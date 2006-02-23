@@ -81,6 +81,8 @@ static CNetScheduleServer* s_netschedule_server = 0;
 /// @internal
 ///
 typedef enum {
+    eRegisterClient,
+    eUnRegisterClient,
     eSubmitJob,
     eSubmitBatch,
     eCancelJob,
@@ -96,7 +98,6 @@ typedef enum {
     eGetProgressMsg,
     ePutProgressMsg,
     eJobExchange,
-
     eShutdown,
     eVersion,
     eLogging,
@@ -313,6 +314,14 @@ public:
                      CQueueDataBase::CQueue& queue);
 
     void ProcessShutdown(CSocket&                sock,
+                         SThreadData&            tdata,
+                         CQueueDataBase::CQueue& queue);
+
+    void ProcessRegisterClient(CSocket&          sock,
+                         SThreadData&            tdata,
+                         CQueueDataBase::CQueue& queue);
+
+    void ProcessUnRegisterClient(CSocket&        sock,
                          SThreadData&            tdata,
                          CQueueDataBase::CQueue& queue);
 
@@ -726,6 +735,12 @@ end_version_control:
                 break;
             case eReloadConfig:
                 ProcessReloadConfig(socket, *tdata, queue);
+                break;
+            case eRegisterClient:
+                ProcessRegisterClient(socket, *tdata, queue);
+                break;
+            case eUnRegisterClient:
+                ProcessUnRegisterClient(socket, *tdata, queue);
                 break;
             case eQList:
                 {
@@ -1314,10 +1329,6 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
 {
     SJS_Request& req = tdata.req;
     unsigned job_id;
-/*
-    unsigned client_address;
-    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-*/
     char key_buf[1024];
     queue.GetJob(key_buf,
                  tdata.peer_addr, &job_id, req.input, m_Host, GetPort(),
@@ -1332,11 +1343,36 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
 
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 
-//    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
     queue.RegisterNotificationListener(
         tdata.peer_addr, req.port, req.timeout, tdata.auth);
 
 }
+
+void CNetScheduleServer::ProcessRegisterClient(CSocket&      sock,
+                                               SThreadData&  tdata,
+                                     CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+
+    queue.RegisterNotificationListener(
+        tdata.peer_addr, req.port, 1, tdata.auth);
+
+    WriteMsg(sock, "OK:", kEmptyStr.c_str());
+}
+
+void CNetScheduleServer::ProcessUnRegisterClient(CSocket&      sock,
+                                               SThreadData&  tdata,
+                                     CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+
+    queue.UnRegisterNotificationListener(tdata.peer_addr, req.port);
+    queue.ClearAffinity(tdata.peer_addr, tdata.auth);
+
+    WriteMsg(sock, "OK:", kEmptyStr.c_str());
+}
+
+
 
 void CNetScheduleServer::ProcessPutFailure(CSocket&                sock, 
                                            SThreadData&            tdata,
@@ -1697,6 +1733,8 @@ struct SNS_Commands
     unsigned  QUIT;
     unsigned  QLST;
     unsigned  BSUB;
+    unsigned  REGC;
+    unsigned  URGC;
 
 
     SNS_Commands()
@@ -1723,6 +1761,8 @@ struct SNS_Commands
         ::memcpy(&QUIT, "QUIT", 4);
         ::memcpy(&QLST, "QLST", 4);
         ::memcpy(&BSUB, "BSUB", 4);
+        ::memcpy(&REGC, "REGC", 4);
+        ::memcpy(&URGC, "URGC", 4);
     }
 
     /// 4 byte command comparison (make sure str is aligned)
@@ -1767,6 +1807,8 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 22.QLST
     // 23.BSUB
     // 24.JXCG [JSID_01_1 EndStatus "NCID_01_2..."]
+    // 25.REGC udp_port
+    // 26.URGC udp_port
 
     const char* s = reqstr;
 
@@ -2120,6 +2162,18 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             req->req_type = eReloadConfig;
             return;
         }
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.REGC, s)) {
+            req->req_type = eRegisterClient;
+            s += 4;
+            NS_SKIPSPACE(s)
+            NS_CHECKEND(s, "Misformed Register request")
+
+            int port = atoi(s);
+            if (port > 0) {
+                req->port = (unsigned)port;
+            }
+            return;
+        }
         break;
     case 'Q':
         if (SNS_Commands::IsCmd(s_NS_cmd_codes.QUIT, s)) {
@@ -2151,6 +2205,20 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
         if (SNS_Commands::IsCmd(s_NS_cmd_codes.BSUB, s)) {
             req->req_type = eSubmitBatch;
             s += 4;
+            return;
+        }
+        break;
+    case 'U':
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.URGC, s)) {
+            req->req_type = eUnRegisterClient;
+            s += 4;
+            NS_SKIPSPACE(s)
+            NS_CHECKEND(s, "Misformed UnRegister request")
+
+            int port = atoi(s);
+            if (port > 0) {
+                req->port = (unsigned)port;
+            }
             return;
         }
         break;
@@ -2531,6 +2599,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/02/23 20:05:10  kuznets
+ * Added grid client registration-unregistration
+ *
  * Revision 1.63  2006/02/21 14:44:57  kuznets
  * Bug fixes, improvements in statistics
  *

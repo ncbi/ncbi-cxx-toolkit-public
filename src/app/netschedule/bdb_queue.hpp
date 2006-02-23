@@ -256,6 +256,23 @@ public:
                                           unsigned short  udp_port,
                                           int             timeout,
                                           const string&   auth);
+        void UnRegisterNotificationListener(unsigned int    host_addr, 
+                                            unsigned short  udp_port);
+
+        /// Remove affinity association for a specified host
+        ///
+        /// @note Affinity is based on network host name and 
+        /// program name (not UDP port). Presumed that we have one
+        /// worker node instance per host.
+        void ClearAffinity(unsigned int  host_addr,
+                           const string& auth);
+
+        /// Find the listener if it is registered
+        /// @return NULL if not found
+        ///
+        SLockedQueue::TListenerList::iterator 
+                        FindListener(unsigned int    host_addr, 
+                                     unsigned short  udp_port);
 
         void SetMonitorSocket(SOCK sock);
 
@@ -486,6 +503,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/02/23 20:05:10  kuznets
+ * Added grid client registration-unregistration
+ *
  * Revision 1.39  2006/02/23 15:45:04  kuznets
  * Added more frequent and non-intrusive memory optimization of status matrix
  *

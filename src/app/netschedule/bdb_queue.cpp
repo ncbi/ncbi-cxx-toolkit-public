@@ -2992,53 +2992,74 @@ CQueueDataBase::CQueue::TimeLineExchange(unsigned remove_job_id,
     }
 }
 
+SLockedQueue::TListenerList::iterator
+CQueueDataBase::CQueue::FindListener(
+                                unsigned int    host_addr, 
+                                unsigned short  udp_port)
+{
+    SLockedQueue::TListenerList&  wnodes = m_LQueue.wnodes;
+    CReadLockGuard guard(m_LQueue.wn_lock);
+    NON_CONST_ITERATE(SLockedQueue::TListenerList, it, wnodes) {
+        const SQueueListener& ql = *(*it);
+        if ((ql.udp_port == udp_port) &&
+            (ql.host == host_addr)
+            ) {
+                return it;
+        }
+    }
+    return wnodes.end();
+}
+
+
 void CQueueDataBase::CQueue::RegisterNotificationListener(
                                             unsigned int    host_addr,
                                             unsigned short  udp_port,
                                             int             timeout,
                                             const string&   auth)
 {
-    // check if listener is already in the list
-
-    SLockedQueue::TListenerList&  wnodes = m_LQueue.wnodes;
-
-    SQueueListener* ql_ptr = 0;
+    SLockedQueue::TListenerList::iterator it =
+                                FindListener(host_addr, udp_port);
     
-    {{
-    CReadLockGuard guard(m_LQueue.wn_lock);
-    for (SLockedQueue::TListenerList::size_type i = 0; 
-         i < wnodes.size(); 
-         ++i) 
-    {
-        SQueueListener& ql = *wnodes[i];
-        if ((ql.udp_port == udp_port) &&
-            (ql.host == host_addr)
-            ) {
-            ql_ptr = &ql;
-            break;
-        }
-    } // for
-    }}
-
-
     time_t curr = time(0);
     CWriteLockGuard guard(m_LQueue.wn_lock);
-    if (ql_ptr) {  // update registration timestamp
-        if ( (ql_ptr->timeout = timeout)!= 0 ) {
-            ql_ptr->last_connect = curr;
-            ql_ptr->auth = auth;
+    if (it != m_LQueue.wnodes.end()) {  // update registration timestamp
+        SQueueListener& ql = *(*it);
+        if ((ql.timeout = timeout)!= 0) {
+            ql.last_connect = curr;
+            ql.auth = auth;
         } else {
         }
-
         return;
     }
 
     // new element
 
     if (timeout) {
-        wnodes.push_back(
+        m_LQueue.wnodes.push_back(
             new SQueueListener(host_addr, udp_port, curr, timeout, auth));
     }
+}
+
+void 
+CQueueDataBase::CQueue::UnRegisterNotificationListener(
+                                            unsigned int    host_addr,
+                                            unsigned short  udp_port)
+{
+    SLockedQueue::TListenerList::iterator it =
+                                FindListener(host_addr, udp_port);
+   CWriteLockGuard guard(m_LQueue.wn_lock);
+   if (it != m_LQueue.wnodes.end()) {
+        SQueueListener* node = *it;
+        delete node;
+        m_LQueue.wnodes.erase(it);
+   }
+}
+
+void CQueueDataBase::CQueue::ClearAffinity(unsigned int  host_addr,
+                                           const string& auth)
+{
+    CFastMutexGuard guard(m_LQueue.aff_map_lock);
+    m_LQueue.worker_aff_map.ClearAffinity(host_addr, auth);
 }
 
 void CQueueDataBase::CQueue::SetMonitorSocket(SOCK sock)
@@ -3372,6 +3393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/02/23 20:05:10  kuznets
+ * Added grid client registration-unregistration
+ *
  * Revision 1.58  2006/02/23 15:45:04  kuznets
  * Added more frequent and non-intrusive memory optimization of status matrix
  *
