@@ -202,39 +202,30 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     // Utility projects
     ITERATE(list<TUtilityProject>, p, m_UtilityProjects) {
         const TUtilityProject& utl_prj = *p;
-//        WriteUtilityProjectConfiguration(utl_prj, ofs);
         proj_guid.push_back(utl_prj.second);
     }
     ITERATE(list<TUtilityProject>, p, m_ConfigureProjects) {
         const TUtilityProject& utl_prj = *p;
-//        WriteUtilityProjectConfiguration(utl_prj, ofs);
         proj_guid.push_back(utl_prj.second);
     }
     // BuildAll project
     if ( !m_BuildAllProject.first.empty() &&
          !m_BuildAllProject.second.empty() ) {
-//        WriteUtilityProjectConfiguration(m_BuildAllProject, ofs);
         proj_guid.push_back(m_BuildAllProject.second);
+    }
+    if ( !m_AsnAllProject.first.empty() &&
+         !m_AsnAllProject.second.empty() ) {
+        proj_guid.push_back(m_AsnAllProject.second);
     }
     // Projects from tree
     ITERATE(TProjects, p, m_Projects) {
-//        WriteProjectConfigurations(ofs, p->second);
         proj_guid.push_back(p->second.m_GUID);
     }
-    proj_guid.sort();
-    proj_guid.unique();
+//    proj_guid.sort();
+//    proj_guid.unique();
     WriteProjectConfigurations( ofs, proj_guid);
     ofs << '\t' << "EndGlobalSection" << endl;
 
-    // meanless stuff
-/*
-    ofs << '\t' 
-        << "GlobalSection(ExtensibilityGlobals) = postSolution" << endl;
-	ofs << '\t' << "EndGlobalSection" << endl;
-	ofs << '\t' << "GlobalSection(ExtensibilityAddIns) = postSolution" << endl;
-	ofs << '\t' << "EndGlobalSection" << endl;
-*/
-   
     //End of global section
     ofs << "EndGlobal" << endl;
 }
@@ -584,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/02/23 15:46:56  gouriano
+ * Changed the order of project guid
+ *
  * Revision 1.32  2006/02/21 19:13:55  gouriano
  * Added DATASPEC_ALL project
  *
