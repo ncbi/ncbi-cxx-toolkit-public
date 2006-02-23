@@ -426,7 +426,6 @@ static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
 
 
 ///return concatenated exon sequence
-///@param gap_char: gap character
 ///@param feat: the feature containing this cds
 ///@param feat_strand: the feature strand
 ///@param range: the range list of seqloc
@@ -435,7 +434,7 @@ static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
 ///@return: the concatenated exon sequences with amino acid aligned to 
 ///to the second base of a codon
 ///
-static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,  
+static string s_GetConcatenatedExon(CFeat_CI& feat,  
                                     ENa_strand feat_strand, 
                                     list<CRange<TSeqPos> >& range,
                                     TSeqPos total_coding_len,
@@ -448,7 +447,8 @@ static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,
     if(cdr.IsSetFrame()){
         frame = cdr.GetFrame();
     }
-    TSeqPos num_base, num_coding_base;
+    TSeqPos num_coding_base;
+    int num_base;
     TSeqPos coding_start_base;
     if(feat_strand == eNa_strand_minus){
         coding_start_base = total_coding_len - 1 - (frame -1) - frame_adj;
@@ -467,7 +467,7 @@ static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,
         //filled backward.
         if(feat_strand != eNa_strand_minus){
             for(TSeqPos i = 0; i < iter->GetLength(); i ++){
-                if(num_base >= coding_start_base){
+                if((TSeqPos)num_base >= coding_start_base){
                     num_coding_base ++;
                     if(num_coding_base % 3 == 2){
                         //a.a to the 2nd base
@@ -486,7 +486,7 @@ static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,
             
             for(TSeqPos i = 0; i < iter->GetLength() &&
                     num_base >= 0; i ++){
-                if(num_base <= coding_start_base){
+                if((TSeqPos)num_base <= coding_start_base){
                     num_coding_base ++;
                     if(num_coding_base % 3 == 2){
                         //a.a to the 2nd base
@@ -1153,7 +1153,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     bool colorMismatch = false; //color the mismatches
     //output identities info 
     if(((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine))
-       && !(m_AlignOption&eMergeAlign)) {
+       && !(m_AlignOption & eMergeAlign)) {
         int match = 0;
         int positive = 0;
         int gap = 0;
@@ -1161,7 +1161,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         x_FillIdentityInfo(sequence[0], sequence[1], match, positive, middleLine);
         if(m_AlignOption & eShowBlastInfo){
             identity = (match*100)/((int)aln_stop+1);
-            if(identity >= k_ColorMismatchIdentity && identity <100){
+            if(identity >= k_ColorMismatchIdentity && identity <100 &&
+               (m_AlignOption & eColorDifferentBases)){
                 colorMismatch = true;
             }
             gap = x_GetNumGaps();
@@ -1269,7 +1270,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 
                 //highlight the seqid for pairwise-with-identity format
                 if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
-                   && m_AlignOption&eShowIdentity && has_mismatch){
+                   && m_AlignOption&eShowIdentity && has_mismatch && 
+                   (m_AlignOption & eColorDifferentBases)){
                     out<< "<font color = ff0000><b>";         
                 }
                 out<<seqidArray[row]; 
@@ -2112,8 +2114,8 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     //fill the feature line
                     char gap_char = m_AV->GetGapChar(row);
                     string concat_exon = 
-                        s_GetConcatenatedExon(gap_char, feat, 
-                                              feat_strand, isolated_range,
+                        s_GetConcatenatedExon(feat, feat_strand, 
+                                              isolated_range,
                                               total_coding_len,
                                               raw_cdr_product,
                                               other_seqloc_length%3 == 0 ?
@@ -3062,6 +3064,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.104  2006/02/23 21:01:08  jianye
+*fixed compiler warnings
+*
 *Revision 1.103  2006/02/22 19:51:46  jianye
 *never compare size_t to 0
 *
