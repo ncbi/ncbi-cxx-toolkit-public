@@ -55,7 +55,7 @@ CHG_Gene::~CHG_Gene(void)
 inline
 CHG_Gene::TSymbol CHG_Gene::x_GetGeneidLabel(void) const 
 { 
-	return( "GeneId:" + NStr::IntToString( GetGeneid() ) );  
+	return( "GeneID:" + NStr::IntToString( GetGeneid() ) );  
 } // end CHG_Gene::x_GetGeneidLabel
 
 
@@ -68,11 +68,9 @@ CHG_Gene::TSymbol CHG_Gene::GetLabel(void) const
 	if ( IsSetSymbol() ) {													// if gene name is set	
 		gene_symbol = GetSymbol();	
 	}
-	/*
 	else if ( IsSetLocus_tag() ) {
 		gene_symbol = GetLocus_tag();		
 	}
-	*/
 	else if ( IsSetAliases() ) {										// if gene name is NOT set, look for aliases
 		const  TAliases &aliases = GetAliases();
 		TAliases_iter aliases_iter = aliases.begin();
@@ -97,6 +95,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/02/23 19:40:53  hassant
+* Changed GetLabel to use GeneID as prefix instead of GeneId
+*
 * Revision 1.3  2006/01/27 19:17:59  hassant
 * Updated GetLabel to a default gene name (Unknown) in case geneid is missing
 *
