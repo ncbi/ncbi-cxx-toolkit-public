@@ -177,6 +177,7 @@ EOF
 
         # simple tests
 
+            # dblib is not  supposed to work with MS SQL Server
             if test $driver = "dblib"  -a  $server = $server_mssql ; then
                 continue
             fi
@@ -189,14 +190,11 @@ EOF
             if test \( $driver = "ftds" -a $server = $server_mssql \) -o \
                     \( $driver != "ftds" -a $driver != "msdblib" \); then
 
-                # ODBC driver doen't support BCP at all.
-                if test $driver != "odbc" ; then
-                    cmd="dbapi_bcp -lb random -d $driver -S $server"
-                    if test $server != "MOZART" -a $server != "BARTOK" ; then 
-                        RunSimpleTest "dbapi_bcp"
-                    else
-                        sum_list="$sum_list XXX_SEPARATOR #  $cmd (Skipped. It causes deadlocks.)"
-                    fi
+                cmd="dbapi_bcp -lb random -d $driver -S $server"
+                if test $server != "MOZART" -a $server != "BARTOK" ; then 
+                    RunSimpleTest "dbapi_bcp"
+                else
+                    sum_list="$sum_list XXX_SEPARATOR #  $cmd (Skipped. It causes deadlocks.)"
                 fi
 
                 # Do not run dbapi_testspeed with MOZART and BARTOK
@@ -216,7 +214,7 @@ EOF
             # MS SQL is already disabled for non-ftds drivers.
             cmd="dbapi_cursor -lb random -d $driver -S $server"
             if test \( \( $driver != "ftds" -a $driver != "ftds63" -a \
-                        $driver != "odbc" -a $driver != "msdblib" \) -o \
+                        $driver != "msdblib" \) -o \
                     \( $driver = "ftds" -a $server = $server_mssql \) -o \
                     \( $driver = "ftds63" -a $server = $server_mssql \) \) -a \
                     $server != "MOZART" -a $server != "BARTOK" ; then
