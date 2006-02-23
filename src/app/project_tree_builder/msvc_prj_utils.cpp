@@ -1022,7 +1022,7 @@ string CreateProjectName(const CProjKey& project_id)
     case CProjKey::eDll:
         return project_id.Id() + ".dll";
     case CProjKey::eMsvc:
-        return project_id.Id() + ".vcproj";
+        return project_id.Id();// + ".vcproj";
     default:
         NCBI_THROW(CProjBulderAppException, eProjectType, project_id.Id());
         return "";
@@ -1130,6 +1130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/02/23 15:02:14  gouriano
+ * Corrected name of msvc-type projects
+ *
  * Revision 1.46  2006/02/22 17:33:23  gouriano
  * Get ready for 64 bits platform
  *
