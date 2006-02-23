@@ -38,7 +38,6 @@
 #include "active_obj.hpp"
 #include <corelib/ncbistre.hpp>
 #include "dbexception.hpp"
-#include "blobstream.hpp"
 #include "rw_impl.hpp"
 #include <map>
 
@@ -101,6 +100,9 @@ private:
 //====================================================================
 /*
 * $Log$
+* Revision 1.13  2006/02/23 15:55:36  kholodov
+* Removed the referece to the blobstream.hpp
+*
 * Revision 1.12  2006/02/21 14:59:23  kholodov
 * Streams implemented thru Reader/Writer interface
 *
