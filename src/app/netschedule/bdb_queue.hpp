@@ -471,6 +471,7 @@ private:
     unsigned int         m_PurgeSkipCnt;      ///< Number of purge skipped
     unsigned int         m_DeleteChkPointCnt; ///< trans. checkpnt counter
     unsigned int         m_FreeStatusMemCnt;  ///< Free memory counter
+    time_t               m_LastFreeMem;       ///< time of the last memory opt
     time_t               m_LastR2P;           ///< Return 2 Pending timestamp
     unsigned short       m_UdpPort;           ///< UDP notification port      
 
@@ -485,6 +486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/02/23 15:45:04  kuznets
+ * Added more frequent and non-intrusive memory optimization of status matrix
+ *
  * Revision 1.38  2006/02/21 14:44:57  kuznets
  * Bug fixes, improvements in statistics
  *

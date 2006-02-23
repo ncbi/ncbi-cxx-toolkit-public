@@ -171,10 +171,20 @@ void CNetScheduler_JobStatusTracker::ClearAll()
 
 void CNetScheduler_JobStatusTracker::FreeUnusedMem()
 {
+    for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
+        TBVector& bv = *m_StatusStor[i];
+        {{
+        CWriteLockGuard guard(m_Lock);
+        bv.optimize(0, TBVector::opt_free_0);
+        }}
+    }
+    {{
     CWriteLockGuard guard(m_Lock);
-    FreeUnusedMemNoLock();
+    m_BorrowedIds.optimize(0, TBVector::opt_free_0);
+    }}
 }
 
+/*
 void CNetScheduler_JobStatusTracker::FreeUnusedMemNoLock()
 {
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
@@ -183,6 +193,7 @@ void CNetScheduler_JobStatusTracker::FreeUnusedMemNoLock()
     }
     m_BorrowedIds.optimize(0, TBVector::opt_free_0);
 }
+*/
 
 void
 CNetScheduler_JobStatusTracker::SetExactStatusNoLock(unsigned int job_id, 
@@ -825,6 +836,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/02/23 15:45:04  kuznets
+ * Added more frequent and non-intrusive memory optimization of status matrix
+ *
  * Revision 1.25  2006/02/21 14:44:57  kuznets
  * Bug fixes, improvements in statistics
  *

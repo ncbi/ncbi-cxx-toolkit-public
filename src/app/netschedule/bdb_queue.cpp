@@ -169,6 +169,7 @@ CQueueDataBase::CQueueDataBase()
   m_PurgeSkipCnt(0),
   m_DeleteChkPointCnt(0),
   m_FreeStatusMemCnt(0),
+  m_LastFreeMem(time(0)),
   m_LastR2P(time(0)),
   m_UdpPort(0)
 {
@@ -862,9 +863,17 @@ void CQueueDataBase::Purge()
 
     } // ITERATE
 
+
+    // optimize status matrix to free some memory
+    //
+    time_t curr = time(0);
     m_FreeStatusMemCnt += global_del_rec;
-    if (m_FreeStatusMemCnt > 1000000) {
+    const int kMemFree_Delay = 15 * 60; 
+    // optimize memory every 15 min. or after 1mil of deleted records
+    if ((m_FreeStatusMemCnt > 1000000) ||
+        (m_LastFreeMem + kMemFree_Delay <= curr)) {
         m_FreeStatusMemCnt = 0;
+        m_LastFreeMem = curr;
 
         const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
         ITERATE(CQueueCollection::TQueueMap, it, qm) {
@@ -3363,6 +3372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/02/23 15:45:04  kuznets
+ * Added more frequent and non-intrusive memory optimization of status matrix
+ *
  * Revision 1.57  2006/02/21 14:44:57  kuznets
  * Bug fixes, improvements in statistics
  *
