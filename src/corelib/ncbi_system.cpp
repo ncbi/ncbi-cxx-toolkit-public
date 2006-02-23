@@ -410,10 +410,6 @@ unsigned long GetVirtualMemoryPageSize(void)
         GetSystemInfo(&si); 
         ps = si.dwAllocationGranularity;
 #elif defined(NCBI_OS_UNIX) 
-        long x = 0;
-#  ifdef HAVE_GETPAGESIZE
-        x = getpagesize();
-#  endif
 #  if   defined(_SC_PAGESIZE)
 #    define NCBI_SC_PAGESIZE _SC_PAGESIZE
 #  elif defined(_SC_PAGE_SIZE)
@@ -421,11 +417,16 @@ unsigned long GetVirtualMemoryPageSize(void)
 #  elif defined(NCBI_SC_PAGESIZE)
 #    undef  NCBI_SC_PAGESIZE
 #  endif
+#  ifndef   NCBI_SC_PAGESIZE
+        long x = 0;
+#  else
+        long x = sysconf(NCBI_SC_PAGESIZE);
+#    undef  NCBI_SC_PAGESIZE
+#  endif
         if (x <= 0) {
-#  ifdef NCBI_SC_PAGESIZE
-            if ((x = sysconf(NCBI_SC_PAGESIZE)) <= 0)
+#  ifdef HAVE_GETPAGESIZE
+            if ((x = getpagesize()) <= 0)
                 return 0;
-#    undef NCBI_SC_PAGESIZE
 #  endif
             return 0;
         }
@@ -521,6 +522,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/02/23 17:44:36  lavr
+ * GetVirtualMemoryPageSize(): use sysctl() first (fallback to getpagesize())
+ *
  * Revision 1.46  2006/02/23 15:07:04  lavr
  * GetVirtualMemoryPageSize():  bug fixed;  reworked to cache the result
  *
