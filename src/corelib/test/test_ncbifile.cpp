@@ -60,7 +60,7 @@ static void s_CreateTestFile(const string& file)
 
 static void s_TEST_SplitPath(void)
 {
-    string path, dir, title, ext;
+    string path, disk, dir, title, ext;
     
 #if defined(NCBI_OS_MSWIN)
     CFile::SplitPath("c:\\windows\\command\\win.ini", &dir, &title, &ext);
@@ -126,6 +126,36 @@ static void s_TEST_SplitPath(void)
 
     path = CFile::MakePath(dir, title, ext);
     assert( path.empty() );
+
+    // SplitPathEx
+    {{
+        struct TSplitPathEx
+        {
+            string path, disk, dir, title, ext;
+        };
+        TSplitPathEx test[] = {
+            { "c:file", "c:", "", "file",  "" },
+            { "", "", "", "", "" },
+            { "file.ext", "", "", "file", ".ext" },
+            { "\\file.ext", "", "\\", "file", ".ext" },
+            { "/file.ext", "", "/", "file", ".ext" },
+            { "c:\\", "c:", "\\", "",  "" },
+            { "c:\\windows\\win.ini", "c:", "\\windows\\", "win",  ".ini" },
+            { "windows\\win.ini", "", "windows\\", "win",  ".ini" },
+            { "/usr/lib/file.ext", "", "/usr/lib/", "file", ".ext" },
+            { "usr/lib/file.ext", "", "usr/lib/", "file", ".ext" },
+            { "c:file", "c:", "", "file",  "" },
+            { "c:file.ext", "c:", "", "file",  ".ext" }
+        };
+
+        for (size_t i = 0;  i < sizeof(test) / sizeof(test[0]);  ++i) {
+            CFile::SplitPathEx(test[i].path, &disk, &dir, &title, &ext);
+            assert( disk  == test[i].disk );
+            assert( dir   == test[i].dir );
+            assert( title == test[i].title );
+            assert( ext   == test[i].ext );
+        }
+    }}
 }
 
 
@@ -1011,6 +1041,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/02/23 19:43:52  ivanov
+ * Added test for CDirEntry::SplitPathEx
+ *
  * Revision 1.54  2005/09/08 18:25:38  ivanov
  * Restore correct number of bytes in the CMemoryFile test
  *
