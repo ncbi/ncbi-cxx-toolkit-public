@@ -134,7 +134,7 @@ public:
 protected:
 
     /// forward dictionary: word -> phonetic representation
-    typedef set<string> TForwardDict;
+    typedef set<string, PNocase> TForwardDict;
     TForwardDict m_ForwardDict;
 
     /// reverse dictionary: soundex/metaphone -> word
@@ -221,6 +221,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/02/23 14:50:03  dicuccio
+ * Use case-insensitive string comparison
+ *
  * Revision 1.4  2005/12/29 19:28:19  dicuccio
  * Split text utility classes out of dictionary.[hc]pp and placed them in a
  * separate compilation unit (dictionary_util.[hc]pp).  Added an implementation of
