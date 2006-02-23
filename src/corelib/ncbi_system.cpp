@@ -402,26 +402,36 @@ unsigned int GetCpuCount(void)
 
 unsigned long GetVirtualMemoryPageSize(void)
 {
-    unsigned long ps = 0;
+    static unsigned long ps = 0;
 
+    if (!ps) {
 #if defined(NCBI_OS_MSWIN)
-    SYSTEM_INFO si;
-    GetSystemInfo(&si); 
-    ps = si.dwAllocationGranularity;
-#elif defined(NCBI_OS_UNIX)
-    long x = 0;
-#  if defined(_SC_PAGESIZE)
-    x = sysconf(_SC_PAGESIZE);
-#  elif defined(_SC_PAGE_SIZE)
-    x = sysconf(_SC_PAGE_SIZE);
-#  endif
+        SYSTEM_INFO si;
+        GetSystemInfo(&si); 
+        ps = si.dwAllocationGranularity;
+#elif defined(NCBI_OS_UNIX) 
+        long x = 0;
 #  ifdef HAVE_GETPAGESIZE
-    if (x <= 0) {
         x = getpagesize();
-    }
-    ps = x < 0 ? 0 : x;
 #  endif
+#  if   defined(_SC_PAGESIZE)
+#    define NCBI_SC_PAGESIZE _SC_PAGESIZE
+#  elif defined(_SC_PAGE_SIZE)
+#    define NCBI_SC_PAGESIZE _SC_PAGE_SIZE
+#  elif defined(NCBI_SC_PAGESIZE)
+#    undef  NCBI_SC_PAGESIZE
+#  endif
+        if (x <= 0) {
+#  ifdef NCBI_SC_PAGESIZE
+            if ((x = sysconf(NCBI_SC_PAGESIZE)) <= 0)
+                return 0;
+#    undef NCBI_SC_PAGESIZE
+#  endif
+            return 0;
+        }
+        ps = x;
 #endif /*OS_TYPE*/
+    }
     return ps;
 }
 
@@ -511,6 +521,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/02/23 15:07:04  lavr
+ * GetVirtualMemoryPageSize():  bug fixed;  reworked to cache the result
+ *
  * Revision 1.45  2006/01/12 19:41:54  ivanov
  * SetCpuTimeLimit: added new parameter - maximum process termination
  * time (default 5 seconds)
