@@ -506,7 +506,7 @@ Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
  * @return 0 if HSP lists have been merged successfully, -1 otherwise.
  */
 NCBI_XBLAST_EXPORT
-Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list, 
+Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list, 
                    BlastHSPList** combined_hsp_list_ptr, 
                    Int4 hsp_num_max, Int4 start, Boolean merge_hsps);
 
