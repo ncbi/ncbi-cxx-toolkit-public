@@ -1939,10 +1939,6 @@ size_t CONNUTIL_GetVMPageSize(void)
         GetSystemInfo(&si); 
         ps = (size_t) si.dwAllocationGranularity;
 #elif defined(NCBI_OS_UNIX) 
-        long x = 0;
-#  ifdef HAVE_GETPAGESIZE
-        x = getpagesize();
-#  endif
 #  if   defined(_SC_PAGESIZE)
 #    define NCBI_SC_PAGESIZE _SC_PAGESIZE
 #  elif defined(_SC_PAGE_SIZE)
@@ -1950,13 +1946,19 @@ size_t CONNUTIL_GetVMPageSize(void)
 #  elif defined(NCBI_SC_PAGESIZE)
 #    undef  NCBI_SC_PAGESIZE
 #  endif
-        if (x <= 0) {
-#  ifdef NCBI_SC_PAGESIZE
-            if ((x = sysconf(NCBI_SC_PAGESIZE)) <= 0)
-                return 0;
-#    undef NCBI_SC_PAGESIZE
+#  ifndef   NCBI_SC_PAGESIZE
+        long x = 0;
+#  else
+        long x = sysconf(NCBI_SC_PAGESIZE);
+#    undef  NCBI_SC_PAGESIZE
 #  endif
+        if (x <= 0) {
+#  ifdef HAVE_GETPAGESIZE
+            if ((x = getpagesize()) <= 0)
+                return 0;
+#  else
             return 0;
+#  endif
         }
         ps = (size_t) x;
 #endif /*OS_TYPE*/
@@ -1968,8 +1970,11 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.97  2006/02/23 17:42:36  lavr
+ * CONNUTIL_GetVMPageSize(): use sysctl() first (fallback to getpagesize())
+ *
  * Revision 6.96  2006/02/23 15:23:03  lavr
- * +CONNUTIL_GetVMPageSize() [merely a copy of what corelib/ncbi_system.cpp has]
+ * +CONNUTIL_GetVMPageSize() [merely copy of what corelib/ncbi_system.cpp has]
  *
  * Revision 6.95  2006/02/14 15:50:22  lavr
  * Introduce and use CONN_TRACE (via CORE_TRACE) -- NOP in Release mode
