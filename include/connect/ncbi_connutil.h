@@ -746,8 +746,11 @@ extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2006/02/23 15:46:16  lavr
+ * Clean ChangeLog
+ *
  * Revision 6.50  2006/02/23 15:22:43  lavr
- * +CONNUTIL_GetVMPageSize() [merely a copy of what corelib/ncbi_system.cpp has]
+ * +CONNUTIL_GetVMPageSize()
  *
  * Revision 6.49  2006/01/27 19:17:41  lavr
  * Fix NCBI_DEPRECATED placement to satify MSVC compiler
