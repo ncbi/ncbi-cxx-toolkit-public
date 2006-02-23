@@ -457,6 +457,19 @@ public:
     virtual
     void SetRunTimeout(const string& job_key, unsigned time_to_run);
 
+
+    /// Register client-listener
+    virtual
+    void RegisterClient(unsigned short udp_port);
+
+
+    /// Unregister client-listener. After this call
+    /// server will not try to send any notification messages or maintain
+    /// job affinity for the client.
+    virtual
+    void UnRegisterClient(unsigned short udp_port);
+
+
     /// Return version string
     virtual
     string ServerVersion();
@@ -580,6 +593,8 @@ protected:
     /// @return TRUE if disconnected 
     bool CheckConnExpired();
 
+    void RegUnregClient(const string& cmd, unsigned short udp_port);
+
 private:
     CNetScheduleClient(const CNetScheduleClient&);
     CNetScheduleClient& operator=(const CNetScheduleClient&);
@@ -679,6 +694,12 @@ public:
                  unsigned       wait_time,
                  unsigned short udp_port);
 
+    virtual
+    void RegisterClient(unsigned short udp_port);
+
+    virtual
+    void UnRegisterClient(unsigned short udp_port);
+
     /// Return Connection Information string
     ///
     virtual string GetConnectionInfo() const; 
@@ -687,6 +708,7 @@ protected:
     virtual bool CheckConnect(const string& key);
 
     bool NeedRebalance(time_t curr) const;
+
 
 public:
     struct SServiceAddress {
@@ -710,6 +732,8 @@ protected:
     ///
     /// @sa ObtainServerList
     const TServiceList& GetServiceList() const { return m_ServList; }
+
+    void RegUnregClient(const string& cmd, unsigned short udp_port);
 
 private:
     bool x_TryGetJob(SServiceAddress& sa,
@@ -839,6 +863,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/02/23 20:06:37  kuznets
+ * Added client registration-unregistration
+ *
  * Revision 1.46  2006/02/21 14:34:42  kuznets
  * Added options for printing statistics
  *

@@ -408,6 +408,7 @@ bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
 }
 
 
+
 bool CNetScheduleClient_LB::WaitJob(string*        job_key, 
                                     string*        input, 
                                     unsigned       wait_time,
@@ -503,6 +504,43 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
     return GetJob(job_key, input, udp_port);
 }
 
+
+void CNetScheduleClient_LB::RegUnregClient(const string&  cmd, 
+                                           unsigned short udp_port)
+{
+    time_t curr = time(0);
+    if (NeedRebalance(curr)) {
+        ObtainServerList(m_LB_ServiceName);
+        m_Requests = 0;
+        m_LastRebalanceTime = curr;
+    }
+    ++m_Requests;
+
+    NON_CONST_ITERATE(TServiceList, it, m_ServList) {
+        SServiceAddress& sa = *it;
+        EIO_Status st = Connect(sa.host, sa.port);
+        if (st != eIO_Success) {
+            sa.conn_fail_time = time(0);
+            return;
+        } else {
+            sa.conn_fail_time = 0;
+        }
+        {{
+        CJS_BoolGuard bg(&m_StickToHost);
+        TParent::RegUnregClient(cmd, udp_port);
+        }}
+    }
+}
+
+void CNetScheduleClient_LB::RegisterClient(unsigned short udp_port)
+{
+    RegUnregClient("REGC ", udp_port);
+}
+
+void CNetScheduleClient_LB::UnRegisterClient(unsigned short udp_port)
+{
+    RegUnregClient("URGC ", udp_port);
+}
 
 bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
                                                string*    job_key, 
@@ -671,6 +709,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/02/23 20:06:57  kuznets
+ * Added client registration-unregistration
+ *
  * Revision 1.21  2006/02/15 19:07:00  lavr
  * Remove inclusion of unnecessary header files
  *

@@ -1148,6 +1148,37 @@ void CNetScheduleClient::ReturnJob(const string& job_key)
     CheckOK(&m_Tmp);
 }
 
+void CNetScheduleClient::RegUnregClient(const string&  cmd, 
+                                        unsigned short udp_port)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+    bool connected = CheckConnect(kEmptyStr);
+    CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+
+    MakeCommandPacket(&m_Tmp, cmd, connected);
+    m_Tmp.append(NStr::IntToString(udp_port));
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
+}
+
+
+void CNetScheduleClient::RegisterClient(unsigned short udp_port)
+{
+    RegUnregClient("REGC ", udp_port);
+}
+
+void CNetScheduleClient::UnRegisterClient(unsigned short udp_port)
+{
+    RegUnregClient("URGC ", udp_port);
+}
+
 
 void CNetScheduleClient::ShutdownServer()
 {
@@ -1540,6 +1571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/02/23 20:06:57  kuznets
+ * Added client registration-unregistration
+ *
  * Revision 1.44  2006/02/21 14:35:37  kuznets
  * Added options for printing statistics
  *
