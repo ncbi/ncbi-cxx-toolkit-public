@@ -14,7 +14,8 @@ cfgs="${1:-DebugDLL ReleaseDLL}"
 
 dirs='static dll'
 sol_static="ncbi_cpp.sln gui\ncbi_gui.sln"
-sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln gbench\ncbi_gbench.sln"
+#sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln gbench\ncbi_gbench.sln"
+sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln"
 timer="date +'%H:%M'"
 
 ########## Functions
