@@ -86,16 +86,16 @@ CRef<CPacked_seqint> s_LocalQueryData2Packed_seqint(ILocalQueryData& query_data)
     CRef<CPacked_seqint> retval(new CPacked_seqint);
     for (int i = 0; i < kNumQueries; i++) {
 
+        CConstRef<CSeq_id> id(query_data.GetSeq_loc(i)->GetId());
         if (query_data.IsValidQuery(i)) {
 
             if (query_data.GetSeq_loc(i)->IsInt()) {
                 retval->AddInterval(query_data.GetSeq_loc(i)->GetInt());
-            } else if (const CSeq_id* id = query_data.GetSeq_loc(i)->GetId()) {
+            } else if (id.NotEmpty()) {
                 retval->AddInterval(*id, 0, query_data.GetSeqLength(i));
             }
 
         } else {
-            const CSeq_id* id = query_data.GetSeq_loc(i)->GetId();
             retval->AddInterval(*id, 0, 0);
         }
 
