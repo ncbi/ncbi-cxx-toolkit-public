@@ -1923,9 +1923,54 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 }
 
 
+
+/****************************************************************************
+ * Page size granularity
+ * See also at corelib's ncbi_system.cpp::GetVirtualMemoryPageSize().
+ */
+
+size_t CONNUTIL_GetVMPageSize(void)
+{
+    static size_t ps = 0;
+
+    if (!ps) {
+#if defined(NCBI_OS_MSWIN)
+        SYSTEM_INFO si;
+        GetSystemInfo(&si); 
+        ps = (size_t) si.dwAllocationGranularity;
+#elif defined(NCBI_OS_UNIX) 
+        long x = 0;
+#  ifdef HAVE_GETPAGESIZE
+        x = getpagesize();
+#  endif
+#  if   defined(_SC_PAGESIZE)
+#    define NCBI_SC_PAGESIZE _SC_PAGESIZE
+#  elif defined(_SC_PAGE_SIZE)
+#    define NCBI_SC_PAGESIZE _SC_PAGE_SIZE
+#  elif defined(NCBI_SC_PAGESIZE)
+#    undef  NCBI_SC_PAGESIZE
+#  endif
+        if (x <= 0) {
+#  ifdef NCBI_SC_PAGESIZE
+            if ((x = sysconf(NCBI_SC_PAGESIZE)) <= 0)
+                return 0;
+#    undef NCBI_SC_PAGESIZE
+#  endif
+            return 0;
+        }
+        ps = (size_t) x;
+#endif /*OS_TYPE*/
+    }
+    return ps;
+}
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.96  2006/02/23 15:23:03  lavr
+ * +CONNUTIL_GetVMPageSize() [merely a copy of what corelib/ncbi_system.cpp has]
+ *
  * Revision 6.95  2006/02/14 15:50:22  lavr
  * Introduce and use CONN_TRACE (via CORE_TRACE) -- NOP in Release mode
  *

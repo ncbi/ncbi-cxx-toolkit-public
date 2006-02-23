@@ -83,6 +83,7 @@
  *
  *    8.Miscellaneous
  *       CONNUTIL_GetUsername()
+ *       CONNUTIL_GetVMPageSize()
  */
 
 #include <connect/ncbi_buffer.h>
@@ -728,6 +729,12 @@ extern NCBI_XCONNECT_EXPORT const char* CONNUTIL_GetUsername
  );
 
 
+/* Obtain virtual memory page size.
+ * Return 0 if the page size cannot be determined.
+ */
+extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -739,6 +746,9 @@ extern NCBI_XCONNECT_EXPORT const char* CONNUTIL_GetUsername
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2006/02/23 15:22:43  lavr
+ * +CONNUTIL_GetVMPageSize() [merely a copy of what corelib/ncbi_system.cpp has]
+ *
  * Revision 6.49  2006/01/27 19:17:41  lavr
  * Fix NCBI_DEPRECATED placement to satify MSVC compiler
  *
