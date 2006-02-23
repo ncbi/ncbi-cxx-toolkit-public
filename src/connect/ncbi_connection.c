@@ -572,13 +572,9 @@ static EIO_Status s_CONN_Read
         if ( *n_read ) {
             CONN_TRACE("[CONN_Read]  Read error");
             status = eIO_Success;
-        } else if ( size ) {
-            const char msg[] = "[CONN_Read]  Cannot read data";
-            if (status == eIO_Closed) {
-                CONN_TRACE(msg);
-            } else {
-                CONN_LOG(status == eIO_Timeout? eLOG_Warning : eLOG_Error,msg);
-            }
+        } else if (size  &&  status != eIO_Closed) {
+            CONN_LOG(status == eIO_Timeout ? eLOG_Warning : eLOG_Error,
+                     "[CONN_Read]  Cannot read data");
         }
     }
     return status;
@@ -866,6 +862,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2006/02/23 17:43:01  lavr
+ * CONN_Read():  No CLOSED trace on EOF
+ *
  * Revision 6.47  2006/02/14 15:49:42  lavr
  * Introduce and use CORE_TRACE macros (NOP in Release mode)
  *
