@@ -11,6 +11,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -35,6 +38,27 @@
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|x64"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -47,6 +71,17 @@
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Configure solution : $(SolutionName)"
+						CommandLine="@echo on&#x0D;&#x0A;set PTB_PATH=$(ProjectDir)..\..\bin\$(ConfigurationName)&#x0D;&#x0A;set TREE_ROOT=$(ProjectDir)..\..\..\..\..&#x0D;&#x0A;set SLN_PATH=$(SolutionPath)&#x0D;&#x0A;cd $(InputDir)&#x0D;&#x0A;copy /Y $(InputFileName) $(InputName).bat&#x0D;&#x0A;call $(InputName).bat&#x0D;&#x0A;del /Q $(InputName).bat&#x0D;&#x0A;&#x0D;&#x0A;"
+						AdditionalDependencies=""
+						Outputs="$(InputPath).aanofile.out"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"

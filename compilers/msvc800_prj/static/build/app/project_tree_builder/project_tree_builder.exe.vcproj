@@ -10,424 +10,13 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
 	<Configurations>
-		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="..\..\..\bin\$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="@echo EXPENDABLE project&#x0D;&#x0A;"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions=""
-				Optimization="0"
-				InlineFunctionExpansion="0"
-				FavorSizeOrSpeed="0"
-				OmitFramePointers="false"
-				AdditionalIncludeDirectories="..\..\..\..\..\..\include\"
-				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;"
-				IgnoreStandardIncludePath="false"
-				StringPooling="false"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				StructMemberAlignment="0"
-				BufferSecurityCheck="true"
-				EnableFunctionLevelLinking="false"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="0"
-				BrowseInformation="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="3"
-				CallingConvention="0"
-				CompileAs="0"
-				DisableSpecificWarnings=""
-				UndefinePreprocessorDefinitions=""
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				AdditionalOptions=""
-				PreprocessorDefinitions="_DEBUG;"
-				AdditionalIncludeDirectories="..\..\..\..\..\..\include\"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="wsock32.lib "
-				OutputFile="$(OutDir)\$(ProjectName)"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="false"
-				IgnoreDefaultLibraryNames="FALSE"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\project_tree_builder.pdb"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="1"
-				ImportLibrary="$(OutDir)\project_tree_builder.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="DebugDLL|Win32"
-			OutputDirectory="..\..\..\bin\$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="@echo EXPENDABLE project&#x0D;&#x0A;"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions=""
-				Optimization="0"
-				InlineFunctionExpansion="0"
-				FavorSizeOrSpeed="0"
-				OmitFramePointers="false"
-				AdditionalIncludeDirectories="..\..\..\..\..\..\include\"
-				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;"
-				IgnoreStandardIncludePath="false"
-				StringPooling="false"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				StructMemberAlignment="0"
-				BufferSecurityCheck="true"
-				EnableFunctionLevelLinking="false"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="0"
-				BrowseInformation="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="3"
-				CallingConvention="0"
-				CompileAs="0"
-				DisableSpecificWarnings=""
-				UndefinePreprocessorDefinitions=""
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				AdditionalOptions=""
-				PreprocessorDefinitions="_DEBUG;"
-				AdditionalIncludeDirectories="..\..\..\..\..\..\include\"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="wsock32.lib "
-				OutputFile="$(OutDir)\$(ProjectName)"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="false"
-				IgnoreDefaultLibraryNames="FALSE"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\project_tree_builder.pdb"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="1"
-				ImportLibrary="$(OutDir)\project_tree_builder.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="DebugMT|Win32"
-			OutputDirectory="..\..\..\bin\$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="@echo EXPENDABLE project&#x0D;&#x0A;"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions=""
-				Optimization="0"
-				InlineFunctionExpansion="0"
-				FavorSizeOrSpeed="0"
-				OmitFramePointers="false"
-				AdditionalIncludeDirectories="..\..\..\..\..\..\include\"
-				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;"
-				IgnoreStandardIncludePath="false"
-				StringPooling="false"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
-				StructMemberAlignment="0"
-				BufferSecurityCheck="true"
-				EnableFunctionLevelLinking="false"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="0"
-				BrowseInformation="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="3"
-				CallingConvention="0"
-				CompileAs="0"
-				DisableSpecificWarnings=""
-				UndefinePreprocessorDefinitions=""
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				AdditionalOptions=""
-				PreprocessorDefinitions="_DEBUG;"
-				AdditionalIncludeDirectories="..\..\..\..\..\..\include\"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="wsock32.lib "
-				OutputFile="$(OutDir)\$(ProjectName)"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="false"
-				IgnoreDefaultLibraryNames="FALSE"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\project_tree_builder.pdb"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="1"
-				ImportLibrary="$(OutDir)\project_tree_builder.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="..\..\..\bin\$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="@echo EXPENDABLE project&#x0D;&#x0A;"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions=""
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\..\..\..\..\..\include\"
-				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;"
-				IgnoreStandardIncludePath="false"
-				StringPooling="false"
-				MinimalRebuild="false"
-				BasicRuntimeChecks="0"
-				StructMemberAlignment="0"
-				BufferSecurityCheck="true"
-				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="0"
-				BrowseInformation="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="0"
-				CallingConvention="0"
-				CompileAs="0"
-				DisableSpecificWarnings=""
-				UndefinePreprocessorDefinitions=""
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				AdditionalOptions=""
-				PreprocessorDefinitions="NDEBUG;"
-				AdditionalIncludeDirectories="..\..\..\..\..\..\include\"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="wsock32.lib "
-				OutputFile="$(OutDir)\$(ProjectName)"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="false"
-				IgnoreDefaultLibraryNames="FALSE"
-				GenerateDebugInformation="false"
-				ProgramDatabaseFile="$(OutDir)\project_tree_builder.pdb"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)\project_tree_builder.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
 		<Configuration
 			Name="ReleaseDLL|Win32"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)"
@@ -533,7 +122,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseMT|Win32"
+			Name="ReleaseDLL|x64"
 			OutputDirectory="..\..\..\bin\$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
@@ -554,6 +143,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
@@ -568,7 +158,7 @@
 				StringPooling="false"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="true"
 				EnableFunctionLevelLinking="true"
@@ -609,7 +199,7 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				ImportLibrary="$(OutDir)\project_tree_builder.lib"
-				TargetMachine="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -648,46 +238,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\configurable_file.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -698,7 +248,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -712,42 +262,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\file_contents.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -757,7 +271,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -770,42 +284,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc71_project__.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -815,7 +293,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -828,42 +306,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc71_project___.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -873,7 +315,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -886,42 +328,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_configure.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -931,7 +337,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -944,42 +350,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_configure_prj_generator.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -989,7 +359,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1002,42 +372,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_dlls_info.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1047,7 +381,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1060,42 +394,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_makefile.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1105,7 +403,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1118,42 +416,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_masterproject_generator.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1163,7 +425,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1176,42 +438,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_prj_files_collector.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1221,7 +447,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1234,42 +460,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_prj_generator.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1279,7 +469,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1292,42 +482,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_prj_utils.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1337,7 +491,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1350,42 +504,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_project_context.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1395,7 +513,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1408,42 +526,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_site.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1453,7 +535,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1466,42 +548,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_sln_generator.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1511,7 +557,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1524,42 +570,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_builder_app.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1569,7 +579,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1582,42 +592,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_datatool_generated_src.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1627,7 +601,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1640,42 +614,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_item.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1685,7 +623,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1698,42 +636,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_projects.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1743,7 +645,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1756,42 +658,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_src_resolver.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1801,7 +667,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1814,42 +680,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_tree.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1859,7 +689,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1872,42 +702,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_tree_builder.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1917,7 +711,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1930,42 +724,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_utils.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -1975,7 +733,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1988,42 +746,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\ptb_gui.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -2033,7 +755,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2046,42 +768,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\resolver.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -2091,7 +777,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2328,50 +1014,6 @@
 				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc71_project.dtd"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"
-						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
-						AdditionalDependencies="$(InputDir)$(InputName).def;&quot;$(OutDir)\datatool.exe&quot;"
-						Outputs="$(InputDir)$(InputName).files;"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"
-						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
-						AdditionalDependencies="$(InputDir)$(InputName).def;&quot;$(OutDir)\datatool.exe&quot;"
-						Outputs="$(InputDir)$(InputName).files;"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"
-						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
-						AdditionalDependencies="$(InputDir)$(InputName).def;&quot;$(OutDir)\datatool.exe&quot;"
-						Outputs="$(InputDir)$(InputName).files;"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"
-						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
-						AdditionalDependencies="$(InputDir)$(InputName).def;&quot;$(OutDir)\datatool.exe&quot;"
-						Outputs="$(InputDir)$(InputName).files;"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
@@ -2383,7 +1025,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseMT|Win32"
+					Name="ReleaseDLL|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
