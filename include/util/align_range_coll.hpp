@@ -159,7 +159,7 @@ public:
 
             if(IsSet(fKeepNormalized))  { // find insertion point                
                 PRangeFromLess<TAlignRange>    p;
-                it = lower_bound(begin_nc(), end_nc(), r.GetFirstFrom(), p);
+                it = std::lower_bound(begin_nc(), end_nc(), r.GetFirstFrom(), p);
             }
 
             return insert(it, r);
@@ -278,37 +278,62 @@ public:
     pair<const_iterator, bool>  find_2(position_type pos) const
     {
         PRangeLess<TAlignRange>    p;
-        const_iterator it = lower_bound(begin(), end(), pos, p);
+        const_iterator it = std::lower_bound(begin(), end(), pos, p);
         bool b_contains = (it != end()  &&  it->GetFirstFrom() <= pos);
         return make_pair(it, b_contains);
     }    
+
+    const_iterator lower_bound(position_type pos) const
+    {
+        PRangeLess<TAlignRange>    p;
+        return std::lower_bound(begin(), end(), pos, p);
+    }
+
+    const_iterator upper_bound(position_type pos) const
+    {
+        PRangeLess<TAlignRange>    p;
+        return std::upper_bound(begin(), end(), pos, p);
+    }
+
     /// @}
 
     position_type   GetFirstFrom() const
     {
-        if( ! m_Ranges.empty())
+        if( ! m_Ranges.empty()) {
             return begin()->GetFirstFrom();
-        else return TAlignRange::GetEmptyFrom();
+        } else {
+            return TAlignRange::GetEmptyFrom();
+        }
     }
+
     position_type   GetFirstToOpen() const
     {
-        if( ! m_Ranges.empty())
+        if( ! m_Ranges.empty()) {
             return rbegin()->GetFirstToOpen();
-        else return TAlignRange::GetEmptyToOpen();
+        } else {
+            return TAlignRange::GetEmptyToOpen();
+        }
     }
+
     position_type   GetFirstTo() const
     {
-        if(! m_Ranges.empty())
+        if(! m_Ranges.empty()) {
             return rbegin()->GetFirstTo();
-        else return TAlignRange::GetEmptyTo();
+        } else {
+            return TAlignRange::GetEmptyTo();
+        }
     }
+
     position_type   GetFirstLength (void) const
     {
        if(! m_Ranges.empty())  {
             position_type from = begin()->GetFrom();
             return rbegin()->GetToOpen() - from;
-       } else return 0;
+       } else {
+           return 0;
+       }
     }
+
     CRange<position_type>   GetFirstRange() const
     {
         return CRange<position_type>(GetFirstFrom(), GetFirstTo());
@@ -678,7 +703,7 @@ public:
     const_iterator FindOnSecond(position_type pos) const
     {
         typename TFrom2Range::const_iterator it =
-            lower_bound(m_Ranges.begin(), m_Ranges.end(), pos, PItLess()); 
+            std::lower_bound(m_Ranges.begin(), m_Ranges.end(), pos, PItLess()); 
         if(it != m_Ranges.end())    {
             const TAlignRange& r = *it->second;
             _ASSERT(r.GetSecondTo() >= pos);
@@ -722,6 +747,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/02/23 14:49:42  dicuccio
+ * Added lower_bound, upper_bound; qualify internal uses of lower_bound using
+ * std:: namespace
+ *
  * Revision 1.9  2006/01/08 03:01:16  dicuccio
  * Fix warnings
  *
