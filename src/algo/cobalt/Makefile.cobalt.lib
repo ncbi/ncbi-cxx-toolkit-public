@@ -7,5 +7,7 @@ SRC   = $(SRC_CXX)
 
 LIB = cobalt
 
+ASN_DEP = seq seqset biotree xnetblast blastdb
+
 CXXFLAGS  = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)

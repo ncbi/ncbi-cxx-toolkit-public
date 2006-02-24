@@ -4,5 +4,7 @@ SRC = align_shadow blast_tabular
 
 LIB = xalgoalignutil
 
+ASN_DEP = seq
+
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
