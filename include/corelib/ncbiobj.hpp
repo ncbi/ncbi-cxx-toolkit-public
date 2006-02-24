@@ -677,13 +677,11 @@ public:
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr != oldPtr ) {
-                if ( newPtr ) {
-                    m_Data.first().Lock(newPtr);
-                }
-                m_Data.second() = newPtr;
                 if ( oldPtr ) {
+                    m_Data.second() = 0;
                     m_Data.first().Unlock(oldPtr);
                 }
+                x_Set(newPtr);
             }
         }
 
@@ -1236,13 +1234,11 @@ public:
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr != oldPtr ) {
-                if ( newPtr ) {
-                    m_Data.first().Lock(newPtr);
-                }
-                m_Data.second() = newPtr;
                 if ( oldPtr ) {
+                    m_Data.second() = 0;
                     m_Data.first().Unlock(oldPtr);
                 }
+                x_Set(newPtr);
             }
         }
 
@@ -1738,7 +1734,8 @@ class CIRef : public CRef<Interface, Locker>
 public:
     typedef typename TParent::TObjectType TObjectType;
     typedef typename TParent::locker_type locker_type;
-    // We have to redefine all constructors
+    typedef CIRef<Interface, Locker> TThisType;
+    // We have to redefine all constructors and assignment operators
 
     /// Constructor for null pointer.
     CIRef(void) THROWS_NONE
@@ -1761,6 +1758,28 @@ public:
         : TParent(ptr, locker_value)
         {
         }
+
+    /// Assignment operator for references.
+    TThisType& operator=(const TThisType& ref)
+        {
+            TParent::operator=(ref);
+            return *this;
+        }
+
+    /// Assignment operator for references with right hand side set to
+    /// a pointer.
+    TThisType& operator=(TObjectType* ptr)
+        {
+            TParent::operator=(ptr);
+            return *this;
+        }
+
+    /// Assignment operator with right hand side set to ENull.
+    TThisType& operator=(ENull null)
+        {
+            TParent::operator=(null);
+            return *this;
+        }
 };
 
 
@@ -1771,7 +1790,8 @@ class CConstIRef : public CConstRef<Interface, Locker>
 public:
     typedef typename TParent::TObjectType TObjectType;
     typedef typename TParent::locker_type locker_type;
-    // We have to redefine all constructors
+    typedef CConstIRef<Interface, Locker> TThisType;
+    // We have to redefine all constructors and assignment operators
 
     /// Constructor for null pointer.
     CConstIRef(void) THROWS_NONE
@@ -1799,6 +1819,35 @@ public:
     CConstIRef(const CIRef<Interface, Locker>& ref)
         : TParent(ref)
         {
+        }
+
+    /// Assignment operator for references.
+    TThisType& operator=(const TThisType& ref)
+        {
+            TParent::operator=(ref);
+            return *this;
+        }
+
+    /// Assignment operator for assigning a reference to a const reference.
+    TThisType& operator=(const CIRef<Interface, Locker>& ref)
+        {
+            TParent::operator=(ref);
+            return *this;
+        }
+
+    /// Assignment operator for references with right hand side set to
+    /// a pointer.
+    TThisType& operator=(TObjectType* ptr)
+        {
+            TParent::operator=(ptr);
+            return *this;
+        }
+
+    /// Assignment operator with right hand side set to ENull.
+    TThisType& operator=(ENull null)
+        {
+            TParent::operator=(null);
+            return *this;
         }
 };
 
@@ -1903,6 +1952,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/02/24 15:22:58  vasilche
+ * Fixed order of locking and unlocking in CRef assignment.
+ *
  * Revision 1.68  2006/02/21 21:07:42  vasilche
  * Removed constness from interface locker methods.
  *
