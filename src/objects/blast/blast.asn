@@ -368,7 +368,11 @@ Blast4-value ::= CHOICE {
 
     -- imported collection types
     bioseq-set              Bioseq-set,
-    seq-align-set           Seq-align-set
+    seq-align-set           Seq-align-set,
+
+    -- scalar and list of Blast4-masks
+    query-mask              Blast4-mask,
+    query-mask-list         SEQUENCE OF Blast4-mask
 }
 
 END
