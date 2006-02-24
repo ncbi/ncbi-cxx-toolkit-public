@@ -35,6 +35,8 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
+#include <sstream>
+#include <connect/ncbi_conn_stream.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -78,6 +80,56 @@ static void TestIostream(void)
 
     str = "0 1 2 3 4 5\n6 7 8 9";
     NcbiCout << "String output: "  << str << NcbiEndl;
+
+#if 0
+    const int CNT2 = 1000000, CNT1 = 1000000/CNT2;
+    if ( 0 ) {
+        CStopWatch sw(CStopWatch::eStart);
+        vector<string> ss;
+        for ( int i = 0; i < CNT1; ++i ) {
+            ostringstream out;
+            for ( int j = 0; j < CNT2; ++j ) 
+            out << "Line  is a bit longer: a;ospdofgiaw;oivnzs;cnv";
+            ss.push_back(out.str());
+        }
+        NcbiCout << "Stringstream time: " << sw.Elapsed() << NcbiEndl;
+    }
+    {
+        CStopWatch sw(CStopWatch::eStart);
+        vector<string> ss;
+        for ( int i = 0; i < CNT1; ++i ) {
+            CNcbiOstrstream out;
+            for ( int j = 0; j < CNT2; ++j ) 
+            out << "Line  is a bit longer: a;ospdofgiaw;oivnzs;cnv";
+            ss.push_back(CNcbiOstrstreamToString(out));
+        }
+        NcbiCout << "CNcbiOstrstreamToString time: " << sw.Elapsed() << NcbiEndl;
+    }
+    {
+        CStopWatch sw(CStopWatch::eStart);
+        vector<string> ss;
+        for ( int i = 0; i < CNT1; ++i ) {
+            CConn_MemoryStream out;
+            for ( int j = 0; j < CNT2; ++j ) 
+            out << "Line  is a bit longer: a;ospdofgiaw;oivnzs;cnv";
+            string s;
+            out.ToString(&s);
+            ss.push_back(s);
+        }
+        NcbiCout << "CConn_MemoryStream str time: " << sw.Elapsed() << NcbiEndl;
+    }
+    {
+        CStopWatch sw(CStopWatch::eStart);
+        vector<string> ss;
+        for ( int i = 0; i < CNT1; ++i ) {
+            CConn_MemoryStream out;
+            for ( int j = 0; j < CNT2; ++j ) 
+            out << "Line  is a bit longer: a;ospdofgiaw;oivnzs;cnv";
+            ss.push_back(out.ToCStr());
+        }
+        NcbiCout << "CConn_MemoryStream cstr time: " << sw.Elapsed() << NcbiEndl;
+    }
+#endif
 }
 
 
@@ -799,6 +851,22 @@ public:
   int m_Int;
 };
 
+class IInterface
+{
+public:
+    virtual ~IInterface() {}
+    virtual void foo() = 0;
+    virtual void bar() const = 0;
+};
+
+class CImplementation : public CObject, public IInterface
+{
+public:
+    virtual ~CImplementation() {}
+    virtual void foo() {}
+    virtual void bar() const {}
+};
+
 static void TestHeapStack(void)
 {
     SetDiagTrace(eDT_Enable);
@@ -843,6 +911,19 @@ static void TestHeapStack(void)
       assert(objRef->CanBeDeleted());
     }
     SetDiagTrace(eDT_Default);
+
+    CIRef<IInterface> iref(new CImplementation);
+    iref->foo();
+    iref->bar();
+    CConstIRef<IInterface> ciref(iref);
+    ciref->bar();
+    ciref = iref;
+    ciref->bar();
+    ciref = null;
+    ciref = iref;
+    ciref->bar();
+    ciref = new CImplementation;
+    ciref->bar();
 }
 
 
@@ -976,6 +1057,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2006/02/24 15:23:19  vasilche
+ * Added CIref test.
+ *
  * Revision 1.105  2006/01/30 15:12:37  gouriano
  * Corrected TestDiag_ErrCodeInfo
  *
