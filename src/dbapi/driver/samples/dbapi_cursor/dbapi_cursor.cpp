@@ -28,6 +28,7 @@
 #include <map>
 #include "dbapi_cursor.hpp"
 #include "../dbapi_sample_base.hpp"
+#include <test/test_assert.h>  /* This header must go last */
 
 map<string, string> dblib_version;
 
@@ -199,6 +200,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/02/24 19:36:13  ssikorsk
+ * Added #include <test/test_assert.h> for test-suite sake
+ *
  * Revision 1.8  2005/10/27 12:59:37  ssikorsk
  * Disabled DeleteLostTables because we use temporary tables only now
  *

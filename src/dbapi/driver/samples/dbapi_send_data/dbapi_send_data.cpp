@@ -27,6 +27,7 @@
 #include <ncbi_pch.hpp>
 #include "dbapi_send_data.hpp"
 #include "../dbapi_sample_base.hpp"
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -113,6 +114,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/02/24 19:36:14  ssikorsk
+ * Added #include <test/test_assert.h> for test-suite sake
+ *
  * Revision 1.7  2005/12/01 15:02:25  ssikorsk
  * Do not delete *lost tables*. We use temporary tables now.
  *

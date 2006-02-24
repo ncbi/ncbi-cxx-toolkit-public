@@ -36,6 +36,7 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -86,6 +87,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/02/24 19:36:13  ssikorsk
+ * Added #include <test/test_assert.h> for test-suite sake
+ *
  * Revision 1.6  2005/10/20 15:00:16  ssikorsk
  * Return more detailed error code if there is any
  *

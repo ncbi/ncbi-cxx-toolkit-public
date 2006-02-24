@@ -35,6 +35,7 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
+#include <test/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
@@ -113,6 +114,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/02/24 19:36:13  ssikorsk
+ * Added #include <test/test_assert.h> for test-suite sake
+ *
  * Revision 1.7  2006/01/26 12:15:37  ssikorsk
  * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
  * Removed protection of DBLB_INSTALL_DEFAULT;

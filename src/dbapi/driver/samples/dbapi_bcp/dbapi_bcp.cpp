@@ -45,6 +45,7 @@
 
 #include "dbapi_bcp.hpp"
 #include "../dbapi_sample_base.hpp"
+#include <test/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
@@ -165,6 +166,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/02/24 19:36:13  ssikorsk
+ * Added #include <test/test_assert.h> for test-suite sake
+ *
  * Revision 1.8  2005/08/24 12:43:15  ssikorsk
  * Use temporary table to store test data
  *

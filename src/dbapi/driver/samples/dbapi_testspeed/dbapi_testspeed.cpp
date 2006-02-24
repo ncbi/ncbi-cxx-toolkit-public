@@ -35,6 +35,7 @@
 #include <corelib/ncbifile.hpp>
 #include "dbapi_testspeed.hpp"
 #include "../dbapi_sample_base.hpp"
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -629,6 +630,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/24 19:36:14  ssikorsk
+ * Added #include <test/test_assert.h> for test-suite sake
+ *
  * Revision 1.19  2005/08/24 14:36:59  ssikorsk
  * Use temporary table to store test data
  *

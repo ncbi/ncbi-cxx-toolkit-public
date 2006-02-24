@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/msdblib/interfaces.hpp>
+#include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
@@ -87,6 +88,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/02/24 19:36:12  ssikorsk
+ * Added #include <test/test_assert.h> for test-suite sake
+ *
  * Revision 1.9  2004/05/17 21:13:00  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

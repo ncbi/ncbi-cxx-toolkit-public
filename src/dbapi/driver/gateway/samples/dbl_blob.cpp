@@ -33,6 +33,7 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/gateway/interfaces.hpp>
 #include <dbapi/driver/samples/dbapi_driver_samples.hpp>
+#include <test/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
@@ -75,6 +76,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/02/24 19:36:13  ssikorsk
+ * Added #include <test/test_assert.h> for test-suite sake
+ *
  * Revision 1.3  2004/05/17 21:14:41  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
