@@ -46,7 +46,7 @@ x_build_dir=$3
 x_confs="${4:-Debug DebugDLL Release ReleaseDLL}"
 
 x_build_trees="." 
-test ".$COMPILER" = ".msvc7"  &&  x_build_trees="static dll" 
+test ".$COMPILER" = ".msvc7" -o ".$COMPILER" = ".msvc8" &&  x_build_trees="static dll" 
 
 if test ! -z "$x_build_dir"; then
    if test ! -d "$x_build_dir"; then
