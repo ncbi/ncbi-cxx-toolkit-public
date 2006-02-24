@@ -31,6 +31,9 @@
 #include <memory>
 #include <fstream>
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
 USING_NCBI_SCOPE;
 using namespace objects;
 
@@ -213,6 +216,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/02/24 19:28:21  ivanov
+* All test must include <test/test_assert.h>
+*
 * Revision 1.6  2004/11/01 19:33:10  grichenk
 * Removed deprecated methods
 *

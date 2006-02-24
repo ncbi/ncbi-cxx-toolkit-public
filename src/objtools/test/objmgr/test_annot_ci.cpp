@@ -55,6 +55,9 @@
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
 BEGIN_NCBI_SCOPE
 using namespace objects;
 
@@ -460,6 +463,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/02/24 19:28:21  ivanov
+* All test must include <test/test_assert.h>
+*
 * Revision 1.4  2005/11/01 16:50:54  grichenk
 * Added test for annot-ci.
 * Do not check order of objects in the tests.

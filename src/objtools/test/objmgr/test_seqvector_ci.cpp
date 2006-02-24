@@ -53,6 +53,8 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <string.h>
 
+#include <test/test_assert.h>  /* This header must go last */
+
 BEGIN_NCBI_SCOPE
 using namespace objects;
 
@@ -552,6 +554,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/02/24 19:27:53  ivanov
+* All test must include <test/test_assert.h>
+*
 * Revision 1.12  2005/06/01 20:47:53  grichenk
 * Avoid using basic_string::replace()
 *
