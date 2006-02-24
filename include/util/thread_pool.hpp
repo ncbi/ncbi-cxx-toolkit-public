@@ -490,6 +490,10 @@ public:
     virtual void OnStatusChange(EStatus /* old */, EStatus /* new */) {}
 };
 
+EMPTY_TEMPLATE
+void CBlockingQueue<CRef<CStdRequest> >::CQueueItem::x_SetStatus
+(EStatus new_status);
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -950,6 +954,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2006/02/24 22:05:55  ucko
+* Declare the specialization of x_SetStatus for CRef<CStdRequest>
+* (defined out-of-line in thread_pool.cpp) to ensure that the generic
+* version doesn't get used instead.
+*
 * Revision 1.33  2006/02/10 14:59:02  ucko
 * Add some static_cast<>s to SItemHandleGreater for the sake of GCC 2.95,
 * which otherwise ignores our operator > in favor of an unsuitable template.
