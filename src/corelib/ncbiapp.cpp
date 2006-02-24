@@ -49,6 +49,9 @@
 #  include <unistd.h>
 #endif
 #if defined(NCBI_OS_DARWIN)
+#  include <math.h>
+// Including math.h avoids errors from Carbon.h that can otherwise occur
+// on some systems when __NOEXTENSIONS__ is defined.
 #  define __NOEXTENSIONS__
 #  include <Carbon/Carbon.h>
 #endif
@@ -1030,6 +1033,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.118  2006/02/24 21:57:44  ucko
+ * Darwin: include <math.h> before __NOEXTENSIONS__ is defined, as the
+ * subsequent inclusion of Carbon.h can otherwise yield broken math inlines.
+ *
  * Revision 1.117  2006/02/16 15:50:18  lavr
  * Use ostrstream's freeze(), not strstreambuf's one
  *
