@@ -219,6 +219,9 @@ int CProcessor::CollectStatistics(void)
 CProcessor::CProcessor(CReadDispatcher& dispatcher)
     : m_Dispatcher(&dispatcher)
 {
+#ifdef GB_COLLECT_STATS
+    CollectStatistics();
+#endif
 }
 
 

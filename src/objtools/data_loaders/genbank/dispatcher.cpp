@@ -72,6 +72,9 @@ int CReadDispatcher::CollectStatistics(void)
 
 CReadDispatcher::CReadDispatcher(void)
 {
+#ifdef GB_COLLECT_STATS
+    CollectStatistics();
+#endif
     CProcessor::RegisterAllProcessors(*this);
 }
 
