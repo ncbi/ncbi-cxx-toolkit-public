@@ -833,7 +833,8 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
 bool CNetScheduleClient::WaitJob(string*    job_key, 
                                  string*    input, 
                                  unsigned   wait_time,
-                                 unsigned short udp_port)
+                                 unsigned short udp_port,
+                                 EWaitMode      wait_mode)
 {
     bool job_received = 
         GetJobWaitNotify(job_key, input, wait_time, udp_port);
@@ -841,6 +842,9 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
         return job_received;
     }
 
+    if (wait_mode != eWaitNotification) {
+        return 0;
+    }
     WaitQueueNotification(wait_time, udp_port);
 
     // no matter is WaitResult we re-try the request
@@ -848,11 +852,13 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
     // we no longer on the UDP socket
 
     return GetJob(job_key, input, udp_port);
+
 }
 
-
-void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
-                                               unsigned short udp_port)
+bool 
+CNetScheduleClient::WaitNotification(const string&  queue_name,
+                                     unsigned       wait_time,
+                                     unsigned short udp_port)
 {
     _ASSERT(wait_time);
 
@@ -877,7 +883,7 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
 
     status = udp_socket.Bind(udp_port);
     if (eIO_Success != status) {
-        return;
+        return false;
     }
 
     time_t curr_time, start_time, end_time;
@@ -886,10 +892,9 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
     end_time = start_time + wait_time;
 
     // minilal length is prefix "NCBI_JSQ_" + queue length
-    size_t min_msg_len = m_Queue.length() + 9;
+    size_t min_msg_len = queue_name.length() + 9;
 
     for (;;) {
-
         curr_time = time(0);
         if (curr_time >= end_time) {
             break;
@@ -919,15 +924,23 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
 
             const char* queue = chr_buf + 9;
 
-            if (strncmp(m_Queue.c_str(), queue, m_Queue.length()) == 0) {
+            if (strncmp(queue_name.c_str(), queue, queue_name.length()) == 0) {
                 // Message from our queue 
-                return;
+                return true;
             }
-
         } 
-
     } // for
 
+    return false;
+
+}
+
+
+
+void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
+                                               unsigned short udp_port)
+{
+    CNetScheduleClient::WaitNotification(GetQueueName(), wait_time, udp_port);
 }
 
 
@@ -1571,6 +1584,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/02/24 14:41:37  kuznets
+ * Job notification wait made optional
+ *
  * Revision 1.45  2006/02/23 20:06:57  kuznets
  * Added client registration-unregistration
  *

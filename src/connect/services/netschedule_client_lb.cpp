@@ -412,7 +412,8 @@ bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
 bool CNetScheduleClient_LB::WaitJob(string*        job_key, 
                                     string*        input, 
                                     unsigned       wait_time,
-                                    unsigned short udp_port)
+                                    unsigned short udp_port,
+                                    EWaitMode      wait_mode)
 {
     time_t curr = time(0);
     if (NeedRebalance(curr)) {
@@ -498,6 +499,10 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
             }
         }
     } // for k
+
+    if (wait_mode != eWaitNotification) {
+        return 0;
+    }
 
     WaitQueueNotification(wait_time, udp_port);
 
@@ -709,6 +714,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/02/24 14:41:37  kuznets
+ * Job notification wait made optional
+ *
  * Revision 1.22  2006/02/23 20:06:57  kuznets
  * Added client registration-unregistration
  *

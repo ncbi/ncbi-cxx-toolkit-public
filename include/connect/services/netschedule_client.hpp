@@ -310,6 +310,12 @@ public:
                 string* input, 
                 unsigned short udp_port = 0);
 
+    /// Notification wait mode
+    enum EWaitMode {
+        eWaitNotification,   ///< Wait for notification
+        eNoWaitNotification  ///< Register for notofication but do not wait
+    };
+
     /// Wait for a job to come. 
     /// Variant of GetJob method. The difference is that if there no 
     /// pending jobs, method waits for a notification from the server.
@@ -335,13 +341,35 @@ public:
     ///    client programs (or threads) listening on the same port. Message
     ///    is going to be delivered to just only one listener.
     ///
-    /// @sa GetJob
+    /// @param wait_mode
+    ///    Notification wait mode. Function either waits for the message in
+    ///    this call, or returns control (eNoWaitNotification).
+    ///    In the second case caller should call WaitNotification to listen
+    ///    for server signals.
+    ///
+    /// @sa GetJob, WaitNotification
     ///
     virtual
     bool WaitJob(string*        job_key, 
                  string*        input, 
                  unsigned       wait_time,
-                 unsigned short udp_port);
+                 unsigned short udp_port,
+                 EWaitMode      wait_mode = eWaitNotification);
+
+
+    /// Wait for queue notification message 
+    /// (signal that queue has pending jobs)
+    /// Method made static so it does not interfere with the client instance.
+    ///
+    /// @return TRUE if message has been received. 
+    ///    If method returns FALSE does NOT mean queue has no jobs.
+    /// 
+    /// @sa WaitJob
+    static
+    bool WaitNotification(const string& queue_name,
+                          unsigned       wait_time,
+                          unsigned short udp_port);
+
 
     /// Put job result (job should be received by GetJob() or WaitJob())
     /// 
@@ -692,7 +720,8 @@ public:
     bool WaitJob(string*        job_key, 
                  string*        input, 
                  unsigned       wait_time,
-                 unsigned short udp_port);
+                 unsigned short udp_port,
+                 EWaitMode      wait_mode = eWaitNotification);
 
     virtual
     void RegisterClient(unsigned short udp_port);
@@ -863,6 +892,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/02/24 14:41:11  kuznets
+ * Job notification wait made optional
+ *
  * Revision 1.47  2006/02/23 20:06:37  kuznets
  * Added client registration-unregistration
  *
