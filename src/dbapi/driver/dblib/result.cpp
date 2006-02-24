@@ -1529,6 +1529,8 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
     
 #else
 
+    // !!! This is a hack !!!
+    // dbcolname returns char*
     DBCOLINFO* col_info = (DBCOLINFO*) dbcolname(dblink, col_num);
 
     CHECK_DRIVER_ERROR( 
@@ -1619,6 +1621,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/02/24 19:33:29  ssikorsk
+ * Added implementation comment
+ *
  * Revision 1.34  2006/02/16 19:37:42  ssikorsk
  * Get rid of compilation warnings
  *
