@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.0  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.1  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -1511,8 +1511,15 @@ void CNetCacheServer::x_CreateLog()
     if (m_Logger.get()) {
         return; // nothing to do
     }
+
+    string log_path = 
+            m_Reg.GetString("server", "log_path", kEmptyStr, 
+                            CNcbiRegistry::eReturn);
+    log_path = CDirEntry::AddTrailingPathSeparator(log_path);
+    log_path += "netcached.log";
+
     m_Logger.reset(
-        new CNetCache_Logger("netcached.log", 100 * 1024 * 1024));
+        new CNetCache_Logger(log_path, 100 * 1024 * 1024));
 }
 
 SNC_ThreadData* CNetCacheServer::x_GetThreadData()
@@ -1725,14 +1732,18 @@ int CNetCacheDApp::Run(void)
             if (!daemon) {
                 return 0;
             }
-
         }
         
         // attempt to get server gracefully shutdown on signal
         signal( SIGINT, Threaded_Server_SignalHandler);
         signal( SIGTERM, Threaded_Server_SignalHandler);
 #endif
-        m_ErrLog.reset(new CNetCacheLogStream("nc_err.log", 25 * 1024 * 1024));
+        string log_path = 
+                reg.GetString("server", "log_path", kEmptyStr, 
+                              CNcbiRegistry::eReturn);
+        log_path = CDirEntry::AddTrailingPathSeparator(log_path);
+        log_path += "nc_err.log";
+        m_ErrLog.reset(new CNetCacheLogStream(log_path, 25 * 1024 * 1024));
         // All errors redirected to rotated log
         // from this moment on the server is silent...
         SetDiagStream(m_ErrLog.get());
@@ -1902,6 +1913,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2006/02/24 17:14:05  kuznets
+ * Adde ini file parameter (location of logs)
+ *
  * Revision 1.78  2006/01/17 16:49:31  kuznets
  * Added session management(auto-shutdown), cleaned-up code
  *
