@@ -123,7 +123,7 @@ CNcbiIstream& CCgiSession_NetCache::GetAttrIStream(const string& name,
     Reset();
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
-        static CNcbiIstrstream sEmptyStream("",0);
+        static CNcbiIstrstream sEmptyStream("",streamsize(0));
         if (size) *size = 0;
         return sEmptyStream;
     }
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/02/27 15:41:29  gouriano
+ * Be more specific about istrstream constructor
+ *
  * Revision 1.8  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *
