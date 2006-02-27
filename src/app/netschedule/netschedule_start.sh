@@ -64,7 +64,7 @@ if [ ! -f $ini_file ]; then
 fi
 
 host=`hostname`
-port=`cat netscheduled.ini | grep port= | sed -e 's/port=//'`
+port=`cat netscheduled.ini | grep port= | grep -v udp_port | sed -e 's/port=//'`
 
 echo "Testing if netscheduled is alive on $host:$port"
 
