@@ -34,14 +34,16 @@
  */
 
 #include <corelib/ncbimisc.hpp>
+#include <corelib/blob_storage.hpp>
+
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <html/html.hpp>
 #include <html/page.hpp>
 
+
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_client.hpp>
-#include <connect/services/netschedule_storage.hpp>
 
 #include <map>
 
@@ -282,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.21  2006/01/18 17:51:02  didenko
  * When job is done just all its output to the response output stream
  *

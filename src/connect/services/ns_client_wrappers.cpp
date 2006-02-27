@@ -65,15 +65,24 @@ string CNSCWrapperShared::GetConnectionInfo() const
     return m_NSClient.GetConnectionInfo();
 }
 
+bool CNSCWrapperShared::GetJob(string* job_key, 
+                                  string* input, 
+                                  unsigned short udp_port)
+{
+    CFastMutexGuard gurad(m_Mutex);
+    return m_NSClient.GetJob(job_key, input, udp_port);
+}
+
 bool CNSCWrapperShared::WaitJob(string*        job_key, 
                                 string*        input, 
                                 unsigned       wait_time,
-                                unsigned short udp_port)
+                                unsigned short udp_port,
+                                CNetScheduleClient::EWaitMode wait_mode)
 {
     CFastMutexGuard gurad(m_Mutex);
     //cerr << "WaitJob" << endl;
     return m_NSClient.WaitJob(job_key, input,
-                              wait_time, udp_port);
+                              wait_time, udp_port, wait_mode);
 }
 
 void CNSCWrapperShared::PutResult(const string& job_key, 
@@ -148,6 +157,18 @@ void CNSCWrapperShared::SetRunTimeout(const string& job_key,
     m_NSClient.SetRunTimeout(job_key, time_to_run);
 }
 
+void CNSCWrapperShared::RegisterClient(unsigned short udp_port)
+{
+    CFastMutexGuard gurad(m_Mutex);
+    m_NSClient.RegisterClient(udp_port);
+}
+void CNSCWrapperShared::UnRegisterClient(unsigned short udp_port)
+{
+    CFastMutexGuard gurad(m_Mutex);
+    m_NSClient.UnRegisterClient(udp_port);
+}
+
+
 /////////////////////////////////////////////////////////////////////
 ///
 CNSCWrapperExclusive::~CNSCWrapperExclusive()
@@ -168,13 +189,22 @@ string CNSCWrapperExclusive::GetConnectionInfo() const
     return m_NSClient->GetConnectionInfo();
 }
 
+bool CNSCWrapperExclusive::GetJob(string* job_key, 
+                                  string* input, 
+                                  unsigned short udp_port)
+{
+    return m_NSClient->GetJob(job_key, input, udp_port);
+}
+
 bool CNSCWrapperExclusive::WaitJob(string*        job_key, 
                                    string*        input, 
                                    unsigned       wait_time,
-                                   unsigned short udp_port)
+                                   unsigned short udp_port,
+                                   CNetScheduleClient::EWaitMode wait_mode)
+
 {
     return m_NSClient->WaitJob(job_key, input,
-                              wait_time, udp_port);
+                               wait_time, udp_port, wait_mode);
 }
 
 void CNSCWrapperExclusive::PutResult(const string& job_key, 
@@ -235,11 +265,23 @@ void CNSCWrapperExclusive::SetRunTimeout(const string& job_key,
     m_NSClient->SetRunTimeout(job_key, time_to_run);
 }
 
+void CNSCWrapperExclusive::RegisterClient(unsigned short udp_port)
+{
+    m_NSClient->RegisterClient(udp_port);
+}
+void CNSCWrapperExclusive::UnRegisterClient(unsigned short udp_port)
+{
+    m_NSClient->UnRegisterClient(udp_port);
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 6.1  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.

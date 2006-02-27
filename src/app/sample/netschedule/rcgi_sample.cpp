@@ -110,7 +110,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     int iters = 5;
     for(int i = 0; i < iters; ++i) {
         PutProgressMessage( "Iteration " + NStr::IntToString(i) 
-                                + " of " + NStr::IntToString(iters));
+                            + " of " + NStr::IntToString(iters));
         SleepSec(5);
     }
     
@@ -149,7 +149,11 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 
     // Compose and flush the resultant HTML page
     try {
+        response.SetHeaderValue("Pragma", "no-cache");
+        response.SetHeaderValue("Cache-Control", "no-cache");
+        response.WriteHeader();
         page->Print(response.out(), CNCBINode::eHTML);
+
     } catch (exception& e) {
         ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
         return 4;
@@ -229,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.1  2005/06/08 16:23:42  didenko
  * Added remote cgi sample application
  *

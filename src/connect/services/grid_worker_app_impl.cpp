@@ -35,9 +35,10 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/blob_storage.hpp>
+
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netschedule_client.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 #include <connect/services/grid_worker_app_impl.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_control_thread.hpp>
@@ -242,6 +243,7 @@ public:
     }
     void Schedule() 
     { 
+        CFastMutexGuard(m_Mutext);
         if (m_StopFlag) {
             m_StopFlag = false; 
             m_Wait1.Post(); 
@@ -249,11 +251,15 @@ public:
     }
     void Suspend() 
     { 
-        m_StopFlag = true; 
-        m_Wait2.Post(); 
+        CFastMutexGuard(m_Mutext);
+        if (!m_StopFlag) {
+            m_StopFlag = true; 
+            m_Wait2.Post(); 
+        }
     }
     
     bool IsShutdownRequested() const { return m_ShutdownFlag; }
+    bool GetStopFlag() const { CFastMutexGuard(m_Mutext); return m_StopFlag; }
 
 
 protected:
@@ -272,6 +278,7 @@ private:
     volatile bool       m_ShutdownFlag;
     unsigned int        m_RunInterval;
     bool                m_ExclusiveMode;
+    mutable CFastMutex  m_Mutext;
 
     CWorkerNodeIdleThread(const CWorkerNodeIdleThread&);
     CWorkerNodeIdleThread& operator=(const CWorkerNodeIdleThread&);
@@ -282,7 +289,7 @@ CWorkerNodeIdleThread::CWorkerNodeIdleThread(IWorkerNodeIdleTask& task,
                                              unsigned run_delay,
                                              bool exclusive_mode)
     : m_Task(task), m_WorkerNode(worker_node),
-      m_Wait1(0,1000000), m_Wait2(0,1000000),
+      m_Wait1(0,100000), m_Wait2(0,1000000),
       m_StopFlag(false), m_ShutdownFlag(false),
       m_RunInterval(run_delay), m_ExclusiveMode(exclusive_mode)
 {
@@ -293,10 +300,11 @@ void* CWorkerNodeIdleThread::Main()
         if (m_Wait1.TryWait(m_RunInterval, 0)) {
             if (m_ShutdownFlag)
                 continue;
-            if (m_Wait2.TryWait(m_RunInterval, 0))
+            if (m_Wait2.TryWait(m_RunInterval, 0)) {
                 continue;  // Shutdown is requested
+            }
         } 
-        if (!m_StopFlag) {
+        if (!GetStopFlag()) {
             if (m_ExclusiveMode)
                 m_WorkerNode.PutOnHold(true);
             try {
@@ -412,7 +420,7 @@ void CGridWorkerApp_Impl::Init()
     reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
 
     if (!m_StorageFactory.get()) 
-        m_StorageFactory.reset(new CBlobStorageFactory_NetCache(reg));
+        m_StorageFactory.reset(new CBlobStorageFactory(reg));
     if (!m_ClientFactory.get()) 
         m_ClientFactory.reset(new CNetScheduleClientFactory(reg));
 }
@@ -644,6 +652,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.15  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 6.14  2006/02/15 19:48:34  didenko
  * Added new optional config parameter "reuse_job_object" which allows reusing
  * IWorkerNodeJob objects in the jobs' threads instead of creating

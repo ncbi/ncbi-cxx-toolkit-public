@@ -43,6 +43,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/grid_worker_app_impl.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -122,6 +123,7 @@ private:
 NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version); \
 int main(int argc, const char* argv[])                    \
 {                                                         \
+    BlobStorage_RegisterDriver_NetCache();                \
     CGridWorkerApp app(new TWorkerNodeJob##Factory);      \
     return app.AppMain(argc, argv);                       \
 }
@@ -130,6 +132,7 @@ int main(int argc, const char* argv[])                    \
 NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version); \
 int main(int argc, const char* argv[])                                            \
 {                                                                                 \
+    BlobStorage_RegisterDriver_NetCache();                                        \
     CGridWorkerApp app(new TWorkerNodeJob##FactoryEx);                            \
     return app.AppMain(argc, argv);                                               \
 }
@@ -142,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/02/27 14:50:20  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.12  2006/02/01 16:39:01  didenko
  * Added Idle Task facility to the Grid Worker Node Framework
  *

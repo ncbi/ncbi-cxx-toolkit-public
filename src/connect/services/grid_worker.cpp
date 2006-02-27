@@ -260,7 +260,14 @@ static void s_RunJob(CGridThreadContext& thr_context)
 }
 void CWorkerNodeRequest::Process(void)
 {
-    s_RunJob(x_GetThreadContext());
+    try {
+        s_RunJob(x_GetThreadContext());
+    } catch (...) {
+        m_Context->GetWorkerNode().x_ReturnJob(m_Context->GetJobKey());
+        CGridGlobals::GetInstance().
+            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        throw;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -277,7 +284,7 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_LogRequested(false), m_OnHold(false),
-      m_HoldSem(0,100)
+      m_HoldSem(0,10000)
 {
 }
 
@@ -357,9 +364,14 @@ void CGridWorkerNode::Start()
                     }
                 }
                 else {
-                    CGridThreadContext& thr_context = s_GetSingleTHreadContext(*this);
-                    thr_context.SetJobContext(*job_context);
-                    s_RunJob(thr_context);
+                    try {
+                        CGridThreadContext& thr_context = s_GetSingleTHreadContext(*this);
+                        thr_context.SetJobContext(*job_context);
+                        s_RunJob(thr_context);
+                    } catch (...) {
+                        x_ReturnJob(job_context->GetJobKey());
+                        throw;
+                    }
                 }
             }            
         } catch (exception& ex) {
@@ -372,6 +384,14 @@ void CGridWorkerNode::Start()
     if (m_MaxThreads > 1 ) {
         m_ThreadsPool->KillAllThreads(true);
         m_ThreadsPool.reset(0);
+    }
+    try {
+        m_NSReadClient->UnRegisterClient(m_UdpPort);
+    } catch (CNetServiceException& e) {
+        // if server does not understand this new command just ignore the error
+        if (e.GetErrCode() != CNetServiceException::eCommunicationError 
+            || NStr::Find(e.what(),"Server error:Unknown request") == NPOS)
+            throw;
     }
     m_NSReadClient.reset(0);
     LOG_POST(Info << "Worker Node has been stopped.");
@@ -420,17 +440,34 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
                 if ( x_AreMastersBusy()) {
                     job_exists = 
                         m_NSReadClient->WaitJob(&job_key, &input,
-                                                m_NSTimeout, m_UdpPort);
+                                                m_NSTimeout, m_UdpPort,
+                                                CNetScheduleClient::eNoWaitNotification);
                     if (job_exists && m_OnHold) {
                         x_ReturnJob(job_key);
                         return false;
                     }
+                    if (job_exists)
+                        return true;
+
+                    job_exists = CNetScheduleClient::WaitNotification(GetQueueName(),
+                                                              m_NSTimeout,m_UdpPort);
+                    if (m_OnHold)
+                        return false;                    
+                    if (job_exists)
+                        job_exists = 
+                            m_NSReadClient->GetJob(&job_key, &input, m_UdpPort);
+
+                    if (job_exists && m_OnHold) {
+                        x_ReturnJob(job_key);
+                        return false;
+                    }
+                    
                 } else {
                     SleepSec(m_NSTimeout);
                 }
                 {
-                CMutexGuard guard(m_HoldMutex);
-                m_HoldSem.TryWait(0,100);
+                CFastMutexGuard guard(m_HoldMutex);
+                m_HoldSem.TryWait(0,1);
                 }
             }
             catch (CNetServiceException& ex) {
@@ -466,6 +503,15 @@ bool CGridWorkerNode::x_CreateNSReadClient()
 
     try {
         m_NSReadClient.reset(CreateClient());
+        try {
+            m_NSReadClient->RegisterClient(m_UdpPort);
+        } catch (CNetServiceException& e) {
+            // if server does not understand this new command just ignore the error
+            if (e.GetErrCode() == CNetServiceException::eCommunicationError 
+                && NStr::Find(e.what(),"Server error:Unknown request") != NPOS)
+                return true;
+            else throw;
+        }
     } catch (exception& ex) {
         ERR_POST(ex.what());
         CGridGlobals::GetInstance().
@@ -549,7 +595,6 @@ bool CGridWorkerNode::x_AreMastersBusy() const
         string replay;
         if (socket.ReadLine(replay) != eIO_Success)
             continue;
-        //        cerr << it->host << ":" << it->port << "  " << replay << endl;           
         if (NStr::StartsWith(replay, "ERR:")) {
             string msg;
             NStr::Replace(replay, "ERR:", "", msg);
@@ -573,7 +618,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
 
 void CGridWorkerNode::PutOnHold(bool hold) 
 { 
-    CMutexGuard guard(m_HoldMutex);
+    CFastMutexGuard guard(m_HoldMutex);
     m_OnHold = hold; 
     if (!m_OnHold)
         m_HoldSem.Post();
@@ -581,7 +626,7 @@ void CGridWorkerNode::PutOnHold(bool hold)
 
 bool CGridWorkerNode::IsOnHold() const 
 { 
-    CMutexGuard guard(m_HoldMutex);
+    CFastMutexGuard guard(m_HoldMutex);
     return m_OnHold; 
 }
 
@@ -619,6 +664,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.41  2006/02/15 19:48:34  didenko
  * Added new optional config parameter "reuse_job_object" which allows reusing
  * IWorkerNodeJob objects in the jobs' threads instead of creating

@@ -45,10 +45,16 @@ public:
     virtual const string& GetClientName() const  = 0;
     virtual string GetConnectionInfo() const = 0;
 
+    virtual  bool GetJob(string* job_key, 
+                         string* input, 
+                         unsigned short udp_port) = 0;
+    
     virtual bool WaitJob(string*        job_key, 
                          string*        input, 
                          unsigned       wait_time,
-                         unsigned short udp_port) = 0;
+                         unsigned short udp_port,
+                         CNetScheduleClient::EWaitMode wait_mode = 
+                         CNetScheduleClient::eNoWaitNotification) = 0;
 
     virtual void PutResult(const string& job_key, 
                            int           ret_code, 
@@ -81,6 +87,9 @@ public:
     virtual void SetRunTimeout(const string& job_key, 
                                unsigned time_to_run) = 0;
 
+    virtual void RegisterClient(unsigned short udp_port) = 0;
+    virtual  void UnRegisterClient(unsigned short udp_port) = 0;
+
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -99,10 +108,16 @@ public:
     virtual const string& GetClientName() const;
     virtual string GetConnectionInfo() const;
 
+    virtual  bool GetJob(string* job_key, 
+                         string* input, 
+                         unsigned short udp_port);
+
     virtual bool WaitJob(string*        job_key, 
                          string*        input, 
                          unsigned       wait_time,
-                         unsigned short udp_port);
+                         unsigned short udp_port,
+                         CNetScheduleClient::EWaitMode wait_mode = 
+                         CNetScheduleClient::eNoWaitNotification);
 
     virtual void PutResult(const string& job_key, 
                            int           ret_code, 
@@ -135,6 +150,8 @@ public:
     virtual void SetRunTimeout(const string& job_key, 
                                unsigned time_to_run);
 
+    virtual void RegisterClient(unsigned short udp_port);
+    virtual  void UnRegisterClient(unsigned short udp_port);
         
 private:
 
@@ -158,10 +175,18 @@ public:
     virtual const string& GetClientName() const;
     virtual string GetConnectionInfo() const;
 
+
+    virtual  bool GetJob(string* job_key, 
+                         string* input, 
+                         unsigned short udp_port);
+
     virtual bool WaitJob(string*        job_key, 
                          string*        input, 
                          unsigned       wait_time,
-                         unsigned short udp_port);
+                         unsigned short udp_port,
+                         CNetScheduleClient::EWaitMode wait_mode = 
+                         CNetScheduleClient::eNoWaitNotification);
+
 
     virtual void PutResult(const string& job_key, 
                            int           ret_code, 
@@ -194,6 +219,8 @@ public:
     virtual void SetRunTimeout(const string& job_key, 
                                unsigned time_to_run);
 
+    virtual void RegisterClient(unsigned short udp_port);
+    virtual  void UnRegisterClient(unsigned short udp_port);
         
 private:
 
@@ -207,6 +234,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/02/27 14:50:20  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.1  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.

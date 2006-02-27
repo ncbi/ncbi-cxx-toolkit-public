@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/blob_storage.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -45,12 +47,72 @@ IBlobStorageFactory::~IBlobStorageFactory()
 }
 
 
+CBlobStorageFactory::CBlobStorageFactory(const IRegistry& reg)
+    : m_Params(CConfig::ConvertRegToTree(reg)), m_Owner(eTakeOwnership)
+{
+}
+CBlobStorageFactory::CBlobStorageFactory(const TPluginManagerParamTree* params,
+                                         EOwnership own)
+    : m_Params(params), m_Owner(own)
+{
+}
+
+CBlobStorageFactory::~CBlobStorageFactory()
+{
+    if (m_Owner == eTakeOwnership)
+        delete m_Params;
+    m_Params = NULL;
+}
+
+IBlobStorage* CBlobStorageFactory::CreateInstance()
+{
+    typedef CPluginManager<IBlobStorage> TCacheManager; 
+    typedef CPluginManagerGetter<IBlobStorage> TCacheManagerStore;
+ 
+    CRef<TCacheManager> cache_manager( TCacheManagerStore::Get() );
+    //auto_ptr<TPluginManagerParamTree> params( MakeParamTree() );
+    IBlobStorage* drv = NULL;
+    
+    _ASSERT( cache_manager );
+
+    const TPluginManagerParamTree* storage_tree = 
+            m_Params->FindSubNode("blob_storage");
+    
+    string driver_name = "netcache";
+    if (storage_tree) {
+        const TPluginManagerParamTree* driver_tree = 
+            storage_tree->FindSubNode("driver");
+        if (driver_tree  && !driver_tree->GetValue().value.empty()) {
+            driver_name = driver_tree->GetValue().value;
+            storage_tree = m_Params->FindSubNode(driver_name);
+        }
+    } else
+        storage_tree = m_Params->FindSubNode("netcache_client");
+        
+    drv = cache_manager->CreateInstance(
+            driver_name,
+            NCBI_INTERFACE_VERSION(IBlobStorage),
+            storage_tree
+            );
+
+    if (!drv)
+        drv = new CBlobStorage_Null;
+    
+    return drv;
+}
+
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.1  2005/12/20 17:13:34  didenko
  * Added new IBlobStorage interface
  *

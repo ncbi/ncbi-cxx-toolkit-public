@@ -72,7 +72,6 @@
 #  define NCBI_XSERIAL_EXPORTS
 #  define NCBI_XUTIL_EXPORTS
 #  define NCBI_XREGEXP_EXPORTS
-#  define NCBI_NET_CACHE_EXPORTS
 #endif
 
 
@@ -228,6 +227,14 @@
 #  define NCBI_NET_CACHE_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_NET_CACHE_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library netcache (IBlobStorage)
+ */
+#ifdef NCBI_BLOBSTORAGE_NETCACHE_EXPORTS
+#  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT __declspec(dllimport)
 #endif
 
 /* Export specifier for library biblo
@@ -1075,6 +1082,7 @@
 #  define NCBI_BDB_CACHE_EXPORT
 #  define NCBI_BDB_EXPORT
 #  define NCBI_NET_CACHE_EXPORT
+#  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BIOTREE_EXPORT
 #  define NCBI_BLASTDB_EXPORT
@@ -1202,6 +1210,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.113  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.112  2006/02/16 16:01:35  rsmith
  * move valerr from ncbi_seqmisc to ncbi_seqext
  *

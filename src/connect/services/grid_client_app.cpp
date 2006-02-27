@@ -30,10 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/blob_storage.hpp>
+
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
 #include <connect/services/ns_client_factory.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -58,7 +60,7 @@ void CGridClientApp::Init(void)
         m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
-        CBlobStorageFactory_NetCache cf(GetConfig());
+        CBlobStorageFactory cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
@@ -71,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.6  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

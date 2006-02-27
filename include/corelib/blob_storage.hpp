@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiexpt.hpp>
-
+#include <corelib/plugin_manager.hpp>
 
 #include <string>
 
@@ -105,6 +105,27 @@ public:
 };
 
 
+NCBI_DECLARE_INTERFACE_VERSION(IBlobStorage,  "xblobstorage", 1, 0, 0);
+ 
+template<>
+class CDllResolver_Getter<IBlobStorage>
+{
+public:
+    CPluginManager_DllResolver* operator()(void)
+    {
+        CPluginManager_DllResolver* resolver =
+            new CPluginManager_DllResolver
+            (CInterfaceVersion<IBlobStorage>::GetName(),
+             kEmptyStr,
+             CVersionInfo::kAny,
+             CDll::eAutoUnload);
+        
+        resolver->SetDllNamePrefix("ncbi");
+        return resolver;
+    }
+};
+
+
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// Blob Storage Factory interafce
@@ -120,6 +141,31 @@ public:
     ///
     virtual IBlobStorage* CreateInstance(void) = 0;
 };
+
+class IRegistry;
+///////////////////////////////////////////////////////////////////////////////
+///
+/// Blob Storage Factory interafce
+///
+/// @sa IBlobStorage
+///
+class NCBI_XNCBI_EXPORT CBlobStorageFactory : public IBlobStorageFactory
+{
+public:
+    explicit CBlobStorageFactory(const IRegistry& reg);
+    explicit CBlobStorageFactory(const TPluginManagerParamTree* params,
+                                 EOwnership own = eTakeOwnership);
+    virtual ~CBlobStorageFactory();
+
+    /// Create an instance of Blob Storage
+    ///
+    virtual IBlobStorage* CreateInstance(void);
+
+private:
+    const TPluginManagerParamTree* m_Params;
+    EOwnership m_Owner;
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -206,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.2  2006/02/10 18:40:46  didenko
  * Added CBlobStorageFactory_Null
  *

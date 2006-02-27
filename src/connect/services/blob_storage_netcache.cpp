@@ -33,6 +33,8 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/rwstream.hpp>
+#include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -52,6 +54,12 @@ CBlobStorage_NetCache::CBlobStorage_NetCache(CNetCacheClient* nc_client,
       m_CreatedBlobId(NULL),
       m_TempDir(temp_dir)
 {
+}
+
+CBlobStorage_NetCache::CBlobStorage_NetCache()
+{
+    NCBI_THROW(CException, eInvalid,
+               "Can not create an empty blob storage.");
 }
 
 
@@ -288,76 +296,104 @@ void CBlobStorage_NetCache::Reset()
     m_OStream.reset();
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 
-CBlobStorageFactory_NetCache::
-CBlobStorageFactory_NetCache(const IRegistry& reg)
-    : m_Registry(reg)
+
+const char* kBlobStorageNetCacheDriverName = "netcache";
+
+
+class CBlobStorageNetCacheCF 
+    : public CSimpleClassFactoryImpl<IBlobStorage,CBlobStorage_NetCache>
 {
-    const string& m_TempDir = 
-        m_Registry.GetString(kNetCacheDriverName, "tmp_dir", ".");
-
-    m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
-    vector<string> masks;
-    masks.push_back( CBlobStorage_NetCache::sm_InputBlobCachePrefix + "*" );
-    masks.push_back( CBlobStorage_NetCache::sm_OutputBlobCachePrefix + "*" );
-    CDir curr_dir(m_TempDir);
-    CDir::TEntries dir_entries = curr_dir.GetEntries(masks, 
-                                                     CDir::eIgnoreRecursive);
-    ITERATE( CDir::TEntries, it, dir_entries) {
-        (*it)->Remove(CDirEntry::eNonRecursive);
+public:
+    typedef CSimpleClassFactoryImpl<IBlobStorage,
+                                    CBlobStorage_NetCache> TParent;
+public:
+    CBlobStorageNetCacheCF() : TParent(kBlobStorageNetCacheDriverName, 0)
+    {
     }
-}
+    virtual ~CBlobStorageNetCacheCF()
+    {
+    }
 
-IBlobStorage* 
-CBlobStorageFactory_NetCache::CreateInstance(void)
+    virtual
+    IBlobStorage* CreateInstance(
+                   const string&    driver  = kEmptyStr,
+                   CVersionInfo     version = NCBI_INTERFACE_VERSION(IBlobStorage),
+                   const TPluginManagerParamTree* params = 0) const;
+};
+
+IBlobStorage* CBlobStorageNetCacheCF::CreateInstance(
+           const string&                  driver,
+           CVersionInfo                   version,
+           const TPluginManagerParamTree* params) const
 {
-    CConfig conf(m_Registry);
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netcache_tree = 
-            param_tree->FindSubNode(kNetCacheDriverName);
+    if (driver.empty() || driver == m_DriverName) {
+        if (version.Match(NCBI_INTERFACE_VERSION(IBlobStorage))
+                            != CVersionInfo::eNonCompatible && params) {
 
-    auto_ptr<CNetCacheClient> nc_client;
-    if (netcache_tree) {
-        nc_client.reset( 
-            m_PM_NetCache.CreateInstance(
-                    kNetCacheDriverName,
-                    TPMNetCache::GetDefaultDrvVers(),
-                    netcache_tree)
-            );
-    }
-    if (!nc_client.get())
-        NCBI_THROW(CNetCacheStorageFactoryException,
-                   eNCClientIsNotCreated, 
-                   "Couldn't create NetCache client."
-                   "Check registry.");
-
-    bool cache_input =
-        m_Registry.GetBool("netcache_client", "cache_input", false, 
-                           0, CNcbiRegistry::eReturn);
-    bool cache_output =
-        m_Registry.GetBool("netcache_client", "cache_output", false, 
-                           0, CNcbiRegistry::eReturn);
+            typedef CPluginManager<CNetCacheClient> TPMNetCache;
+            TPMNetCache                      PM_NetCache;
+            PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
+            auto_ptr<CNetCacheClient> nc_client (
+                            PM_NetCache.CreateInstance(
+                                            kNetCacheDriverName,
+                                            TPMNetCache::GetDefaultDrvVers(),
+                                            params)
+                            );
+            if( nc_client.get() ) {
+                string temp_dir = 
+                    GetParam(params, "tmp_dir", false, ".");
+                vector<string> masks;
+                masks.push_back( CBlobStorage_NetCache::sm_InputBlobCachePrefix + "*" );
+                masks.push_back( CBlobStorage_NetCache::sm_OutputBlobCachePrefix + "*" );
+                CDir curr_dir(temp_dir);
+                CDir::TEntries dir_entries = curr_dir.GetEntries(masks, 
+                                                                 CDir::eIgnoreRecursive);
+                ITERATE( CDir::TEntries, it, dir_entries) {
+                    (*it)->Remove(CDirEntry::eNonRecursive);
+                }
+                bool cache_input =
+                    GetParamBool(params, "cache_input", false, false);
+                bool cache_output =
+                    GetParamBool(params, "cache_output", false, false);
  
-    CBlobStorage_NetCache::TCacheFlags flags = 0;
-    if (cache_input) flags |= CBlobStorage_NetCache::eCacheInput;
-    if (cache_output) flags |= CBlobStorage_NetCache::eCacheOutput;
+                CBlobStorage_NetCache::TCacheFlags flags = 0;
+                if (cache_input) flags |= CBlobStorage_NetCache::eCacheInput;
+                if (cache_output) flags |= CBlobStorage_NetCache::eCacheOutput;
 
-    return new CBlobStorage_NetCache(nc_client.release(),
-                                     flags, 
-                                     m_TempDir);
+                return new CBlobStorage_NetCache(nc_client.release(),
+                                                 flags, 
+                                                 temp_dir);
+
+            }
+        }
+    }
+    return 0;
 }
 
+void NCBI_EntryPoint_xblobstorage_netcache(
+     CPluginManager<IBlobStorage>::TDriverInfoList&   info_list,
+     CPluginManager<IBlobStorage>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CBlobStorageNetCacheCF>
+        ::NCBI_EntryPointImpl(info_list, method);
+}
 
-
+void BlobStorage_RegisterDriver_NetCache(void)
+{
+    RegisterEntryPoint<IBlobStorage>( NCBI_EntryPoint_xblobstorage_netcache );
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 6.2  2006/02/15 20:39:17  lavr
  * CRWStream moved to corelib
  *

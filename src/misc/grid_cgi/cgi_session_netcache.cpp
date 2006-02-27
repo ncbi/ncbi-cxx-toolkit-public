@@ -44,10 +44,13 @@ BEGIN_NCBI_SCOPE
 CCgiSession_NetCache::CCgiSession_NetCache(const IRegistry& conf) 
     : m_Dirty(false), m_Loaded(false)
 {
-    CBlobStorageFactory_NetCache factory(conf);
+    // hack!!! It needs to be removed when we know how to deal with unresolved
+    // symbols in plugins.
+    BlobStorage_RegisterDriver_NetCache(); 
+    CBlobStorageFactory factory(conf);
     m_Storage.reset(factory.CreateInstance());
 }
-
+/*
 CCgiSession_NetCache::CCgiSession_NetCache(CNetCacheClient* nc_client, 
                                            CBlobStorage_NetCache::TCacheFlags flags,
                                            const string& temp_dir)
@@ -58,6 +61,7 @@ CCgiSession_NetCache::CCgiSession_NetCache(CNetCacheClient* nc_client,
                                               temp_dir));
 }
 
+*/
 
 CCgiSession_NetCache::~CCgiSession_NetCache()
 {
@@ -214,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.7  2005/12/23 15:03:29  didenko
  * Added one more constructor
  *

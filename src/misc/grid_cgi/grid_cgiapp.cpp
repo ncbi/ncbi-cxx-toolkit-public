@@ -32,8 +32,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
+#include <corelib/blob_storage.hpp>
+
 #include <connect/services/ns_client_factory.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 #include <misc/grid_cgi/grid_cgiapp.hpp>
 
@@ -169,6 +171,9 @@ void CGridCgiApplication::Init()
 
 void CGridCgiApplication::InitGridClient()
 {
+    // hack!!! It needs to be removed when we know how to deal with unresolved
+    // symbols in plugins.
+    BlobStorage_RegisterDriver_NetCache(); 
     m_RefreshDelay = 
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
     m_FirstDelay = 
@@ -187,7 +192,7 @@ void CGridCgiApplication::InitGridClient()
         m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
-        CBlobStorageFactory_NetCache cf(GetConfig());
+        CBlobStorageFactory cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
@@ -418,6 +423,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.27  2006/01/18 17:51:03  didenko
  * When job is done just all its output to the response output stream
  *

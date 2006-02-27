@@ -29,6 +29,8 @@
  */
 #include <ncbi_pch.hpp>
 
+#include <corelib/blob_storage.hpp>
+
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgiapp.hpp>
 
@@ -36,7 +38,6 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_client.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 #include <connect/services/ns_client_factory.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -85,7 +86,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
     ns_client.reset(cfc.CreateInstance());
     ns_client->SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
 
-    CBlobStorageFactory_NetCache cfs(app.GetConfig());
+    CBlobStorageFactory cfs(app.GetConfig());
     ns_storage.reset(cfs.CreateInstance());
     grid_client.reset(new CGridClient(*ns_client, *ns_storage,
                                       CGridClient::eManualCleanup,
@@ -115,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.3  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 /// CBlobStorage_NetCache ---
 /// Implementaion of IBlobStorage interface based on NetCache service
 ///
-class NCBI_XCONNECT_EXPORT CBlobStorage_NetCache : public IBlobStorage
+class NCBI_BLOBSTORAGE_NETCACHE_EXPORT CBlobStorage_NetCache : public IBlobStorage
 {
 public:
 
@@ -60,6 +60,8 @@ public:
         eCacheBoth = eCacheInput | eCacheOutput
     };
     typedef unsigned int TCacheFlags;
+
+    CBlobStorage_NetCache();
 
     /// Create Blob Storage 
     /// @param[in] nc_client
@@ -137,6 +139,23 @@ private:
     string   m_TempDir;
 };
 
+extern NCBI_BLOBSTORAGE_NETCACHE_EXPORT const char* kBlobStorageNetCacheDriverName;
+
+extern "C"
+{
+
+NCBI_BLOBSTORAGE_NETCACHE_EXPORT
+void NCBI_EntryPoint_xblobstorage_netcache(
+     CPluginManager<IBlobStorage>::TDriverInfoList&   info_list,
+     CPluginManager<IBlobStorage>::EEntryPointRequest method);
+
+NCBI_BLOBSTORAGE_NETCACHE_EXPORT
+void BlobStorage_RegisterDriver_NetCache(void);
+
+} // extern C
+
+
+
 class CNetCacheStorageException : public CBlobStorageException
 {
 public:
@@ -159,55 +178,15 @@ public:
                            CBlobStorageException);
 };
 
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class NCBI_XCONNECT_EXPORT CBlobStorageFactory_NetCache 
-    : public IBlobStorageFactory
-{
-public:
-    
-    explicit CBlobStorageFactory_NetCache(const IRegistry& reg);
-
-    virtual ~CBlobStorageFactory_NetCache() {}
-
-    virtual IBlobStorage* CreateInstance(void);
-
-private:
-    typedef CPluginManager<CNetCacheClient> TPMNetCache;
-    TPMNetCache                      m_PM_NetCache;
-    const IRegistry&                 m_Registry;
-    string                           m_TempDir;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class CNetCacheStorageFactoryException : public CException
-{
-public:
-    enum EErrCode {
-        eNCClientIsNotCreated
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eNCClientIsNotCreated: 
-            return "eNCClientIsNotCreatedError";
-        default:      return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetCacheStorageFactoryException, CException);
-};
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/02/27 14:50:20  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.3  2006/02/15 20:38:42  lavr
  * Remove inclusion of unnecessary header files
  *

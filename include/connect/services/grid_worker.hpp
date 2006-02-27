@@ -265,7 +265,7 @@ private:
     bool                 m_JobCommitted;
     size_t               m_InputBlobSize;
     bool                 m_LogRequested;
-    unsigned int   m_JobNumber;
+    unsigned int         m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
 
     /// The copy constructor and the assignment operator
@@ -515,7 +515,7 @@ private:
     bool                         m_LogRequested;
     volatile bool                m_OnHold;
     CSemaphore                   m_HoldSem;
-    mutable CMutex               m_HoldMutex;
+    mutable CFastMutex           m_HoldMutex;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
@@ -553,6 +553,8 @@ private:
     set<unsigned int> m_AdminHosts;
 
     bool x_GetNextJob(string& job_key, string& input);
+
+    friend class CWorkerNodeRequest;
     void x_ReturnJob(const string& job_key);
     bool x_CreateNSReadClient();
     bool x_AreMastersBusy() const;
@@ -573,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/02/27 14:50:20  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.36  2006/02/15 20:27:45  didenko
  * Added new optional config parameter "reuse_job_object" which allows
  * reusing IWorkerNodeJob objects in the jobs' threads instead of

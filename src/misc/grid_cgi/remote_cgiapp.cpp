@@ -33,6 +33,9 @@
 
 #include <misc/grid_cgi/remote_cgiapp.hpp>
 
+// 
+#include <connect/services/blob_storage_netcache.hpp>
+
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
@@ -105,6 +108,9 @@ CRemoteCgiApp::CRemoteCgiApp(
                    INetScheduleClientFactory* client_factory)
     : m_WorkerNodeContext(NULL)
 {
+    // hack!!! It needs to be removed when we know how to deal with unresolved
+    // symbols in plugins.
+    BlobStorage_RegisterDriver_NetCache(); 
     m_AppImpl.reset(new  CGridWorkerApp_Impl(*this,
                                              new CCgiWorkerNodeJobFactory(*this),
                                              storage_factory,
@@ -203,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.4  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

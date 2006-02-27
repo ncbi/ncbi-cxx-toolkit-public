@@ -32,9 +32,9 @@
 
 #include <stddef.h>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/blob_storage.hpp>
 
 #include <cgi/cgi_session.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 #include <map>
 #include <string>
@@ -61,7 +61,7 @@ class NCBI_XGRIDCGI_EXPORT CCgiSession_NetCache : public ICgiSessionStorage
 public:
     /// Create Session Storage from the registry
     CCgiSession_NetCache(const IRegistry&);
-
+    /*
     /// Create Session Storage 
     /// @param[in] nc_client
     ///  NetCache client. Session Storage will delete it when
@@ -74,7 +74,7 @@ public:
     CCgiSession_NetCache(CNetCacheClient* nc_client, 
                          CBlobStorage_NetCache::TCacheFlags flags = 0x0,
                          const string& temp_dir = ".");
-
+    */
     virtual ~CCgiSession_NetCache();
 
     /// Create a new empty session. 
@@ -182,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/02/27 14:50:21  didenko
+ * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
+ *
  * Revision 1.7  2006/01/09 16:17:28  vakatov
  * Removed extraneous comma
  *
