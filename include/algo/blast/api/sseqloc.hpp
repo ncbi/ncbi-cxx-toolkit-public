@@ -239,6 +239,13 @@ public:
         m_Queries[i]->AddMask(sli);
     }
     
+    CRef<CBlastSearchQuery>
+    GetBlastSearchQuery(int i) const
+    {
+        _ASSERT(i < (int) m_Queries.size());
+        return m_Queries[i];
+    }
+    
 private:
     /// The set of queries used for a search.
     vector< CRef<CBlastSearchQuery> > m_Queries;
