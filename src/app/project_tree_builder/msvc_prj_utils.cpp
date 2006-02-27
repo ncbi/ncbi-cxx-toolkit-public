@@ -331,11 +331,16 @@ CMsvc7RegSettings::EMsvcVersion  CMsvc7RegSettings::GetMsvcVersion(void)
 
 string CMsvc7RegSettings::GetMsvcSection(void)
 {
+    string s;
     if (GetMsvcVersion() == eMsvc710) {
-        return string(MSVC_REG_SECTION) + "710";
+        s = string(MSVC_REG_SECTION) + "710";
     } else {
-        return string(MSVC_REG_SECTION) + "800";
+        s = string(MSVC_REG_SECTION) + "800";
     }
+    if (GetMsvcPlatform() != eMsvcWin32) {
+        s += "." + GetMsvcPlatformName();
+    }
+    return s;
 }
 CMsvc7RegSettings::EMsvcPlatform  CMsvc7RegSettings::GetMsvcPlatform(void)
 {
@@ -1130,6 +1135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/02/27 14:35:14  gouriano
+ * Added section for x64 platform
+ *
  * Revision 1.47  2006/02/23 15:02:14  gouriano
  * Corrected name of msvc-type projects
  *
