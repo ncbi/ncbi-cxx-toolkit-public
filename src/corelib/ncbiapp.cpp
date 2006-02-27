@@ -49,9 +49,6 @@
 #  include <unistd.h>
 #endif
 #if defined(NCBI_OS_DARWIN)
-#  include <math.h>
-// Including math.h avoids errors from Carbon.h that can otherwise occur
-// on some systems when __NOEXTENSIONS__ is defined.
 #  ifdef NCBI_COMPILER_METROWERKS
 #    define __NOEXTENSIONS__
 #  endif
@@ -1035,6 +1032,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.120  2006/02/27 15:14:59  ucko
+ * Drop explicit inclusion of <math.h> on Darwin, which should be
+ * unnecessary now that __NOEXTENSIONS__ is defined only for CodeWarrior.
+ *
  * Revision 1.119  2006/02/27 13:53:15  rsmith
  * Only define _NOEXTENSIONS_ on Mac Codewarrior builds.
  *
