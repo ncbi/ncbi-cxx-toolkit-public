@@ -266,7 +266,7 @@ CBlastQuerySourceBioseqSet::GetMask(int /*index*/)
 }
 
 TMaskedQueryRegions
-CBlastQuerySourceBioseqSet::GetMaskedRegions(int /*index*/) const 
+CBlastQuerySourceBioseqSet::GetMaskedRegions(int /*index*/)
 {
     return TMaskedQueryRegions();
 }

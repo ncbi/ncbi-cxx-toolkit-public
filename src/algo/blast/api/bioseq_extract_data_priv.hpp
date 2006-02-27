@@ -135,7 +135,7 @@ public:
     
     /// Return the filtered (masked) regions for a sequence
     /// @param i index of the sequence in the sequence container [in]
-    virtual TMaskedQueryRegions GetMaskedRegions(int index) const;
+    virtual TMaskedQueryRegions GetMaskedRegions(int index);
     
     /// Return the CSeq_loc associated with a sequence
     /// @param index index of the sequence in the sequence container [in]

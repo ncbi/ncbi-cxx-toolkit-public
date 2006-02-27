@@ -119,7 +119,7 @@ public:
     
     /// Return the filtered (masked) regions for a sequence
     /// @param index index of the sequence in the sequence container [in]
-    virtual TMaskedQueryRegions GetMaskedRegions(int index) const = 0;
+    virtual TMaskedQueryRegions GetMaskedRegions(int index) = 0;
     
     /// Return the CSeq_loc associated with a sequence
     /// @param index index of the sequence in the sequence container [in]
@@ -483,6 +483,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2006/02/27 15:43:47  camacho
+* Fixed bug in CBlastQuerySourceOM::GetMaskedRegions.
+* Made IBlastQuerySource::GetMaskedRegions a non-const method.
+*
 * Revision 1.59  2006/02/22 18:34:17  bealer
 * - Blastx filtering support, CBlastQueryVector class.
 *

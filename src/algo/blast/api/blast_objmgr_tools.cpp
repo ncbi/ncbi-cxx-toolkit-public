@@ -110,14 +110,14 @@ CBlastQuerySourceOM::x_CalculateMasks(void)
         if (m_Options->GetDustFiltering()) {
             if (m_QueryVector.NotEmpty()) {
                 Blast_FindDustFilterLoc(*m_QueryVector,
-                                        static_cast<Uint4>(m_Options->GetDustFilteringLevel()),
-                                        static_cast<Uint4>(m_Options->GetDustFilteringWindow()),
-                                        static_cast<Uint4>(m_Options->GetDustFilteringLinker()));
+                    static_cast<Uint4>(m_Options->GetDustFilteringLevel()),
+                    static_cast<Uint4>(m_Options->GetDustFilteringWindow()),
+                    static_cast<Uint4>(m_Options->GetDustFilteringLinker()));
             } else {
                 Blast_FindDustFilterLoc(*m_TSeqLocVector, 
-                                        static_cast<Uint4>(m_Options->GetDustFilteringLevel()),
-                                        static_cast<Uint4>(m_Options->GetDustFilteringWindow()),
-                                        static_cast<Uint4>(m_Options->GetDustFilteringLinker()));
+                    static_cast<Uint4>(m_Options->GetDustFilteringLevel()),
+                    static_cast<Uint4>(m_Options->GetDustFilteringWindow()),
+                    static_cast<Uint4>(m_Options->GetDustFilteringLinker()));
             }
         }
         if (m_Options->GetRepeatFiltering()) {
@@ -155,8 +155,10 @@ CBlastQuerySourceOM::GetStrand(int i) const
 }
 
 TMaskedQueryRegions
-CBlastQuerySourceOM::GetMaskedRegions(int i) const
+CBlastQuerySourceOM::GetMaskedRegions(int i)
 {
+    x_CalculateMasks();
+
     if (m_QueryVector.NotEmpty()) {
         return m_QueryVector->GetMaskedRegions(i);
     } else {
@@ -665,6 +667,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2006/02/27 15:43:47  camacho
+* Fixed bug in CBlastQuerySourceOM::GetMaskedRegions.
+* Made IBlastQuerySource::GetMaskedRegions a non-const method.
+*
 * Revision 1.67  2006/02/22 18:34:17  bealer
 * - Blastx filtering support, CBlastQueryVector class.
 *

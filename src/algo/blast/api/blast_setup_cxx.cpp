@@ -450,7 +450,7 @@ s_RestrictSeqLocs_Multiframe(CBlastQueryFilteredFrames & frame_to_bsl,
 }
 
 CRef<CBlastQueryFilteredFrames>
-s_GetRestrictedBlastSeqLocs(const IBlastQuerySource & queries,
+s_GetRestrictedBlastSeqLocs(IBlastQuerySource & queries,
                             int                       query_index,
                             const BlastQueryInfo    * qinfo,
                             EBlastProgramType         program)
@@ -1579,6 +1579,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.106  2006/02/27 15:43:47  camacho
+ * Fixed bug in CBlastQuerySourceOM::GetMaskedRegions.
+ * Made IBlastQuerySource::GetMaskedRegions a non-const method.
+ *
  * Revision 1.105  2006/02/22 18:34:17  bealer
  * - Blastx filtering support, CBlastQueryVector class.
  *
