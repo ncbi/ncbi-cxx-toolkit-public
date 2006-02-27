@@ -53,6 +53,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include <test/test_assert.h>
 
 using namespace ncbi;
 using namespace objects;
@@ -272,6 +273,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2006/02/27 19:21:03  grichenk
+ * Include test_assert.h
+ *
  * Revision 1.22  2004/11/24 16:22:24  grichenk
  * Do not use GetBioseqCore() to get IDs
  *
