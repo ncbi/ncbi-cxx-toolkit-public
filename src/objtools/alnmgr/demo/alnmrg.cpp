@@ -59,6 +59,8 @@
 #include <objtools/alnmgr/alnmix.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 
@@ -524,6 +526,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2006/02/27 12:18:29  ivanov
+* Added #include <test/test_assert.h> -- all tests must include it
+*
 * Revision 1.34  2005/08/18 19:38:59  todorov
 * Added optional progress feedback.
 *
