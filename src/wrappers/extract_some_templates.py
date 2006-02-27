@@ -36,7 +36,8 @@ class_list = {}
 
 banned = ['int', 'double', 'bool', 'string',
           'char', 'TSeqPos', 'Int8']
-banned_vectors = ['CHit'] # ncbi::CHit vs. ncbi::objects::CHit
+banned_vectors = ['CHit']  # ncbi::CHit vs. ncbi::objects::CHit
+banned_lists = ['CGBProjectHandle']  # private copy ctor and assignment
 
 for iname in inames:
     headers = sppp.ProcessFile(iname, None, defined_symbols)
@@ -64,7 +65,9 @@ for iname in inames:
                            or contained in banned \
                            or (contained[0] != 'C' and contained[0] != 'S') \
                            or (container == 'vector' and
-                               contained in banned_vectors):
+                               contained in banned_vectors) \
+                           or (container == 'list' and
+                               contained in banned_lists):
                         # a template of templates or a "banned" type; skip it
                         skipped['%s %s' % template] = ''
                         continue
