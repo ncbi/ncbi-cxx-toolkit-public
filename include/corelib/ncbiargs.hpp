@@ -757,7 +757,7 @@ private:
     unsigned     m_nExtra;    ///> # of mandatory extra args
     unsigned     m_nExtraOpt; ///< # of optional  extra args
     TArgGroups   m_ArgGroups;    ///< Argument groups
-    int          m_CurrentGroup; ///< Currently selected group (0 = no group)
+    size_t       m_CurrentGroup; ///< Currently selected group (0 = no group)
 
     // Extra USAGE info
     string    m_UsageName;         ///< Program name
@@ -778,8 +778,8 @@ private:
     TArgsCI x_Find(const string& name) const;
 
     /// Get group index. Returns group index in the m_ArgGroups, 0 for empty
-    /// group name or -1 for undefined group.
-    int x_GetGroupIndex(const string& group) const;
+    /// group name or the next group number for undefined group.
+    size_t x_GetGroupIndex(const string& group) const;
 
     /// Helper method for adding description.
     void x_AddDesc(CArgDesc& arg); 
@@ -1237,9 +1237,9 @@ public:
     const string& GetComment(void) const { return m_Comment; }
 
     /// Get argument group
-    virtual int GetGroup(void) const { return 0; }
+    virtual size_t GetGroup(void) const { return 0; }
     /// Set argument group
-    virtual void SetGroup(int /* group */) {}
+    virtual void SetGroup(size_t /* group */) {}
 
     /// Get usage synopsis.
     virtual string GetUsageSynopsis(bool name_only = false) const = 0;
@@ -1295,6 +1295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/02/27 19:58:12  grichenk
+ * Fixed warnings
+ *
  * Revision 1.50  2006/02/02 21:29:43  vakatov
  * Heed minor (extra comma) warning
  *

@@ -1532,7 +1532,7 @@ void CArgDescriptions::SetConstraint(const string&      name,
 void CArgDescriptions::SetCurrentGroup(const string& group)
 {
     m_CurrentGroup = x_GetGroupIndex(group);
-    if (m_CurrentGroup < 0) {
+    if (m_CurrentGroup >= m_ArgGroups.size()) {
         m_ArgGroups.push_back(group);
         m_CurrentGroup = m_ArgGroups.size() - 1;
     }
@@ -1623,7 +1623,7 @@ CArgDescriptions::TArgsI CArgDescriptions::x_Find(const string& name)
 }
 
 
-int CArgDescriptions::x_GetGroupIndex(const string& group) const
+size_t CArgDescriptions::x_GetGroupIndex(const string& group) const
 {
     if ( group.empty() ) {
         return 0;
@@ -1633,7 +1633,7 @@ int CArgDescriptions::x_GetGroupIndex(const string& group) const
             return i;
         }
     }
-    return -1;
+    return m_ArgGroups.size();
 }
 
 
@@ -2536,6 +2536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/02/27 19:58:12  grichenk
+ * Fixed warnings
+ *
  * Revision 1.63  2006/01/25 19:43:27  grichenk
  * Fixed warning
  *

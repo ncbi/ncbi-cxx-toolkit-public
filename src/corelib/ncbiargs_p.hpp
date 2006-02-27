@@ -250,11 +250,11 @@ public:
                      CArgDescriptions::TFlags flags);
     virtual ~CArgDescOptional(void);
     virtual CArgValue* ProcessDefault(void) const;
-    virtual int GetGroup(void) const { return m_Group; }
-    virtual void SetGroup(int group) { m_Group = group; }
+    virtual size_t GetGroup(void) const { return m_Group; }
+    virtual void SetGroup(size_t group) { m_Group = group; }
 
 private:
-    int m_Group;
+    size_t m_Group;
 };
 
 
@@ -323,12 +323,12 @@ public:
 
     virtual CArgValue* ProcessArgument(const string& value) const;
     virtual CArgValue* ProcessDefault(void) const;
-    virtual int GetGroup(void) const { return m_Group; }
-    virtual void SetGroup(int group) { m_Group = group; }
+    virtual size_t GetGroup(void) const { return m_Group; }
+    virtual void SetGroup(size_t group) { m_Group = group; }
 
 private:
-    int  m_Group;
-    bool m_SetValue;  // value to set if the arg is provided  
+    size_t  m_Group;
+    bool    m_SetValue;  // value to set if the arg is provided  
 };
 
 
@@ -418,6 +418,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/02/27 19:58:12  grichenk
+ * Fixed warnings
+ *
  * Revision 1.9  2006/01/23 19:17:10  grichenk
  * Added groups and error handler for arguments.
  *
