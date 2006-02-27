@@ -20,10 +20,8 @@
 
 #define NCBI_COMPILER_MSVC    1
 
-#define HOST         "i386-pc-win32"
 #define HOST_CPU     "i386"
 #define HOST_VENDOR  "pc"
-#define HOST_OS      "win32"
 
 #define HAVE_STRDUP                1
 #define HAVE_STRICMP               1
@@ -66,6 +64,8 @@
 #define NCBI_DEPRECATED __declspec(deprecated)
 
 #ifdef _WIN64
+#  define HOST         "i386-pc-win64"
+#  define HOST_OS      "win64"
 typedef __int64 ssize_t;
 #  define HAVE_INTPTR_T
 #  define SIZEOF_LONG_LONG    8
@@ -73,6 +73,8 @@ typedef __int64 ssize_t;
 #  define SIZEOF_VOIDP        8
 #  define NCBI_PLATFORM_BITS  64
 #else
+#  define HOST         "i386-pc-win32"
+#  define HOST_OS      "win32"
 typedef   int   ssize_t;
 #  define SIZEOF_LONG_LONG    0
 #  define SIZEOF_SIZE_T       4
