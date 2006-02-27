@@ -52,7 +52,9 @@
 #  include <math.h>
 // Including math.h avoids errors from Carbon.h that can otherwise occur
 // on some systems when __NOEXTENSIONS__ is defined.
-#  define __NOEXTENSIONS__
+#  ifdef NCBI_COMPILER_METROWERKS
+#    define __NOEXTENSIONS__
+#  endif
 #  include <Carbon/Carbon.h>
 #endif
 
@@ -1033,6 +1035,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.119  2006/02/27 13:53:15  rsmith
+ * Only define _NOEXTENSIONS_ on Mac Codewarrior builds.
+ *
  * Revision 1.118  2006/02/24 21:57:44  ucko
  * Darwin: include <math.h> before __NOEXTENSIONS__ is defined, as the
  * subsequent inclusion of Carbon.h can otherwise yield broken math inlines.
