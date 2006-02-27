@@ -57,6 +57,7 @@
 %ignore ncbi::CEvent::AddRef;
 %ignore ncbi::CBookmark::SetRange;
 %ignore *::CPluginValue::SetDataHandle;
+%ignore ncbi::objects::CGBProjectHandle::SetProjectVersion;
 
 // SWIG problem with non-member operators
 %ignore *::operator<<(CNcbiOstream& strm, TFileType& ftype);  // app_popup.hpp
@@ -153,10 +154,8 @@ gui/core/data_plugin.hpp
 gui/core/data_store.hpp
 gui/core/dh_manager.hpp
 gui/core/doc_exception.hpp
-gui/core/doc_manager.hpp
 gui/core/docmgr_view.hpp
-gui/core/document.hpp
-gui/core/idocument.hpp
+gui/core/igbproject.hpp
 gui/core/iselection_service.hpp
 gui/core/iservice.hpp
 gui/core/iview.hpp
@@ -186,6 +185,7 @@ gui/core/version.hpp
 gui/core/view.hpp
 gui/core/view_composite.hpp
 gui/core/view_composite_plugin.hpp
+gui/core/view_container.hpp
 gui/core/view_exception.hpp
 gui/core/view_factory.hpp
 gui/core/view_link.hpp
@@ -309,12 +309,6 @@ ncbi::CRef<ncbi::objects::CPluginInfoSet> __MakeCPluginInfoSet(unsigned long ptr
 // and associated template classes;
 // downcasting can happen in the scripting laguage.
 
-%template(pair_CConstRef_IDocument_CConstRef_CObject)
-std::pair<ncbi::CConstRef<ncbi::IDocument>, ncbi::CConstRef<ncbi::CObject> >;
-
-%template(list_pair_CConstRef_IDocument_CConstRef_CObject)
-std::list<std::pair<ncbi::CConstRef<ncbi::IDocument>, ncbi::CConstRef<ncbi::CObject> > >;
-
 %template(__GetArgValue) ncbi::GetArgValue<ncbi::CObject>;
 
 
@@ -325,6 +319,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/02/27 18:22:38  jcherry
+ * Reflect changes to gui/core
+ *
  * Revision 1.9  2006/02/19 14:54:15  jcherry
  * Add iselection_service.hpp, remove selection_service.hpp
  *
