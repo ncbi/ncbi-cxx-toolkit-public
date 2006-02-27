@@ -356,6 +356,7 @@ int CAsn2FlatApp::Run(void)
 
     m_Os->flush();
 
+    is.reset();
     return 0;
 }
 
@@ -588,9 +589,11 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
     
     // make sure of the underlying input stream. If -i was given on the command line 
     // then the input comes from a file. Otherwise, it comes from stdin:
-    CNcbiIstream* pInputStream = &cin;
+    CNcbiIstream* pInputStream = &NcbiCin;
+    bool bDeleteOnClose = false;
     if ( args["i"] ) {
         pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
+        bDeleteOnClose = true;
     }
         
     // if -c was specified then wrap the input stream into a gzip decompressor before 
@@ -604,7 +607,7 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
         pI = CObjectIStream::Open( serial, *pUnzipStream, true );
     }
     else {
-        pI = CObjectIStream::Open( serial, *pInputStream, true );
+        pI = CObjectIStream::Open( serial, *pInputStream, bDeleteOnClose );
     }
     
     if ( 0 != pI ) {
@@ -828,6 +831,10 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2006/02/27 14:51:30  ludwigf
+* FIXED: Application attempted to delete stack memory on exit, causing nasty
+* messages in (Windows) debug mode.
+*
 * Revision 1.20  2006/02/07 17:53:02  ludwigf
 * ADDED: Support for (gzip-) compressed input.
 *
