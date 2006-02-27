@@ -68,12 +68,13 @@ property dbapi : {name:"dbapi", path:"dbapi"}
 property dbapi_cache : {name:"dbapi_cache", path:"dbapi:cache"}
 property dbapi_driver : {name:"dbapi_driver", path:"dbapi:driver"}
 property xhtml : {name:"xhtml", path:"html", exc:{"nodemap.cpp"}}
-property xconnect : {name:"xconnect", path:"connect", exc:{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp"}}
+property xconnect : {name:"xconnect", path:"connect", exc:{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c"}}
 --property cserial : {name:"cserial", path:"serial", inc:{"asntypes.cpp", "serialasn.cpp"}}
 property xser : {name:"xser", path:"serial", exc:{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"}}
 property xutil : {name:"xutil", path:"util"}
 property bdb : {name:"bdb", path:"bdb", exc:{"bdb_query_bison.tab.c", "bdb_query_lexer.cpp", "bdb_blobcache.cpp"}}
 property xcache_bdb : {name:"xcache_bdb", path:"bdb", inc:{"bdb_blobcache.cpp"}}
+property xcache_netcache : {name:"xcache_netcache", path:"connect:services"}
 property xsqlite : {name:"xsqlite", path:"sqlite"}
 property xregexp : {name:"xregexp", path:"util:regexp", exc:{"pcreposix.c"}}
 property ximage : {name:"ximage", path:"util:image"}
@@ -190,7 +191,7 @@ property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 
 
 (* GUI Libraries *)
-property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBenchInitReply.cpp", "GBenchServiceRequest.cpp", "GBenchVersionReply.cpp", "GBenchVersionRequest.cpp", "NCBI_GBenchService_module.cpp", "GBenchServiceReply.cpp", "DataHandle.cpp", "DataHandleAction.cpp", "DataHandleSelector.cpp", "DataHandleTransformer.cpp", "DataHandleViewer.cpp", "NCBI_Data_Handle_module.cpp", "GBenchVersionInfo.cpp", "GBenchInitRequest.cpp", "GBenchFeedbackRequest.cpp", "NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "data_handle__.cpp", "data_handle___.cpp", "gbench_svc__.cpp", "gbench_svc___.cpp", "gbench_svc_cli.cpp", "gbench_svc_cli_.cpp", "plugin__.cpp", "plugin___.cpp"}}
+property gui__core : {name:"gui__core", path:"gui:core", exc:{"OS_ver.cpp", "GBProject_ver2.cpp", "GBenchInitReply.cpp", "GBenchServiceRequest.cpp", "GBenchVersionReply.cpp", "GBenchVersionRequest.cpp", "NCBI_GBenchService_module.cpp", "GBenchServiceReply.cpp", "DataHandle.cpp", "DataHandleAction.cpp", "DataHandleSelector.cpp", "DataHandleTransformer.cpp", "DataHandleViewer.cpp", "NCBI_Data_Handle_module.cpp", "GBenchVersionInfo.cpp", "GBenchInitRequest.cpp", "GBenchFeedbackRequest.cpp", "NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "data_handle__.cpp", "data_handle___.cpp", "gbench_svc__.cpp", "gbench_svc___.cpp", "gbench_svc_cli.cpp", "gbench_svc_cli_.cpp", "plugin__.cpp", "plugin___.cpp"}}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true, asn1Name:"gui_project"}
 property data_handle : {name:"data_handle", path:"gui:core", inc:{"data_handle__.cpp", "data_handle___.cpp"}, asn1:true, asn1Name:"data_handle"}
 property gbench_svc : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc__.cpp", "gbench_svc___.cpp"}, asn1:true, asn1Name:"gbench_svc"}
@@ -274,6 +275,7 @@ property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, se
 property ncbi_web : {name:"ncbi_web", libs:{xhtml, xcgi}, dep:"ncbi_core", req:true}
 property ncbi_bdb : {name:"ncbi_bdb", libs:{bdb}, dep:"ncbi_core" & BDB_LIBS, req:true}
 property ncbi_xcache_bdb : {name:"ncbi_xcache_bdb", libs:{xcache_bdb}, dep:"ncbi_core ncbi_bdb", req:true}
+property ncbi_xcache_netcache : {name:"ncbi_xcache_netcache", libs:{xcache_netcache}, dep:"ncbi_core", req:true}
 property ncbi_sqlite : {name:"ncbi_sqlite", libs:{xsqlite}, dep:"ncbi_core" & SQLITE_LIBS, req:true}
 property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core" & IMG_LIBS, req:true}
 property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep:"ncbi_core", req:true}
@@ -396,10 +398,10 @@ property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_co
 property demo_wcontrols : {name:"demo_wcontrols", path:"gui:widgets:controls:demo", exc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
 property demo_wizard : {name:"demo_wizard", path:"gui:widgets:controls:demo", inc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
 
-property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp", "gbench_monitor.cpp", "gbench_feedback_agent.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_widgets_misc gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
+property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp", "gbench_monitor.cpp", "gbench_feedback_agent.cpp"}, dep:"ncbi_core ncbi_xcache_netcache ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_services gui_widgets gui_widgets_aln gui_widgets_misc gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
 
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils", req:true}
-property gbench_monitor : {name:"gbench_monitor", path:"gui:gbench", inc:{"gbench_monitor.cpp"}, dep:"ncbi_core", req:true}
+property gbench_monitor : {name:"gbench_monitor", path:"gui:gbench", inc:{"gbench_monitor.cpp"}, dep:"ncbi_core ncbi_xcache_netcache", req:true}
 property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench", inc:{"gbench_feedback_agent.cpp", "feedback_wizard.cpp", "gbench_version.cpp"}, dep:"ncbi_core ncbi_general gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:true}
 
 (* ====================================================================================================== *)
@@ -407,7 +409,7 @@ property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench
 
 
 -- All Libraries to build
-property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_sqlite, ncbi_image, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_misc, ncbi_seqext, ncbi_validator, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_cache, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_blastdb, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, ncbi_xobjsimple, ncbi_algo, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_services, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_webpage, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
+property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_xcache_netcache, ncbi_sqlite, ncbi_image, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_misc, ncbi_seqext, ncbi_validator, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_cache, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_blastdb, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, ncbi_xobjsimple, ncbi_algo, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_services, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_webpage, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
@@ -435,6 +437,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2006/02/27 13:37:28  lebedev
+ * ncbi_xcache_netcache added
+ *
  * Revision 1.91  2006/02/27 12:49:28  lebedev
  * Build gui_services after gui_core
  *
