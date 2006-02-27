@@ -45,11 +45,7 @@
 #define SIZEOF_INT          4
 #define SIZEOF_LONG         4
 #define SIZEOF_LONG_DOUBLE  8
-#define SIZEOF_LONG_LONG    0
 #define SIZEOF_SHORT        2
-#define SIZEOF_SIZE_T       4
-#define SIZEOF_VOIDP        4
-#define NCBI_PLATFORM_BITS  32
 
 #define STDC_HEADERS     1
 
@@ -71,9 +67,17 @@
 
 #ifdef _WIN64
 typedef __int64 ssize_t;
-#define HAVE_INTPTR_T
+#  define HAVE_INTPTR_T
+#  define SIZEOF_LONG_LONG    8
+#  define SIZEOF_SIZE_T       8
+#  define SIZEOF_VOIDP        8
+#  define NCBI_PLATFORM_BITS  64
 #else
 typedef   int   ssize_t;
+#  define SIZEOF_LONG_LONG    0
+#  define SIZEOF_SIZE_T       4
+#  define SIZEOF_VOIDP        4
+#  define NCBI_PLATFORM_BITS  32
 #endif
 
 
