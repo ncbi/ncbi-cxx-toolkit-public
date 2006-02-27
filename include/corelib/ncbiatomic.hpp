@@ -138,11 +138,15 @@ void* SwapPointers(void * volatile * location, void* new_value)
     }
     return old_value;
 #  elif defined(NCBI_OS_MSWIN)
-    // InterlockedExchangePointer would be better, but older SDK versions
-    // don't declare it. :-/
+#    if defined(_WIN64)
+    return InterlockedExchangePointer(nv_loc,new_value);
+#    else
+    // InterlockedExchangePointer is better, but older SDK versions
+    // don't declare it.
     return reinterpret_cast<void*>
         (InterlockedExchange(reinterpret_cast<LPLONG>(nv_loc),
                              reinterpret_cast<LONG>(new_value)));
+#    endif
 #  elif defined(NCBI_COUNTER_ASM_OK)
 #    if defined(__i386) || defined(__x86_64) // same (overloaded) opcode...
     void* old_value;
@@ -210,6 +214,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/02/27 15:26:48  gouriano
+ * Use InterlockedExchangePointer on MSVC x64 platfrom
+ *
  * Revision 1.11  2005/10/07 15:26:10  ssikorsk
  * Fixed typo with m constraint
  *
