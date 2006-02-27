@@ -29,16 +29,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_config.hpp>
-#include <corelib/plugin_manager.hpp>
-#include <corelib/ncbiexpt.hpp>
+#include <corelib/blob_storage.hpp>
 
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
-
-#include <connect/services/blob_storage_netcache.hpp>
 
 #include <html/html.hpp>
 #include <html/page.hpp>
@@ -94,7 +89,7 @@ void CCgiSampleApplication::Init()
 
 void CCgiSampleApplication::x_InitStorage()
 {
-    CBlobStorageFactory_NetCache factory(GetConfig());
+    CBlobStorageFactory factory(GetConfig());
     m_Storage.reset(factory.CreateInstance());
 }
 
@@ -245,6 +240,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/02/27 16:44:56  ucko
+ * Use CBlobStorageFactory rather than CBSF_NetCache, which seems to have
+ * vanished; adjust include directives accordingly (and drop redundant ones).
+ *
  * Revision 1.2  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
