@@ -32,7 +32,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objmgr/impl/mutex_pool.hpp>
+#include <xobjmgr/impl/mutex_pool.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/02/27 15:42:13  vasilche
+* CMutexPool moved from xobjmgr to xutil.
+*
 * Revision 1.8  2006/01/25 15:22:45  vasilche
 * Take benefits of Swap().
 *

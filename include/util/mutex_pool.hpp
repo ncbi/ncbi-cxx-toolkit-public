@@ -1,5 +1,5 @@
-#ifndef OBJECTS_OBJMGR___MUTEX_POOL__HPP
-#define OBJECTS_OBJMGR___MUTEX_POOL__HPP
+#ifndef UTIL___MUTEX_POOL__HPP
+#define UTIL___MUTEX_POOL__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -41,7 +41,6 @@
 #include <list>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
 
 class CInitMutexPool;
 class CInitMutex_Base;
@@ -55,7 +54,7 @@ class CInitGuard;
 //
 
 
-class NCBI_XOBJMGR_EXPORT CInitMutexPool
+class NCBI_XUTIL_EXPORT CInitMutexPool
 {
 public:
     CInitMutexPool(void);
@@ -104,7 +103,7 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CInitMutex_Base
+class NCBI_XUTIL_EXPORT CInitMutex_Base
 {
 public:
     DECLARE_OPERATOR_BOOL_REF(m_Object);
@@ -270,12 +269,14 @@ private:
 };
 
 
-END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/02/27 15:42:13  vasilche
+* CMutexPool moved from xobjmgr to xutil.
+*
 * Revision 1.9  2006/01/25 14:17:09  vasilche
 * Do not export completely inlined classes.
 *
@@ -336,4 +337,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* OBJECTS_OBJMGR___MUTEX_POOL__HPP */
+#endif  /* UTIL___MUTEX_POOL__HPP */
