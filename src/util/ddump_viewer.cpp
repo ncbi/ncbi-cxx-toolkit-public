@@ -63,7 +63,11 @@ bool CDebugDumpViewer::x_GetInput(string& input)
 const void* CDebugDumpViewer::x_StrToPtr(const string& str)
 {
     void* addr = 0;
-    addr = reinterpret_cast<void*>(NStr::StringToULong(str, 0, 16));
+#if SIZEOF_VOIDP == 8
+	addr = reinterpret_cast<void*>(NStr::StringToUInt8(str, 0, 16));
+#else
+	addr = reinterpret_cast<void*>(NStr::StringToULong(str, 0, 16));
+#endif
     return addr;
 }
 
@@ -231,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/02/28 19:15:49  gouriano
+ * MSVC x64 tuneup
+ *
  * Revision 1.7  2006/02/06 16:07:34  ivanov
  * Use 0 instead of NStr::fStringToNumDefault
  *
