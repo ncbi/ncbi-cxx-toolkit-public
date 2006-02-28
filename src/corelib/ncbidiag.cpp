@@ -1790,6 +1790,7 @@ bool s_ParseErrCodeInfoStr(string&          str,
                            bool&            x_ready)
 {
     list<string> tokens;    // List with line tokens
+	unsigned long uline = (unsigned long)line;
 
     try {
         // Get message text
@@ -1805,7 +1806,7 @@ bool s_ParseErrCodeInfoStr(string&          str,
         NStr::Split(str, ",", tokens);
         if (tokens.size() < 2) {
             ERR_POST("Error message file parsing: Incorrect file format " \
-                     ", line " + NStr::IntToString(line));
+                     ", line " + NStr::UIntToString(uline));
             return false;
         }
         // Mnemonic name (skip)
@@ -1825,7 +1826,7 @@ bool s_ParseErrCodeInfoStr(string&          str,
             } else {
                 ERR_POST(Warning << "Error message file parsing: " \
                          "Incorrect severity level in the verbose " \
-                         "message file, line " + NStr::IntToString(line));
+                         "message file, line " + NStr::UIntToString(uline));
             }
         } else {
             x_severity = -1;
@@ -1833,7 +1834,7 @@ bool s_ParseErrCodeInfoStr(string&          str,
     }
     catch (CException& e) {
         ERR_POST(Warning << "Error message file parsing: " << e.GetMsg() <<
-                 ", line " + NStr::IntToString(line));
+                 ", line " + NStr::UIntToString(uline));
         return false;
     }
     x_ready = true;
@@ -1929,6 +1930,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.110  2006/02/28 18:58:47  gouriano
+ * MSVC x64 tuneup
+ *
  * Revision 1.109  2006/02/22 16:37:46  grichenk
  * Added CDiagContext::SetOldPostFormat()
  *

@@ -55,7 +55,7 @@ void xncbi_SetValidateAction(EValidateAction action)
 EValidateAction xncbi_GetValidateAction(void)
 {
     // some 64 bit compilers refuse to cast from int* to EValidateAction
-    EValidateAction action = EValidateAction(long(s_ValidateTLS->GetValue()));
+    EValidateAction action = EValidateAction(intptr_t(s_ValidateTLS->GetValue()));
     // we may store Default, but we may not return Default
     if (action == eValidate_Default) {
 #if defined(_DEBUG)
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/02/28 18:58:47  gouriano
+ * MSVC x64 tuneup
+ *
  * Revision 1.5  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *

@@ -1121,7 +1121,11 @@ CArgs::~CArgs(void)
 
 static string s_ComposeNameExtra(size_t idx)
 {
-    return '#' + NStr::UIntToString(idx);
+#if SIZEOF_SIZE_T == 8
+	return '#' + NStr::UInt8ToString(idx);
+#else
+	return '#' + NStr::UIntToString(idx);
+#endif
 }
 
 
@@ -1167,7 +1171,7 @@ const CArgValue& CArgs::operator[] (const string& name) const
             if (idx == 0  ||  idx >= m_nExtra) {
                 NCBI_THROW(CArgException, eInvalidArg,
                            "\"Extra\" (unnamed positional) arg is "
-                           "out-of-range (#1..#" + NStr::UIntToString(m_nExtra)
+                           "out-of-range (#1.." + s_ComposeNameExtra(m_nExtra)
                            + "): " + s_ComposeNameExtra(idx));
             }
         }
@@ -2536,6 +2540,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/02/28 18:58:47  gouriano
+ * MSVC x64 tuneup
+ *
  * Revision 1.64  2006/02/27 19:58:12  grichenk
  * Fixed warnings
  *
