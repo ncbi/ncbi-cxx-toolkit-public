@@ -227,7 +227,7 @@ unsigned CSeq_id_Handle::GetHash(void) const
 {
     unsigned hash = m_Gi;
     if ( !hash ) {
-        hash = unsigned((unsigned long)(m_Info.GetPointerOrNull())>>3);
+        hash = unsigned((intptr_t)(m_Info.GetPointerOrNull())>>3);
     }
     return hash;
 }
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/02/28 21:04:47  gouriano
+* MSVC x64 tuneup
+*
 * Revision 1.30  2005/06/20 17:28:20  vasilche
 * Use CRef's locker for CSeq_id_Info locking.
 * Removed obsolete registering functions.

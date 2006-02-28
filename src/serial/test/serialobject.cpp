@@ -5,7 +5,7 @@
 string Pntr(const void* p)
 {
     CNcbiOstrstream b;
-    b << "0x" << hex << long(p);
+    b << "0x" << hex << intptr_t(p);
     return CNcbiOstrstreamToString(b);
 }
 
