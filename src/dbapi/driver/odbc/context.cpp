@@ -169,7 +169,7 @@ void CODBC_Reporter::ReportErrors(void) const
 
 
 
-CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn) 
+CODBCContext::CODBCContext(SQLLEN version, bool use_dsn) 
 : m_PacketSize(0)
 , m_LoginTimeout(0)
 , m_Timeout(0)
@@ -313,20 +313,20 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         return 0;
 
     if(m_Timeout) {
-        SQLSetConnectAttr(con, SQL_ATTR_CONNECTION_TIMEOUT, (void*)m_Timeout, 0);
+        SQLSetConnectAttr(con, SQL_ATTR_CONNECTION_TIMEOUT, (SQLPOINTER)m_Timeout, 0);
     }
 
     if(m_LoginTimeout) {
-        SQLSetConnectAttr(con, SQL_ATTR_LOGIN_TIMEOUT, (void*)m_LoginTimeout, 0);
+        SQLSetConnectAttr(con, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER)m_LoginTimeout, 0);
     }
 
     if(m_PacketSize) {
-        SQLSetConnectAttr(con, SQL_ATTR_PACKET_SIZE, (void*)m_PacketSize, 0);
+        SQLSetConnectAttr(con, SQL_ATTR_PACKET_SIZE, (SQLPOINTER)m_PacketSize, 0);
     }
 
 #ifdef SQL_COPT_SS_BCP
     if((mode & fBcpIn) != 0) {
-        SQLSetConnectAttr(con, SQL_COPT_SS_BCP, (void*) SQL_BCP_ON, SQL_IS_INTEGER);
+        SQLSetConnectAttr(con, SQL_COPT_SS_BCP, (SQLPOINTER) SQL_BCP_ON, SQL_IS_INTEGER);
     }
 #endif
 
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/02/28 15:00:45  ssikorsk
+ * Use larger type (SQLLEN) instead of SQLINTEGER where it needs to be converted to a pointer.
+ *
  * Revision 1.39  2006/02/22 15:15:51  ssikorsk
  * *** empty log message ***
  *

@@ -108,7 +108,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public I_DriverContext
     friend class CDB_Connection;
 
 public:
-    CODBCContext(SQLINTEGER version = SQL_OV_ODBC3, bool use_dsn= false);
+    CODBCContext(SQLLEN version = SQL_OV_ODBC3, bool use_dsn= false);
     virtual ~CODBCContext(void);
 
 public:
@@ -142,13 +142,13 @@ protected:
     virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
     
 private:
-    SQLHENV     m_Context;
-    SQLUINTEGER m_PacketSize;
-    SQLUINTEGER m_LoginTimeout;
-    SQLUINTEGER m_Timeout;
-    SQLUINTEGER m_TextImageSize;
-    CODBC_Reporter m_Reporter;
-    bool m_UseDSN;
+    SQLHENV         m_Context;
+    SQLULEN         m_PacketSize;
+    SQLULEN         m_LoginTimeout;
+    SQLULEN         m_Timeout;
+    SQLUINTEGER     m_TextImageSize;
+    CODBC_Reporter  m_Reporter;
+    bool            m_UseDSN;
 
     SQLHDBC x_ConnectToServer(const string&   srv_name,
                    const string&   usr_name,
@@ -721,6 +721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/02/28 15:00:16  ssikorsk
+ * Use larger type (SQLLEN) instead of SQLINTEGER where it needs to be converted to a pointer.
+ *
  * Revision 1.21  2006/02/28 14:26:35  ssikorsk
  * Replaced int/SQLINTEGER members with SQLLEN where needed.
  *

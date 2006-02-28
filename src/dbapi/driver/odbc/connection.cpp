@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
-                                  SQLINTEGER size, 
+                                  SQLLEN size, 
                                   bool is_text, 
                                   bool logit, 
                                   SQLPOINTER id, 
@@ -323,7 +323,7 @@ bool CODBC_Connection::Abort()
 static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn, 
                                   CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
-                                  SQLINTEGER size, 
+                                  SQLLEN size, 
                                   bool is_text, 
                                   bool logit, 
                                   SQLPOINTER id, 
@@ -649,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/02/28 15:00:45  ssikorsk
+ * Use larger type (SQLLEN) instead of SQLINTEGER where it needs to be converted to a pointer.
+ *
  * Revision 1.18  2006/02/28 14:27:30  ssikorsk
  * Replaced int/SQLINTEGER variables with SQLLEN where needed.
  *

@@ -42,7 +42,7 @@ static const char* wrong_type = "Wrong type of CDB_Object";
 /////////////////////////////////////////////////////////////////////////////
 
 static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
-                              SQLUINTEGER prec)
+                              SQLULEN prec)
 {
     switch (t) {
     case SQL_WCHAR:
@@ -1161,6 +1161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/02/28 15:00:45  ssikorsk
+ * Use larger type (SQLLEN) instead of SQLINTEGER where it needs to be converted to a pointer.
+ *
  * Revision 1.27  2006/02/28 14:27:30  ssikorsk
  * Replaced int/SQLINTEGER variables with SQLLEN where needed.
  *
