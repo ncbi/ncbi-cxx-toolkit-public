@@ -111,6 +111,15 @@ m4_define([_AS_LINENO_PREPARE],
 ])# _AS_LINENO_PREPARE
 
 
+# Keep track of (un)available features, packages, and projects.
+AC_DEFUN(NCBI_FEAT_EX,
+         [m4_append_uniq([NCBI_ALL_]$1, $2, [ ])dnl
+	  With$1="[$]With$1[$]{With$1Sep}$2"; With$1Sep=" "])
+AC_DEFUN(NCBI_FEATURE, [NCBI_FEAT_EX(Features, $1)])
+AC_DEFUN(NCBI_PACKAGE, [NCBI_FEAT_EX(Packages, $1)])
+AC_DEFUN(NCBI_PROJECT, [NCBI_FEAT_EX(Projects, $1)])
+
+
 # Argument: question to ask user.
 AC_DEFUN(NCBI_CAUTION,
 [case "$with_caution" in
@@ -185,9 +194,8 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_,
     $2_PATH="No_$2"
     $2_INCLUDE=
     $2_LIBS=
-    WithoutPackages="$WithoutPackages $2"
  else
-    WithPackages="$WithPackages $2"
+    NCBI_PACKAGE($2)
     $2_INCLUDE="$7 [$]$2_INCLUDE"
     AC_DEFINE([HAVE_LIB]patsubst($2, [^LIB], []), 1,
               [Define to 1 if lib$3 is available.])

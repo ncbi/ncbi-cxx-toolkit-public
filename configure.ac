@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.411 2006/02/09 23:43:18 vakatov Exp $
+#  $Id: configure.ac,v 1.412 2006/02/28 17:15:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -332,6 +332,10 @@ AC_ARG_WITH(algo,
    [ --without-algo          do not build CPU-intensive algorithms])
 AC_ARG_WITH(internal,
    [ --without-internal      do not build internal projects])
+AC_ARG_WITH(gbench,
+   [ --with-gbench           ensure that Genome Workbench can be built])
+AC_ARG_WITH(gbench2,
+   [ --without-gbench        do not build Genome Workbench])
 
 ## Manuals
 AC_ARG_WITH(manuals,
@@ -349,7 +353,7 @@ z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
-serial objects dbapi app ctools gui algo internal"
+serial objects dbapi app ctools gui algo internal gbench"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -375,7 +379,7 @@ for x_arg in "$@" ; do
    case "$x_arg" in
       --with-extra-action= | --exec-prefix= | --with-projects= \
       | --cache-file= | --build= | --host= | --target= | --with-runpath= )
-      AC_MSG_ERROR(["  $x_arg:  requires value;  use --help to show usage"])
+      AC_MSG_ERROR([$x_arg:  requires value;  use --help to show usage])
       ;;
 
       --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
@@ -397,11 +401,22 @@ for x_arg in "$@" ; do
       ;;
 
       * )
-      AC_MSG_ERROR(["  $x_arg:  unknown option;  use --help to show usage"])
+      AC_MSG_ERROR([$x_arg:  unknown option;  use --help to show usage])
       ;;
    esac
 done
 
+
+if test "$with_gbench" = "yes" ; then
+   m4_foreach(OPT, [dll,mt,gui,exe,dbapi,serial,objects,algo,app],
+     [if test "$[with_]OPT" = "no"; then
+         AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
+      else
+         [with_]OPT=yes
+      fi
+     ])
+   : ${with_projects=scripts/projects/ncbi_gbench.lst}
+fi
 
 if test "$with_bin_release" = "yes" ; then
    # Default some other options accordingly
@@ -417,10 +432,10 @@ fi
 
 #### Check for special options
 if test "$with_extra_action" = "yes" ; then
-   AC_MSG_ERROR(["--with-extra-action must have a value after ="])
+   AC_MSG_ERROR([--with-extra-action must have a value after =])
 fi
 if test "$with_extra_action" = "no" ; then
-   AC_MSG_ERROR(["--without-extra-action is not allowed"])
+   AC_MSG_ERROR([--without-extra-action is not allowed])
 fi
 
 
@@ -683,7 +698,7 @@ if test "$with_mt" = "yes" ; then
     *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
     *:Compaq | *:GCC | *:ICC )  : ${MT_FLAG:="-pthread"} ;;
     *:VisualAge              )  : ${MT_FLAG:="-qthreaded"} ;;
-    * )   AC_MSG_ERROR(["Do not know how to build MT-safe with compiler $CXX $compiler_ver"]) ;;
+    * )   AC_MSG_ERROR([Do not know how to build MT-safe with compiler $CXX $compiler_ver]) ;;
    esac
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT -D_THREAD_SAFE"
    case "$host_os" in
@@ -693,13 +708,12 @@ if test "$with_mt" = "yes" ; then
    esac
    LIBS="$LIBS $THREAD_LIBS"
    mt_sfx="MT"
-   WithFeatures="$WithFeatures MT"
+   NCBI_FEATURE(MT)
 else
    CPPFLAGS="$CPPFLAGS -DNCBI_WITHOUT_MT"
    MT_FLAG=
    THREAD_LIBS=
    mt_sfx=""
-   WithoutFeatures="$WithoutFeatures MT"
 fi
 MT_SFX="${mt_sfx}"
 AC_SUBST(MT_SFX)
@@ -941,7 +955,7 @@ changequote([, ])dnl
       ARCH_CFLAGS="-64"
       ;;
     * )
-      AC_MSG_ERROR(["Do not know how to compile 64-bit with compiler $CXX $compiler_ver $host:$compiler"])
+      AC_MSG_ERROR([Do not know how to compile 64-bit with compiler $CXX $compiler_ver $host:$compiler])
       ;;
    esac
 else
@@ -970,7 +984,7 @@ else
          ;;
        * )
          # Just a warning, since 32-bit mode is typically the default anyway...
-         AC_MSG_WARN(["Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler"])
+         AC_MSG_WARN([Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler])
          ;;
       esac
    fi
@@ -1156,11 +1170,11 @@ case "$compiler:$compiler_version:$with_bin_release" in
     case "$libstdcxx" in
        /*)
           LIBS="$libstdcxx $LIBS"
-	  LINK=$C_LINK
-	  ;;
+          LINK=$C_LINK
+          ;;
        *)
           AC_MSG_WARN([Unable to find static libstdc++ requested by --with-bin-release.])
-	  ;;
+          ;;
     esac
     ;;
   GCC:* )
@@ -1257,10 +1271,9 @@ esac
 
 if test "$with_dll" = "no"; then # no DLLs whatsoever!
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
-   WithoutFeatures="$WithoutFeatures DLL"
 else
    FORCE_STATIC_LIB=
-   WithFeatures="$WithFeatures DLL"
+   NCBI_FEATURE(DLL)
    # Some shared libraries end up containing static libraries, so make
    # sure to use DLL flags for both on platforms where such inclusion
    # would otherwise be illegal....
@@ -1594,7 +1607,7 @@ signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${
 
 #### Check if there is "${build_root}" dir
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
-test -d "${build_root}"  ||  AC_MSG_ERROR(["Couldn't create ${build_root}"])
+test -d "${build_root}"  ||  AC_MSG_ERROR([Couldn't create ${build_root}])
 
 #### Try to find a version of pwd that yields /net paths.
 AC_PATH_PROG(AMQ, amq, [], $PATH:/usr/sbin:/sbin)
@@ -1731,7 +1744,7 @@ case "$compiler" in
    ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
-      AC_MSG_ERROR(["Do not know how to build DLLs with compiler $CXX $compiler_ver"])
+      AC_MSG_ERROR([Do not know how to build DLLs with compiler $CXX $compiler_ver])
    fi
    ;;
 esac
@@ -1899,29 +1912,55 @@ AC_CHECK_HEADERS(windows.h, x_have_windows="yes")
 if test "$x_have_windows" = "yes" -a "x$host_os" != "xcygwin32" -a "x$host_os" != "xcygwin"; then
    AC_DEFINE(NCBI_OS_MSWIN, 1, [Define to 1 on Windows.])
    AC_DEFINE(NCBI_OS, "MSWIN", [Operating system name])
+   NCBI_FEATURE(MSWin)
 elif test "$x_have_unistd" = "yes" ; then
    AC_DEFINE(NCBI_OS_UNIX, 1,  [Define to 1 on Unix.])
    AC_DEFINE(NCBI_OS, "UNIX",  [Operating system name])
 
    UNIX_SRC='$(UNIX_SRC)'
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
-   WithFeatures="$WithFeatures unix"
+   NCBI_FEATURE(unix)
 
    # Extra defines for variants we care about
    case "$OSTYPE" in
-     aix)     AC_DEFINE(NCBI_OS_AIX,     1, [Define to 1 on AIX.])          ;;
-     *bsd)    AC_DEFINE(NCBI_OS_BSD,     1, [Define to 1 on *BSD.])         ;;
-     cygwin)  AC_DEFINE(NCBI_OS_CYGWIN,  1, [Define to 1 on Cygwin.])       ;;
-     darwin)  AC_DEFINE(NCBI_OS_DARWIN,  1, [Define to 1 on Mac OS X.])     ;;
-     irix)    AC_DEFINE(NCBI_OS_IRIX,    1, [Define to 1 on IRIX.])         ;;
-     linux)   AC_DEFINE(NCBI_OS_LINUX,   1, [Define to 1 on Linux.])        ;;
-     osf)     AC_DEFINE(NCBI_OS_OSF1,    1, [Define to 1 on Tru64 Unix.])   ;;
-     solaris) AC_DEFINE(NCBI_OS_SOLARIS, 1, [Define to 1 on Solaris.])      ;;
+     aix)
+        AC_DEFINE(NCBI_OS_AIX,     1, [Define to 1 on AIX.])
+        NCBI_FEATURE(AIX)
+        ;;
+     *bsd)
+        AC_DEFINE(NCBI_OS_BSD,     1, [Define to 1 on *BSD.])
+        NCBI_FEATURE(BSD)
+        ;;
+     cygwin)
+        AC_DEFINE(NCBI_OS_CYGWIN,  1, [Define to 1 on Cygwin.])
+        NCBI_FEATURE(Cygwin)
+        if test "$with_mt" = yes; then NCBI_FEATURE(CygwinMT); fi
+        ;;
+     darwin)
+        AC_DEFINE(NCBI_OS_DARWIN,  1, [Define to 1 on Mac OS X.])
+        NCBI_FEATURE(Darwin)
+        ;;
+     irix)
+        AC_DEFINE(NCBI_OS_IRIX,    1, [Define to 1 on IRIX.])
+        NCBI_FEATURE(IRIX)
+        ;;
+     linux)
+        AC_DEFINE(NCBI_OS_LINUX,   1, [Define to 1 on Linux.])
+        NCBI_FEATURE(Linux)
+        ;;
+     osf)
+        AC_DEFINE(NCBI_OS_OSF1,    1, [Define to 1 on Tru64 Unix.])
+        NCBI_FEATURE(OSF)
+        ;;
+     solaris)
+        AC_DEFINE(NCBI_OS_SOLARIS, 1, [Define to 1 on Solaris.])
+        NCBI_FEATURE(Solaris)
+        ;;
    esac
 else
-   WithoutFeatures="$WithoutFeatures unix"
    AC_DEFINE(NCBI_OS_MAC, 1, [Define to 1 on MacOS.])
    AC_DEFINE(NCBI_OS, "MAC", [Operating system name])
+   NCBI_FEATURE(MacOS)
 fi
 
 case "$host_os" in
@@ -2643,8 +2682,8 @@ if test -z "$Z_LIBS"; then
    # Z_LIBS="-lz"
    Z_LIB="z"
    # AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
-   WithPackages="$WithPackages Z LocalZ"
-   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ Z//'`
+   NCBI_PACKAGE(Z)
+   NCBI_PACKAGE(LocalZ)
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(bz2,
@@ -2659,8 +2698,8 @@ if test -z "$BZ2_LIBS"; then
    # BZ2_LIBS="-lbz2"
    BZ2_LIB="bz2"
    AC_DEFINE(USE_LOCAL_BZLIB, 1, [Define to 1 if using a local copy of bzlib.])
-   WithPackages="$WithPackages BZ2 LocalBZ2"
-   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ BZ2//'`
+   NCBI_PACKAGE(BZ2)
+   NCBI_PACKAGE(LocalBZ2)
 fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
@@ -2679,8 +2718,8 @@ if test -z "$PCRE_LIBS"; then
    # PCREPOSIX_LIBS="-lregexp"
    PCRE_LIB="regexp"
    AC_DEFINE(USE_LOCAL_PCRE, 1, [Define to 1 if using a local copy of PCRE.])
-   WithPackages="$WithPackages PCRE LocalPCRE"
-   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ PCRE//'`
+   NCBI_PACKAGE(PCRE)
+   NCBI_PACKAGE(LocalPCRE)
 else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
 fi
@@ -2827,7 +2866,7 @@ if test "$with_sybase" != "no" ; then
           [ncbi_cv_lib_sybase=yes], [ncbi_cv_lib_sybase=no])])
 
    if test "$ncbi_cv_lib_sybase" = yes; then
-      WithPackages="$WithPackages Sybase"
+      NCBI_PACKAGE(Sybase)
       AC_DEFINE(HAVE_LIBSYBASE, 1,
                 [Define to 1 if SYBASE libraries are available.])
       if test "$with_mt" = "yes" -a "$ncbi_cv_lib_sybase_r" = "yes"; then
@@ -2847,7 +2886,7 @@ if test "$with_sybase" != "no" ; then
 
       SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx}"
       AC_CACHE_CHECK([for Sybase DBLib], ncbi_cv_lib_sybdb,
-         [CPPFLAGS="$SYBASE_INCLUDE $prig_CPPFLAGS"
+         [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
           LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
              [[
@@ -2860,11 +2899,10 @@ if test "$with_sybase" != "no" ; then
              ]])],
              [ncbi_cv_lib_sybdb=yes], [ncbi_cv_lib_sybdb=no])])
       if test "$ncbi_cv_lib_sybdb" = yes; then
-         WithPackages="$WithPackages DBLib"
+         NCBI_PACKAGE(DBLib)
          AC_DEFINE(HAVE_LIBSYBDB, 1,
                    [Define to 1 if SYBASE DBLib is available.])
       else
-         WithoutPackages="$WithoutPackages DBLib"
          SYBASE_DBLIBS=
       fi
       # apply the Sybase patch to $NETWORK_LIBS
@@ -2877,7 +2915,6 @@ if test "$with_sybase" != "no" ; then
 fi # with_sybase != no?
 
 if test "$with_sybase" = no; then
-   WithoutPackages="$WithoutPackages Sybase DBLib"
    SYBASE_PATH="No_Sybase"
    SYBASE_INCLUDE=
    SYBASE_LIBS=
@@ -2973,11 +3010,10 @@ if test "$with_ftds" = "no" ; then
    FTDS63_LIBS=
    FTDS63_LIB=
    freetds=
-   WithoutPackages="$WithoutPackages FreeTDS"
 else
    AC_DEFINE(HAVE_LIBFTDS, 1,
              [Define to 1 if FreeTDS libraries are available.])
-   WithPackages="$WithPackages FreeTDS"
+   NCBI_PACKAGE(FreeTDS)
 fi
 AC_SUBST(FTDS8_INCLUDE)
 AC_SUBST(FTDS8_LIBS)
@@ -3021,9 +3057,8 @@ if test "$with_mysql" = "no" ; then
    MYSQL_PATH="No_MYSQL"
    MYSQL_INCLUDE=
    MYSQL_LIBS=
-   WithoutPackages="$WithoutPackages MySQL"
 else
-   WithPackages="$WithPackages MySQL"
+   NCBI_PACKAGE(MySQL)
    AC_DEFINE(HAVE_MYSQL, 1, [Define to 1 if MySQL is available.])
 fi
 
@@ -3117,9 +3152,8 @@ if test "$with_bdb" = "no" ; then
    BERKELEYDB_STATIC_LIBS=
    BERKELEYDB_CXX_LIBS=
    BERKELEYDB_CXX_STATIC_LIBS=
-   WithoutPackages="$WithoutPackages BerkeleyDB BerkeleyDB++"
 else
-   WithPackages="$WithPackages BerkeleyDB"
+   NCBI_PACKAGE(BerkeleyDB)
    AC_DEFINE(HAVE_BERKELEY_DB, 1,
              [Define to 1 if Berkeley DB libraries are available.])
    if test -d "$BERKELEYDB_LIBPATH"; then
@@ -3142,13 +3176,12 @@ else
           [ncbi_cv_lib_berkeley_db_cxx=yes],
           [ncbi_cv_lib_berkeley_db_cxx=no])])
    if test "$ncbi_cv_lib_berkeley_db_cxx" = "yes"; then
-      WithPackages="$WithPackages BerkeleyDB++"
+      NCBI_PACKAGE(BerkeleyDB++)
       AC_DEFINE(HAVE_BERKELEY_DB_CXX, 1,
                 [Define to 1 if the Berkeley `db_cxx' library is available.])
    else
       BERKELEYDB_CXX_LIBS=
       BERKELEYDB_CXX_STATIC_LIBS=
-      WithoutPackages="$WithoutPackages BerkeleyDB++"
    fi
 fi
 
@@ -3181,9 +3214,8 @@ if test "$with_odbc" = "no" ; then
    ODBC_PATH="No_ODBC"
    ODBC_INCLUDE=
    ODBC_LIBS=
-   WithoutPackages="$WithoutPackages ODBC"
 else
-   WithPackages="$WithPackages ODBC"
+   NCBI_PACKAGE(ODBC)
    AC_DEFINE(HAVE_ODBC, 1, [Define to 1 if ODBC libraries are available.])
 fi
 
@@ -3211,9 +3243,8 @@ if test "$with_python" = "no" ; then
    PYTHON_PATH="No_Python"
    PYTHON_INCLUDE=
    PYTHON_LIBS=
-   WithoutPackages="$WithoutPackages PYTHON"
 else
-   WithPackages="$WithPackages PYTHON"
+   NCBI_PACKAGE(PYTHON)
    AC_DEFINE(HAVE_PYTHON, 1, [Define to 1 if Python libraries are available.])
 fi
 
@@ -3269,9 +3300,8 @@ if test "$with_cppunit" = "no" ; then
    CPPUNIT_PATH="No_CPPUNIT"
    CPPUNIT_INCLUDE=
    CPPUNIT_LIBS=
-   WithoutPackages="$WithoutPackages CPPUNIT"
 else
-   WithPackages="$WithPackages CPPUNIT"
+   NCBI_PACKAGE(CPPUNIT)
    CPPUNIT_CONFIG="$CPPUNIT_BINPATH/cppunit-config"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$CPPUNIT_INCLUDE"; then
@@ -3326,8 +3356,9 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          esac
          if test "$with_mt" = "yes"; then
             case "$host_os" in
-               darwin* ) ;; # threading always implicitly enabled
-               IRIX*   ) ;; # threading always disabled (unsupported)
+               # No more special casing, as we always force a distinction.
+               # darwin* ) ;; # threading always implicitly enabled
+               # IRIX*   ) ;; # threading always disabled (unsupported)
                *       ) BOOST_TAG="${BOOST_TAG}-mt" ;;
             esac
          fi
@@ -3395,7 +3426,7 @@ fi
 if test "$ncbi_cv_lib_boost_test" != "no"; then
    AC_DEFINE(HAVE_BOOST_TEST, 1,
              [Define to 1 if the `Boost.Test' libraries are available.])
-   WithPackages="$WithPackages Boost.Test"
+   NCBI_PACKAGE(Boost.Test)
 else
    BOOST_TEST_PEM_LIBS=
    BOOST_TEST_PEM_STATIC_LIBS=
@@ -3403,7 +3434,6 @@ else
    BOOST_TEST_TEM_STATIC_LIBS=
    BOOST_TEST_UTF_LIBS=
    BOOST_TEST_UTF_STATIC_LIBS=
-   WithoutPackages="$WithoutPackages Boost.Test"
 fi
 
 
@@ -3447,9 +3477,8 @@ if test "$with_ncbi_c" = "no" ; then
    NCBI_C_INCLUDE=
    NCBI_C_LIBPATH=
    NCBI_C_ncbi=
-   WithoutPackages="$WithoutPackages C-Toolkit"
 else
-   WithPackages="$WithPackages C-Toolkit"
+   NCBI_PACKAGE(C-Toolkit)
    AC_DEFINE(HAVE_NCBI_C, 1, [Define to 1 if the NCBI C toolkit is available.])
 fi
 
@@ -3525,9 +3554,8 @@ if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    GLUT_INCLUDE=
    GLUT_LIBS=
    with_opengl="no"
-   WithoutPackages="$WithoutPackages OpenGL MESA"
 else
-   WithPackages="$WithPackages OpenGL"
+   NCBI_PACKAGE(OpenGL)
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
    : ${OSMESA_PATH=$NCBI/MesaGL}
    orig_LDFLAGS_X=$LDFLAGS
@@ -3541,10 +3569,10 @@ else
       fi
       LDFLAGS="$orig_LDFLAGS_X $OSMESA_LDFLAGS"
       AC_CHECK_LIB(OSMesa, OSMesaCreateContext,
-         [WithPackages="$WithPackages MESA";
+         [NCBI_PACKAGE(MESA);
           OSMESA_LIBS="$OSMESA_LDFLAGS $X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
           AC_DEFINE(HAVE_LIBOSMESA, 1, [Define to 1 if you have libOSMesa.])],
-         [WithoutPackages="$WithoutPackages MESA"; OSMESA_LIBS=],
+         [OSMESA_LIBS=],
          $OPENGL_LIBS)
    fi
    : ${GLUT_PATH=$NCBI/glut}
@@ -3558,10 +3586,10 @@ else
       fi
       LDFLAGS="$orig_LDFLAGS_X $GLUT_LDFLAGS"
       AC_CHECK_LIB(glut, glutInit,
-         [WithPackages="$WithPackages GLUT";
+         [NCBI_PACKAGE(GLUT);
           GLUT_LIBS="$GLUT_LDFLAGS $X_LIBS -lglut -lGLU -lGL $X_ALL_LIBS"
           AC_DEFINE(HAVE_LIBGLUT, 1, [Define to 1 if you have libglut.])],
-         [WithoutPackages="$WithoutPackages GLUT"; GLUT_LIBS=],
+         [GLUT_LIBS=],
          $OPENGL_LIBS)
    fi
 fi
@@ -3614,9 +3642,8 @@ if test "$with_fltk" = "no" ; then
    FLTK_INCLUDE=
    FLTK_LIBS=
    FLTK_LIBS_GL=
-   WithoutPackages="$WithoutPackages FLTK"
 else
-   WithPackages="$WithPackages FLTK"
+   NCBI_PACKAGE(FLTK)
    FLTK_CONFIG="$FLTK_BINPATH/fltk-config"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$FLTK_INCLUDE"; then
@@ -3697,9 +3724,8 @@ if test "$with_wxwin" = "no" ; then
    WXWIN_GL_LIBS=
    WXWIN_GL_STATIC_LIBS=
    WXWIN_POST_LINK=:
-   WithoutPackages="$WithoutPackages wxWindows"
 else
-   WithPackages="$WithPackages wxWindows"
+   NCBI_PACKAGE(wxWindows)
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIN_INCLUDE"; then
       WXWIN_INCLUDE="$baseflags `$wxconf --cflags`"
@@ -3791,9 +3817,8 @@ if test "$with_wxwidgets" = "no" ; then
    WXWIDGETS_GL_LIBS=
    WXWIDGETS_GL_STATIC_LIBS=
    WXWIDGETS_POST_LINK=:
-   WithoutPackages="$WithoutPackages wxWidgets"
 else
-   WithPackages="$WithPackages wxWidgets"
+   NCBI_PACKAGE(wxWidgets)
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
@@ -3843,9 +3868,8 @@ if test "$with_fastcgi" = "no" ; then
    FASTCGI_INCLUDE=
    FASTCGI_LIBS=
    FASTCGI_OBJS=
-   WithoutPackages="$WithoutPackages Fast-CGI"
 else
-   WithPackages="$WithPackages Fast-CGI"
+   NCBI_PACKAGE(Fast-CGI)
    AC_DEFINE(HAVE_LIBFASTCGI, 1,
              [Define to 1 if FastCGI libraries are available.])
 fi
@@ -3910,7 +3934,6 @@ if test "$with_sss" = "no" ; then
    NCBI_SSS_LIBPATH=
    LIBSSSUTILS=
    LIBSSSDB=
-   WithoutPackages="$WithoutPackages SSSUTILS SSSDB"
 else
    if test "$with_included_sss" = "yes"; then
       NCBI_SSS_LIBPATH= # Not needed
@@ -3934,12 +3957,11 @@ else
       if test "$ncbi_cv_lib_sssutils" = yes; then
          AC_DEFINE(HAVE_LIBSSSUTILS, 1,
                    [Define to 1 if the NCBI SSS UTILS library is available.])
-         WithPackages="$WithPackages SSSUTILS"
+         NCBI_PACKAGE(SSSUTILS)
       else
          with_sssutils="no"
          with_sss="no"
          LIBSSSUTILS=""
-         WithoutPackages="$WithoutPackages SSSUTILS"
       fi
    fi
 
@@ -3960,12 +3982,11 @@ else
       if test "$ncbi_cv_lib_sssdb" = "yes"; then
          AC_DEFINE(HAVE_LIBSSSDB, 1,
                    [Define to 1 if the NCBI SSS DB library is available.])
-         WithPackages="$WithPackages SSSDB"
+         NCBI_PACKAGE(SSSDB)
       else
          with_sssdb="no"
          with_sss="no"
          LIBSSSDB=""
-         WithoutPackages="$WithoutPackages SSSDB"
       fi
    fi
 fi
@@ -4016,9 +4037,8 @@ fi
 if test "$with_sp" = "no" ; then
    SP_INCLUDE=
    SP_LIBS=
-   WithoutPackages="$WithoutPackages SP"
 else
-   WithPackages="$WithPackages SP"
+   NCBI_PACKAGE(SP)
    AC_DEFINE(HAVE_LIBSP, 1, [Define to 1 if the SP SGML library is available.])
 fi
 
@@ -4074,14 +4094,13 @@ if test "$with_orbacus" != no; then
    fi
 fi
 if test "$with_orbacus" = no; then
-   WithoutPackages="$WithoutPackages ORBacus"
    ORBACUS_PATH=No_ORBacus
    ORBACUS_INCLUDE=
    ORBACUS_LIBPATH=
    LIBOB=
    LIBIMR=
 else
-   WithPackages="$WithPackages ORBacus"
+   NCBI_PACKAGE(ORBacus)
    AC_DEFINE(HAVE_ORBACUS, 1,
              [Define to 1 if the ORBacus CORBA package is available.])
 fi
@@ -4141,9 +4160,8 @@ if test "$with_icu" = "no" ; then
    ICU_INCLUDE=
    ICU_LIBS=
    ICU_STATIC_LIBS=
-   WithoutPackages="$WithoutPackages ICU"
 else
-   WithPackages="$WithPackages ICU"
+   NCBI_PACKAGE(ICU)
    ICU_CONFIG="`$ICU_BINPATH/icu-config --bindir`/icu-config"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$ICU_INCLUDE"; then
@@ -4226,9 +4244,8 @@ if test "$with_libxml" = "no"; then
    LIBXML_PATH="No_LIBXML"
    LIBXML_INCLUDE=
    LIBXML_LIBS=
-   WithoutPackages="$WithoutPackages LIBXML"
 else
-   WithPackages="$WithPackages LIBXML"
+   NCBI_PACKAGE(LIBXML)
    LIBXML_INCLUDE="$LIBXML_INCLUDE"
    AC_DEFINE(HAVE_LIBXML, 1, [Define to 1 if libxml2 is available.])
 fi
@@ -4304,10 +4321,9 @@ if test "$with_xerces" != no; then
    fi
 fi
 if test "$with_xerces" != no; then
-   WithPackages="$WithPackages Xerces"
+   NCBI_PACKAGE(Xerces)
    AC_DEFINE(HAVE_XERCES, 1, [Define to 1 if Xerces-C++ is available.])
 else
-   WithoutPackages="$WithoutPackages Xerces"
    XERCES_INCLUDE=
    XERCES_LIBS=
    XERCES_STATIC_LIBS=
@@ -4361,10 +4377,9 @@ if test "$with_xalan" != no; then
    fi
 fi
 if test "$with_xalan" != no; then
-   WithPackages="$WithPackages Xalan"
+   NCBI_PACKAGE(Xalan)
    AC_DEFINE(HAVE_XALAN, 1, [Define to 1 if Xalan-C++ is available.])
 else
-   WithoutPackages="$WithoutPackages Xalan"
    XALAN_INCLUDE=
    XALAN_LIBS=
    XALAN_STATIC_LIBS=
@@ -4492,9 +4507,8 @@ if test "$with_freetype" = "no" ; then
    FREETYPE_PATH="No_FREETYPE"
    FREETYPE_INCLUDE=
    FREETYPE_LIBS=
-   WithoutPackages="$WithoutPackages FreeType"
 else
-   WithPackages="$WithPackages FreeType"
+   NCBI_PACKAGE(FreeType)
    AC_DEFINE(HAVE_FREETYPE, 1, [Define to 1 if FreeType is available.])
 fi
 
@@ -4519,7 +4533,7 @@ test $ncbi_cv_sys_semaphores = no  &&  with_local_lbsm=no
 for fff in $local_lbsm ; do
    if test ! -f ${real_srcdir}/src/connect/${fff}.c ; then
       if test "$with_local_lbsm" = "yes" ; then
-         AC_MSG_ERROR(["--with-local-lbsm:  src/connect/${fff}.c is  missing"])
+         AC_MSG_ERROR([--with-local-lbsm:  src/connect/${fff}.c is  missing])
       fi
       with_local_lbsm="no"
       break
@@ -4527,10 +4541,9 @@ for fff in $local_lbsm ; do
 done
 
 if test "$with_local_lbsm" = "no" ; then
-   WithoutProjects="$WithoutProjects local_lbsm"
    local_lbsm="ncbi_lbsmd_stub"
 else
-   WithProjects="$WithProjects local_lbsm"
+   NCBI_PROJECT(local_lbsm)
    AC_DEFINE(HAVE_LOCAL_LBSM, 1,
              [Define to 1 if local LBSM support is available.])
 fi
@@ -4543,7 +4556,7 @@ connext="ncbi_dblb ncbi_ifconf ncbi_localnet"
 for fff in $connext ; do
    if test ! -f ${real_srcdir}/src/connect/ext/${fff}.c ; then
       if test "$with_connext" = "yes" ; then
-         AC_MSG_ERROR(["--with-connext:  src/connect/ext/${fff}.c is missing"])
+         AC_MSG_ERROR([--with-connext:  src/connect/ext/${fff}.c is missing])
       fi
       with_connext="no"
       break
@@ -4558,11 +4571,10 @@ if test "$with_connext" = "no"; then
 fi
 
 if test "$with_connext" = "no" ; then
-   WithoutProjects="$WithoutProjects connext"
    CONNEXT=
    XCONNEXT=
 else
-   WithProjects="$WithProjects connext"
+   NCBI_PROJECT(connext)
    CONNEXT=connext
    XCONNEXT=xconnext
    AC_DEFINE(HAVE_LIBCONNEXT, 1,
@@ -4577,7 +4589,7 @@ ncbi_crypt="ncbi_crypt"
 for fff in $ncbi_crypt ; do
    if test ! -f ${real_srcdir}/src/connect/ext/${fff}.c ; then
       if test "$with_ncbi_crypt" = "yes" ; then
-         AC_MSG_ERROR(["--with-ncbi-crypt:  src/connect/ext/${fff}.c is missing"])
+         AC_MSG_ERROR([--with-ncbi-crypt:  src/connect/ext/${fff}.c is missing])
       fi
       with_ncbi_crypt="no"
       break
@@ -4585,10 +4597,9 @@ for fff in $ncbi_crypt ; do
 done
 
 if test "$with_ncbi_crypt" = "no" ; then
-   WithoutProjects="$WithoutProjects ncbi_crypt"
    ncbi_crypt="ncbi_crypt_stub"
 else
-   WithProjects="$WithProjects ncbi_crypt"
+   NCBI_PROJECT(ncbi_crypt)
    AC_DEFINE(HAVE_NCBI_CRYPT, 1,
       [Define to 1 if the real version of ncbi_crypt support is available.])
 fi
@@ -4603,16 +4614,15 @@ fi
 if test ! -f ${real_srcdir}/src/serial/Makefile.in  -o  \
         ! -d ${real_srcdir}/include/serial ; then
    if test "$with_serial" = "yes" ; then
-      AC_MSG_ERROR(["--with-serial:  SERIAL sources are missing"])
+      AC_MSG_ERROR([--with-serial:  SERIAL sources are missing])
    fi
    with_serial="no"
 fi
 
 if test "$with_serial" = "no" ; then
-   WithoutProjects="$WithoutProjects serial"
    serial=
 else
-   WithProjects="$WithProjects serial"
+   NCBI_PROJECT(serial)
    serial="serial"
 fi
 
@@ -4626,16 +4636,15 @@ fi
 if test ! -f ${real_srcdir}/src/objects/Makefile.in  -o  \
         ! -d ${real_srcdir}/include/objects ; then
    if test "$with_objects" = "yes" ; then
-      AC_MSG_ERROR(["--with-objects:  OBJECTS sources are missing"])
+      AC_MSG_ERROR([--with-objects:  OBJECTS sources are missing])
    fi
    with_objects="no"
 fi
 
 if test "$with_objects" = "no"  -o  -z "$serial" ; then
-   WithoutProjects="$WithoutProjects objects"
    objects=
 else
-   WithProjects="$WithProjects objects"
+   NCBI_PROJECT(objects)
    objects="objects"
 fi
 
@@ -4649,18 +4658,17 @@ fi
 if test ! -f ${real_srcdir}/src/bdb/Makefile.in  -o  ! -d ${real_srcdir}/include/bdb
 then
    if test "$with_bdb" = "yes" ; then
-      AC_MSG_ERROR(["--with-bdb:  BDB sources are missing"])
+      AC_MSG_ERROR([--with-bdb:  BDB sources are missing])
    fi
    with_bdb="no"
 fi
 
 if test "$with_bdb" = "no" ; then
-   WithoutProjects="$WithoutProjects bdb"
    bdb=
    BDB_LIB=
    BDB_CACHE_LIB=
 else
-   WithProjects="$WithProjects bdb"
+   NCBI_PROJECT(bdb)
    bdb="bdb"
    BDB_LIB="bdb"
    AC_DEFINE(HAVE_BDB, 1,
@@ -4681,16 +4689,15 @@ fi
 if test ! -f ${real_srcdir}/src/dbapi/Makefile.in  -o  \
         ! -d ${real_srcdir}/include/dbapi ; then
    if test "$with_dbapi" = "yes" ; then
-      AC_MSG_ERROR(["--with-dbapi:  DBAPI sources are missing"])
+      AC_MSG_ERROR([--with-dbapi:  DBAPI sources are missing])
    fi
    with_dbapi="no"
 fi
 
 if test "$with_dbapi" = "no" ; then
-   WithoutProjects="$WithoutProjects dbapi"
    dbapi=
 else
-   WithProjects="$WithProjects dbapi"
+   NCBI_PROJECT(dbapi)
    dbapi="dbapi"
 fi
 
@@ -4704,16 +4711,15 @@ fi
 if test ! -f ${real_srcdir}/src/app/Makefile.in  -o  \
         ! -d ${real_srcdir}/include/app ; then
    if test "$with_app" = "yes" ; then
-      AC_MSG_ERROR(["--with-app:  APP sources are missing"])
+      AC_MSG_ERROR([--with-app:  APP sources are missing])
    fi
    with_app="no"
 fi
 
 if test "$with_app" = "no" ; then
-   WithoutProjects="$WithoutProjects app"
    app=
 else
-   WithProjects="$WithProjects app"
+   NCBI_PROJECT(app)
    app="app"
 fi
 
@@ -4729,18 +4735,16 @@ if test ! -f ${real_srcdir}/src/ctools/Makefile.in  -o  \
 then
    if test "$with_ctools" = "yes" ; then
       if test "$with_ncbi_c" = "no" ; then
-         AC_MSG_ERROR(["--with-ctools:  NCBI C Toolkit is missing"])
+         AC_MSG_ERROR([--with-ctools:  NCBI C Toolkit is missing])
       else
-         AC_MSG_ERROR(["--with-ctools:  CTOOLS sources are missing"])
+         AC_MSG_ERROR([--with-ctools:  CTOOLS sources are missing])
       fi
    fi
    with_ctools="no"
 fi
 
-if test "$with_ctools" = "no" ; then
-   WithoutProjects="$WithoutProjects ctools"
-else
-   WithProjects="$WithProjects ctools"
+if test "$with_ctools" != "no" ; then
+   NCBI_PROJECT(ctools)
 fi
 
 
@@ -4755,19 +4759,18 @@ if test ! -f ${real_srcdir}/src/gui/Makefile.in  -o  ! -d ${real_srcdir}/include
 then
    if test "$with_gui" = "yes" ; then
       if test "$with_fltk" = "no" ; then
-         AC_MSG_ERROR(["--with-gui:  FLTK package is missing"])
+         AC_MSG_ERROR([--with-gui:  FLTK package is missing])
       else
-         AC_MSG_ERROR(["--with-gui:  GUI sources are missing"])
+         AC_MSG_ERROR([--with-gui:  GUI sources are missing])
       fi
    fi
    with_gui="no"
 fi
 
 if test "$with_gui" = "no" ; then
-   WithoutProjects="$WithoutProjects gui"
    gui=
 else
-   WithProjects="$WithProjects gui"
+   NCBI_PROJECT(gui)
    gui="gui"
 fi
 
@@ -4781,16 +4784,15 @@ fi
 if test ! -f ${real_srcdir}/src/algo/Makefile.in  -o  ! -d ${real_srcdir}/include/algo
 then
    if test "$with_algo" = "yes" ; then
-      AC_MSG_ERROR(["--with-algo:  ALGO sources are missing"])
+      AC_MSG_ERROR([--with-algo:  ALGO sources are missing])
    fi
    with_algo="no"
 fi
 
 if test "$with_algo" = "no" ; then
-   WithoutProjects="$WithoutProjects algo"
    algo=
 else
-   WithProjects="$WithProjects algo"
+   NCBI_PROJECT(algo)
    algo="algo"
 fi
 
@@ -4818,9 +4820,9 @@ else
    fi
    if test -n "$reason" -a "$with_internal" = "yes"; then
       if test -z "$with_projects"  -o  "$with_projects" = "no"; then
-         AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects: missing $reason"])
+         AC_MSG_ERROR([--with-internal:  Cannot build INTERNAL projects: missing $reason])
       else
-         AC_MSG_WARN(["--with-internal:  Cannot build all INTERNAL projects: missing $reason"])
+         AC_MSG_WARN([--with-internal:  Cannot build all INTERNAL projects: missing $reason])
          OPT_GROUPS="$OPT_GROUPS internal"
          internal="internal"
       fi
@@ -4830,6 +4832,44 @@ else
    else
       OPT_GROUPS="$OPT_GROUPS internal"
       internal="internal"
+   fi
+fi
+
+## Genome Workbench
+
+if test "$with_gbench" != "no"  -a  -d ${real_srcdir}/src/gui/gbench \
+    -a  -d ${real_srcdir}/src/gui/plugins; then
+   reason=""
+   sep=
+   if test "$with_fltk" = "no"; then
+     reason="$reason${sep}FLTK"
+     sep=", "
+   fi
+   if test "$with_opengl" = "no"; then
+     reason="$reason${sep}OpenGL"
+     sep=", "
+   fi
+   if test "$with_sqlite" = "no"; then
+     reason="$reason${sep}SQLite"
+     sep=", "
+   fi
+   if test "$with_bdb" = "no"; then
+     reason="$reason${sep}Berkeley DB 4.3"
+     sep=", "
+   fi
+   if test "$with_mt" = "no"; then
+     reason="$reason${sep}multithreading"
+     sep=", "
+   fi
+   if test "$with_dll" != "yes"; then
+     reason="$reason${sep}full-DLL setup"
+     sep=", "
+   fi
+   # Anything else?
+   if test -n "$reason" -a "$with_gbench" = "yes"; then
+      AC_MSG_ERROR([--with-gbench:  Cannot build Genome Workbench: missing $reason])
+   elif test -z "$reason"; then
+      NCBI_PROJECT(gbench)
    fi
 fi
 
@@ -4884,12 +4924,22 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
    if test "$with_check" != "yes" ; then
       CHECK_ARG=`echo "$with_check" | sed 's/%/ /g'`
    fi
-   WithFeatures="$WithFeatures check"
-else
-   WithoutFeatures="$WithoutFeatures check"
+   NCBI_FEATURE(check)
 fi
 CHECK_TOOLS=$with_check_tools
 
+### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
+### but that's life.
+m4_foreach(CATEGORY, [Features,Packages,Projects],
+  [for x in m4_indir([NCBI_ALL_]CATEGORY); do
+      case " [$With]CATEGORY " in
+         *" $x "*) ;;
+         *) [Without]CATEGORY="[$Without]CATEGORY[$Without]CATEGORY[Sep$x]"
+            [Without]CATEGORY[Sep]=" "
+          ;;
+      esac
+   done
+  ])
 
 ### Cleanup
 ### ---------------------------------
@@ -5269,13 +5319,13 @@ fi
 
 dnl print out additional configuration options
 case "$LIB_OR_DLL" in
-both) DLL_USAGE="LIBRARIES:   build both static and dynamic by default" ;;
-dll)  DLL_USAGE="LIBRARIES:   build as dynamic by default" ;;
+both) DLL_USAGE="LIBRARIES:  build both static and dynamic by default" ;;
+dll)  DLL_USAGE="LIBRARIES:  build as dynamic by default" ;;
 lib)
    if test "$with_dll" = "no" ; then
-      DLL_USAGE="LIBRARIES:   build as static only"
+      DLL_USAGE="LIBRARIES:  build as static only"
    else
-      DLL_USAGE="LIBRARIES:   build as static by default"
+      DLL_USAGE="LIBRARIES:  build as static by default"
    fi
    ;;
 esac
