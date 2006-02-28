@@ -53,6 +53,7 @@
 #include <serial/objostrasnb.hpp> 
 #include <serial/objistrasnb.hpp> 
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ext/ncbi_localnet.h>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -90,6 +91,8 @@
 #include <util/tables/raw_scoremat.h>
 #include <objtools/readers/getfeature.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
+
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE (sequence);
@@ -144,6 +147,15 @@ type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', \
 'getSeqAlignment%d', 'getSeqGi')\"></form></td><td><FORM><input \
 type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
 'getSeqAlignment%d', 'getSeqGi')\"></form>";
+
+
+static string k_GetTreeViewForm =  "<FORM  method=\"post\" \
+action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&dbname=%s&queryID=%s\" \
+name=\"tree%s%d\" target=\"trv%s\"> \
+<input type=button value=\"Tree View\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
+<input type=\"hidden\" name=\"sequenceSet\" value=\"\"></form>";
+
+
 
 CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, 
                                    CScope& scope,
@@ -365,6 +377,27 @@ static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope)
     return frame;
 }
 
+
+///Determine if the user is a local user at the NCBI.
+///@return: true if local user
+///
+static bool s_IsLocalCgiClient(void)
+{
+    bool isLocal = false;
+    unsigned int ip = NcbiGetCgiClientIP(eCgiClientIP_TryAll, NULL);
+
+    const int kMaxIPAddrLen = 16;
+    char addr[kMaxIPAddrLen];
+    if(ip) {
+        if (SOCK_ntoa(ip,addr,sizeof(addr)) == 0) {
+            isLocal = NcbiIsLocalIP(ip);
+        }
+    }
+
+    return isLocal;
+}
+
+
 ///return the get sequence table for html display
 ///@param form_name: form name
 ///@parm db_is_na: is the db of nucleotide type?
@@ -372,21 +405,51 @@ static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope)
 ///@return: the from string
 ///
 static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
-                           int db_type)
+                           int db_type,const char *dbName,const char *rid, const char *queryID)
 {
-    char buf[2048] = {""};
-    if(form_name){
+
+    char buf[4096] = {""};
+    if(form_name){             
+        string localClientButtons = "";
+        if(s_IsLocalCgiClient()) {
+            localClientButtons = k_GetTreeViewForm + "</td><td>";
+        }
+
         string template_str = "<table border=\"0\"><tr><td>" + \
-            k_GetSeqSubmitForm[db_type] + \
-            "</td><td>" + \
-            k_GetSeqSelectForm +\
-            "</td></tr></table>";
-        sprintf(buf, template_str.c_str(), form_name, query_number, \
-                db_is_na?1:0, query_number, form_name, query_number, db_type,
-                query_number, query_number);      
+                            k_GetSeqSubmitForm[db_type] + \
+                            "</td><td>" + \
+                            k_GetSeqSelectForm + \
+                            "</td><td>" + \
+                            localClientButtons + \
+                            "</table>";
+
+        if(s_IsLocalCgiClient()) {
+            sprintf(buf, template_str.c_str(), form_name, query_number,
+                db_is_na?1:0, query_number, form_name, query_number, db_type, 
+                query_number,query_number,             
+                rid,dbName,queryID,form_name,query_number,rid,query_number,form_name,query_number);  	        
         
+        }
+        else {
+             sprintf(buf, template_str.c_str(), form_name, query_number, \
+                db_is_na?1:0, query_number, form_name, query_number, db_type, 
+                query_number,query_number);              
+        }
+
     }
     return buf;
+}
+
+///Gets Query Seq ID from Seq Align
+///@param actual_aln_list: align set for one query
+///@return: string query ID
+static string s_GetQueryIDFromSeqAlign(const CSeq_align_set& actual_aln_list) 
+{
+    CRef<CSeq_align> first_aln = actual_aln_list.Get().front();
+    const CSeq_id& query_SeqID = first_aln->GetSeq_id(0);
+    string queryID;
+    query_SeqID.GetLabel(&queryID);    
+    return queryID;
 }
 
 ///return id type specified or null ref
@@ -1428,7 +1491,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     //get sequence 
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){ 
         out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber, 
-                          x_GetDbType(actual_aln_list));
+                          x_GetDbType(actual_aln_list),m_DbName.c_str(),m_Rid.c_str(),s_GetQueryIDFromSeqAlign(actual_aln_list).c_str());                          
         out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
     }
     //begin to display
@@ -1693,9 +1756,9 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
         delete [] mix;
     }
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){
-        out<<"</form>\n";
+        out<<"</form>\n";        
         out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa, m_QueryNumber, 
-                          x_GetDbType(actual_aln_list));
+                          x_GetDbType(actual_aln_list),m_DbName.c_str(),m_Rid.c_str(),s_GetQueryIDFromSeqAlign(actual_aln_list).c_str());                         
     }
 }
 
@@ -2542,6 +2605,8 @@ static string s_MakeURLSafe(char* src){
 }
 
 
+
+
 string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids, 
                                           int row,
                                           const string& alternative_url,
@@ -3064,6 +3129,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.105  2006/02/28 17:30:20  zaretska
+*Added Tree view button for local users to the results page
+*
 *Revision 1.104  2006/02/23 21:01:08  jianye
 *fixed compiler warnings
 *
