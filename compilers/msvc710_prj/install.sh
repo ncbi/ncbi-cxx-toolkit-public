@@ -42,8 +42,7 @@ docdir="$target"/doc
 scriptdir="$target"/scripts
 incdir="$target"/include
 srcdir="$target"/src
-dbgdir="$target"/Debug
-libdir="$target"/Release
+libdir="$target"/lib
 bindir="$target"/bin
 cldir="$target"/compilers
 
@@ -88,21 +87,21 @@ find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
 # Libraries
 for i in 'Debug' 'Release' ; do
   for j in '' 'DLL' ; do
-    if test -d "$builddir"/compilers/$compiler/static/lib/$i$j ; then
-      makedir "$target/$i$j" -p
-      cd "$builddir"/compilers/$compiler/static/lib/$i$j
-      cp -p *.lib "$target/$i$j"
-    fi
-    if test -d "$builddir"/compilers/$compiler/dll/lib/$i$j ; then
-      makedir "$target/$i$j" -p
-      cd "$builddir"/compilers/$compiler/dll/lib/$i$j
-      cp -p *.lib "$target/$i$j"
-    fi
-    if test -d "$builddir"/compilers/$compiler/dll/bin/$i$j ; then
-      makedir "$target/$i$j" -p
-      cd "$builddir"/compilers/$compiler/dll/bin/$i$j
-      cp -p *.lib *.dll *.exp "$target/$i$j"
-    fi
+    for b in 'static' 'dll' ; do
+
+      if test -d "$builddir"/compilers/$compiler/$b/lib/$i$j ; then
+        makedir "$libdir/$b/$i$j" -p
+        cd "$builddir"/compilers/$compiler/$b/lib/$i$j
+        cp -p *.lib "$libdir/$b/$i$j"
+      fi
+      if test "$b"=='dll' ; then
+        if test -d "$builddir"/compilers/$compiler/$b/bin/$i$j ; then
+          makedir "$libdir/$b/$i$j" -p
+          cd "$builddir"/compilers/$compiler/$b/bin/$i$j
+          cp -p *.lib *.dll *.exp "$libdir/$b/$i$j"
+        fi
+      fi
+    done
   done
 done
 
