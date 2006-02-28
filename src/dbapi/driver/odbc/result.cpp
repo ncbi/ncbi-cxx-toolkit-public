@@ -195,7 +195,7 @@ int CODBC_RowResult::GetColumnNum(void) const
 int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
                               SQLINTEGER buffer_size)
 {
-    SQLINTEGER f;
+    SQLLEN f;
 
     switch(SQLGetData(GetHandle(), m_CurrItem+1, target_type, buffer, buffer_size, &f)) {
     case SQL_SUCCESS_WITH_INFO:
@@ -531,7 +531,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
     case SQL_WLONGVARCHAR:
     case SQL_LONGVARBINARY:
     case SQL_LONGVARCHAR: {
-        SQLINTEGER f;
+        SQLLEN f;
         switch(item_buf->GetType()) {
         case eDB_Text: {
             CDB_Stream* val = (CDB_Stream*) item_buf;
@@ -730,7 +730,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     case SQL_WLONGVARCHAR:
     case SQL_LONGVARCHAR: {
         CDB_Text* val = new CDB_Text;
-        SQLINTEGER f;
+        SQLLEN f;
 
         for(;;) {
             switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
@@ -760,7 +760,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
 
     case SQL_LONGVARBINARY: {
         CDB_Image* val = new CDB_Image;
-        SQLINTEGER f;
+        SQLLEN f;
         for(;;) {
             switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
             case SQL_SUCCESS_WITH_INFO:
@@ -816,7 +816,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
         return 0;
     }
 
-    SQLINTEGER f= 0;
+    SQLLEN f = 0;
 
     if(is_null) *is_null= false;
 
@@ -1161,6 +1161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/02/28 14:00:47  ssikorsk
+ * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
+ *
  * Revision 1.25  2005/11/28 13:22:59  ssikorsk
  * Report SQL statement and database connection parameters in case
  * of an error in addition to a server error message.

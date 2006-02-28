@@ -248,7 +248,7 @@ CDB_Result* CODBC_RPCCmd::Result()
         }
 
         if(nof_cols < 1) { // no data in this result set
-            SQLINTEGER rc;
+            SQLLEN rc;
             switch(SQLRowCount(GetHandle(), &rc)) {
                 case SQL_SUCCESS_WITH_INFO:
                     ReportErrors(); 
@@ -380,7 +380,7 @@ CODBC_RPCCmd::~CODBC_RPCCmd()
 
 
 bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
-                                   CMemPot& bind_guard, SQLINTEGER* indicator)
+                                   CMemPot& bind_guard, SQLLEN* indicator)
 {
     char p_nm[16], tbuf[32];
     // check if we do have a named parameters (first named - all named)
@@ -602,6 +602,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/02/28 14:00:47  ssikorsk
+ * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
+ *
  * Revision 1.17  2006/02/22 15:15:51  ssikorsk
  * *** empty log message ***
  *

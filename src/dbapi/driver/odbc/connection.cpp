@@ -45,7 +45,7 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   bool is_text, 
                                   bool logit, 
                                   SQLPOINTER id, 
-                                  SQLINTEGER* ph);
+                                  SQLLEN* ph);
 
 static bool ODBC_xSendDataGetId(CStatementBase& stmt,
                                 SQLPOINTER* id);
@@ -327,7 +327,7 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
                                   bool is_text, 
                                   bool logit, 
                                   SQLPOINTER id, 
-                                  SQLINTEGER* ph)
+                                  SQLLEN* ph)
 {
     string q= "update ";
     q+= descr_in.TableName();
@@ -359,7 +359,7 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
     }
             
     SQLSMALLINT par_type, par_dig, par_null;
-    SQLUINTEGER par_size;
+    SQLULEN par_size;
 
 #if 0
     switch(SQLNumParams(stmt.GetHandle(), &par_dig)) {
@@ -649,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/28 14:00:47  ssikorsk
+ * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
+ *
  * Revision 1.16  2006/02/17 18:00:29  ssikorsk
  * Set CODBC_Connection::m_BCPable to false in ctor.
  *

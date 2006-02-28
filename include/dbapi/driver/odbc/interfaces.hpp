@@ -358,7 +358,7 @@ protected:
     virtual void Release(void);
 
 private:
-    bool x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER* indicator);
+    bool x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* indicator);
     bool xCheck4MoreResults(void);
 
     string            m_Query;
@@ -407,7 +407,7 @@ protected:
 
 private:
     bool x_AssignParams(string& cmd, string& q_exec, string& q_select,
-        CMemPot& bind_guard, SQLINTEGER* indicator);
+        CMemPot& bind_guard, SQLLEN* indicator);
     bool xCheck4MoreResults(void);
 
     string            m_Query;
@@ -611,7 +611,7 @@ private:
 #define ODBC_COLUMN_NAME_SIZE 80
     typedef struct t_SODBC_ColDescr {
         SQLCHAR     ColumnName[ODBC_COLUMN_NAME_SIZE];
-        SQLUINTEGER ColumnSize;
+        SQLULEN     ColumnSize;
         SQLSMALLINT DataType;
         SQLSMALLINT DecimalDigits;
     } SODBC_ColDescr;
@@ -720,6 +720,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/28 13:59:38  ssikorsk
+ * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
+ *
  * Revision 1.19  2006/01/23 13:17:11  ssikorsk
  * Renamed CODBCContext::MakeConnection to MakeIConnection.
  *

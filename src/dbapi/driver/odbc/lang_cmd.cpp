@@ -250,7 +250,7 @@ CDB_Result* CODBC_LangCmd::Result()
         }
 
         if(nof_cols < 1) { // no data in this result set
-            SQLINTEGER rc;
+            SQLLEN rc;
             switch(SQLRowCount(GetHandle(), &rc)) {
                 case SQL_SUCCESS_WITH_INFO:
                     ReportErrors();
@@ -345,7 +345,7 @@ CODBC_LangCmd::~CODBC_LangCmd()
 }
 
 
-bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER* indicator)
+bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* indicator)
 {
     for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
         if(m_Params.GetParamStatus(n) == 0) continue;
@@ -562,6 +562,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/02/28 14:00:47  ssikorsk
+ * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
+ *
  * Revision 1.18  2006/02/22 15:15:51  ssikorsk
  * *** empty log message ***
  *
