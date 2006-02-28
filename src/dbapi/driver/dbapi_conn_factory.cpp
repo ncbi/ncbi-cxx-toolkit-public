@@ -181,11 +181,11 @@ CDBConnectionFactory::MakeDBConnection(
                 I_DriverContext::SConnAttr cur_conn_attr(conn_attr);
 
                 cur_conn_attr.srv_name = dsp_srv->GetName();
-                t_con = MakeValidConnection(ctx, cur_conn_attr, validator);
-
-                _ASSERT(t_con);
                 
-                ++m_DispatchNumMap[conn_attr.srv_name];
+                // MakeValidConnection may return NULL here because a newly 
+                // create connection may not pass validation.
+                t_con = MakeValidConnection(ctx, cur_conn_attr, validator);
+                
             } catch(const CDB_Exception&) {
                 // Ignore exceptions. We still can redispatch ...
             }
@@ -194,6 +194,8 @@ CDBConnectionFactory::MakeDBConnection(
                 // We couldn't connect ...
                 // Redispach ...
                 t_con = DispatchServerName(ctx, conn_attr, validator);
+            } else {
+                ++m_DispatchNumMap[conn_attr.srv_name];
             }
         }
     }
@@ -422,6 +424,10 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/02/28 16:02:31  ssikorsk
+ * Redispatch connection if previously successfully validated connection
+ * parameters are not valid with currently created connection.
+ *
  * Revision 1.5  2006/02/22 16:05:35  ssikorsk
  * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
  *
