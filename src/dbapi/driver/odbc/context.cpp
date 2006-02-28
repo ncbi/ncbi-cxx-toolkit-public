@@ -192,14 +192,14 @@ CODBCContext::CODBCContext(SQLLEN version, bool use_dsn)
 
 bool CODBCContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    m_LoginTimeout= (SQLUINTEGER)nof_secs;
+    m_LoginTimeout = (SQLULEN)nof_secs;
     return true;
 }
 
 
 bool CODBCContext::SetTimeout(unsigned int nof_secs)
 {
-    m_Timeout= (SQLUINTEGER)nof_secs;
+    m_Timeout = (SQLULEN)nof_secs;
 
     for (int i = m_NotInUse.NofItems(); i--;) {
         CODBC_Connection* t_con
@@ -290,7 +290,7 @@ CODBCContext::~CODBCContext()
 
 void CODBCContext::ODBC_SetPacketSize(SQLUINTEGER packet_size)
 {
-    m_PacketSize = packet_size;
+    m_PacketSize = (SQLULEN)packet_size;
 }
 
 
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/02/28 15:14:30  ssikorsk
+ * Replaced argument type SQLINTEGER on SQLLEN where needed.
+ *
  * Revision 1.40  2006/02/28 15:00:45  ssikorsk
  * Use larger type (SQLLEN) instead of SQLINTEGER where it needs to be converted to a pointer.
  *

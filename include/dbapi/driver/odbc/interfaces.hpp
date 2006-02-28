@@ -216,8 +216,8 @@ protected:
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release(void);
 
-    void ODBC_SetTimeout(SQLUINTEGER nof_secs);
-    void ODBC_SetTextImageSize(SQLUINTEGER nof_bytes);
+    void ODBC_SetTimeout(SQLULEN nof_secs);
+    void ODBC_SetTextImageSize(SQLULEN nof_bytes);
 
     void DropCmd(CDB_BaseEnt& cmd);
 
@@ -721,6 +721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/02/28 15:13:59  ssikorsk
+ * Replaced argument type SQLINTEGER on SQLLEN where needed.
+ *
  * Revision 1.22  2006/02/28 15:00:16  ssikorsk
  * Use larger type (SQLLEN) instead of SQLINTEGER where it needs to be converted to a pointer.
  *

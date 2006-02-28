@@ -159,7 +159,7 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_i
     CStatementBase stmt(*this);
 
     SQLPOINTER  p = (SQLPOINTER)2;
-    SQLINTEGER  s = img.Size();
+    SQLLEN      s = img.Size();
     SQLLEN      ph;
 
     if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, false, log_it, p, &ph)) ||
@@ -178,7 +178,7 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
     CStatementBase stmt(*this);
 
     SQLPOINTER  p = (SQLPOINTER)2;
-    SQLINTEGER  s = txt.Size();
+    SQLLEN      s = txt.Size();
     SQLLEN      ph;
 
     if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, true, log_it, p, &ph)) ||
@@ -483,8 +483,8 @@ bool CODBC_Connection::x_SendData(CStatementBase& stmt,
     return true;
 }
         
-void CODBC_Connection::ODBC_SetTimeout(SQLUINTEGER nof_secs) {}
-void CODBC_Connection::ODBC_SetTextImageSize(SQLUINTEGER nof_bytes) {}
+void CODBC_Connection::ODBC_SetTimeout(SQLULEN nof_secs) {}
+void CODBC_Connection::ODBC_SetTextImageSize(SQLULEN nof_bytes) {}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -649,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/28 15:14:30  ssikorsk
+ * Replaced argument type SQLINTEGER on SQLLEN where needed.
+ *
  * Revision 1.19  2006/02/28 15:00:45  ssikorsk
  * Use larger type (SQLLEN) instead of SQLINTEGER where it needs to be converted to a pointer.
  *
