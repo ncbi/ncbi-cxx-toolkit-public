@@ -525,8 +525,6 @@ SetupQueries_OMF(IBlastQuerySource& queries,
     for(TSeqPos index = 0; index < queries.Size(); index++) {
         ENa_strand strand = eNa_strand_unknown;
         
-        CRef<CBlastQueryFilteredFrames> frame_to_bsl;
-        
         try {
 
             if ((is_na || translate) &&
@@ -544,10 +542,8 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                 strand = strand_opt;
             }
             
-            frame_to_bsl =  s_GetRestrictedBlastSeqLocs(queries,
-                                                        index,
-                                                        qinfo,
-                                                        prog);
+            CRef<CBlastQueryFilteredFrames> frame_to_bsl = 
+                s_GetRestrictedBlastSeqLocs(queries, index, qinfo, prog);
             
             // Set the id if this is possible
             if (const CSeq_id* id = queries.GetSeqId(index)) {
@@ -625,6 +621,13 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                 }
             }
 
+            TSeqPos qlen = BlastQueryInfoGetQueryLength(qinfo, prog, index);
+            
+            s_AddMask(prog, mask, index, *frame_to_bsl, strand, qlen);
+            
+            // AddMask releases the elements of frame_to_bsl that it uses;
+            // the rest are freed by frame_to_bsl in the destructor.
+        
         } catch (const CException& e) {
             // FIXME: is index this the right value for the 2nd arg?
             CRef<CSearchMessage> m
@@ -633,13 +636,6 @@ SetupQueries_OMF(IBlastQuerySource& queries,
             messages[index].push_back(m);
             s_InvalidateQueryContexts(qinfo, index);
         }
-        
-        TSeqPos qlen = BlastQueryInfoGetQueryLength(qinfo, prog, index);
-        
-        s_AddMask(prog, mask, index, *frame_to_bsl, strand, qlen);
-        
-        // AddMask releases the elements of frame_to_bsl that it uses;
-        // the rest are freed by frame_to_bsl in the destructor.
         
         ctx_index += kNumContexts;
     }
@@ -1579,6 +1575,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.107  2006/02/28 17:14:32  camacho
+ * Reduce the scope of frame_to_bsl so that a non-NULL object is always passed to
+ * s_AddMask. The object might be NULL in case of an invalid gi.
+ *
  * Revision 1.106  2006/02/27 15:43:47  camacho
  * Fixed bug in CBlastQuerySourceOM::GetMaskedRegions.
  * Made IBlastQuerySource::GetMaskedRegions a non-const method.
