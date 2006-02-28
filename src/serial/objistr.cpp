@@ -176,7 +176,7 @@ static CSafeStaticRef< CTls<int> > s_VerifyTLS;
 void CObjectIStream::SetVerifyDataThread(ESerialVerifyData verify)
 {
     x_GetVerifyDataDefault();
-    ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
         tls_verify != eSerialVerifyData_DefValueAlways) {
@@ -202,7 +202,7 @@ ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
         ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
         verify = ms_VerifyDataDefault;
     } else {
-        verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+        verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
         if (verify == eSerialVerifyData_Default) {
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 
@@ -243,7 +243,7 @@ static CSafeStaticRef< CTls<int> > s_SkipTLS;
 void CObjectIStream::SetSkipUnknownThread(ESerialSkipUnknown skip)
 {
     x_GetSkipUnknownDefault();
-    ESerialSkipUnknown tls_skip = ESerialSkipUnknown(long(s_SkipTLS->GetValue()));
+    ESerialSkipUnknown tls_skip = ESerialSkipUnknown(intptr_t(s_SkipTLS->GetValue()));
     if (tls_skip != eSerialSkipUnknown_Never &&
         tls_skip != eSerialSkipUnknown_Always) {
         s_SkipTLS->SetValue(reinterpret_cast<int*>(skip));
@@ -266,7 +266,7 @@ ESerialSkipUnknown CObjectIStream::x_GetSkipUnknownDefault(void)
         ms_SkipUnknownDefault == eSerialSkipUnknown_Always) {
         skip = ms_SkipUnknownDefault;
     } else {
-        skip = ESerialSkipUnknown(long(s_SkipTLS->GetValue()));
+        skip = ESerialSkipUnknown(intptr_t(s_SkipTLS->GetValue()));
         if (skip == eSerialSkipUnknown_Default) {
             if (ms_SkipUnknownDefault == eSerialSkipUnknown_Default) {
 
@@ -1591,6 +1591,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.142  2006/02/28 19:28:17  gouriano
+* MSVC x64 tuneup
+*
 * Revision 1.141  2006/01/19 18:21:57  gouriano
 * Added possibility to save bit string data in compressed format
 *

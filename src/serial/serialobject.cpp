@@ -130,7 +130,7 @@ static CSafeStaticRef< CTls<int> > s_VerifyTLS;
 void CSerialObject::SetVerifyDataThread(ESerialVerifyData verify)
 {
     x_GetVerifyData();
-    ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
         tls_verify != eSerialVerifyData_DefValueAlways) {
@@ -156,7 +156,7 @@ ESerialVerifyData CSerialObject::x_GetVerifyData(void)
         ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
         verify = ms_VerifyDataDefault;
     } else {
-        verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+        verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
         if (verify == eSerialVerifyData_Default) {
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 
@@ -603,6 +603,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/02/28 19:28:18  gouriano
+* MSVC x64 tuneup
+*
 * Revision 1.30  2005/12/05 20:09:21  gouriano
 * Added i/o stream manipulators with parameters for serializable objects
 *

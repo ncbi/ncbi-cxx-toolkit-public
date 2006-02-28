@@ -130,7 +130,7 @@ static CSafeStaticRef< CTls<int> > s_VerifyTLS;
 void CObjectOStream::SetVerifyDataThread(ESerialVerifyData verify)
 {
     x_GetVerifyDataDefault();
-    ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
         tls_verify != eSerialVerifyData_DefValueAlways) {
@@ -156,7 +156,7 @@ ESerialVerifyData CObjectOStream::x_GetVerifyDataDefault(void)
         ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
         verify = ms_VerifyDataDefault;
     } else {
-        verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+        verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
         if (verify == eSerialVerifyData_Default) {
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 
@@ -1026,6 +1026,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2006/02/28 19:28:18  gouriano
+* MSVC x64 tuneup
+*
 * Revision 1.105  2005/11/07 18:40:49  gouriano
 * Use Int8 in stream position calculations
 *
