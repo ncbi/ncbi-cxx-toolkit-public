@@ -394,12 +394,12 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
             localClientButtons = k_GetTreeViewForm + "</td><td>";
         }
 
-        string template_str = "<table border=\"0\"><tr><td>" + \
-                            k_GetSeqSubmitForm[db_type] + \
-                            "</td><td>" + \
-                            k_GetSeqSelectForm + \
-                            "</td><td>" + \
-                            localClientButtons + \
+        string template_str = "<table border=\"0\"><tr><td>" +
+                            k_GetSeqSubmitForm[db_type] +
+                            "</td><td>" +
+                            k_GetSeqSelectForm +
+                            "</td><td>" +
+                            localClientButtons +
                             "</table>";
 
         if(showTreeButtons) {
@@ -410,7 +410,7 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
         
         }
         else {
-             sprintf(buf, template_str.c_str(), form_name, query_number, \
+             sprintf(buf, template_str.c_str(), form_name, query_number,
                 db_is_na?1:0, query_number, form_name, query_number, db_type, 
                 query_number,query_number);              
         }
@@ -3110,6 +3110,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.107  2006/02/28 21:25:00  ucko
+*Fix line endings.
+*
 *Revision 1.106  2006/02/28 19:52:49  zaretska
 *Added new DispalyOption to for Tree view button
 *
