@@ -158,9 +158,9 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_i
 {
     CStatementBase stmt(*this);
 
-    SQLPOINTER p= (SQLPOINTER)2;
-    SQLINTEGER s= img.Size();
-    SQLINTEGER ph;
+    SQLPOINTER  p = (SQLPOINTER)2;
+    SQLINTEGER  s = img.Size();
+    SQLLEN      ph;
 
     if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, false, log_it, p, &ph)) ||
        (!ODBC_xSendDataGetId(stmt, &p ))) {
@@ -177,9 +177,9 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
 {
     CStatementBase stmt(*this);
 
-    SQLPOINTER p= (SQLPOINTER)2;
-    SQLINTEGER s= txt.Size();
-    SQLINTEGER ph;
+    SQLPOINTER  p = (SQLPOINTER)2;
+    SQLINTEGER  s = txt.Size();
+    SQLLEN      ph;
 
     if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, true, log_it, p, &ph)) ||
        (!ODBC_xSendDataGetId(stmt, &p))) {
@@ -649,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/02/28 14:27:30  ssikorsk
+ * Replaced int/SQLINTEGER variables with SQLLEN where needed.
+ *
  * Revision 1.17  2006/02/28 14:00:47  ssikorsk
  * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
  *

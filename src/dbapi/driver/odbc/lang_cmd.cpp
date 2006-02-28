@@ -46,17 +46,16 @@ CODBC_LangCmd::CODBC_LangCmd(
     CODBC_Connection* conn,
     const string& lang_query,
     unsigned int nof_params
-    )
-: CStatementBase(*conn)
-, m_Query(lang_query)
-, m_Params(nof_params)
+    ) :
+    CStatementBase(*conn),
+    m_Query(lang_query),
+    m_Params(nof_params),
+    m_Res(NULL),
+    m_RowCount(-1),
+    m_WasSent(false),
+    m_HasFailed(false)
 {
     _ASSERT( conn );
-
-    m_WasSent   =  false;
-    m_HasFailed =  false;
-    m_Res       =  0;
-    m_RowCount  = -1;
 
 /* This logic is not working for some reason
     if ( SQLSetStmtAttr(m_Cmd, SQL_ATTR_ROWS_FETCHED_PTR, &m_RowCount, sizeof(m_RowCount)) != SQL_SUCCESS ) {
@@ -100,8 +99,8 @@ bool CODBC_LangCmd::Send()
     string q_str;
 
     if(m_Params.NofParams() > 0) {
-        SQLINTEGER* indicator= (SQLINTEGER*)
-                bindGuard.Alloc(m_Params.NofParams()*sizeof(SQLINTEGER));
+        SQLLEN* indicator = (SQLLEN*)
+                bindGuard.Alloc(m_Params.NofParams() * sizeof(SQLLEN));
 
         if (!x_AssignParams(q_str, bindGuard, indicator)) {
             ResetParams();
@@ -128,7 +127,7 @@ bool CODBC_LangCmd::Send()
 
     case SQL_NO_DATA:
         m_hasResults= false;
-        m_RowCount= 0;
+        m_RowCount = 0;
         break;
 
     case SQL_ERROR:
@@ -562,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/28 14:27:30  ssikorsk
+ * Replaced int/SQLINTEGER variables with SQLLEN where needed.
+ *
  * Revision 1.19  2006/02/28 14:00:47  ssikorsk
  * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
  *

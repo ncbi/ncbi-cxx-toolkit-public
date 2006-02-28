@@ -95,8 +95,8 @@ bool CODBC_RPCCmd::Send()
     string q_str;
 
     if(m_Params.NofParams() > 0) {
-        SQLINTEGER* indicator= (SQLINTEGER*)
-                bindGuard.Alloc(m_Params.NofParams()*sizeof(SQLINTEGER));
+        SQLLEN* indicator= (SQLLEN*)
+                bindGuard.Alloc(m_Params.NofParams() * sizeof(SQLLEN));
 
         if (!x_AssignParams(q_str, main_exec_query, param_result_query, 
                           bindGuard, indicator)) {
@@ -602,6 +602,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/02/28 14:27:30  ssikorsk
+ * Replaced int/SQLINTEGER variables with SQLLEN where needed.
+ *
  * Revision 1.18  2006/02/28 14:00:47  ssikorsk
  * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
  *

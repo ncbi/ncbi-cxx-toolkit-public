@@ -79,7 +79,7 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
 CODBC_RowResult::CODBC_RowResult(
     CStatementBase& stmt,
     SQLSMALLINT nof_cols,
-    int* row_count
+    SQLLEN* row_count
     )
     : m_Stmt(stmt)
     , m_CurrItem(-1)
@@ -87,7 +87,7 @@ CODBC_RowResult::CODBC_RowResult(
     , m_RowCountPtr( row_count )
 {
     m_NofCols = nof_cols;
-    if(m_RowCountPtr) *m_RowCountPtr= 0;
+    if(m_RowCountPtr) *m_RowCountPtr = 0;
 
     SQLSMALLINT actual_name_size, nullable;
 
@@ -1161,6 +1161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/02/28 14:27:30  ssikorsk
+ * Replaced int/SQLINTEGER variables with SQLLEN where needed.
+ *
  * Revision 1.26  2006/02/28 14:00:47  ssikorsk
  * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
  *
