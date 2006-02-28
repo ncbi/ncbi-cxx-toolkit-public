@@ -364,7 +364,7 @@ private:
     string            m_Query;
     CDB_Params        m_Params;
     CODBC_RowResult*  m_Res;
-    int               m_RowCount;
+    SQLLEN            m_RowCount;
     bool              m_hasResults;
     bool              m_WasSent;
     bool              m_HasFailed;
@@ -418,7 +418,7 @@ private:
     bool              m_HasStatus;
     bool              m_hasResults;
     I_Result*         m_Res;
-    int               m_RowCount;
+    SQLLEN            m_RowCount;
 };
 
 
@@ -537,8 +537,9 @@ protected:
 
 private:
     void xCancel(void);
-    size_t            m_Bytes2go;
-    SQLINTEGER        m_ParamPH;
+
+    size_t  m_Bytes2go;
+    SQLLEN  m_ParamPH;
 };
 
 
@@ -558,7 +559,7 @@ protected:
     CODBC_RowResult(
         CStatementBase& stmt,
         SQLSMALLINT nof_cols,
-        int* row_count
+        SQLLEN* row_count
         );
     virtual ~CODBC_RowResult(void);
 
@@ -617,7 +618,7 @@ private:
     } SODBC_ColDescr;
 
     SODBC_ColDescr* m_ColFmt;
-    int* const      m_RowCountPtr;
+    SQLLEN* const   m_RowCountPtr;
 };
 
 
@@ -720,6 +721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/02/28 14:26:35  ssikorsk
+ * Replaced int/SQLINTEGER members with SQLLEN where needed.
+ *
  * Revision 1.20  2006/02/28 13:59:38  ssikorsk
  * Fixed argument type misuse (like SQLINTEGER and SQLLEN) for vc8-x64 sake.
  *
