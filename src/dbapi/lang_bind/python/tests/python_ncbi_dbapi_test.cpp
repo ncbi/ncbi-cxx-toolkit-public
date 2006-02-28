@@ -35,6 +35,7 @@
 // #include <boost/test/unit_test_result.hpp>
 
 #include "python_ncbi_dbapi_test.hpp"
+#include <test/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 
@@ -776,6 +777,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.24  2006/02/28 12:09:46  ivanov
+* #include <test/test_assert.h>
+*
 * Revision 1.23  2005/12/05 17:04:31  ucko
 * Add support for Boost 1.33.x, which is now installed on Solaris 10.
 *
