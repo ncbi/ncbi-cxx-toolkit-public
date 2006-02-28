@@ -132,7 +132,8 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
         eShowNoDeflineInfo = (1 << 18), //Don't show defline when eShowBlastInfo
                                         //is chosen
         eHyperLinkSlaveSeqid = (1 << 19),    //Hyperlink slave seqids 
-        eHyperLinkMasterSeqid = (1 << 20)    //Hyperlink master seqids 
+        eHyperLinkMasterSeqid = (1 << 20),    //Hyperlink master seqids 
+        eDisplayTreeView = (1 << 21),         // Display tree feature
     };
     
     ///Middle line style option
@@ -596,6 +597,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.45  2006/02/28 19:54:06  zaretska
+*Added new DispalyOption to for Tree view button
+*
 *Revision 1.44  2006/02/21 15:15:23  jianye
 *eMultiAlign to eMergeAlign and add seqid hyperlink
 *

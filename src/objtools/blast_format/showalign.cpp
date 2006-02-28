@@ -53,7 +53,7 @@
 #include <serial/objostrasnb.hpp> 
 #include <serial/objistrasnb.hpp> 
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ext/ncbi_localnet.h>
+
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -377,27 +377,6 @@ static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope)
     return frame;
 }
 
-
-///Determine if the user is a local user at the NCBI.
-///@return: true if local user
-///
-static bool s_IsLocalCgiClient(void)
-{
-    bool isLocal = false;
-    unsigned int ip = NcbiGetCgiClientIP(eCgiClientIP_TryAll, NULL);
-
-    const int kMaxIPAddrLen = 16;
-    char addr[kMaxIPAddrLen];
-    if(ip) {
-        if (SOCK_ntoa(ip,addr,sizeof(addr)) == 0) {
-            isLocal = NcbiIsLocalIP(ip);
-        }
-    }
-
-    return isLocal;
-}
-
-
 ///return the get sequence table for html display
 ///@param form_name: form name
 ///@parm db_is_na: is the db of nucleotide type?
@@ -405,13 +384,13 @@ static bool s_IsLocalCgiClient(void)
 ///@return: the from string
 ///
 static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
-                           int db_type,const char *dbName,const char *rid, const char *queryID)
+                           int db_type,const char *dbName,const char *rid, const char *queryID,bool showTreeButtons)
 {
 
     char buf[4096] = {""};
     if(form_name){             
         string localClientButtons = "";
-        if(s_IsLocalCgiClient()) {
+        if(showTreeButtons) {
             localClientButtons = k_GetTreeViewForm + "</td><td>";
         }
 
@@ -423,7 +402,7 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
                             localClientButtons + \
                             "</table>";
 
-        if(s_IsLocalCgiClient()) {
+        if(showTreeButtons) {
             sprintf(buf, template_str.c_str(), form_name, query_number,
                 db_is_na?1:0, query_number, form_name, query_number, db_type, 
                 query_number,query_number,             
@@ -1491,7 +1470,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     //get sequence 
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){ 
         out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber, 
-                          x_GetDbType(actual_aln_list),m_DbName.c_str(),m_Rid.c_str(),s_GetQueryIDFromSeqAlign(actual_aln_list).c_str());                          
+                          x_GetDbType(actual_aln_list),m_DbName.c_str(),m_Rid.c_str(),
+                          s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),m_AlignOption & eDisplayTreeView);                          
         out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
     }
     //begin to display
@@ -1758,7 +1738,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){
         out<<"</form>\n";        
         out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa, m_QueryNumber, 
-                          x_GetDbType(actual_aln_list),m_DbName.c_str(),m_Rid.c_str(),s_GetQueryIDFromSeqAlign(actual_aln_list).c_str());                         
+                          x_GetDbType(actual_aln_list),m_DbName.c_str(),m_Rid.c_str(),
+                          s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),m_AlignOption & eDisplayTreeView);                         
     }
 }
 
@@ -3129,6 +3110,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.106  2006/02/28 19:52:49  zaretska
+*Added new DispalyOption to for Tree view button
+*
 *Revision 1.105  2006/02/28 17:30:20  zaretska
 *Added Tree view button for local users to the results page
 *
