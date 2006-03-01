@@ -169,6 +169,7 @@ util/lightstr.hpp
 util/linkedset.hpp
 util/logrotate.hpp
 util/md5.hpp
+util/mutex_pool.hpp
 util/random_gen.hpp
 util/range.hpp
 util/range_coll.hpp
@@ -212,7 +213,8 @@ connect/services/grid_client.hpp
 connect/services/grid_client_app.hpp
 connect/services/grid_control_thread.hpp
 connect/services/grid_debug_context.hpp
-connect/services/grid_default_factories.hpp
+// Deprecated, causes trouble
+//connect/services/grid_default_factories.hpp
 connect/services/grid_worker.hpp
 connect/services/grid_worker_app.hpp
 connect/services/grid_worker_app_impl.hpp
@@ -341,6 +343,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/03/01 16:27:15  jcherry
+ * Adjusted header list
+ *
  * Revision 1.14  2006/02/16 17:27:08  jcherry
  * Reflect header rearrangement
  *
