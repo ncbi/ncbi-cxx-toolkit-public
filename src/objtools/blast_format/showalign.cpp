@@ -391,16 +391,16 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
     if(form_name){             
         string localClientButtons = "";
         if(showTreeButtons) {
-            localClientButtons = k_GetTreeViewForm + "</td><td>";
+            localClientButtons = "<td>" + k_GetTreeViewForm + "</td>";
         }
 
         string template_str = "<table border=\"0\"><tr><td>" +
                             k_GetSeqSubmitForm[db_type] +
                             "</td><td>" +
                             k_GetSeqSelectForm +
-                            "</td><td>" +
+                            "</td>" +
                             localClientButtons +
-                            "</table>";
+                            "</tr></table>";
 
         if(showTreeButtons) {
             sprintf(buf, template_str.c_str(), form_name, query_number,
@@ -3110,6 +3110,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.108  2006/03/01 22:29:13  zaretska
+*Fixed html bug
+*
 *Revision 1.107  2006/02/28 21:25:00  ucko
 *Fix line endings.
 *
