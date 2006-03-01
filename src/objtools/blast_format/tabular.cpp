@@ -526,7 +526,7 @@ void CBlastTabularInfo::x_PrintFieldNames()
         case ePercentPositives:
             m_Ostream << "% positives"; break;
         case eFrames:
-            m_Ostream << "% frames"; break; 
+            m_Ostream << "query/sbjct frames"; break; 
         default:
             break;
         }
@@ -572,6 +572,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/03/01 23:12:34  jianye
+* Corrected type error
+*
 * Revision 1.11  2006/03/01 18:38:10  jianye
 * added positives and frame info
 *
