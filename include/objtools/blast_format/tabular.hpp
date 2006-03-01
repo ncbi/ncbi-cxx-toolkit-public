@@ -157,9 +157,9 @@ public:
         ePositives,            ///< Number of positive-scoring matches
         eGapOpenings,          ///< Number of gap openings
         eGaps,                 ///< Total number of gaps
-        eMaxTabularField,      ///< Sentinel value
         ePercentPositives,     ///<percent positives 
-        eFrames                ///< frames
+        eFrames,               ///< frames
+        eMaxTabularField       ///< Sentinel value
     };
 
     /// Return all field names supported in the format string.
@@ -527,6 +527,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/03/01 20:52:20  jianye
+* move eMaxTabularField to the end
+*
 * Revision 1.9  2006/03/01 18:38:28  jianye
 * added positives and frame info
 *
