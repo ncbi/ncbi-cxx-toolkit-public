@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -338,6 +339,8 @@ CDB_MultiEx::ReportErrorStack(ostream& out) const
 class CDB_UserHandler_Wrapper : public CDB_UserHandler
 {
 public:
+    CDB_UserHandler_Wrapper(void);
+
     CDB_UserHandler* Set(CDB_UserHandler* h);
 
     virtual bool HandleIt(CDB_Exception* ex);
@@ -348,9 +351,12 @@ private:
 };
 
 
-static CDB_UserHandler_Wrapper s_CDB_DefUserHandler;  // (singleton)
-static bool                    s_CDB_DefUserHandler_IsSet = false;
+static CSafeStaticPtr<CDB_UserHandler_Wrapper> s_CDB_DefUserHandler;  // (singleton)
 
+CDB_UserHandler_Wrapper::CDB_UserHandler_Wrapper(void) :
+m_Handler(new CDB_UserHandler_Default)
+{
+}
 
 CDB_UserHandler* CDB_UserHandler_Wrapper::Set(CDB_UserHandler* h)
 {
@@ -370,7 +376,6 @@ CDB_UserHandler_Wrapper::~CDB_UserHandler_Wrapper()
     try {
         delete m_Handler;
         m_Handler = 0;
-        s_CDB_DefUserHandler_IsSet = false;
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -400,19 +405,15 @@ CDB_UserHandler::~CDB_UserHandler()
 
 CDB_UserHandler& CDB_UserHandler::GetDefault(void)
 {
-    if ( !s_CDB_DefUserHandler_IsSet ) {
-        s_CDB_DefUserHandler_IsSet = true;
-        s_CDB_DefUserHandler.Set(new CDB_UserHandler_Default);
-    }
+    static CSafeStaticPtr<CDB_UserHandler_Wrapper> instance;
 
-    return s_CDB_DefUserHandler;
+    return s_CDB_DefUserHandler.Get();
 }
 
 
 CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
 {
-    s_CDB_DefUserHandler_IsSet = true;
-    return s_CDB_DefUserHandler.Set(h);
+    return s_CDB_DefUserHandler->Set(h);
 }
 
 
@@ -518,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/03/01 19:50:13  ssikorsk
+ * Replaced static variable with CSafeStaticPtr.
+ *
  * Revision 1.20  2006/02/08 17:23:01  ssikorsk
  * For exceptions with informational severity print only a message.
  *
