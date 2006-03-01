@@ -61,7 +61,7 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str)
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
 
-    return ENUM_METHOD_NAME(ESubtype)()->FindValue(str);
+    return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
 }
 
 
@@ -81,6 +81,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2006/03/01 18:46:12  meric
+* Use curated name, not string as provided
+*
 * Revision 6.1  2005/05/20 13:36:54  shomrat
 * Added BasicCleanup()
 *
