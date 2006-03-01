@@ -43,6 +43,7 @@ static char const rcsid[] =
 
 // Local
 #include "queue_poll.hpp"
+#include "blast_input.hpp"
 
 // Corelib
 #include <corelib/ncbi_system.hpp>
@@ -192,22 +193,6 @@ s_Output(CNcbiOstream & os, CRef<T> t)
 //--------------------------------------------------------------------
 
 
-/// Read a fasta query from a CNcbiIstream and return a CBioseq_set.
-static CRef<CBioseq_set>
-s_SetupQuery(CNcbiIstream    & query_in,
-             CRef<CScope>      scope,
-             TReadFastaFlags   fasta_flags)
-{
-    CRef<CSeq_entry> seqentry = ReadFasta(query_in, fasta_flags, 0, 0);
-    
-    scope->AddTopLevelSeqEntry(*seqentry);
-    
-    CRef<CBioseq_set> seqset(new CBioseq_set);
-    seqset->SetSeq_set().push_back(seqentry);
-    
-    return seqset;
-}
-
 /// Set options appropriately for local and remote searches.
 #ifndef SKIP_DOXYGEN_PROCESSING
 class CSearchParamBuilder : public COptionWalker
@@ -305,13 +290,39 @@ s_SetSearchParams(CRef<CRemoteBlast>  & cb4o,
     opts.Apply(spb, cboh, cb4o);
 }
 
+static void
+s_SetQueries(CRef<CRemoteBlast> remote_blast,
+             TSeqLocVector& queries)
+{
+    CRef<CBioseq_set> query_bioseqs(new CBioseq_set);
+    TSeqLocInfoVector query_masking_locations;
+    query_masking_locations.reserve(queries.size());
+
+    ITERATE(TSeqLocVector, query, queries) {
+        try {
+            CBioseq_Handle bh = query->scope->GetBioseqHandle(*query->seqloc);
+
+            CRef<CSeq_entry> seq_entry(new CSeq_entry);
+            seq_entry->SetSeq(const_cast<CBioseq&>(*bh.GetBioseqCore()));
+            query_bioseqs->SetSeq_set().push_back(seq_entry);
+
+            TMaskedQueryRegions mqr(PackedSeqLocToMaskedQueryRegions(query->mask));
+            query_masking_locations.push_back(mqr);
+        } catch (const CException& e) {
+            cerr << "Failed to instantiate query: " << e.what() << endl;
+        }
+    }
+
+    remote_blast->SetQueries(query_bioseqs, query_masking_locations);
+}
+
 /// Instantiate appropriate options handle based on program and service.
 static CRef<CRemoteBlast>
 s_SetBlast4Params(string              & program,
                   string              & service,
                   string              & database,
                   CNetblastSearchOpts & opts,
-                  CRef<CBioseq_set>     query,
+                  TSeqLocVector       & queries,
                   string              & err)
 {
     CRef<CRemoteBlast> cb4o;
@@ -359,21 +370,7 @@ s_SetBlast4Params(string              & program,
     } else {
         cb4o->SetDatabase(database);
         
-        // Should the following adjustment / workaround be in...
-        // ... CRemoteBlast ?
-        // ... blast4 server?
-        // ... right here?
-        
-        if (query->GetSeq_set().front()->IsSeq()) {
-            cb4o->SetQueries(query);
-        } else {
-            const CBioseq_set * myset = & query->GetSeq_set().front()->GetSet();
-            CBioseq_set * myset2 = (CBioseq_set *) myset;
-            
-            cb4o->SetQueries(CRef<CBioseq_set>(myset2));
-        }
-        
-        cb4o->SetQueries (query);
+        s_SetQueries(cb4o, queries);
     }
     
     return cb4o;
@@ -385,7 +382,7 @@ s_QueueSearch(string              & program,
               string              & service,
               string              & database,
               CNetblastSearchOpts & opts,
-              CRef<CBioseq_set>     query,
+              TSeqLocVector       & queries,
               string              & err)
 {
     CRef<CRemoteBlast> cb4o
@@ -393,7 +390,7 @@ s_QueueSearch(string              & program,
                             service,
                             database,
                             opts,
-                            query,
+                            queries,
                             err);
     
     if (cb4o.NotEmpty()) {
@@ -504,6 +501,7 @@ QueueAndPoll(string                program,       ///< program name
              CNetblastSearchOpts & opts,          ///< search options
              CNcbiIstream        & query_in,      ///< where to read query from
              bool                  verbose,       ///< verbose mode?
+             bool                  lcase_masking, ///< Read the lowercase masks?
              bool                  trust_defline, ///< believe the query defline?
              bool                  raw_asn,       ///< emit raw asn when formatting?
              CAlignParms         & alparms,       ///< parameters for CDisplaySeqalign
@@ -518,15 +516,12 @@ QueueAndPoll(string                program,       ///< program name
         
     // Queue and poll
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-
     CRef<CScope>         scope (new CScope(*objmgr));
     scope->AddDefaults();
         
     string err;
     
     CRef<CRemoteBlast> cb4o;
-    
-    CRef<CBioseq_set> cbss;
     
     bool amino = s_QueryIsAmino(program);
     
@@ -542,14 +537,18 @@ QueueAndPoll(string                program,       ///< program name
         flags |= fReadFasta_NoParseID;
     }
     
-    cbss = s_SetupQuery(query_in, scope, flags);
+    ENa_strand strand = amino ? eNa_strand_unknown : eNa_strand_plus;
+    int counter(0);
+    TSeqLocVector queries = BLASTGetSeqLocFromStream(query_in, *objmgr, 
+                                                     strand, 0, 0, &counter,
+                                                     lcase_masking);
     
     if (get_RID.empty()) {
         cb4o = s_QueueSearch(program,
                              service,
                              database,
                              opts,
-                             cbss,
+                             queries,
                              err);
     
         if (cb4o.Empty() && err.empty()) {
@@ -589,6 +588,9 @@ QueueAndPoll(string                program,       ///< program name
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2006/03/01 21:26:57  camacho
+ * Add support for user-specified query masking locations
+ *
  * Revision 1.16  2005/05/19 21:48:37  bealer
  * - Set verbose mode in RID case.
  *

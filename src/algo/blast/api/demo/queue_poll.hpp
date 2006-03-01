@@ -54,6 +54,8 @@ USING_NCBI_SCOPE;
 /// @param opts          Optional netblast parameters.
 /// @param query_in      Read query fasta from supplied istream.
 /// @param verbose       Debugging output - displays netblast socket traffic.
+/// @param lcase_masking if true, read lowercase masking in the input, 
+///                      otherwise ignore it.
 /// @param trust_defline Assume sequence and defline are consistent with db.
 /// @param raw_asn       Display text ASN.1, not formatted output.
 /// @param alparms       Parameters to control output formatting.
@@ -66,6 +68,7 @@ Int4 QueueAndPoll(string                program,
                   CNetblastSearchOpts & opts,
                   CNcbiIstream        & query_in,
                   bool                  verbose,
+                  bool                  lcase_masking,
                   bool                  trust_defline,
                   bool                  raw_asn,
                   CAlignParms         & alparms,
@@ -76,6 +79,9 @@ Int4 QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/03/01 21:26:57  camacho
+ * Add support for user-specified query masking locations
+ *
  * Revision 1.2  2004/11/01 18:25:15  coulouri
  * doxygen fixes
  *

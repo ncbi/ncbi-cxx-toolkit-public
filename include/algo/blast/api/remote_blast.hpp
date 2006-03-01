@@ -33,7 +33,7 @@
 /// @file remote_blast.hpp
 /// Declares the CRemoteBlast class.
 
-
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/blastx_options.hpp>
 #include <algo/blast/api/tblastn_options.hpp>
@@ -113,11 +113,27 @@ public:
     
     /// Set the query as a Bioseq_set.
     void SetQueries(CRef<objects::CBioseq_set> bioseqs);
+
+    /// Set the query as a Bioseq_set along with the corresponding masking
+    /// locations.
+    /// @param bioseqs Query sequence data [in]
+    /// @param masking_locations Masked regions for the queries above [in]
+    void SetQueries(CRef<objects::CBioseq_set> bioseqs,
+                    const TSeqLocInfoVector& masking_locations);
+
+    /// Typedef for a list of Seq-locs
+    typedef list< CRef<objects::CSeq_loc> > TSeqLocList;
+
+    /// Set the query as a list of Seq_locs.
+    /// @param seqlocs One interval Seq_loc or a list of whole Seq_locs.
+    void SetQueries(TSeqLocList& seqlocs);
     
     /// Set the query as a list of Seq_locs.
     /// @param seqlocs One interval Seq_loc or a list of whole Seq_locs.
-    void SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs);
-    
+    /// @param masking_locations Masked regions for the queries above [in]
+    void SetQueries(TSeqLocList& seqlocs,
+                    const TSeqLocInfoVector& masking_locations);
+
     /// Set a PSSM query (as for PSI blast), which must include a bioseq set.
     void SetQueries(CRef<objects::CPssmWithParameters> pssm);
     
@@ -404,6 +420,10 @@ private:
     /// @param name Name of option.
     /// @param value Pointer to pointer to null delimited string.
     void x_SetOneParam(const char * name, const char ** value);
+
+    /// Set a masking location for query
+    /// @param value masking location [in]
+    void x_SetOneParam(CRef<objects::CBlast4_mask> mask);
     
     /// Determine what state the search is in.
     EState x_GetState(void);
@@ -479,6 +499,14 @@ private:
     
     void x_GetRequestInfo();
     
+    /// Set the masking locations AFTER the queries have been set in the 
+    /// m_QSR field
+    void x_SetMaskingLocationsForQueries(const TSeqLocInfoVector&
+                                         masking_locations);
+
+    /// Converts the provided query masking locations (if any) to the network
+    /// representation following the BLAST 4 ASN.1 spec
+    void x_QueryMaskingLocationsToNetwork();
     
     /// Prohibit copy construction.
     CRemoteBlast(const CRemoteBlast &);
@@ -542,8 +570,26 @@ private:
     
     /// Options relevant to the search application.
     CRef<objects::CBlast4_parameters> m_ProgramOpts;
+
+    /// Masking locations for queries
+    TSeqLocInfoVector m_QueryMaskingLocations;
 };
 
+/** Converts the return value of CSeqLocInfo::GetFrame into the
+ * Blast4-frame-type field. Note that for non-translated queries, this value
+ * should be set to notset (value = 0).
+ */
+objects::EBlast4_frame_type
+FrameNumber2NetworkFrame(int frame, EBlastProgramType program);
+
+/// Function to convert from program and service name into the CORE BLAST
+/// program type
+/// This is based on the values set in the various CBlastOptionsHandle 
+/// subclasses (look for SetRemoteProgramAndService_Blast3 in include tree)
+/// @note This function needs to be updated if the program/service name
+/// combinations change
+EBlastProgramType
+NetworkProgram2BlastProgramType(const string& program, const string& service);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -554,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/03/01 21:24:36  camacho
+ * Add support for user-specified query masking locations
+ *
  * Revision 1.27  2006/01/26 15:51:43  bealer
  *  - Get request info functionality.
  *

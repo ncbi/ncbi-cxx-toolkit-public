@@ -107,6 +107,8 @@ void CRemote_blastApplication::x_AddRemoteBlastKeys(void)
     m_ArgDesc->AddKey       ("infile", "InputFilename",
                              "Filename of input query.",
                              CArgDescriptions::eInputFile);
+    m_ArgDesc->AddDefaultKey("lcase", "lcase", "Should lower case be masked?",
+                            CArgDescriptions::eBoolean, "F");
     m_ArgDesc->AddDefaultKey("outputasn", "AsnOutput",
                             "Output raw ASN.1 objects.",
                             CArgDescriptions::eBoolean,
@@ -201,6 +203,7 @@ int CRemote_blastApplication::Run(void)
     string program       = args["program"]    .AsString();
     string database      = args["db"]         .AsString();
     string service       = args["service"]    .AsString();
+    bool   lcase_masking = args["lcase"] .AsBoolean();
     bool   trust_defline = args["believedef"] .AsBoolean();
     
     bool   raw_asn       = args["outputasn"]  .AsBoolean();
@@ -234,17 +237,22 @@ int CRemote_blastApplication::Run(void)
     
     alparms.SetNumAlgn(opts.NumAligns());
     
+    try {
     return QueueAndPoll(program,
                         service,
                         database,
                         opts,
                         query_in,
                         verbose,
+                        lcase_masking,
                         trust_defline,
                         raw_asn,
                         alparms,
                         async_mode,
                         get_RID);
+    } catch (const CException& e) {
+        cerr << e.what() << endl;
+    }
 }
 
 /// Simple, wrapper style, main function for app framework.
@@ -257,6 +265,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/03/01 21:26:57  camacho
+ * Add support for user-specified query masking locations
+ *
  * Revision 1.5  2004/06/14 18:04:34  bealer
  * - Doxydation.
  *

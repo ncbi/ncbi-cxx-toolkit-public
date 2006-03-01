@@ -452,10 +452,11 @@ void CRemoteBlast::x_SubmitSearch(void)
     }
     
     x_SetAlgoOpts();
+    x_QueryMaskingLocationsToNetwork();
     
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetQueue_search(*m_QSR);
-    
+
     CRef<CBlast4_reply> reply;
     
     try {
@@ -637,6 +638,7 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
     m_Pending    = false;
     m_Verbose    = eSilent;
     m_NeedConfig = eNeedAll;
+    m_QueryMaskingLocations.clear();
     
     m_QSR.Reset(new CBlast4_queue_search_request);
     
@@ -689,6 +691,19 @@ void CRemoteBlast::x_SetOneParam(const char * name, const int * x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
+void CRemoteBlast::x_SetOneParam(CRef<objects::CBlast4_mask> mask)
+{
+    CRef<CBlast4_value> v(new CBlast4_value);
+    v->SetQuery_mask(*mask);
+        
+    CRef<CBlast4_parameter> p(new CBlast4_parameter);
+    // as dictated by internal/blast/interfaces/blast4/params.hpp
+    p->SetName("LCaseMask");    
+    p->SetValue(*v);
+
+    m_QSR->SetProgram_options().Set().push_back(p);
+}
+
 void CRemoteBlast::x_SetOneParam(const char * name, const list<int> * x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
@@ -727,7 +742,14 @@ void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
 }
 
-void CRemoteBlast::SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs)
+void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs,
+                              const TSeqLocInfoVector& masking_locations)
+{
+    SetQueries(bioseqs);
+    x_SetMaskingLocationsForQueries(masking_locations);
+}
+
+void CRemoteBlast::SetQueries(CRemoteBlast::TSeqLocList& seqlocs)
 {
     if (seqlocs.empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument,
@@ -739,6 +761,114 @@ void CRemoteBlast::SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs)
     
     m_QSR->SetQueries(*queries_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
+}
+
+void CRemoteBlast::SetQueries(CRemoteBlast::TSeqLocList& seqlocs,
+                              const TSeqLocInfoVector& masking_locations)
+{
+    SetQueries(seqlocs);
+    x_SetMaskingLocationsForQueries(masking_locations);
+}
+
+void 
+CRemoteBlast::x_SetMaskingLocationsForQueries(const TSeqLocInfoVector&
+                                              masking_locations)
+{
+    _ASSERT(m_QSR->CanGetQueries());
+    if (m_QSR->GetQueries().GetNumQueries() != masking_locations.size()) {
+        CNcbiOstrstream oss;
+        oss << "Mismatched number of queries (" 
+             << m_QSR->GetQueries().GetNumQueries() 
+             << ") and masking locations (" << masking_locations.size() << ")";
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   CNcbiOstrstreamToString(oss));
+    }
+
+    m_QueryMaskingLocations = const_cast<TSeqLocInfoVector&>(masking_locations);
+}
+
+/// Auxiliary functor used in CRemoteBlast::x_QueryMaskingLocationsToNetwork()
+struct SBlast4_maskLessComparator :
+    public binary_function< CRef<CBlast4_mask>,
+                            CRef<CBlast4_mask>,
+                            bool>
+{
+    result_type operator() (const first_argument_type& a,
+                            const second_argument_type& b) const {
+        // first compare the frames
+        _ASSERT(a->GetLocations().size() == b->GetLocations().size());
+        _ASSERT(a->GetLocations().size() == ((size_t)1));
+
+        CRef<CSeq_loc> sl_a = a->GetLocations().front();
+        _ASSERT(sl_a->IsInt());
+
+        CRef<CSeq_loc> sl_b = b->GetLocations().front();
+        _ASSERT(sl_b->IsInt());
+
+        // first compare the Seq-ids ...
+        if (sl_a->GetId()->AsFastaString() <
+            sl_b->GetId()->AsFastaString()) {
+            return true;
+        } else {
+
+            // then compare the frames...
+            if (a->GetFrame() < b->GetFrame()) {
+                return true;
+            } else {
+                // and finally compare the Seq-interval
+                const CSeq_interval& si_a = sl_a->GetInt();
+                const CSeq_interval& si_b = sl_b->GetInt();
+
+                if (si_a.GetFrom() < si_b.GetFrom()) {
+                    return true;
+                } else {
+                    if (si_a.GetTo() < si_b.GetTo()) {
+                        return true;
+                    }
+                }
+            }
+
+        }
+        return false;
+    }
+};
+
+void
+CRemoteBlast::x_QueryMaskingLocationsToNetwork()
+{
+    if (m_QueryMaskingLocations.empty()) {
+        return;
+    }
+
+    m_CBOH->GetOptions().GetRemoteProgramAndService_Blast3(m_Program, 
+                                                           m_Service);
+
+
+    ITERATE(TSeqLocInfoVector, query_masks, m_QueryMaskingLocations) {
+
+        // Use a set to keep unique copies of the masks. For nucleotide
+        // queries, it is assumed that only the plus strand of the mask will be
+        // sent. Note that in spite of this convention, masks for nucleotide
+        // queries are sent with the frame as notset.
+        set< CRef<CBlast4_mask>, SBlast4_maskLessComparator > 
+            unique_query_masks;
+
+        ITERATE(TMaskedQueryRegions, mask, *query_masks) {
+            CRef<CBlast4_mask> network_mask(new CBlast4_mask);
+            network_mask->SetFrame
+                (FrameNumber2NetworkFrame
+                    ((*mask)->GetFrame(), 
+                     NetworkProgram2BlastProgramType(m_Program, m_Service)));
+            const CSeq_interval& seqint = (*mask)->GetInterval();
+            CRef<CSeq_loc> sl(new CSeq_loc(const_cast<CSeq_id&>(seqint.GetId()),
+                                           seqint.GetFrom(),
+                                           seqint.GetTo()));
+            network_mask->SetLocations().push_back(sl);
+            if (unique_query_masks.insert(network_mask).second) {
+                x_SetOneParam(network_mask);
+            }
+        }
+    }
 }
 
 void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
@@ -1176,31 +1306,59 @@ CRemoteBlast::GetQueries()
     return m_Queries;
 }
 
-#if 0
-CRef<CBlast4_parameters>
-CRemoteBlast::GetAlgorithmOptions()
+EBlastProgramType
+NetworkProgram2BlastProgramType(const string& program, const string& service)
 {
-    if (! m_AlgoOpts.Empty()) {
-        return m_AlgoOpts;
+    _ASSERT(!program.empty());
+    _ASSERT(!service.empty());
+
+    EBlastProgramType retval = eBlastTypeUndefined;
+    Int2 rv = BlastProgram2Number(program.c_str(), &retval);
+    _ASSERT(rv == 0);
+    _ASSERT(retval != eBlastTypeUndefined);
+
+    if (service == "rpsblast") {
+
+        if (program == "blastp") {
+            retval = eBlastTypeRpsBlast;
+        } else if (program == "tblastn") {
+            retval = eBlastTypeRpsTblastn;
+        } else {
+            abort();
+        }
+
+    } 
+    
+    if (service == "psi") {
+        _ASSERT(program == "blastp");
+        retval = eBlastTypePsiBlast;
     }
-    
-    x_GetRequestInfo();
-    
-    return m_AlgoOpts;
+
+    return retval;
 }
 
-CRef<CBlast4_parameters>
-CRemoteBlast::GetProgramOptions()
+
+EBlast4_frame_type
+FrameNumber2NetworkFrame(int frame, EBlastProgramType program)
 {
-    if (! m_ProgramOpts.Empty()) {
-        return m_ProgramOpts;
+    if (Blast_QueryIsTranslated(program)) {
+        switch (frame) {
+        case  1: return eBlast4_frame_type_plus1;
+        case  2: return eBlast4_frame_type_plus2;
+        case  3: return eBlast4_frame_type_plus3;
+        case -1: return eBlast4_frame_type_minus1;
+        case -2: return eBlast4_frame_type_minus2;
+        case -3: return eBlast4_frame_type_minus3;
+        default: abort();
+        }
+    } else if (Blast_QueryIsNucleotide(program)) {
+        _ASSERT(frame == -1 || frame == 1);
+        // For some reason, the return value here is not set...
+        return eBlast4_frame_type_notset;
+    } else {
+        return eBlast4_frame_type_notset;
     }
-    
-    x_GetRequestInfo();
-    
-    return m_ProgramOpts;
 }
-#endif
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -1211,6 +1369,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2006/03/01 21:25:28  camacho
+* Add support for user-specified query masking locations
+*
 * Revision 1.36  2006/01/26 15:51:43  bealer
 *  - Get request info functionality.
 *
