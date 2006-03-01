@@ -135,15 +135,21 @@ public:
         fKillOnClose   = 0x10   ///< Close(): kill child process if it didn't
                                 ///< terminate after eIO_Close timeout.
     };
-    typedef unsigned int TCreateFlags;  ///< bit-wise OR of "ECreateFlags"
+    typedef unsigned int TCreateFlags;    ///< bit-wise OR of "ECreateFlags"
 
     /// Which of the child I/O handles to use.
     enum EChildIOHandle {
-        eStdIn,
-        eStdOut,
-        eStdErr,
-        eDefault
+        fStdIn     = (1 << 0),
+        fStdOut    = (1 << 1),
+        fStdErr    = (1 << 2),
+        fDefault   = (1 << 3),
+        
+        eStdIn     = fStdIn,
+        eStdOut    = fStdOut,
+        eStdErr    = fStdErr,
+        eDefault   = fDefault   ///< see SetReadHandle()
     };
+    typedef unsigned int TChildPollMask;  ///< bit-wise OR of "EChildIOHandle"
 
     /// Constructor.
     CPipe();
@@ -161,11 +167,9 @@ public:
     ///   Specifies the options to be applied when creating the pipe.
     /// @sa
     ///   Open()
-    CPipe
-        (const string&         cmd,
-         const vector<string>& args,
-         TCreateFlags          create_flags = 0
-        );
+    CPipe(const string&         cmd,
+          const vector<string>& args,
+          TCreateFlags          create_flags = 0);
 
     /// Destructor. 
     ///
@@ -188,11 +192,9 @@ public:
     ///   Completion status.
     /// @sa
     ///   Read(), Write(), Close()
-    EIO_Status Open
-        (const string&         cmd,
-         const vector<string>& args,
-         TCreateFlags          create_flags = 0
-        );
+    EIO_Status Open(const string&         cmd,
+                    const vector<string>& args,
+                    TCreateFlags          create_flags = 0);
 
     /// Close pipe.
     ///
@@ -251,12 +253,10 @@ public:
     ///   Return other (error) status only if no data at all could be obtained.
     /// @sa
     ///   Write(), SetTimeout()
-    EIO_Status Read
-        (void*          buf, 
-         size_t         count, 
-         size_t*        read = 0,
-         EChildIOHandle from_handle = eDefault
-        );
+    EIO_Status Read(void*          buf, 
+                    size_t         count, 
+                    size_t*        read = 0,
+                    EChildIOHandle from_handle = eDefault);
 
     /// Set standard output handle to read data from.
     ///
@@ -282,11 +282,27 @@ public:
     ///   Return other (error) code only if no data at all could be written.
     /// @sa
     ///   Read(), SetTimeout()
-    EIO_Status Write
-        (const void* buf,
-         size_t      count,
-         size_t*     written = 0
-        );
+    EIO_Status Write(const void* buf,
+                     size_t      count,
+                     size_t*     written = 0);
+                     
+    /// Wait for I/O event(s). 
+    ///
+    /// Block until at least one of the I/O handles enlisted in poll mask
+    /// becomes available for I/O, or until timeout expires.
+    /// Throw CPipeException on failure to create the pipe.
+    ///
+    /// @param mask
+    ///   Mask of I/O handles to poll.
+    /// @param timeout
+    ///   Timeout value to set.
+    ///   If "timeout" is NULL then set the timeout to be infinite.
+    /// @return
+    ///   Mask of I/O handles that ready for I/O.
+    ///   Return zero on timeout or if all I/O handles are closed.
+    ///   If fDefault is polled and the corresponding Err/Out is ready
+    ///   then return fDefault, and not the "real" fStdOut/fStdErr.
+    TChildPollMask Poll(TChildPollMask mask, const STimeout* timeout = 0);
 
     /// Return a status of the last I/O operation.
     /// 
@@ -372,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/03/01 17:01:03  ivanov
+ * + CPipe::Poll() -- Unix version only
+ *
  * Revision 1.23  2005/05/02 16:01:36  lavr
  * Proper exception class derivation
  *

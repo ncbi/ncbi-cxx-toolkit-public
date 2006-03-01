@@ -109,9 +109,11 @@ public:
     EIO_Status CloseHandle (CPipe::EChildIOHandle handle);
     EIO_Status Read(void* buf, size_t count, size_t* n_read,
                     const CPipe::EChildIOHandle from_handle,
-                    const STimeout* timeout);
+                    const STimeout* timeout) const;
     EIO_Status Write(const void* buf, size_t count, size_t* written,
-                     const STimeout* timeout);
+                     const STimeout* timeout) const;
+    CPipe::TChildPollMask Poll(CPipe::TChildPollMask mask,
+                               const STimeout* timeout) const;
     TProcessHandle GetProcessHandle(void) const { return m_ProcHandle; };
 
 private:
@@ -421,7 +423,7 @@ EIO_Status CPipeHandle::CloseHandle(CPipe::EChildIOHandle handle)
 
 EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read, 
                              const CPipe::EChildIOHandle from_handle,
-                             const STimeout* timeout)
+                             const STimeout* timeout) const
 {
     EIO_Status status = eIO_Unknown;
 
@@ -490,7 +492,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
 
 
 EIO_Status CPipeHandle::Write(const void* buf, size_t count,
-                              size_t* n_written, const STimeout* timeout)
+                              size_t* n_written, const STimeout* timeout) const
 
 {
     EIO_Status status = eIO_Unknown;
@@ -545,6 +547,14 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
         ERR_POST(s_FormatErrorMessage("Write", what));
     }
     return status;
+}
+
+
+CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
+                                        const STimeout* timeout) const
+{
+    NCBI_THROW(CPipeException, eInit,
+               "Not implemented yet on MS Windows");
 }
 
 
@@ -619,9 +629,11 @@ public:
     EIO_Status CloseHandle (CPipe::EChildIOHandle handle);
     EIO_Status Read(void* buf, size_t count, size_t* read,
                     const CPipe::EChildIOHandle from_handle,
-                    const STimeout* timeout);
+                    const STimeout* timeout) const;
     EIO_Status Write(const void* buf, size_t count, size_t* written,
-                     const STimeout* timeout);
+                     const STimeout* timeout) const;
+    CPipe::TChildPollMask Poll(CPipe::TChildPollMask mask,
+                               const STimeout* timeout) const;
     TProcessHandle GetProcessHandle(void) const { return m_Pid; };
 
 private:
@@ -637,6 +649,8 @@ private:
     // Throw an exception on error.
     EIO_Status x_Wait(int fd, EIO_Event direction,
                       const STimeout* timeout) const;
+    CPipe::TChildPollMask x_Poll(CPipe::TChildPollMask mask,
+                                 const STimeout* timeout) const;
 
 private:
     // I/O handles for child process.
@@ -927,7 +941,7 @@ EIO_Status CPipeHandle::CloseHandle(CPipe::EChildIOHandle handle)
 
 EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read, 
                              const CPipe::EChildIOHandle from_handle,
-                             const STimeout* timeout)
+                             const STimeout* timeout) const
 {
     EIO_Status status = eIO_Unknown;
 
@@ -978,7 +992,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 
 
 EIO_Status CPipeHandle::Write(const void* buf, size_t count,
-                              size_t* n_written, const STimeout* timeout)
+                              size_t* n_written, const STimeout* timeout) const
 
 {
     EIO_Status status = eIO_Unknown;
@@ -1029,6 +1043,29 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
         ERR_POST(s_FormatErrorMessage("Write", what));
     }
     return status;
+}
+
+
+CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
+                                        const STimeout* timeout) const
+{
+    CPipe::TChildPollMask poll = 0;
+
+    try {
+        if (m_Pid == (pid_t)(-1)) {
+            throw string("Pipe is closed");
+        }
+        if (m_ChildStdIn  == -1  &&
+            m_ChildStdOut == -1  &&
+            m_ChildStdErr == -1) {
+            throw string("All pipe I/O handles are closed");
+        }
+        poll = x_Poll(mask, timeout);
+    }
+    catch (string& what) {
+        ERR_POST(s_FormatErrorMessage("Poll", what));
+    }
+    return poll;
 }
 
 
@@ -1092,8 +1129,9 @@ EIO_Status CPipeHandle::x_Wait(int fd, EIO_Event direction,
             tm.tv_sec  = timeout->sec;
             tm.tv_usec = timeout->usec;
             tmp = &tm;
-        } else
+        } else {
             tmp = 0;
+        }
         fd_set rfds;
         fd_set wfds;
         fd_set efds;
@@ -1143,6 +1181,83 @@ EIO_Status CPipeHandle::x_Wait(int fd, EIO_Event direction,
         }
     }
     return eIO_Success;
+}
+
+
+CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
+                                          const STimeout* timeout) const
+{
+    CPipe::TChildPollMask poll = 0;
+
+    // Wait for the file descriptors to become ready only
+    // if timeout is set or infinite
+    if (timeout  &&  !timeout->sec  &&  !timeout->usec) {
+        return poll;
+    }
+    for (;;) { // Auto-resume if interrupted by a signal
+        struct timeval* tmp;
+        struct timeval  tm;
+
+        if ( timeout ) {
+            // NB: Timeout has been normalized already
+            tm.tv_sec  = timeout->sec;
+            tm.tv_usec = timeout->usec;
+            tmp = &tm;
+        } else {
+            tmp = 0;
+        }
+        
+        fd_set rfds;
+        fd_set wfds;
+        fd_set efds;
+        
+        FD_ZERO(&rfds);
+        FD_ZERO(&wfds);
+        FD_ZERO(&efds);
+        
+        int max = 0;
+        
+        if ( mask & CPipe::fStdIn   &&  m_ChildStdIn != -1 ) {
+            FD_SET(m_ChildStdIn, &wfds);
+            FD_SET(m_ChildStdIn, &efds);
+            max = m_ChildStdIn;
+        }
+        if ( mask & CPipe::fStdOut  &&  m_ChildStdOut != -1 ) {
+            FD_SET(m_ChildStdOut, &rfds);
+            FD_SET(m_ChildStdOut, &efds);
+            max = m_ChildStdOut;
+        }
+        if ( mask & CPipe::fStdErr  &&  m_ChildStdErr != -1 ) {
+            FD_SET(m_ChildStdErr, &rfds);
+            FD_SET(m_ChildStdErr, &efds);
+            max = m_ChildStdErr;
+        }
+        
+        int n = select(max + 1, &rfds, &wfds, &efds, tmp);
+                       
+        if (n == 0) {
+            // timeout
+            break;
+        } else if (n > 0) {
+            if ( mask & CPipe::fStdIn   &&  m_ChildStdIn != -1   &&
+                 FD_ISSET(m_ChildStdIn, &wfds) ) {
+                poll |= CPipe::fStdIn;
+            }
+            if ( mask & CPipe::fStdOut  &&  m_ChildStdOut != -1  &&
+                 FD_ISSET(m_ChildStdOut, &rfds) ) {
+                poll |= CPipe::fStdOut;
+            }
+            if ( mask & CPipe::fStdErr  &&  m_ChildStdErr != -1  &&
+                 FD_ISSET(m_ChildStdErr, &rfds) ) {
+                poll |= CPipe::fStdErr;
+            }
+            break;
+        } else if (errno != EINTR) {
+            throw string("Failed select() on pipe");
+        }
+        // continue
+    }
+    return poll;
 }
 
 
@@ -1294,6 +1409,33 @@ EIO_Status CPipe::Write(const void* buf, size_t count, size_t* written)
 }
 
 
+CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask, 
+                                  const STimeout* timeout)
+{
+    if ( !m_PipeHandle ) {
+        NCBI_THROW(CPipeException, eInit,
+                   "OS-specific pipe handle is not created");
+    }
+    if ( !mask ) {
+        return 0;
+    }
+    TChildPollMask x_mask = mask;
+    if ( mask & fDefault ) {
+        x_mask |= m_ReadHandle;
+    }
+    TChildPollMask poll = m_PipeHandle->Poll(x_mask, timeout);
+    if ( mask & fDefault ) {
+        if ( poll & m_ReadHandle ) {
+            poll |= fDefault;
+        }
+        if ( !(mask & m_ReadHandle) ) {
+            poll &= ~m_ReadHandle;
+        }
+    }
+    return poll;
+}
+
+
 EIO_Status CPipe::Status(EIO_Event direction) const
 {
     switch ( direction ) {
@@ -1362,6 +1504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/03/01 17:01:17  ivanov
+ * + CPipe::Poll() -- Unix version only
+ *
  * Revision 1.41  2005/11/29 19:55:43  lavr
  * When requested to close, reopen standard fds to /dev/null instead
  *
