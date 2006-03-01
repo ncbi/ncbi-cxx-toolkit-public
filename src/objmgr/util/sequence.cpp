@@ -2148,8 +2148,11 @@ CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
         result->SetNull();
         break;
     case 1:
-        result.Reset(mix.Set().front());
+    {{
+        CRef<CSeq_loc> first = mix.Set().front();
+        result = first;
         break;
+    }}
     default:
         break;
     }
@@ -2517,6 +2520,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.136  2006/03/01 19:06:54  vasilche
+* Avoid premature deletion of Seq-loc.
+*
 * Revision 1.135  2006/02/09 20:30:28  ucko
 * The versions of CFastaOstream::Write that set up a temporary OM scope
 * no longer need to take non-const arguments.
