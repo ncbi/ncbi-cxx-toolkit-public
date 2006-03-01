@@ -651,13 +651,13 @@ public:
 };
 
 XXX::XXX(const string& m) : mess(m) {
-    NcbiCerr << "XXX: " << long(this) << NcbiEndl;
+    NcbiCerr << "XXX: " << (void*)(this) << NcbiEndl;
 }
 XXX::XXX(const XXX&x) : mess(x.mess) {
-    NcbiCerr << "XXX(" << long(&x) << "): " << long(this) << NcbiEndl;
+    NcbiCerr << "XXX(" << (void*)(&x) << "): " << (void*)(this) << NcbiEndl;
 }
 XXX::~XXX(void) {
-    NcbiCerr << "~XXX: " << long(this) << NcbiEndl;
+    NcbiCerr << "~XXX: " << (void*)(this) << NcbiEndl;
 }
 
 static void s_ThrowXXX(void) {
@@ -1057,6 +1057,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2006/03/01 17:55:46  gouriano
+ * Do not convert pointer to long
+ *
  * Revision 1.106  2006/02/24 15:23:19  vasilche
  * Added CIref test.
  *
