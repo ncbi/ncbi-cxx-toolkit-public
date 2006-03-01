@@ -106,7 +106,8 @@ public:
     /// @param gap_opens Number of gap openings [in]
     /// @param positives Number of positives [in]
     void SetCounts(int num_ident, int length, int gaps, int gap_opens, 
-                   int positives=0);
+                   int positives =0, int query_frame = 1, 
+                   int subject_frame = 1);
     /// Set all member fields, given a Seq-align
     /// @param sal Seq-align to get data from [in]
     /// @param scope Scope for Bioseq retrieval [in]
@@ -156,7 +157,9 @@ public:
         ePositives,            ///< Number of positive-scoring matches
         eGapOpenings,          ///< Number of gap openings
         eGaps,                 ///< Total number of gaps
-        eMaxTabularField       ///< Sentinel value
+        eMaxTabularField,      ///< Sentinel value
+        ePercentPositives,     ///<percent positives 
+        eFrames                ///< frames
     };
 
     /// Return all field names supported in the format string.
@@ -235,6 +238,10 @@ protected:
     void x_PrintGapOpenings(void);
     /// Print total number of gaps
     void x_PrintGaps(void);
+    /// Print percent positives
+    void x_PrintPercentPositives();
+    /// Print frames
+    void x_PrintFrames();
 
 private:
 
@@ -256,6 +263,8 @@ private:
     int m_SubjectEnd;        ///< Ending offset in subject 
     string m_QuerySeq;       ///< Aligned part of the query sequence
     string m_SubjectSeq;     ///< Aligned part of the subject sequence
+    int m_QueryFrame;        ///< query frame
+    int m_SubjectFrame;      ///< subject frame
     /// Map of field enum values to field names.
     map<string, ETabularField> m_FieldMap; 
     list<ETabularField> m_FieldsToShow; ///< Which fields to show?
@@ -281,13 +290,15 @@ CBlastTabularInfo::SetEndpoints(int q_start, int q_end, int s_start, int s_end)
 
 inline void 
 CBlastTabularInfo::SetCounts(int num_ident, int length, int gaps, int gap_opens,
-                             int positives)
+                             int positives, int query_frame, int subject_frame)
 {
     m_AlignLength = length;
     m_NumIdent = num_ident;
     m_NumGaps = gaps;
     m_NumGapOpens = gap_opens;
     m_NumPositives = positives;
+    m_QueryFrame = query_frame;
+    m_SubjectFrame = subject_frame;
 }
 
 inline void
@@ -403,6 +414,10 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintGapOpenings(); break;
     case eGaps:
         x_PrintGaps(); break;
+    case ePercentPositives:
+        x_PrintPercentPositives(); break;
+    case eFrames:
+        x_PrintFrames(); break;
     default:
         break;
     }
@@ -465,6 +480,18 @@ inline void CBlastTabularInfo::x_PrintPercentIdentical(void)
     m_Ostream << NStr::DoubleToString(perc_ident, 2);
 }
 
+inline void CBlastTabularInfo::x_PrintPercentPositives(void)
+{
+    double perc_positives = 
+        (m_AlignLength > 0 ? ((double)m_NumPositives)/m_AlignLength * 100 : 0);
+    m_Ostream << NStr::DoubleToString(perc_positives, 2);
+}
+
+inline void CBlastTabularInfo::x_PrintFrames(void)
+{
+    m_Ostream << m_QueryFrame << "/" << m_SubjectFrame;
+}
+
 inline void CBlastTabularInfo::x_PrintNumIdentical(void)
 {
     m_Ostream << m_NumIdent;
@@ -500,6 +527,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/03/01 18:38:28  jianye
+* added positives and frame info
+*
 * Revision 1.8  2005/12/21 15:18:13  jcherry
 * Added export specifiers
 *

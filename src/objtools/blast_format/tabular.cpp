@@ -86,6 +86,8 @@ void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
     m_FieldMap["positive"] = ePositives;
     m_FieldMap["gapopen"] = eGapOpenings;
     m_FieldMap["gaps"] = eGaps;
+    m_FieldMap["ppos"] = ePercentPositives;
+    m_FieldMap["frames"] = eFrames;
     
     vector<string> format_tokens;
 
@@ -407,8 +409,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         }
     }
 
-    SetCounts(num_ident, align_length, num_gaps, num_gap_opens, num_positives);
-
+   
     int q_start, q_end, s_start, s_end;
 
     // For translated search, for a negative query frame, reverse its start and
@@ -432,6 +433,20 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         s_start = alnVec.GetSeqStart(kSubjectRow) + 1;
         s_end = alnVec.GetSeqStop(kSubjectRow) + 1;
     }
+    
+    int query_frame = 1, subject_frame = 1;
+    if (kTranslated) {
+        query_frame = CBlastFormatUtil::
+            GetFrame (q_start - 1, ds.GetSeqStrand(kQueryRow), 
+                      scope.GetBioseqHandle(align.GetSeq_id(0)));
+    
+        subject_frame = CBlastFormatUtil::
+            GetFrame (s_start - 1, ds.GetSeqStrand(kSubjectRow), 
+                      scope.GetBioseqHandle(align.GetSeq_id(1)));
+
+    }
+    SetCounts(num_ident, align_length, num_gaps, num_gap_opens, num_positives,
+              query_frame, subject_frame);
 
     SetEndpoints(q_start, q_end, s_start, s_end);
 
@@ -508,6 +523,10 @@ void CBlastTabularInfo::x_PrintFieldNames()
             m_Ostream << "gap opens"; break;
         case eGaps:
             m_Ostream << "gaps"; break;
+        case ePercentPositives:
+            m_Ostream << "% positives"; break;
+        case eFrames:
+            m_Ostream << "% frames"; break; 
         default:
             break;
         }
@@ -553,6 +572,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/03/01 18:38:10  jianye
+* added positives and frame info
+*
 * Revision 1.10  2005/08/10 17:13:24  dondosha
 * Minor Solaris compiler warning and doxygen fixes
 *

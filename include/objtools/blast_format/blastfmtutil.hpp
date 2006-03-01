@@ -307,6 +307,16 @@ public:
     ///@param scope: scope to fetch this sequence
     ///
     static int GetTaxidForSeqid(const CSeq_id& id, CScope& scope);
+    
+    ///return the frame for a given strand
+    ///Note that start is zero bases.  It returns frame +/-(1-3).
+    ///0 indicates error
+    ///@param start: sequence start position
+    ///@param strand: strand
+    ///@param id: the seqid
+    ///@return: the frame
+    ///
+    static int GetFrame (int start, ENa_strand strand, const CBioseq_Handle& handle); 
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.
@@ -328,6 +338,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.20  2006/03/01 18:38:28  jianye
+added positives and frame info
+
 Revision 1.19  2005/12/21 15:18:13  jcherry
 Added export specifiers
 

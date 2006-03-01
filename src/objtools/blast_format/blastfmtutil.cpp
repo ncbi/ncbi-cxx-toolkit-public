@@ -686,6 +686,21 @@ int CBlastFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
     return taxid;
 }
 
+int CBlastFormatUtil::GetFrame (int start, ENa_strand strand, 
+                                const CBioseq_Handle& handle) 
+{
+    int frame = 0;
+    if (strand == eNa_strand_plus) {
+        frame = (start % 3) + 1;
+    } else if (strand == eNa_strand_minus) {
+        frame = -(((int)handle.GetBioseqLength() - start - 1)
+                  % 3 + 1);
+        
+    }
+    return frame;
+}
+
+
 CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows, 
                                                unsigned int ncols)
 {
