@@ -167,6 +167,7 @@ typedef vector< TMaskedQueryRegions > TSeqLocInfoVector;
 /// Build a TMaskedQueryRegions from a Packed CSeq_loc.
 /// @param sloc Seq-loc describing masked query regions.
 /// @return List of masked query regions.
+NCBI_XBLAST_EXPORT
 TMaskedQueryRegions
 PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc);
 
@@ -176,7 +177,7 @@ PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc);
 /// direction can be lossy.  The conversion could be supported for
 /// cases where it can be done safely, but it might be better to
 /// convert the calling code to use a CBlastQueryVector.
-
+NCBI_XBLAST_EXPORT
 CRef<objects::CSeq_loc>
 MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & sloc);
 
@@ -290,6 +291,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2006/03/02 18:42:37  ivanov
+* Added more export specifiers
+*
 * Revision 1.69  2006/03/02 12:16:20  ivanov
 * Added export specifier for CSeqLocInfo
 *
