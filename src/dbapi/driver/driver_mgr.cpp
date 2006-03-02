@@ -36,8 +36,10 @@
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <dbapi/driver/driver_mgr.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -78,17 +80,15 @@ CDllResolver_Getter<I_DriverContext>::operator()(void)
 class C_xDriverMgr : public I_DriverMgr
 {
 public:
-    C_xDriverMgr(unsigned int nof_drivers= 16);
+    C_xDriverMgr(unsigned int nof_drivers = 16);
 
     FDBAPI_CreateContext GetDriver(const string& driver_name,
-                                   string* err_msg= 0);
+                                   string*       err_msg = 0);
 
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
-    virtual ~C_xDriverMgr() {
-        delete [] m_Drivers;
-    }
+    virtual ~C_xDriverMgr(void);
 
 public:
     /// Add path for the DLL lookup
@@ -110,12 +110,17 @@ private:
     typedef FDriverRegister (*FDllEntryPoint)  (void);
 
     struct SDrivers {
+        SDrivers(const string& name, FDBAPI_CreateContext func) :
+            drv_name(name),
+            drv_func(func)
+        {
+        }
+        
         string               drv_name;
         FDBAPI_CreateContext drv_func;
-    } *m_Drivers;
+    };
+    vector<SDrivers> m_Drivers;
 
-    unsigned int m_NofDrvs;
-    unsigned int m_NofRoom;
     CFastMutex m_Mutex1;
     CFastMutex m_Mutex2;
 
@@ -126,12 +131,8 @@ private:
     CRef<TContextManager>   m_ContextManager;
 };
 
-C_xDriverMgr::C_xDriverMgr( unsigned int nof_drivers )
+C_xDriverMgr::C_xDriverMgr( unsigned int /*nof_drivers*/ )
 {
-    m_NofRoom= nof_drivers? nof_drivers : 16;
-    m_Drivers= new SDrivers[m_NofRoom];
-    m_NofDrvs= 0;
-
     ///////////////////////////////////
 
     m_ContextManager.Reset( TContextManagerStore::Get() );
@@ -142,6 +143,10 @@ C_xDriverMgr::C_xDriverMgr( unsigned int nof_drivers )
 #endif
 }
 
+C_xDriverMgr::~C_xDriverMgr(void) 
+{
+}
+    
 void
 C_xDriverMgr::AddDllSearchPath(const string& path)
 {
@@ -195,32 +200,25 @@ C_xDriverMgr::GetDriverContext(
 void C_xDriverMgr::RegisterDriver(const string&        driver_name,
                                   FDBAPI_CreateContext driver_ctx_func)
 {
-    if(m_NofDrvs < m_NofRoom) {
-        CFastMutexGuard mg(m_Mutex2);
-        for(unsigned int i= m_NofDrvs; i--; ) {
-            if(m_Drivers[i].drv_name == driver_name) {
-                m_Drivers[i].drv_func= driver_ctx_func;
-                return;
-            }
+    NON_CONST_ITERATE(vector<SDrivers>, it, m_Drivers) {
+        if (it->drv_name == driver_name) {
+            it->drv_func = driver_ctx_func;
+            
+            return;
         }
-        m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
-        m_Drivers[m_NofDrvs-1].drv_name= driver_name;
     }
-    else {
-        DATABASE_DRIVER_ERROR( "No space left for driver registration", 101 );
-    }
-
+    
+    m_Drivers.push_back(SDrivers(driver_name, driver_ctx_func));
 }
 
 FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
-                                             string* err_msg)
+                                             string*       err_msg)
 {
     CFastMutexGuard mg(m_Mutex1);
-    unsigned int i;
 
-    for(i= m_NofDrvs; i--; ) {
-        if(m_Drivers[i].drv_name == driver_name) {
-            return m_Drivers[i].drv_func;
+    ITERATE(vector<SDrivers>, it, m_Drivers) {
+        if (it->drv_name == driver_name) {
+            return it->drv_func;
         }
     }
 
@@ -228,9 +226,9 @@ FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
         return 0;
     }
 
-    for(i= m_NofDrvs; i--; ) {
-        if(m_Drivers[i].drv_name == driver_name) {
-            return m_Drivers[i].drv_func;
+    ITERATE(vector<SDrivers>, it, m_Drivers) {
+        if (it->drv_name == driver_name) {
+            return it->drv_func;
         }
     }
 
@@ -240,7 +238,6 @@ FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
 bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
 {
     try {
-//        CDll drv_dll("dbapi_driver_" + driver_name);
         CDll drv_dll("ncbi_xdbapi_" + driver_name);
 
         FDllEntryPoint entry_point;
@@ -249,11 +246,14 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
             drv_dll.Unload();
             return false;
         }
+        
         FDriverRegister reg = entry_point();
+        
         if(!reg) {
             DATABASE_DRIVER_ERROR( "driver reports an unrecoverable error "
                                "(e.g. conflict in libraries)", 300 );
         }
+        
         reg(*this);
         return true;
     }
@@ -263,31 +263,15 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
     }
 }
 
-static C_xDriverMgr* s_DrvMgr= 0;
-static int           s_DrvCount= 0;
-DEFINE_STATIC_FAST_MUTEX(s_DrvMutex);
+static CSafeStaticPtr<C_xDriverMgr> s_DrvMgr;
 
 C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
 {
-    CFastMutexGuard mg(s_DrvMutex); // lock the mutex
-    if(!s_DrvMgr) { // There is no driver manager yet
-        s_DrvMgr= new C_xDriverMgr(nof_drivers);
-    }
-    ++s_DrvCount;
 }
 
 
 C_DriverMgr::~C_DriverMgr()
 {
-    try {
-        CFastMutexGuard mg(s_DrvMutex); // lock the mutex
-        if(--s_DrvCount <= 0) { // this is a last one
-            delete s_DrvMgr;
-            s_DrvMgr= 0;
-            s_DrvCount= 0;
-        }
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
@@ -299,7 +283,6 @@ FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
                                  FDBAPI_CreateContext driver_ctx_func)
 {
-    _ASSERT( s_DrvMgr );
     s_DrvMgr->RegisterDriver(driver_name, driver_ctx_func);
 }
 
@@ -307,14 +290,12 @@ I_DriverContext* C_DriverMgr::GetDriverContext(const string&       driver_name,
                                                string*             err_msg,
                                                const map<string,string>* attr)
 {
-    _ASSERT( s_DrvMgr );
     return s_DrvMgr->GetDriverContext( driver_name, attr );
 }
 
 void
 C_DriverMgr::AddDllSearchPath(const string& path)
 {
-    _ASSERT( s_DrvMgr );
     s_DrvMgr->AddDllSearchPath( path );
 }
 
@@ -323,7 +304,6 @@ C_DriverMgr::GetDriverContextFromTree(
     const string& driver_name,
     const TPluginManagerParamTree* const attr)
 {
-    _ASSERT( s_DrvMgr );
     return s_DrvMgr->GetDriverContext( driver_name, attr );
 }
 
@@ -332,7 +312,6 @@ C_DriverMgr::GetDriverContextFromMap(
     const string& driver_name,
     const map<string, string>* attr)
 {
-    _ASSERT( s_DrvMgr );
     return s_DrvMgr->GetDriverContext( driver_name, attr );
 }
 
@@ -349,9 +328,13 @@ Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
     _ASSERT(ReaderManager);
 
     try {
+        auto_ptr<TPluginManagerParamTree> pt;
+        
         if ( attr != NULL ) {
-            TPluginManagerParamTree* pt = MakePluginManagerParamTree(driver_name, attr);
-            _ASSERT(pt);
+             pt.reset( MakePluginManagerParamTree(driver_name, attr) );
+            
+            _ASSERT( pt.get() );
+            
             nd = pt->FindNode( driver_name );
         }
         drv = ReaderManager->CreateInstance(
@@ -380,6 +363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/03/02 16:01:11  ssikorsk
+ * Use CSafeStaticPtr to manage lifetime of static C_xDriverMgr s_DrvMgr.
+ *
  * Revision 1.31  2006/02/22 16:05:35  ssikorsk
  * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
  *
