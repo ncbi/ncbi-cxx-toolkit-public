@@ -960,8 +960,8 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 
             // Blocked -- wait for data to come;  exit if timeout/error
             if (errno == EAGAIN  ||  errno == EWOULDBLOCK) {
-                CPipe::TChildPollMask poll = x_Poll(from_handle, timeout);
-                if ( !poll ) {
+                if ( ( timeout  &&  !timeout->sec  &&  !timeout->usec )  ||
+                    !x_Poll(from_handle, timeout) ) {
                     status = eIO_Timeout;
                     break;
                 }
@@ -1018,8 +1018,8 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
 
             // Blocked -- wait for write readiness;  exit if timeout/error
             if (errno == EAGAIN  ||  errno == EWOULDBLOCK) {
-                CPipe::TChildPollMask poll = x_Poll(CPipe::fStdIn, timeout);
-                if ( !poll ) {
+                if ( ( timeout  &&  !timeout->sec  &&  !timeout->usec)  ||
+                    !x_Poll(CPipe::fStdIn, timeout) ) {
                     status = eIO_Timeout;
                     break;
                 }
@@ -1110,11 +1110,6 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 {
     CPipe::TChildPollMask poll = 0;
 
-    // Wait for the file descriptors to become ready only
-    // if timeout is set or infinite
-    if (timeout  &&  !timeout->sec  &&  !timeout->usec) {
-        return poll;
-    }
     for (;;) { // Auto-resume if interrupted by a signal
         struct timeval* tmp;
         struct timeval  tm;
@@ -1127,18 +1122,18 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
         } else {
             tmp = 0;
         }
-        
+
         fd_set rfds;
         fd_set wfds;
         fd_set efds;
-        
+
         FD_ZERO(&rfds);
         FD_ZERO(&wfds);
         FD_ZERO(&efds);
-        
-        int max = 0;
-        
-        if ( (mask & CPipe::fStdIn)   &&  m_ChildStdIn != -1 ) {
+
+        int max = -1;
+
+        if ( (mask & CPipe::fStdIn)   &&  m_ChildStdIn  != -1 ) {
             FD_SET(m_ChildStdIn,  &wfds);
             FD_SET(m_ChildStdIn,  &efds);
             if (max < m_ChildStdIn) {
@@ -1159,9 +1154,9 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                 max = m_ChildStdErr;
             }
         }
-        
+
         int n = select(max + 1, &rfds, &wfds, &efds, tmp);
-                       
+
         if (n == 0) {
             // timeout
             break;
@@ -1430,6 +1425,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/03/02 20:28:12  lavr
+ * Move timeout restrictions out of x_Poll() [for Poll() to work correctly]
+ *
  * Revision 1.47  2006/03/02 20:15:51  lavr
  * Fix Unix version of CPipeHandle::x_Poll()
  *
