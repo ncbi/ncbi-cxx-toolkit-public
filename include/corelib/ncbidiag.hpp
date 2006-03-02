@@ -112,54 +112,39 @@ private:
 // Based on boost's BOOST_CURRENT_FUNCTION
 
 #ifndef NDEBUG
-
-#define NCBI_SHOW_FUNCTION_NAME
-
+#  define NCBI_SHOW_FUNCTION_NAME
 #endif
 
 
 #ifdef NCBI_SHOW_FUNCTION_NAME
-
-#if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600))
-
-# define NCBI_CURRENT_FUNCTION __PRETTY_FUNCTION__
-
-#elif defined(__FUNCSIG__)
-
-# define NCBI_CURRENT_FUNCTION __FUNCSIG__
-
-#elif (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 600)) || (defined(__IBMCPP__) && (__IBMCPP__ >= 500))
-
-# define NCBI_CURRENT_FUNCTION __FUNCTION__
-
-#elif defined(__BORLANDC__) && (__BORLANDC__ >= 0x550)
-
-# define NCBI_CURRENT_FUNCTION __FUNC__
-
-#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
-
-# define NCBI_CURRENT_FUNCTION __func__
-
+#  if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600))
+#    define NCBI_CURRENT_FUNCTION __PRETTY_FUNCTION__
+#  elif defined(__FUNCSIG__)
+#    define NCBI_CURRENT_FUNCTION __FUNCSIG__
+#  elif (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 600)) || (defined(__IBMCPP__) && (__IBMCPP__ >= 500))
+#    define NCBI_CURRENT_FUNCTION __FUNCTION__
+#  elif defined(__BORLANDC__) && (__BORLANDC__ >= 0x550)
+#    define NCBI_CURRENT_FUNCTION __FUNC__
+#  elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
+#    define NCBI_CURRENT_FUNCTION __func__
+#  else
+#    define NCBI_CURRENT_FUNCTION NULL
+#  endif
 #else
-
-# define NCBI_CURRENT_FUNCTION NULL
-
+#  define NCBI_CURRENT_FUNCTION NULL
 #endif
 
-#else
-
-# define NCBI_CURRENT_FUNCTION NULL
-
-#endif
 
 /// Make compile time diagnostic information object
 /// to use in CDiagInfo and CException
 /// @sa
 ///   CDiagCompileInfo
 
-#define DIAG_COMPILE_INFO NCBI_NS_NCBI::CDiagCompileInfo(__FILE__, __LINE__,  \
-                                                 NCBI_CURRENT_FUNCTION, \
-                                                 NCBI_MAKE_MODULE(NCBI_MODULE))
+#define DIAG_COMPILE_INFO                               \
+  NCBI_NS_NCBI::CDiagCompileInfo(__FILE__,              \
+                                 __LINE__,              \
+                                 NCBI_CURRENT_FUNCTION, \
+                                 NCBI_MAKE_MODULE(NCBI_MODULE))
 
     
 
@@ -756,6 +741,8 @@ NCBI_XNCBI_EXPORT
 extern void UnsetDiagPostFlag(EDiagPostFlag flag);
 
 /// Versions of the above for extra trace flags.
+/// ATTENTION:  Thus set trace flags will be ADDED to the regular
+///             posting flags.
 
 NCBI_XNCBI_EXPORT
 extern TDiagPostFlags SetDiagTraceAllFlags(TDiagPostFlags flags);
@@ -1329,6 +1316,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.101  2006/03/02 16:28:53  vakatov
+ * Some comments and code styling
+ *
  * Revision 1.100  2006/02/22 16:37:46  grichenk
  * Added CDiagContext::SetOldPostFormat()
  *
