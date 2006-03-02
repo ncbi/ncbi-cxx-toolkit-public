@@ -643,12 +643,7 @@ private:
     int  x_GetHandle(CPipe::EChildIOHandle from_handle) const;
     // Trigger blocking mode on specified I/O handle.
     bool x_SetNonBlockingMode(int fd, bool nonblock = true) const;
-    // Wait on the file descriptor I/O.
-    // Return eIO_Success when "fd" is found ready for the I/O.
-    // Return eIO_Timeout, if timeout expired before I/O became available.
-    // Throw an exception on error.
-    EIO_Status x_Wait(int fd, EIO_Event direction,
-                      const STimeout* timeout) const;
+    // Wait on the file descriptors I/O.
     CPipe::TChildPollMask x_Poll(CPipe::TChildPollMask mask,
                                  const STimeout* timeout) const;
 
@@ -976,8 +971,9 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 
             // Blocked -- wait for data to come;  exit if timeout/error
             if (errno == EAGAIN  ||  errno == EWOULDBLOCK) {
-                status = x_Wait(fd, eIO_Read, timeout);
-                if (status != eIO_Success) {
+                CPipe::TChildPollMask poll = x_Poll(from_handle, timeout);
+                if ( !poll ) {
+                    status = eIO_Timeout;
                     break;
                 }
                 continue;
@@ -1031,8 +1027,9 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
             }
             // Blocked -- wait for write readiness;  exit if timeout/error
             if (errno == EAGAIN  ||  errno == EWOULDBLOCK) {
-                status = x_Wait(m_ChildStdIn, eIO_Write, timeout);
-                if (status != eIO_Success) {
+                CPipe::TChildPollMask poll = x_Poll(CPipe::fStdIn, timeout);
+                if ( !poll ) {
+                    status = eIO_Timeout;
                     break;
                 }
                 continue;
@@ -1113,78 +1110,6 @@ bool CPipeHandle::x_SetNonBlockingMode(int fd, bool nonblock) const
                  nonblock ?
                  fcntl(fd, F_GETFL, 0) | O_NONBLOCK :
                  fcntl(fd, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1;
-}
-
-
-EIO_Status CPipeHandle::x_Wait(int fd, EIO_Event direction,
-                               const STimeout* timeout) const
-{
-    // Wait for the file descriptor to become ready only
-    // if timeout is set or infinite
-    if (timeout  &&  !timeout->sec  &&  !timeout->usec) {
-        return eIO_Timeout;
-    }
-    for (;;) { // Auto-resume if interrupted by a signal
-        struct timeval* tmp;
-        struct timeval  tm;
-
-        if ( timeout ) {
-            // NB: Timeout has been normalized already
-            tm.tv_sec  = timeout->sec;
-            tm.tv_usec = timeout->usec;
-            tmp = &tm;
-        } else {
-            tmp = 0;
-        }
-        fd_set rfds;
-        fd_set wfds;
-        fd_set efds;
-        switch (direction) {
-        case eIO_Read:
-            FD_ZERO(&rfds);
-            FD_SET(fd, &rfds);
-            break;
-        case eIO_Write:
-            FD_ZERO(&wfds);
-            FD_SET(fd, &wfds);
-            break;
-        default:
-            assert(0);
-            return eIO_Unknown;
-        }
-        FD_ZERO(&efds);
-        FD_SET(fd, &efds);
-
-        int n = select(fd + 1,
-                       direction == eIO_Read  ? &rfds : 0,
-                       direction == eIO_Write ? &wfds : 0,
-                       &efds, tmp);
-        if (n == 0) {
-            return eIO_Timeout;
-        } else if (n > 0) {
-            switch (direction) {
-            case eIO_Read:
-                if ( !FD_ISSET(fd, &rfds) ) {
-                    assert( FD_ISSET(fd, &efds) );
-                    return eIO_Closed;
-                }
-                break;
-            case eIO_Write:
-                if ( !FD_ISSET(fd, &wfds) ) {
-                    assert( FD_ISSET(fd, &efds) );
-                    return eIO_Closed;
-                }
-                break;
-            default:
-                assert(0);
-                return eIO_Unknown;
-            }
-            break;
-        } else if (errno != EINTR) {
-            throw string("Failed select() on pipe");
-        }
-    }
-    return eIO_Success;
 }
 
 
@@ -1508,6 +1433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/03/02 17:33:39  ivanov
+ * UNIX: CPipeHandle:: use x_Poll() instead of x_Wait() in Read/Write
+ *
  * Revision 1.43  2006/03/02 14:28:24  ivanov
  * UNIX: CPipeHandle::Close() -- release zombie process from the system
  *
