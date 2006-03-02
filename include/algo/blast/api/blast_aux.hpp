@@ -120,7 +120,7 @@ TAutoUint1ArrayPtr
 FindGeneticCode(int genetic_code);
 
 ///structure for seqloc info
-class CSeqLocInfo : public CObject {
+class NCBI_XBLAST_EXPORT CSeqLocInfo : public CObject {
 public:
     typedef enum ETranslationFrame {
         eFramePlus1  =  1,
@@ -290,6 +290,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2006/03/02 12:16:20  ivanov
+* Added export specifier for CSeqLocInfo
+*
 * Revision 1.68  2006/02/22 18:18:35  bealer
 * - Blastx filtering support.
 *
