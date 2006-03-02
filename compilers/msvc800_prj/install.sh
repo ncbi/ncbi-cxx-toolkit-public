@@ -118,6 +118,14 @@ for i in 'DLL' '' ; do
   fi
 done
 
+# Gbench public installation
+for i in ReleaseDLL DebugDLL; do
+  if test -d "$builddir"/compilers/$compiler/dll/bin/"$i" ; then
+    cp -pr "$builddir"/compilers/$compiler/dll/bin/$i/gbench "$bindir"
+    break
+  fi
+done
+
 
 # Compiler dir (copy all .pdb and configurable files files for debug purposes)
 makedir "$cldir" -p
@@ -135,15 +143,6 @@ makedir "$cldir"/$compiler/dll -p
 cp -p "$builddir"/compilers/$compiler/*        "$cldir"/$compiler
 cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
 cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
-
-
-# Gbench public installation
-#for i in ReleaseDLL DebugDLL; do
-#  if test -d "$builddir"/compilers/$compiler/dll/bin/"$i" ; then
-#    makedir "$bindir"/gbench/"$i" -p
-#    cp -pr "$builddir"/compilers/$compiler/dll/bin/$i/gbench/* "$bindir"/gbench/"$i"
-#  fi
-#done
 
 
 # CVS checkout info file
