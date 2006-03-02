@@ -237,22 +237,24 @@ int CRemote_blastApplication::Run(void)
     
     alparms.SetNumAlgn(opts.NumAligns());
     
+    int retval = 0;
     try {
-    return QueueAndPoll(program,
-                        service,
-                        database,
-                        opts,
-                        query_in,
-                        verbose,
-                        lcase_masking,
-                        trust_defline,
-                        raw_asn,
-                        alparms,
-                        async_mode,
-                        get_RID);
+        retval = QueueAndPoll(program,
+                              service,
+                              database,
+                              opts,
+                              query_in,
+                              verbose,
+                              lcase_masking,
+                              trust_defline,
+                              raw_asn,
+                              alparms,
+                              async_mode,
+                              get_RID);
     } catch (const CException& e) {
         cerr << e.what() << endl;
     }
+    return retval;
 }
 
 /// Simple, wrapper style, main function for app framework.
@@ -265,6 +267,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/02 22:58:18  camacho
+ * Eliminate compiler warning
+ *
  * Revision 1.6  2006/03/01 21:26:57  camacho
  * Add support for user-specified query masking locations
  *
