@@ -855,6 +855,10 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
             if (ws > 0) {
                 // Process has terminated
                 status = eIO_Success;
+                if ( x_options ) {
+                    // Release zombie process from the system.
+                    waitpid(m_Pid, &x_exitcode, 0);
+                }
                 break;
             } else if (ws == 0) {
                 // Process is still running
@@ -1504,6 +1508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/03/02 14:28:24  ivanov
+ * UNIX: CPipeHandle::Close() -- release zombie process from the system
+ *
  * Revision 1.42  2006/03/01 17:01:17  ivanov
  * + CPipe::Poll() -- Unix version only
  *
