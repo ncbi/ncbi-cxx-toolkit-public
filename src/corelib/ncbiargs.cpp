@@ -1121,11 +1121,7 @@ CArgs::~CArgs(void)
 
 static string s_ComposeNameExtra(size_t idx)
 {
-#if SIZEOF_SIZE_T == 8
 	return '#' + NStr::UInt8ToString(idx);
-#else
-	return '#' + NStr::UIntToString(idx);
-#endif
 }
 
 
@@ -2182,19 +2178,19 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
         list<string> opt;
         // Collect mandatory args
         for (it = args.begin();  it != args.end();  ++it) {
-            if (s_IsOptional(**it) || s_IsFlag(**it)) {
+            if (s_IsOptional(**it)  ||  s_IsFlag(**it)) {
                 continue;
             }
             s_PrintComment(req, **it, m_UsageWidth);
         }
         // Collect optional args
-        for (int grp = 0; grp < int(m_ArgGroups.size()); ++grp) {
+        for (size_t grp = 0;  grp < m_ArgGroups.size();  ++grp) {
             if ( !m_ArgGroups[grp].empty() ) {
                 NStr::Wrap(m_ArgGroups[grp], m_UsageWidth, opt,
                     NStr::fWrap_Hyphenate, " *** ");
             }
             for (it = args.begin();  it != args.end();  ++it) {
-                if (!s_IsOptional(**it) && !s_IsFlag(**it)) {
+                if (!s_IsOptional(**it)  &&  !s_IsFlag(**it)) {
                     continue;
                 }
                 if ((*it)->GetGroup() == grp) {
@@ -2540,6 +2536,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/03/02 16:31:18  vakatov
+ * Just use UInt8ToString() even for platforms with shorter 'size_t',
+ * to avoid using config pre-processing macro where possible
+ *
  * Revision 1.65  2006/02/28 18:58:47  gouriano
  * MSVC x64 tuneup
  *
