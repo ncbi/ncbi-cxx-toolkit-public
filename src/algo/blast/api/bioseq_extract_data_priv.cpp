@@ -144,6 +144,7 @@ CBlastSeqVectorFromCSeq_data::SetCoding(objects::CSeq_data::E_Choice c)
                                              tmp,
                                              x_Encoding_CSeq_data2CSeqUtil(c));
         ASSERT(nconv == tmp.size());
+        nconv += 0; // to eliminate compiler warning
         m_Encoding = x_Encoding_CSeq_data2CSeqUtil(c);
         m_SequenceData = tmp;
     }
