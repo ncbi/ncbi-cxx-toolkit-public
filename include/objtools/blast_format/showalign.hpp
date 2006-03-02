@@ -577,16 +577,16 @@ private:
     ///@param master_feat_str: the feature for master seq
     ///@param out: the out stream
     ///
-    void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
-                                           int row, 
-                                           CAlnMap::TSignedRange alignment_range,
-                                           int aln_start,
-                                           int line_length, 
-                                           int id_length,
-                                           int start_length,
-                                           int max_feature_num, 
-                                           string& master_feat_str,
-                                           CNcbiOstream& out);
+    void x_PrintFeatures(list<SAlnFeatureInfo*> feature,
+                         int row, 
+                         CAlnMap::TSignedRange alignment_range,
+                         int aln_start,
+                         int line_length, 
+                         int id_length,
+                         int start_length,
+                         int max_feature_num, 
+                         string& master_feat_str,
+                         CNcbiOstream& out);
 
 };
 
@@ -597,6 +597,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.46  2006/03/02 21:13:16  jcherry
+*Removed gratuitous class qualifier on method declaration
+*
 *Revision 1.45  2006/02/28 19:54:06  zaretska
 *Added new DispalyOption to for Tree view button
 *
