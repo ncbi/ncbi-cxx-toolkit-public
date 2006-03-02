@@ -128,6 +128,10 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
       so set it to 1. */
    kbp->H = 1.0;
 
+   /* This is populated so that the checks for valid contexts don't fail,
+    * note that this field is not used at all during a PHI-BLAST search */
+   sbp->sfp[0] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
+
    /* Ideal Karlin block is filled unconditionally. */
    status = Blast_ScoreBlkKbpIdealCalc(sbp);
    if (status)
