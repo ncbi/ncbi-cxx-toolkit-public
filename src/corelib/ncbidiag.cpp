@@ -1486,12 +1486,12 @@ bool CNcbiDiag::CheckFilters(void) const
     if (GetSeverity() == eDiag_Trace) {
         // check for trace filter
         return 
-        s_TraceFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject;
+         s_TraceFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject;
     }
     
     // check for post filter and severity
     return 
-        (s_PostFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject);
+        s_PostFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject;
 }
 
 
@@ -1573,7 +1573,7 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
     }
     sev = EDiagSev(nsev);
     // Unknown value
-    return sev >= eDiagSevMin && sev <= eDiagSevMax;
+    return sev >= eDiagSevMin  &&  sev <= eDiagSevMax;
 }
 
 void CNcbiDiag::DiagFatal(const CDiagCompileInfo& info,
@@ -1626,7 +1626,7 @@ CDiagRestorer::CDiagRestorer(void)
     m_ErrCodeInfo           = buf.sm_ErrCodeInfo;
     m_CanDeleteErrCodeInfo  = buf.sm_CanDeleteErrCodeInfo;
     // avoid premature cleanup
-    buf.sm_CanDeleteHandler = false;
+    buf.sm_CanDeleteHandler     = false;
     buf.sm_CanDeleteErrCodeInfo = false;
 }
 
@@ -1672,6 +1672,7 @@ private:
     FDiagCleanup m_Cleanup;
 };
 
+
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup)
@@ -1683,9 +1684,10 @@ extern void SetDiagHandler(FDiagHandler func,
 class CCompatStreamDiagHandler : public CStreamDiagHandler
 {
 public:
-    CCompatStreamDiagHandler(CNcbiOstream* os, bool quick_flush = true,
-                             FDiagCleanup cleanup = 0,
-                             void* cleanup_data = 0)
+    CCompatStreamDiagHandler(CNcbiOstream* os,
+                             bool          quick_flush  = true,
+                             FDiagCleanup  cleanup      = 0,
+                             void*         cleanup_data = 0)
         : CStreamDiagHandler(os, quick_flush),
           m_Cleanup(cleanup), m_CleanupData(cleanup_data)
         {
@@ -1790,7 +1792,6 @@ bool s_ParseErrCodeInfoStr(string&          str,
                            bool&            x_ready)
 {
     list<string> tokens;    // List with line tokens
-	unsigned long uline = (unsigned long)line;
 
     try {
         // Get message text
@@ -1805,8 +1806,8 @@ bool s_ParseErrCodeInfoStr(string&          str,
         // Split string on parts
         NStr::Split(str, ",", tokens);
         if (tokens.size() < 2) {
-            ERR_POST("Error message file parsing: Incorrect file format " \
-                     ", line " + NStr::UIntToString(uline));
+            ERR_POST("Error message file parsing: Incorrect file format "
+                     ", line " + NStr::UInt8ToString(line));
             return false;
         }
         // Mnemonic name (skip)
@@ -1818,15 +1819,15 @@ bool s_ParseErrCodeInfoStr(string&          str,
         x_code = NStr::StringToInt(token);
 
         // Severity
-        if (!tokens.empty()) { 
+        if ( !tokens.empty() ) { 
             token = NStr::TruncateSpaces(tokens.front());
             EDiagSev sev;
             if (CNcbiDiag::StrToSeverityLevel(token.c_str(), sev)) {
                 x_severity = sev;
             } else {
-                ERR_POST(Warning << "Error message file parsing: " \
-                         "Incorrect severity level in the verbose " \
-                         "message file, line " + NStr::UIntToString(uline));
+                ERR_POST(Warning << "Error message file parsing: "
+                         "Incorrect severity level in the verbose "
+                         "message file, line " + NStr::UInt8ToString(line));
             }
         } else {
             x_severity = -1;
@@ -1834,7 +1835,7 @@ bool s_ParseErrCodeInfoStr(string&          str,
     }
     catch (CException& e) {
         ERR_POST(Warning << "Error message file parsing: " << e.GetMsg() <<
-                 ", line " + NStr::UIntToString(uline));
+                 ", line " + NStr::UInt8ToString(line));
         return false;
     }
     x_ready = true;
@@ -1899,15 +1900,15 @@ bool CDiagErrCodeInfo::Read(CNcbiIstream& is)
         if (err_subseverity == -1)
             err_subseverity = err_severity;
         SetDescription(ErrCode(err_code, err_subcode), 
-            SDiagErrCodeDescription(err_message, err_text,
-                                    err_subseverity));
+            SDiagErrCodeDescription(err_message, err_text, err_subseverity));
     }
     return true;
 }
 
 
 bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code, 
-                      SDiagErrCodeDescription* description) const
+                                      SDiagErrCodeDescription* description)
+    const
 {
     // Find entry
     TInfo::const_iterator find_entry = m_Info.find(err_code);
@@ -1930,6 +1931,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.111  2006/03/02 16:36:12  vakatov
+ * Use UInt8ToString() for 'size_t'
+ *
  * Revision 1.110  2006/02/28 18:58:47  gouriano
  * MSVC x64 tuneup
  *
