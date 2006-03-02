@@ -762,6 +762,7 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
    BlastHitSavingOptions* hit_options;
    Int4 pattern_index;
    Int4 num_patterns;
+   Int4 HspNumMax=0;
 
    if (!query || !subject || !gap_align || !score_params ||
        !hit_params || !init_hitlist || !hsp_list_ptr)
@@ -771,8 +772,10 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
       return 0;
 
    hit_options = hit_params->options;
+   HspNumMax = BlastHspNumMax(score_params->options->gapped_calculation, hit_options);
+
    if (*hsp_list_ptr == NULL)
-      *hsp_list_ptr = hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
+      *hsp_list_ptr = hsp_list = Blast_HSPListNew(HspNumMax);
    else 
       hsp_list = *hsp_list_ptr;
 

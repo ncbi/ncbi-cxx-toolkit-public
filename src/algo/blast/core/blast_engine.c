@@ -239,7 +239,6 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    Int4 orig_length = subject->length;
    Uint1* orig_sequence = subject->sequence;
    Int4 **matrix;
-   Int4 hsp_num_max;
    BlastUngappedStats* ungapped_stats = NULL;
    BlastGappedStats* gapped_stats = NULL;
    BlastQueryInfo* query_info = query_info_in;
@@ -250,6 +249,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
    const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
                                 program_number == eBlastTypePhiBlastn);
+   const int kHspNumMax = BlastHspNumMax(score_options->gapped_calculation, hit_options);
 
    *hsp_list_out_ptr = NULL;
 
@@ -288,7 +288,6 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    else
       matrix = gap_align->sbp->matrix->data;
 
-   hsp_num_max = (hit_options->hsp_num_max ? hit_options->hsp_num_max : INT4_MAX);
 
    if (diagnostics) {
       ungapped_stats = diagnostics->ungapped_stat;
@@ -401,13 +400,13 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
          Blast_HSPListAdjustOffsets(hsp_list, offset);
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
-         Blast_HSPListsMerge(&hsp_list, &combined_hsp_list, hsp_num_max, offset,
+         Blast_HSPListsMerge(&hsp_list, &combined_hsp_list, kHspNumMax, offset,
             (Boolean)(prelim_traceback || !score_options->gapped_calculation));
       } /* End loop on chunks of subject sequence */
 
       hsp_list = Blast_HSPListFree(hsp_list);  /* In case this was not freed in above loop. */
 
-      if (Blast_HSPListAppend(&combined_hsp_list, &hsp_list_out, hsp_num_max)) {
+      if (Blast_HSPListAppend(&combined_hsp_list, &hsp_list_out, kHspNumMax)) {
          status = 1;
          break;
       }

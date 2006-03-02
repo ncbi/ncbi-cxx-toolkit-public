@@ -40,7 +40,8 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h>
 
-const int kUngappedHSPNumMax = 400;
+const int kUngappedHSPNumMax = 400;  /**< Suggested max. number of HSPs for an ungapped search. */
+
 const double kPSSM_NoImpalaScaling = 1.0;
 
 SDustOptions* SDustOptionsFree(SDustOptions* dust_options)
@@ -315,6 +316,7 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
    /* Except in one special case of greedy gapped extension, we always do 
       ungapped extension. Let the special case unset this option. */
    (*options)->ungapped_extension = TRUE;
+   (*options)->program_number = program;
 
    return 0;
 }
@@ -405,6 +407,8 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
     if (program == eBlastTypePsiBlast) {
         (*options)->compositionBasedStats = TRUE;
     }
+
+    (*options)->program_number = program;
 
 	return 0;
 }
@@ -521,6 +525,7 @@ BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *o
    }
    (*options)->decline_align = INT2_MAX;
    (*options)->gapped_calculation = TRUE;
+   (*options)->program_number = program_number;
    
    return 0;
 }
@@ -557,6 +562,8 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
       options->gap_open = gap_open;
    if (gap_extend >= 0)
       options->gap_extend = gap_extend;
+
+   options->program_number = program_number;
 
    return 0;
 }
@@ -792,6 +799,8 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
        break;
    }
 
+   (*options)->program_number = program_number;
+
    return 0;
 }
 
@@ -1012,6 +1021,7 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
 
    (*options)->hitlist_size = BLAST_HITLIST_SIZE;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
+   (*options)->program_number = program_number;
 
    return 0;
 
@@ -1289,6 +1299,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.181  2006/03/02 13:28:34  madden
+ * use BlastHspNumMax function, refactor how hsp_num_max is calculated
+ *
  * Revision 1.180  2006/02/09 18:47:07  camacho
  * Correct error reporting when there are errors in validation of filtering
  * options.

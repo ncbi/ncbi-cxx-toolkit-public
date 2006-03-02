@@ -2662,6 +2662,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    Int4 score;
    Int4 **rpsblast_pssms = NULL;   /* Pointer to concatenated PSSMs in
                                        RPS-BLAST database */
+   const int kHspNumMax = BlastHspNumMax(TRUE, hit_options);
 
    if (!query || !subject || !gap_align || !score_params || !ext_params ||
        !hit_params || !init_hitlist || !hsp_list_ptr)
@@ -2682,7 +2683,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    ASSERT(Blast_InitHitListIsSortedByScore(init_hitlist));
 
    if (*hsp_list_ptr == NULL)
-      *hsp_list_ptr = hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
+      *hsp_list_ptr = hsp_list = Blast_HSPListNew(kHspNumMax);
    else 
       hsp_list = *hsp_list_ptr;
 
@@ -3367,6 +3368,7 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
    Int4 index;
    BlastInitHSP* init_hsp;
    Int4 context;
+   const int kHspNumMax = BlastHspNumMax(FALSE, hit_options);
 
    /* The BlastHSPList structure can be allocated and passed from outside */
    if (*hsp_list_ptr != NULL)
@@ -3392,7 +3394,7 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
       s_GetRelativeCoordinates(NULL, query_info, init_hsp, NULL, 
                              NULL, &context);
       if (!hsp_list) {
-         hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
+         hsp_list = Blast_HSPListNew(kHspNumMax);
          *hsp_list_ptr = hsp_list;
       }
       ungapped_data = init_hsp->ungapped_data;
