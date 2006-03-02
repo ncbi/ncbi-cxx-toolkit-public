@@ -36,7 +36,5 @@
 /* Real configuration
  */
 #include <ncbiconf.h>
-/* Ensure the availability of intptr_t */
-#include <corelib/ncbitype.h>
 
 #endif /* CONNECT___NCBI_CONFIG__H */
