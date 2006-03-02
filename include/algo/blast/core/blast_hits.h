@@ -47,7 +47,7 @@ extern "C" {
 typedef struct SBlastHitsParameters {
    Int4 prelim_hitlist_size; /**< number of hits saved during preliminary 
                            part of search. */
-   const BlastHitSavingOptions* options; /**< Use hsp_num_max from here. */
+   Int4 hsp_num_max; /**< number of HSPs to save per db sequence. */
 } SBlastHitsParameters; 
 
 /** Sets up small structures used by blast_hit.c and hspstream_collector.c
@@ -291,6 +291,13 @@ Blast_HSPTestIdentityAndLength(EBlastProgramType program_number,
                                BlastHSP* hsp, Uint1* query, Uint1* subject, 
                                const BlastScoringOptions* score_options,
                                const BlastHitSavingOptions* hit_options);
+
+/** Calculated the number of HSPs that should be saved.
+ * @param gapped_calculation ungapped if false [in]
+ * @param options HitSavingoptions object [in]
+ * @return number of HSPs to save. 
+ */
+Int4 BlastHspNumMax(Boolean gapped_calculation, const BlastHitSavingOptions* options);
 
 /** Calculate length of an HSP as length in query plus length of gaps in 
  * query. If gap information is unavailable, return maximum between length in
