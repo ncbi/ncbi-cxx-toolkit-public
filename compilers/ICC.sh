@@ -16,6 +16,11 @@ case `uname -m` in
     *      ) CXX="icpc -cxxlib-icc" ;;
 esac
 
+Usage() {
+    echo "USAGE: `basename $0` [[build_dir] [--configure-flags] | -h]"
+    exit $1
+}
+
 $CXX -V -help >/dev/null 2>&1
 if test "$?" -ne 0 ; then
    cat <<EOF
@@ -44,7 +49,16 @@ fi
 ## Build directory (optional)
 if test -n "$1" ; then
   case "$1" in
+   -h )  Usage 0 ;;
    -* )  BUILD_ROOT="" ;;
+   32 | 64 )
+         cat <<EOF
+ERROR: $0 does not accept "$1" as a positional argument,
+or non-default system ABIs.
+Please supply --with-build-root=$1 if you wish to name your build root "$1".
+
+EOF
+	 Usage 1 ;;
    *  )  BUILD_ROOT="--with-build-root=$1" ; shift ;;
   esac
 fi
@@ -53,4 +67,4 @@ fi
 ## Configure
 export CC CXX
 
-${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $BUILD_ROOT $ARCH "$@"
+${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $BUILD_ROOT "$@"

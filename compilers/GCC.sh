@@ -11,11 +11,16 @@
 CXX="g++"
 CC="gcc"
 
+Usage() {
+    echo "USAGE: `basename $0` [version] [[build_dir] [--configure-flags] | -h]"
+    exit $1
+}
+
 platform="`uname -s``uname -r`-`uname -p`"
 platform="`echo $platform | sed -e 's/SunOS5\./solaris/; s/\(sol.*\)-i386/\1-intel/'`"
 
 case "$1" in
-  [1-9]*)
+  [1-9].*)
      # Look for the specified version in various reasonable places
      # (tuned for NCBI's installations).
      if /usr/local/gcc-$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
@@ -54,11 +59,17 @@ fi
 
 if test -n "$1" ; then
   case "$1" in
-   -h )
-    echo "USAGE: `basename $0` [version] [build_dir [--configure-flags] | -h]"
-    exit 0
-    ;;
-   --* )  ;;
+   -h  )  Usage 0 ;;
+   -*  )  ;;
+   32 | 64 )
+          [ $1 = 32 ] && out=out
+          cat <<EOF
+ERROR: $0 does not accept "$1" as a positional argument.
+Please supply --with$out-64 to force building of $1-bit binaries,
+or --with-build-root=$1 if you wish to name your build root "$1".
+
+EOF
+          Usage 1 ;;
    *   )  BUILD_ROOT="--with-build-root=$1" ; shift ;;
   esac
 fi
