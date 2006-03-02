@@ -209,7 +209,7 @@ int CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
     GET_EXEC_ARGS;
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int)spawnv(s_GetRealMode(mode), cmdname, args);
+    status = (int) spawnv(s_GetRealMode(mode), cmdname, args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, args);
 #endif
@@ -227,7 +227,7 @@ int CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
     char** envp = va_arg(vargs, char**);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int)spawnve(s_GetRealMode(mode), cmdname, args, envp);
+    status = (int) spawnve(s_GetRealMode(mode), cmdname, args, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
 #endif
@@ -244,7 +244,7 @@ int CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
     GET_EXEC_ARGS;
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int)spawnvp(s_GetRealMode(mode), cmdname, args);
+    status = (int) spawnvp(s_GetRealMode(mode), cmdname, args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, args);
 #endif
@@ -262,7 +262,7 @@ int CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
     char** envp = va_arg(vargs, char**);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int)spawnve(s_GetRealMode(mode), cmdname, args, envp);
+    status = (int) spawnve(s_GetRealMode(mode), cmdname, args, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, args, envp);
 #endif
@@ -280,7 +280,7 @@ int CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int)spawnv(s_GetRealMode(mode), cmdname, argv);
+    status = (int) spawnv(s_GetRealMode(mode), cmdname, argv);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, argv);
 #endif
@@ -299,7 +299,7 @@ int CExec::SpawnVE(EMode mode, const char *cmdname,
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int)spawnve(s_GetRealMode(mode), cmdname, argv, envp);
+    status = (int) spawnve(s_GetRealMode(mode), cmdname, argv, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, argv, envp);
 #endif
@@ -317,7 +317,7 @@ int CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int)spawnvp(s_GetRealMode(mode), cmdname, argv);
+    status = (int) spawnvp(s_GetRealMode(mode), cmdname, argv);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, argv);
 #endif
@@ -336,7 +336,7 @@ int CExec::SpawnVPE(EMode mode, const char *cmdname,
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int)spawnvpe(s_GetRealMode(mode), cmdname, argv, envp);
+    status = (int) spawnvpe(s_GetRealMode(mode), cmdname, argv, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, argv, envp);
 #endif
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/03/02 16:48:16  vakatov
+ * Minor formatting
+ *
  * Revision 1.27  2006/02/28 18:58:47  gouriano
  * MSVC x64 tuneup
  *
