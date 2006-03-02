@@ -140,6 +140,7 @@
             usage_str += "    <name>      -- name of the project\n";
             usage_str += "    <type>      -- one of the following:\n";
             usage_str += "                   app[/basic]  for a simple application\n";
+            usage_str += "                   app/blast    for a BLAST application\n";
             usage_str += "                   app/cgi      for a CGI application\n";
             usage_str += "                   app/dbapi    for a DBAPI application\n";
             usage_str += "                   app/gui      for a FLTK application\n";
@@ -198,6 +199,7 @@
                 prompt += "This can be one of the following:\n";
                 prompt += "\tapp\n";
                 prompt += "\tapp/basic\n";
+                prompt += "\tapp/blast\n";
                 prompt += "\tapp/cgi\n";
                 prompt += "\tapp/dbapi\n";
                 prompt += "\tapp/gui\n";
@@ -220,6 +222,7 @@
             this.TemplatesDict = new ActiveXObject("Scripting.Dictionary");
             this.TemplatesDict.Add("app",         "app/sample/basic");
             this.TemplatesDict.Add("app/basic",   "app/sample/basic");
+            this.TemplatesDict.Add("app/blast",   "app/sample/blast");
             this.TemplatesDict.Add("app/cgi",     "app/sample/cgi");
             this.TemplatesDict.Add("app/dbapi",   "app/sample/dbapi");
             this.TemplatesDict.Add("app/gui",     "app/sample/gui");
