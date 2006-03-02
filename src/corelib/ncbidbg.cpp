@@ -26,7 +26,7 @@
  * Author:  Andrei Gourianov, gouriano@ncbi.nlm.nih.gov
  *
  * File Description:
- *   implementation of debugging function(s)
+ *   Implementation of debugging function(s)
  *
  */
 
@@ -35,7 +35,9 @@
 #include <corelib/ncbithr.hpp>
 #include "ncbidbg_p.hpp"
 
+
 BEGIN_NCBI_SCOPE
+
 
 /////////////////////////////////////////////////////////////////////////////
 // xncbi_Validate() related functions
@@ -55,8 +57,10 @@ void xncbi_SetValidateAction(EValidateAction action)
 EValidateAction xncbi_GetValidateAction(void)
 {
     // some 64 bit compilers refuse to cast from int* to EValidateAction
-    EValidateAction action = EValidateAction(intptr_t(s_ValidateTLS->GetValue()));
-    // we may store Default, but we may not return Default
+    EValidateAction action =
+        EValidateAction(intptr_t(s_ValidateTLS->GetValue()));
+
+    // we can store Default, but we cannot return Default
     if (action == eValidate_Default) {
 #if defined(_DEBUG)
         action = eValidate_Abort;
@@ -71,9 +75,13 @@ EValidateAction xncbi_GetValidateAction(void)
 END_NCBI_SCOPE
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/02 16:33:58  vakatov
+ * Code formatting, and nothing else
+ *
  * Revision 1.6  2006/02/28 18:58:47  gouriano
  * MSVC x64 tuneup
  *
