@@ -691,10 +691,10 @@ void CRemoteBlast::x_SetOneParam(const char * name, const int * x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(CRef<objects::CBlast4_mask> mask)
+void CRemoteBlast::x_SetOneParam(CBlast4_value::TSeq_loc_list& query_masks)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
-    v->SetQuery_mask(*mask);
+    v->SetSeq_loc_list() = query_masks;
         
     CRef<CBlast4_parameter> p(new CBlast4_parameter);
     // as dictated by internal/blast/interfaces/blast4/params.hpp
@@ -788,43 +788,27 @@ CRemoteBlast::x_SetMaskingLocationsForQueries(const TSeqLocInfoVector&
 }
 
 /// Auxiliary functor used in CRemoteBlast::x_QueryMaskingLocationsToNetwork()
-struct SBlast4_maskLessComparator :
-    public binary_function< CRef<CBlast4_mask>,
-                            CRef<CBlast4_mask>,
+struct SSeq_locLessComparator :
+    public binary_function< CRef<CSeq_loc>,
+                            CRef<CSeq_loc>,
                             bool>
 {
     result_type operator() (const first_argument_type& a,
                             const second_argument_type& b) const {
-        // first compare the frames
-        _ASSERT(a->GetLocations().size() == b->GetLocations().size());
-        _ASSERT(a->GetLocations().size() == ((size_t)1));
-
-        CRef<CSeq_loc> sl_a = a->GetLocations().front();
-        _ASSERT(sl_a->IsInt());
-
-        CRef<CSeq_loc> sl_b = b->GetLocations().front();
-        _ASSERT(sl_b->IsInt());
-
         // first compare the Seq-ids ...
-        if (sl_a->GetId()->AsFastaString() <
-            sl_b->GetId()->AsFastaString()) {
+        if (a->GetId()->AsFastaString() < b->GetId()->AsFastaString()) {
             return true;
         } else {
 
-            // then compare the frames...
-            if (a->GetFrame() < b->GetFrame()) {
+            // then compare the Seq-interval
+            const CSeq_interval& si_a = a->GetInt();
+            const CSeq_interval& si_b = b->GetInt();
+
+            if (si_a.GetFrom() < si_b.GetFrom()) {
                 return true;
             } else {
-                // and finally compare the Seq-interval
-                const CSeq_interval& si_a = sl_a->GetInt();
-                const CSeq_interval& si_b = sl_b->GetInt();
-
-                if (si_a.GetFrom() < si_b.GetFrom()) {
+                if (si_a.GetTo() < si_b.GetTo()) {
                     return true;
-                } else {
-                    if (si_a.GetTo() < si_b.GetTo()) {
-                        return true;
-                    }
                 }
             }
 
@@ -843,31 +827,30 @@ CRemoteBlast::x_QueryMaskingLocationsToNetwork()
     m_CBOH->GetOptions().GetRemoteProgramAndService_Blast3(m_Program, 
                                                            m_Service);
 
+    // Use a set to keep unique copies of the masks. For nucleotide
+    // queries, it is assumed that only the plus strand of the mask will be
+    // sent. Note that in spite of this convention, masks for nucleotide
+    // queries are sent with the frame as notset.
+    typedef set< CRef<CSeq_loc>, SSeq_locLessComparator> TUniqueMasks;
+    TUniqueMasks unique_query_masks;
 
+    CRef<CPacked_seqint> packed_seqint(new CPacked_seqint);
     ITERATE(TSeqLocInfoVector, query_masks, m_QueryMaskingLocations) {
-
-        // Use a set to keep unique copies of the masks. For nucleotide
-        // queries, it is assumed that only the plus strand of the mask will be
-        // sent. Note that in spite of this convention, masks for nucleotide
-        // queries are sent with the frame as notset.
-        set< CRef<CBlast4_mask>, SBlast4_maskLessComparator > 
-            unique_query_masks;
-
         ITERATE(TMaskedQueryRegions, mask, *query_masks) {
-            CRef<CBlast4_mask> network_mask(new CBlast4_mask);
-            network_mask->SetFrame
-                (FrameNumber2NetworkFrame
-                    ((*mask)->GetFrame(), 
-                     NetworkProgram2BlastProgramType(m_Program, m_Service)));
             const CSeq_interval& seqint = (*mask)->GetInterval();
             CRef<CSeq_loc> sl(new CSeq_loc(const_cast<CSeq_id&>(seqint.GetId()),
                                            seqint.GetFrom(),
                                            seqint.GetTo()));
-            network_mask->SetLocations().push_back(sl);
-            if (unique_query_masks.insert(network_mask).second) {
-                x_SetOneParam(network_mask);
+            if (unique_query_masks.insert(sl).second) {
+                packed_seqint->AddInterval(seqint);
             }
         }
+    }
+    if ( !packed_seqint->Get().empty() ) {
+        CBlast4_value::TSeq_loc_list seqloc_list(1);
+        seqloc_list.front().Reset(new CSeq_loc);
+        seqloc_list.front()->SetPacked_int(*packed_seqint);
+        x_SetOneParam(seqloc_list);
     }
 }
 
@@ -1315,6 +1298,7 @@ NetworkProgram2BlastProgramType(const string& program, const string& service)
     EBlastProgramType retval = eBlastTypeUndefined;
     Int2 rv = BlastProgram2Number(program.c_str(), &retval);
     _ASSERT(rv == 0);
+    rv += 0;    // to eliminate compiler warning
     _ASSERT(retval != eBlastTypeUndefined);
 
     if (service == "rpsblast") {
@@ -1369,6 +1353,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2006/03/02 22:57:57  camacho
+* Correct creation of query masked locations using CBlast4_value::e_Seq_loc_list
+*
 * Revision 1.37  2006/03/01 21:25:28  camacho
 * Add support for user-specified query masking locations
 *
