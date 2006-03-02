@@ -1343,8 +1343,11 @@ CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask,
         x_mask |= m_ReadHandle;
     }
     TChildPollMask poll = m_PipeHandle->Poll(x_mask, timeout);
-    if ( (mask & fDefault) && (poll & m_ReadHandle) ) {
-        poll |= fDefault;
+    if ( mask & fDefault ) {
+        poll &= mask;
+        if ( poll & m_ReadHandle ) {
+            poll |= fDefault;
+        }
     }
     return poll;
 }
@@ -1418,6 +1421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/03/02 19:09:33  ivanov
+ * CPipe::Poll() -- fixed fDefault handling
+ *
  * Revision 1.45  2006/03/02 18:51:01  lavr
  * Use exception mask in select(); some code formatting
  *
