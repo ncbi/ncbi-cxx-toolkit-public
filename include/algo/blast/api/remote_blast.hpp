@@ -421,9 +421,9 @@ private:
     /// @param value Pointer to pointer to null delimited string.
     void x_SetOneParam(const char * name, const char ** value);
 
-    /// Set a masking location for query
-    /// @param value masking location [in]
-    void x_SetOneParam(CRef<objects::CBlast4_mask> mask);
+    /// Set masking locations for all queries
+    /// @param query_masks masking locations [in]
+    void x_SetOneParam(objects::CBlast4_value::TSeq_loc_list& query_masks);
     
     /// Determine what state the search is in.
     EState x_GetState(void);
@@ -600,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/03/02 22:54:11  camacho
+ * Change overloaded x_SetOneParam argument from CRef<CBlast4_mask> to CBlast4_value::TSeq_loc_list
+ *
  * Revision 1.28  2006/03/01 21:24:36  camacho
  * Add support for user-specified query masking locations
  *
