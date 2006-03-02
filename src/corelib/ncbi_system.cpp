@@ -451,9 +451,19 @@ void SleepMicroSec(unsigned long mc_sec)
     struct timespec delay, unslept;
     delay.tv_sec  =  mc_sec / kMicroSecondsPerSecond;
     delay.tv_nsec = (mc_sec % kMicroSecondsPerSecond) * 1000;
-    nanosleep(&delay, &unslept);
+    while (nanosleep(&delay, &unslept) < 0) {
+#  if 1
+        break;
 #  else
-    /* portable but ugly */
+        if (errno != EINTR) {
+            break;
+        }
+        delay = unslept;
+#  endif
+    }
+#  else
+    /* portable but ugly (note: no way to check unslept time except for
+     * on Linux, even though it's done better with nanosleep() above) */
     struct timeval delay;
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
@@ -522,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/03/02 23:52:49  lavr
+ * Show Sleep... inconsistency at least for Linux
+ *
  * Revision 1.47  2006/02/23 17:44:36  lavr
  * GetVirtualMemoryPageSize(): use sysctl() first (fallback to getpagesize())
  *
