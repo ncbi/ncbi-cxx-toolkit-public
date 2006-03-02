@@ -57,8 +57,8 @@ BEGIN_NCBI_SCOPE
 // CProcess 
 //
 
-// Predefined timeouts (in microseconds)
-const unsigned long kWaitPrecision = 100; 
+// Predefined timeouts (in milliseconds)
+const unsigned long           kWaitPrecision      = 100;
 const unsigned long CProcess::kDefaultKillTimeout = 1000;
 
 
@@ -206,37 +206,45 @@ bool CProcess::IsAlive(void) const
 bool CProcess::Kill(unsigned long timeout) const
 {
 #if defined(NCBI_OS_UNIX)
-    TPid pid = (TPid)m_Process;
-    int status;
 
-    // Try to kill process
+    TPid pid = (TPid) m_Process;
+
+    // Try to kill the process with SIGTERM first
     if (kill(pid, SIGTERM) == -1  &&  errno == EPERM) {
         return false;
     }
-    // Check process termination within timeout
-    do {
-        if (waitpid(pid, &status, WNOHANG) == pid) {
-            // Release zombie process from the system
-            waitpid(pid, &status, 0);
-            return true;
+
+    int status;
+    // Check process termination within the timeout
+    for (;;) {
+        TPid tmp = waitpid(pid, &status, WNOHANG);
+        if (tmp) {
+            return tmp == pid;
         }
         unsigned long x_sleep = kWaitPrecision;
-        if (timeout < kWaitPrecision) {
+        if (x_sleep > timeout) {
             x_sleep = timeout;
         }
-        if ( x_sleep ) {
-            timeout -= x_sleep;
-            SleepMilliSec(x_sleep);
+        if ( !x_sleep ) {
+             break;
         }
-    } while (timeout);
+        timeout -= x_sleep;
+        SleepMilliSec(x_sleep);
+    }
 
-    // Try harder to kill stubborn process
-    if (kill(pid, SIGKILL) == -1  &&  errno == EPERM) {
+    // Try harder to kill the stubborn process -- SIGKILL may not be caught!
+    kill(pid, SIGKILL);
+    SleepMilliSec(kWaitPrecision);
+    if ( !kill(pid, 0) ) {
+        // The process cannot be killed (most likely due to a kernel problem)
         return false;
     }
-    // Release zombie process from the system
-    if (waitpid(pid, &status, WNOHANG) == pid) {
-        waitpid(pid, &status, 0);
+
+    // Rip the zombie up from the system
+    while (waitpid(pid, &status, 0) < 0) {
+        if (errno != EINTR) {
+            return false;
+        }
     }
     return true;
 
@@ -544,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/03/02 23:57:13  lavr
+ * Fix CProcess::Kill()'s logic for Unix
+ *
  * Revision 1.13  2006/01/30 19:53:09  grichenk
  * Added workaround for PID on linux.
  *
