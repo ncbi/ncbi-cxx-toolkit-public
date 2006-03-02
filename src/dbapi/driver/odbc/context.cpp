@@ -281,10 +281,23 @@ CODBCContext::~CODBCContext()
             CODBC_Connection* t_con = static_cast<CODBC_Connection*> (m_InUse.Get(i));
             delete t_con;
         }
+
+        int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+        switch( rc ) {
+        case SQL_INVALID_HANDLE:
+        case SQL_ERROR:
+            m_Reporter.ReportErrors();
+            break;
+        case SQL_SUCCESS_WITH_INFO:
+            m_Reporter.ReportErrors();
+        case SQL_SUCCESS:
+            break;
+        default:
+            m_Reporter.ReportErrors();
+            break;
+        };
     }
     NCBI_CATCH_ALL( kEmptyStr )
-
-    SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
 }
 
 
@@ -569,6 +582,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/03/02 17:20:58  ssikorsk
+ * Report errors with SQLFreeHandle(SQL_HANDLE_ENV, m_Context)
+ *
  * Revision 1.41  2006/02/28 15:14:30  ssikorsk
  * Replaced argument type SQLINTEGER on SQLLEN where needed.
  *
