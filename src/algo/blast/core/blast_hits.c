@@ -69,7 +69,7 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
        else
             (*retval)->prelim_hitlist_size = hit_options->hitlist_size;
 
-       (*retval)->options = hit_options;
+       (*retval)->hsp_num_max = BlastHspNumMax(scoring_options->gapped_calculation, hit_options);
 
        return 0;
 }
@@ -79,11 +79,12 @@ SBlastHitsParameters* SBlastHitsParametersFree(SBlastHitsParameters* param)
 {
        if (param)
        {
-               param->options = NULL;
                sfree(param);
        }
        return NULL;
 }
+
+
 
 /********************************************************************************
           Functions manipulating BlastHSP's
@@ -147,6 +148,23 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
    *ret_hsp = new_hsp;
 
    return 0;
+}
+
+Int4 BlastHspNumMax(Boolean gapped_calculation, const BlastHitSavingOptions* options)
+{
+   Int4 retval=0;
+
+   if (options->hsp_num_max <= 0)
+   {
+      if (!gapped_calculation || options->program_number == eBlastTypeTblastx)
+         retval = kUngappedHSPNumMax;
+      else
+         retval = INT4_MAX;
+   }
+   else
+       retval = options->hsp_num_max;
+
+   return retval;
 }
 
 /** Copies all contents of a BlastHSP structure. Used in PHI BLAST for splitting
@@ -2861,7 +2879,7 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
 
          if (!(tmp_hsp_list = hsp_list_array[query_index])) {
             hsp_list_array[query_index] = tmp_hsp_list = 
-               Blast_HSPListNew(blasthit_params->options->hsp_num_max);
+               Blast_HSPListNew(blasthit_params->hsp_num_max);
             if (tmp_hsp_list == NULL)
             {
                  sfree(hsp_list_array);
