@@ -338,12 +338,15 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
                                  TRange(first_tback, last_tback));
             }
 
-            // save the new block alignment
+            // save the new block alignment if the rounded-down
+            // version of its score is positive
 
-            hit->InsertSubHit(new CHit(hit->m_SeqIndex1,
-                                       hit->m_SeqIndex2,
-                                       q_range, s_range,
-                                       score, final_script));
+            if (score > kRpsScaleFactor / 2) {
+                hit->InsertSubHit(new CHit(hit->m_SeqIndex1,
+                                           hit->m_SeqIndex2,
+                                           q_range, s_range,
+                                           score, final_script));
+            }
         }
 
         // finish processing hit i
@@ -657,6 +660,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.10  2006/03/02 21:38:02  papadopo
+  do not save block alignments unless their score is positive
+
   Revision 1.9  2006/01/24 17:18:22  papadopo
   make more debug output optional
 
