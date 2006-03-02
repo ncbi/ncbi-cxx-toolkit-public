@@ -1139,19 +1139,25 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
         int max = 0;
         
         if ( (mask & CPipe::fStdIn)   &&  m_ChildStdIn != -1 ) {
-            FD_SET(m_ChildStdIn, &wfds);
-            FD_SET(m_ChildStdIn, &efds);
-            max = m_ChildStdIn;
+            FD_SET(m_ChildStdIn,  &wfds);
+            FD_SET(m_ChildStdIn,  &efds);
+            if (max < m_ChildStdIn) {
+                max = m_ChildStdIn;
+            }
         }
         if ( (mask & CPipe::fStdOut)  &&  m_ChildStdOut != -1 ) {
             FD_SET(m_ChildStdOut, &rfds);
             FD_SET(m_ChildStdOut, &efds);
-            max = m_ChildStdOut;
+            if (max < m_ChildStdOut) {
+                max = m_ChildStdOut;
+            }
         }
         if ( (mask & CPipe::fStdErr)  &&  m_ChildStdErr != -1 ) {
             FD_SET(m_ChildStdErr, &rfds);
             FD_SET(m_ChildStdErr, &efds);
-            max = m_ChildStdErr;
+            if (max < m_ChildStdErr) {
+                max = m_ChildStdErr;
+            }
         }
         
         int n = select(max + 1, &rfds, &wfds, &efds, tmp);
@@ -1160,16 +1166,19 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             // timeout
             break;
         } else if (n > 0) {
-            if ( FD_ISSET(m_ChildStdIn, &wfds)   ||
-                 FD_ISSET(m_ChildStdIn, &efds) ) {
+            if ( m_ChildStdIn  != -1  &&
+                ( FD_ISSET(m_ChildStdIn,  &wfds)  ||
+                  FD_ISSET(m_ChildStdIn,  &efds) ) ) {
                 poll |= CPipe::fStdIn;
             }
-            if ( FD_ISSET(m_ChildStdOut, &rfds)  ||
-                 FD_ISSET(m_ChildStdOut, &efds) ) {
+            if ( m_ChildStdOut != -1  &&
+                ( FD_ISSET(m_ChildStdOut, &rfds)  ||
+                  FD_ISSET(m_ChildStdOut, &efds) ) ) {
                 poll |= CPipe::fStdOut;
             }
-            if ( FD_ISSET(m_ChildStdErr, &rfds)  ||
-                 FD_ISSET(m_ChildStdErr, &efds) ) {
+            if ( m_ChildStdErr != -1  &&
+                ( FD_ISSET(m_ChildStdErr, &rfds)  ||
+                  FD_ISSET(m_ChildStdErr, &efds) ) ) {
                 poll |= CPipe::fStdErr;
             }
             break;
@@ -1421,6 +1430,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/03/02 20:15:51  lavr
+ * Fix Unix version of CPipeHandle::x_Poll()
+ *
  * Revision 1.46  2006/03/02 19:09:33  ivanov
  * CPipe::Poll() -- fixed fDefault handling
  *
