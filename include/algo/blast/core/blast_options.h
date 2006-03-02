@@ -46,6 +46,7 @@
 extern "C" {
 #endif
 
+
 /** Some default values (used when creating blast options block and for
  * command-line program defaults. When changing these defaults, please
  * remember to update the defaults in the command-line programs 
@@ -181,6 +182,7 @@ typedef struct LookupTableOptions {
    char* phi_pattern;  /**< PHI-BLAST pattern */
    Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
                              PHI-BLAST */
+   EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } LookupTableOptions;
 
 /** Options for dust algorithm, applies only to nucl.-nucl. comparisons.
@@ -241,6 +243,7 @@ typedef struct BlastInitialWordOptions {
                                   performed? */
    double x_dropoff; /**< X-dropoff value (in bits) for the ungapped 
                          extension */
+   EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastInitialWordOptions;
 
 /** The algorithm to be used for preliminary
@@ -280,6 +283,7 @@ typedef struct BlastExtensionOptions {
    Int4 compositionBasedStats; /**< mode of compositional adjustment to use;
                                    if zero then compositional adjustment is
                                    not used */
+   EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastExtensionOptions;
 
 /** Should sum statistics be performed? If not set, the engine decides this
@@ -328,6 +332,7 @@ typedef struct BlastHitSavingOptions {
                                 not at least this long are discarded */
    Int4 min_diag_separation; /**< How many diagonals separate a hit from a substantial alignment
                                   before it's not blocked out. Must be > 0 to be used. */
+   EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastHitSavingOptions;
 
 /** Scoring options block 
@@ -351,6 +356,7 @@ typedef struct BlastScoringOptions {
                           search? */
    Int4 shift_pen;   /**< Penalty for shifting a frame in out-of-frame 
                         gapping */
+   EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastScoringOptions;
 
 /** Options for setting up effective lengths and search spaces.  
