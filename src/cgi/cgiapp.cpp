@@ -130,8 +130,6 @@ int CCgiApplication::Run(void)
 
             if (logopt != eNoLog) {
                 x_LogPost(msg.c_str(), 0, start_time, 0, fBegin|fEnd);
-            } else {
-                ERR_POST(msg);  // Post error notification even if no logging
             }
             if ( is_stat_log ) {
                 stat->Reset(start_time, result, &e);
@@ -144,12 +142,9 @@ int CCgiApplication::Run(void)
         {{
             CException* ex = dynamic_cast<CException*> (&e);
             if ( ex ) {
-                // kuznets: re-throw commented out (11/29/2004), 
-                // in CGI it's better just to report like in FCGI
-                // NCBI_RETHROW_SAME((*ex), "(CGI) CCgiApplication::Run");
-
                 NCBI_REPORT_EXCEPTION("(CGI) CCgiApplication::Run", *ex);
-
+            } else if (logopt == eNoLog) {
+                ERR_POST(e.what());
             }
         }}
     }
@@ -861,6 +856,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.70  2006/03/02 17:53:00  vakatov
+* CCgiApplication::Run() -- avoid double reporting of an exception
+*
 * Revision 1.69  2006/01/05 21:16:27  grichenk
 * Allow all 2xx HTTP status codes rather than only 200.
 *
