@@ -1554,31 +1554,33 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   entry_name,
     bool update = true;
     if (toc) {
         bool found = false;
-        const CTarEntryInfo* x_info = 0;
 
         // Start searching from the end of the list, to find
         // the most recently updated entry (if any) first
         REVERSE_ITERATE(CTar::TEntries, i, *toc) {
-            x_info = &(*i);
-            if (info.GetName() == x_info->GetName()  &&
-                (info.GetType() == x_info->GetType()  ||
-                 !(m_Flags & fEqualTypes))) {
+            if (info.GetName() == i->GetName()  &&
+                (info.GetType() == i->GetType() || (m_Flags & fEqualTypes))) {
                 found = true;
+                if (!entry.IsNewer(i->GetModificationTime(),
+                                   CDirEntry::eIfAbsent_Throw)) {
+                    if (type != CDirEntry::eDir) {
+                        /* same(or older) file, no update */
+                        return entries;
+                    }
+                    /* same(or older) dir gets recursive treatment later */
+                    update = false;
+                }
                 break;
             }
         }
 
-        if (found) {
-            if (!entry.IsNewer(x_info->GetModificationTime(),
-                               CDirEntry::eIfAbsent_Throw)) {
-                if (type == CDirEntry::eDir) {
-                    update = false;
-                } else {
-                    return entries;
-                }
+        if (!found) {
+            if (m_Flags & fUpdateExistingOnly) {
+                return entries;
             }
-        } else {
-            update = false;
+            if (type == CDirEntry::eDir) {
+                update = false;
+            }
         }
     }
 
@@ -1670,6 +1672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/03/03 18:25:06  lavr
+ * Simplify/change/speed up x_Append()
+ *
  * Revision 1.39  2006/03/03 13:19:41  ivanov
  * Fixed warning about uninitialized variable
  *
