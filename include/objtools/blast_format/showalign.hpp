@@ -133,7 +133,7 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
                                         //is chosen
         eHyperLinkSlaveSeqid = (1 << 19),    //Hyperlink slave seqids 
         eHyperLinkMasterSeqid = (1 << 20),    //Hyperlink master seqids 
-        eDisplayTreeView = (1 << 21),         // Display tree feature
+        eDisplayTreeView = (1 << 21)         // Display tree feature
     };
     
     ///Middle line style option
@@ -597,6 +597,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.47  2006/03/03 21:46:26  zaretska
+*Deleted extra comma after eDisplayTreeView
+*
 *Revision 1.46  2006/03/02 21:13:16  jcherry
 *Removed gratuitous class qualifier on method declaration
 *
