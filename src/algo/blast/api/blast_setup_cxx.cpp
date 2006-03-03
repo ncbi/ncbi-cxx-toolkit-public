@@ -1534,7 +1534,8 @@ bool CBlastQueryFilteredFrames::QueryIsMulti() const
     return false;
 }
 
-void CBlastQueryFilteredFrames::AddSeqLoc(const CSeq_interval & intv, int frame)
+void CBlastQueryFilteredFrames::AddSeqLoc(const objects::CSeq_interval & intv, 
+                                          int frame)
 {
     if ((frame == 0) && (m_Program == eBlastTypeBlastn)) {
         x_VerifyFrame(CSeqLocInfo::eFramePlus1);
@@ -1575,6 +1576,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.108  2006/03/03 17:15:21  camacho
+ * Doxygen fixes
+ *
  * Revision 1.107  2006/02/28 17:14:32  camacho
  * Reduce the scope of frame_to_bsl so that a non-NULL object is always passed to
  * s_AddMask. The object might be NULL in case of an invalid gi.

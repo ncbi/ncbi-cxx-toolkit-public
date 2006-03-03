@@ -60,19 +60,29 @@ class IBlastSeqSrcAdapter;
 class NCBI_XBLAST_EXPORT CBlastPrelimSearch : public CObject, public CThreadable
 {
 public:
-    // we create a BlastSeqSrc using CSeqDB as its implementation
+    /// Constructor which creates and manages a BLAST database handle for 
+    /// the caller
+    /// @note we create a BlastSeqSrc using CSeqDB as its implementation
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                        CRef<CBlastOptions> options,
                        const CSearchDatabase& dbinfo);
-    // we don't own the BlastSeqSrc
+
+    /// Constructor which creates BlastSeqSrc object from the already
+    /// constructed BLAST database handle
+    /// @note we don't own the BlastSeqSrc
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                        CRef<CBlastOptions> options,
                        IBlastSeqSrcAdapter& db);
-    // we don't own the BlastSeqSrc
+
+    /// Constructor which takes a PSSM and an already initialized BlastSeqSrc
+    /// object
+    /// @note we don't own the BlastSeqSrc
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                        CRef<CBlastOptions> options,
                        BlastSeqSrc* seqsrc,
                        CConstRef<objects::CPssmWithParameters> pssm);
+
+    /// Destructor
     ~CBlastPrelimSearch();
 
     /// Borrow the internal data and results results. 

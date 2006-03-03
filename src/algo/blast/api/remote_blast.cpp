@@ -691,7 +691,8 @@ void CRemoteBlast::x_SetOneParam(const char * name, const int * x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(CBlast4_value::TSeq_loc_list& query_masks)
+void 
+CRemoteBlast::x_SetOneParam(objects::CBlast4_value::TSeq_loc_list& query_masks)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetSeq_loc_list() = query_masks;
@@ -1353,6 +1354,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2006/03/03 17:15:21  camacho
+* Doxygen fixes
+*
 * Revision 1.38  2006/03/02 22:57:57  camacho
 * Correct creation of query masked locations using CBlast4_value::e_Seq_loc_list
 *

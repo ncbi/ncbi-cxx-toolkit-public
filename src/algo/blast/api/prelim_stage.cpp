@@ -114,9 +114,9 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
 }
 
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
-                                       CRef<CBlastOptions> options,
-                                       BlastSeqSrc* seqsrc,
-                                       CConstRef<CPssmWithParameters> pssm)
+                               CRef<CBlastOptions> options,
+                               BlastSeqSrc* seqsrc,
+                               CConstRef<objects::CPssmWithParameters> pssm)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
     x_Init(query_factory, options, pssm, BlastSeqSrcGetName(seqsrc));
@@ -126,7 +126,7 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
 void
 CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CRef<CBlastOptions> options,
-                           CConstRef<CPssmWithParameters> pssm,
+                           CConstRef<objects::CPssmWithParameters> pssm,
                            const string& dbname)
 {
     options->Validate();
