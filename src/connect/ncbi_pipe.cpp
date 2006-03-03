@@ -372,7 +372,6 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
         status = (!IS_SET(m_Flags, CPipe::fKillOnClose)  ||
                   CProcess(m_Pid, CProcess::ePid).Kill()
                   ? eIO_Success : eIO_Unknown);
-        }
     }
     if (status != eIO_Timeout) {
         x_Clear();
@@ -1413,6 +1412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/03/03 12:29:25  ivanov
+ * Fixed compilation on MS Windows
+ *
  * Revision 1.49  2006/03/03 03:17:45  lavr
  * Fix Close() on UNIX (small change on Windows, too)
  *
