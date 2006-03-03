@@ -48,13 +48,14 @@ class CTest : public CNcbiApplication
 {
 protected:
     enum EAction {
-        fNone    =  0,
-        fCreate  = (1 << 0),
-        fAppend  = (1 << 1),
-        fUpdate  = (1 << 2),
-        fList    = (1 << 3),
-        fExtract = (1 << 4),
-        fTest    = (1 << 5)
+        fNone               =  0,
+        fCreate             = (1 << 0),
+        fAppend             = (1 << 1),
+        fUpdate             = (1 << 2),
+        fUpdateExistingOnly = (1 << 3),
+        fList               = (1 << 4),
+        fExtract            = (1 << 5),
+        fTest               = (1 << 6)
     };
     typedef unsigned int TAction;
 
@@ -75,6 +76,7 @@ void CTest::Init(void)
     args->AddFlag("c", "Create archive");
     args->AddFlag("r", "Append archive");
     args->AddFlag("u", "Update archive");
+    args->AddFlag("U", "Update archive (existing entries only)");
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
     args->AddFlag("T", "Test archive [non-standard option]");
@@ -107,6 +109,8 @@ int CTest::Run(void)
         action |= fAppend;
     if (args["u"].HasValue())
         action |= fUpdate;
+    if (args["U"].HasValue())
+        action |= fUpdateExistingOnly;
     if (args["t"].HasValue())
         action |= fList;
     if (args["x"].HasValue())
@@ -116,7 +120,8 @@ int CTest::Run(void)
 
     if (!action  ||  (action & (action - 1))) {
         NCBI_THROW(CArgException, eInvalidArg,
-                   "You have to specify exactly one of c, r, u, t, x, or T");
+                   "You have to specify exactly one of "
+                   "c, r, u, U, t, x, or T");
     }
 
     size_t blocking_factor = args["b"].AsInteger();
@@ -154,21 +159,30 @@ int CTest::Run(void)
         tar->SetFlags(tar->GetFlags() | CTar::fIgnoreZeroBlocks);
     }
 
+    if (args["U"].HasValue()) {
+        tar->SetFlags(tar->GetFlags() | CTar::fUpdateExistingOnly);
+    }
+
     if (action == fCreate) {
         tar->Create();
     }
     auto_ptr<CTar::TEntries> entries;
-    if (action == fCreate  ||  action == fAppend  ||  action == fUpdate) {
+    if (action == fCreate  ||  action == fAppend  ||
+        action == fUpdate  ||  action == fUpdateExistingOnly) {
         size_t n = args.GetNExtra();
         if (n == 0) {
             NCBI_THROW(CArgException, eInvalidArg, "Must specify filename(s)");
         }
         for (size_t i = 1;  i <= n;  i++) {
             const string& name   = args[i].AsString();
-            const string& what   = action == fUpdate ? "Updating " : "Adding ";
-            const string& prefix = action == fUpdate ? "u " : "a ";
+            const string& what   =
+                action == fUpdate  ||  action == fUpdateExistingOnly
+                ? "Updating " : "Adding ";
+            const string& prefix =
+                action == fUpdate  ||  action == fUpdateExistingOnly
+                ? "u "        : "a ";
             LOG_POST(what << name);
-            if (action == fUpdate) {
+            if (action == fUpdate  ||  action == fUpdateExistingOnly) {
                 entries.reset(tar->Update(name).release());
             } else {
                 entries.reset(tar->Append(name).release());
@@ -228,6 +242,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/03 18:31:11  lavr
+ * Added option -U (update existing only)
+ *
  * Revision 1.6  2005/06/23 15:13:30  ucko
  * Adjust usage of auto_ptr<> for compatibility with GCC 2.95.
  *
