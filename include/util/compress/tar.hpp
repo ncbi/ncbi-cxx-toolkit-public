@@ -219,32 +219,35 @@ public:
         // --- Extract/List/Test ---
         /// Ignore blocks of zeros in archive.
         /// Generally, 2 or more consecutive zero blocks indicate EOF.
-        fIgnoreZeroBlocks  = (1<<1),
+        fIgnoreZeroBlocks   = (1<<1),
 
         // --- Extract/Append ---
-        ///< Follow symbolic links (instead of overwriting them)
-        fFollowLinks       = (1<<2),
+        /// Follow symbolic links (instead of overwriting them)
+        fFollowLinks        = (1<<2),
 
         // --- Extract ---
         /// Allow to overwrite existing entries with entries from the archive
-        fOverwrite         = (1<<3),
-        /// Update entries that are older than the ones in the archive
-        fUpdate            = (1<<4) | fOverwrite,
+        fOverwrite          = (1<<3),
+        /// Update entries that are older than those already in the archive
+        fUpdate             = (1<<4) | fOverwrite,
         /// Backup destinations if they exist (all entries including dirs)
-        fBackup            = (1<<5) | fOverwrite,
-        ///< If destination entry exists, it must have the same type as source
-        fEqualTypes        = (1<<6),
+        fBackup             = (1<<5) | fOverwrite,
+        /// If destination entry exists, it must have the same type as source
+        fEqualTypes         = (1<<6),
         /// Create extracted files with the same ownership
-        fPreserveOwner     = (1<<7),
+        fPreserveOwner      = (1<<7),
         /// Create extracted files with the same permissions
-        fPreserveMode      = (1<<8),
+        fPreserveMode       = (1<<8),
         /// Preserve date/times for extracted files
-        fPreserveTime      = (1<<9),
+        fPreserveTime       = (1<<9),
         /// Preserve all attributes
-        fPreserveAll       = fPreserveOwner | fPreserveMode | fPreserveTime,
+        fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
+
+        // --- Update ---
+        fUpdateExistingOnly = (1<<10),
 
         /// Default flags
-        fDefault           = fOverwrite | fPreserveAll
+        fDefault            = fOverwrite | fPreserveAll
     };
     typedef unsigned int TFlags;  ///< Bitwise OR of EFlags
 
@@ -319,14 +322,14 @@ public:
     auto_ptr<TEntries> Diff(const string& diff_dir);
 */
 
-    /// Extract the entire archive (either in current directory or
-    /// a directory specified by SetBaseDir()).
+    /// Extract the entire archive (into either current directory or
+    /// a directory otherwise specified by SetBaseDir()).
     ///
     /// Extract all archive entries, which names match pre-set mask.
     /// @sa SetMask, SetBaseDir
     auto_ptr<TEntries> Extract(void);
 
-    /// Get information about archive entries.
+    /// Get information about all matching archive entries.
     ///
     /// @return
     ///   An array containing information on those archive entries
@@ -584,6 +587,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/03/03 16:58:58  lavr
+ * +fUpdateExistingOnly
+ *
  * Revision 1.20  2005/12/28 16:50:13  ucko
  * +<memory> for auto_ptr<>
  *
