@@ -1554,7 +1554,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   entry_name,
     bool update = true;
     if (toc) {
         bool found = false;
-        const CTarEntryInfo* x_info;
+        const CTarEntryInfo* x_info = 0;
 
         // Start searching from the end of the list, to find
         // the most recently updated entry (if any) first
@@ -1670,6 +1670,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/03/03 13:19:41  ivanov
+ * Fixed warning about uninitialized variable
+ *
  * Revision 1.38  2006/02/16 19:51:55  lavr
  * Use "entry" instead of "file" in exception text
  *
