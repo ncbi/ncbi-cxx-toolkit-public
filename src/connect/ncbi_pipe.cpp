@@ -363,28 +363,21 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
             status = eIO_Success;
         }
     }
-
-    // Is the process running?
-    if (status == eIO_Timeout) {
+    if (status != eIO_Success) {
         x_exitcode = -1;
-        assert(CPipe::fKillOnClose);
-        if ( IS_SET(m_Flags, CPipe::fKillOnClose) ) {
-            status = CProcess(m_Pid, CProcess::ePid).Kill() ?
-                              eIO_Success : eIO_Unknown;
-        }
-        // Active by default.
-        assert(!CPipe::fCloseOnClose);
-        if ( !IS_SET(m_Flags, CPipe::fCloseOnClose) ) {
-            status = eIO_Success;
-        }
-        // fKeepOnClose -- nothing to do.
-        assert(CPipe::fKeepOnClose);
     }
 
-    // Is the process still running? Nothing to do.
+    // Is the process still running?
+    if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
+        status = (!IS_SET(m_Flags, CPipe::fKillOnClose)  ||
+                  CProcess(m_Pid, CProcess::ePid).Kill()
+                  ? eIO_Success : eIO_Unknown);
+        }
+    }
     if (status != eIO_Timeout) {
         x_Clear();
     }
+
     if ( exitcode ) {
         *exitcode = (int) x_exitcode;
     }
@@ -617,7 +610,7 @@ bool CPipeHandle::x_SetNonBlockingMode(HANDLE fd, bool nonblock) const
 //////////////////////////////////////////////////////////////////////////////
 //
 // CPipeHandle -- Unix version
-//
+
 
 class CPipeHandle
 {
@@ -684,10 +677,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 {
     x_Clear();
 
-    bool need_delete_handles = false; 
-    int  fd_pipe_in[2], fd_pipe_out[2], fd_pipe_err[2];
-
     m_Flags = create_flags;
+
+    int fd_pipe_in[2], fd_pipe_out[2], fd_pipe_err[2];
 
     // Child process I/O handles
     fd_pipe_in[0]  = -1;
@@ -698,7 +690,6 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         if (m_Pid != (pid_t)(-1)) {
             throw string("Pipe is already open");
         }
-        need_delete_handles = true; 
 
         // Create pipe for child's stdin
         assert(CPipe::fStdIn_Close);
@@ -735,6 +726,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         case (pid_t)(-1):
             // Fork failed
             throw string("Failed to fork process");
+
         case 0:
             // Now we are in the child process
             int status = -1;
@@ -790,7 +782,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
         // Close unused pipe handles
         assert(CPipe::fStdIn_Close);
-        if ( !IS_SET(create_flags, CPipe::fStdIn_Close) ) {
+        if ( !IS_SET(create_flags, CPipe::fStdIn_Close)  ) {
             close(fd_pipe_in[0]);
         }
         assert(CPipe::fStdOut_Close);
@@ -798,15 +790,19 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             close(fd_pipe_out[1]);
         }
         assert(!CPipe::fStdErr_Close);
-        if ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
+        if (  IS_SET(create_flags, CPipe::fStdErr_Open)  ) {
             close(fd_pipe_err[1]);
         }
         return eIO_Success;
     } 
     catch (string& what) {
-        if ( need_delete_handles ) {
+        if ( fd_pipe_in[0]  != -1 ) {
             close(fd_pipe_in[0]);
+        }
+        if ( fd_pipe_out[1] != -1 ) {
             close(fd_pipe_out[1]);
+        }
+        if ( fd_pipe_err[1] != -1 ) {
             close(fd_pipe_err[1]);
         }
         // Close all opened file descriptors (close timeout doesn't apply here)
@@ -819,18 +815,22 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
 EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 {    
-    EIO_Status    status     = eIO_Unknown;
-    unsigned long x_timeout  = 1;
-    int           x_options  = 0;
-    int           x_exitcode = -1;
+    EIO_Status status     = eIO_Unknown;
+    int        x_exitcode = -1;
 
     if (m_Pid == (pid_t)(-1)) {
         status = eIO_Closed;
     } else {
-        // If timeout is not infinite
+        int           x_options;
+        unsigned long x_timeout;
+
         if ( timeout ) {
-            x_timeout = (timeout->sec * 1000) + (timeout->usec / 1000);
+            // If timeout is not infinite
+            x_timeout = timeout->sec * 1000 + (timeout->usec + 500) / 1000;
             x_options = WNOHANG;
+        } else {
+            x_timeout = 0/*irrelevant*/;
+            x_options = 0;
         }
 
         // Retry if interrupted by signal
@@ -839,54 +839,42 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
             if (ws > 0) {
                 // Process has terminated
                 status = eIO_Success;
-                if ( x_options ) {
-                    // Release zombie process from the system.
-                    waitpid(m_Pid, &x_exitcode, 0);
-                }
                 break;
             } else if (ws == 0) {
                 // Process is still running
                 assert(timeout);
-                if ( !x_timeout ) {
-                    status = eIO_Timeout;
+                if ( !x_timeout  &&  status == eIO_Timeout ) {
+                    break;
+                }
+                status = eIO_Timeout;
+                if ( !timeout->sec  &&  !timeout->usec ) {
                     break;
                 }
                 unsigned long x_sleep = kSleepTime;
-                if (x_timeout < kSleepTime) {
+                if (x_sleep > x_timeout ) {
                     x_sleep = x_timeout;
                 }
                 x_timeout -= x_sleep;
                 SleepMilliSec(x_sleep);
-            } else {
-                // Some error
-                if (errno != EINTR) {
-                    break;
-                }
+            } else if (errno != EINTR) {
+                break;
             }
         }
     }
-
-    // Is the process running?
-    if (status == eIO_Timeout) {
+    if (status != eIO_Success) {
         x_exitcode = -1;
-        assert(CPipe::fKillOnClose);
-        if ( IS_SET(m_Flags, CPipe::fKillOnClose) ) {
-            status = CProcess(m_Pid, CProcess::ePid).Kill() ?
-                              eIO_Success : eIO_Unknown;
-        }
-        // Active by default.
-        assert(!CPipe::fCloseOnClose);
-        if ( !IS_SET(m_Flags, CPipe::fCloseOnClose) ) {
-            status = eIO_Success;
-        }
-        // fKeepOnClose -- nothing to do.
-        assert(CPipe::fKeepOnClose);
     }
 
-    // Is the process still running? Nothing to do.
+    // Is the process still running?
+    if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
+        status = (!IS_SET(m_Flags, CPipe::fKillOnClose)  ||
+                  CProcess(m_Pid, CProcess::ePid).Kill()
+                  ? eIO_Success : eIO_Unknown);
+    }
     if (status != eIO_Timeout) {
         x_Clear();
     }
+
     if ( exitcode ) {
         // Get real exit code or -1 on error
         *exitcode = (status == eIO_Success  &&  x_exitcode != -1) ?
@@ -1100,8 +1088,8 @@ bool CPipeHandle::x_SetNonBlockingMode(int fd, bool nonblock) const
 {
     return fcntl(fd, F_SETFL,
                  nonblock ?
-                 fcntl(fd, F_GETFL, 0) | O_NONBLOCK :
-                 fcntl(fd, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1;
+                 fcntl(fd, F_GETFL, 0) |  O_NONBLOCK :
+                 fcntl(fd, F_GETFL, 0) & ~O_NONBLOCK) != -1;
 }
 
 
@@ -1425,6 +1413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/03/03 03:17:45  lavr
+ * Fix Close() on UNIX (small change on Windows, too)
+ *
  * Revision 1.48  2006/03/02 20:28:12  lavr
  * Move timeout restrictions out of x_Poll() [for Poll() to work correctly]
  *
