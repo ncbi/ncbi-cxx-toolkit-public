@@ -304,13 +304,24 @@ public:
     ///   Create, Update, SetBaseDir
     auto_ptr<TEntries> Append(const string& entry_name);
 
-    /// Only append entries that are newer than corresponding ones
-    /// already found in the archive.
+    /// Look for more recent copies, if available, of archive members,
+    /// and place them at the end of the archive:
     ///
-    /// Add more recent copies, if available, of archive members,
-    /// and place them at the end of the archive.
+    /// if fUpdateExistingOnly is set in processing flags, only the
+    /// existing archive entries (including directories) will be updated;
+    /// that is, Update(".") won't recursively add "." if "." is not
+    /// the archive member;  it will, however, do the recursive update
+    /// should "." be found in the archive.
+    ///
+    /// if fUpdateExistingOnly is unset, the existing entries will be
+    /// updated (if newer), and inexistent entries will be added to
+    /// the archive; that is, Update(".") will recursively scan "."
+    /// to update both existing entries (if newer files found),
+    /// and add new entries for any files/directories, which are
+    /// currently not in the archive.
+    ///
     /// @sa
-    ///   Append, SetBaseDir
+    ///   Append, SetBaseDir, SetFlags
     auto_ptr<TEntries> Update(const string& entry_name);
 
 /*
@@ -587,6 +598,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/03/03 18:24:24  lavr
+ * Document Update() finely
+ *
  * Revision 1.21  2006/03/03 16:58:58  lavr
  * +fUpdateExistingOnly
  *
