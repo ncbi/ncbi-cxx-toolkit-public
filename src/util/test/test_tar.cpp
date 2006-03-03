@@ -76,10 +76,10 @@ void CTest::Init(void)
     args->AddFlag("c", "Create archive");
     args->AddFlag("r", "Append archive");
     args->AddFlag("u", "Update archive");
-    args->AddFlag("U", "Update archive (existing entries only)");
+    args->AddFlag("U", "Update archive (existing only) [non-standard]");
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
-    args->AddFlag("T", "Test archive [non-standard option]");
+    args->AddFlag("T", "Test archive [non-standard]");
     args->AddOptionalKey("f", "filename",
                          "Default = cin/cout", CArgDescriptions::eString);
     args->AddOptionalKey("C", "directory",
@@ -242,6 +242,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/03 18:34:14  lavr
+ * Mark non-standard options so
+ *
  * Revision 1.7  2006/03/03 18:31:11  lavr
  * Added option -U (update existing only)
  *
