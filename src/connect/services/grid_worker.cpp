@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/services/grid_worker.hpp>
 #include <connect/services/grid_globals.hpp>
@@ -154,7 +155,7 @@ static void s_TlsCleanup(CGridThreadContext* p_value, void* /* data */ )
     delete p_value;
 }
 /// @internal
-static CRef< CTls<CGridThreadContext> > s_tls(new CTls<CGridThreadContext>);
+static CSafeStaticRef< CTls<CGridThreadContext> > s_tls;
 
 ///@internal
 class CWorkerNodeRequest : public CStdRequest
@@ -664,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/03/03 14:14:59  vasilche
+ * Used CSafeStaticRef.
+ *
  * Revision 1.42  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *
