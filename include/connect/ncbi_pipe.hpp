@@ -120,20 +120,24 @@ public:
     /// Default is 0 
     ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose.
     enum ECreateFlags {
-        fStdIn_Open    =    0,  ///< Do     open child stdin (default).
+        fStdIn_Open    =    0,  ///< Do     open child's stdin (default).
         fStdIn_Close   = 0x01,  ///< Do not open child's stdin.
-        fStdOut_Open   =    0,  ///< Do     open child stdout (default).
+        fStdOut_Open   =    0,  ///< Do     open child's stdout (default).
         fStdOut_Close  = 0x02,  ///< Do not open child's stdout.
-        fStdErr_Open   = 0x04,  ///< Do     open child stderr.
-        fStdErr_Close  =    0,  ///< Do not open child stderr (default).
-        fKeepOnClose   = 0x08,  ///< Close(): just return eIO_Timeout on
-                                ///< eIO_Close timeout w/o closing pipe
-                                ///< handles and/or killing child process.
+        fStdErr_Open   = 0x04,  ///< Do     open child's stderr.
+        fStdErr_Close  =    0,  ///< Do not open child's stderr (default).
+        fKeepOnClose   = 0x08,  ///< Close(): just return eIO_Timeout
+                                ///< if Close() cannot complete within
+                                ///< the allotted time;  don't close any
+                                ///< pipe handles nor signal the child.
         fCloseOnClose  =    0,  ///< Close(): always close all pipe handles
                                 ///< but do not send any signal to running
-                                ///< process if eIO_Close timeout expired.
-        fKillOnClose   = 0x10   ///< Close(): kill child process if it didn't
-                                ///< terminate after eIO_Close timeout.
+                                ///< process if Close()'s timeout expired.
+        fKillOnClose   = 0x10   ///< Close(): kill child process if it hasn't
+                                ///< terminated within the allotted time.
+                                ///< NOTE:  If both fKeepOnClose and
+                                ///< fKillOnClose are set, the safer
+                                ///< fKeepOnClose takes the effect.
     };
     typedef unsigned int TCreateFlags;    ///< bit-wise OR of "ECreateFlags"
 
@@ -212,15 +216,15 @@ public:
     ///
     ///   eIO_Closed  - pipe was already closed;
     ///   eIO_Timeout - the eIO_Close timeout expired, child process
-    ///                 is still running and the pipe was not yet closed
+    ///                 is still running and the pipe has not yet closed
     ///                 (return only if fKeepOnClose create flag was set);
-    ///   eIO_Success - pipe was succesfully closed. The child process
-    ///                 running status depend on the flags:
-    ///       fKeepOnClose  - process is terminated with "exitcode";
-    ///       fCloseOnClose - process is self-terminated if "exitcode" != -1,
+    ///   eIO_Success - pipe was succesfully closed.  The running status of
+    ///                 child process depends on the flags:
+    ///       fKeepOnClose  - process has terminated with "exitcode";
+    ///       fCloseOnClose - process has self-terminated if "exitcode" != -1,
     ///                       or is still running otherwise;
-    ///       fKillOnClose  - process is self-terminated if "exitcode" != -1,
-    ///                       or was forcibly terminated otherwise;
+    ///       fKillOnClose  - process has self-terminated if "exitcode" != -1,
+    ///                       or has been forcibly terminated otherwise;
     ///   Otherwise   - an error was detected;
     /// @sa
     ///   Description for flags fKeepOnClose, fCloseOnClose, fKillOnClose.
@@ -388,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/03/03 03:18:43  lavr
+ * Rectify usage and effects of OnClose-flags
+ *
  * Revision 1.24  2006/03/01 17:01:03  ivanov
  * + CPipe::Poll() -- Unix version only
  *
