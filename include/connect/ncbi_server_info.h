@@ -154,8 +154,6 @@ typedef struct {
     USERV_Info               u; /* server type-specific data/params          */
 } SSERV_Info;
 
-#define SERV_TIME_INFINITE ((TNCBI_Time)(-1))
-
 
 /* Constructors for the various types of NCBI server meta-addresses
  */
@@ -391,6 +389,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_EqualInfo
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2006/03/04 17:02:14  lavr
+ * NCBI_TIME_INFINITE moved to ncbi_types.h
+ *
  * Revision 6.39  2005/12/23 18:06:53  lavr
  * fSERV_StatelessOnly -> fSERV_Stateless
  * fSERV_Any, fSERV_Stateless -> <connect/ncbi_service.h>
