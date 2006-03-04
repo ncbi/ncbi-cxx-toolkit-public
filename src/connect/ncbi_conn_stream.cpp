@@ -34,7 +34,6 @@
 
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
-#include "ncbi_assert.h"
 #include "ncbi_conn_streambuf.hpp"
 #include "ncbi_core_cxxp.hpp"
 #include <connect/ncbi_conn_exception.hpp>
@@ -310,7 +309,7 @@ void CConn_MemoryStream::ToString(string* str)
     str->resize(size);
     if (sb) {
         streamsize s = sb->sgetn(&(*str)[0], size);
-        assert(size == s);
+        _ASSERT(size == s);
         str->resize(s);  // NB: this is essentially a NOP when size == s
     }
 }
@@ -328,7 +327,7 @@ char* CConn_MemoryStream::ToCStr(void)
     }
     if (sb) {
         streamsize s = sb->sgetn(str, size);
-        assert(size == s);
+        _ASSERT(size == s);
         size = s;
     }
     str[size] = '\0';
@@ -399,6 +398,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2006/03/04 17:03:26  lavr
+ * Do not include ncbi_assert.h, change assert -> _ASSERT
+ *
  * Revision 6.50  2006/02/14 20:39:54  lavr
  * CConn_MemoryStream::ToString() and CConn_MemoryStream::ToCStr()
  * rewritten to call xsgetn() for proper tracking of stream position
