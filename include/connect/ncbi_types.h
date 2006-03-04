@@ -69,13 +69,8 @@ typedef struct {
     unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
 
-#if defined(__cplusplus)  &&  !defined(NCBI_COMPILER_WORKSHOP)  &&  0
-static const STimeout *const kDefaultTimeout  = (const STimeout*)(-1);
-static const STimeout *const kInfiniteTimeout = (const STimeout*)( 0);
-#else
-#  define                    kDefaultTimeout   ((const STimeout*)(-1))
-#  define                    kInfiniteTimeout  ((const STimeout*)( 0))
-#endif /*__cplusplus*/
+#define kDefaultTimeout  ((const STimeout*)(-1))
+#define kInfiniteTimeout ((const STimeout*)( 0))
 
 
 /* Aux. enum to set/unset/default various features
@@ -92,6 +87,8 @@ typedef enum {
 typedef unsigned int TNCBI_Size;
 typedef unsigned int TNCBI_Time;
 
+#define NCBI_TIME_INFINITE ((TNCBI_Time)(-1))
+
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -104,6 +101,9 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2006/03/04 17:01:14  lavr
+ * Clean away dead #if 0 branch
+ *
  * Revision 6.10  2005/11/22 20:52:38  lavr
  * Removed a note about ncbiconf.h -- irrelevant
  *
