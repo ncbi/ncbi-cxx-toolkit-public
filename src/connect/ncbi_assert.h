@@ -35,7 +35,7 @@
 #include "ncbi_config.h"
 
 #if defined(verify)
-#undef verify
+#  undef verify
 #endif
 
 #if !defined(NDEBUG)  &&  !defined(_DEBUG)
@@ -58,6 +58,9 @@
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2006/03/04 16:59:40  lavr
+ * Formatting
+ *
  * Revision 1.1  2005/04/20 18:11:23  lavr
  * Initial revision
  *
