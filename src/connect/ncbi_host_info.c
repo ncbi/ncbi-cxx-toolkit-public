@@ -43,26 +43,46 @@
 
 typedef struct SHostInfoTag {
     const char* env;
+    const char* arg;
+    const char* val;
     double      pad;    /* for proper 'hinfo' alignment; also as a magic */
     char        hinfo[1];
 } SHOST_Info;
 
 
-HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env)
+HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env,
+                       const char* arg, const char* val)
 {
     SHOST_Info* host_info;
     size_t      size;
+    size_t      e_s;
+    size_t      a_s;
+    size_t      v_s;
+    char*       s;
 
     if (!hinfo)
         return 0;
-    if (env && !*env)
-        env = 0;
-    size = sizeof(*host_info) + hinfo_size;
-    if (!(host_info = (SHOST_Info*) malloc(size + (env ? strlen(env) : 0))))
+    e_s = env && *env ? strlen(env) + 1 : 0;
+    a_s = arg && *arg ? strlen(arg) + 1 : 0;
+    v_s = a_s &&  val ? strlen(val) + 1 : 0;
+    size = sizeof(*host_info) - sizeof(host_info->hinfo) + hinfo_size;
+    if (!(host_info = (SHOST_Info*) calloc(1, size + e_s + a_s + v_s)))
         return 0;
-    host_info->env = env ? strcpy((char*) host_info + size - 1, env) : 0;
-    host_info->pad = M_PI;
     memcpy(host_info->hinfo, hinfo, hinfo_size);
+    s = (char*) host_info + size;
+    if (e_s) {
+        host_info->env = strcpy(s, env);
+        s += e_s;
+    }
+    if (a_s) {
+        host_info->arg = strcpy(s, arg);
+        s += a_s;
+    }
+    if (v_s) {
+        host_info->val = strcpy(s, val);
+        s += v_s;
+    }
+    host_info->pad = M_PI;
     return host_info;
 }
 
@@ -99,11 +119,10 @@ int/*bool*/ HINFO_Status(HOST_INFO host_info, double status[2])
 }
 
 
+/*ARGSUSED*/
 int/*bool*/ HINFO_BLASTParams(HOST_INFO host_info, unsigned int blast[8])
 {
-    if (!host_info || host_info->pad != M_PI)
-        return 0;
-    return LBSM_HINFO_BLASTParams(host_info->hinfo, blast);
+    return 0;
 }
 
 
@@ -115,9 +134,28 @@ const char* HINFO_Environment(HOST_INFO host_info)
 }
 
 
+const char* HINFO_AffinityArgument(HOST_INFO host_info)
+{
+    if (!host_info || host_info->pad != M_PI)
+        return 0;
+    return host_info->arg;
+}
+
+
+const char* HINFO_AffinityArgvalue(HOST_INFO host_info)
+{
+    if (!host_info || host_info->pad != M_PI)
+        return 0;
+    return host_info->val;
+}
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2006/03/05 17:36:52  lavr
+ * +HINFO_AffinityArgument, +HINFO_AffinityArgvalue; HINFO_Create modified
+ *
  * Revision 6.6  2003/01/17 19:44:46  lavr
  * Reduce dependencies
  *
