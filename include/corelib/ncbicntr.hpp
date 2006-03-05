@@ -121,27 +121,12 @@ extern "C" {
 #  define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
 #elif defined(NCBI_OS_DARWIN)
 #  ifdef __MWERKS__
-    // necessary so Metrowerks can compile the following header properly
-    // unfortunately, there's no way to save the old value of the macro,
-    // so NCBI_verify_save must be just a flag.
 #    define __NOEXTENSIONS__
-#    ifdef verify
-#      define NCBI_verify_save verify
-#      undef verify
-#    endif
 #  endif
 #  include <CoreServices/CoreServices.h>
 // Darwin's <AssertMacros.h> defines check as a variant of assert....
 #  ifdef check
 #    undef check
-#  endif
-#  ifdef NCBI_verify_save
-#    undef verify
-#    if defined(NDEBUG) || !defined(_DEBUG)
-#      define verify(expr)  (void)(expr)
-#    else
-#      define verify(expr) assert(expr)
-#    endif
 #  endif
    typedef SInt32 TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (AddAtomic(d, p) + d)
@@ -369,6 +354,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/03/05 01:04:25  lavr
+* Attempt to remove "verify" kludge -- since "verify" has been moved away
+*
 * Revision 1.27  2005/11/22 22:45:19  vasilche
 * Rolled back accidental commit.
 *
