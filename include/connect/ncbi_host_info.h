@@ -109,7 +109,23 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ HINFO_BLASTParams
  * host environment remains valid until the handle 'host_info' deleted
  * in the application program.
  */
-extern NCBI_XCONNECT_EXPORT const char* HINFO_Environment(HOST_INFO host_info);
+extern NCBI_XCONNECT_EXPORT const char* HINFO_Environment
+(HOST_INFO host_info);
+
+
+/* Obtain affinity argument and value that has keyed the service
+ * selection (if affinities have been used at all).  NULL gets returned
+ * as argument if no affinity has been found (in this case value
+ * will be returned 0 as well).  Otherwise, NULL gets returned as
+ * value if there was no particular value matched but the argument
+ * played alone; "" is the value has been used empty, or any other
+ * substring from the host environment that has keyed the decision.
+ */
+extern NCBI_XCONNECT_EXPORT const char* HINFO_AffinityArgument
+(HOST_INFO host_info);
+
+extern NCBI_XCONNECT_EXPORT const char* HINFO_AffinityArgvalue
+(HOST_INFO host_info);
 
 
 #ifdef __cplusplus
@@ -123,6 +139,9 @@ extern NCBI_XCONNECT_EXPORT const char* HINFO_Environment(HOST_INFO host_info);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2006/03/05 17:33:15  lavr
+ * +HINFO_AffinityArgument, +HINFO_AffinityArgvalue
+ *
  * Revision 6.5  2003/04/09 19:05:42  siyan
  * Added doxygen support
  *
