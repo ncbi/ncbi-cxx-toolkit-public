@@ -41,17 +41,24 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
 }
 
 
-extern char* LBSMD_GetConfig(void)
+extern const char* LBSMD_GetConfig(void)
 {
     return 0;
 }
 
 
 /*ARGSUSED*/
-extern ESwitch LBSM_KeepHeapAttached(ESwitch sw/*ignored*/)
+extern ESwitch LBSMD_KeepHeapAttached(ESwitch sw/*ignored*/)
 {
     /* ignore any new settings, always return Off */
     return eOff;
+}
+
+
+/*ARGSUSED*/
+extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time/*ignored*/)
+{
+    return 0;
 }
 
 
@@ -79,15 +86,12 @@ int/*bool*/ LBSM_HINFO_Status(const void* load_ptr, double status[2])
 }
 
 
-int/*bool*/ LBSM_HINFO_BLASTParams(const void* load_ptr, unsigned int blast[8])
-{
-    return 0/*failure*/;
-}
-
-
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2006/03/05 17:44:12  lavr
+ * Private API changes; cached HEAP copy; BLAST counters dropped
+ *
  * Revision 6.7  2005/05/04 16:16:08  lavr
  * +<connect/ncbi_service_misc.h>, +LBSMD_GetConfig(), +LBSM_KeepHeapAttached()
  *
