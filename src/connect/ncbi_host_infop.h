@@ -42,7 +42,8 @@ extern "C" {
 #endif
 
 
-HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env);
+HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size,
+                       const char* env, const char* arg, const char* val);
 
 
 #ifdef __cplusplus
@@ -53,6 +54,9 @@ HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2006/03/05 17:37:14  lavr
+ * New proto for HINFO_Create
+ *
  * Revision 6.2  2002/10/28 21:55:38  lavr
  * LBSM_HINFO introduced for readability to replace plain "const void*"
  *
