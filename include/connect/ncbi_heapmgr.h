@@ -61,8 +61,8 @@ typedef struct {
 } SHEAP_Block;
 
 
-/* Callback to expand the heap (a la 'realloc').
- * NOTE: the returned address must be aligned on a 'double' boundary!
+/* Callback to resize the heap (a la 'realloc').
+ * NOTE: the returned address must be aligned with the 'double' boundary!
  *
  *   old_base  |  new_size  |  Expected result
  * ------------+------------+--------------------------------------------------
@@ -72,10 +72,11 @@ typedef struct {
  *      0      |     0      | Do nothing, return 0
  * ------------+------------+--------------------------------------------------
  * Note that reallocation can request either to expand or to shrink the
- * heap extent. When (re-)allocation fails, the callback should return 0.
- * When expected to return 0, this callback has to always do so.
+ * heap extent.  When (re-)allocation fails, the callback should return 0
+ * (and must not change the original heap extent / content, if any).
+ * When expected to return 0, this callback must always do so.
  */
-typedef void* (*FHEAP_Expand)
+typedef void* (*FHEAP_Resize)
 (void*      old_base,  /* current base of the heap to be expanded           */
  TNCBI_Size new_size,  /* requested new heap size (zero to deallocate heap) */
  void*      arg        /* user-supplied argument, see HEAP_Create() below   */
@@ -83,38 +84,41 @@ typedef void* (*FHEAP_Expand)
 
 
 /* Create new heap.
- * NOTE: the initial heap base must be aligned on a 'double' boundary!
+ * NOTE: the initial heap base must be aligned with a 'double' boundary!
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Create
-(void*        base,        /* initial heap base (use "expand" if NULL) */
+(void*        base,        /* initial heap base (use "resize" if NULL) */
  TNCBI_Size   size,        /* initial heap size                        */
  TNCBI_Size   chunk_size,  /* minimal increment size                   */
- FHEAP_Expand expand,      /* NULL if not expandable                   */
- void*        arg          /* arg to pass to expand (if any)           */
+ FHEAP_Resize resize,      /* NULL if not resizeable                   */
+ void*        arg          /* user argument to pass to "resize"        */
  );
 
 
 /* Attach to an already existing heap (in read-only mode).
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Attach
-(const void* base          /* base of the heap to attach to */
+(const void* base,         /* base of the heap to attach to */
+ int         serial        /* serial number to assign       */
  );
 
+/* faster HEAP_Attach() that does not calculate heap size on its own */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_AttachEx
-(const void* base,
- TNCBI_Size  size
+(const void* base,         /* base of the heap to attach to                  */
+ TNCBI_Size  size,         /* heap extent -- must be non-0 for non-NULL base */
+ int         serial        /* serial number to assign                        */
  );
 
 
 /* Allocate a new block of memory in the heap.
  */
 extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Alloc
-(HEAP       heap,          /* heap handle                       */
- TNCBI_Size size           /* data size of the block to contain */
+(HEAP       heap,          /* heap handle                          */
+ TNCBI_Size size           /* data size of the block to accomodate */
  );
 
 
-/* Deallocate block pointed by "block_ptr".
+/* Deallocate a block pointed to by "block_ptr".
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Free
 (HEAP         heap,        /* heap handle         */
@@ -132,53 +136,69 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Walk
  );
 
 
-/* Trim the heap, making garbage collection first. Returned is
- * the size of the resultant heap, which has its last block trimmed
- * to the size of heap chunk size as specified at the time of the
- * heap creation.  No change in size is made if the last block is
- * not free or large enough to allow the trimming. 0 returned on
- * NULL or read-only heaps, or if an error has occurred.
+/* Trim the heap, making garbage collection first.  Returned is
+ * the resultant heap, which has its last block (if any) trimmed to the
+ * size of heap chunk size as specified at the time of the heap creation.
+ * No change in size is made if the last block is not free or large
+ * enough to allow the trimming.  NULL gets returned on NULL or read-only
+ * heaps, or if a resize error has occurred.
+ * Note that trimming can cause the entire heap extent (of an empty heap)
+ * to deallocate (so that HEAP_Base() and HEAP_Size() will return 0).
  */
-extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Trim(HEAP heap);
+extern NCBI_XCONNECT_EXPORT HEAP HEAP_Trim(HEAP heap);
 
 
 /* Make a snapshot of a given heap.  Return a read-only heap
- * (like one after HEAP_Attach), which must be freed by a call to
- * either HEAP_Detach or HEAP_Destroy when no longer needed.
- * If a non-zero number provided (serial number) it is stored
- * in the heap descriptor (zero serial is always turned into 1).
+ * (like the one after HEAP_Attach[Ex]), which must be freed by a call
+ * to either HEAP_Detach() or HEAP_Destroy() when no longer needed.
+ * A copy is created reference-counted (with the initial ref.count set to 1).
  */
-extern NCBI_XCONNECT_EXPORT HEAP HEAP_CopySerial
-(const HEAP orig,         /* original heap to copy from               */
- size_t     extra,        /* extra amount to add past the heap extent */
- int        serial        /* serial number to assign (default is 1)   */
+extern NCBI_XCONNECT_EXPORT HEAP HEAP_Copy
+(const HEAP orig,          /* original heap to copy from               */
+ size_t     extra,         /* extra amount to add past the heap extent */
+ int        serial         /* serial number to assign                  */
  );
 
-#define HEAP_Copy(orig) HEAP_CopySerial(orig, 0, 0)
+
+/* Add reference counter to the given copy heap (no effect on
+ * a heap, which have been HEAP_Create()'d or HEAP_Attach[Ex]()'d).
+ * The heap handle then will be destroyed only when the internal
+ * reference counter reaches 0.  No internal locking is provided.
+ */
+extern NCBI_XCONNECT_EXPORT void HEAP_AddRef(HEAP heap);
 
 
-/* Detach heap (previously attached by HEAP_Attach).
+/* Detach heap (previously attached by HEAP_Attach[Ex]).
+ * For copy heap, it decrements an internal ref. counter by one, and
+ * destroys the heap handle if and only if the counter has reached 0.
+ * No internal locking of the reference counter is provided.
+ * For heaps that are results of HEAP_Copy() call,
+ * both HEAP_Detach() and HEAP_Destroy() can be used interchangeably.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Detach(HEAP heap);
 
 
-/* Destroy heap (previously created by HEAP_Create).
+/* Destroy heap (previously created by HEAP_Create()).
+ * For copy heaps -- see comments for HEAP_Detach() above.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Destroy(HEAP heap);
 
 
 /* Get base address of the heap.
+ * Return NULL if heap is passed as NULL, or when the heap is completely empty.
  */
 extern NCBI_XCONNECT_EXPORT void* HEAP_Base(const HEAP heap);
 
 
 /* Get the extent of the heap.
+ * Return 0 if heap is passed as NULL, or when the heap is completely empty.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Size(const HEAP heap);
 
 
 /* Get non-zero serial number of the heap.
- * Return 0 if HEAP is passed as 0, or the heap is not a copy but the original.
+ * Return 0 if heap is passed as NULL,
+ * or the heap is not a copy but the original.
  */
 extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 
@@ -194,6 +214,9 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2006/03/05 17:32:35  lavr
+ * Revised API to allow to create ref-counted heap copies
+ *
  * Revision 6.20  2004/07/08 14:11:11  lavr
  * Fix few inline descriptions
  *
