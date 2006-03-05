@@ -47,8 +47,7 @@ extern "C" {
 typedef struct {
     void        (*Reset)(SERV_ITER iter);
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter, HOST_INFO* host_info);
-    int/*bool*/ (*Update)(SERV_ITER iter, TNCBI_Time now,
-                          const char* text, int code);
+    int/*bool*/ (*Update)(SERV_ITER iter, const char* text, int code);
     int/*bool*/ (*Penalize)(SERV_ITER iter, double penalty);
     void        (*Close)(SERV_ITER iter);
     const char* name;
@@ -74,12 +73,13 @@ struct SSERV_IterTag {
     unsigned      ismask:1;  /* whether the name is to be treated as a mask  */
     unsigned promiscuous:1;  /* as taken from..                              */
     unsigned reverse_dns:1;  /*            ..types passed..                  */
-    unsigned   stateless:1;   /*                       .. in SERV_*() calls  */
+    unsigned   stateless:1;  /*                        .. in SERV_*() calls  */
     unsigned    external:1;  /* whether this is an external request          */
     const char*        arg;  /* argument to match; original pointer          */
     size_t          arglen;  /* == 0 for NULL pointer above                  */
     const char*        val;  /* value to match; original pointer             */
     size_t          vallen;  /* == 0 for NULL pointer above                  */
+    TNCBI_Time        time;  /* time of call                                 */
 };
 
 
@@ -115,7 +115,8 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
  size_t               n_skip,        /* number of servers in preceding array */
  int/*bool*/          external,      /* whether mapping is not local to NCBI */
  const char*          arg,           /* environment variable name to search  */
- const char*          val            /* environment variable value to match  */
+ const char*          val,           /* environment variable value to match  */
+ HOST_INFO*           hinfo          /* host information to return on match  */
  );
 
 /* same as the above but creates an iterator to get the servers one by one 
@@ -198,6 +199,9 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2006/03/05 17:47:55  lavr
+ * +SERV_ITER::time, new VT::Update proto, SERV_OpenP() to return HINFO
+ *
  * Revision 6.37  2006/01/11 16:26:10  lavr
  * SERV_Update() and SERV_ITER's VT::Update() have got addt'l "code" argument
  *

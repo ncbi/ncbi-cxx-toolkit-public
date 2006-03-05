@@ -136,32 +136,37 @@ static SERV_ITER s_Open(const char*          service,
     const SSERV_VTable* op;
     SERV_ITER iter;
     
-    if (!s || !*s || !(iter = (SERV_ITER) malloc(sizeof(*iter))))
+    if (!s || !*s || !(iter = (SERV_ITER) calloc(1, sizeof(*iter))))
         return 0;
 
-    iter->name        = s;
-    iter->type        = types & ~special_flags;
-    iter->host        = (preferred_host == SERV_LOCALHOST
-                         ? SOCK_gethostbyname(0) : preferred_host);
-    iter->port        = preferred_port;
-    iter->pref        = (preference < 0.0
-                         ? -1.0
-                         : 0.01 * (preference > 100.0 ? 100.0 : preference));
-    iter->n_skip      = 0;
-    iter->a_skip      = 0;
-    iter->skip        = 0;
-    iter->last        = 0;
-    iter->op          = 0;
-    iter->data        = 0;
-    iter->ismask      = ismask ? 1 : 0;
-    iter->promiscuous = types & fSERV_Promiscuous ? 1 : 0;
-    iter->reverse_dns = types & fSERV_ReverseDns ? 1 : 0;
-    iter->stateless   = types & fSERV_Stateless ? 1 : 0;
-    iter->external    = external;
-    iter->arg         = arg;
-    iter->arglen      = arg ? strlen(arg) : 0;
-    iter->val         = val;
-    iter->vallen      = val ? strlen(val) : 0;
+    iter->name            = s;
+    iter->type            = types & ~special_flags;
+    iter->host            = (preferred_host == SERV_LOCALHOST
+                             ? SOCK_gethostbyname(0) : preferred_host);
+    iter->port            = preferred_port;
+    iter->pref            = (preference < 0.0
+                             ? -1.0
+                             :  0.01 * (preference > 100.0
+                                        ? 100.0
+                                        : preference));
+    if (ismask)
+        iter->ismask      = 1;
+    if (types & fSERV_Promiscuous)
+        iter->promiscuous = 1;
+    if (types & fSERV_ReverseDns)
+        iter->reverse_dns = 1;
+    if (types & fSERV_Stateless)
+        iter->stateless   = 1;
+    iter->external        = external;
+    if (arg) {
+        iter->arg         = arg;
+        iter->arglen      = strlen(arg);
+    }
+    if (iter->arglen  &&  val) {
+        iter->val         = val;
+        iter->vallen      = strlen(val);
+    }
+    iter->time            = (TNCBI_Time) time(0);
 
     if (n_skip) {
         size_t i;
@@ -170,7 +175,7 @@ static SERV_ITER s_Open(const char*          service,
                                 SERV_NameOfInfo(skip[i]) : "");
             SSERV_Info* temp = SERV_CopyInfoEx(skip[i], name);
             if (temp) {
-                temp->time = SERV_TIME_INFINITE;
+                temp->time = NCBI_TIME_INFINITE;
                 if (!s_AddSkipInfo(iter, name, temp)) {
                     free(temp);
                     temp = 0;
@@ -185,7 +190,7 @@ static SERV_ITER s_Open(const char*          service,
     assert(n_skip == iter->n_skip);
 
     if (!net_info) {
-        if (!(op = SERV_LBSMD_Open(iter, info, host_info))) {
+        if (!(op = SERV_LBSMD_Open(iter, info, host_info, 0))) {
             /* LBSMD failed in non-DISPD mapping */
             SERV_Close(iter);
             return 0;
@@ -196,7 +201,7 @@ static SERV_ITER s_Open(const char*          service,
         if (net_info->stateless)
             iter->stateless = 1;
         if ((net_info->lb_disable
-             ||  !(op = SERV_LBSMD_Open(iter, info, host_info)))  &&
+             ||  !(op = SERV_LBSMD_Open(iter, info, host_info, 1)))  &&
             !(op = SERV_DISPD_Open(iter, net_info, info, host_info))) {
             SERV_Close(iter);
             return 0;
@@ -266,7 +271,7 @@ SERV_ITER SERV_OpenP(const char*          service,
 }
 
 
-static void s_SkipSkip(SERV_ITER iter, time_t now)
+static void s_SkipSkip(SERV_ITER iter)
 {
     size_t n;
     if (!iter->n_skip)
@@ -275,8 +280,8 @@ static void s_SkipSkip(SERV_ITER iter, time_t now)
     n = 0;
     while (n < iter->n_skip) {
         SSERV_Info* temp = iter->skip[n];
-        if (temp->time != SERV_TIME_INFINITE &&
-            (!now || temp->time < (TNCBI_Time) now)) {
+        if (temp->time != NCBI_TIME_INFINITE  &&
+            (!iter->time  ||  temp->time < iter->time)) {
             if (n < --iter->n_skip) {
                 memmove(iter->skip + n, iter->skip + n + 1,
                         sizeof(*iter->skip)*(iter->n_skip - n));
@@ -298,10 +303,10 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
     assert(iter && iter->op);
     if (iter->op->GetNextInfo) {
         if (!internal) {
-            /* First, remove all outdated entries from our skip list */
-            s_SkipSkip(iter, time(0));
+            iter->time = (TNCBI_Time) time(0);
+            s_SkipSkip(iter);
         }
-        /* Next, obtain a fresh entry from the actual mapper */
+        /* Obtain a fresh entry from the actual mapper */
         while ((info = (*iter->op->GetNextInfo)(iter, host_info)) != 0) {
             /* This should never actually be used for LBSMD dispatcher,
              * as all exclusion logic is already done in it internally. */
@@ -392,13 +397,14 @@ SSERV_Info* SERV_GetInfoP(const char*          service,
                           size_t               n_skip,
                           int/*bool*/          external, 
                           const char*          arg,
-                          const char*          val)
+                          const char*          val,
+                          HOST_INFO*           host_info)
 {
     return s_GetInfo(service, types,
                      preferred_host, preferred_port, preference,
                      net_info, skip, n_skip,
                      external, arg, val,
-                     0/*host_info*/);
+                     host_info);
 }
 
 
@@ -440,8 +446,9 @@ void SERV_Reset(SERV_ITER iter)
 {
     if (!iter)
         return;
-    iter->last = 0;
-    s_SkipSkip(iter, 0);
+    iter->last  = 0;
+    iter->time  = 0;
+    s_SkipSkip(iter);
     if (iter->op && iter->op->Reset)
         (*iter->op->Reset)(iter);
 }
@@ -472,8 +479,8 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
     int retval = 0/*not updated yet*/;
 
     if (iter && iter->op && text) {
-        TNCBI_Time now = (TNCBI_Time) time(0);
         const char *c, *b;
+        iter->time = (TNCBI_Time) time(0);
         for (b = text; (c = strchr(b, '\n')) != 0; b = c + 1) {
             size_t len = (size_t)(c - b);
             SSERV_Info* info;
@@ -489,7 +496,7 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
             else
                 t[len] = '\0';
             p = t;
-            if (iter->op->Update && (*iter->op->Update)(iter, now, p, code))
+            if (iter->op->Update  &&  (*iter->op->Update)(iter, p, code))
                 retval = 1/*updated*/;
             if (strncasecmp(p, used_server_info,
                             sizeof(used_server_info) - 1) == 0) {
@@ -597,7 +604,8 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
             }
         }
         /* Drop any outdated skip entries */
-        s_SkipSkip(iter, time(0));
+        iter->time = (TNCBI_Time) time(0);
+        s_SkipSkip(iter);
         /* Put all the rest into rejection list */
         for (i = 0; i < iter->n_skip; i++) {
             /* NB: all skip infos are now kept with names (perhaps, empty) */
@@ -663,6 +671,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.76  2006/03/05 17:47:55  lavr
+ * +SERV_ITER::time, new VT::Update proto, SERV_OpenP() to return HINFO
+ *
  * Revision 6.75  2006/01/27 17:10:08  lavr
  * Explicit casts that heed signed/unsigned comparison warning
  *
