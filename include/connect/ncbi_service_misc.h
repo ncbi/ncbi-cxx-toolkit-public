@@ -36,6 +36,12 @@
 
 #include <connect/ncbi_types.h>
 
+#ifndef NCBI_DEPRECATED
+#  define NCBI_SERVICE_MISC_DEPRECATED
+#else
+#  define NCBI_SERVICE_MISC_DEPRECATED NCBI_DEPRECATED
+#endif
+
 
 /** @addtogroup ServiceSupport
  *
@@ -57,7 +63,11 @@ extern "C" {
  * OnOff == eDefault has no effect but returns the current setting.
  */
 
-extern NCBI_XCONNECT_EXPORT ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
+extern NCBI_XCONNECT_EXPORT
+ESwitch LBSMD_KeepHeapAttached(ESwitch OnOff);
+
+extern NCBI_XCONNECT_EXPORT NCBI_SERVICE_MISC_DEPRECATED
+ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
 
 
 #ifdef __cplusplus
@@ -71,6 +81,9 @@ extern NCBI_XCONNECT_EXPORT ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/03/05 17:34:25  lavr
+ * LBSM_KeepHeapAttached -> LBSMD_KeepHeapAttached
+ *
  * Revision 1.3  2006/01/17 20:17:15  lavr
  * DISP_SetMessageHook() moved from ncbi_service_misc.h to
  * ncbi_http_connector.h and renamed to HTTP_SetNcbiMessageHook()
