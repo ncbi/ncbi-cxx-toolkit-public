@@ -64,7 +64,8 @@ int main(int argc, const char* argv[])
     ConnNetInfo_Destroy(net_info);
     if (iter) {
         HOST_INFO hinfo;
-        CORE_LOG(eLOG_Trace, "Service mapper has been successfully opened");
+        CORE_LOGF(eLOG_Trace,("Service mapper %s has been successfully opened",
+                              SERV_MapperName(iter)));
         while ((info = SERV_GetNextInfoEx(iter, &hinfo)) != 0) {
             char* info_str = SERV_WriteInfo(info);
             CORE_LOGF(eLOG_Note, ("Service `%s' = %s",
@@ -72,6 +73,8 @@ int main(int argc, const char* argv[])
             if (hinfo) {
                 double array[2];
                 const char* e = HINFO_Environment(hinfo);
+                const char* a = HINFO_AffinityArgument(hinfo);
+                const char* v = HINFO_AffinityArgvalue(hinfo);
                 CORE_LOG(eLOG_Note, "  Host info available:");
                 CORE_LOGF(eLOG_Note, ("    Number of CPUs: %d",
                                       HINFO_CpuCount(hinfo)));
@@ -82,6 +85,13 @@ int main(int argc, const char* argv[])
                                           array[0], array[1]));
                 } else
                     CORE_LOG (eLOG_Note,  "    Load average: unavailable");
+                if (a) {
+                    assert(*a);
+                    CORE_LOGF(eLOG_Note, ("    Affinity argument: %s", a));
+                }
+                if (a  &&  v)
+                    CORE_LOGF(eLOG_Note, ("    Affinity value:    %s%s%s",
+                                          *v ? "" : "\"", v, *v ? "" : "\""));
                 CORE_LOGF(eLOG_Note, ("    Host environment: %s%s%s",
                                       e? "\"": "", e? e: "NULL", e? "\"": ""));
                 free(hinfo);
@@ -130,6 +140,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2006/03/05 17:43:01  lavr
+ * Log service mapper name; extract affinities (if any)
+ *
  * Revision 6.21  2006/01/11 16:35:59  lavr
  * Open service iterator for everything (but FIREWALL)
  *
