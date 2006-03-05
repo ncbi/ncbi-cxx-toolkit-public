@@ -41,7 +41,6 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 /* Lower bound of up-to-date/out-of-date ratio */
 #define SERV_DISPD_STALE_RATIO_OK  0.8
@@ -54,7 +53,7 @@ extern "C" {
 #endif /*__cplusplus*/
     static void        s_Reset      (SERV_ITER);
     static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
-    static int/*bool*/ s_Update     (SERV_ITER, TNCBI_Time, const char*, int);
+    static int/*bool*/ s_Update     (SERV_ITER, const char*, int);
     static void        s_Close      (SERV_ITER);
 
     static const SSERV_VTable s_op = {
@@ -180,8 +179,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 }
 
 
-static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now,
-                            const char* text, int code)
+static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
 {
     static const char server_info[] = "Server-Info-";
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
@@ -224,8 +222,8 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now,
         if (s)
             free(s);
         if (info) {
-            if (info->time != SERV_TIME_INFINITE)
-                info->time += now; /* expiration time now */
+            if (info->time != NCBI_TIME_INFINITE)
+                info->time += iter->time; /* expiration time now */
             if (s_AddServerInfo(data, info))
                 return 1/*updated*/;
             free(info);
@@ -253,18 +251,17 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now,
 }
 
 
-static int/*bool*/ s_IsUpdateNeeded(struct SDISPD_Data *data)
+static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SDISPD_Data *data)
 {
     double status = 0.0, total = 0.0;
 
     if (data->n_cand) {
-        TNCBI_Time t = (TNCBI_Time) time(0);
         size_t i = 0;
         while (i < data->n_cand) {
             const SSERV_Info* info = data->cand[i].info;
 
             total += info->rate;
-            if (info->time < t) {
+            if (info->time < now) {
                 if (i < --data->n_cand) {
                     memmove(data->cand + i, data->cand + i + 1,
                             sizeof(*data->cand)*(data->n_cand - i));
@@ -295,8 +292,10 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     size_t n;
 
     assert(data);
-    if (s_IsUpdateNeeded(data)  &&  (!s_Resolve(iter)  ||  !data->n_cand))
+    if (s_IsUpdateNeeded(iter->time, data)  &&
+        (!s_Resolve(iter)  ||  !data->n_cand)) {
         return 0;
+    }
 
     for (n = 0; n < data->n_cand; n++)
         data->cand[n].status = data->cand[n].info->rate;
@@ -384,7 +383,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     iter->op = &s_op; /* SERV_Update() - from HTTP callback - expects this */
 
     if (g_NCBI_ConnectRandomSeed == 0) {
-        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        g_NCBI_ConnectRandomSeed = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
     }
 
@@ -405,6 +404,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.78  2006/03/05 17:38:12  lavr
+ * Adjust for SERV_ITER to now carry time (s_Update)
+ *
  * Revision 6.77  2006/02/21 14:57:59  lavr
  * Dispatcher to not require server-infos for stateless firewalled client
  *
