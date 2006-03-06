@@ -32,7 +32,7 @@
  */
  
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_cache.hpp>
+#include <util/ncbi_cache.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -54,6 +54,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/06 18:28:25  grichenk
+ * Moved ncbi_cache from corelib to util.
+ *
  * Revision 1.1  2006/02/28 16:24:05  grichenk
  * Initial revision
  *

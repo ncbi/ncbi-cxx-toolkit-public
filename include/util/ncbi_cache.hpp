@@ -46,6 +46,10 @@ BEGIN_NCBI_SCOPE
  */
 
 
+/// @file ncbi_cache.hpp
+/// The NCBI C++ generic cache template
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///    Generic cache.
@@ -528,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/06 18:28:25  grichenk
+ * Moved ncbi_cache from corelib to util.
+ *
  * Revision 1.1  2006/02/28 16:24:05  grichenk
  * Initial revision
  *
