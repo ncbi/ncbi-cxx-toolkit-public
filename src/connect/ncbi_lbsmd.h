@@ -73,7 +73,7 @@ extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
  * call LBSMD_GetConfig() provided that LBSM_KeepHeapAttached() has
  * been set to eOff (which is the default setting).
  */
-extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
+extern NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
 
 
 /* Host info getters */
@@ -99,6 +99,9 @@ int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2]);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2006/03/06 20:40:14  lavr
+ * Added NCBI_XCONNECT_EXPORT attribute to LBSMD_GetHeapCopy()
+ *
  * Revision 6.12  2006/03/06 20:27:49  lavr
  * Comments
  *
