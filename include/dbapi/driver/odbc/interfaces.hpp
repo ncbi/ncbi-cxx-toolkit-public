@@ -55,6 +55,7 @@ class CODBC_RowResult;
 class CODBC_ParamResult;
 class CODBC_ComputeResult;
 class CODBC_StatusResult;
+class CODBCContextRegistry;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -69,7 +70,7 @@ public:
                    SQLHANDLE h,
                    const CODBC_Reporter* parent_reporter = NULL);
     ~CODBC_Reporter(void);
-    
+
 public:
     void ReportErrors(void) const;
     void SetHandlerStack(CDBHandlerStack* hs) {
@@ -110,6 +111,8 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public I_DriverContext
 public:
     CODBCContext(SQLLEN version = SQL_OV_ODBC3, bool use_dsn= false);
     virtual ~CODBCContext(void);
+    
+    void Close();
 
 public:
     //
@@ -149,12 +152,19 @@ private:
     SQLUINTEGER     m_TextImageSize;
     CODBC_Reporter  m_Reporter;
     bool            m_UseDSN;
+    CODBCContextRegistry* m_Registry;
 
     SQLHDBC x_ConnectToServer(const string&   srv_name,
                    const string&   usr_name,
                    const string&   passwd,
                    TConnectionMode mode);
     void xReportConError(SQLHDBC con);
+
+    void x_AddToRegistry(void);
+    void x_RemoveFromRegistry(void);
+    void x_SetRegistry(CODBCContextRegistry* registry);
+    
+    friend class CODBCContextRegistry;
 };
 
 
@@ -721,6 +731,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/03/06 22:14:23  ssikorsk
+ * Added CODBCContext::Close
+ *
  * Revision 1.23  2006/02/28 15:13:59  ssikorsk
  * Replaced argument type SQLINTEGER on SQLLEN where needed.
  *

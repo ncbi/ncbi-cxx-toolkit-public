@@ -51,6 +51,80 @@ static const CDiagCompileInfo kBlankCompileInfo;
 
 /////////////////////////////////////////////////////////////////////////////
 //
+//  CODBCContextRegistry (Singleton)
+//
+
+class CODBCContextRegistry
+{
+public:
+    static CODBCContextRegistry& Instance(void);
+    
+    void Add(CODBCContext* ctx);
+    void Remove(CODBCContext* ctx);
+    
+private:
+    CODBCContextRegistry(void);
+    ~CODBCContextRegistry(void);
+    
+    mutable CFastMutex m_Mutex;
+    vector<CODBCContext*> registry_;
+    
+    friend class auto_ptr<CODBCContextRegistry>;
+};
+
+
+CODBCContextRegistry::CODBCContextRegistry(void)
+{
+}
+
+CODBCContextRegistry::~CODBCContextRegistry(void)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    // Remove dependency from this registry ...
+    NON_CONST_ITERATE(vector<CODBCContext*>, it, registry_) {
+        (*it)->x_SetRegistry(NULL);
+    }
+    
+    // Close all managed CTLibContext ...
+    NON_CONST_ITERATE(vector<CODBCContext*>, it, registry_) {
+        (*it)->Close();
+    }
+}
+
+CODBCContextRegistry& 
+CODBCContextRegistry::Instance(void)
+{
+    static auto_ptr<CODBCContextRegistry> instance(new CODBCContextRegistry);
+    
+    return *instance;
+}
+
+void 
+CODBCContextRegistry::Add(CODBCContext* ctx)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    vector<CODBCContext*>::iterator it = find(registry_.begin(), 
+                                             registry_.end(), 
+                                             ctx);
+    if (it == registry_.end()) {
+        registry_.push_back(ctx);
+    }
+}
+
+void 
+CODBCContextRegistry::Remove(CODBCContext* ctx)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    registry_.erase(find(registry_.begin(), 
+                         registry_.end(), 
+                         ctx));
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
 //  CODBC_Reporter::
 //
 CODBC_Reporter::CODBC_Reporter(CDBHandlerStack* hs, 
@@ -169,13 +243,14 @@ void CODBC_Reporter::ReportErrors(void) const
 
 
 
-CODBCContext::CODBCContext(SQLLEN version, bool use_dsn) 
+CODBCContext::CODBCContext(SQLLEN version, bool use_dsn)
 : m_PacketSize(0)
 , m_LoginTimeout(0)
 , m_Timeout(0)
 , m_TextImageSize(0)
 , m_Reporter(0, SQL_HANDLE_ENV, 0)
 , m_UseDSN(use_dsn)
+, m_Registry(&CODBCContextRegistry::Instance())
 {
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
@@ -187,6 +262,32 @@ CODBCContext::CODBCContext(SQLLEN version, bool use_dsn)
     m_Reporter.SetHandlerStack(&m_CntxHandlers);
 
     SQLSetEnvAttr(m_Context, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)version, 0);
+
+    x_AddToRegistry();
+}
+
+void 
+CODBCContext::x_AddToRegistry(void)
+{
+    if (m_Registry) {
+        m_Registry->Add(this);
+    }
+}
+
+void 
+CODBCContext::x_RemoveFromRegistry(void)
+{
+    if (m_Registry) {
+        m_Registry->Remove(this);
+    }
+}
+
+void 
+CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
+{
+    CFastMutexGuard mg(m_Mtx);
+    
+    m_Registry = registry;
 }
 
 
@@ -267,37 +368,47 @@ CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
 CODBCContext::~CODBCContext()
 {
     try {
-        if ( !m_Context ) {
-            return;
-        }
-
-        // close all connections first
-        for (int i = m_NotInUse.NofItems();  i--; ) {
-            CODBC_Connection* t_con = static_cast<CODBC_Connection*>(m_NotInUse.Get(i));
-            delete t_con;
-        }
-
-        for (int i = m_InUse.NofItems();  i--; ) {
-            CODBC_Connection* t_con = static_cast<CODBC_Connection*> (m_InUse.Get(i));
-            delete t_con;
-        }
-
-        int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
-        switch( rc ) {
-        case SQL_INVALID_HANDLE:
-        case SQL_ERROR:
-            m_Reporter.ReportErrors();
-            break;
-        case SQL_SUCCESS_WITH_INFO:
-            m_Reporter.ReportErrors();
-        case SQL_SUCCESS:
-            break;
-        default:
-            m_Reporter.ReportErrors();
-            break;
-        };
+        Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
+}
+
+void
+CODBCContext::Close(void)
+{
+    if ( !m_Context ) {
+        return;
+    }
+
+    // close all connections first
+    for (int i = m_NotInUse.NofItems();  i--; ) {
+        CODBC_Connection* t_con = static_cast<CODBC_Connection*>(m_NotInUse.Get(i));
+        delete t_con;
+    }
+
+    for (int i = m_InUse.NofItems();  i--; ) {
+        CODBC_Connection* t_con = static_cast<CODBC_Connection*> (m_InUse.Get(i));
+        delete t_con;
+    }
+
+    int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+    switch( rc ) {
+    case SQL_INVALID_HANDLE:
+    case SQL_ERROR:
+        m_Reporter.ReportErrors();
+        break;
+    case SQL_SUCCESS_WITH_INFO:
+        m_Reporter.ReportErrors();
+    case SQL_SUCCESS:
+        break;
+    default:
+        m_Reporter.ReportErrors();
+        break;
+    };
+
+    m_Context = NULL;
+    x_RemoveFromRegistry();
+
 }
 
 
@@ -582,6 +693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/03/06 22:14:59  ssikorsk
+ * Added CODBCContext::Close
+ *
  * Revision 1.42  2006/03/02 17:20:58  ssikorsk
  * Report errors with SQLFreeHandle(SQL_HANDLE_ENV, m_Context)
  *
