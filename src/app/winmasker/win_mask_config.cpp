@@ -175,6 +175,13 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
 void CWinMaskConfig::Validate() const
 {
     _TRACE( "Entering CWinMaskConfig::Validate" );
+
+    if( !mk_counts && lstat_name.empty() ){
+        NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
+                    "one of '-mk_counts true' or '-ustat <stat_file>' "
+                    "must be specified" );
+    }
+
     _TRACE( "Leaving CWinMaskConfig::Validate" );
 }
 
@@ -208,6 +215,10 @@ const char * CWinMaskConfig::CWinMaskConfigException::GetErrCodeString() const
     case eReaderAllocFail:
 
         return "can not allocate fasta sequence reader";
+
+    case eInconsistentOptions:
+
+        return "inconsistent program options";
 
     default: 
 
@@ -338,6 +349,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.14  2006/03/06 20:32:40  morgulis
+ * Check that one of '-mk_counts true' or '-ustat <stat_file>' is present on
+ * the command line.
+ *
  * Revision 1.13  2005/11/21 16:49:15  morgulis
  * 1. Fixed a bug causing infinite loop in the case of empty genome.
  * 2. Added possibility to use substring matching with -ids and -exclude-ids
