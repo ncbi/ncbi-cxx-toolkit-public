@@ -595,8 +595,10 @@ void HEAP_AddRef(HEAP heap)
     if (!heap)
         return;
     assert(!heap->base == !heap->size);
-    if (heap->refc)
+    if (heap->refc) {
         heap->refc++;
+        assert(heap->refc);
+    }
 }
 
 
@@ -655,6 +657,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2006/03/06 20:26:00  lavr
+ * Added a paranoid assert() to check ref.-count overflow
+ *
  * Revision 6.29  2006/03/06 14:22:48  lavr
  * Cast (void*) to (char*) to allow ptr arithmetics
  *
