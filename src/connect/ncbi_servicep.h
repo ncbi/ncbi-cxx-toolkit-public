@@ -64,7 +64,7 @@ struct SSERV_IterTag {
     double            pref;  /* range [0..100] %%                            */
     size_t          n_skip;  /* actual number of servers in the array        */
     size_t          a_skip;  /* number of allocated slots in the array       */
-    SSERV_Info**      skip;  /* servers to skip (followed by names [opt])    */
+    SSERV_Info**      skip;  /* servers to skip (w/names)                    */
     const SSERV_Info* last;  /* last server info taken out                   */
 
     const SSERV_VTable* op;  /* table of virtual functions                   */
@@ -79,7 +79,7 @@ struct SSERV_IterTag {
     size_t          arglen;  /* == 0 for NULL pointer above                  */
     const char*        val;  /* value to match; original pointer             */
     size_t          vallen;  /* == 0 for NULL pointer above                  */
-    TNCBI_Time        time;  /* time of call                                 */
+    TNCBI_Time        time;  /* the time of call                             */
 };
 
 
@@ -121,8 +121,8 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
 
 /* same as the above but creates an iterator to get the servers one by one 
  * CAUTION:  Special requirement for "skip" infos in case of a wildcard
- * service is requested, is that they _must_ be created having a name attached
- * (perhaps, empty ""), like with SERV_ReadInfoEx() or SERV_CopyInfoEx() */
+ * service is that they _must_ be created having a name (perhaps, empty "")
+ * attached, like if done by SERV_ReadInfoEx() or SERV_CopyInfoEx() */
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
 (const char*          service,       /* service name (can be a mask)         */
  TSERV_Type           types,
@@ -138,15 +138,14 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
  );
 
 
-/* Return service name the iterator is currently working on.
+/* Return service name, which the iterator is currently working on.
  */
 extern NCBI_XCONNECT_EXPORT const char* SERV_CurrentName(SERV_ITER iter);
 
 
-/* Private interface: update mapper information from the given text
- * (<CR><LF> separated lines, usually taken from HTTP header), and by
- * optionally (if non-zero) using error code provided.
- * NB: non-zero code denotes abnormal state regardless of its value.
+/* Update mapper information from the given text (<CR><LF> separated lines,
+ * usually as taken from HTTP header), and by optionally (if non-zero)
+ * using the HTTP error code provided.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Update
 (SERV_ITER   iter,
@@ -199,6 +198,9 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2006/03/06 20:28:37  lavr
+ * Comments
+ *
  * Revision 6.38  2006/03/05 17:47:55  lavr
  * +SERV_ITER::time, new VT::Update proto, SERV_OpenP() to return HINFO
  *

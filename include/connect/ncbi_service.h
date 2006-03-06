@@ -125,16 +125,16 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_Open
 /* Get the next server meta-address, optionally accompanied by host
  * environment, specified in LBSMD configuration file on that host.
  * Return 0 if no more servers were found for the service requested
- * (parameter 'host_info' remains untouched in this case).
+ * (the pointer to 'host_info' remains untouched in this case).
  * Only when completing successfully, i.e. returning non-NULL info,
- * this function can also provide the host information as follows: if
+ * this function can also provide host information as follows: if
  * 'host_info' parameter is passed as a non-NULL pointer, then a copy of the
- * host information is allocated, and pointer to it is stored in 'host_info'.
+ * host information is allocated, and the pointer is stored at *host_info.
  * Using this information, various host parameters like load, host
  * environment, number of CPUs can be retrieved (see ncbi_host_info.h).
  * NOTE:  Application program should NOT destroy the returned server info:
  *        it will be freed automatically upon iterator destruction.
- *        On the other hand, the returned host information has to be
+ *        On the other hand, returned host information has to be
  *        explicitly free()'d when no longer needed.
  * NOTE:  Returned server info is valid only until either of the two events:
  *        1) SERV_GetNextInfo[Ex] is called for the same iterator again;
@@ -156,7 +156,7 @@ extern NCBI_XCONNECT_EXPORT const SSERV_Info* SERV_GetNextInfo
  * a single entry (the first one), and which is not interested in iterating
  * over all available entries.  Both returned server info and environment have
  * to be explicitly free()'d by the application when no longer needed.
- * Note that the host environment is supplied only if the function
+ * Note that the host environment is provided only (if at all) if the function
  * returns a non-NULL result.
  */
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoEx
@@ -213,6 +213,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2006/03/06 20:24:44  lavr
+ * Comments
+ *
  * Revision 6.45  2006/01/03 19:57:59  lavr
  * Bump client revision to 6.210
  *

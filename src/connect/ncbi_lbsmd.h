@@ -46,7 +46,7 @@ extern "C" {
 const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
                                     SSERV_Info** info,
                                     HOST_INFO*   host_info,
-                                    int/*bool*/  dispd);
+                                    int/*bool*/  dispd_to_follow);
 
 
 /* Get configuration file name. Returned '\0'-terminated string
@@ -76,8 +76,8 @@ extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
 extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
 
 
+/* Host info getters */
 typedef const void* LBSM_HINFO;
-
 
 int LBSM_HINFO_CpuCount(LBSM_HINFO hinfo);
 
@@ -99,6 +99,9 @@ int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2]);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2006/03/06 20:27:49  lavr
+ * Comments
+ *
  * Revision 6.11  2006/03/05 17:43:52  lavr
  * Private API changes; cached HEAP copy; BLAST counters dropped
  *
