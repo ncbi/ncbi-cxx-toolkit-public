@@ -46,7 +46,6 @@ typedef struct SHostInfoTag {
     const char* arg;
     const char* val;
     double      pad;    /* for proper 'hinfo' alignment; also as a magic */
-    char        hinfo[1];
 } SHOST_Info;
 
 
@@ -65,21 +64,21 @@ HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env,
     e_s = env && *env ? strlen(env) + 1 : 0;
     a_s = arg && *arg ? strlen(arg) + 1 : 0;
     v_s = a_s &&  val ? strlen(val) + 1 : 0;
-    size = sizeof(*host_info) - sizeof(host_info->hinfo) + hinfo_size;
+    size = sizeof(*host_info) + hinfo_size;
     if (!(host_info = (SHOST_Info*) calloc(1, size + e_s + a_s + v_s)))
         return 0;
-    memcpy(host_info->hinfo, hinfo, hinfo_size);
+    memcpy((char*) host_info + sizeof(*host_info), hinfo, hinfo_size);
     s = (char*) host_info + size;
     if (e_s) {
-        host_info->env = strcpy(s, env);
+        host_info->env = memcpy(s, env, e_s);
         s += e_s;
     }
     if (a_s) {
-        host_info->arg = strcpy(s, arg);
+        host_info->arg = memcpy(s, arg, a_s);
         s += a_s;
     }
     if (v_s) {
-        host_info->val = strcpy(s, val);
+        host_info->val = memcpy(s, val, v_s);
         s += v_s;
     }
     host_info->pad = M_PI;
@@ -87,46 +86,48 @@ HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env,
 }
 
 
-int HINFO_CpuCount(HOST_INFO host_info)
+int HINFO_CpuCount(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
-    return LBSM_HINFO_CpuCount(host_info->hinfo);
+    return LBSM_HINFO_CpuCount((const char*) host_info + sizeof(*host_info));
 }
 
 
-int HINFO_TaskCount(HOST_INFO host_info)
+int HINFO_TaskCount(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
-    return LBSM_HINFO_TaskCount(host_info->hinfo);
+    return LBSM_HINFO_TaskCount((const char*) host_info + sizeof(*host_info));
 }
 
 
-int/*bool*/ HINFO_LoadAverage(HOST_INFO host_info, double lavg[2])
+int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
-    return LBSM_HINFO_LoadAverage(host_info->hinfo, lavg);
+    return LBSM_HINFO_LoadAverage((const char*) host_info + sizeof(*host_info),
+                                  lavg);
 }
 
 
-int/*bool*/ HINFO_Status(HOST_INFO host_info, double status[2])
+int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2])
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
-    return LBSM_HINFO_Status(host_info->hinfo, status);
+    return LBSM_HINFO_Status((const char*) host_info + sizeof(*host_info),
+                             status);
 }
 
 
 /*ARGSUSED*/
-int/*bool*/ HINFO_BLASTParams(HOST_INFO host_info, unsigned int blast[8])
+int/*bool*/ HINFO_BLASTParams(const HOST_INFO host_info, unsigned int blast[8])
 {
     return 0;
 }
 
 
-const char* HINFO_Environment(HOST_INFO host_info)
+const char* HINFO_Environment(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
@@ -134,7 +135,7 @@ const char* HINFO_Environment(HOST_INFO host_info)
 }
 
 
-const char* HINFO_AffinityArgument(HOST_INFO host_info)
+const char* HINFO_AffinityArgument(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
@@ -142,7 +143,7 @@ const char* HINFO_AffinityArgument(HOST_INFO host_info)
 }
 
 
-const char* HINFO_AffinityArgvalue(HOST_INFO host_info)
+const char* HINFO_AffinityArgvalue(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
@@ -153,6 +154,9 @@ const char* HINFO_AffinityArgvalue(HOST_INFO host_info)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2006/03/06 20:24:20  lavr
+ * Added "const" qualifier to all host-infos when passed to getters
+ *
  * Revision 6.7  2006/03/05 17:36:52  lavr
  * +HINFO_AffinityArgument, +HINFO_AffinityArgvalue; HINFO_Create modified
  *

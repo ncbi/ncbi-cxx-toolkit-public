@@ -59,12 +59,12 @@ typedef struct SHostInfoTag* HOST_INFO;
 
 /* Return CPU count or -1 if error occurred.
  */
-extern NCBI_XCONNECT_EXPORT int HINFO_CpuCount(HOST_INFO host_info);
+extern NCBI_XCONNECT_EXPORT int HINFO_CpuCount(const HOST_INFO host_info);
 
 
 /* Return task count or -1 if error occurred.
  */
-extern NCBI_XCONNECT_EXPORT int HINFO_TaskCount(HOST_INFO host_info);
+extern NCBI_XCONNECT_EXPORT int HINFO_TaskCount(const HOST_INFO host_info);
 
 
 /* Return non-zero on success and store load averages in the
@@ -73,8 +73,8 @@ extern NCBI_XCONNECT_EXPORT int HINFO_TaskCount(HOST_INFO host_info);
  * (aka BLAST) stored at index [1]. Return 0 on error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ HINFO_LoadAverage
-(HOST_INFO host_info,
- double    lavg[2]
+(const HOST_INFO host_info,
+ double          lavg[2]
  );
 
 
@@ -85,19 +85,16 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ HINFO_LoadAverage
  * does not provide such information. Return 0 on error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ HINFO_Status
-(HOST_INFO host_info,
- double    status[2]
+(const HOST_INFO host_info,
+ double          status[2]
  );
 
 
-/* Return non-zero on success and store BLAST counters in the
- * provided array "blast", with first five entries (indices [0..4])
- * containing task counters, and last 3 entries (indices [5..7])
- * containing queue sizes. Return 0 on error.
+/* Obsolete.  Always returns 0 and does not touch its "blast" argument.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ HINFO_BLASTParams
-(HOST_INFO    host_info,
- unsigned int blast[8]
+(const HOST_INFO host_info,
+ unsigned int    blast[8]
  );
 
 
@@ -110,7 +107,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ HINFO_BLASTParams
  * in the application program.
  */
 extern NCBI_XCONNECT_EXPORT const char* HINFO_Environment
-(HOST_INFO host_info);
+(const HOST_INFO host_info);
 
 
 /* Obtain affinity argument and value that has keyed the service
@@ -122,10 +119,10 @@ extern NCBI_XCONNECT_EXPORT const char* HINFO_Environment
  * substring from the host environment that has keyed the decision.
  */
 extern NCBI_XCONNECT_EXPORT const char* HINFO_AffinityArgument
-(HOST_INFO host_info);
+(const HOST_INFO host_info);
 
 extern NCBI_XCONNECT_EXPORT const char* HINFO_AffinityArgvalue
-(HOST_INFO host_info);
+(const HOST_INFO host_info);
 
 
 #ifdef __cplusplus
@@ -139,6 +136,9 @@ extern NCBI_XCONNECT_EXPORT const char* HINFO_AffinityArgvalue
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2006/03/06 20:23:59  lavr
+ * Added "const" qualifier to all host-infos when passed to getters
+ *
  * Revision 6.6  2006/03/05 17:33:15  lavr
  * +HINFO_AffinityArgument, +HINFO_AffinityArgvalue
  *
