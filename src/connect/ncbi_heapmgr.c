@@ -577,8 +577,8 @@ HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
     newheap->refc   = 1/*copy*/;
     newheap->serial = serial;
     if (heap->size) {
-        memcpy(newheap->base,  heap->base,           heap->size);
-        memset(newheap->base + heap->size, 0, size - heap->size);
+        memcpy((char*) newheap->base,  heap->base,           heap->size);
+        memset((char*) newheap->base + heap->size, 0, size - heap->size);
     }
     return newheap;
 }
@@ -655,6 +655,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2006/03/06 14:22:48  lavr
+ * Cast (void*) to (char*) to allow ptr arithmetics
+ *
  * Revision 6.28  2006/03/05 17:35:56  lavr
  * API revised to allow to create ref-counted heap copies
  *
