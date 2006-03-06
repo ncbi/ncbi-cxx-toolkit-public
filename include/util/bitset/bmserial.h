@@ -104,7 +104,19 @@ const unsigned char set_block_bit_interval  = 17; //!< Interval block
 namespace bm
 {
 
+/// \internal
+enum serialization_header_mask {
+    BM_HM_DEFAULT = 1,
+    BM_HM_RESIZE  = (1 << 1), // resized vector
+    BM_HM_ID_LIST = (1 << 2), // id list stored
+    BM_HM_NO_BO   = (1 << 3)  // no byte-order
+};
 
+
+/// Bit mask flags for serialization algorithm
+enum serialization_flags {
+    BM_NO_BYTE_ORDER = 1      ///< save no byte-order info (save some space)
+};
 
 /*!
    \brief Saves bitvector into memory.
@@ -123,8 +135,12 @@ namespace bm
    serialize.
    (Of course serialize does not deallocate temp_block.)
 
+   \param serialization_flags
+   Flags controlling serilization (bit-mask) 
+   (use OR-ed serialization flags)
+
    \return Size of serialization block.
-   \sa calc_stat
+   \sa calc_stat, serialization_flags
 */
 /*
  Serialization format:
@@ -133,7 +149,7 @@ namespace bm
  | HEADER | BLOCKS |
 
  Header structure:
-   BYTE : Serialization type (0x1)
+   BYTE : Serialization header (bit mask of BM_HM_*)
    BYTE : Byte order ( 0 - Big Endian, 1 - Little Endian)
    INT16: Reserved (0)
    INT16: Reserved Flags (0)
@@ -141,7 +157,10 @@ namespace bm
  </pre>
 */
 template<class BV>
-unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
+unsigned serialize(const BV& bv, 
+                   unsigned char* buf, 
+                   bm::word_t*    temp_block,
+                   unsigned       serialization_flags = 0)
 {
     BM_ASSERT(temp_block);
     
@@ -157,18 +176,20 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
 
     unsigned char header_flag = 0;
     if (bv.size() == bm::id_max) // no dynamic resize
-    {
-        header_flag |= 1;
-    }
+        header_flag |= BM_HM_DEFAULT;
     else 
-    {
-        header_flag |= (1 << 1);
-    }
+        header_flag |= BM_HM_RESIZE;
+
+    if (serialization_flags & BM_NO_BYTE_ORDER) 
+        header_flag |= BM_HM_NO_BO;
 
     enc.put_8(header_flag);
 
-    ByteOrder bo = globals<true>::byte_order();
-    enc.put_8((unsigned char)bo);
+    if (!(serialization_flags & BM_NO_BYTE_ORDER))
+    {
+        ByteOrder bo = globals<true>::byte_order();
+        enc.put_8((unsigned char)bo);
+    }
 
     unsigned i,j;
 
@@ -176,7 +197,7 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
     enc.put_16(bman.glen(), bm::gap_levels);
 
     // save size (only if bvector has been down-sized)
-    if (header_flag & (1 << 1)) 
+    if (header_flag & BM_HM_RESIZE) 
     {
         enc.put_32(bv.size());
     }
@@ -264,12 +285,6 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
             unsigned len = gap_length(gblk);
             enc.put_8(set_block_gap);
             enc.put_16(gblk, len-1);
-            /*
-            for (unsigned k = 0; k < (len-1); ++k)
-            {
-                enc.put_16(gblk[k]);
-            }
-            */
             continue;
         }
         
@@ -277,12 +292,12 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
         // BIT BLOCK serialization
 
         // Try to reduce the size up to the reasonable limit.
-/*
+        /*
         unsigned len = bm::bit_convert_to_gap(gap_temp_block, 
                                               blk, 
                                               bm::GAP_MAX_BITS, 
                                               bm::GAP_EQUIV_LEN-64);
-*/
+        */
         gap_word_t len;
 
         len = bit_convert_to_arr(gap_temp_block, 
@@ -292,9 +307,6 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
 
         if (len)  // reduced
         {
-//            len = gap_length(gap_temp_block);
-//            enc.put_8(SET_BLOCK_GAPBIT);
-//            enc.memcpy(gap_temp_block, sizeof(gap_word_t) * (len - 1));
             enc.put_8(set_block_arrbit);
             if (sizeof(gap_word_t) == 2)
             {
@@ -333,7 +345,49 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
     }
 
     enc.put_8(set_block_end);
-    return enc.size();
+
+
+    unsigned encoded_size = enc.size();
+    
+    // check if bit-vector encoding is inefficient 
+    // (can happen for very sparse vectors)
+
+    bm::id_t cnt = bv.count();
+    unsigned id_capacity = cnt * sizeof(bm::id_t);
+    id_capacity += 16;
+    if (id_capacity < encoded_size) 
+    {
+        // plain list of ints is better than serialization
+        bm::encoder enc(buf, 0);
+        header_flag = BM_HM_ID_LIST;
+        if (bv.size() != bm::id_max) // no dynamic resize
+            header_flag |= BM_HM_RESIZE;
+        if (serialization_flags & BM_NO_BYTE_ORDER) 
+            header_flag |= BM_HM_NO_BO;
+
+        enc.put_8(header_flag);
+        if (!(serialization_flags & BM_NO_BYTE_ORDER))
+        {
+            ByteOrder bo = globals<true>::byte_order();
+            enc.put_8((unsigned char)bo);
+        }
+
+        if (bv.size() != bm::id_max) // no dynamic resize
+        {
+            enc.put_32(bv.size());
+        }
+
+        enc.put_32(cnt);
+        typename BV::enumerator en(bv.first());
+        for (;en.valid(); ++en,--cnt) 
+        {
+            bm::id_t id = *en;
+            enc.put_32(id);
+        }
+        return enc.size();
+    } // if capacity
+
+    return encoded_size;
 
 }
 
@@ -343,7 +397,9 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
 */
 
 template<class BV>
-unsigned serialize(BV& bv, unsigned char* buf)
+unsigned serialize(BV& bv, 
+                   unsigned char* buf, 
+                   unsigned  serialization_flags=0)
 {
     typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
 
@@ -390,8 +446,12 @@ unsigned deserialize(BV& bv,
     ByteOrder bo_current = globals<true>::byte_order();
 
     bm::decoder dec(buf);
-    /*unsigned char header_flag =*/ dec.get_8();
-    ByteOrder bo = (bm::ByteOrder)dec.get_8();
+    unsigned char header_flag = dec.get_8();
+    ByteOrder bo = bo_current;
+    if (!(header_flag & BM_HM_NO_BO))
+    {
+        bo = (bm::ByteOrder) dec.get_8();
+    }
 
     if (bo_current == bo)
     {
@@ -442,7 +502,29 @@ unsigned deserializer<BV, DEC>::deserialize(bvector_type&        bv,
     // Reading header
 
     unsigned char header_flag =  dec.get_8();
-    /*ByteOrder bo = (bm::ByteOrder)*/dec.get_8();
+    if (!(header_flag & BM_HM_NO_BO))
+    {
+        /*ByteOrder bo = (bm::ByteOrder)*/dec.get_8();
+    }
+
+    if (header_flag & BM_HM_ID_LIST)
+    {
+        // special case: the next comes plain list of integers
+        if (header_flag & BM_HM_RESIZE)
+        {
+            unsigned bv_size = dec.get_32();
+            if (bv_size > bv.size())
+            {
+                bv.resize(bv_size);
+            }
+        }
+
+        for (unsigned cnt = dec.get_32(); cnt; --cnt) {
+            bm::id_t id = dec.get_32();
+            bv.set(id);
+        } // for
+        return dec.size();
+    }
 
     unsigned i;
 
