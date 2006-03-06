@@ -53,7 +53,7 @@ class CTL_ParamResult;
 class CTL_ComputeResult;
 class CTL_StatusResult;
 class CTL_CursorResult;
-
+class CTLibContextRegistry;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -68,6 +68,9 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public I_DriverContext
 public:
     CTLibContext(bool reuse_context = true, CS_INT version = CS_VERSION_110);
     virtual ~CTLibContext(void);
+    
+    // Deinitialize all internal structures.
+    void Close(void);
 
 public:
     //
@@ -111,11 +114,17 @@ private:
     CS_INT      m_PacketSize;
     CS_INT      m_LoginRetryCount;
     CS_INT      m_LoginLoopDelay;
+    CTLibContextRegistry* m_Registry;
 
     CS_CONNECTION* x_ConnectToServer(const string&   srv_name,
                                      const string&   usr_name,
                                      const string&   passwd,
                                      TConnectionMode mode);
+    void x_AddToRegistry(void);
+    void x_RemoveFromRegistry(void);
+    void x_SetRegistry(CTLibContextRegistry* registry);
+    
+    friend class CTLibContextRegistry;
 };
 
 
@@ -139,6 +148,8 @@ protected:
     CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
                    bool reusable, const string& pool_name);
     virtual ~CTL_Connection(void);
+    
+    void Close(void);
 
 protected:
     virtual bool IsAlive(void);
@@ -187,6 +198,7 @@ protected:
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
+    CS_CONNECTION* x_GetSybaseConn(void) const { return m_Link; }
 
     CS_CONNECTION*  m_Link;
     CTLibContext*   m_Context;
@@ -217,6 +229,8 @@ protected:
     CTL_LangCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                 const string& lang_query, unsigned int nof_params);
     virtual ~CTL_LangCmd(void);
+    
+    void Close(void);
 
 protected:
     virtual bool More(const string& query_text);
@@ -239,6 +253,7 @@ private:
     {
         return *m_Connect;
     }
+    CS_COMMAND* x_GetSybaseCmd(void) const { return m_Cmd; }
 
 private:
     CTL_Connection* m_Connect;
@@ -266,6 +281,8 @@ protected:
     CTL_RPCCmd(CTL_Connection* con, CS_COMMAND* cmd,
                const string& proc_name, unsigned int nof_params);
     virtual ~CTL_RPCCmd(void);
+    
+    void Close(void);
 
 protected:
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
@@ -290,6 +307,7 @@ private:
     {
         return *m_Connect;
     }
+    CS_COMMAND* x_GetSybaseCmd(void) const { return m_Cmd; }
 
 private:
     CTL_Connection* m_Connect;
@@ -319,6 +337,8 @@ protected:
                   const string& cursor_name, const string& query,
                   unsigned int nof_params, unsigned int fetch_size);
     virtual ~CTL_CursorCmd(void);
+    
+    void CloseForever(void);
 
 protected:
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
@@ -340,6 +360,7 @@ private:
     {
         return *m_Connect;
     }
+    CS_COMMAND* x_GetSybaseCmd(void) const { return m_Cmd; }
     
 private:
     CTL_Connection*   m_Connect;
@@ -370,6 +391,8 @@ protected:
     CTL_BCPInCmd(CTL_Connection* con, CS_BLKDESC* cmd,
                  const string& table_name, unsigned int nof_columns);
     virtual ~CTL_BCPInCmd(void);
+    
+    void Close(void);
 
 protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
@@ -385,6 +408,7 @@ private:
     {
         return *m_Connect;
     }
+    CS_BLKDESC* x_GetSybaseCmd(void) const { return m_Cmd; }
 
 private:
     CTL_Connection* m_Connect;
@@ -416,6 +440,8 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : public I_SendDataCmd
 protected:
     CTL_SendDataCmd(CTL_Connection* con, CS_COMMAND* cmd, size_t nof_bytes);
     virtual ~CTL_SendDataCmd(void);
+    
+    void Close(void);
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
@@ -426,6 +452,7 @@ private:
     {
         return *m_Connect;
     }
+    CS_COMMAND* x_GetSybaseCmd(void) const { return m_Cmd; }
 
 private:
     CTL_Connection* m_Connect;
@@ -451,6 +478,8 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RowResult : public I_Result
 protected:
     CTL_RowResult(CS_COMMAND* cmd);
     virtual ~CTL_RowResult(void);
+    
+    void Close(void);
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
@@ -472,6 +501,9 @@ protected:
 							  CS_INT buflen, CS_INT *outlen);
     CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
 						  CDB_Object* item_buf);
+    CS_COMMAND* x_GetSybaseCmd(void) const { return m_Cmd; }
+
+protected:
     // data
     CS_COMMAND*  m_Cmd;
     int          m_CurrItem;
@@ -484,6 +516,7 @@ protected:
     CS_INT*      m_Copied;
     CS_SMALLINT* m_Indicator;
     unsigned char m_BindBuff[2048];
+    
 };
 
 
@@ -629,6 +662,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/03/06 19:50:02  ssikorsk
+ * Added method Close/CloseForever to all context/command-aware classes.
+ * Use getters to access Sybase's context and command handles.
+ *
  * Revision 1.23  2006/01/23 13:12:50  ssikorsk
  * Renamed CTLibContext::MakeConnection to MakeIConnection.
  *
