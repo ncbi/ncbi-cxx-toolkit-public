@@ -34,8 +34,11 @@
 #include <connect/ncbi_service_misc.h>
 
 
-const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
-                                    SSERV_Info** info, HOST_INFO* hinfo)
+/*ARGSUSED*/
+const SSERV_VTable *SERV_LBSMD_Open(SERV_ITER    iter,
+                                    SSERV_Info** info,
+                                    HOST_INFO*   host_info,
+                                    int/*bool*/  dispd_follow)
 {
     return 0;
 }
@@ -62,24 +65,28 @@ extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time/*ignored*/)
 }
 
 
+/*ARGSUSED*/
 int LBSM_HINFO_CpuCount(const void* load_ptr)
 {
     return -1;
 }
 
 
+/*ARGSUSED*/
 int LBSM_HINFO_TaskCount(const void* load_ptr)
 {
     return -1;
 }
 
 
+/*ARGSUSED*/
 int/*bool*/ LBSM_HINFO_LoadAverage(const void* load_ptr, double lavg[2])
 {
     return 0/*failure*/;
 }
 
 
+/*ARGSUSED*/
 int/*bool*/ LBSM_HINFO_Status(const void* load_ptr, double status[2])
 {
     return 0/*failure*/;
@@ -89,6 +96,9 @@ int/*bool*/ LBSM_HINFO_Status(const void* load_ptr, double status[2])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2006/03/06 14:42:04  lavr
+ * SERV_LBSMD_Open() -- use new proto
+ *
  * Revision 6.8  2006/03/05 17:44:12  lavr
  * Private API changes; cached HEAP copy; BLAST counters dropped
  *
