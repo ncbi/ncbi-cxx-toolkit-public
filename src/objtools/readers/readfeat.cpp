@@ -1816,12 +1816,13 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname, flags);
 
     // go through all features and demote single interval seqlocmix to seqlocint
-
     for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
         CSeq_feat& feat = *fi;
         CSeq_loc& location = feat.SetLocation ();
         if (location.IsMix ()) {
             CSeq_loc_mix& mx = location.SetMix ();
+            CSeq_loc &keep_loc(*mx.Set ().front ());
+            CRef<CSeq_loc> guard_loc(&keep_loc);            
             switch (mx.Get ().size ()) {
                 case 0:
                     location.SetNull ();
