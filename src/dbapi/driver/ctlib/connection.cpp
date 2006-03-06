@@ -69,33 +69,33 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
     m_Pool     = pool_name;
 
     CTL_Connection* link = this;
-    ct_con_props(m_Link, CS_SET, CS_USERDATA,
+    ct_con_props(x_GetSybaseConn(), CS_SET, CS_USERDATA,
                  &link, (CS_INT) sizeof(link), NULL);
 
     // retrieve the connection attributes
     CS_INT outlen(0);
     char   buf[512];
 
-    ct_con_props(m_Link, CS_GET, CS_SERVERNAME,
+    ct_con_props(x_GetSybaseConn(), CS_GET, CS_SERVERNAME,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
     if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
     m_Server.append(buf, (size_t) outlen);
 
-    ct_con_props(m_Link, CS_GET, CS_USERNAME,
+    ct_con_props(x_GetSybaseConn(), CS_GET, CS_USERNAME,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
     if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
     m_User.append(buf, (size_t) outlen);
 
-    ct_con_props(m_Link, CS_GET, CS_PASSWORD,
+    ct_con_props(x_GetSybaseConn(), CS_GET, CS_PASSWORD,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
     if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
     m_Passwd.append(buf, (size_t) outlen);
 
     CS_BOOL flag;
-    ct_con_props(m_Link, CS_GET, CS_BULK_LOGIN, &flag, CS_UNUSED, &outlen);
+    ct_con_props(x_GetSybaseConn(), CS_GET, CS_BULK_LOGIN, &flag, CS_UNUSED, &outlen);
     m_BCPable = (flag == CS_TRUE);
 
-    ct_con_props(m_Link, CS_GET, CS_SEC_ENCRYPTION, &flag, CS_UNUSED, &outlen);
+    ct_con_props(x_GetSybaseConn(), CS_GET, CS_SEC_ENCRYPTION, &flag, CS_UNUSED, &outlen);
     m_SecureLogin = (flag == CS_TRUE);
 
     m_ResProc= 0;
@@ -105,7 +105,7 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
 bool CTL_Connection::IsAlive()
 {
     CS_INT status;
-    if (ct_con_props(m_Link, CS_GET, CS_CON_STATUS, &status, CS_UNUSED, 0)
+    if (ct_con_props(x_GetSybaseConn(), CS_GET, CS_CON_STATUS, &status, CS_UNUSED, 0)
         != CS_SUCCEED)
         return false;
 
@@ -120,7 +120,7 @@ CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
 {
     CS_COMMAND* cmd;
 
-    CmdAlloc(m_Link, &cmd);
+    CmdAlloc(x_GetSybaseConn(), &cmd);
 
     CTL_LangCmd* lcmd = new CTL_LangCmd(this, cmd, lang_query, nof_params);
     m_CMDs.Add(lcmd);
@@ -133,7 +133,7 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
 {
     CS_COMMAND* cmd;
 
-    CmdAlloc(m_Link, &cmd);
+    CmdAlloc(x_GetSybaseConn(), &cmd);
 
     CTL_RPCCmd* rcmd = new CTL_RPCCmd(this, cmd, rpc_name, nof_args);
     m_CMDs.Add(rcmd);
@@ -147,7 +147,7 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
     CHECK_DRIVER_ERROR( !m_BCPable, "No bcp on this connection", 110003 );
 
     CS_BLKDESC* cmd;
-    if (blk_alloc(m_Link, BLK_VERSION_100, &cmd) != CS_SUCCEED) {
+    if (blk_alloc(x_GetSybaseConn(), BLK_VERSION_100, &cmd) != CS_SUCCEED) {
         DATABASE_DRIVER_ERROR( "blk_alloc failed", 110004 );
     }
 
@@ -164,7 +164,7 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 {
     CS_COMMAND* cmd;
 
-    CmdAlloc(m_Link, &cmd);
+    CmdAlloc(x_GetSybaseConn(), &cmd);
 
     CTL_CursorCmd* ccmd = new CTL_CursorCmd(this, cmd, cursor_name, query,
                                             nof_params, batch_size);
@@ -191,7 +191,7 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     C_ITDescriptorGuard d_guard(p_desc);
     CS_COMMAND* cmd;
 
-    CmdAlloc(m_Link, &cmd);
+    CmdAlloc(x_GetSybaseConn(), &cmd);
 
     if (ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA)
         != CS_SUCCEED) {
@@ -244,12 +244,12 @@ bool CTL_Connection::Refresh()
     }
 
     // cancel all pending commands
-    if (ct_cancel(m_Link, 0, CS_CANCEL_ALL) != CS_SUCCEED)
+    if (ct_cancel(x_GetSybaseConn(), 0, CS_CANCEL_ALL) != CS_SUCCEED)
         return false;
 
     // check the connection status
     CS_INT status;
-    if (ct_con_props(m_Link, CS_GET, CS_CON_STATUS, &status, CS_UNUSED, 0)
+    if (ct_con_props(x_GetSybaseConn(), CS_GET, CS_CON_STATUS, &status, CS_UNUSED, 0)
         != CS_SUCCEED)
         return false;
 
@@ -344,13 +344,23 @@ void CTL_Connection::Release()
 CTL_Connection::~CTL_Connection()
 {
     try {
-        if (!Refresh()  ||  ct_close(m_Link, CS_UNUSED) != CS_SUCCEED) {
-            ct_close(m_Link, CS_FORCE_CLOSE);
-        }
-
-        ct_con_drop(m_Link);
+        Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
+}
+
+void
+CTL_Connection::Close(void)
+{
+    if (x_GetSybaseConn()) {
+        if (!Refresh()  ||  ct_close(x_GetSybaseConn(), CS_UNUSED) != CS_SUCCEED) {
+            ct_close(x_GetSybaseConn(), CS_FORCE_CLOSE);
+        }
+
+        ct_con_drop(x_GetSybaseConn());
+        
+        m_Link = NULL;
+    }
 }
 
 
@@ -382,7 +392,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     C_ITDescriptorGuard d_guard(p_desc);
     CS_COMMAND* cmd;
 
-    CmdAlloc(m_Link, &cmd);
+    CmdAlloc(x_GetSybaseConn(), &cmd);
 
     if (ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA)
         != CS_SUCCEED) {
@@ -541,9 +551,9 @@ I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
 
 bool CTL_Connection::Abort()
 {
-    int fd= -1;
+    int fd = -1;
 
-    if(ct_con_props(m_Link, CS_GET, CS_ENDPOINT, &fd, CS_UNUSED, 0) == CS_SUCCEED) {
+    if(ct_con_props(x_GetSybaseConn(), CS_GET, CS_ENDPOINT, &fd, CS_UNUSED, 0) == CS_SUCCEED) {
         if(fd >= 0) {
             close(fd);
             return true;
@@ -581,7 +591,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (nof_bytes > m_Bytes2go)
         nof_bytes = m_Bytes2go;
 
-    if (ct_send_data(m_Cmd, (void*) pChunk, (CS_INT) nof_bytes) != CS_SUCCEED){
+    if (ct_send_data(x_GetSybaseCmd(), (void*) pChunk, (CS_INT) nof_bytes) != CS_SUCCEED){
         DATABASE_DRIVER_ERROR( "ct_send_data failed", 190001 );
     }
 
@@ -589,29 +599,29 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if ( m_Bytes2go )
         return nof_bytes;
 
-    if (ct_send(m_Cmd) != CS_SUCCEED) {
-        ct_cancel(0, m_Cmd, CS_CANCEL_CURRENT);
+    if (ct_send(x_GetSybaseCmd()) != CS_SUCCEED) {
+        ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_CURRENT);
         DATABASE_DRIVER_ERROR( "ct_send failed", 190004 );
     }
 
     for (;;) {
         CS_INT res_type;
-        switch ( ct_results(m_Cmd, &res_type) ) {
+        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
         case CS_SUCCEED: {
             if(m_Connect->m_ResProc) {
                 I_Result* res= 0;
                 switch (res_type) {
                 case CS_ROW_RESULT:
-                    res = new CTL_RowResult(m_Cmd);
+                    res = new CTL_RowResult(x_GetSybaseCmd());
                     break;
                 case CS_PARAM_RESULT:
-                    res = new CTL_ParamResult(m_Cmd);
+                    res = new CTL_ParamResult(x_GetSybaseCmd());
                     break;
                 case CS_COMPUTE_RESULT:
-                    res = new CTL_ComputeResult(m_Cmd);
+                    res = new CTL_ComputeResult(x_GetSybaseCmd());
                     break;
                 case CS_STATUS_RESULT:
-                    res = new CTL_StatusResult(m_Cmd);
+                    res = new CTL_StatusResult(x_GetSybaseCmd());
                     break;
                 }
                 if(res) {
@@ -629,7 +639,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
             case CS_ROW_RESULT:
             case CS_STATUS_RESULT: {
                 CS_RETCODE ret_code;
-                while ((ret_code = ct_fetch(m_Cmd, CS_UNUSED, CS_UNUSED,
+                while ((ret_code = ct_fetch(x_GetSybaseCmd(), CS_UNUSED, CS_UNUSED,
                                             CS_UNUSED, 0)) == CS_SUCCEED);
                 if (ret_code != CS_END_DATA) {
                     DATABASE_DRIVER_ERROR( "ct_fetch failed", 190006 );
@@ -637,7 +647,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
                 break;
             }
             case CS_CMD_FAIL: {
-                ct_cancel(NULL, m_Cmd, CS_CANCEL_ALL);
+                ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL);
                 DATABASE_DRIVER_ERROR( "command failed", 190007 );
             }
             default: {
@@ -650,7 +660,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
             return nof_bytes;
         }
         default: {
-            if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
+            if (ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) != CS_SUCCEED) {
                 DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
                                    "Connection must be closed", 190002 );
             }
@@ -665,7 +675,7 @@ void CTL_SendDataCmd::Release()
 {
     m_BR = 0;
     if ( m_Bytes2go ) {
-        ct_cancel(0, m_Cmd, CS_CANCEL_ALL);
+        ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL);
         m_Bytes2go = 0;
     }
     m_Connect->DropCmd(*this);
@@ -676,17 +686,27 @@ void CTL_SendDataCmd::Release()
 CTL_SendDataCmd::~CTL_SendDataCmd()
 {
     try {
-        if ( m_Bytes2go )
-            ct_cancel(0, m_Cmd, CS_CANCEL_ALL);
-
-        if ( m_BR )
-            *m_BR = 0;
-
-        ct_cmd_drop(m_Cmd);
+        Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
 
+
+void
+CTL_SendDataCmd::Close(void)
+{
+    if (x_GetSybaseCmd()) {
+        if ( m_Bytes2go )
+            ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL);
+
+        if ( m_BR )
+            *m_BR = 0;
+
+        ct_cmd_drop(x_GetSybaseCmd());
+        
+        m_Cmd = NULL;
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -695,6 +715,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/03/06 19:51:37  ssikorsk
+ * Added method Close/CloseForever to all context/command-aware classes.
+ * Use getters to access Sybase's context and command handles.
+ *
  * Revision 1.24  2006/02/22 15:56:40  ssikorsk
  * CHECK_DRIVER_FATAL --> CHECK_DRIVER_ERROR
  *

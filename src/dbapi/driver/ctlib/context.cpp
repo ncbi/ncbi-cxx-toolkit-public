@@ -51,6 +51,79 @@ BEGIN_NCBI_SCOPE
 
 
 static const CDiagCompileInfo kBlankCompileInfo;
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTLibContextRegistry (Singleton)
+//
+
+class CTLibContextRegistry
+{
+public:
+    static CTLibContextRegistry& Instance(void);
+    
+    void Add(CTLibContext* ctx);
+    void Remove(CTLibContext* ctx);
+    
+private:
+    CTLibContextRegistry(void);
+    ~CTLibContextRegistry(void);
+    
+    mutable CFastMutex m_Mutex;
+    vector<CTLibContext*> registry_;
+    
+    friend class auto_ptr<CTLibContextRegistry>;
+};
+
+
+CTLibContextRegistry::CTLibContextRegistry(void)
+{
+}
+
+CTLibContextRegistry::~CTLibContextRegistry(void)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    // Remove dependency from this registry ...
+    NON_CONST_ITERATE(vector<CTLibContext*>, it, registry_) {
+        (*it)->x_SetRegistry(NULL);
+    }
+    
+    // Close all managed CTLibContext ...
+    NON_CONST_ITERATE(vector<CTLibContext*>, it, registry_) {
+        (*it)->Close();
+    }
+}
+
+CTLibContextRegistry& 
+CTLibContextRegistry::Instance(void)
+{
+    static auto_ptr<CTLibContextRegistry> instance;
+    
+    return *instance;
+}
+
+void 
+CTLibContextRegistry::Add(CTLibContext* ctx)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    vector<CTLibContext*>::iterator it = find(registry_.begin(), 
+                                             registry_.end(), 
+                                             ctx);
+    if (it == registry_.end()) {
+        registry_.push_back(ctx);
+    }
+}
+
+void 
+CTLibContextRegistry::Remove(CTLibContext* ctx)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    registry_.erase(find(registry_.begin(), 
+                         registry_.end(), 
+                         ctx));
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -79,7 +152,8 @@ CS_START_EXTERN_C
     }
 CS_END_EXTERN_C
 
-CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
+CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
+m_Registry(&CTLibContextRegistry::Instance())
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
@@ -103,7 +177,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     CPointerPot* p_pot = 0;
 
     // check if cs message callback is already installed
-    r = cs_config(m_Context, CS_GET, CS_MESSAGE_CB, &cb, CS_UNUSED, &outlen);
+    r = cs_config(CTLIB_GetContext(), CS_GET, CS_MESSAGE_CB, &cb, CS_UNUSED, &outlen);
     if (r != CS_SUCCEED) {
         m_Context = 0;
         DATABASE_DRIVER_ERROR( "cs_config failed", 100006 );
@@ -111,7 +185,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 
     if (cb == (CS_VOID*)  s_CTLIB_cserr_callback) {
         // we did use this context already
-        r = cs_config(m_Context, CS_GET, CS_USERDATA,
+        r = cs_config(CTLIB_GetContext(), CS_GET, CS_USERDATA,
                       (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), &outlen);
         if (r != CS_SUCCEED) {
             m_Context = 0;
@@ -120,47 +194,47 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     }
     else {
         // this is a brand new context
-        r = cs_config(m_Context, CS_SET, CS_MESSAGE_CB,
+        r = cs_config(CTLIB_GetContext(), CS_SET, CS_MESSAGE_CB,
                       (CS_VOID*) s_CTLIB_cserr_callback, CS_UNUSED, NULL);
         if (r != CS_SUCCEED) {
-            cs_ctx_drop(m_Context);
+            cs_ctx_drop(CTLIB_GetContext());
             m_Context = 0;
             DATABASE_DRIVER_ERROR( "Cannot install the cslib message callback", 100005 );
         }
 
         p_pot = new CPointerPot;
-        r = cs_config(m_Context, CS_SET, CS_USERDATA,
+        r = cs_config(CTLIB_GetContext(), CS_SET, CS_USERDATA,
                       (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), NULL);
         if (r != CS_SUCCEED) {
-            cs_ctx_drop(m_Context);
+            cs_ctx_drop(CTLIB_GetContext());
             m_Context = 0;
             delete p_pot;
             DATABASE_DRIVER_ERROR( "Cannot install the user data", 100007 );
         }
 
-        r = ct_init(m_Context, version);
+        r = ct_init(CTLIB_GetContext(), version);
         if (r != CS_SUCCEED) {
-            cs_ctx_drop(m_Context);
+            cs_ctx_drop(CTLIB_GetContext());
             m_Context = 0;
             delete p_pot;
             DATABASE_DRIVER_ERROR( "ct_init failed", 100002 );
         }
 
-        r = ct_callback(m_Context, NULL, CS_SET, CS_CLIENTMSG_CB,
+        r = ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_CLIENTMSG_CB,
                         (CS_VOID*) s_CTLIB_cterr_callback);
         if (r != CS_SUCCEED) {
-            ct_exit(m_Context, CS_FORCE_EXIT);
-            cs_ctx_drop(m_Context);
+            ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
+            cs_ctx_drop(CTLIB_GetContext());
             m_Context = 0;
             delete p_pot;
             DATABASE_DRIVER_ERROR( "Cannot install the client message callback", 100003 );
         }
 
-        r = ct_callback(m_Context, NULL, CS_SET, CS_SERVERMSG_CB,
+        r = ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_SERVERMSG_CB,
                         (CS_VOID*) s_CTLIB_srverr_callback);
         if (r != CS_SUCCEED) {
-            ct_exit(m_Context, CS_FORCE_EXIT);
-            cs_ctx_drop(m_Context);
+            ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
+            cs_ctx_drop(CTLIB_GetContext());
             m_Context = 0;
             delete p_pot;
             DATABASE_DRIVER_ERROR( "Cannot install the server message callback", 100004 );
@@ -171,13 +245,38 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     if ( p_pot ) {
         p_pot->Add((TPotItem) this);
     }
+    
+    x_AddToRegistry();
 }
 
+void 
+CTLibContext::x_AddToRegistry(void)
+{
+    if (m_Registry) {
+        m_Registry->Add(this);
+    }
+}
+
+void 
+CTLibContext::x_RemoveFromRegistry(void)
+{
+    if (m_Registry) {
+        m_Registry->Remove(this);
+    }
+}
+
+void 
+CTLibContext::x_SetRegistry(CTLibContextRegistry* registry)
+{
+    CFastMutexGuard mg(m_Mtx);
+    
+    m_Registry = registry;
+}
 
 bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
     CS_INT t_out = (CS_INT) nof_secs;
-    return ct_config(m_Context, CS_SET,
+    return ct_config(CTLIB_GetContext(), CS_SET,
                      CS_LOGIN_TIMEOUT, &t_out, CS_UNUSED, NULL) == CS_SUCCEED;
 }
 
@@ -185,7 +284,7 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
     CS_INT t_out = (CS_INT) nof_secs;
-    return ct_config(m_Context, CS_SET,
+    return ct_config(CTLIB_GetContext(), CS_SET,
                      CS_TIMEOUT, &t_out, CS_UNUSED, NULL) == CS_SUCCEED;
 }
 
@@ -193,7 +292,7 @@ bool CTLibContext::SetTimeout(unsigned int nof_secs)
 bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     CS_INT ti_size = (CS_INT) nof_bytes;
-    return ct_config(m_Context, CS_SET,
+    return ct_config(CTLIB_GetContext(), CS_SET,
                      CS_TEXTLIMIT, &ti_size, CS_UNUSED, NULL) == CS_SUCCEED;
 }
 
@@ -240,12 +339,18 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 CTLibContext::~CTLibContext()
 {
     try {
+        Close();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
+}
+
+
+void 
+CTLibContext::Close(void)
+{
+    if ( CTLIB_GetContext() ) {
         CFastMutexGuard mg(m_Mtx);
-
-        if ( !m_Context ) {
-            return;
-        }
-
+        
         // close all connections first
         for (int i = m_NotInUse.NofItems();  i--; ) {
             CTL_Connection* t_con = static_cast<CTL_Connection*>(m_NotInUse.Get(i));
@@ -260,22 +365,24 @@ CTLibContext::~CTLibContext()
         CS_INT       outlen;
         CPointerPot* p_pot = 0;
 
-        if (cs_config(m_Context, CS_GET, CS_USERDATA,
+        if (cs_config(CTLIB_GetContext(), CS_GET, CS_USERDATA,
                       (void*) &p_pot, (CS_INT) sizeof(p_pot), &outlen) == CS_SUCCEED
             &&  p_pot != 0) {
             p_pot->Remove(this);
             if (p_pot->NofItems() == 0) { // this is a last driver for this context
                 delete p_pot;
 #if !defined(NCBI_OS_MSWIN)
-                if (ct_exit(m_Context, CS_UNUSED) != CS_SUCCEED) {
-                    ct_exit(m_Context, CS_FORCE_EXIT);
+                if (ct_exit(CTLIB_GetContext(), CS_UNUSED) != CS_SUCCEED) {
+                    ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
                 }
-                cs_ctx_drop(m_Context);
+                cs_ctx_drop(CTLIB_GetContext());
 #endif
             }
         }
+        
+        m_Context = NULL;
+        x_RemoveFromRegistry();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -614,7 +721,7 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
                                                TConnectionMode mode)
 {
     CS_CONNECTION* con;
-    if (ct_con_alloc(m_Context, &con) != CS_SUCCEED)
+    if (ct_con_alloc(CTLIB_GetContext(), &con) != CS_SUCCEED)
         return 0;
 
     ct_callback(NULL, con, CS_SET, CS_CLIENTMSG_CB,
@@ -1119,6 +1226,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/03/06 19:51:38  ssikorsk
+ * Added method Close/CloseForever to all context/command-aware classes.
+ * Use getters to access Sybase's context and command handles.
+ *
  * Revision 1.60  2006/02/22 15:15:50  ssikorsk
  * *** empty log message ***
  *

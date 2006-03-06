@@ -80,7 +80,7 @@ bool CTL_RPCCmd::Send()
 
     m_HasFailed = false;
 
-    switch ( ct_command(m_Cmd, CS_RPC_CMD,
+    switch ( ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
                         const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
                         m_Recompile ? CS_RECOMPILE : CS_UNUSED) ) {
     case CS_SUCCEED:
@@ -95,12 +95,12 @@ bool CTL_RPCCmd::Send()
     m_HasFailed = !x_AssignParams();
     CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 121003 );
 
-    switch ( ct_send(m_Cmd) ) {
+    switch ( ct_send(x_GetSybaseCmd()) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
+        if (ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) != CS_SUCCEED) {
             // we need to close this connection
             DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_send. "
                                "Connection must be closed", 121004 );
@@ -134,13 +134,13 @@ bool CTL_RPCCmd::Cancel()
     }
 
     if ( m_Res ) {
-        // to prevent ct_cancel(NULL, m_Cmd, CS_CANCEL_CURRENT) call:
+        // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
         ((CTL_RowResult*)m_Res)->m_EOR= true; 
         delete m_Res;
         m_Res = 0;
     }
 
-    switch ( ct_cancel(0, m_Cmd, CS_CANCEL_ALL) ) {
+    switch ( ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) ) {
     case CS_SUCCEED:
         m_WasSent = false;
         return true;
@@ -175,7 +175,7 @@ CDB_Result* CTL_RPCCmd::Result()
     for (;;) {
         CS_INT res_type;
 
-        switch ( ct_results(m_Cmd, &res_type) ) {
+        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
@@ -183,7 +183,7 @@ CDB_Result* CTL_RPCCmd::Result()
             return 0;
         case CS_FAIL:
             m_HasFailed = true;
-            if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
+            if (ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
                 DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
                                    "Connection must be closed", 121012 );
@@ -203,24 +203,24 @@ CDB_Result* CTL_RPCCmd::Result()
         case CS_CMD_SUCCEED:
         case CS_CMD_DONE: // done with this command
             // check the number of affected rows
-            g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
+            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
             continue;
         case CS_CMD_FAIL: // the command has failed
-            g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
+            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
             m_HasFailed = true;
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 121016 );
         case CS_ROW_RESULT:
-            m_Res = new CTL_RowResult(m_Cmd);
+            m_Res = new CTL_RowResult(x_GetSybaseCmd());
             break;
         case CS_PARAM_RESULT:
-            m_Res = new CTL_ParamResult(m_Cmd);
+            m_Res = new CTL_ParamResult(x_GetSybaseCmd());
             break;
         case CS_COMPUTE_RESULT:
-            m_Res = new CTL_ComputeResult(m_Cmd);
+            m_Res = new CTL_ComputeResult(x_GetSybaseCmd());
             break;
         case CS_STATUS_RESULT:
-            m_Res = new CTL_StatusResult(m_Cmd);
+            m_Res = new CTL_StatusResult(x_GetSybaseCmd());
             break;
         case CS_COMPUTEFMT_RESULT:
             DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 121017 );
@@ -251,7 +251,7 @@ void CTL_RPCCmd::DumpResults()
     for (;;) {
         CS_INT res_type;
 
-        switch ( ct_results(m_Cmd, &res_type) ) {
+        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
@@ -259,7 +259,7 @@ void CTL_RPCCmd::DumpResults()
             return;
         case CS_FAIL:
             m_HasFailed = true;
-            if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
+            if (ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
                 DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
                                    "Connection must be closed", 121012 );
@@ -279,24 +279,24 @@ void CTL_RPCCmd::DumpResults()
         case CS_CMD_SUCCEED:
         case CS_CMD_DONE: // done with this command
             // check the number of affected rows
-            g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
+            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
             continue;
         case CS_CMD_FAIL: // the command has failed
-            g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
+            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
             m_HasFailed = true;
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 121016 );
         case CS_ROW_RESULT:
-            m_Res = new CTL_RowResult(m_Cmd);
+            m_Res = new CTL_RowResult(x_GetSybaseCmd());
             break;
         case CS_PARAM_RESULT:
-            m_Res = new CTL_ParamResult(m_Cmd);
+            m_Res = new CTL_ParamResult(x_GetSybaseCmd());
             break;
         case CS_COMPUTE_RESULT:
-            m_Res = new CTL_ComputeResult(m_Cmd);
+            m_Res = new CTL_ComputeResult(x_GetSybaseCmd());
             break;
         case CS_STATUS_RESULT:
-            m_Res = new CTL_StatusResult(m_Cmd);
+            m_Res = new CTL_StatusResult(x_GetSybaseCmd());
             break;
         case CS_COMPUTEFMT_RESULT:
             DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 121017 );
@@ -366,6 +366,16 @@ void CTL_RPCCmd::Release()
 CTL_RPCCmd::~CTL_RPCCmd()
 {
     try {
+        Close();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
+}
+
+
+void
+CTL_RPCCmd::Close(void)
+{
+    if (x_GetSybaseCmd()) {
         if ( m_BR ) {
             *m_BR = 0;
         }
@@ -377,9 +387,9 @@ CTL_RPCCmd::~CTL_RPCCmd()
             }
         }
 
-        ct_cmd_drop(m_Cmd);
+        ct_cmd_drop(x_GetSybaseCmd());
+        m_Cmd = NULL;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -400,7 +410,7 @@ bool CTL_RPCCmd::x_AssignParams()
             ((m_Params.GetParamStatus(i) & CDB_Params::fOutput) == 0)
             ? CS_INPUTVALUE : CS_RETURN;
 
-        if ( !g_CTLIB_AssignCmdParam(m_Cmd, param, param_name, param_fmt,
+        if ( !g_CTLIB_AssignCmdParam(x_GetSybaseCmd(), param, param_name, param_fmt,
                                      indicator, false/*!declare_only*/) ) {
             return false;
         }
@@ -417,6 +427,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/03/06 19:51:38  ssikorsk
+ * Added method Close/CloseForever to all context/command-aware classes.
+ * Use getters to access Sybase's context and command handles.
+ *
  * Revision 1.14  2006/02/22 15:15:50  ssikorsk
  * *** empty log message ***
  *

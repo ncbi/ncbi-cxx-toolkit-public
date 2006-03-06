@@ -76,7 +76,7 @@ CDB_Result* CTL_CursorCmd::Open()
     if ( !m_Used ) {
         m_HasFailed = false;
 
-        switch ( ct_cursor(m_Cmd, CS_CURSOR_DECLARE,
+        switch ( ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DECLARE,
                            const_cast<char*> (m_Name.c_str()), CS_NULLTERM,
                            const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
                            CS_UNUSED) ) {
@@ -101,7 +101,7 @@ CDB_Result* CTL_CursorCmd::Open()
         }
 
         if (m_FetchSize > 1) {
-            switch ( ct_cursor(m_Cmd, CS_CURSOR_ROWS, 0, CS_UNUSED,
+            switch ( ct_cursor(x_GetSybaseCmd(), CS_CURSOR_ROWS, 0, CS_UNUSED,
                                0, CS_UNUSED, (CS_INT) m_FetchSize) ) {
             case CS_SUCCEED:
                 break;
@@ -117,7 +117,7 @@ CDB_Result* CTL_CursorCmd::Open()
     m_HasFailed = false;
 
     // open the cursor
-    switch ( ct_cursor(m_Cmd, CS_CURSOR_OPEN, 0, CS_UNUSED, 0, CS_UNUSED,
+    switch ( ct_cursor(x_GetSybaseCmd(), CS_CURSOR_OPEN, 0, CS_UNUSED, 0, CS_UNUSED,
                        m_Used ? CS_RESTORE_OPEN : CS_UNUSED) ) {
     case CS_SUCCEED:
         break;
@@ -137,7 +137,7 @@ CDB_Result* CTL_CursorCmd::Open()
     }
 
     // send this command
-    switch ( ct_send(m_Cmd) ) {
+    switch ( ct_send(x_GetSybaseCmd()) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
@@ -155,7 +155,7 @@ CDB_Result* CTL_CursorCmd::Open()
     for (;;) {
         CS_INT res_type;
 
-        switch ( ct_results(m_Cmd, &res_type) ) {
+        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
@@ -175,19 +175,19 @@ CDB_Result* CTL_CursorCmd::Open()
         case CS_CMD_SUCCEED:
         case CS_CMD_DONE:
             // done with this command -- check the number of affected rows
-            g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
+            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
             continue;
         case CS_CMD_FAIL:
             // the command has failed -- check the number of affected rows
-            g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
+            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
             m_HasFailed = true;
-            while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
+            while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
                 continue;
             }
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 122016 );
         case CS_CURSOR_RESULT:
-            m_Res = new CTL_CursorResult(m_Cmd);
+            m_Res = new CTL_CursorResult(x_GetSybaseCmd());
             break;
         default:
             continue;
@@ -204,7 +204,7 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
         return false;
     }
 
-    switch ( ct_cursor(m_Cmd, CS_CURSOR_UPDATE,
+    switch ( ct_cursor(x_GetSybaseCmd(), CS_CURSOR_UPDATE,
                        const_cast<char*> (table_name.c_str()), CS_NULLTERM,
                        const_cast<char*> (upd_query.c_str()),  CS_NULLTERM,
                        CS_UNUSED) ) {
@@ -219,7 +219,7 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
 
 
     // send this command
-    switch ( ct_send(m_Cmd) ) {
+    switch ( ct_send(x_GetSybaseCmd()) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
@@ -236,7 +236,7 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
     for (;;) {
         CS_INT res_type;
 
-        switch ( ct_results(m_Cmd, &res_type) ) {
+        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
@@ -256,16 +256,16 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
             I_Result* res= 0;
             switch (res_type) {
             case CS_ROW_RESULT:
-                res = new CTL_RowResult(m_Cmd);
+                res = new CTL_RowResult(x_GetSybaseCmd());
                 break;
             case CS_PARAM_RESULT:
-                res = new CTL_ParamResult(m_Cmd);
+                res = new CTL_ParamResult(x_GetSybaseCmd());
                 break;
             case CS_COMPUTE_RESULT:
-                res = new CTL_ComputeResult(m_Cmd);
+                res = new CTL_ComputeResult(x_GetSybaseCmd());
                 break;
             case CS_STATUS_RESULT:
-                res = new CTL_StatusResult(m_Cmd);
+                res = new CTL_StatusResult(x_GetSybaseCmd());
                 break;
             }
             if(res) {
@@ -282,7 +282,7 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
             continue;
         case CS_CMD_FAIL: // the command has failed
             m_HasFailed = true;
-            while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
+            while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
                 continue;
             }
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
@@ -309,7 +309,7 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     else {
         auto_ptr<CTL_ITDescriptor> dsc(new CTL_ITDescriptor);
         
-        bool rc = (ct_data_info(m_Cmd, CS_GET, item_num+1, &dsc->m_Desc)
+        bool rc = (ct_data_info(x_GetSybaseCmd(), CS_GET, item_num+1, &dsc->m_Desc)
                    != CS_SUCCEED);
 
         CHECK_DRIVER_ERROR( 
@@ -345,7 +345,7 @@ bool CTL_CursorCmd::Delete(const string& table_name)
         return false;
     }
 
-    switch ( ct_cursor(m_Cmd, CS_CURSOR_DELETE,
+    switch ( ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DELETE,
                        const_cast<char*> (table_name.c_str()), CS_NULLTERM,
                        0, CS_UNUSED, CS_UNUSED) ) {
     case CS_SUCCEED:
@@ -358,7 +358,7 @@ bool CTL_CursorCmd::Delete(const string& table_name)
     }
 
     // send this command
-    switch ( ct_send(m_Cmd) ) {
+    switch ( ct_send(x_GetSybaseCmd()) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
@@ -375,7 +375,7 @@ bool CTL_CursorCmd::Delete(const string& table_name)
     for (;;) {
         CS_INT res_type;
 
-        switch ( ct_results(m_Cmd, &res_type) ) {
+        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
@@ -395,16 +395,16 @@ bool CTL_CursorCmd::Delete(const string& table_name)
             I_Result* res= 0;
             switch (res_type) {
             case CS_ROW_RESULT:
-                res = new CTL_RowResult(m_Cmd);
+                res = new CTL_RowResult(x_GetSybaseCmd());
                 break;
             case CS_PARAM_RESULT:
-                res = new CTL_ParamResult(m_Cmd);
+                res = new CTL_ParamResult(x_GetSybaseCmd());
                 break;
             case CS_COMPUTE_RESULT:
-                res = new CTL_ComputeResult(m_Cmd);
+                res = new CTL_ComputeResult(x_GetSybaseCmd());
                 break;
             case CS_STATUS_RESULT:
-                res = new CTL_StatusResult(m_Cmd);
+                res = new CTL_StatusResult(x_GetSybaseCmd());
                 break;
             }
             if(res) {
@@ -421,7 +421,7 @@ bool CTL_CursorCmd::Delete(const string& table_name)
             continue;
         case CS_CMD_FAIL: // the command has failed
             m_HasFailed = true;
-            while(ct_results(m_Cmd, &res_type) == CS_SUCCEED);
+            while(ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED);
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 122049 );
         default:
@@ -448,7 +448,7 @@ bool CTL_CursorCmd::Close()
         m_Res = 0;
     }
 
-    switch ( ct_cursor(m_Cmd, CS_CURSOR_CLOSE, 0, CS_UNUSED, 0, CS_UNUSED,
+    switch ( ct_cursor(x_GetSybaseCmd(), CS_CURSOR_CLOSE, 0, CS_UNUSED, 0, CS_UNUSED,
                        CS_UNUSED) ) {
     case CS_SUCCEED:
         break;
@@ -460,7 +460,7 @@ bool CTL_CursorCmd::Close()
     }
 
     // send this command
-    switch ( ct_send(m_Cmd) ) {
+    switch ( ct_send(x_GetSybaseCmd()) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
@@ -477,7 +477,7 @@ bool CTL_CursorCmd::Close()
 
     CS_INT res_type;
     for (;;) {
-        switch ( ct_results(m_Cmd, &res_type) ) {
+        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
@@ -497,16 +497,16 @@ bool CTL_CursorCmd::Close()
             I_Result* res= 0;
             switch (res_type) {
             case CS_ROW_RESULT:
-                res = new CTL_RowResult(m_Cmd);
+                res = new CTL_RowResult(x_GetSybaseCmd());
                 break;
             case CS_PARAM_RESULT:
-                res = new CTL_ParamResult(m_Cmd);
+                res = new CTL_ParamResult(x_GetSybaseCmd());
                 break;
             case CS_COMPUTE_RESULT:
-                res = new CTL_ComputeResult(m_Cmd);
+                res = new CTL_ComputeResult(x_GetSybaseCmd());
                 break;
             case CS_STATUS_RESULT:
-                res = new CTL_StatusResult(m_Cmd);
+                res = new CTL_StatusResult(x_GetSybaseCmd());
                 break;
             }
             if(res) {
@@ -525,7 +525,7 @@ bool CTL_CursorCmd::Close()
         case CS_CMD_FAIL:
             // the command has failed
             m_HasFailed = true;
-            while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
+            while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
                 continue;
             }
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
@@ -535,21 +535,10 @@ bool CTL_CursorCmd::Close()
 }
 
 
-void CTL_CursorCmd::Release()
+void
+CTL_CursorCmd::CloseForever(void)
 {
-    m_BR = 0;
-    if ( m_IsOpen ) {
-        Close();
-        m_IsOpen = false;
-    }
-    m_Connect->DropCmd(*this);
-    delete this;
-}
-
-
-CTL_CursorCmd::~CTL_CursorCmd()
-{
-    try {
+    if (x_GetSybaseCmd()) {
         if ( m_BR ) {
             *m_BR = 0;
         }
@@ -560,7 +549,7 @@ CTL_CursorCmd::~CTL_CursorCmd()
 
         if ( m_Used ) {
             // deallocate the cursor
-            switch ( ct_cursor(m_Cmd, CS_CURSOR_DEALLOC,
+            switch ( ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DEALLOC,
                                0, CS_UNUSED, 0, CS_UNUSED, CS_UNUSED) ) {
             case CS_SUCCEED:
                 break;
@@ -571,12 +560,12 @@ CTL_CursorCmd::~CTL_CursorCmd()
             case CS_BUSY:
                 //throw CDB_ClientEx(eDiag_Error, 122051, "::~CTL_CursorCmd",
                 //                   "the connection is busy");
-                ct_cmd_drop(m_Cmd);
+                ct_cmd_drop(x_GetSybaseCmd());
                 return;
             }
 
             // send this command
-            switch ( ct_send(m_Cmd) ) {
+            switch ( ct_send(x_GetSybaseCmd()) ) {
             case CS_SUCCEED:
                 break;
             case CS_FAIL:
@@ -590,7 +579,7 @@ CTL_CursorCmd::~CTL_CursorCmd()
             case CS_PENDING:
                 // throw CDB_ClientEx(eDiag_Error, 122054, "::~CTL_CursorCmd",
                 //                   "connection has another request pending");
-                ct_cmd_drop(m_Cmd);
+                ct_cmd_drop(x_GetSybaseCmd());
                 return;
             }
 
@@ -598,7 +587,7 @@ CTL_CursorCmd::~CTL_CursorCmd()
             for (bool need_cont = true;  need_cont; ) {
                 CS_INT res_type;
 
-                switch ( ct_results(m_Cmd, &res_type) ) {
+                switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
                 case CS_SUCCEED:
                     break;
                 case CS_END_RESULTS:
@@ -625,16 +614,16 @@ CTL_CursorCmd::~CTL_CursorCmd()
                     I_Result* res= 0;
                     switch (res_type) {
                     case CS_ROW_RESULT:
-                        res = new CTL_RowResult(m_Cmd);
+                        res = new CTL_RowResult(x_GetSybaseCmd());
                         break;
                     case CS_PARAM_RESULT:
-                        res = new CTL_ParamResult(m_Cmd);
+                        res = new CTL_ParamResult(x_GetSybaseCmd());
                         break;
                     case CS_COMPUTE_RESULT:
-                        res = new CTL_ComputeResult(m_Cmd);
+                        res = new CTL_ComputeResult(x_GetSybaseCmd());
                         break;
                     case CS_STATUS_RESULT:
-                        res = new CTL_StatusResult(m_Cmd);
+                        res = new CTL_StatusResult(x_GetSybaseCmd());
                         break;
                     }
                     if(res) {
@@ -651,7 +640,7 @@ CTL_CursorCmd::~CTL_CursorCmd()
                     continue;
                 case CS_CMD_FAIL: // the command has failed
                     // m_HasFailed = true;
-                    while (ct_results(m_Cmd, &res_type) == CS_SUCCEED);
+                    while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED);
                     // throw CDB_ClientEx(eDiag_Warning, 122059, "::~CTL_CursorCmd",
                     //                   "The server encountered an error while "
                     //                   "executing a command");
@@ -663,13 +652,37 @@ CTL_CursorCmd::~CTL_CursorCmd()
         }
 
 #if 0
-        if (ct_cmd_drop(m_Cmd) != CS_SUCCEED) {
+        if (ct_cmd_drop(x_GetSybaseCmd()) != CS_SUCCEED) {
             // throw CDB_ClientEx(eDiag_Fatal, 122060, "::~CTL_CursorCmd",
             //                   "ct_cmd_drop failed");
         }
 #else
-        ct_cmd_drop(m_Cmd);
+        ct_cmd_drop(x_GetSybaseCmd());
 #endif
+
+        m_Cmd = NULL;
+    }
+}
+
+
+void CTL_CursorCmd::Release()
+{
+    m_BR = 0;
+    if ( m_IsOpen ) {
+        Close();
+        m_IsOpen = false;
+    }
+    m_Connect->DropCmd(*this);
+    delete this;
+}
+
+
+CTL_CursorCmd::~CTL_CursorCmd()
+{
+    try {
+        // !!! It calls Close() internaly which is virtual !!!
+        // !!! Be aware of this !!!
+        CloseForever();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -689,7 +702,7 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
         const string& param_name = m_Params.GetParamName(i);
         CS_SMALLINT   indicator = (!declare_only  &&  param.IsNULL()) ? -1 : 0;
 
-        if ( !g_CTLIB_AssignCmdParam(m_Cmd, param, param_name, param_fmt,
+        if ( !g_CTLIB_AssignCmdParam(x_GetSybaseCmd(), param, param_name, param_fmt,
                                      indicator, declare_only) ) {
             return false;
         }
@@ -706,6 +719,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/03/06 19:51:38  ssikorsk
+ * Added method Close/CloseForever to all context/command-aware classes.
+ * Use getters to access Sybase's context and command handles.
+ *
  * Revision 1.14  2006/02/22 15:15:50  ssikorsk
  * *** empty log message ***
  *
