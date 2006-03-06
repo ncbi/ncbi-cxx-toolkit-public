@@ -97,7 +97,7 @@ CTLibContextRegistry::~CTLibContextRegistry(void)
 CTLibContextRegistry& 
 CTLibContextRegistry::Instance(void)
 {
-    static auto_ptr<CTLibContextRegistry> instance;
+    static auto_ptr<CTLibContextRegistry> instance(new CTLibContextRegistry);
     
     return *instance;
 }
@@ -1226,7 +1226,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/03/06 20:16:04  ssikorsk
+ * Fixed singleton initialisation in CTLibContextRegistry::Instance.
+ *
  * Revision 1.61  2006/03/06 19:51:38  ssikorsk
+ *
  * Added method Close/CloseForever to all context/command-aware classes.
  * Use getters to access Sybase's context and command handles.
  *
