@@ -230,12 +230,14 @@ end clicked
 
 (* Called right before application will quit *)
 on will quit theObject
-	-- Save User Defaults	
-	repeat with p in allPaths
-		set thePath to the contents of text field (p as string) of tab view item "tab1" of tab view "theTab" of window "Main"
-		make new default entry at end of default entries of user defaults with properties {name:p, contents:thePath}
-		set contents of default entry (p as string) of user defaults to thePath
-	end repeat
+	try
+		-- Save User Defaults	
+		repeat with p in allPaths
+			set thePath to the contents of text field (p as string) of tab view item "tab1" of tab view "theTab" of window "Main"
+			make new default entry at end of default entries of user defaults with properties {name:p, contents:thePath}
+			set contents of default entry (p as string) of user defaults to thePath
+		end repeat
+	end try
 end will quit
 
 
@@ -294,6 +296,14 @@ on idle theObject
 	end if
 	return 3
 end idle
+
+on cell value theObject row theRow table column tableColumn
+	(*Add your script here.*)
+end cell value
+
+on number of rows theObject
+	(*Add your script here.*)
+end number of rows
 
 
 (* Launch shell script to install third party libraries *)
@@ -454,8 +464,8 @@ on GetSourceFiles(lib)
 	
 	try -- Try to get the included file list
 		set incfileList to inc of lib
-		repeat with f in incfileList
-			set src_files to src_files & (fullSourcePath & f)
+		repeat with F in incfileList
+			set src_files to src_files & (fullSourcePath & F)
 		end repeat
 		return src_files -- done
 	end try
@@ -481,8 +491,8 @@ on x_GetFolderContent(folderName, excfileList)
 	set fileList to EndsWith(fileList, ".c") & EndsWith(fileList, ".cpp") & EndsWith(fileList, ".c.in")
 	
 	set filesWithPath to {}
-	repeat with f in fileList
-		copy folderName & f to the end of filesWithPath
+	repeat with F in fileList
+		copy folderName & F to the end of filesWithPath
 	end repeat
 	return filesWithPath
 end x_GetFolderContent
@@ -490,9 +500,9 @@ end x_GetFolderContent
 (* Returns a new list with items "allFiles" excluding "excFiles" *)
 on ExcludeFiles(allFiles, excFiles)
 	set newList to {}
-	repeat with f in allFiles
-		if excFiles does not contain f then
-			copy f to the end of newList
+	repeat with F in allFiles
+		if excFiles does not contain F then
+			copy F to the end of newList
 		end if
 	end repeat
 	return newList
@@ -515,9 +525,9 @@ end x_Replace
 (* Return a subset of "aList" with items ending with "suffix" *)
 on EndsWith(aList, suffix)
 	set newList to {}
-	repeat with f in aList
-		if (f ends with suffix) and (f does not end with "_.cpp") then
-			copy (f as string) to end of newList
+	repeat with F in aList
+		if (F ends with suffix) and (F does not end with "_.cpp") then
+			copy (F as string) to end of newList
 		end if
 	end repeat
 	return newList
@@ -641,6 +651,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/03/06 18:31:12  lebedev
+ * AppleScript warning fixed
+ *
  * Revision 1.17  2005/12/12 18:42:17  lebedev
  * Rework the check for files/folders to exist (10.4 change)
  *
