@@ -362,7 +362,7 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
  * @param diagnostics Hit counts and other diagnostics [in] [out]
  * @param aux_struct Structure containing different auxiliary data and memory
  *                   for the preliminary stage of the BLAST search [in]
- * @param hsp_list_out List of HSPs found for a given subject sequence [in]
+ * @param hsp_list_out_ptr List of HSPs found for a given subject sequence [in]
  */
 static Int2
 s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* query, 
