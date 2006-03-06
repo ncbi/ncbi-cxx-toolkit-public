@@ -42,7 +42,7 @@ const double kLnThree = log(3.);
 
 /* inline */ double CLorentz::ClosingScore(int l) const
 {
-    if(l == MaxLen()) return BadScore();
+    if(l >= MaxLen()) return BadScore();
     int i = (l-1)/m_step;
     int delx = min((i+1)*m_step,MaxLen())-l;
     double dely = (i == 0 ? 1 : m_clscore[i-1])-m_clscore[i];
@@ -769,6 +769,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2006/03/06 15:52:53  souvorov
+ * Changes needed for ChanceOfIntronLongerThan(int l)
+ *
  * Revision 1.3  2005/10/06 15:51:20  chetvern
  * moved methods that compiler doesn't make inline anyway from hmm_inlines.hpp to hmm.cpp and score.cpp
  *

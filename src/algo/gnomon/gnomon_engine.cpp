@@ -79,6 +79,8 @@ CGnomonEngine::CGnomonEngine(const string& modeldatafilename, const string& seqn
         m_data->m_ncdr.reset    ( new CMC_NonCodingRegion<5> (modeldatafilename, m_data->m_gccontent));
         m_data->m_intrg.reset   ( new CMC_NonCodingRegion<5> (modeldatafilename, m_data->m_gccontent));
 
+        ResetRange(m_data->m_range);  // init CIntron, CIntergenic, CExon
+
     }
     catch(...) {
         cleanup();
@@ -96,6 +98,11 @@ void CGnomonEngine::cleanup()
     delete(m_data);
 }
 
+double CGnomonEngine::GetChanceOfIntronLongerThan(int l)
+{
+    return CIntron::ChanceOfIntronLongerThan(l);
+}
+
 int CGnomonEngine::GetMinIntronLen()
 {
     return CIntron::MinIntron();
@@ -111,6 +118,10 @@ void CGnomonEngine::CheckRange()
 void CGnomonEngine::ResetRange(TSignedSeqRange range)
 {
     m_data->m_range = range; CheckRange();
+
+    CIntron::    Init(m_data->m_modeldatafilename, m_data->m_gccontent, m_data->m_range.GetLength());
+    CIntergenic::Init(m_data->m_modeldatafilename, m_data->m_gccontent, m_data->m_range.GetLength());
+    CExon::      Init(m_data->m_modeldatafilename, m_data->m_gccontent);
 }
 
 int CGnomonEngine::GetGCcontent() const
@@ -139,14 +150,6 @@ double CGnomonEngine::Run(const TAlignList& cls, //  const TFrameShifts& initial
     m_Annot.Reset();
     m_data->m_parse.reset();
     m_data->m_ss.reset();
-
-    static TSignedSeqPos prev_range_len;
-    if (prev_range_len != m_data->m_range.GetLength()) {
-        CIntron::Init    (m_data->m_modeldatafilename, m_data->m_gccontent, m_data->m_range.GetLength());
-        CIntergenic::Init(m_data->m_modeldatafilename, m_data->m_gccontent, m_data->m_range.GetLength());
-        CExon::Init      (m_data->m_modeldatafilename, m_data->m_gccontent);
-        prev_range_len = m_data->m_range.GetLength();
-    }
 
     TFrameShifts initial_fshifts;
 
@@ -213,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2006/03/06 15:52:53  souvorov
+ * Changes needed for ChanceOfIntronLongerThan(int l)
+ *
  * Revision 1.6  2005/11/22 18:52:29  chetvern
  * More robust check for 'Human.inp' parameter file
  *

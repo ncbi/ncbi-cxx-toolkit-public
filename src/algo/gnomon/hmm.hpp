@@ -392,35 +392,36 @@ class CLastExon : public CExon
 
 class CIntron : public CHMM_State
 {
-    public:
-        static void Init(const string& file, int cgcontent, int seqlen);
-        
-        ~CIntron() {}
-        CIntron(EStrand strn, int ph, int point);
-        static int MinIntron() { return sm_intronlen.MinLen(); }   // used for introducing frameshifts
-        static int MaxIntron() { return sm_intronlen.MaxLen(); }
-        int MinLen() const { return sm_intronlen.MinLen(); }
-        int MaxLen() const { return sm_intronlen.MaxLen(); }
-        int Phase() const { return m_phase; }
-        bool OpenRgn() const { return sm_seqscr->OpenNonCodingRegion(Start(),Stop(),Strand()); }
-        double RgnScore() const { return 0; }   // Intron scores are substructed from all others
+public:
+    static void Init(const string& file, int cgcontent, int seqlen);
+    
+    ~CIntron() {}
+    CIntron(EStrand strn, int ph, int point);
+    static int MinIntron() { return sm_intronlen.MinLen(); }   // used for introducing frameshifts  
+    static int MaxIntron() { return sm_intronlen.MaxLen(); }
+    static double ChanceOfIntronLongerThan(int l) { return exp(sm_intronlen.ClosingScore(l)); } // used to eliminate "holes" in protein alignments
+    int MinLen() const { return sm_intronlen.MinLen(); }
+    int MaxLen() const { return sm_intronlen.MaxLen(); }
+    int Phase() const { return m_phase; }
+    bool OpenRgn() const { return sm_seqscr->OpenNonCodingRegion(Start(),Stop(),Strand()); }
+    double RgnScore() const { return 0; }   // Intron scores are substructed from all others    
     double TermScore() const
     {
         if(isPlus()) return sm_seqscr->AcceptorScore(Stop(),Strand());
         else return sm_seqscr->DonorScore(Stop(),Strand());
     }
-        double DenScore() const { return sm_lnDen[Phase()]; }
+    double DenScore() const { return sm_lnDen[Phase()]; }
     double LengthScore() const
     {
         if(SplittedStop()) return BadScore();
         else return sm_intronlen.Score(Stop()-Start()+1);
     }
-        double ClosingLengthScore() const;
-        double ThroughLengthScore() const  { return sm_lnThrough[Phase()]; }
-        double InitialLengthScore() const { return sm_lnDen[Phase()]+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
-        double BranchScore(const CHMM_State& next) const { return BadScore(); }
-        double BranchScore(const CLastExon& next) const;
-        double BranchScore(const CInternalExon& next) const;
+    double ClosingLengthScore() const;
+    double ThroughLengthScore() const  { return sm_lnThrough[Phase()]; }
+    double InitialLengthScore() const { return sm_lnDen[Phase()]+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element 
+    double BranchScore(const CHMM_State& next) const { return BadScore(); }
+    double BranchScore(const CLastExon& next) const;
+    double BranchScore(const CInternalExon& next) const;
     bool SplittedStop() const
     {
         if(Phase() == 0 || NoLeftEnd() || NoRightEnd())
@@ -430,17 +431,17 @@ class CIntron : public CHMM_State
         else
             return sm_seqscr->SplittedStop(Stop(),LeftState()->Stop(),Strand(),Phase()-1);
     }
-
-
-        SStateScores GetStateScores() const { return CalcStateScores(*this); }
-        string GetStateName() const { return "Intron"; }
     
-    protected:
-        int m_phase;
-        static double sm_lnThrough[3], sm_lnDen[3];
-        static double sm_lnTerminal, sm_lnInternal;
-        static CLorentz sm_intronlen;
-        static bool sm_initialised;
+    
+    SStateScores GetStateScores() const { return CalcStateScores(*this); }
+    string GetStateName() const { return "Intron"; }
+    
+protected:
+    int m_phase;
+    static double sm_lnThrough[3], sm_lnDen[3];
+    static double sm_lnTerminal, sm_lnInternal;
+    static CLorentz sm_intronlen;
+    static bool sm_initialised;
 };
 
 inline double CIntron::BranchScore(const CInternalExon& next) const
@@ -502,6 +503,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/03/06 15:52:53  souvorov
+ * Changes needed for ChanceOfIntronLongerThan(int l)
+ *
  * Revision 1.3  2005/10/06 15:51:43  chetvern
  * moved TDVec definition from hmm.hpp to gnomon_seq.hpp
  * moved several most frequently called methods implementations into class definitions to make them inline

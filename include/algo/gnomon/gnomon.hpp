@@ -69,6 +69,7 @@ public:
     int GetGCcontent() const;
     string GetSeqName() const;
     static int GetMinIntronLen();
+    static double GetChanceOfIntronLongerThan(int l);
 
     // calculate gnomon score for a gene model
     void GetScore(CAlignVec& model, bool uselims = false) const;
@@ -124,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/06 15:53:23  souvorov
+ * Changes needed for ChanceOfIntronLongerThan(int l)
+ *
  * Revision 1.7  2005/11/29 15:21:37  jcherry
  * Added export specifier
  *
