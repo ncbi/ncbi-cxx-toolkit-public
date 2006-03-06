@@ -62,8 +62,51 @@ BEGIN_NCBI_SCOPE
 //
 
 
+DEFINE_STATIC_FAST_MUTEX(s_TlsCleanupMutex);
+
+
+CUsedTlsBases::CUsedTlsBases(void)
+{
+}
+
+
+CUsedTlsBases::~CUsedTlsBases(void)
+{
+    ClearAll();
+}
+
+
+void CUsedTlsBases::ClearAll(void)
+{
+    CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+    NON_CONST_ITERATE(TTlsSet, it, m_UsedTls) {
+        CRef<CTlsBase> tls = *it;
+        tls->x_DeleteTlsData();
+    }
+    m_UsedTls.clear();
+}
+
+
+void CUsedTlsBases::Register(CTlsBase* tls)
+{
+    CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+    m_UsedTls.insert(Ref(tls));
+}
+
+
+void CUsedTlsBases::Deregister(CTlsBase* tls)
+{
+    CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+    CRef<CTlsBase> ref(tls);
+    m_UsedTls.erase(ref);
+    ref.Release();
+}
+
+
+static CSafeStaticPtr<CUsedTlsBases> s_MainUsedTls;
+
 // Flag and function to report s_Tls_TlsSet destruction
-static bool s_TlsSetDestroyed = false;
+static bool s_TlsSetDestroyed = true;
 
 static void s_TlsSetCleanup(void* /* ptr */)
 {
@@ -134,6 +177,8 @@ CTlsBase::~CTlsBase(void)
 
 void CTlsBase::x_Discard(void)
 {
+    x_Reset();
+
     if ( s_TlsSetDestroyed ) {
         return;  // Nothing to do - the TLS set has been destroyed
     }
@@ -200,20 +245,20 @@ void CTlsBase::x_SetValue(void*        value,
                   "CTlsBase::x_SetValue() -- error setting value");
 
     // Add to the used TLS list to cleanup data in the thread Exit()
-    CThread::AddUsedTls(this);
+    CThread::GetUsedTlsBases().Register(this);
 }
 
 
-void CTlsBase::x_Reset(void)
+bool CTlsBase::x_DeleteTlsData(void)
 {
     if ( !m_Initialized ) {
-        return;
+        return false;
     }
 
     // Get previously stored data
     STlsData* tls_data = static_cast<STlsData*> (x_GetTlsData());
     if ( !tls_data ) {
-        return;
+        return false;
     }
 
     // Cleanup & destroy
@@ -225,6 +270,18 @@ void CTlsBase::x_Reset(void)
     // Store NULL in the TLS
     s_TlsSetValue(m_Key, 0,
                   "CTlsBase::x_Reset() -- error cleaning-up TLS");
+
+    return true;
+}
+
+
+
+void CTlsBase::x_Reset(void)
+{
+    if ( x_DeleteTlsData() ) {
+        // Deregister this TLS from the current thread
+        CThread::GetUsedTlsBases().Deregister(this);
+    }
 }
 
 
@@ -310,7 +367,6 @@ CExitThreadException::~CExitThreadException(void)
 // Mutex to protect CThread members and to make sure that Wrapper() function
 // will not proceed until after the appropriate Run() is finished.
 DEFINE_STATIC_FAST_MUTEX(s_ThreadMutex);
-DEFINE_STATIC_FAST_MUTEX(s_TlsCleanupMutex);
 
 
 // Internal storage for thread objects and related variables/functions
@@ -372,13 +428,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     NCBI_CATCH_ALL("CThread::Wrapper: CThread::OnExit() failed");
 
     // Cleanup local storages used by this thread
-    {{
-        CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-        NON_CONST_ITERATE(TTlsSet, it, thread_obj->m_UsedTls) {
-            CRef<CTlsBase> tls = *it;
-            tls->x_Reset();
-        }
-    }}
+    thread_obj->m_UsedTls.ClearAll();
 
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
@@ -665,15 +715,14 @@ void CThread::OnExit(void)
 }
 
 
-void CThread::AddUsedTls(CTlsBase* tls)
+CUsedTlsBases& CThread::GetUsedTlsBases(void)
 {
-    // Can not use s_ThreadMutex in POSIX since it may be already locked
-    CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-
-    // Get current thread object
-    CThread* x_this = GetCurrentThread();
-    if ( x_this ) {
-        x_this->m_UsedTls.insert(CRef<CTlsBase>(tls));
+    CThread* thread = CThread::GetCurrentThread();
+    if ( thread ) {
+        return thread->m_UsedTls;
+    }
+    else {
+        return *s_MainUsedTls;
     }
 }
 
@@ -699,6 +748,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/03/06 17:43:57  vasilche
+ * Fixed cleanup of CTls<> objects and values.
+ *
  * Revision 1.35  2006/02/01 19:47:09  grichenk
  * Added CThread::GetCurrentThread()
  *

@@ -70,7 +70,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XNCBI_EXPORT CTlsBase : public CObject
 {
     friend class CRef<CTlsBase>;
-    friend class CThread;
+    friend class CUsedTlsBases;
 
 public:
     typedef void (*FCleanupBase)(void* value, void* cleanup_data);
@@ -109,6 +109,9 @@ private:
 
     /// Helper method to get the STlsData* 
     STlsData* x_GetTlsData(void) const;
+    /// Deletes STlsData* structure and managed pointer
+    /// Returns true if CTlsBase must be deregistered from current thread
+    bool x_DeleteTlsData(void);
 };
 
 
@@ -175,6 +178,26 @@ public:
     void Discard(void) { x_Discard(); }
 };
 
+
+class NCBI_XNCBI_EXPORT CUsedTlsBases
+{
+public:
+    CUsedTlsBases(void);
+    ~CUsedTlsBases(void);
+
+    void ClearAll(void);
+
+    void Register(CTlsBase* tls);
+    void Deregister(CTlsBase* tls);
+    
+private:
+    typedef set< CRef<CTlsBase> > TTlsSet;
+    TTlsSet m_UsedTls;
+
+private:
+    CUsedTlsBases(const CUsedTlsBases&);
+    void operator=(const CUsedTlsBases&);
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -313,9 +336,9 @@ private:
     friend void s_CleanupThreadsTls(void* /* ptr */);
 
     /// Keep all TLS references to clean them up in Exit()
-    typedef set< CRef<CTlsBase> > TTlsSet;
-    TTlsSet m_UsedTls;
-    static void AddUsedTls(CTlsBase* tls);
+    CUsedTlsBases m_UsedTls;
+
+    static CUsedTlsBases& GetUsedTlsBases(void);
 };
 
 
@@ -410,6 +433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/03/06 17:43:57  vasilche
+ * Fixed cleanup of CTls<> objects and values.
+ *
  * Revision 1.27  2006/02/01 19:47:09  grichenk
  * Added CThread::GetCurrentThread()
  *
