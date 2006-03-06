@@ -141,11 +141,12 @@ struct SBDB_BvStore_Id : public CBDB_BvStore< TBV >
     CBDB_FieldUint4        id;  ///< ID key
 
     typedef CBDB_BvStore< TBV >         TParent;
+    typedef typename TParent::TBitVector TBitVector;
 
     SBDB_BvStore_Id(unsigned initial_serialization_buf_size = 16384)
         : TParent(initial_serialization_buf_size)
     {
-        BindKey("id",   &id);
+        this->BindKey("id",   &id);
     }
 
     /// Store vector of bitvector ponters, index in the vector becoms 
@@ -346,6 +347,7 @@ public:
     typedef  CBDB_BvStore<TBV> TParent;
     typedef  TBV               TBitVector;  ///< Serializable bitvector
     typedef  TM                TMatrix;     ///< Bit matrix
+    typedef typename TParent::ECompact ECompact;
 
     /// Sparse matrix descriptor
     struct SMatrixDescr
@@ -589,7 +591,7 @@ CBDB_IdSplitBvStore<TBV>::~CBDB_IdSplitBvStore()
 template<class TBV>
 void CBDB_IdSplitBvStore<TBV>::FreeVolumeDict()
 {
-    NON_CONST_ITERATE(TVolumeDict, it, m_VolumeDict) {
+    NON_CONST_ITERATE(typename TVolumeDict, it, m_VolumeDict) {
         TBitVector* bv = *it;
         delete bv;
     }
@@ -599,7 +601,7 @@ void CBDB_IdSplitBvStore<TBV>::FreeVolumeDict()
 template<class TBV>
 void CBDB_IdSplitBvStore<TBV>::CloseVolumes()
 {
-    NON_CONST_ITERATE(TVolumeDir, it, m_VolumeDir) {
+    NON_CONST_ITERATE(typename TVolumeDir, it, m_VolumeDir) {
         delete *it;
     }
     m_VolumeDir.resize(0);
@@ -609,7 +611,7 @@ template<class TBV>
 int CBDB_IdSplitBvStore<TBV>::FindVolume(unsigned id)
 {
     int vol_idx = 0;
-    ITERATE(TVolumeDict, it, m_VolumeDict) {
+    ITERATE(typename TVolumeDict, it, m_VolumeDict) {
         const TBitVector* bv = *it;
         if (bv && (*bv)[id]) {
             return vol_idx;
@@ -695,7 +697,7 @@ void CBDB_IdSplitBvStore<TBV>::Open(const string&    storage_name,
     LoadVolumeDict();
 
     m_VolumeDir.resize(m_VolumeDict.size());
-    NON_CONST_ITERATE(TVolumeDir, it, m_VolumeDir) {
+    NON_CONST_ITERATE(typename TVolumeDir, it, m_VolumeDir) {
         *it = 0;
     }
 }
@@ -713,7 +715,7 @@ void CBDB_IdSplitBvStore<TBV>::LoadVolumeDict()
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
 
-    TBvStore::TBuffer& buf = m_DescFile->GetBuffer();
+    typename TBvStore::TBuffer& buf = m_DescFile->GetBuffer();
 
     for (m_VolumeCount = 0; ;++m_VolumeCount) {
         err = m_DescFile->FetchToBuffer(cur);
@@ -735,7 +737,7 @@ CBDB_IdSplitBvStore<TBV>::GetVolumeDescr(unsigned vol_num)
     while (vol_num >= m_VolumeDict.size()) {
         m_VolumeDict.push_back(0);
     }
-    CBDB_IdSplitBvStore<TBV>::TBitVector* bv = m_VolumeDict[vol_num];
+    typename CBDB_IdSplitBvStore<TBV>::TBitVector* bv = m_VolumeDict[vol_num];
     if (!bv) {
         m_VolumeDict[vol_num] = bv = new TBitVector(bm::BM_GAP);
     }
@@ -870,7 +872,7 @@ void CBDB_IdSplitBvStore<TBV>::LoadStore(SBDB_BvStore_Id<TBV>& in_store,
         if (err != eBDB_Ok)
             break;
         unsigned id = in_store.id;
-        SBDB_BvStore_Id<TBV>::TBuffer& buf = in_store.GetBuffer();
+        typename SBDB_BvStore_Id<TBV>::TBuffer& buf = in_store.GetBuffer();
 
         // save the buffer into volume
 
@@ -883,12 +885,12 @@ void CBDB_IdSplitBvStore<TBV>::LoadStore(SBDB_BvStore_Id<TBV>& in_store,
         vol_descr_bv->set(id);
         
         unsigned blob_size = in_store.LobSize();
-        SBDB_BvStore_Id<TBV>::TBuffer::value_type* blob_ptr = &buf[0];
+        typename SBDB_BvStore_Id<TBV>::TBuffer::value_type* blob_ptr = &buf[0];
 
         if (blob_size <= 2048) { // try to re-compress the vector
             bv_tmp.clear(true);
             in_store.Deserialize(&bv_tmp, blob_ptr);
-            TBitVector::statistics st;
+            typename TBitVector::statistics st;
             bv_tmp.calc_stat(&st);
             if (buf.size() < st.max_serialize_mem) {
                 buf.resize(st.max_serialize_mem);
@@ -926,7 +928,7 @@ void SBDB_BvStore_Id<TBV>::StoreVectorList(const vector<TBitVector*>& bv_lst)
     {
         id = i;
         const TBitVector* bv = bv_lst[i];
-        WriteVector(*bv, eCompact);
+        WriteVector(*bv, TParent::eCompact);
     }
 }
 
@@ -936,12 +938,12 @@ void
 SBDB_BvStore_Id<TBV>::ComputeBitCountMap(TBitCountMap* bc_map, 
                                          unsigned    bitcount_from,
                                          unsigned    bitcount_to,
-                                       TBitVector*   out_of_interval_ids = 0)
+                                         TBitVector*   out_of_interval_ids)
 {
     _ASSERT(bc_map);
 
-    if (m_STmpBlock == 0) {
-        m_STmpBlock = m_TmpBVec.allocate_tempblock();
+    if (this->m_STmpBlock == 0) {
+        this->m_STmpBlock = this->m_TmpBVec.allocate_tempblock();
     }
 
     EBDB_ErrCode err;
@@ -953,10 +955,10 @@ SBDB_BvStore_Id<TBV>::ComputeBitCountMap(TBitCountMap* bc_map,
     TBitVector bv(bm::BM_GAP);
 
     while (true) {
-        void* p = &m_Buffer[0];
+        void* p = &this->m_Buffer[0];
         try {
             err = cur.Fetch(CBDB_FileCursor::eDefault,
-                            &p, m_Buffer.size(),
+                            &p, this->m_Buffer.size(),
                             CBDB_File::eReallocForbidden);
             if (err != eBDB_Ok) {
                 break;
@@ -964,7 +966,7 @@ SBDB_BvStore_Id<TBV>::ComputeBitCountMap(TBitCountMap* bc_map,
         }
         catch (CBDB_ErrnoException& e) {
             if (e.IsBufferSmall()  ||  e.IsNoMem()) {
-                unsigned buf_size = LobSize();
+                unsigned buf_size = this->LobSize();
                 unsigned bv_id = id;
                 if (out_of_interval_ids) {
                     out_of_interval_ids->set(bv_id);
@@ -974,10 +976,10 @@ SBDB_BvStore_Id<TBV>::ComputeBitCountMap(TBitCountMap* bc_map,
                 cur.From << ++bv_id;
                 continue;
 */
-                m_Buffer.resize(buf_size);
-                void* p = &m_Buffer[0];
+                this->m_Buffer.resize(buf_size);
+                void* p = &this->m_Buffer[0];
                 err = cur.Fetch(CBDB_FileCursor::eDefault,
-                                &p, m_Buffer.size(),
+                                &p, this->m_Buffer.size(),
                                 CBDB_File::eReallocForbidden);
             } else {
                 throw;
@@ -986,7 +988,7 @@ SBDB_BvStore_Id<TBV>::ComputeBitCountMap(TBitCountMap* bc_map,
         unsigned bv_id = id;
         {{
             bv.clear(true);
-            bm::deserialize(bv, &m_Buffer[0], m_STmpBlock);
+            bm::deserialize(bv, &this->m_Buffer[0], this->m_STmpBlock);
 
             unsigned bitcount = bv.count();
             if (bitcount >= bitcount_from && bitcount <= bitcount_to) {
@@ -1013,9 +1015,9 @@ template<class TBV, class TM>
 CBDB_MatrixBvStore<TBV, TM>::CBDB_MatrixBvStore(unsigned initial_buf_size)
 : TParent(initial_buf_size)
 {
-    BindKey("matr_cols",  &matr_cols);
-    BindKey("matr_rows",  &matr_rows);
-    BindKey("store_type", &store_type);
+    this->BindKey("matr_cols",  &matr_cols);
+    this->BindKey("matr_rows",  &matr_rows);
+    this->BindKey("store_type", &store_type);
 }
 
 template<class TBV, class TM>
@@ -1062,8 +1064,8 @@ void CBDB_MatrixBvStore<TBV, TM>::LoadMatrixDescriptions(
     descr_list->resize(0);
     EBDB_ErrCode err;
 
-    if (m_Buffer.size() == 0) {
-        m_Buffer.resize(16384);
+    if (this->m_Buffer.size() == 0) {
+        this->m_Buffer.resize(16384);
     }
 
     CBDB_FileCursor cur(*this);
@@ -1071,19 +1073,19 @@ void CBDB_MatrixBvStore<TBV, TM>::LoadMatrixDescriptions(
     cur.From << 0 << 0 << 0;
 
     while (true) {
-        void* p = &m_Buffer[0];
+        void* p = &this->m_Buffer[0];
         try {
             err = cur.Fetch(CBDB_FileCursor::eDefault,
-                            &p, m_Buffer.size(),
+                            &p, this->m_Buffer.size(),
                             CBDB_File::eReallocForbidden);
         }
         catch (CBDB_ErrnoException& e) {
             if (e.IsBufferSmall()  ||  e.IsNoMem()) {
-                unsigned buf_size = LobSize();
-                m_Buffer.resize(buf_size);
-                void* p = &m_Buffer[0];
+                unsigned buf_size = this->LobSize();
+                this->m_Buffer.resize(buf_size);
+                void* p = &this->m_Buffer[0];
                 err = cur.Fetch(CBDB_FileCursor::eCurrent,
-                                &p, m_Buffer.size(),
+                                &p, this->m_Buffer.size(),
                                 CBDB_File::eReallocForbidden);
             } else {
                 throw;
@@ -1095,7 +1097,7 @@ void CBDB_MatrixBvStore<TBV, TM>::LoadMatrixDescriptions(
         TBitVector* bv = new TBitVector(bm::BM_GAP);
         descr_list->push_back(SMatrixDescr(cols, rows, bv));
 
-        bm::deserialize(*bv, &m_Buffer[0]);
+        bm::deserialize(*bv, &this->m_Buffer[0]);
 
     } // while
 }
@@ -1107,6 +1109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/06 15:47:04  vasilche
+ * Fixed references to parent template class members.
+ *
  * Revision 1.6  2006/03/06 14:07:55  kuznets
  * +SBDB_BvStore_Id, CBDB_IdSplitBvStore
  *
