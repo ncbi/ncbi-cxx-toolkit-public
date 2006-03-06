@@ -38,7 +38,7 @@
 const SSERV_VTable *SERV_LBSMD_Open(SERV_ITER    iter,
                                     SSERV_Info** info,
                                     HOST_INFO*   host_info,
-                                    int/*bool*/  dispd_follow)
+                                    int/*bool*/  dispd_to_follow)
 {
     return 0;
 }
@@ -57,6 +57,12 @@ extern ESwitch LBSMD_KeepHeapAttached(ESwitch sw/*ignored*/)
     return eOff;
 }
 
+/*ARGSUSED*/ /*DEPRECATED*/
+extern ESwitch LBSM_KeepHeapAttached(ESwitch sw/*ignored*/)
+{
+    return eOff;
+}
+
 
 /*ARGSUSED*/
 extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time/*ignored*/)
@@ -66,28 +72,28 @@ extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time/*ignored*/)
 
 
 /*ARGSUSED*/
-int LBSM_HINFO_CpuCount(const void* load_ptr)
+int LBSM_HINFO_CpuCount(LBSM_HINFO hinfo)
 {
     return -1;
 }
 
 
 /*ARGSUSED*/
-int LBSM_HINFO_TaskCount(const void* load_ptr)
+int LBSM_HINFO_TaskCount(LBSM_HINFO hinfo)
 {
     return -1;
 }
 
 
 /*ARGSUSED*/
-int/*bool*/ LBSM_HINFO_LoadAverage(const void* load_ptr, double lavg[2])
+int/*bool*/ LBSM_HINFO_LoadAverage(LBSM_HINFO hinfo, double lavg[2])
 {
     return 0/*failure*/;
 }
 
 
 /*ARGSUSED*/
-int/*bool*/ LBSM_HINFO_Status(const void* load_ptr, double status[2])
+int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2])
 {
     return 0/*failure*/;
 }
@@ -96,6 +102,9 @@ int/*bool*/ LBSM_HINFO_Status(const void* load_ptr, double status[2])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2006/03/06 20:28:21  lavr
+ * Comments;  use proper LBSM_HINFO in all getters
+ *
  * Revision 6.9  2006/03/06 14:42:04  lavr
  * SERV_LBSMD_Open() -- use new proto
  *
