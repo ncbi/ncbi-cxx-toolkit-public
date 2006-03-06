@@ -367,6 +367,10 @@
  *  Util members
  */
 
+/** @defgroup Cache Generic Cache
+ *  @ingroup UTIL
+ */
+
 /** @defgroup Checksum
  *  @ingroup UTIL
  */
