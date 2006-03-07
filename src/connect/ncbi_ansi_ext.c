@@ -64,7 +64,7 @@ extern char* strndup(const char* str, size_t n)
     char*  res  = (char*) malloc((size < n ? size : n) + 1);
     if (res)
         strncpy0(res, n ? str : "", n);
-    return s;
+    return res;
 }
 
 #endif /*HAVE_STRNDUP*/
@@ -142,6 +142,9 @@ extern char* strlwr(char* s)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2006/03/07 17:54:44  ivanov
+ * Fixed compilation error in strndup
+ *
  * Revision 6.17  2006/03/07 17:18:51  lavr
  * +strndup
  *
