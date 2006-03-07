@@ -733,31 +733,37 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             // Bind child's standard I/O file handles to pipe
             assert(CPipe::fStdIn_Close);
             if ( !IS_SET(create_flags, CPipe::fStdIn_Close) ) {
-                if (dup2(fd_pipe_in[0], STDIN_FILENO) < 0) {
-                    _exit(status);
+                if (fd_pipe_in[0] != STDIN_FILENO) {
+                    if (dup2(fd_pipe_in[0], STDIN_FILENO) < 0) {
+                        _exit(status);
+                    }
+                    close(fd_pipe_in[0]);
                 }
-                close(fd_pipe_in[0]);
                 close(fd_pipe_in[1]);
             } else {
                 freopen("/dev/null", "r", stdin);
             }
             assert(CPipe::fStdOut_Close);
             if ( !IS_SET(create_flags, CPipe::fStdOut_Close) ) {
-                if (dup2(fd_pipe_out[1], STDOUT_FILENO) < 0) {
-                    _exit(status);
+                if (fd_pipe_out[1] != STDOUT_FILENO) {
+                    if (dup2(fd_pipe_out[1], STDOUT_FILENO) < 0) {
+                        _exit(status);
+                    }
+                    close(fd_pipe_out[1]);
                 }
                 close(fd_pipe_out[0]);
-                close(fd_pipe_out[1]);
             } else {
                 freopen("/dev/null", "w", stdout);
             }
             assert(!CPipe::fStdErr_Close);
             if ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
-                if (dup2(fd_pipe_err[1], STDERR_FILENO) < 0) {
-                    _exit(status);
+                if (fd_pipe_err[1] != STDERR_FILENO) {
+                    if (dup2(fd_pipe_err[1], STDERR_FILENO) < 0) {
+                        _exit(status);
+                    }
+                    close(fd_pipe_err[1]);
                 }
                 close(fd_pipe_err[0]);
-                close(fd_pipe_err[1]);
             } else {
                 freopen("/dev/null", "a", stderr);
             }
@@ -1413,6 +1419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/03/07 17:18:40  lavr
+ * Always check against redirect-into-self for dup'ed file descriptors
+ *
  * Revision 1.51  2006/03/07 14:59:46  lavr
  * CPipe::Close()[Unix] adj.tmo.after sleep [in case actual slept time ret'd]
  *
