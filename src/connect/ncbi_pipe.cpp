@@ -837,6 +837,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
             pid_t ws = waitpid(m_Pid, &x_exitcode, x_options);
             if (ws > 0) {
                 // Process has terminated
+                assert(ws == m_Pid);
                 status = eIO_Success;
                 break;
             } else if (ws == 0) {
@@ -853,8 +854,8 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
                 if (x_sleep > x_timeout ) {
                     x_sleep = x_timeout;
                 }
-                x_timeout -= x_sleep;
                 SleepMilliSec(x_sleep);
+                x_timeout -= x_sleep;
             } else if (errno != EINTR) {
                 break;
             }
@@ -1412,6 +1413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/03/07 14:59:46  lavr
+ * CPipe::Close()[Unix] adj.tmo.after sleep [in case actual slept time ret'd]
+ *
  * Revision 1.50  2006/03/03 12:29:25  ivanov
  * Fixed compilation on MS Windows
  *
