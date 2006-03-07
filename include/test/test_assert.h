@@ -94,13 +94,11 @@ static int _SuppressDiagPopupMessages(void)
 /* Put this function at startup init level 'V', far enough not to mess up with
  * base RTL init, which happens at preceding levels in alphabetical order.
  */
-#if _MSC_VER >= 1400
-#  pragma section( ".CRT$XIV", read)
-#endif
+#  if _MSC_VER >= 1400
+#    pragma section( ".CRT$XIV", read)
+#  endif
 #  pragma data_seg(".CRT$XIV")
-
 static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
-
 #  pragma data_seg()
 
 #endif /*defined(NCBI_OS_...)*/
@@ -145,6 +143,9 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2006/03/07 17:06:42  gouriano
+ * Formatting
+ *
  * Revision 1.21  2006/03/06 15:15:46  gouriano
  * Mark CRT data segment as read-only for MSVC 2005
  *
