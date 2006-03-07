@@ -854,8 +854,6 @@ static void s_ShowDataLayout(void)
 
 extern EIO_Status SOCK_InitializeAPI(void)
 {
-    static int/*bool*/ s_AtExitSet = 0;
-
     CORE_LOCK_WRITE;
     if ( s_Initialized ) {
         CORE_UNLOCK;
@@ -889,10 +887,16 @@ extern EIO_Status SOCK_InitializeAPI(void)
 #endif /*platform-specific init*/
 
     s_Initialized = 1/*true*/;
-    if ( !s_AtExitSet ) {
-        atexit((void (*)(void)) SOCK_ShutdownAPI);
-        s_AtExitSet = 1;
-    }
+#ifdef NCBI_OS_MSWIN
+    {{
+        static int/*bool*/ s_AtExitSet = 0;
+        if ( !s_AtExitSet ) {
+            atexit((void (*)(void)) SOCK_ShutdownAPI);
+            s_AtExitSet = 1;
+        }
+    }}
+#endif
+
     CORE_UNLOCK;
     return eIO_Success;
 }
@@ -907,7 +911,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
     }
 
     s_Initialized = 0/*false*/;
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
     {{
         int x_errno = WSACleanup() ? SOCK_ERRNO : 0;
         CORE_UNLOCK;
@@ -4554,6 +4558,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.187  2006/03/07 17:29:10  lavr
+ * Register with atexit() on Windows only [no need on other platforms]
+ *
  * Revision 6.186  2006/02/21 14:56:55  lavr
  * Take advantage of new CORE_DEBUG_ARG to suppress Release-mode unused vars
  *
