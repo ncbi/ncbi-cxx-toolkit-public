@@ -363,8 +363,11 @@ GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding,
 /// BlastHitList to CSeq_align_set
 CSeq_align_set*
 BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
-    EBlastProgramType prog, const SSeqLoc &query,
-    const IBlastSeqInfoSrc* seqinfo_src, bool is_gapped, bool is_ooframe)
+                        EBlastProgramType prog,
+                        const SSeqLoc &query,
+                        const IBlastSeqInfoSrc* seqinfo_src,
+                        bool is_gapped,
+                        bool is_ooframe)
 {
     CSeq_align_set* seq_aligns = new CSeq_align_set();
 
@@ -393,15 +396,29 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
 
         // Create a CSeq_align for each matching sequence
         CRef<CSeq_align> hit_align;
+        
+        vector<int> gi_list;
+        GetProteinSequenceGis(*seqinfo_src, prog, hsp_list->oid, gi_list);
+        
         if (is_gapped) {
             hit_align =
-                BLASTHspListToSeqAlign(prog, hsp_list, query_id,
-                                       subject_id, query_length, subj_length,
-                                       is_ooframe);
+                BLASTHspListToSeqAlign(prog,
+                                       hsp_list,
+                                       query_id,
+                                       subject_id,
+                                       query_length,
+                                       subj_length,
+                                       is_ooframe,
+                                       gi_list);
         } else {
             hit_align =
-                BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
-                    subject_id, query_length, subj_length);
+                BLASTUngappedHspListToSeqAlign(prog,
+                                               hsp_list,
+                                               query_id,
+                                               subject_id,
+                                               query_length,
+                                               subj_length,
+                                               gi_list);
         }
         RemapToQueryLoc(hit_align, *query.seqloc);
         seq_aligns->Set().push_back(hit_align);
@@ -667,6 +684,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2006/03/07 16:35:27  bealer
+* - Add "use_this_gi" scores for protein searches with Entrez queries.
+*
 * Revision 1.68  2006/02/27 15:43:47  camacho
 * Fixed bug in CBlastQuerySourceOM::GetMaskedRegions.
 * Made IBlastQuerySource::GetMaskedRegions a non-const method.

@@ -54,6 +54,22 @@ BEGIN_SCOPE(blast)
 /// Forward declaration
 class ILocalQueryData; 
 
+/// Get GIs for a protein sequence.
+///
+/// The program is checked - if this type of search uses protein
+/// databases for subject sequences, this function returns a list of
+/// GIs corresponding to the specified OID, otherwise it returns an
+/// empty list.
+///
+/// @param sisrc Source of sequence information. [in]
+/// @param prog Program value for this search.   [in]
+/// @param oid OID for which to retrieve GIs.    [in]
+/// @param gis GIs found for the specified oid.  [out]
+void GetProteinSequenceGis(const IBlastSeqInfoSrc & sisrc,
+                           EBlastProgramType        prog,
+                           int                      oid,
+                           vector<int>            & gis);
+
 /// Remaps Seq-align offsets relative to the query Seq-loc. 
 /// Since the query strands were already taken into account when CSeq_align 
 /// was created, only start position shifts in the CSeq_loc's are relevant in 
@@ -78,7 +94,8 @@ BLASTHspListToSeqAlign(EBlastProgramType program,
                        const CSeq_id *subject_id,
                        Int4 query_length, 
                        Int4 subject_length,
-                       bool is_ooframe);
+                       bool is_ooframe,
+                       const vector<int> & gi_list);
 
 CRef<CSeq_align>
 BLASTUngappedHspListToSeqAlign(EBlastProgramType program, 
@@ -86,7 +103,8 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                const CSeq_id *query_id, 
                                const CSeq_id *subject_id, 
                                Int4 query_length, 
-                               Int4 subject_length);
+                               Int4 subject_length,
+                               const vector<int> & gi_list);
 
 /// Convert traceback output into Seq-align format.
 /// 
@@ -129,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2006/03/07 16:35:27  bealer
+* - Add "use_this_gi" scores for protein searches with Entrez queries.
+*
 * Revision 1.33  2005/11/28 17:15:29  bealer
 * - Doxyg.
 *

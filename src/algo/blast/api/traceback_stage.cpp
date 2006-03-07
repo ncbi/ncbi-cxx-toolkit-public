@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include <algo/blast/api/traceback_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>  // for CSeqDbSeqInfoSrc
+#include <objtools/readers/seqdb/seqdb.hpp>     // for CSeqDb
 
 #include "blast_memento_priv.hpp"
 #include "blast_seqsrc_adapter_priv.hpp"
@@ -74,6 +75,27 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
     x_Init(qf, opts, db.GetDatabaseName());
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
     m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
+    m_OwnSeqInfoSrc = true;
+    m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
+    m_InternalData->m_HspStream.Reset(hsps);
+}
+
+CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
+                                             CRef<CBlastOptions>     opts,
+                                             CRef<CSeqDB>            db,
+                                             CRef<TBlastHSPStream>   hsps)
+    : m_QueryFactory (qf),
+      m_Options      (opts),
+      m_InternalData (new SInternalData),
+      m_OptsMemento  (0),
+      m_HspResults   (0),
+      m_SeqInfoSrc   (0),
+      m_OwnSeqInfoSrc(false),
+      m_ResultType(eDatabaseSearch)
+{
+    x_Init(qf, opts, db->GetDBNameList());
+    BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
+    m_SeqInfoSrc = InitSeqInfoSrc(&*db);
     m_OwnSeqInfoSrc = true;
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
     m_InternalData->m_HspStream.Reset(hsps);

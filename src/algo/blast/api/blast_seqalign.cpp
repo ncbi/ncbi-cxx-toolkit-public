@@ -63,18 +63,44 @@ BEGIN_SCOPE(blast)
 
 // Declared in blast_seqinfosrc.hpp
 void
-GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, 
-                       int oid, 
-                       CConstRef<CSeq_id>& seqid, 
-                       TSeqPos* length)
+GetSequenceLengthAndId(const IBlastSeqInfoSrc * seqinfo_src,
+                       int                      oid,
+                       CConstRef<CSeq_id>     & seqid,
+                       TSeqPos                * length)
 {
     ASSERT(length);
     list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
-
+    
     seqid.Reset(seqid_list.front());
     *length = seqinfo_src->GetLength(oid);
 
     return;
+}
+
+void GetProteinSequenceGis(const IBlastSeqInfoSrc & seqinfo_src,
+                           EBlastProgramType        prog,
+                           int                      oid,
+                           vector<int>            & gis)
+{
+    gis.resize(0);
+    
+    if (! Blast_SubjectIsProtein(prog)) {
+        return;
+    }
+    
+    if (! seqinfo_src.HasGiList()) {
+        return;
+    }
+    
+    list< CRef<CSeq_id> > seqid_list = seqinfo_src.GetId(oid);
+    
+    ITERATE(list< CRef<CSeq_id> >, id, seqid_list) {
+        if ((**id).IsGi()) {
+            gis.push_back((**id).GetGi());
+        }
+    }
+    
+    sort(gis.begin(), gis.end());
 }
 
 /// Converts a frame into the appropriate strand
@@ -911,8 +937,11 @@ s_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 /// Creates a list of score objects for a Seq-align, given an HSP structure.
 /// @param hsp Structure containing HSP information [in]
 /// @param scores Linked list of score objects to put into a Seq-align [out]
+/// @param gi_list List of GIs for the subject sequence.
 static void
-s_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
+s_BuildScoreList(const BlastHSP     * hsp,
+                 CSeq_align::TScore & scores,
+                 const vector<int>  & gi_list)
 {
     string score_type;
 
@@ -949,6 +978,13 @@ s_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
         scores.push_back(s_MakeScore(score_type, 0.0,
                                      hsp->comp_adjustment_method));
     }
+    
+    score_type = "use_this_gi";
+    
+    ITERATE(vector<int>, gi, gi_list) {
+        scores.push_back(s_MakeScore(score_type, 0.0, *gi));
+    }
+    
     return;
 }
 
@@ -957,12 +993,15 @@ s_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 /// a Seq-align.
 /// @param seqalign Seq-align object to fill [in] [out]
 /// @param hsp An HSP structure [in]
+/// @param gi_list List of GIs for the subject sequence.
 static void
-s_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
+s_AddScoresToSeqAlign(CRef<CSeq_align>  & seqalign,
+                      const BlastHSP    * hsp,
+                      const vector<int> & gi_list)
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
-    s_BuildScoreList(hsp, score_list);
+    s_BuildScoreList(hsp, score_list, gi_list);
 }
 
 
@@ -973,11 +1012,13 @@ s_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
 /// @param subject_id Subject sequence identifier [in]
 /// @param query_length Length of the query [in]
 /// @param subject_length Length of the subject [in]
+/// @param gi_list List of GIs for the subject sequence.
 /// @return Resulting Dense-diag object.
 CRef<CDense_diag>
 x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id, 
                          const CSeq_id *subject_id,
-                         Int4 query_length, Int4 subject_length)
+                         Int4 query_length, Int4 subject_length,
+                         const vector<int> & gi_list)
 {
     CRef<CDense_diag> retval(new CDense_diag());
     
@@ -1010,7 +1051,7 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
     }
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    s_BuildScoreList(hsp, score_list);
+    s_BuildScoreList(hsp, score_list, gi_list);
 
     return retval;
 }
@@ -1022,11 +1063,13 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
 /// @param subject_id Subject sequence identifier [in]
 /// @param query_length Length of the query [in]
 /// @param subject_length Length of the subject [in]
+/// @param gi_list List of GIs for the subject sequence.
 /// @return Resulting Std-seg object.
 CRef<CStd_seg>
 x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id, 
-    const CSeq_id *subject_id,
-    Int4 query_length, Int4 subject_length)
+                      const CSeq_id *subject_id,
+                      Int4 query_length, Int4 subject_length,
+                      const vector<int> & gi_list)
 {
     CRef<CStd_seg> retval(new CStd_seg());
 
@@ -1084,7 +1127,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     retval->SetLoc().push_back(subject_loc);
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    s_BuildScoreList(hsp, score_list);
+    s_BuildScoreList(hsp, score_list, gi_list);
 
     return retval;
 }
@@ -1098,10 +1141,15 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
 /// @param subject_id Subject sequence identifier [in]
 /// @param query_length Length of the query [in]
 /// @param subject_length Length of the subject [in]
+/// @param gi_list List of GIs for the subject sequence.
 CRef<CSeq_align>
 BLASTUngappedHspListToSeqAlign(EBlastProgramType program, 
-    BlastHSPList* hsp_list, const CSeq_id *query_id, 
-    const CSeq_id *subject_id, Int4 query_length, Int4 subject_length)
+                               BlastHSPList* hsp_list,
+                               const CSeq_id *query_id, 
+                               const CSeq_id *subject_id,
+                               Int4 query_length,
+                               Int4 subject_length,
+                               const vector<int> & gi_list)
 {
     CRef<CSeq_align> seqalign(new CSeq_align()); 
     BlastHSP** hsp_array;
@@ -1120,15 +1168,23 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
             seqalign->SetSegs().SetDendiag().push_back(
-                x_UngappedHSPToDenseDiag(hsp, query_id, subject_id, 
-					 query_length, subject_length));
+                x_UngappedHSPToDenseDiag(hsp,
+                                         query_id,
+                                         subject_id, 
+					 query_length,
+                                         subject_length,
+                                         gi_list));
         }
     } else { // Translated search
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
             seqalign->SetSegs().SetStd().push_back(
-                x_UngappedHSPToStdSeg(hsp, query_id, subject_id, 
-				      query_length, subject_length));
+                x_UngappedHSPToStdSeg(hsp,
+                                      query_id,
+                                      subject_id, 
+				      query_length,
+                                      subject_length,
+                                      gi_list));
         }
     }
     // Wrap this Seq-align into a discontinuous Seq-align, so the 
@@ -1152,11 +1208,13 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
 /// @param query_length Length of query sequence [in]
 /// @param subject_length Length of subject sequence [in]
 /// @param is_ooframe Was this a search with out-of-frame gapping? [in]
+/// @param gi_list List of GIs for the subject sequence.
 /// @return Resulting Seq-align object. 
 CRef<CSeq_align>
 BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
                        const CSeq_id *query_id, const CSeq_id *subject_id, 
-                       Int4 query_length, Int4 subject_length, bool is_ooframe)
+                       Int4 query_length, Int4 subject_length, bool is_ooframe,
+                       const vector<int> & gi_list)
 {
     CRef<CSeq_align> retval(new CSeq_align()); 
     retval->SetType(CSeq_align::eType_disc);
@@ -1181,7 +1239,7 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
                                     query_length, subject_length);
         }
         
-        s_AddScoresToSeqAlign(seqalign, hsp);
+        s_AddScoresToSeqAlign(seqalign, hsp, gi_list);
         retval->SetSegs().SetDisc().Set().push_back(seqalign);
     }
     
@@ -1311,6 +1369,8 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
     TSeqPos subj_length = 0;
     CConstRef<CSeq_id> subject_id;
     
+    vector<int> gi_list;
+    
     for (int index = 0; index < hit_list->hsplist_count; index++) {
         BlastHSPList* hsp_list = hit_list->hsplist_array[index];
         if (!hsp_list)
@@ -1326,15 +1386,29 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         
         // Create a CSeq_align for each matching sequence
         CRef<CSeq_align> hit_align;
+        
+        // Get GIs for entrez query restriction.
+        GetProteinSequenceGis(*seqinfo_src, prog, hsp_list->oid, gi_list);
+        
         if (is_gapped) {
             hit_align =
-                BLASTHspListToSeqAlign(prog, hsp_list, query_id,
-                                       subject_id, query_length, subj_length,
-                                       is_ooframe);
+                BLASTHspListToSeqAlign(prog,
+                                       hsp_list,
+                                       query_id,
+                                       subject_id,
+                                       query_length,
+                                       subj_length,
+                                       is_ooframe,
+                                       gi_list);
         } else {
             hit_align =
-                BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
-                    subject_id, query_length, subj_length);
+                BLASTUngappedHspListToSeqAlign(prog,
+                                               hsp_list,
+                                               query_id,
+                                               subject_id,
+                                               query_length,
+                                               subj_length,
+                                               gi_list);
         }
         RemapToQueryLoc(hit_align, query_loc);
         seq_aligns->Set().push_back(hit_align);
@@ -1409,6 +1483,7 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
  * @param subj_index Index of this subject sequence in a set [in]
  * @param is_gapped Is this a gapped search? [in]
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
+ * @param gi_list List of GIs for the subject sequence.
  * @return Vector of seqalign sets (one set per query sequence).
  */
 static TSeqAlignVector
@@ -1458,16 +1533,29 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             CConstRef<CSeq_loc> seqloc = query_data.GetSeq_loc(qindex);
             CConstRef<CSeq_id> query_id(seqloc->GetId());
             TSeqPos query_length = query_data.GetSeqLength(qindex); 
-
+            
+            vector<int> gi_list;
+            GetProteinSequenceGis(seqinfo_src, prog, hsp_list->oid, gi_list);
+            
             if (is_gapped) {
                 hit_align =
-                    BLASTHspListToSeqAlign(prog, hsp_list, query_id,
-                                           subject_id, query_length, 
-                                           subj_length, is_ooframe);
+                    BLASTHspListToSeqAlign(prog,
+                                           hsp_list,
+                                           query_id,
+                                           subject_id,
+                                           query_length, 
+                                           subj_length,
+                                           is_ooframe,
+                                           gi_list);
             } else {
                 hit_align =
-                    BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
-                        subject_id, query_length, subj_length);
+                    BLASTUngappedHspListToSeqAlign(prog,
+                                                   hsp_list,
+                                                   query_id,
+                                                   subject_id,
+                                                   query_length,
+                                                   subj_length,
+                                                   gi_list);
             }
             ASSERT(hit_align->GetSegs().IsDisc());
             RemapToQueryLoc(hit_align, *seqloc);
@@ -1612,6 +1700,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2006/03/07 16:35:27  bealer
+* - Add "use_this_gi" scores for protein searches with Entrez queries.
+*
 * Revision 1.65  2006/02/15 15:07:32  madden
 * Changes for GapEditScript structure change
 *

@@ -38,6 +38,7 @@
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/uniform_search.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -54,19 +55,25 @@ class IBlastSeqInfoSrc;
 class NCBI_XBLAST_EXPORT CBlastTracebackSearch : public CObject
 {
 public:
-    // we create a BlastSeqSrc using CSeqDB as its implementation
+    // Create a BlastSeqSrc wrapping the provided CSeqDB object.
+    CBlastTracebackSearch(CRef<IQueryFactory>     qf,
+                          CRef<CBlastOptions>     opts,
+                          CRef<CSeqDB>            dbinfo,
+                          CRef<TBlastHSPStream>   hsps);
+    
+    // Create a BlastSeqSrc using a new constructed CSeqDB.
     CBlastTracebackSearch(CRef<IQueryFactory>     qf,
                           CRef<CBlastOptions>     opts,
                           const CSearchDatabase & dbinfo,
                           CRef<TBlastHSPStream>   hsps);
     
-    // we don't own the BlastSeqSrc
+    // We don't own the IBlastSeqSrcAdapter.
     CBlastTracebackSearch(CRef<IQueryFactory>   qf,
                           CRef<CBlastOptions>   opts,
                           IBlastSeqSrcAdapter & db,
                           CRef<TBlastHSPStream> hsps);
     
-    // we don't own the BlastSeqSrc
+    // We don't own the BlastSeqSrc
     CBlastTracebackSearch(CRef<IQueryFactory>   qf,
                           CRef<CBlastOptions>   opts,
                           BlastSeqSrc         * seqsrc,
@@ -91,10 +98,10 @@ public:
     
 private:
     /// Common initialization performed when doing traceback only
-    void x_Init(CRef<IQueryFactory> qf, 
-                CRef<CBlastOptions> opts,
-                const string& dbname);
-
+    void x_Init(CRef<IQueryFactory>   qf, 
+                CRef<CBlastOptions>   opts,
+                const string        & dbname);
+    
     /// Prohibit copy constructor
     CBlastTracebackSearch(CBlastTracebackSearch &);
     /// Prohibi assignment operator
