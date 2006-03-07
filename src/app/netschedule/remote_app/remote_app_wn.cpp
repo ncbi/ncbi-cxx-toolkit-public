@@ -135,7 +135,7 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
         if (context.GetShutdownLevel() == 
             CNetScheduleClient::eShutdownImmidiate) {
             CProcess(pipe.GetProcessHandle()).Kill();
-            canseled = true;
+            canceled = true;
             break;
         }
     }
@@ -312,6 +312,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/07 18:00:18  didenko
+ * Spelling fix
+ *
  * Revision 1.1  2006/03/07 17:39:59  didenko
  * Added a workernode for running external applications
  *
