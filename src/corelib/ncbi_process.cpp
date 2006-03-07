@@ -351,11 +351,11 @@ int CProcess::Wait(unsigned long timeout) const
         TPid ws = waitpid(pid, &status, options);
         if (ws > 0) {
             // Process has terminated.
-            assert(ws == pid);
+            _ASSERT(ws == pid);
             return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
         } else if (ws == 0) {
             // Process is still running
-            assert(timeout != kMax_ULong/*infinite*/);
+            _ASSERT(timeout != kMax_ULong/*infinite*/);
             unsigned long x_sleep = kWaitPrecision;
             if (x_sleep > timeout) {
                 x_sleep = timeout;
@@ -567,6 +567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/03/07 19:30:46  lavr
+ * assert -> _ASSERT
+ *
  * Revision 1.16  2006/03/07 14:58:04  lavr
  * Sync CProcess::Wait()[Unix] implementation with connect/ncbi_pipe.cpp
  *
