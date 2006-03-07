@@ -64,7 +64,7 @@ extern NCBI_XCONNECT_EXPORT char* strdup(const char* str);
 #  ifdef strndup
 #    undef strndup
 #  endif
-#  define strndup      NCBI_strndup
+#  define strndup     NCBI_strndup
 
 /* Create a copy of up to "n" first characters of string "str".
  * Return a malloc'ed and '\0'-terminated string, which must be
@@ -103,8 +103,8 @@ extern NCBI_XCONNECT_EXPORT int strncasecmp(const char* s1, const char* s2, size
 #  undef strupr
 #  undef strlwr
 #endif
-#define strupr NCBI_strupr
-#define strlwr NCBI_strlwr
+#define strupr        NCBI_strupr
+#define strlwr        NCBI_strlwr
 
 /* Convert a string to uppercase, then return pointer to
  * the altered string. Because the conversion is made in place, the
@@ -122,8 +122,8 @@ extern NCBI_XCONNECT_EXPORT char* strlwr(char* s);
 /* Copy not more than "n" characters from string "s2" into "s1"
  * and return the result, which is always null-terminated.
  * NOTE: The difference of this function from standard strncpy() is in
- * that the result is always null-terminated and that the function
- * does not pad "s1" with null bytes should "s2" be shorter than "n".
+ * that the result is always null-terminated and that the function does not
+ * pad "s1" with null bytes should "s2" be shorter than "n" characters.
  */
 extern NCBI_XCONNECT_EXPORT char* strncpy0(char* s1, const char* s2, size_t n);
 
@@ -136,6 +136,9 @@ extern NCBI_XCONNECT_EXPORT char* strncpy0(char* s1, const char* s2, size_t n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2006/03/07 18:14:59  lavr
+ * Formatting
+ *
  * Revision 6.14  2006/03/07 17:18:52  lavr
  * +strndup
  *
