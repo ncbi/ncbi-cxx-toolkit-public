@@ -59,6 +59,22 @@ extern NCBI_XCONNECT_EXPORT char* strdup(const char* str);
 #endif /*HAVE_STRDUP*/
 
 
+#ifndef HAVE_STRNDUP
+
+#  ifdef strndup
+#    undef strndup
+#  endif
+#  define strndup      NCBI_strndup
+
+/* Create a copy of up to "n" first characters of string "str".
+ * Return a malloc'ed and '\0'-terminated string, which must be
+ * explicitly freed by free() when no longer needed.
+ */
+extern NCBI_XCONNECT_EXPORT char* strndup(const char* str, size_t n);
+
+#endif /*HAVE_STRNDUP*/
+
+
 #ifndef HAVE_STRCASECMP
 
 #  ifdef strcasecmp
@@ -120,6 +136,9 @@ extern NCBI_XCONNECT_EXPORT char* strncpy0(char* s1, const char* s2, size_t n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2006/03/07 17:18:52  lavr
+ * +strndup
+ *
  * Revision 6.13  2005/04/20 18:12:16  lavr
  * strdup() has got NCBI_XCONNECT_EXPORT
  *

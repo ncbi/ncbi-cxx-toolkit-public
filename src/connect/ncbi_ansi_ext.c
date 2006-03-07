@@ -35,6 +35,13 @@
 #include <stdlib.h>
 
 
+extern char* strncpy0(char* s1, const char* s2, size_t n)
+{
+    *s1 = '\0';
+    return strncat(s1, s2, n);
+}
+
+
 #ifndef HAVE_STRDUP
 
 extern char* strdup(const char* str)
@@ -47,6 +54,20 @@ extern char* strdup(const char* str)
 }
 
 #endif /*HAVE_STRDUP*/
+
+
+#ifndef HAVE_STRNDUP
+
+extern char* strndup(const char* str, size_t n)
+{
+    size_t size = n ? strlen(str) : 0;
+    char*  res  = (char*) malloc((size < n ? size : n) + 1);
+    if (res)
+        strncpy0(res, n ? str : "", n);
+    return s;
+}
+
+#endif /*HAVE_STRNDUP*/
 
 
 #ifndef HAVE_STRCASECMP
@@ -118,16 +139,12 @@ extern char* strlwr(char* s)
 }
 
 
-extern char* strncpy0(char* s1, const char* s2, size_t n)
-{
-    *s1 = '\0';
-    return strncat(s1, s2, n);
-}
-
-
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2006/03/07 17:18:51  lavr
+ * +strndup
+ *
  * Revision 6.16  2004/10/08 16:16:24  ivanov
  * Removed extra ")"
  *
