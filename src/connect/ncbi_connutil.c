@@ -1819,17 +1819,17 @@ extern unsigned int CRC32_Update(unsigned int checksum,
 
 extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 {
-#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_SOLARIS)
-#  ifndef LOGIN_NAME_MAX
-#    ifdef _POSIX_LOGIN_NAME_MAX
-#      define LOGIN_NAME_MAX _POSIX_LOGIN_NAME_MAX
-#    else
-#      define LOGIN_NAME_MAX 256
-#    endif
-#  endif
-    char loginbuf[LOGIN_NAME_MAX + 1];
-#endif
 #if defined(NCBI_OS_UNIX)
+#  if !defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_GETLOGIN_R)
+#    ifndef LOGIN_NAME_MAX
+#      ifdef _POSIX_LOGIN_NAME_MAX
+#        define LOGIN_NAME_MAX _POSIX_LOGIN_NAME_MAX
+#      else
+#        define LOGIN_NAME_MAX 256
+#      endif
+#    endif
+    char loginbuf[LOGIN_NAME_MAX + 1];
+#  endif
     struct passwd* pw;
 #  if !defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_GETPWUID_R)
     struct passwd pwd;
@@ -1844,6 +1844,7 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
     assert(buf  &&  bufsize);
 
 #ifndef NCBI_OS_UNIX
+
 #  ifdef NCBI_OS_MSWIN
     if (GetUserName(loginbuf, &loginbufsize)) {
         assert(loginbufsize < sizeof(loginbuf));
@@ -1856,6 +1857,7 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
         return buf;
     }
 #  endif
+
 #else /*!NCBI_OS_UNIX*/
 
 #  if defined(NCBI_OS_SOLARIS)  ||  !defined(HAVE_GETLOGIN_R)
@@ -1882,7 +1884,7 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 
 #  if defined(NCBI_OS_SOLARIS)  ||  \
     (!defined(HAVE_GETPWUID_R)  &&  defined(HAVE_GETPWUID))
-    /* NB:  getpwuid() is MT safe on Solaris, so use it here, if available */
+    /* NB:  getpwuid() is MT-safe on Solaris, so use it here, if available */
 #  ifndef NCBI_OS_SOLARIS
     CORE_LOCK_WRITE;
 #  endif
@@ -1970,6 +1972,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.98  2006/03/07 15:37:19  lavr
+ * CONNUTIL_GetUsername(): Do not define loginbuf, if it's going to be unused
+ *
  * Revision 6.97  2006/02/23 17:42:36  lavr
  * CONNUTIL_GetVMPageSize(): use sysctl() first (fallback to getpagesize())
  *
