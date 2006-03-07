@@ -70,6 +70,9 @@
 /* Define to 1 if you have the `freehostent' function. */
 #define HAVE_FREEHOSTENT 1
 
+/* Define to 1 if FreeType is available. */
+/* #undef HAVE_FREETYPE */
+
 /* Define to 1 if you have the <fstream> header file. */
 #define HAVE_FSTREAM 1
 
@@ -101,6 +104,9 @@
 
 /* Define to 1 if you have the `getloadavg' function. */
 #define HAVE_GETLOADAVG 1
+
+/* Define to 1 if you have the `getlogin_r' function */
+#define HAVE_GETLOGIN_R 1
 
 /* Define to 1 if you have the `getnameinfo' function. */
 #define HAVE_GETNAMEINFO 1
@@ -158,6 +164,9 @@
 /* Define to 1 if libbz2 is available. */
 #define HAVE_LIBBZ2 1
 
+/* Define to 1 if non-public CONNECT extensions are available. */
+/* #undef HAVE_LIBCONNEXT */
+
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #define HAVE_LIBCRYPT 1
@@ -174,9 +183,6 @@
 
 /* Define to 1 if FreeTDS libraries are available. */
 /* #undef HAVE_LIBFTDS */
-
-/* Define to 1 if NCBI GEO DB library is available. */
-/* #undef HAVE_LIBGEODB */
 
 /* Define to 1 if libgif is available. */
 #define HAVE_LIBGIF 1
@@ -206,9 +212,6 @@
 
 /* Define to 1 if libpng is available. */
 #define HAVE_LIBPNG 1
-
-/* Define to 1 if NCBI PubMed libraries are available. */
-/* #undef HAVE_LIBPUBMED */
 
 /* Define to 1 if RPCSVC is available, either in its own library or as part of
    the standard libraries. */
@@ -251,6 +254,9 @@
 /* Define to 1 if libXpm is available. */
 /* #undef HAVE_LIBXPM */
 
+/* Define to 1 if libxslt is available. */
+/* #undef HAVE_LIBXSLT */
+
 /* Define to 1 if libz is available. */
 #define HAVE_LIBZ 1
 
@@ -275,8 +281,14 @@
 /* Define to 1 if MySQL is available. */
 /* #undef HAVE_MYSQL */
 
+/* Define to 1 if you have the `nanosleep' function. */
+#define HAVE_NANOSLEEP 1
+
 /* Define to 1 if the NCBI C toolkit is available. */
 /* #undef HAVE_NCBI_C */
+
+/* Define to 1 if the real version of ncbi_crypt support is available. */
+/* #undef HAVE_NCBI_CRYPT */
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #define HAVE_NETDB_H 1
@@ -342,6 +354,12 @@
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
 
+/* Define to 1 if you have the `statfs' function. */
+#define HAVE_STATFS 1
+
+/* Define to 1 if you have the `statvfs' function. */
+#define HAVE_STATVFS 1
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
 
@@ -362,6 +380,9 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
+
+/* Define to 1 if you have the `strndup' function. */
+/* #undef HAVE_STRNDUP */
 
 /* Define to 1 if you have the <strstream> header file. */
 #define HAVE_STRSTREAM 1
@@ -387,6 +408,12 @@
 /* Define to 1 if you have SysV semaphores. */
 #define HAVE_SYSV_SEMAPHORES 1
 
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#define HAVE_SYS_IOCTL_H 1
+
+/* Define to 1 if you have the <sys/mount.h> header file. */
+#define HAVE_SYS_MOUNT_H 1
+
 /* Define to 1 if you have the <sys/select.h> header file. */
 #define HAVE_SYS_SELECT_H 1
 
@@ -395,6 +422,9 @@
 
 /* Define to 1 if you have the <sys/sockio.h> header file. */
 #define HAVE_SYS_SOCKIO_H 1
+
+/* Define to 1 if you have the <sys/statvfs.h> header file. */
+#define HAVE_SYS_STATVFS_H 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
@@ -407,6 +437,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
+
+/* Define to 1 if you have the <sys/vfs.h> header file. */
+/* #undef HAVE_SYS_VFS_H */
 
 /* Define to 1 if you have the `timegm' function. */
 #define HAVE_TIMEGM 1
@@ -435,6 +468,9 @@
 /* Define to 1 if the system has the type `wstring'. */
 #define HAVE_WSTRING 1
 
+/* Define to 1 if wxWidgets is available. */
+/* #undef HAVE_WXWIDGETS */
+
 /* Define to 1 if wxWindows is available. */
 /* #undef HAVE_WXWINDOWS */
 
@@ -457,10 +493,13 @@
 #define HOST_VENDOR "apple"
 
 /* Define as const if the declaration of iconv() needs const. */
-#define ICONV_CONST
+#define ICONV_CONST 
 
 /* Define to 0xffffffff if your operating system doesn't. */
 /* #undef INADDR_NONE */
+
+/* Define to 1 when building binaries for public release. */
+/* #undef NCBI_BIN_RELEASE */
 
 /* Compiler name */
 /* #undef NCBI_COMPILER_COMPAQ */
@@ -583,7 +622,11 @@
 #define SIZEOF_LONG 4
 
 /* The size of a `long double', as computed by sizeof. */
-#define SIZEOF_LONG_DOUBLE 8
+#if __LDBL_DIG__ == 31
+#  define SIZEOF_LONG_DOUBLE 16
+#else
+#  define SIZEOF_LONG_DOUBLE 8
+#endif
 
 /* The size of a `long long', as computed by sizeof. */
 #define SIZEOF_LONG_LONG 8
