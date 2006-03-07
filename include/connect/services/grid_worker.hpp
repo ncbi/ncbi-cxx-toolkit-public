@@ -371,7 +371,13 @@ public:
     virtual void Init(const IWorkerNodeInitContext& context) 
     {
         m_WorkerNodeInitContext = &context;
-        m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
+        try {
+            m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
+        } catch (exception& ex) {
+            LOG_POST("Idle tast is not created: " << ex.what());
+        } catch (...) {
+            LOG_POST("Idle tast is not created: Unknown error");
+        }
     }
     virtual IWorkerNodeJob* CreateInstance(void)
     {
@@ -481,7 +487,7 @@ public:
     ///
     string GetJobVersion() const
     {
-        CMutexGuard guard(m_JobFactoryMutex);
+        CFastMutexGuard guard(m_JobFactoryMutex);
         return m_JobFactory.GetJobVersion();
     }
 
@@ -508,10 +514,10 @@ private:
     unsigned int                 m_InitThreads;
     unsigned int                 m_NSTimeout;
     unsigned int                 m_ThreadsPoolTimeout;
-    CMutex                       m_NSClientFactoryMutex;
-    mutable CMutex               m_JobFactoryMutex;
-    CMutex                       m_StorageFactoryMutex;
-    CMutex                       m_JobWatcherMutex;
+    CFastMutex                   m_NSClientFactoryMutex;
+    mutable CFastMutex           m_JobFactoryMutex;
+    CFastMutex                   m_StorageFactoryMutex;
+    CFastMutex                   m_JobWatcherMutex;
     bool                         m_LogRequested;
     volatile bool                m_OnHold;
     CSemaphore                   m_HoldSem;
@@ -520,12 +526,12 @@ private:
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
     {
-        CMutexGuard guard(m_JobFactoryMutex);
+        CFastMutexGuard guard(m_JobFactoryMutex);
         return m_JobFactory.CreateInstance();
     }
     IBlobStorage* CreateStorage()
     {
-        CMutexGuard guard(m_StorageFactoryMutex);
+        CFastMutexGuard guard(m_StorageFactoryMutex);
         return  m_NSStorageFactory.CreateInstance();
     }
     INSCWrapper* CreateClient();
@@ -534,7 +540,7 @@ private:
                             IWorkerNodeJobWatcher::EEvent event)
     {
         if (m_JobWatcher) {
-            CMutexGuard guard(m_JobWatcherMutex);
+            CFastMutexGuard guard(m_JobWatcherMutex);
             m_JobWatcher->Notify(job, event);
         }
     }
@@ -575,6 +581,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/03/07 17:19:37  didenko
+ * Perfomance and error handling improvements
+ *
  * Revision 1.37  2006/02/27 14:50:20  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

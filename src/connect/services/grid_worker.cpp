@@ -645,7 +645,7 @@ void CGridWorkerNode::AcivatePermanentConnection(bool on_off)
 
 INSCWrapper* CGridWorkerNode::CreateClient()
 {
-    CMutexGuard guard(m_NSClientFactoryMutex);
+    CFastMutexGuard guard(m_NSClientFactoryMutex);
     auto_ptr<INSCWrapper> ret;
     if ( m_SharedNSClient.get() ) {
         ret.reset(new CNSCWrapperShared(*m_SharedNSClient, 
@@ -665,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/03/07 17:19:37  didenko
+ * Perfomance and error handling improvements
+ *
  * Revision 1.43  2006/03/03 14:14:59  vasilche
  * Used CSafeStaticRef.
  *
