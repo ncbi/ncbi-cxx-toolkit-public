@@ -269,6 +269,20 @@ CSetupFactory::CreateBlastSeqSrc(const CSearchDatabase& db)
     return retval;
 }
 
+BlastSeqSrc*
+CSetupFactory::CreateBlastSeqSrc(ncbi::CSeqDB * db)
+{
+    BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db);
+    char* error_str = BlastSeqSrcGetInitError(retval);
+    if (error_str) {
+        string msg(error_str);
+        sfree(error_str);
+        retval = BlastSeqSrcFree(retval);
+        NCBI_THROW(CBlastException, eSeqSrcInit, msg);
+    }
+    return retval;
+}
+
 SInternalData::SInternalData()
 {
     m_Queries = 0;

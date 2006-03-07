@@ -39,6 +39,7 @@
 #include <algo/blast/api/rps_aux.hpp>           // for CBlastRPSInfo
 #include <algo/blast/core/blast_hspstream.h>
 #include <algo/blast/core/pattern.h>
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -246,7 +247,12 @@ public:
     /// @param db description of BLAST database to search [in]
     static BlastSeqSrc*
     CreateBlastSeqSrc(const CSearchDatabase& db);
-
+    
+    /// Create a BlastSeqSrc from an existing CSeqDB object
+    /// @param db Existing CSeqDB object for the searched BLAST database [in]
+    static BlastSeqSrc*
+    CreateBlastSeqSrc(CSeqDB * db);
+    
 private:
     /// Auxiliary function to create the BlastHSPStream structure
     /// @param opts_memento Memento options object [in]

@@ -67,6 +67,12 @@ InitSeqInfoSrc(const BlastSeqSrc* seqsrc)
     return new CSeqDbSeqInfoSrc(db_name, is_prot);
 }
 
+IBlastSeqInfoSrc*
+InitSeqInfoSrc(CSeqDB* seqdb)
+{
+    return new CSeqDbSeqInfoSrc(seqdb);
+}
+
 CConstRef<CSeq_loc> CreateWholeSeqLocFromIds(const list< CRef<CSeq_id> > seqids)
 {
     ASSERT(!seqids.empty());

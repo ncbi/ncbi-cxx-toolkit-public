@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/api/blast_types.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -62,6 +63,11 @@ class IBlastSeqInfoSrc;
  * @param seqsrc BlastSeqSrc from which to obtain the database information
  */
 IBlastSeqInfoSrc* InitSeqInfoSrc(const BlastSeqSrc* seqsrc);
+
+/** Initializes the IBlastSeqInfoSrc from an existing CSeqDB object.
+ * @param seqdb CSeqDB object to use as a source of database information.
+ */
+IBlastSeqInfoSrc* InitSeqInfoSrc(CSeqDB * seqsrc);
 
 /** Create a single CSeq_loc of type whole from the first id in the list.
  * @param seqids identifiers for the Seq-loc [in]
