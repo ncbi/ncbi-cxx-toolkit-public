@@ -35,19 +35,12 @@
 #include <stdlib.h>
 
 
-extern char* strncpy0(char* s1, const char* s2, size_t n)
-{
-    *s1 = '\0';
-    return strncat(s1, s2, n);
-}
-
-
 #ifndef HAVE_STRDUP
 
 extern char* strdup(const char* str)
 {
     size_t size = strlen(str) + 1;
-    char*  res  = (char*) malloc(size);
+    char*   res = (char*) malloc(size);
     if (res)
         memcpy(res, str, size);
     return res;
@@ -60,10 +53,13 @@ extern char* strdup(const char* str)
 
 extern char* strndup(const char* str, size_t n)
 {
-    size_t size = n ? strlen(str) : 0;
-    char*  res  = (char*) malloc((size < n ? size : n) + 1);
-    if (res)
-        strncpy0(res, n ? str : "", n);
+    const char* end = n   ? memchr(str, '\0', n) : 0;
+    size_t     size = end ? (size_t)(end - str)  : n;
+    char*       res = (char*) malloc(size + 1);
+    if (res) {
+        memcpy(res, str, size);
+        res[size] = '\0';
+    }
     return res;
 }
 
@@ -139,9 +135,19 @@ extern char* strlwr(char* s)
 }
 
 
+extern char* strncpy0(char* s1, const char* s2, size_t n)
+{
+    *s1 = '\0';
+    return strncat(s1, s2, n);
+}
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2006/03/07 18:15:14  lavr
+ * Optimize strndup()
+ *
  * Revision 6.18  2006/03/07 17:54:44  ivanov
  * Fixed compilation error in strndup
  *
