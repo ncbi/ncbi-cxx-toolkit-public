@@ -51,12 +51,14 @@ bool Daemonize(const char* logfile, TDaemonFlags flags)
             int nullr = ::open("/dev/null", O_RDONLY);
             if (nullr < 0)
                 throw "Error opening /dev/null for reading";
-            int error = ::dup2(nullr, STDIN_FILENO);
-            int x_errno = errno;
-            ::close(nullr);
-            if (error < 0) {
-                errno = x_errno;
-                throw "Error redirecting stdin";
+            if (nullr != STDIN_FILENO) {
+                int error = ::dup2(nullr, STDIN_FILENO);
+                int x_errno = errno;
+                ::close(nullr);
+                if (error < 0) {
+                    errno = x_errno;
+                    throw "Error redirecting stdin";
+                }
             }
         }
         if (flags & fDaemon_KeepStdout) {
@@ -64,28 +66,33 @@ bool Daemonize(const char* logfile, TDaemonFlags flags)
             if (nullw < 0)
                 throw "Error opening /dev/null for writing";
             ::fflush(stdout);
-            int error = ::dup2(nullw, STDOUT_FILENO);
-            int x_errno = errno;
-            ::close(nullw);
-            if (error < 0) {
-                ::dup2(fdin, STDIN_FILENO);
-                errno = x_errno;
-                throw "Error redirecting stdout";
+            if (nullw != STDOUT_FILENO) {
+                int error = ::dup2(nullw, STDOUT_FILENO);
+                int x_errno = errno;
+                ::close(nullw);
+                if (error < 0) {
+                    ::dup2(fdin, STDIN_FILENO);
+                    errno = x_errno;
+                    throw "Error redirecting stdout";
+                }
             }
         }
         if (logfile) {
-            int fd = open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666);
+            int fd = (!*logfile ? ::open("/dev/null", O_WRONLY | O_APPEND) :
+                      ::open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666));
             if (fd < 0)
                 throw "Unable to open logfile for stderr";
             ::fflush(stderr);
-            int error = ::dup2(fd, STDERR_FILENO);
-            int x_errno = errno;
-            ::close(fd);
-            if (error < 0) {
-                ::dup2(fdin,  STDIN_FILENO);
-                ::dup2(fdout, STDOUT_FILENO);
-                errno = x_errno;
-                throw "Error redirecting stderr";
+            if (fd != STDERR_FILENO) {
+                int error = ::dup2(fd, STDERR_FILENO);
+                int x_errno = errno;
+                ::close(fd);
+                if (error < 0) {
+                    ::dup2(fdin,  STDIN_FILENO);
+                    ::dup2(fdout, STDOUT_FILENO);
+                    errno = x_errno;
+                    throw "Error redirecting stderr";
+                }
             }
         }
         pid_t pid = fork();
@@ -131,6 +138,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2006/03/07 16:51:05  lavr
+ * Make empty string for the logfile to cause use of "/dev/null"
+ * Always check redirect-into-self for dup'ed file descriptors
+ *
  * Revision 1.3  2005/11/30 11:53:29  ivanov
  * Cosmetics
  *
