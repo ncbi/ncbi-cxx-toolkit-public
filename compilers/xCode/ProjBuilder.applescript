@@ -60,12 +60,12 @@ property buildSettings10_2 : {|MACOSX_DEPLOYMENT_TARGET|:"10.2", |SDKROOT|:"/Dev
 (* Build settings for the project *)
 
 property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"|none|", |GCC_MODEL_TUNING|:"|none|", |LIBRARY_SEARCH_PATHS|:"", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |OTHER_CPLUSPLUSFLAGS|:"", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
-property buildSettingsDevelopment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _DEBUG _MT"}
-property buildSettingsDeployment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _MT"}
+property buildSettingsDebug : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _DEBUG _MT"}
+property buildSettingsRelease : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _MT", |SEPARATE_STRIP|:"YES"}
 
 (* Build styles for the project *)
-property buildStyleDevelopment : {isa:"PBXBuildStyle", |name|:"Debug", |buildRules|:{}, |buildSettings|:buildSettingsDevelopment}
-property buildStyleDeployment : {isa:"PBXBuildStyle", |name|:"Release", |buildRules|:{}, |buildSettings|:buildSettingsDeployment}
+property buildStyleDebug : {isa:"PBXBuildStyle", |name|:"Debug", |buildRules|:{}, |buildSettings|:buildSettingsDebug}
+property buildStyleRelease : {isa:"PBXBuildStyle", |name|:"Release", |buildRules|:{}, |buildSettings|:buildSettingsRelease}
 property projectBuildStyles : {"BUILDSTYLE__Development", "BUILDSTYLE__Deployment"}
 
 
@@ -102,31 +102,31 @@ script ProjBuilder
 		
 		set libraryPath to libraryPath & " " & TheOUTPath & "/lib"
 		
-		set |HEADER_SEARCH_PATHS| of buildSettingsDevelopment to headerPath
-		set |HEADER_SEARCH_PATHS| of buildSettingsDeployment to headerPath
+		set |HEADER_SEARCH_PATHS| of buildSettingsDebug to headerPath
+		set |HEADER_SEARCH_PATHS| of buildSettingsRelease to headerPath
 		
-		set |LIBRARY_SEARCH_PATHS| of buildSettingsDevelopment to libraryPath
-		set |LIBRARY_SEARCH_PATHS| of buildSettingsDeployment to libraryPath
+		set |LIBRARY_SEARCH_PATHS| of buildSettingsDebug to libraryPath
+		set |LIBRARY_SEARCH_PATHS| of buildSettingsRelease to libraryPath
 		
 		set PCH to x_Replace(TheNCBIPath, ":", "/") & "/include/ncbi_pch.hpp"
-		set |GCC_PREFIX_HEADER| of buildSettingsDevelopment to PCH
-		set |GCC_PREFIX_HEADER| of buildSettingsDeployment to PCH
+		set |GCC_PREFIX_HEADER| of buildSettingsDebug to PCH
+		set |GCC_PREFIX_HEADER| of buildSettingsRelease to PCH
 		
 		(* no-permissive flag for GCC *)
-		set |OTHER_CPLUSPLUSFLAGS| of buildSettingsDevelopment to "-fno-permissive"
-		set |OTHER_CPLUSPLUSFLAGS| of buildSettingsDevelopment to "-fno-permissive"
+		set |OTHER_CPLUSPLUSFLAGS| of buildSettingsDebug to "-fno-permissive"
+		set |OTHER_CPLUSPLUSFLAGS| of buildSettingsDebug to "-fno-permissive"
 		
 		(* Output directories and intermidiate files (works staring xCode 1.5) *)
-		set |OBJROOT| of buildSettingsDevelopment to TheOUTPath
-		set |OBJROOT| of buildSettingsDeployment to TheOUTPath
+		set |OBJROOT| of buildSettingsDebug to TheOUTPath
+		set |OBJROOT| of buildSettingsRelease to TheOUTPath
 		
 		(* Set other options *)
 		if zeroLink then
-			set |ZERO_LINK| of buildSettingsDevelopment to "YES"
+			set |ZERO_LINK| of buildSettingsDebug to "YES"
 		end if
 		
 		if fixContinue then
-			set |GCC_ENABLE_FIX_AND_CONTINUE| of buildSettingsDevelopment to "YES"
+			set |GCC_ENABLE_FIX_AND_CONTINUE| of buildSettingsDebug to "YES"
 		end if
 		
 		if cpuOptimization then
@@ -134,24 +134,24 @@ script ProjBuilder
 			set cpuType to do shell script "/usr/sbin/ioreg | grep PowerPC | awk '{print $3}'| cut -c 9-10"
 			
 			if cpuType contains "G5" then
-				set |GCC_MODEL_TUNING| of buildSettingsDevelopment to "G5"
-				set |GCC_MODEL_CPU| of buildSettingsDevelopment to "G5"
-				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDevelopment to "YES"
-				set |GCC_MODEL_TUNING| of buildSettingsDeployment to "G5"
-				set |GCC_MODEL_CPU| of buildSettingsDeployment to "G5"
-				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDeployment to "YES"
+				set |GCC_MODEL_TUNING| of buildSettingsDebug to "G5"
+				set |GCC_MODEL_CPU| of buildSettingsDebug to "G5"
+				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDebug to "YES"
+				set |GCC_MODEL_TUNING| of buildSettingsRelease to "G5"
+				set |GCC_MODEL_CPU| of buildSettingsRelease to "G5"
+				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsRelease to "YES"
 			else if cpuType contains "G4" then
-				set |GCC_MODEL_TUNING| of buildSettingsDevelopment to "G4"
-				set |GCC_MODEL_CPU| of buildSettingsDevelopment to "G4"
-				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDevelopment to "YES"
-				set |GCC_MODEL_TUNING| of buildSettingsDeployment to "G4"
-				set |GCC_MODEL_CPU| of buildSettingsDeployment to "G4"
-				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDeployment to "YES"
+				set |GCC_MODEL_TUNING| of buildSettingsDebug to "G4"
+				set |GCC_MODEL_CPU| of buildSettingsDebug to "G4"
+				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDebug to "YES"
+				set |GCC_MODEL_TUNING| of buildSettingsRelease to "G4"
+				set |GCC_MODEL_CPU| of buildSettingsRelease to "G4"
+				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsRelease to "YES"
 			else
-				set |GCC_MODEL_TUNING| of buildSettingsDevelopment to "G3"
-				set |GCC_MODEL_CPU| of buildSettingsDevelopment to "G3"
-				set |GCC_MODEL_TUNING| of buildSettingsDeployment to "G3"
-				set |GCC_MODEL_CPU| of buildSettingsDeployment to "G3"
+				set |GCC_MODEL_TUNING| of buildSettingsDebug to "G3"
+				set |GCC_MODEL_CPU| of buildSettingsDebug to "G3"
+				set |GCC_MODEL_TUNING| of buildSettingsRelease to "G3"
+				set |GCC_MODEL_CPU| of buildSettingsRelease to "G3"
 			end if
 			log cpuType
 		end if
@@ -168,8 +168,8 @@ script ProjBuilder
 		set |buildStyles| of rootObject to projectBuildStyles
 		
 		addPair(mainGroup, "MAINGROUP")
-		addPair(buildStyleDevelopment, "BUILDSTYLE__Development")
-		addPair(buildStyleDeployment, "BUILDSTYLE__Deployment")
+		addPair(buildStyleDebug, "BUILDSTYLE__Development")
+		addPair(buildStyleRelease, "BUILDSTYLE__Deployment")
 		log "Done initialize ProjBuilder"
 	end Initialize
 	
@@ -381,7 +381,7 @@ script ProjBuilder
 		set linkerFlags to x_CreateLinkerFlags(app_info) -- additional liker flags (like -lxncbi)
 		
 		set symRoot to TheOUTPath & "/bin"
-		set buildSettings to {|PRODUCT_NAME|:appName, |OTHER_LDFLAGS|:linkerFlags, |REZ_EXECUTABLE|:"YES", |INFOPLIST_FILE|:"", |SYMROOT|:symRoot}
+		set buildSettings to {|PRODUCT_NAME|:appName, |OTHER_LDFLAGS|:linkerFlags, |REZ_EXECUTABLE|:"YES", |INFOPLIST_FILE|:"", |SYMROOT|:symRoot, |KEEP_PRIVATE_EXTERNS|:"YES", |GENERATE_MASTER_OBJECT_FILE|:"YES"}
 		set appTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:appName, |productReference|:"", |productType|:"com.apple.product-type.application", dependencies:{}}
 		
 		my MakeNewTarget(app_info, src_files, appTarget, appProduct, 1) -- 1 is application
@@ -629,6 +629,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/03/07 16:16:25  lebedev
+ * Linker flags added to fix dynamic_cast across shared boundaries issue
+ *
  * Revision 1.40  2006/03/06 18:30:38  lebedev
  * gbench_cache_agent added
  *
