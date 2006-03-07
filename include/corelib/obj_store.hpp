@@ -138,7 +138,7 @@ protected:
 class NCBI_XUTIL_EXPORT CObjectStoreProtectedBase
 {
 protected:
-    static CFastMutex& GetMutex(void); 
+    static SSystemFastMutex& GetMutex(void); 
 };
 
 /// System wide dumping ground for objects
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/07 14:35:57  vasilche
+ * Fixed static mutex use.
+ *
  * Revision 1.6  2005/03/07 14:39:31  ssikorsk
  * Replaced static member m_Lock with a static function GetMutex
  *

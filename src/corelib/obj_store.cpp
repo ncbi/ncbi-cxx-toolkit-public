@@ -35,10 +35,10 @@
 BEGIN_NCBI_SCOPE
 
 
-CFastMutex&
+SSystemFastMutex&
 CObjectStoreProtectedBase::GetMutex(void)
 {
-    static CFastMutex lock;
+    DEFINE_STATIC_FAST_MUTEX(lock);
 
     return lock;
 }
@@ -51,6 +51,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/03/07 14:35:57  vasilche
+* Fixed static mutex use.
+*
 * Revision 1.3  2005/03/07 14:39:31  ssikorsk
 * Replaced static member m_Lock with a static function GetMutex
 *
