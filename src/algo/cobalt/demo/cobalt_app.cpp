@@ -173,6 +173,8 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
 
 int CMultiApplication::Run(void)
 {
+    // Allow the fasta reader to complain on 
+    // invalid sequence input
     SetDiagPostLevel(eDiag_Warning);
 
     // Process command line args
@@ -249,6 +251,9 @@ int main(int argc, const char* argv[])
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.5  2006/03/07 22:53:45  papadopo
+  add comment
+
   Revision 1.4  2006/01/11 23:17:56  papadopo
   make default e-value match that of aligner
 
