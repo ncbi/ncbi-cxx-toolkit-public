@@ -97,8 +97,12 @@ public:
         eHandle   ///< As a process handle.
     };
 
-    /// Default process termination timeout.
+    /// Default wait time between "soft" and "hard" attempts to terminate
+    // the process.
     static const unsigned long kDefaultKillTimeout;
+    /// Default really process termination timeout after successful 
+    /// "soft" or "hard" attempt.
+    static const unsigned long kDefaultLingerTimeout;
 
     /// Constructor.
     CProcess(long process, EProcessType type = eHandle);
@@ -117,21 +121,33 @@ public:
     ///   TRUE  - if the process is still running.
     ///   FALSE - if the process did not exist or was already terminated.
     /// @sa
-    ///   Wait(), WaitForAlive(), WaitForTerminate()
+    ///   Wait
     bool IsAlive(void) const;
 
     /// Terminate process.
     ///
-    /// @timeout
+    /// First try "soft" and second "hard" attempts to terminate the process.
+    /// Even "hard" terminate do not assure us that process will be
+    /// terminated. Process termination can take some time, and process can
+    /// be "alive" after "hard" attempt of termination.
+    ///
+    /// @kill_timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
-    ///   attempts to terminate the process.
-    ///   Note that in case of zero or very small timeout the killing 
-    ///   process can be not released and continue to persists as zombie
-    ///   process even after call of this function.
+    ///   attempts to terminate the process. 
+    ///   Note, that on UNIX in case of zero or very small timeout
+    ///   the killing process can be not released and continue to persists
+    ///   as zombie process even after call of this function.
+    /// @linger_timeout
+    ///   MS Windows only: Wait time in milliseconds of really process
+    ///   termination. Previous "soft" or "hard" attemps where successful.
     /// @return
     ///   TRUE  - if the process did not exist or was successfully terminated.
-    ///   FALSE - if the process is still running and cannot be terminated.
-    bool Kill(unsigned long timeout = kDefaultKillTimeout) const;
+    ///   FALSE - if the process is still running, cannot be terminated, or
+    ///           it is terminating right now (but still not terminated).
+    ///   Return TRUE also if the process is in terminating state and
+    ///   'linger_timeout' specified as zero.
+    bool Kill(unsigned long kill_timeout   = kDefaultKillTimeout,
+              unsigned long linger_timeout = kDefaultLingerTimeout) const;
 
     /// Wait until process terminates.
     ///
@@ -143,7 +159,7 @@ public:
     ///   - Exit code of the process, if no errors.
     ///   - (-1), if error has occurred.
     /// @sa
-    ///   IsAlive(), WaitForAlive(), WaitForTerminate()
+    ///   IsAlive
     int Wait(unsigned long timeout = kMax_ULong) const;
 
 private:
@@ -276,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/03/07 14:27:24  ivanov
+ * CProcess::Kill() -- added linger_timeout parameter
+ *
  * Revision 1.14  2006/01/30 19:53:09  grichenk
  * Added workaround for PID on linux.
  *
@@ -306,8 +325,6 @@ END_NCBI_SCOPE
  * causes ICC 8.0 generated code to abort in Release mode.
  *
  * Revision 1.7  2004/05/18 16:59:09  ivanov
- * CProcess::
- *     + WaitForAlive(), WaitForTerminate().
  * CPIDGuard::
  *     Fixed CPIDGuard to use reference counters in PID file.
  *     Added CPIDGuard::Remove().

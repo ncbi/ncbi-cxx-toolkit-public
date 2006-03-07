@@ -58,8 +58,9 @@ BEGIN_NCBI_SCOPE
 //
 
 // Predefined timeouts (in milliseconds)
-const unsigned long           kWaitPrecision      = 100;
-const unsigned long CProcess::kDefaultKillTimeout = 1000;
+const unsigned long           kWaitPrecision        = 100;
+const unsigned long CProcess::kDefaultKillTimeout   = 1000;
+const unsigned long CProcess::kDefaultLingerTimeout = 1000;
 
 
 CProcess::CProcess(long process, EProcessType type)
@@ -203,7 +204,15 @@ bool CProcess::IsAlive(void) const
 }
 
 
-bool CProcess::Kill(unsigned long timeout) const
+#if defined(NCBI_OS_MSWIN)
+bool s_WaitForTerminate(unsigned long timeout)
+{
+    return false;
+}
+#endif
+
+bool CProcess::Kill(unsigned long kill_timeout,
+                    unsigned long linger_timeout) const
 {
 #if defined(NCBI_OS_UNIX)
 
@@ -222,13 +231,13 @@ bool CProcess::Kill(unsigned long timeout) const
             return tmp == pid;
         }
         unsigned long x_sleep = kWaitPrecision;
-        if (x_sleep > timeout) {
-            x_sleep = timeout;
+        if (x_sleep > kill_timeout) {
+            x_sleep = kill_timeout;
         }
         if ( !x_sleep ) {
              break;
         }
-        timeout -= x_sleep;
+        kill_timeout -= x_sleep;
         SleepMilliSec(x_sleep);
     }
 
@@ -275,32 +284,50 @@ bool CProcess::Kill(unsigned long timeout) const
 
     // Terminate process
     bool terminated = false;
-    try {
-        // Safe process termination
-        // (kernel32.dll loaded at same address in each process)
-        FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
-                                          "ExitProcess");
-        if ( exitproc ) {
-            hThread = CreateRemoteThread(hProcess, NULL, 0,
-                                         (LPTHREAD_START_ROUTINE)exitproc,
-                                         0, 0, 0);
+
+    // Safe process termination
+    // (kernel32.dll loaded at same address in each process)
+    FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
+                                      "ExitProcess");
+    if ( exitproc ) {
+        hThread = CreateRemoteThread(hProcess, NULL, 0,
+                                     (LPTHREAD_START_ROUTINE)exitproc,
+                                     0, 0, 0);
+    }
+    // Wait until process terminated, or timeout expired
+    if ( enable_sync ) {
+        if (WaitForSingleObject(hProcess, kill_timeout) == WAIT_OBJECT_0) {
+            terminated = true;
         }
-        // Wait for process terminated, or timeout expired
-        if (enable_sync  &&  timeout) {
-            if (WaitForSingleObject(hProcess, timeout) == WAIT_OBJECT_0) {
-                throw true;
-            }
-        }
-        // Try harder to kill stubborn process
+    }
+    // Try harder to kill stubborn process
+    if ( !terminated ) {
         if ( TerminateProcess(hProcess, -1) != 0  ||
-             GetLastError() == ERROR_INVALID_HANDLE ) {
-            // If process terminated succesfuly or error occur but
+            GetLastError() == ERROR_INVALID_HANDLE ) {
+            // If process "terminated" succesfuly or error occur but
             // process handle became invalid -- process has terminated
             terminated = true;
         }
     }
-    catch (bool e) {
-        terminated = e;
+    if ( terminated  &&  linger_timeout ) {
+        // The process terminating now.
+        // Reset flag, and wait for real process termination.
+        terminated = false;
+        for (;;) {
+            if ( !IsAlive() ) {
+                terminated = true;
+                break;
+            }
+            unsigned long x_sleep = kWaitPrecision;
+            if (x_sleep > linger_timeout) {
+                x_sleep = linger_timeout;
+            }
+            if ( !x_sleep ) {
+                break;
+            }
+            linger_timeout -= x_sleep;
+            SleepMilliSec(x_sleep);
+        }
     }
     // Close opened temporary process handle
     if ( hThread ) {
@@ -552,6 +579,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/03/07 14:27:02  ivanov
+ * CProcess::Kill() -- added linger_timeout parameter
+ *
  * Revision 1.14  2006/03/02 23:57:13  lavr
  * Fix CProcess::Kill()'s logic for Unix
  *
