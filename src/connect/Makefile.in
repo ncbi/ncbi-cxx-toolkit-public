@@ -10,7 +10,7 @@
 #################################
 
 LIB_PROJ = connect xxconnect xconnect xthrserv 
-SUB_PROJ = services ext test
+SUB_PROJ = services ext daemons test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
