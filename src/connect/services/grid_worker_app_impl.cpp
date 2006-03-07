@@ -523,7 +523,8 @@ int CGridWorkerApp_Impl::Run()
 #if defined(NCBI_OS_UNIX)
     if (is_daemon) {
         LOG_POST("Entering UNIX daemon mode...");
-        bool daemon = Daemonize(0, fDaemon_DontChroot);
+        bool daemon = Daemonize("/dev/null", fDaemon_DontChroot | fDaemon_KeepStdin |
+                                fDaemon_KeepStdout);
         if (!daemon) {
             return 0;
         }
@@ -652,6 +653,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.16  2006/03/07 17:20:29  didenko
+ * Fixing call to Daemonize function
+ *
  * Revision 6.15  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *
