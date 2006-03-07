@@ -825,6 +825,9 @@ private:
     /// The memory management layer
     CSeqDBAtlas & m_Atlas;
     
+    /// True if the volume is protein, false for nucleotide.
+    bool m_IsAA;
+    
     /// The name of this volume
     string m_VolName;
     

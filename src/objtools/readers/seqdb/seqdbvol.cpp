@@ -53,6 +53,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
                      CSeqDBGiList   * user_gilist,
                      CSeqDBLockHold & locked)
     : m_Atlas   (atlas),
+      m_IsAA    (prot_nucl == 'p'),
       m_VolName (name),
       m_Idx     (atlas, name, prot_nucl, locked),
       m_Seq     (atlas, name, prot_nucl, locked),
@@ -1604,6 +1605,101 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     return BDLS;
 }
 
+template<bool aa>
+bool s_DeflineCompare(CRef<CBlast_def_line> d1,
+                      CRef<CBlast_def_line> d2)
+{
+    if (d1.Empty() || d2.Empty()) {
+        return false;
+    }
+    
+    bool rv = false;
+    
+    if (d1->CanGetSeqid() && d1->CanGetSeqid()) {
+        
+        // First, use Seq-id by-type ranking.
+        
+        CRef<CSeq_id> c1 =
+            FindBestChoice(d1->GetSeqid(),
+                           (aa
+                            ? CSeq_id::FastaAARank
+                            : CSeq_id::FastaNARank));
+        
+        CRef<CSeq_id> c2 =
+            FindBestChoice(d2->GetSeqid(),
+                           (aa
+                            ? CSeq_id::FastaAARank
+                            : CSeq_id::FastaNARank));
+        
+        int diff = 0;
+        
+        if (aa) {
+            diff = CSeq_id::FastaAARank(c1) - CSeq_id::FastaAARank(c2);
+        } else {
+            diff = CSeq_id::FastaNARank(c1) - CSeq_id::FastaNARank(c2);
+        }
+        
+        if (diff < 0) {
+            return true;
+        }
+        
+        if (diff > 0) {
+            return false;
+        }
+        
+        // Second, use GI numerical ranking (least value first).  I
+        // avoid the possibility of circular rankings by ranking GI
+        // above non-GI here, although this should not happen unless
+        // GIs are given a rank value equal to that of another type.
+        // Finally, if no ranking is possible here, a string
+        // comparison is done.
+        
+        const CSeq_id & cs1 = *d1->GetSeqid().front();
+        const CSeq_id & cs2 = *d2->GetSeqid().front();
+        
+        if (cs1.IsGi()) {
+            if (cs2.IsGi()) {
+                rv = cs1.GetGi() < cs2.GetGi();
+            } else {
+                rv = true;
+            }
+        } else {
+            if (cs2.IsGi()) {
+                rv = false;
+            } else {
+                // Neither is a GI - this will typically only happen
+                // for databases that have no GI.
+                
+                rv = cs1.AsFastaString() < cs2.AsFastaString();
+            }
+        }
+    }
+    
+    return rv;
+}
+
+void s_SortDeflineSetAA(CRef<CBlast_def_line_set> s1)
+{
+    if (s1.Empty()) {
+        return;
+    }
+    
+    if (s1->CanGet()) {
+        s1->Set().sort(s_DeflineCompare<true>);
+    }
+}
+
+void s_SortDeflineSetNA(CRef<CBlast_def_line_set> s1)
+{
+    if (s1.Empty()) {
+        return;
+    }
+    
+    if (s1->CanGet()) {
+        s1->Set().sort(s_DeflineCompare<false>);
+    }
+}
+
 CRef<CBlast_def_line_set>
 CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
 {
@@ -1638,6 +1734,11 @@ CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
     
     *inpstr >> *phil;
     
+    if (m_IsAA) {
+        s_SortDeflineSetAA(phil);
+    } else {
+        s_SortDeflineSetNA(phil);
+    }
     
     return phil;
 }
