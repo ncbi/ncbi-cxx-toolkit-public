@@ -272,6 +272,9 @@
 /* Define to 1 if MySQL is available. */
 #undef HAVE_MYSQL
 
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
 /* Define to 1 if the NCBI C toolkit is available. */
 #undef HAVE_NCBI_C
 
@@ -368,6 +371,9 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strndup' function. */
+#undef HAVE_STRNDUP
 
 /* Define to 1 if you have the <strstream> header file. */
 #undef HAVE_STRSTREAM
