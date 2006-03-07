@@ -40,6 +40,8 @@
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
+#include <algorithm>
+
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock.h>
 #else
@@ -1226,6 +1228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/03/07 17:24:21  ucko
+ * +<algorithm> for find()
+ *
  * Revision 1.62  2006/03/06 20:16:04  ssikorsk
  * Fixed singleton initialisation in CTLibContextRegistry::Instance.
  *
