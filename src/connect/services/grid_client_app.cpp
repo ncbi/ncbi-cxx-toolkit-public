@@ -58,14 +58,37 @@ void CGridClientApp::Init(void)
         CNetScheduleClientFactory cf(GetConfig());
         m_NSClient.reset(cf.CreateInstance());
         m_NSClient->SetProgramVersion(GetProgramVersion());
+        if (UsePermanentConnection()) {
+            m_NSClient->ActivateRequestRateControl(false);
+            m_NSClient->SetConnMode(CNetScheduleClient::eKeepConnection);
+        }
     }
     if( !m_NSStorage.get()) {
         CBlobStorageFactory cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
+    CGridClient::ECleanUp cleanup = UseAutomaticCleanup() ? 
+        CGridClient::eAutomaticCleanup :
+        CGridClient::eManualCleanup;
+    CGridClient::EProgressMsg pmsg = UseProgressMessage() ?
+        CGridClient::eProgressMsgOn :
+        CGridClient::eProgressMsgOff;
+
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
-                                       CGridClient::eAutomaticCleanup, 
-                                       CGridClient::eProgressMsgOn));
+                                       cleanup, pmsg));
+}
+
+bool CGridClientApp::UseProgressMessage() const
+{
+    return true;
+}
+bool CGridClientApp::UsePermanentConnection() const
+{
+    return false;
+}
+bool CGridClientApp::UseAutomaticCleanup() const
+{
+    return true;
 }
 
 END_NCBI_SCOPE
@@ -73,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/07 17:14:12  didenko
+ * Added virtual functions which allow tunning up a NetCache client
+ *
  * Revision 1.7  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

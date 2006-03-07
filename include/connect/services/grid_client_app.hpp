@@ -78,6 +78,11 @@ public:
     ///
     virtual string GetProgramVersion(void) const = 0;
 
+protected:
+    virtual bool UseProgressMessage() const;
+    virtual bool UseAutomaticCleanup() const;
+    virtual bool UsePermanentConnection() const;
+
 private:
 
     auto_ptr<CNetScheduleClient> m_NSClient;
@@ -92,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/03/07 17:14:12  didenko
+ * Added virtual functions which allow tunning up a NetCache client
+ *
  * Revision 1.4  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
