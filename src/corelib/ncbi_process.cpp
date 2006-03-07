@@ -122,10 +122,9 @@ TPid CProcess::sx_GetPid(EGetPidFlag flag)
 
 TPid CProcess::GetCurrentPid(void)
 {
-#if defined NCBI_THREAD_PID_WORKAROUND
+#if   defined NCBI_THREAD_PID_WORKAROUND
     return sx_GetPid(ePID_GetCurrent);
-#endif
-#if defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_UNIX)
     return getpid();
 #elif defined(NCBI_OS_MSWIN)
     return GetCurrentProcessId();
@@ -137,10 +136,9 @@ TPid CProcess::GetCurrentPid(void)
 
 TPid CProcess::GetParentPid(void)
 {
-#if defined NCBI_THREAD_PID_WORKAROUND
+#if   defined NCBI_THREAD_PID_WORKAROUND
     return sx_GetPid(ePID_GetParent);
-#endif
-#if defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_UNIX)
     return getppid();
 #elif defined(NCBI_OS_MSWIN)
     TPid ppid = (TPid)(-1);
@@ -175,10 +173,7 @@ TPid CProcess::GetParentPid(void)
 bool CProcess::IsAlive(void) const
 {
 #if defined(NCBI_OS_UNIX)
-    if ( kill((TPid)m_Process, 0) < 0  &&  errno != EPERM ) {
-        return false;
-    }
-    return true;
+    return kill((TPid) m_Process, 0) == 0  ||  errno == EPERM;
 
 #elif defined(NCBI_OS_MSWIN)
     HANDLE hProcess = 0;
@@ -237,8 +232,8 @@ bool CProcess::Kill(unsigned long kill_timeout,
         if ( !x_sleep ) {
              break;
         }
-        kill_timeout -= x_sleep;
         SleepMilliSec(x_sleep);
+        kill_timeout -= x_sleep;
     }
 
     // Try harder to kill the stubborn process -- SIGKILL may not be caught!
@@ -347,41 +342,34 @@ bool CProcess::Kill(unsigned long kill_timeout,
 int CProcess::Wait(unsigned long timeout) const
 {
 #if defined(NCBI_OS_UNIX)
-    TPid  pid     = (TPid)m_Process;
-    int   options = (timeout == kMax_ULong /*infinite*/) ? 0 : WNOHANG;
-    int   status;
+    TPid pid     = (TPid) m_Process;
+    int  options = timeout == kMax_ULong/*infinite*/ ? 0 : WNOHANG;
+    int  status;
 
     // Check process termination within timeout (or infinite)
-    do {
+    for (;;) {
         TPid ws = waitpid(pid, &status, options);
         if (ws > 0) {
             // Process has terminated.
-            if ( options ) {
-                // Release zombie process from the system.
-                waitpid(pid, &status, 0);
+            assert(ws == pid);
+            return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+        } else if (ws == 0) {
+            // Process is still running
+            assert(timeout != kMax_ULong/*infinite*/);
+            unsigned long x_sleep = kWaitPrecision;
+            if (x_sleep > timeout) {
+                x_sleep = timeout;
             }
-            if ( WIFEXITED(status) ) {
-                return WEXITSTATUS(status);
+            if ( !x_sleep ) {
+                break;
             }
-            // Process terminated by a signal which was not caught
-            return -1;
-        } 
-        else if (ws < 0  &&  errno != EINTR ) {
+            SleepMilliSec(x_sleep);
+            timeout -= x_sleep;
+        } else if (errno != EINTR ) {
             // Some error
             break;
         }
-        // Process is still running
-        unsigned long x_sleep = kWaitPrecision;
-        if (timeout != kMax_ULong /*infinite*/) {
-            if (timeout < kWaitPrecision) {
-                x_sleep = timeout;
-            }
-            timeout -= x_sleep;
-        }
-        if ( x_sleep ) {
-            SleepMilliSec(x_sleep);
-        }
-    } while (timeout); 
+    }
 
     return -1;
 
@@ -579,6 +567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/03/07 14:58:04  lavr
+ * Sync CProcess::Wait()[Unix] implementation with connect/ncbi_pipe.cpp
+ *
  * Revision 1.15  2006/03/07 14:27:02  ivanov
  * CProcess::Kill() -- added linger_timeout parameter
  *
