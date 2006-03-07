@@ -60,7 +60,8 @@ typedef unsigned int TDaemonFlags;
 ///
 /// Return true in the daemon thread.
 /// Return false on error (no daemon created), errno can be used to analyze.
-/// Reopen stderr in daemon thread if logfile specified as non-NULL,
+/// Reopen stderr in daemon thread if logfile specified as non-NULL
+/// (stderr will open to "/dev/null" if logfile == ""),
 /// otherwise stderr is closed in the daemon thread.
 /// NB: Always check stderr for errors of failed redirection!
 ///
@@ -81,6 +82,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2006/03/07 16:49:56  lavr
+ * Make empty string for the logfile to cause use of "/dev/null"
+ *
  * Revision 1.1  2003/09/30 20:52:56  lavr
  * Initial revision
  *
