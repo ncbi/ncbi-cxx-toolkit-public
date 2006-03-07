@@ -62,19 +62,28 @@ public:
     /// @param is_prot true if sequence in bs argument is protein, else 
     /// false [in]
     CBioseqSeqInfoSrc(const objects::CBioseq& bs, bool is_prot);
+
     /// Parametrized constructor 
     /// @param bss CBioseq_set object from which to obtain the data [in]
     /// @param is_prot true if sequences in bss argument are all proteins, else
     /// false [in]
     CBioseqSeqInfoSrc(const objects::CBioseq_set& bss, bool is_prot);
+
     /// Retrieve a sequence identifier given its index in the vector.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const;
+
     /// Retrieve a sequence identifier given its index in the vector.
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 index) const;
+
     /// Retrieve sequence length given its index in the vector.
     virtual Uint4 GetLength(Uint4 index) const;
+
     /// Returns the size of the underlying container of sequences
     virtual size_t Size() const;
+    
+    /// Is the subject restricted by a GI list?  (Always returns false).
+    virtual bool HasGiList() const;
+    
 private:
     CBlastQuerySourceBioseqSet m_DataSource;
 };

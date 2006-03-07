@@ -58,15 +58,22 @@ BEGIN_SCOPE(blast)
 class IBlastSeqInfoSrc
 {
 public:
-	virtual ~IBlastSeqInfoSrc() {}
+    virtual ~IBlastSeqInfoSrc() {}
+    
     /// Method to retrieve a sequence identifier given its ordinal number.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const = 0;
+
     /// Method to retrieve the sequence location given its ordinal number.
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 index) const = 0;
+
     /// Method to retrieve a sequence length given its ordinal number.
     virtual Uint4 GetLength(Uint4 index) const = 0;
+
     /// Returns the size of the underlying container of sequences
     virtual size_t Size() const = 0;
+    
+    /// Returns true if the subject is restricted by a GI list.
+    virtual bool HasGiList() const = 0;
 };
 
 /** Retrieves subject sequence Seq-id and length.
@@ -90,6 +97,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/03/07 16:07:39  bealer
+ * - Add HasGiList() to IBlastSeqInfoSrc and classes derived thereof.
+ *
  * Revision 1.8  2005/11/09 20:56:26  camacho
  * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
  * as CBl2Seq and reduce redundant code.

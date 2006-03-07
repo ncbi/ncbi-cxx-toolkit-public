@@ -53,16 +53,25 @@ class CSeqVecSeqInfoSrc : public IBlastSeqInfoSrc
 public:
     /// Constructor from a vector of sequence locations.
     CSeqVecSeqInfoSrc(const TSeqLocVector& seqv);
+
     /// Destructor
     virtual ~CSeqVecSeqInfoSrc();
+
     /// Retrieve a sequence identifier given its index in the vector.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const;
+
     /// Method to retrieve the sequence location given its ordinal number.
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 index) const;
+
     /// Retrieve sequence length given its index in the vector.
     virtual Uint4 GetLength(Uint4 index) const;
+
     /// Returns the size of the underlying container of sequences
     virtual size_t Size() const;
+    
+    /// Is the subject restricted by a GI list?  (Always returns false).
+    virtual bool HasGiList() const;
+    
 private:
     TSeqLocVector m_SeqVec; ///< Vector of subject sequence locations to get 
                             /// information from
@@ -76,6 +85,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/03/07 16:07:39  bealer
+ * - Add HasGiList() to IBlastSeqInfoSrc and classes derived thereof.
+ *
  * Revision 1.8  2005/11/09 20:56:26  camacho
  * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
  * as CBl2Seq and reduce redundant code.

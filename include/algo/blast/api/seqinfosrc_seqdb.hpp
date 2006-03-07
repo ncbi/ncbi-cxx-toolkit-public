@@ -59,21 +59,27 @@ public:
 
     /// Constructor from an already existing CSeqDB object.
     /// @param seqdb Pointer to the CSeqDB object to use.
-    CSeqDbSeqInfoSrc(CSeqDB* seqdb);
+    CSeqDbSeqInfoSrc(ncbi::CSeqDB* seqdb);
 
     virtual ~CSeqDbSeqInfoSrc();
+
     /// Retrieve a sequence identifier given its ordinal number.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 oid) const;
+
     /// Method to retrieve the sequence location given its ordinal number.
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 oid) const;
+
     /// Retrieve sequence length given its ordinal number.
     virtual Uint4 GetLength(Uint4 oid) const;
+
     /// Returns the size of the underlying container of sequences
     virtual size_t Size() const;
-
+    
+    /// Returns true if the subject is restricted by a GI list.
+    virtual bool HasGiList() const;
+    
 private:
     CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
-
 };
 
 END_SCOPE(blast)
@@ -83,6 +89,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/03/07 16:07:39  bealer
+ * - Add HasGiList() to IBlastSeqInfoSrc and classes derived thereof.
+ *
  * Revision 1.9  2005/11/09 20:56:26  camacho
  * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
  * as CBl2Seq and reduce redundant code.

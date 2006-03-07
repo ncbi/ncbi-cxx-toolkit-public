@@ -57,7 +57,7 @@ CSeqDbSeqInfoSrc::CSeqDbSeqInfoSrc(const string& dbname, bool is_protein)
                                        : CSeqDB::eNucleotide)));
 }
 
-CSeqDbSeqInfoSrc::CSeqDbSeqInfoSrc(CSeqDB* seqdb)
+CSeqDbSeqInfoSrc::CSeqDbSeqInfoSrc(ncbi::CSeqDB* seqdb)
 {
     m_iSeqDb.Reset(seqdb);
 }
@@ -86,6 +86,11 @@ size_t CSeqDbSeqInfoSrc::Size() const
     return m_iSeqDb->GetNumOIDs();
 }
 
+bool CSeqDbSeqInfoSrc::HasGiList() const
+{
+    return !! m_iSeqDb->GetGiList();
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -95,6 +100,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/03/07 16:07:39  bealer
+ * - Add HasGiList() to IBlastSeqInfoSrc and classes derived thereof.
+ *
  * Revision 1.5  2005/11/09 20:56:26  camacho
  * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
  * as CBl2Seq and reduce redundant code.

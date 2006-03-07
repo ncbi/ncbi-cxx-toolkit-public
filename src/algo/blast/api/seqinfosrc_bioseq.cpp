@@ -90,6 +90,11 @@ size_t CBioseqSeqInfoSrc::Size() const
     return (size_t)m_DataSource.Size();
 }
 
+bool CBioseqSeqInfoSrc::HasGiList() const
+{
+    return false;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
