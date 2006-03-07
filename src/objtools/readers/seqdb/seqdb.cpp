@@ -718,5 +718,10 @@ void CSeqDB::GetTotals(ESummaryType   sumtype,
     m_Impl->Verify();
 }
 
+const CSeqDBGiList * CSeqDB::GetGiList() const
+{
+    return m_Impl->GetGiList();
+}
+
 END_NCBI_SCOPE
 

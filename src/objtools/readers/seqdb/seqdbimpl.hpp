@@ -410,6 +410,20 @@ public:
     ///   List of database names.
     const string & GetDBNameList() const;
     
+    /// Get GI list attached to this database.
+    ///
+    /// This returns the GI list attached to this database, or NULL,
+    /// if no GI list was used.  The effects of changing the contents
+    /// of this GI list are undefined.  This method only deals with
+    /// the GI list passed to the top level CSeqDB constructor; it
+    /// does not consider volume GI lists.
+    ///
+    /// @return A pointer to the attached GI list, or NULL.
+    const CSeqDBGiList * GetGiList() const
+    {
+        return m_UserGiList.GetPointerOrNull();
+    }
+    
     /// Set upper limit on memory and mapping slice size.
     /// 
     /// This sets an approximate upper limit on memory used by CSeqDB.
