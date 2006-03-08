@@ -111,11 +111,13 @@ CHitList::MakeCanonical()
         _ASSERT(hit->m_SeqIndex1 != hit->m_SeqIndex2);
         swap(hit->m_SeqIndex1, hit->m_SeqIndex2);
         swap(hit->m_SeqRange1, hit->m_SeqRange2);
+        hit->GetEditScript().ReverseEditScript();
         if (hit->HasSubHits()) {
             NON_CONST_ITERATE(CHit::TSubHit, subitr, hit->GetSubHit()) {
                 CHit *subhit = *subitr;
                 swap(subhit->m_SeqIndex1, subhit->m_SeqIndex2);
                 swap(subhit->m_SeqRange1, subhit->m_SeqRange2);
+                subhit->GetEditScript().ReverseEditScript();
             }
         }
     }
@@ -392,6 +394,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.7  2006/03/08 15:50:50  papadopo
+  when reversing hits in a hitlist, reverse any traceback those hits have
+
   Revision 1.6  2005/11/18 23:09:19  papadopo
   add documentation, add doxygen
 
