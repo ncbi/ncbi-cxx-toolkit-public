@@ -37,6 +37,8 @@
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_worker_app_impl.hpp>
 
+#include <math.h>
+
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
@@ -90,7 +92,8 @@ public:
         if (request.find("SUICIDE") != NPOS) {
             LOG_POST("DIE request has been received from host: " << m_Host);
             LOG_POST("SERVER IS COMMITTING SUICIDE!!");
-            int k = 1/0;
+            double d = 0.0/8.0;
+            int k = 1/(int)d;
         }
         LOG_POST("Shutdown request has been received from host: " << m_Host);
     }
@@ -291,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.18  2006/03/08 17:56:40  didenko
+ * Fix compilation error on windows
+ *
  * Revision 6.17  2006/03/08 17:15:06  didenko
  * Added die command
  *
