@@ -49,6 +49,7 @@ Contents: Interface for CMultiAligner
 #include <algo/cobalt/hitlist.hpp>
 #include <algo/cobalt/dist.hpp>
 #include <algo/cobalt/tree.hpp>
+#include <algo/cobalt/exception.hpp>
 
 /// @file cobalt.hpp
 /// Interface for CMultiAligner
@@ -526,6 +527,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.14  2006/03/08 15:49:24  papadopo
+  add exception class
+
   Revision 1.13  2006/01/27 20:55:58  papadopo
   remove unneeded header, add matrix name member
 
