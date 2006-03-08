@@ -86,16 +86,21 @@ public:
                          CNcbiOstream& os,
                          CGridWorkerNode& )
     {
-        CGridGlobals::GetInstance().
-            RequestShutdown(CNetScheduleClient::eNormalShutdown);
-        os << "OK:";
         if (request.find("SUICIDE") != NPOS) {
             LOG_POST("DIE request has been received from host: " << m_Host);
             LOG_POST("SERVER IS COMMITTING SUICIDE!!");
-            double d = 0.0/8.0;
-            int k = 1/(int)d;
+#if defined(NCBI_OS_MSWIN)
+            ExitProcess(256);
+#else
+            double d = 0.0 * 8.0;
+            (void) 1/(int)d;
+#endif
+        } else {
+            os << "OK:";
+            CGridGlobals::GetInstance().
+                RequestShutdown(CNetScheduleClient::eNormalShutdown);
+            LOG_POST("Shutdown request has been received from host: " << m_Host);
         }
-        LOG_POST("Shutdown request has been received from host: " << m_Host);
     }
 private:
     string m_Host;
@@ -294,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2006/03/08 19:53:21  didenko
+ * Added kill logic for Windows platform
+ *
  * Revision 6.18  2006/03/08 17:56:40  didenko
  * Fix compilation error on windows
  *
