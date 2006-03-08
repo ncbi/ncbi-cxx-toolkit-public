@@ -1606,8 +1606,8 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
 }
 
 template<bool aa>
-bool s_DeflineCompare(CRef<CBlast_def_line> d1,
-                      CRef<CBlast_def_line> d2)
+bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
+                      const CRef<CBlast_def_line>& d2)
 {
     if (d1.Empty() || d2.Empty()) {
         return false;
