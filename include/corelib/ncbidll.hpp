@@ -442,7 +442,7 @@ public:
     /// Various (usually system-dependent) standard paths to look for DLLs in.
     /// The fProgramPath flag works only inside CNcbiApplication framework.
     /// @sa
-    ///   AddExtraDllPath, FindCandidates
+    ///   x_AddExtraDllPath, FindCandidates
     enum EExtraDllPath {
         fNoExtraDllPath = 0,        //< Do not add
         fProgramPath    = 1 << 0,   //< Path to executable file
@@ -457,25 +457,13 @@ public:
     /// specified directories.
     ///
     /// @param paths
-    ///   Container to add the requested DLL search paths to.
-    /// @param which
-    ///   Which "standard" paths to add.
-    /// @sa
-    ///   FindCandidates
-    NCBI_XNCBI_EXPORT
-    void AddExtraDllPath(vector<string>& paths, TExtraDllPath which);
-
-    /// Try to resolve all files matching the specified masks in the
-    /// specified directories.
-    ///
-    /// @param paths
     ///   Container with directory names.
     /// @param masks
     ///   Container with file candidate masks.
     /// @param extra_path
     ///   Extra "standard" paths to search the DLLs in
     /// @sa
-    ///   GetResolvedEntries, AddExtraDllPath
+    ///   GetResolvedEntries, x_AddExtraDllPath
     template<class TClass1, class TClass2>
     void FindCandidates(const TClass1& paths, const TClass2& masks,
                         TExtraDllPath extra_path = fDefaultDllPath,
@@ -484,7 +472,7 @@ public:
         // search in the explicitly specified paths
         vector<string> x_path(paths);
         // search in "standard" paths, if any specified by 'extra_path' flag
-        AddExtraDllPath(x_path, extra_path);
+        x_AddExtraDllPath(x_path, extra_path);
         // remove duplicate dirs
         vector<string> x_path_unique;
         x_path_unique.reserve(x_path.size());
@@ -537,6 +525,17 @@ private:
     CDllResolver(const CDllResolver&);
     CDllResolver& operator=(const CDllResolver&);
 
+    /// Get the DLL search paths related to the given standard path group
+    ///
+    /// @param paths
+    ///   Container to add the requested DLL search paths to.
+    /// @param which
+    ///   Which "standard" paths to add.
+    /// @sa
+    ///   FindCandidates
+    NCBI_XNCBI_EXPORT
+    void x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which);
+
 protected:
     vector<string>     m_EntryPoinNames;   ///< Candidate entry points
     TEntries           m_ResolvedEntries;
@@ -553,6 +552,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/03/08 20:14:09  ssikorsk
+ * Made method CDllResolver::AddExtraDllPath private. Renamed it
+ * to x_AddExtraDllPath.
+ *
  * Revision 1.30  2005/07/18 10:53:33  ssikorsk
  * Case-insensitive comparison of directory names on Windows in FindCandidates.
  *
