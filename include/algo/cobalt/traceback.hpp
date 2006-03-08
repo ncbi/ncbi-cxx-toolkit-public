@@ -65,6 +65,24 @@ public:
     ///
     ~CEditScript() {}
 
+    /// Test whether edit script is empty
+    /// @return true if there are no edit operations in the script
+    ///
+    bool Empty() { return m_Script.empty(); }
+
+    /// Reverse an edit script; insertions become deletions
+    /// and vice versa
+    ///
+    void ReverseEditScript()
+    {
+        for (size_t i = 0; i < m_Script.size(); i++) {
+            if (m_Script[i].op_type == eGapAlignIns)
+                m_Script[i].op_type = eGapAlignDel;
+            else if (m_Script[i].op_type == eGapAlignDel)
+                m_Script[i].op_type = eGapAlignIns;
+        }
+    }
+
     /// Return an edit script corresponding to a subset of 
     /// the complete traceback available
     /// @param tback_range The portion of the traceback desired.
@@ -143,7 +161,7 @@ public:
     ///
     vector<TOffsetPair> ListMatchRegions(TOffsetPair start_offsets);
 
-    /// Validate that the alinment described by the CEditScript
+    /// Validate that the alignment described by the CEditScript
     /// has the same size for each sequence as the input ranges
     /// @param seq1_range Start/stop offsets of the first sequence [in]
     /// @param seq2_range Start/stop offsets of the second sequence [in]
@@ -190,6 +208,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2006/03/08 15:44:46  papadopo
+  add potentially useful members
+
   Revision 1.3  2005/11/15 23:24:15  papadopo
   add doxygen
 
