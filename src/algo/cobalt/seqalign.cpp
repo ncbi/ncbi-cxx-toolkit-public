@@ -159,18 +159,26 @@ CRef<CSeq_align>
 CMultiAligner::GetSeqalignResults(CSeq_align& align,
                                   vector<int>& indices)
 {
-    _ASSERT(align.GetType() == CSeq_align::eType_global);
-    _ASSERT(align.IsSetSegs());
-    _ASSERT(align.GetSegs().IsDenseg());
+    if (align.GetType() != CSeq_align::eType_global ||
+        !align.IsSetSegs() || !align.GetSegs().IsDenseg()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Unsupported SeqAlign format");
+    }
+    if (indices.empty()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Sequences must be specified for output SeqAlign");
+    }
 
     const CDense_seg& denseg = align.GetSegs().GetDenseg();
     int num_queries = denseg.GetDim();
     int num_segs = denseg.GetNumseg();
 
-    _ASSERT(!indices.empty());
     int num_subset = indices.size();
     for (int i = 0; i < num_subset; i++) {
-        _ASSERT(indices[i] >= 0 && indices[i] < num_queries);
+        if (indices[i] < 0 || indices[i] >= num_queries) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                            "Sequence index out of range");
+        }
     }
 
     // output Seqalign is of global type
@@ -253,7 +261,7 @@ CMultiAligner::GetSeqalignResults()
     int num_queries = m_Results.size();
     vector<int> indices(num_queries);
 
-    // all sequence participate in the output
+    // all sequences participate in the output
 
     for (int i = 0; i < num_queries; i++) {
         indices[i] = i;
@@ -273,7 +281,10 @@ CMultiAligner::GetSeqalignResults(vector<int>& indices)
     // in the output
 
     for (int i = 0; i < num_selected; i++) {
-        _ASSERT(indices[i] >= 0 && indices[i] < m_Results.size());
+        if (indices[i] < 0 || indices[i] >= m_Results.size()) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                            "Sequence index out of range");
+        }
         new_align[i] = m_Results[indices[i]];
         new_indices[i] = i;
     }
@@ -290,6 +301,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.8  2006/03/08 15:51:24  papadopo
+  convert assertions to exceptions
+
   Revision 1.7  2005/11/22 18:41:33  papadopo
   add function to retrieve a subset of a Seq-align
 

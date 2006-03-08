@@ -85,6 +85,11 @@ CMultiAligner::~CMultiAligner()
 void 
 CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
 {
+    if (queries.empty()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "List of input sequences must not be empty");
+    }
+
     Reset();
     m_tQueries = queries;
     m_QueryData.clear();
@@ -109,6 +114,9 @@ CMultiAligner::SetScoreMatrix(const char *matrix_name)
         m_Aligner.SetScoreMatrix(&NCBISM_Pam70);
     else if (strcmp(matrix_name, "PAM250") == 0)
         m_Aligner.SetScoreMatrix(&NCBISM_Pam250);
+    else
+        NCBI_THROW(CMultiAlignerException, eInvalidScoreMatrix,
+                   "Unsupported score matrix");
     
     m_MatrixName = matrix_name;
 }
@@ -199,6 +207,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.8  2006/03/08 15:51:24  papadopo
+  convert assertions to exceptions
+
   Revision 1.7  2006/01/27 20:57:11  papadopo
   input a Karlin block for computing raw scores to bit scores before calculating distances
 
