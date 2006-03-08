@@ -177,6 +177,9 @@ struct SBDB_BvStore_Id : public CBDB_BvStore< TBV >
                             unsigned  bitcount_to,
                             TBitVector* out_of_interval_ids = 0);
 
+    /// Read id storage keys (id field) into bit-vector
+    void ReadIds(TBitVector* id_bv);
+
 };
 
 
@@ -259,10 +262,15 @@ public:
                               unsigned            id, 
                               TBitVector*         bv);
 
+    EBDB_ErrCode BlobSize(unsigned   id, 
+                          size_t*    blob_size, 
+                          EScanMode  scan_mode = eScanAllVolumes);
+
     /// Load an external store into volume storage
     void LoadStore(SBDB_BvStore_Id<TBV>& in_store,
                    unsigned volume_rec_limit = 1000000,
-            unsigned blobs_total = 1024 * 1024 * 1024 + 200 * 1024 * 1024);
+            unsigned blobs_total = 1024 * 1024 * 1024 + 200 * 1024 * 1024,
+            bool     recompress = true);
 
     /// Get pointer on file environment
     /// Return NULL if no environment has been set
@@ -671,6 +679,56 @@ CBDB_IdSplitBvStore<TBV>::ReadVectorOr(unsigned    id,
     return err;
 }
 
+template<class TBV>
+EBDB_ErrCode 
+CBDB_IdSplitBvStore<TBV>::BlobSize(unsigned   id, 
+                                   size_t*    blob_size, 
+                                   EScanMode  scan_mode)
+{
+    _ASSERT(blob_size);
+
+    EBDB_ErrCode err = eBDB_NotFound;
+    *blob_size = 0;
+    for (unsigned int i = 0; i < m_VolumeDict.size(); ++i) {
+        const TBitVector* bv_dict = m_VolumeDict[i];
+        if (bv_dict && (*bv_dict)[id]) {
+            SVolume& vol = GetVolume(i);
+
+            {{
+            vol.db_large->id = id;
+            EBDB_ErrCode e = vol.db_large->Fetch();
+            if (e == eBDB_Ok) {
+                err = e;
+                *blob_size += vol.db_large->LobSize();
+                if (scan_mode == eScanFirstFound) break;
+            }
+            }}
+            {{
+            vol.db_medium->id = id;
+            EBDB_ErrCode e = vol.db_medium->Fetch();
+            if (e == eBDB_Ok) {
+                err = e;
+                *blob_size += vol.db_medium->LobSize();
+                if (scan_mode == eScanFirstFound) break;
+            }
+            }}
+            {{
+            vol.db_small->id = id;
+            EBDB_ErrCode e = vol.db_small->Fetch();
+            if (e == eBDB_Ok) {
+                err = e;
+                *blob_size += vol.db_small->LobSize();
+                if (scan_mode == eScanFirstFound) break;
+            }
+            }}
+
+        }
+    } // for
+    return err;
+
+}
+
+
 
 template<class TBV>
 void CBDB_IdSplitBvStore<TBV>::SetEnv(CBDB_Env& env)
@@ -848,8 +906,9 @@ CBDB_IdSplitBvStore<TBV>::SelectVolumeFile(SVolume* vol, size_t rec_size)
 
 template<class TBV>
 void CBDB_IdSplitBvStore<TBV>::LoadStore(SBDB_BvStore_Id<TBV>& in_store,
-                                         unsigned volume_rec_limit,
-                                         unsigned blobs_total)
+                                         unsigned              volume_rec_limit,
+                                         unsigned              blobs_total,
+                                         bool                  recompress)
 {
     unsigned rec_cnt = 0;
     unsigned vol_cnt = 0;
@@ -887,7 +946,7 @@ void CBDB_IdSplitBvStore<TBV>::LoadStore(SBDB_BvStore_Id<TBV>& in_store,
         unsigned blob_size = in_store.LobSize();
         typename SBDB_BvStore_Id<TBV>::TBuffer::value_type* blob_ptr = &buf[0];
 
-        if (blob_size <= 2048) { // try to re-compress the vector
+        if (recompress) { // try to re-compress the vector
             bv_tmp.clear(true);
             in_store.Deserialize(&bv_tmp, blob_ptr);
             typename TBitVector::statistics st;
@@ -931,6 +990,46 @@ void SBDB_BvStore_Id<TBV>::StoreVectorList(const vector<TBitVector*>& bv_lst)
         WriteVector(*bv, TParent::eCompact);
     }
 }
+
+template<class TBV>
+void SBDB_BvStore_Id<TBV>::ReadIds(TBitVector* id_bv)
+{
+    _ASSERT(id_bv);
+
+    EBDB_ErrCode err;
+
+    CBDB_FileCursor cur(*this);
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    cur.From << 0;
+
+    TBitVector bv(bm::BM_GAP);
+
+    while (true) {
+        void* p = &m_Buffer[0];
+        try {
+            err = cur.Fetch();
+            if (err != eBDB_Ok) {
+                break;
+            }
+            unsigned bv_id = id;
+            id_bv->set(bv_id);
+        }
+        catch (CBDB_ErrnoException& e) {
+            if (e.IsBufferSmall()  ||  e.IsNoMem()) {
+                unsigned buf_size = LobSize();
+                unsigned bv_id = id;
+                id_bv->set(bv_id);
+                cur.SetCondition(CBDB_FileCursor::eGE);
+                cur.From << ++bv_id;
+                continue;
+            } else {
+                throw;
+            }
+        }
+
+    } // while
+}
+
 
 
 template<class TBV>
@@ -1109,6 +1208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/08 14:51:17  kuznets
+ * +ReadIds(), +BlobSize()
+ *
  * Revision 1.7  2006/03/06 15:47:04  vasilche
  * Fixed references to parent template class members.
  *
