@@ -83,6 +83,26 @@
 #endif
 
 
+/* New/nonstandard keywords
+ */
+#if defined(__cplusplus)  &&  defined(NCBI_RESTRICT_CXX)
+#  define NCBI_RESTRICT NCBI_RESTRICT_CXX
+#elif !defined(__cplusplus)  &&  defined(NCBI_RESTRICT_C)
+#  define NCBI_RESTRICT NCBI_RESTRICT_C
+#elif __STDC_VERSION__ >= 199901 /* C99 specifies restrict */
+#  define NCBI_RESTRICT restrict
+#else
+#  define NCBI_RESTRICT
+#endif
+
+#ifndef NCBI_FORCEINLINE
+#  ifdef __cplusplus
+#    define NCBI_FORCEINLINE inline
+#  else
+#    define NCBI_FORCEINLINE
+#  endif
+#endif
+
 /* Char, Uchar, Int[1,2,4], Uint[1,2,4]
  */
 
@@ -210,6 +230,9 @@ typedef long long intptr_t;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/03/08 16:26:47  ucko
+ * New keyword macros: NCBI_RESTRICT, NCBI_FORCEINLINE.
+ *
  * Revision 1.19  2005/05/13 18:23:30  ivanov
  * Do not use C++ comments in the .h files
  *

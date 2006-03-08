@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.413 2006/03/07 15:10:14 ucko Exp $
+#  $Id: configure.ac,v 1.414 2006/03/08 16:26:47 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2487,6 +2487,51 @@ test "$depr" = "none"  &&  depr=""
 AC_DEFINE_UNQUOTED(NCBI_DEPRECATED, $depr,
    [Define to whatever syntax, if any, your compiler supports for marking
     functions as deprecated.])
+
+AC_LANG_PUSH(C)
+AC_CACHE_CHECK([how to force inlining],
+   ncbi_cv_c_forceinline,
+   [ncbi_cv_c_forceinline=no
+    for fi in forceinline __forceinline__ __forceinline __always_inline \
+      "inline __attribute__((always_inline))" inline __inline__; do
+       test "$ncbi_cv_c_forceinline" = "no" || break
+       AC_COMPILE_IFELSE([AC_LANG_SOURCE([$fi int f(void) { return 0; }])],
+          [ncbi_cv_c_forceinline=$fi], [])
+    done])
+forceinline=$ncbi_cv_c_forceinline
+test "$forceinline" = "no"  &&  forceinline=""
+AC_DEFINE_UNQUOTED(NCBI_FORCEINLINE, $forceinline,
+   [Define to whatever syntax your compiler supports for marking functions
+    as to be inlined even if they might not otherwise be.])
+
+AC_CACHE_CHECK([whether the C compiler supports C99 restrict],
+   ncbi_cv_c_restrict,
+   [ncbi_cv_c_restrict=no
+    for restrict in restrict __restrict__ __restrict; do
+       test "$ncbi_cv_c_restrict" = "no" || break
+       AC_COMPILE_IFELSE([AC_LANG_SOURCE([void f(int * $restrict p);])],
+          [ncbi_cv_c_restrict=$restrict], [])
+    done])
+restrict=$ncbi_cv_c_restrict
+test "$restrict" = "no"  &&  restrict=""
+AC_DEFINE_UNQUOTED(NCBI_RESTRICT_C, $restrict,
+   [Define to whatever syntax, if any, your C compiler supports for marking
+    pointers as restricted in the C99 sense.])
+AC_LANG_POP(C)
+
+AC_CACHE_CHECK([whether the C++ compiler supports C99 restrict],
+   ncbi_cv_cxx_restrict,
+   [ncbi_cv_cxx_restrict=no
+    for restrict in restrict __restrict__ __restrict; do
+       test "$ncbi_cv_cxx_restrict" = "no" || break
+       AC_COMPILE_IFELSE([AC_LANG_SOURCE([void f(int * $restrict p);])],
+          [ncbi_cv_cxx_restrict=$restrict], [])
+    done])
+restrict=$ncbi_cv_cxx_restrict
+test "$restrict" = "no"  &&  restrict=""
+AC_DEFINE_UNQUOTED(NCBI_RESTRICT_CXX, $restrict,
+   [Define to whatever syntax, if any, your C++ compiler supports for marking
+    pointers as restricted in the C99 sense.])
 
 # for FreeTDS
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],
