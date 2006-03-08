@@ -59,8 +59,8 @@
 BEGIN_NCBI_SCOPE
 
 
-// Sleep time for timeouts
-const unsigned int kSleepTime = 100;
+// Predefined timeout (in milliseconds)
+const unsigned long kWaitPrecision = 100;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -127,6 +127,9 @@ private:
     long   x_TimeoutToMSec(const STimeout* timeout) const;
     // Trigger blocking mode on specified I/O handle.
     bool   x_SetNonBlockingMode(HANDLE fd, bool nonblock = true) const;
+    // Wait on the file descriptors I/O.
+    CPipe::TChildPollMask x_Poll(CPipe::TChildPollMask mask,
+                                 const STimeout* timeout) const;
 
 private:
     // I/O handles for child process.
@@ -439,7 +442,10 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
         DWORD bytes_read  = 0;
 
         // Wait for data from the pipe with timeout.
-        // NOTE:  The function WaitForSingleObject() does not work with pipes.
+        // Using a loop and periodicaly try PeekNamedPipe is inefficient,
+        // but Windows doesn't have asynchronous mechanism to read
+        // from a pipe.
+        // NOTE:  WaitForSingleObject() doesn't work with anonymous pipes.
         do {
             if ( !PeekNamedPipe(fd, NULL, 0, NULL, &bytes_avail, NULL) ) {
                 // Has peer closed the connection?
@@ -451,9 +457,9 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
             if ( bytes_avail ) {
                 break;
             }
-            DWORD x_sleep = kSleepTime;
+            DWORD x_sleep = kWaitPrecision;
             if (x_timeout != INFINITE) {
-                if (x_timeout < kSleepTime) {
+                if (x_timeout < kWaitPrecision) {
                     x_sleep = x_timeout;
                 }
                 x_timeout -= x_sleep;
@@ -506,36 +512,36 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
         DWORD x_timeout     = x_TimeoutToMSec(timeout);
         DWORD bytes_written = 0;
 
-        // Wait for data from the pipe with timeout.
-        // NOTE:  The function WaitForSingleObject() does not work with pipes.
-        do {
+        // Try to write data into the pipe within specified time.
+        for (;;) {
             if ( !WriteFile(m_ChildStdIn, (char*)buf, count,
-                           &bytes_written, NULL) ) {
+                            &bytes_written, NULL) ) {
                 if ( n_written ) {
                     *n_written = bytes_written;
                 }
                 throw string("Failed to write data into pipe");
             }
             if ( bytes_written ) {
+                status = eIO_Success;
                 break;
             }
-            DWORD x_sleep = kSleepTime;
+            DWORD x_sleep = kWaitPrecision;
             if (x_timeout != INFINITE) {
-                if (x_timeout < kSleepTime) {
-                    x_sleep = x_timeout;
+                if ( x_timeout ) {
+                    if (x_sleep > x_timeout) {
+                        x_sleep = x_timeout;
+                    }
+                    x_timeout -= x_sleep;
+                } else {
+                    status = eIO_Timeout;
+                    break;
                 }
-                x_timeout -= x_sleep;
             }
             SleepMilliSec(x_sleep);
-        } while (x_timeout == INFINITE  ||  x_timeout);
-
-        if ( !bytes_written ) {
-            return eIO_Timeout;
         }
         if ( n_written ) {
             *n_written = bytes_written;
         }
-        status = eIO_Success;
     }
     catch (string& what) {
         ERR_POST(s_FormatErrorMessage("Write", what));
@@ -547,8 +553,23 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
 CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
                                         const STimeout* timeout) const
 {
-    NCBI_THROW(CPipeException, eInit,
-               "Not yet implemented on MS Windows");
+    CPipe::TChildPollMask poll = 0;
+
+    try {
+        if (m_ProcHandle == INVALID_HANDLE_VALUE) {
+            throw string("Pipe is closed");
+        }
+        if (m_ChildStdIn  == INVALID_HANDLE_VALUE  &&
+            m_ChildStdOut == INVALID_HANDLE_VALUE  &&
+            m_ChildStdErr == INVALID_HANDLE_VALUE) {
+            throw string("All pipe I/O handles are closed");
+        }
+        poll = x_Poll(mask, timeout);
+    }
+    catch (string& what) {
+        ERR_POST(s_FormatErrorMessage("Poll", what));
+    }
+    return poll;
 }
 
 
@@ -587,8 +608,8 @@ HANDLE CPipeHandle::x_GetHandle(CPipe::EChildIOHandle from_handle) const
 
 long CPipeHandle::x_TimeoutToMSec(const STimeout* timeout) const
 {
-    return timeout ? (timeout->sec * 1000) + (timeout->usec / 1000) 
-        : INFINITE;
+    return timeout ? timeout->sec * 1000 + (timeout->usec + 500) / 1000 
+                   : INFINITE;
 }
 
 
@@ -598,8 +619,72 @@ bool CPipeHandle::x_SetNonBlockingMode(HANDLE fd, bool nonblock) const
     // NOTE: We cannot get a state of a pipe handle opened for writing.
     //       We cannot set a state of a pipe handle opened for reading.
     DWORD state = nonblock ? PIPE_READMODE_BYTE | PIPE_NOWAIT :
-        PIPE_READMODE_BYTE;
+                             PIPE_READMODE_BYTE;
     return SetNamedPipeHandleState(fd, &state, NULL, NULL) != 0; 
+}
+
+
+CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
+                                          const STimeout* timeout) const
+{
+    CPipe::TChildPollMask poll = 0;
+    DWORD x_timeout = x_TimeoutToMSec(timeout);
+
+    // Wait for data from the pipe with timeout.
+    // Using a loop and periodicaly try PeekNamedPipe is inefficient,
+    // but Windows doesn't have asynchronous mechanism to read
+    // from a pipe.
+    // NOTE: WaitForSingleObject() doesn't work with anonymous pipes.
+
+    for (;;) {
+        if ( (mask & CPipe::fStdOut)  &&
+              m_ChildStdOut != INVALID_HANDLE_VALUE ) {
+            DWORD bytes_avail = 0;
+            if ( !PeekNamedPipe(m_ChildStdOut, NULL, 0, NULL,
+                                &bytes_avail, NULL) ) {
+                // Has peer closed connection?
+                if (GetLastError() != ERROR_BROKEN_PIPE) {
+                    throw string("PeekNamedPipe() failed");
+                }
+                poll |= CPipe::fStdOut;
+            } else if ( bytes_avail ) {
+                poll |= CPipe::fStdOut;
+            }
+        }
+        if ( (mask & CPipe::fStdErr)  &&
+              m_ChildStdErr != INVALID_HANDLE_VALUE ) {
+            DWORD bytes_avail = 0;
+            if ( !PeekNamedPipe(m_ChildStdErr, NULL, 0, NULL,
+                                &bytes_avail, NULL) ) {
+                // Has peer closed connection?
+                if (GetLastError() != ERROR_BROKEN_PIPE) {
+                    throw string("PeekNamedPipe() failed");
+                }
+                poll |= CPipe::fStdErr;
+            } else if ( bytes_avail ) {
+                poll |= CPipe::fStdErr;
+            }
+        }
+        if ( poll ) {
+            break;
+        }
+        unsigned long x_sleep = kWaitPrecision;
+        if (x_timeout != INFINITE) {
+            if (x_sleep > x_timeout) {
+                x_sleep = x_timeout;
+            }
+            if ( !x_sleep ) {
+                break;
+            }
+            x_timeout -= x_sleep;
+        }
+        SleepMilliSec(x_sleep);
+    }
+
+    // We cannot poll child's stdin, so just copy corresponding flag
+    // from source to result mask before return
+    poll |= (mask & CPipe::fStdIn);
+    return poll;
 }
 
 
@@ -856,7 +941,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
                 if ( !timeout->sec  &&  !timeout->usec ) {
                     break;
                 }
-                unsigned long x_sleep = kSleepTime;
+                unsigned long x_sleep = kWaitPrecision;
                 if (x_sleep > x_timeout ) {
                     x_sleep = x_timeout;
                 }
@@ -1342,8 +1427,9 @@ CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask,
     }
     TChildPollMask poll = m_PipeHandle->Poll(x_mask, timeout);
     if ( mask & fDefault ) {
+        TChildPollMask p = poll;
         poll &= mask;
-        if ( poll & m_ReadHandle ) {
+        if ( p & m_ReadHandle ) {
             poll |= fDefault;
         }
     }
@@ -1419,6 +1505,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/03/08 14:36:29  ivanov
+ * CPipe::Poll() -- added implementation for Windows,
+ * fixed fDefault flag handling again.
+ *
  * Revision 1.52  2006/03/07 17:18:40  lavr
  * Always check against redirect-into-self for dup'ed file descriptors
  *
