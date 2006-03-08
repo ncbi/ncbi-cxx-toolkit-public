@@ -93,7 +93,7 @@ public:
             ExitProcess(256);
 #else
             double d = 0.0 * 8.0;
-            (void) 1/(int)d;
+            int k = 1/(int)d;
 #endif
         } else {
             os << "OK:";
@@ -299,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2006/03/08 20:00:49  didenko
+ * Fix compilation error on Linux
+ *
  * Revision 6.19  2006/03/08 19:53:21  didenko
  * Added kill logic for Windows platform
  *
