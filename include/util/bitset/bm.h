@@ -2757,6 +2757,8 @@ void bvector<Alloc, MS>::stat(unsigned blocks) const
     register bm::id_t count = 0;
     int printed = 0;
 
+    int total_gap_eff = 0;
+
     if (!blocks)
     {
         blocks = bm::set_total_blocks;
@@ -2813,11 +2815,13 @@ void bvector<Alloc, MS>::stat(unsigned blocks) const
                unsigned sum = gap_control_sum(BMGAP_PTR(blk));
                unsigned level = gap_level(BMGAP_PTR(blk));
                 count += bc;
-               printf("[ GAP %i=%i:%i ]", nb, bc, level);
-               if (sum != bm::gap_max_bits)
-               {
-                    printf("<=*");
-               }
+               unsigned len = gap_length(BMGAP_PTR(blk))-1;
+               unsigned raw_size=bc*2;
+               unsigned cmr_len=len*2;
+               int mem_eff = raw_size - cmr_len;
+               total_gap_eff += mem_eff;
+               
+               printf("[ GAP %i=%i:%i-%i(%i) ]", nb, bc, level, len, mem_eff);
                 ++printed;
             }
             else // bitset
@@ -2838,6 +2842,7 @@ void bvector<Alloc, MS>::stat(unsigned blocks) const
         }
     } // for nb
     printf("\n");
+    printf("gap_efficiency=%i\n", total_gap_eff); 
 
 }
 

@@ -65,7 +65,9 @@ const unsigned char set_block_sgapgap = 13;  //!< SGAP compressed GAP block
 const unsigned char set_block_gap     = 14;  //!< Plain GAP block
 const unsigned char set_block_gapbit  = 15;  //!< GAP compressed bitblock 
 const unsigned char set_block_arrbit  = 16;  //!< List of bits ON
-const unsigned char set_block_bit_interval  = 17; //!< Interval block
+const unsigned char set_block_bit_interval = 17; //!< Interval block
+const unsigned char set_block_arrgap  = 18;  //!< List of bits ON (GAP block)
+
 
 
 
@@ -283,8 +285,28 @@ unsigned serialize(const BV& bv,
         {
             gap_word_t* gblk = BMGAP_PTR(blk);
             unsigned len = gap_length(gblk);
-            enc.put_8(set_block_gap);
-            enc.put_16(gblk, len-1);
+            unsigned bc = gap_bit_count(gblk);
+
+            if (bc+1 < len-1) 
+            {
+                gap_word_t len;
+                len = gap_convert_to_arr(gap_temp_block,
+                                         gblk,
+                                         bm::gap_equiv_len-10);
+                if (len == 0) 
+                {
+                    goto save_as_gap;
+                }
+                enc.put_8(set_block_arrgap);
+                enc.put_16(len);
+                enc.put_16(gap_temp_block, len);
+            }
+            else 
+            {
+            save_as_gap:
+                enc.put_8(set_block_gap);
+                enc.put_16(gblk, len-1);
+            }
             continue;
         }
         
@@ -742,6 +764,61 @@ unsigned deserializer<BV, DEC>::deserialize(bvector_type&        bv,
                                                 BM_OR);
             }
 
+            continue;
+        }
+
+        if (btype == set_block_arrgap) 
+        {
+            gap_word_t len = dec.get_16();
+            int block_type;
+            unsigned k = 0;
+
+        get_block_ptr:
+            bm::word_t* blk =
+                bman.check_allocate_block(i,
+                                          true,
+                                          bv.get_new_blocks_strat(),
+                                          &block_type,
+                                          false /* no null return*/);
+
+            // block is all 1, no need to do anything
+            if (!blk)
+            {
+                for (; k < len; ++k)
+                {
+                    dec.get_16();
+                }
+            }
+
+            if (block_type == 1) // gap
+            {            
+                bm::gap_word_t* gap_blk = BMGAP_PTR(blk);
+                unsigned threshold = bm::gap_limit(gap_blk, bman.glen());
+                
+                for (; k < len; ++k)
+                {
+                    gap_word_t bit_idx = dec.get_16();
+                    unsigned is_set;
+                    unsigned new_block_len =
+                        gap_set_value(true, gap_blk, bit_idx, &is_set);
+                    if (new_block_len > threshold) 
+                    {
+                        bman.extend_gap_block(i, gap_blk);
+                        ++k;
+                        goto get_block_ptr;  // block pointer changed - reset
+                    }
+
+                } // for
+            }
+            else // bit block
+            {
+                // Get the array one by one and set the bits.
+                for(;k < len; ++k)
+                {
+                    gap_word_t bit_idx = dec.get_16();
+                    or_bit_block(blk, bit_idx, 1);
+                }
+            }
             continue;
         }
 

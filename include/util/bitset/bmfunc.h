@@ -1891,7 +1891,57 @@ complete:
     return len;
 }
 
+
 /*!
+   \brief Convert gap block into array of ints corresponding to 1 bits
+   @ingroup gapfunc
+*/
+template<typename D, typename T>
+D gap_convert_to_arr(D* BMRESTRICT       dest, 
+                     const T* BMRESTRICT buf,
+                     unsigned            dest_len)
+{
+    register const T* BMRESTRICT pcurr = buf;
+    register const T* pend = pcurr + (*pcurr >> 3);
+
+    D* BMRESTRICT dest_curr = dest;
+    ++pcurr;
+
+    if (*buf & 1)
+    {
+        if (*pcurr + 1 >= dest_len)
+            return 0; // insufficient space
+        dest_len -= *pcurr;
+        T to = *pcurr;
+        for (T i = 0; ;++i) 
+        {
+            *dest_curr++ = i;
+            if (i == to) break;
+        }
+        ++pcurr;
+    }
+    ++pcurr;  // set GAP to 1
+
+    while (pcurr <= pend)
+    {
+        unsigned pending = *pcurr - *(pcurr-1);
+        if (pending >= dest_len)
+            return 0;
+        dest_len -= pending;
+        T from = *(pcurr-1)+1;
+        T to = *pcurr;
+        for (T i = from; ;++i) 
+        {
+            *dest_curr++ = i;
+            if (i == to) break;
+        }
+        pcurr += 2; // jump to the next positive GAP
+    }
+    return (D) (dest_curr - dest);
+}
+
+/*!
+    \brief Convert bit block into an array of ints corresponding to 1 bits
     @ingroup bitfunc 
 */
 template<typename T> T bit_convert_to_arr(T* BMRESTRICT dest, 
