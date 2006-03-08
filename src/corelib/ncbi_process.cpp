@@ -221,9 +221,9 @@ bool CProcess::Kill(unsigned long kill_timeout,
     int status;
     // Check process termination within the timeout
     for (;;) {
-        TPid tmp = waitpid(pid, &status, WNOHANG);
-        if (tmp) {
-            return tmp == pid;
+        waitpid(pid, 0, WNOHANG);
+        if (kill(pid, 0) < 0) {
+            return true;
         }
         unsigned long x_sleep = kWaitPrecision;
         if (x_sleep > kill_timeout) {
@@ -244,12 +244,8 @@ bool CProcess::Kill(unsigned long kill_timeout,
         return false;
     }
 
-    // Rip the zombie up from the system
-    while (waitpid(pid, &status, 0) < 0) {
-        if (errno != EINTR) {
-            return false;
-        }
-    }
+    // Rip (if child) the zombie up from the system
+    waitpid(pid, &status, WNOHANG);
     return true;
 
 #elif defined(NCBI_OS_MSWIN)
@@ -576,6 +572,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/03/08 21:32:54  didenko
+ * Fixed kill command on unix
+ *
  * Revision 1.18  2006/03/08 20:10:57  ivanov
  * MSWin: CProcess::Kill -- kill current process other way.
  * Try 'hard' attempt to kill process on empty kill_timeout first,
