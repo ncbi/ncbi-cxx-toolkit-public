@@ -1003,9 +1003,8 @@ void SBDB_BvStore_Id<TBV>::ReadIds(TBitVector* id_bv)
     cur.From << 0;
 
     TBitVector bv(bm::BM_GAP);
-
+	
     while (true) {
-        void* p = &m_Buffer[0];
         try {
             err = cur.Fetch();
             if (err != eBDB_Ok) {
@@ -1016,7 +1015,6 @@ void SBDB_BvStore_Id<TBV>::ReadIds(TBitVector* id_bv)
         }
         catch (CBDB_ErrnoException& e) {
             if (e.IsBufferSmall()  ||  e.IsNoMem()) {
-                unsigned buf_size = LobSize();
                 unsigned bv_id = id;
                 id_bv->set(bv_id);
                 cur.SetCondition(CBDB_FileCursor::eGE);
@@ -1208,6 +1206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/08 16:15:48  kuznets
+ * Fixed GCC compilation
+ *
  * Revision 1.8  2006/03/08 14:51:17  kuznets
  * +ReadIds(), +BlobSize()
  *
