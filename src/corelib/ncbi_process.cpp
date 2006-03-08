@@ -218,7 +218,6 @@ bool CProcess::Kill(unsigned long kill_timeout,
         return false;
     }
 
-    int status;
     // Check process termination within the timeout
     for (;;) {
         waitpid(pid, 0, WNOHANG);
@@ -244,8 +243,8 @@ bool CProcess::Kill(unsigned long kill_timeout,
         return false;
     }
 
-    // Rip (if child) the zombie up from the system
-    waitpid(pid, &status, WNOHANG);
+    // Rip the zombie (if child) up from the system
+    waitpid(pid, 0, WNOHANG);
     return true;
 
 #elif defined(NCBI_OS_MSWIN)
@@ -572,6 +571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/03/08 21:41:43  lavr
+ * CProcess::Kill() rip w/o status
+ *
  * Revision 1.19  2006/03/08 21:32:54  didenko
  * Fixed kill command on unix
  *
