@@ -43,6 +43,7 @@ Contents: Interface for CSequence class
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/align/nw/nw_aligner.hpp>
 #include <algo/cobalt/base.hpp>
+#include <algo/cobalt/exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
@@ -123,34 +124,6 @@ public:
     static void CompressSequences(vector<CSequence>& seq, 
                                   vector<int> index_list);
 
-    /// Compute the score derived from aligning seq1 with seq2.
-    /// Affine gap penalties are assessed
-    /// @param seq1 The first sequence [in]
-    /// @param seq2 The second sequence [in]
-    /// @param matrix The score matrix to use [in]
-    /// @param gap_open Penalty for starting a gap in one sequence [in]
-    /// @param gap_open Penalty for extending a gap in one sequence [in]
-    /// @return The alignment score
-    ///
-    static int GetPairwiseScore(CSequence& seq1, 
-                            CSequence& seq2,
-                            SNCBIFullScoreMatrix& matrix,
-                            int gap_open,
-                            int gap_extend);
-
-    /// Compute the sum of the scores derived from aligning
-    /// all sequence pairs in a list
-    /// @param list The list of sequences [in]
-    /// @param matrix The score matrix to use [in]
-    /// @param gap_open Penalty for starting a gap in one sequence [in]
-    /// @param gap_open Penalty for extending a gap in one sequence [in]
-    /// @return The alignment score
-    ///
-    static int GetSumOfPairs(vector<CSequence>& list,
-                         SNCBIFullScoreMatrix& matrix,
-                         int gap_open,
-                         int gap_extend);
-
 private:
     vector<unsigned char> m_Sequence;  ///< The sequence (ncbistdaa format)
     TFreqMatrix m_Freqs;               ///< Position-specific frequency 
@@ -164,6 +137,10 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2006/03/08 15:49:08  papadopo
+  1. Add exception include
+  2. Remove dead code
+
   Revision 1.4  2005/11/15 20:10:29  papadopo
   add doxygen
 
