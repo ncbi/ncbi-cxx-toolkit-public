@@ -540,6 +540,10 @@
    functions as deprecated. */
 #define NCBI_DEPRECATED __attribute__((__deprecated__))
 
+/* Define to whatever syntax your compiler supports for marking functions as
+   to be inlined even if they might not otherwise be. */
+#define NCBI_FORCEINLINE inline __attribute__((always_inline))
+
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #define NCBI_FTDS_RENAME_SYBDB 1
 
@@ -584,6 +588,14 @@
 
 /* Define to the architecture size. */
 #define NCBI_PLATFORM_BITS 32
+
+/* Define to whatever syntax, if any, your C compiler supports for marking
+   pointers as restricted in the C99 sense. */
+#define NCBI_RESTRICT_C __restrict__
+
+/* Define to whatever syntax, if any, your C++ compiler supports for marking
+   pointers as restricted in the C99 sense. */
+#define NCBI_RESTRICT_CXX __restrict__
 
 /* Define to 1 if prototypes can use exception specifications. */
 #define NCBI_USE_THROW_SPEC 1

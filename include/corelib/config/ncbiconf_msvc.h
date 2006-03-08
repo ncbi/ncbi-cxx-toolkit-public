@@ -62,6 +62,9 @@
 #define HAVE_WSTRING     1
 
 #define NCBI_DEPRECATED __declspec(deprecated)
+#define NCBI_FORCEINLINE __forceinline
+#define NCBI_RESTRICT_C
+#define NCBI_RESTRICT_CXX
 
 #ifdef _WIN64
 #  define HOST         "i386-pc-win64"
