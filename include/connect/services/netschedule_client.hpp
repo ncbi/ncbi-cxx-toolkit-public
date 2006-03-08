@@ -542,7 +542,7 @@ protected:
 
     /// Shutdown the server daemon.
     ///
-    void ShutdownServer();
+    void ShutdownServer(bool send_die_signal = false);
 
     /// Kill all jobs in the queue.
     ///
@@ -892,6 +892,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/03/08 17:15:05  didenko
+ * Added die command
+ *
  * Revision 1.48  2006/02/24 14:41:11  kuznets
  * Job notification wait made optional
  *

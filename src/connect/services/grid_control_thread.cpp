@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
+
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_worker_app_impl.hpp>
@@ -86,6 +87,11 @@ public:
         CGridGlobals::GetInstance().
             RequestShutdown(CNetScheduleClient::eNormalShutdown);
         os << "OK:";
+        if (request.find("SUICIDE") != NPOS) {
+            LOG_POST("DIE request has been received from host: " << m_Host);
+            LOG_POST("SERVER IS COMMITTING SUICIDE!!");
+            int k = 1/0;
+        }
         LOG_POST("Shutdown request has been received from host: " << m_Host);
     }
 private:
@@ -285,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.17  2006/03/08 17:15:06  didenko
+ * Added die command
+ *
  * Revision 6.16  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.

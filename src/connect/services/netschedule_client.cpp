@@ -1193,13 +1193,17 @@ void CNetScheduleClient::UnRegisterClient(unsigned short udp_port)
 }
 
 
-void CNetScheduleClient::ShutdownServer()
+void CNetScheduleClient::ShutdownServer(bool send_die_signal)
 {
     bool connected = CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "SHUTDOWN ", connected);
+    string cmd = send_die_signal? "SHUTDOWN SUICIDE " : "SHUTDOWN ";
+                                
+    MakeCommandPacket(&m_Tmp, cmd, connected);
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    if( send_die_signal )
+        return;
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
@@ -1584,6 +1588,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/03/08 17:15:06  didenko
+ * Added die command
+ *
  * Revision 1.46  2006/02/24 14:41:37  kuznets
  * Job notification wait made optional
  *

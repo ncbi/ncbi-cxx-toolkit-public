@@ -82,6 +82,7 @@ void CNetScheduleControl::Init(void)
                             CArgDescriptions::eInteger);
 
     arg_desc->AddFlag("s", "Shutdown server");
+    arg_desc->AddFlag("die", "Shutdown server");
     arg_desc->AddFlag("v", "Server version");
     arg_desc->AddFlag("reconf", "Reload server configuration");
     arg_desc->AddFlag("qlist", "List available queues");
@@ -208,6 +209,15 @@ int CNetScheduleControl::Run(void)
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
         return 0;
     }
+    if (args["die"]) {  // shutdown        
+        if( !CheckPermission() ) {
+            NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
+            return 1;
+        }
+        nc_client.ShutdownServer(true);
+        NcbiCout << "Die request has been sent to server" << NcbiEndl;
+        return 0;
+    }
 
     if (args["v"]) {  // version
         string version = nc_client.ServerVersion();
@@ -256,6 +266,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/03/08 17:15:05  didenko
+ * Added die command
+ *
  * Revision 1.16  2006/02/08 15:17:33  kuznets
  * Tuning and bug fixing of job affinity
  *
