@@ -51,6 +51,7 @@
 extern "C" {
 #endif
 
+#ifndef NCBI_RESTRICT /* now defined in the C++ Toolkit */
 /** For some reason, ICC claims a suitable __STDC_VERSION__ but then
    barfs on restrict. Added ECC per Haruna Cofer */
 #if defined(__ICC) || defined(__ECC)
@@ -59,6 +60,7 @@ extern "C" {
 #define NCBI_RESTRICT restrict
 #else
 #define NCBI_RESTRICT
+#endif
 #endif
 
 /* inlining support -- compiler dependent */
