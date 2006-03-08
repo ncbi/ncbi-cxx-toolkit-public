@@ -1605,9 +1605,10 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     return BDLS;
 }
 
-template<bool aa>
+static
 bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
-                      const CRef<CBlast_def_line>& d2)
+                      const CRef<CBlast_def_line>& d2,
+                      int (*rank_func)(const CRef<CSeq_id>&))
 {
     if (d1.Empty() || d2.Empty()) {
         return false;
@@ -1615,29 +1616,14 @@ bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
     
     bool rv = false;
     
-    if (d1->CanGetSeqid() && d1->CanGetSeqid()) {
+    if (d1->CanGetSeqid() && d2->CanGetSeqid()) {
         
         // First, use Seq-id by-type ranking.
         
-        CRef<CSeq_id> c1 =
-            FindBestChoice(d1->GetSeqid(),
-                           (aa
-                            ? CSeq_id::FastaAARank
-                            : CSeq_id::FastaNARank));
+        CRef<CSeq_id> c1 = FindBestChoice(d1->GetSeqid(), rank_func);
+        CRef<CSeq_id> c2 = FindBestChoice(d2->GetSeqid(), rank_func);
         
-        CRef<CSeq_id> c2 =
-            FindBestChoice(d2->GetSeqid(),
-                           (aa
-                            ? CSeq_id::FastaAARank
-                            : CSeq_id::FastaNARank));
-        
-        int diff = 0;
-        
-        if (aa) {
-            diff = CSeq_id::FastaAARank(c1) - CSeq_id::FastaAARank(c2);
-        } else {
-            diff = CSeq_id::FastaNARank(c1) - CSeq_id::FastaNARank(c2);
-        }
+        int diff = rank_func(c1) - rank_func(c2);
         
         if (diff < 0) {
             return true;
@@ -1678,6 +1664,20 @@ bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
     return rv;
 }
 
+inline
+bool s_DeflineCompareAA(const CRef<CBlast_def_line>& d1,
+                        const CRef<CBlast_def_line>& d2)
+{
+    return s_DeflineCompare(d1, d2, CSeq_id::FastaAARank);
+}
+
+inline
+bool s_DeflineCompareNA(const CRef<CBlast_def_line>& d1,
+                        const CRef<CBlast_def_line>& d2)
+{
+    return s_DeflineCompare(d1, d2, CSeq_id::FastaNARank);
+}
+
 void s_SortDeflineSetAA(CRef<CBlast_def_line_set> s1)
 {
     if (s1.Empty()) {
@@ -1685,7 +1685,7 @@ void s_SortDeflineSetAA(CRef<CBlast_def_line_set> s1)
     }
     
     if (s1->CanGet()) {
-        s1->Set().sort(s_DeflineCompare<true>);
+        s1->Set().sort(s_DeflineCompareAA);
     }
 }
 
@@ -1696,7 +1696,7 @@ void s_SortDeflineSetNA(CRef<CBlast_def_line_set> s1)
     }
     
     if (s1->CanGet()) {
-        s1->Set().sort(s_DeflineCompare<false>);
+        s1->Set().sort(s_DeflineCompareNA);
     }
 }
 
