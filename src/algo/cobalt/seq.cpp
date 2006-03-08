@@ -87,11 +87,17 @@ CSequence::GetPrintableLetter(int pos) const
 void 
 CSequence::Reset(const blast::SSeqLoc& seq_in)
 {
-    _ASSERT(seq_in.seqloc->IsWhole() || seq_in.seqloc->IsInt());
+    if (!seq_in.seqloc->IsWhole() && !seq_in.seqloc->IsInt()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Unsupported SeqLoc encountered");
+    }
 
     objects::CSeqVector sv(*seq_in.seqloc, *seq_in.scope);
 
-    _ASSERT(sv.IsProtein());
+    if (!sv.IsProtein()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Nucleotide sequences cannot be aligned");
+    }
 
     // make a local copy of the sequence data
 
@@ -193,81 +199,15 @@ void CSequence::CompressSequences(vector<CSequence>& seq,
     }
 }
 
-int
-CSequence::GetPairwiseScore(CSequence& seq1, 
-                            CSequence& seq2,
-                            SNCBIFullScoreMatrix& matrix,
-                            int gap_open,
-                            int gap_extend)
-{
-    _ASSERT(seq1.GetLength() == seq2.GetLength());
-
-    int i = -1, j = -1;
-    int len = seq1.GetLength();
-    bool seq1_gap = false;
-    bool seq2_gap = false;
-    int score = 0;
-
-    for (int k = 0; k < len; k++) {
-        unsigned char letter1 = seq1.m_Sequence[k];
-        unsigned char letter2 = seq2.m_Sequence[k];
-
-        if (letter1 != kGapChar)
-            i++;
-        if (letter2 != kGapChar)
-            j++;
-
-        if (letter1 != kGapChar && letter2 != kGapChar) {
-            seq1_gap = false;
-            seq2_gap = false;
-            score += matrix.s[letter1][letter2];
-        }
-        else if (letter1 == kGapChar && letter2 == kGapChar) {
-            continue;
-        }
-        else if (letter1 == kGapChar) {
-            if (seq1_gap == false) {
-                score += gap_open;
-                seq1_gap = true;
-                seq2_gap = false;
-            }
-            score += gap_extend;
-        }
-        else {
-            if (seq2_gap == false) {
-                score += gap_open;
-                seq1_gap = false;
-                seq2_gap = true;
-            }
-            score += gap_extend;
-        }
-    }
-    return score;
-}
-
-int
-CSequence::GetSumOfPairs(vector<CSequence>& list,
-                         SNCBIFullScoreMatrix& matrix,
-                         int gap_open,
-                         int gap_extend)
-{
-    int num_seq = list.size();
-    int score = 0;
-
-    for (int i = 0; i < num_seq - 1; i++) {
-        for (int j = i + 1; j < num_seq; j++) {
-            score += GetPairwiseScore(list[i], list[j], matrix,
-                                      gap_open, gap_extend);
-        }
-    }
-    return score;
-}
-
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.10  2006/03/08 15:50:01  papadopo
+  1. Convert assertions to exceptions
+  2. Remove dead code
+
   Revision 1.9  2005/12/16 23:34:19  papadopo
   protect against non-protein-sequence inputs
 
