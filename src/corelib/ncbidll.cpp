@@ -330,7 +330,7 @@ bool CDllResolver::TryCandidate(const string& file_name,
     return true;
 }
 
-void CDllResolver::AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
+void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 {
     // Nothing to do
 
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/03/08 20:14:52  ssikorsk
+ * Renamed method CDllResolver::AddExtraDllPath to x_AddExtraDllPath.
+ *
  * Revision 1.32  2005/12/16 16:38:54  ucko
  * Default RTLD_LOCAL to 0 as needed (on Cygwin?)
  *
