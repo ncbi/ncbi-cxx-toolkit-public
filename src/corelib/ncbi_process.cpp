@@ -254,6 +254,13 @@ bool CProcess::Kill(unsigned long kill_timeout,
 
 #elif defined(NCBI_OS_MSWIN)
 
+    // Try to kill current process?
+    if ( m_Process == GetCurrentPid() ) {
+        ExitProcess(-1);
+        // should not reached
+        return false;
+    }
+
     HANDLE hProcess    = NULL;
     HANDLE hThread     = NULL;
     bool   enable_sync = true;
@@ -281,18 +288,20 @@ bool CProcess::Kill(unsigned long kill_timeout,
     bool terminated = false;
 
     // Safe process termination
-    // (kernel32.dll loaded at same address in each process)
-    FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
-                                      "ExitProcess");
-    if ( exitproc ) {
-        hThread = CreateRemoteThread(hProcess, NULL, 0,
-                                     (LPTHREAD_START_ROUTINE)exitproc,
-                                     0, 0, 0);
-    }
-    // Wait until process terminated, or timeout expired
-    if ( enable_sync ) {
-        if (WaitForSingleObject(hProcess, kill_timeout) == WAIT_OBJECT_0) {
-            terminated = true;
+    if ( kill_timeout ) {
+        // (kernel32.dll loaded at same address in each process)
+        FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
+                                        "ExitProcess");
+        if ( exitproc ) {
+            hThread = CreateRemoteThread(hProcess, NULL, 0,
+                                        (LPTHREAD_START_ROUTINE)exitproc,
+                                        0, 0, 0);
+        }
+        // Wait until process terminated, or timeout expired
+        if ( enable_sync ) {
+            if (WaitForSingleObject(hProcess, kill_timeout) == WAIT_OBJECT_0){
+                terminated = true;
+            }
         }
     }
     // Try harder to kill stubborn process
@@ -320,8 +329,8 @@ bool CProcess::Kill(unsigned long kill_timeout,
             if ( !x_sleep ) {
                 break;
             }
-            linger_timeout -= x_sleep;
             SleepMilliSec(x_sleep);
+            linger_timeout -= x_sleep;
         }
     }
     // Close opened temporary process handle
@@ -567,6 +576,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/03/08 20:10:57  ivanov
+ * MSWin: CProcess::Kill -- kill current process other way.
+ * Try 'hard' attempt to kill process on empty kill_timeout first,
+ * because 'soft' attempt do not have a chance to finish.
+ *
  * Revision 1.17  2006/03/07 19:30:46  lavr
  * assert -> _ASSERT
  *
