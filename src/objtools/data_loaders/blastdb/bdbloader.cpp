@@ -357,8 +357,8 @@ int CBlastDbDataLoader::GetOid(const CSeq_id_Handle& idh)
     
     list< CRef<CSeq_id> > filtered = m_SeqDB->GetSeqIDs(oid);
     
-    ITERATE(list< CRef<CSeq_id> >, iter, filtered) {
-        if (seqid->Compare(**iter) == CSeq_id::e_YES) {
+    ITERATE(list< CRef<CSeq_id> >, id, filtered) {
+        if (seqid->Compare(**id) == CSeq_id::e_YES) {
             found = true;
             break;
         }
@@ -534,6 +534,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.39  2006/03/08 17:45:26  camacho
+ * Remove compiler warning
+ *
  * Revision 1.38  2006/02/13 18:21:00  bealer
  * - break out of loop once result is known.
  *
