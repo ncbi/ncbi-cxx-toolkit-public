@@ -1124,9 +1124,10 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     list<list<CRange<TSeqPos> > > feat_seq_range;
     list<ENa_strand> feat_seq_strand;
     for (int row=0; row<rowNum; row++) {
-        string type_temp = NStr::ToLower(m_BlastType);
-        if(type_temp.find("mapview") != string::npos || 
-           type_temp.find("gsfasta") != string::npos){
+        string type_temp = m_BlastType;
+        type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
+        if(type_temp == "mapview" || type_temp == "mapview_prev" || 
+           type_temp == "gsfasta"){
             taxid[row] = CBlastFormatUtil::GetTaxidForSeqid(m_AV->GetSeqId(row),
                                                             m_Scope);
         } else {
@@ -1846,10 +1847,10 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                     if(m_AlignOption&eHtml){
                         int taxid = 0;
                         string type_temp = m_BlastType;
-                        if(NStr::ToLower(type_temp).find("mapview") 
-                           != string::npos || 
-                           NStr::ToLower(type_temp).find("gsfasta") != 
-                           string::npos && 
+                        type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
+                        if((type_temp == "mapview" || 
+                            type_temp == "mapview_prev" || 
+                            type_temp == "gsfasta") && 
                            (*iter)->IsSetTaxid() && 
                            (*iter)->CanGetTaxid()){
                             taxid = (*iter)->GetTaxid();
@@ -2675,7 +2676,10 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     if (toolUrl.find("?") == string::npos){
         link += toolUrl + "?" + "db=" + str + "&na=" + (m_IsDbNa? "1" : "0");
     } else {
-        link += toolUrl + "&db=" + str + "&na=" + (m_IsDbNa? "1" : "0");
+        if (toolUrl.find("=") != string::npos) {
+            toolUrl += "&";
+        }
+        link += toolUrl + "db=" + str + "&na=" + (m_IsDbNa? "1" : "0");
     }
     
     if (gnl[0] != '\0'){
@@ -2835,7 +2839,13 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
                                              (*iterAv)->bits, evalue_buf, 
                                              bit_score_buf);
             //add id anchor for mapviewer link
-            if(m_AlignOption&eHtml && NStr::ToUpper(m_BlastType).find("GENOME") != string::npos){
+            string type_temp = m_BlastType;
+            type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
+            if(m_AlignOption&eHtml && 
+               (type_temp.find("genome") != string::npos ||
+                type_temp == "mapview" || 
+                type_temp == "mapview_prev" || 
+                type_temp == "gsfasta")){
                 string subj_id_str;
                 char buffer[126];
                 int master_start = m_AV->GetSeqStart(0) + 1;
@@ -3110,6 +3120,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.109  2006/03/08 19:01:56  jianye
+*added mapview_prev url link
+*
 *Revision 1.108  2006/03/01 22:29:13  zaretska
 *Fixed html bug
 *

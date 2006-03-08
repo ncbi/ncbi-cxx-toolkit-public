@@ -216,7 +216,10 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
             url_link += user_url + "?" + "db=" + actual_db + "&na=" + 
                 (is_db_na? "1" : "0");
         } else {
-            url_link += user_url + "&db=" + actual_db + "&na=" + 
+            if (user_url.find("=") != string::npos) {
+                user_url += "&";
+            }
+            url_link += user_url + "db=" + actual_db + "&na=" + 
                 (is_db_na? "1" : "0");
         }
         const CSeq_id* bestid = NULL;
@@ -575,10 +578,12 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             NStr::IntToString(sdl->gi);
         sdl->score_url += ">";
 
-        string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
+        string user_url = m_Reg->Get(m_BlastType, "TOOL_URL");
+        string type_temp = m_BlastType;
+        type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
         int taxid = 0;
-        if((NStr::ToLower(m_BlastType)).find("mapview") != string::npos || 
-           (NStr::ToLower(m_BlastType)).find("gsfasta") != string::npos){
+        if (type_temp == "mapview" || type_temp == "mapview_prev" || 
+            type_temp == "gsfasta") {
             taxid = 
                 CBlastFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
         }
@@ -907,6 +912,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.22  2006/03/08 19:01:56  jianye
+*added mapview_prev url link
+*
 *Revision 1.21  2005/08/11 15:30:26  jianye
 *add taxid to user url
 *
