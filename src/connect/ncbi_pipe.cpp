@@ -759,6 +759,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
                              CPipe::TCreateFlags   create_flags)
 {
+    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+    CFastMutexGuard gurad_mutex(s_Mutex);
+
     x_Clear();
 
     m_Flags = create_flags;
@@ -1505,6 +1508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/03/08 17:22:14  didenko
+ * Quick and dirty fix for preventing race condition when a child process is starting
+ *
  * Revision 1.53  2006/03/08 14:36:29  ivanov
  * CPipe::Poll() -- added implementation for Windows,
  * fixed fDefault flag handling again.
