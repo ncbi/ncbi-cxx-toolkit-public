@@ -295,6 +295,10 @@ public:
     /// Block until at least one of the I/O handles enlisted in poll mask
     /// becomes available for I/O, or until timeout expires.
     /// Throw CPipeException on failure to create the pipe.
+    /// NOTE: MS Windows doesn't have mechanism to get status of 'write end'
+    /// of the pipe, so only fStdOut/fStdErr/fDefault can be used for polling
+    /// child stdin/stderr handles. If fStdIn flag is set in the 'mask',
+    /// that it will be copied to resulting mask also.
     ///
     /// @param mask
     ///   Mask of I/O handles to poll.
@@ -392,6 +396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/03/08 14:37:01  ivanov
+ * CPipe::Poll() -- added implementation for Windows, added some comments
+ *
  * Revision 1.25  2006/03/03 03:18:43  lavr
  * Rectify usage and effects of OnClose-flags
  *
