@@ -240,9 +240,6 @@ void CODBC_Reporter::ReportErrors(void) const
 //  CODBCContext::
 //
 
-
-
-
 CODBCContext::CODBCContext(SQLLEN version, bool use_dsn)
 : m_PacketSize(0)
 , m_LoginTimeout(0)
@@ -252,6 +249,8 @@ CODBCContext::CODBCContext(SQLLEN version, bool use_dsn)
 , m_UseDSN(use_dsn)
 , m_Registry(&CODBCContextRegistry::Instance())
 {
+    DEFINE_STATIC_FAST_MUTEX(xMutex);
+    CFastMutexGuard mg(xMutex);
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
         string err_message = "Cannot allocate a context" + m_Reporter.GetExtraMsg();
@@ -293,6 +292,8 @@ CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 
 bool CODBCContext::SetLoginTimeout(unsigned int nof_secs)
 {
+    CFastMutexGuard mg(m_Mtx);
+    
     m_LoginTimeout = (SQLULEN)nof_secs;
     return true;
 }
@@ -300,37 +301,52 @@ bool CODBCContext::SetLoginTimeout(unsigned int nof_secs)
 
 bool CODBCContext::SetTimeout(unsigned int nof_secs)
 {
+    CFastMutexGuard mg(m_Mtx);
+    
     m_Timeout = (SQLULEN)nof_secs;
 
-    for (int i = m_NotInUse.NofItems(); i--;) {
+    ITERATE(TConnPool, it, m_NotInUse) {
         CODBC_Connection* t_con
-            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+            = dynamic_cast<CODBC_Connection*>(*it);
+        if (!t_con) continue;
+
         t_con->ODBC_SetTimeout(m_Timeout);
     }
 
-    for (int i = m_InUse.NofItems(); i--;) {
+    ITERATE(TConnPool, it, m_InUse) {
         CODBC_Connection* t_con
-            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+            = dynamic_cast<CODBC_Connection*>(*it);
+        if (!t_con) continue;
+
         t_con->ODBC_SetTimeout(m_Timeout);
     }
+
     return true;
 }
 
 
 bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
 {
+    CFastMutexGuard mg(m_Mtx);
+    
     m_TextImageSize = (SQLUINTEGER) nof_bytes;
-    for (int i = m_NotInUse.NofItems(); i--;) {
+
+    ITERATE(TConnPool, it, m_NotInUse) {
         CODBC_Connection* t_con
-            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+            = dynamic_cast<CODBC_Connection*>(*it);
+        if (!t_con) continue;
+
         t_con->ODBC_SetTextImageSize(m_TextImageSize);
     }
 
-    for (int i = m_InUse.NofItems(); i--;) {
+    ITERATE(TConnPool, it, m_InUse) {
         CODBC_Connection* t_con
-            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+            = dynamic_cast<CODBC_Connection*>(*it);
+        if (!t_con) continue;
+
         t_con->ODBC_SetTextImageSize(m_TextImageSize);
     }
+
     return true;
 }
 
@@ -338,6 +354,8 @@ bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
 I_Connection* 
 CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
 {
+    CFastMutexGuard mg(m_Mtx);
+    
     SQLHDBC con = x_ConnectToServer(conn_attr.srv_name, 
                                     conn_attr.user_name, 
                                     conn_attr.passwd, 
@@ -376,44 +394,37 @@ CODBCContext::~CODBCContext()
 void
 CODBCContext::Close(void)
 {
-    if ( !m_Context ) {
-        return;
+    if ( m_Context ) {
+        CFastMutexGuard mg(m_Mtx);
+
+        // close all connections first
+        CloseAllConn();
+
+        int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+        switch( rc ) {
+        case SQL_INVALID_HANDLE:
+        case SQL_ERROR:
+            m_Reporter.ReportErrors();
+            break;
+        case SQL_SUCCESS_WITH_INFO:
+            m_Reporter.ReportErrors();
+        case SQL_SUCCESS:
+            break;
+        default:
+            m_Reporter.ReportErrors();
+            break;
+        };
+
+        m_Context = NULL;
+        x_RemoveFromRegistry();
     }
-
-    // close all connections first
-    for (int i = m_NotInUse.NofItems();  i--; ) {
-        CODBC_Connection* t_con = static_cast<CODBC_Connection*>(m_NotInUse.Get(i));
-        delete t_con;
-    }
-
-    for (int i = m_InUse.NofItems();  i--; ) {
-        CODBC_Connection* t_con = static_cast<CODBC_Connection*> (m_InUse.Get(i));
-        delete t_con;
-    }
-
-    int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
-    switch( rc ) {
-    case SQL_INVALID_HANDLE:
-    case SQL_ERROR:
-        m_Reporter.ReportErrors();
-        break;
-    case SQL_SUCCESS_WITH_INFO:
-        m_Reporter.ReportErrors();
-    case SQL_SUCCESS:
-        break;
-    default:
-        m_Reporter.ReportErrors();
-        break;
-    };
-
-    m_Context = NULL;
-    x_RemoveFromRegistry();
-
 }
 
 
 void CODBCContext::ODBC_SetPacketSize(SQLUINTEGER packet_size)
 {
+    CFastMutexGuard mg(m_Mtx);
+    
     m_PacketSize = (SQLULEN)packet_size;
 }
 
@@ -425,14 +436,17 @@ SQLHENV CODBCContext::ODBC_GetContext() const
 
 
 SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
-                                               const string&   user_name,
-                                               const string&   passwd,
-                                               TConnectionMode mode)
+                                        const string&   user_name,
+                                        const string&   passwd,
+                                        TConnectionMode mode)
 {
+    // This is a private method. We do not have to make it thread-safe.
+    // This will be made in public methods.
+
     SQLHDBC con;
     SQLRETURN r;
 
-    r= SQLAllocHandle(SQL_HANDLE_DBC, m_Context, &con);
+    r = SQLAllocHandle(SQL_HANDLE_DBC, m_Context, &con);
     if((r != SQL_SUCCESS) && (r != SQL_SUCCESS_WITH_INFO))
         return 0;
 
@@ -470,13 +484,13 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         connect_str+= ";PWD=";
         connect_str+= passwd;
         
-        r= SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
-                            0, 0, 0, SQL_DRIVER_NOPROMPT);
+        r = SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
+                             0, 0, 0, SQL_DRIVER_NOPROMPT);
     }
     else {
-        r= SQLConnect(con, (SQLCHAR*) srv_name.c_str(), SQL_NTS,
-                   (SQLCHAR*) user_name.c_str(), SQL_NTS,
-                   (SQLCHAR*) passwd.c_str(), SQL_NTS);
+        r = SQLConnect(con, (SQLCHAR*) srv_name.c_str(), SQL_NTS,
+                      (SQLCHAR*) user_name.c_str(), SQL_NTS,
+                      (SQLCHAR*) passwd.c_str(), SQL_NTS);
     }
 
     switch(r) {
@@ -693,6 +707,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/03/09 20:37:25  ssikorsk
+ * Utilized method I_DriverContext:: CloseAllConn.
+ *
  * Revision 1.43  2006/03/06 22:14:59  ssikorsk
  * Added CODBCContext::Close
  *
