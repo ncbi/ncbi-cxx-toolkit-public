@@ -170,6 +170,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
                              CPipe::TCreateFlags   create_flags)
 {
+    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+    CFastMutexGuard guard_mutex(s_Mutex);
+
     x_Clear();
 
     bool need_restore_handles = false; 
@@ -760,7 +763,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              CPipe::TCreateFlags   create_flags)
 {
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
-    CFastMutexGuard gurad_mutex(s_Mutex);
+    CFastMutexGuard guard_mutex(s_Mutex);
 
     x_Clear();
 
@@ -1508,6 +1511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/03/09 14:23:05  didenko
+ * Added mutex lock in CPipe::Open method on Windows to prevent race condition
+ *
  * Revision 1.54  2006/03/08 17:22:14  didenko
  * Quick and dirty fix for preventing race condition when a child process is starting
  *
