@@ -293,6 +293,10 @@ class CPluginManager : public CPluginManagerBase
 public:
     typedef IClassFactory<TClass>         TClassFactory;
     typedef CDefaultDriverVersion<TClass> TDefaultDriverVersion;
+    
+    /// Container for the DLL search paths
+    /// @sa ResetDllSearchPath
+    typedef vector<string>                TSearchPaths;
 
     static const CVersionInfo& GetDefaultDrvVers(void)
     {
@@ -459,12 +463,33 @@ public:
     DetachResolver(CPluginManager_DllResolver* resolver);
 
     /// Add path for the DLL lookup (for all resolvers)
+    /// @param path
+    ///  Additional path for the DLL lookup
+    /// @sa ResetDllSearchPath
     void AddDllSearchPath(const string& path);
+    
+    /// Delete all user-installed paths for the DLL lookup (for all resolvers)
+    /// @param previous_paths
+    ///  If non-NULL, store the prevously set search paths in this container
+    /// @sa AddDllSearchPath
+    void ResetDllSearchPath(TSearchPaths* previous_paths = NULL);
+    
+    /// Specify which standard locations should be used for the DLL lookup
+    /// (for all resolvers). If standard locations are not set explicitelly
+    /// using this method CDllResolver::fDefaultDllPath will be used by default.
+    /// @sa CDllResolver
+    CDllResolver::TExtraDllPath
+    SetDllStdSearchPath(CDllResolver::TExtraDllPath standard_paths);
 
+    /// Get standard locations which should be used for the DLL lookup.
+    /// @sa SetDllStdSearchPath
+    CDllResolver::TExtraDllPath
+    GetDllStdSearchPath(void) const;
+    
     /// Scan DLLs for specified driver using attached resolvers
     // Former "Resolve"
-    void ResolveFile(const string&   driver  = kEmptyStr,
-                 const CVersionInfo& version = GetDefaultDrvVers());
+    void ResolveFile(const string&       driver  = kEmptyStr,
+                     const CVersionInfo& version = GetDefaultDrvVers());
 
     /// Disable/enable DLL resolution (search for class factories in DLLs)
     void FreezeResolution(bool value = true) { m_BlockResolution = value; }
@@ -476,7 +501,8 @@ public:
 
     // ctors
     CPluginManager(void)
-        : m_BlockResolution(false)
+        : m_BlockResolution(false),
+          m_StdDllPath(CDllResolver::fDefaultDllPath)
     {
         CDllResolver_Getter<TClass> getter;
         CPluginManager_DllResolver* resolver = getter();
@@ -502,6 +528,7 @@ protected:
     typedef vector<CPluginManager_DllResolver*>  TDllResolvers;
 
     typedef set<string>                          TStringSet;
+    
 private:
     /// List of factories presently registered with (and owned by)
     /// the plugin manager.
@@ -511,13 +538,15 @@ private:
     /// DLL resolvers
     TDllResolvers                        m_Resolvers;
     /// Paths used for DLL search
-    vector<string>                       m_DllSearchPaths;
+    TSearchPaths                         m_DllSearchPaths;
     /// DLL entries resolved and registered with dll resolver(s)
     TResolvedEntries                     m_RegisteredEntries;
     /// Flag, prohibits DLL resolution
     bool                                 m_BlockResolution;
     /// Set of drivers prohibited from DLL resolution
     TStringSet                           m_FreezeResolutionDrivers;
+    /// Standard locations that should be used for the DLL lookup.
+    CDllResolver::TExtraDllPath          m_StdDllPath;
 };
 
 
@@ -531,6 +560,9 @@ private:
 class NCBI_XNCBI_EXPORT CPluginManager_DllResolver
 {
 public:
+    /// Container for the DLL search paths
+    typedef vector<string>  TSearchPaths;
+    
     //
     CPluginManager_DllResolver(void);
 
@@ -566,11 +598,14 @@ public:
     /// @return
     ///   Reference on DLL resolver holding all entry points
     // Former "Resolve"
-    CDllResolver& ResolveFile(const vector<string>& paths,
+    CDllResolver& ResolveFile(const TSearchPaths&   paths,
                               const string&         driver_name 
                                 = kEmptyStr,
                               const CVersionInfo&   version 
-                                = CVersionInfo::kAny);
+                                = CVersionInfo::kAny,
+                              CDllResolver::TExtraDllPath std_path 
+                                = CDllResolver::fDefaultDllPath
+                              );
 
     /// Search for plugin DLLs, resolve entry points.
     ///
@@ -1020,8 +1055,7 @@ void CPluginManager<TClass>::AddResolver
 
 template <class TClass>
 CPluginManager_DllResolver*
-CPluginManager<TClass>::DetachResolver(CPluginManager_DllResolver*
-                                                                    resolver)
+CPluginManager<TClass>::DetachResolver(CPluginManager_DllResolver* resolver)
 {
     NON_CONST_ITERATE(TDllResolvers, it, m_Resolvers) {
         if (resolver == *it) {
@@ -1036,6 +1070,35 @@ template <class TClass>
 void CPluginManager<TClass>::AddDllSearchPath(const string& path)
 {
     m_DllSearchPaths.push_back(path);
+}
+
+template <class TClass>
+void CPluginManager<TClass>::ResetDllSearchPath(TSearchPaths* previous_paths)
+{
+    if (previous_paths) {
+        previous_paths->clear();
+        previous_paths->swap(m_DllSearchPaths);
+    } else {
+        m_DllSearchPaths.clear();
+    }
+}
+
+template <class TClass>
+CDllResolver::TExtraDllPath
+CPluginManager<TClass>::SetDllStdSearchPath
+(CDllResolver::TExtraDllPath standard_paths)
+{
+    CDllResolver::TExtraDllPath tmp_path = m_StdDllPath;
+    
+    m_StdDllPath = standard_paths;
+    return tmp_path;
+}
+
+template <class TClass>
+CDllResolver::TExtraDllPath
+CPluginManager<TClass>::GetDllStdSearchPath(void) const
+{
+    return m_StdDllPath;
 }
 
 template <class TClass>
@@ -1059,14 +1122,20 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
     ITERATE(vector<CPluginManager_DllResolver*>, it, m_Resolvers) {
         // Try to get an exact match.
         CDllResolver* dll_resolver =
-            &(*it)->ResolveFile(m_DllSearchPaths, driver, version);
+            &(*it)->ResolveFile(m_DllSearchPaths, 
+                                driver, 
+                                version, 
+                                m_StdDllPath);
 
         if ( !version.IsAny() && !version.IsLatest() &&
             dll_resolver->GetResolvedEntries().empty() ) {
 
             // Try to get at least something (ignore version).
             dll_resolver =
-                &(*it)->ResolveFile(m_DllSearchPaths, driver, CVersionInfo::kAny);
+                &(*it)->ResolveFile(m_DllSearchPaths, 
+                                    driver, 
+                                    CVersionInfo::kAny, 
+                                    m_StdDllPath);
 
             if ( dll_resolver->GetResolvedEntries().empty() ) {
                 dll_resolver = 0;
@@ -1155,6 +1224,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/03/09 15:06:49  ssikorsk
+ * Added methods ResetDllSearchPath, SetDllStdSearchPath, GetDllStdSearchPath
+ * to CPluginManager.
+ *
  * Revision 1.54  2005/11/30 19:25:03  ssikorsk
  * Downgraded warning about duplicate driver factories to info-level.
  *
