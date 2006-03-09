@@ -102,8 +102,12 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
         
             size_t bytes_written;
             if (bytes_in_inbuf > 0) {
-                pipe.Write(inbuf + total_bytes_written, bytes_in_inbuf,
-                           &bytes_written);
+                rstatus = pipe.Write(inbuf + total_bytes_written, bytes_in_inbuf,
+                                     &bytes_written);
+                if (rstatus != eIO_Success) {
+                    NCBI_THROW(CException, eInvalid, 
+                               "Not all data is written to stdin of a child process.");
+                }
                 total_bytes_written += bytes_written;
                 bytes_in_inbuf -= bytes_written;
             }
@@ -177,8 +181,8 @@ public:
 
     int Do(CWorkerNodeJobContext& context) 
     {
-        LOG_POST( CTime(CTime::eCurrent).AsString() 
-                  << ": " << context.GetJobKey() + " " + context.GetJobInput());
+        //        LOG_POST( CTime(CTime::eCurrent).AsString() 
+        //                  << ": " << context.GetJobKey() + " " + context.GetJobInput());
 
         CRemoteJobRequest_Executer request(m_Factory);
         request.Receive(context.GetIStream());
@@ -199,8 +203,8 @@ public:
         result.SetRetCode(ret); 
         result.Send(context.GetOStream());
 
-        LOG_POST( CTime(CTime::eCurrent).AsString() 
-                  << ": Job " << context.GetJobKey() << " is done. ");
+        //        LOG_POST( CTime(CTime::eCurrent).AsString() 
+        //                  << ": Job " << context.GetJobKey() << " is done. ");
         if (!canceled)
             context.CommitJob();
         return 0;
@@ -248,6 +252,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/03/09 14:56:43  didenko
+ * Added status check after writing into the pipe
+ *
  * Revision 1.3  2006/03/09 14:24:33  didenko
  * Fixed logic of event handling
  *
