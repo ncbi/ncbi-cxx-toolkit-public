@@ -82,7 +82,9 @@ int CGi2TaxIdApp::Run()
     bool show = args["show_acc"];
 
     vector<string> id_list;
-    id_list.push_back("gi|" + NStr::IntToString(args["gi"].AsInteger()));
+    if( args["gi"].AsInteger() ) {
+        id_list.push_back( args["gi"].AsString() );
+    }
 
     if (args["file"]) {
         CNcbiIstream& istr = args["file"].AsInputFile();
@@ -144,6 +146,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/03/09 21:47:39  sapojnik
+ * Do not try to convert -gi argument if it is not defined (while -file may be defined)
+ *
  * Revision 1.3  2005/07/01 16:40:36  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *
