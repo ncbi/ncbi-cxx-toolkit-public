@@ -353,17 +353,8 @@ CTLibContext::Close(void)
     if ( CTLIB_GetContext() ) {
         CFastMutexGuard mg(m_Mtx);
         
-        // close all connections first
-        for (int i = m_NotInUse.NofItems();  i--; ) {
-            CTL_Connection* t_con = static_cast<CTL_Connection*>(m_NotInUse.Get(i));
-            delete t_con;
-        }
-
-        for (int i = m_InUse.NofItems();  i--; ) {
-            CTL_Connection* t_con = static_cast<CTL_Connection*> (m_InUse.Get(i));
-            delete t_con;
-        }
-
+        CloseAllConn();
+        
         CS_INT       outlen;
         CPointerPot* p_pot = 0;
 
@@ -1228,6 +1219,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/03/09 19:03:36  ssikorsk
+ * Utilized method I_DriverContext:: CloseAllConn.
+ *
  * Revision 1.64  2006/03/09 17:21:41  ssikorsk
  * Replaced database error severity eDiag_Fatal with eDiag_Critical.
  *

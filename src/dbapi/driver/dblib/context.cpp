@@ -274,15 +274,7 @@ CDBLibContext::~CDBLibContext()
         CDBL_Connection* t_con;
 
         // close all connections first
-        for (int i = m_NotInUse.NofItems(); i--; ) {
-            t_con = static_cast<CDBL_Connection*> (m_NotInUse.Get(i));
-            delete t_con;
-        }
-
-        for (int i = m_InUse.NofItems(); i--; ) {
-            t_con = static_cast<CDBL_Connection*> (m_InUse.Get(i));
-            delete t_con;
-        }
+        CloseAllConn();
 
 #ifdef MS_DBLIB_IN_USE
         // Fail for some reason (04/08/05) ...
@@ -1091,6 +1083,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/03/09 19:03:58  ssikorsk
+ * Utilized method I_DriverContext:: CloseAllConn.
+ *
  * Revision 1.66  2006/03/09 17:21:16  ssikorsk
  * Replaced database error severity eDiag_Fatal with eDiag_Critical.
  *
