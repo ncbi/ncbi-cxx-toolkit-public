@@ -330,6 +330,7 @@ private:
         double evalue;
         list<int> use_this_gi;
         int comp_adj_method;
+        int sum_n;
     };
 
     ///store feature information
@@ -597,6 +598,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.48  2006/03/09 21:23:12  jianye
+*added sum_n report
+*
 *Revision 1.47  2006/03/03 21:46:26  zaretska
 *Deleted extra comma after eDisplayTreeView
 *

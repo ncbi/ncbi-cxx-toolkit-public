@@ -1559,13 +1559,12 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         }
                         //save the current alnment regardless
                         SAlnInfo* alnvecInfo = new SAlnInfo;
-                        int sum_n;
                         int num_ident;
                         CBlastFormatUtil::GetAlnScores(**iter, 
                                                        alnvecInfo->score, 
                                                        alnvecInfo->bits, 
                                                        alnvecInfo->evalue, 
-                                                       sum_n, 
+                                                       alnvecInfo->sum_n, 
                                                        num_ident,
                                                        alnvecInfo->use_this_gi,
                                                        alnvecInfo->comp_adj_method);
@@ -2866,7 +2865,12 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
             }
             out<<" Score = "<<bit_score_buf<<" ";
             out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
-            out<<"Expect = "<<evalue_buf;
+            out<<"Expect";
+            if ((*iterAv)->sum_n > 0) {
+                out << "(" << (*iterAv)->sum_n << ")";
+            }
+
+            out << " = " << evalue_buf;
             if ((*iterAv)->comp_adj_method == 1)
                 out << ", Method: Composition-based stats.";
             else if ((*iterAv)->comp_adj_method == 2)
@@ -3120,6 +3124,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.111  2006/03/09 21:20:59  jianye
+*added sum_n report
+*
 *Revision 1.110  2006/03/09 14:32:06  zaretska
 *Added checking Show distance by default for Tree View button
 *
