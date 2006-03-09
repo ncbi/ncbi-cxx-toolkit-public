@@ -37,8 +37,8 @@ ConsensusMaker::ConsensusMaker(CRef<CSeq_align_set> seqAlign, CCdCore* cd) :
 	makeConsensus();
 }*/
 
-ConsensusMaker::ConsensusMaker(CCdCore* cd) :
-	m_cd(cd), m_consensus(), m_rp(), m_seqAligns(cd->GetSeqAligns()), m_made(false)
+ConsensusMaker::ConsensusMaker(CCdCore* cd, double incl) :
+	m_cd(cd), m_consensus(), m_rp(), m_seqAligns(cd->GetSeqAligns()), m_made(false), m_inclusionRule(incl)
 {
 	addRows();
 	CRef< CSeq_id > seqId;
@@ -91,6 +91,7 @@ void ConsensusMaker::addRows()
 }
 void ConsensusMaker::makeConsensus()
 {
+	m_rp.setInclusionThreshold(m_inclusionRule);
 	m_rp.calculateRowWeights();
 	m_consensus = m_rp.makeConsensus();
 	BlockModelPair& guideAlignment = m_rp.getGuideAlignment();
@@ -242,6 +243,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/03/09 19:17:23  cliu
+ * export the inclusionThreshold parameter
+ *
  * Revision 1.3  2005/08/25 20:22:22  cliu
  * conditionally skip long insert
  *

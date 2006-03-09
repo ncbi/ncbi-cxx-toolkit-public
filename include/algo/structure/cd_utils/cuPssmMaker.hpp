@@ -66,6 +66,7 @@ struct PssmMakerOptions
     bool gaplessColumnWeights;
 
 	int unalignedSegThreshold;  // -1 : do not skip unaligned segment
+	double inclusionThreshold;
 };
 
 class CdPssmInput : public IPssmInputData, public ColumnReader
@@ -133,11 +134,11 @@ public:
 	const BlockModelPair& getGuideAlignment();
 	const string& getConsensus();
 	short getPseudoCount() {return m_pseudoCount;}
-	ConsensusMaker& getConsensusMaker() {return m_conMaker;}
+	ConsensusMaker& getConsensusMaker() {return *m_conMaker;}
 	void printAlignment(string& fileName);
 
 private:
-	ConsensusMaker m_conMaker;
+	ConsensusMaker* m_conMaker;
 	bool m_useConsensus;
 	bool m_addQuery;
 	CRef< CSeq_entry > m_masterSeqEntry;
@@ -158,6 +159,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/03/09 19:17:41  cliu
+ * export the inclusionThreshold parameter
+ *
  * Revision 1.6  2006/02/06 16:38:49  cliu
  * remove c dependency
  *

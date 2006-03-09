@@ -150,9 +150,10 @@ private:
  class ResidueProfiles
  {
  public:
-	static const double FrequencyThreshold;
+	
 	ResidueProfiles();
 	~ResidueProfiles();
+	void setInclusionThreshold(double th){m_frequencyThreshold = th;};
 	void addOneRow(BlockModelPair& bmp, const string& mSeq, const string& sSeq);
 	void calculateRowWeights();
 	const string& makeConsensus();
@@ -175,7 +176,7 @@ private:
 	const vector< CRef< CSeq_id> > getSeqIdsByRow() const { return m_seqIds;}
 
  private:
-	 
+	double m_frequencyThreshold;
 	int m_totalRows;
 	//double m_rowWeightsSum;
 	//col address vs. ColResidueProfile
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/03/09 19:17:41  cliu
+ * export the inclusionThreshold parameter
+ *
  * Revision 1.5  2005/08/25 20:22:48  cliu
  * conditionally skip long insert
  *

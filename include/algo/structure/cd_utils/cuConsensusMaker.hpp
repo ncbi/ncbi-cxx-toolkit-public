@@ -49,7 +49,7 @@ class ConsensusMaker
 public:
 
 	//ConsensusMaker(CRef<CSeq_align_set> seqAlign, CCdCore* cd);
-	ConsensusMaker(CCdCore* cd);
+	ConsensusMaker(CCdCore* cd, double incl = 0.5);
 	~ConsensusMaker();
 
 	void makeConsensus();
@@ -62,6 +62,7 @@ public:
 	void remasterWithConsensus(bool extended);
 
 	void skipUnalignedSeg(int threshold);
+	//void columnInclusionThreshold(double percentage){m_inclusionRule = percentage;};
 	
 	static CRef<CSeq_align_set> degapAlignment(CCdCore* cd);
 	static void degapAlignment(CCdCore* cd, list< CRef< CSeq_align > >& seqAligns);
@@ -77,7 +78,7 @@ private:
 	CRef< CSeq_id > m_masterSeqId;
 	CRef< CSeq_id > m_conSeqId;
 	bool m_made;
-
+	double m_inclusionRule;
 	ResidueProfiles m_rp;
 };
 
@@ -90,6 +91,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/03/09 19:17:41  cliu
+ * export the inclusionThreshold parameter
+ *
  * Revision 1.2  2005/08/25 20:22:48  cliu
  * conditionally skip long insert
  *

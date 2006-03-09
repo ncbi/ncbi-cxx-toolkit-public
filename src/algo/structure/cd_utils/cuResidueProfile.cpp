@@ -350,12 +350,11 @@ bool ColumnAddress::operator<(const ColumnAddress& rhs) const
 
 //-------------------------ResidueProfiles----------------------------------------
 
-const double ResidueProfiles::FrequencyThreshold = 0.5; //50-50 rule
-
 ResidueProfiles::ResidueProfiles()
 : m_profiles(), m_rowWeights(),
 	m_consensus(), m_guideAlignment(),
-	m_totalRows(1) //starting at 1 because 0 is reserved for master
+	m_totalRows(1), //starting at 1 because 0 is reserved for master
+	m_frequencyThreshold(0.5)
 {
 }
 
@@ -546,7 +545,7 @@ const string& ResidueProfiles::makeConsensus()
 	int startM = 0, endM = 0;
 	int startC = 0;
 	int blockId = 0;
-	double threshold = FrequencyThreshold;
+	double threshold = m_frequencyThreshold;
 
 	PosProfileMap::iterator cit = m_profiles.begin();
 	for (; cit != m_profiles.end(); cit++)
@@ -959,6 +958,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/03/09 19:17:24  cliu
+ * export the inclusionThreshold parameter
+ *
  * Revision 1.7  2006/01/10 16:54:51  lanczyck
  * eliminate unused variable warnings
  *

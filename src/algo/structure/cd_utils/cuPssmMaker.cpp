@@ -79,7 +79,8 @@ PssmMakerOptions::PssmMakerOptions()
     requestWeightedResidueFrequencies(false),   
     requestFrequencyRatios(false),
     gaplessColumnWeights(false),
-	unalignedSegThreshold(-1)
+	unalignedSegThreshold(-1),
+	inclusionThreshold(0.5)
 {
 };
 
@@ -303,7 +304,7 @@ const PSIDiagnosticsRequest* CdPssmInput::GetDiagnosticsRequest()
 
 //------------------------- PssmMaker ---------------------
 PssmMaker::PssmMaker(CCdCore* cd, bool useConsensus, bool addQueryToPssm) 
-	: m_conMaker(cd), m_useConsensus(useConsensus), m_trunctMaster(),
+	: m_conMaker(0), m_useConsensus(useConsensus), m_trunctMaster(),
 	m_masterSeqEntry(), m_addQuery(addQueryToPssm), m_cd(cd), m_pssmInput(0)
 	//m_identityFilterThreshold(0.94)
 {
@@ -332,15 +333,18 @@ PssmMaker::~PssmMaker()
 {
 	if (m_pssmInput)
 		delete m_pssmInput;
+	if (m_conMaker)
+		delete m_conMaker;
 }
 
 CRef<CPssmWithParameters> PssmMaker::make()
 {
 	if (m_config.unalignedSegThreshold >= 0)
 	{
-		m_conMaker.skipUnalignedSeg(m_config.unalignedSegThreshold);
+		m_conMaker->skipUnalignedSeg(m_config.unalignedSegThreshold);
 	}
-	m_pssmInput = new CdPssmInput (m_conMaker.getResidueProfiles(), m_config,m_useConsensus);
+	m_conMaker = new ConsensusMaker(m_cd, m_config.inclusionThreshold);
+	m_pssmInput = new CdPssmInput (m_conMaker->getResidueProfiles(), m_config,m_useConsensus);
 	if (!m_useConsensus)
 		for(int i = 0 ; i < m_pssmInput->GetQueryLength(); i++)
 			m_trunctMaster.push_back(m_pssmInput->GetQuery()[i]);
@@ -355,7 +359,7 @@ CRef<CPssmWithParameters> PssmMaker::make()
 	{
 		CRef< CSeq_entry > query;
 		if(m_useConsensus)
-			query = m_conMaker.getConsensusSeqEntry();
+			query = m_conMaker->getConsensusSeqEntry();
 		else
 		{
 			query = new CSeq_entry;
@@ -430,12 +434,12 @@ void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 
 const BlockModelPair& PssmMaker::getGuideAlignment()
 {
-	return m_conMaker.getGuideAlignment();
+	return m_conMaker->getGuideAlignment();
 }
 
 const string& PssmMaker::getConsensus()
 {
-	return m_conMaker.getConsensus();
+	return m_conMaker->getConsensus();
 }
 
 //seqId in seqEntry is kept.
@@ -459,7 +463,7 @@ bool PssmMaker::getTrunctMaster(CRef< CSeq_entry >& seqEntry)
 void PssmMaker::printAlignment(string& fileName)
 {
 	vector<string> seqIdStr;
-	const vector< CRef< CSeq_id > >& seqIds = m_conMaker.getResidueProfiles().getSeqIdsByRow();
+	const vector< CRef< CSeq_id > >& seqIds = m_conMaker->getResidueProfiles().getSeqIdsByRow();
 	if (!IsConsensus(seqIds[0]))
 		seqIdStr.push_back(seqIds[0]->AsFastaString());
 	for (int i = 1; i < seqIds.size(); i++)
@@ -478,6 +482,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/03/09 19:17:24  cliu
+ * export the inclusionThreshold parameter
+ *
  * Revision 1.9  2006/01/10 16:54:51  lanczyck
  * eliminate unused variable warnings
  *
