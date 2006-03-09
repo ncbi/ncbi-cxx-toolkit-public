@@ -65,6 +65,20 @@ public:
 public:
     /// Add path for the DLL lookup
     void AddDllSearchPath(const string& path);
+    /// Delete all user-installed paths for the DLL lookup (for all resolvers)
+    /// @param previous_paths
+    ///  If non-NULL, store the prevously set search paths in this container
+    void ResetDllSearchPath(vector<string>* previous_paths = NULL);
+    
+    /// Specify which standard locations should be used for the DLL lookup
+    /// (for all resolvers). If standard locations are not set explicitelly
+    /// using this method CDllResolver::fDefaultDllPath will be used by default.
+    CDllResolver::TExtraDllPath
+    SetDllStdSearchPath(CDllResolver::TExtraDllPath standard_paths);
+
+    /// Get standard locations which should be used for the DLL lookup.
+    /// @sa SetDllStdSearchPath
+    CDllResolver::TExtraDllPath GetDllStdSearchPath(void) const;
 
     I_DriverContext* GetDriverContextFromTree(
         const string& driver_name,
@@ -97,6 +111,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/03/09 16:52:04  ssikorsk
+ * Added methods ResetDllSearchPath,  SetDllStdSearchPath,
+ * GetDllStdSearchPath to the C_DriverMgr class.
+ *
  * Revision 1.19  2005/06/07 16:19:23  ssikorsk
  * Moved a definition of CDllResolver_Getter<I_DriverContext>::operator()(void) into cpp (again).
  *

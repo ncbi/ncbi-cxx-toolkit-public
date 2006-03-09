@@ -93,6 +93,20 @@ public:
 public:
     /// Add path for the DLL lookup
     void AddDllSearchPath(const string& path);
+    /// Delete all user-installed paths for the DLL lookup (for all resolvers)
+    /// @param previous_paths
+    ///  If non-NULL, store the prevously set search paths in this container
+    void ResetDllSearchPath(vector<string>* previous_paths = NULL);
+    
+    /// Specify which standard locations should be used for the DLL lookup
+    /// (for all resolvers). If standard locations are not set explicitelly
+    /// using this method CDllResolver::fDefaultDllPath will be used by default.
+    CDllResolver::TExtraDllPath
+    SetDllStdSearchPath(CDllResolver::TExtraDllPath standard_paths);
+
+    /// Get standard locations which should be used for the DLL lookup.
+    /// @sa SetDllStdSearchPath
+    CDllResolver::TExtraDllPath GetDllStdSearchPath(void) const;
 
     I_DriverContext* GetDriverContext(
         const string& driver_name,
@@ -143,15 +157,39 @@ C_xDriverMgr::C_xDriverMgr( unsigned int /*nof_drivers*/ )
 #endif
 }
 
+
 C_xDriverMgr::~C_xDriverMgr(void) 
 {
 }
     
+
 void
 C_xDriverMgr::AddDllSearchPath(const string& path)
 {
     m_ContextManager->AddDllSearchPath( path );
 }
+
+
+void 
+C_xDriverMgr::ResetDllSearchPath(vector<string>* previous_paths)
+{
+    m_ContextManager->ResetDllSearchPath( previous_paths );
+}
+
+
+CDllResolver::TExtraDllPath
+C_xDriverMgr::SetDllStdSearchPath(CDllResolver::TExtraDllPath standard_paths)
+{
+    return m_ContextManager->SetDllStdSearchPath( standard_paths );
+}
+
+
+CDllResolver::TExtraDllPath 
+C_xDriverMgr::GetDllStdSearchPath(void) const
+{
+    return m_ContextManager->GetDllStdSearchPath();
+}
+
 
 I_DriverContext*
 C_xDriverMgr::GetDriverContext(
@@ -293,11 +331,34 @@ I_DriverContext* C_DriverMgr::GetDriverContext(const string&       driver_name,
     return s_DrvMgr->GetDriverContext( driver_name, attr );
 }
 
+
 void
 C_DriverMgr::AddDllSearchPath(const string& path)
 {
     s_DrvMgr->AddDllSearchPath( path );
 }
+
+
+void 
+C_DriverMgr::ResetDllSearchPath(vector<string>* previous_paths)
+{
+    s_DrvMgr->ResetDllSearchPath( previous_paths );
+}
+
+
+CDllResolver::TExtraDllPath
+C_DriverMgr::SetDllStdSearchPath(CDllResolver::TExtraDllPath standard_paths)
+{
+    return s_DrvMgr->SetDllStdSearchPath( standard_paths );
+}
+
+
+CDllResolver::TExtraDllPath 
+C_DriverMgr::GetDllStdSearchPath(void) const
+{
+    return s_DrvMgr->GetDllStdSearchPath();
+}
+
 
 I_DriverContext*
 C_DriverMgr::GetDriverContextFromTree(
@@ -307,6 +368,7 @@ C_DriverMgr::GetDriverContextFromTree(
     return s_DrvMgr->GetDriverContext( driver_name, attr );
 }
 
+
 I_DriverContext*
 C_DriverMgr::GetDriverContextFromMap(
     const string& driver_name,
@@ -314,6 +376,7 @@ C_DriverMgr::GetDriverContextFromMap(
 {
     return s_DrvMgr->GetDriverContext( driver_name, attr );
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 I_DriverContext*
@@ -363,6 +426,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/03/09 16:52:37  ssikorsk
+ * Added methods ResetDllSearchPath,  SetDllStdSearchPath,
+ * GetDllStdSearchPath to the C_DriverMgr class.
+ *
  * Revision 1.32  2006/03/02 16:01:11  ssikorsk
  * Use CSafeStaticPtr to manage lifetime of static C_xDriverMgr s_DrvMgr.
  *
