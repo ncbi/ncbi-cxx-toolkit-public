@@ -441,7 +441,7 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
             sev = eDiag_Info;
         }
         else if (msg->severity == CS_SV_FATAL) {
-            sev = eDiag_Fatal;
+            sev = eDiag_Critical;
         }
 
         CDB_ClientEx ex( kBlankCompileInfo, 0, msg->msgstring, sev, msg->msgnumber);
@@ -577,7 +577,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
             kBlankCompileInfo, 
             0, 
             message, 
-            eDiag_Fatal, 
+            eDiag_Critical, 
             msg->msgnumber);
         
         hs->PostMsg(&ftl);
@@ -676,7 +676,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         EDiagSev sev =
             msg->severity <  10 ? eDiag_Info :
             msg->severity == 10 ? (msg->msgnumber == 0 ? eDiag_Info : eDiag_Warning) :
-            msg->severity <  16 ? eDiag_Error : eDiag_Fatal;
+            msg->severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (msg->proclen > 0) {
             CDB_RPCEx rpc(kBlankCompileInfo,
@@ -1228,6 +1228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/03/09 17:21:41  ssikorsk
+ * Replaced database error severity eDiag_Fatal with eDiag_Critical.
+ *
  * Revision 1.63  2006/03/07 17:24:21  ucko
  * +<algorithm> for find()
  *

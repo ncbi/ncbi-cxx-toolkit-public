@@ -410,7 +410,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
             CDB_ClientEx ftl( kBlankCompileInfo,
                          0,
                          message,
-                         eDiag_Fatal,
+                         eDiag_Critical,
                          dberr);
             hs->PostMsg(&ftl);
         }
@@ -454,7 +454,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
             severity == 10 ? eDiag_Warning :
-            severity <  16 ? eDiag_Error : eDiag_Fatal;
+            severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (!procname.empty()) {
             CDB_RPCEx rpc( kBlankCompileInfo,
@@ -1091,6 +1091,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/03/09 17:21:16  ssikorsk
+ * Replaced database error severity eDiag_Fatal with eDiag_Critical.
+ *
  * Revision 1.65  2006/02/22 15:15:50  ssikorsk
  * *** empty log message ***
  *

@@ -346,7 +346,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
             CDB_ClientEx ftl(kBlankCompileInfo,
                              0,
                              message,
-                             eDiag_Fatal,
+                             eDiag_Critical,
                              dberr);
             hs->PostMsg(&ftl);
         }
@@ -389,7 +389,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
             severity == 10 ? eDiag_Warning :
-            severity <  16 ? eDiag_Error : eDiag_Fatal;
+            severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (!procname.empty()) {
             CDB_RPCEx rpc(kBlankCompileInfo,
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/03/09 17:20:43  ssikorsk
+ * Replaced database error severity eDiag_Fatal with eDiag_Critical.
+ *
  * Revision 1.58  2006/02/22 15:56:40  ssikorsk
  * CHECK_DRIVER_FATAL --> CHECK_DRIVER_ERROR
  *
