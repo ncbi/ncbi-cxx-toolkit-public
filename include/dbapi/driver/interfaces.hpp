@@ -32,8 +32,6 @@
  *
  */
 
-#include <map>
-
 #include <corelib/ncbimtx.hpp>
 
 #include <dbapi/driver/types.hpp>
@@ -44,6 +42,10 @@
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #endif
+
+#include <map>
+#include <list>
+
 
 /** @addtogroup DbInterfaces
  *
@@ -513,15 +515,18 @@ public:
     const string& GetHostName(void) const;
 
 protected:
+    typedef list<I_Connection*> TConnPool;
+    
     // To allow children of I_DriverContext to create CDB_Connection
     CDB_Connection* Create_Connection(I_Connection& connection);
     CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr);
     virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr) = 0;
+    void CloseAllConn(void);
     
     /// Used connections
-    CPointerPot m_NotInUse;
+    TConnPool m_NotInUse;
     /// Unused(reserve) connections
-    CPointerPot m_InUse;
+    TConnPool m_InUse;
 
     /// Stack of `per-context' err.message handlers
     CDBHandlerStack m_CntxHandlers;
@@ -665,6 +670,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/03/09 19:01:16  ssikorsk
+ * Replaced types of I_DriverContext's m_NotInUse and
+ * m_InUse from CPointerPot to list<I_Connection*>.
+ * Added method I_DriverContext:: CloseAllConn.
+ *
  * Revision 1.40  2006/01/27 12:43:39  ssikorsk
  * Disabled BCP as a default connection mode;
  * Added Doxigen comments;

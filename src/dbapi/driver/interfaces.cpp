@@ -34,6 +34,7 @@
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -217,10 +218,10 @@ void I_DriverContext::x_Recycle(I_Connection* conn, bool conn_reusable)
 {
     CFastMutexGuard mg(m_Mtx);
 
-    m_InUse.Remove((TPotItem) conn);
+    m_InUse.erase(find(m_InUse.begin(), m_InUse.end(), conn));
 
     if ( conn_reusable ) {
-        m_NotInUse.Add((TPotItem) conn);
+        m_NotInUse.push_back(conn);
     } else {
         delete conn;
     }
@@ -231,15 +232,16 @@ void I_DriverContext::CloseUnusedConnections(const string&   srv_name,
 {
     CFastMutexGuard mg(m_Mtx);
 
-    I_Connection* con;
+    TConnPool::value_type con;
     
     // close all connections first
-    for (int i = m_NotInUse.NofItems();  i--; ) {
-        con = (I_Connection*)(m_NotInUse.Get(i));
+    NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
+        con = *it;
+        
         if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
-
-        m_NotInUse.Remove(i);
+        
+        m_NotInUse.erase(it);
         delete con;
     }
 }
@@ -249,33 +251,33 @@ unsigned int I_DriverContext::NofConnections(const string& srv_name,
 {
 
     if ( srv_name.empty() && pool_name.empty()) {
-        return m_InUse.NofItems() + m_NotInUse.NofItems();
+        return m_InUse.size() + m_NotInUse.size();
     }
 
     CFastMutexGuard mg(m_Mtx);
     int n = 0;
-    I_Connection* con;
+    TConnPool::value_type con;
 
-    for (int i = m_NotInUse.NofItems(); i--;) {
-        con= (I_Connection*) (m_NotInUse.Get(i));
+    ITERATE(TConnPool, it, m_NotInUse) {
+        con = *it;
         if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
         ++n;
     }
-
-    for (int i = m_InUse.NofItems(); i--;) {
-        con= (I_Connection*) (m_InUse.Get(i));
+    
+    ITERATE(TConnPool, it, m_InUse) {
+        con = *it;
         if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
         ++n;
     }
-
+    
     return n;
 }
 
 CDB_Connection* I_DriverContext::Create_Connection(I_Connection& connection)
 {
-    m_InUse.Add((TPotItem) &connection);
+    m_InUse.push_back(&connection);
 
     return new CDB_Connection(&connection);
 }
@@ -307,18 +309,19 @@ I_DriverContext::GetHostName(void) const
 CDB_Connection* 
 I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
 {
-    if (conn_attr.reusable  &&  m_NotInUse.NofItems() > 0) {
+    if (conn_attr.reusable  &&  !m_NotInUse.empty()) {
         // try to get a connection from the pot
         if ( !conn_attr.pool_name.empty() ) {
             // use a pool name
-            for (int i = m_NotInUse.NofItems();  --i; ) {
+            NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
                 CDB_Connection* t_con
-                    = static_cast<CDB_Connection*> (m_NotInUse.Get(i));
-
+                    = dynamic_cast<CDB_Connection*> (*it);
+                if (!t_con) { continue; }
+                
                 // There is no pool name check here. We assume that a connection
                 // pool contains connections with appropriate server names only.
                 if (conn_attr.pool_name.compare(t_con->PoolName()) == 0) {
-                    m_NotInUse.Remove(i);
+                    m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return Create_Connection(*t_con);
                     }
@@ -332,12 +335,13 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
                 return NULL;
 
             // try to use a server name
-            for (int i = m_NotInUse.NofItems();  --i; ) {
+            NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
                 CDB_Connection* t_con
-                    = static_cast<CDB_Connection*> (m_NotInUse.Get(i));
-
+                    = dynamic_cast<CDB_Connection*> (*it);
+                if (!t_con) { continue; }
+                
                 if (conn_attr.srv_name.compare(t_con->ServerName()) == 0) {
-                    m_NotInUse.Remove(i);
+                    m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return Create_Connection(*t_con);
                     }
@@ -354,6 +358,21 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
     I_Connection* t_con = MakeIConnection(conn_attr);
     
     return Create_Connection(*t_con);
+}
+
+void 
+I_DriverContext::CloseAllConn(void)
+{
+    // close all connections first
+    ITERATE(TConnPool, it, m_NotInUse) {
+        delete *it;
+    }
+    m_NotInUse.clear();
+
+    ITERATE(TConnPool, it, m_InUse) {
+        delete *it;
+    }
+    m_InUse.clear();
 }
 
 CDB_Connection* 
@@ -533,6 +552,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/03/09 19:01:37  ssikorsk
+ * Replaced types of I_DriverContext's m_NotInUse and
+ * m_InUse from CPointerPot to list<I_Connection*>.
+ * Added method I_DriverContext:: CloseAllConn.
+ *
  * Revision 1.14  2006/02/01 13:55:07  ssikorsk
  * Report server and user names in case of a failed connection attempt.
  *
