@@ -130,7 +130,6 @@ private:
     // Wait on the file descriptors I/O.
     CPipe::TChildPollMask x_Poll(CPipe::TChildPollMask mask,
                                  const STimeout* timeout) const;
-
 private:
     // I/O handles for child process.
     HANDLE m_ChildStdIn;
@@ -449,9 +448,10 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
         // but Windows doesn't have asynchronous mechanism to read
         // from a pipe.
         // NOTE:  WaitForSingleObject() doesn't work with anonymous pipes.
-        do {
+        // See CPipe::Poll() for more details.
+        for (;;) {
             if ( !PeekNamedPipe(fd, NULL, 0, NULL, &bytes_avail, NULL) ) {
-                // Has peer closed the connection?
+                // Has peer closed connection?
                 if (GetLastError() == ERROR_BROKEN_PIPE) {
                     return eIO_Closed;
                 }
@@ -460,15 +460,18 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
             if ( bytes_avail ) {
                 break;
             }
-            DWORD x_sleep = kWaitPrecision;
+            unsigned long x_sleep = kWaitPrecision;
             if (x_timeout != INFINITE) {
-                if (x_timeout < kWaitPrecision) {
+                if (x_sleep > x_timeout) {
                     x_sleep = x_timeout;
+                }
+                if ( !x_sleep ) {
+                    break;
                 }
                 x_timeout -= x_sleep;
             }
             SleepMilliSec(x_sleep);
-        } while (x_timeout == INFINITE  ||  x_timeout);
+        }
 
         // Data is available to read or read request has timed out
         if ( !bytes_avail ) {
@@ -1511,11 +1514,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/03/09 17:35:30  ivanov
+ * MSWin: CPipeHandle::Read() wait timeout value in full
+ *
  * Revision 1.55  2006/03/09 14:23:05  didenko
  * Added mutex lock in CPipe::Open method on Windows to prevent race condition
  *
  * Revision 1.54  2006/03/08 17:22:14  didenko
- * Quick and dirty fix for preventing race condition when a child process is starting
+ * Quick and dirty fix for preventing race condition when a child process
+ * is starting
  *
  * Revision 1.53  2006/03/08 14:36:29  ivanov
  * CPipe::Poll() -- added implementation for Windows,
