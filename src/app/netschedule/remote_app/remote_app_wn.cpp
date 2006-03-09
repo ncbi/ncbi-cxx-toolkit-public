@@ -86,61 +86,6 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
     size_t total_bytes_written = 0;
     char inbuf[buf_size];
 
-#if defined(NCBI_OS_MSWIN)
-    STimeout short_time = {0, 1};
-    pipe.SetTimeout(eIO_Read, &short_time);
-    pipe.SetTimeout(eIO_Write, &short_time);
-    
-    while (!out_done || !err_done) {
-
-        // write stdin
-        if (in.good() && bytes_in_inbuf == 0) {
-            bytes_in_inbuf = CStreamUtils::Readsome(in, inbuf, buf_size);
-            total_bytes_written = 0;
-        }
-        
-        size_t bytes_written;
-        if (bytes_in_inbuf > 0) {
-            pipe.Write(inbuf + total_bytes_written, bytes_in_inbuf,
-                       &bytes_written);
-            total_bytes_written += bytes_written;
-            bytes_in_inbuf -= bytes_written;
-        }
-
-        if ((!in.good() || in.eof()) && bytes_in_inbuf == 0) {
-            pipe.CloseHandle(CPipe::eStdIn);
-        }
-
-        EIO_Status rstatus;
-        size_t bytes_read;
-     
-        // read stdout
-        if (!out_done) {
-            rstatus = pipe.Read(buf, buf_size, &bytes_read);
-            out.write(buf, bytes_read);
-            if (rstatus != eIO_Success && rstatus != eIO_Timeout) {
-                out_done = true;
-            }
-        }
-        
-        // read stderr
-        if (!err_done) {
-            rstatus = pipe.Read(buf, buf_size, &bytes_read, CPipe::eStdErr);
-            err.write(buf, bytes_read);
-            if (rstatus != eIO_Success && rstatus != eIO_Timeout) {
-                err_done = true;
-            }
-        }
-
-        if (context.GetShutdownLevel() == 
-            CNetScheduleClient::eShutdownImmidiate) {
-            CProcess(pipe.GetProcessHandle()).Kill();
-            canceled = true;
-            break;
-        }
-    }
-#elif defined(NCBI_OS_UNIX)
-
     CPipe::TChildPollMask mask = CPipe::fStdIn | CPipe::fStdOut | CPipe::fStdErr;
 
     STimeout wait_time = {1, 0};
@@ -168,7 +113,7 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
                 mask &= ~CPipe::fStdIn;
             }
 
-        } else if (rmask & CPipe::fStdOut) {
+        } if (rmask & CPipe::fStdOut) {
             // read stdout
             if (!out_done) {
                 rstatus = pipe.Read(buf, buf_size, &bytes_read);
@@ -180,7 +125,7 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
         }
 
 
-        } else if (rmask & CPipe::fStdErr) {
+        } if (rmask & CPipe::fStdErr) {
             if (!err_done) {
                 rstatus = pipe.Read(buf, buf_size, &bytes_read, CPipe::eStdErr);
                 err.write(buf, bytes_read);
@@ -189,13 +134,9 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
                     mask &= ~CPipe::fStdErr;
                 }
             }
-        } else {
         }
-
         if (!CProcess(pipe.GetProcessHandle()).IsAlive())
-            //            LOG_POST("Process is not alive : " << pipe.GetProcessHandle() );
             break;
-
         if (context.GetShutdownLevel() == 
             CNetScheduleClient::eShutdownImmidiate) {
             CProcess(pipe.GetProcessHandle()).Kill();
@@ -205,12 +146,7 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
 
     }
 
-#endif  /* NCBI_OS_UNIX | NCBI_OS_MSWIN */
-
-    //    LOG_POST("About to close : " << pipe.GetProcessHandle() );
     pipe.Close(&exit_value);
-
-    // return the value with which the process exited
     return canceled;
 }
 
@@ -312,6 +248,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/03/09 14:24:33  didenko
+ * Fixed logic of event handling
+ *
  * Revision 1.2  2006/03/07 18:00:18  didenko
  * Spelling fix
  *
