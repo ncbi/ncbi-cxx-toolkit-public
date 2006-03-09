@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_process.hpp>
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_control_thread.hpp>
@@ -89,12 +90,8 @@ public:
         if (request.find("SUICIDE") != NPOS) {
             LOG_POST("DIE request has been received from host: " << m_Host);
             LOG_POST("SERVER IS COMMITTING SUICIDE!!");
-#if defined(NCBI_OS_MSWIN)
-            ExitProcess(256);
-#else
-            double d = 0.0 * 8.0;
-            int k = 1/(int)d;
-#endif
+            TPid cpid = CProcess::GetCurrentPid();
+            CProcess(cpid).Kill(0,0);
         } else {
             os << "OK:";
             CGridGlobals::GetInstance().
@@ -299,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2006/03/09 14:08:11  didenko
+ * Got rid of a compilation warning
+ *
  * Revision 6.20  2006/03/08 20:00:49  didenko
  * Fix compilation error on Linux
  *
