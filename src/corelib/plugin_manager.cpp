@@ -70,9 +70,11 @@ CPluginManager_DllResolver::~CPluginManager_DllResolver(void)
 }
 
 CDllResolver& 
-CPluginManager_DllResolver::ResolveFile(const vector<string>& paths,
+CPluginManager_DllResolver::ResolveFile(const TSearchPaths&   paths,
                                     	const string&         driver_name,
-                                    	const CVersionInfo&   version)
+                                    	const CVersionInfo&   version,
+                                        CDllResolver::TExtraDllPath
+                                                              std_path)
 {
     CDllResolver* resolver = GetCreateDllResolver();
     _ASSERT(resolver);
@@ -98,8 +100,7 @@ CPluginManager_DllResolver::ResolveFile(const vector<string>& paths,
 #endif        
     }
     
-    resolver->FindCandidates(paths, masks, 
-                             CDllResolver::fDefaultDllPath, drv);
+    resolver->FindCandidates(paths, masks, std_path, drv);
     
     return *resolver;
 }
@@ -335,6 +336,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/03/09 15:12:02  ssikorsk
+ * Added CDllResolver::TExtraDllPath std_path argument to
+ * the CPluginManager_DllResolver::ResolveFile method.
+ *
  * Revision 1.20  2005/07/26 12:15:19  ssikorsk
  * Implemented a new algorithm of DLLs name resolving.
  *
