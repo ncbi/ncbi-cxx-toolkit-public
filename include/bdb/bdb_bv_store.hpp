@@ -57,8 +57,9 @@ template<class TBV>
 class CBDB_BvStore : public CBDB_BLobFile
 {
 public:
-    typedef  TBV  TBitVector;  ///< Serializable bitvector
-    typedef  vector<unsigned char> TBuffer;
+    typedef TBV                   TBitVector; ///< Serializable bitvector
+    typedef vector<unsigned char> TBuffer;
+    typedef TBuffer::value_type   TBufferValue;
 public:
 
     /// Construction
@@ -108,7 +109,7 @@ public:
     /// Fetch the next BLOB record to the resiable buffer
     EBDB_ErrCode FetchToBuffer(CBDB_FileCursor& cur);
 
-    void Deserialize(TBitVector* bv, const TBuffer::value_type* buf);
+    void Deserialize(TBitVector* bv, const TBufferValue* buf);
 
     bm::word_t* GetSerializationTempBlock();
 
@@ -545,8 +546,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::Read(TBitVector*  bv,
 }
 
 template<class TBV>
-void CBDB_BvStore<TBV>::Deserialize(TBitVector* bv, 
-                                    const TBuffer::value_type* buf)
+void CBDB_BvStore<TBV>::Deserialize(TBitVector* bv, const TBufferValue* buf)
 {
     if (m_STmpBlock == 0) {
         m_STmpBlock = m_TmpBVec.allocate_tempblock();
@@ -1206,6 +1206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/03/09 19:13:11  ucko
+ * Tweak to work around weird build failures with WorkShop 5.3 on Solaris/x86.
+ *
  * Revision 1.9  2006/03/08 16:15:48  kuznets
  * Fixed GCC compilation
  *
