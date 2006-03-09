@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.1  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.2  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -444,6 +444,10 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
     case eGet:
         stat.req_code = 'G';
         ProcessGet(socket, tdata.req, tdata, stat);
+        break;
+    case eGet2:
+        stat.req_code = 'G';
+        ProcessGet2(socket, tdata.req, tdata, stat);
         break;
     case eShutdown:
         stat.req_code = 'S';
@@ -887,6 +891,159 @@ void CNetCacheServer::x_WriteBuf(CSocket& sock,
         buf += n_written;
     } while (bytes > 0);
 }
+
+
+void CNetCacheServer::ProcessGet2(CSocket&               sock, 
+                                  const SNC_Request&     req,
+                                  SNC_ThreadData&        tdata,
+                                  NetCache_RequestStat&  stat)
+{
+    // The key difference between Get2 and Get is that Get2 protocol
+    // requires the client to send a string "OK:" when client receives
+    // all the data. We do that to prevent server side disconnect 
+    // which freezes socket for 2 minutes on the kernel level
+
+    const string& req_id = req.req_id;
+
+    if (req_id.empty()) {
+        WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        x_RegisterProtocolErr(req.req_type, tdata.auth);
+        return;
+    }
+
+    CIdBusyGuard guard(&m_UsedIds);
+    if (req.no_lock) {
+        bool lock_accuired = guard.Lock(req_id, 0);
+        if (!lock_accuired) {  // BLOB is locked by someone else
+            WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
+            s_WaitForReadSocket(sock, 5);
+            ReadStr(sock, &(tdata.tmp));
+            //SleepMilliSec(100); // giving the client a time to disconnect
+            return;
+        }
+    } else {
+        guard.Lock(req_id, m_InactivityTimeout);
+    }
+    char* buf = tdata.buffer.get();
+
+    ICache::SBlobAccessDescr ba_descr;
+    buf += 100;
+    ba_descr.buf = buf;
+    ba_descr.buf_size = GetTLS_Size() - 100;
+
+    m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
+
+    if (!ba_descr.blob_found) {
+blob_not_found:
+            string msg = "BLOB not found. ";
+            msg += req_id;
+            WriteMsg(sock, "ERR:", msg);
+
+            s_WaitForReadSocket(sock, 5);
+            ReadStr(sock, &(tdata.tmp));
+            return;
+    }
+
+    if (ba_descr.blob_size == 0) {
+        WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
+
+        s_WaitForReadSocket(sock, 5);
+        ReadStr(sock, &(tdata.tmp));
+        return;
+    }
+
+/*
+    if (ba_descr.blob_size == 0) { // not found
+        if (ba_descr.reader == 0) {
+blob_not_found:
+            string msg = "BLOB not found. ";
+            msg += req_id;
+            WriteMsg(sock, "ERR:", msg);
+        } else {
+            WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
+        }
+        x_RegisterNoBlobErr(req.req_type, tdata.auth);
+        return;
+    }
+*/
+    stat.blob_size = ba_descr.blob_size;
+
+    if (ba_descr.reader.get() == 0) {  // all in buffer
+        string msg("OK:BLOB found. SIZE=");
+        string sz;
+        NStr::UIntToString(sz, ba_descr.blob_size);
+        msg += sz;
+
+        const char* msg_begin = msg.c_str();
+        const char* msg_end = msg_begin + msg.length();
+
+        for (; msg_end >= msg_begin; --msg_end) {
+            --buf;
+            *buf = *msg_end;
+            ++ba_descr.blob_size;
+        }
+
+        // translate BLOB fragment to the network
+        CStopWatch  sw(CStopWatch::eStart);
+
+        x_WriteBuf(sock, buf, ba_descr.blob_size);
+
+        stat.comm_elapsed += sw.Elapsed();
+        ++stat.io_blocks;
+
+        s_WaitForReadSocket(sock, 5);
+        ReadStr(sock, &(tdata.tmp));
+        return;
+
+    } // inline BLOB
+
+
+    // re-translate reader to the network
+
+    auto_ptr<IReader> rdr(ba_descr.reader.release());
+    if (!rdr.get()) {
+        goto blob_not_found;
+    }
+    size_t blob_size = ba_descr.blob_size;
+
+    bool read_flag = false;
+    
+    buf = tdata.buffer.get();
+
+    size_t bytes_read;
+    do {
+        ERW_Result io_res = rdr->Read(buf, GetTLS_Size(), &bytes_read);
+        if (io_res == eRW_Success && bytes_read) {
+            if (!read_flag) {
+                read_flag = true;
+                string msg("BLOB found. SIZE=");
+                string sz;
+                NStr::UIntToString(sz, blob_size);
+                msg += sz;
+                WriteMsg(sock, "OK:", msg);
+            }
+
+            // translate BLOB fragment to the network
+            CStopWatch  sw(CStopWatch::eStart);
+
+            x_WriteBuf(sock, buf, bytes_read);
+
+            stat.comm_elapsed += sw.Elapsed();
+            ++stat.io_blocks;
+
+        } else {
+            break;
+        }
+    } while(1);
+    if (!read_flag) {
+        goto blob_not_found;
+    }
+
+    s_WaitForReadSocket(sock, 5);
+    ReadStr(sock, &(tdata.tmp));
+}
+
+
 
 
 void CNetCacheServer::ProcessGet(CSocket&               sock, 
@@ -1913,6 +2070,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2006/03/09 21:06:37  kuznets
+ * Added Get2 command (with client driven disconnect)
+ *
  * Revision 1.79  2006/02/24 17:14:05  kuznets
  * Adde ini file parameter (location of logs)
  *

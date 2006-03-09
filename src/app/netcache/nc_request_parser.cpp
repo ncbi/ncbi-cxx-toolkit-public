@@ -296,9 +296,18 @@ void CNetCacheServer::ParseRequestNC(const string& reqstr, SNC_Request* req)
 
     case 'G':
 
+        if (strncmp(s, "GET2", 4) == 0) {
+            req->req_type = eGet;
+            s += 4;
+            goto parse_get;
+        }
+
+
         if (strncmp(s, "GET", 3) == 0) {
             req->req_type = eGet;
             s += 3;
+
+        parse_get:
 
             if (isspace((unsigned char)(*s))) { // "GET"
                 while (*s && isspace((unsigned char)(*s))) {
@@ -439,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/03/09 21:06:37  kuznets
+ * Added Get2 command (with client driven disconnect)
+ *
  * Revision 1.5  2006/01/18 17:04:17  kuznets
  * Fixed bug in request parsing (missing request code eGet)
  *

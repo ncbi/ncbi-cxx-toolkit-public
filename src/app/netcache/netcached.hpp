@@ -57,6 +57,7 @@ typedef enum {
     ePut,
     ePut2,   ///< PUT v.2 transmission protocol
     eGet,
+    eGet2,   ///< GET v.2 (with confirmation message)
     eShutdown,
     eVersion,
     eRemove,
@@ -152,6 +153,7 @@ struct SNC_ThreadData
     SNC_Request req;                            ///< parsed NC request
     SIC_Request ic_req;                         ///< parsed IC request
     AutoPtr<char, ArrayDeleter<char> >  buffer; ///< operation buffer
+    string      tmp;
 
     SNC_ThreadData(unsigned int size)
         : buffer(new char[size + 256]) 
@@ -374,6 +376,12 @@ private:
                     SNC_ThreadData&       tdata,
                     NetCache_RequestStat& stat);
 
+    /// Process "GET2" request
+    void ProcessGet2(CSocket&              sock,
+                     const SNC_Request&    req,
+                     SNC_ThreadData&       tdata,
+                     NetCache_RequestStat& stat);
+
     /// Process "VERSION" request
     void ProcessVersion(CSocket& sock, const SNC_Request& req);
 
@@ -526,6 +534,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/03/09 21:06:37  kuznets
+ * Added Get2 command (with client driven disconnect)
+ *
  * Revision 1.4  2006/01/17 16:49:31  kuznets
  * Added session management(auto-shutdown), cleaned-up code
  *
