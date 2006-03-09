@@ -73,12 +73,12 @@ public:
                CRef<IQueryFactory> subject,
                CConstRef<CPSIBlastOptionsHandle> options);
 
-    /// Constructor to compare two protein sequences in an object manager-free
+    /// Constructor to compare protein sequences in an object manager-free
     /// manner.
     /// @param query 
     ///     Protein query sequence to search (only 1 is allowed!) [in]
     /// @param subject 
-    ///     Protein sequence to search [in]
+    ///     Protein sequence(s) to search [in]
     /// @param options 
     ///     Protein options [in]
     CPsiBl2Seq(CRef<IQueryFactory> query,
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/03/09 18:28:34  camacho
+* Update comment
+*
 * Revision 1.6  2005/11/04 13:26:23  camacho
 * Use CPsiBlastImpl class
 *
