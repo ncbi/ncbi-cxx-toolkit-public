@@ -63,17 +63,17 @@ const unsigned long CProcess::kDefaultKillTimeout   = 1000;
 const unsigned long CProcess::kDefaultLingerTimeout = 1000;
 
 
-CProcess::CProcess(long process, EProcessType type)
-    : m_Process(process), m_Type(type)
+CProcess::CProcess(TPid process, EProcessType type)
+    : m_Process((TProcessHandle)process), m_Type(type)
 {
     return;
 }
 
 #if defined(NCBI_OS_MSWIN)
-// The helper constructor for MS Windows to avoid cast from HANDLE to long
-
-CProcess::CProcess(HANDLE process, EProcessType type)
-    : m_Process((long)process), m_Type(type)
+// The helper constructor for MS Windows to avoid cast from
+// TProcessHandle/HANDLE to TPid/DWORD
+CProcess::CProcess(TProcessHandle process, EProcessType type)
+    : m_Process(process), m_Type(type)
 {
     return;
 }
@@ -173,17 +173,18 @@ TPid CProcess::GetParentPid(void)
 bool CProcess::IsAlive(void) const
 {
 #if defined(NCBI_OS_UNIX)
-    return kill((TPid) m_Process, 0) == 0  ||  errno == EPERM;
+    return kill((TPid)m_Process, 0) == 0  ||  errno == EPERM;
 
 #elif defined(NCBI_OS_MSWIN)
     HANDLE hProcess = 0;
     if (m_Type == ePid) {
-        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, m_Process);
+        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,
+                               FALSE, (TPid)m_Process);
         if (!hProcess) {
             return GetLastError() == ERROR_ACCESS_DENIED;
         }
     } else {
-        hProcess = (HANDLE)m_Process;
+        hProcess = m_Process;
     }
     DWORD status = 0;
     _ASSERT(STILL_ACTIVE != 0);
@@ -199,19 +200,12 @@ bool CProcess::IsAlive(void) const
 }
 
 
-#if defined(NCBI_OS_MSWIN)
-bool s_WaitForTerminate(unsigned long timeout)
-{
-    return false;
-}
-#endif
-
 bool CProcess::Kill(unsigned long kill_timeout,
                     unsigned long linger_timeout) const
 {
 #if defined(NCBI_OS_UNIX)
 
-    TPid pid = (TPid) m_Process;
+    TPid pid = (TPid)m_Process;
 
     // Try to kill the process with SIGTERM first
     if (kill(pid, SIGTERM) == -1  &&  errno == EPERM) {
@@ -250,7 +244,7 @@ bool CProcess::Kill(unsigned long kill_timeout,
 #elif defined(NCBI_OS_MSWIN)
 
     // Try to kill current process?
-    if ( m_Process == GetCurrentPid() ) {
+    if ( m_Type == ePid  &&  (TPid)m_Process == GetCurrentPid() ) {
         ExitProcess(-1);
         // should not reached
         return false;
@@ -263,16 +257,16 @@ bool CProcess::Kill(unsigned long kill_timeout,
     // Get process handle
     if (m_Type == ePid) {
         hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_TERMINATE |
-                               SYNCHRONIZE, FALSE, m_Process);
+                               SYNCHRONIZE, FALSE, (TPid)m_Process);
         if ( !hProcess ) {
             enable_sync = false;
-            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, m_Process);
+            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
             if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
                 return false;
             }
         }
     } else {
-        hProcess = (HANDLE)m_Process;
+        hProcess = m_Process;
     }
     // Check process handle
     if ( !hProcess  ||  hProcess == INVALID_HANDLE_VALUE ) {
@@ -346,7 +340,7 @@ bool CProcess::Kill(unsigned long kill_timeout,
 int CProcess::Wait(unsigned long timeout) const
 {
 #if defined(NCBI_OS_UNIX)
-    TPid pid     = (TPid) m_Process;
+    TPid pid     = (TPid)m_Process;
     int  options = timeout == kMax_ULong/*infinite*/ ? 0 : WNOHANG;
     int  status;
 
@@ -383,16 +377,16 @@ int CProcess::Wait(unsigned long timeout) const
     // Get process handle
     if (m_Type == ePid) {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE,
-                               FALSE, m_Process);
+                               FALSE, (TPid)m_Process);
         if ( !hProcess ) {
             enable_sync = false;
-            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, m_Process);
+            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
             if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
                 return false;
             }
         }
     } else {
-        hProcess = (HANDLE)m_Process;
+        hProcess = m_Process;
     }
     DWORD status = -1;
     try {
@@ -571,6 +565,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/03/09 19:29:08  ivanov
+ * CProcess: use CProcessHandle instead of 'long' to store process id,
+ * to avoid warnings on 64-bit Windows.
+ *
  * Revision 1.20  2006/03/08 21:41:43  lavr
  * CProcess::Kill() rip w/o status
  *

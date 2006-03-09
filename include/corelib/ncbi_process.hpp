@@ -105,9 +105,11 @@ public:
     static const unsigned long kDefaultLingerTimeout;
 
     /// Constructor.
-    CProcess(long process, EProcessType type = eHandle);
+    CProcess(TPid process, EProcessType type = eHandle);
 #if defined(NCBI_OS_MSWIN)
-    CProcess(HANDLE process, EProcessType type = eHandle);
+    // On MS windows process identifiers and process handles
+    // are different.
+    CProcess(TProcessHandle process, EProcessType type = eHandle);
 #endif
 
     /// Get process identifier for a current running process.
@@ -177,8 +179,9 @@ private:
     friend class CThread;
 #endif
 
-    long          m_Process;   ///< Process identifier.
-    EProcessType  m_Type;      ///< Type of process identifier.
+    // TProcessHandle type can store both: pid and process handle.
+    TProcessHandle  m_Process;  ///< Process identifier.
+    EProcessType    m_Type;     ///< Type of process identifier.
 };
 
 
@@ -292,6 +295,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/03/09 19:29:07  ivanov
+ * CProcess: use CProcessHandle instead of 'long' to store process id,
+ * to avoid warnings on 64-bit Windows.
+ *
  * Revision 1.15  2006/03/07 14:27:24  ivanov
  * CProcess::Kill() -- added linger_timeout parameter
  *
