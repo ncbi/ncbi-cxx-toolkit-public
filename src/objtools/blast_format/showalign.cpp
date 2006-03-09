@@ -150,7 +150,7 @@ type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
 
 
 static string k_GetTreeViewForm =  "<FORM  method=\"post\" \
-action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&dbname=%s&queryID=%s\" \
+action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&dbname=%s&queryID=%s&distmode=on\" \
 name=\"tree%s%d\" target=\"trv%s\"> \
 <input type=button value=\"Tree View\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
 <input type=\"hidden\" name=\"sequenceSet\" value=\"\"></form>";
@@ -3120,6 +3120,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.110  2006/03/09 14:32:06  zaretska
+*Added checking Show distance by default for Tree View button
+*
 *Revision 1.109  2006/03/08 19:01:56  jianye
 *added mapview_prev url link
 *
