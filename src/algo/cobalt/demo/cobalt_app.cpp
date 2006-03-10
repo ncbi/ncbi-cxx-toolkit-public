@@ -84,6 +84,12 @@ void CMultiApplication::Init(void)
     arg_desc->AddOptionalKey("seqalign", "file", 
                      "destination filename for text seqalign",
                      CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("c", "constraintfile", 
+                     "filename containing pairwise alignment constraints, "
+                     "one per line, each of the form:\n"
+                     "seq1_idx seq1_start seq1_end "
+                     "seq2_idx seq2_start seq2_end",
+                     CArgDescriptions::eString);
     arg_desc->AddDefaultKey("evalue", "evalue", 
                      "E-value threshold for selecting conserved domains",
                      CArgDescriptions::eDouble, "0.01");
@@ -171,6 +177,38 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
 }
 
 
+static void
+x_LoadConstraints(string constraintfile, CHitList& hitlist)
+{
+    CNcbiIfstream f(constraintfile.c_str());
+    if (f.bad() || f.fail())
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Cannot open file with pairwise constraints");
+
+    int seq1, seq1_start, seq1_end;
+    int seq2, seq2_start, seq2_end;
+
+    f >> seq1 >> seq1_start >> seq1_end;
+    f >> seq2 >> seq2_start >> seq2_end;
+    hitlist.AddToHitList(new CHit(seq1, seq2,
+                            TRange(seq1_start, seq1_end),
+                            TRange(seq2_start, seq2_end),
+                            0, CEditScript()));
+
+    while (!f.eof()) {
+        seq1 = -1;
+
+        f >> seq1 >> seq1_start >> seq1_end;
+        f >> seq2 >> seq2_start >> seq2_end;
+        if (seq1 >= 0)
+            hitlist.AddToHitList(new CHit(seq1, seq2,
+                                TRange(seq1_start, seq1_end),
+                                TRange(seq2_start, seq2_end),
+                                0, CEditScript()));
+    }
+}
+
+
 int CMultiApplication::Run(void)
 {
     // Allow the fasta reader to complain on 
@@ -221,6 +259,12 @@ int CMultiApplication::Run(void)
         aligner.SetPatternInfo(args["p"].AsString());
     }
 
+    if (args["c"]) {
+        CHitList user_hits;
+        x_LoadConstraints(args["c"].AsString(), user_hits);
+        aligner.SetUserHits(user_hits);
+    }
+
     aligner.SetVerbose(args["v"].AsBoolean());
 
     aligner.Run();
@@ -255,6 +299,9 @@ int main(int argc, const char* argv[])
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.7  2006/03/10 19:27:43  papadopo
+  allow pairwise user-specified constraints to be read from file
+
   Revision 1.6  2006/03/10 16:54:12  papadopo
   make RPS residue frequencies optional
 
