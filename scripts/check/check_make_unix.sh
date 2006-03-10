@@ -404,7 +404,8 @@ RunTest() {
                # Get application execution time
                exec_time=\`\$build_dir/sysdep.sh tl 5 \$x_log | tr '\n\r' '??'\`
                exec_time=\`echo \$exec_time |  \\
-                          sed -e 's/?$//'      \\
+                          sed -e 's/??/?/g'    \\
+                              -e 's/?$//'      \\
                               -e 's/?/, /g'    \\
                               -e 's/[ ] */ /g' \\
                               -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
