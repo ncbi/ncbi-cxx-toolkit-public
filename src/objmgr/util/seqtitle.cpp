@@ -84,6 +84,8 @@ static string s_TitleFromProtein   (const CBioseq_Handle& handle,
                                           bool           all_proteins);
 static string s_TitleFromSegment   (const CBioseq_Handle& handle,
                                           CScope&        scope);
+
+static void s_FlyCG_PtoR(string& s);
                                           
 
 string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
@@ -250,6 +252,10 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             string cds_label;
             feature::GetLabel(*cdregion, &cds_label, feature::eContent,
                               &scope);
+            if (NStr::EqualNocase(source->GetOrg().GetTaxname(),
+                                  "Drosophila melanogaster")) {
+                s_FlyCG_PtoR(cds_label);
+            }
             title += NStr::Replace(cds_label, "isoform ",
                                    "transcript variant ");
             title += " (";
@@ -883,6 +889,24 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 }
 
 
+static void s_FlyCG_PtoR(string& s)
+{
+    // s =~ s/\b(CG\d*-)P([[:alpha:]])\b/$1R$2/g, more or less.
+    SIZE_TYPE pos = 0, len = s.size();
+    while ((pos = NStr::FindCase(s, "CG", pos)) != NPOS) {
+        pos += 2;
+        while (pos + 3 < len  &&  isdigit((unsigned char)s[pos])) {
+            ++pos;
+        }
+        if (s[pos] == '-'  &&  s[pos + 1] == 'P'
+            &&  isalpha((unsigned char)s[pos + 2])
+            &&  (pos + 3 == len  ||  strchr(" ,;", s[pos + 3])) ) {
+            s[pos + 1] = 'R';
+        }
+    }
+}
+
+
 END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -890,6 +914,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.55  2006/03/10 17:07:41  ucko
+* Per recent changes in the C Toolkit, replace CG*-Px with CG*-Rx when
+* making titles for D. melanogaster RefSeq mRNA (NM_) records.
+*
 * Revision 1.54  2006/02/02 15:44:19  ucko
 * Fix logic error in handling of sequences already flagged as TPA_exp or TPA_inf.
 *
