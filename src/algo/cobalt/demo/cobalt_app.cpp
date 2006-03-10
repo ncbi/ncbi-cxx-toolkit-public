@@ -201,14 +201,18 @@ int CMultiApplication::Run(void)
     aligner.SetQueries(queries);
 
     if (args["norps"].AsBoolean() == false) {
-        if (!args["db"] || !args["b"] || !args["f"]) {
-            printf("RPS database, frequency file and block file "
-                   "must be specified\n");
+        if (!args["db"] || !args["b"]) {
+            printf("RPS database and block file must be specified "
+                   "(possibly with RPS frequency file)\n");
             return -1;
         }
+        string freqfile;
+        if (args["f"])
+            freqfile = args["f"].AsString();
+
         aligner.SetDomainInfo(args["db"].AsString(),
                               args["b"].AsString(),
-                              args["f"].AsString(),
+                              freqfile,
                               args["evalue"].AsDouble(),
                               args["dfb"].AsDouble());
     }
@@ -251,6 +255,9 @@ int main(int argc, const char* argv[])
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.6  2006/03/10 16:54:12  papadopo
+  make RPS residue frequencies optional
+
   Revision 1.5  2006/03/07 22:53:45  papadopo
   add comment
 

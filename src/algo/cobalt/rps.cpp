@@ -556,8 +556,7 @@ void
 CMultiAligner::FindDomainHits()
 {
     if (m_RPSdb.empty() || 
-        m_Blockfile.empty() || 
-        m_Freqfile.empty()) {
+        m_Blockfile.empty()) {
         return;
     }
 
@@ -612,9 +611,15 @@ CMultiAligner::FindDomainHits()
     // propagate the residue frequencies of the best
     // RPS hits onto the query sequences
 
-    profile_data.Load(CProfileData::eGetResFreqs, m_RPSdb, m_Freqfile);
-    x_AssignRPSResFreqs(m_DomainHits, profile_data);
-    profile_data.Clear();
+    if (!m_Freqfile.empty()) {
+        profile_data.Load(CProfileData::eGetResFreqs, m_RPSdb, m_Freqfile);
+        x_AssignRPSResFreqs(m_DomainHits, profile_data);
+        profile_data.Clear();
+    }
+    else {
+        if (m_Verbose)
+            printf("warning: No RPSBLAST residue frequencies available\n");
+    }
 
     // Connect together RPS hits to the same region of the
     // same database sequence
@@ -660,6 +665,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.11  2006/03/10 16:54:12  papadopo
+  make RPS residue frequencies optional
+
   Revision 1.10  2006/03/02 21:38:02  papadopo
   do not save block alignments unless their score is positive
 
