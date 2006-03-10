@@ -29,7 +29,8 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Base class of object input stream classes.
+*   It reads data from an input stream, parses it, and creates a data object
 */
 
 #include <corelib/ncbistd.hpp>
@@ -89,16 +90,13 @@ class CPackString;
 class NCBI_XSERIAL_EXPORT CObjectIStream : public CObjectStack
 {
 public:
-    // typedefs
-    typedef size_t TObjectIndex;
+    // constructors are protected
+    // use any one of 'Create' methods to construct the stream
+    virtual ~CObjectIStream(void);
 
-    // open methods
-    virtual void Open(CByteSourceReader& reader);
-    void Open(CByteSource& source);
-    void Open(CNcbiIstream& inStream, bool deleteInStream = false);
-    void Close(void);
-    void ResetLocalHooks(void);
-
+//---------------------------------------------------------------------------
+// Create methods
+    // CObjectIStream will be created on heap, and must be deleted later on
     static CObjectIStream* Open(ESerialDataFormat format,
                                 CNcbiIstream& inStream,
                                 bool deleteInStream = false);
@@ -107,51 +105,118 @@ public:
                                 TSerialOpenFlags openFlags = 0);
     static CObjectIStream* Open(const string& fileName,
                                 ESerialDataFormat format);
-
-    bool DetectLoops(void) const;
-
-    // when enabled, stream verifies data on input
-    // and throws CSerialException with eFormatError err.code
-
-    // for this particular stream
-    void SetVerifyData(ESerialVerifyData verify);
-    ESerialVerifyData GetVerifyData(void) const;
-    // for streams created by the current thread
-    static  void SetVerifyDataThread(ESerialVerifyData verify);
-    // for streams created by the current process
-    static  void SetVerifyDataGlobal(ESerialVerifyData verify);
-
-    // for this particular stream
-    void SetSkipUnknownMembers(ESerialSkipUnknown skip);
-    ESerialSkipUnknown GetSkipUnknownMembers(void);
-    // for streams created by the current thread
-    static  void SetSkipUnknownThread(ESerialSkipUnknown skip);
-    // for streams created by the current process
-    static  void SetSkipUnknownGlobal(ESerialSkipUnknown skip);
-
-    // memory pool
-    void SetMemoryPool(CObjectMemoryPool* memory_pool)
-        {
-            m_MemoryPool = memory_pool;
-        }
-    CObjectMemoryPool* GetMemoryPool(void)
-        {
-            return m_MemoryPool;
-        }
-    void UseMemoryPool(void);
-
-    // constructors
-protected:
-    CObjectIStream(ESerialDataFormat format);
-    CObjectIStream(CNcbiIstream& in, bool deleteIn = false);
-
-public:
-    virtual ~CObjectIStream(void);
-
-    // get data format
+    static CObjectIStream* Create(ESerialDataFormat format);
+    static CObjectIStream* Create(ESerialDataFormat format,
+                                  CByteSource& source);
+    static CObjectIStream* Create(ESerialDataFormat format,
+                                  CByteSourceReader& reader);
+    // Get data format
     ESerialDataFormat GetDataFormat(void) const;
 
-    // USER INTERFACE
+//---------------------------------------------------------------------------
+// Data verification setup
+    // When enabled, stream verifies data on input
+    // and throws CSerialException with eFormatError err.code
+
+    // For this particular stream
+    void SetVerifyData(ESerialVerifyData verify);
+    ESerialVerifyData GetVerifyData(void) const;
+    // For streams created by the current thread
+    static  void SetVerifyDataThread(ESerialVerifyData verify);
+    // For streams created by the current process
+    static  void SetVerifyDataGlobal(ESerialVerifyData verify);
+
+    // For this particular stream
+    void SetSkipUnknownMembers(ESerialSkipUnknown skip);
+    ESerialSkipUnknown GetSkipUnknownMembers(void);
+    // For streams created by the current thread
+    static  void SetSkipUnknownThread(ESerialSkipUnknown skip);
+    // For streams created by the current process
+    static  void SetSkipUnknownGlobal(ESerialSkipUnknown skip);
+
+//---------------------------------------------------------------------------
+// Stream state
+    enum EFailFlags {
+        /// No error
+        fNoError       = 0,             eNoError     = fNoError,
+        /// End of file in the middle of reading an object
+        fEOF           = 1 << 0,        eEOF         = fEOF,
+        /// An unknown error when reading the input file
+        fReadError     = 1 << 1,        eReadError   = fReadError,
+        /// Input file formatting does not conform with specification
+        fFormatError   = 1 << 2,        eFormatError = fFormatError,
+        /// Data read is beyond the allowed limits
+        fOverflow      = 1 << 3,        eOverflow    = fOverflow,
+        /// Input data is incorrect (e.g. invalid enum)
+        fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
+        /// Illegal in a given context function call
+        fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
+        /// Internal error, the real reason is unclear
+        fFail          = 1 << 6,        eFail        = fFail,
+        /// No input file
+        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen,
+        /// Method is not implemented
+        fNotImplemented= 1 << 8,        eNotImplemented = fNotImplemented,
+        /// Mandatory value was missing in the input.
+        /// This is the variant of fFormatError.
+        /// Normally stream throws an exception, but client can request
+        /// not to throw one; in this case this flag is set instead.
+        fMissingValue  = 1 << 9,        eMissingValue= fMissingValue,
+        /// Unknown value was present in the input.
+        /// This is the variant of fFormatError.
+        /// Normally stream throws an exception, but client can request
+        /// not to throw one; in this case this flag is set instead.
+        fUnknownValue  = 1 << 10,       eUnknownValue= fUnknownValue
+    };
+    typedef int TFailFlags;
+
+    // Check if any of fail flags is set
+    bool fail(void) const;
+    TFailFlags GetFailFlags(void) const;
+    TFailFlags SetFailFlags(TFailFlags flags, const char* message=0);
+    TFailFlags ClearFailFlags(TFailFlags flags);
+    // Check fail flags and also the state of m_Input (CIStreamBuffer)
+    bool InGoodState(void);
+
+    // Check if there is still some meaningful data that can be read;
+    // in text streams this function will skip white spaces and comments
+    virtual bool EndOfData(void);
+
+    /// @deprecated
+    ///   Use GetStreamPos() instead
+    /// @sa GetStreamPos()
+    NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
+    CNcbiStreampos GetStreamPos(void) const;
+
+    /// @deprecated
+    ///  Use SetStreamPos() instead
+    /// @sa SetStreamPos() 
+    NCBI_DEPRECATED void   SetStreamOffset(CNcbiStreampos pos);
+    void   SetStreamPos(CNcbiStreampos pos);
+
+    // Useful for diagnostic and information messages
+    virtual string GetStackTrace(void) const;
+    virtual string GetPosition(void) const;
+
+//---------------------------------------------------------------------------
+// Local read hooks
+    void SetPathReadObjectHook( const string& path, CReadObjectHook*        hook);
+    void SetPathSkipObjectHook( const string& path, CSkipObjectHook*        hook);
+    void SetPathReadMemberHook( const string& path, CReadClassMemberHook*   hook);
+    void SetPathSkipMemberHook( const string& path, CSkipClassMemberHook*   hook);
+    void SetPathReadVariantHook(const string& path, CReadChoiceVariantHook* hook);
+    void SetPathSkipVariantHook(const string& path, CSkipChoiceVariantHook* hook);
+
+//---------------------------------------------------------------------------
+// Open methods
+    virtual void Open(CByteSourceReader& reader);
+    void Open(CByteSource& source);
+    void Open(CNcbiIstream& inStream, bool deleteInStream = false);
+    void Close(void);
+
+//---------------------------------------------------------------------------
+// User interface
+
     // root reader
     void Read(const CObjectInfo& object);
     void Read(TObjectPtr object, TTypeInfo type);
@@ -187,20 +252,20 @@ public:
     // variant
     void ReadChoiceVariant(const CObjectInfoCV& object);
 
-    // END OF USER INTERFACE
+    // Call this function inside hooks to discard the object,
+    // which has been just read.
+    // Such an object was created before the hook function was called,
+    // and can be deleted only after the hook processing completes.
+    // The option lets save memory when processing large amount of data.
+    // Please keep in mind though, that the 'root' object constructed by
+    // such read operation will be invalid.
+    void SetDiscardCurrObject(bool discard=true)
+        {m_DiscardCurrObject = discard;}
+    bool GetDiscardCurrObject(void) const
+        {return m_DiscardCurrObject;}
 
-    // internal reader
-    void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
-    void SkipExternalObject(TTypeInfo typeInfo);
-
-    CObjectInfo ReadObject(void);
-
-    virtual void EndOfRead(void);
-    
-    // try to read enum value name, "" if none
-    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values) = 0;
-
-    // std C types readers
+//---------------------------------------------------------------------------
+// Standard type readers
     // bool
     void ReadStd(bool& data);
     void SkipStd(const bool &);
@@ -326,6 +391,7 @@ public:
 
     virtual void ReadBitString(CBitString& obj) = 0;
     virtual void SkipBitString(void) = 0;
+    void ReadCompressedBitString(CBitString& data);
 
     // octet string
     virtual void SkipByteBlock(void) = 0;
@@ -341,68 +407,51 @@ public:
 
     void SkipPointer(TTypeInfo declaredType);
 
-    // low level readers:
-    enum EFailFlags {
-        /// No error
-        fNoError       = 0,             eNoError     = fNoError,
-        /// End of file in the middle of reading an object
-        fEOF           = 1 << 0,        eEOF         = fEOF,
-        /// An unknown error when reading the input file
-        fReadError     = 1 << 1,        eReadError   = fReadError,
-        /// Input file formatting does not conform with specification
-        fFormatError   = 1 << 2,        eFormatError = fFormatError,
-        /// Data read is beyond the allowed limits
-        fOverflow      = 1 << 3,        eOverflow    = fOverflow,
-        /// Input data is incorrect (e.g. invalid enum)
-        fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
-        /// Illegal in a given context function call
-        fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
-        /// Internal error, the real reason is unclear
-        fFail          = 1 << 6,        eFail        = fFail,
-        /// No input file
-        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen,
-        /// Method is not implemented
-        fNotImplemented= 1 << 8,        eNotImplemented = fNotImplemented,
-        /// Mandatory value was missing in the input.
-        /// This is the variant of fFormatError.
-        /// Normally stream throws an exception, but client can request
-        /// not to throw one; in this case this flag is set instead.
-        fMissingValue  = 1 << 9,        eMissingValue= fMissingValue,
-        /// Unknown value was present in the input.
-        /// This is the variant of fFormatError.
-        /// Normally stream throws an exception, but client can request
-        /// not to throw one; in this case this flag is set instead.
-        fUnknownValue  = 1 << 10,       eUnknownValue= fUnknownValue
-    };
-    typedef int TFailFlags;
+//---------------------------------------------------------------------------
+// Internals
 
-    bool fail(void) const;
-    TFailFlags GetFailFlags(void) const;
-    TFailFlags SetFailFlags(TFailFlags flags, const char* message=0);
-    TFailFlags ClearFailFlags(TFailFlags flags);
-    bool InGoodState(void);
-    virtual bool EndOfData(void);
+    // memory pool to use to create new objects when reading data
+    void SetMemoryPool(CObjectMemoryPool* memory_pool)
+        {
+            m_MemoryPool = memory_pool;
+        }
+    CObjectMemoryPool* GetMemoryPool(void)
+        {
+            return m_MemoryPool;
+        }
+    // create and set new memory pool
+    void UseMemoryPool(void);
+
+    // internal reader
+    void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
+    void SkipExternalObject(TTypeInfo typeInfo);
+
+    CObjectInfo ReadObject(void);
+    virtual void EndOfRead(void);
+    
+    // try to read enum value name, "" if none
+    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values) = 0;
+
+    void ResetLocalHooks(void);
+    bool DetectLoops(void) const;
     void HandleEOF(CEofException&);
-    virtual string GetStackTrace(void) const;
-    virtual string GetPosition(void) const;
-
-    /// @deprecated
-    ///   Use GetStreamPos() instead
-    /// @sa GetStreamPos()
-    NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
-    CNcbiStreampos GetStreamPos(void) const;
-
-    /// @deprecated
-    ///  Use SetStreamPos() instead
-    /// @sa SetStreamPos() 
-    NCBI_DEPRECATED void   SetStreamOffset(CNcbiStreampos pos);
-    void   SetStreamPos(CNcbiStreampos pos);
 
     void ThrowError1(const CDiagCompileInfo& diag_info,
                      TFailFlags fail, const char* message);
     void ThrowError1(const CDiagCompileInfo& diag_info,
                      TFailFlags fail, const string& message);
 #define ThrowError(flag, mess) ThrowError1(DIAG_COMPILE_INFO,flag,mess)
+    // report unended block
+    void Unended(const string& msg);
+    // report unended object stack frame
+    virtual void UnendedFrame(void);
+    // report class member errors
+    void DuplicatedMember(const CMemberInfo* memberInfo);
+    void ExpectedMember(const CMemberInfo* memberInfo);
+
+    // check if m_Input has any more data to read
+    // (ANY data, including white spaces and comments)
+    bool HaveMoreData(void);
 
     enum EFlags {
         fFlagNone                = 0,
@@ -500,7 +549,8 @@ public:
 public:
 #endif
     
-    // mid level I/O
+//---------------------------------------------------------------------------
+// mid level I/O
     // named type
     MLIOVIR void ReadNamedType(TTypeInfo namedTypeInfo,
                                TTypeInfo typeInfo, TObjectPtr object);
@@ -530,7 +580,8 @@ public:
                            TObjectPtr aliasPtr);
     MLIOVIR void SkipAlias(const CAliasTypeInfo* aliasType);
 
-    // low level I/O
+//---------------------------------------------------------------------------
+// low level I/O
     // named type (alias)
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);
     virtual void EndNamedType(void);
@@ -567,37 +618,16 @@ public:
     virtual size_t ReadChars(CharBlock& block, char* buffer, size_t count) = 0;
     virtual void EndChars(const CharBlock& block);
 
-    // report error about unended block
-    void Unended(const string& msg);
-    // report error about unended object stack frame
-    virtual void UnendedFrame(void);
-
-    void SetPathReadObjectHook( const string& path, CReadObjectHook*        hook);
-    void SetPathSkipObjectHook( const string& path, CSkipObjectHook*        hook);
-    void SetPathReadMemberHook( const string& path, CReadClassMemberHook*   hook);
-    void SetPathSkipMemberHook( const string& path, CSkipClassMemberHook*   hook);
-    void SetPathReadVariantHook(const string& path, CReadChoiceVariantHook* hook);
-    void SetPathSkipVariantHook(const string& path, CSkipChoiceVariantHook* hook);
-
-    // report error about class members
-    void DuplicatedMember(const CMemberInfo* memberInfo);
-    void ExpectedMember(const CMemberInfo* memberInfo);
-
     virtual void StartDelayBuffer(void);
     virtual CRef<CByteSource> EndDelayBuffer(void);
     void EndDelayBuffer(CDelayBuffer& buffer,
                         const CItemInfo* itemInfo, TObjectPtr objectPtr);
 
-    void SetDiscardCurrObject(bool discard=true)
-        {m_DiscardCurrObject = discard;}
-    bool GetDiscardCurrObject(void) const
-        {return m_DiscardCurrObject;}
-
-    bool HaveMoreData(void);
-
 protected:
-    friend class CObjectStreamCopier;
+    CObjectIStream(ESerialDataFormat format);
+    CObjectIStream(CNcbiIstream& in, bool deleteIn = false);
 
+    typedef size_t TObjectIndex;
     // low level readers
     pair<TObjectPtr, TTypeInfo> ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
@@ -609,39 +639,31 @@ protected:
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
     const CReadObjectInfo& GetRegisteredObject(TObjectIndex index);
     virtual void x_SetPathHooks(bool set);
-    void ReadCompressedBitString(CBitString& data);
 
-public:
-    // open helpers
-    static CObjectIStream* Create(ESerialDataFormat format);
-    static CObjectIStream* Create(ESerialDataFormat format,
-                                  CByteSource& source);
-    static CObjectIStream* Create(ESerialDataFormat format,
-                                  CByteSourceReader& reader);
+    CIStreamBuffer m_Input;
+    bool m_DiscardCurrObject;
+    ESerialDataFormat   m_DataFormat;
+    
 private:
+    static CObjectIStream* CreateObjectIStreamAsn(void);
+    static CObjectIStream* CreateObjectIStreamAsnBinary(void);
+    static CObjectIStream* CreateObjectIStreamXml(void);
+
     static CRef<CByteSource> GetSource(ESerialDataFormat format,
                                        const string& fileName,
                                        TSerialOpenFlags openFlags = 0);
     static CRef<CByteSource> GetSource(CNcbiIstream& inStream,
                                        bool deleteInStream = false);
 
-    static CObjectIStream* CreateObjectIStreamAsn(void);
-    static CObjectIStream* CreateObjectIStreamAsnBinary(void);
-    static CObjectIStream* CreateObjectIStreamXml(void);
-
-protected:
-    CIStreamBuffer m_Input;
-    bool m_DiscardCurrObject;
-    ESerialDataFormat   m_DataFormat;
-    
-private:
-    ESerialVerifyData   m_VerifyData;
     static ESerialVerifyData ms_VerifyDataDefault;
     static ESerialVerifyData x_GetVerifyDataDefault(void);
-    ESerialSkipUnknown m_SkipUnknown;
+
     static ESerialSkipUnknown ms_SkipUnknownDefault;
     static ESerialSkipUnknown x_GetSkipUnknownDefault(void);
 
+
+    ESerialVerifyData   m_VerifyData;
+    ESerialSkipUnknown m_SkipUnknown;
     AutoPtr<CReadObjectList> m_Objects;
 
     TFailFlags m_Fail;
@@ -656,13 +678,15 @@ private:
     CRef<CObjectMemoryPool> m_MemoryPool;
 
 public:
-    // hook support
+    // read hooks
     CLocalHookSet<CReadObjectHook> m_ObjectHookKey;
     CLocalHookSet<CReadClassMemberHook> m_ClassMemberHookKey;
     CLocalHookSet<CReadChoiceVariantHook> m_ChoiceVariantHookKey;
     CLocalHookSet<CSkipObjectHook> m_ObjectSkipHookKey;
     CLocalHookSet<CSkipClassMemberHook> m_ClassMemberSkipHookKey;
     CLocalHookSet<CSkipChoiceVariantHook> m_ChoiceVariantSkipHookKey;
+
+    friend class CObjectStreamCopier;
 };
 
 inline
@@ -734,6 +758,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.117  2006/03/10 14:51:23  gouriano
+* Categorized methods
+*
 * Revision 1.116  2006/01/19 18:22:34  gouriano
 * Added possibility to save bit string data in compressed format
 *

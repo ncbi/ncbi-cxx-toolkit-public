@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Decode input data in ASN binary format (BER)
 */
 
 #include <corelib/ncbistd.hpp>
@@ -52,6 +52,7 @@ class NCBI_XSERIAL_EXPORT CObjectIStreamAsnBinary : public CObjectIStream,
                                                     public CAsnBinaryDefs
 {
 public:
+    // constructors
     CObjectIStreamAsnBinary(EFixNonPrint how = eFNP_Default);
     CObjectIStreamAsnBinary(CNcbiIstream& in,
                             EFixNonPrint how = eFNP_Default);
@@ -61,8 +62,8 @@ public:
     CObjectIStreamAsnBinary(CByteSourceReader& reader,
                             EFixNonPrint how = eFNP_Default);
 
-    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
+    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
     virtual void ReadNull(void);
 
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
@@ -104,7 +105,6 @@ protected:
     virtual void SkipNull(void);
     virtual void SkipByteBlock(void);
 
-protected:
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
@@ -257,6 +257,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2006/03/10 14:51:23  gouriano
+* Categorized methods
+*
 * Revision 1.52  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

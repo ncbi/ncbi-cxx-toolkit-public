@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Encode data object using ASN text format
 */
 
 #include <corelib/ncbistd.hpp>
@@ -177,6 +177,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2006/03/10 14:51:23  gouriano
+* Categorized methods
+*
 * Revision 1.51  2006/01/19 18:22:34  gouriano
 * Added possibility to save bit string data in compressed format
 *

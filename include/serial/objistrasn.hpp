@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Decode input data in ASN text format
 */
 
 #include <corelib/ncbistd.hpp>
@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XSERIAL_EXPORT CObjectIStreamAsn : public CObjectIStream
 {
 public:
+    // constructors
     CObjectIStreamAsn(EFixNonPrint how = eFNP_Default);
     CObjectIStreamAsn(CNcbiIstream& in,
                       EFixNonPrint how = eFNP_Default);
@@ -55,12 +56,14 @@ public:
                       bool deleteIn,
                       EFixNonPrint how = eFNP_Default);
 
+    // check if there is still some meaningful data that can be read;
+    // this function will skip white spaces and comments
     virtual bool EndOfData(void);
+
     virtual string GetPosition(void) const;
 
     virtual string ReadFileHeader(void);
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
-
     virtual void ReadNull(void);
 
     void ReadAnyContent(string& value);
@@ -111,7 +114,6 @@ protected:
     virtual void SkipNull(void);
     virtual void SkipByteBlock(void);
 
-protected:
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
@@ -159,7 +161,6 @@ private:
     void SkipObjectPointer(void);
     void SkipBlock(void);
 
-private:
     // low level methods
     char GetChar(void);
     char PeekChar(void);
@@ -222,6 +223,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2006/03/10 14:51:23  gouriano
+* Categorized methods
+*
 * Revision 1.64  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

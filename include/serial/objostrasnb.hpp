@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Encode data object using ASN binary format (BER)
 */
 
 #include <corelib/ncbistd.hpp>
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2006/03/10 14:51:23  gouriano
+* Categorized methods
+*
 * Revision 1.51  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

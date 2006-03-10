@@ -29,7 +29,8 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Base class of object output stream classes
+*   Having a data object, it encodes it and saves in an output stream
 */
 
 #include <corelib/ncbistd.hpp>
@@ -78,9 +79,13 @@ class CWriteObjectList;
 class NCBI_XSERIAL_EXPORT CObjectOStream : public CObjectStack
 {
 public:
-    typedef size_t TObjectIndex;
+    // constructors are protected
+    // use any one of 'Create' methods to construct the stream
+    virtual ~CObjectOStream(void);
 
-    // open methods
+//---------------------------------------------------------------------------
+// Create methods
+    // CObjectOStream will be created on heap, and must be deleted later on
     static CObjectOStream* Open(ESerialDataFormat format,
                                 const string& fileName,
                                 TSerialOpenFlags openFlags = 0);
@@ -89,10 +94,11 @@ public:
     static CObjectOStream* Open(ESerialDataFormat format,
                                 CNcbiOstream& outStream,
                                 bool deleteOutStream = false);
+    // Get data format
+    ESerialDataFormat GetDataFormat(void) const;
 
-    void Close(void);
-    void ResetLocalHooks(void);
-
+//---------------------------------------------------------------------------
+// Data verification setup
     // when enabled, stream verifies data on output
     // and throws CUnassignedMember exception
 
@@ -104,24 +110,77 @@ public:
     // for streams created by the current process
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
+//---------------------------------------------------------------------------
+// Formatting of the output
+
     void SetUseIndentation(bool set);
     bool GetUseIndentation(void) const;
     
     void SetWriteNamedIntegersByValue(bool set);
     bool GetWriteNamedIntegersByValue(void) const;
 
-    // constructors
-protected:
-    CObjectOStream(ESerialDataFormat format,
-                   CNcbiOstream& out, bool deleteOut = false);
+    // Separator management
+    string GetSeparator(void) const;
+    void SetSeparator(const string sep);
+    // Controls auto-output of the separator after each object. By default
+    // this flag is true for text ASN.1 streams only.
+    bool GetAutoSeparator(void);
+    void SetAutoSeparator(bool value);
 
-public:
-    virtual ~CObjectOStream(void);
+//---------------------------------------------------------------------------
+// Stream state
+    enum EFailFlags {
+        /// No error
+        fNoError       = 0,             eNoError     = fNoError,
+//        fEOF           = 1 << 0,        eEOF         = fEOF,
+        /// An unknown error when writing into output file
+        fWriteError    = 1 << 1,        eWriteError  = fWriteError,
+//        fFormatError   = 1 << 2,        eFormatError = fFormatError,
+        /// Internal buffer overflow
+        fOverflow      = 1 << 3,        eOverflow    = fOverflow,
+        /// Output data is incorrect
+        fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
+        /// Illegal in a given context function call
+        fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
+        /// Internal error, the real reason is unclear
+        fFail          = 1 << 6,        eFail        = fFail,
+        /// No output file
+        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen,
+        /// Method is not implemented
+        fNotImplemented= 1 << 8,        eNotImplemented = fNotImplemented,
+        /// Mandatory object member is unassigned
+        /// Normally this results in throwing CUnassignedMember exception
+        fUnassigned    = 1 << 9,        eUnassigned  = fUnassigned
+    };
+    typedef int TFailFlags;
 
-    // get data format
-    ESerialDataFormat GetDataFormat(void) const;
+    // Check if any of fail flags is set
+    bool fail(void) const;
+    TFailFlags GetFailFlags(void) const;
+    TFailFlags SetFailFlagsNoError(TFailFlags flags);
+    TFailFlags SetFailFlags(TFailFlags flags, const char* message);
+    TFailFlags ClearFailFlags(TFailFlags flags);
+    // Check fail flags and also the state of m_Output
+    bool InGoodState(void);
 
-    // USER INTERFACE
+    /// @deprecated
+    ///   Use GetStreamPos() instead
+    /// @sa GetStreamPos()
+    NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
+    CNcbiStreampos GetStreamPos(void) const;
+
+    // Useful for diagnostic and information messages
+    virtual string GetStackTrace(void) const;
+    virtual string GetPosition(void) const;
+
+//---------------------------------------------------------------------------
+// Local write hooks
+    void SetPathWriteObjectHook( const string& path, CWriteObjectHook*        hook);
+    void SetPathWriteMemberHook( const string& path, CWriteClassMemberHook*   hook);
+    void SetPathWriteVariantHook(const string& path, CWriteChoiceVariantHook* hook);
+
+//---------------------------------------------------------------------------
+// User interface
     // flush buffer
     void FlushBuffer(void);
     // flush buffer and underlying stream
@@ -133,6 +192,9 @@ public:
     void Write(const CConstObjectInfo& object);
     void Write(TConstObjectPtr object, TTypeInfo type);
     void Write(TConstObjectPtr object, const CTypeRef& type);
+
+    // file header
+    virtual void WriteFileHeader(TTypeInfo type);
 
     // subtree writer
     void WriteObject(const CConstObjectInfo& object);
@@ -152,26 +214,12 @@ public:
     // choice variant interface
     void WriteChoiceVariant(const CConstObjectInfoCV& member);
 
-    // Separator management
-    string GetSeparator(void) const;
-    void SetSeparator(const string sep);
-    // Controls auto-output of the separator after each object. By default
-    // this flag is true for text ASN.1 streams only.
-    bool GetAutoSeparator(void);
-    void SetAutoSeparator(bool value);
 
     CObjectOStream& operator<< (CObjectOStream& (*mod)(CObjectOStream& os));
     friend CObjectOStream& Separator(CObjectOStream& os);
 
-    // END OF USER INTERFACE
-
-    // low level writers
-
-    // root object
-    virtual void WriteFileHeader(TTypeInfo type);
-    virtual void EndOfWrite(void);
-
-    // std C types readers
+//---------------------------------------------------------------------------
+// Standard types
     // bool
     void WriteStd(const bool& data);
 
@@ -259,46 +307,23 @@ public:
     // delayed buffer
     virtual bool Write(CByteSource& source);
 
-    // low level readers:
-    enum EFailFlags {
-        /// No error
-        fNoError       = 0,             eNoError     = fNoError,
-//        fEOF           = 1 << 0,        eEOF         = fEOF,
-        /// An unknown error when writing into output file
-        fWriteError    = 1 << 1,        eWriteError  = fWriteError,
-//        fFormatError   = 1 << 2,        eFormatError = fFormatError,
-        /// Internal buffer overflow
-        fOverflow      = 1 << 3,        eOverflow    = fOverflow,
-        /// Output data is incorrect
-        fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
-        /// Illegal in a given context function call
-        fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
-        /// Internal error, the real reason is unclear
-        fFail          = 1 << 6,        eFail        = fFail,
-        /// No output file
-        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen,
-        /// Method is not implemented
-        fNotImplemented= 1 << 8,        eNotImplemented = fNotImplemented,
-        /// Mandatory object member is unassigned
-        /// Normally this results in throwing CUnassignedMember exception
-        fUnassigned    = 1 << 9,        eUnassigned  = fUnassigned
-    };
-    typedef int TFailFlags;
-    bool fail(void) const;
-    TFailFlags GetFailFlags(void) const;
-    TFailFlags SetFailFlagsNoError(TFailFlags flags);
-    TFailFlags SetFailFlags(TFailFlags flags, const char* message);
-    TFailFlags ClearFailFlags(TFailFlags flags);
-    bool InGoodState(void);
+//---------------------------------------------------------------------------
+// Internals
+    void Close(void);
+    virtual void EndOfWrite(void);
+    void ResetLocalHooks(void);
     void HandleEOF(CEofException&);
-    virtual string GetStackTrace(void) const;
-    virtual string GetPosition(void) const;
 
-    /// @deprecated
-    ///   Use GetStreamPos() instead
-    /// @sa GetStreamPos()
-    NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
-    CNcbiStreampos GetStreamPos(void) const;
+    void ThrowError1(const CDiagCompileInfo& diag_info,
+                     TFailFlags fail, const char* message);
+    void ThrowError1(const CDiagCompileInfo& diag_info,
+                     TFailFlags fail, const string& message);
+#define ThrowError(flag, mess) ThrowError1(DIAG_COMPILE_INFO,flag,mess)
+
+    // report error about unended block
+    void Unended(const string& msg);
+    // report error about unended object stack frame
+    virtual void UnendedFrame(void);
 
     enum EFlags {
         fFlagNone                = 0,
@@ -311,12 +336,6 @@ public:
     TFlags GetFlags(void) const;
     TFlags SetFlags(TFlags flags);
     TFlags ClearFlags(TFlags flags);
-
-    void ThrowError1(const CDiagCompileInfo& diag_info,
-                     TFailFlags fail, const char* message);
-    void ThrowError1(const CDiagCompileInfo& diag_info,
-                     TFailFlags fail, const string& message);
-#define ThrowError(flag, mess) ThrowError1(DIAG_COMPILE_INFO,flag,mess)
 
     class ByteBlock;
     friend class ByteBlock;
@@ -391,7 +410,8 @@ public:
 public:
 #endif
 
-    // mid level I/O
+//---------------------------------------------------------------------------
+// mid level I/O
     // named type (alias)
     MLIOVIR void WriteNamedType(TTypeInfo namedTypeInfo,
                                 TTypeInfo typeInfo, TConstObjectPtr object);
@@ -418,7 +438,8 @@ public:
     MLIOVIR void WriteAlias(const CAliasTypeInfo* aliasType,
                             TConstObjectPtr aliasPtr);
 
-    // COPY
+//---------------------------------------------------------------------------
+// Copying
     // named type (alias)
     MLIOVIR void CopyNamedType(TTypeInfo namedTypeInfo,
                                TTypeInfo typeInfo,
@@ -438,7 +459,8 @@ public:
     MLIOVIR void CopyAlias(const CAliasTypeInfo* AliasType,
                             CObjectStreamCopier& copier);
 
-    // low level I/O
+//---------------------------------------------------------------------------
+// low level I/O
     // named type
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);
     virtual void EndNamedType(void);
@@ -476,10 +498,13 @@ public:
     virtual void EndChars(const CharBlock& block);
 
     void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
+
 protected:
-    friend class CObjectStreamCopier;
+    CObjectOStream(ESerialDataFormat format,
+                   CNcbiOstream& out, bool deleteOut = false);
 
     // low level writers
+    typedef size_t TObjectIndex;
     virtual void WriteNullPointer(void) = 0;
     virtual void WriteObjectReference(TObjectIndex index) = 0;
     virtual void WriteThis(TConstObjectPtr object,
@@ -491,44 +516,30 @@ protected:
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo);
 
-    // report error about unended block
-    void Unended(const string& msg);
-    // report error about unended object stack frame
-    virtual void UnendedFrame(void);
-
-    void SetPathWriteObjectHook( const string& path, CWriteObjectHook*        hook);
-    void SetPathWriteMemberHook( const string& path, CWriteClassMemberHook*   hook);
-    void SetPathWriteVariantHook(const string& path, CWriteChoiceVariantHook* hook);
-
-
-    static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
-                                                bool deleteOut);
-    static CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out,
-                                                      bool deleteOut);
-    static CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out,
-                                                bool deleteOut);
-
-protected:
     void x_SetPathHooks(bool set);
-
-    COStreamBuffer m_Output;
-
-    TFailFlags m_Fail;
-    TFlags m_Flags;
-
-    AutoPtr<CWriteObjectList> m_Objects;
-
     // Write current separator to the stream
     virtual void WriteSeparator(void);
+
+    COStreamBuffer m_Output;
+    TFailFlags m_Fail;
+    TFlags m_Flags;
+    AutoPtr<CWriteObjectList> m_Objects;
     string m_Separator;
     bool   m_AutoSeparator;
     ESerialDataFormat   m_DataFormat;
     bool  m_WriteNamedIntegersByValue;
 
 private:
+    static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
+                                                bool deleteOut);
+    static CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out,
+                                                      bool deleteOut);
+    static CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out,
+                                                bool deleteOut);
+    static ESerialVerifyData x_GetVerifyDataDefault(void);
+
     ESerialVerifyData   m_VerifyData;
     static ESerialVerifyData ms_VerifyDataDefault;
-    static ESerialVerifyData x_GetVerifyDataDefault(void);
     CStreamObjectPathHook<CWriteObjectHook*>                m_PathWriteObjectHooks;
     CStreamPathHook<CMemberInfo*, CWriteClassMemberHook*>   m_PathWriteMemberHooks;
     CStreamPathHook<CVariantInfo*,CWriteChoiceVariantHook*> m_PathWriteVariantHooks;
@@ -538,6 +549,8 @@ public:
     CLocalHookSet<CWriteObjectHook> m_ObjectHookKey;
     CLocalHookSet<CWriteClassMemberHook> m_ClassMemberHookKey;
     CLocalHookSet<CWriteChoiceVariantHook> m_ChoiceVariantHookKey;
+
+    friend class CObjectStreamCopier;
 };
 
 
@@ -554,6 +567,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2006/03/10 14:51:23  gouriano
+* Categorized methods
+*
 * Revision 1.97  2006/02/13 19:05:23  vakatov
 * Doxigen'ize the deprecation of GetStreamOffset()
 *
