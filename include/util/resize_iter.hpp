@@ -285,7 +285,8 @@ CConstResizingIterator<TSeq, TOut>::operator++() // prefix
     // We advance the raw iterator past things we read, so only advance
     // it now if we haven't read the current value.
     if (!m_ValueKnown) {
-        for (m_BitOffset += m_NewSize;  m_BitOffset >= kBitsPerElement;
+        for (m_BitOffset += m_NewSize;
+             m_BitOffset >= kBitsPerElement  &&  m_RawIterator != m_End;
              m_BitOffset -= kBitsPerElement) {
             ++m_RawIterator;
         }
@@ -339,7 +340,8 @@ CResizingIterator<TSeq, TVal>& CResizingIterator<TSeq, TVal>::operator++()
 {
     static const size_t kBitsPerElement = CHAR_BIT * sizeof(TRawValue);
 
-    for (m_BitOffset += m_NewSize;  m_BitOffset >= kBitsPerElement;
+    for (m_BitOffset += m_NewSize;
+         m_BitOffset >= kBitsPerElement  &&  m_RawIterator != m_End;
          m_BitOffset -= kBitsPerElement) {
         ++m_RawIterator;
     }
@@ -367,7 +369,7 @@ void CResizingIterator<TSeq, TVal>::operator=(TVal value)
 
     tmp = StoreBits<TRawIterator, TVal, TRawValue>
         (it, m_End, offset, m_NewSize, *it, value);
-    if (offset > 0) {
+    if (offset > 0  &&  it != m_End) {
         *it = tmp;
     }
 }
@@ -402,6 +404,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/03/10 21:13:52  ucko
+* Take more care not to dereference or increment m_RawIterator when it's
+* already hit m_End.  (Based on a patch from A. Gourianov, who found the bug.)
+*
 * Revision 1.9  2004/04/26 14:50:59  ucko
 * Fix a typo caught by GCC 3.4.
 *
