@@ -121,6 +121,50 @@ CMultiAligner::SetScoreMatrix(const char *matrix_name)
     m_MatrixName = matrix_name;
 }
 
+void 
+CMultiAligner::SetUserHits(CHitList& hits)
+{
+    for (int i = 0; i < hits.Size(); i++) {
+        CHit *hit = hits.GetHit(i);
+        if (hit->m_SeqIndex1 < 0 || hit->m_SeqIndex2 < 0 ||
+            hit->m_SeqIndex1 >= (int)m_QueryData.size() ||
+            hit->m_SeqIndex2 >= (int)m_QueryData.size()) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                        "Sequence specified by constraint is out of range");
+        }
+        int index1 = hit->m_SeqIndex1;
+        int index2 = hit->m_SeqIndex2;
+
+        if ((hit->m_SeqRange1.GetLength() == 1 &&
+             hit->m_SeqRange2.GetLength() != 1) ||
+            (hit->m_SeqRange1.GetLength() != 1 &&
+             hit->m_SeqRange2.GetLength() == 1)) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                        "Range specified by constraint is degenerate");
+        }
+        int from1 = hit->m_SeqRange1.GetFrom();
+        int from2 = hit->m_SeqRange2.GetFrom();
+        int to1 = hit->m_SeqRange1.GetTo();
+        int to2 = hit->m_SeqRange2.GetTo();
+
+        if (from1 > to1 || from2 > to2) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                        "Range specified by constraint is invalid");
+        }
+        if (from1 >= m_QueryData[index1].GetLength() ||
+            to1 >= m_QueryData[index1].GetLength() ||
+            from2 >= m_QueryData[index2].GetLength() ||
+            to2 >= m_QueryData[index2].GetLength()) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                        "Constraint is out of range");
+        }
+    }
+
+    m_UserHits.PurgeAllHits();
+    m_UserHits.Append(hits);
+    for (int i = 0; i < m_UserHits.Size(); i++)
+        m_UserHits.GetHit(i)->m_Score = 1000000;
+}
 
 void
 CMultiAligner::Reset()
@@ -207,6 +251,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.9  2006/03/10 19:28:56  papadopo
+  perform sanity checks on user-specified constraints
+
   Revision 1.8  2006/03/08 15:51:24  papadopo
   convert assertions to exceptions
 
