@@ -276,7 +276,7 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
     vector<SGraphNode> graph;
     for (int j = 0; j < profile_hitlist.Size(); j++) {
         CHit *hit = profile_hitlist.GetHit(j);
-        if (iteration == 0 &&
+        if (iteration == 0 && hit->m_Score < 1000 &&
             (hit->m_SeqRange1.GetLength() < kMinAlignLength ||
              hit->m_SeqRange2.GetLength() < kMinAlignLength) )
             continue;
@@ -816,6 +816,11 @@ CMultiAligner::x_BuildAlignmentIterative(
         pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
         pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
     }
+    for (int i = 0; i < m_UserHits.Size(); i++) {
+        CHit *hit = m_UserHits.GetHit(i);
+        pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
+        pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
+    }
     CHitList conserved_regions;
 
     conserved_cols = 0;
@@ -887,6 +892,12 @@ CMultiAligner::x_BuildAlignmentIterative(
         new_conserved_cols = 0;
         for (int i = 0; i < m_PatternHits.Size(); i++) {
             CHit *hit = m_PatternHits.GetHit(i);
+            pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
+            pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
+            new_conserved_cols += hit->m_SeqRange1.GetLength();
+        }
+        for (int i = 0; i < m_UserHits.Size(); i++) {
+            CHit *hit = m_UserHits.GetHit(i);
             pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
             pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
             new_conserved_cols += hit->m_SeqRange1.GetLength();
@@ -969,6 +980,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.10  2006/03/10 19:29:43  papadopo
+  fold user-specified constraints into the complete list of candidates to constrain profile-profile alignments
+
   Revision 1.9  2006/01/27 21:02:35  papadopo
   revert previous checkin
 
