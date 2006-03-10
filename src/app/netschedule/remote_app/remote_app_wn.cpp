@@ -162,20 +162,7 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
 class CRemoteAppJob : public IWorkerNodeJob
 {
 public:
-    CRemoteAppJob(const IWorkerNodeInitContext& context) :
-        m_Factory(context.GetConfig())
-    {
-        const IRegistry& reg = context.GetConfig();
-        m_AppPath = reg.GetString("remote_app", "app_path", "" );
-        CFile file(m_AppPath);
-        if (!file.Exists())
-            NCBI_THROW(CException, eInvalid, 
-                       "File : " + m_AppPath + " doesn't exists.");
-        if (!s_CanExecute(file))
-            NCBI_THROW(CException, eInvalid, 
-                       "Could not execute " + m_AppPath + " file.");
-
-    }
+    CRemoteAppJob(const IWorkerNodeInitContext& context);
 
     virtual ~CRemoteAppJob() {} 
 
@@ -217,6 +204,21 @@ private:
 
 };
 
+CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
+    : m_Factory(context.GetConfig())
+{
+    const IRegistry& reg = context.GetConfig();
+    m_AppPath = reg.GetString("remote_app", "app_path", "" );
+    CFile file(m_AppPath);
+    if (!file.Exists())
+        NCBI_THROW(CException, eInvalid, 
+                   "File : " + m_AppPath + " doesn't exists.");
+    if (!s_CanExecute(file))
+        NCBI_THROW(CException, eInvalid, 
+                   "Could not execute " + m_AppPath + " file.");
+    
+}
+
 class CRemoteAppIdleTask : public IWorkerNodeIdleTask
 {
 public:
@@ -252,6 +254,10 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/03/10 15:21:07  ucko
+ * Don't (implicitly) inline CRemoteJobApp's constructor, as WorkShop 5.3
+ * then refuses to let it call s_CanExecute.
+ *
  * Revision 1.4  2006/03/09 14:56:43  didenko
  * Added status check after writing into the pipe
  *
