@@ -286,11 +286,7 @@ public:
     /// to be aligned
     /// @param hits the list of user-specified constraints
     ///
-    void SetUserHits(CHitList& hits) 
-    { 
-        m_UserHits.PurgeAllHits();
-        m_UserHits.Append(hits); 
-    }
+    void SetUserHits(CHitList& hits);
 
     /// Set the expect value to use for local hits. When running blast 
     /// on the input sequences, keep hits that are this significant or better
@@ -527,6 +523,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.15  2006/03/10 19:30:38  papadopo
+  move SetUserHits implementation to .cpp
+
   Revision 1.14  2006/03/08 15:49:24  papadopo
   add exception class
 
