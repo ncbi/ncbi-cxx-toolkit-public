@@ -894,6 +894,9 @@ static void s_FlyCG_PtoR(string& s)
     // s =~ s/\b(CG\d*-)P([[:alpha:]])\b/$1R$2/g, more or less.
     SIZE_TYPE pos = 0, len = s.size();
     while ((pos = NStr::FindCase(s, "CG", pos)) != NPOS) {
+        if (pos > 0  &&  !isspace((unsigned char)s[pos - 1]) ) {
+            continue;
+        }
         pos += 2;
         while (pos + 3 < len  &&  isdigit((unsigned char)s[pos])) {
             ++pos;
@@ -914,6 +917,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.56  2006/03/10 17:59:46  ucko
+* Correct previous commit to avoid potential false positives.
+*
 * Revision 1.55  2006/03/10 17:07:41  ucko
 * Per recent changes in the C Toolkit, replace CG*-Px with CG*-Rx when
 * making titles for D. melanogaster RefSeq mRNA (NM_) records.
