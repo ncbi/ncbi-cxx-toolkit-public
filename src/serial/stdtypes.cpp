@@ -1423,8 +1423,10 @@ void CCharVectorTypeInfo<Char>::GetValueString(TConstObjectPtr objectPtr,
                                                string& value) const
 {
     const TObjectType& obj = CCharVectorFunctions<TChar>::Get(objectPtr);
-    const char* buffer = CCharVectorFunctions<TChar>::ToChar(&obj.front());
-    value.assign(buffer, buffer + obj.size());
+    if (!obj.empty()) {
+        const char* buffer = CCharVectorFunctions<TChar>::ToChar(&obj.front());
+        value.assign(buffer, buffer + obj.size());
+    }
 }
 
 template<typename Char>
@@ -1433,8 +1435,10 @@ void CCharVectorTypeInfo<Char>::SetValueString(TObjectPtr objectPtr,
 {
     TObjectType& obj = CCharVectorFunctions<TChar>::Get(objectPtr);
     obj.clear();
-    const TChar* buffer = CCharVectorFunctions<TChar>::ToTChar(value.data());
-    obj.insert(obj.end(), buffer, buffer + value.size());
+    if (!value.empty()) {
+        const TChar* buffer = CCharVectorFunctions<TChar>::ToTChar(value.data());
+        obj.insert(obj.end(), buffer, buffer + value.size());
+    }
 }
 
 template<typename Char>
@@ -1443,8 +1447,10 @@ void CCharVectorTypeInfo<Char>::GetValueOctetString(TConstObjectPtr objectPtr,
 {
     const TObjectType& obj = CCharVectorFunctions<TChar>::Get(objectPtr);
     value.clear();
-    const char* buffer = CCharVectorFunctions<TChar>::ToChar(&obj.front());
-    value.insert(value.end(), buffer, buffer + obj.size());
+    if (!obj.empty()) {
+        const char* buffer = CCharVectorFunctions<TChar>::ToChar(&obj.front());
+        value.insert(value.end(), buffer, buffer + obj.size());
+    }
 }
 
 template<typename Char>
@@ -1453,8 +1459,10 @@ void CCharVectorTypeInfo<Char>::SetValueOctetString(TObjectPtr objectPtr,
 {
     TObjectType& obj = CCharVectorFunctions<TChar>::Get(objectPtr);
     obj.clear();
-    const TChar* buffer = CCharVectorFunctions<TChar>::ToTChar(&value.front());
-    obj.insert(obj.end(), buffer, buffer + value.size());
+    if (!value.empty()) {
+        const TChar* buffer = CCharVectorFunctions<TChar>::ToTChar(&value.front());
+        obj.insert(obj.end(), buffer, buffer + value.size());
+    }
 }
 
 TTypeInfo CStdTypeInfo< vector<char> >::GetTypeInfo(void)
@@ -1605,6 +1613,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2006/03/13 20:55:12  gouriano
+* Verify that vector is not empty before accessing it
+*
 * Revision 1.47  2005/11/29 17:43:15  gouriano
 * Added CBitString class
 *
