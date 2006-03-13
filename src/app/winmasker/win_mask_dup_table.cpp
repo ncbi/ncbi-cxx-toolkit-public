@@ -362,10 +362,10 @@ private:
      **\param s_off last position in the subject sequence
      **\param q_off last position in the query sequence
      **/
-    void tracker::report_match( Uint4 queryseq, 
-                                Uint4 match_count,
-                                string::size_type s_off,
-                                string::size_type q_off );
+    void report_match( Uint4 queryseq, 
+                       Uint4 match_count,
+                       string::size_type s_off,
+                       string::size_type q_off );
 
     result_list_type main_list;     /**<\internal current result list */
     result_list_type aux_list;      /**<\internal additional (helper) result list */
@@ -596,6 +596,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2006/03/13 15:32:30  vakatov
+ * Removed extraneous tracker:: scope qualifier that confused GCC 4.1.0
+ *
  * Revision 1.6  2005/11/21 16:49:15  morgulis
  * 1. Fixed a bug causing infinite loop in the case of empty genome.
  * 2. Added possibility to use substring matching with -ids and -exclude-ids
