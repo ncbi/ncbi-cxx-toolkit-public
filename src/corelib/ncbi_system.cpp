@@ -293,7 +293,7 @@ static void s_SignalHandler(int _DEBUG_ARG(sig))
     _ASSERT(sig == SIGXCPU);
     _VERIFY(signal(SIGXCPU, SIG_IGN) != SIG_ERR);
     s_ExitCode = eLEC_Cpu;
-    exit(-1);
+    _exit(-1);
 }
 
 
@@ -532,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/03/13 15:27:43  ivanov
+ * Use _exit() in the signal handler
+ *
  * Revision 1.48  2006/03/02 23:52:49  lavr
  * Show Sleep... inconsistency at least for Linux
  *
