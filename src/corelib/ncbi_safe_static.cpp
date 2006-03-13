@@ -48,6 +48,10 @@ BEGIN_NCBI_SCOPE
 CSafeStaticLifeSpan::CSafeStaticLifeSpan(ELifeSpan span, int adjust)
     : m_LifeSpan(int(span) + adjust)
 {
+    if (span == eLifeSpan_Min) {
+        m_LifeSpan = int(span); // ignore adjustments
+        adjust = 0;
+    }
     if (adjust >= 5000  ||  adjust <= -5000) {
         ERR_POST(Warning
             << "CSafeStaticLifeSpan level adjustment out of range: "
@@ -59,7 +63,7 @@ CSafeStaticLifeSpan::CSafeStaticLifeSpan(ELifeSpan span, int adjust)
 
 CSafeStaticLifeSpan& CSafeStaticLifeSpan::GetDefault(void)
 {
-    static CSafeStaticLifeSpan s_DefaultSpan(eLifeSpan_Normal);
+    static CSafeStaticLifeSpan s_DefaultSpan(eLifeSpan_Min);
     return s_DefaultSpan;
 }
 
@@ -111,6 +115,16 @@ int CSafeStaticPtr_Base::x_GetCreationOrder(void)
 }
 
 
+CSafeStaticPtr_Base::~CSafeStaticPtr_Base(void)
+{
+    bool mutex_locked = false;
+    if ( !Init_Lock(&mutex_locked) ) {
+        Cleanup();
+    }
+    Init_Unlock(mutex_locked);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CSafeStaticGuard::
@@ -136,8 +150,13 @@ CSafeStaticGuard::CSafeStaticGuard(void)
 
 static CSafeStaticGuard* sh_CleanupGuard;
 
+
+
 CSafeStaticGuard::~CSafeStaticGuard(void)
 {
+    CFastMutexGuard guard(s_Mutex);
+
+    // Protect CSafeStaticGuard destruction
     if ( sh_CleanupGuard ) {
         CSafeStaticGuard* tmp = sh_CleanupGuard;
         sh_CleanupGuard = 0;
@@ -183,6 +202,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/13 15:23:54  grichenk
+ * By default protect only initialization of an object,
+ * but do not control its lifetime.
+ *
  * Revision 1.8  2005/12/14 17:12:41  grichenk
  * Added life span parameter for safe static objects.
  *

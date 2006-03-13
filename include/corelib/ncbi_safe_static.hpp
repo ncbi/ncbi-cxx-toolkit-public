@@ -44,6 +44,7 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_limits.h>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -61,6 +62,7 @@ class NCBI_XNCBI_EXPORT CSafeStaticLifeSpan
 public:
     // Predefined life spans for the safe static objects
     enum ELifeSpan {
+        eLifeSpan_Min      = kMin_Int, // std static, not adjustable
         eLifeSpan_Shortest = -20000,
         eLifeSpan_Short    = -10000,
         eLifeSpan_Normal   = 0,
@@ -69,12 +71,13 @@ public:
     };
     // Constructs a life span object from basic level and adjustment.
     // Generates warning (and assertion in debug mode) if the adjustment
-    // argument is too big (<= -5000 or >= 5000).
+    // argument is too big (<= -5000 or >= 5000). If span is eLifeSpan_Min
+    // "adjust" is ignored.
     CSafeStaticLifeSpan(ELifeSpan span, int adjust = 0);
 
     int GetLifeSpan(void) const { return m_LifeSpan; }
 
-    // Get default life span (set to eLifeSpan_Normal).
+    // Get default life span (set to eLifeSpan_Min).
     static CSafeStaticLifeSpan& GetDefault(void);
 
 private:
@@ -114,6 +117,8 @@ public:
           m_CreationOrder(x_GetCreationOrder())
     {}
 
+    ~CSafeStaticPtr_Base(void);
+
 protected:
     void* m_Ptr;          // Pointer to the data
 
@@ -133,6 +138,13 @@ private:
     int          m_CreationOrder; // Creation order of the object
 
     static int x_GetCreationOrder(void);
+
+    // Return true if the object should behave like regular static
+    // (no delayed destruction).
+    bool x_IsStdStatic(void) const
+    {
+        return m_LifeSpan == int(CSafeStaticLifeSpan::eLifeSpan_Min);
+    }
 
     // To be called by CSafeStaticGuard on the program termination
     friend class CSafeStaticGuard;
@@ -294,6 +306,10 @@ public:
     // Add new on-demand variable to the cleanup stack.
     static void Register(CSafeStaticPtr_Base* ptr)
     {
+        if ( ptr->x_IsStdStatic() ) {
+            // Do not add the object to the stack
+            return;
+        }
         if ( !sm_Stack ) {
             Get();
         }
@@ -436,6 +452,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/03/13 15:23:54  grichenk
+ * By default protect only initialization of an object,
+ * but do not control its lifetime.
+ *
  * Revision 1.15  2005/12/23 15:30:07  ivanov
  * Removed extra comma in ELifeSpan enum declaration
  *
