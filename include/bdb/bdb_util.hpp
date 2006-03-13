@@ -35,6 +35,7 @@
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_cursor.hpp>
+#include <bdb/bdb_trans.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -57,6 +58,8 @@ void BDB_iterate_file(FL& dbf, Func& func)
     }
 }
 
+/// Iterate file following the sequence of ids
+/// BDB file should have an integer key
 template<class FL, class IT, class Func>
 void BDB_iterate_file(FL& dbf, IT start, IT finish, Func& func)
 {
@@ -71,6 +74,63 @@ void BDB_iterate_file(FL& dbf, IT start, IT finish, Func& func)
             func(dbf);
         }
     } // for
+}
+
+
+/// Delete file records based on sequence of ids
+///
+/// Records are getting deleted in batches (one transaction per batch)
+/// We need batches not to overflow transaction log and not to lock
+/// the file for a long time (to allow concurrent access)
+///
+template<class IT, class Lock>
+void BDB_batch_delete_recs(CBDB_File& dbf, 
+                           IT start,  IT finish, 
+                           unsigned   batch_size,
+                           Lock*      locker)
+{
+    if (batch_size == 0) 
+        ++batch_size;
+    vector<unsigned> batch(batch_size);
+    CBDB_BufferManager& kbuf = *dbf.GetKeyBuffer();
+    _ASSERT(kbuf.FieldCount() == 1);
+    CBDB_Field& fld = kbuf.GetField(0);
+
+    while (start != finish) {
+        batch.resize(0);
+        for (unsigned i = 0; 
+             i < batch_size && start != finish; 
+             ++i, ++start) {
+
+             unsigned id = (unsigned) *start;
+             batch.push_back(id);
+        }
+        // delete the batch
+
+        if (batch.size() == 0)
+            continue;
+
+        if (locker) locker->Lock();
+        try {
+            CBDB_Transaction trans(*dbf.GetEnv(), 
+                                CBDB_Transaction::eTransASync);
+            dbf.SetTransaction(&trans);
+
+            ITERATE(vector<unsigned>, it, batch) {
+                unsigned id = *it;
+                fld.SetInt((int)id);
+                dbf.Delete(CBDB_RawFile::eIgnoreError);
+            }
+
+            trans.Commit();
+        } catch (...) {
+            if (locker) locker->Unlock();
+            throw;
+        }
+
+        if (locker) locker->Unlock();
+
+    } // while
 }
 
 
@@ -110,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/13 14:30:57  kuznets
+ * +BDB_batch_delete_recs()
+ *
  * Revision 1.6  2005/10/06 15:27:03  kuznets
  * + BDB_iterate_file() (can iterate file using result set iterators
  *
