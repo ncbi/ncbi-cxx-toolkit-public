@@ -220,6 +220,49 @@ string CNetScheduleClient::StatusToString(EJobStatus status)
     return kEmptyStr;
 }
 
+CNetScheduleClient::EJobStatus 
+CNetScheduleClient::StringToStatus(const string& status_str)
+{
+    if (NStr::CompareNocase(status_str, "Pending") == 0) {
+        return ePending;
+    }
+    if (NStr::CompareNocase(status_str, "Running") == 0) {
+        return eRunning;
+    }
+    if (NStr::CompareNocase(status_str, "Returned") == 0) {
+        return eReturned;
+    }
+    if (NStr::CompareNocase(status_str, "Canceled") == 0) {
+        return eCanceled;
+    }
+    if (NStr::CompareNocase(status_str, "Failed") == 0) {
+        return eFailed;
+    }
+    if (NStr::CompareNocase(status_str, "Done") == 0) {
+        return eDone;
+    }
+
+    // check acceptable synonyms
+
+    if (NStr::CompareNocase(status_str, "Pend") == 0) {
+        return ePending;
+    }
+    if (NStr::CompareNocase(status_str, "Run") == 0) {
+        return eRunning;
+    }
+    if (NStr::CompareNocase(status_str, "Return") == 0) {
+        return eReturned;
+    }
+    if (NStr::CompareNocase(status_str, "Cancel") == 0) {
+        return eCanceled;
+    }
+    if (NStr::CompareNocase(status_str, "Fail") == 0) {
+        return eFailed;
+    }
+
+    return eJobNotFound;
+}
+
 
 string CNetScheduleClient::GetConnectionInfo() const
 {
@@ -1268,7 +1311,7 @@ void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    bool connected = CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     MakeCommandPacket(&m_Tmp, "DUMP ", connected);
@@ -1278,6 +1321,27 @@ void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
     WaitForServer();
     PrintServerOut(out);
 }
+
+void CNetScheduleClient::PrintQueue(CNcbiOstream& out,
+                                    EJobStatus    status)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    bool connected = CheckConnect(kEmptyStr);
+    CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+
+    string status_str = CNetScheduleClient::StatusToString(status);
+
+    MakeCommandPacket(&m_Tmp, "QPRT ", connected);
+    m_Tmp += status_str;
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+
+    WaitForServer();
+    PrintServerOut(out);
+}
+
 
 
 void CNetScheduleClient::PrintStatistics(CNcbiOstream & out,
@@ -1588,6 +1652,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/03/13 16:20:12  kuznets
+ * +StringToStatus()
+ *
  * Revision 1.47  2006/03/08 17:15:06  didenko
  * Added die command
  *

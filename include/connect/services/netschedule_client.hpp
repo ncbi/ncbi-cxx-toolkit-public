@@ -506,6 +506,16 @@ public:
     static
     string StatusToString(EJobStatus status);
 
+    /// Parse status string into enumerator value
+    ///
+    /// Acceptable string values:
+    ///   Pending, Running, Returned, Canceled, Failed, Done
+    ///   Pend, Run, Return, Cancel, Fail
+    ///
+    /// @return eJobNotFound if string cannot be parsed
+    static
+    EJobStatus StringToStatus(const string& status_str);
+
     /// Return Queue name
     const string& GetQueueName() const { return m_Queue; }
 
@@ -559,6 +569,9 @@ protected:
 
     void DumpQueue(CNcbiOstream& out, 
                    const string& job_key = kEmptyStr);
+
+    void PrintQueue(CNcbiOstream& out,
+                    EJobStatus status);
 
     void Monitor(CNcbiOstream & out);
 
@@ -892,6 +905,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/03/13 16:19:50  kuznets
+ * +StringToStatus()
+ *
  * Revision 1.49  2006/03/08 17:15:05  didenko
  * Added die command
  *
