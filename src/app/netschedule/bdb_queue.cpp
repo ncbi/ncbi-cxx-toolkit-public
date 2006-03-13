@@ -41,6 +41,7 @@
 #include <db.h>
 #include <bdb/bdb_trans.hpp>
 #include <bdb/bdb_cursor.hpp>
+#include <bdb/bdb_util.hpp>
 
 #include "bdb_queue.hpp"
 
@@ -1071,6 +1072,29 @@ void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB&      db,
 }
 
 void 
+CQueueDataBase::CQueue::x_PrintShortJobDbStat(SQueueDB&     db, 
+                                              const string& host,
+                                              unsigned      port,
+                                              CNcbiOstream& out,
+                                              const char*   fsp)
+{
+    char buf[1024];
+    sprintf(buf, NETSCHEDULE_JOBMASK, 
+                 (unsigned)db.id, host.c_str(), port);
+    out << buf << fsp;
+    CNetScheduleClient::EJobStatus status = 
+        (CNetScheduleClient::EJobStatus)(int)db.status;
+    out << CNetScheduleClient::StatusToString(status) << fsp;
+
+    out << "'" << (string) db.input    << "'" << fsp;
+    out << "'" << (string) db.output   << "'" << fsp;
+    out << "'" << (string) db.err_msg  << "'" << fsp;
+
+    out << "\n";
+}
+
+
+void 
 CQueueDataBase::CQueue::PrintJobDbStat(unsigned job_id, CNcbiOstream & out)
 {
     SQueueDB& db = m_LQueue.db;
@@ -1121,6 +1145,34 @@ void CQueueDataBase::CQueue::PrintStat(CNcbiOstream & out)
     CFastMutexGuard guard(m_LQueue.lock);
 	db.SetTransaction(0);
     db.PrintStat(out);
+}
+
+
+void CQueueDataBase::CQueue::PrintQueue(CNcbiOstream & out, 
+                            CNetScheduleClient::EJobStatus job_status,
+                            const string& host,
+                            unsigned      port)
+{
+    CNetScheduler_JobStatusTracker::TBVector bv;
+    m_LQueue.status_tracker.StatusSnapshot(job_status, &bv);
+    SQueueDB& db = m_LQueue.db;
+
+    CNetScheduler_JobStatusTracker::TBVector::enumerator en(bv.first());
+    for (;en.valid(); ++en) {
+        unsigned id = *en;
+        {{
+        CFastMutexGuard guard(m_LQueue.lock);
+	    db.SetTransaction(0);
+        
+        db.id = id;
+
+        if (db.Fetch() == eBDB_Ok) {
+            x_PrintShortJobDbStat(db, host, port, out, "\t");
+        }
+
+        }}
+        
+    } // for
 }
 
 
@@ -2940,9 +2992,21 @@ void CQueueDataBase::CQueue::ClearAffinityIdx()
 
 void CQueueDataBase::CQueue::Truncate()
 {
-    m_LQueue.status_tracker.ClearAll();
     SQueueDB& db = m_LQueue.db;
+    
+    CNetScheduler_JobStatusTracker::TBVector del_bv(bm::BM_GAP);
+    
+    m_LQueue.status_tracker.ClearAll(&del_bv);
+    if (del_bv.none()) {
+        return;
+    }
+
     CFastMutexGuard guard(m_LQueue.lock);
+
+    BDB_batch_delete_recs(db, del_bv.first(), del_bv.end(), 
+                         100, (CFastMutex*)(0));
+
+    // control shot
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync);
     db.SetTransaction(&trans);
@@ -3393,6 +3457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/03/13 16:01:36  kuznets
+ * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
+ *
  * Revision 1.59  2006/02/23 20:05:10  kuznets
  * Added grid client registration-unregistration
  *

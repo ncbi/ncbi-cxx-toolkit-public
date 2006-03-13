@@ -303,6 +303,10 @@ public:
         void PrintNodeStat(CNcbiOstream & out) const;
         void PrintSubmHosts(CNcbiOstream & out) const;
         void PrintWNodeHosts(CNcbiOstream & out) const;
+        void PrintQueue(CNcbiOstream & out, 
+                        CNetScheduleClient::EJobStatus job_status,
+                        const string& host,
+                        unsigned      port);
 
         void PrintJobDbStat(unsigned job_id, CNcbiOstream & out);
         /// Dump all job records
@@ -366,6 +370,12 @@ public:
                               CNcbiOstream& out,
                               const char*   fld_separator = "\n",
                               bool          print_fname = true);
+
+        void x_PrintShortJobDbStat(SQueueDB&     db, 
+                                   const string& host,
+                                   unsigned port,
+                                   CNcbiOstream& out,
+                                   const char*   fld_separator = "\t");
 
         /// Delete record using positioned cursor, dumps content
         /// to text file if necessary
@@ -503,6 +513,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/03/13 16:01:36  kuznets
+ * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
+ *
  * Revision 1.40  2006/02/23 20:05:10  kuznets
  * Added grid client registration-unregistration
  *

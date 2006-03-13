@@ -171,6 +171,10 @@ public:
     void StatusStatistics(CNetScheduleClient::EJobStatus status,
                           TBVector::statistics*          st) const;
 
+    /// Specified status is OR-ed with the target vector
+    void StatusSnapshot(CNetScheduleClient::EJobStatus status,
+                        TBVector*                      bv) const;
+
     static
     bool IsCancelCode(CNetScheduleClient::EJobStatus status)
     {
@@ -179,7 +183,11 @@ public:
     }
 
     /// Clear status storage
-    void ClearAll();
+    ///
+    /// @param bv
+    ///    If not NULL all ids from the matrix are OR-ed with this vector 
+    ///    (bv is not cleared)
+    void ClearAll(TBVector* bv = 0);
 
     /// Free unused memory buffers
     void FreeUnusedMem();
@@ -330,6 +338,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/03/13 16:01:36  kuznets
+ * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
+ *
  * Revision 1.15  2006/02/21 14:44:57  kuznets
  * Bug fixes, improvements in statistics
  *

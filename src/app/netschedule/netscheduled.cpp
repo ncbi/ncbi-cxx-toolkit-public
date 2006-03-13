@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.1  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -106,6 +106,7 @@ typedef enum {
     eError,
     eMonitor,
     eDumpQueue,
+    ePrintQueue,
     eReloadConfig,
     eQList
 } EJS_RequestType;
@@ -312,6 +313,10 @@ public:
     void ProcessDump(CSocket&                sock,
                      SThreadData&            tdata,
                      CQueueDataBase::CQueue& queue);
+
+    void ProcessPrintQueue(CSocket&                sock,
+                           SThreadData&            tdata,
+                           CQueueDataBase::CQueue& queue);
 
     void ProcessShutdown(CSocket&                sock,
                          SThreadData&            tdata,
@@ -729,6 +734,9 @@ end_version_control:
                 break;
             case eDumpQueue:
                 ProcessDump(socket, *tdata, queue);
+                break;
+            case ePrintQueue:
+                ProcessPrintQueue(socket, *tdata, queue);
                 break;
             case eStatistics:
                 ProcessStatistics(socket, *tdata, queue);
@@ -1434,6 +1442,35 @@ void CNetScheduleServer::ProcessMonitor(CSocket&                sock,
     queue.SetMonitorSocket(sock.GetSOCK());
 }
 
+void CNetScheduleServer::ProcessPrintQueue(CSocket&                sock,
+                                           SThreadData&            tdata,
+                                           CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+
+    CNetScheduleClient::EJobStatus 
+        job_status = CNetScheduleClient::StringToStatus(req.job_key_str);
+
+    if (job_status == CNetScheduleClient::eJobNotFound) {
+        string err_msg = "Status unknown: " + req.job_key_str;
+        WriteMsg(sock, "ERR:", err_msg.c_str());
+        return;
+    }
+
+    SOCK sk = sock.GetSOCK();
+    sock.SetOwnership(eNoOwnership);
+    sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+
+    CConn_SocketStream ios(sk);  // sock is being passed and used exclusively
+
+    queue.PrintQueue(ios, 
+                     job_status,
+                     m_Host,
+                     GetPort());
+
+    ios << "OK:END";
+}
+
 
 void CNetScheduleServer::ProcessDump(CSocket&                sock, 
                                      SThreadData&            tdata,
@@ -1732,6 +1769,7 @@ struct SNS_Commands
     unsigned  RETU;
     unsigned  QUIT;
     unsigned  QLST;
+    unsigned  QPRT;
     unsigned  BSUB;
     unsigned  REGC;
     unsigned  URGC;
@@ -1760,6 +1798,7 @@ struct SNS_Commands
         ::memcpy(&RETU, "RETU", 4);
         ::memcpy(&QUIT, "QUIT", 4);
         ::memcpy(&QLST, "QLST", 4);
+        ::memcpy(&QPRT, "QPRT", 4);
         ::memcpy(&BSUB, "BSUB", 4);
         ::memcpy(&REGC, "REGC", 4);
         ::memcpy(&URGC, "URGC", 4);
@@ -1809,6 +1848,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 24.JXCG [JSID_01_1 EndStatus "NCID_01_2..."]
     // 25.REGC udp_port
     // 26.URGC udp_port
+    // 27.QPRT Status
 
     const char* s = reqstr;
 
@@ -2182,6 +2222,14 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
         }
         if (SNS_Commands::IsCmd(s_NS_cmd_codes.QLST, s)) {
             req->req_type = eQList;
+            return;
+        }
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.QPRT, s)) {
+            req->req_type = ePrintQueue;
+            s += 4;
+            NS_SKIPSPACE(s)
+            NS_CHECKEND(s, "Misformed QPRT request")
+            NS_GETSTRING(s, req->job_key_str)
             return;
         }
         break;
@@ -2599,6 +2647,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/03/13 16:01:36  kuznets
+ * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
+ *
  * Revision 1.64  2006/02/23 20:05:10  kuznets
  * Added grid client registration-unregistration
  *

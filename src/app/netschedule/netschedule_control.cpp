@@ -108,6 +108,13 @@ void CNetScheduleControl::Init(void)
         "Print queue dump or job dump (queuename:job_key)",
         CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey(
+        "qprint",
+        "print_queue",
+        "Print queue content for the specified status (queuename:status)",
+        CArgDescriptions::eString);
+
+
     arg_desc->AddOptionalKey("monitor",
                              "monitor",
                              "Queue monitoring (-monitor queue_name)",
@@ -179,6 +186,24 @@ int CNetScheduleControl::Run(void)
 
         CNetScheduleClient_Control cl(host, port, queue);
         cl.DumpQueue(NcbiCout, job_key);
+        NcbiCout << NcbiEndl;
+    }
+
+    if (args["qprint"]) {
+        string param = args["qprint"].AsString(); 
+        string queue, status_str;
+        
+        NStr::SplitInTwo(param, ":", queue, status_str);
+
+        CNetScheduleClient::EJobStatus status =
+            CNetScheduleClient::StringToStatus(status_str);
+        if (status == CNetScheduleClient::eJobNotFound) {
+            ERR_POST("Status string unknown:" << status_str);
+            return 1;
+        }
+
+        CNetScheduleClient_Control cl(host, port, queue);
+        cl.PrintQueue(NcbiCout, status);
         NcbiCout << NcbiEndl;
     }
 
@@ -266,6 +291,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/03/13 16:01:36  kuznets
+ * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
+ *
  * Revision 1.17  2006/03/08 17:15:05  didenko
  * Added die command
  *

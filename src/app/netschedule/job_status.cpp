@@ -118,6 +118,16 @@ CNetScheduler_JobStatusTracker::StatusStatistics(
 
 }
 
+void CNetScheduler_JobStatusTracker::StatusSnapshot(
+                        CNetScheduleClient::EJobStatus status,
+                        TBVector*                      bv) const
+{
+    _ASSERT(bv);
+    CReadLockGuard guard(m_Lock);
+
+    const TBVector& bv_s = *m_StatusStor[(int)status];
+    *bv |= bv_s;
+}
 
 
 void CNetScheduler_JobStatusTracker::Return2Pending()
@@ -158,13 +168,19 @@ CNetScheduler_JobStatusTracker::SetStatus(unsigned int  job_id,
     }
 }
 
-void CNetScheduler_JobStatusTracker::ClearAll()
+void CNetScheduler_JobStatusTracker::ClearAll(TBVector* bv)
 {
     CWriteLockGuard guard(m_Lock);
 
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
-        TBVector& bv = *m_StatusStor[i];
-        bv.clear(true);
+        TBVector& bv1 = *m_StatusStor[i];
+        if (bv) {
+            *bv |= bv1;
+        }
+        bv1.clear(true);
+    }
+    if (bv) {
+        *bv |= m_BorrowedIds;
     }
     m_BorrowedIds.clear(true);
 }
@@ -836,6 +852,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/03/13 16:01:36  kuznets
+ * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
+ *
  * Revision 1.26  2006/02/23 15:45:04  kuznets
  * Added more frequent and non-intrusive memory optimization of status matrix
  *

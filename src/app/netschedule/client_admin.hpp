@@ -55,6 +55,7 @@ public:
     using CNetScheduleClient::PrintStatistics;
     using CNetScheduleClient::Monitor;
     using CNetScheduleClient::DumpQueue;
+    using CNetScheduleClient::PrintQueue;
     using CNetScheduleClient::Logging;
     using CNetScheduleClient::ReloadServerConfig;
     using CNetScheduleClient::GetQueueList;
@@ -71,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/03/13 16:01:36  kuznets
+ * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
+ *
  * Revision 1.5  2005/08/17 14:39:10  kuznets
  * Reflected change in CheckConnect proto
  *
