@@ -437,6 +437,12 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam("PseudoCountWeight", v);
         return;
         
+    case eBlastOpt_CompositionBasedStats:
+        if (v < eNumCompoAdjustModes) {
+            x_SetParam("CompositionBasedStats", v);
+            return;
+        }
+        
     default:
         break;
     }
@@ -1870,6 +1876,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2006/03/13 17:54:41  bealer
+* - Allow composition based stats in BlastOptions.
+*
 * Revision 1.76  2006/01/23 19:57:39  camacho
 * Allow new varieties of composition based statistics
 *
