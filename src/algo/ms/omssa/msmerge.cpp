@@ -57,6 +57,8 @@
 #include "msmerge.hpp"
 
 #include <limits>
+#include <algorithm>
+#include <iterator>
 
 BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(objects);
