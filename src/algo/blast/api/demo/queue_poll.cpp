@@ -306,7 +306,11 @@ s_SetQueries(CRef<CRemoteBlast> remote_blast,
             seq_entry->SetSeq(const_cast<CBioseq&>(*bh.GetBioseqCore()));
             query_bioseqs->SetSeq_set().push_back(seq_entry);
 
-            TMaskedQueryRegions mqr(PackedSeqLocToMaskedQueryRegions(query->mask));
+            EBlastProgramType prog
+                = NetworkProgram2BlastProgramType(remote_blast->GetProgram(),
+                                                  remote_blast->GetService());
+            TMaskedQueryRegions mqr(PackedSeqLocToMaskedQueryRegions
+                                    (query->mask, prog));
             query_masking_locations.push_back(mqr);
         } catch (const CException& e) {
             cerr << "Failed to instantiate query: " << e.what() << endl;
@@ -588,6 +592,9 @@ QueueAndPoll(string                program,       ///< program name
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2006/03/13 19:03:43  ucko
+ * PackedSeqLocToMaskedQueryRegions evidently now requires a program type.
+ *
  * Revision 1.17  2006/03/01 21:26:57  camacho
  * Add support for user-specified query masking locations
  *
