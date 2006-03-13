@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
                  n += count) {
                 for (unsigned int i = 0; i < count; ++i) {
                     int value = *it;
-                    if ( !*it2.AtEnd() ) {
+                    if ( !it2.AtEnd() ) {
                         *it2 = value; // ignore bogus WorkShop complaints here
                     }
                     ++it2;
@@ -78,6 +78,9 @@ int main(int argc, char** argv) {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/13 17:53:12  ucko
+ * Properly fix typos.
+ *
  * Revision 1.8  2006/03/13 16:30:54  ucko
  * Fix typo in previous revision.
  *
