@@ -737,7 +737,6 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
         x_AddFTableQuals(ctx);
         return;
     }
-
     CScope&             scope = ctx.GetScope();
     const CSeqFeatData& data  = m_Feat->GetData();
     const CSeq_loc&     loc   = GetLoc();
@@ -1760,7 +1759,8 @@ const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals
 
     // /allele
     if (subtype != CSeqFeatData::eSubtype_variation && 
-      subtype != CSeqFeatData::eSubtype_repeat_region ) {
+      subtype != CSeqFeatData::eSubtype_repeat_region &&
+      subtype != CSeqFeatData::eSubtype_primer_bind ) {
         if (gene.IsSetAllele()  &&  !NStr::IsBlank(gene.GetAllele())) {
             x_AddQual(eFQ_gene_allele, new CFlatStringQVal(gene.GetAllele()));
         }
@@ -2260,24 +2260,13 @@ void CFeatureItem::x_AddRptTypeQual(const string& rpt_type, bool check_qual_synt
     if (rpt_type.empty()) {
         return;
     }
-
-    vector<string> types;
-
-    if (NStr::StartsWith(rpt_type, '(')  &&  NStr::EndsWith(rpt_type, ')')  &&
-        NStr::Find(rpt_type, "(", 1) == NPOS) {
-        string tmp = rpt_type.substr(1, rpt_type.length() - 2);
-        NStr::Tokenize(tmp, ",", types);
-    } else {
-        types.push_back(rpt_type);
+    
+    string value( rpt_type );
+    NStr::TruncateSpacesInPlace( value );
+    if ( check_qual_syntax && ! s_IsValidRptType( value ) ) {
+        return;
     }
-
-    NON_CONST_ITERATE (vector<string>, it, types) {
-        if (check_qual_syntax  &&  !s_IsValidRptType(*it)) {
-            continue;
-        }
-        NStr::TruncateSpacesInPlace(*it);
-        x_AddQual(eFQ_rpt_type, new CFlatStringQVal(*it, CFormatQual::eUnquoted));
-    }
+    x_AddQual( eFQ_rpt_type, new CFlatStringQVal( value, CFormatQual::eUnquoted ) );
 }
 
 
@@ -3811,6 +3800,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2006/03/13 19:44:16  ludwigf
+* REMOVED: Fixup code for compound rpt_type qualifiers.
+* This functionality is now part of BasicCleanup.
+*
+* CHANGED: Suppressed allele qualifier in "primer_bind" feature.
+* This is to maintain compatibility with the C toolkit flat file generator.
+*
 * Revision 1.72  2006/01/23 14:24:15  ludwigf
 * FIXED: Formatting for comments and notes would call function ExpandTildes()
 *  twice, effectively killing even the tildes that were supposed to survive.
