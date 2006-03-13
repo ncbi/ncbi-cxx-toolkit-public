@@ -55,7 +55,9 @@ int main(int argc, char** argv) {
                  n += count) {
                 for (unsigned int i = 0; i < count; ++i) {
                     int value = *it;
-                    *it2 = value; // ignore bogus WorkShop complaints here
+                    if ( !*it2->AtEnd() ) {
+                        *it2 = value; // ignore bogus WorkShop complaints here
+                    }
                     ++it2;
                     cout << value;
                     if (new_size > 4)
@@ -76,6 +78,9 @@ int main(int argc, char** argv) {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/13 15:45:24  ucko
+ * Guard against overruns that can occur when count > 1.
+ *
  * Revision 1.6  2004/05/17 21:09:26  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
