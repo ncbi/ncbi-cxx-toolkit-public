@@ -52,20 +52,20 @@ typedef std::set <int> TOid;
 
 
 /** generic exception class */
-class NCBI_XOMSSA_EXPORT COMSSAException: EXCEPTION_VIRTUAL_BASE public CException {
+class COMSSAException: EXCEPTION_VIRTUAL_BASE public CException {
     public:
     /// Error types that subsystem can generate.
     enum EErrCode {
-        eType1,		///< unable to parse COMSSASearch
-        eType2,		///< unmatched sequence library
+        eMSParseException,		///< unable to parse COMSSASearch
+        eMSNoMatchException		///< unmatched sequence library
     };
 
     /// Translate from the error code value to its string representation.   
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eType1: return "unable to parse COMSSASearch";
-        case eType2: return "unmatched sequence library";
+        case eMSParseException: return "unable to parse COMSSASearch";
+        case eMSNoMatchException: return "unmatched sequence library";
         default:     return CException::GetErrCodeString();
         }
     }

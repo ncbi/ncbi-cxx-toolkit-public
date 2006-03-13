@@ -125,7 +125,7 @@ COMSSASearch::FindMinMaxSearchSettingId(
     Min = numeric_limits <int>::max();
 
     if(GetRequest().size() == 0)
-        NCBI_THROW(COMSSAException, COMSSAException::eType1, "No Search Requests");
+        NCBI_THROW(COMSSAException, eMSParseException, "No Search Requests");
 
     FindMinMaxForOneSetting((*GetRequest().begin())->GetSettings(), Min, Max);
     if((*GetRequest().begin())->CanGetMoresettings() && (*GetRequest().begin())->GetMoresettings().CanGet()) {
@@ -146,10 +146,10 @@ COMSSASearch::FindMinMaxSpectrumNumber(
     Min = numeric_limits <int>::max();
 
     if(GetRequest().size() == 0)
-         NCBI_THROW(COMSSAException, COMSSAException::eType1, "No Search Requests");
+         NCBI_THROW(COMSSAException, eMSParseException, "No Search Requests");
 
     if((*GetRequest().begin())->GetSpectra().Get().size() == 0)
-        NCBI_THROW(COMSSAException, COMSSAException::eType1, "No Spectra");
+        NCBI_THROW(COMSSAException, eMSParseException, "No Spectra");
 
     ITERATE(CMSSpectrumset::Tdata, iSpectrum, (*GetRequest().begin())->GetSpectra().Get()) {
         if((*iSpectrum)->GetNumber() > Max)
@@ -193,9 +193,9 @@ const bool
 COMSSASearch::CheckLibraryNameAndSize(const string Name, const int Size) const
 {
     if(GetRequest().size() == 0)
-          NCBI_THROW(COMSSAException, COMSSAException::eType1, "No Search Requests");
+          NCBI_THROW(COMSSAException, eMSParseException, "No Search Requests");
     if(GetResponse().size() == 0)
-           NCBI_THROW(COMSSAException, COMSSAException::eType1, "No Search Responses");
+           NCBI_THROW(COMSSAException, eMSParseException, "No Search Responses");
 
 
     if((*GetRequest().begin())->GetSettings().GetDb() != Name ||
@@ -276,15 +276,15 @@ COMSSASearch::AppendSearch(CRef <COMSSASearch> OldSearch)
     int Min, Max, OldMin, OldMax;
 
     if(GetRequest().size() == 0)
-          NCBI_THROW(COMSSAException, COMSSAException::eType1, "No Search Requests");
+          NCBI_THROW(COMSSAException, eMSParseException, "No Search Requests");
     if(GetResponse().size() == 0)
-           NCBI_THROW(COMSSAException, COMSSAException::eType1, "No Search Responses");
+           NCBI_THROW(COMSSAException, eMSParseException, "No Search Responses");
 
 
     // check library
     if(!CheckLibraryNameAndSize((*GetRequest().begin())->GetSettings().GetDb(),
                                 (*GetResponse().begin())->GetDbversion()))
-        NCBI_THROW(COMSSAException, COMSSAException::eType2, "unmatched sequence library");
+        NCBI_THROW(COMSSAException, eMSNoMatchException, "unmatched sequence library");
 
     // renumber search settings
     FindMinMaxSearchSettingId(Min, Max);
