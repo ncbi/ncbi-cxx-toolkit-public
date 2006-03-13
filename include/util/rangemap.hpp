@@ -197,7 +197,7 @@ public:
     // singular
     CRangeMapIterator(void)
         {
-            m_SelectIter = m_SelectIterEnd;
+            //m_SelectIter = m_SelectIterEnd;
         }
     // copy from non const iterator
     CRangeMapIterator(const typename TTraits::non_const_iterator& iter)
@@ -234,7 +234,7 @@ public:
     // check state
     bool Valid(void) const
         {
-            return m_SelectIter != m_SelectIterEnd;
+            return !m_Range.Empty() && m_SelectIter != m_SelectIterEnd;
         }
     DECLARE_OPERATOR_BOOL(Valid());
 
@@ -658,6 +658,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/03/13 21:40:14  gouriano
+* Compare only valid iterators
+*
 * Revision 1.26  2005/04/13 21:36:53  ucko
 * Remove unused stat() method, which collided badly with a macro on
 * some platforms.
