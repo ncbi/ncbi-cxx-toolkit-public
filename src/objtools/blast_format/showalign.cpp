@@ -110,6 +110,8 @@ static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
 static const int k_NumAsciiChar = 128;
 const string color[]={"#000000", "#808080", "#FF0000"};
+const string k_ColorRed = "#FF0000";
+const string k_ColorPink = "#F805F5";
 static const char k_PSymbol[CDisplaySeqalign::ePMatrixSize+1] =
 "ARNDCQEGHILKMFPSTWYVBZX";
 
@@ -315,7 +317,7 @@ static void s_WrapOutputLine(CNcbiOstream& out, const string& str)
 ///
 static void s_ColorDifferentBases(string& seq, char identity_char,
                                   CNcbiOstream& out){
-    string base_color = "#FF0000";
+    string base_color = k_ColorRed;
     bool tagOpened = false;
     for(int i = 0; i < (int)seq.size(); i ++){
         if(seq[i] != identity_char){
@@ -886,7 +888,7 @@ static void s_OutputFeature(string& reference_feat_line,
         if(color_feat_mismatch 
            && actual_reference_feat != NcbiEmptyString &&
            !NStr::IsBlank(actual_reference_feat)){
-            string base_color = "#F805F5";
+            string base_color = k_ColorPink;
             bool tagOpened = false;
             for(int i = 0; i < (int)actual_feat.size() &&
                     i < (int)actual_reference_feat.size(); i ++){
@@ -1315,7 +1317,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
                    && m_AlignOption&eShowIdentity && has_mismatch && 
                    (m_AlignOption & eColorDifferentBases)){
-                    out<< "<font color = ff0000><b>";         
+                    out<< "<font color = \"k_ColorRed\"><b>";         
                 }
                 out<<seqidArray[row]; 
                
@@ -3124,6 +3126,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.112  2006/03/13 15:58:18  jianye
+*corrected font color tag
+*
 *Revision 1.111  2006/03/09 21:20:59  jianye
 *added sum_n report
 *
