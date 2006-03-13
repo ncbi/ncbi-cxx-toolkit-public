@@ -31,6 +31,7 @@
  * ===========================================================================
  */
 
+
 #ifndef OMSSASCORE__HPP
 #define OMSSASCORE__HPP
 
@@ -41,12 +42,14 @@
 // for erf fcn
 #include <algo/blast/core/ncbi_math.h>
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-BEGIN_SCOPE(omssa)
+#define BEGIN_OMSSA_SCOPE \
+    BEGIN_NCBI_SCOPE BEGIN_SCOPE(objects) BEGIN_SCOPE(omssa)
+#define END_OMSSA_SCOPE END_NCBI_SCOPE END_SCOPE(objects) END_SCOPE(omssa)
 
-// this is a wrapper for msscore.hpp so that msscore.hpp can be ncbi toolkit independent
+#define USING_OMSSA_SCOPE \
+    USING_NCBI_SCOPE; USING_SCOPE(objects); USING_SCOPE(omssa);
 
+BEGIN_OMSSA_SCOPE
 
 /** m/z type */
 typedef int TMSMZ;
@@ -75,11 +78,10 @@ typedef int TMSRank;
 // define convergence delta for scoring
 #define MSDOUBLELIMIT 1e-300L
 
-#include "msscore.hpp"
+END_OMSSA_SCOPE
 
-END_SCOPE(omssa)
-END_SCOPE(objects)
-END_NCBI_SCOPE
+// this is a wrapper for msscore.hpp so that msscore.hpp can be ncbi toolkit independent
+#include "msscore.hpp"
 
 #endif
 

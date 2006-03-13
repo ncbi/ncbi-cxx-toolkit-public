@@ -49,6 +49,10 @@
 #include <vector>
 #include <map>
 
+#ifdef BEGIN_OMSSA_SCOPE
+BEGIN_OMSSA_SCOPE
+#endif
+
 // ncbi toolkit specific define for dll export
 #ifndef NCBI_XOMSSA_EXPORT
 #define NCBI_XOMSSA_EXPORT
@@ -73,8 +77,9 @@ enum EMSIonSeries {
     eMSIonTypeMax
 };
 
+
 /** set of ion series specifiers */
-typedef vector <EMSIonSeries> TIonSeriesSet;
+typedef std::vector <EMSIonSeries> TIonSeriesSet;
 
 
 /** 
@@ -170,6 +175,14 @@ public:
     /** Get the ion series number */
     TMSNumber& SetNumber(void);
 
+    /** 
+     * is a particular series forward going? 
+     * 
+     * @param Series the series
+     * @return 1 = yes, 0 = no, -1 = indeterminate
+     */
+    static const int IsForwardSeries(EMSIonSeries Series);
+
 private:
     TMSCharge Charge;
     TMSIonSeries Series;
@@ -242,7 +255,8 @@ enum EMSMatchType {
     eMSMatchTypeSemiIndependent, /**< the match is independent to first order */
     eMSMatchTypeDependent, /**< the match is statistically dependent */
     eMSMatchTypeNoSearch, /**< the peak was not searched, e.g. b1 */
-    eMSMatchTypeNoMatch   /**< peak was searched, but no match */
+    eMSMatchTypeNoMatch,   /**< peak was searched, but no match */
+    eMSMatchTypeTerminus  /**< statistically biased terminal match */
 };
 
 /**
@@ -327,7 +341,7 @@ typedef std::vector <CMSMatchedPeak *> TMatchedPeakSet;
 /**
  * container for a set of matches
  */
-class CMSMatchedPeakSet {
+class NCBI_XOMSSA_EXPORT CMSMatchedPeakSet {
 public:
     CMSMatchedPeakSet(void);
     virtual ~CMSMatchedPeakSet();
@@ -393,6 +407,7 @@ public:
 
     /**
      * create a new ion series
+     * if the series exists and is the same size, it will reuse old array
      * 
      * @param Charge charge of ion series
      * @param Series which ion series
@@ -439,6 +454,17 @@ TIonSeriesMatchMap& CMSMatchedPeakSetMap::SetMatchMap(void)
 {
     return MatchMap;
 }
+
+
+/**
+ * is the peptide statistically biased in any way on either end?
+ */
+enum EMSTerminalBias {
+    eMSNoTerminalBias,
+    eMSNTerminalBias,
+    eMSCTerminalBias,
+    eMSBothTerminalBias
+};
 
 /**
  * container for match between a spectrum and a mass ladder
@@ -536,9 +562,6 @@ public:
      */
     CMSBasicMatchedPeak * Find(TMSNumber Number, TMSCharge Charge, TMSIonSeries Series);
 
-    /** assignment operator */
-//    CMSSpectrumMatch& operator= (CMSSpectrumMatch& in);
-
     /**
      * get map from ion series to CMSMatchedPeakSet *
      */
@@ -558,19 +581,32 @@ public:
      * @param Series ion series
      * @param size length of the ion series
      * @param MinIntensity the minimum intensity of the peak to consider it as a match
-     * @param MH the neutral mass of the precursor
+     * @param Skipb1 should the first forward going ion be ignored?
+     * @param TerminalIon is either of the terminal ions statistically biased, e.g. only K or R at Cterm?
      */
     void FillMatchedPeaks(
         TMSCharge Charge, 
         TMSIonSeries Series, 
         int Size, 
         TMSIntensity MinIntensity, 
-        TMSMZ MH);
+        bool Skipb1,
+        EMSTerminalBias TerminalIon
+        );
 
     /**
      * calculate the mean value of the poisson distribution for this match
+     * 
+     * @param ProbTerminal the probability of a terminal peak
+     * @param NumTerminalMasses the number of terminal masses searched (2 for trypsin)
+     * @param ProbDependent the probability of a peak following a peak
+     * @param NumUniqueMasses the number of unique masses searched (19 with no modifications)
+     * 
+     * @return mean of poisson
      */
-    const double CalcPoissonMean(void) const;
+    const double CalcPoissonMean(double ProbTerminal=0.0L,
+                                 int NumTerminalMasses=2,
+                                 double ProbDependent=0.0L, 
+                                 int NumUniqueMasses=19) const;
 
     /**
      * calulate the poisson distribution
@@ -610,7 +646,7 @@ public:
     const double CalcNormalTopHit(double Mean, double TopHitProb) const;
 
     /**
-     * calcualte the p-value using poisson distribution and the top hit prob
+     * calculate the p-value using poisson distribution and the top hit prob
      * 
      * @param Mean mean value of poisson
      * @param Hits number of hits
@@ -619,6 +655,13 @@ public:
      * @return p-value
      */
     const double CalcPvalueTopHit(double Mean, int Hits, double Normal, double TopHitProb) const;
+
+    /**
+     * calculate the rank score
+     * 
+     * @return probability of given ranks
+     */
+    const double CalcRankProb(void) const;
 
 private:
     // disallow copy
@@ -765,38 +808,9 @@ CMSMatchedPeakSetMap& CMSSpectrumMatch::SetIonSeriesMatchMap(void)
     return IonSeriesMatchMap;
 }
 
-
-#if 0
-inline 
-CMSSpectrumMatch& CMSSpectrumMatch::operator= (CMSSpectrumMatch& in) 
-{ 
-    // handle self assignment
-    if(this == &in) return *this;
-
-    SetExpMass() = in.GetExpMass();
-    SetHits() = in.GetHits();
-    SetCharge() = in.GetCharge();
-    SetTheoreticalMass() = in.GetTheoreticalMass();
-    SetSum() = in.GetSum();
-    SetM() = in.GetM();
-    SetN() = in.GetN();
-
-    int i;
-    if(in.HitInfo) {
-        CreateHitInfo();
-        for(i = 0; i < GetHits(); i++) 
-            SetHitInfo(i) = in.GetHitInfo(i);
-    }
-    if(in.MatchInfo) {
-         CreateMatchInfo();
-         for(i = 0; i < GetHits(); i++) 
-             SetMatchInfo(i) = in.GetMatchInfo(i);
-     }
-    return *this;
-}
+#ifdef END_OMSSA_SCOPE
+END_OMSSA_SCOPE
 #endif
-
-
 
 #endif
 

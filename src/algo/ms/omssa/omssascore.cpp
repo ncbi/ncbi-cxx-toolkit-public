@@ -41,10 +41,6 @@
 
 #include "omssascore.hpp"
 
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-USING_SCOPE(omssa);
-
 // wrapper for msscore.cpp so that it can be ncbi-independent
 #include "msscore.cpp"
 

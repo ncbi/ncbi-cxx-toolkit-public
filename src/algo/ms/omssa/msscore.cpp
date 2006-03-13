@@ -44,33 +44,51 @@
 
 // precompiled headers #include found in msscore.cpp
 #if 0
-#include <ncbi_pch.hpp>
+    #include <ncbi_pch.hpp>
 #endif
 
 #include <math.h>
 #include "msscore.hpp"
 
+#ifdef USING_OMSSA_SCOPE
+USING_OMSSA_SCOPE
+#endif
+
 // define log of gamma fcn if not defined already
 #ifndef MSLNGAMMA
-#define MSLNGAMMA lgamma
+    #define MSLNGAMMA lgamma
 #endif
 
 // define error function
 #ifndef MSERF
-#define MSERF erf
+    #define MSERF erf
 #endif
 
 
+const int CMSBasicMatchedPeak::IsForwardSeries(EMSIonSeries Series)
+{
+    if ( Series == eMSIonTypeA ||
+         Series == eMSIonTypeB ||
+         Series == eMSIonTypeC)
+        return 1;
+    if ( Series == eMSIonTypeX ||
+         Series == eMSIonTypeY ||
+         Series == eMSIonTypeZ)
+        return 0;
+    return -1;
+}
+
+
 CMSMatchedPeak::CMSMatchedPeak(void):
-    MassTolerance(-1),
-    ExpIons(-1),
-    MatchType(eMSMatchTypeUnknown)
+MassTolerance(-1),
+ExpIons(-1),
+MatchType(eMSMatchTypeUnknown)
 {
 }
 
 void CMSMatchedPeak::Assign(CMSMatchedPeak *in)
 {
-    if(!in || in == this) return;
+    if (!in || in == this) return;
     SetCharge() = in->GetCharge();
     SetExpIons() = in->GetExpIons();
     SetIntensity() = in->GetIntensity();
@@ -83,16 +101,16 @@ void CMSMatchedPeak::Assign(CMSMatchedPeak *in)
 
 void CMSMatchedPeak::Assign(CMSBasicMatchedPeak *in)
 {
-    if(!in || in == this) return;
-     SetCharge() = in->GetCharge();
-     SetIntensity() = in->GetIntensity();
-     SetIonSeries() = in->GetIonSeries();
-     SetMZ() = in->GetMZ();
-     SetNumber() = in->GetNumber();
+    if (!in || in == this) return;
+    SetCharge() = in->GetCharge();
+    SetIntensity() = in->GetIntensity();
+    SetIonSeries() = in->GetIonSeries();
+    SetMZ() = in->GetMZ();
+    SetNumber() = in->GetNumber();
 
-     SetMassTolerance() = -1;
-     SetExpIons() = -1;
-     SetMatchType() = eMSMatchTypeUnknown;
+    SetMassTolerance() = -1;
+    SetExpIons() = -1;
+    SetMatchType() = eMSMatchTypeUnknown;
 }
 
 
@@ -109,13 +127,13 @@ void CMSMatchedPeakSet::CreateMatchedPeakSet(int Size)
 {
     DeleteMatchedPeakSet();
     int i;
-    for(i = 0; i < Size; ++i)
+    for (i = 0; i < Size; ++i)
         SetMatchedPeakSet().push_back(new CMSMatchedPeak);
 }
 
 void CMSMatchedPeakSet::DeleteMatchedPeakSet(void)
 {         
-    while(!GetMatchedPeakSet().empty()) {
+    while (!GetMatchedPeakSet().empty()) {
         delete SetMatchedPeakSet().back();
         SetMatchedPeakSet().pop_back();
     }
@@ -128,29 +146,36 @@ CMSMatchedPeakSetMap::CMSMatchedPeakSetMap(void)
 CMSMatchedPeakSetMap::~CMSMatchedPeakSetMap()
 {
     TIonSeriesMatchMap::iterator i;
-    for( i = SetMatchMap().begin(); i != SetMatchMap().end(); ++i)
+    for ( i = SetMatchMap().begin(); i != SetMatchMap().end(); ++i)
         delete i->second;
     SetMatchMap().clear();
 }
 
 CMSMatchedPeakSet * CMSMatchedPeakSetMap::CreateSeries(
-    TMSCharge Charge, 
-    TMSIonSeries Series,
-    int Size)
+                                                      TMSCharge Charge, 
+                                                      TMSIonSeries Series,
+                                                      int Size)
 {
     CMSMatchedPeakSet *retval;
     int Key = ChargeSeries2Key(Charge, Series);
 
-    // delete any old matches
-    if(GetMatchMap().find(Key) != GetMatchMap().end()) {
-        delete SetMatchMap()[Key];
-        SetMatchMap().erase(Key);
+    // find old matches
+    if (GetMatchMap().find(Key) != GetMatchMap().end()) {
+        // if size is same, don't bother reallocating
+        if (SetMatchMap()[Key]->SetMatchedPeakSet().size() == Size) {
+            return SetMatchMap()[Key];
+        }
+        // otherwise delete and reallocate
+        else {
+            delete SetMatchMap()[Key];
+            SetMatchMap().erase(Key);
+        }
     }
 
     retval = new CMSMatchedPeakSet;
-    if(retval) {
+    if (retval) {
         retval->CreateMatchedPeakSet(Size);
-        SetMatchMap().insert(pair <int, CMSMatchedPeakSet * > (Key, retval));
+        SetMatchMap().insert(std::pair <int, CMSMatchedPeakSet * > (Key, retval));
     }
 
     return retval;
@@ -160,11 +185,11 @@ CMSMatchedPeakSet * CMSMatchedPeakSetMap::SetSeries(TMSCharge Charge, TMSIonSeri
 {
     CMSMatchedPeakSet *retval;
     const int Key = ChargeSeries2Key(Charge, Series);
-    if(GetMatchMap().find(Key) != GetMatchMap().end())
+    if (GetMatchMap().find(Key) != GetMatchMap().end())
         retval = SetMatchMap()[Key];
-    else 
+    else
         retval = 0;
-    
+
     return retval;
 }   
 
@@ -179,13 +204,13 @@ const int CMSMatchedPeakSetMap::ChargeSeries2Key(TMSCharge Charge, TMSIonSeries 
 
 
 CMSSpectrumMatch::CMSSpectrumMatch(void):
-    HitInfo(0),
-    Hits(0),
-    ExpMass(-1),
-    TheoreticalMass(-1),
-    Sum(0),
-    M(0),
-    N(0)
+HitInfo(0),
+Hits(0),
+ExpMass(-1),
+TheoreticalMass(-1),
+Sum(0),
+M(0),
+N(0)
 {
 }
 
@@ -198,31 +223,33 @@ void CMSSpectrumMatch::CreateHitInfo(void)
 {
     delete [] HitInfo;
     HitInfo = 0;
-    if(GetHits() > 0)
+    if (GetHits() > 0)
         HitInfo = new CMSBasicMatchedPeak[GetHits()];
 }
 
 CMSBasicMatchedPeak * CMSSpectrumMatch::Find(
-    TMSNumber Number, 
-    TMSCharge Charge, 
-    TMSIonSeries Series)
+                                            TMSNumber Number, 
+                                            TMSCharge Charge, 
+                                            TMSIonSeries Series)
 {
     int i;
-    for(i = 0; i < GetHits(); ++i) {
-        if(GetHitInfo(i).GetNumber() == Number &&
-           GetHitInfo(i).GetCharge() == Charge &&
-           GetHitInfo(i).GetIonSeries() == Series)
+    for (i = 0; i < GetHits(); ++i) {
+        if (GetHitInfo(i).GetNumber() == Number &&
+            GetHitInfo(i).GetCharge() == Charge &&
+            GetHitInfo(i).GetIonSeries() == Series)
             return &SetHitInfo(i);
     }
     return 0;
 }
 
+
 void CMSSpectrumMatch::FillMatchedPeaks(
-    TMSCharge Charge, 
-    TMSIonSeries Series, 
-    int Size, 
-    TMSIntensity MinIntensity, 
-    TMSMZ MH)
+                                       TMSCharge Charge, 
+                                       TMSIonSeries Series, 
+                                       int Size, 
+                                       TMSIntensity MinIntensity, 
+                                       bool Skipb1,
+                                       EMSTerminalBias TerminalIon)
 {
     // create a new match set
     CMSMatchedPeakSet *MatchPeakSet =
@@ -231,14 +258,30 @@ void CMSSpectrumMatch::FillMatchedPeaks(
     int i;
 
     // iterate over series and look for matching hits
-    for(i = 0; i < Size; ++i) {
+    for (i = 0; i < Size; ++i) {
         CMSBasicMatchedPeak * FoundPeak = Find(i, Charge, Series);
-        if(FoundPeak && FoundPeak->GetIntensity() > MinIntensity) {
-                // copy hit to match
-                MatchPeakSet->SetMatchedPeakSet()[i]->Assign(FoundPeak);
-                // set as untyped hit
-                MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() =
-                    eMSMatchTypeNotTyped;
+        if (FoundPeak && FoundPeak->GetIntensity() > MinIntensity) {
+            // copy hit to match
+            MatchPeakSet->SetMatchedPeakSet()[i]->Assign(FoundPeak);
+            // set as untyped hit
+            MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() =
+            eMSMatchTypeNotTyped;
+
+            // check for terminal match
+            // n-term
+            if (TerminalIon == eMSNTerminalBias || TerminalIon == eMSBothTerminalBias) {
+                if ( (i==0 && CMSBasicMatchedPeak::IsForwardSeries(static_cast <EMSIonSeries> (Series))) ||
+                     (i==Size-1 && !CMSBasicMatchedPeak::IsForwardSeries(static_cast <EMSIonSeries> (Series)))) {
+                    MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeTerminus;
+                }
+            }
+            // c-term
+            else if (TerminalIon == eMSCTerminalBias || TerminalIon == eMSBothTerminalBias) {
+                if ( (i==0 && !CMSBasicMatchedPeak::IsForwardSeries(static_cast <EMSIonSeries> (Series))) ||
+                     (i==Size-1 && CMSBasicMatchedPeak::IsForwardSeries(static_cast <EMSIonSeries> (Series)))) {
+                    MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeTerminus;
+                }
+            }
         }
         else {
             MatchPeakSet->SetMatchedPeakSet()[i]->SetCharge() = Charge;
@@ -248,7 +291,11 @@ void CMSSpectrumMatch::FillMatchedPeaks(
             MatchPeakSet->SetMatchedPeakSet()[i]->SetIntensity() = 0;
             MatchPeakSet->SetMatchedPeakSet()[i]->SetNumber() = i;
         }
-    }    
+        // if b1 should not be searched, mark it as so.
+        if (i == 0 && Skipb1 && CMSBasicMatchedPeak::IsForwardSeries(static_cast <EMSIonSeries> (Series)))
+            MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeNoSearch;
+
+    }
 
 
     // iterate over array, look for unset m/z.  keep track of index of last set m/z
@@ -257,25 +304,25 @@ void CMSSpectrumMatch::FillMatchedPeaks(
     // find first -1
     int j;
     for (i = 0; i < Size; ++i) {
-        if(MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ() != 0) break;
+        if (MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ() != 0) break;
     }
     // if first filled hit is not the first one, fill in array
-    for(j = 0; j < i && i < Size; ++j) {
+    for (j = 0; j < i && i < Size; ++j) {
         MatchPeakSet->SetMatchedPeakSet()[j]->SetMZ() = 
-            (MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ()/ (i+1)) * (j+1);
+        (MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ()/ (i+1)) * (j+1);
     }
     // now fill out sections in the center
     int LastIndex(i);
-    for(; i < Size; ++i) {
-        if(MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ() != 0) {
-            if(i != LastIndex) {
+    for (; i < Size; ++i) {
+        if (MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ() != 0) {
+            if (i != LastIndex) {
                 // fill in the blank spaces
-                for(j = LastIndex+1; j < i; j++) {
+                for (j = LastIndex+1; j < i; j++) {
                     MatchPeakSet->SetMatchedPeakSet()[j]->SetMZ() =
-                        MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ() +
-                        ((MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ() -
-                         MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ()) /
-                        (i - LastIndex )) * (j - LastIndex) ;
+                    MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ() +
+                    ((MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ() -
+                      MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ()) /
+                     (i - LastIndex )) * (j - LastIndex) ;
                 }
             }
             LastIndex = i;
@@ -283,61 +330,51 @@ void CMSSpectrumMatch::FillMatchedPeaks(
     }
 
     // now fill out last section
-    if(MatchPeakSet->GetMatchedPeakSet()[Size-1]->GetMZ() == 0) {
+    if (MatchPeakSet->GetMatchedPeakSet()[Size-1]->GetMZ() == 0) {
 
         int StartIndex;
         TMSMZ StartMass;
         TMSMZ MassIncrement;
         // if completely empty, force the array to be completely filled out
-        if(MatchPeakSet->GetMatchedPeakSet()[0]->GetMZ() == 0) {
-            MassIncrement = (MH/Charge)/(Size+1);
+        if (MatchPeakSet->GetMatchedPeakSet()[0]->GetMZ() == 0) {
+            MassIncrement = (GetExpMass()/Charge)/(Size+1);
             StartIndex = 0;
-            StartMass = (MH/Charge)/(Size+1);
+            StartMass = (GetExpMass()/Charge)/(Size+1);
         }
         else {
-            MassIncrement = ((MH/Charge) - MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ()) /
-                (Size - LastIndex);
+            MassIncrement = ((GetExpMass()/Charge) - MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ()) /
+                            (Size - LastIndex);
             StartIndex = LastIndex + 1;
             StartMass = MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ() +
-                MassIncrement;
+                        MassIncrement;
         }
 
-        for(j = StartIndex; j < Size; ++j) {
+        for (j = StartIndex; j < Size; ++j) {
             MatchPeakSet->SetMatchedPeakSet()[j]->SetMZ() = 
-                StartMass + MassIncrement * (j - StartIndex);
+            StartMass + MassIncrement * (j - StartIndex);
         }
     }
-
-
-
-#if 0
-
-    // todo: if sb1 or sct, mark as don't search
-
-    for (i = 1; i < LadderArray.size(); ++i) {
-        cerr << "i=" << i << " start=" << LadderArray[i]->GetStart() << " stop=" <<
-            LadderArray[i]->GetStop() << " center=" << LadderArray[i]->GetCenter() << endl;
-    }
-#endif
 
 
     // first determine if the first peak is independent.  This simplifies the loop
-    if(MatchPeakSet->GetMatchedPeakSet()[0]->GetMatchType() == eMSMatchTypeNotTyped)
-         MatchPeakSet->SetMatchedPeakSet()[0]->SetMatchType() = eMSMatchTypeIndependent;
+    if (MatchPeakSet->GetMatchedPeakSet()[0]->GetMatchType() == eMSMatchTypeNotTyped)
+        MatchPeakSet->SetMatchedPeakSet()[0]->SetMatchType() = eMSMatchTypeIndependent;
 
     // now characterize all of the matches depending on the preceeding match
     for (i = 1; i < Size; ++i) {
         // only type matched peaks
-        if(MatchPeakSet->GetMatchedPeakSet()[i]->GetMatchType() == eMSMatchTypeNotTyped) {
-            if(MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeIndependent ||
-               MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeSemiIndependent) {
+        if (MatchPeakSet->GetMatchedPeakSet()[i]->GetMatchType() == eMSMatchTypeNotTyped) {
+            if (MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeIndependent ||
+                MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeSemiIndependent) {
                 MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeDependent;
             }
-            else if(MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeNoSearch ||
-                    MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeUnknown) {
+            else if (MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeNoSearch ||
+                     MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeUnknown ||
+                     MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeNoSearch ||
+                     MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeTerminus) {
                 MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeIndependent;
             }
-            else if(MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeDependent) {
+            else if (MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeDependent) {
                 MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeSemiIndependent;
             }
         }
@@ -347,24 +384,43 @@ void CMSSpectrumMatch::FillMatchedPeaks(
 }
 
 
-const double CMSSpectrumMatch::CalcPoissonMean(void) const
+const double 
+CMSSpectrumMatch::CalcPoissonMean(double ProbTerminal,
+                                  int NumTerminalMasses, 
+                                  double ProbDependent, 
+                                  int NumUniqueMasses
+                                  ) const
 {
     double Mean(0.0L);
     // scan thru entire map
     TIonSeriesMatchMap::const_iterator i;
-    for(i = GetIonSeriesMatchMap().GetMatchMap().begin();
-         i != GetIonSeriesMatchMap().GetMatchMap().end();
-         ++i) {
+    for (i = GetIonSeriesMatchMap().GetMatchMap().begin();
+        i != GetIonSeriesMatchMap().GetMatchMap().end();
+        ++i) {
         CMSMatchedPeakSet *PeakSet = i->second;
         // scan thru each match set
         TMatchedPeakSet::const_iterator j;
-        for(j = PeakSet->GetMatchedPeakSet().begin();
-             j != PeakSet->GetMatchedPeakSet().end();
-             ++j) {
+        for (j = PeakSet->GetMatchedPeakSet().begin();
+            j != PeakSet->GetMatchedPeakSet().end();
+            ++j) {
             CMSMatchedPeak *Peak = *j;
+
+            // skip unsearched peaks
+            if (Peak->GetMatchType() == eMSMatchTypeNoSearch) continue;
+
             // calculate single poisson
             // add it to total poisson
             Mean += 2.0 * Peak->GetMassTolerance() * Peak->GetExpIons();
+
+            // if a statistically dependent peak, add in dependent match probability
+            if (Peak->GetMatchType() == eMSMatchTypeDependent && NumUniqueMasses != 0) {
+                Mean += ProbDependent / NumUniqueMasses;
+            }
+
+            // if a statistically biased terminal peak, add in biased match probability
+            if (Peak->GetMatchType() == eMSMatchTypeTerminus && NumTerminalMasses != 0) {
+                Mean += ProbTerminal / NumTerminalMasses;
+            }
         }
     }
     return Mean;
@@ -405,10 +461,23 @@ const double CMSSpectrumMatch::CalcPvalue(double Mean, int Hits) const
     if (Hits <= 0) return 1.0L;
 
     int i;
-    double retval(0.0L);
+    double retval(0.0L), increment, beforeincrement;
 
-    for (i = 0; i < Hits; i++)
-        retval += CalcPoisson(Mean, i);
+    for (i = 0; i < Hits; i++) {
+        increment = CalcPoisson(Mean, i);
+#ifdef HAVE_LIMITS
+        // detect limit of increment if numeric_limits available
+        if(increment < retval * std::numeric_limits <double> ::epsilon()) break;
+#endif
+        retval += increment;
+        if(retval == 1.0L) break;
+        beforeincrement = increment;
+    }
+
+    // if retval is calculated to the maximum precision of double
+    // back off one increment to give a lower bound of the e-value
+    if(retval == 1.0L)
+        retval -= beforeincrement;
 
     retval = 1.0L - retval;
     if (retval <= 0.0L) retval = MSDOUBLELIMIT;
@@ -420,16 +489,42 @@ const double CMSSpectrumMatch::CalcPvalueTopHit(double Mean, int Hits, double No
     if (Hits <= 0) return 1.0L;
 
     int i;
-    double retval(0.0L), increment;
+    double retval(0.0L), increment, beforeretval(-1.0), beforeincrement;
 
     for (i = 1; i < Hits; i++) {
         increment = CalcPoissonTopHit(Mean, i, TopHitProb);
+#ifdef HAVE_LIMITS
+        // detect limit of increment if numeric_limits available
+        if(increment < retval * std::numeric_limits <double> ::epsilon()) break;
+#endif
         retval += increment;
+        // note that in gcc 3.4.2 on linux with -O9 -ffast-math, the following statement doesn't appear to work
+        // trying to fix this with retval - beforeretval < increment also does not work -- it breaks too soon!
+        if(retval == beforeretval) break;
+        beforeretval = retval;
+        beforeincrement = increment;
     }
+
+    // if retval and Normal are calculated to the maximum precision of double
+    // back off one increment to give a lower bound of the e-value
+    if(retval == Normal) retval -= beforeincrement;
 
     retval /= Normal;
     retval = 1.0L - retval;
     if (retval <= 0.0L) retval = MSDOUBLELIMIT;
     return retval;
 }
+
+const double CMSSpectrumMatch::CalcRankProb(void) const
+{
+    double Average, StdDev, Perf(1.0L);
+    if (GetM() != 0.0) {
+        Average = (GetM() *(GetN()+1))/2.0;
+        StdDev = sqrt(Average * (GetN() - GetM()) / 6.0);
+        if ( StdDev != 0.0)
+            Perf = 0.5*(1.0 + MSERF((GetSum() - Average)/(StdDev*sqrt(2.0))));
+    }
+    return Perf;
+}
+
 

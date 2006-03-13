@@ -95,12 +95,6 @@ public:
     CSearch(void);
     ~CSearch(void);
 
-#ifdef MSSTATRUN
-    double CompareLaddersPearson(int iMod,
-                            CMSPeak *Peaks,
-                            const TMassPeak *MassPeak);
-#endif
-
     
     // init blast databases.  stream thru db if InitDB true
     int InitBlast(const char *blastdb);
@@ -122,21 +116,19 @@ public:
    /**
     * fill out MatchedPeakSet
     * 
-    * @param MatchPeakSet Peakset to fill out
-    * @param Size length of ion series
+    * @param Hit the match being evaluated
     * @param SeriesCharge charge of ion series
+    * @param Ion which ion series
     * @param MinIntensity the minimum intensity to consider
     * @param Which which version of experimental peaks to use
     * @param Peaks experimental peaks
-    * @param Mass neutral mass of peptide
     */
-    void PepCharge(CMSMatchedPeakSet *MatchPeakSet,
-                   int Size, 
+    void PepCharge(CMSHit& Hit,
                    int SeriesCharge,
+                   int Ion,
                    int MinIntensity,
                    int Which,
-                   CMSPeak *Peaks,
-                   int Mass);
+                   CMSPeak *Peaks);
 
     /** 
      * Sets the scoring to use rank statistics
@@ -406,7 +398,7 @@ protected:
     /**
      * Get search settings
      */
-    const CRef<CMSSearchSettings> GetSettings(void) const;
+    CConstRef<CMSSearchSettings> GetSettings(void) const;
 
     /**
      * Set search request
@@ -416,7 +408,7 @@ protected:
     /**
      * Get search request
      */
-    const CRef<CMSRequest> GetRequest(void) const;
+    CConstRef<CMSRequest> GetRequest(void) const;
 
     /**
      * Set search response
@@ -426,7 +418,17 @@ protected:
     /**
      * Get search response
      */
-    const CRef<CMSResponse> GetResponse(void) const;
+    CConstRef<CMSResponse> GetResponse(void) const;
+
+    /**
+     * Set search enzyme
+     */
+    CRef <CCleave>& SetEnzyme(void);
+
+    /**
+     * Get search enzyme
+     */
+    CConstRef<CCleave> GetEnzyme(void) const;
 
 
 private:
@@ -439,6 +441,11 @@ private:
     CMSMod VariableMods;  // categorized variable mods
     CMSMod FixedMods;  // categorized fixed mods
     int numseq; // number of sequences in blastdb
+
+    /**
+     * the enzyme in use
+     */
+    CRef <CCleave> Enzyme;
 
     /**
      * Search request
@@ -672,7 +679,7 @@ CRef<CMSSearchSettings>& CSearch::SetSettings(void)
 }
 
 inline
-const CRef<CMSSearchSettings> CSearch::GetSettings(void) const
+CConstRef<CMSSearchSettings> CSearch::GetSettings(void) const
 {
     return MySettings;
 }
@@ -684,7 +691,7 @@ CRef<CMSRequest>& CSearch::SetRequest(void)
 }
 
 inline
-const CRef<CMSRequest> CSearch::GetRequest(void) const
+CConstRef<CMSRequest> CSearch::GetRequest(void) const
 {
     return MyRequest;
 }
@@ -696,7 +703,7 @@ CRef<CMSResponse>& CSearch::SetResponse(void)
 }
 
 inline
-const CRef<CMSResponse> CSearch::GetResponse(void) const
+CConstRef<CMSResponse> CSearch::GetResponse(void) const
 {
     return MyResponse;
 }
@@ -731,6 +738,19 @@ const bool CSearch::GetRestrictedSearch(void) const
     return RestrictedSearch;
 }
 
+inline
+CRef <CCleave>& CSearch::SetEnzyme(void)
+{
+    return Enzyme;
+}
+
+inline
+CConstRef<CCleave> CSearch::GetEnzyme(void) const
+{
+    return Enzyme;
+}
+
+
 /////////////////// end of CSearch inline methods
 
 
@@ -742,6 +762,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.38  2006/03/13 15:48:11  lewisg
+  omssamerge and intermediate score fixes
+
   Revision 1.37  2006/01/23 17:47:37  lewisg
   refactor scoring
 

@@ -579,6 +579,11 @@ public:
     int GetCleaveNum(void) const;
 
     /**
+     * Get the the cleave offset, 0 = cterm, 1 = nterm
+     */
+    const char * GetCleaveOffset(void) const;
+
+    /**
      * Is there n-term methionine cleavage?
      */
     bool GetNMethionine(void) const;
@@ -777,53 +782,41 @@ void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
                 iPepStart, false, Modset);
 }
 
-
-/**
- * Is the enzyme really a top-down search?
- */
 inline
 bool CCleave::GetTopDown(void) const
 {
     return TopDown;
 }
 
-/**
- * Is this a non-specific search?
- */
 inline
 bool CCleave::GetNonSpecific(void) const
 {
     return NonSpecific;
 }
 
-/**
- * Get the enzyme stop value
- */
 inline
 const char * CCleave::GetStop(void) const
 {
     return Stop;
 }
 
-/**
- * Set the enzyme stop value
- */
 inline
 const char * & CCleave::SetStop(void)
 {
     return Stop;
 }
 
-
-/**
-  * Get the number of cleavage chars
-  */
 inline
 int CCleave::GetCleaveNum(void) const
 {
     return kCleave;
 }
 
+inline
+const char * CCleave::GetCleaveOffset(void) const
+{
+    return CleaveOffset;
+}
 
 inline
 bool CCleave::GetNMethionine(void) const
@@ -1037,6 +1030,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.31  2006/03/13 15:48:11  lewisg
+  omssamerge and intermediate score fixes
+
   Revision 1.30  2006/01/23 17:47:37  lewisg
   refactor scoring
 

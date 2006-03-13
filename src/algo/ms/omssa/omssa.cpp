@@ -194,42 +194,6 @@ int CSearch::CompareLadders(int iMod,
 }
 
 
-#ifdef MSSTATRUN
-// compare ladders to experiment
-double CSearch::CompareLaddersPearson(int iMod,
-                                      CMSPeak *Peaks,
-                                      const TMassPeak *MassPeak)
-{
-    double avgMZI(0.0), avgLadder(0.0);
-    int n(0);
-    double numerator(0.0), normLadder(0.0), normMZI(0.0);
-    double retval(0.0);
-    if (MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
-        Peaks->CompareSortedAvg(*(BLadder[iMod]), MSCULLED2, avgMZI, avgLadder, n, true);
-        Peaks->CompareSortedAvg(*(YLadder[iMod]), MSCULLED2, avgMZI, avgLadder, n, false);
-        Peaks->CompareSortedAvg(*(B2Ladder[iMod]), MSCULLED2, avgMZI, avgLadder, n, false);
-        Peaks->CompareSortedAvg(*(Y2Ladder[iMod]), MSCULLED2, avgMZI, avgLadder, n, false);
-        avgLadder /= n;
-        avgMZI /= n;
-
-        Peaks->CompareSortedPearsons(*(BLadder[iMod]), MSCULLED2, avgMZI, avgLadder, numerator, normLadder, normMZI, true);
-        Peaks->CompareSortedPearsons(*(YLadder[iMod]), MSCULLED2, avgMZI, avgLadder, numerator, normLadder, normMZI, false);
-        Peaks->CompareSortedPearsons(*(B2Ladder[iMod]), MSCULLED2, avgMZI, avgLadder, numerator, normLadder, normMZI, false);
-        Peaks->CompareSortedPearsons(*(Y2Ladder[iMod]), MSCULLED2, avgMZI, avgLadder, numerator, normLadder, normMZI, false);
-    }
-    else {
-        Peaks->CompareSortedAvg(*(BLadder[iMod]), MSCULLED1, avgMZI, avgLadder, n, true);
-        Peaks->CompareSortedAvg(*(YLadder[iMod]), MSCULLED1, avgMZI, avgLadder, n, false);
-        avgLadder /= n;
-        avgMZI /= n;
-
-        Peaks->CompareSortedPearsons(*(BLadder[iMod]), MSCULLED1, avgMZI, avgLadder, numerator, normLadder, normMZI, true);
-        Peaks->CompareSortedPearsons(*(YLadder[iMod]), MSCULLED1, avgMZI, avgLadder, numerator, normLadder, normMZI, false);
-    }
-    retval = numerator / (sqrt(normLadder) * sqrt(normMZI));
-    return retval;
-}
-#endif
 
 
 void CSearch::CompareLaddersRank(int iMod,
@@ -674,9 +638,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
         SetupMods(Modset);
 
-        CRef <CCleave> enzyme =
-        CCleaveFactory::CleaveFactory(static_cast <EMSEnzymes> 
-                                      (GetSettings()->GetEnzyme()));
+        SetEnzyme() = CCleaveFactory::CleaveFactory(static_cast <EMSEnzymes> 
+                                                    (GetSettings()->GetEnzyme()));
 
         // do iterative search setup
         if (GetIterative()) {
@@ -702,7 +665,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         CAA AA;
 
         int Missed;  // number of missed cleaves allowed + 1
-        if (enzyme->GetNonSpecific()) Missed = 1;
+        if (GetEnzyme()->GetNonSpecific()) Missed = 1;
         else Missed = GetSettings()->GetMissedcleave()+1;
 
         int iMissed; // iterate thru missed cleavages
@@ -716,7 +679,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         PrecursorMassArray.Init(FixedMods, 
                                 GetSettings()->GetPrecursorsearchtype(), Modset);
         // initialize variable mods and set enzyme to use n-term methionine cleavage
-        enzyme->SetNMethionine() = 
+        SetEnzyme()->SetNMethionine() = 
         VariableMods.Init(GetSettings()->GetVariable(), Modset);
 
         const int *IntMassArray = MassArray.GetIntMass();
@@ -763,9 +726,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
         Spectrum2Peak(PeakSet);
 
-#ifdef MSSTATRUN
-        ofstream histos("histo.txt");
-#endif
 
         vector <int> taxids;
         vector <int>::iterator itaxids;
@@ -809,8 +769,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
             PepStart[Missed - 1] = Sequence.GetData();
 
             // if non-specific enzyme, set stop point
-            if (enzyme->GetNonSpecific()) {
-                enzyme->SetStop() = Sequence.GetData() + GetSettings()->GetMinnoenzyme() - 1;
+            if (GetEnzyme()->GetNonSpecific()) {
+                SetEnzyme()->SetStop() = Sequence.GetData() + GetSettings()->GetMinnoenzyme() - 1;
             }
 
             // iterate thru the sequence by digesting it
@@ -829,7 +789,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
                 // calculate new stop and mass
                 SequenceDone = 
-                enzyme->CalcAndCut(Sequence.GetData(),
+                SetEnzyme()->CalcAndCut(Sequence.GetData(),
                                    Sequence.GetData() + Sequence.GetLength() - 1, 
                                    &(PepEnd[Missed - 1]),
                                    &(Masses[Missed - 1]),
@@ -888,7 +848,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
                         // return peaks where theoretical mass is <= precursor mass + tol
                         // and >= precursor mass - tol
-                        if (!enzyme->GetTopDown())
+                        if (!GetEnzyme()->GetTopDown())
                             im = PeakSet.SetIntervalTree().IntervalsContaining(OldMass);
                         // if top-down enzyme, skip the interval tree match
                         else
@@ -946,22 +906,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                        YLadder[iMod]->HitCount() +
                                        B2Ladder[iMod]->HitCount() +
                                        Y2Ladder[iMod]->HitCount();
-#ifdef MSSTATRUN
-//                histos << CompareLaddersPearson(iMod, Peaks, MassPeak) << endl;
-                                {
-                                    int N(0), M(0), Sum(0);
-                                    double Average, StdDev;
-                                    Peaks->ClearUsedAll();
-
-                                    CompareLaddersRank(iMod, Peaks, MassPeak, N,
-                                                       M,
-                                                       Sum);
-                                    Average = ( M *(N+1))/2.0;
-                                    StdDev = sqrt(Average * (N - M) / 6.0);
-                                    histos << "N=" << N << " M=" << M << " Sum=" << Sum << " Ave=" << Average << " SD=" << StdDev << " erf=" << 0.5*(1.0 + erf((Sum - Average)/(StdDev*sqrt(2.0)))) << endl;
-                                }
-
-#endif
                                 if (hits >= GetSettings()->GetMinhit()) {
                                     // need to save mods.  bool map?
                                     NewHit.SetHits() = hits;   
@@ -994,7 +938,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                         } // MassPeak
                     } //iMod
                 } // iMissed
-                if (enzyme->GetNonSpecific()) {
+                if (GetEnzyme()->GetNonSpecific()) {
                     int NonSpecificMass(Masses[0] + EndMasses[0]);
                     PartialLoop:
 
@@ -1009,23 +953,23 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     // need to use different criterion if semi-tryptic and  start position was
                     // moved.  otherwise this criterion is OK
                     if (NonSpecificMass < MaxMZ /*- MSSCALE2INT(MonoMass[7]) */&&
-                        enzyme->GetStop() < Sequence.GetData() + Sequence.GetLength() &&
+                        GetEnzyme()->GetStop() < Sequence.GetData() + Sequence.GetLength() &&
                         (GetSettings()->GetMaxnoenzyme() == 0 ||
-                         enzyme->GetStop() - PepStart[0] + 1 < GetSettings()->GetMaxnoenzyme())
+                         GetEnzyme()->GetStop() - PepStart[0] + 1 < GetSettings()->GetMaxnoenzyme())
                        ) {
-                        enzyme->SetStop()++;
-                        NonSpecificMass += PrecursorIntMassArray[AA.GetMap()[*(enzyme->GetStop())]];
+                        SetEnzyme()->SetStop()++;
+                        NonSpecificMass += PrecursorIntMassArray[AA.GetMap()[*(GetEnzyme()->GetStop())]];
                     }
                     // reset to new start with minimum size
                     else if ( PepStart[0] < Sequence.GetData() + Sequence.GetLength() - 
                               GetSettings()->GetMinnoenzyme()) {
                         PepStart[0]++;
-                        enzyme->SetStop() = PepStart[0] + GetSettings()->GetMinnoenzyme() - 1;
+                        SetEnzyme()->SetStop() = PepStart[0] + GetSettings()->GetMinnoenzyme() - 1;
 
                         // reset mass
                         NonSpecificMass = 0;
                         const char *iSeqChar;
-                        for (iSeqChar = PepStart[0]; iSeqChar <= enzyme->GetStop(); iSeqChar++)
+                        for (iSeqChar = PepStart[0]; iSeqChar <= GetEnzyme()->GetStop(); iSeqChar++)
                             PrecursorIntMassArray[AA.GetMap()[*iSeqChar]];
                         // reset sequence done flag if at end of sequence
                         SequenceDone = false;
@@ -1035,11 +979,11 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     // if this is partial tryptic, loop back if one end or the other is not tryptic
                     // for start, need to check sequence before (check for start of seq)
                     // for end, need to deal with end of protein case
-                    if (!SequenceDone && enzyme->GetCleaveNum() > 0 &&
+                    if (!SequenceDone && GetEnzyme()->GetCleaveNum() > 0 &&
                         PepStart[0] != Sequence.GetData() &&
-                        enzyme->GetStop() != Sequence.GetData() + Sequence.GetLength() ) {
-                        if (!enzyme->CheckCleaveChar(PepStart[0]-1) &&
-                            !enzyme->CheckCleaveChar(enzyme->GetStop()))
+                        GetEnzyme()->GetStop() != Sequence.GetData() + Sequence.GetLength() ) {
+                        if (!SetEnzyme()->CheckCleaveChar(PepStart[0]-1) &&
+                            !SetEnzyme()->CheckCleaveChar(GetEnzyme()->GetStop()))
                             goto PartialLoop;
                     }
 
@@ -1397,23 +1341,50 @@ void CSearch::WriteBioseqs(void)
 }
 
 
-void CSearch::PepCharge(CMSMatchedPeakSet *MatchPeakSet,
-                        int Size, 
+void CSearch::PepCharge(CMSHit& Hit,
                         int SeriesCharge,
+                        int Ion,
                         int minintensity,
                         int Which, 
-                        CMSPeak *Peaks, 
-                        int tempMass)
+                        CMSPeak *Peaks)
 {
     int iii;
     int lowmz(0), highmz;
+
+    int Size = Hit.GetStop() - Hit.GetStart();
+
+    // decide if there is any terminal bias
+    EMSTerminalBias TerminalBias(eMSNoTerminalBias);
+
+    for(iii = 0; iii < GetEnzyme()->GetCleaveNum(); ++iii) {
+        // n term
+        if(GetEnzyme()->GetCleaveOffset()[iii] == 1 ) {
+            // check to see if should be biases on both ends
+            if(TerminalBias == eMSNTerminalBias || TerminalBias == eMSNoTerminalBias)
+                TerminalBias = eMSNTerminalBias;
+            else
+                TerminalBias = eMSBothTerminalBias;
+        }
+        // c term
+        else if (GetEnzyme()->GetCleaveOffset()[iii] == 0 ) {            
+            // check to see if should be biases on both ends
+            if(TerminalBias == eMSCTerminalBias || TerminalBias == eMSNoTerminalBias)
+                TerminalBias = eMSCTerminalBias;
+            else
+                TerminalBias = eMSBothTerminalBias;
+        }
+    }
+
+    Hit.FillMatchedPeaks(SeriesCharge, Ion, Size, minintensity, false, TerminalBias);
+    CMSMatchedPeakSet *MatchPeakSet = Hit.SetIonSeriesMatchMap().SetSeries(SeriesCharge, Ion);
+
     for (iii = 0; iii < Size; ++iii) {
         // need to go thru match info, not hit info.
         if(iii != 0) lowmz = (MatchPeakSet->GetMatchedPeakSet()[iii]->GetMZ() +
             MatchPeakSet->GetMatchedPeakSet()[iii-1]->GetMZ())/2;
         if(iii != Size-1) highmz = (MatchPeakSet->GetMatchedPeakSet()[iii]->GetMZ() +
                  MatchPeakSet->GetMatchedPeakSet()[iii+1]->GetMZ())/2;
-        else highmz = tempMass/SeriesCharge;
+        else highmz = Hit.GetExpMass()/SeriesCharge;
         MatchPeakSet->SetMatchedPeakSet()[iii]->SetExpIons() = 
             Peaks->CountMZRange(lowmz,
                                 highmz,
@@ -1443,8 +1414,6 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             iHitList++) {
 
             int tempMass = HitList[iHitList].GetExpMass();
-            int tempStart = HitList[iHitList].GetStart();
-            int tempStop = HitList[iHitList].GetStop();
             int Charge = HitList[iHitList].GetCharge();
             int Which = Peaks->GetWhich(Charge);
 
@@ -1458,22 +1427,14 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             int minintensity = Threshold * Peaks->GetMaxI(Which);
 
             // fill out the match list
-            HitList[iHitList].FillMatchedPeaks(1, ForwardIon, tempStop-tempStart, minintensity, tempMass);
-            PepCharge(HitList[iHitList].SetIonSeriesMatchMap().SetSeries(1, ForwardIon), tempStop-tempStart, 1,
-                       minintensity, Which, Peaks, tempMass);
-            HitList[iHitList].FillMatchedPeaks(1, BackwardIon, tempStop-tempStart, minintensity, tempMass);
-            PepCharge(HitList[iHitList].SetIonSeriesMatchMap().SetSeries(1, BackwardIon), tempStop-tempStart, 1,
-                        minintensity, Which, Peaks, tempMass);
+            PepCharge(HitList[iHitList], 1, ForwardIon, minintensity, Which, Peaks);
+            PepCharge(HitList[iHitList], 1, BackwardIon, minintensity, Which, Peaks);
             // in case of +2 series
             if(Charge >= Peaks->GetConsiderMult()) {
-                HitList[iHitList].FillMatchedPeaks(2, ForwardIon, tempStop-tempStart, minintensity, tempMass);
-                PepCharge(HitList[iHitList].SetIonSeriesMatchMap().SetSeries(2, ForwardIon), tempStop-tempStart, 2,
-                            minintensity, Which, Peaks, tempMass);
-                HitList[iHitList].FillMatchedPeaks(2, BackwardIon, tempStop-tempStart, minintensity, tempMass);
-                PepCharge(HitList[iHitList].SetIonSeriesMatchMap().SetSeries(2, BackwardIon), tempStop-tempStart, 2,
-                             minintensity, Which, Peaks, tempMass);
+                PepCharge(HitList[iHitList], 2, ForwardIon, minintensity, Which, Peaks);
+                PepCharge(HitList[iHitList], 2, BackwardIon, minintensity, Which, Peaks);
             }
-            double a = HitList[iHitList].CalcPoissonMean();
+            double a = HitList[iHitList].CalcPoissonMean(0.5, GetEnzyme()->GetCleaveNum(), 0.5, 19);
 
             if (a == 0) {
                 // threshold probably too high
@@ -1510,21 +1471,16 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 pval = HitList[iHitList].CalcPvalueTopHit(a, numhits, Normal, TopHitProb);
             }
             else {
-                pval = HitList[iHitList].CalcPvalue(HitList[iHitList].CalcPoissonMean(),
-                                                     HitList[iHitList].CountHits(Threshold, Peaks->GetMaxI(Which)));
+                pval = HitList[iHitList].CalcPvalue(a, HitList[iHitList].CountHits(Threshold, Peaks->GetMaxI(Which)));
             }
             if (UseRankScore) {
                 if (HitList[iHitList].GetM() != 0.0) {
-                    double Average, StdDev, Perf;
-                    Average = ( HitList[iHitList].GetM() *(HitList[iHitList].GetN()+1))/2.0;
-                    StdDev = sqrt(Average * (HitList[iHitList].GetN() - HitList[iHitList].GetM()) / 6.0);
-                    Perf = 0.5*(1.0 + NCBI_Erf((HitList[iHitList].GetSum() - Average)/(StdDev*sqrt(2.0))));
+                    double Perf = HitList[iHitList].CalcRankProb();
                     pval *= Perf;
-
                 }
                 else ERR_POST(Info << "M is zero");
             }
-            double eval = /*1e5*/ 1e4 * pval * N;
+            double eval = /*1e5*/ 1e3 * pval * N;
             _TRACE( " pval=" << pval << " eval=" << eval );
             ScoreList.insert(pair<const double, CMSHit *> 
                              (eval, &(HitList[iHitList])));

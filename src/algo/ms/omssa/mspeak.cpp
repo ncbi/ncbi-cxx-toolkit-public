@@ -462,106 +462,6 @@ const int CMSPeak::CompareSorted(CLadder& Ladder, const int Which, TIntensity* I
     return retval;
 }
 
-#ifdef MSSTATRUN
-void CMSPeak::CompareSortedAvg(CLadder& Ladder, int Which,
-                               double& avgMZI, double& avgLadder, int& n,
-                               bool CountExperimental)
-{
-    if(Ladder.size() == 0 ||  Num[Which] == 0) return;
-    unsigned i(0), j(0);
-
-#if 0
-    // first find average
-    for(i = 0; i < Ladder.size(); i++)
-        avgLadder += 1.0;
-    nLadder += Ladder.size();
-    for(j = 0; j < Num[Which]; j++)
-        avgMZI += MZI[Which][j].Intensity;
-    nMZI += Num[Which];
-#endif
-
-
-    do {
-        if (MZI[Which][j].MZ < Ladder[i] - tol) {
-            // increment experimental values
-            if(CountExperimental) {
-                avgMZI += MZI[Which][j].Intensity;
-                n++;
-            }
-            j++;
-            if(j >= Num[Which]) break;
-            continue;
-        }
-        else if(MZI[Which][j].MZ > Ladder[i] + tol) {
-            // increment theoretical values
-            // note: overcounts values shared with other ladders
-//            avgLadder += 1.0;
-//           n++;
-            i++;
-            if(i >= Ladder.size()) break;
-            continue;
-        }
-        else {
-            // increment matched experimental and theoretical values
-            if(CountExperimental) {
-                avgMZI += MZI[Which][j].Intensity;
-            }
-                n++;
-                avgLadder += 1.0;
-            j++;
-            if(j >= Num[Which]) break;
-            i++;
-            if(i >= Ladder.size()) break;
-        }
-    } while(true);
-
-}
-
-void CMSPeak::CompareSortedPearsons(CLadder& Ladder, int Which,
-                                    double avgMZI, double avgLadder,
-                                    double& numerator,
-                                    double& normLadder,
-                                    double& normMZI,
-                                    bool CountExperimental)
-{
-    unsigned i(0), j(0);
-    if(Ladder.size() == 0 ||  Num[Which] == 0) return;
-
-    do {
-        if (MZI[Which][j].MZ < Ladder[i] - tol) {
-            if(CountExperimental) {
-                numerator += (MZI[Which][j].Intensity - avgMZI) * (0.0 - avgLadder);
-                normMZI += pow(MZI[Which][j].Intensity - avgMZI, 2.0);
-                normLadder += pow(0.0 - avgLadder, 2.0);
-            }
-            j++;
-            if(j >= Num[Which]) break;
-            continue;
-        }
-        else if(MZI[Which][j].MZ > Ladder[i] + tol) {
-//            numerator += (0.0 - avgMZI) * (1.0 - avgLadder);
-//            normMZI += pow(0.0 - avgMZI, 2.0);
-//            normLadder += pow(1.0 - avgLadder, 2.0);
-            i++;
-            if(i >= Ladder.size()) break;
-            continue;
-        }
-        else {
-            numerator += (MZI[Which][j].Intensity - avgMZI) * (1.0 - avgLadder);
-            normLadder += pow(1.0 - avgLadder, 2.0);
-            if(CountExperimental) {
-                normMZI += pow(MZI[Which][j].Intensity - avgMZI, 2.0);
-            }
-            j++;
-            if(j >= Num[Which]) break;
-            i++;
-            if(i >= Ladder.size()) break;
-        }
-    } while(true);
-
-    return;
-}
-#endif
 
 int CMSPeak::CompareSortedRank(CLadder& Ladder, int Which, TIntensity* Intensity, int& Sum, int& M)
 {
@@ -879,14 +779,14 @@ void CMSPeak::CullBaseLine(const double Threshold, CMZI *Temp, int& TempLen)
 }
 
 
-void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor)
+void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor, const int Charge)
 {
     // chop out precursors
     int iTemp(0), iMZI;
     
     for(iMZI = 0; iMZI < TempLen; iMZI++) { 
-	if(Temp[iMZI].GetMZ() > Precursor - tol && 
-	    Temp[iMZI].GetMZ() < Precursor + tol) continue;
+	if(Temp[iMZI].GetMZ() > Precursor - 12*tol/Charge && 
+	    Temp[iMZI].GetMZ() < Precursor + 12*tol/Charge) continue;
 	
 	Temp[iTemp] = Temp[iMZI];
 	iTemp++;
@@ -966,7 +866,7 @@ void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct,
 
     int iCharges;
 	for(iCharges = 0; iCharges < GetNumCharges(); iCharges++){
-		CullPrecursor(Temp, TempLen, CalcPrecursorMass(GetCharges()[iCharges]));
+		CullPrecursor(Temp, TempLen, CalcPrecursorMass(GetCharges()[iCharges]), GetCharges()[iCharges]);
 	}
 //#define DEBUG_PEAKS1
 #ifdef DEBUG_PEAKS1

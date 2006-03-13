@@ -543,18 +543,6 @@ public:
      */
     CMSPeak(int HitListSize);
 
-#ifdef MSSTATRUN
-    void CompareSortedAvg(CLadder& Ladder, int Which,
-                          double& avgMZI, double& avgLadder, int& n,
-                          bool CountExperimental);
-
-    void CompareSortedPearsons(CLadder& Ladder, int Which,
-                               double avgMZI, double avgLadder,
-                               double& numerator,
-                               double& normLadder,
-                               double& normMZI,
-                               bool CountExperimental);
-#endif
 
 private:
 
@@ -650,8 +638,9 @@ public:
      * @param Temp MZI values to use
      * @param TempLen length of Temp
      * @param scaled precursor value
+     * @param Charge precursor charge
      */
-    void CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor);
+    void CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor, const int Charge);
 
     /**
      *  take out peaks below a threshold
@@ -1342,6 +1331,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.37  2006/03/13 15:48:11  lewisg
+  omssamerge and intermediate score fixes
+
   Revision 1.36  2006/01/23 17:47:37  lewisg
   refactor scoring
 
