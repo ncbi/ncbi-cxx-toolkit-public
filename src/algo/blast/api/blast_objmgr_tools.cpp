@@ -70,11 +70,13 @@ BEGIN_SCOPE(blast)
 
 // N.B.: the const is removed, but the v object is never really changed,
 // therefore we keep it as a const argument
-CBlastQuerySourceOM::CBlastQuerySourceOM(const TSeqLocVector& v)
+CBlastQuerySourceOM::CBlastQuerySourceOM(const TSeqLocVector& v,
+                                         EBlastProgramType     program)
     : m_TSeqLocVector(const_cast<TSeqLocVector*>(&v)),
       m_OwnTSeqLocVector(false), 
       m_Options(0), 
-      m_CalculatedMasks(true)
+      m_CalculatedMasks(true),
+      m_Program(program)
 {}
 
 CBlastQuerySourceOM::CBlastQuerySourceOM(TSeqLocVector& v,
@@ -82,12 +84,30 @@ CBlastQuerySourceOM::CBlastQuerySourceOM(TSeqLocVector& v,
     : m_TSeqLocVector(&v), 
       m_OwnTSeqLocVector(false), 
       m_Options(opts), 
-      m_CalculatedMasks(false)
-{}
+      m_CalculatedMasks(false),
+      m_Program(opts->GetProgramType())
+{
+}
 
-CBlastQuerySourceOM::CBlastQuerySourceOM(CBlastQueryVector& v)
-    : m_QueryVector(& v)
-{}
+CBlastQuerySourceOM::CBlastQuerySourceOM(CBlastQueryVector   & v,
+                                         EBlastProgramType     program)
+    : m_QueryVector(& v),
+      m_OwnTSeqLocVector(false), 
+      m_Options(0), 
+      m_CalculatedMasks(false),
+      m_Program(program)
+{
+}
+
+CBlastQuerySourceOM::CBlastQuerySourceOM(CBlastQueryVector   & v,
+                                         const CBlastOptions * opts)
+    : m_QueryVector(& v),
+      m_OwnTSeqLocVector(false), 
+      m_Options(opts), 
+      m_CalculatedMasks(false),
+      m_Program(opts->GetProgramType())
+{
+}
 
 void
 CBlastQuerySourceOM::x_CalculateMasks(void)
@@ -162,7 +182,8 @@ CBlastQuerySourceOM::GetMaskedRegions(int i)
     if (m_QueryVector.NotEmpty()) {
         return m_QueryVector->GetMaskedRegions(i);
     } else {
-        return PackedSeqLocToMaskedQueryRegions( (*m_TSeqLocVector)[i].mask );
+        return PackedSeqLocToMaskedQueryRegions( (*m_TSeqLocVector)[i].mask,
+                                                 m_Program );
     }
 }
 
@@ -255,7 +276,7 @@ SetupQueryInfo(const TSeqLocVector& queries,
                ENa_strand strand_opt,
                BlastQueryInfo** qinfo)
 {
-    SetupQueryInfo_OMF(CBlastQuerySourceOM(queries), prog, strand_opt, qinfo);
+    SetupQueryInfo_OMF(CBlastQuerySourceOM(queries, prog), prog, strand_opt, qinfo);
 }
 
 void
@@ -267,7 +288,7 @@ SetupQueries(const TSeqLocVector& queries,
              const Uint1* genetic_code,
              TSearchMessages& messages)
 {
-    CBlastQuerySourceOM query_src(queries);
+    CBlastQuerySourceOM query_src(queries, prog);
     SetupQueries_OMF(query_src, qinfo, seqblk, prog, 
                      strand_opt, genetic_code, messages);
 }
@@ -278,7 +299,7 @@ SetupSubjects(const TSeqLocVector& subjects,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen)
 {
-    CBlastQuerySourceOM subj_src(subjects);
+    CBlastQuerySourceOM subj_src(subjects, prog);
     SetupSubjects_OMF(subj_src, prog, seqblk_vec, max_subjlen);
 }
 
@@ -584,7 +605,8 @@ PsiBlastComputePssmFromAlignment(const CBioseq& query,
 }
 
 TMaskedQueryRegions
-PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in)
+PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in,
+                                 EBlastProgramType            prog)
 {
     if (sloc_in.Empty()) {
         return TMaskedQueryRegions();
@@ -615,47 +637,52 @@ PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in)
         objects::CSeq_interval * iv =
             const_cast<objects::CSeq_interval*>(& (**iter));
         
-        bool do_pos = false;
-        bool do_neg = false;
-        
-        if (iv->CanGetStrand()) {
-            switch(iv->GetStrand()) {
-            case objects::eNa_strand_plus:
-                do_pos = true;
-                break;
-                
-            case objects::eNa_strand_minus:
-                do_neg = true;
-                break;
-                
-            case objects::eNa_strand_both:
-                do_pos = true;
-                do_neg = true;
-                break;
-                
-            default:
-                NCBI_THROW(CBlastException, eNotSupported, 
-                           "Unsupported strand type used for query");
-            }
+        if (Blast_QueryIsProtein(prog)) {
+            int fr = (int) CSeqLocInfo::eFrameNotSet;
+            mqr.push_back(CRef<CSeqLocInfo>(new CSeqLocInfo(iv, fr)));
         } else {
-            // intervals with no strand assignment will use both.
-            do_pos = true;
-            do_neg = true;
-        }
+            bool do_pos = false;
+            bool do_neg = false;
         
-        if (do_pos) {
-            int fr = (int) CSeqLocInfo::eFramePlus1;
-            mqr.push_back(CRef<CSeqLocInfo>(new CSeqLocInfo(iv, fr)));
-        }
-        
-        // No reversal is done here.  Tt seems that the code (in core)
-        // that applies the mask reverses it.  Whether this is an
-        // accidental or designed is not clear to me, but for now this
-        // will remain as is.
-        
-        if (do_neg) {
-            int fr = (int) CSeqLocInfo::eFrameMinus1;
-            mqr.push_back(CRef<CSeqLocInfo>(new CSeqLocInfo(iv, fr)));
+            if (iv->CanGetStrand()) {
+                switch(iv->GetStrand()) {
+                case objects::eNa_strand_plus:
+                    do_pos = true;
+                    break;
+                
+                case objects::eNa_strand_minus:
+                    do_neg = true;
+                    break;
+                
+                case objects::eNa_strand_both:
+                    do_pos = true;
+                    do_neg = true;
+                    break;
+                
+                default:
+                    NCBI_THROW(CBlastException, eNotSupported, 
+                               "Unsupported strand type used for query");
+                }
+            } else {
+                // intervals with no strand assignment will use both.
+                do_pos = true;
+                do_neg = true;
+            }
+            
+            if (do_pos) {
+                int fr = (int) CSeqLocInfo::eFramePlus1;
+                mqr.push_back(CRef<CSeqLocInfo>(new CSeqLocInfo(iv, fr)));
+            }
+            
+            // No reversal is done here.  Tt seems that the code (in core)
+            // that applies the mask reverses it.  Whether this is an
+            // accidental or designed is not clear to me, but for now this
+            // will remain as is.
+            
+            if (do_neg) {
+                int fr = (int) CSeqLocInfo::eFrameMinus1;
+                mqr.push_back(CRef<CSeqLocInfo>(new CSeqLocInfo(iv, fr)));
+            }
         }
     }
     
@@ -684,6 +711,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2006/03/13 16:43:51  bealer
+* - Fix protein masking issue.
+*
 * Revision 1.69  2006/03/07 16:35:27  bealer
 * - Add "use_this_gi" scores for protein searches with Entrez queries.
 *

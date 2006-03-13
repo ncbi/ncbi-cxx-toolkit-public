@@ -63,18 +63,39 @@ class CPSIBlastOptionsHandle;
 class CBlastQuerySourceOM : public IBlastQuerySource {
 public:
     /// Constructor which takes a TSeqLocVector
+    /// 
+    /// This version assumes the masking information (if any) was
+    /// provided with the TSeqLocVector.
+    /// 
     /// @param v vector of SSeqLoc structures containing the queries [in]
-    CBlastQuerySourceOM(const TSeqLocVector & v);
-
+    /// @param p program type of this search [in]
+    CBlastQuerySourceOM(const TSeqLocVector & v, EBlastProgramType prog);
+    
     /// Constructor which takes a TSeqLocVector
+    /// 
+    /// This version will compute masking information with dust.
+    /// 
     /// @param v vector of SSeqLoc structures containing the queries [in]
     /// @param opts BLAST algorithm options [in]
     /// @note that the v argument might be changed with the filtering locations
     CBlastQuerySourceOM(TSeqLocVector & v, const CBlastOptions* opts);
 
     /// Constructor which takes a CBlastQueryVector
+    /// 
+    /// This version assumes the masking information (if any) was
+    /// provided with the CBlastQueryVector.
+    /// 
     /// @param v Object containing the queries, scopes and masking info [in]
-    CBlastQuerySourceOM(CBlastQueryVector & v);
+    /// @param opts BLAST algorithm options [in]
+    CBlastQuerySourceOM(CBlastQueryVector & v, EBlastProgramType prog);
+    
+    /// Constructor which takes a CBlastQueryVector
+    /// 
+    /// This version will compute masking information with dust.
+    ///
+    /// @param v Object containing the queries, scopes and masking info [in]
+    /// @param opts BLAST algorithm options [in]
+    CBlastQuerySourceOM(CBlastQueryVector & v, const CBlastOptions* opts);
     
     /// dtor which determines if the internal pointer to its data should be
     /// deleted or not.
@@ -139,6 +160,9 @@ private:
     /// this flag allows for lazy initialization of the masking locations
     bool m_CalculatedMasks;
 
+    /// BLAST program variable
+    EBlastProgramType   m_Program;
+    
     /// Performs filtering on the query sequences to calculate the masked
     /// locations
     void x_CalculateMasks();

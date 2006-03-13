@@ -110,13 +110,14 @@ s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
  * @return List of mask locations in TMaskedQueryRegions form.
  */
 TMaskedQueryRegions
-s_BlastSeqLoc2MaskedRegions(const CSeq_loc & query,
-                            CScope         * scope,
-                            BlastSeqLoc    * loc_list)
+s_BlastSeqLoc2MaskedRegions(const CSeq_loc    & query,
+                            CScope            * scope,
+                            BlastSeqLoc       * loc_list,
+                            EBlastProgramType   program)
 {
     CConstRef<CSeq_loc> sloc(s_BlastSeqLoc2CSeqloc(query, scope, loc_list));
     
-    return PackedSeqLocToMaskedQueryRegions(sloc);
+    return PackedSeqLocToMaskedQueryRegions(sloc, program);
 }
 
 
@@ -284,7 +285,8 @@ s_FillMaskLocFromBlastHSPResults(CBlastQueryVector & query,
         TMaskedQueryRegions filter_seqloc =
             s_BlastSeqLoc2MaskedRegions(*query.GetQuerySeqLoc(query_index),
                                         query.GetScope(query_index),
-                                        ordered_loc_list);
+                                        ordered_loc_list,
+                                        program);
         
         // Free the combined mask list in the BlastSeqLoc form.
         ordered_loc_list = BlastSeqLocFree(ordered_loc_list);
@@ -423,6 +425,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.26  2006/03/13 16:43:51  bealer
+ *  - Fix protein masking issue.
+ *
  *  Revision 1.25  2006/02/22 18:34:17  bealer
  *  - Blastx filtering support, CBlastQueryVector class.
  *

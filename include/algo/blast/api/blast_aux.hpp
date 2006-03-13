@@ -166,11 +166,12 @@ typedef vector< TMaskedQueryRegions > TSeqLocInfoVector;
 
 /// Build a TMaskedQueryRegions from a Packed CSeq_loc.
 /// @param sloc Seq-loc describing masked query regions.
+/// @param program Blast program value.
 /// @return List of masked query regions.
 NCBI_XBLAST_EXPORT
 TMaskedQueryRegions
-PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc);
-
+PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc,
+                                 EBlastProgramType program);
 
 /// Interface to build a CSeq-loc from a TMaskedQueryRegion; this
 /// method always throws an exception, because conversion in this
@@ -291,6 +292,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2006/03/13 16:44:06  bealer
+* - Fix protein masking issue.
+*
 * Revision 1.70  2006/03/02 18:42:37  ivanov
 * Added more export specifiers
 *

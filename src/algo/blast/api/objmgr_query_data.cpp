@@ -246,7 +246,7 @@ CObjMgr_LocalQueryData::CObjMgr_LocalQueryData(CBlastQueryVector   & qv,
                                                const CBlastOptions * opts)
     : m_QueryVector(& qv), m_SeqLocs(0), m_Options(opts)
 {
-    m_QuerySource.reset(new CBlastQuerySourceOM(qv));
+    m_QuerySource.reset(new CBlastQuerySourceOM(qv, opts));
 }
 
 CObjMgr_LocalQueryData::CObjMgr_LocalQueryData
