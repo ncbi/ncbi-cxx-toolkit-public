@@ -52,7 +52,7 @@ typedef std::set <int> TOid;
 
 
 /** generic exception class */
-class NCBI_XOMSSA_EXPORT COMSSAException: public CException {
+class NCBI_XOMSSA_EXPORT COMSSAException: EXCEPTION_VIRTUAL_BASE public CException {
     public:
     /// Error types that subsystem can generate.
     enum EErrCode {
