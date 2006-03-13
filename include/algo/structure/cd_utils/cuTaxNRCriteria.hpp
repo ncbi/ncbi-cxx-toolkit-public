@@ -128,7 +128,7 @@ public:
     //  Use an existing set of priority tax nodes.
     //  The vector index of taxIdsToBeClustered is used as the 'id' associated w/ its entries
     //  in setting up m_id2Tax:  this is assumed to be the same index used in building clusters.
-    CTaxNRCriteria::CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const vector< int >& taxIdsToBeClustered);
+    CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const vector< int >& taxIdsToBeClustered);
 
     //  Pass in the item id <--> tax id mapping and the set of priority tax nodes.
     //  The key in 'id2TaxidMap' is the index used when making clusters.
@@ -197,6 +197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/03/13 15:31:50  vakatov
+* Removed extraneous CTaxNRCriteria:: scope qualifier that confused GCC 4.1.0
+*
 * Revision 1.5  2005/10/18 17:06:51  lanczyck
 * make TaxClient a virtual base class;
 * add methods CanBeApplied and GetCriteriaError in base criteria
