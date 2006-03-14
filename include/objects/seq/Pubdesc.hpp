@@ -59,15 +59,10 @@ public:
     // destructor
     ~CPubdesc(void);
 
-    // Basic data cleanup
-    void BasicCleanup(void);
-
 private:
     // Prohibit copy constructor and assignment operator
     CPubdesc(const CPubdesc& value);
     CPubdesc& operator=(const CPubdesc& value);
-
-    bool x_IsOnlinePub(void) const;
 
 };
 
@@ -92,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.1  2005/05/20 13:34:02  shomrat
 * Added BasicCleanup()
 *

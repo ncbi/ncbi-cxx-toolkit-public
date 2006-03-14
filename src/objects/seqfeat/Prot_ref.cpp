@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2006/03/14 20:21:52  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 6.3  2005/05/20 13:36:54  shomrat
  * Added BasicCleanup()
  *
@@ -77,22 +80,6 @@ void CProt_ref::GetLabel(string* label) const
     }
 }
 
-
-// perform basic cleanup functionality (trim spaces from strings etc.)
-void CProt_ref::BasicCleanup(void)
-{
-    CLEAN_STRING_MEMBER(Desc);
-    CLEAN_STRING_LIST(Name);
-    CLEAN_STRING_LIST(Ec);
-    CLEAN_STRING_LIST(Activity);
-
-    if (IsSetProcessed()  &&  !IsSetName()) {
-        TProcessed processed = GetProcessed();
-        if (processed == eProcessed_preprotein  ||  processed == eProcessed_mature) {
-            SetName().push_back("unnamed");
-        }
-    }
-}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

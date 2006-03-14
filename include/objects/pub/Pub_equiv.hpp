@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/03/14 20:21:50  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.3  2005/05/20 13:33:17  shomrat
  * Added BasicCleanup()
  *
@@ -73,15 +76,11 @@ public:
     // Appends a label to "label" based on content
     void GetLabel(string* label) const;
 
-    // Basic data cleanup
-    void BasicCleanup(void);
-
 private:
     // Prohibit copy constructor and assignment operator
     CPub_equiv(const CPub_equiv& value);
     CPub_equiv& operator=(const CPub_equiv& value);
 
-	void x_FlattenPubEquiv(void);
 };
 
 /////////////////// CPub_equiv inline methods

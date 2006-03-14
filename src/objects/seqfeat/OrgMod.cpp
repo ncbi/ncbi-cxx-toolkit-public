@@ -37,7 +37,6 @@
 // standard includes
 #include <ncbi_pch.hpp>
 #include <util/static_map.hpp>
-#include <objects/general/cleanup_utils.hpp>
 #include <serial/enumvalues.hpp>
 
 // generated includes
@@ -65,13 +64,6 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str)
 }
 
 
-void COrgMod::BasicCleanup(void)
-{
-    CLEAN_STRING_MEMBER(Subname);
-    CLEAN_STRING_MEMBER(Attrib);
-}
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -81,6 +73,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2006/03/14 20:21:52  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.2  2006/03/01 18:46:12  meric
 * Use curated name, not string as provided
 *

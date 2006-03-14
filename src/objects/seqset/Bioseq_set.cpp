@@ -196,45 +196,6 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
 }
 
 
-static ECleanupMode s_GetCleanupMode(const CBioseq_set& bsst)
-{
-    CTypeConstIterator<CBioseq> seq(ConstBegin(bsst));
-    if (seq) {
-        ITERATE (CBioseq::TId, it, seq->GetId()) {
-            const CSeq_id& id = **it;
-            if (id.IsEmbl()  ||  id.IsTpe()) {
-                return eCleanup_EMBL;
-            } else if (id.IsDdbj()  ||  id.IsTpd()) {
-                return eCleanup_DDBJ;
-            } else if (id.IsSwissprot()) {
-                return eCleanup_SwissProt;
-            }
-        }
-    }
-    return eCleanup_GenBank;
-}
-
-
-void CBioseq_set::BasicCleanup(void)
-{
-    ECleanupMode mode = s_GetCleanupMode(*this);
-
-    if (IsSetAnnot()) {
-        NON_CONST_ITERATE (TAnnot, it, SetAnnot()) {
-            (*it)->BasicCleanup(mode);
-        }
-    }
-    if (IsSetDescr()) {
-        SetDescr().BasicCleanup(mode);
-    }
-    if (IsSetSeq_set()) {
-        NON_CONST_ITERATE (TSeq_set, it, SetSeq_set()) {
-            (*it)->BasicCleanup();
-        }
-    }
-}
-
-
 const CBioseq& CBioseq_set::GetNucFromNucProtSet(void) const
 {
     if (GetClass() != eClass_nuc_prot) {
@@ -309,6 +270,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/03/14 20:21:52  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.11  2005/07/01 15:08:14  shomrat
  * Added Class specific methods
  *

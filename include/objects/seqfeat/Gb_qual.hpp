@@ -61,9 +61,6 @@ public:
     // destructor
     ~CGb_qual(void);
 
-    // Basic data cleanup
-    void BasicCleanup(void);
-
 private:
     // Prohibit copy constructor and assignment operator
     CGb_qual(const CGb_qual& value);
@@ -98,6 +95,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.1  2005/05/20 13:36:22  shomrat
 * Added BasicCleanup()
 *

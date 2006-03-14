@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.4  2005/05/20 13:36:22  shomrat
  * Added BasicCleanup()
  *
@@ -78,9 +81,6 @@ public:
 
     // Checks for an emtpy Gene-ref used for suppressing /gene by overlap
     bool IsSuppressed(void) const;
-
-    // Basic data cleanup
-    void BasicCleanup(void);
 
 private:
     // Prohibit copy constructor and assignment operator

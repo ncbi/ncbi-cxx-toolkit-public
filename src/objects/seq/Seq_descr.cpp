@@ -52,14 +52,6 @@ CSeq_descr::~CSeq_descr(void)
 {
 }
 
-
-void CSeq_descr::BasicCleanup(ECleanupMode mode)
-{
-    NON_CONST_ITERATE (Tdata, it, Set()) {
-        (*it)->BasicCleanup(mode);
-    }
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -69,6 +61,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.1  2005/05/20 13:34:26  shomrat
 * Added BasicCleanup()
 *

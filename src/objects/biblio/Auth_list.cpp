@@ -55,126 +55,6 @@ CAuth_list::~CAuth_list(void)
 }
 
 
-static bool s_IsEmptyAffil(const CAuth_list::TAffil& affil)
-{
-    if (affil.IsStr()) {
-        return NStr::IsBlank(affil.GetStr());
-    } else if (affil.IsStd()) {
-        const CAuth_list::TAffil::TStd& std = affil.GetStd();
-        return !(std.IsSetAffil()  ||  std.IsSetDiv()      ||  std.IsSetCity()    ||
-                 std.IsSetSub()    ||  std.IsSetCountry()  ||  std.IsSetStreet()  ||
-                 std.IsSetEmail()  ||  std.IsSetFax()      ||  std.IsSetPhone()   ||
-                 std.IsSetPostal_code());
-    }
-    return true;
-}
-
-
-static bool s_IsEmptyAuthor(const CAuthor& auth)
-{
-    if (!auth.IsSetName()) {
-        return true;
-    }
-
-    const CAuthor::TName& name = auth.GetName();
-
-    const string* str = NULL;
-    switch (name.Which()) {
-    case CAuthor::TName::e_not_set:
-        return true;
-
-    case CAuthor::TName::e_Name:
-    {{
-        const CName_std& nstd = name.GetName();
-        if ((!nstd.IsSetLast()      ||  NStr::IsBlank(nstd.GetLast()))      &&
-            (!nstd.IsSetFirst()     ||  NStr::IsBlank(nstd.GetFirst()))     &&
-            (!nstd.IsSetMiddle()    ||  NStr::IsBlank(nstd.GetMiddle()))    &&
-            (!nstd.IsSetFull()      ||  NStr::IsBlank(nstd.GetFull()))      &&
-            (!nstd.IsSetInitials()  ||  NStr::IsBlank(nstd.GetInitials()))  &&
-            (!nstd.IsSetSuffix()    ||  NStr::IsBlank(nstd.GetSuffix()))    &&
-            (!nstd.IsSetTitle()     ||  NStr::IsBlank(nstd.GetTitle()))) {
-                return true;
-        }
-        break;
-    }}
-
-    case CAuthor::TName::e_Ml:
-        str = &name.GetMl();
-        break;
-    case CAuthor::TName::e_Str:
-        str = &name.GetStr();
-        break;
-    case CAuthor::TName::e_Consortium:
-        str = &name.GetConsortium();
-        break;
-
-    default:
-        break;
-    };
-    if (str != NULL  &&  NStr::IsBlank(*str)) {
-        return true;
-    }
-    return false;
-}
-
-
-// Basic cleanup
-void CAuth_list::BasicCleanup(bool fix_initials)
-{
-    if (IsSetAffil()) {
-        SetAffil().BasicCleanup();
-        if (s_IsEmptyAffil(SetAffil())) {
-            ResetAffil();
-        }
-    }
-
-    if (IsSetNames()) {
-        TNames& names = SetNames();
-        switch (names.Which()) {
-        case TNames::e_Std:
-        {{
-            // call BasicCleanup for each CAuthor
-            TNames::TStd& std = names.SetStd();
-            TNames::TStd::iterator it = std.begin();
-            while (it != std.end()) {
-                (*it)->BasicCleanup(fix_initials);
-                if (s_IsEmptyAuthor(**it)) {
-                    it = std.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-            if (std.empty()) {
-                names.Reset();
-            }
-            break;
-        }}
-        case TNames::e_Ml:
-        {{
-            CleanStringContainer(names.SetMl());
-            if (names.GetMl().empty()) {
-                names.Reset();
-            }
-            break;
-        }}
-        case TNames::e_Str:
-        {{
-            CleanStringContainer(names.SetStr());
-            if (names.GetStr().empty()) {
-                names.Reset();
-            }
-            break;
-        }}
-        default:
-            break;
-        }
-    }
-    // if no remaining authors, put in default author for legal ASN.1
-    if (!IsSetNames()) {
-        SetNames().SetStr().push_back("?");
-    }
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -184,6 +64,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.1  2005/05/20 13:32:48  shomrat
 * Added BasicCleanup()
 *

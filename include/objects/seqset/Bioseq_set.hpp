@@ -74,9 +74,6 @@ public:
     const CBioseq& GetGenomicFromGenProdSet(void) const;
     const CBioseq& GetMasterFromSegSet(void) const;
 
-    // Basic data cleanup
-    void BasicCleanup(void);
-
 private:
     // Prohibit copy constructor & assignment operator
     CBioseq_set(const CBioseq_set&);
@@ -105,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.19  2005/07/01 15:07:55  shomrat
  * Added Class specific methods
  *

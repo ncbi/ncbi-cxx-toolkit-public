@@ -59,16 +59,10 @@ public:
     // Get the appropriate gene code from this BioSource.
     int GetGenCode(void) const;
 
-    // Basic data cleanup
-    void BasicCleanup(void);
-
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);
     CBioSource& operator=(const CBioSource& value);
-
-    void x_OrgModToSubtype(void);
-    void x_SubtypeCleanup(void);
 
 };
 
@@ -95,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.3  2005/05/20 13:36:22  shomrat
 * Added BasicCleanup()
 *

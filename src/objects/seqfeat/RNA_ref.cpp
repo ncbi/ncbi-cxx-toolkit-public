@@ -52,78 +52,6 @@ CRNA_ref::~CRNA_ref(void)
 }
 
 
-// perform basic cleanup functionality (trim spaces from strings etc.)
-void CRNA_ref::BasicCleanup(void)
-{
-    if (IsSetExt()) {
-        TExt& ext = SetExt();
-        switch (ext.Which()) {
-        case TExt::e_Name:
-            x_CleanupExtName();
-            break;
-        case TExt::e_TRNA:
-            x_CleanupExtTRNA();
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-
-void CRNA_ref::x_CleanupExtName(void)
-{
-    static const string rRNA = " rRNA";
-    static const string kRibosomalrRna = " ribosomal rRNA";
-
-    _ASSERT(IsSetExt()  &&  GetExt().IsName());
-
-    string& name = SetExt().SetName();
-    CleanString(name);
-
-    if (name.empty()) {
-        ResetExt();
-    } else if (IsSetType()) {
-        switch (GetType()) {
-        case eType_rRNA:
-        {{
-            size_t len = name.length();
-            if (len >= rRNA.length()                       &&
-                NStr::EndsWith(name, rRNA, NStr::eNocase)  &&
-                !NStr::EndsWith(name, kRibosomalrRna, NStr::eNocase)) {
-                name.replace(len - rRNA.length(), name.size(), kRibosomalrRna);
-            }
-            break;
-        }}
-        case eType_tRNA:
-        {{
-            // !!!
-            break;
-        }}
-        case eType_other:
-        {{
-            if (NStr::EqualNocase(name, "its1")) {
-                name = "internal transcribed spacer 1";
-            } else if (NStr::EqualNocase(name, "its2")) {
-                name = "internal transcribed spacer 2";
-            } else if (NStr::EqualNocase(name, "its3")) {
-                name = "internal transcribed spacer 3";
-            }
-            break;
-        }}
-        default:
-            break;
-        }
-    }
-}
-
-
-void CRNA_ref::x_CleanupExtTRNA(void)
-{
-    _ASSERT(IsSetExt()  &&  GetExt().IsTRNA());
-    // !!!
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -133,6 +61,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2006/03/14 20:21:52  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.1  2005/05/20 13:36:54  shomrat
 * Added BasicCleanup()
 *

@@ -41,7 +41,6 @@
 // generated includes
 #include <corelib/ncbitime.hpp>
 #include <objects/seq/Seq_annot_.hpp>
-#include <objects/general/cleanup_utils.hpp>
 
 // generated classes
 
@@ -85,9 +84,6 @@ public:
     // add a user-object descriptor
     void AddUserObject(CUser_object& obj);
 
-    // Basic data cleanup
-    void BasicCleanup(ECleanupMode mode = eCleanup_GenBank);
-
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_annot(const CSeq_annot& value);
@@ -118,6 +114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.3  2005/05/20 13:34:02  shomrat
 * Added BasicCleanup()
 *

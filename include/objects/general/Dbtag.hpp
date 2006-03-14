@@ -168,9 +168,6 @@ public:
     //   the URL or an empty string if non is available
     string GetUrl(void) const;
 
-    /// Basic data cleanup
-    void BasicCleanup(void);
-
 private:
 
     // our enumerated (parsed) type
@@ -203,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/03/14 20:21:50  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.16  2005/05/20 13:29:48  shomrat
  * Added BasicCleanup()
  *

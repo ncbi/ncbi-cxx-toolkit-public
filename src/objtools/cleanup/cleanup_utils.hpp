@@ -73,18 +73,18 @@ void CleanStringContainer(C& str_cont)
 }
 
 
-#define TRUNCATE_SPACES(x) \
-    if (IsSet##x()) { \
-        NStr::TruncateSpacesInPlace(Set##x()); \
-        if (NStr::IsBlank(Get##x())) { \
-            Reset##x(); \
+#define TRUNCATE_SPACES(o, x) \
+    if ((o).IsSet##x()) { \
+        NStr::TruncateSpacesInPlace((o).Set##x()); \
+        if (NStr::IsBlank((o).Get##x())) { \
+            (o).Reset##x(); \
         } \
     }
 
-#define TRUNCATE_CHOICE_SPACES(x) \
-    NStr::TruncateSpacesInPlace(Set##x()); \
-    if (NStr::IsBlank(Get##x())) { \
-        Reset(); \
+#define TRUNCATE_CHOICE_SPACES(o, x) \
+    NStr::TruncateSpacesInPlace((o).Set##x()); \
+    if (NStr::IsBlank((o).Get##x())) { \
+        (o).Reset(); \
     }
 
 #define CONVERT_QUOTES(x) \
@@ -92,25 +92,25 @@ void CleanStringContainer(C& str_cont)
         ConvertDoubleQuotes(Set##x()); \
     }
 
-#define CLEAN_STRING_MEMBER(x) \
-    if (IsSet##x()) { \
-        CleanString(Set##x()); \
-        if (NStr::IsBlank(Get##x())) { \
-            Reset##x(); \
+#define CLEAN_STRING_MEMBER(o, x) \
+if ((o).IsSet##x()) { \
+    CleanString((o).Set##x()); \
+        if (NStr::IsBlank((o).Get##x())) { \
+            (o).Reset##x(); \
         } \
-    }
+}
 
-#define CLEAN_STRING_CHOICE(x) \
-        CleanString(Set##x()); \
-        if (NStr::IsBlank(Get##x())) { \
-            Reset(); \
+#define CLEAN_STRING_CHOICE(o, x) \
+        CleanString((o).Set##x()); \
+        if (NStr::IsBlank((o).Get##x())) { \
+            (o).Reset(); \
         }
 
-#define CLEAN_STRING_LIST(x) \
-    if (IsSet##x()) { \
-        CleanStringContainer(Set##x()); \
-        if (Get##x().empty()) { \
-            Reset##x(); \
+#define CLEAN_STRING_LIST(o, x) \
+    if ((o).IsSet##x()) { \
+        CleanStringContainer((o).Set##x()); \
+        if ((o).Get##x().empty()) { \
+            (o).Reset##x(); \
         } \
     }
 
@@ -124,17 +124,6 @@ void CleanStringContainer(C& str_cont)
     }
 
 
-/// right now a slightly different cleanup is performed for EMBL/DDBJ and
-/// SwissProt records. All other types are handaled as GenBank records.
-enum ECleanupMode
-{
-    eCleanup_EMBL,
-    eCleanup_DDBJ,
-    eCleanup_SwissProt,
-    eCleanup_GenBank
-};
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -143,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.1  2006/03/14 20:21:50  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.1  2005/05/20 13:29:48  shomrat
 * Added BasicCleanup()
 *

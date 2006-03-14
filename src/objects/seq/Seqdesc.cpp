@@ -47,7 +47,6 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/BioSource.hpp>
-#include <objects/general/cleanup_utils.hpp>
 #include <objects/seqblock/GB_block.hpp>
 
 // generated classes
@@ -156,76 +155,6 @@ void CSeqdesc::GetLabel(string* const label, ELabelType label_type) const
 }
 
 
-// perform basic cleanup functionality (trim spaces from strings etc.)
-void CSeqdesc::BasicCleanup(ECleanupMode mode)
-{
-    switch (Which()) {
-    case CSeqdesc::e_Mol_type:
-        break;
-    case CSeqdesc::e_Modif:
-        break;
-    case CSeqdesc::e_Method:
-        break;
-    case CSeqdesc::e_Name:
-        break;
-    case CSeqdesc::e_Title:
-        break;
-    case CSeqdesc::e_Org:
-        break;
-    case CSeqdesc::e_Comment:
-        CommentCleanup( SetComment() );
-        break;
-    case CSeqdesc::e_Num:
-        break;
-    case CSeqdesc::e_Maploc:
-        break;
-    case CSeqdesc::e_Pir:
-        break;
-    case CSeqdesc::e_Genbank:
-        SetGenbank().BasicCleanup();
-        break;
-    case CSeqdesc::e_Pub:
-        SetPub().BasicCleanup();
-        break;
-    case CSeqdesc::e_Region:
-        break;
-    case CSeqdesc::e_User:
-        break;
-    case CSeqdesc::e_Sp:
-        break;
-    case CSeqdesc::e_Dbxref:
-        break;
-    case CSeqdesc::e_Embl:
-        break;
-    case CSeqdesc::e_Create_date:
-        break;
-    case CSeqdesc::e_Update_date:
-        break;
-    case CSeqdesc::e_Prf:
-        break;
-    case CSeqdesc::e_Pdb:
-        break;
-    case CSeqdesc::e_Het:
-        break;
-    case CSeqdesc::e_Source:
-        break;
-    case CSeqdesc::e_Molinfo:
-        break;
-
-    default:
-        break;
-    }
-}
-
-void CSeqdesc::CommentCleanup( TComment& comment )
-{
-    //  Remove trailing periods:
-    if ( ! comment.empty() && (comment[ comment.size() -1 ] == '.') ) {
-        comment = comment.substr( 0, comment.size() -1 );
-    }
-};
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -235,6 +164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.7  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.6  2005/10/26 13:50:13  ludwigf
 * Extended BasicCleanup() to cover additional items.
 *

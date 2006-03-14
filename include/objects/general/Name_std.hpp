@@ -67,20 +67,11 @@ public:
     /// Get a list of NCBI's standard suffixes.
     static const TSuffixes& GetStandardSuffixes(void);
 
-    /// Basic data cleanup
-    void BasicCleanup(bool fix_initials);
-
 private:
     // Prohibit copy constructor and assignment operator
     CName_std(const CName_std& value);
     CName_std& operator=(const CName_std& value);
     
-    // Cleanup related helper methods
-    void x_FixEtAl(void);
-    void x_FixInitials(void);
-    void x_ExtractSuffixFromInitials(void);
-    TInitials x_GetInitialsFromFirst(void) const;
-    void x_FixSuffix(void);
 };
 
 /////////////////// CName_std inline methods
@@ -103,6 +94,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/03/14 20:21:50  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.1  2005/05/20 13:29:48  shomrat
 * Added BasicCleanup()
 *

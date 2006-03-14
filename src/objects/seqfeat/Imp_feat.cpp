@@ -52,21 +52,6 @@ CImp_feat::~CImp_feat(void)
 }
 
 
-// perform basic cleanup functionality (trim spaces from strings etc.)
-void CImp_feat::BasicCleanup(void)
-{
-    CLEAN_STRING_MEMBER(Key);
-    CLEAN_STRING_MEMBER(Loc);
-    CLEAN_STRING_MEMBER(Descr);
-
-    if (IsSetKey()) {
-        const TKey& key = GetKey();
-        if (key == "allele"  ||  key == "mutation") {
-            SetKey("variation");
-        }
-    }
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -76,6 +61,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2006/03/14 20:21:52  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.1  2005/05/20 13:36:54  shomrat
 * Added BasicCleanup()
 *

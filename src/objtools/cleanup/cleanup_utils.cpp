@@ -32,7 +32,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objects/general/cleanup_utils.hpp>
+#include "cleanup_utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.1  2006/03/14 20:21:50  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.2  2005/06/03 16:52:18  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

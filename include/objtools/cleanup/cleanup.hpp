@@ -34,7 +34,9 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-
+#include <corelib/mswin_export.h>
+#include <corelib/ncbiobj.hpp>
+#include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -111,10 +113,9 @@ private:
 
     // constructor
     CCleanupChangeItem(unsigned int         ec,        // change code
-                  const string&        msg,       // message
-                  const string&        obj_desc,  // object description
-                  const CSerialObject& obj,       // offending object
-                  CScope&              scope);    // scope
+                       const string&        msg,       // message
+                       const string&        obj_desc,  // object description
+                       const CSerialObject& obj);      // offending object
     
     CCleanupChangeItem(void);
     CCleanupChangeItem(const CCleanupChangeItem&);
@@ -127,7 +128,6 @@ private:
     string        m_Message;    // specific error message
     string        m_Desc;       // changed object's description
     TObject       m_Object;     // changed object
-    CRef<CScope>  m_Scope;      // scope
 
     // currently used for Seqdesc objects only
     CConstRef<CSeq_entry> m_Ctx;
@@ -147,8 +147,7 @@ public:
     void AddChangedItem(unsigned int         ec,      // error code
                         const string&        msg,     // specific error message
                         const string&        desc,    // offending object's description
-                        const CSerialObject& obj,     // offending object
-                        CScope&              scope);  // scope
+                        const CSerialObject& obj);    // offending object
 
     // Statistics
     SIZE_TYPE Size(void)    const;
@@ -219,6 +218,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/03/14 20:21:50  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.4  2005/10/18 22:47:12  vakatov
 * Static class members sm_Verbose[] and sm_Terse[] to become static
 * in-function s_Verbose[] and s_Terse[], respectively (didn't work on

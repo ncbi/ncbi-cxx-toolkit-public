@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 6.4  2005/05/20 13:33:24  shomrat
  * Added BasicCleanup()
  *
@@ -141,34 +144,6 @@ static bool s_FixInitials(const CPub_equiv& equiv)
     return !(has_art  &&  has_id);
 }
 
-
-void CPub_equiv::BasicCleanup(void)
-{
-	x_FlattenPubEquiv();
-
-    bool fix_initials = s_FixInitials(*this);
-	NON_CONST_ITERATE(Tdata, it, Set()) {
-		(*it)->BasicCleanup(fix_initials);
-	}
-}
-
-
-void CPub_equiv::x_FlattenPubEquiv(void)
-{
-	Tdata& data = Set();
-
-	Tdata::iterator it = data.begin();
-	while(it != data.end()) {
-		if ((*it)->IsEquiv()) {
-			CPub_equiv& equiv = (*it)->SetEquiv();
-			equiv.x_FlattenPubEquiv();
-			copy(equiv.Set().begin(), equiv.Set().end(), back_inserter(data));
-			it = data.erase(it);
-		} else {
-			++it;
-		}
-	}
-}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

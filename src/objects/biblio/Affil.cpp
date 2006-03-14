@@ -36,7 +36,6 @@
 
 // standard includes
 #include <ncbi_pch.hpp>
-#include <objects/general/cleanup_utils.hpp>
 
 // generated includes
 #include <objects/biblio/Affil.hpp>
@@ -53,35 +52,6 @@ CAffil::~CAffil(void)
 }
 
 
-// Basic cleanup
-void CAffil::BasicCleanup(void)
-{
-    switch (Which()) {
-        case e_Str:
-        {{
-            CLEAN_STRING_CHOICE(Str);
-            break;
-        }}
-        case e_Std:
-        {{
-            TStd& std = SetStd();
-            CLEAN_INTERNAL_STRING(std, Affil);
-            CLEAN_INTERNAL_STRING(std, Div);
-            CLEAN_INTERNAL_STRING(std, City);
-            CLEAN_INTERNAL_STRING(std, Sub);
-            CLEAN_INTERNAL_STRING(std, Country);
-            CLEAN_INTERNAL_STRING(std, Street);
-            CLEAN_INTERNAL_STRING(std, Email);
-            CLEAN_INTERNAL_STRING(std, Fax);
-            CLEAN_INTERNAL_STRING(std, Phone);
-            CLEAN_INTERNAL_STRING(std, Postal_code);
-            break;
-        }}
-        default:
-            break;
-    }
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -91,6 +61,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.1  2005/05/20 13:32:48  shomrat
 * Added BasicCleanup()
 *

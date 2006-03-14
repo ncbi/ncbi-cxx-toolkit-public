@@ -52,14 +52,6 @@ CCit_let::~CCit_let(void)
 }
 
 
-void CCit_let::BasicCleanup(bool fix_initials)
-{
-    if (IsSetCit()  &&  IsSetType()  &&  GetType() == eType_thesis) {
-        SetCit().BasicCleanup(fix_initials);
-    }
-}
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -69,6 +61,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.3  2005/05/20 13:32:48  shomrat
 * Added BasicCleanup()
 *

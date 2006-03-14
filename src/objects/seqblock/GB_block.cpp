@@ -51,20 +51,6 @@ CGB_block::~CGB_block(void)
 {
 }
 
-// data member cleanup
-void CGB_block::BasicCleanup(void)   
-{
-    //
-    //  origin:
-    //  append period if there isn't one already
-    //
-    if ( CanGetOrigin() ) {
-        const TOrigin& origin = GetOrigin();
-        if ( ! origin.empty() && ! NStr::EndsWith(origin, ".")) {
-            SetOrigin() += '.';
-        }
-    }
-}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -75,6 +61,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.2  2005/10/26 14:11:55  ucko
 * Fix typo (stray "q")
 *

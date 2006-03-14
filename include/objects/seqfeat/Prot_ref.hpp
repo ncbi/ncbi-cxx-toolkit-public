@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.3  2005/05/20 13:36:22  shomrat
  * Added BasicCleanup()
  *
@@ -72,9 +75,6 @@ public:
     
     // Appends a label to "label" based on content
     void GetLabel(string* label) const;
-
-    // perform basic cleanup functionality (trim spaces from strings etc.)
-    void BasicCleanup(void);
 
 private:
     // Prohibit copy constructor and assignment operator

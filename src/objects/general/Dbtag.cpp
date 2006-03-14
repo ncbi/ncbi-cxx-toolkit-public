@@ -43,7 +43,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objects/general/cleanup_utils.hpp>
 #include <util/static_map.hpp>
 
 // generated classes
@@ -413,92 +412,6 @@ string CDbtag::GetUrl(void) const
 }
 
 
-//=========================================================================//
-//                              Basic Cleanup                              //
-//=========================================================================//
-
-
-// convert str variant where the string is all digits to id variant
-static void s_TagCleanup(CDbtag::TTag& tag)
-{
-    if (!tag.IsStr()) {
-        return;
-    }
-    const CDbtag::TTag::TStr& str = tag.GetStr();
-    if (NStr::IsBlank(str)) {
-        return;
-    }
-
-    bool all_zero = true;
-    ITERATE (CDbtag::TTag::TStr, it, str) {
-        if (isdigit((unsigned char)(*it))) {
-            if (*it != '0') {
-                all_zero = false;
-            }
-        } else if (!isspace((unsigned char)(*it))) {
-            return;
-        }
-    }
-
-    if (str[0] != '0'  ||  all_zero) {
-        try {
-            tag.SetId(NStr::StringToUInt(str));
-        } catch (CStringException&) {
-            // just leave things as are
-        }
-    }
-}
-
-
-/** 
- * replace old DB names with new ones:
- *  Swiss-Prot       => UniProt/Swiss-Prot
- *  SPTREMBL, TrEMBL => UniProt/TrEMBL
- *  SUBTILIS         => SubtiList
- *  LocusID          => GeneID
- *  MaizeDB          => MaizeGDB
- **/
-static void s_DbCleanup(string& db)
-{
-    if (NStr::EqualNocase(db, "Swiss-Prot")) {
-        db = "UniProt/Swiss-Prot";
-    } else if (NStr::EqualNocase(db, "SPTREMBL")  ||
-               NStr::EqualNocase(db, "TrEMBL")) {
-        db = "UniProt/TrEMBL";
-    } else if (NStr::EqualNocase(db, "SUBTILIS")) {
-        db = "SubtiList";
-    } else if (NStr::EqualNocase(db, "LocusID")) {
-        db = "GeneID";
-    } else if (NStr::EqualNocase(db, "MaizeDB")) {
-        db = "MaizeGDB";
-    }
-}
-
-
-void CDbtag::BasicCleanup(void)
-{
-    if (IsSetDb()) {
-        CleanString(SetDb());
-    } else {
-        SetDb();  // make sure mandatory field is set.
-    }
-
-    if (IsSetTag()) {
-        if (GetTag().IsStr()) {
-            CleanString(SetTag().SetStr());
-        }
-    } else {
-        SetTag();  // make sure mandatory field is set.
-    }
-    _ASSERT(IsSetDb()  &&  IsSetTag());  // mandatory fields
-
-    s_DbCleanup(SetDb());
-    s_TagCleanup(SetTag());
-
-    InvalidateType();
-}
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -506,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.30  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 6.29  2006/01/23 14:13:01  ludwigf
  * CHANGED: URL associated with the "FANTOM_DB"/db_xref, per note from Mark
  *  Cavanaugh.

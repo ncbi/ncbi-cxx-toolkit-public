@@ -53,14 +53,6 @@ CAuthor::~CAuthor(void)
 }
 
 
-// Basic cleanup
-void CAuthor::BasicCleanup(bool fix_initials)
-{
-    if (IsSetName()) {
-        SetName().BasicCleanup(fix_initials);
-    }
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -70,6 +62,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.1  2005/05/20 13:32:48  shomrat
 * Added BasicCleanup()
 *

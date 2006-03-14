@@ -59,8 +59,6 @@ public:
     // destructor
     ~CGB_block(void);
 
-    void BasicCleanup();
-
 private:
     // Prohibit copy constructor and assignment operator
     CGB_block(const CGB_block& value);
@@ -89,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.1  2005/10/26 13:50:13  ludwigf
 * Extended BasicCleanup() to cover additional items.
 *

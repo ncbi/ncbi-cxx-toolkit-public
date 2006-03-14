@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/03/14 20:21:50  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.3  2005/05/20 13:29:48  shomrat
  * Added BasicCleanup()
  *
@@ -79,9 +82,6 @@ public:
     // commas are not removed. If type == eEmbl, all commas are replace 
     // by spaces.   
     void GetLabel(string* label, ETypeLabel type = eGenbank) const;
-
-    // Basic data cleanup
-    void BasicCleanup(bool fix_initials);
 
 private:
     // Prohibit copy constructor and assignment operator

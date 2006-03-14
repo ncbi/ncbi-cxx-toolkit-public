@@ -39,7 +39,6 @@
 #include <objects/biblio/Cit_gen.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
-#include <objects/general/cleanup_utils.hpp>
 
 // generated includes
 #include <objects/seq/Pubdesc.hpp>
@@ -56,38 +55,6 @@ CPubdesc::~CPubdesc(void)
 }
 
 
-// perform basic cleanup functionality (trim spaces from strings etc.)
-void CPubdesc::BasicCleanup(void)
-{
-    if (IsSetPub()) {
-        SetPub().BasicCleanup();
-    }
-
-    CLEAN_STRING_MEMBER(Name);
-
-    if (x_IsOnlinePub()) {
-        TRUNCATE_SPACES(Comment);
-    } else {
-        CLEAN_STRING_MEMBER(Comment);
-    }
-}
-
-bool CPubdesc::x_IsOnlinePub(void) const
-{
-    if (IsSetPub()) {
-        ITERATE (TPub::Tdata, it, GetPub().Get()) {
-            if ((*it)->IsGen()) {
-                const CCit_gen& gen = (*it)->GetGen();
-                if (gen.IsSetCit()  &&
-                    NStr::StartsWith(gen.GetCit(), "Online Publication", NStr::eNocase)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -97,6 +64,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.1  2005/05/20 13:34:26  shomrat
 * Added BasicCleanup()
 *

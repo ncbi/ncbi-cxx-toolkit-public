@@ -67,9 +67,6 @@ public:
     // convert subtype from string to enum.
     static TSubtype GetSubtypeValue(const string& str);
 
-    // Basic data cleanup
-    void BasicCleanup(void);
-
 private:
     // Prohibit copy constructor and assignment operator
     CSubSource(const CSubSource& value);
@@ -112,6 +109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.2  2005/05/20 13:36:22  shomrat
 * Added BasicCleanup()
 *

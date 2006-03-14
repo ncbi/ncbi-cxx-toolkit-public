@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 6.4  2005/05/20 13:32:48  shomrat
  * Added BasicCleanup()
  *
@@ -90,20 +93,6 @@ void CCit_pat::GetLabel(string* label) const
         IsSetNumber() ? &GetNumber() :
             (IsSetApp_number() ? &GetApp_number() : 0),
         0, date_ptr);
-}
-
-
-void CCit_pat::BasicCleanup(bool fix_initials)
-{
-	if (IsSetAuthors()) {
-		SetAuthors().BasicCleanup(fix_initials);
-	}
-	if (IsSetApplicants()) {
-		SetApplicants().BasicCleanup(fix_initials);
-	}
-	if (IsSetAssignees()) {
-		SetAssignees().BasicCleanup(fix_initials);
-	}
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

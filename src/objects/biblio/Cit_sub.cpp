@@ -66,34 +66,6 @@ void CCit_sub::GetLabel(string* label, bool unique) const
 }
 
 
-void CCit_sub::BasicCleanup(bool fix_initials)
-{
-    CRef<TAuthors> authors;
-    if (IsSetAuthors()) {
-        authors.Reset(&SetAuthors());
-        authors->BasicCleanup(fix_initials);
-    }
-
-    if (IsSetImp()) {
-        TImp& imp = SetImp();
-        if (authors  &&  !authors->IsSetAffil()  &&  imp.IsSetPub()) {
-            authors->SetAffil(imp.SetPub());
-            imp.ResetPub();
-        }
-        if (!IsSetDate()  &&  imp.IsSetDate()) {
-            SetDate().Assign(imp.GetDate());
-            imp.ResetDate();
-        }
-        if (!imp.IsSetPub()) {
-            ResetImp();
-        }
-    }
-    if (authors  &&  authors->IsSetAffil()) {
-        //!!! TO DO
-    }
-}
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -103,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.5  2005/11/14 18:28:20  ludwigf
 * FIXED: The submission date would get lost during the processing of the
 * submission citation data. This happened when the date object got obsoleted

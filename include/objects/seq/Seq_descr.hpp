@@ -42,7 +42,6 @@
 
 // generated includes
 #include <objects/seq/Seq_descr_.hpp>
-#include <objects/general/cleanup_utils.hpp>
 
 // generated classes
 
@@ -59,9 +58,6 @@ public:
     CSeq_descr(void);
     // destructor
     ~CSeq_descr(void);
-
-    // Basic data cleanup
-    void BasicCleanup(ECleanupMode mode = eCleanup_GenBank);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -91,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/03/14 20:21:51  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.1  2005/05/20 13:34:02  shomrat
 * Added BasicCleanup()
 *

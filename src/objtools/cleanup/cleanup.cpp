@@ -42,7 +42,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
-// #include "cleanupp.hpp"
+#include "cleanupp.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -65,12 +65,11 @@ CCleanup::~CCleanup(void)
 }
 
 
-CConstRef<CCleanupChange> CCleanup::BasicCleanup
-(CSeq_entry& se,
- Uint4 options)
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&se));
-    se.BasicCleanup();
+    CCleanup_imp clean_i(errors, options);
+    clean_i.BasicCleanup(se);
     return errors;
 }
 
@@ -79,7 +78,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&bs));
-    bs.BasicCleanup();
+    CCleanup_imp clean_i(errors, options);
+    clean_i.BasicCleanup(bs);
     return errors;
 }
 
@@ -87,7 +87,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&bss));
-    bss.BasicCleanup();
+    CCleanup_imp clean_i(errors, options);
+    clean_i.BasicCleanup(bss);
     return errors;
 }
 
@@ -95,7 +96,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot& sa, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&sa));
-    sa.BasicCleanup();
+    CCleanup_imp clean_i(errors, options);
+    clean_i.BasicCleanup(sa);
     return errors;
 }
 
@@ -103,7 +105,8 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot& sa, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&sf));
-    sf.BasicCleanup();
+    CCleanup_imp clean_i(errors, options);
+    clean_i.BasicCleanup(sf);
     return errors;
 }
 
@@ -120,10 +123,9 @@ void CCleanupChange::AddChangedItem
 (unsigned int         cc,
  const string&        msg,
  const string&        desc,
- const CSerialObject& obj,
- CScope&              scope)
+ const CSerialObject& obj)
 {
-    CRef<CCleanupChangeItem> item(new CCleanupChangeItem(cc, msg, desc, obj, scope));
+    CRef<CCleanupChangeItem> item(new CCleanupChangeItem(cc, msg, desc, obj));
     m_ChangeItems.push_back(item);
 }
 
@@ -253,13 +255,11 @@ CCleanupChangeItem::CCleanupChangeItem
 (unsigned int         cc,
  const string&        msg,
  const string&        desc,
- const CSerialObject& obj,
- CScope& scope)
+ const CSerialObject& obj)
   : m_ChangeIndex(cc),
     m_Message(msg),
     m_Desc(desc),
-    m_Object(&obj),
-    m_Scope(&scope)
+    m_Object(&obj)
 {
 }
 
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/03/14 20:21:50  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 1.5  2005/10/18 22:46:34  vakatov
 * Static class members sm_Verbose[] and sm_Terse[] to become static
 * in-function s_Verbose[] and s_Terse[], respectively (didn't work on

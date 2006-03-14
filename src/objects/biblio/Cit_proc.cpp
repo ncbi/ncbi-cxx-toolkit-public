@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 6.3  2005/05/20 13:32:48  shomrat
  * Added BasicCleanup()
  *
@@ -63,14 +66,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CCit_proc::~CCit_proc(void)
 {
-}
-
-
-void CCit_proc::BasicCleanup(bool fix_initials)
-{
-    if (IsSetBook()) {
-        SetBook().BasicCleanup(fix_initials);
-    }
 }
 
 

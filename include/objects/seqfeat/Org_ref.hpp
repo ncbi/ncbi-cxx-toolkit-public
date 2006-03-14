@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.4  2005/05/20 13:36:22  shomrat
  * Added BasicCleanup()
  *
@@ -83,15 +86,10 @@ public:
     // Returns old value of tax id or 0 if it was not found
     int SetTaxId( int tax_id );
 
-    // Basic data cleanup
-    void BasicCleanup(void);
-
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);
     COrg_ref& operator=(const COrg_ref& value);
-
-    void x_ModToOrgMod(void);
 };
 
 

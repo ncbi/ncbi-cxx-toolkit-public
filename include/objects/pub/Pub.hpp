@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/03/14 20:21:50  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 1.3  2005/05/20 13:33:17  shomrat
  * Added BasicCleanup()
  *
@@ -81,10 +84,7 @@ public:
                   ELabelType       type   = eContent, 
                   bool             unique = false) const;
     
-	// Basic data cleanup
-    void BasicCleanup(bool fix_initials = true);
- 
-private:
+	private:
     // Prohibit copy constructor and assignment operator
     CPub(const CPub& value);
     CPub& operator=(const CPub& value);

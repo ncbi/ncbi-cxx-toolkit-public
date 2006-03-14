@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 6.4  2005/05/20 13:32:48  shomrat
  * Added BasicCleanup()
  *
@@ -73,14 +76,6 @@ CCit_book::~CCit_book(void)
 void CCit_book::GetLabel(string* label) const
 {
     GetLabelContent(label, false, &GetAuthors(), &GetImp(), &GetTitle(), this, 0);
-}
-
-
-void CCit_book::BasicCleanup(bool fix_initials)
-{
-    if (IsSetAuthors()) {
-        SetAuthors().BasicCleanup(fix_initials);
-    }
 }
 
 

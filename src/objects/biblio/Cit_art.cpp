@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 6.6  2005/05/20 13:32:48  shomrat
  * Added BasicCleanup()
  *
@@ -154,22 +157,6 @@ void CCit_art::GetLabel(string* label, bool unique) const
     GetLabelContent(label, unique, authors, imprint, title, book, journal,
         0, 0, titleunique);
 }   
-
-
-void CCit_art::BasicCleanup(bool fix_initials)
-{
-    if (IsSetAuthors()) {
-        SetAuthors().BasicCleanup(fix_initials);
-    }
-    if (IsSetFrom()) {
-        TFrom& from = SetFrom();
-        if (from.IsBook()) {
-            from.SetBook().BasicCleanup(fix_initials);
-        } else if (from.IsProc()) {
-            from.SetProc().BasicCleanup(fix_initials);
-        }
-    }
-}
 
 
 END_objects_SCOPE // namespace ncbi::objects::

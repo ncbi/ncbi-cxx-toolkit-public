@@ -36,7 +36,6 @@
 
 // standard includes
 #include <ncbi_pch.hpp>
-#include <objects/general/cleanup_utils.hpp>
 
 // generated includes
 #include <objects/seqfeat/Gb_qual.hpp>
@@ -53,104 +52,6 @@ CGb_qual::~CGb_qual(void)
 }
 
 
-static bool s_IsJustQuotes(const string& str)
-{
-    ITERATE (string, it, str) {
-        if ((*it > ' ')  &&  (*it != '"')  &&  (*it  != '\'')) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-static void s_CleanupConsSplice(CGb_qual& gbq)
-
-{
-    string& val = gbq.SetVal();
-
-    if (!NStr::StartsWith(val, "(5'site:")) {
-        return;
-    }
-  
-    size_t pos = val.find(",3'site:");
-    if (pos != NPOS) {
-        val.insert(pos + 1, " ");
-    }
-}
-
-
-static void s_CleanupRptUnit(CGb_qual& gbq)
-{
-    CGb_qual::TVal& val = gbq.SetVal();
-
-    if (NStr::IsBlank(val)) {
-        return;
-    }
-    string s;
-    string::const_iterator it = val.begin();
-    string::const_iterator end = val.end();
-    while (it != end) {
-        while (it != end  &&  (*it == '('  ||  *it == ')'  ||  *it == ',')) {
-            s += *it++;
-        }
-        while (it != end  &&  isspace((unsigned char)(*it))) {
-            ++it;
-        }
-        while (it != end  &&  isdigit((unsigned char)(*it))) {
-            s += *it++;
-        }
-        if (it != end  &&  (*it == '.'  ||  *it == '-')) {
-            while (it != end  &&  (*it == '.'  ||  *it == '-')) {
-                ++it;
-            }
-            s += "..";
-        }
-        while (it != end  &&  isspace((unsigned char)(*it))) {
-            ++it;
-        }
-        while (it != end  &&  isdigit((unsigned char)(*it))) {
-            s += *it++;
-        }
-        while (it != end  &&  isspace((unsigned char)(*it))) {
-            ++it;
-        }
-        if (it != end) {
-            char c = *it;
-            if (c != '('  &&  c != ')'  &&  c != ','  &&  c != '.'  &&
-                !isspace((unsigned char) c)  &&  !isdigit((unsigned char) c)) {
-                NStr::ToLower(val);
-                return;
-            }
-        }
-    }
-    val = s;
-}
-
-
-void CGb_qual::BasicCleanup(void)
-{
-    CLEAN_STRING_MEMBER(Qual);
-    if (!IsSetQual()) {
-        SetQual(kEmptyStr);
-    }
-
-    CLEAN_STRING_MEMBER(Val);
-    if (IsSetVal()  &&  s_IsJustQuotes(GetVal())) {
-        ResetVal();
-    }
-    if (!IsSetVal()) {
-        SetVal(kEmptyStr);
-    }
-    _ASSERT(IsSetQual()  &&  IsSetVal());
-
-    if (NStr::EqualNocase(GetQual(), "cons_splice")) {
-        s_CleanupConsSplice(*this);
-    } else if (NStr::EqualNocase(GetQual(), "rpt_unit")) {
-        s_CleanupRptUnit(*this);
-    }
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -160,6 +61,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2006/03/14 20:21:52  rsmith
+* Move BasicCleanup functionality from objects to objtools/cleanup
+*
 * Revision 6.2  2005/06/03 16:52:36  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

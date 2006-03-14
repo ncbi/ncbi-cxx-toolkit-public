@@ -152,34 +152,6 @@ void CPub::GetLabel(string*    label,
 }
 
 
-// perform basic cleanup functionality (trim spaces from strings etc.)
-void CPub::BasicCleanup(bool fix_initials)
-{
-	switch (Which()) {
-	case e_Gen:
-		SetGen().BasicCleanup(fix_initials);
-		break;
-	case e_Sub:
-		SetSub().BasicCleanup(fix_initials);
-		break;
-	case e_Article:
-		SetArticle().BasicCleanup(fix_initials);
-		break;
-	case e_Book:
-		SetBook().BasicCleanup(fix_initials);
-		break;
-	case e_Patent:
-		SetPatent().BasicCleanup(fix_initials);
-		break;
-	case e_Man:
-		SetMan().BasicCleanup(fix_initials);
-		break;
-
-	default:
-		break;
-	}
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -187,6 +159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2006/03/14 20:21:51  rsmith
+ * Move BasicCleanup functionality from objects to objtools/cleanup
+ *
  * Revision 6.9  2005/05/20 13:33:24  shomrat
  * Added BasicCleanup()
  *
