@@ -292,23 +292,21 @@ s_SetSearchParams(CRef<CRemoteBlast>  & cb4o,
 
 static void
 s_SetQueries(CRef<CRemoteBlast> remote_blast,
-             TSeqLocVector& queries)
+             TSeqLocVector& queries,
+             EBlastProgramType prog)
 {
     CRef<CBioseq_set> query_bioseqs(new CBioseq_set);
     TSeqLocInfoVector query_masking_locations;
     query_masking_locations.reserve(queries.size());
-
+    
     ITERATE(TSeqLocVector, query, queries) {
         try {
             CBioseq_Handle bh = query->scope->GetBioseqHandle(*query->seqloc);
-
+            
             CRef<CSeq_entry> seq_entry(new CSeq_entry);
             seq_entry->SetSeq(const_cast<CBioseq&>(*bh.GetBioseqCore()));
             query_bioseqs->SetSeq_set().push_back(seq_entry);
-
-            EBlastProgramType prog
-                = NetworkProgram2BlastProgramType(remote_blast->GetProgram(),
-                                                  remote_blast->GetService());
+            
             TMaskedQueryRegions mqr(PackedSeqLocToMaskedQueryRegions
                                     (query->mask, prog));
             query_masking_locations.push_back(mqr);
@@ -329,6 +327,7 @@ s_SetBlast4Params(string              & program,
                   TSeqLocVector       & queries,
                   string              & err)
 {
+    EBlastProgramType ptype(eBlastTypeUndefined);
     CRef<CRemoteBlast> cb4o;
     
     // NOTE: If adding new types here, add them also to the code in
@@ -339,9 +338,12 @@ s_SetBlast4Params(string              & program,
     
     if (program == "blastp" && service == "plain") {
         s_SetSearchParams<CBlastProteinOptionsHandle>(cb4o, opts, flag);
+        ptype = eBlastTypeBlastp;
     }
     else if (program  == "blastn" &&
              (service == "plain"  || service == "megablast")) {
+        
+        ptype = eBlastTypeBlastn;
         
         if (service == "plain") {
             flag = eBlastnDefaults;
@@ -353,15 +355,15 @@ s_SetBlast4Params(string              & program,
         s_SetSearchParams<CBlastNucleotideOptionsHandle>(cb4o, opts, flag);
     }
     else if (program == "tblastn" && service == "plain") {
+        ptype = eBlastTypeTblastn;
         s_SetSearchParams<CTBlastnOptionsHandle>(cb4o, opts, flag);
     }
     else if (program == "tblastx" && service == "plain") {
+        ptype = eBlastTypeTblastx;
         s_SetSearchParams<CTBlastxOptionsHandle>(cb4o, opts, flag);
     }
     else if (program == "blastx" && service == "plain") {
-        s_SetSearchParams<CBlastxOptionsHandle>(cb4o, opts, flag);
-    }
-    else if (program == "blastx" && service == "plain") {
+        ptype = eBlastTypeBlastx;
         s_SetSearchParams<CBlastxOptionsHandle>(cb4o, opts, flag);
     }
     
@@ -374,7 +376,7 @@ s_SetBlast4Params(string              & program,
     } else {
         cb4o->SetDatabase(database);
         
-        s_SetQueries(cb4o, queries);
+        s_SetQueries(cb4o, queries, ptype);
     }
     
     return cb4o;
@@ -592,6 +594,9 @@ QueueAndPoll(string                program,       ///< program name
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2006/03/14 16:04:19  bealer
+ * - Record program for masked query regions construction.
+ *
  * Revision 1.18  2006/03/13 19:03:43  ucko
  * PackedSeqLocToMaskedQueryRegions evidently now requires a program type.
  *
