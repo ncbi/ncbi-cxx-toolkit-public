@@ -16,6 +16,6 @@ LIB_ = xomssa omssa blast composition_adjustment seqdb blastdb tables \
        seqset $(SEQ_LIBS) pub medline biblio general \
        xser xconnect xregexp xutil xncbi
 
-LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
