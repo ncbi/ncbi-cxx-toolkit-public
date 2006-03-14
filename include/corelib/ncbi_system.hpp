@@ -150,13 +150,16 @@ extern unsigned long GetVirtualMemoryPageSize(void);
 /// [UNIX & Windows]
 
 NCBI_XNCBI_EXPORT
-extern void SleepSec(unsigned long sec);
+extern void SleepSec(unsigned long sec, 
+                     EInterruptOnSignal onsignal = eRestartOnSignal);
 
 NCBI_XNCBI_EXPORT
-extern void SleepMilliSec(unsigned long ml_sec);
+extern void SleepMilliSec(unsigned long ml_sec,
+                     EInterruptOnSignal onsignal = eRestartOnSignal);
 
 NCBI_XNCBI_EXPORT
-extern void SleepMicroSec(unsigned long mc_sec);
+extern void SleepMicroSec(unsigned long mc_sec,
+                     EInterruptOnSignal onsignal = eRestartOnSignal);
 
 
 
@@ -195,6 +198,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/03/14 13:24:57  ivanov
+ * Sleep*(): added parameter of EInterruptOnSignal type.
+ * [Unix] try to utilize unslept part of the time if interrupted by a signal.
+ *
  * Revision 1.19  2006/01/12 19:41:57  ivanov
  * SetCpuTimeLimit: added new parameter - maximum process termination
  * time (default 5 seconds)

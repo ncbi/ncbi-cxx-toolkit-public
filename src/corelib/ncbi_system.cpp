@@ -442,54 +442,55 @@ unsigned long GetVirtualMemoryPageSize(void)
 // Sleep
 //
 
-void SleepMicroSec(unsigned long mc_sec)
+void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 {
 #if defined(NCBI_OS_MSWIN)
     Sleep((mc_sec + 500) / 1000);
 #elif defined(NCBI_OS_UNIX)
-#  ifdef NCBI_OS_LINUX
+#  if defined(HAVE_NANOSLEEP)
     struct timespec delay, unslept;
     delay.tv_sec  =  mc_sec / kMicroSecondsPerSecond;
     delay.tv_nsec = (mc_sec % kMicroSecondsPerSecond) * 1000;
     while (nanosleep(&delay, &unslept) < 0) {
-#  if 1
-        break;
-#  else
-        if (errno != EINTR) {
+        if (errno != EINTR  ||  onsignal == eInterruptOnSignal)
             break;
-        }
         delay = unslept;
-#  endif
     }
 #  else
-    /* portable but ugly (note: no way to check unslept time except for
-     * on Linux, even though it's done better with nanosleep() above) */
+    // Portable but ugly.
+    // Most implementations of select() do not modifies timeout to reflect
+    // the amount of time not slept; but some do this. Also, on some
+    // platforms it can be interrupted by a signal, on other not.
     struct timeval delay;
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
-    select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay);
-#  endif /*NCBI_OS_LINUX*/
+    while (select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay) < 0) {
+        if (errno != EINTR  ||  onsignal == eInterruptOnSignal)
+            break;
+    }
+#  endif /*HAVE_NANOSLEEP*/
+
 #elif defined(NCBI_OS_MAC)
     OTDelay((mc_sec + 500) / 1000);
 #endif /*NCBI_OS_...*/
 }
 
 
-void SleepMilliSec(unsigned long ml_sec)
+void SleepMilliSec(unsigned long ml_sec, EInterruptOnSignal onsignal)
 {
 #if defined(NCBI_OS_MSWIN)
     Sleep(ml_sec);
 #elif defined(NCBI_OS_UNIX)
-    SleepMicroSec(ml_sec * 1000);
+    SleepMicroSec(ml_sec * 1000, onsignal);
 #elif defined(NCBI_OS_MAC)
     OTDelay(ml_sec);
 #endif
 }
 
 
-void SleepSec(unsigned long sec)
+void SleepSec(unsigned long sec, EInterruptOnSignal onsignal)
 {
-    SleepMicroSec(sec * kMicroSecondsPerSecond);
+    SleepMicroSec(sec * kMicroSecondsPerSecond, onsignal);
 }
 
 
@@ -532,6 +533,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/03/14 13:24:34  ivanov
+ * Sleep*(): added parameter of EInterruptOnSignal type.
+ * [Unix] try to utilize unslept part of the time if interrupted by a signal.
+ *
  * Revision 1.49  2006/03/13 15:27:43  ivanov
  * Use _exit() in the signal handler
  *
