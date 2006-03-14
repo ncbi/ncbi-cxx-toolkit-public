@@ -67,7 +67,8 @@ public:
     typedef list<CAlnMixSegment*>       TSegments;
 
     void Build               (bool gap_join = false,
-                              bool min_gap = false);
+                              bool min_gap = false,
+                              bool remove_leading_and_trailing_gaps = false);
     void FillUnalignedRegions(void);
 
 private:
@@ -124,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/03/14 22:38:09  todorov
+* + remove_leading_and_trailing_gaps
+*
 * Revision 1.4  2006/02/21 15:57:31  todorov
 * CAlnMixSeq::TStarts -> CAlnMixStarts.
 *

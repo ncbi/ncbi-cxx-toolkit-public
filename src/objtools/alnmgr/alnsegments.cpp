@@ -56,7 +56,8 @@ CAlnMixSegments::CAlnMixSegments(CRef<CAlnMixSequences>&  aln_mix_sequences,
 
 void
 CAlnMixSegments::Build(bool gap_join,
-                       bool min_gap)
+                       bool min_gap,
+                       bool remove_leading_and_trailing_gaps)
 {
     m_AlnMixSequences->InitRowsStartIts();
     m_AlnMixSequences->InitExtraRowsStartIts();
@@ -263,6 +264,16 @@ CAlnMixSegments::Build(bool gap_join,
         } // while (refseq->GetStarts().current != refseq->GetStarts().end())
         orig_refseq = false;
     } // while (true)
+
+
+    if (remove_leading_and_trailing_gaps) {
+        while (m_Segments.front()->m_StartIts.size() < 2) {
+            m_Segments.pop_front();
+        }
+        while (m_Segments.back()->m_StartIts.size() < 2) {
+            m_Segments.pop_back();
+        }
+    }
 
 }
 
@@ -569,6 +580,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/03/14 22:38:30  todorov
+* + remove_leading_and_trailing_gaps
+*
 * Revision 1.8  2006/02/21 15:57:10  todorov
 * CAlnMixSeq::TStarts -> CAlnMixStarts.
 *
