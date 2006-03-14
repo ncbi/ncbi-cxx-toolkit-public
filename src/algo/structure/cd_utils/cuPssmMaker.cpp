@@ -80,7 +80,8 @@ PssmMakerOptions::PssmMakerOptions()
     requestFrequencyRatios(false),
     gaplessColumnWeights(false),
 	unalignedSegThreshold(-1),
-	inclusionThreshold(0.5)
+	inclusionThreshold(0.5),
+	reuseUid(false)
 {
 };
 
@@ -392,7 +393,7 @@ void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 			break;
 		}
 	}
-	if (cit != cdids.end())
+	if (cit != cdids.end() && m_config.reuseUid)
 	{
 		obj.SetId(uid);
 		dbtag.SetDb("CDD");
@@ -482,6 +483,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/03/14 19:18:37  cliu
+ * PssmId usage
+ *
  * Revision 1.10  2006/03/09 19:17:24  cliu
  * export the inclusionThreshold parameter
  *

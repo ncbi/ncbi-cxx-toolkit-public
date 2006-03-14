@@ -67,6 +67,7 @@ struct PssmMakerOptions
 
 	int unalignedSegThreshold;  // -1 : do not skip unaligned segment
 	double inclusionThreshold;
+	bool reuseUid;
 };
 
 class CdPssmInput : public IPssmInputData, public ColumnReader
@@ -159,6 +160,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/03/14 19:17:35  cliu
+ * PssmId usage
+ *
  * Revision 1.7  2006/03/09 19:17:41  cliu
  * export the inclusionThreshold parameter
  *
