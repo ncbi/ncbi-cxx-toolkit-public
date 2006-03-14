@@ -520,7 +520,11 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                     }
                 }
             } else {
-                found = true;
+                ITERATE(CBioseq::TId, iter_id, cur_id) {
+                    if ((*iter_id)->Match(aln_id)) {
+                        found = true;
+                    }
+                }
             }
             if(found){
                 sdl->id = wid;
@@ -912,6 +916,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.23  2006/03/14 22:21:55  jianye
+*use only seqids in seqalign
+*
 *Revision 1.22  2006/03/08 19:01:56  jianye
 *added mapview_prev url link
 *
