@@ -610,13 +610,16 @@ bool obeysParentTypeConstraints(const CCdCore* pCD) {
 
 void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 {
-	rankList.clear();
 	MultipleAlignment ma(cd);
-	TreeOptions treeOptions;
-	SeqTree* seqTree = TreeFactory::makeTree(&ma, treeOptions);
-	int colRow = ma.GetRowSourceTable().convertFromCDRow(cd, 0);
-	seqTree->getDiversityRankToRow(colRow, rankList);
-	delete seqTree;
+	if (ma.isBlockAligned())
+	{
+		rankList.clear();
+		TreeOptions treeOptions;
+		SeqTree* seqTree = TreeFactory::makeTree(&ma, treeOptions);
+		int colRow = ma.GetRowSourceTable().convertFromCDRow(cd, 0);
+		seqTree->getDiversityRankToRow(colRow, rankList);
+		delete seqTree;
+	}
 }
 
 bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
@@ -901,6 +904,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2006/03/14 19:19:07  cliu
+ * remake div-rank only for CDs with good blocks.
+ *
  * Revision 1.16  2006/02/08 21:24:28  ucko
  * GetBioseqWithFootprintForNthRow: use NStr::IntToString rather than
  * sprintf, which hasn't necessarily been declared (and is discouraged anyway)
