@@ -75,12 +75,13 @@ public:
         fTryOtherMethodOnFail = 0x0008,
         fGapJoin              = 0x0010, // join equal len segs gapped on refseq
         fMinGap               = 0x0020, // minimize segs gapped on refseq
-        fSortSeqsByScore      = 0x0040, // Better scoring seqs go towards the top
-        fSortInputByScore     = 0x0080, // Process better scoring input aligments first
-        fQuerySeqMergeOnly    = 0x0100, // Only put the query seq on same row, 
+        fRemoveLeadTrailGaps  = 0x0040, // Remove all leading or trailing gaps
+        fSortSeqsByScore      = 0x0080, // Better scoring seqs go towards the top
+        fSortInputByScore     = 0x0100, // Process better scoring input alignments first
+        fQuerySeqMergeOnly    = 0x0200, // Only put the query seq on same row, 
                                         // other seqs from diff densegs go to diff rows
-        fFillUnalignedRegions = 0x0200,
-        fAllowTranslocation   = 0x0400  // allow translocations when truncating overlaps
+        fFillUnalignedRegions = 0x0400,
+        fAllowTranslocation   = 0x0800  // allow translocations when truncating overlaps
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
 
@@ -194,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/03/14 22:37:35  todorov
+* + fRemoveLeadTrailGaps
+*
 * Revision 1.10  2006/02/21 15:56:21  todorov
 * CAlnMixSeq::TStarts -> CAlnMixStarts.
 *

@@ -820,7 +820,8 @@ CAlnMixMerger::x_Merge()
     
     m_AlnMixSequences->BuildRows();
     m_AlnMixSegments->Build(m_MergeFlags & fGapJoin,
-                            m_MergeFlags & fMinGap);
+                            m_MergeFlags & fMinGap,
+                            m_MergeFlags & fRemoveLeadTrailGaps);
     if (m_MergeFlags & fFillUnalignedRegions) {
         m_AlnMixSegments->FillUnalignedRegions();
     }
@@ -1269,6 +1270,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/03/14 22:37:16  todorov
+* + fRemoveLeadTrailGaps
+*
 * Revision 1.15  2006/02/22 00:19:28  ucko
 * Avoid comparing regular and const_ iterators, which had let to
 * compilation errors under WorkShop.
