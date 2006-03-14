@@ -55,9 +55,9 @@
 #include <algorithm>
 #include <iterator>
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
-BEGIN_SCOPE(omssa);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+BEGIN_SCOPE(omssa)
 
 
 void COMSSASearch::CopyCMSSearch(CRef <COMSSASearch> OldSearch)
@@ -327,6 +327,6 @@ NCBI_XOMSSA_EXPORT CObjectOStream* SetUpOutputFile(CObjectOStream* os, ESerialDa
 
 
 
-END_SCOPE(omssa);
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(omssa)
+END_SCOPE(objects)
+END_NCBI_SCOPE
