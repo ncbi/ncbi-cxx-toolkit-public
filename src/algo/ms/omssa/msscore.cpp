@@ -47,6 +47,9 @@
     #include <ncbi_pch.hpp>
 #endif
 
+#ifdef HAVE_LIMITS
+    #include <limits>
+#endif
 #include <math.h>
 #include "msscore.hpp"
 
