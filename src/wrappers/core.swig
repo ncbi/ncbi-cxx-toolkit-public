@@ -340,9 +340,26 @@ public:
 %template(COpenRange_TSignedSeqPos) ncbi::COpenRange<ncbi::TSignedSeqPos>;
 %template(CRange_TSignedSeqPos) ncbi::CRange<ncbi::TSignedSeqPos>;
 
+
+// An ugly semi-fix.  With SWIG/Python, if there are static and
+// non-static signatures of the same method name, only
+// static or non-static are usable, depending on declaration order.
+// This gets us the static ones.
+#ifdef SWIGPYTHON
+%extend ncbi::CObjectIStream {
+%pythoncode %{
+    Open = staticmethod(Open)
+%}
+}
+#endif
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/03/14 17:00:03  jcherry
+ * Work-around for CObjectIStream::Open
+ *
  * Revision 1.15  2006/03/01 16:27:15  jcherry
  * Adjusted header list
  *
