@@ -58,6 +58,8 @@
 #include <objects/entrez2/Entrez2_id_list.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
 
+#include <objtools/cleanup/cleanup.hpp>
+
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 
@@ -531,7 +533,9 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     const CArgs&   args = GetArgs();
 
     if (!args["nocleanup"]) {
-        se->BasicCleanup();
+    
+        CCleanup Cleanup;
+        Cleanup.BasicCleanup( se.GetObject() );
     }
 
     string label;
@@ -831,6 +835,10 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2006/03/14 18:44:07  ludwigf
+* CHANGED: Switched from object internal BasicCleanup() to the new CCleanup
+*  class.
+*
 * Revision 1.21  2006/02/27 14:51:30  ludwigf
 * FIXED: Application attempted to delete stack memory on exit, causing nasty
 * messages in (Windows) debug mode.
