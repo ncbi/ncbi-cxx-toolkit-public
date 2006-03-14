@@ -1,0 +1,15 @@
+[-]
+_export = NCBI_SEQ_EXPORT
+
+[Seq-table]
+columns._type    = vector
+
+[Table-column]
+data.int._type    = vector
+data.real._type    = vector
+data.bool._type    = vector
+data.string._type    = vector
+data.loc._type    = vector
+data.id._type    = vector
+data.interval._type    = vector
+
