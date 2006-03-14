@@ -1734,11 +1734,11 @@ CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
     
     *inpstr >> *phil;
     
-    if (m_IsAA) {
-        s_SortDeflineSetAA(phil);
-    } else {
-        s_SortDeflineSetNA(phil);
-    }
+    //if (m_IsAA) {
+    //    s_SortDeflineSetAA(phil);
+    //} else {
+    //    s_SortDeflineSetNA(phil);
+    //}
     
     return phil;
 }
