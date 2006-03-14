@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2006/03/14 20:32:45  rsmith
+ * Remove old #include
+ *
  * Revision 6.7  2006/03/14 20:21:52  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *
@@ -67,7 +70,6 @@
 #include <objects/seqfeat/Gene_ref.hpp>
 
 #include <objects/general/Dbtag.hpp>
-#include <objects/general/cleanup_utils.hpp>
 
 // generated classes
 

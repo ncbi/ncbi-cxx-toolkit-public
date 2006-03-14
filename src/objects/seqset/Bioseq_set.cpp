@@ -40,7 +40,6 @@
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
-#include <objects/general/cleanup_utils.hpp>
 
 // generated includes
 #include <objects/seqset/Bioseq_set.hpp>
@@ -270,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/03/14 20:32:45  rsmith
+ * Remove old #include
+ *
  * Revision 1.12  2006/03/14 20:21:52  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *

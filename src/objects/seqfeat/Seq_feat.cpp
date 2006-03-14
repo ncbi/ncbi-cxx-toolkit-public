@@ -42,7 +42,6 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
-#include <objects/general/cleanup_utils.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <vector>
 
@@ -298,6 +297,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.26  2006/03/14 20:32:45  rsmith
+ * Remove old #include
+ *
  * Revision 6.25  2006/03/14 20:21:52  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *

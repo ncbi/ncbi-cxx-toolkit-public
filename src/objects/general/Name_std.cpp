@@ -36,7 +36,6 @@
 
 // standard includes
 #include <ncbi_pch.hpp>
-#include <objects/general/cleanup_utils.hpp>
 
 // generated includes
 #include <objects/general/Name_std.hpp>
@@ -71,6 +70,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.4  2006/03/14 20:32:45  rsmith
+* Remove old #include
+*
 * Revision 6.3  2006/03/14 20:21:51  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *
