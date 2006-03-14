@@ -101,6 +101,16 @@ enum EFollowLinks {
 };
 
 
+/// Interrupt on signal mode
+///
+/// On UNIX some functions can be interrupted by a signal and EINTR errno
+/// value. We can restart or cancel its execution.
+enum EInterruptOnSignal {
+    eInterruptOnSignal, ///< Cancel operation if interrapted by a signal
+    eRestartOnSignal    ///< Restart operation if interrupted by a signal
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 /// Support for safe bool operators
 /////////////////////////////////////////////////////////////////////////////
@@ -930,6 +940,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2006/03/14 13:16:51  ivanov
+ * + enum EInterruptOnSignal
+ *
  * Revision 1.94  2006/01/17 17:23:20  vasilche
  * Fixed definition of CAutoArray.
  *
