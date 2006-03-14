@@ -113,6 +113,15 @@ typedef   int   ssize_t;
 #pragma warning(disable: 4996)
 #endif
 
+#if _MSC_VER >= 1400
+/*
+ *  Disable checked iterators in Release builds
+ */
+#ifndef _DEBUG
+#define _SECURE_SCL 0
+#endif
+#endif
+
 /*
  *  Site localization
  */
