@@ -642,8 +642,8 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
     
     m_QSR.Reset(new CBlast4_queue_search_request);
     
-    m_QSR->SetProgram(program);
-    m_QSR->SetService(service);
+    m_QSR->SetProgram(m_Program = program);
+    m_QSR->SetService(m_Service = service);
     
     m_NeedConfig = ENeedConfig(m_NeedConfig & ~(eProgram | eService));
     
@@ -973,6 +973,21 @@ void CRemoteBlast::SetDatabase(const string & x)
     subject_p->SetDatabase(x);
     m_QSR->SetSubject(*subject_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
+    
+    EBlast4_residue_type rtype(eBlast4_residue_type_unknown);
+    
+    if (m_Program == "blastp" ||
+        m_Program == "blastx" ||
+        (m_Program == "tblastn" && m_Service == "rpsblast")) {
+        
+        rtype = eBlast4_residue_type_protein;
+    } else {
+        rtype = eBlast4_residue_type_nucleotide;
+    }
+    
+    m_Dbs.Reset(new CBlast4_database);
+    m_Dbs->SetName(x);
+    m_Dbs->SetType(rtype);
 }
 
 void CRemoteBlast::SetEntrezQuery(const char * x)
@@ -1354,6 +1369,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2006/03/14 16:00:02  bealer
+* - Get program, service, and database without fetch if possible.
+*
 * Revision 1.39  2006/03/03 17:15:21  camacho
 * Doxygen fixes
 *
