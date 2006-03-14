@@ -37,11 +37,7 @@
 // standard includes
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_limits.h>
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbistl.hpp>
-#include <corelib/ncbistre.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbifile.hpp>
 #include <connect/ncbi_memory_connector.h>
 #include <connect/ncbi_conn_stream.hpp>
@@ -56,7 +52,6 @@
 
 #include "msmerge.hpp"
 
-#include <limits>
 #include <algorithm>
 #include <iterator>
 
