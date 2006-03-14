@@ -12,7 +12,10 @@ APP = omssamerge
 
 SRC = omssamerge
 
-LIB = xomssa$(STATIC) omssa$(STATIC) seqset$(STATIC) seq$(STATIC) seqcode$(STATIC) \
-      sequtil$(STATIC) pub$(STATIC) medline$(STATIC) biblio$(STATIC) general$(STATIC) \
-      xser$(STATIC) xconnect$(STATIC) xutil$(STATIC) xncbi$(STATIC)
+LIB_ = xomssa omssa blast composition_adjustment seqdb blastdb tables \
+       seqset $(SEQ_LIBS) pub medline biblio general \
+       xser xconnect xregexp xutil xncbi
 
+LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
+
+LIB = $(LIB_:%=%$(STATIC))
