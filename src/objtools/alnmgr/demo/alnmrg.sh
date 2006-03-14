@@ -99,6 +99,9 @@ test1 slave_repeated_insert "-noobjmgr t" "slave repeated insert"
 
 #test2 match_iter "-noobjmgr t" "proper match iteration"
 
+# leading and trailing gaps
+test2 leadtrailgaps "-rmleadtrailgaps t -noobjmgr t" "remove leading and trailing gaps"
+
 
 # clean
 rm $tmp_out
