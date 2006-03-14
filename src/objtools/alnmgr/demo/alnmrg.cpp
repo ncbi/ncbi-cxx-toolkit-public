@@ -167,6 +167,11 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
+        ("rmleadtrailgaps", "bool",
+         "Remove leading and trailing gaps",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
         ("minusstrand", "bool",
          "Minus strand on the refseq when merging.",
          CArgDescriptions::eBoolean, "f");
@@ -369,6 +374,8 @@ void CAlnMrgApp::SetOptions(void)
 
     if ( args["log"] ) {
         SetDiagStream( &args["log"].AsOutputFile() );
+    } else {
+        SetDiagStream(&NcbiCerr);
     }
 
     m_MergeFlags = 0;
@@ -380,6 +387,10 @@ void CAlnMrgApp::SetOptions(void)
 
     if (args["mingap"]  &&  args["mingap"].AsBoolean()) {
         m_MergeFlags |= CAlnMix::fMinGap;
+    }
+
+    if (args["rmleadtrailgaps"]  &&  args["rmleadtrailgaps"].AsBoolean()) {
+        m_MergeFlags |= CAlnMix::fRemoveLeadTrailGaps;
     }
 
     if (args["gen2est"]  &&  args["gen2est"].AsBoolean()) {
@@ -490,6 +501,7 @@ void CAlnMrgApp::ViewMergedAlignment(void)
 
 int CAlnMrgApp::Run(void)
 {
+    _TRACE("Run()");
     const CArgs& args = GetArgs();
 
     SetOptions();
@@ -526,6 +538,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2006/03/14 22:42:24  todorov
+* + rmleadtrailgaps
+*
 * Revision 1.35  2006/02/27 12:18:29  ivanov
 * Added #include <test/test_assert.h> -- all tests must include it
 *
