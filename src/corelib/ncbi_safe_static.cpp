@@ -75,7 +75,7 @@ CSafeStaticLifeSpan& CSafeStaticLifeSpan::GetDefault(void)
 
 // Protective mutex and the owner thread ID to avoid
 // multiple initializations and deadlocks
-DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+DEFINE_STATIC_MUTEX(s_Mutex);
 
 static CThreadSystemID s_MutexOwner;
 // true if s_MutexOwner has been set (while the mutex is locked)
@@ -154,7 +154,7 @@ static CSafeStaticGuard* sh_CleanupGuard;
 
 CSafeStaticGuard::~CSafeStaticGuard(void)
 {
-    CFastMutexGuard guard(s_Mutex);
+    CMutexGuard guard(s_Mutex);
 
     // Protect CSafeStaticGuard destruction
     if ( sh_CleanupGuard ) {
@@ -202,6 +202,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/03/14 16:14:11  ucko
+ * Change s_Mutex from fast to normal, as ~CSafeStaticGuard can use it
+ * recursively.
+ *
  * Revision 1.9  2006/03/13 15:23:54  grichenk
  * By default protect only initialization of an object,
  * but do not control its lifetime.
