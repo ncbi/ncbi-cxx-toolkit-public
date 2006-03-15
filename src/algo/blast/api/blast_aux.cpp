@@ -49,6 +49,8 @@
 #include "blast_setup.hpp"
 #include "blast_aux_priv.hpp"
 
+#include <algorithm>
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -794,6 +796,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.90  2006/03/15 02:16:10  ucko
+ * +<algorithm> (once indirectly included?) for sort(), reverse(), and unique().
+ *
  * Revision 1.89  2006/02/22 18:34:17  bealer
  * - Blastx filtering support, CBlastQueryVector class.
  *
