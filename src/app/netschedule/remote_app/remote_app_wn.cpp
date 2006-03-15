@@ -171,24 +171,21 @@ public:
         //        LOG_POST( CTime(CTime::eCurrent).AsString() 
         //                  << ": " << context.GetJobKey() + " " + context.GetJobInput());
 
-        CRemoteJobRequest_Executer request(m_Factory);
-        request.Receive(context.GetIStream());
+        m_Request.Receive(context.GetIStream());
         vector<string> args;
-        NStr::Tokenize(request.GetCmdLine(), " ", args);
-
-        CRemoteJobResult_Executer result(m_Factory);
+        NStr::Tokenize(m_Request.GetCmdLine(), " ", args);
 
         int ret = 0;
         bool canceled = s_Exec(m_AppPath, args, 
-                               request.GetStdIn(), 
-                               result.GetStdOut(), 
-                               result.GetStdErr(),
+                               m_Request.GetStdIn(), 
+                               m_Result.GetStdOut(), 
+                               m_Result.GetStdErr(),
                                ret,
                                context);
 
-        request.CleanUp();
-        result.SetRetCode(ret); 
-        result.Send(context.GetOStream());
+        m_Request.CleanUp();
+        m_Result.SetRetCode(ret); 
+        m_Result.Send(context.GetOStream());
 
         //        LOG_POST( CTime(CTime::eCurrent).AsString() 
         //                  << ": Job " << context.GetJobKey() << " is done. ");
@@ -201,11 +198,12 @@ private:
     string m_AppPath;
 
     CBlobStorageFactory m_Factory;
-
+    CRemoteJobRequest_Executer m_Request;
+    CRemoteJobResult_Executer  m_Result;
 };
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
-    : m_Factory(context.GetConfig())
+    : m_Factory(context.GetConfig()), m_Request(m_Factory), m_Result(m_Factory)
 {
     const IRegistry& reg = context.GetConfig();
     m_AppPath = reg.GetString("remote_app", "app_path", "" );
@@ -254,6 +252,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/03/15 17:42:01  didenko
+ * Performance improvement
+ *
  * Revision 1.5  2006/03/10 15:21:07  ucko
  * Don't (implicitly) inline CRemoteJobApp's constructor, as WorkShop 5.3
  * then refuses to let it call s_CanExecute.
