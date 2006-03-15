@@ -39,6 +39,8 @@
 
 #include <connect/services/blob_storage_netcache.hpp>
 
+#include <algorithm>
+
 USING_NCBI_SCOPE;
 
 class CGridClientSampleApp : public CGridClientApp
@@ -205,6 +207,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/15 21:59:54  ucko
+ * +<algorithm> for remove().
+ *
  * Revision 1.8  2006/03/15 17:39:33  didenko
  * Added jobs parameter
  *
