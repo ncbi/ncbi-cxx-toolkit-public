@@ -45,10 +45,10 @@ class encoder
 {
 public:
     encoder(unsigned char* buf, unsigned size);
-    void put_8(unsigned char c);
-    void put_16(bm::short_t  s);
+    BMFORCEINLINE void put_8(unsigned char c);
+    BMFORCEINLINE void put_16(bm::short_t  s);
     void put_16(const bm::short_t* s, unsigned count);
-    void put_32(bm::word_t  w);
+    BMFORCEINLINE void put_32(bm::word_t  w);
     void put_32(const bm::word_t* w, unsigned count);
     unsigned size() const;
 private:
@@ -66,8 +66,9 @@ class decoder_base
 public:
     decoder_base(const unsigned char* buf) { buf_ = start_ = buf; }
     /// Reads character from the decoding buffer. 
-    unsigned char get_8() { return *buf_++; }
+    BMFORCEINLINE unsigned char get_8() { return *buf_++; }
     /// Returns size of the current decoding stream.
+    BMFORCEINLINE 
     unsigned size() const { return (unsigned)(buf_ - start_); }
 protected:
    const unsigned char*   buf_;
@@ -84,8 +85,8 @@ class decoder : public decoder_base
 {
 public:
     decoder(const unsigned char* buf);
-    bm::short_t get_16();
-    bm::word_t get_32();
+    BMFORCEINLINE bm::short_t get_16();
+    BMFORCEINLINE bm::word_t get_32();
     void get_32(bm::word_t* w, unsigned count);
     void get_16(bm::short_t* s, unsigned count);
 };

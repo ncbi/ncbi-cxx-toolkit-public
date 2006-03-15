@@ -57,12 +57,12 @@ namespace bm
 class sse2_empty_guard
 {
 public:
-    __forceinline sse2_empty_guard() 
+    BMFORCEINLINE sse2_empty_guard() 
     {
         _mm_empty();
     }
 
-    __forceinline ~sse2_empty_guard() 
+    BMFORCEINLINE ~sse2_empty_guard() 
     {
         _mm_empty();
     }
@@ -80,7 +80,7 @@ public:
 
     @ingroup SSE2
 */
-__forceinline 
+BMFORCEINLINE 
 void sse2_xor_arr_2_mask(__m128i* BMRESTRICT dst, 
                          const __m128i* BMRESTRICT src, 
                          const __m128i* BMRESTRICT src_end,
@@ -105,7 +105,7 @@ void sse2_xor_arr_2_mask(__m128i* BMRESTRICT dst,
 
     @ingroup SSE2
 */
-__forceinline 
+BMFORCEINLINE 
 void sse2_andnot_arr_2_mask(__m128i* BMRESTRICT dst, 
                             const __m128i* BMRESTRICT src, 
                             const __m128i* BMRESTRICT src_end,
@@ -133,7 +133,7 @@ void sse2_andnot_arr_2_mask(__m128i* BMRESTRICT dst,
 
     @ingroup SSE2
 */
-__forceinline 
+BMFORCEINLINE 
 void sse2_and_arr(__m128i* BMRESTRICT dst, 
                   const __m128i* BMRESTRICT src, 
                   const __m128i* BMRESTRICT src_end)
@@ -175,7 +175,7 @@ void sse2_and_arr(__m128i* BMRESTRICT dst,
 
     @ingroup SSE2
 */
-__forceinline 
+BMFORCEINLINE 
 void sse2_or_arr(__m128i* BMRESTRICT dst, 
                  const __m128i* BMRESTRICT src, 
                  const __m128i* BMRESTRICT src_end)
@@ -214,7 +214,7 @@ void sse2_or_arr(__m128i* BMRESTRICT dst,
 
     @ingroup SSE2
 */
-__forceinline 
+BMFORCEINLINE 
 void sse2_xor_arr(__m128i* BMRESTRICT dst, 
                   const __m128i* BMRESTRICT src, 
                   const __m128i* BMRESTRICT src_end)
@@ -254,7 +254,7 @@ void sse2_xor_arr(__m128i* BMRESTRICT dst,
 
     @ingroup SSE2
 */
-__forceinline 
+BMFORCEINLINE 
 void sse2_sub_arr(__m128i* BMRESTRICT dst, 
                  const __m128i* BMRESTRICT src, 
                  const __m128i* BMRESTRICT src_end)
@@ -294,7 +294,7 @@ void sse2_sub_arr(__m128i* BMRESTRICT dst,
     @ingroup SSE2
 */
 
-__forceinline 
+BMFORCEINLINE 
 void sse2_set_block(__m128i* BMRESTRICT dst, 
                     __m128i* BMRESTRICT dst_end, 
                     bm::word_t value)
@@ -326,7 +326,7 @@ void sse2_set_block(__m128i* BMRESTRICT dst,
 
     @ingroup SSE2
 */
-__forceinline 
+BMFORCEINLINE 
 void sse2_copy_block(__m128i* BMRESTRICT dst, 
                      const __m128i* BMRESTRICT src, 
                      const __m128i* BMRESTRICT src_end)
@@ -371,7 +371,7 @@ void sse2_copy_block(__m128i* BMRESTRICT dst,
 
     @ingroup SSE2
 */
-__forceinline 
+BMFORCEINLINE 
 void sse2_invert_arr(bm::word_t* first, bm::word_t* last)
 {
     __m128i xmm1 = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 
@@ -468,26 +468,26 @@ bm::id_t sse2_bit_count(const __m128i* block, const __m128i* block_end)
     return tcnt[0] + tcnt[1] + tcnt[2] + tcnt[3];
 }
 
-__forceinline 
+BMFORCEINLINE 
 __m128i sse2_and(__m128i a, __m128i b)
 {
     return _mm_and_si128(a, b);
 }
 
-__forceinline 
+BMFORCEINLINE 
 __m128i sse2_or(__m128i a, __m128i b)
 {
     return _mm_or_si128(a, b);
 }
 
 
-__forceinline 
+BMFORCEINLINE 
 __m128i sse2_xor(__m128i a, __m128i b)
 {
     return _mm_xor_si128(a, b);
 }
 
-__forceinline 
+BMFORCEINLINE 
 __m128i sse2_sub(__m128i a, __m128i b)
 {
     return _mm_andnot_si128(b, a);

@@ -36,6 +36,16 @@
 
 #define BM_ASSERT _ASSERT
 
+#ifdef NCBI_RESTRICT
+#define BM_HASRESTRICT
+#define BMRESTRICT NCBI_RESTRICT
+#endif
+
+#ifdef NCBI_FORCEINLINE
+#define BM_HASFORCEINLINE
+#define BMFORCEINLINE NCBI_FORCEINLINE
+#endif
+
 #include <util/bitset/bm.h>
 
 
@@ -43,6 +53,9 @@
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/03/15 16:05:49  kuznets
+* Use NCBI_RESTRICT and NCBI_FORCEINLINE
+*
 * Revision 1.1  2004/04/14 12:50:14  kuznets
 * Initial revision
 *

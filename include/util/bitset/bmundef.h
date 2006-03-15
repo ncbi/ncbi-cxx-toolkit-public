@@ -17,6 +17,7 @@
 #undef BMCOUNT_SET
 #undef BMCOUNT_ADJ
 #undef BMRESTRICT
+#undef BMFORCEINLINE
 #undef BMGAP_PTR
 #undef BMSET_PTRGAP
 #undef BM_IS_GAP

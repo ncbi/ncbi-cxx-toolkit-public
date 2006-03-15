@@ -71,6 +71,14 @@
 #endif
 
 
+#ifdef BM_HASFORCEINLINE
+# ifndef BMFORCEINLINE
+#  define BMFORCEINLINE __forceinline
+# endif
+#else
+# define BMFORCEINLINE inline
+#endif
+
 
 
 #ifndef BMSSE2OPT
