@@ -118,8 +118,11 @@ typedef   int   ssize_t;
  *  Disable checked iterators in Release builds
  */
 #ifndef _DEBUG
-#define _SECURE_SCL 0
+#  ifndef _SECURE_SCL
+#    define _SECURE_SCL 0
+#  endif
 #endif
+
 #endif
 
 /*
