@@ -40,6 +40,8 @@
 #include <objmgr/scope.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -527,6 +529,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/03/15 02:09:04  ucko
+* +<algorithm> (once indirectly included?) for sort().
+*
 * Revision 1.10  2006/03/01 20:52:20  jianye
 * move eMaxTabularField to the end
 *
