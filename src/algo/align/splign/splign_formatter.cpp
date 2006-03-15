@@ -43,6 +43,8 @@
 
 #include <objmgr/seq_vector.hpp>
 
+#include <algorithm>
+
 #include "splign_util.hpp"
 #include "messages.hpp"
 
@@ -528,6 +530,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2006/03/15 02:18:52  ucko
+ * +<algorithm> (once indirectly included?) for reverse() and transform().
+ *
  * Revision 1.20  2005/11/21 16:06:38  kapustin
  * Move gpipe-sensitive items to the app level
  *
