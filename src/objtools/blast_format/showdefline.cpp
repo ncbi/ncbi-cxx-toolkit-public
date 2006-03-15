@@ -598,13 +598,48 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                  m_Rid, m_QueryNumber, taxid);
     }
 
-    //get defline
-    /// @todo FIXME: the following function finds the full Seq-id string too.
-    /// Should this be used instead of the code embedded in the 
-    /// DisplayBlastDefline method below?
-    string seqid_str; 
-    GetBioseqHandleDeflineAndId(handle, use_this_gi, seqid_str, sdl->defline,
-                                (m_Option & eShowGi) ? true : false);
+  
+    sdl->defline = GetTitle(m_ScopeRef->GetBioseqHandle(*(sdl->id)));
+    if (!(bdl.empty())) { 
+        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
+            iter != bdl.end(); iter++){
+            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
+            int cur_gi =  FindGi(cur_id);
+            int gi_in_use_this_gi = 0;
+            ITERATE(list<int>, iter_gi, use_this_gi){
+                if(cur_gi == *iter_gi){
+                    gi_in_use_this_gi = *iter_gi;                 
+                    break;
+                }
+            }
+            if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
+                
+                if((*iter)->IsSetTitle()){
+                    bool id_used_already = false;
+                    ITERATE(CBioseq::TId, iter_id, cur_id) {
+                        if ((*iter_id)->Match(*(sdl->id))) {
+                            id_used_already = true;
+                            break;
+                        }
+                    }
+                    if (!id_used_already) {
+                        string concat_acc;
+                        wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
+                        wid->GetLabel(&concat_acc, CSeq_id::eFasta, 0);
+                        if( (m_Option & eShowGi) && cur_gi > 0){
+                            sdl->defline =  sdl->defline + " >" + "gi|" + 
+                                NStr::IntToString(cur_gi) + "|" + 
+                                concat_acc + " " + (*iter)->GetTitle();
+                        } else {
+                            sdl->defline = sdl->defline + " >" + concat_acc +
+                                " " + 
+                                (*iter)->GetTitle();
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -916,6 +951,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.24  2006/03/15 16:46:55  jianye
+*use title from seqalign bioseq as the first one
+*
 *Revision 1.23  2006/03/14 22:21:55  jianye
 *use only seqids in seqalign
 *
