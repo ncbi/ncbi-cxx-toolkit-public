@@ -195,13 +195,18 @@ void CGridCgiApplication::InitGridClient()
         CBlobStorageFactory cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
+    bool use_embedded_input = 
+        GetConfig().GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+                            CNcbiRegistry::eReturn);
+
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
                                        automatic_cleanup? 
                                             CGridClient::eAutomaticCleanup  :
                                             CGridClient::eManualCleanup,
                                        use_progress? 
                                             CGridClient::eProgressMsgOn :
-                                            CGridClient::eProgressMsgOff));
+                                            CGridClient::eProgressMsgOff,
+                                       use_embedded_input));
 
 }
 
@@ -423,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/03/15 17:30:12  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 1.28  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

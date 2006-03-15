@@ -292,7 +292,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     MakeCommandPacket(&m_Tmp, "SUBMIT \"", connected);
-    m_Tmp.append(input);
+    m_Tmp.append(NStr::PrintableString(input));
     m_Tmp.append("\"");
 
     if (!progress_msg.empty()) {
@@ -378,7 +378,7 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
         unsigned batch_start = i;
         string aff_prev;
         for (unsigned j = 0; j < batch_size; ++j,++i) {
-            const string& input = subm.job_list[i].input;
+            string input = NStr::PrintableString(subm.job_list[i].input);
             const string& aff = subm.job_list[i].affinity_token;
             if (aff[0]) {
                 if (aff == aff_prev) { // exactly same affinity(sorted jobs)
@@ -712,6 +712,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
     status = (EJobStatus) st;
 
     if ((status == eDone || status == eFailed)) {
+        //cerr << str <<endl;
         for ( ;*str && isdigit((unsigned char)(*str)); ++str) {
         }
 
@@ -734,7 +735,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
                 output->push_back(*str);
             }
         }
-
+        *output = NStr::ParseEscapes(*output);
         if (err_msg || input) {
             err_msg->erase();
             if (!*str)
@@ -776,6 +777,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
                     input->push_back(*str);
                 }
             }
+            *input = NStr::ParseEscapes(*input);
         }
 
     } // if status done or failed
@@ -1012,6 +1014,7 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
     for (;*str && *str != '"'; ++str) {
         input->push_back(*str);
     }
+    *input = NStr::ParseEscapes(*input);
 }
 
 
@@ -1032,8 +1035,11 @@ void CNetScheduleClient::PutResult(const string& job_key,
     m_Tmp.append(" ");
     m_Tmp.append(NStr::IntToString(ret_code));
     m_Tmp.append(" \"");
-    m_Tmp.append(output);
+    m_Tmp.append(NStr::PrintableString(output));
     m_Tmp.append("\"");
+
+    //cerr << output << endl << "==================" << endl;
+    //cerr << m_Tmp << endl;
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
@@ -1070,8 +1076,11 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
     m_Tmp.append(" ");
     m_Tmp.append(NStr::IntToString(done_ret_code));
     m_Tmp.append(" \"");
-    m_Tmp.append(done_output);
+    m_Tmp.append(NStr::PrintableString(done_output));
     m_Tmp.append("\"");
+    //cerr << done_output << endl << "==================" << endl;;
+    //cerr << m_Tmp << endl;
+
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
@@ -1652,6 +1661,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/03/15 17:30:12  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 1.48  2006/03/13 16:20:12  kuznets
  * +StringToStatus()
  *

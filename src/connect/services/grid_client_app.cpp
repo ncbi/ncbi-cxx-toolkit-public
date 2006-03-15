@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/blob_storage.hpp>
+#include <corelib/ncbireg.hpp>
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
@@ -74,8 +75,12 @@ void CGridClientApp::Init(void)
         CGridClient::eProgressMsgOn :
         CGridClient::eProgressMsgOff;
 
+    bool use_embedded_input = 
+        GetConfig().GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+                            CNcbiRegistry::eReturn);
+
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
-                                       cleanup, pmsg));
+                                       cleanup, pmsg, use_embedded_input));
 }
 
 bool CGridClientApp::UseProgressMessage() const
@@ -96,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/15 17:30:12  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 1.8  2006/03/07 17:14:12  didenko
  * Added virtual functions which allow tunning up a NetCache client
  *

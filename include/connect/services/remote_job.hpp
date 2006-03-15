@@ -56,6 +56,9 @@ public:
     void Send(CNcbiOstream& os);
 
 private:
+    CRemoteJobRequest_Submitter(const CRemoteJobRequest_Submitter&);
+    CRemoteJobRequest_Submitter& operator=(const CRemoteJobRequest_Submitter&);
+
     auto_ptr<CRemoteJobRequest_Impl> m_Impl;
 };
 
@@ -72,6 +75,8 @@ public:
     void CleanUp();
 
 private:
+    CRemoteJobRequest_Executer(const CRemoteJobRequest_Executer &);
+    CRemoteJobRequest_Executer& operator=(const CRemoteJobRequest_Executer&);
 
     auto_ptr<CRemoteJobRequest_Impl> m_Impl;
 };
@@ -93,6 +98,8 @@ public:
     void Send(CNcbiOstream& os);
 
 private:
+    CRemoteJobResult_Executer(const CRemoteJobResult_Executer&);
+    CRemoteJobResult_Executer& operator=(const CRemoteJobResult_Executer&);
 
     auto_ptr<CRemoteJobResult_Impl> m_Impl;
 };
@@ -111,6 +118,8 @@ public:
     void Receive(CNcbiIstream& is);
 
 private:
+    CRemoteJobResult_Submitter(const CRemoteJobResult_Submitter&);
+    CRemoteJobResult_Submitter& operator=(const CRemoteJobResult_Submitter&);
 
     auto_ptr<CRemoteJobResult_Impl> m_Impl;
 };
@@ -121,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/15 17:30:11  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 1.1  2006/03/07 17:17:12  didenko
  * Added facility for running external applications throu NetSchedule service
  *

@@ -32,12 +32,16 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/blob_storage.hpp>
+#include <corelib/rwstream.hpp>
 
+#include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/remote_job.hpp>
 
 BEGIN_NCBI_SCOPE
 
-
+const size_t kMaxBlobInlineSize = 500;
+//////////////////////////////////////////////////////////////////////////////
+//
 static inline CNcbiOstream& s_Write(CNcbiOstream& os, const string& str)
 {
     os << str.size() << ' ' << str;
@@ -56,31 +60,82 @@ static inline CNcbiIstream& s_Read(CNcbiIstream& is, string& str)
 
 //////////////////////////////////////////////////////////////////////////////
 //
+class CBlobStreamHelper
+{
+public:
+    CBlobStreamHelper(IBlobStorage& storage, string& data, size_t& data_size)
+        : m_Storage(storage), m_Data(data), m_DataSize(data_size)
+    {
+    }
+
+    ~CBlobStreamHelper()
+    {
+    }
+
+    CNcbiOstream& GetOStream() 
+    {
+        if (!m_OStream.get()) {
+            _ASSERT(!m_IStream.get());
+            IWriter* writer = 
+                new CStringOrBlobStorageWriter(kMaxBlobInlineSize,
+                                               m_Storage,
+                                               m_Data);
+            m_OStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter));
+        }
+        return *m_OStream; 
+    }
+
+    CNcbiIstream& GetIStream() 
+    {
+        if (!m_IStream.get()) {
+            _ASSERT(!m_OStream.get());
+            IReader* reader = new CStringOrBlobStorageReader(m_Data,
+                                                             m_Storage,
+                                                             IBlobStorage::eLockWait,
+                                                             m_DataSize);
+            m_IStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader));
+        }
+        return *m_IStream; 
+    }
+    void Reset()
+    {
+        m_IStream.reset();
+        m_OStream.reset();
+    }
+private:
+    IBlobStorage& m_Storage;
+    auto_ptr<CNcbiIstream> m_IStream;
+    auto_ptr<CNcbiOstream> m_OStream;
+    string& m_Data;
+    size_t& m_DataSize;
+};
+//////////////////////////////////////////////////////////////////////////////
+//
 
 class CRemoteJobRequest_Impl
 {
 public:
     explicit CRemoteJobRequest_Impl(IBlobStorageFactory& factory)
-        : m_InBlob(factory.CreateInstance()), m_StdIn(NULL)
-    {}
+        : m_InBlob(factory.CreateInstance()), m_StdInDataSize(0)
+    {
+        m_StdIn.reset(new CBlobStreamHelper(*m_InBlob, 
+                                            m_InBlobIdOrData,
+                                            m_StdInDataSize));
+    }
 
     ~CRemoteJobRequest_Impl() 
     {
-        m_InBlob->Reset();
     }
+
     CNcbiOstream& GetStdInForWrite() 
     { 
-        if (!m_StdIn) {
-            _ASSERT(m_InBlobKey.empty());
-            m_StdIn = &m_InBlob->CreateOStream(m_InBlobKey);
-        }
-        return *m_StdIn; 
+        return m_StdIn->GetOStream();
     }
     CNcbiIstream& GetStdInForRead() 
     { 
-        _ASSERT(!m_InBlobKey.empty());
-        return m_InBlob->GetIStream(m_InBlobKey); 
+        return m_StdIn->GetIStream();
     }
+
     void SetCmdLine(const string& cmdline) { m_CmdLine = cmdline; }
     const string& GetCmdLine() const { return m_CmdLine; }
 
@@ -89,7 +144,7 @@ public:
         m_Files.insert(fname); 
     }
 
-    void Serialize(CNcbiOstream& os) const;
+    void Serialize(CNcbiOstream& os);
     void Deserialize(CNcbiIstream& is);
 
     void CleanUp();
@@ -99,9 +154,11 @@ private:
     static CAtomicCounter sm_DirCounter;
     static string sm_TmpDirPath;
     
-    auto_ptr<IBlobStorage> m_InBlob;
-    string m_InBlobKey;
-    CNcbiOstream* m_StdIn;
+    auto_ptr<IBlobStorage>   m_InBlob;
+    size_t                   m_StdInDataSize;
+    mutable auto_ptr<CBlobStreamHelper>   m_StdIn;
+
+    string m_InBlobIdOrData;
     string m_CmdLine;
 
     string m_TmpDirName;
@@ -113,11 +170,9 @@ CAtomicCounter CRemoteJobRequest_Impl::sm_DirCounter;
 string CRemoteJobRequest_Impl::sm_TmpDirPath = ".";
 
 
-void CRemoteJobRequest_Impl::Serialize(CNcbiOstream& os) const
+void CRemoteJobRequest_Impl::Serialize(CNcbiOstream& os)
 {
-    m_InBlob->Reset();
-    s_Write(os, m_InBlobKey);
-    s_Write(os, m_CmdLine);
+    m_StdIn->Reset();
     typedef map<string,string> TFmap;
     TFmap file_map;
     ITERATE(TFiles, it, m_Files) {
@@ -134,17 +189,26 @@ void CRemoteJobRequest_Impl::Serialize(CNcbiOstream& os) const
             }
         }
     }
+
+    m_InBlob->Reset();
+
+    s_Write(os, m_CmdLine);
+    s_Write(os, m_InBlobIdOrData);
+
     os << file_map.size() << ' ';
     ITERATE(TFmap, itf, file_map) {
         s_Write(os, itf->first);
         s_Write(os, itf->second);
     }
+    Reset();
 }
 void CRemoteJobRequest_Impl::Deserialize(CNcbiIstream& is)
 {
     Reset();
-    s_Read(is, m_InBlobKey);
+
     s_Read(is, m_CmdLine);
+    s_Read(is, m_InBlobIdOrData);
+
     int fcount = 0;
     vector<string> args;
     is >> fcount;
@@ -200,11 +264,11 @@ void CRemoteJobRequest_Impl::CleanUp()
 
 void CRemoteJobRequest_Impl::Reset()
 {
-    m_InBlob->Reset();
-    m_InBlobKey = "";
+    m_StdIn->Reset();
+    m_InBlobIdOrData = "";
+    m_StdInDataSize = 0;
     m_CmdLine = "";
     m_Files.clear();
-    m_StdIn = NULL;
 }
 CRemoteJobRequest_Submitter::
 CRemoteJobRequest_Submitter(IBlobStorageFactory& factory)
@@ -224,7 +288,6 @@ void CRemoteJobRequest_Submitter::AddFileForTransfer(const string& fname)
 void CRemoteJobRequest_Submitter::Send(CNcbiOstream& os)
 {
     m_Impl->Serialize(os);    
-    m_Impl->Reset();
 }
 
 
@@ -274,78 +337,89 @@ class CRemoteJobResult_Impl
 {
 public:
     explicit CRemoteJobResult_Impl(IBlobStorageFactory& factory)
-        : m_OutBlob(factory.CreateInstance()), m_StdOut(NULL), 
-          m_ErrBlob(factory.CreateInstance()), m_StdErr(NULL),
+        : m_OutBlob(factory.CreateInstance()), m_OutBlobSize(0), 
+          m_ErrBlob(factory.CreateInstance()), m_ErrBlobSize(0),
           m_RetCode(-1)
-    {}
+    {
+        m_StdOut.reset(new CBlobStreamHelper(*m_OutBlob,
+                                             m_OutBlobIdOrData,
+                                             m_OutBlobSize));
+        m_StdErr.reset(new CBlobStreamHelper(*m_ErrBlob,
+                                             m_ErrBlobIdOrData,
+                                             m_ErrBlobSize));
+    }
     ~CRemoteJobResult_Impl()
     {
-        m_OutBlob->Reset();
-        m_ErrBlob->Reset();
     }    
 
     CNcbiOstream& GetStdOutForWrite() 
     { 
-        if (!m_StdOut) {
-            _ASSERT(m_OutBlobKey.empty());
-            m_StdOut = &m_OutBlob->CreateOStream(m_OutBlobKey);
-        }
-        return *m_StdOut; 
+        return m_StdOut->GetOStream();
     }
     CNcbiIstream& GetStdOutForRead() 
     { 
-        _ASSERT(!m_OutBlobKey.empty());
-        return m_OutBlob->GetIStream(m_OutBlobKey); 
+        return m_StdOut->GetIStream();
     }
 
-    CNcbiOstream& GetStdErrForWrite() { 
-        if (!m_StdErr) {
-            _ASSERT(m_ErrBlobKey.empty());
-            m_StdErr = &m_ErrBlob->CreateOStream(m_ErrBlobKey);
-        }
-        return *m_StdErr; 
+    CNcbiOstream& GetStdErrForWrite() 
+    { 
+        return m_StdErr->GetOStream();
     }
     CNcbiIstream& GetStdErrForRead() 
     { 
-        _ASSERT(!m_ErrBlobKey.empty());
-        return m_ErrBlob->GetIStream(m_ErrBlobKey); 
+        return m_StdErr->GetIStream();
     }
 
     int GetRetCode() const { return m_RetCode; }
     void SetRetCode(int ret_code) { m_RetCode = ret_code; }
 
-    void Serialize(CNcbiOstream& os) const;
+    void Serialize(CNcbiOstream& os);
     void Deserialize(CNcbiIstream& is);
+
+    void Reset();
 
 private:
     auto_ptr<IBlobStorage> m_OutBlob;
-    string m_OutBlobKey;
-    CNcbiOstream* m_StdOut;
+    string m_OutBlobIdOrData;
+    size_t m_OutBlobSize;
+    mutable auto_ptr<CBlobStreamHelper> m_StdOut;
+
     auto_ptr<IBlobStorage> m_ErrBlob;
-    string m_ErrBlobKey;
-    CNcbiOstream* m_StdErr;
+    string m_ErrBlobIdOrData;
+    size_t m_ErrBlobSize;
+    mutable auto_ptr<CBlobStreamHelper> m_StdErr;
     int m_RetCode;
 
 };
 
-void CRemoteJobResult_Impl::Serialize(CNcbiOstream& os) const
+void CRemoteJobResult_Impl::Serialize(CNcbiOstream& os)
 {
-    m_OutBlob->Reset();
-    s_Write(os, m_OutBlobKey);
-    m_ErrBlob->Reset();
-    s_Write(os, m_ErrBlobKey);
+    m_StdOut->Reset();
+    m_StdErr->Reset();
+    s_Write(os, m_OutBlobIdOrData);
+    s_Write(os, m_ErrBlobIdOrData);
     os << m_RetCode;
+    Reset();
 }
 void CRemoteJobResult_Impl::Deserialize(CNcbiIstream& is)
 {
-    m_OutBlob->Reset();
-    s_Read(is, m_OutBlobKey);
-    m_StdOut = NULL;
-    m_ErrBlob->Reset();
-    s_Read(is, m_ErrBlobKey);
-    m_StdErr = NULL;
+    Reset();
+    s_Read(is, m_OutBlobIdOrData);
+    s_Read(is, m_ErrBlobIdOrData);
     m_RetCode = -1;
     is >> m_RetCode;
+}
+
+void CRemoteJobResult_Impl::Reset()
+{
+    m_OutBlobIdOrData = "";
+    m_OutBlobSize = 0;
+    m_StdOut->Reset();
+
+    m_ErrBlobIdOrData = "";
+    m_ErrBlobSize = 0;
+    m_StdErr->Reset();
+    m_RetCode = -1;
 }
 
 
@@ -411,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/03/15 17:30:12  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 6.1  2006/03/07 17:17:12  didenko
  * Added facility for running external applications throu NetSchedule service
  *

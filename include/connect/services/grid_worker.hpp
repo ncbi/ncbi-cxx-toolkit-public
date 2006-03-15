@@ -471,6 +471,9 @@ public:
     void SetMasterWorkerNodes(const string& hosts);
     void SetAdminHosts(const string& hosts);
     bool IsHostInAdminHostsList(const string& host) const;
+
+    void SetUseEmbeddedInput(bool on_off) { m_UseEmbeddedInput = on_off; }
+    bool IsEmeddedInputUsed() const { return m_UseEmbeddedInput; }
     /// Start jobs execution.
     ///
     void Start();
@@ -522,6 +525,7 @@ private:
     volatile bool                m_OnHold;
     CSemaphore                   m_HoldSem;
     mutable CFastMutex           m_HoldMutex;
+    bool                         m_UseEmbeddedInput;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
@@ -581,6 +585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/03/15 17:30:11  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 1.38  2006/03/07 17:19:37  didenko
  * Perfomance and error handling improvements
  *

@@ -493,6 +493,10 @@ int CGridWorkerApp_Impl::Run()
     string admin_hosts = 
             reg.GetString("server", "admin_hosts", "");
 
+    bool use_embedded_input = 
+        reg.GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+                    CNcbiRegistry::eReturn);
+
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
     string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
     if (NStr::CompareNocase(dbg_mode, "gather")==0) {
@@ -556,6 +560,7 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetMaxThreads(max_threads);
     m_WorkerNode->SetInitThreads(init_threads);
     m_WorkerNode->SetNSTimeout(ns_timeout);
+    m_WorkerNode->SetUseEmbeddedInput(use_embedded_input);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
     CGridGlobals::GetInstance().SetMaxJobsAllowed(max_total_jobs);
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
@@ -653,6 +658,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.17  2006/03/15 17:30:12  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 6.16  2006/03/07 17:20:29  didenko
  * Fixing call to Daemonize function
  *

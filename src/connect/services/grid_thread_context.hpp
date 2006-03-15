@@ -34,6 +34,7 @@
  */
 
 #include <util/request_control.hpp>
+
 #include <connect/services/grid_worker.hpp>
 #include <connect/services/ns_client_wrappers.hpp>
 
@@ -46,7 +47,7 @@ BEGIN_NCBI_SCOPE
 class CGridThreadContext
 {
 public:
-    CGridThreadContext(CGridWorkerNode& node);
+    explicit CGridThreadContext(CGridWorkerNode& node);
 
     CWorkerNodeJobContext& GetJobContext();
 
@@ -71,11 +72,16 @@ public:
    
     IWorkerNodeJob* GetJob();
 private:
+
     CWorkerNodeJobContext*        m_JobContext;
     CRef<IWorkerNodeJob>          m_Job;
     auto_ptr<INSCWrapper>         m_Reporter;
+
     auto_ptr<IBlobStorage>        m_Reader;
+    auto_ptr<CNcbiIstream>        m_RStream;
     auto_ptr<IBlobStorage>        m_Writer;
+    auto_ptr<CNcbiOstream>        m_WStream;
+
     auto_ptr<IBlobStorage>        m_ProgressWriter;
     CRequestRateControl           m_RateControl; 
 
@@ -88,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2006/03/15 17:30:12  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 6.8  2006/02/15 19:48:34  didenko
  * Added new optional config parameter "reuse_job_object" which allows reusing
  * IWorkerNodeJob objects in the jobs' threads instead of creating

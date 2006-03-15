@@ -31,9 +31,13 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/rwstream.hpp>
+
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_globals.hpp>
+#include <connect/services/grid_rw_impl.hpp>
+
 #include "grid_thread_context.hpp"
 
 
@@ -95,9 +99,13 @@ CNcbiIstream& CGridThreadContext::GetIStream(IBlobStorage::ELockMode mode)
 {
     _ASSERT(m_JobContext);
     if (m_Reader.get()) {
-        return m_Reader->GetIStream(m_JobContext->GetJobInput(),
-                                    &m_JobContext->SetJobInputBlobSize(),
-                                    mode);
+        IReader* reader =
+               new CStringOrBlobStorageReader(m_JobContext->GetJobInput(),
+                                              *m_Reader, mode,
+                                              m_JobContext->SetJobInputBlobSize());
+        m_RStream.reset(new CRStream(reader, 0,0, 
+                                     CRWStreambuf::fOwnReader));
+        return *m_RStream;
     }
     NCBI_THROW(CBlobStorageException,
                eReader, "Reader is not set.");
@@ -107,7 +115,14 @@ CNcbiOstream& CGridThreadContext::GetOStream()
 {
     _ASSERT(m_JobContext);
     if (m_Writer.get()) {
-        return m_Writer->CreateOStream(m_JobContext->SetJobOutput());
+        size_t max_data_size =  m_JobContext->GetWorkerNode().IsEmeddedInputUsed() ?
+            kNetScheduleMaxDataSize : 0;
+        IWriter* writer = 
+            new CStringOrBlobStorageWriter(max_data_size,
+                                           *m_Writer,
+                                           m_JobContext->SetJobOutput());
+        m_WStream.reset(new CWStream(writer, 0,0, CRWStreambuf::fOwnWriter));
+        return *m_WStream;
     }
     NCBI_THROW(CBlobStorageException,
                eWriter, "Writer is not set.");
@@ -313,8 +328,9 @@ IWorkerNodeJob* CGridThreadContext::GetJob()
 void CGridThreadContext::CloseStreams()
 {
     _ASSERT(m_JobContext);
-    m_Reader->Reset();
-    m_Writer->Reset();
+    m_RStream.reset(); // Destructor of IReader resets m_Reader also
+    m_WStream.reset(); // Destructor of IWriter resets m_Writer also
+
     m_ProgressWriter->Reset();
     m_RateControl.Reset(1);
 
@@ -331,6 +347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.17  2006/03/15 17:30:12  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 6.16  2006/02/16 15:39:10  didenko
  * If an instance of a job's class could not be create then the worker node
  * should shutdown itself.

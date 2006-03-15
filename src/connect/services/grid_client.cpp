@@ -30,6 +30,9 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/rwstream.hpp>
+
+#include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -39,11 +42,13 @@ BEGIN_NCBI_SCOPE
 CGridClient::CGridClient(CNetScheduleClient& ns_client, 
                          IBlobStorage& storage,
                          ECleanUp cleanup,
-                         EProgressMsg progress_msg)
+                         EProgressMsg progress_msg,
+                         bool use_embedded_input)
 : m_NSClient(ns_client), m_NSStorage(storage)
 {
     m_JobSubmiter.reset(new CGridJobSubmiter(*this,
-                                             progress_msg == eProgressMsgOn));
+                                             progress_msg == eProgressMsgOn,
+                                             use_embedded_input));
     m_JobStatus.reset(new CGridJobStatus(*this, 
                                          cleanup == eAutomaticCleanup,
                                          progress_msg == eProgressMsgOn));
@@ -69,13 +74,17 @@ void CGridClient::CancelJob(const string& job_key)
 }
 void CGridClient::RemoveDataBlob(const string& data_key)
 {
-    m_NSStorage.DeleteBlob(data_key);
+    if (m_NSStorage.IsKeyValid(data_key))
+        m_NSStorage.DeleteBlob(data_key);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 //
-CGridJobSubmiter::CGridJobSubmiter(CGridClient& grid_client, bool use_progress)
-    : m_GridClient(grid_client), m_UseProgress(use_progress)
+CGridJobSubmiter::CGridJobSubmiter(CGridClient& grid_client, 
+                                   bool use_progress,
+                                   bool use_embedded_input)
+    : m_GridClient(grid_client), m_UseProgress(use_progress), 
+      m_UseEmbeddedInput(use_embedded_input)
 {
 }
 
@@ -88,12 +97,21 @@ void CGridJobSubmiter::SetJobInput(const string& input)
 }
 CNcbiOstream& CGridJobSubmiter::GetOStream()
 {
-    return m_GridClient.GetStorage().CreateOStream(m_Input);
+    size_t max_data_size = m_UseEmbeddedInput ? kNetScheduleMaxDataSize : 0;
+    IWriter* writer = 
+        new CStringOrBlobStorageWriter(max_data_size,
+                                       m_GridClient.GetStorage(),
+                                       m_Input);
+
+    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter));
+    return *m_WStream;
+    //    return m_GridClient.GetStorage().CreateOStream(m_Input);
 }
 
 string CGridJobSubmiter::Submit()
 {
-    m_GridClient.GetStorage().Reset();
+    m_WStream.reset();
+
     string progress_msg_key;
     if (m_UseProgress)
         progress_msg_key = m_GridClient.GetStorage().CreateEmptyBlob();
@@ -139,8 +157,12 @@ CNetScheduleClient::EJobStatus CGridJobStatus::GetStatus()
 
 CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
 {
-    return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize,
-                                                mode);
+    IReader* reader = new CStringOrBlobStorageReader(m_Output,
+                                                     m_GridClient.GetStorage(),
+                                                     mode, m_BlobSize);
+    m_RStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader));
+    return *m_RStream;
+    //    return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize, mode);
 }
 
 string CGridJobStatus::GetProgressMessage()
@@ -156,12 +178,13 @@ void CGridJobStatus::x_SetJobKey(const string& job_key)
         NStr::SplitInTwo(job_key, "|", m_JobKey, m_ProgressMsgKey);
     else 
         m_JobKey = job_key;
+    m_RStream.reset();
+
     m_Output.erase();
     m_ErrMsg.erase();
     m_Input.erase();
     m_RetCode = 0;
     m_BlobSize = 0;
-    m_GridClient.GetStorage().Reset();
 }
 
 
@@ -170,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/15 17:30:12  didenko
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ *
  * Revision 1.6  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
