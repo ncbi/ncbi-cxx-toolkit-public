@@ -40,6 +40,7 @@ Contents: Use RPS blast to find domain hits
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/cobalt/cobalt.hpp>
+#include <algorithm>
 
 /// @file rps.cpp
 /// Use RPS blast to find domain hits
@@ -665,6 +666,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.12  2006/03/15 15:23:36  ucko
+  +<algorithm> for lower_bound().
+
   Revision 1.11  2006/03/10 16:54:12  papadopo
   make RPS residue frequencies optional
 
