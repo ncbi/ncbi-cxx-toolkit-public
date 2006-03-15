@@ -37,6 +37,8 @@
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
 
+#include <connect/services/blob_storage_netcache.hpp>
+
 USING_NCBI_SCOPE;
 
 class CGridClientSampleApp : public CGridClientApp
@@ -60,6 +62,9 @@ public:
 
 void CGridClientSampleApp::Init(void)
 {
+    // hack!!! It needs to be removed when we know how to deal with unresolved
+    // symbols in plugins.
+    BlobStorage_RegisterDriver_NetCache(); 
     // Don't forget to call it
     CGridClientApp::Init();
 
@@ -75,6 +80,11 @@ void CGridClientSampleApp::Init(void)
                              "Size of the test vector",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("jobs", 
+                             "jobs",
+                             "Number of jobs to submit",
+                             CArgDescriptions::eInteger);
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -88,73 +98,95 @@ int CGridClientSampleApp::Run(void)
         vsize = args["vsize"].AsInteger();
     }
 
-    NcbiCout << "Submit a job..." << NcbiEndl;
-
-    // Get a job submiter
-    CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
-
-    // Get an ouptut stream
-    CNcbiOstream& os = job_submiter.GetOStream();
-
-    // Send jobs input data
-    os << "doubles ";  // output_type - just a list of doubels
-    os << vsize << ' ';
-    srand( (unsigned)time( NULL ) );
-    for (int j = 0; j < vsize; ++j) {
-    double d = rand()*0.2;
-        os << d << ' ';
+    int jobs_number = 10;
+    if (args["jobs"]) {
+        jobs_number = args["jobs"].AsInteger();
     }
 
-    // Submit a job
-    string job_key = job_submiter.Submit();
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    vector<string> job_keys;
 
-    NcbiCout << "Waiting for job " << job_key << "..." << NcbiEndl;
+    NcbiCout << "Submit a job..." << jobs_number << NcbiEndl;
+
+    for (int i = 0; i < jobs_number; ++i) {
+        // Get a job submiter
+        CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
+
+        // Get an ouptut stream
+        CNcbiOstream& os = job_submiter.GetOStream();
+
+        // Send jobs input data
+        os << "doubles ";  // output_type - just a list of doubels
+        os << vsize << ' ';
+        srand( (unsigned)time( NULL ) );
+        for (int j = 0; j < vsize; ++j) {
+            double d = rand()*0.2;
+            os << d << ' ';
+        }
+        
+        // Submit a job
+        job_keys.push_back(job_submiter.Submit());
+    }
+    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+     
+    NcbiCout << "Waiting for job " << job_keys.size() << "..." << NcbiEndl;
 
     unsigned int cnt = 0;
     while (1) {
         SleepMilliSec(100);
 
-        // Get a job status
-        CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
-        CNetScheduleClient::EJobStatus status;
-        status = job_status.GetStatus();
+        vector<string> done_jobs;
+        for(vector<string>::const_iterator it = job_keys.begin();
+            it != job_keys.end(); ++it) {
+            // Get a job status
+            CGridJobStatus& job_status = GetGridClient().GetJobStatus(*it);
+            CNetScheduleClient::EJobStatus status;
+            status = job_status.GetStatus();
 
-        // A job is done here
-        if (status == CNetScheduleClient::eDone) {
-            // Get an input stream
-            CNcbiIstream& is = job_status.GetIStream();
-            int count;
-
-            // Get the result
-            is >> count;
-            vector<double> resvec;
-            for (int i = 0; i < count; ++i) {
-                if (!is.good()) {
-                    LOG_POST( "Input stream error. Index : " << i );
-                    break;
+            // A job is done here
+            if (status == CNetScheduleClient::eDone) {
+                // Get an input stream
+                CNcbiIstream& is = job_status.GetIStream();
+                int count;
+                
+                // Get the result
+                is >> count;
+                vector<double> resvec;
+                for (int i = 0; i < count; ++i) {
+                    if (!is.good()) {
+                        LOG_POST( "Input stream error. Index : " << i );
+                        break;
+                    }
+                    double d;
+                    is >> d;
+                    resvec.push_back(d);
                 }
-                double d;
-                is >> d;
-                resvec.push_back(d);
+                LOG_POST( "Job " << *it << " is done." );
+                done_jobs.push_back(*it);
+                break;
             }
-            LOG_POST( "Job " << job_key << " is done." );
-            break;
-        }
+            
+            // A job has failed
+            if (status == CNetScheduleClient::eFailed) {
+                ERR_POST( "Job " << *it << " failed : " 
+                          << job_status.GetErrorMessage() );
+                done_jobs.push_back(*it);
+                break;
+            }
 
-        // A job has failed
-        if (status == CNetScheduleClient::eFailed) {
-            ERR_POST( "Job " << job_key << " failed : " 
-                             << job_status.GetErrorMessage() );
-            break;
+            // A job has been canceled
+            if (status == CNetScheduleClient::eCanceled) {
+                LOG_POST( "Job " << *it << " is canceled.");
+                done_jobs.push_back(*it);
+                break;
+            }
+        }            
+        for(vector<string>::const_iterator i = done_jobs.begin();
+            i != done_jobs.end(); ++i) {
+            job_keys.erase(remove(job_keys.begin(),job_keys.end(), *i),job_keys.end());
         }
-
-        // A job has been canceled
-        if (status == CNetScheduleClient::eCanceled) {
-            LOG_POST( "Job " << job_key << " is canceled.");
+        if (job_keys.empty())
             break;
-        }
-
+         
         // A job is still running
         if (++cnt % 1000 == 0) {
             NcbiCout << "Still waiting..." << NcbiEndl;
@@ -173,6 +205,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/15 17:39:33  didenko
+ * Added jobs parameter
+ *
  * Revision 1.7  2005/04/18 13:36:15  didenko
  * Changed program version
  *
