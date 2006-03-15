@@ -33,6 +33,7 @@
 
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
@@ -73,7 +74,7 @@ private:
     mutable CFastMutex m_Mutex;
     vector<CTLibContext*> registry_;
     
-    friend class auto_ptr<CTLibContextRegistry>;
+    friend class CSafeStaticPtr<CTLibContextRegistry>;
 };
 
 
@@ -99,7 +100,7 @@ CTLibContextRegistry::~CTLibContextRegistry(void)
 CTLibContextRegistry& 
 CTLibContextRegistry::Instance(void)
 {
-    static auto_ptr<CTLibContextRegistry> instance(new CTLibContextRegistry);
+    static CSafeStaticPtr<CTLibContextRegistry> instance;
     
     return *instance;
 }
@@ -352,29 +353,35 @@ CTLibContext::Close(void)
 {
     if ( CTLIB_GetContext() ) {
         CFastMutexGuard mg(m_Mtx);
-        
-        CloseAllConn();
-        
-        CS_INT       outlen;
-        CPointerPot* p_pot = 0;
+        if (CTLIB_GetContext()) {
+            CloseAllConn();
+            
+            CS_INT       outlen;
+            CPointerPot* p_pot = 0;
 
-        if (cs_config(CTLIB_GetContext(), CS_GET, CS_USERDATA,
-                      (void*) &p_pot, (CS_INT) sizeof(p_pot), &outlen) == CS_SUCCEED
-            &&  p_pot != 0) {
-            p_pot->Remove(this);
-            if (p_pot->NofItems() == 0) { // this is a last driver for this context
-                delete p_pot;
+            if (cs_config(CTLIB_GetContext(), 
+                          CS_GET, 
+                          CS_USERDATA,
+                          (void*) &p_pot, 
+                          (CS_INT) sizeof(p_pot), 
+                          &outlen) == CS_SUCCEED
+                &&  p_pot != 0) {
+                p_pot->Remove(this);
+                if (p_pot->NofItems() == 0) { 
+                    // this is a last driver for this context
+                    delete p_pot;
 #if !defined(NCBI_OS_MSWIN)
-                if (ct_exit(CTLIB_GetContext(), CS_UNUSED) != CS_SUCCEED) {
-                    ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
-                }
-                cs_ctx_drop(CTLIB_GetContext());
+                    if (ct_exit(CTLIB_GetContext(), CS_UNUSED) != CS_SUCCEED) {
+                        ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
+                    }
+                    cs_ctx_drop(CTLIB_GetContext());
 #endif
+                }
             }
+            
+            m_Context = NULL;
+            x_RemoveFromRegistry();
         }
-        
-        m_Context = NULL;
-        x_RemoveFromRegistry();
     }
 }
 
@@ -1219,6 +1226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/03/15 19:57:09  ssikorsk
+ * Replaced "static auto_ptr" with "static CSafeStaticPtr".
+ *
  * Revision 1.65  2006/03/09 19:03:36  ssikorsk
  * Utilized method I_DriverContext:: CloseAllConn.
  *

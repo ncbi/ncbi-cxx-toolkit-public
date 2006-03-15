@@ -34,6 +34,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
@@ -69,7 +70,7 @@ private:
     mutable CFastMutex m_Mutex;
     vector<CODBCContext*> registry_;
     
-    friend class auto_ptr<CODBCContextRegistry>;
+    friend class CSafeStaticPtr<CODBCContextRegistry>;
 };
 
 
@@ -95,7 +96,7 @@ CODBCContextRegistry::~CODBCContextRegistry(void)
 CODBCContextRegistry& 
 CODBCContextRegistry::Instance(void)
 {
-    static auto_ptr<CODBCContextRegistry> instance(new CODBCContextRegistry);
+    static CSafeStaticPtr<CODBCContextRegistry> instance;
     
     return *instance;
 }
@@ -284,16 +285,12 @@ CODBCContext::x_RemoveFromRegistry(void)
 void 
 CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 {
-    CFastMutexGuard mg(m_Mtx);
-    
     m_Registry = registry;
 }
 
 
 bool CODBCContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    CFastMutexGuard mg(m_Mtx);
-    
     m_LoginTimeout = (SQLULEN)nof_secs;
     return true;
 }
@@ -396,27 +393,28 @@ CODBCContext::Close(void)
 {
     if ( m_Context ) {
         CFastMutexGuard mg(m_Mtx);
+        if (m_Context) {
+            // close all connections first
+            CloseAllConn();
 
-        // close all connections first
-        CloseAllConn();
+            int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+            switch( rc ) {
+            case SQL_INVALID_HANDLE:
+            case SQL_ERROR:
+                m_Reporter.ReportErrors();
+                break;
+            case SQL_SUCCESS_WITH_INFO:
+                m_Reporter.ReportErrors();
+            case SQL_SUCCESS:
+                break;
+            default:
+                m_Reporter.ReportErrors();
+                break;
+            };
 
-        int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
-        switch( rc ) {
-        case SQL_INVALID_HANDLE:
-        case SQL_ERROR:
-            m_Reporter.ReportErrors();
-            break;
-        case SQL_SUCCESS_WITH_INFO:
-            m_Reporter.ReportErrors();
-        case SQL_SUCCESS:
-            break;
-        default:
-            m_Reporter.ReportErrors();
-            break;
-        };
-
-        m_Context = NULL;
-        x_RemoveFromRegistry();
+            m_Context = NULL;
+            x_RemoveFromRegistry();
+        }
     }
 }
 
@@ -707,6 +705,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/03/15 19:56:37  ssikorsk
+ * Replaced "static auto_ptr" with "static CSafeStaticPtr".
+ *
  * Revision 1.44  2006/03/09 20:37:25  ssikorsk
  * Utilized method I_DriverContext:: CloseAllConn.
  *
