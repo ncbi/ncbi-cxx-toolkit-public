@@ -91,6 +91,29 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 	                      BlastInitHitList* ungapped_hsps, 
                               BlastUngappedStats* ungapped_stats);
 
+/** Scan a subject sequence for word hits and trigger two-hit extensions
+ * (specialized for RSP blast).
+ *
+ * @param subject the subject sequence [in]
+ * @param query the query sequence [in]
+ * @param lookup_wrap the lookup table [in]
+ * @param diag the diagonal array structure [in/out]
+ * @param matrix the substitution matrix [in]
+ * @param cutoff cutoff score for saving ungapped HSPs [in]
+ * @param dropoff x dropoff [in]
+ * @param ungapped_hsps hsps resulting from the ungapped extension [out]
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
+ */
+Int2 BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
+	 		       const BLAST_SequenceBlk* query,
+			       const LookupTableWrap* lookup_wrap,
+			       BLAST_DiagTable* diag,
+			       Int4 ** matrix,
+			       Int4 cutoff,
+			       Int4 dropoff,
+	                       BlastInitHitList* ungapped_hsps, 
+                               BlastUngappedStats* ungapped_stats);
+
 /** Scan a subject sequence for word hits and trigger one-hit extensions.
  *
  * @param subject the subject sequence
@@ -116,6 +139,29 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      Int4 array_size,
 	            BlastInitHitList* ungapped_hsps, 
                BlastUngappedStats* ungapped_stats);
+
+/** Scan a subject sequence for word hits and trigger one-hit extensions
+ * (spcialized for RPS blast).
+ *
+ * @param subject the subject sequence
+ * @param query the query sequence
+ * @param lookup_wrap the lookup table
+ * @param diag the diagonal array structure
+ * @param matrix the substitution matrix [in]
+ * @param cutoff cutoff score for saving ungapped HSPs [in]
+ * @param dropoff x dropoff [in]
+ * @param ungapped_hsps hsps resulting from the ungapped extensions [out]
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
+ */
+Int2 BlastRPSWordFinder_OneHit(const BLAST_SequenceBlk* subject,
+                               const BLAST_SequenceBlk* query,
+                               const LookupTableWrap* lookup_wrap,
+                               BLAST_DiagTable* diag,
+                               Int4 ** matrix,
+                               Int4 cutoff,
+                               Int4 dropoff,
+                               BlastInitHitList* ungapped_hsps, 
+                               BlastUngappedStats* ungapped_stats);
 
 /**
  * Beginning at s_off and q_off in the subject and query, respectively,

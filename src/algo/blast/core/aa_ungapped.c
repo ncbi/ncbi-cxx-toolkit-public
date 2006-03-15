@@ -53,30 +53,194 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
 
   if (ewp->diag_table->multiple_hits)
     {
-      status = BlastAaWordFinder_TwoHit(subject, query,
-                                        lut_wrap, ewp->diag_table,
-                                        matrix,
-                                        word_params->cutoff_score,
-                                        word_params->x_dropoff,
-                                        offset_pairs,
-                                        offset_array_size,
-                                        init_hitlist, ungapped_stats);
+      if (lut_wrap->lut_type == RPS_LOOKUP_TABLE)
+        {
+          status = BlastRPSWordFinder_TwoHit(subject, query,
+                                             lut_wrap, ewp->diag_table,
+                                             matrix,
+                                             word_params->cutoff_score,
+                                             word_params->x_dropoff,
+                                             init_hitlist, ungapped_stats);
+        }
+      else
+        {
+          status = BlastAaWordFinder_TwoHit(subject, query,
+                                            lut_wrap, ewp->diag_table,
+                                            matrix,
+                                            word_params->cutoff_score,
+                                            word_params->x_dropoff,
+                                            offset_pairs,
+                                            offset_array_size,
+                                            init_hitlist, ungapped_stats);
+        }
     }
   else
     {
-      status = BlastAaWordFinder_OneHit(subject, query,
-                                        lut_wrap, ewp->diag_table,
-                                        matrix,
-                                        word_params->cutoff_score,
-                                        word_params->x_dropoff,
-                                        offset_pairs,
-                                        offset_array_size,
-                                        init_hitlist, ungapped_stats);
+      if (lut_wrap->lut_type == RPS_LOOKUP_TABLE)
+        {
+          status = BlastRPSWordFinder_OneHit(subject, query,
+                                             lut_wrap, ewp->diag_table,
+                                             matrix,
+                                             word_params->cutoff_score,
+                                             word_params->x_dropoff,
+                                             init_hitlist, ungapped_stats);
+        }
+      else
+        {
+          status = BlastAaWordFinder_OneHit(subject, query,
+                                            lut_wrap, ewp->diag_table,
+                                            matrix,
+                                            word_params->cutoff_score,
+                                            word_params->x_dropoff,
+                                            offset_pairs,
+                                            offset_array_size,
+                                            init_hitlist, ungapped_stats);
+        }
     }
 
   Blast_InitHitListSortByScore(init_hitlist);
 
   return status;
+}
+
+Int2 
+BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
+                          const BLAST_SequenceBlk* query,
+                          const LookupTableWrap* lookup_wrap,
+                          BLAST_DiagTable* diag,
+                          Int4 ** matrix,
+                          Int4 cutoff,
+                          Int4 dropoff,
+                          BlastInitHitList* ungapped_hsps, 
+                          BlastUngappedStats* ungapped_stats)
+{
+   BlastRPSLookupTable* lookup;
+   Int4 wordsize;
+   Int4 i, j;
+   Int4 hits=0;
+   Int4 totalhits=0;
+   Int4 first_offset = 0;
+   Int4 last_offset;
+   Int4 score;
+   Int4 hsp_q, hsp_s, hsp_len;
+   Int4 window;
+   Int4 last_hit, s_last_off, diff;
+   Int4 diag_offset, diag_coord, diag_mask;
+   DiagStruct* diag_array;
+   Boolean right_extend;
+   Int4 hits_extended = 0;
+
+   ASSERT(diag != NULL);
+
+   diag_offset = diag->offset;
+   diag_array = diag->hit_level_array;
+
+   ASSERT(diag_array);
+
+   diag_mask = diag->diag_mask;
+   window = diag->window;
+
+   lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
+   wordsize = lookup->wordsize;
+   last_offset  = subject->length - wordsize;
+
+   while(first_offset <= last_offset) {
+      /* scan the subject sequence for hits */
+      hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset);
+
+      totalhits += hits;
+      /* for each region of the concatenated database */
+      for (i = 0; i < lookup->num_buckets; ++i)
+      {
+         RPSBucket *curr_bucket = lookup->bucket_array + i;
+         BlastOffsetPair *offset_pairs = curr_bucket->offset_pairs;
+         hits = curr_bucket->num_filled;
+
+         /* handle each hit in the neighborhood. Because the
+            neighborhood is small and there should be many hits
+            there, proceeding one bucket at a time provides
+            maximum reuse of data structures. A side benefit is
+            that ungapped extensions also cluster together in
+            the concatenated database, reusing PSSM data as well. */
+         for (j = 0; j < hits; ++j)
+         {
+            Uint4 query_offset = offset_pairs[j].qs_offsets.q_off;
+            Uint4 subject_offset = offset_pairs[j].qs_offsets.s_off;
+            
+            /* calculate the diagonal associated with this query-subject
+               pair, and find the distance to the last hit on this diagonal */
+   
+            diag_coord = 
+               (query_offset  - subject_offset) & diag_mask;
+            
+            last_hit = diag_array[diag_coord].last_hit - diag_offset;
+            diff = subject_offset - last_hit;
+   
+            if (diff >= window) {
+               /* We are beyond the window for this diagonal; start a new hit */
+               diag_array[diag_coord].last_hit = subject_offset + diag_offset;
+            }
+            else {
+               /* If the difference is negative, or is less than the 
+                  wordsize (i.e. last hit and this hit overlap), give up */
+   
+               if (diff < wordsize)
+                  continue;
+   
+               /* If a previous extension has not already 
+                  covered this portion of the query and subject 
+                  sequences, do the ungapped extension */
+   
+               right_extend = TRUE;
+               if ((Int4)(subject_offset + diag_offset) >= 
+                   diag_array[diag_coord].diag_level) {
+   
+                  /* Extend this pair of hits. The extension to the left must 
+                     reach the end of the first word in order for extension 
+                     to the right to proceed. */
+                  hsp_len = 0;
+                  score = BlastAaExtendTwoHit(matrix, subject, query,
+                                          last_hit + wordsize, 
+                                          subject_offset, query_offset, 
+                                          dropoff, &hsp_q, &hsp_s, 
+                                          &hsp_len, TRUE,
+                                          wordsize, &right_extend, &s_last_off);
+   
+                  ++hits_extended;
+   
+                  /* if the hsp meets the score threshold, report it */
+                  if (score >= cutoff)
+                     BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
+                           query_offset, subject_offset, hsp_len, score);
+   
+                  /* whether or not the score was high enough, remember
+                     the rightmost subject word offset examined. Future hits 
+                     must lie at least one letter to the right of this point */
+                  diag_array[diag_coord].diag_level = 
+                           s_last_off - (wordsize - 1) + diag_offset;
+               }
+   
+               /* If an extension to the right happened (or no extension
+                  at all), reset the last hit so that future hits to this 
+                  diagonal must start over. Otherwise make the present hit
+                  into the previous hit for this diagonal */
+   
+               if (right_extend)
+                  diag_array[diag_coord].last_hit = 0;
+               else
+                  diag_array[diag_coord].last_hit = 
+                           subject_offset + diag_offset;
+            } 
+         }/* end for - done with this batch of hits */
+      } /* end for - done with this bucket, call scansubject again */
+   } /* end while - done with the entire sequence. */
+ 
+   /* increment the offset in the diagonal array */
+   BlastDiagUpdate(diag, subject->length + window); 
+ 
+   Blast_UngappedStatsUpdate(ungapped_stats, totalhits, hits_extended, 
+                             ungapped_hsps->total);
+   return 0;
 }
 
 Int2 
@@ -93,7 +257,6 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                          BlastUngappedStats* ungapped_stats)
 {
    BlastLookupTable* lookup=NULL;
-   BlastRPSLookupTable* rps_lookup=NULL;
    Boolean use_pssm;
    Int4 wordsize;
    Int4 i;
@@ -109,7 +272,6 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    DiagStruct* diag_array;
    Boolean right_extend;
    Int4 hits_extended = 0;
-   Uint4 subject_offset, query_offset;
 
    ASSERT(diag != NULL);
 
@@ -121,32 +283,22 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    diag_mask = diag->diag_mask;
    window = diag->window;
 
-   if (lookup_wrap->lut_type == RPS_LOOKUP_TABLE) {
-      rps_lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
-      wordsize = rps_lookup->wordsize;
-   }
-   else {
-      lookup = (BlastLookupTable *)lookup_wrap->lut;
-      wordsize = lookup->word_length;
-   }
+   lookup = (BlastLookupTable *)lookup_wrap->lut;
+   wordsize = lookup->word_length;
    last_offset  = subject->length - wordsize;
-   use_pssm = (rps_lookup != NULL) || (lookup->use_pssm);
+   use_pssm = lookup->use_pssm;
 
    while(first_offset <= last_offset) {
       /* scan the subject sequence for hits */
-      if (rps_lookup)
-         hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset, 
-                                    offset_pairs, array_size);
-      else
-         hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset, 
-                                   offset_pairs, array_size);
+      hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset, 
+                                offset_pairs, array_size);
 
       totalhits += hits;
       /* for each hit, */
       for (i = 0; i < hits; ++i)
       {
-         query_offset = offset_pairs[i].qs_offsets.q_off;
-         subject_offset = offset_pairs[i].qs_offsets.s_off;
+         Uint4 query_offset = offset_pairs[i].qs_offsets.q_off;
+         Uint4 subject_offset = offset_pairs[i].qs_offsets.s_off;
          
          /* calculate the diagonal associated with this query-subject
             pair, and find the distance to the last hit on this diagonal */
@@ -223,6 +375,95 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    return 0;
 }
 
+Int2 BlastRPSWordFinder_OneHit(const BLAST_SequenceBlk* subject,
+                               const BLAST_SequenceBlk* query,
+                               const LookupTableWrap* lookup_wrap,
+                               BLAST_DiagTable* diag,
+                               Int4 ** matrix,
+                               Int4 cutoff,
+                               Int4 dropoff,
+                               BlastInitHitList* ungapped_hsps, 
+                               BlastUngappedStats* ungapped_stats)
+{
+   BlastRPSLookupTable* lookup=NULL;
+   Int4 wordsize;
+   Int4 hits=0;
+   Int4 totalhits=0;
+   Int4 first_offset = 0;
+   Int4 last_offset;
+   Int4 hsp_q, hsp_s, hsp_len;
+   Int4 s_last_off;
+   Int4 i, j;
+   Int4 score;
+   Int4 diag_offset, diag_coord, diag_mask, diff;
+   DiagStruct* diag_array;
+   Int4 hits_extended = 0;
+
+   ASSERT(diag != NULL);
+   
+   diag_offset = diag->offset;
+   diag_array = diag->hit_level_array;
+   ASSERT(diag_array);
+
+   diag_mask = diag->diag_mask;
+   
+   lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
+   wordsize = lookup->wordsize;
+   last_offset  = subject->length - wordsize;
+
+   while(first_offset <= last_offset)
+   {
+      /* scan the subject sequence for hits */
+      hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset);
+
+      totalhits += hits;
+      for (i = 0; i < lookup->num_buckets; i++) {
+         RPSBucket *curr_bucket = lookup->bucket_array + i;
+         BlastOffsetPair* offset_pairs = curr_bucket->offset_pairs;
+         hits = curr_bucket->num_filled;
+
+         /* handle each hit in the neighborhood. Because the
+            neighborhood is small and there should be many hits
+            there, proceeding one bucket at a time provides
+            maximum reuse of data structures. A side benefit is
+            that ungapped extensions also cluster together in
+            the concatenated database, reusing PSSM data as well. */
+         for (j = 0; j < hits; ++j) {
+            Uint4 query_offset = offset_pairs[j].qs_offsets.q_off;
+            Uint4 subject_offset = offset_pairs[j].qs_offsets.s_off;
+            diag_coord = 
+               (subject_offset  - query_offset) & diag_mask;
+            diff = subject_offset - 
+               (diag_array[diag_coord].diag_level - diag_offset);
+   
+            /* do an extension, but only if we have not already extended
+               this far */
+            if (diff >= 0) {
+               ++hits_extended;
+               score=BlastAaExtendOneHit(matrix, subject, query,
+                        subject_offset, query_offset, dropoff,
+                        &hsp_q, &hsp_s, &hsp_len, wordsize, TRUE, &s_last_off);
+   
+               /* if the hsp meets the score threshold, report it */
+               if (score >= cutoff) {
+                  BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, 
+                     query_offset, subject_offset, hsp_len, score);
+               }
+               diag_array[diag_coord].diag_level = 
+                     s_last_off - (wordsize - 1) + diag_offset;
+            }
+         } /* end for (one bucket) */
+      } /* end for (all buckets) */
+   } /* end while */
+
+   /* increment the offset in the diagonal array (no windows used) */
+   BlastDiagUpdate(diag, subject->length); 
+ 
+   Blast_UngappedStatsUpdate(ungapped_stats, totalhits, hits_extended, 
+                             ungapped_hsps->total);
+   return 0;
+}
+
 Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      const BLAST_SequenceBlk* query,
 			      const LookupTableWrap* lookup_wrap,
@@ -236,7 +477,6 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
                BlastUngappedStats* ungapped_stats)
 {
    BlastLookupTable* lookup=NULL;
-   BlastRPSLookupTable* rps_lookup=NULL;
    Boolean use_pssm;
    Int4 wordsize;
    Int4 hits=0;
@@ -259,32 +499,22 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 
    diag_mask = diag->diag_mask;
    
-   if (lookup_wrap->lut_type == RPS_LOOKUP_TABLE) {
-      rps_lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
-      wordsize = rps_lookup->wordsize;
-   }
-   else {
-      lookup = (BlastLookupTable *)lookup_wrap->lut;
-      wordsize = lookup->word_length;
-   }
+   lookup = (BlastLookupTable *)lookup_wrap->lut;
+   wordsize = lookup->word_length;
    last_offset  = subject->length - wordsize;
-   use_pssm = (rps_lookup != NULL) || (lookup->use_pssm);
+   use_pssm = lookup->use_pssm;
 
    while(first_offset <= last_offset)
    {
       /* scan the subject sequence for hits */
-      if (rps_lookup)
-         hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset, 
-                                    offset_pairs, array_size);
-      else
-         hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset,
+      hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset,
 				   offset_pairs, array_size);
 
       totalhits += hits;
       /* for each hit, */
       for (i = 0; i < hits; ++i) {
-         Uint4 subject_offset = offset_pairs[i].qs_offsets.s_off;
          Uint4 query_offset = offset_pairs[i].qs_offsets.q_off;
+         Uint4 subject_offset = offset_pairs[i].qs_offsets.s_off;
          diag_coord = 
             (subject_offset  - query_offset) & diag_mask;
          diff = subject_offset - 
