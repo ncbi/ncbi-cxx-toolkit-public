@@ -156,7 +156,7 @@ ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
         if (bytes_read) *bytes_read = 0;
         return eRW_Eof;
     }
-    size_t bytes_rest = distance(m_CurPos, m_Data.end());
+    size_t bytes_rest = m_Data.end() - m_CurPos;
     if (count > bytes_rest)
         count = bytes_rest;
     memcpy(buf, &*m_CurPos, count);
@@ -174,7 +174,7 @@ ERW_Result CStringOrBlobStorageReader::PendingCount(size_t* count)
             *count = 0;
     }
     else 
-        *count = distance(m_CurPos, m_Data.end());
+        *count = m_Data.end() - m_CurPos;
     return eRW_Success;
 }
 
@@ -184,6 +184,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/03/15 22:04:54  ucko
+ * Replace call to distance(), which WorkShop's STL doesn't properly
+ * support, with simple iterator subtraction, which random-access
+ * iterators (such as string's, here) should always support.
+ *
  * Revision 6.1  2006/03/15 17:22:25  didenko
  * Added CStringOrBlobStorage{Reader,Writer} classes
  *
