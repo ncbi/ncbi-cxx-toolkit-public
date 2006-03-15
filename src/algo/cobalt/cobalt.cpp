@@ -85,9 +85,9 @@ CMultiAligner::~CMultiAligner()
 void 
 CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
 {
-    if (queries.empty()) {
+    if (queries.size() < 2) {
         NCBI_THROW(CMultiAlignerException, eInvalidInput,
-                   "List of input sequences must not be empty");
+                   "Aligner requires at least two input sequences");
     }
 
     Reset();
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.10  2006/03/15 15:51:35  papadopo
+  check number of input sequences
+
   Revision 1.9  2006/03/10 19:28:56  papadopo
   perform sanity checks on user-specified constraints
 
