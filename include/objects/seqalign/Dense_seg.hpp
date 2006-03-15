@@ -106,6 +106,9 @@ public:
     /// alignment
     void Compact();
 
+    /// Trim leading/training gaps if possible
+    void TrimEndGaps();
+
     /// Remap row coords according to a given seq-loc
     /// Optionally, ignore the strand of the loc
     void RemapToLoc(TDim row, const CSeq_loc& loc,
@@ -212,6 +215,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/03/15 15:49:03  dicuccio
+* Added TrimEndGaps()
+*
 * Revision 1.15  2005/11/22 18:47:37  dicuccio
 * Restore default parameter for Assign()
 *

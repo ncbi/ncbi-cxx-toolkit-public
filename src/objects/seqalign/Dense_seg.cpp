@@ -258,6 +258,82 @@ void CDense_seg::Validate(bool full_test) const
 }
 
 
+void CDense_seg::TrimEndGaps()
+{
+    _ASSERT(GetNumseg() == GetLens().size());
+    _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
+    _ASSERT(!IsSetStrands()  ||  GetNumseg() * GetDim() == GetStrands().size());
+    _ASSERT(GetDim() == GetIds().size());
+
+    list<TSignedSeqRange> delete_ranges;
+    int i;
+    int j;
+
+    /// leading gap segments first
+    for (i = 0;  i < GetNumseg();  ++i) {
+        int count_gaps = 0;
+        for (j = 0;  j < GetDim();  ++j) {
+            TSignedSeqPos this_start = GetStarts()[i * GetDim() + j];
+            if (this_start == -1) {
+                ++count_gaps;
+            }
+        }
+
+        if (GetDim() - count_gaps > 1) {
+            /// no can do
+            break;
+        }
+    }
+
+    delete_ranges.push_back(TSignedSeqRange(0, i));
+
+    /// trailing gap segments next
+    for (i = GetNumseg() - 1;  i >= 0;  --i) {
+        int count_gaps = 0;
+        for (j = 0;  j < GetDim();  ++j) {
+            TSignedSeqPos this_start = GetStarts()[i * GetDim() + j];
+            if (this_start == -1) {
+                ++count_gaps;
+            }
+        }
+
+        if (GetDim() - count_gaps > 1) {
+            /// no can do
+            break;
+        }
+    }
+
+    delete_ranges.push_back(TSignedSeqRange(i + 1, GetNumseg()));
+
+    list<TSignedSeqRange>::reverse_iterator iter = delete_ranges.rbegin();
+    list<TSignedSeqRange>::reverse_iterator end  = delete_ranges.rend();
+    for ( ;  iter != end;  ++iter) {
+        TSignedSeqRange r = *iter;
+        if (r.GetLength() == 0) {
+            continue;
+        }
+
+        /// we can trim the first i segments
+        if (IsSetStrands()) {
+            SetStrands().erase(SetStrands().begin() + r.GetFrom() * GetDim(),
+                               SetStrands().begin() + r.GetTo()   * GetDim());
+        }
+        SetStarts().erase(SetStarts().begin() + r.GetFrom() * GetDim(),
+                          SetStarts().begin() + r.GetTo()   * GetDim());
+        SetLens().erase(SetLens().begin() + r.GetFrom(),
+                        SetLens().begin() + r.GetTo());
+    }
+
+    /// fix our number of segments
+    SetNumseg(SetLens().size());
+
+    _ASSERT(GetNumseg() == GetLens().size());
+    _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
+    _ASSERT(!IsSetStrands()  ||  GetNumseg() * GetDim() == GetStrands().size());
+    _ASSERT(GetDim() == GetIds().size());
+}
+
+
 void CDense_seg::Compact()
 {
     _ASSERT(GetNumseg() == GetLens().size());
@@ -1043,6 +1119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2006/03/15 15:49:04  dicuccio
+* Added TrimEndGaps()
+*
 * Revision 1.24  2005/11/22 18:15:06  dicuccio
 * Added Assign()
 *
