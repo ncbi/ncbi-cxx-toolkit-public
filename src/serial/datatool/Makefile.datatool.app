@@ -21,5 +21,5 @@ APP_OR_NULL = app
 CHECK_CMD = datatool.sh
 CHECK_CMD = datatool.sh /am/ncbiapdata/test_data/objects
 CHECK_CMD = datatool_xml.sh
-CHECK_REQUIRES = unix
+CHECK_REQUIRES = unix -Cygwin
 CHECK_TIMEOUT = 600
