@@ -43,6 +43,8 @@
 #include <objects/general/Object_id.hpp>
 #include <serial/iterator.hpp>
 
+#include <algorithm>
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -1700,6 +1702,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2006/03/15 02:16:19  ucko
+* +<algorithm> (once indirectly included?) for sort().
+*
 * Revision 1.66  2006/03/07 16:35:27  bealer
 * - Add "use_this_gi" scores for protein searches with Entrez queries.
 *
