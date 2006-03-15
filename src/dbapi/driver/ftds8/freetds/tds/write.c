@@ -27,7 +27,7 @@
 
 #ifdef _WIN32
 #define WRITE(a,b,c) send((a),(b),(c), 0L)
-#else 
+#else
 #define WRITE(a,b,c) write(a,b,c)
 #endif
 
@@ -67,10 +67,10 @@ tds_put_n(TDSSOCKET *tds, const unsigned char *buf, int n)
 int i;
 const unsigned char *bufp = buf;
 	if (bufp)  {
-		for (i=0;i<n;i++)	
+		for (i=0;i<n;i++)
 			tds_put_byte(tds, bufp[i]);
 	} else {
-		for (i=0;i<n;i++)	
+		for (i=0;i<n;i++)
 			tds_put_byte(tds, '\0');
 	}
 #endif
@@ -143,14 +143,14 @@ int tds_init_write_buf(TDSSOCKET *tds)
 }
 
 /* TODO this code should be similar to read one... */
-static int 
+static int
 tds_check_socket_write(TDSSOCKET *tds)
 {
 int retcode = 0;
 struct timeval selecttimeout;
 time_t start, now;
 fd_set fds;
- 
+
 	/* Jeffs hack *** START OF NEW CODE */
 	FD_ZERO (&fds);
 
@@ -168,7 +168,7 @@ fd_set fds;
 	}
 	start = time(NULL);
 	now = start;
- 
+
 	while ((retcode == 0) && ((now-start) < tds->timeout)) {
 		FD_SET (tds->s, &fds);
 		selecttimeout.tv_sec = tds->timeout - (now-start);
@@ -180,7 +180,7 @@ fd_set fds;
 
 		now = time (NULL);
 	}
- 
+
 	return retcode;
 	/* Jeffs hack *** END OF NEW CODE */
 }
@@ -196,7 +196,7 @@ int retval;
 
 	left = tds->out_pos;
 	p = tds->out_buf;
-  
+
 	while (left > 0) {
 		/* If there's a timeout, we need to sit and wait for socket */
 		/* writability */
@@ -211,7 +211,7 @@ int retval;
 			tds_client_msg(tds->tds_ctx, tds, 10018, 9, 0, 0, "The connection was closed");
 			tds->in_pos=0;
 			tds->in_len=0;
-			close(tds->s);
+			CLOSESOCKET(tds->s);
 			tds->s=0;
 			result = 0;
 			break;

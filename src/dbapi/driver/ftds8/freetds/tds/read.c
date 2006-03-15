@@ -23,14 +23,6 @@
 #include <dmalloc.h>
 #endif
 
-#ifdef _WIN32
-#define CLOSE(a) closesocket(a)
-#define READ(a,b,c) recv (a, b, c, 0L);
-#else
-#define CLOSE(a) close(a)
-#define READ(a,b,c) read (a, b, c);
-#endif
-
 #include "tdsutil.h"
 
 
@@ -39,9 +31,9 @@ static void *no_unused_var_warn[] = {software_version,
                                      no_unused_var_warn};
 
 
-/** 
- * Loops until we have received buflen characters 
- * return -1 on failure 
+/**
+ * Loops until we have received buflen characters
+ * return -1 on failure
  */
 static int
 goodread (TDSSOCKET *tds, unsigned char *buf, int buflen)
@@ -75,7 +67,7 @@ struct timeval selecttimeout;
 				now = time (NULL);
 				timeleft = tds->timeout - (now-start);
 			} while((retcode == 0) && timeleft > 0);
-			len = READ(tds->s, buf+got, buflen);
+			len = READSOCKET(tds->s, buf+got, buflen);
 			if (len <= 0) {
 				if (len < 0 && (errno == EINTR || errno == TDSSOCK_EINPROGRESS || errno == EAGAIN)) len = 0;
 				else return (-1); /* SOCKET_ERROR); */
@@ -97,11 +89,11 @@ struct timeval selecttimeout;
 			int len;
 			FD_SET (tds->s, &fds);
 			select (tds->s + 1, &fds, NULL, NULL, NULL);
-			len = READ(tds->s, buf + got, buflen - got);
+			len = READSOCKET(tds->s, buf + got, buflen - got);
 			if (len <= 0) {
 				if (len < 0 && (errno == EINTR || errno == TDSSOCK_EINPROGRESS || errno == EAGAIN)) len = 0;
 				else return (-1); /* SOCKET_ERROR); */
-			}  
+			}
 			got += len;
 		}
 
@@ -218,14 +210,14 @@ char *temp;
 		tds7_unicode2ascii(tds,temp,dest,need);
 		free(temp);
 		return(dest);
-		
+
 	} else {
-		return tds_get_n(tds,dest,need);	
+		return tds_get_n(tds,dest,need);
 	}
 }
 /*
-** Get N bytes from the buffer and return them in the already allocated space  
-** given to us.  We ASSUME that the person calling this function has done the  
+** Get N bytes from the buffer and return them in the already allocated space
+** given to us.  We ASSUME that the person calling this function has done the
 ** bounds checking for us since they know how many bytes they want here.
 ** dest of NULL means we just want to eat the bytes.   (tetherow@nol.org)
 */
@@ -294,7 +286,7 @@ unsigned char header[8];
 int           len;
 int           x = 0, have, need;
 
-	/* Read in the packet header.  We use this to figure out our packet 
+	/* Read in the packet header.  We use this to figure out our packet
 	** length */
 
 	/* Cast to int are needed because some compiler seem to convert
@@ -304,21 +296,21 @@ int           x = 0, have, need;
 		if (len<0) {
 			/* FIX ME -- get the exact err num and text */
 			tds_client_msg(tds->tds_ctx, tds,10018, 9, 0, 0, "The connection was closed");
-			CLOSE(tds->s);
+			CLOSESOCKET(tds->s);
 			tds->s=0;
                 	tds->in_len=0;
 			tds->in_pos=0;
 			return -1;
 		}
 		/* GW ADDED */
-		/*  Not sure if this is the best way to do the error 
-		**  handling here but this is the way it is currently 
+		/*  Not sure if this is the best way to do the error
+		**  handling here but this is the way it is currently
 		**  being done. */
                 tds->in_len=0;
 		tds->in_pos=0;
 		tds->last_packet=1;
 		if (len==0) {
-			CLOSE(tds->s);
+			CLOSESOCKET(tds->s);
 			tds->s=0;
 		}
 		return -1;
@@ -332,8 +324,8 @@ int           x = 0, have, need;
 	if (IS_TDS42(tds)) {
 		if (header[0]!=0x04 && header[0]!=0x0f) {
 			tdsdump_log(TDS_DBG_ERROR, "Invalid packet header %d\n", header[0]);
-			/*  Not sure if this is the best way to do the error 
-			**  handling here but this is the way it is currently 
+			/*  Not sure if this is the best way to do the error
+			**  handling here but this is the way it is currently
 			**  being done. */
 			tds->in_len=0;
 			tds->in_pos=0;
@@ -341,12 +333,12 @@ int           x = 0, have, need;
 			return(-1);
 		}
 	}
- 
+
         /* Convert our packet length from network to host byte order */
         len = ((((unsigned int)header[2])<<8)|header[3])-8;
         need=len;
 
-        /* If this packet size is the largest we have gotten allocate 
+        /* If this packet size is the largest we have gotten allocate
 	** space for it */
 	if (len > tds->in_buf_max) {
 		unsigned char *p;
@@ -368,14 +360,14 @@ int           x = 0, have, need;
 	have=0;
 	while(need>0) {
 		if ((x=goodread(tds, tds->in_buf+have, need))<1) {
-			/*  Not sure if this is the best way to do the error 
-			**  handling here but this is the way it is currently 
+			/*  Not sure if this is the best way to do the error
+			**  handling here but this is the way it is currently
 			**  being done. */
 			tds->in_len=0;
 			tds->in_pos=0;
 			tds->last_packet=1;
 			if (len==0) {
-				CLOSE(tds->s);
+				CLOSESOCKET(tds->s);
 				tds->s=0;
 			}
 			return(-1);
@@ -384,7 +376,7 @@ int           x = 0, have, need;
 		need-=x;
 	}
 	if (x < 1 ) {
-		/*  Not sure if this is the best way to do the error handling 
+		/*  Not sure if this is the best way to do the error handling
 		**  here but this is the way it is currently being done. */
 		tds->in_len=0;
 		tds->in_pos=0;

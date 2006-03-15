@@ -39,7 +39,7 @@ typedef struct tdsiconvinfo {
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 
 #else
 #include "tdsiconv.h"
@@ -79,7 +79,7 @@ int i;
 	}
 
 	/* ok, we have a list and need to add another */
-	tds->dyns = (TDSDYNAMIC **) 
+	tds->dyns = (TDSDYNAMIC **)
 		realloc(tds->dyns, sizeof(TDSDYNAMIC *) * tds->num_dyns);
 	tds->dyns[tds->num_dyns] = (TDSDYNAMIC *) malloc(sizeof(TDSDYNAMIC));
 	memset(tds->dyns[tds->num_dyns], 0, sizeof(TDSDYNAMIC));
@@ -98,15 +98,15 @@ TDSINPUTPARAM *param;
 		param = (TDSINPUTPARAM *) malloc(sizeof(TDSINPUTPARAM));
 		memset(param,'\0',sizeof(TDSINPUTPARAM));
 		dyn->num_params=1;
-		dyn->params = (TDSINPUTPARAM **) 
+		dyn->params = (TDSINPUTPARAM **)
 			malloc(sizeof(TDSINPUTPARAM *));
 		dyn->params[0] = param;
 	} else {
 		param = (TDSINPUTPARAM *) malloc(sizeof(TDSINPUTPARAM));
 		memset(param,'\0',sizeof(TDSINPUTPARAM));
 		dyn->num_params++;
-		dyn->params = (TDSINPUTPARAM **) 
-			realloc(dyn->params, 
+		dyn->params = (TDSINPUTPARAM **)
+			realloc(dyn->params,
 			sizeof(TDSINPUTPARAM *) * dyn->num_params);
 		dyn->params[dyn->num_params-1] = param;
 	}
@@ -136,14 +136,14 @@ TDSDYNAMIC *dyn;
 	}
 	if (tds->dyns) TDS_ZERO_FREE(tds->dyns);
 	tds->num_dyns = 0;
-	
+
 	return;
 }
 /*
 ** tds_alloc_param_result() works a bit differently than the other alloc result
-** functions.  Output parameters come in individually with no total number 
+** functions.  Output parameters come in individually with no total number
 ** given in advance, so we simply call this func every time with get a
-** TDS_PARAM_TOKEN and let it realloc the columns struct one bigger. 
+** TDS_PARAM_TOKEN and let it realloc the columns struct one bigger.
 ** tds_free_all_results() usually cleans up after us.
 */
 TDSPARAMINFO *tds_alloc_param_result(TDSPARAMINFO *old_param)
@@ -154,15 +154,15 @@ TDSPARAMINFO *param_info;
 		param_info = (TDSPARAMINFO *) malloc(sizeof(TDSPARAMINFO));
 		memset(param_info,'\0',sizeof(TDSPARAMINFO));
 		param_info->num_cols=1;
-		param_info->columns = (TDSCOLINFO **) 
+		param_info->columns = (TDSCOLINFO **)
 			malloc(sizeof(TDSCOLINFO *));
 		param_info->columns[0] = (TDSCOLINFO *) malloc(sizeof(TDSCOLINFO));
 		memset(param_info->columns[0],'\0',sizeof(TDSCOLINFO));
 	} else {
 		param_info = old_param;
 		param_info->num_cols++;
-		param_info->columns = (TDSCOLINFO **) 
-			realloc(param_info->columns, 
+		param_info->columns = (TDSCOLINFO **)
+			realloc(param_info->columns,
 			sizeof(TDSCOLINFO *) * param_info->num_cols);
 		param_info->columns[param_info->num_cols-1] =
 		        (TDSCOLINFO *) malloc(sizeof(TDSCOLINFO));
@@ -181,19 +181,19 @@ int null_sz;
 
 	comp_info = (TDSCOMPUTEINFO *) malloc(sizeof(TDSCOMPUTEINFO));
 	memset(comp_info,'\0',sizeof(TDSCOMPUTEINFO));
-	comp_info->columns = (TDSCOLINFO **) 
+	comp_info->columns = (TDSCOLINFO **)
 		malloc(sizeof(TDSCOLINFO *) * num_cols);
 	for (col=0;col<num_cols;col++)  {
 		comp_info->columns[col] = (TDSCOLINFO *) malloc(sizeof(TDSCOLINFO));
 		memset(comp_info->columns[col],'\0',sizeof(TDSCOLINFO));
 	}
 	comp_info->num_cols = num_cols;
-    
+
 	null_sz = (unsigned) (num_cols + (8 * TDS_ALIGN_SIZE - 1)) / 8u;
 	null_sz = null_sz - null_sz % TDS_ALIGN_SIZE;
 	/* set the initial row size to the size of the null info */
 	comp_info->row_size = comp_info->null_info_size = null_sz;
-    
+
 	return comp_info;
 }
 
@@ -207,20 +207,20 @@ int null_sz;
 
 	res_info = (TDSRESULTINFO *) malloc(sizeof(TDSRESULTINFO));
 	memset(res_info,'\0',sizeof(TDSRESULTINFO));
-	res_info->columns = (TDSCOLINFO **) 
+	res_info->columns = (TDSCOLINFO **)
 		malloc(sizeof(TDSCOLINFO *) * num_cols);
 	for (col=0;col<num_cols;col++)  {
 		res_info->columns[col] = (TDSCOLINFO *) malloc(sizeof(TDSCOLINFO));
 		memset(res_info->columns[col],'\0',sizeof(TDSCOLINFO));
 	}
 	res_info->num_cols = num_cols;
-    
+
 	null_sz = (unsigned) (num_cols + (8 * TDS_ALIGN_SIZE - 1)) / 8u;
 	null_sz = null_sz - null_sz % TDS_ALIGN_SIZE;
 	res_info->null_info_size = null_sz;
 	/* set the initial row size to the size of the null info */
 	res_info->row_size = res_info->null_info_size;
-    
+
 	return res_info;
 }
 
@@ -229,7 +229,7 @@ void *tds_alloc_row(TDSRESULTINFO *res_info)
 void *ptr;
 
 	ptr = (void *) malloc(res_info->row_size);
-	memset(ptr,'\0',res_info->row_size); 
+	memset(ptr,'\0',res_info->row_size);
 	return ptr;
 }
 
@@ -327,7 +327,7 @@ TDSCONFIGINFO *tds_alloc_config(TDSLOCINFO *locale)
 {
 TDSCONFIGINFO *config;
 char hostname[30];
-	
+
 	config = (TDSCONFIGINFO *) malloc(sizeof(TDSCONFIGINFO));
 	memset(config, '\0', sizeof(TDSCONFIGINFO));
 
@@ -342,13 +342,13 @@ char hostname[30];
 #endif
 	config->block_size = TDS_DEF_BLKSZ;
 	if (locale) {
-		if (locale->language) 
+		if (locale->language)
         		config->language = strdup(locale->language);
-		else 
+		else
         		config->language = strdup(TDS_DEF_LANG);
-		if (locale->char_set) 
+		if (locale->char_set)
         		config->char_set = strdup(locale->char_set);
-		else 
+		else
         		config->char_set = strdup(TDS_DEF_CHARSET);
 	}
 	config->try_server_login = 1;
@@ -356,7 +356,7 @@ char hostname[30];
 	gethostname(hostname,30);
 	hostname[29]='\0'; /* make sure it's truncated */
 	config->host_name = strdup(hostname);
-	
+
 	return config;
 }
 TDSLOGIN *tds_alloc_login()
@@ -419,7 +419,7 @@ TDSICONVINFO *iconv;
 	iconv->cdto = (iconv_t)-1;
 #endif
 	/* Jeff's hack, init to no timeout */
-	tds_socket->timeout = 0;                
+	tds_socket->timeout = 0;
 	tds_init_write_buf(tds_socket);
 	return tds_socket;
 }
@@ -441,7 +441,7 @@ TDSICONVINFO *iconv_info;
 		}
 		if (tds->in_buf) TDS_ZERO_FREE(tds->in_buf);
 		if (tds->out_buf) TDS_ZERO_FREE(tds->out_buf);
-		if (tds->s) close(tds->s);
+		if (tds->s) CLOSESOCKET(tds->s);
 		if (tds->date_fmt) free(tds->date_fmt);
 		if (tds->iconv_info) {
 			iconv_info = (TDSICONVINFO *) tds->iconv_info;

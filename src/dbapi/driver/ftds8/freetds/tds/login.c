@@ -30,7 +30,7 @@
 #endif
 #endif
 
-#ifdef _WIN32                                           
+#ifdef _WIN32
 #define IOCTL(a,b,c) ioctlsocket(a, b, c)
 #else
 #define IOCTL(a,b,c) ioctl(a, b, c)
@@ -53,15 +53,15 @@ void tds_set_version(TDSLOGIN *tds_login, short major_ver, short minor_ver)
     tds_login->minor_version=minor_ver;
 }
 void tds_set_packet(TDSLOGIN *tds_login, short packet_size)
-{ 
-    tds_login->block_size=packet_size; 
+{
+    tds_login->block_size=packet_size;
 }
 void tds_set_port(TDSLOGIN *tds_login, int port)
-{ 
-    tds_login->port=port; 
+{
+    tds_login->port=port;
 }
 void tds_set_passwd(TDSLOGIN *tds_login, char *password)
-{ 
+{
     if (password) {
         strncpy(tds_login->password, password, sizeof(tds_login->password)-1);
     }
@@ -71,7 +71,7 @@ void tds_set_bulk(TDSLOGIN *tds_login, TDS_TINYINT enabled)
     tds_login->bulk_copy = enabled ? 0 : 1;
 }
 void tds_set_user(TDSLOGIN *tds_login, char *username)
-{ 
+{
     strncpy(tds_login->user_name, username, TDS_MAX_LOGIN_STR_SZ);
 }
 void tds_set_host(TDSLOGIN *tds_login, char *hostname)
@@ -117,21 +117,21 @@ void tds_set_longquery_handler(TDSLOGIN * tds_login, void (*longquery_func)(long
 }
 void tds_set_capabilities(TDSLOGIN *tds_login, unsigned char *capabilities, int size)
 {
-    memcpy(tds_login->capabilities, capabilities, 
+    memcpy(tds_login->capabilities, capabilities,
            size > TDS_MAX_CAPABILITY ? TDS_MAX_CAPABILITY : size);
 }
 
 #ifdef NCBI_FTDS
-TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent) 
+TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 {
     TDSSOCKET	*tds;
     struct sockaddr_in      sin;
     /* Jeff's hack - begin */
-    unsigned long ioctl_blocking = 1;                      
-    struct timeval selecttimeout;                         
-    fd_set fds;                                          
-    fd_set fds1;                                          
-    int retval, n;                                         
+    unsigned long ioctl_blocking = 1;
+    struct timeval selecttimeout;
+    fd_set fds;
+    fd_set fds1;
+    int retval, n;
     // time_t start, now;
     TDSCONFIGINFO *config;
     /* 13 + max string of 32bit int, 30 should cover it */
@@ -140,8 +140,8 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     int connect_timeout = 0;
 
 
-    FD_ZERO (&fds);                                    
-    FD_ZERO (&fds1);                                    
+    FD_ZERO (&fds);
+    FD_ZERO (&fds1);
     /* end */
 
     config = tds_get_config(NULL, login, context->locale);
@@ -153,7 +153,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         tdsdump_open(config->dump_file);
     }
 
-    /* 
+    /*
     ** The initial login packet must have a block size of 512.
     ** Once the connection is established the block size can be changed
     ** by the server with TDS_ENV_CHG_TOKEN
@@ -190,7 +190,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     }
 
     /* Jeff's hack - begin */
-    tds->timeout = login->query_timeout;        
+    tds->timeout = login->query_timeout;
     tds->longquery_timeout = login->longquery_timeout;
     tds->longquery_func = login->longquery_func;
     tds->longquery_param = login->longquery_param;
@@ -218,7 +218,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 	for(n= 0; n < NCBI_NUM_SERVERS; n++) {
 	    if(config->ip_addr[n] == NULL) {
 		    /* no more servers */
-		    tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, 
+		    tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
 						   "Server is unavailable or does not exist.");
 			tds_free_config(config);
 			tds_free_socket(tds);
@@ -234,7 +234,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 		sin.sin_port = htons(config->port[n]);
 
 
-		tdsdump_log(TDS_DBG_INFO1, "%L Connecting addr %s port %d\n", 
+		tdsdump_log(TDS_DBG_INFO1, "%L Connecting addr %s port %d\n",
 					inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
 
 		if ((tds->s = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -255,18 +255,18 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
         if (retval < 0 && (sock_errno == TDSSOCK_EINPROGRESS || sock_errno == TDSSOCK_EWOULDBLOCK)) retval = 0;
         if (retval < 0) {
-		    close(tds->s);
+		    CLOSESOCKET(tds->s);
 		    continue;
         }
         /* Select on writeability for connect_timeout */
-		FD_ZERO (&fds);                                    
-		FD_ZERO (&fds1);                                    
+		FD_ZERO (&fds);
+		FD_ZERO (&fds1);
         for(retval= -1; retval < 0;) {
             selecttimeout.tv_sec = connect_timeout;
             selecttimeout.tv_usec = 0;
             FD_SET (tds->s, &fds);
             FD_SET (tds->s, &fds1);
-            retval = select(tds->s + 1, NULL, &fds, &fds1, 
+            retval = select(tds->s + 1, NULL, &fds, &fds1,
                             (connect_timeout > 0)? &selecttimeout : NULL);
             if((retval < 0) && (errno != EINTR)) {
 			    break;
@@ -285,7 +285,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 	}
 
 	if(n >= NCBI_NUM_SERVERS) {
-		tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, 
+		tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
 					   "Server is unavailable or does not exist.");
 		tds_free_config(config);
 		tds_free_socket(tds);
@@ -294,13 +294,13 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 
     if (IS_TDS7_PLUS(tds)) {
         tds->out_flag=0x10;
-        tds7_send_login(tds,config);	
+        tds7_send_login(tds,config);
     } else {
         tds->out_flag=0x02;
-        tds_send_login(tds,config);	
+        tds_send_login(tds,config);
     }
     if (!tds_process_login_tokens(tds)) {
-        tds_client_msg(tds->tds_ctx, tds, 20014, 9, 0, 0, 
+        tds_client_msg(tds->tds_ctx, tds, 20014, 9, 0, 0,
                        "Login incorrect.");
         tds_free_config(config);
         tds_free_socket(tds);
@@ -320,15 +320,15 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     return tds;
 }
 #else
-TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent) 
+TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 {
     TDSSOCKET	*tds;
     struct sockaddr_in      sin;
     /* Jeff's hack - begin */
-    unsigned long ioctl_blocking = 1;                      
-    struct timeval selecttimeout;                         
-    fd_set fds;                                          
-    int retval;                                         
+    unsigned long ioctl_blocking = 1;
+    struct timeval selecttimeout;
+    fd_set fds;
+    int retval;
     time_t start, now;
     TDSCONFIGINFO *config;
     /* 13 + max string of 32bit int, 30 should cover it */
@@ -337,7 +337,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     int connect_timeout = 0;
 
 
-    FD_ZERO (&fds);                                    
+    FD_ZERO (&fds);
     /* end */
 
     config = tds_get_config(NULL, login, context->locale);
@@ -349,7 +349,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         tdsdump_open(config->dump_file);
     }
 
-    /* 
+    /*
     ** The initial login packet must have a block size of 512.
     ** Once the connection is established the block size can be changed
     ** by the server with TDS_ENV_CHG_TOKEN
@@ -386,7 +386,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     }
 
     /* Jeff's hack - begin */
-    tds->timeout = (connect_timeout) ? login->query_timeout : 0;        
+    tds->timeout = (connect_timeout) ? login->query_timeout : 0;
     tds->longquery_timeout = (connect_timeout) ? login->longquery_timeout : 0;
     tds->longquery_func = login->longquery_func;
     tds->longquery_param = login->longquery_param;
@@ -444,7 +444,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
         if (retval < 0 && errno == EINPROGRESS) retval = 0;
         if (retval < 0) {
-            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, 
+            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
                            "Server is unavailable or does not exist.");
             tds_free_config(config);
             tds_free_socket(tds);
@@ -463,7 +463,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         }
 
         if ((now-start) > connect_timeout) {
-            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, 
+            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
                            "Server is unavailable or does not exist.");
             tds_free_config(config);
             tds_free_socket(tds);
@@ -475,7 +475,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
             sprintf(message, "src/tds/login.c: tds_connect: %s:%d",
                     inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
             perror(message);
-            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, 
+            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
                            "Server is unavailable or does not exist.");
             tds_free_config(config);
             tds_free_socket(tds);
@@ -486,13 +486,13 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 
     if (IS_TDS7_PLUS(tds)) {
         tds->out_flag=0x10;
-        tds7_send_login(tds,config);	
+        tds7_send_login(tds,config);
     } else {
         tds->out_flag=0x02;
-        tds_send_login(tds,config);	
+        tds_send_login(tds,config);
     }
     if (!tds_process_login_tokens(tds)) {
-        tds_client_msg(tds->tds_ctx, tds, 20014, 9, 0, 0, 
+        tds_client_msg(tds->tds_ctx, tds, 20014, 9, 0, 0,
                        "Login incorrect.");
         tds_free_config(config);
         tds_free_socket(tds);
@@ -513,7 +513,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 }
 #endif
 int tds_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
-{	
+{
     /*   char *tmpbuf;
          int tmplen;*/
 #ifdef WORDS_BIGENDIAN
@@ -521,26 +521,26 @@ int tds_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
 #endif
     unsigned char le1[]= {0x03,0x01,0x06,0x0a,0x09,0x01};
     unsigned char magic2[]={0x00,0x00};
-   
+
     unsigned char magic3[]= {0x00,0x00,0x00};
-   
+
 /* these seem to endian flags as well 13,17 on intel/alpha 12,16 on power */
-   
+
 #ifdef WORDS_BIGENDIAN
     unsigned char be2[]= {0x00,12,16};
 #endif
     unsigned char le2[]= {0x00,13,17};
-   
-   /* 
-   ** the former byte 0 of magic5 causes the language token and message to be 
-   ** absent from the login acknowledgement if set to 1. There must be a way 
+
+   /*
+   ** the former byte 0 of magic5 causes the language token and message to be
+   ** absent from the login acknowledgement if set to 1. There must be a way
    ** of setting this in the client layer, but I am not aware of any thing of
    ** the sort -- bsb 01/17/99
    */
     unsigned char magic5[]= {0x00,0x00};
     unsigned char magic6[]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
     unsigned char magic7=   0x01;
-   
+
     unsigned char magic42[]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
     unsigned char magic50[]= {0x00,0x00,0x00,0x00};
     /*
@@ -558,13 +558,13 @@ int tds_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
    unsigned char capabilities[]= {0x01,0x07,0x00,96, 129,207, 0xFF,0xFE,62,  0x02,0x07,0x00,0x00,0x00,120,192,0x00,0x00};
 **
 */
-   
+
     unsigned char protocol_version[4];
     unsigned char program_version[4];
-   
+
     int rc;
     char blockstr[10], passwdstr[255];
-   
+
     if (IS_TDS42(tds)) {
         memcpy(protocol_version,"\004\002\000\000",4);
         memcpy(program_version,"\004\002\000\000",4);
@@ -579,11 +579,11 @@ int tds_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
         exit(1);
     }
     /*
-   ** the following code is adapted from  Arno Pedusaar's 
+   ** the following code is adapted from  Arno Pedusaar's
    ** (psaar@fenar.ee) MS-SQL Client. His was a much better way to
    ** do this, (well...mine was a kludge actually) so here's mostly his
    */
-   
+
     rc=tds_put_string(tds,config->host_name,TDS_MAX_LOGIN_STR_SZ);   /* client host name */
     rc|=tds_put_string(tds,config->user_name,TDS_MAX_LOGIN_STR_SZ);  /* account name */
     rc|=tds_put_string(tds,config->password,TDS_MAX_LOGIN_STR_SZ);  /* account password */
@@ -621,10 +621,10 @@ int tds_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
             rc|=tds_put_buf(tds,passwdstr,255,(unsigned char)strlen(config->password)+2);
         }
     }
-   
+
     rc|=tds_put_n(tds,protocol_version,4); /* TDS version; { 0x04,0x02,0x00,0x00 } */
     rc|=tds_put_string(tds,config->library,10);  /* client program name */
-    if (IS_TDS42(tds)) { 
+    if (IS_TDS42(tds)) {
         rc|=tds_put_int(tds,0);
     } else {
         rc|=tds_put_n(tds,program_version,4); /* program version ? */
@@ -657,7 +657,7 @@ int tds_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
         rc|=tds_put_smallint(tds, 18);
         rc|=tds_put_n(tds,tds->capabilities,TDS_MAX_CAPABILITY);
     }
-   
+
     /*
    tmpbuf = malloc(tds->out_pos);
    tmplen = tds->out_pos;
@@ -705,13 +705,13 @@ int tds7_send_auth(TDSSOCKET *tds, unsigned char *challenge)
     host_name_len = config->host_name ? strlen(config->host_name) : 0;
     password_len = config->password ? strlen(config->password) : 0;
     domain_len = domain ? strlen(domain) : 0;
-	
+
     /* check override of domain */
     if (user_name && (p=strchr(user_name,'\\')) != NULL)
         {
             domain = user_name;
             domain_len = p-user_name;
-		
+
             user_name = p+1;
             user_name_len = strlen(user_name);
         }
@@ -721,7 +721,7 @@ int tds7_send_auth(TDSSOCKET *tds, unsigned char *challenge)
     tds_put_int(tds, 3); /* sequence 3 */
 
     current_pos = 64 + (domain_len+user_name_len+host_name_len)*2;
-	
+
     tds_put_smallint(tds, 24);  /* lan man resp length */
     tds_put_smallint(tds, 24);  /* lan man resp length */
     tds_put_int(tds, current_pos);  /* resp offset */
@@ -738,7 +738,7 @@ int tds7_send_auth(TDSSOCKET *tds, unsigned char *challenge)
     tds_put_smallint(tds, domain_len*2);
     tds_put_int(tds, current_pos);
     current_pos += domain_len*2;
-	
+
     /* username */
     tds_put_smallint(tds, user_name_len*2);
     tds_put_smallint(tds, user_name_len*2);
@@ -769,7 +769,7 @@ int tds7_send_auth(TDSSOCKET *tds, unsigned char *challenge)
     tds_answer_challenge(config->password, challenge, &answer);
     tds_put_n(tds, answer.lm_resp, 24);
     tds_put_n(tds, answer.nt_resp, 24);
-	
+
     /* for security reason clear structure */
     memset(&answer,0,sizeof(TDSANSWER));
 
@@ -785,13 +785,13 @@ int tds7_send_auth(TDSSOCKET *tds, unsigned char *challenge)
 ** TDS 7.0 login packet is vastly different and so gets its own function
 */
 int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
-{	
+{
     int rc;
 #if DOMAIN
     static const unsigned char magic1_domain[] =
     {6,0x7d,0x0f,0xfd,
      0xff,0x0,0x0,0x0,  /* Client PID */
-     /* the 0x80 in the third byte controls whether this is a domain login 
+     /* the 0x80 in the third byte controls whether this is a domain login
       * or not  0x80 = yes, 0x00 = no */
      0x0,0xe0,0x83,0x0, /* Connection ID of the Primary Server (?) */
      0x0,               /* Option Flags 1 */
@@ -852,7 +852,7 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
         {
             domain = user_name;
             domain_len = p-user_name;
-		
+
             user_name = p+1;
             user_name_len = strlen(user_name);
         }
@@ -892,7 +892,7 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
     tds_put_n(tds,NULL,3);       /* rest of TDSVersion which is a 4 byte field    */
 #endif
 #ifdef NCBI_FTDS
-	if(config->block_size < 512 || config->block_size > 1000000) 
+	if(config->block_size < 512 || config->block_size > 1000000)
 	  config->block_size= 4096;
 	tds_put_int(tds, config->block_size);
 
@@ -932,7 +932,7 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
 	}
 #endif
 
-	
+
 #else
     tds_put_n(tds,NULL,4);       /* desired packet size being requested by client */
     tds_put_n(tds,magic1,21);
@@ -940,7 +940,7 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
 
     current_pos = 86; /* ? */
     /* host name */
-    tds_put_smallint(tds,current_pos); 
+    tds_put_smallint(tds,current_pos);
     tds_put_smallint(tds,host_name_len);
     current_pos += host_name_len * 2;
 #if DOMAIN
@@ -971,19 +971,19 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
     tds_put_smallint(tds,server_name_len);
     current_pos += server_name_len * 2;
     /* unknown */
-    tds_put_smallint(tds,0); 
-    tds_put_smallint(tds,0); 
+    tds_put_smallint(tds,0);
+    tds_put_smallint(tds,0);
     /* library name */
     tds_put_smallint(tds,current_pos);
     tds_put_smallint(tds,library_len);
     current_pos += library_len * 2;
     /* language  - kostya@warmcat.excom.spb.su */
-    tds_put_smallint(tds,current_pos); 
+    tds_put_smallint(tds,current_pos);
     tds_put_smallint(tds,language_len);
     current_pos += language_len * 2;
     /* database name */
-    tds_put_smallint(tds,current_pos); 
-    tds_put_smallint(tds,0); 
+    tds_put_smallint(tds,current_pos);
+    tds_put_smallint(tds,0);
 
     /* MAC address */
     tds_put_n(tds,magic2,6);
@@ -1002,7 +1002,7 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
 
     /* unknown */
     tds_put_smallint(tds, current_pos);
-    tds_put_smallint(tds, 0); 
+    tds_put_smallint(tds, 0);
 
     tds7_ascii2unicode(tds,config->host_name, unicode_string, 255);
     tds_put_n(tds,unicode_string,host_name_len * 2);
@@ -1050,17 +1050,17 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
         tds_put_n(tds,domain,domain_len);
     }
 #endif
-   
+
     tdsdump_off();
     rc=tds_flush_packet(tds);
     tdsdump_on();
-   
+
     return rc;
 }
 
 /*
 ** tds7_crypt_pass() -- 'encrypt' TDS 7.0 style passwords.
-** the calling function is responsible for ensuring crypt_pass is at least 
+** the calling function is responsible for ensuring crypt_pass is at least
 ** 'len' characters
 */
 unsigned char *
