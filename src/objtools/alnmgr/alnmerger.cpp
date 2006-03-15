@@ -38,6 +38,7 @@
 #include <objtools/alnmgr/alnmatch.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -1270,6 +1271,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/03/15 01:24:51  ucko
+* +<algorithm> (once indirectly included?) for lower_bound().
+*
 * Revision 1.16  2006/03/14 22:37:16  todorov
 * + fRemoveLeadTrailGaps
 *
