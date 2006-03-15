@@ -677,7 +677,7 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
         if ( !m_GetSem.TryWait(timeout_sec, timeout_nsec) ) {
             m_HungerSem.TryWait();
             NCBI_THROW(CBlockingQueueException, eTimedOut,
-                       "CBlockingQueue<>::Get: timed out");        
+                       "CBlockingQueue<>::Get[Handle]: timed out");        
         }
     }
 
@@ -775,7 +775,14 @@ void* CThreadInPool<TRequest>::Main(void)
 
         for (;;) {
             m_Pool->m_Delta.Add(-1);
-            handle.Reset(m_Pool->m_Queue.GetHandle());
+            try {
+                handle.Reset(m_Pool->m_Queue.GetHandle());
+            } catch (CBlockingQueueException& e) {
+                // work around "impossible" timeouts
+                ERR_POST(Warning << e.what());
+                m_Pool->m_Delta.Add(1);
+                continue;
+            }
             ProcessRequest(handle);
             if (m_RunMode == eRunOnce) {
                 m_Pool->UnRegister(*this);
@@ -954,6 +961,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2006/03/15 19:17:02  ucko
+* Work around "impossible" timeouts that can befall worker threads, and
+* update the relevant exception's message to name the right function.
+*
 * Revision 1.34  2006/02/24 22:05:55  ucko
 * Declare the specialization of x_SetStatus for CRef<CStdRequest>
 * (defined out-of-line in thread_pool.cpp) to ensure that the generic
