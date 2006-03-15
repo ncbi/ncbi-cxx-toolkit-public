@@ -55,7 +55,7 @@
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
-#include <iostream>
+#include <algorithm>
 #include <memory>
 
 
@@ -1509,6 +1509,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/03/15 15:15:54  ucko
+ * +<algorithm> for sort() et al.; -<iostream>, already included via ncbistd.hpp.
+ *
  * Revision 1.60  2006/02/14 02:21:35  ucko
  * Use our IOS_BASE macro rather than ios_base for compatibility with GCC 2.95.
  *
