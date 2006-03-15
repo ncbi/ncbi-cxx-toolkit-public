@@ -38,6 +38,8 @@ Contents: implementation of CHit class
 #include <ncbi_pch.hpp>
 #include <algo/cobalt/hit.hpp>
 
+#include <algorithm>
+
 /// @file hit.cpp
 /// Implementation of CHit class
 
@@ -353,6 +355,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.6  2006/03/15 02:26:32  ucko
+  +<algorithm> (once indirectly included?) for sort().
+
   Revision 1.5  2005/11/18 20:19:02  papadopo
   add documentation
 

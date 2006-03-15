@@ -38,6 +38,8 @@ Contents: Implementation of CHitList class
 #include <ncbi_pch.hpp>
 #include <algo/cobalt/hitlist.hpp>
 
+#include <algorithm>
+
 
 /// @file hitlist.cpp
 /// Implementation of CHitList class
@@ -394,6 +396,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.8  2006/03/15 02:26:32  ucko
+  +<algorithm> (once indirectly included?) for sort().
+
   Revision 1.7  2006/03/08 15:50:50  papadopo
   when reversing hits in a hitlist, reverse any traceback those hits have
 
