@@ -62,6 +62,8 @@ public:
 
 protected:
 
+    void PrintJobInfo(const string& job_key);
+
     virtual bool UseProgressMessage() const { return false; }
     virtual bool UsePermanentConnection() const { return true; }
     virtual bool UseAutomaticCleanup() const { return false; }
@@ -88,13 +90,25 @@ void CRemoteAppClientSampleApp::Init(void)
                              "Number of jobs to submit",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("jobinfo", 
+                             "job",
+                             "Get job's info",
+                             CArgDescriptions::eString);
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
 
+const char* kData = 
+    "====================================================================================================";
 int CRemoteAppClientSampleApp::Run(void)
 {
     CArgs args = GetArgs();
+
+    if (args["jobinfo"]) {
+        PrintJobInfo(args["jobinfo"].AsString());
+        return 0;
+    }
 
     int jobs_number = 10;
     if (args["jobs"]) {
@@ -103,17 +117,29 @@ int CRemoteAppClientSampleApp::Run(void)
 
     NcbiCout << "Submitting jobs..." << jobs_number << NcbiEndl;
 
-    vector<string> job_keys;
+    typedef list<string> TJobKeys;
+    TJobKeys job_keys;
 
     CBlobStorageFactory factory(GetConfig());
+    CRemoteJobRequest_Submitter request(factory);
     for (int i = 0; i < jobs_number; ++i) {
-        CRemoteJobRequest_Submitter request(factory);
         CNcbiOstream& os = request.GetStdIn();
-        os << "Request data";
+        /*
+        if (i % 5 == 0) {
+            os.write(kData,100);
+            os << endl << i << endl;
+            os.write(kData,100);
+            os.write(kData,100);
+            os.write(kData,100);
+            os.write(kData,100);
+            } else*/
+
+            os << "Request data";
+
 
         request.SetCmdLine("-a aaa -f=/tmp/dddd.f -d=/tmp/dddd.f1 -s=/tmp/dddd.f");
-        request.AddFileForTransfer("/tmp/dddd.f");
-        request.AddFileForTransfer("/tmp/dddd.f1");
+        //        request.AddFileForTransfer("/tmp/dddd.f");
+        //        request.AddFileForTransfer("/tmp/dddd.f1");
 
         // Get a job submiter
         CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
@@ -128,12 +154,16 @@ int CRemoteAppClientSampleApp::Run(void)
      
     NcbiCout << "Waiting for jobs..." << NcbiEndl;
 
+    CRemoteJobResult_Submitter result(factory);
+    TJobKeys failed_jobs;
+
     unsigned int cnt = 0;
     while (1) {
         SleepMilliSec(100);
-
-        vector<string> done_jobs;
-        for(vector<string>::const_iterator it = job_keys.begin();
+        
+        typedef list<TJobKeys::iterator> TDoneJobs;
+        TDoneJobs done_jobs;
+        for(TJobKeys::iterator it = job_keys.begin();
             it != job_keys.end(); ++it) {
         // Get a job status
             CGridJobStatus& job_status = GetGridClient().GetJobStatus(*it);
@@ -143,7 +173,6 @@ int CRemoteAppClientSampleApp::Run(void)
             // A job is done here
             if (status == CNetScheduleClient::eDone) {
                 
-                CRemoteJobResult_Submitter result(factory);
                 result.Receive(job_status.GetIStream());
                 
                 NcbiCout << "Job : " << *it << NcbiEndl;
@@ -155,7 +184,7 @@ int CRemoteAppClientSampleApp::Run(void)
                 NcbiCout << result.GetStdErr().rdbuf();
                 NcbiCout.clear();
                 NcbiCout << NcbiEndl << "----------------------" <<  NcbiEndl;
-                done_jobs.push_back(*it);
+                done_jobs.push_back(it);
 
             }
 
@@ -163,18 +192,18 @@ int CRemoteAppClientSampleApp::Run(void)
             if (status == CNetScheduleClient::eFailed) {
                 ERR_POST( "Job " << *it << " failed : " 
                              << job_status.GetErrorMessage() );
-                done_jobs.push_back(*it);
+                done_jobs.push_back(it);
             }
 
             // A job has been canceled
             if (status == CNetScheduleClient::eCanceled) {
                 LOG_POST( "Job " << *it << " is canceled.");
-                done_jobs.push_back(*it);
+                done_jobs.push_back(it);
             }
         }
-        for(vector<string>::const_iterator i = done_jobs.begin();
+        for(TDoneJobs::iterator i = done_jobs.begin();
             i != done_jobs.end(); ++i) {
-            job_keys.erase(remove(job_keys.begin(),job_keys.end(), *i),job_keys.end());
+            job_keys.erase(*i);
         }
         if (job_keys.empty())
             break;
@@ -184,6 +213,41 @@ int CRemoteAppClientSampleApp::Run(void)
         }
     }
     return 0;
+}
+
+void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
+{
+    CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
+    CNetScheduleClient::EJobStatus status;
+    status = job_status.GetStatus();
+    // A job is done here
+    if (status == CNetScheduleClient::eDone) {
+        NcbiCout << "Job : " << job_key << NcbiEndl;
+        NcbiCout << "Input : " << job_status.GetJobInput() << NcbiEndl; 
+        NcbiCout << "Output : " << job_status.GetJobOutput() << NcbiEndl; 
+        NcbiCout << "======================================" << NcbiEndl; 
+        CBlobStorageFactory factory(GetConfig());
+        CRemoteJobResult_Submitter result(factory);
+        result.Receive(job_status.GetIStream());
+        NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
+        NcbiCout << "StdOut : " <<  NcbiEndl;
+        NcbiCout << result.GetStdOut().rdbuf();
+        NcbiCout.clear();
+        NcbiCout << NcbiEndl << "StdErr : " <<  NcbiEndl;
+        NcbiCout << result.GetStdErr().rdbuf();
+        NcbiCout.clear();
+    }
+    
+    // A job has failed
+    if (status == CNetScheduleClient::eFailed) {
+        ERR_POST( "Job " << job_key << " failed : " 
+                  << job_status.GetErrorMessage() );
+    }
+    
+    // A job has been canceled
+    if (status == CNetScheduleClient::eCanceled) {
+        LOG_POST( "Job " << job_key << " is canceled.");
+    }
 }
 
 
@@ -196,6 +260,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/15 17:34:09  didenko
+ * Added remote_app_client_sample
+ *
  * Revision 1.1  2006/03/07 17:24:00  didenko
  * Added a workernode for running external applications
  *
