@@ -92,10 +92,10 @@ CTDSContext::CTDSContext(DBINT version)
 : m_PacketSize(0)
 , m_TDSVersion(version)
 {
-    SetApplicationName("TDSDriver");
-
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
+
+    SetApplicationName("TDSDriver");
 
     CHECK_DRIVER_ERROR( 
         g_pTDSContext != 0, 
@@ -145,7 +145,7 @@ int CTDSContext::GetTDSVersion(void) const
 
 bool CTDSContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    m_LoginTimeout= nof_secs;
+    m_LoginTimeout = nof_secs;
     return true;
     //    return dbsetlogintime(nof_secs) == SUCCEED;
 }
@@ -153,7 +153,7 @@ bool CTDSContext::SetLoginTimeout(unsigned int nof_secs)
 
 bool CTDSContext::SetTimeout(unsigned int nof_secs)
 {
-    m_Timeout= nof_secs;
+    m_Timeout = nof_secs;
     return true;
     //    return dbsettime(nof_secs) == SUCCEED;
 }
@@ -161,8 +161,11 @@ bool CTDSContext::SetTimeout(unsigned int nof_secs)
 
 bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 {
+    CFastMutexGuard mg(m_Mtx);
+    
     char s[64];
     sprintf(s, "%lu", (unsigned long) nof_bytes);
+
     return dbsetopt(0, DBTEXTLIMIT, s, -1) == SUCCEED
         /* && dbsetopt(0, DBTEXTSIZE, s, -1) == SUCCEED */;
 }
@@ -171,6 +174,8 @@ bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 I_Connection* 
 CTDSContext::MakeIConnection(const SConnAttr& conn_attr)
 {
+    CFastMutexGuard mg(m_Mtx);
+
     DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name, 
                                          conn_attr.user_name, 
                                          conn_attr.passwd, 
@@ -217,18 +222,21 @@ bool CTDSContext::IsAbleTo(ECapability cpb) const
 CTDSContext::~CTDSContext()
 {
     try {
-        CTDS_Connection* t_con;
+        if (g_pTDSContext) {
+            CFastMutexGuard mg(m_Mtx);
+            if (g_pTDSContext) {
+                // close all connections first
+                CloseAllConn();
 
-        // close all connections first
-        CloseAllConn();
-
-        dbloginfree(m_Login);
-        dbexit();
-        g_pTDSContext = 0;
+                dbloginfree(m_Login);
+                dbexit();
+                g_pTDSContext = 0;
 
 #if defined(NCBI_OS_MSWIN)
-        WSACleanup();
+                WSACleanup();
 #endif
+            }
+        }
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -660,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/03/15 20:10:53  ssikorsk
+ * Made more MT-safe.
+ *
  * Revision 1.60  2006/03/09 19:04:17  ssikorsk
  * Utilized method I_DriverContext:: CloseAllConn.
  *
