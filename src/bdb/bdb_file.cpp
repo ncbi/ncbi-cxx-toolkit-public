@@ -158,7 +158,7 @@ DB_TXN* CBDB_RawFile::GetTxn()
 
 void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 {
-    LOG_POST("Closing: " << m_FileName);
+    LOG_POST(Info << "Closing: " << m_FileName);
     if ( m_FileName.empty() )
         return;
 
@@ -1242,6 +1242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/03/15 15:55:32  kuznets
+ * File closing message made Info message
+ *
  * Revision 1.57  2006/02/21 14:40:53  kuznets
  * Diagnostics
  *
