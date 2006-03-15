@@ -178,10 +178,6 @@ Int4 GetOffsetArraySize(LookupTableWrap* lookup)
       offset_array_size = OFFSET_ARRAY_SIZE + 
          ((BlastLookupTable*)lookup->lut)->longest_chain;
       break;
-   case RPS_LOOKUP_TABLE:
-      offset_array_size = OFFSET_ARRAY_SIZE + 
-         ((BlastRPSLookupTable*)lookup->lut)->longest_chain;
-      break;
    default:
       offset_array_size = OFFSET_ARRAY_SIZE;
       break;
