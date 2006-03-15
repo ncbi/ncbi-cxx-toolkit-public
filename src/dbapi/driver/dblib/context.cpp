@@ -120,9 +120,10 @@ CDBLibContext::CDBLibContext(DBINT version)
 : m_PacketSize( 0 )
 , m_TDSVersion( version )
 {
+    DEFINE_STATIC_FAST_MUTEX(xMutex);
+
     SetApplicationName("DBLibDriver");
 
-    DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
     CHECK_DRIVER_ERROR( 
@@ -198,6 +199,8 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     char s[64];
     sprintf(s, "%lu", (unsigned long) nof_bytes);
+    CFastMutexGuard mg(m_Mtx);
+
 #ifdef MS_DBLIB_IN_USE
     return dbsetopt(0, DBTEXTLIMIT, s) == SUCCEED;
 #else
@@ -218,6 +221,8 @@ void CDBLibContext::SetClientCharset(const char* charset) const
 I_Connection* 
 CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {
+    CFastMutexGuard mg(m_Mtx);
+
     DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name, 
                                          conn_attr.user_name, 
                                          conn_attr.passwd, 
@@ -271,26 +276,29 @@ bool CDBLibContext::IsAbleTo(ECapability cpb) const
 CDBLibContext::~CDBLibContext()
 {
     try {
-        CDBL_Connection* t_con;
-
-        // close all connections first
-        CloseAllConn();
+        if (g_pContext) {
+            CFastMutexGuard mg(m_Mtx);
+            if (g_pContext) {
+                // close all connections first
+                CloseAllConn();
 
 #ifdef MS_DBLIB_IN_USE
-        // Fail for some reason (04/08/05) ...
-        // dbfreelogin(m_Login);
-        dbwinexit();
+                // Fail for some reason (04/08/05) ...
+                // dbfreelogin(m_Login);
+                dbwinexit();
 #else
-        dbloginfree(m_Login);
-#if defined(FTDS_IN_USE) || !defined(NCBI_OS_MSWIN)
-        dbexit();
+                dbloginfree(m_Login);
+#  if defined(FTDS_IN_USE) || !defined(NCBI_OS_MSWIN)
+                dbexit();
+#  endif
 #endif
-#endif
-        g_pContext = NULL;
+                g_pContext = NULL;
 
 #if defined(NCBI_OS_MSWIN) && defined(FTDS_IN_USE)
-        WSACleanup();
+                WSACleanup();
 #endif
+            }
+        }
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -1083,6 +1091,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/03/15 20:03:57  ssikorsk
+ * Made more MT-safe.
+ *
  * Revision 1.67  2006/03/09 19:03:58  ssikorsk
  * Utilized method I_DriverContext:: CloseAllConn.
  *
