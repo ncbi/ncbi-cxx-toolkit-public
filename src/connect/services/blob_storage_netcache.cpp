@@ -74,7 +74,7 @@ void CBlobStorage_NetCache::x_Check()
 {
     if ( (m_IStream.get() && !(m_CacheFlags & eCacheInput)) || 
          (m_OStream.get() || (m_CacheFlags & eCacheOutput) && m_CreatedBlobId) )
-        NCBI_THROW(CNetCacheStorageException,
+        NCBI_THROW(CBlobStorageException,
                    eBusy, "Communication channel is already in use.");
 }
 
@@ -89,7 +89,7 @@ auto_ptr<IReader> CBlobStorage_NetCache::x_GetReader(const string& key,
 
     auto_ptr<IReader> reader;
     if (key.empty()) 
-        NCBI_THROW(CNetCacheStorageException,
+        NCBI_THROW(CBlobStorageException,
                    eBlobNotFound, "Requested blob is not found.");
     int try_count = 0;
     while(1) {
@@ -114,10 +114,20 @@ auto_ptr<IReader> CBlobStorage_NetCache::x_GetReader(const string& key,
         }
     }
     if (!reader.get()) {
-        NCBI_THROW(CNetCacheStorageException,
+        NCBI_THROW(CBlobStorageException,
                    eBlobNotFound, "Requested blob is not found.");
     }
     return reader;
+}
+
+bool CBlobStorage_NetCache::IsKeyValid(const string& str)
+{
+    try {
+        CNetCache_Key key(str);
+        return true;
+    } catch(...) {
+        return false;
+    }
 }
 
 CNcbiIstream& CBlobStorage_NetCache::GetIStream(const string& key,
@@ -161,20 +171,14 @@ CNcbiIstream& CBlobStorage_NetCache::GetIStream(const string& key,
 string CBlobStorage_NetCache::GetBlobAsString(const string& data_id)
 {
     size_t b_size = 0;
-    //    try {
-        auto_ptr<IReader> reader = x_GetReader(data_id, b_size, eLockWait);
-        AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
-        if( reader->Read(buf.get(), b_size) != eRW_Success )
-            NCBI_THROW(CBlobStorageException,
-                       eReader, "Reader couldn't read a blob.");
-        buf.get()[b_size] = 0;   
-        return string(buf.get());
-
-        //    } catch (CNetCacheNSStorageException& ex) {
-        //        if (ex.GetErrCode() == CNetCacheNSStorageException::eBlobNotFound)
-        //            return "";//data_id;
-        //        throw;
-        //    }
+    auto_ptr<IReader> reader = x_GetReader(data_id, b_size, eLockWait);
+    //    vector<char> buf(b_size);
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
+    if( reader->Read(buf.get(), b_size) != eRW_Success )
+        NCBI_THROW(CBlobStorageException,
+                   eReader, "Reader couldn't read a blob.");
+    buf.get()[b_size] = 0;   
+    return string(buf.get());
 }
 
 CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
@@ -391,6 +395,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2006/03/15 17:20:35  didenko
+ * +IsValidKey method
+ * Added new CBlobStorageExecption error codes
+ *
  * Revision 6.3  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

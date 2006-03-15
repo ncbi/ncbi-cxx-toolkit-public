@@ -55,6 +55,13 @@ public:
 
     virtual ~IBlobStorage();
 
+    /// Check if a given string is a valid key.
+    /// The implementaion should not check if a blob with a given key
+    /// exists in the storage (and does not do any connection to the 
+    /// storgae) it just checks the str structure.
+    virtual bool IsKeyValid(const string& str) = 0;
+
+
     /// Get a blob content as a string
     ///
     /// @param blob_key
@@ -175,19 +182,23 @@ class CBlobStorageException : public CException
 {
 public:
     enum EErrCode {
-        eReader,    ///< A problem arised while reading from a stroage
-        eWriter,    ///< A problem arised while writting to a stroage
-        eBlocked    ///< A blob is blocked by another reader/writer
+        eReader,       ///< A problem arised while reading from a stroage
+        eWriter,       ///< A problem arised while writting to a stroage
+        eBlocked,      ///< A blob is blocked by another reader/writer
+        eBlobNotFound, ///< A blob is not found
+        eBusy          ///< An instance of storage is busy
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
-        case eReader:  return "eReaderError";
-        case eWriter:  return "eWriterError";
-        case eBlocked: return "eBlocked";
-        default:       return CException::GetErrCodeString();
+        case eReader:       return "eReaderError";
+        case eWriter:       return "eWriterError";
+        case eBlocked:      return "eBlocked";
+        case eBlobNotFound: return "eBlobNotFound";
+        case eBusy:         return "eBusy";
+        default:            return CException::GetErrCodeString();
         }
     }
 
@@ -224,6 +235,7 @@ public:
                    eWriter, "Empty Storage writer.");
     }
 
+    virtual bool IsKeyValid(const string&) { return false; }
     virtual string CreateEmptyBlob() { return kEmptyStr; };
     virtual void DeleteBlob(const string& data_id) {}
     virtual void Reset() {};
@@ -252,6 +264,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/03/15 17:20:35  didenko
+ * +IsValidKey method
+ * Added new CBlobStorageExecption error codes
+ *
  * Revision 1.3  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

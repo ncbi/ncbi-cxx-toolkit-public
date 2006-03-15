@@ -78,6 +78,9 @@ public:
 
     virtual ~CBlobStorage_NetCache(); 
 
+
+    virtual bool IsKeyValid(const string& str);
+
     /// Get a blob content as a string
     ///
     /// @param[in] blob_key
@@ -155,35 +158,15 @@ void BlobStorage_RegisterDriver_NetCache(void);
 } // extern C
 
 
-
-class CNetCacheStorageException : public CBlobStorageException
-{
-public:
-    enum EErrCode {
-        eBlobNotFound,
-        eBusy
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eBlobNotFound: return "eBlobNotFoundError";
-        case eBusy:         return "eBusy";
-        default:      return CBlobStorageException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetCacheStorageException, 
-                           CBlobStorageException);
-};
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/03/15 17:20:35  didenko
+ * +IsValidKey method
+ * Added new CBlobStorageExecption error codes
+ *
  * Revision 1.4  2006/02/27 14:50:20  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *
