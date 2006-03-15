@@ -49,7 +49,7 @@ objects/general/User_field.hpp
 objects/general/User_field_.hpp
 objects/general/User_object.hpp
 objects/general/User_object_.hpp
-objects/general/cleanup_utils.hpp
+objects/general/general_exception.hpp
 objects/general/uoconv.hpp
 objects/general/NCBI_General_module.hpp
 
@@ -58,6 +58,9 @@ objects/general/NCBI_General_module.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/03/15 15:34:57  jcherry
+ * Adjusted header list
+ *
  * Revision 1.3  2005/10/27 12:37:18  jcherry
  * Added *_module.hpp
  *
