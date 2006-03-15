@@ -1317,7 +1317,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
                    && m_AlignOption&eShowIdentity && has_mismatch && 
                    (m_AlignOption & eColorDifferentBases)){
-                    out<< "<font color = \"k_ColorRed\"><b>";         
+                    out<< "<font color = \""<<k_ColorRed<<"\"><b>";         
                 }
                 out<<seqidArray[row]; 
                
@@ -3126,6 +3126,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.113  2006/03/15 16:45:02  jianye
+*correct font tag
+*
 *Revision 1.112  2006/03/13 15:58:18  jianye
 *corrected font color tag
 *
