@@ -6,6 +6,10 @@
 # pcre moved into platform specific make 
 # LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
 
+CXXFLAGS = $(FAST_CXXFLAGS)
+
+LDFLAGS  = $(FAST_LDFLAGS)
+
 CPPFLAGS = -I$(top_srcdir)/src/algo/ms/omssa $(ORIG_CPPFLAGS)
 
 APP = omssamerge
