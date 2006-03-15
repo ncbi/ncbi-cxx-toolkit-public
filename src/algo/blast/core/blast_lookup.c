@@ -114,6 +114,8 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt,
   return LookupTableNew(opt, lut, 0, TRUE);
 }
 
+#define RPS_BUCKET_SIZE 2048
+
 Int4 RPSLookupTableNew(const BlastRPSInfo *info,
 		      BlastRPSLookupTable* * lut)
 {
@@ -124,7 +126,6 @@ Int4 RPSLookupTableNew(const BlastRPSInfo *info,
       (BlastRPSLookupTable*) calloc(1, sizeof(BlastRPSLookupTable));
    Int4* pssm_start;
    Int4 num_pssm_rows;
-   Int4 longest_chain;
 
    ASSERT(info != NULL);
 
@@ -151,16 +152,11 @@ Int4 RPSLookupTableNew(const BlastRPSInfo *info,
    lookup->pv = (PV_ARRAY_TYPE *)
       calloc((lookup->backbone_size >> PV_ARRAY_BTS) , sizeof(PV_ARRAY_TYPE));
 
-   longest_chain = 0;
    for (i = 0; i < lookup->backbone_size; i++) {
       if (lookup->rps_backbone[i].num_used > 0) {
 	 PV_SET(lookup,i);
       }
-      if (lookup->rps_backbone[i].num_used > longest_chain) {
-         longest_chain = lookup->rps_backbone[i].num_used;
-      }
    }
-   lookup->longest_chain = longest_chain;
 
    /* Fill in the PSSM information */
 
@@ -177,6 +173,22 @@ Int4 RPSLookupTableNew(const BlastRPSInfo *info,
    for (i = 0; i < num_pssm_rows + 1; i++) {
       lookup->rps_pssm[i] = pssm_start;
       pssm_start += lookup->alphabet_size;
+   }
+
+   /* divide the concatenated database into regions of
+      size RPS_BUCKET_SIZE. bucket_array will then be
+      used to organize offsets retrieved from the lookup
+      table in order to increase cache reuse */
+
+   lookup->num_buckets = num_pssm_rows / RPS_BUCKET_SIZE + 1;
+   lookup->bucket_array = (RPSBucket *)malloc(lookup->num_buckets *
+                                         sizeof(RPSBucket));
+   for (i = 0; i < lookup->num_buckets; i++) {
+       RPSBucket *bucket = lookup->bucket_array + i;
+       bucket->num_filled = 0;
+       bucket->num_alloc = 1000;
+       bucket->offset_pairs = (BlastOffsetPair *)malloc(bucket->num_alloc * 
+                                                     sizeof(BlastOffsetPair));
    }
 
    return 0;
@@ -532,28 +544,55 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
   return totalhits;
 }
 
+static void s_AddToRPSBucket(RPSBucket *b, Uint4 q_off, Uint4 s_off)
+{
+    BlastOffsetPair* offset_pairs = b->offset_pairs;
+    Int4 i = b->num_filled;
+    if (i == b->num_alloc) {
+        b->num_alloc *= 2;
+        offset_pairs = b->offset_pairs = (BlastOffsetPair *)realloc(
+                                       b->offset_pairs, b->num_alloc * 
+                                       sizeof(BlastOffsetPair));
+    }
+    offset_pairs[i].qs_offsets.q_off = q_off;
+    offset_pairs[i].qs_offsets.s_off = s_off;
+    b->num_filled++;
+}
+
 Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *sequence,
-                        Int4* offset,
-                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
-                        Int4 array_size
-		   )
+                        Int4* offset)
 {
   Int4 index=0;
   Int4 table_correction;
   Uint1* s=NULL;
+  Uint1* abs_start = sequence->sequence;
   Uint1* s_first=NULL;
   Uint1* s_last=NULL;
   Int4 numhits = 0; /* number of hits found for a given subject offset */
   Int4 totalhits = 0; /* cumulative number of hits found */
   BlastRPSLookupTable* lookup;
   RPSBackboneCell *cell;
+  RPSBucket *bucket_array;
+  /* Buffer a large number of hits at once. The number of
+     hits is independent of the search, because the structures
+     that will contain them grow dynamically. A large number
+     is needed because cache reuse requires that many hits
+     to the same neighborhood of the concatenated database
+     are available at any given time */
+  const Int4 max_hits = 4000000;
 
   ASSERT(lookup_wrap->lut_type == RPS_LOOKUP_TABLE);
   lookup = (BlastRPSLookupTable*) lookup_wrap->lut;
+  bucket_array = lookup->bucket_array;
+  
+  /* empty the previous collection of hits */
 
-  s_first = sequence->sequence + *offset;
-  s_last  = sequence->sequence + sequence->length - lookup->wordsize; 
+  for (index = 0; index < lookup->num_buckets; index++)
+      bucket_array[index].num_filled = 0;
+
+  s_first = abs_start + *offset;
+  s_last = abs_start + sequence->length - lookup->wordsize; 
 
   /* Calling code expects the returned sequence offsets to
      refer to the *first letter* in a word. The legacy RPS blast
@@ -582,32 +621,31 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
 
           ASSERT(numhits != 0);
     
-	  if ( numhits <= (array_size - totalhits) )
+	  if ( numhits <= (max_hits - totalhits) )
 	    {
 	      Int4* src;
 	      Int4 i;
+              Uint4 q_off;
+              Uint4 s_off = s - abs_start;
 	      if ( numhits <= RPS_HITS_PER_CELL ) {
-		/* hits live in thick_backbone */
 	        for(i=0;i<numhits;i++)
 		  {
-		    offset_pairs[i + totalhits].qs_offsets.q_off = 
-                        cell->entries[i] - table_correction;
-		    offset_pairs[i + totalhits].qs_offsets.s_off = 
-                        s - sequence->sequence;
+                    q_off = cell->entries[i] - table_correction;
+                    s_AddToRPSBucket(bucket_array + q_off/RPS_BUCKET_SIZE, 
+                                     q_off, s_off);
 		  }
               }
 	      else {
 		/* hits (past the first) live in overflow array */
 		src = lookup->overflow + (cell->entries[1] / sizeof(Int4));
-		offset_pairs[totalhits].qs_offsets.q_off = 
-                    cell->entries[0] - table_correction;
-		offset_pairs[totalhits].qs_offsets.s_off = s - sequence->sequence;
+                q_off = cell->entries[0] - table_correction;
+                s_AddToRPSBucket(bucket_array + q_off/RPS_BUCKET_SIZE, 
+                                 q_off, s_off);
 	        for(i=0;i<(numhits-1);i++)
 		  {
-		    offset_pairs[i+totalhits+1].qs_offsets.q_off = 
-                        src[i] - table_correction;
-		    offset_pairs[i+totalhits+1].qs_offsets.s_off = 
-                        s - sequence->sequence;
+                    q_off = src[i] - table_correction;
+                    s_AddToRPSBucket(bucket_array + q_off/RPS_BUCKET_SIZE, 
+                                     q_off, s_off);
 		  }
 	      }
 
@@ -626,7 +664,7 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
     }
 
   /* if we get here, we fell off the end of the sequence */
-  *offset = s - sequence->sequence;
+  *offset = s - abs_start;
 
   return totalhits;
 }
@@ -1259,6 +1297,11 @@ BlastRPSLookupTable* RPSLookupTableDestruct(BlastRPSLookupTable* lookup)
 {
    /* The following will only free memory that was 
       allocated by RPSLookupTableNew. */
+   Int4 i;
+   for (i = 0; i < lookup->num_buckets; i++)
+       sfree(lookup->bucket_array[i].offset_pairs);
+   sfree(lookup->bucket_array);
+
    sfree(lookup->rps_pssm);
    sfree(lookup->pv);
    sfree(lookup);
