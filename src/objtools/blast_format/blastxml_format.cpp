@@ -51,6 +51,8 @@ static char const rcsid[] = "$Id$";
 
 #include <algo/blast/api/version.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(blast);
