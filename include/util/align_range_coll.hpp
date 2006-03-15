@@ -38,6 +38,8 @@
 
 #include <util/range.hpp>
 
+#include <algorithm>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -747,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/03/15 02:33:02  ucko
+ * +<algorithm> for lower_bound().
+ *
  * Revision 1.10  2006/02/23 14:49:42  dicuccio
  * Added lower_bound, upper_bound; qualify internal uses of lower_bound using
  * std:: namespace
