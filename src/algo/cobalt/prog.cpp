@@ -37,6 +37,7 @@ Contents: Perform a progressive multiple alignment
 
 #include <ncbi_pch.hpp>
 #include <algo/cobalt/cobalt.hpp>
+#include <algorithm>
 
 /// @file prog.cpp
 /// Perform a progressive multiple alignment
@@ -980,6 +981,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.11  2006/03/15 15:23:27  ucko
+  +<algorithm> for sort().
+
   Revision 1.10  2006/03/10 19:29:43  papadopo
   fold user-specified constraints into the complete list of candidates to constrain profile-profile alignments
 
