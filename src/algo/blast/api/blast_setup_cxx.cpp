@@ -744,7 +744,7 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
 /// Tests if a number represents a valid residue
 /// @param res Value to test [in]
 /// @return TRUE if value is a valid residue ( < 26)
-static bool s_IsValidResidue(Uint1 res) { return res < 26; }
+static inline bool s_IsValidResidue(Uint1 res) { return res < 26; }
 
 /// Protein sequences are always encoded in eBlastEncodingProtein and always 
 /// have sentinel bytes around sequence data
@@ -1576,6 +1576,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.109  2006/03/15 22:39:54  camacho
+ * Minor change
+ *
  * Revision 1.108  2006/03/03 17:15:21  camacho
  * Doxygen fixes
  *
