@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 
 /// convert double quotes to single quotes
 inline 
-void NCBI_GENERAL_EXPORT ConvertDoubleQuotes(string& str)
+void ConvertDoubleQuotes(string& str)
 {
     if (!str.empty()) {
         replace(str.begin(), str.end(), '\"', '\'');
@@ -52,10 +52,10 @@ void NCBI_GENERAL_EXPORT ConvertDoubleQuotes(string& str)
 
 
 /// truncate spaces and semicolons
-void NCBI_GENERAL_EXPORT CleanString(string& str);
+void CleanString(string& str);
 
 /// remove all spaces from a string
-void NCBI_GENERAL_EXPORT RemoveSpaces(string& str);
+void RemoveSpaces(string& str);
 
 /// clean a container of strings, remove blanks and repeats.
 template<typename C>
@@ -132,6 +132,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/03/15 14:09:54  dicuccio
+* Fix compilation errors: hide assignment operator, drop import specifier for
+* private functions
+*
 * Revision 1.1  2006/03/14 20:21:50  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *

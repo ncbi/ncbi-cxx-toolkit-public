@@ -85,8 +85,6 @@ private:
 class NCBI_CLEANUP_EXPORT CCleanupChangeItem : public CObject 
 {
 public:
-    
-
     // destructor
     ~CCleanupChangeItem(void);
 
@@ -117,8 +115,6 @@ private:
                        const string&        obj_desc,  // object description
                        const CSerialObject& obj);      // offending object
     
-    CCleanupChangeItem(void);
-    CCleanupChangeItem(const CCleanupChangeItem&);
 
     void x_SetAcc(void);
     void x_SetAcc(const CBioseq& seq);
@@ -131,6 +127,12 @@ private:
 
     // currently used for Seqdesc objects only
     CConstRef<CSeq_entry> m_Ctx;
+
+private:
+    /// forbidden
+    CCleanupChangeItem(void);
+    CCleanupChangeItem(const CCleanupChangeItem&);
+    CCleanupChangeItem& operator=(const CCleanupChangeItem&);
 };
 
 
@@ -218,6 +220,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/03/15 14:09:54  dicuccio
+* Fix compilation errors: hide assignment operator, drop import specifier for
+* private functions
+*
 * Revision 1.5  2006/03/14 20:21:50  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *
