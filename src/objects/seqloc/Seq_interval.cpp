@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2006/03/16 18:58:30  grichenk
+ * Indicate intervals truncated while mapping by fuzz lim tl/tr.
+ *
  * Revision 6.10  2005/02/18 15:01:53  shomrat
  * Use ESeqLocExtremes to solve Left/Right ambiguity
  *
@@ -179,6 +182,90 @@ void CSeq_interval::SetPartialStop(bool val, ESeqLocExtremes ext)
         }
     }
     _ASSERT(val == IsPartialStop(ext));
+}
+
+
+bool CSeq_interval::IsTruncatedStart(ESeqLocExtremes ext) const
+{
+    if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+        if (IsSetFuzz_to()) {
+            const CInt_fuzz& ifp = GetFuzz_to();
+            if (ifp.IsLim()  &&  ifp.GetLim() == CInt_fuzz::eLim_tr) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz_from()) {
+            const CInt_fuzz& ifp = GetFuzz_from();
+            if (ifp.IsLim()  &&  ifp.GetLim() == CInt_fuzz::eLim_tl) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CSeq_interval::IsTruncatedStop(ESeqLocExtremes ext) const
+{
+    if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+        if (IsSetFuzz_from()) {
+            const CInt_fuzz& ifp = GetFuzz_from();
+            if (ifp.IsLim()  &&  ifp.GetLim() == CInt_fuzz::eLim_tl) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz_to()) {
+            const CInt_fuzz& ifp = GetFuzz_to();
+            if (ifp.IsLim()  &&  ifp.GetLim() == CInt_fuzz::eLim_tr) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void CSeq_interval::SetTruncatedStart(bool val, ESeqLocExtremes ext)
+{
+    if (val != IsTruncatedStart(ext)) {
+        if (val) {
+            if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+                SetFuzz_to().SetLim(CInt_fuzz::eLim_tr);
+            } else {
+                SetFuzz_from().SetLim(CInt_fuzz::eLim_tl);
+            }
+        } else {
+            if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+                ResetFuzz_to();
+            } else {
+                ResetFuzz_from();
+            }
+        }
+    }
+    _ASSERT(val == IsTruncatedStart(ext));
+}
+
+
+void CSeq_interval::SetTruncatedStop(bool val, ESeqLocExtremes ext)
+{
+    if (val != IsTruncatedStop(ext)) {
+        if (val) {
+            if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+                SetFuzz_from().SetLim(CInt_fuzz::eLim_tl);
+            } else {
+                SetFuzz_to().SetLim(CInt_fuzz::eLim_tr);
+            }
+        } else {
+            if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+                ResetFuzz_from();
+            } else {
+                ResetFuzz_to();
+            }
+        }
+    }
+    _ASSERT(val == IsTruncatedStop(ext));
 }
 
 

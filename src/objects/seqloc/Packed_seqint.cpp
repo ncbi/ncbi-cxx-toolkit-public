@@ -105,7 +105,7 @@ void CPacked_seqint::SetPartialStart(bool val, ESeqLocExtremes ext)
             Set().back() : Set().front();
     }
     if (ival != NULL) {
-        ival->SetPartialStop(val, ext);
+        ival->SetPartialStart(val, ext);
     }
 }
 
@@ -119,6 +119,54 @@ void CPacked_seqint::SetPartialStop(bool val, ESeqLocExtremes ext)
     }
     if (ival != NULL) {
         ival->SetPartialStop(val, ext);
+    }
+}
+
+
+bool CPacked_seqint::IsTruncatedStart(ESeqLocExtremes ext) const
+{
+    const CSeq_interval* ival = NULL;
+    if (!Get().empty()) {
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Get().back() : Get().front();
+    }
+    return (ival != NULL) ? ival->IsTruncatedStart(ext) : false;
+}
+
+
+bool CPacked_seqint::IsTruncatedStop(ESeqLocExtremes ext) const
+{
+    const CSeq_interval* ival = NULL;
+    if (!Get().empty()) {
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Get().front() : Get().back();
+    }
+    return (ival != NULL) ? ival->IsTruncatedStop(ext) : false;
+}
+
+
+void CPacked_seqint::SetTruncatedStart(bool val, ESeqLocExtremes ext)
+{
+    CSeq_interval* ival = NULL;
+    if (!Set().empty()) {
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Set().back() : Set().front();
+    }
+    if (ival != NULL) {
+        ival->SetTruncatedStart(val, ext);
+    }
+}
+
+
+void CPacked_seqint::SetTruncatedStop(bool val, ESeqLocExtremes ext)
+{
+    CSeq_interval* ival = NULL;
+    if (!Set().empty()) {
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Set().front() : Set().back();
+    }
+    if (ival != NULL) {
+        ival->SetTruncatedStop(val, ext);
     }
 }
 
@@ -238,6 +286,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.14  2006/03/16 18:58:30  grichenk
+ * Indicate intervals truncated while mapping by fuzz lim tl/tr.
+ *
  * Revision 6.13  2005/02/18 15:01:53  shomrat
  * Use ESeqLocExtremes to solve Left/Right ambiguity
  *

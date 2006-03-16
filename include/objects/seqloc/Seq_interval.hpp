@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2006/03/16 18:58:30  grichenk
+ * Indicate intervals truncated while mapping by fuzz lim tl/tr.
+ *
  * Revision 1.15  2005/02/18 15:00:47  shomrat
  * Use ESeqLocExtremes to solve Left/Right ambiguity
  *
@@ -123,6 +126,15 @@ public:
     // set / remove e_Lim fuzz on start or stop end
     void SetPartialStart(bool val, ESeqLocExtremes ext);
     void SetPartialStop (bool val, ESeqLocExtremes ext);
+
+    /// check if parts of the seq-loc are missing
+    bool IsTruncatedStart(ESeqLocExtremes ext) const;
+    bool IsTruncatedStop (ESeqLocExtremes ext) const;
+
+    /// set / remove e_Lim fuzz on start or stop
+    /// (tl/tr - indicating removed parts of the seq-loc)
+    void SetTruncatedStart(bool val, ESeqLocExtremes ext);
+    void SetTruncatedStop (bool val, ESeqLocExtremes ext);
 
     // Flip the strand (e.g. plus to minus)
     void FlipStrand(void);

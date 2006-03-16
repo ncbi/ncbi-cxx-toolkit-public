@@ -659,11 +659,16 @@ CSeq_loc_CI::CSeq_loc_CI(void)
 }
 
 
-CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc& loc, EEmptyFlag empty_flag)
+CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc& loc,
+                         EEmptyFlag empty_flag,
+                         ESeqLocOrder order)
     : m_Location(&loc),
       m_EmptyFlag(empty_flag)
 {
     x_ProcessLocation(loc);
+    if ( order == eOrder_Biological  &&  loc.IsReverseStrand() ) {
+        m_LocList.reverse();
+    }
     m_CurLoc = m_LocList.begin();
 }
 
@@ -1197,6 +1202,124 @@ void CSeq_loc::SetPartialStop(bool val, ESeqLocExtremes ext)
 
         case e_Mix:
             SetMix().SetPartialStop(val, ext);
+            break;
+
+        default :
+            break;
+    }
+}
+
+
+bool CSeq_loc::IsTruncatedStart(ESeqLocExtremes ext) const
+{
+    switch (Which ()) {
+        case e_Int :
+            return GetInt().IsTruncatedStart(ext);
+
+        case e_Packed_int :
+            return GetPacked_int().IsTruncatedStart(ext);
+
+        case e_Pnt :
+            return GetPnt().IsTruncatedStart(ext);
+
+        case e_Packed_pnt :
+            return GetPacked_pnt().IsTruncatedStart(ext);
+
+        case e_Mix :
+            return GetMix().IsTruncatedStart(ext);
+
+        default :
+            break;
+    }
+
+    return false;
+}
+
+
+bool CSeq_loc::IsTruncatedStop(ESeqLocExtremes ext) const
+{
+    switch (Which ()) {
+        case e_Int :
+            return GetInt().IsTruncatedStop(ext);
+
+        case e_Packed_int :
+            return GetPacked_int().IsTruncatedStop(ext);
+
+        case e_Pnt :
+            return GetPnt().IsTruncatedStop(ext);
+
+        case e_Packed_pnt :
+            return GetPacked_pnt().IsTruncatedStop(ext);
+
+        case e_Mix :
+            return GetMix().IsTruncatedStop(ext);
+
+        default :
+            break;
+    }
+
+    return false;
+}
+
+
+void CSeq_loc::SetTruncatedStart(bool val, ESeqLocExtremes ext)
+{
+    if (val == IsTruncatedStart(ext)) {
+        return;
+    }
+
+    switch (Which()) {
+        case e_Int:
+            SetInt().SetTruncatedStart(val, ext);
+            break;
+
+        case e_Packed_int :
+            SetPacked_int().SetTruncatedStart(val, ext);
+            break;
+
+        case e_Pnt:
+            SetPnt().SetTruncatedStart(val, ext);
+            break;
+
+        case e_Packed_pnt:
+            SetPacked_pnt().SetTruncatedStart(val, ext);
+            break;
+
+        case e_Mix :
+            SetMix().SetTruncatedStart(val, ext);
+            break;
+
+        default :
+            break;
+    }
+}
+
+
+void CSeq_loc::SetTruncatedStop(bool val, ESeqLocExtremes ext)
+{
+    if (val == IsTruncatedStop(ext)) {
+        return;
+    }
+
+    switch (Which()) {
+        case e_Int:
+            SetInt().SetTruncatedStop(val, ext);
+            break;
+
+        case e_Packed_int :
+            SetPacked_int().SetTruncatedStop(val, ext);
+            break;
+
+        case e_Pnt:
+            SetPnt().SetTruncatedStop(val, ext);
+            break;
+
+        case e_Packed_pnt:
+            SetPacked_pnt().SetTruncatedStop(val, ext);
+            break;
+
+        case e_Mix:
+            SetMix().SetTruncatedStop(val, ext);
             break;
 
         default :
@@ -2462,6 +2585,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.59  2006/03/16 18:58:30  grichenk
+ * Indicate intervals truncated while mapping by fuzz lim tl/tr.
+ *
  * Revision 6.58  2005/11/22 20:11:06  grichenk
  * Fixed assignment of iterator.
  *

@@ -1454,8 +1454,20 @@ bool CSeq_loc_Mapper::x_MapNextRange(const TRange& src_rg,
             fuzz.second = src_fuzz.second;
         }
     }
+    if ( m_LastTruncated ) {
+        if ( !reverse && !fuzz.first ) {
+            fuzz.first.Reset(new CInt_fuzz);
+            fuzz.first->SetLim(CInt_fuzz::eLim_tl);
+        }
+        else if ( reverse  &&  !fuzz.second ) {
+            fuzz.second.Reset(new CInt_fuzz);
+            fuzz.second->SetLim(CInt_fuzz::eLim_tr);
+        }
+        m_LastTruncated = false;
+    }
 
     TRangeFuzz mapped_fuzz = cvt.Map_Fuzz(fuzz);
+
     TRange rg = cvt.Map_Range(left, right, &src_fuzz);
     ENa_strand dst_strand;
     bool is_set_dst_strand = cvt.Map_Strand(is_set_strand,
@@ -1464,6 +1476,19 @@ bool CSeq_loc_Mapper::x_MapNextRange(const TRange& src_rg,
                       STRAND_TO_INDEX(is_set_dst_strand, dst_strand),
                       rg, mapped_fuzz);
     return true;
+}
+
+
+void CSeq_loc_Mapper::x_SetLastTruncated(void)
+{
+    if ( m_LastTruncated ) {
+        return;
+    }
+    m_LastTruncated = true;
+    x_PushRangesToDstMix();
+    if ( m_Dst_loc  &&  !m_Dst_loc->IsPartialStop(eExtreme_Biological) ) {
+        m_Dst_loc->SetTruncatedStop(true, eExtreme_Biological);
+    }
 }
 
 
@@ -1502,6 +1527,9 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
                               mappings, idx,
                               &last_src_to);
     }
+    if ( !res ) {
+        x_SetLastTruncated();
+    }
     return res;
 }
 
@@ -1535,6 +1563,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper::Map(const CSeq_loc& src_loc)
 {
     m_Dst_loc.Reset();
     m_Partial = false; // reset for each location
+    m_LastTruncated = false;
     x_MapSeq_loc(src_loc);
     x_PushRangesToDstMix();
     x_OptimizeSeq_loc(m_Dst_loc);
@@ -1546,6 +1575,7 @@ CRef<CSeq_align> CSeq_loc_Mapper::Map(const CSeq_align& src_align)
 {
     m_Dst_loc.Reset();
     m_Partial = false; // reset for each location
+    m_LastTruncated = false;
     return x_MapSeq_align(src_align);
 }
 
@@ -2077,6 +2107,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2006/03/16 18:58:30  grichenk
+* Indicate intervals truncated while mapping by fuzz lim tl/tr.
+*
 * Revision 1.44  2006/02/01 19:48:22  grichenk
 * CBioseq_Handle& top_level_seq argument made const.
 *

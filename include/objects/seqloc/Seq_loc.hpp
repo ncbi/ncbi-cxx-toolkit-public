@@ -133,11 +133,21 @@ public:
 
     /// check start or stop of location for e_Lim fuzz
     bool IsPartialStart(ESeqLocExtremes ext) const;
-    bool IsPartialStop (ESeqLocExtremes ext) const;
+    bool IsPartialStop(ESeqLocExtremes ext) const;
 
     /// set / remove e_Lim fuzz on start or stop
-    void SetPartialStart (bool val, ESeqLocExtremes ext);
-    void SetPartialStop  (bool val, ESeqLocExtremes ext);
+    /// (lt/gt - indicating partial interval)
+    void SetPartialStart(bool val, ESeqLocExtremes ext);
+    void SetPartialStop (bool val, ESeqLocExtremes ext);
+
+    /// check if parts of the seq-loc are missing
+    bool IsTruncatedStart(ESeqLocExtremes ext) const;
+    bool IsTruncatedStop (ESeqLocExtremes ext) const;
+
+    /// set / remove e_Lim fuzz on start or stop
+    /// (tl/tr - indicating removed parts of the seq-loc)
+    void SetTruncatedStart(bool val, ESeqLocExtremes ext);
+    void SetTruncatedStop (bool val, ESeqLocExtremes ext);
 
     /// Get the id of the location
     /// return NULL if has multiple ids or no id at all.
@@ -293,12 +303,17 @@ public:
         eEmpty_Skip,    /// ignore empty locations
         eEmpty_Allow    /// treat empty locations as usual
     };
-
+    enum ESeqLocOrder {
+        eOrder_Positional,    /// Iterate sub-locations in positional order
+        eOrder_Biological     /// Iterate sub-locations in biological order
+    };
     typedef CSeq_loc::TRange    TRange;
 
     /// constructors
     CSeq_loc_CI(void);
-    CSeq_loc_CI(const CSeq_loc& loc, EEmptyFlag empty_flag = eEmpty_Skip);
+    CSeq_loc_CI(const CSeq_loc& loc,
+                EEmptyFlag empty_flag = eEmpty_Skip,
+                ESeqLocOrder order = eOrder_Positional);
     /// destructor
     ~CSeq_loc_CI(void);
 
@@ -615,6 +630,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/03/16 18:58:30  grichenk
+ * Indicate intervals truncated while mapping by fuzz lim tl/tr.
+ *
  * Revision 1.48  2005/06/21 14:20:46  ucko
  * Tweak CSeq_loc_CI::SLoc_Info::m_Fuzz's type to avoid GCC 3.0.4
  * optimizer crashes (probably brought on by the recent changes to CRef).

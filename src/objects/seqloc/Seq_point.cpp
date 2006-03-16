@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2006/03/16 18:58:30  grichenk
+ * Indicate intervals truncated while mapping by fuzz lim tl/tr.
+ *
  * Revision 6.10  2005/02/18 15:01:53  shomrat
  * Use ESeqLocExtremes to solve Left/Right ambiguity
  *
@@ -156,6 +159,53 @@ void CSeq_point::SetPartialStop (bool val, ESeqLocExtremes ext)
     if (val) {
         CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
             CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt;
+        SetFuzz().SetLim(lim);
+    } else {
+        ResetFuzz();
+    }
+}
+
+
+bool CSeq_point::IsTruncatedStart(ESeqLocExtremes ext) const
+{
+    CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+        CInt_fuzz::eLim_tr : CInt_fuzz::eLim_tl;
+    return IsSetFuzz()  &&  GetFuzz().IsLim()  &&  GetFuzz().GetLim() == lim;
+}
+
+
+bool CSeq_point::IsTruncatedStop(ESeqLocExtremes ext) const
+{
+    CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+        CInt_fuzz::eLim_tl : CInt_fuzz::eLim_tr;
+    return IsSetFuzz()  &&  GetFuzz().IsLim()  &&  GetFuzz().GetLim() == lim;
+}
+
+
+void CSeq_point::SetTruncatedStart(bool val, ESeqLocExtremes ext)
+{
+    if (val == IsTruncatedStart(ext)) {
+        return;
+    }
+
+    if (val) {
+        CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+            CInt_fuzz::eLim_tr : CInt_fuzz::eLim_tl;
+        SetFuzz().SetLim(lim);
+    } else {
+        ResetFuzz();
+    }
+}
+
+
+void CSeq_point::SetTruncatedStop (bool val, ESeqLocExtremes ext)
+{
+    if (val == IsTruncatedStop(ext)) {
+        return;
+    }
+    if (val) {
+        CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+            CInt_fuzz::eLim_tl : CInt_fuzz::eLim_tr;
         SetFuzz().SetLim(lim);
     } else {
         ResetFuzz();

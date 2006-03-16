@@ -315,6 +315,7 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
         src_to = m_Src_to;
     }
     if ( src_from > src_to ) {
+        m_Partial = true;
         return false;
     }
     TSeqPos dst_from, dst_to;
@@ -442,13 +443,27 @@ void CSeq_loc_Conversion::ConvertPacked_int(const CSeq_loc& src,
     _ASSERT(src.Which() == CSeq_loc::e_Packed_int);
     const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
     CPacked_seqint::Tdata* dst_ints = 0;
+    bool last_truncated = false;
     ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
         if ( ConvertInterval(**i) ) {
             if ( !dst_ints ) {
                 dst->Reset(new CSeq_loc);
                 dst_ints = &(*dst)->SetPacked_int().Set();
             }
-            dst_ints->push_back(GetDstInterval());
+            CRef<CSeq_interval> dst_int = GetDstInterval();
+            if ( last_truncated  &&
+                !dst_int->IsPartialStart(eExtreme_Biological) ) {
+                dst_int->SetTruncatedStart(true, eExtreme_Biological);
+            }
+            dst_ints->push_back(dst_int);
+            last_truncated = false;
+        }
+        else {
+            if ( !last_truncated  &&  *dst  &&
+                !(*dst)->IsPartialStop(eExtreme_Biological) ) {
+                (*dst)->SetTruncatedStop(true, eExtreme_Biological);
+            }
+            last_truncated = true;
         }
     }
 }
@@ -464,6 +479,7 @@ void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
     }
     const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
     CPacked_seqpnt::TPoints* dst_pnts = 0;
+    bool last_truncated = false;
     ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
         TSeqPos dst_pos = ConvertPos(*i);
         if ( dst_pos != kInvalidSeqPos ) {
@@ -497,6 +513,7 @@ void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
     const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
     CSeq_loc_mix::Tdata* dst_mix = 0;
     CRef<CSeq_loc> dst_loc;
+    bool last_truncated = false;
     ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
         if ( Convert(**i, &dst_loc, eCnvAlways) ) {
             if ( !dst_mix ) {
@@ -504,7 +521,19 @@ void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
                 dst_mix = &(*dst)->SetMix().Set();
             }
             _ASSERT(dst_loc);
+            if ( last_truncated  &&
+                !dst_loc->IsPartialStart(eExtreme_Biological) ) {
+                dst_loc->SetTruncatedStart(true, eExtreme_Biological);
+            }
             dst_mix->push_back(dst_loc);
+            last_truncated = false;
+        }
+        else {
+            if ( !last_truncated  &&  *dst  &&
+                !(*dst)->IsPartialStop(eExtreme_Biological) ) {
+                (*dst)->SetTruncatedStop(true, eExtreme_Biological);
+            }
+            last_truncated = true;
         }
     }
 }
@@ -1301,10 +1330,15 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
     _ASSERT(src.Which() == CSeq_loc::e_Packed_int);
     const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
     CPacked_seqint::Tdata& dst_ints = (*dst)->SetPacked_int().Set();
+    bool last_truncated = false;
     ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
         CRef<CSeq_loc> dst_int(new CSeq_loc);
         bool mapped = ConvertInterval(**i, &dst_int, loc_index);
         if (mapped) {
+            if ( last_truncated  &&
+                !dst_int->IsPartialStart(eExtreme_Biological) ) {
+                dst_int->SetTruncatedStart(true, eExtreme_Biological);
+            }
             if ( dst_int->IsInt() ) {
                 dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
             }
@@ -1316,8 +1350,15 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
                 _ASSERT("this cannot happen" && 0);
             }
         }
+        else {
+            if ( !last_truncated  &&
+                !(*dst)->IsPartialStop(eExtreme_Biological) ) {
+                (*dst)->SetTruncatedStop(true, eExtreme_Biological);
+            }
+        }
         m_Partial |= !mapped;
         res |= mapped;
+        last_truncated = !mapped;
     }
     return res;
 }
@@ -1374,12 +1415,25 @@ bool CSeq_loc_Conversion_Set::ConvertMix(const CSeq_loc& src,
     const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
     CRef<CSeq_loc> dst_loc;
     CSeq_loc_mix::Tdata& dst_mix = (*dst)->SetMix().Set();
+    bool last_truncated = false;
     ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
         dst_loc.Reset(new CSeq_loc);
         if ( Convert(**i, &dst_loc, loc_index) ) {
             _ASSERT(dst_loc);
+            if ( last_truncated  &&
+                !dst_loc->IsPartialStart(eExtreme_Biological) ) {
+                dst_loc->SetTruncatedStart(true, eExtreme_Biological);
+            }
             dst_mix.push_back(dst_loc);
             res = true;
+            last_truncated = false;
+        }
+        else {
+            if ( !last_truncated  &&
+                !(*dst)->IsPartialStop(eExtreme_Biological) ) {
+                (*dst)->SetTruncatedStop(true, eExtreme_Biological);
+            }
+            last_truncated = true;
         }
     }
     m_Partial |= !res;
@@ -1577,6 +1631,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2006/03/16 18:58:30  grichenk
+* Indicate intervals truncated while mapping by fuzz lim tl/tr.
+*
 * Revision 1.54  2005/09/22 20:49:33  grichenk
 * Adjust segment length when mapping alignment between nuc and prot.
 *

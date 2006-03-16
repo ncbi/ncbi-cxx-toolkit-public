@@ -365,6 +365,7 @@ private:
                        bool             is_set_strand,
                        ENa_strand       src_strand,
                        TRangeFuzz       orig_fuzz);
+    void x_SetLastTruncated(void);
 
     void x_PushLocToDstMix(CRef<CSeq_loc> loc);
 
@@ -406,6 +407,7 @@ private:
     int             m_Dst_width;
     TIdMap          m_IdMap;
     bool            m_Partial;
+    bool            m_LastTruncated;
 
     mutable TRangesById m_MappedLocs;
     CRef<CSeq_loc>      m_Dst_loc;
@@ -556,6 +558,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2006/03/16 18:58:30  grichenk
+* Indicate intervals truncated while mapping by fuzz lim tl/tr.
+*
 * Revision 1.29  2006/02/14 15:02:34  grichenk
 * Removed wrong comment
 *

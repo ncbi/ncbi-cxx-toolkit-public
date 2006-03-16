@@ -227,8 +227,8 @@ private:
 
     // Separate flags for left and right truncations of each interval
     enum EPartialFlag {
-        fPartial_from  = 1 << 0,
-        fPartial_to    = 1 << 1
+        fPartial_from = 1 << 0, // the interval is partial on the left
+        fPartial_to   = 1 << 1  // the interval is partial on the right
     };
     typedef int TPartialFlag;
 
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/03/16 18:58:30  grichenk
+* Indicate intervals truncated while mapping by fuzz lim tl/tr.
+*
 * Revision 1.30  2005/03/31 18:06:19  grichenk
 * Fixed filtering of duplicate annotations
 *
