@@ -168,15 +168,33 @@ void CDDBookRefDialog::OnCloseWindow(wxCloseEvent& event)
 
 static wxString MakeRID(const CCdd_book_ref& bref)
 {
-    wxString uid;
-    if (bref.IsSetSubelementid())
-        uid.Printf("%s.%s.%i#%i",
-            bref.GetBookname().c_str(), enum2str.Find(bref.GetTextelement())->c_str(),
-            bref.GetElementid(), bref.GetSubelementid());
-    else
-        uid.Printf("%s.%s.%i",
-            bref.GetBookname().c_str(), enum2str.Find(bref.GetTextelement())->c_str(), bref.GetElementid());
-    return uid;
+    wxString rid;
+
+    if (!bref.IsSetElementid() && !bref.IsSetCelementid())
+        ERRORMSG("MakeRID() failed - neither elementid nor celementid is set");
+
+    else if (bref.IsSetElementid() && bref.IsSetCelementid())
+        ERRORMSG("MakeRID() failed - both elementid and celementid are set");
+
+    else if (bref.IsSetSubelementid() && bref.IsSetCsubelementid())
+        ERRORMSG("MakeRID() failed - both subelementid and csubelementid are set");
+
+    else {
+        string
+            elementid = (bref.IsSetElementid() ? NStr::IntToString(bref.GetElementid()) : bref.GetCelementid()),
+            subelementid = ((bref.IsSetSubelementid() || bref.IsSetCsubelementid()) ?
+                (bref.IsSetSubelementid() ? NStr::IntToString(bref.GetSubelementid()) : bref.GetCsubelementid()) : kEmptyStr);
+        if (subelementid.size() > 0)
+            rid.Printf("%s.%s.%s#%s",
+                bref.GetBookname().c_str(), enum2str.Find(bref.GetTextelement())->c_str(),
+                elementid.c_str(), subelementid.c_str());
+        else
+            rid.Printf("%s.%s.%s",
+                bref.GetBookname().c_str(), enum2str.Find(bref.GetTextelement())->c_str(),
+                elementid.c_str());
+    }
+
+    return rid;
 }
 
 void CDDBookRefDialog::SetWidgetStates(void)
@@ -189,7 +207,9 @@ void CDDBookRefDialog::SetWidgetStates(void)
     for (d=descrSet->Set().begin(); d!=de; ++d) {
         if ((*d)->IsBook_ref()) {
             // make client data of menu item a pointer to the CRef containing the CCdd_descr object
-            listbox->Append(MakeRID((*d)->GetBook_ref()), &(*d));
+            wxString rid = MakeRID((*d)->GetBook_ref());
+            if (rid.size() > 0)
+                listbox->Append(rid, &(*d));
         }
     }
     if (selectedItem < 0 && listbox->GetCount() > 0)
@@ -207,11 +227,17 @@ void CDDBookRefDialog::SetWidgetStates(void)
         tName->SetValue(bref.GetBookname().c_str());
         cType->SetStringSelection(enum2str.Find(bref.GetTextelement())->c_str());
         wxString s;
-        s.Printf("%i", bref.GetElementid());
-        tAddress->SetValue(s);
-        if (bref.IsSetSubelementid())
-            s.Printf("%i", bref.GetSubelementid());
+        if (bref.IsSetElementid())
+            s.Printf("%i", bref.GetElementid());
         else
+            s.Printf("%s", bref.GetCelementid().c_str());
+        tAddress->SetValue(s);
+        if (bref.IsSetSubelementid() || bref.IsSetCsubelementid()) {
+            if (bref.IsSetSubelementid())
+                s.Printf("%i", bref.GetSubelementid());
+            else
+                s.Printf("%s", bref.GetCsubelementid().c_str());
+        } else
             s.Clear();
         tSubaddress->SetValue(s);
     } else {
@@ -300,10 +326,8 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cType, ID_C_TYPE, wxChoice)
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tAddress, ID_T_ADDRESS, wxTextCtrl)
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tSubaddress, ID_T_SUBADDRESS, wxTextCtrl)
-        long address, subaddress;
-        if (!tAddress->GetValue().ToLong(&address) ||
-            (tSubaddress->GetValue().size() > 0 && !tSubaddress->GetValue().ToLong(&subaddress))) {
-            ERRORMSG("Address (required) and sub-address (optional) must be integers");
+        if (tAddress->GetValue().size() == 0) {
+            ERRORMSG("Address is required");
             return;
         }
         CCdd_descr *descr;
@@ -318,11 +342,26 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
         }
         descr->SetBook_ref().SetBookname(tName->GetValue().c_str());
         descr->SetBook_ref().SetTextelement(*(enum2str.Find(string(cType->GetStringSelection().c_str()))));
-        descr->SetBook_ref().SetElementid((int) address);
-        if (tSubaddress->GetValue().size() > 0)
-            descr->SetBook_ref().SetSubelementid((int) subaddress);
-        else
+        long address, subaddress;
+        if (tAddress->GetValue().ToLong(&address)) {
+            descr->SetBook_ref().SetElementid((int) address);
+            descr->SetBook_ref().ResetCelementid();
+        } else {
+            descr->SetBook_ref().SetCelementid(tAddress->GetValue().c_str());
+            descr->SetBook_ref().ResetElementid();
+        }
+        if (tSubaddress->GetValue().size() > 0) {
+            if (tSubaddress->GetValue().ToLong(&subaddress)) {
+                descr->SetBook_ref().SetSubelementid((int) subaddress);
+                descr->SetBook_ref().ResetCsubelementid();
+            } else {
+                descr->SetBook_ref().SetCsubelementid(tSubaddress->GetValue().c_str());
+                descr->SetBook_ref().ResetSubelementid();
+            }
+        } else {
             descr->SetBook_ref().ResetSubelementid();
+            descr->SetBook_ref().ResetCsubelementid();
+        }
         sSet->SetDataChanged(StructureSet::eCDDData);
         editOn = false;
     }
@@ -337,27 +376,35 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
             if (wxTheClipboard->IsSupported(wxDF_TEXT)) {
                 wxTextDataObject data;
                 wxTheClipboard->GetData(data);
-                wxStringTokenizer tkz(data.GetText(), ".#", wxTOKEN_STRTOK);
-                if (tkz.CountTokens() == 3 || tkz.CountTokens() == 4) {
-                    bool haveSubaddr = (tkz.CountTokens() == 4);
-                    CRef < CCdd_descr > descr(new CCdd_descr);
-                    descr->SetBook_ref().SetBookname(tkz.GetNextToken().c_str());
-                    const CCdd_book_ref::ETextelement *type =
-                        enum2str.Find(string(tkz.GetNextToken().c_str()));
-                    long address, subaddress;
-                    bool
-                        gotAddr = tkz.GetNextToken().ToLong(&address),
-                        gotSubaddr = haveSubaddr ? tkz.GetNextToken().ToLong(&subaddress) : false;
-                    if (type && gotAddr && (!haveSubaddr || gotSubaddr)) {
-                        descr->SetBook_ref().SetTextelement(*type);
-                        descr->SetBook_ref().SetElementid((int) address);
+                wxStringTokenizer sharp(data.GetText(), "#", wxTOKEN_STRTOK);
+                if (sharp.CountTokens() == 1 || sharp.CountTokens() == 2) {
+                    bool haveSubaddr = (sharp.CountTokens() == 2);
+                    wxStringTokenizer dot(sharp.GetNextToken(), ".", wxTOKEN_STRTOK);
+                    if (dot.CountTokens() == 3) {
+                        CRef < CCdd_descr > descr(new CCdd_descr);
+                        descr->SetBook_ref().SetBookname(dot.GetNextToken().c_str());
+                        const CCdd_book_ref::ETextelement *type = enum2str.Find(string(dot.GetNextToken().c_str()));
+                        wxString addrStr = dot.GetNextToken();
+                        wxString subaddrStr;
                         if (haveSubaddr)
-                            descr->SetBook_ref().SetSubelementid((int) subaddress);
-                        else
-                            descr->SetBook_ref().ResetSubelementid();
-                        descrSet->Set().push_back(descr);
-                        sSet->SetDataChanged(StructureSet::eCDDData);
-                        selectedItem = listbox->GetCount();
+                            subaddrStr = sharp.GetNextToken();
+                        if (type) {
+                            descr->SetBook_ref().SetTextelement(*type);
+                            long address, subaddress;
+                            if (addrStr.ToLong(&address))
+                                descr->SetBook_ref().SetElementid((int) address);
+                            else
+                                descr->SetBook_ref().SetCelementid(addrStr.c_str());
+                            if (haveSubaddr) {
+                                if (subaddrStr.ToLong(&subaddress))
+                                    descr->SetBook_ref().SetSubelementid((int) subaddress);
+                                else
+                                    descr->SetBook_ref().SetCsubelementid(subaddrStr.c_str());
+                            }
+                            descrSet->Set().push_back(descr);
+                            sSet->SetDataChanged(StructureSet::eCDDData);
+                            selectedItem = listbox->GetCount();
+                        }
                     }
                 }
             }
@@ -469,6 +516,7 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     item1->Add( item14, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxFlexGridSizer *item19 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item19->AddGrowableCol(3);
 
     wxStaticText *item20 = new wxStaticText( parent, ID_TEXT, wxT("Address:"), wxDefaultPosition, wxDefaultSize, 0 );
     item19->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
@@ -480,9 +528,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     item19->Add( item22, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxTextCtrl *item23 = new wxTextCtrl( parent, ID_T_SUBADDRESS, wxT(""), wxDefaultPosition, wxSize(80,-1), 0 );
-    item19->Add( item23, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item19->Add( item23, 0, wxGROW/*wxALIGN_CENTRE*/|wxALL, 5 );
 
-    item1->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item1->Add( item19, 0, wxGROW/*wxALIGN_CENTRE*/|wxALL, 5 );
 
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
@@ -507,6 +555,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/03/16 20:30:45  thiessen
+* allow character book element/subelement
+*
 * Revision 1.8  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
