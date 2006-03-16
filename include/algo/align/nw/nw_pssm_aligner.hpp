@@ -152,6 +152,8 @@ protected:
 
     // retrieve transcript symbol for a one-character diag
     virtual ETranscriptSymbol x_GetDiagTS(size_t i1, size_t i2) const;
+
+    double m_DScoreMatrix[kPSSM_ColumnSize][kPSSM_ColumnSize];
 };
 
 
@@ -164,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/16 18:04:28  papadopo
+ * add scratch array used by performance optimizations in the aligner
+ *
  * Revision 1.7  2005/11/07 18:23:52  papadopo
  * minor cleanup
  *
