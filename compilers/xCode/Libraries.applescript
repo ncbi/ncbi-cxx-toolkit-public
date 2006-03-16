@@ -116,7 +116,7 @@ property entrez2cli : {name:"entrez2cli", path:"objects:entrez2", inc:{"entrez2_
 property entrezgene : {name:"entrezgene", path:"objects:entrezgene", inc:{"entrezgene__.cpp", "entrezgene___.cpp"}, asn1:true}
 property featdef : {name:"featdef", path:"objects:featdef", inc:{"featdef__.cpp", "featdef___.cpp"}, asn1:true}
 property gbseq : {name:"gbseq", path:"objects:gbseq", inc:{"gbseq__.cpp", "gbseq___.cpp"}, asn1:true}
-property general : {name:"general", path:"objects:general", inc:{"general__.cpp", "general___.cpp", "uoconv.cpp", "cleanup_utils.cpp"}, asn1:true}
+property general : {name:"general", path:"objects:general", inc:{"general__.cpp", "general___.cpp", "uoconv.cpp"}, asn1:true}
 property id1 : {name:"id1", path:"objects:id1", inc:{"id1__.cpp", "id1___.cpp"}, asn1:true}
 property id1cli : {name:"id1cli", path:"objects:id1", inc:{"id1_client.cpp", "id1_client_.cpp"}, asn1:true}
 property id2 : {name:"id2", path:"objects:id2", inc:{"id2__.cpp", "id2___.cpp"}, asn1:true}
@@ -325,7 +325,7 @@ property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_
 property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
 property algo_webpage : {name:"algo_webpage", libs:{gui_algo_webpage}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
 property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
-property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_xloader_genbank ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub" & FLTK_LIBS, bundle:true, req:true}
+property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_xloader_genbank ncbi_xloader_lds ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub" & FLTK_LIBS, bundle:true, req:true}
 property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table", bundle:true, req:true}
 property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln gui_config" & FLTK_LIBS, bundle:true, req:true}
 property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, bundle:true, req:true}
@@ -437,6 +437,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2006/03/16 14:42:57  lebedev
+ * dload_basic += ncbi_xloader_lds
+ *
  * Revision 1.93  2006/03/06 18:30:38  lebedev
  * gbench_cache_agent added
  *
