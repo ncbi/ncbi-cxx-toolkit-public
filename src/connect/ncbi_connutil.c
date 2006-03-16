@@ -703,7 +703,7 @@ static int/*bool*/ s_IsSufficientAddress(const char* addr)
         if (addr[i] == '.') {
             if (++dots > 3)
                 isip = 0;
-            if (isip  &&  dot  &&  &addr[i] - dot > 3)
+            if (isip  &&  &addr[i] - (dot ? dot : addr) > 3)
                 isip = 0;
             dot = &addr[i];
         }
@@ -1972,6 +1972,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.99  2006/03/16 20:04:02  lavr
+ * s_IsSufficientAddress():  IP recognition bug fixed
+ *
  * Revision 6.98  2006/03/07 15:37:19  lavr
  * CONNUTIL_GetUsername(): Do not define loginbuf, if it's going to be unused
  *
