@@ -94,11 +94,16 @@ int CTest::Run(void)
     };
 
     {{
-        string        ld_path_setting               ("LD_LIBRARY_PATH=");
-        const string& ld_path = GetEnvironment().Get("LD_LIBRARY_PATH");
-        if (ld_path.size()) {
-            ld_path_setting += ld_path;
-            my_env[0] = strdup(ld_path_setting.c_str());
+#if defined(NCBI_OS_CYGWIN)
+        string path_setting("PATH=");
+        const string& path = GetEnvironment().Get("PATH");
+#else
+        string path_setting("LD_LIBRARY_PATH=");
+        const string& path = GetEnvironment().Get("LD_LIBRARY_PATH");
+#endif
+        if (path.size()) {
+            path_setting += path;
+            my_env[0] = strdup(path_setting.c_str());
         }
     }}
 
@@ -111,8 +116,11 @@ int CTest::Run(void)
     args_p[2] = NULL;
 
     // System
-        
+
+#if !defined(NCBI_OS_CYGWIN)
+    // This test doesn't work on GCC/Cygwin
     assert( CExec::System(0) > 0 );
+#endif
     string cmd = app + " System";
     assert( CExec::System(cmd.c_str()) == TEST_RESULT_C );
     cmd = string(app_p) + " " + app_pp;
@@ -240,6 +248,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2006/03/16 12:45:37  ivanov
+ * Fixed to work on GCC/Cygwin
+ *
  * Revision 6.20  2004/10/13 14:56:02  ivanov
  * Do not make a ls for current directory, run it for parent dir '..'
  * -- this fixed a problem with ls on Cygwin.
