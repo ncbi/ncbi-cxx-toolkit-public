@@ -327,6 +327,7 @@ public:
     const string&           GetVerbose  (void) const;
     // Offending object
     const CSerialObject&    GetObject   (void) const;
+    bool                    IsSetObject (void) const;
 
     // Convert Severity from enum to a string representation
     static const string& ConvertSeverity(EDiagSev sev);
@@ -410,6 +411,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/03/16 14:14:41  rsmith
+* add IsSetObject()
+*
 * Revision 1.2  2006/02/08 16:30:31  rsmith
 * fix export specs
 *

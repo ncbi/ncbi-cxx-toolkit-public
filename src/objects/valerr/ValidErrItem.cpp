@@ -1117,6 +1117,12 @@ const CSerialObject& CValidErrItem::GetObject(void) const
 }
 
 
+bool CValidErrItem::IsSetObject(void) const 
+{
+    return m_Object.NotEmpty(); 
+}
+
+
 const string& CValidErrItem::ConvertSeverity(EDiagSev sev)
 {
     static const string str_sev[] = {
@@ -1145,6 +1151,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/03/16 14:14:46  rsmith
+* add IsSetObject()
+*
 * Revision 1.1  2006/02/07 15:07:45  rsmith
 * initial checkin
 *
