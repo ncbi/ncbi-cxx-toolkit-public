@@ -413,7 +413,7 @@ property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_xcache_
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
-property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, gbench_cache_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, convert_seq}
+property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, gbench_cache_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, convert_seq, ini2reg}
 --property allCTools : {tests}
 
 
@@ -437,6 +437,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2006/03/16 21:05:16  rsmith
+ * allCTools += ini2reg
+ *
  * Revision 1.94  2006/03/16 14:42:57  lebedev
  * dload_basic += ncbi_xloader_lds
  *
