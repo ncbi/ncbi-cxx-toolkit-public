@@ -83,7 +83,7 @@ bool CByteSourceReader::Pushback(const char* /*data*/, size_t size)
 {
     if ( size ) {
         ERR_POST("CByteSourceReader::Pushback: "
-                 "cannot push back " << size << " bytes");
+                 "unable to push back " << size << " byte(s)");
         return false;
     }
     return true;
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/03/16 04:40:27  lavr
+ * Minor ERR_POST change in push back
+ *
  * Revision 1.42  2006/01/11 19:42:01  vasilche
  * Fixed EOF check in CIRByteSourceReader.
  *
