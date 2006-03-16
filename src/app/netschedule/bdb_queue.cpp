@@ -2738,36 +2738,54 @@ void CQueueDataBase::CQueue::GetJob(char*          key_buf,
     }
 }
 
-bool CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
-                                         int*         ret_code,
-                                         char*        input,
-                                         char*        output,
-                                         char*        err_msg,
-                                         char*        progress_msg)
+bool 
+CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
+                                    int*         ret_code,
+                                    char*        input,
+                                    char*        output,
+                                    char*        err_msg,
+                                    char*        progress_msg,
+                            CNetScheduleClient::EJobStatus expected_status)
 {
     SQueueDB& db = m_LQueue.db;
-    CFastMutexGuard guard(m_LQueue.lock);
-    db.SetTransaction(0);
 
-    db.id = job_id;
-    if (db.Fetch() == eBDB_Ok) {
-        if (ret_code)
-            *ret_code = db.ret_code;
+    for (unsigned i = 0; i < 3; ++i) {
+        {{
+        CFastMutexGuard guard(m_LQueue.lock);
+        db.SetTransaction(0);
 
-        if (input) {
-            ::strcpy(input, (const char* )db.input);
-        }
-        if (output) {
-            ::strcpy(output, (const char* )db.output);
-        }
-        if (err_msg) {
-            ::strcpy(err_msg, (const char* )db.err_msg);
-        }
-        if (progress_msg) {
-            ::strcpy(progress_msg, (const char* )db.progress_msg);
-        }
+        db.id = job_id;
+        if (db.Fetch() == eBDB_Ok) {
+            if (expected_status != CNetScheduleClient::eJobNotFound) {
+                CNetScheduleClient::EJobStatus status =
+                    (CNetScheduleClient::EJobStatus)(int)db.status;
+                if (status != expected_status) {
+                    goto wait_sleep;
+                }
+            }
+            if (ret_code)
+                *ret_code = db.ret_code;
 
-        return true;
+            if (input) {
+                ::strcpy(input, (const char* )db.input);
+            }
+            if (output) {
+                ::strcpy(output, (const char* )db.output);
+            }
+            if (err_msg) {
+                ::strcpy(err_msg, (const char* )db.err_msg);
+            }
+            if (progress_msg) {
+                ::strcpy(progress_msg, (const char* )db.progress_msg);
+            }
+
+            return true;
+        }
+        }}
+    wait_sleep:
+        // failed to read the record (maybe looks like writer is late, so we 
+        // need to retry a bit later)
+        SleepMilliSec(300);
     }
 
     return false; // job not found
@@ -3457,6 +3475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/03/16 19:37:28  kuznets
+ * Fixed possible race condition between client and worker
+ *
  * Revision 1.60  2006/03/13 16:01:36  kuznets
  * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
  *

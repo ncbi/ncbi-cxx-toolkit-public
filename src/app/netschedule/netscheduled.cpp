@@ -1159,7 +1159,8 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
         bool b = queue.GetJobDescr(job_id, &ret_code, 
                              tdata.req.input,
                              tdata.req.output,
-                             0, 0);
+                             0, 0,
+                             status);
 
         if (b) {
             sprintf(szBuf, 
@@ -1178,7 +1179,8 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
                              tdata.req.input,
                              0,
                              tdata.req.err,
-                             0);
+                             0,
+                             status);
 
         if (b) {
             sprintf(szBuf, 
@@ -2647,6 +2649,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/03/16 19:37:28  kuznets
+ * Fixed possible race condition between client and worker
+ *
  * Revision 1.65  2006/03/13 16:01:36  kuznets
  * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
  *

@@ -206,12 +206,18 @@ public:
         void ReturnJob(unsigned int job_id);
 
 
+        /// @param expected_status
+        ///    If current status is different from expected try to
+        ///    double read the database (to avoid races between nodes
+        ///    and submitters)
         bool GetJobDescr(unsigned int job_id,
                          int*         ret_code,
                          char*        input,
                          char*        output,
                          char*        err_msg,
-                         char*        progress_msg);
+                         char*        progress_msg,
+                         CNetScheduleClient::EJobStatus expected_status 
+                                         = CNetScheduleClient::eJobNotFound);
 
         CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
@@ -513,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/03/16 19:37:28  kuznets
+ * Fixed possible race condition between client and worker
+ *
  * Revision 1.41  2006/03/13 16:01:36  kuznets
  * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
  *
