@@ -565,13 +565,13 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
 
             for (int m = 1; m < kPSSM_ColumnSize; m++) {
                 if (profile1[m] < profile2[m]) {
-                    accum += profile1[m] * (double)sm[m][m];
+                    accum += profile1[m] * m_DScoreMatrix[m][m];
                     diff_freq1[m] = 0.0;
                     diff_freq2[m] = profile2[m] - profile1[m];
                     num_zeros1++;
                 }
                 else {
-                    accum += profile2[m] * (double)sm[m][m];
+                    accum += profile2[m] * m_DScoreMatrix[m][m];
                     diff_freq1[m] = profile1[m] - profile2[m];
                     diff_freq2[m] = 0.0;
                     num_zeros2++;
@@ -893,6 +893,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/03/16 18:20:43  papadopo
+ * fix to previous commit
+ *
  * Revision 1.13  2006/03/16 18:03:35  papadopo
  * performance optimization
  *
