@@ -38,11 +38,22 @@
 
 BEGIN_NCBI_SCOPE
 
+/// String or Blob Storage Writer
+///
+/// An implementation of the IWriter interface with a dual behavior.
+/// It writes data into the "data_or_key" paramter until
+/// the total number of written bytes reaches "max_string_size" parameter.
+/// After that all data from "data_or_key" is stored into the Blob Storage
+/// and all next calls to Write method will write data to the Blob Storage.
+/// In this case "data_or_key" paramter holds a blob key for the written data.
+///
 class NCBI_XCONNECT_EXPORT CStringOrBlobStorageWriter : public IWriter
 {
 public:
-    CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage& storage, 
-                               string& data);
+    CStringOrBlobStorageWriter(size_t max_string_size,
+                               IBlobStorage& storage,
+                               string& data_or_key);
+
     virtual ~CStringOrBlobStorageWriter();
 
     virtual ERW_Result Write(const void* buf,
@@ -50,12 +61,12 @@ public:
                              size_t*     bytes_written = 0);
 
     virtual ERW_Result Flush(void);
-
-private:    
-
-    ERW_Result writeToStream(const void* buf,
-                             size_t      count,
-                             size_t*     bytes_written = 0);
+    
+private:
+    
+    ERW_Result x_WriteToStream(const void* buf,
+                               size_t      count,
+                               size_t*     bytes_written = 0);
 
     size_t        m_MaxBuffSize;
     IBlobStorage& m_Storage;
@@ -64,10 +75,18 @@ private:
 };
 
 
+/// String or Blob Strorage Reader
+///
+/// An implementaion of the IReader interface with a dual behavior.
+/// If "data_or_key" parameter can be interpered as Blob Storage key and 
+/// a blob with given key is found in the storage, then the storage is 
+/// used as data source. Otherwise "data_or_key" is a data source.
+///
 class NCBI_XCONNECT_EXPORT CStringOrBlobStorageReader : public IReader
 {
 public:
-    CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
+    CStringOrBlobStorageReader(const string& data_or_key, 
+                               IBlobStorage& storage,
                                IBlobStorage::ELockMode lock_mode,
                                size_t& data_size);
     virtual ~CStringOrBlobStorageReader();
@@ -91,6 +110,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/16 15:13:08  didenko
+ * Fixed writer algorithm
+ * + Comments
+ *
  * Revision 1.1  2006/03/15 17:22:25  didenko
  * Added CStringOrBlobStorage{Reader,Writer} classes
  *

@@ -40,6 +40,7 @@ CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage& storage,
     : m_MaxBuffSize(max_string_size), m_Storage(storage), m_BlobOstr(NULL),
       m_Data(data)
 {
+    m_Data.erase();
 }
 
 CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter() 
@@ -51,34 +52,32 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
                                              size_t      count,
                                              size_t*     bytes_written)
 {
-    if (!count) {
-        if (bytes_written)
-            *bytes_written = 0;
+    if (bytes_written) *bytes_written = 0;
+    if (count == 0) 
         return eRW_Success;
-    }
-    if (m_BlobOstr) {
-        return writeToStream(buf,count,bytes_written);
-    }
+
+    if (m_BlobOstr) 
+        return x_WriteToStream(buf,count,bytes_written);
+
     if (m_Data.size()+count > m_MaxBuffSize) {
         _ASSERT(!m_BlobOstr);
         string tmp = m_Data;
         m_Data = "";
         m_BlobOstr = &m_Storage.CreateOStream(m_Data);
         ERW_Result ret = eRW_Success;
-        if (m_Data.size() > 0) {
-            ret = writeToStream(&*tmp.begin(), tmp.size());
+        if (tmp.size() > 0) {
+            ret = x_WriteToStream(&*tmp.begin(), tmp.size());
             if( ret != eRW_Success ) {
+                m_Storage.Reset();
                 m_Data = tmp;
-                if (bytes_written)
-                    *bytes_written = 0;
+                m_BlobOstr = NULL;
                 return ret;
             }
         }
-        return writeToStream(buf,count,bytes_written);            
+        return x_WriteToStream(buf,count,bytes_written);            
     }
     m_Data.append( (const char*)buf, count);
-    if (bytes_written)
-        *bytes_written = count;
+    if (bytes_written) *bytes_written = count;
     return eRW_Success;
 }
 
@@ -89,17 +88,14 @@ ERW_Result CStringOrBlobStorageWriter::Flush(void)
 }
 
 
-ERW_Result CStringOrBlobStorageWriter::writeToStream(const void* buf,
-                                                     size_t      count,
-                                                     size_t*     bytes_written)
+ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
+                                                       size_t      count,
+                                                       size_t*     bytes_written)
 {
     _ASSERT(m_BlobOstr);
-    if (bytes_written)
-        *bytes_written = 0;
     m_BlobOstr->write((const char*)buf, count);
     if (m_BlobOstr->good()) {
-        if (bytes_written)
-            *bytes_written = count;
+        if (bytes_written) *bytes_written = count;
         return eRW_Success;
     }
     return eRW_Error;
@@ -121,9 +117,9 @@ CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
         } catch (CBlobStorageException& ex) {
             if (ex.GetErrCode() != CBlobStorageException::eBlobNotFound)
                 throw;
-            data_size = m_Data.size();
         }
-    } else {
+    }
+    if (!m_BlobIstr) {
         m_CurPos = m_Data.begin();
         data_size = m_Data.size();
     }
@@ -139,13 +135,15 @@ ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
                                             size_t  count,
                                             size_t* bytes_read)
 {
+    if (bytes_read) *bytes_read = 0;
+    if (count == 0)
+        return eRW_Success;
+        
     if (m_BlobIstr) {
         if (m_BlobIstr->eof()) {
-            if (bytes_read) *bytes_read = 0;
             return eRW_Eof;
         }
         if (!m_BlobIstr->good()) {
-            if (bytes_read) *bytes_read = 0;
             return eRW_Error;
         }
         m_BlobIstr->read((char*) buf, count);
@@ -153,7 +151,6 @@ ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
         return eRW_Success;
     }
     if (m_CurPos == m_Data.end()) {
-        if (bytes_read) *bytes_read = 0;
         return eRW_Eof;
     }
     size_t bytes_rest = m_Data.end() - m_CurPos;
@@ -184,6 +181,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/03/16 15:13:09  didenko
+ * Fixed writer algorithm
+ * + Comments
+ *
  * Revision 6.2  2006/03/15 22:04:54  ucko
  * Replace call to distance(), which WorkShop's STL doesn't properly
  * support, with simple iterator subtraction, which random-access
