@@ -40,88 +40,136 @@
 BEGIN_NCBI_SCOPE
 
 class IBlobStorageFactory;
-class CRemoteJobRequest_Impl;
+class CRemoteAppRequest_Impl;
 
-class NCBI_XCONNECT_EXPORT CRemoteJobRequest_Submitter 
+/// Remote Application Request (client side)
+///
+/// It is used by a client application which wants to run a remote application
+/// through NetSchedule infrastructure and should be used in conjunction with 
+/// CGridJobSubmiter class
+///
+class NCBI_XCONNECT_EXPORT CRemoteAppRequest
 {
 public:
-    explicit CRemoteJobRequest_Submitter(IBlobStorageFactory& factory);
-    ~CRemoteJobRequest_Submitter();
+    explicit CRemoteAppRequest(IBlobStorageFactory& factory);
+    ~CRemoteAppRequest();
 
+    /// Get an output stream to write data to a remote application stdin
     CNcbiOstream& GetStdIn();
-    void SetCmdLine(const string& cmd);
 
+    /// Set a remote application command line. 
+    /// Cmdline should not contain a remote program name, just its arguments
+    void SetCmdLine(const string& cmd);
+    
+    /// Transfer a file to an application executer side.
+    /// It only makes sense to transfer a file if its name also mentioned in
+    /// the command line for the remote application. When the file is transfered 
+    /// the the executer side it gets stored to a temprary directory and then its
+    /// original name in the command line will be replaced with the new temprary name.
     void AddFileForTransfer(const string& fname);
 
+    /// Serialize a request to a given stream. After call to this method the instance
+    /// cleans itself an it can be reused.
     void Send(CNcbiOstream& os);
 
 private:
-    CRemoteJobRequest_Submitter(const CRemoteJobRequest_Submitter&);
-    CRemoteJobRequest_Submitter& operator=(const CRemoteJobRequest_Submitter&);
+    CRemoteAppRequest(const CRemoteAppRequest&);
+    CRemoteAppRequest& operator=(const CRemoteAppRequest&);
 
-    auto_ptr<CRemoteJobRequest_Impl> m_Impl;
+    auto_ptr<CRemoteAppRequest_Impl> m_Impl;
 };
 
-class NCBI_XCONNECT_EXPORT CRemoteJobRequest_Executer
+/// Remote Application Request (application executer side)
+/// 
+/// It is used by a grid worker node to get parameters for a remote application.
+///
+class NCBI_XCONNECT_EXPORT CRemoteAppRequest_Executer
 {
 public:
-    explicit CRemoteJobRequest_Executer(IBlobStorageFactory& factory);
-    ~CRemoteJobRequest_Executer();
+    explicit CRemoteAppRequest_Executer(IBlobStorageFactory& factory);
+    ~CRemoteAppRequest_Executer();
 
+    /// Get a stdin stream for a remote application
     CNcbiIstream& GetStdIn();
+
+    /// Get a commnad line for a remote application
     const string& GetCmdLine() const;
 
+    /// Deserialize a request from a given stream.
     void Receive(CNcbiIstream& is);
+
+    /// Remove all temprary files and directory which were used during a
+    /// files transfer.
     void CleanUp();
 
 private:
-    CRemoteJobRequest_Executer(const CRemoteJobRequest_Executer &);
-    CRemoteJobRequest_Executer& operator=(const CRemoteJobRequest_Executer&);
+    CRemoteAppRequest_Executer(const CRemoteAppRequest_Executer &);
+    CRemoteAppRequest_Executer& operator=(const CRemoteAppRequest_Executer&);
 
-    auto_ptr<CRemoteJobRequest_Impl> m_Impl;
+    auto_ptr<CRemoteAppRequest_Impl> m_Impl;
 };
 
 
-class CRemoteJobResult_Impl;
+class CRemoteAppResult_Impl;
 
-class NCBI_XCONNECT_EXPORT CRemoteJobResult_Executer
+/// Remote Application Result (client side)
+///
+/// It is used by a client application to get results for a remote applicaion
+/// and should be used in conjunction with CGridJobStatus
+///
+class NCBI_XCONNECT_EXPORT CRemoteAppResult
 {
 public:
-    explicit CRemoteJobResult_Executer(IBlobStorageFactory& factory);
-    ~CRemoteJobResult_Executer();
+    explicit CRemoteAppResult(IBlobStorageFactory& factory);
+    ~CRemoteAppResult();
 
-    CNcbiOstream& GetStdOut();
-    CNcbiOstream& GetStdErr();
-
-    void SetRetCode(int ret_code);
-
-    void Send(CNcbiOstream& os);
-
-private:
-    CRemoteJobResult_Executer(const CRemoteJobResult_Executer&);
-    CRemoteJobResult_Executer& operator=(const CRemoteJobResult_Executer&);
-
-    auto_ptr<CRemoteJobResult_Impl> m_Impl;
-};
-
-
-class NCBI_XCONNECT_EXPORT CRemoteJobResult_Submitter
-{
-public:
-    explicit CRemoteJobResult_Submitter(IBlobStorageFactory& factory);
-    ~CRemoteJobResult_Submitter();
-
+    /// Get a remote application stdout
     CNcbiIstream& GetStdOut();
+
+    /// Get a remote application stderr
     CNcbiIstream& GetStdErr();
+
+    /// Get a remote application return code
     int           GetRetCode() const;
 
+    /// Deserialize a result from a given stream.
     void Receive(CNcbiIstream& is);
 
 private:
-    CRemoteJobResult_Submitter(const CRemoteJobResult_Submitter&);
-    CRemoteJobResult_Submitter& operator=(const CRemoteJobResult_Submitter&);
+    CRemoteAppResult(const CRemoteAppResult&);
+    CRemoteAppResult& operator=(const CRemoteAppResult&);
 
-    auto_ptr<CRemoteJobResult_Impl> m_Impl;
+    auto_ptr<CRemoteAppResult_Impl> m_Impl;
+};
+
+/// Remote Application Result (application executer side)
+/// 
+/// It is used by a grid worker node to send results of a 
+/// finished remote application to the clien.
+class NCBI_XCONNECT_EXPORT CRemoteAppResult_Executer
+{
+public:
+    explicit CRemoteAppResult_Executer(IBlobStorageFactory& factory);
+    ~CRemoteAppResult_Executer();
+
+    /// Get a stream to put remote application's stdout to
+    CNcbiOstream& GetStdOut();
+
+    /// Get a stream to put remote application's stderr to
+    CNcbiOstream& GetStdErr();
+    
+    /// Set a remote application's return code
+    void SetRetCode(int ret_code);
+
+    /// Serialize a result to a given stream. After call to this method the instance
+    /// cleans itself an it can be reused.
+    void Send(CNcbiOstream& os);
+
+private:
+    CRemoteAppResult_Executer(const CRemoteAppResult_Executer&);
+    CRemoteAppResult_Executer& operator=(const CRemoteAppResult_Executer&);
+
+    auto_ptr<CRemoteAppResult_Impl> m_Impl;
 };
 
 
@@ -130,8 +178,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/03/16 15:13:59  didenko
+ * Remaned CRemoteJob... to CRemoteApp...
+ * + Comments
+ *
  * Revision 1.2  2006/03/15 17:30:11  didenko
- * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ * Added ability to use embedded NetSchedule job's storage as a job's input/output
+ * data instead of using it as a NetCache blob key. This reduces network traffic 
+ * and increases job submittion speed.
  *
  * Revision 1.1  2006/03/07 17:17:12  didenko
  * Added facility for running external applications throu NetSchedule service

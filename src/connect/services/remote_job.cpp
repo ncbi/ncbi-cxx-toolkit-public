@@ -112,10 +112,10 @@ private:
 //////////////////////////////////////////////////////////////////////////////
 //
 
-class CRemoteJobRequest_Impl
+class CRemoteAppRequest_Impl
 {
 public:
-    explicit CRemoteJobRequest_Impl(IBlobStorageFactory& factory)
+    explicit CRemoteAppRequest_Impl(IBlobStorageFactory& factory)
         : m_InBlob(factory.CreateInstance()), m_StdInDataSize(0)
     {
         m_StdIn.reset(new CBlobStreamHelper(*m_InBlob, 
@@ -123,7 +123,7 @@ public:
                                             m_StdInDataSize));
     }
 
-    ~CRemoteJobRequest_Impl() 
+    ~CRemoteAppRequest_Impl() 
     {
     }
 
@@ -166,11 +166,11 @@ private:
     TFiles m_Files;
 };
 
-CAtomicCounter CRemoteJobRequest_Impl::sm_DirCounter;
-string CRemoteJobRequest_Impl::sm_TmpDirPath = ".";
+CAtomicCounter CRemoteAppRequest_Impl::sm_DirCounter;
+string CRemoteAppRequest_Impl::sm_TmpDirPath = ".";
 
 
-void CRemoteJobRequest_Impl::Serialize(CNcbiOstream& os)
+void CRemoteAppRequest_Impl::Serialize(CNcbiOstream& os)
 {
     m_StdIn->Reset();
     typedef map<string,string> TFmap;
@@ -202,7 +202,7 @@ void CRemoteJobRequest_Impl::Serialize(CNcbiOstream& os)
     }
     Reset();
 }
-void CRemoteJobRequest_Impl::Deserialize(CNcbiIstream& is)
+void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
 {
     Reset();
 
@@ -254,7 +254,7 @@ void CRemoteJobRequest_Impl::Deserialize(CNcbiIstream& is)
     }
 }
 
-void CRemoteJobRequest_Impl::CleanUp()
+void CRemoteAppRequest_Impl::CleanUp()
 {
     if (!m_TmpDirName.empty()) {
         CDir(m_TmpDirName).Remove();
@@ -262,7 +262,7 @@ void CRemoteJobRequest_Impl::CleanUp()
     }
 }
 
-void CRemoteJobRequest_Impl::Reset()
+void CRemoteAppRequest_Impl::Reset()
 {
     m_StdIn->Reset();
     m_InBlobIdOrData = "";
@@ -270,60 +270,60 @@ void CRemoteJobRequest_Impl::Reset()
     m_CmdLine = "";
     m_Files.clear();
 }
-CRemoteJobRequest_Submitter::
-CRemoteJobRequest_Submitter(IBlobStorageFactory& factory)
-    : m_Impl(new CRemoteJobRequest_Impl(factory))
+CRemoteAppRequest::
+CRemoteAppRequest(IBlobStorageFactory& factory)
+    : m_Impl(new CRemoteAppRequest_Impl(factory))
 {
 }
 
-CRemoteJobRequest_Submitter::~CRemoteJobRequest_Submitter()
+CRemoteAppRequest::~CRemoteAppRequest()
 {
 }
 
-void CRemoteJobRequest_Submitter::AddFileForTransfer(const string& fname)
+void CRemoteAppRequest::AddFileForTransfer(const string& fname)
 {
     m_Impl->AddFileForTransfer(fname);
 }
 
-void CRemoteJobRequest_Submitter::Send(CNcbiOstream& os)
+void CRemoteAppRequest::Send(CNcbiOstream& os)
 {
     m_Impl->Serialize(os);    
 }
 
 
-CNcbiOstream& CRemoteJobRequest_Submitter::GetStdIn()
+CNcbiOstream& CRemoteAppRequest::GetStdIn()
 {
     return m_Impl->GetStdInForWrite();
 }
-void CRemoteJobRequest_Submitter::SetCmdLine(const string& cmdline)
+void CRemoteAppRequest::SetCmdLine(const string& cmdline)
 {
     m_Impl->SetCmdLine(cmdline);
 }
 
-CRemoteJobRequest_Executer::
-CRemoteJobRequest_Executer(IBlobStorageFactory& factory)
-    : m_Impl(new CRemoteJobRequest_Impl(factory))
+CRemoteAppRequest_Executer::
+CRemoteAppRequest_Executer(IBlobStorageFactory& factory)
+    : m_Impl(new CRemoteAppRequest_Impl(factory))
 {
 }
-CRemoteJobRequest_Executer::~CRemoteJobRequest_Executer()
+CRemoteAppRequest_Executer::~CRemoteAppRequest_Executer()
 {
 }
 
-CNcbiIstream& CRemoteJobRequest_Executer::GetStdIn()
+CNcbiIstream& CRemoteAppRequest_Executer::GetStdIn()
 {
     return m_Impl->GetStdInForRead();
 }
-const string& CRemoteJobRequest_Executer::GetCmdLine() const 
+const string& CRemoteAppRequest_Executer::GetCmdLine() const 
 {
     return m_Impl->GetCmdLine();
 }
 
-void CRemoteJobRequest_Executer::Receive(CNcbiIstream& is)
+void CRemoteAppRequest_Executer::Receive(CNcbiIstream& is)
 {
     m_Impl->Deserialize(is);
 }
 
-void CRemoteJobRequest_Executer::CleanUp()
+void CRemoteAppRequest_Executer::CleanUp()
 {
     m_Impl->CleanUp();
 }
@@ -331,12 +331,12 @@ void CRemoteJobRequest_Executer::CleanUp()
 //////////////////////////////////////////////////////////////////////////////
 //
 
-class CRemoteJobResult_Impl;
+class CRemoteAppResult_Impl;
 
-class CRemoteJobResult_Impl
+class CRemoteAppResult_Impl
 {
 public:
-    explicit CRemoteJobResult_Impl(IBlobStorageFactory& factory)
+    explicit CRemoteAppResult_Impl(IBlobStorageFactory& factory)
         : m_OutBlob(factory.CreateInstance()), m_OutBlobSize(0), 
           m_ErrBlob(factory.CreateInstance()), m_ErrBlobSize(0),
           m_RetCode(-1)
@@ -348,7 +348,7 @@ public:
                                              m_ErrBlobIdOrData,
                                              m_ErrBlobSize));
     }
-    ~CRemoteJobResult_Impl()
+    ~CRemoteAppResult_Impl()
     {
     }    
 
@@ -392,7 +392,7 @@ private:
 
 };
 
-void CRemoteJobResult_Impl::Serialize(CNcbiOstream& os)
+void CRemoteAppResult_Impl::Serialize(CNcbiOstream& os)
 {
     m_StdOut->Reset();
     m_StdErr->Reset();
@@ -401,7 +401,7 @@ void CRemoteJobResult_Impl::Serialize(CNcbiOstream& os)
     os << m_RetCode;
     Reset();
 }
-void CRemoteJobResult_Impl::Deserialize(CNcbiIstream& is)
+void CRemoteAppResult_Impl::Deserialize(CNcbiIstream& is)
 {
     Reset();
     s_Read(is, m_OutBlobIdOrData);
@@ -410,7 +410,7 @@ void CRemoteJobResult_Impl::Deserialize(CNcbiIstream& is)
     is >> m_RetCode;
 }
 
-void CRemoteJobResult_Impl::Reset()
+void CRemoteAppResult_Impl::Reset()
 {
     m_OutBlobIdOrData = "";
     m_OutBlobSize = 0;
@@ -424,58 +424,58 @@ void CRemoteJobResult_Impl::Reset()
 
 
 
-CRemoteJobResult_Executer::
-CRemoteJobResult_Executer(IBlobStorageFactory& factory)
-    : m_Impl(new CRemoteJobResult_Impl(factory))
+CRemoteAppResult_Executer::
+CRemoteAppResult_Executer(IBlobStorageFactory& factory)
+    : m_Impl(new CRemoteAppResult_Impl(factory))
 {
 }
-CRemoteJobResult_Executer::~CRemoteJobResult_Executer()
+CRemoteAppResult_Executer::~CRemoteAppResult_Executer()
 {
 }
 
-CNcbiOstream& CRemoteJobResult_Executer::GetStdOut()
+CNcbiOstream& CRemoteAppResult_Executer::GetStdOut()
 {
     return m_Impl->GetStdOutForWrite();
 }
-CNcbiOstream& CRemoteJobResult_Executer::GetStdErr()
+CNcbiOstream& CRemoteAppResult_Executer::GetStdErr()
 {
     return m_Impl->GetStdErrForWrite();
 }
 
-void CRemoteJobResult_Executer::SetRetCode(int ret_code)
+void CRemoteAppResult_Executer::SetRetCode(int ret_code)
 {
     m_Impl->SetRetCode(ret_code);
 }
 
-void CRemoteJobResult_Executer::Send(CNcbiOstream& os)
+void CRemoteAppResult_Executer::Send(CNcbiOstream& os)
 {
     m_Impl->Serialize(os);
 }
 
 
-CRemoteJobResult_Submitter::
-CRemoteJobResult_Submitter(IBlobStorageFactory& factory)
-    : m_Impl(new CRemoteJobResult_Impl(factory))
+CRemoteAppResult::
+CRemoteAppResult(IBlobStorageFactory& factory)
+    : m_Impl(new CRemoteAppResult_Impl(factory))
 {
 }
-CRemoteJobResult_Submitter::~CRemoteJobResult_Submitter()
+CRemoteAppResult::~CRemoteAppResult()
 {
 }
 
-CNcbiIstream& CRemoteJobResult_Submitter::GetStdOut()
+CNcbiIstream& CRemoteAppResult::GetStdOut()
 {
     return m_Impl->GetStdOutForRead();
 }
-CNcbiIstream& CRemoteJobResult_Submitter::GetStdErr()
+CNcbiIstream& CRemoteAppResult::GetStdErr()
 {
     return m_Impl->GetStdErrForRead();
 }
-int CRemoteJobResult_Submitter::GetRetCode() const
+int CRemoteAppResult::GetRetCode() const
 {
     return m_Impl->GetRetCode();
 }
 
-void CRemoteJobResult_Submitter::Receive(CNcbiIstream& is)
+void CRemoteAppResult::Receive(CNcbiIstream& is)
 {
     m_Impl->Deserialize(is);
 }
@@ -485,8 +485,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/03/16 15:13:59  didenko
+ * Remaned CRemoteJob... to CRemoteApp...
+ * + Comments
+ *
  * Revision 6.2  2006/03/15 17:30:12  didenko
- * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
+ * Added ability to use embedded NetSchedule job's storage as a job's 
+ * input/output data instead of using it as a NetCache blob key. This reduces 
+ * a network traffic and increases job submittion speed.
  *
  * Revision 6.1  2006/03/07 17:17:12  didenko
  * Added facility for running external applications throu NetSchedule service
