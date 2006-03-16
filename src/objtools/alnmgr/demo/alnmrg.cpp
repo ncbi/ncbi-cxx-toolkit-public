@@ -141,6 +141,11 @@ void CAlnMrgApp::Init(void)
          "and specifies the type of the top-level ASN.1 object.\n",
          CArgDescriptions::eString, "");
 
+    arg_desc->AddDefaultKey
+        ("bout", "bool",
+         "This forced the output file to be written in binary ASN.1 mode.\n",
+         CArgDescriptions::eBoolean, "f");
+
     arg_desc->AddOptionalKey
         ("log", "log_file_name",
          "Name of log file to write to",
@@ -443,7 +448,8 @@ void CAlnMrgApp::PrintMergedAlignment(void)
     const CArgs& args = GetArgs();
     auto_ptr<CObjectOStream> asn_out 
         (CObjectOStream::Open
-         (eSerial_AsnText,
+         (args["bout"] && args["bout"].AsBoolean() ? 
+          eSerial_AsnBinary : eSerial_AsnText,
           args["asnoutb"] ?
           args["asnoutb"].AsOutputFile() : args["asnout"].AsOutputFile()));
 
@@ -538,6 +544,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2006/03/16 00:50:03  todorov
+* Added -bout option for binary asn.1 output.
+*
 * Revision 1.36  2006/03/14 22:42:24  todorov
 * + rmleadtrailgaps
 *
