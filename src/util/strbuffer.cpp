@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2006/03/16 16:51:19  vasilche
+* Fixed premature deletion of CSubSourceCollector.
+* Move position to the beginning of buffer if no data is left.
+*
 * Revision 1.50  2005/11/03 21:39:07  ucko
 * Make sure to cast integers to CT_OFF_TYPE before adding them to
 * CT_POS_TYPE (member) variables.
@@ -304,11 +308,15 @@ CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
 
     CRef<CByteSource> source = m_Collector->GetSource();
 
-    m_Collector = m_Collector->GetParentCollector();
-    if ( m_Collector )
+    CRef<CSubSourceCollector> parent = m_Collector->GetParentCollector();
+    if ( parent ) {
+        m_Collector = parent;
         m_CollectPos = m_CurrentPos;
-    else
+    }
+    else {
+        m_Collector = null;
         m_CollectPos = 0;
+    }
 
     return source;
 }
@@ -415,7 +423,9 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
     // remove unused portion of buffer at the beginning
     _ASSERT(m_CurrentPos >= m_Buffer);
     size_t newPosOffset = pos - m_Buffer;
-    if ( newPosOffset >= m_BufferSize ) {
+    if ( newPosOffset >= m_BufferSize || m_DataEndPos == m_CurrentPos ) {
+        // if new position is out of buffer, or if there is no data left
+        // move pointers to the beginning
         size_t erase = m_CurrentPos - m_Buffer;
         if ( erase > 0 ) {
             char* newPos = m_CurrentPos - erase;
