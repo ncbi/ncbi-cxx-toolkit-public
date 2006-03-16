@@ -54,18 +54,25 @@ extern "C" {
 #endif
 
 
-/* Set default behavior of keeping attached/detaching LBSM heap
+/* ATTENTION:  NEVER EVER USE THIS CALL
+ *
+ * Current implememtation does pretty good shmem caching, so this call becomes
+ * rather specific and fits only for some special occasions like CAF module.
+ * Set default behavior of keeping attached/detaching LBSM heap
  * (if has been attached) upon service iterator closure.
  * By default, on SERV_Close() the heap gets detached, but this may not be
  * desirable in a long-run applications that use service iterators intensively,
  * and would like to avoid rapid successtions of attaching/detaching.
  * The function returns a setting that has been previously in effect.
  * OnOff == eDefault has no effect but returns the current setting.
+ *
+ * And again:
+ * ATTENTION:  NEVER EVER USE THIS CALL
  */
-
 extern NCBI_XCONNECT_EXPORT
 ESwitch LBSMD_KeepHeapAttached(ESwitch OnOff);
 
+/* ATTENTION:  NEVER EVER USE THIS CALL */
 extern NCBI_XCONNECT_EXPORT NCBI_SERVICE_MISC_DEPRECATED
 ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
 
@@ -81,6 +88,9 @@ ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/03/16 19:02:08  lavr
+ * Scream about LBSMD_KeepHeapAttached
+ *
  * Revision 1.4  2006/03/05 17:34:25  lavr
  * LBSM_KeepHeapAttached -> LBSMD_KeepHeapAttached
  *
