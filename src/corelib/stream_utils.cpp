@@ -159,10 +159,10 @@ CT_POS_TYPE CPushback_Streambuf::seekoff(CT_OFF_TYPE off,
                                          IOS_BASE::seekdir whence,
                                          IOS_BASE::openmode which)
 {
-    x_DropBuffer();
     if (whence == ios::cur  &&  (which & ios::in)) {
         return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
     }
+    x_DropBuffer();
     return m_Sb->PUBSEEKOFF(off, whence, which);
 }
 
@@ -493,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.45  2006/03/16 20:13:02  vasilche
+ * Do not drop pushback buffer in tellg().
+ *
  * Revision 1.44  2006/02/15 17:42:26  lavr
  * Readsome-tolerant MIPSPro-specific streambuf moved to <corelib/ncbistre.hpp>
  *
