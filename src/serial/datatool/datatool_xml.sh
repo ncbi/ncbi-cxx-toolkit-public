@@ -7,13 +7,9 @@ if test ! -d $base; then
     echo "Error -- test data dir not found: $base"
     exit 1
 fi
-if test -d "$1"; then
-    shift
-fi
 
 d="$base/data"
 r="$base/res"
-
 tool="datatool"
 
 for i in "idx" "elink" "note"; do
