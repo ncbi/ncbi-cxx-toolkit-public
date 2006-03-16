@@ -529,6 +529,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
  SOCK*         sock,       
  const void*   init_data,   
  size_t        init_size,   
+ ESwitch       log,         
  ESCOT_OnClose on_close     
  );
 
@@ -1436,6 +1437,10 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.61  2006/03/16 19:12:21  ucko
+ * Fix SOCK_CreateOnTopEx's prototype, which accidentally lost one
+ * argument in the previous commit.
+ *
  * Revision 6.60  2006/03/16 18:15:34  serovav
  * added markup for Doxygen
  *
