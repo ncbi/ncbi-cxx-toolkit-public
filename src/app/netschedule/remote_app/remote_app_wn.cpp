@@ -198,8 +198,8 @@ private:
     string m_AppPath;
 
     CBlobStorageFactory m_Factory;
-    CRemoteJobRequest_Executer m_Request;
-    CRemoteJobResult_Executer  m_Result;
+    CRemoteAppRequest_Executer m_Request;
+    CRemoteAppResult_Executer  m_Result;
 };
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
@@ -252,6 +252,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/16 15:14:41  didenko
+ * Renamed CRemoteJob... to CRemoteApp...
+ *
  * Revision 1.6  2006/03/15 17:42:01  didenko
  * Performance improvement
  *

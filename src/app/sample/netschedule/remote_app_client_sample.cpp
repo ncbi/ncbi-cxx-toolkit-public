@@ -121,7 +121,7 @@ int CRemoteAppClientSampleApp::Run(void)
     TJobKeys job_keys;
 
     CBlobStorageFactory factory(GetConfig());
-    CRemoteJobRequest_Submitter request(factory);
+    CRemoteAppRequest request(factory);
     for (int i = 0; i < jobs_number; ++i) {
         CNcbiOstream& os = request.GetStdIn();
         /*
@@ -154,7 +154,7 @@ int CRemoteAppClientSampleApp::Run(void)
      
     NcbiCout << "Waiting for jobs..." << NcbiEndl;
 
-    CRemoteJobResult_Submitter result(factory);
+    CRemoteAppResult result(factory);
     TJobKeys failed_jobs;
 
     unsigned int cnt = 0;
@@ -227,7 +227,7 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
         NcbiCout << "Output : " << job_status.GetJobOutput() << NcbiEndl; 
         NcbiCout << "======================================" << NcbiEndl; 
         CBlobStorageFactory factory(GetConfig());
-        CRemoteJobResult_Submitter result(factory);
+        CRemoteAppResult result(factory);
         result.Receive(job_status.GetIStream());
         NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
         NcbiCout << "StdOut : " <<  NcbiEndl;
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/03/16 15:14:41  didenko
+ * Renamed CRemoteJob... to CRemoteApp...
+ *
  * Revision 1.2  2006/03/15 17:34:09  didenko
  * Added remote_app_client_sample
  *
