@@ -62,7 +62,7 @@ test1 multiple_row_inserts "" "multiple row inserts"
 test2 iterator_minus_minus "" "iterator minus minus"
 
 
-# test2 blast "-queryseqmergeonly t" "blast output merge"
+#test2 blast "-b Seq-align-set -bout t -queryseqmergeonly t" "blast output merge"
 test2 seg_overlap "" "overlapping segments"
 test2 trunc1 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 1"
 test2 trunc2 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 2"
@@ -97,7 +97,7 @@ test2 best_reciprocal_hits "-queryseqmergeonly t -truncateoverlaps t -noobjmgr t
 test1 slave_repeated_insert "-noobjmgr t" "slave repeated insert"
 
 
-#test2 match_iter "-noobjmgr t" "proper match iteration"
+#test2 match_iter "-b Seq-annot -bout t -noobjmgr t" "proper match iteration"
 
 ## leading and trailing gaps
 test2 leadtrailgaps "-rmleadtrailgaps t -noobjmgr t" "remove leading and trailing gaps"
