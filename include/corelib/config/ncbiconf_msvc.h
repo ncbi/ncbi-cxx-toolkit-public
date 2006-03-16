@@ -113,6 +113,13 @@ typedef   int   ssize_t;
 #pragma warning(disable: 4996)
 #endif
 
+#if _MSC_VER >= 1400
+
+/* STL iterators are non-POD types */
+#define NCBI_NON_POD_STL_ITERATORS 1
+
+#endif
+
 /*
  *  Site localization
  */
