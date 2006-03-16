@@ -311,7 +311,7 @@ static void TestCgi_Request_Static(void)
     assert(  TestIndexes(indexes, "e%20e+f%26f+g%2Ag+hh%2e") );
     indexes.clear();
     assert( !TestIndexes(indexes, " jhg") );
-    assert( !TestIndexes(indexes, "e%h%2e+3") );
+    // assert( !TestIndexes(indexes, "e%h%2e+3") );
     assert(  TestIndexes(indexes, "aa+%20+bb") );
     assert( !TestIndexes(indexes, "aa++bb") );
     indexes.clear();
@@ -872,6 +872,10 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.27  2006/03/16 22:14:07  ucko
+ * Comment out a test that's been failing now that the library's more
+ * tolerant of unescaped % characters.
+ *
  * Revision 1.26  2005/11/22 12:38:32  ivanov
  * + TestUserAgent()
  *
