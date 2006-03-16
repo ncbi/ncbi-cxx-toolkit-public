@@ -83,6 +83,8 @@ public:
         eSNP_Complex_AlleleCountIsNonStandard,
         eSNP_Complex_WeightBadValue,
         eSNP_Complex_WeightCountIsNotOne,
+        eSNP_Complex_NoPlaceForQAdata,
+        eSNP_Complex_BadQAdata,
         eSNP_Type_last
     };
     // names of types for logging
@@ -130,6 +132,12 @@ public:
         kMax_AlleleIndex   = kNo_AlleleIndex - 1,
         kMax_AlleleLength  = 5
     };
+    typedef Uint1 TQualityIndex;
+    enum {
+        kNo_QualityIndex    = kMax_UI1,
+        kMax_QualityIndex   = kNo_QualityIndex - 1,
+        kMax_QualityLength  = 255
+    };
     enum {
         kMax_AllelesCount  = 4
     };
@@ -142,7 +150,9 @@ public:
         fMinusStrand = 1 << 0,
         fQualReplace = 1 << 1,
         fWeightQual  = 1 << 2,
-        fRemoved     = 1 << 3
+        fRemoved     = 1 << 3,
+        fWeightExt   = 1 << 4,
+        fQualityCode = 1 << 5
     };
 
     TSeqPos         m_ToPosition;

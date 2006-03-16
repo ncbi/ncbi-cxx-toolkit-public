@@ -92,7 +92,9 @@ const char* const SSNP_Info::s_SNP_Type_Label[eSNP_Type_last] = {
     "complex - allele count is too large",
     "complex - allele count is non standard",
     "complex - weight has bad value",
-    "complex - weight count is not one"
+    "complex - weight count is not one",
+    "complex - no place to store dbSnpQAdata",
+    "complex - bad format of dbSnpQAdata"
 };
 
 
@@ -100,7 +102,9 @@ static const string kId_variation        ("variation");
 static const string kId_allele           ("allele");
 static const string kId_replace          ("replace");
 static const string kId_dbSnpSynonymyData("dbSnpSynonymyData");
+static const string kId_dbSnpQAdata      ("dbSnpQAdata");
 static const string kId_weight           ("weight");
+static const string kId_QualityCodes     ("QualityCodes");
 static const string kVal_1               ("1");
 static const string kId_dbSNP            ("dbSNP");
 
@@ -183,8 +187,8 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         return eSNP_Complex_AlleleCountIsNonStandard;
     }
 #else
-    while ( alleles_count < kMax_AllelesCount ) {
-        m_AllelesIndices[alleles_count++] = kNo_AlleleIndex;
+    for ( size_t i = alleles_count; i < kMax_AllelesCount; ++i ) {
+        m_AllelesIndices[i] = kNo_AlleleIndex;
     }
 #endif
 
@@ -232,49 +236,85 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     }
 
     if ( feat.IsSetExt() ) {
-        if ( weight_qual ) {
-            return eSNP_Complex_WeightCountIsNotOne;
-        }
         const CUser_object& ext = feat.GetExt();
-        {{
-            const CObject_id& id = ext.GetType();
-            if ( id.Which() != CObject_id::e_Str ||
-                 id.GetStr() != kId_dbSnpSynonymyData ) {
-                return eSNP_Bad_WrongTextId;
+        const CObject_id& ext_id = ext.GetType();
+        if ( ext_id.Which() != CObject_id::e_Str ) {
+            return eSNP_Bad_WrongTextId;
+        }
+        const string& ext_id_str = ext_id.GetStr();
+        if ( ext_id_str == kId_dbSnpSynonymyData ) {
+            if ( weight_qual ) {
+                return eSNP_Complex_WeightCountIsNotOne;
             }
-        }}
 
-        ITERATE ( CUser_object::TData, it, ext.GetData() ) {
+            ITERATE ( CUser_object::TData, it, ext.GetData() ) {
+                const CUser_field& field = **it;
+                const CUser_field::TData& user_data = field.GetData();
+
+                {{
+                    const CObject_id& id = field.GetLabel();
+                    if ( id.Which() != CObject_id::e_Str ||
+                         id.GetStr() != kId_weight ) {
+                        return eSNP_Bad_WrongTextId;
+                    }
+                }}
+
+                if ( weight_ext ) {
+                    return eSNP_Complex_WeightCountIsNotOne;
+                }
+                weight_ext = true;
+                m_Flags |= fWeightExt;
+                if ( field.IsSetNum() ||
+                     user_data.Which() != CUser_field::TData::e_Int ) {
+                    return eSNP_Complex_WeightBadValue;
+                }
+                int value = user_data.GetInt();
+                if ( value < 0 || value > kMax_Weight ) {
+                    return eSNP_Complex_WeightBadValue;
+                }
+                m_Weight = TWeight(value);
+            }
+        }
+        else if ( ext_id_str == kId_dbSnpQAdata ) {
+            if ( alleles_count == kMax_AllelesCount ||
+                 (m_Flags & fQualityCode) ) {
+                return eSNP_Complex_NoPlaceForQAdata;
+            }
+            
+            const CUser_object::TData& data = ext.GetData();
+            if ( data.empty() ) {
+                return eSNP_Complex_BadQAdata;
+            }
+            CUser_object::TData::const_iterator it = data.begin();
             const CUser_field& field = **it;
-            const CUser_field::TData& user_data = field.GetData();
-
             {{
                 const CObject_id& id = field.GetLabel();
                 if ( id.Which() != CObject_id::e_Str ||
-                     id.GetStr() != kId_weight ) {
+                     id.GetStr() != kId_QualityCodes ) {
                     return eSNP_Bad_WrongTextId;
                 }
             }}
-
-            if ( weight_ext ) {
-                return eSNP_Complex_WeightCountIsNotOne;
+            const CUser_field::TData& user_data = field.GetData();
+            if ( user_data.Which() != CUser_field::TData::e_Str ) {
+                return eSNP_Complex_BadQAdata;
             }
-            weight_ext = true;
-            if ( field.IsSetNum() ||
-                 user_data.Which() != CUser_field::TData::e_Int ) {
-                return eSNP_Complex_WeightBadValue;
+            const string& qadata = user_data.GetStr();
+            TQualityIndex qaindex = annot_info.x_GetQualityIndex(qadata);
+            if ( qaindex == kNo_CommentIndex ) {
+                return eSNP_Complex_NoPlaceForQAdata;
             }
-            int value = user_data.GetInt();
-            if ( value < 0 || value > kMax_Weight ) {
-                return eSNP_Complex_WeightBadValue;
+            
+            if ( ++it != data.end() ) {
+                return eSNP_Complex_NoPlaceForQAdata;
             }
-            m_Weight = TWeight(value);
+            
+            m_Flags |= fQualityCode;
+            m_AllelesIndices[alleles_count++] = qaindex;
+        }
+        else {
+            return eSNP_Bad_WrongTextId;
         }
     }
-    if ( !weight_ext && !weight_qual ) {
-        return eSNP_Complex_WeightCountIsNotOne;
-    }
-
     const CSeq_id* id;
     ENa_strand strand;
     switch ( loc.Which() ) {
@@ -387,36 +427,47 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
                                 annot_info.x_GetComment(m_CommentIndex));
         }
     }
+    size_t alleles_count = 0;
+    while ( alleles_count < kMax_AllelesCount &&
+            m_AllelesIndices[alleles_count] != kNo_AlleleIndex ) {
+        ++alleles_count;
+    }
+    
+    if ( m_Flags & fQualityCode ) {
+        _ASSERT(alleles_count > 0);
+        --alleles_count;
+    }
+    
     { // allele
         CSeq_feat::TQual& qual = feat.SetQual();
-        size_t i;
         const string& qual_str =
             m_Flags & fQualReplace? kId_replace: kId_allele;
-        for ( i = 0; i < kMax_AllelesCount; ++i ) {
+        
+        size_t qual_index = 0;
+        for ( size_t i = 0; i < alleles_count; ++i ) {
             TAlleleIndex allele_index = m_AllelesIndices[i];
-            if ( allele_index == kNo_AlleleIndex ) {
-                break;
-            }
             CGb_qual* gb_qual;
-            if ( i < qual.size() ) {
-                gb_qual = qual[i].GetPointer();
+            if ( qual_index < qual.size() ) {
+                gb_qual = qual[qual_index].GetPointer();
             }
             else {
                 qual.push_back(CRef<CGb_qual>(gb_qual = new CGb_qual));
             }
+            ++qual_index;
             CPackString::Assign(gb_qual->SetQual(), qual_str);
             CPackString::Assign(gb_qual->SetVal(),
                                 annot_info.x_GetAllele(allele_index));
         }
+
         if ( m_Flags & fWeightQual ) { // weight in qual
             CGb_qual* gb_qual;
-            if ( i < qual.size() ) {
-                gb_qual = qual[i].GetPointer();
+            if ( qual_index < qual.size() ) {
+                gb_qual = qual[qual_index].GetPointer();
             }
             else {
                 qual.push_back(CRef<CGb_qual>(gb_qual = new CGb_qual));
             }
-            ++i;
+            ++qual_index;
             CPackString::Assign(gb_qual->SetQual(), kId_weight);
             if ( m_Weight == 1 ) {
                 CPackString::Assign(gb_qual->SetVal(), kVal_1);
@@ -425,28 +476,39 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
                 gb_qual->SetVal(NStr::IntToString(m_Weight));
             }
         }
-        qual.resize(i);
+        qual.resize(qual_index);
     }
-    if ( m_Flags & fWeightQual ) { // weight in qual
-        feat.ResetExt();
-    }
-    else { // weight in ext
-        if ( !feat.IsSetExt() ) {
-            CSeq_feat::TExt& ext = feat.SetExt();
-            CPackString::Assign(ext.SetType().SetStr(),
-                                kId_dbSnpSynonymyData);
-            CSeq_feat::TExt::TData& data = ext.SetData();
-            data.resize(1);
-            data[0].Reset(new CUser_field);
-            CUser_field& user_field = *data[0];
-            CPackString::Assign(user_field.SetLabel().SetStr(),
-                                kId_weight);
-        }
-        CSeq_feat::TExt::TData& data = feat.SetExt().SetData();
-        _ASSERT(data.size() == 1);
+
+    if ( m_Flags & fWeightExt ) {
+        // weight in ext
+        CSeq_feat::TExt& ext = feat.SetExt();
+        CPackString::Assign(ext.SetType().SetStr(), kId_dbSnpSynonymyData);
+        CSeq_feat::TExt::TData& data = ext.SetData();
+        data.resize(1);
+        data[0].Reset(new CUser_field);
         CUser_field& user_field = *data[0];
+        CPackString::Assign(user_field.SetLabel().SetStr(),
+                            kId_weight);
         user_field.SetData().SetInt(m_Weight);
     }
+    else if ( m_Flags & fQualityCode ) {
+        // qadata in ext
+        CSeq_feat::TExt& ext = feat.SetExt();
+        CPackString::Assign(ext.SetType().SetStr(), kId_dbSnpQAdata);
+        CSeq_feat::TExt::TData& data = ext.SetData();
+        data.resize(1);
+        data[0].Reset(new CUser_field);
+        CUser_field& user_field = *data[0];
+        CPackString::Assign(user_field.SetLabel().SetStr(),
+                            kId_QualityCodes);
+        TQualityIndex qadata_index = m_AllelesIndices[alleles_count];
+        CPackString::Assign(user_field.SetData().SetStr(),
+                            annot_info.x_GetQuality(qadata_index));
+    }
+    else {
+        feat.ResetExt();
+    }
+
     { // snpid
         CSeq_feat::TDbxref& dbxref = feat.SetDbxref();
         _ASSERT(dbxref.size() == 1);
@@ -727,6 +789,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.19  2006/03/16 20:32:39  vasilche
+ * Updated SNP table parser to accept quality code.
+ *
  * Revision 1.18  2005/11/03 14:25:46  vasilche
  * Do not forget to copy CSeq_id.
  *

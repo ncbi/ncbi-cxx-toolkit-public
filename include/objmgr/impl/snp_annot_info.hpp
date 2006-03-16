@@ -160,6 +160,8 @@ protected:
     const string& x_GetComment(SSNP_Info::TCommentIndex index) const;
     SSNP_Info::TAlleleIndex x_GetAlleleIndex(const string& allele);
     const string& x_GetAllele(SSNP_Info::TAlleleIndex index) const;
+    SSNP_Info::TQualityIndex x_GetQualityIndex(const string& comment);
+    const string& x_GetQuality(SSNP_Info::TQualityIndex index) const;
 
     bool x_CheckGi(int gi);
     void x_SetGi(int gi);
@@ -179,6 +181,7 @@ private:
     TSNP_Set                    m_SNP_Set;
     CIndexedStrings             m_Comments;
     CIndexedStrings             m_Alleles;
+    CIndexedStrings             m_Quality;
     CRef<CSeq_annot>            m_Seq_annot;
 };
 
@@ -264,6 +267,14 @@ CSeq_annot_SNP_Info::x_GetCommentIndex(const string& comment)
 
 
 inline
+SSNP_Info::TQualityIndex
+CSeq_annot_SNP_Info::x_GetQualityIndex(const string& str)
+{
+    return m_Quality.GetIndex(str, SSNP_Info::kMax_QualityIndex);
+}
+
+
+inline
 const string&
 CSeq_annot_SNP_Info::x_GetComment(SSNP_Info::TCommentIndex index) const
 {
@@ -276,6 +287,14 @@ const string&
 CSeq_annot_SNP_Info::x_GetAllele(SSNP_Info::TAlleleIndex index) const
 {
     return m_Alleles.GetString(index);
+}
+
+
+inline
+const string&
+CSeq_annot_SNP_Info::x_GetQuality(SSNP_Info::TQualityIndex index) const
+{
+    return m_Quality.GetString(index);
 }
 
 
@@ -308,6 +327,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/03/16 20:32:39  vasilche
+* Updated SNP table parser to accept quality code.
+*
 * Revision 1.20  2005/09/20 15:45:35  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

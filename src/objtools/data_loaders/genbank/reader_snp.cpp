@@ -416,7 +416,8 @@ public:
 }
 
 
-static const unsigned MAGIC = 0x12340003;
+static const unsigned MAGIC = 0x12340004;
+static const unsigned MAGIC_NOQUALITY = 0x12340003;
 
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
@@ -452,7 +453,11 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
                                       CTSE_SetObjectInfo& set_info)
 {
     unsigned magic = read_unsigned(stream);
-    if ( !stream || magic != MAGIC ) {
+    if ( !stream ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Bad format of SNP table");
+    }
+    if ( magic != MAGIC && magic != MAGIC_NOQUALITY ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
@@ -527,6 +532,7 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
     // strings
     StoreIndexedStringsTo(stream, snp_info.m_Comments);
     StoreIndexedStringsTo(stream, snp_info.m_Alleles);
+    StoreIndexedStringsTo(stream, snp_info.m_Quality);
 
     // simple Set_Info
     unsigned count = snp_info.m_SNP_Set.size();
@@ -543,7 +549,11 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
 
     // header
     unsigned magic = read_unsigned(stream);
-    if ( !stream || magic != MAGIC ) {
+    if ( !stream ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Bad format of SNP table");
+    }
+    if ( magic != MAGIC && magic != MAGIC_NOQUALITY ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
@@ -558,6 +568,12 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                            snp_info.m_Alleles,
                            SSNP_Info::kMax_AlleleIndex,
                            SSNP_Info::kMax_AlleleLength);
+    if ( magic != MAGIC_NOQUALITY ) {
+        LoadIndexedStringsFrom(stream,
+                               snp_info.m_Quality,
+                               SSNP_Info::kMax_QualityIndex,
+                               SSNP_Info::kMax_QualityLength);
+    }
 
     // simple Set_Info
     unsigned count = read_size(stream);
@@ -568,6 +584,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
     }
     size_t comments_size = snp_info.m_Comments.GetSize();
     size_t alleles_size = snp_info.m_Alleles.GetSize();
+    size_t quality_size = snp_info.m_Quality.GetSize();
     ITERATE ( CSeq_annot_SNP_Info::TSNP_Set, it, snp_info.m_SNP_Set ) {
         size_t index = it->m_CommentIndex;
         if ( index != SSNP_Info::kNo_CommentIndex &&
@@ -576,13 +593,25 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Bad format of SNP table");
         }
-        for ( size_t i = 0; i < SSNP_Info::kMax_AllelesCount; ++i ) {
+        int quality = it->m_Flags & SSNP_Info::fQualityCode;
+        for ( int i = SSNP_Info::kMax_AllelesCount-1; i >= 0; --i ) {
             index = it->m_AllelesIndices[i];
-            if ( index != SSNP_Info::kNo_AlleleIndex &&
-                 index >= alleles_size ) {
-                snp_info.Reset();
-                NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "Bad format of SNP table");
+            if ( index != SSNP_Info::kNo_AlleleIndex ) {
+                if ( quality ) {
+                    quality = 0;
+                    if ( index >= quality_size ) {
+                        snp_info.Reset();
+                        NCBI_THROW(CLoaderException, eLoaderFailed,
+                                   "Bad format of SNP table");
+                    }
+                }
+                else {
+                    if ( index >= alleles_size ) {
+                        snp_info.Reset();
+                        NCBI_THROW(CLoaderException, eLoaderFailed,
+                                   "Bad format of SNP table");
+                    }
+                }
             }
         }
     }
@@ -594,6 +623,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.29  2006/03/16 20:33:03  vasilche
+ * Updated SNP table parser to accept quality code.
+ *
  * Revision 1.28  2006/02/15 20:39:58  lavr
  * CRWStream moved to corelib
  *
