@@ -47,7 +47,7 @@
 
 #include <objmgr/data_loader.hpp>
 
-#include <objmgr/impl/mutex_pool.hpp>
+#include <util/mutex_pool.hpp>
 
 #include <objtools/data_loaders/genbank/blob_id.hpp>
 #include <objtools/data_loaders/genbank/gbload_util.hpp>
