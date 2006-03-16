@@ -527,16 +527,21 @@ extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
     for (SIZE_TYPE pos = 0;  pos < len;  p++) {
         switch ( str[pos] ) {
         case '%': {
-            if (pos + 2 > len)
-                return (pos + 1);
-            int i1 = s_HexChar(str[pos+1]);
-            if (i1 < 0  ||  15 < i1)
-                return (pos + 2);
-            int i2 = s_HexChar(str[pos+2]);
-            if (i2 < 0  ||  15 < i2)
-                return (pos + 3);
-            str[p] = s_HexChar(str[pos+1]) * 16 + s_HexChar(str[pos+2]);
-            pos += 3;
+            // Accordingly RFC 1738 the '%' character is unsafe
+            // and should be always encoded, but sometimes it is
+            // not really encoded...
+            if (pos + 2 > len) {
+                str[p] = str[pos++];
+            } else {
+                int n1 = s_HexChar(str[pos+1]);
+                int n2 = s_HexChar(str[pos+2]);
+                if (n1 < 0  ||  n1 > 15  || n2 < 0  ||  n2 > 15) {
+                    str[p] = str[pos++];
+                } else {
+                    str[p] = s_HexChar(str[pos+1])*16 + s_HexChar(str[pos+2]);
+                    pos += 3;
+                }
+            }
             break;
         }
         case '+': {
@@ -550,12 +555,10 @@ extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
             str[p] = str[pos++];
         }
     }
-
     if (p < len) {
         str[p] = '\0';
         str.resize(p);
     }
-
     return 0;
 }
 
@@ -1125,6 +1128,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2006/03/16 13:42:17  ivanov
+* URL_DecodeInPlace(): Accordingly RFC 1738 the '%' character is unsafe
+* and should be always encoded, but sometimes it is not really encoded.
+*
 * Revision 1.12  2006/01/05 15:24:50  lavr
 * URL_EncodeString(): Keep off compiler warning
 *
