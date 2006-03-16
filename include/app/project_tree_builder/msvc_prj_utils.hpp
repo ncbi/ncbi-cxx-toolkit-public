@@ -191,6 +191,7 @@ public:
     string            m_DllInfo;
 
     static EMsvcVersion    GetMsvcVersion(void);
+    static string          GetMsvcVersionName(void);
     static string          GetMsvcSection(void);
     static EMsvcPlatform   GetMsvcPlatform(void);
     static string          GetMsvcPlatformName(void);
@@ -493,6 +494,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/03/16 16:06:09  gouriano
+ * Add Version name
+ *
  * Revision 1.31  2006/02/22 17:32:44  gouriano
  * Get ready for 64 bits platform
  *
