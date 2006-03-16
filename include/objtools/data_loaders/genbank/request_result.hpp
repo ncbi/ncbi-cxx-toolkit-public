@@ -37,7 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-#include <objmgr/impl/mutex_pool.hpp>
+#include <util/mutex_pool.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objtools/data_loaders/genbank/blob_id.hpp>
 
