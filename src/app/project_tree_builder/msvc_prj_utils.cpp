@@ -329,14 +329,17 @@ CMsvc7RegSettings::EMsvcVersion  CMsvc7RegSettings::GetMsvcVersion(void)
     return sm_MsvcVersion;
 }
 
+string CMsvc7RegSettings::GetMsvcVersionName(void)
+{
+    if (GetMsvcVersion() == eMsvc710) {
+        return "710";
+    }
+    return "800";
+}
+
 string CMsvc7RegSettings::GetMsvcSection(void)
 {
-    string s;
-    if (GetMsvcVersion() == eMsvc710) {
-        s = string(MSVC_REG_SECTION) + "710";
-    } else {
-        s = string(MSVC_REG_SECTION) + "800";
-    }
+    string s = string(MSVC_REG_SECTION) + GetMsvcVersionName();
     if (GetMsvcPlatform() != eMsvcWin32) {
         s += "." + GetMsvcPlatformName();
     }
@@ -404,11 +407,15 @@ string GetOpt(const CNcbiRegistry& registry,
 {
     string build = GetApp().GetBuildType().GetTypeStr();
     string spec = config.m_Debug ? "debug": "release";
+    string version = CMsvc7RegSettings::GetMsvcVersionName();
+    string platform = CMsvc7RegSettings::GetMsvcPlatformName();
     list<string> entries;
     entries.push_front(section);
-    entries.push_front(section + "." + CMsvc7RegSettings::GetMsvcPlatformName());
+    entries.push_front(section + "." + version);
+    entries.push_front(section + "." + platform);
     entries.push_front(section + "." + build);
     entries.push_front(section + "." + spec);
+    entries.push_front(section + "." + version + "." + spec);
     entries.push_front(section + "." + build + "." + spec);
     entries.push_front(section + "." + spec + "." + config.m_Name);
     entries.push_front(section + "." + build + "." + spec + "." + config.m_Name);
@@ -1135,6 +1142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/03/16 16:07:02  gouriano
+ * Use MSVC version name in settings
+ *
  * Revision 1.48  2006/02/27 14:35:14  gouriano
  * Added section for x64 platform
  *
