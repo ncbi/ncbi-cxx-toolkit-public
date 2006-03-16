@@ -441,12 +441,26 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
             list<string> resolved_def;
             NStr::Split(def, LIST_SEPARATOR, resolved_def);
             ITERATE(list<string>, r, resolved_def) {
-                depends_ids->push_back(CProjKey(CProjKey::eLib, *r));
+                if ( GetApp().GetBuildType().GetType() == CBuildType::eDll &&
+                    GetApp().GetDllsInfo().IsDllHosted(id) ) {
+                    depends_ids->push_back(CProjKey(CProjKey::eDll,
+                                        GetApp().GetDllsInfo().GetDllHost(id)));
+                } else {
+                    depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+                }
             }
         } else {
-            depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+            if ( GetApp().GetBuildType().GetType() == CBuildType::eDll &&
+                 GetApp().GetDllsInfo().IsDllHosted(id) ) {
+                depends_ids->push_back(CProjKey(CProjKey::eDll,
+                                       GetApp().GetDllsInfo().GetDllHost(id)));
+            } else {
+                depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+            }
         }
     }
+    depends_ids->sort();
+    depends_ids->unique();
 }
 
 void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends, 
@@ -1590,6 +1604,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/03/16 19:26:17  gouriano
+ * Take into account lib to dll dependencies
+ *
  * Revision 1.33  2006/02/16 19:24:16  gouriano
  * Use predefined GUID for MSVC type projects
  *
