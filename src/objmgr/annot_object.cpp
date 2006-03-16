@@ -77,6 +77,9 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
       m_ObjectIndex(index),
       m_Type((*iter)->GetData().GetSubtype())
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    m_Iter.m_Feat.Construct();
+#endif
     *m_Iter.m_Feat = iter;
     _ASSERT(IsRegular());
     _ASSERT(m_Iter.m_RawPtr != 0);
@@ -90,6 +93,9 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
       m_ObjectIndex(index),
       m_Type(C_Data::e_Align)
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    m_Iter.m_Align.Construct();
+#endif
     *m_Iter.m_Align = iter;
     _ASSERT(IsRegular());
     _ASSERT(m_Iter.m_RawPtr != 0);
@@ -103,6 +109,9 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
       m_ObjectIndex(index),
       m_Type(C_Data::e_Graph)
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    m_Iter.m_Graph.Construct();
+#endif
     *m_Iter.m_Graph = iter;
     _ASSERT(IsRegular());
     _ASSERT(m_Iter.m_RawPtr != 0);
@@ -116,6 +125,9 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
       m_ObjectIndex(index),
       m_Type(C_Data::e_Locs)
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    m_Iter.m_Locs.Construct();
+#endif
     *m_Iter.m_Locs = iter;
     _ASSERT(IsRegular());
     _ASSERT(m_Iter.m_RawPtr != 0);
@@ -130,6 +142,9 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
       m_ObjectIndex(index),
       m_Type(obj.GetData().GetSubtype())
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    m_Iter.m_Feat.Construct();
+#endif
     *m_Iter.m_Feat = cont.insert(cont.end(),
                                  Ref(const_cast<CSeq_feat*>(&obj)));
     _ASSERT(IsRegular());
@@ -145,6 +160,9 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
       m_ObjectIndex(index),
       m_Type(C_Data::e_Align)
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    m_Iter.m_Align.Construct();
+#endif
     *m_Iter.m_Align = cont.insert(cont.end(),
                                   Ref(const_cast<CSeq_align*>(&obj)));
     _ASSERT(IsRegular());
@@ -160,6 +178,9 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
       m_ObjectIndex(index),
       m_Type(C_Data::e_Graph)
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    m_Iter.m_Graph.Construct();
+#endif
     *m_Iter.m_Graph = cont.insert(cont.end(),
                                   Ref(const_cast<CSeq_graph*>(&obj)));
     _ASSERT(IsRegular());
@@ -175,6 +196,9 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
       m_ObjectIndex(index),
       m_Type(C_Data::e_Locs)
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    m_Iter.m_Locs.Construct();
+#endif
     *m_Iter.m_Locs = cont.insert(cont.end(),
                                  Ref(const_cast<CSeq_loc*>(&obj)));
     _ASSERT(IsRegular());
@@ -194,8 +218,96 @@ CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
 }
 
 
+#ifdef NCBI_NON_POD_STL_ITERATORS
+
+CAnnotObject_Info::~CAnnotObject_Info()
+{
+    Reset();
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(const CAnnotObject_Info& info)
+    : m_Seq_annot_Info(info.m_Seq_annot_Info),
+      m_ObjectIndex(info.m_ObjectIndex),
+      m_Type(info.m_Type)
+{
+    if ( IsRegular() ) {
+        if ( IsFeat() ) {
+            m_Iter.m_Feat.Construct();
+            *m_Iter.m_Feat = *info.m_Iter.m_Feat;
+        }
+        else if ( IsAlign() ) {
+            m_Iter.m_Align.Construct();
+            *m_Iter.m_Align = *info.m_Iter.m_Align;
+        }
+        else if ( IsGraph() ) {
+            m_Iter.m_Graph.Construct();
+            *m_Iter.m_Graph = *info.m_Iter.m_Graph;
+        }
+        else if ( IsLocs() ) {
+            m_Iter.m_Locs.Construct();
+            *m_Iter.m_Locs = *info.m_Iter.m_Locs;
+        }
+    }
+    else {
+        m_Iter.m_RawPtr = info.m_Iter.m_RawPtr;
+    }
+}
+
+
+CAnnotObject_Info& CAnnotObject_Info::operator=(const CAnnotObject_Info& info)
+{
+    if ( this != &info ) {
+        Reset();
+        m_Seq_annot_Info = info.m_Seq_annot_Info;
+        m_ObjectIndex = info.m_ObjectIndex;
+        m_Type = info.m_Type;
+        if ( IsRegular() ) {
+            if ( IsFeat() ) {
+                m_Iter.m_Feat.Construct();
+                *m_Iter.m_Feat = *info.m_Iter.m_Feat;
+            }
+            else if ( IsAlign() ) {
+                m_Iter.m_Align.Construct();
+                *m_Iter.m_Align = *info.m_Iter.m_Align;
+            }
+            else if ( IsGraph() ) {
+                m_Iter.m_Graph.Construct();
+                *m_Iter.m_Graph = *info.m_Iter.m_Graph;
+            }
+            else if ( IsLocs() ) {
+                m_Iter.m_Locs.Construct();
+                *m_Iter.m_Locs = *info.m_Iter.m_Locs;
+            }
+        }
+        else {
+            m_Iter.m_RawPtr = info.m_Iter.m_RawPtr;
+        }
+    }
+    return *this;
+}
+
+#endif
+
+
 void CAnnotObject_Info::Reset(void)
 {
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    if ( IsRegular() ) {
+        if ( IsFeat() ) {
+            m_Iter.m_Feat.Destruct();
+        }
+        else if ( IsAlign() ) {
+            m_Iter.m_Align.Destruct();
+        }
+        else if ( IsGraph() ) {
+            m_Iter.m_Graph.Destruct();
+        }
+        else if ( IsLocs() ) {
+            m_Iter.m_Locs.Destruct();
+        }
+    }
+#endif
     m_Type.SetAnnotType(C_Data::e_not_set);
     m_Iter.m_RawPtr = 0;
     m_ObjectIndex = eEmpty;
@@ -572,6 +684,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2006/03/16 21:42:14  vasilche
+* Always construct STL iterators on MSVC 2005.
+*
 * Revision 1.45  2006/01/25 18:59:04  didenko
 * Redisgned bio objects edit facility
 *

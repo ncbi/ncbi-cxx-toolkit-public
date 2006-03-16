@@ -97,6 +97,12 @@ public:
     CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                       const SAnnotTypeSelector& sel);
 
+#ifdef NCBI_NON_POD_STL_ITERATORS
+    ~CAnnotObject_Info();
+    CAnnotObject_Info(const CAnnotObject_Info& info);
+    CAnnotObject_Info& operator=(const CAnnotObject_Info& info);
+#endif
+
     // state check
     bool IsEmpty(void) const;
     bool IsRemoved(void) const; // same as empty
@@ -464,6 +470,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2006/03/16 21:42:14  vasilche
+* Always construct STL iterators on MSVC 2005.
+*
 * Revision 1.22  2006/01/25 18:59:03  didenko
 * Redisgned bio objects edit facility
 *
