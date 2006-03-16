@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="gbench-install-internal"
-	ProjectGUID="{6C23686B-1522-4B44-8D48-7E3176C36247}"
+	ProjectGUID="{6C23686B-1522-4B44-8D48-7E3176C36248}"
 	RootNamespace="gbench-install-internal"
 	Keyword="MakeFileProj">
 	<Platforms>
