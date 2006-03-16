@@ -163,6 +163,12 @@ void CPSSMAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix *scoremat)
 
     // no penalty for aligning gaps with each other
     m_ScoreMatrix.s[0][0] = 0;
+
+    for (int i = 0; i < kPSSM_ColumnSize; i++) {
+        for (int j = 0; j < kPSSM_ColumnSize; j++) {
+            m_DScoreMatrix[i][j] = (double)m_ScoreMatrix.s[i][j];
+        }
+    }
 }
 
 
@@ -418,7 +424,6 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
 
     const double** freq1_row = m_Freq1 + data->m_offset1 - 1;
     const double** freq2_row = m_Freq2 + data->m_offset2 - 1;
-    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
     m_terminate = false;
 
@@ -536,12 +541,15 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
                 wg2 = wg2R;
                 ws2 = ws2R;
             }
-            double scaled_wg1 = wg1 * (1.0 - freq2_row[j][0]);
-            double scaled_ws1 = ws1;
-            double scaled_wg2 = wg2 * (1.0 - freq1_row[i][0]);
-            double scaled_ws2 = ws2;
+            const double *profile1 = freq1_row[i];
+            const double *profile2 = freq2_row[j];
+            const double scaled_wg1 = wg1 * (1.0 - profile2[0]);
+            const double scaled_ws1 = ws1;
+            const double scaled_wg2 = wg2 * (1.0 - profile1[0]);
+            const double scaled_ws2 = ws2;
             
             double accum = 0.0, sum = 0.0;
+            int num_zeros1 = 0, num_zeros2 = 0;
             double diff_freq1[kPSSM_ColumnSize];
             double diff_freq2[kPSSM_ColumnSize];
 
@@ -553,23 +561,25 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
             // to more similar frequency columns
             //
             // Begin by separating out the common portion of each
-            // profile, including the frequency associated with gaps
+            // profile
 
             for (int m = 1; m < kPSSM_ColumnSize; m++) {
-                if (freq1_row[i][m] < freq2_row[j][m]) {
-                    accum += freq1_row[i][m] * (double)sm[m][m];
+                if (profile1[m] < profile2[m]) {
+                    accum += profile1[m] * (double)sm[m][m];
                     diff_freq1[m] = 0.0;
-                    diff_freq2[m] = freq2_row[j][m] - freq1_row[i][m];
+                    diff_freq2[m] = profile2[m] - profile1[m];
+                    num_zeros1++;
                 }
                 else {
-                    accum += freq2_row[j][m] * (double)sm[m][m];
-                    diff_freq1[m] = freq1_row[i][m] - freq2_row[j][m];
+                    accum += profile2[m] * (double)sm[m][m];
+                    diff_freq1[m] = profile1[m] - profile2[m];
                     diff_freq2[m] = 0.0;
+                    num_zeros2++;
                 }
             }
 
             // normalize difference for profile with smaller gap
-            if (freq1_row[i][0] <=  freq2_row[j][0]) {
+            if (profile1[0] <= profile2[0]) {
                 for (int m = 1; m < kPSSM_ColumnSize; m++)
                     sum += diff_freq1[m];
             } else {
@@ -578,28 +588,47 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
             }
 
             if (sum > 0) {
-                if (freq1_row[i][0] <=  freq2_row[j][0]) {
+                sum = 1.0 / sum;
+                if (profile1[0] <= profile2[0]) {
                     for (int m = 1; m < kPSSM_ColumnSize; m++)
-                        diff_freq1[m] /= sum;
+                        diff_freq1[m] *= sum;
                 } else {
                     for (int m = 1; m < kPSSM_ColumnSize; m++)
-                        diff_freq2[m] /= sum;
+                        diff_freq2[m] *= sum;
                 }
 
-                // add in the cross terms (not counting gaps)
+                // Add in the cross terms (not counting gaps).
+                // Note that the following assumes a symmetric
+                // score matrix
 
-                for (int m = 1; m < kPSSM_ColumnSize; m++) {
-                    for (int n = 1; n < kPSSM_ColumnSize; n++) {
-                        accum += diff_freq1[m] * 
-                                diff_freq2[n] * 
-                                (double)sm[m][n];
+                if (num_zeros1 > num_zeros2) {
+                    for (int m = 1; m < kPSSM_ColumnSize; m++) {
+                        if (diff_freq1[m] > 0) {
+                            sum = 0.0;
+                            double *matrix_row = m_DScoreMatrix[m];
+                            for (int n = 1; n < kPSSM_ColumnSize; n++) {
+                                sum += diff_freq2[n] * matrix_row[n];
+                            }
+                            accum += diff_freq1[m] * sum;
+                        }
+                    }
+                } else {
+                    for (int m = 1; m < kPSSM_ColumnSize; m++) {
+                        if (diff_freq2[m] > 0) {
+                            sum = 0.0;
+                            double *matrix_row = m_DScoreMatrix[m];
+                            for (int n = 1; n < kPSSM_ColumnSize; n++) {
+                                sum += diff_freq1[n] * matrix_row[n];
+                            }
+                            accum += diff_freq2[m] * sum;
+                        }
                     }
                 }
             }
 
             G = pV[j] + accum * m_FreqScale +
-                freq1_row[i][0] * m_Ws * (1-freq2_row[j][0]) +
-                freq2_row[j][0] * m_Ws * (1-freq1_row[i][0]);
+                            profile1[0] * m_Ws * (1-profile2[0]) +
+                            profile2[0] * m_Ws * (1-profile1[0]);
 
             pV[j] = V;
 
@@ -864,6 +893,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/03/16 18:03:35  papadopo
+ * performance optimization
+ *
  * Revision 1.12  2006/02/07 20:56:17  papadopo
  * normalize profile with smaller gap frequency instead of larger
  *
