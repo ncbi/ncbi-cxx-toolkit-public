@@ -1296,7 +1296,7 @@ CQueueDataBase::CQueue::SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
                         CBDB_Transaction::eNoAssociation);
     for (unsigned i = 0; i < batch.size(); ++i) {
         SNS_BatchSubmitRec& subm = batch[i];
-        if (subm.affinity_id == kMax_I4) { // take prev. token
+        if (subm.affinity_id == (unsigned)kMax_I4) { // take prev. token
             _ASSERT(i > 0);
             subm.affinity_id = batch[i-1].affinity_id;
         } else {
@@ -3511,6 +3511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/03/17 14:40:25  kuznets
+ * fixed warning
+ *
  * Revision 1.62  2006/03/17 14:25:29  kuznets
  * Force reschedule (to re-try failed jobs)
  *
