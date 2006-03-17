@@ -1209,14 +1209,15 @@ static EIO_Status s_BUF_IO
  size_t*   n_read,
  EIO_Event what)
 {
+    BUF b;
     switch (what) {
     case eIO_Read:
         *n_read = BUF_Read((BUF) stream, buf, size);
         return *n_read ? eIO_Success : eIO_Closed;
     case eIO_Write:
         assert(stream);
-        return BUF_PushBack((BUF*) &stream, buf, size)
-            ? eIO_Success : eIO_Unknown;
+        b = (BUF) stream;
+        return BUF_PushBack(&b, buf, size) ? eIO_Success : eIO_Unknown;
     default:
         break;
     }
@@ -1972,6 +1973,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.100  2006/03/17 16:42:33  lavr
+ * BUF_StripToPattern(): Avoid type-punned ptr (and keep off GCC warning)
+ *
  * Revision 6.99  2006/03/16 20:04:02  lavr
  * s_IsSufficientAddress():  IP recognition bug fixed
  *
