@@ -1909,7 +1909,7 @@ D gap_convert_to_arr(D* BMRESTRICT       dest,
 
     if (*buf & 1)
     {
-        if (*pcurr + 1 >= dest_len)
+        if (unsigned(*pcurr + 1) >= dest_len)
             return 0; // insufficient space
         dest_len -= *pcurr;
         T to = *pcurr;
