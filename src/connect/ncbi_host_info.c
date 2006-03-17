@@ -154,8 +154,11 @@ const char* HINFO_AffinityArgvalue(const HOST_INFO host_info)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2006/03/17 16:41:20  lavr
+ * Fix a typo in the last rev's change log
+ *
  * Revision 6.9  2006/03/17 16:39:56  lavr
- * Exclicit casts to keep compiler happy
+ * Explicit casts to keep compiler happy
  *
  * Revision 6.8  2006/03/06 20:24:20  lavr
  * Added "const" qualifier to all host-infos when passed to getters
