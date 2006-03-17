@@ -117,6 +117,11 @@ void CSplignApp::Init()
          "Must be used with -query. ",
          CArgDescriptions::eInputFile);
     
+    argdescr->AddDefaultKey
+        ("W", "mbwordsize", "[Pairwise mode] Megablast word size",
+         CArgDescriptions::eInteger,
+         "28");
+
 #ifdef GENOME_PIPELINE
     argdescr->AddOptionalKey
         ("querydb", "querydb",
@@ -132,11 +137,6 @@ void CSplignApp::Init()
          "sequences. To create one, use formatdb -o T -p F",
          CArgDescriptions::eString);
     
-    argdescr->AddDefaultKey
-        ("W", "mbwordsize", "Megablast word size",
-         CArgDescriptions::eInteger,
-         "28");
-
     argdescr->AddOptionalKey(
         "chunk", "chunk",
         "[Batch mode or incremental mode - no external hits] "
@@ -1509,6 +1509,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/03/17 15:58:16  kapustin
+ * Fix megablast word size option
+ *
  * Revision 1.61  2006/03/15 15:15:54  ucko
  * +<algorithm> for sort() et al.; -<iostream>, already included via ncbistd.hpp.
  *
