@@ -464,10 +464,13 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
     struct timeval delay;
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
+    select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay);
+/*
     while (select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay) < 0) {
         if (errno != EINTR  ||  onsignal == eInterruptOnSignal)
             break;
     }
+*/
 #  endif /*HAVE_NANOSLEEP*/
 
 #elif defined(NCBI_OS_MAC)
@@ -533,6 +536,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/03/17 14:32:05  ivanov
+ * SleepMicroSec() [Unix] -- ignore 'onsignal'parameter for platforms that
+ * use select(), sleeping less is more preferble here than sleeping longer.
+ *
  * Revision 1.50  2006/03/14 13:24:34  ivanov
  * Sleep*(): added parameter of EInterruptOnSignal type.
  * [Unix] try to utilize unslept part of the time if interrupted by a signal.
