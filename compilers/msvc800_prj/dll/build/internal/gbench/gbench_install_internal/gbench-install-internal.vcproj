@@ -9,6 +9,8 @@
 	<Platforms>
 		<Platform
 			Name="Win32"/>
+		<Platform
+			Name="x64"/>
 	</Platforms>
 	<Configurations>
 		<Configuration
@@ -24,7 +26,31 @@
 				Output="gbench-install-internal.exe"/>
 		</Configuration>
 		<Configuration
+			Name="DebugDLL|x64"
+			OutputDirectory="DebugDLL"
+			IntermediateDirectory="DebugDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				Output="gbench-install-internal.exe"/>
+		</Configuration>
+		<Configuration
 			Name="ReleaseDLL|Win32"
+			OutputDirectory="ReleaseDLL"
+			IntermediateDirectory="ReleaseDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				Output="gbench-install-internal.exe"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|x64"
 			OutputDirectory="ReleaseDLL"
 			IntermediateDirectory="ReleaseDLL"
 			ConfigurationType="0">
