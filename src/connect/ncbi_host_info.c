@@ -70,15 +70,15 @@ HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env,
     memcpy((char*) host_info + sizeof(*host_info), hinfo, hinfo_size);
     s = (char*) host_info + size;
     if (e_s) {
-        host_info->env = memcpy(s, env, e_s);
+        host_info->env = (const char*) memcpy(s, env, e_s);
         s += e_s;
     }
     if (a_s) {
-        host_info->arg = memcpy(s, arg, a_s);
+        host_info->arg = (const char*) memcpy(s, arg, a_s);
         s += a_s;
     }
     if (v_s) {
-        host_info->val = memcpy(s, val, v_s);
+        host_info->val = (const char*) memcpy(s, val, v_s);
         s += v_s;
     }
     host_info->pad = M_PI;
@@ -154,6 +154,9 @@ const char* HINFO_AffinityArgvalue(const HOST_INFO host_info)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2006/03/17 16:39:56  lavr
+ * Exclicit casts to keep compiler happy
+ *
  * Revision 6.8  2006/03/06 20:24:20  lavr
  * Added "const" qualifier to all host-infos when passed to getters
  *
