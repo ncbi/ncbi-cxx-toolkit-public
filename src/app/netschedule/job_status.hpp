@@ -125,6 +125,9 @@ public:
     unsigned PutDone_GetPending(unsigned int done_job_id,
                                 bool*        need_db_update);
 
+    /// Reschedule job without status check
+    void ForceReschedule(unsigned job_id);
+
     /// Logical AND of candidates and pending jobs
     /// (candidate_set &= pending_set)
     void PendingIntersect(bm::bvector<>* candidate_set);
@@ -338,6 +341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/03/17 14:25:29  kuznets
+ * Force reschedule (to re-try failed jobs)
+ *
  * Revision 1.16  2006/03/13 16:01:36  kuznets
  * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
  *

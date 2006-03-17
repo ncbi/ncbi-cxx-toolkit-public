@@ -161,6 +161,10 @@ public:
                                  const char*   progress_msg = 0);
 
         void Cancel(unsigned int job_id);
+
+        /// Move job to pending ignoring its current status
+        void ForceReschedule(unsigned int job_id);
+
         void PutResult(unsigned int  job_id,
                        int           ret_code,
                        const char*   output,
@@ -519,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/03/17 14:25:29  kuznets
+ * Force reschedule (to re-try failed jobs)
+ *
  * Revision 1.42  2006/03/16 19:37:28  kuznets
  * Fixed possible race condition between client and worker
  *

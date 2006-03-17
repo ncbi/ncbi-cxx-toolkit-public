@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.2  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.3  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -85,6 +85,7 @@ typedef enum {
     eUnRegisterClient,
     eSubmitJob,
     eSubmitBatch,
+    eForceReschedule,
     eCancelJob,
     eStatusJob,
     eGetJob,
@@ -296,6 +297,11 @@ public:
     void ProcessDropJob(CSocket&                sock,
                         SThreadData&            tdata,
                         CQueueDataBase::CQueue& queue);
+
+    void ProcessForceReschedule(CSocket&                sock,
+                                SThreadData&            tdata,
+                                CQueueDataBase::CQueue& queue);
+
 
     void ProcessStatistics(CSocket&                sock,
                            SThreadData&            tdata,
@@ -711,6 +717,13 @@ end_version_control:
                 }
                 ProcessDropJob(socket, *tdata, queue);
                 break;
+            case eForceReschedule:
+                if (!queue.IsSubmitAllowed()) {
+                    WriteMsg(socket, "ERR:", "OPERATION_ACCESS_DENIED");
+                    break;
+                }
+                ProcessForceReschedule(socket, *tdata, queue);
+                break;
             case eGetProgressMsg:
                 ProcessMGet(socket, *tdata, queue);
                 break;
@@ -1118,6 +1131,20 @@ void CNetScheduleServer::ProcessCancel(CSocket&                sock,
     queue.Cancel(job_id);
     WriteMsg(sock, "OK:", "");
 }
+
+
+void CNetScheduleServer::ProcessForceReschedule(
+                                       CSocket&                sock,
+                                       SThreadData&            tdata,
+                                       CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    queue.ForceReschedule(job_id);
+    WriteMsg(sock, "OK:", "");
+}
+
 
 void CNetScheduleServer::ProcessDropJob(CSocket&                sock, 
                                         SThreadData&            tdata,
@@ -1775,6 +1802,7 @@ struct SNS_Commands
     unsigned  BSUB;
     unsigned  REGC;
     unsigned  URGC;
+    unsigned  FRES;
 
 
     SNS_Commands()
@@ -1804,6 +1832,7 @@ struct SNS_Commands
         ::memcpy(&BSUB, "BSUB", 4);
         ::memcpy(&REGC, "REGC", 4);
         ::memcpy(&URGC, "URGC", 4);
+        ::memcpy(&FRES, "FRES", 4);
     }
 
     /// 4 byte command comparison (make sure str is aligned)
@@ -1851,6 +1880,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 25.REGC udp_port
     // 26.URGC udp_port
     // 27.QPRT Status
+    // 28.FRES JSID_01_1
 
     const char* s = reqstr;
 
@@ -2188,6 +2218,19 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             
             return;
         }
+
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.FRES, s)) {
+            req->req_type = ePutJobFailure;
+            s += 4;
+            NS_SKIPSPACE(s)
+            NS_GETSTRING(s, req->job_key_str)
+            
+            if (req->job_key_str.empty()) {
+                NS_RETURN_ERROR("Misformed force reschedule request")
+            }
+            return;
+        }
+
         break;
 
     case 'R':
@@ -2649,6 +2692,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/03/17 14:25:29  kuznets
+ * Force reschedule (to re-try failed jobs)
+ *
  * Revision 1.67  2006/03/16 19:39:02  kuznets
  * version increment
  *

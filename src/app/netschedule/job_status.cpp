@@ -151,6 +151,15 @@ void CNetScheduler_JobStatusTracker::Return2PendingNoLock()
 }
 
 
+void CNetScheduler_JobStatusTracker::ForceReschedule(unsigned job_id)
+{
+    CWriteLockGuard guard(m_Lock);
+
+    CNetScheduleClient::EJobStatus old_st = GetStatusNoLock(job_id);
+    x_SetClearStatusNoLock(job_id, CNetScheduleClient::ePending, old_st);
+}
+
+
 void 
 CNetScheduler_JobStatusTracker::SetStatus(unsigned int  job_id, 
                         CNetScheduleClient::EJobStatus  status)
@@ -852,6 +861,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/03/17 14:25:29  kuznets
+ * Force reschedule (to re-try failed jobs)
+ *
  * Revision 1.27  2006/03/13 16:01:36  kuznets
  * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
  *

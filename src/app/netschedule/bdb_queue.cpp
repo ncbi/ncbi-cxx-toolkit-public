@@ -1425,6 +1425,42 @@ CQueueDataBase::CQueue::StatusStatistics(
     m_LQueue.status_tracker.StatusStatistics(status, st);
 }
 
+void CQueueDataBase::CQueue::ForceReschedule(unsigned int job_id)
+{
+    {{
+    SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(0);
+
+    db.id = job_id;
+    if (db.Fetch() == eBDB_Ok) {
+        //int status = db.status;
+        db.status = (int) CNetScheduleClient::ePending;
+        db.worker_node5 = 0; 
+
+        unsigned run_counter = db.run_counter;
+        if (run_counter) {
+            db.run_counter = --run_counter;
+        }
+
+	    db.SetTransaction(&trans);
+        db.UpdateInsert();
+        trans.Commit();
+
+    } else {
+        // TODO: Integrity error or job just expired?
+        return;
+    }    
+    }}
+
+
+    m_LQueue.status_tracker.ForceReschedule(job_id);
+
+}
 
 void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 {
@@ -3475,6 +3511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/03/17 14:25:29  kuznets
+ * Force reschedule (to re-try failed jobs)
+ *
  * Revision 1.61  2006/03/16 19:37:28  kuznets
  * Fixed possible race condition between client and worker
  *
