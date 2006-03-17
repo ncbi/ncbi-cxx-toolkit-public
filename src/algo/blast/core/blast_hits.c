@@ -685,7 +685,7 @@ Blast_HSPTestIdentityAndLength(EBlastProgramType program_number,
       
    /* Check whether this HSP passes the percent identity and minimal hit 
       length criteria, and delete it if it does not. */
-   if ((hsp->num_ident * 100 < 
+   if ((hsp->num_ident * 100.0 < 
         align_length * hit_options->percent_identity) ||
        align_length < hit_options->min_hit_length) {
       delete_hsp = TRUE;
