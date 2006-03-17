@@ -27,9 +27,9 @@
 #define HAVE_STRICMP               1
 #define NCBI_USE_THROW_SPEC        1
 #if _MSC_VER < 1400
-#define HAVE_NO_AUTO_PTR           1
+#  define HAVE_NO_AUTO_PTR           1
 #else
-/* #define HAVE_NO_AUTO_PTR           1 */
+/* #  define HAVE_NO_AUTO_PTR           1 */
 #endif
 #define HAVE_NO_MINMAX_TEMPLATE    1
 #define STACK_GROWS_DOWN           1
@@ -100,23 +100,21 @@ typedef   int   ssize_t;
 #define HAVE_STRING_H                   1
 
 #ifdef __GNUC__
-# define HAVE_SYS_TIME_H                1
+#  define HAVE_SYS_TIME_H               1
 #endif
 
 #define ICONV_CONST                     const
 #define NETDB_REENTRANT                 1
 
-/*
- *  Suppress 'function deprecated' warning on MSVC 2005 express
- */
-#if _MSC_VER == 1400
-#pragma warning(disable: 4996)
-#endif
-
 #if _MSC_VER >= 1400
 
+/* Suppress 'function deprecated' warning on MSVC 2005 express */
+#  pragma warning(disable: 4996)
+
+#  if !defined(_SECURE_SCL) || _SECURE_SCL
 /* STL iterators are non-POD types */
-#define NCBI_NON_POD_STL_ITERATORS 1
+#    define NCBI_NON_POD_TYPE_STL_ITERATORS  1
+#  endif
 
 #endif
 
