@@ -698,15 +698,19 @@ static int/*bool*/ s_IsSufficientAddress(const char* addr)
     const char* dot = 0;
 
     for (i = 0; i < len; i++) {
-        if (!isdigit((unsigned char) addr[i]))
-            isip = 0;
         if (addr[i] == '.') {
-            if (++dots > 3)
-                isip = 0;
-            if (isip  &&  &addr[i] - (dot ? dot : addr) > 3)
+            ++dots;
+            if (i  &&  dots <= 3) {
+                if (isip) {
+                    size_t n = (size_t)(&addr[i] - (dot ? dot : addr - 1));
+                    if (n <= 1  ||  n > 4)
+                        isip = 0;
+                }
+            } else
                 isip = 0;
             dot = &addr[i];
-        }
+        } else if (!isdigit((unsigned char) addr[i]))
+            isip = 0;
     }
     if (dots < 3)
         isip = 0;
@@ -1973,6 +1977,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.101  2006/03/19 01:40:17  lavr
+ * Yet another fix for s_IsSufficientAddress()
+ *
  * Revision 6.100  2006/03/17 16:42:33  lavr
  * BUF_StripToPattern(): Avoid type-punned ptr (and keep off GCC warning)
  *
