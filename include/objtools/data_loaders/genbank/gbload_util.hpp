@@ -328,8 +328,7 @@ protected:
     void x_GC(void)
     {
         while ( m_Index.size() > m_MaxSize ) {
-            if ( !m_Queue.back().second->ReferencedOnlyOnce()  ||
-                !m_Queue.back().second->IsLoaded() ) {
+            if ( !m_Queue.back().second->ReferencedOnlyOnce() ) {
                 break;
             }
             m_Index.erase(m_Queue.back().first);
@@ -364,6 +363,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.8  2006/03/20 21:06:28  vasilche
+ * Delete unused not-loaded entries too.
+ *
  * Revision 1.7  2005/08/29 15:01:08  grichenk
  * Use CRef to store blob-ids.
  * Do not release locked objects in x_GC.
