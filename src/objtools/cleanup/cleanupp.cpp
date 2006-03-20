@@ -33,6 +33,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -74,6 +75,29 @@ void CCleanup_imp::BasicCleanup(CSeq_entry& se)
             BasicCleanup(se.SetSet());
             break;
         case CSeq_entry::e_not_set:
+        default:
+            break;
+    }
+}
+
+
+void CCleanup_imp::BasicCleanup(CSeq_submit& ss)
+{
+    // TODO Cleanup Submit-block.
+    
+    switch (ss.GetData().Which()) {
+        case CSeq_submit::TData::e_Entrys:
+            NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, ss.SetData().SetEntrys()) {
+                BasicCleanup(**it);
+            }
+            break;
+        case CSeq_submit::TData::e_Annots:
+            NON_CONST_ITERATE(CSeq_submit::TData::TAnnots, it, ss.SetData().SetAnnots()) {
+                BasicCleanup(**it);
+            }
+            break;
+        case CSeq_submit::TData::e_Delete:
+        case CSeq_submit::TData::e_not_set:
         default:
             break;
     }
@@ -224,6 +248,7 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd, ECleanupMode mode)
         case CSeqdesc::e_Het:
             break;
         case CSeqdesc::e_Source:
+            BasicCleanup(sd.SetSource());
             break;
         case CSeqdesc::e_Molinfo:
             break;
@@ -292,6 +317,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/03/20 14:22:15  rsmith
+ * add cleanup for CSeq_submit
+ *
  * Revision 1.1  2006/03/14 20:21:50  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *

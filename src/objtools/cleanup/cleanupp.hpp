@@ -39,6 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_entry;
+class CSeq_submit;
 class CBioseq;
 class CBioseq_set;
 class CSeq_annot;
@@ -97,6 +98,8 @@ public:
     
     /// Cleanup a Seq-entry. 
     void BasicCleanup(CSeq_entry& se);
+    /// Cleanup a Seq-submit.
+    void BasicCleanup(CSeq_submit& ss);
     /// Cleanup a Bioseq. 
     void BasicCleanup(CBioseq& bs);
     /// Cleanup a Bioseq_set.
@@ -205,6 +208,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/03/20 14:22:15  rsmith
+ * add cleanup for CSeq_submit
+ *
  * Revision 1.1  2006/03/14 20:21:50  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *

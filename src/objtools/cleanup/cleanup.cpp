@@ -37,6 +37,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
 
 #include <objmgr/util/sequence.hpp>
@@ -70,6 +71,15 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
     CRef<CCleanupChange> errors(new CCleanupChange(&se));
     CCleanup_imp clean_i(errors, options);
     clean_i.BasicCleanup(se);
+    return errors;
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_submit& ss, Uint4 options)
+{
+    CRef<CCleanupChange> errors(new CCleanupChange(&ss));
+    CCleanup_imp clean_i(errors, options);
+    clean_i.BasicCleanup(ss);
     return errors;
 }
 
@@ -337,6 +347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/03/20 14:22:15  rsmith
+* add cleanup for CSeq_submit
+*
 * Revision 1.6  2006/03/14 20:21:50  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *
