@@ -58,6 +58,7 @@
 #include "cn3d_tools.hpp"
 #include "sequence_viewer.hpp"
 #include "cn3d_pssm.hpp"
+#include "progress_meter.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -256,10 +257,17 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
     bool errorsEncountered = false;
 
+    unsigned int nAln = toRealign.size(), a = 0;
+    auto_ptr < ProgressMeter > progress;
+    if (nAln > 1)
+        progress.reset(new ProgressMeter(NULL, "Running block alignment...", "Working", nAln));
+
     AlignmentList::const_iterator s, se = toRealign.end();
-    for (s=toRealign.begin(); s!=se; ++s) {
+    for (s=toRealign.begin(); s!=se; ++s, ++a) {
         if (multiple && (*s)->GetMaster() != multiple->GetMaster())
             ERRORMSG("master sequence mismatch");
+        if (nAln > 1)
+            progress->SetValue(a);
 
         // slave sequence info
         dpQuery = (*s)->GetSequenceOfRow(1);
@@ -512,6 +520,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2006/03/20 22:13:49  thiessen
+* add progress meter
+*
 * Revision 1.41  2005/11/28 22:43:25  thiessen
 * adjust block aligner parameter defaults
 *
