@@ -49,12 +49,17 @@ private:
 };
 
 
-class CTestRemover
+class CTestHandler
 {
 public:
-    static void RemoveElement(const Uint8& key, CElement* value)
+    void RemoveElement(const Uint8& key, CElement* value)
     {
         delete value;
+    }
+    void InsertElement(const Uint8& key, CElement* value) {}
+    ECache_InsertFlag CanInsertElement(const Uint8& key, CElement* value)
+    {
+        return eCache_CheckSize;
     }
 };
 
@@ -65,22 +70,22 @@ typedef CCacheTraits<Uint8,
                      TElement,
                      TCacheLock,
                      unsigned char,
-                     CTestRemover>  TUCharCacheTr;
+                     CTestHandler>  TUCharCacheTr;
 typedef CCacheTraits<Uint8,
                      TElement,
                      TCacheLock,
                      unsigned int,
-                     CTestRemover>  TUIntCacheTr;
+                     CTestHandler>  TUIntCacheTr;
 typedef CCacheTraits<Uint8,
                      TElement,
                      TCacheLock,
                      Uint8,
-                     CTestRemover>  TUInt8CacheTr;
+                     CTestHandler>  TUInt8CacheTr;
 typedef CCacheTraits<Uint8,
                      TElement,
                      TCacheLock,
                      signed char,
-                     CTestRemover>  TIntCacheTr;
+                     CTestHandler>  TIntCacheTr;
 typedef CCache<Uint8, TElement, TUCharCacheTr> TUCharCache;
 typedef CCache<Uint8, TElement, TUIntCacheTr>  TUIntCache;
 typedef CCache<Uint8, TElement, TUInt8CacheTr> TUInt8Cache;
@@ -232,6 +237,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/03/20 18:54:25  grichenk
+ * Added callbacks for element insertion.
+ *
  * Revision 1.2  2006/03/06 18:28:25  grichenk
  * Moved ncbi_cache from corelib to util.
  *

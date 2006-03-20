@@ -91,12 +91,30 @@ struct CCacheElement_Less
 };
 
 
-/// Default (NOP) element remover
+/// Flag indicating if an element can be inserted into cache
+enum ECache_InsertFlag {
+    eCache_CheckSize,   ///< Insert the element after checking max cache size
+    eCache_CanInsert,   ///< The element can be inserted
+    eCache_NeedCleanup, ///< Need to cleanup cache before inserting the element
+    eCache_DoNotCache   ///< The element can not be inserted (e.g. too big)
+};
+
+
+/// Default (NOP) element handler
 template <class TKey, class TValue>
-class CCacheElement_Remover
+class CCacheElement_Handler
 {
 public:
-    static void RemoveElement(const TKey& key, TValue& value) {}
+    /// Special processing of a removed element (e.g. deleting the object)
+    void RemoveElement(const TKey& key, TValue& value) {}
+    /// Special processing of an element to be inserted (e.g. count total
+    /// memory used by the cached objects)
+    void InsertElement(const TKey& key, const TValue& value) {}
+    /// Check if the element can be inserted into the cache
+    ECache_InsertFlag CanInsertElement(const TKey& key, const TValue& value)
+    {
+        return eCache_CheckSize;
+    }
 };
 
 
@@ -145,7 +163,7 @@ template <class            TKey,
           class            TValue,
           class TLock    = TCacheLock_Default,
           class TSize    = Uint4,
-          class TRemover = CCacheElement_Remover<TKey, TValue> >
+          class THandler = CCacheElement_Handler<TKey, TValue> >
 class CCacheTraits
 {
 public:
@@ -153,7 +171,7 @@ public:
     typedef TValue   TValueType;
     typedef TSize    TSizeType;
     /// Element remover
-    typedef TRemover TRemoverType;
+    typedef THandler THandlerType;
     /// MT-safety
     typedef TLock    TLockType;
 };
@@ -180,7 +198,8 @@ public:
     /// Result of element insertion
     enum EAddResult {
         eElement_Added,    ///< The element was added to the cache
-        eElement_Replaced  ///< The element existed and was replaced
+        eElement_Replaced, ///< The element existed and was replaced
+        eElement_Ignored   ///< Failed to insert the element
     };
 
     /// Add new element to the cache or replace the existing value.
@@ -238,7 +257,7 @@ private:
     typedef typename TTraits::TLockType          TLockTraits;
     typedef typename TLockTraits::TGuard         TGuardType;
     typedef typename TLockTraits::TLock          TLockType;
-    typedef typename TTraits::TRemoverType       TRemoverType;
+    typedef typename TTraits::THandlerType       THandlerType;
 
     // Get next counter value, adjust order of all elements if the counter
     // approaches its limit.
@@ -253,11 +272,12 @@ private:
             return m_CacheSet.empty() ? 0 : (*m_CacheSet.begin())->m_Weight;
         }
 
-    TLockType m_Lock;
-    TSizeType m_Capacity;
-    TCacheSet m_CacheSet;
-    TCacheMap m_CacheMap;
-    TOrder    m_Counter;
+    TLockType    m_Lock;
+    TSizeType    m_Capacity;
+    TCacheSet    m_CacheSet;
+    TCacheMap    m_CacheMap;
+    TOrder       m_Counter;
+    THandlerType m_Handler;
 };
 
 
@@ -311,7 +331,7 @@ void CCache<TKey, TValue, TTraits>::x_EraseElement(TCacheSet_I& set_iter,
     _ASSERT(map_iter != m_CacheMap.end());
     TCacheElement* next = *set_iter;
     _ASSERT(next);
-    TRemoverType::RemoveElement(map_iter->first, map_iter->second.m_Value);
+    m_Handler.RemoveElement(map_iter->first, map_iter->second.m_Value);
     m_CacheMap.erase(map_iter);
     m_CacheSet.erase(set_iter);
     delete next;
@@ -469,11 +489,30 @@ CCache<TKey, TValue, TTraits>::Add(const TKeyType&   key,
         *result = eElement_Added;
     }
 
-    while (GetSize() >= m_Capacity) {
-        x_EraseLast();
+    
+    for (ECache_InsertFlag ins_flag = m_Handler.CanInsertElement(key, value);;
+         ins_flag = m_Handler.CanInsertElement(key, value)) {
+        if (ins_flag == eCache_CheckSize) {
+            while (GetSize() >= m_Capacity) {
+                x_EraseLast();
+            }
+            break;
+        }
+        else if (ins_flag == eCache_CanInsert) {
+            break;
+        }
+        else if (ins_flag == eCache_DoNotCache) {
+            if ( result ) {
+                *result = eElement_Ignored;
+            }
+            return 0;
+        }
+        else if (ins_flag == eCache_NeedCleanup) {
+            x_EraseLast();
+        }
     }
-
     SValueWithIndex& map_val = m_CacheMap[key];
+    m_Handler.InsertElement(key, value);
     map_val.m_CacheElement = x_InsertElement(key, weight);
     map_val.m_Value = value;
     _ASSERT(map_val.m_CacheElement);
@@ -532,6 +571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/03/20 18:54:25  grichenk
+ * Added callbacks for element insertion.
+ *
  * Revision 1.2  2006/03/06 18:28:25  grichenk
  * Moved ncbi_cache from corelib to util.
  *
