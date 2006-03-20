@@ -543,7 +543,9 @@ class NCBI_XCONNECT_EXPORT CNetCacheSock_RW : public CSocketReaderWriter
 public:
     typedef CSocketReaderWriter TParent;
 
-    CNetCacheSock_RW(CSocket* sock);
+    explicit CNetCacheSock_RW(CSocket* sock);
+    explicit CNetCacheSock_RW(CSocket* sock, size_t blob_size);
+
     virtual ~CNetCacheSock_RW();
 
     /// Take socket ownership
@@ -557,15 +559,18 @@ public:
     /// Access to CSocketReaderWriter::m_Sock
     CSocket& GetSocket() { _ASSERT(m_Sock); return *m_Sock; }
 
+    /*
     /// Turn ON blob size control.
     /// When turned on IReader returns EOF if all BLOB bytes being
     /// read from the socket (without expecting the server to close it)
     void SetBlobSize(size_t blob_size);
+    */
 
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0);
 
+    void FinishTransmission();
 private:
     CNetCacheSock_RW(const CNetCacheSock_RW&);
     CNetCacheSock_RW& operator=(const CNetCacheSock_RW&);
@@ -633,6 +638,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/03/20 19:15:22  didenko
+ * Modified the GET method in a way that the client side initiates
+ * SOCKET connection closing.
+ *
  * Revision 1.55  2006/02/15 19:05:50  lavr
  * Remove inclusion of unnecessary header files
  *

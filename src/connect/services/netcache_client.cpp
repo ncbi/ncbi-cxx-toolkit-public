@@ -603,7 +603,7 @@ IReader* CNetCacheClient::GetData(const string& key,
     CSockGuard sg(*m_Sock);
 
     string& request = m_Tmp;
-    MakeCommandPacket(&request, "GET ");
+    MakeCommandPacket(&request, "GET2 ");
     
     request += key;
 
@@ -621,9 +621,9 @@ IReader* CNetCacheClient::GetData(const string& key,
     WriteStr(request.c_str(), request.length() + 1);
 
     WaitForServer();
-    unsigned int bs = 0;
 
     string answer;
+    size_t bsize = 0;
     bool res = ReadStr(*m_Sock, &answer);
     if (res) {
         bool blob_found = x_CheckErrTrim(answer);
@@ -631,13 +631,13 @@ IReader* CNetCacheClient::GetData(const string& key,
         if (!blob_found) {
             return NULL;
         }
-
-        if (blob_size) {
-            string::size_type pos = answer.find("SIZE=");
-            if (pos != string::npos) {
-                const char* ch = answer.c_str() + pos + 5;
-                bs = atoi(ch);
-                *blob_size = (size_t) bs;
+        string::size_type pos = answer.find("SIZE=");
+        if (pos != string::npos) {
+            const char* ch = answer.c_str() + pos + 5;
+            bsize = (size_t)atoi(ch);
+        
+            if (blob_size) {
+                *blob_size = bsize;
             } else {
                 *blob_size = 0;
             }
@@ -648,8 +648,7 @@ IReader* CNetCacheClient::GetData(const string& key,
     }
 
     sg.Release();
-    IReader* reader = new CNetCacheSock_RW(m_Sock);
-    return reader;
+    return new CNetCacheSock_RW(m_Sock, bsize);
 }
 
 
@@ -893,21 +892,35 @@ CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock)
 {
 }
 
+CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock, size_t blob_size) 
+: CSocketReaderWriter(sock),
+  m_Parent(0),
+  m_BlobSizeControl(true),
+  m_BlobBytesToRead(blob_size)
+{
+}
+
 
 CNetCacheSock_RW::~CNetCacheSock_RW() 
+{
+    try {
+        FinishTransmission();
+    } catch(exception& ex) {
+        ERR_POST("Exception in CNetCacheSock_RW::~CNetCacheSock_RW():" << ex.what());
+    } catch(...) {
+        ERR_POST("Unknown Exception in CNetCacheSock_RW::~CNetCacheSock_RW()");
+    }
+}
+
+void CNetCacheSock_RW::FinishTransmission()
 { 
     if (m_Sock) { 
         if (m_Parent) {
-            try {
-                m_Parent->ReturnSocket(m_Sock);
-            } 
-            catch(exception& ex)
-            {
-                ERR_POST("Exception when returning socket " << ex.what());
-            }
+            m_Parent->ReturnSocket(m_Sock);
             m_Sock = 0;
         } else {
-            m_Sock->Close();
+            if (m_Sock->GetStatus(eIO_Open) == eIO_Success)
+                m_Sock->Close();
         }
     }
 }
@@ -923,34 +936,47 @@ void CNetCacheSock_RW::SetSocketParent(CNetServiceClient* parent)
 {
     m_Parent = parent;
 }
-
+/*
 
 void CNetCacheSock_RW::SetBlobSize(size_t blob_size)
 {
     m_BlobSizeControl = true;
     m_BlobBytesToRead = blob_size;
 }
-
+*/
 
 ERW_Result CNetCacheSock_RW::Read(void*   buf,
                                   size_t  count,
                                   size_t* bytes_read)
 {
+    _ASSERT(m_BlobSizeControl);
     if (!m_BlobSizeControl) {
         return TParent::Read(buf, count, bytes_read);
+    }
+    ERW_Result res = eRW_Eof;
+    if ( m_BlobBytesToRead == 0) {
+        if ( bytes_read ) {
+            *bytes_read = 0;
+        }
+        return res;
     }
     if ( m_BlobBytesToRead < count ) {
         count = m_BlobBytesToRead;
     }
-    ERW_Result res = eRW_Eof;
     size_t nn_read = 0;
     if ( count ) {
         res = TParent::Read(buf, count, &nn_read);
     }
+    
     if ( bytes_read ) {
         *bytes_read = nn_read;
     }
     m_BlobBytesToRead -= nn_read;
+    if (m_BlobBytesToRead == 0) {
+        static string ok_str = "OK:";
+        TParent::Write(ok_str.c_str(), ok_str.size(), 0);
+        FinishTransmission();
+    }
     return res;
 }
 
@@ -1154,6 +1180,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/03/20 19:15:22  didenko
+ * Modified the GET method in a way that the client side initiates
+ * SOCKET connection closing.
+ *
  * Revision 1.64  2006/02/15 18:38:41  lavr
  * Remove inclusion of unnecessary header files
  *

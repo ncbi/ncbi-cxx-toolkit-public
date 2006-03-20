@@ -780,12 +780,11 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
     }
 
     sg.Release();
-    auto_ptr<CNetCacheSock_RW> rw(new CNetCacheSock_RW(m_Sock));
+    auto_ptr<CNetCacheSock_RW> rw(new CNetCacheSock_RW(m_Sock, m_BlobSize));
     
     rw->OwnSocket();
     DetachSocket();
     rw->SetSocketParent(this);
-    rw->SetBlobSize(m_BlobSize);
 
     return rw.release();
 }
@@ -937,6 +936,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/03/20 19:15:22  didenko
+ * Modified the GET method in a way that the client side initiates
+ * SOCKET connection closing.
+ *
  * Revision 1.22  2006/02/15 18:42:57  lavr
  * Remove inclusion of unnecessary header files
  *
