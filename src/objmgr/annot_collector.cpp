@@ -2059,6 +2059,18 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                 }
             }
         }
+        else if ( m_Selector->m_UnresolvedFlag == SAnnotSelector::eSearchUnresolved &&
+                  m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE &&
+                  m_Selector->m_LimitObjectType == SAnnotSelector::eLimit_TSE_Info &&
+                  m_Selector->m_LimitObject ) {
+            // external annotations only
+            ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
+                const CTSE_Info& tse_info = *tse_it->first;
+                tse_info.UpdateAnnotIndex();
+                found |= x_SearchTSE(tse_it->second, idit->first,
+                                     idit->second, cvt);
+            }
+        }
         else {
             // Search in the limit objects
             CConstRef<CSynonymsSet> syns;
@@ -2264,6 +2276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2006/03/20 21:09:10  vasilche
+* Do not try synonyms Seq-ids when looking for external annotations.
+*
 * Revision 1.71  2006/02/14 16:57:14  grichenk
 * Do not collect types by default.
 *
