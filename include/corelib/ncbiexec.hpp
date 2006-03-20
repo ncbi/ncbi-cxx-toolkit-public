@@ -131,14 +131,11 @@ public:
     /// Meaning of the suffix "L" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
     ///   arguments are passed separately as arguments.
-    ///
-    /// NOTE: At least one argument must be present. This argument is always, 
-    /// by convention, the name of the file being spawned (argument with 
-    /// number 0).
+   ///
     /// @param mode
     ///   Mode for running the process.
-    /// @param cmdline
-    ///   Command-line string.
+    /// @param cmdname
+    ///   Path to the process to spawn.
     /// @param argv
     ///   First argument vector parameter.
     /// @param ...
@@ -171,13 +168,10 @@ public:
     ///   the new process. The NULL environment pointer indicates that the new 
     ///   process will inherit the parents process's environment.
     ///
-    /// NOTE: At least one argument must be present. This argument is always, 
-    /// by convention, the name of the file being spawned (argument with 
-    /// number 0).
     /// @param mode
     ///   Mode for running the process.
-    /// @param cmdline
-    ///   Command-line string.
+    /// @param cmdname
+    ///   Path of file to be executed.
     /// @param argv
     ///   First argument vector parameter.
     /// @param ...
@@ -214,13 +208,10 @@ public:
     ///   platform this feature works in functions without letter "P" in
     ///   function name. 
     ///
-    /// NOTE: At least one argument must be present. This argument is always, 
-    /// by convention, the name of the file being spawned (argument with 
-    /// number 0).
     /// @param mode
     ///   Mode for running the process.
-    /// @param cmdline
-    ///   Command-line string.
+    /// @param cmdname
+    ///   Path of file to be executed.
     /// @param argv
     ///   First argument vector parameter.
     /// @param ...
@@ -260,13 +251,10 @@ public:
     ///   the new process. The NULL environment pointer indicates that the new 
     ///   process will inherit the parents process's environment.
     ///
-    /// NOTE: At least one argument must be present. This argument is always, 
-    /// by convention, the name of the file being spawned (argument with 
-    /// number 0).
     /// @param mode
     ///   Mode for running the process.
-    /// @param cmdline
-    ///   Command-line string.
+    /// @param cmdname
+    ///   Path of file to be executed.
     /// @param argv
     ///   First argument vector parameter.
     /// @param ...
@@ -297,13 +285,10 @@ public:
     /// - The letter "V" as suffix refers to the fact that the number of
     /// command-line arguments are variable.
     ///
-    /// NOTE: At least one argument must be present. This argument is always, 
-    /// by convention, the name of the file being spawned (argument with 
-    /// number 0).
     /// @param mode
     ///   Mode for running the process.
     /// @param cmdline
-    ///   Command-line string.
+    ///   Path of file to be executed.
     /// @param argv
     ///   Pointer to argument vector. Last value in vector must be NULL.
     /// @return 
@@ -335,13 +320,10 @@ public:
     ///   the new process. The NULL environment pointer indicates that the new 
     ///   process will inherit the parents process's environment.
     ///
-    /// NOTE: At least one argument must be present. This argument is always, 
-    /// by convention, the name of the file being spawned (argument with 
-    /// number 0).
     /// @param mode
     ///   Mode for running the process.
-    /// @param cmdline
-    ///   Command-line string.
+    /// @param cmdname
+    ///   Path of file to be executed.
     /// @param argv
     ///   Argument vector. Last value must be NULL.
     /// @param envp
@@ -375,13 +357,10 @@ public:
     ///   platform this feature works in functions without letter "P" in
     ///   function name. 
     ///
-    /// NOTE: At least one argument must be present. This argument is always, 
-    /// by convention, the name of the file being spawned (argument with 
-    /// number 0).
     /// @param mode
     ///   Mode for running the process.
-    /// @param cmdline
-    ///   Command-line string.
+    /// @param cmdname
+    ///   Path of file to be executed.
     /// @param argv
     ///   Pointer to argument vector. Last value in vector must be NULL.
     /// @return 
@@ -418,13 +397,10 @@ public:
     ///   the new process. The NULL environment pointer indicates that the new 
     ///   process will inherit the parents process's environment.
     ///
-    /// NOTE: At least one argument must be present. This argument is always, 
-    /// by convention, the name of the file being spawned (argument with 
-    /// number 0).
     /// @param mode
     ///   Mode for running the process.
-    /// @param cmdline
-    ///   Command-line string.
+    /// @param cmdname
+    ///   Path of file to be executed.
     /// @param argv
     ///   Argument vector. Last value must be NULL.
     /// @param envp
@@ -442,7 +418,7 @@ public:
     static int SpawnVPE(EMode mode, const char *cmdname,
                         const char *const *argv, const char *const *envp);
 
-    /// Wait until child process terminates.
+    /// Run console application .
     ///
     /// Wait until the child process with "handle" terminates, and return
     /// immeditately if the specifed child process has already terminated.
@@ -455,6 +431,39 @@ public:
     ///   - Exit code of child process, if no errors.
     ///   - (-1), if error has occurred.
     static int Wait(int handle, unsigned long timeout = kMax_ULong);
+
+    /// Spawn a new process with specified command-line
+    ///
+    /// MSWin:
+    ///    This function try to run a program in invisible mode, without
+    ///    visible window. This can be used to run console programm from 
+    ///    non-console application. If it runs from console application,
+    ///    the parent's console window can be used by child process.
+    ///    Executing non-console program can show theirs windows or not,
+    ///    this depends. In eDetach mode the main window/console of
+    ///    the running program can be visible, use eNoWait instead.
+    ///    Note, that if the running program cannot self-terminate, that
+    ///    it can be never terminated.
+    /// Unix:
+    ///    In current implementation equal to SpawnL().
+    /// @param mode
+    ///   Mode for running the process.
+    /// @param cmdname
+    ///   Path to the process to spawn.
+    /// @param argv
+    ///   First argument vector parameter.
+    /// @param ...
+    ///   Argument vector. Must ends with NULL.
+    /// @return 
+    ///   On success, return:
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
+    /// @sa
+    ///   SpawnL()
+    static int RunSilent(EMode mode, const char *cmdname,
+                         const char *argv, ... /*, NULL */);
 };
 
 
@@ -467,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/03/20 15:46:51  ivanov
+ * + CExec::RunSilent()
+ *
  * Revision 1.15  2004/08/19 13:01:51  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *

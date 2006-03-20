@@ -353,12 +353,93 @@ int CExec::Wait(int handle, unsigned long timeout)
 }
 
 
+int CExec::RunSilent(EMode mode, const char *cmdname,
+                     const char *argv, ... /*, NULL */)
+{
+    int status = -1;
+
+#if defined(NCBI_OS_MSWIN)
+    _flushall();
+
+    STARTUPINFO         StartupInfo;
+    PROCESS_INFORMATION ProcessInfo;
+    const int           kMaxCmdLength = 4096;
+	string              cmdline;
+
+    // Set startup info
+	memset(&StartupInfo, 0, sizeof(StartupInfo));
+	StartupInfo.cb          = sizeof(STARTUPINFO);
+	StartupInfo.dwFlags     = STARTF_USESHOWWINDOW;
+	StartupInfo.wShowWindow = SW_HIDE;
+    DWORD dwCreateFlags     = (mode == eDetach) ? 
+                              DETACHED_PROCESS : CREATE_NEW_CONSOLE;
+
+	// Compose command line
+    cmdline.reserve(kMaxCmdLength);
+	cmdline = cmdname;
+	cmdline += " "; 
+	cmdline += argv;
+    va_list vargs;
+    va_start(vargs, argv);
+    while ( va_arg(vargs, const char*) ) {
+	    cmdline += " "; 
+	    cmdline += va_arg(vargs, const char*);
+    }
+    va_end(vargs);
+
+    // Just check mode parameter
+    s_GetRealMode(mode);
+
+    // Run program
+	if (CreateProcess(NULL, (LPSTR)cmdline.c_str(), NULL, NULL, FALSE,
+		              dwCreateFlags, NULL, NULL, &StartupInfo, &ProcessInfo))
+    {
+        if (mode == eOverlay) {
+            // destroy ourselves
+            _exit(0);
+        }
+        else if (mode == eWait) {
+            // wait running process
+            WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
+            DWORD exitcode = -1;
+            GetExitCodeProcess(ProcessInfo.hProcess, &exitcode);
+            status = (int)exitcode;
+            CloseHandle(ProcessInfo.hProcess);
+        }
+        else if (mode == eDetach) {
+            // detached asynchronous spawn,
+            // just close process handle, return 0 for success
+            CloseHandle(ProcessInfo.hProcess);
+            status = 0;
+        }
+        else if (mode == eNoWait) {
+            // asynchronous spawn -- return PID
+            status = (int)ProcessInfo.hProcess;
+        }
+        CloseHandle(ProcessInfo.hThread);
+    }
+
+#elif defined(NCBI_OS_UNIX)
+    GET_EXEC_ARGS;
+    status = s_SpawnUnix(eV, mode, cmdname, args);
+
+#endif
+    if (status == -1) {
+        NCBI_THROW(CExecException, eSpawn, "CExec::RunSilent()");
+    }
+    return status;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/03/20 15:46:41  ivanov
+ * + CExec::RunSilent()
+ *
  * Revision 1.28  2006/03/02 16:48:16  vakatov
  * Minor formatting
  *
