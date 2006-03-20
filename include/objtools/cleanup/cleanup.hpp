@@ -46,6 +46,7 @@ class CBioseq;
 class CBioseq_set;
 class CSeq_annot;
 class CSeq_feat;
+class CSeq_submit;
 
 class CCleanupChange;
 
@@ -61,6 +62,8 @@ public:
 
     /// Cleanup a Seq-entry. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
+    /// Cleanup a Seq-submit. 
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_submit& se,  Uint4 options = 0);
     /// Cleanup a Bioseq. 
     CConstRef<CCleanupChange> BasicCleanup(CBioseq& bs,     Uint4 options = 0);
     /// Cleanup a Bioseq_set.
@@ -220,6 +223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/03/20 14:20:37  rsmith
+* add BasicCleanup for CSeq_submit
+*
 * Revision 1.6  2006/03/15 14:09:54  dicuccio
 * Fix compilation errors: hide assignment operator, drop import specifier for
 * private functions
