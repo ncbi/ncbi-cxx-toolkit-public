@@ -3,5 +3,5 @@
 # Build library "xcleanup"
 ###############################
 
-SRC = cleanup cleanup_feat cleanup_general cleanup_pub cleanup_utils cleanupp
+SRC = cleanup cleanup_feat cleanup_general cleanup_pub cleanup_utils cleanup_biosource cleanupp
 LIB    = xcleanup
