@@ -171,7 +171,7 @@ char StringToChar(const string&      src,
             // if character greater than 127 (0x7F) than substitute it 
             // with kOutrangeChar, else leave it as is.
             if (dst_code > 0x7F) {
-                RETURN_S (kOutrangeChar, eOutrange);
+                RETURN_S (kOutrangeChar, eOutrangeChar);
             }
         }
     }
@@ -236,13 +236,13 @@ long StringToCode(const string&      src,
         else
         {
             // Bad character. Save it as kOutrangeChar
-            RETURN_LS (kOutrangeChar, 1, eOutrange)
+            RETURN_LS (kOutrangeChar, 1, eOutrangeChar)
         }
     }
 
     // Broken unicode sequence
     if (utf_len > src.size()) {
-        RETURN_LS ((long)kSkipChar, 1, eSkip);
+        RETURN_LS ((long)kSkipChar, 1, eSkipChar);
     }
         
     unsigned char mask = 0xFF;
@@ -297,18 +297,18 @@ char CodeToChar(const long src, EConversionStatus* status)
     unsigned char ch;
 
     if (src < 0x80) RETURN_S ((char)src, eSuccess);
-    if ((src >= 0x0300) && (src <= 0x036F)) RETURN_S (kSkipChar, eSkip);
+    if ((src >= 0x0300) && (src <= 0x036F)) RETURN_S (kSkipChar, eSkipChar);
     if ((src >= 0x1E00) && (src <= 0x1EFF))
     {
       ch = tblTransA[src-0x1E00];
-      if (!ch) RETURN_S (kOutrangeChar, eOutrange)
+      if (!ch) RETURN_S (kOutrangeChar, eOutrangeChar)
       else     RETURN_S ((char)ch, eSuccess);
     }
-    if ((src >= 0xFE20) && (src <= 0xFE2F)) RETURN_S (kSkipChar, eSkip);
-    if (src > 0x2FF) RETURN_S (kOutrangeChar, eOutrange);
+    if ((src >= 0xFE20) && (src <= 0xFE2F)) RETURN_S (kSkipChar, eSkipChar);
+    if (src > 0x2FF) RETURN_S (kOutrangeChar, eOutrangeChar);
 
     ch = tblTrans[src-0x80];
-    if (!ch) RETURN_S (kOutrangeChar, eOutrange);
+    if (!ch) RETURN_S (kOutrangeChar, eOutrangeChar);
 
     RETURN_S ((char)ch, eSuccess);
 }
@@ -320,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/20 20:54:18  gouriano
+ * Changed enum names to avoid conflicts
+ *
  * Revision 1.6  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

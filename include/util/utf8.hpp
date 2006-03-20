@@ -63,8 +63,8 @@ const char kSkipChar = '\xFF';
 // Result (status) conversion Unicode symbols to character
 enum EConversionStatus {
     eSuccess,             // Success, result is good
-    eSkip,                // Result conversion == kSkipChar
-    eOutrange             // Result conversion == kOutrangeChar
+    eSkipChar,            // Result conversion == kSkipChar
+    eOutrangeChar         // Result conversion == kOutrangeChar
 };
 
 
@@ -74,7 +74,7 @@ enum EConversionStatus {
 // (if "seq_len" is not NULL).
 // Return resulting ASCII-7 character.
 // NOTE:  If the UTF-8 symbol has no ASCII-7 equivalent, then return
-//        kOutrangeChar or hSkipChar.
+//        kOutrangeChar or kSkipChar.
 //
 NCBI_XUTIL_EXPORT
 extern char StringToChar(const string&      src,
@@ -96,7 +96,7 @@ extern string StringToAscii(const string& src,
 // (if "seq_len" is not NULL).
 // Return resulting Unicode symbol code.
 // NOTE:  If the UTF-8 symbol has no Unicode equivalent, then return
-//        kOutrangeChar or hSkipChar.
+//        kOutrangeChar or kSkipChar.
 //
 NCBI_XUTIL_EXPORT
 extern long StringToCode(const string&      src,
@@ -115,7 +115,7 @@ extern vector<long> StringToVector(const string& src);
 // character.
 // Return resulting ASCII-7 character.
 // NOTE:  If the Unicode symbol has no ASCII-7 equivalent, then return
-//        kOutrangeChar or hSkipChar.
+//        kOutrangeChar or kSkipChar.
 //
 NCBI_XUTIL_EXPORT
 extern char CodeToChar(const long src, EConversionStatus* status = 0); 
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/03/20 20:53:58  gouriano
+ * Changed enum names to avoid conflicts
+ *
  * Revision 1.5  2004/03/11 22:55:43  gorelenk
  * Added export prefixes NCBI_XUTIL_EXPORT to functions.
  *
