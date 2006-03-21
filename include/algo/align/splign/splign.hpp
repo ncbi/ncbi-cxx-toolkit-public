@@ -87,6 +87,9 @@ public:
     static double s_GetDefaultMinCompartmentIdty(void);
     double GetMinCompartmentIdentity(void) const;
 
+    void   SetMinSingletonIdentity(double idty);
+    double GetMinSingletonIdentity(void) const;
+
     void   SetMinExonIdentity(double idty);
     static double s_GetDefaultMinExonIdty(void);
     double GetMinExonIdentity(void) const;
@@ -181,6 +184,9 @@ public:
                                 size_t range_left, size_t range_right,
                                 SAlignedCompartment* result);
 
+    // clear sequence vectors and scope - use with caution
+    void ClearMem(void);
+
 protected:
 
     // active ingredient :-)
@@ -196,11 +202,14 @@ protected:
     // min exon idty - others will be marked as gaps
     double m_MinExonIdty;
 
+    // compartment penalty as a per cent of the query (mRna) length
+    double m_compartment_penalty;
+
     // min compartment idty - others will be skipped
     double m_MinCompartmentIdty;
 
-    // compartment penalty as a per cent of the query (mRna) length
-    double m_compartment_penalty;
+    // min single compartment idty (single per subject per strand)
+    double m_MinSingletonIdty;
 
     // mandatory end gap detection flag
     bool m_endgaps;
@@ -256,6 +265,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2006/03/21 16:17:33  kapustin
+ * Support max singleton idty parameter
+ *
  * Revision 1.33  2006/02/14 15:41:35  kapustin
  * +AlignSingleCompartment()
  *
