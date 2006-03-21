@@ -15,7 +15,8 @@ services="
    NC_test         \
    service1:9001   \
    service2:9001   \
-   service2:9005   \
+   service0:9005   \
+   service3:9005   \
    service1:9009   \
    netcache:9009"
 
