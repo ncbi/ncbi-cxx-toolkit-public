@@ -72,7 +72,13 @@ COMMON_Error()
         echo  "------------------------------------------------------"
         echo  "Current dir:  `pwd`"
         echo
-        echo "[$script_name] FAILED:"
+        if [ "x$1" = "x-s" ]; then
+            echo "[$script_name] FAILED (status $2):"
+            shift
+            shift
+        else
+            echo "[$script_name] FAILED:"
+        fi
         err="   $1"
         shift
         for arg in "$@" ; do
@@ -95,8 +101,9 @@ COMMON_Exec()
 {
     "$@"
 
-    if test $? -ne 0 ; then
-        COMMON_Error "$@"
+    x_status=$?
+    if test $x_status -ne 0 ; then
+        COMMON_Error -s $x_status "$@"
     fi
 }
 
@@ -111,11 +118,12 @@ COMMON_ExecRB()
 {
     "$@"
 
-    if test $? -ne 0 ; then
+    x_status=$?
+    if test $x_status -ne 0 ; then
         if [ ! -z "$x_common_rb" ]; then
             $x_common_rb
         fi
-        COMMON_Error "$@"
+        COMMON_Error -s $x_status "$@"
     fi
 }
 
