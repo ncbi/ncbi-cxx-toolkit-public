@@ -230,8 +230,13 @@ public:
     /// Keep ranges which can not be mapped. Does not affect truncation
     /// of partially mapped ranges. By default nonmapping ranges are
     /// converted to NULL.
-    void KeepNonmappingRanges(void);
-    void TruncateNonmappingRanges(void);
+    CSeq_loc_Mapper& KeepNonmappingRanges(void);
+    CSeq_loc_Mapper& TruncateNonmappingRanges(void);
+
+    /// Check strands before mapping a range. By default strand is not
+    /// checked and a range will be mapped even if its strand does not
+    /// correspond to the strand of the mapping source.
+    CSeq_loc_Mapper& SetCheckStrand(bool value = true);
 
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
     CRef<CSeq_align> Map(const CSeq_align& src_align);
@@ -396,10 +401,10 @@ private:
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
     CHeapScope        m_Scope;
-    // CSeq_loc_Conversion_Set m_Cvt;
     EMergeFlags       m_MergeFlag;
     EGapFlags         m_GapFlag;
     bool              m_KeepNonmapping;
+    bool              m_CheckStrand; // Check strands before mapping
 
     // Sources may have different widths, e.g. in an alignment
     TWidthById      m_Widths;
@@ -529,6 +534,14 @@ CSeq_loc_Mapper& CSeq_loc_Mapper::SetGapRemove(void)
 
 
 inline
+CSeq_loc_Mapper& CSeq_loc_Mapper::SetCheckStrand(bool value)
+{
+    m_CheckStrand = value;
+    return *this;
+}
+
+
+inline
 bool CSeq_loc_Mapper::LastIsPartial(void)
 {
     return m_Partial;
@@ -536,16 +549,18 @@ bool CSeq_loc_Mapper::LastIsPartial(void)
 
 
 inline
-void CSeq_loc_Mapper::KeepNonmappingRanges(void)
+CSeq_loc_Mapper& CSeq_loc_Mapper::KeepNonmappingRanges(void)
 {
     m_KeepNonmapping = true;
+    return *this;
 }
 
 
 inline
-void CSeq_loc_Mapper::TruncateNonmappingRanges(void)
+CSeq_loc_Mapper& CSeq_loc_Mapper::TruncateNonmappingRanges(void)
 {
     m_KeepNonmapping = false;
+    return *this;
 }
 
 
@@ -558,6 +573,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/03/21 16:38:19  grichenk
+* Added flag to check strands before mapping
+*
 * Revision 1.30  2006/03/16 18:58:30  grichenk
 * Indicate intervals truncated while mapping by fuzz lim tl/tr.
 *

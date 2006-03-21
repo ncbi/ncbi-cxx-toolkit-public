@@ -79,6 +79,9 @@ bool CMappingRange::CanMap(TSeqPos from,
                            bool is_set_strand,
                            ENa_strand strand) const
 {
+    if ( is_set_strand  &&  (IsReverse(strand) != m_Reverse) ) {
+        return false;
+    }
     return from <= m_Src_to  &&  to >= m_Src_from;
 }
 
@@ -220,6 +223,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
+      m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
@@ -245,6 +249,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
+      m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
@@ -260,6 +265,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
+      m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
@@ -275,6 +281,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
+      m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
@@ -289,6 +296,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle top_level_seq,
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
+      m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
@@ -332,6 +340,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
+      m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
@@ -348,6 +357,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
+      m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
@@ -389,6 +399,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
+      m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
@@ -1386,7 +1397,7 @@ bool CSeq_loc_Mapper::x_MapNextRange(const TRange& src_rg,
 {
     const CMappingRange& cvt = *mappings[cvt_idx];
     if ( !cvt.CanMap(src_rg.GetFrom(), src_rg.GetTo(),
-        is_set_strand, src_strand) ) {
+        is_set_strand && m_CheckStrand, src_strand) ) {
         // Can not map the range
         return false;
     }
@@ -2107,6 +2118,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2006/03/21 16:38:19  grichenk
+* Added flag to check strands before mapping
+*
 * Revision 1.45  2006/03/16 18:58:30  grichenk
 * Indicate intervals truncated while mapping by fuzz lim tl/tr.
 *
