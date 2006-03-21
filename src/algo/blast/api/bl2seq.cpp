@@ -141,6 +141,7 @@ void CBl2Seq::x_InitSeqs(const TSeqLocVector& queries,
     mi_pDiagnostics = NULL;
     mi_pSeqSrc = NULL;
     m_ipFilteredRegions = NULL;
+    m_fnpInterrupt = NULL;
 }
 
 CBl2Seq::~CBl2Seq()
@@ -275,9 +276,9 @@ CBl2Seq::ScanDB()
                             kOptions.GetScoringOpts(), &blasthit_params);
     /* Initialize an HSPList stream to collect hits; 
        results should not be sorted for reading from the stream. */
-    BlastHSPStream* hsp_stream = 
+    AutoPtr<BlastHSPStream> hsp_stream(
         Blast_HSPListCollectorInit(kOptions.GetProgramType(), blasthit_params,
-                                   mi_clsQueryInfo->num_queries, FALSE);
+                                   mi_clsQueryInfo->num_queries, FALSE));
                   
     Int4 status = Blast_RunFullSearch(kOptions.GetProgramType(),
                                       mi_clsQueries, mi_clsQueryInfo, 
@@ -289,14 +290,12 @@ CBl2Seq::ScanDB()
                                       kOptions.GetHitSaveOpts(),
                                       kOptions.GetEffLenOpts(),
                                       NULL, kOptions.GetDbOpts(),
-                                      hsp_stream, NULL, mi_pDiagnostics, 
-                                      &mi_pResults);
+                                      hsp_stream.get(), NULL, mi_pDiagnostics, 
+                                      &mi_pResults, m_fnpInterrupt);
     if (status) {
-        string msg("Blast_RunFullSearch failed with status ");
-        msg += NStr::IntToString(status);
-        NCBI_THROW(CBlastException, eCoreBlastError, msg);
+        NCBI_THROW(CBlastException, eCoreBlastError,
+                   BlastErrorCode2String(status));
     }
-    hsp_stream = BlastHSPStreamFree(hsp_stream);
 }
 
 
@@ -342,6 +341,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.90  2006/03/21 21:00:47  camacho
+ * + interruptible api support
+ *
  * Revision 1.89  2006/01/24 15:18:55  camacho
  * Remove refactored method
  *

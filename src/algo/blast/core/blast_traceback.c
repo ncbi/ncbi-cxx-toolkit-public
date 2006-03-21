@@ -851,6 +851,10 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
  * @param rps_info Extra information about RPS database. [in]
  * @param results Results structure containing all HSPs, with added
  *                traceback information. [out]
+ * @param interrupt_search function callback to allow interruption of BLAST
+ *                   search [in, optional]
+ * @param progress_info contains information about the progress of the current
+ *                   BLAST search [in|out]
  * @return nonzero indicates failure, otherwise zero
  */
 static 
@@ -863,7 +867,9 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
                            const BlastExtensionParameters* ext_params,
                            BlastHitSavingParameters* hit_params,
                            const BlastRPSInfo* rps_info,                
-                           BlastHSPResults* results)
+                           BlastHSPResults* results,
+                           TInterruptFnPtr interrupt_search, 
+                           SBlastProgress* progress_info)
 {
    Int2 status = 0;
    BlastHSPList* hsp_list;
@@ -894,6 +900,14 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
 
    while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
           != kBlastHSPStream_Eof) {
+
+      /* check for interrupt */
+      if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
+          hsp_list = Blast_HSPListFree(hsp_list);
+          status = BLASTERR_INTERRUPTED;
+          break;
+      }
+
       if (!hsp_list)
          continue;
 
@@ -1008,7 +1022,9 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                        const PSIBlastOptions* psi_options, 
                        const BlastRPSInfo* rps_info, 
                        SPHIPatternSearchBlk* pattern_blk,
-                       BlastHSPResults** results_out)
+                       BlastHSPResults** results_out, 
+                       TInterruptFnPtr interrupt_search, 
+                       SBlastProgress* progress_info)
 {
    Int2 status = 0;
    BlastHSPResults* results = NULL;
@@ -1029,6 +1045,9 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
    if (db_options)
       gen_code_string = db_options->gen_code_string;
  
+   /* signal the traceback stage has started */
+   if (progress_info)
+       progress_info->stage = eTracebackSearch;
 
    results = Blast_HSPResultsNew(query_info->num_queries);
 
@@ -1036,7 +1055,8 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
        status =
            s_RPSComputeTraceback(program_number, hsp_stream, seq_src, query,
                                  query_info, gap_align, score_params,
-                                 ext_params, hit_params, rps_info, results);
+                                 ext_params, hit_params, rps_info, results,
+                                 interrupt_search, progress_info);
    } else if ((program_number == eBlastTypeBlastp ||
                program_number == eBlastTypeTblastn ||
                program_number == eBlastTypePhiBlastp ||
@@ -1061,6 +1081,13 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
       /* Retrieve all HSP lists from the HSPStream. */
       while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
              != kBlastHSPStream_Eof) {
+
+         /* check for interrupt */
+         if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
+             hsp_list = Blast_HSPListFree(hsp_list);
+             status = BLASTERR_INTERRUPTED;
+             break;
+         }
 
          /* Perform traceback here, if necessary. */
          if (perform_traceback) {
@@ -1130,9 +1157,13 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
       than the final hit list size */
     s_BlastPruneExtraHits(results, hit_params->options->hitlist_size);
 
-   *results_out = results;
+    if (status == BLASTERR_INTERRUPTED) {
+        results = Blast_HSPResultsFree(results);
+    }
 
-   return status;
+    *results_out = results;
+
+    return status;
 }
 
 Int2 
@@ -1170,7 +1201,7 @@ Blast_RunTracebackSearch(EBlastProgramType program,
       BLAST_ComputeTraceback(program, hsp_stream, query, query_info,
                              seq_src, gap_align, score_params, ext_params, 
                              hit_params, eff_len_params, db_options, psi_options,
-                             rps_info, pattern_blk, results);
+                             rps_info, pattern_blk, results, 0, 0);
 
    /* Do not destruct score block here */
    gap_align->sbp = NULL;

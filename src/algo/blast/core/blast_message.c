@@ -129,6 +129,10 @@ Blast_Message* Blast_PerrorEx(Int2 error_code,
                                  "program type");
         retval->severity = eBlastSevError;
         break;
+    case BLASTERR_INTERRUPTED:
+        retval->message = strdup("BLAST search interrupted at user's request");
+        retval->severity = eBlastSevInfo;
+        break;
 
     /* Fatal errors */
     case BLASTERR_MEMORY:
@@ -173,6 +177,9 @@ Blast_Message* Blast_PerrorEx(Int2 error_code,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2006/03/21 21:00:52  camacho
+ * + interruptible api support
+ *
  * Revision 1.20  2006/01/12 20:33:06  camacho
  * + SMessageOrigin structure, Blast_PerrorEx function, and error codes
  *

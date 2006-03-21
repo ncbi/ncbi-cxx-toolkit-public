@@ -107,6 +107,10 @@ Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp);
  * @param rps_info RPS BLAST auxiliary data structure [in]
  * @param pattern_blk PHI BLAST auxiliary data structure [in]
  * @param results All results from the BLAST search [out]
+ * @param interrupt_search function callback to allow interruption of BLAST
+ * search [in, optional]
+ * @param progress_info contains information about the progress of the current
+ * BLAST search [in|out]
  * @return nonzero indicates failure, otherwise zero
  */
 NCBI_XBLAST_EXPORT
@@ -120,7 +124,8 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
    BlastEffectiveLengthsParameters* eff_len_params,
    const BlastDatabaseOptions* db_options,
    const PSIBlastOptions* psi_options, const BlastRPSInfo* rps_info, 
-   SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results);
+   SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results,
+   TInterruptFnPtr interrupt_search, SBlastProgress* progress_info);
 
 /** Entry point from the API level to perform the traceback stage of a BLAST 
  * search, given the source of HSP lists, obtained from the preliminary stage. 

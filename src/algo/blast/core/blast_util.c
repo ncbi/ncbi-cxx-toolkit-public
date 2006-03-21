@@ -1446,3 +1446,17 @@ BLAST_GetNumberOfContexts(EBlastProgramType p)
 
     return retval;
 }
+
+SBlastProgress* SBlastProgressNew()
+{
+    return (SBlastProgress*)calloc(1, sizeof(SBlastProgress));
+}
+
+SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info)
+{
+    if ( !progress_info ) {
+        return NULL;
+    }
+    sfree(progress_info);
+}
+

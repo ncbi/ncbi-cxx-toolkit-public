@@ -214,6 +214,41 @@ typedef struct BlastQueryInfo {
                                       occurrences, used in PHI BLAST only. */
 } BlastQueryInfo;
 
+/************************* Progress monitoring/interruptible API *************/
+
+/** Enumeration for the stages in the BLAST search */
+typedef enum EBlastStage {
+    ePrelimSearch,
+    eTracebackSearch
+} EBlastStage;
+
+/** Progress monitoring structure. This is updated by the engine to provided to
+ * the user as an argument to the user-supplied callback function 
+ * (TInterruptFnPtr). This function then can assess whether the search 
+ * should proceed or exit prematurely.
+ * @sa TInterruptFnPtr
+ */
+typedef struct SBlastProgress {
+    EBlastStage stage;      /**< Stage of the BLAST search currently in
+                              progress */
+} SBlastProgress;
+
+/** Allocates and initializes a new SBlastProgress structure.
+ * Implemented in blast_util.c */
+SBlastProgress* SBlastProgressNew();
+
+/** Deallocates a SBlastProgress structure.
+ * Implemented in blast_util.c */
+SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info);
+
+/** Prototype for function pointer to determine whether the BLAST search
+ * should proceed or be interrupted. If this function returns true, all 
+ * processing must stop and the search must discard all interim results 
+ * @note In order to avoid undue overhead, this function should not perform any
+ * time consuming operations and should always return (i.e.: it should never 
+ * block)
+ */
+typedef Boolean (*TInterruptFnPtr) (SBlastProgress* progress_info);
 
 #ifdef __cplusplus
 }

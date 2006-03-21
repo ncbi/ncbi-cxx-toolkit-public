@@ -44,6 +44,7 @@ static char const rcsid[] =
 #include <objects/scoremat/PssmWithParameters.hpp>
 
 #include "prelim_search_runner.hpp"
+#include "blast_aux_priv.hpp"
 #include "psiblast_aux_priv.hpp"
 #include "blast_seqsrc_adapter_priv.hpp"
 
@@ -246,7 +247,10 @@ CBlastPrelimSearch::Run()
          : CPrelimSearchRunner(*m_InternalData, m_OptsMemento)());
     
     ASSERT(retval == 0);
-    retval += 0;        // dummy statement to avoid compiler warnings
+    if (retval) {
+        NCBI_THROW(CBlastException, eCoreBlastError,
+                   BlastErrorCode2String(retval));
+    }
     
     return m_InternalData;
 }

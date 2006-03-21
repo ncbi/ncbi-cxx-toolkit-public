@@ -59,6 +59,13 @@ BEGIN_SCOPE(objects)
     class CPacked_seqint;
 END_SCOPE(objects)
 
+template <>
+struct Deleter<BlastHSPStream>
+{
+    static void Delete(BlastHSPStream* p) 
+    { BlastHSPStreamFree(p); }
+};
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -292,6 +299,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2006/03/21 21:00:17  camacho
+* + interruptible api support
+*
 * Revision 1.71  2006/03/13 16:44:06  bealer
 * - Fix protein masking issue.
 *

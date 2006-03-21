@@ -141,6 +141,12 @@ public:
     /// Returns error messages/warnings.
     void GetMessages(TSearchMessages& messages) const;
 
+    /// Set a function callback to be invoked by the CORE of BLAST to allow
+    /// interrupting a BLAST search in progress.
+    /// @return the previously set TInterruptFnPtr (NULL if none was
+    /// provided before)
+    TInterruptFnPtr SetInterruptCallback(TInterruptFnPtr fnptr);
+
 protected:
     /// Process the queries, do setup, and build the lookup table.
     virtual void SetupSearch();
@@ -187,6 +193,9 @@ private:
 
     /// Regions filtered out from the query sequences
     BlastMaskLoc* m_ipFilteredRegions;
+
+    /// User-provided interrupt callback
+    TInterruptFnPtr                     m_fnpInterrupt;
 
     /// Resets query data structures
     void x_ResetQueryDs();
@@ -279,6 +288,13 @@ CBl2Seq::GetMessages(TSearchMessages& messages) const
     messages = m_Messages;
 }
 
+inline TInterruptFnPtr
+CBl2Seq::SetInterruptCallback(TInterruptFnPtr fnptr)
+{
+    swap(m_fnpInterrupt, fnptr);
+    return fnptr;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -288,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2006/03/21 21:00:17  camacho
+* + interruptible api support
+*
 * Revision 1.47  2006/01/24 15:15:20  camacho
 * Remove refactored method
 *

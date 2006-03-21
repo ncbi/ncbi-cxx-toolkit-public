@@ -136,6 +136,9 @@ Blast_Message* Blast_PerrorEx(Int2 error_code,
 /** All queries/contexts are determined invalid in the setup code */
 #define BLASTERR_INVALIDQUERIES                     102
 
+/** BLAST search was interrupted via a user-provided callback */
+#define BLASTERR_INTERRUPTED                        103
+
 #ifdef __cplusplus
 }
 #endif

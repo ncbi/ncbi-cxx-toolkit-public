@@ -113,6 +113,15 @@ Blast_Message2TSearchMessages(const Blast_Message* blmsg,
     messages.RemoveDuplicates();
 }
 
+string
+BlastErrorCode2String(Int2 error_code)
+{
+    Blast_Message* blast_msg = Blast_PerrorEx(error_code, __FILE__, __LINE__);
+    string retval(blast_msg->message);
+    blast_msg = Blast_MessageFree(blast_msg);
+    return retval;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

@@ -77,6 +77,8 @@ extern const char* kBlastReleaseDate;
  * @param diagnostics Return statistics containing numbers of hits on 
  *                    different stages of the search [out]
  * @param results Results of the BLAST search [out]
+ * @param interrupt_search function callback to allow interruption of BLAST
+ * search [in, optional]
  */
 Int4 
 Blast_RunFullSearch(EBlastProgramType program_number, 
@@ -91,7 +93,8 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
-   BlastDiagnostics* diagnostics, BlastHSPResults** results);
+   BlastDiagnostics* diagnostics, BlastHSPResults** results,
+   TInterruptFnPtr interrupt_search);
 
 /** Perform the preliminary stage of the BLAST search.
  * @param  program_number Type of BLAST program [in]
@@ -112,6 +115,10 @@ Blast_RunFullSearch(EBlastProgramType program_number,
  * @param diagnostics Return statistics containing numbers of hits on 
  *                    different stages of the search. Statistics saved only 
  *                    for the allocated parts of the structure. [in] [out]
+ * @param interrupt_search function callback to allow interruption of BLAST
+ * search [in, optional]
+ * @param progress_info contains information about the progress of the current
+ * BLAST search [in|out]
  */
 Int4 
 BLAST_PreliminarySearchEngine(EBlastProgramType program_number, 
@@ -125,7 +132,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    BlastEffectiveLengthsParameters* eff_len_params,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics);
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics,
+   TInterruptFnPtr interrupt_search, SBlastProgress* progress_info);
 
 /** The high level function performing the BLAST search against a BLAST 
  * database after all the setup has been done.

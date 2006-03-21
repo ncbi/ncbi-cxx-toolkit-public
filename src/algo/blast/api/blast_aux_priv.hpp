@@ -105,6 +105,11 @@ Blast_Message2TSearchMessages(const Blast_Message* blmsg,
                               const BlastQueryInfo* query_info,
                               TSearchMessages& messages);
 
+/// Returns a string containing a human-readable interpretation of the
+/// error_code passed as this function's argument
+string
+BlastErrorCode2String(Int2 error_code);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
