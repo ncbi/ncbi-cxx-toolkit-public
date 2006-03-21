@@ -64,13 +64,14 @@ public:
     // brings up a dialog that lets the user set block aligner ; returns false if cancelled
     bool SetOptions(wxWindow* parent);
 
+    enum EMergeOption { mergeNone = 0, mergeAfterEach = 1, mergeAfterAll = 2 };
     typedef struct {
         double loopPercentile;
         unsigned int loopExtension;
         unsigned int loopCutoff;
         bool globalAlignment;
         bool keepExistingBlocks;
-        bool mergeAfterEachSequence;
+        EMergeOption mergeType;
     } BlockAlignerOptions;
 
 private:
@@ -84,6 +85,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/03/21 19:36:50  thiessen
+* add new merge-after-all option to block aligner
+*
 * Revision 1.12  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

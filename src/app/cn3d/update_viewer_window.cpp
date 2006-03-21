@@ -97,7 +97,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     // Algorithms menu
     wxMenu *menu = new wxMenu;
     menu->Append(MID_BLOCKALIGN_ONE, "B&lock Align Single", "", true);
-    menu->Append(MID_BLOCKALIGN_ALL, "Bloc&k Align All");
+    menu->Append(MID_BLOCKALIGN_ALL, "Bloc&k Align N");
     menu->AppendSeparator();
     menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
     menu->Append(MID_BLAST_PSSM_ONE, "BLAST/&PSSM Single", "", true);
@@ -654,6 +654,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2006/03/21 19:36:50  thiessen
+* add new merge-after-all option to block aligner
+*
 * Revision 1.65  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

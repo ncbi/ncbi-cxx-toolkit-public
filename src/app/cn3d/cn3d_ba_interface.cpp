@@ -46,6 +46,7 @@
 #include <wx/msw/winundef.h>
 #endif
 #include <wx/wx.h>
+#include <wx/numdlg.h>
 
 #include <algo/structure/struct_dp/struct_dp.h>
 
@@ -77,7 +78,8 @@ public:
 private:
     IntegerSpinCtrl *iExtension, *iCutoff;
     FloatingPointSpinCtrl *fpPercent;
-    wxCheckBox *cGlobal, *cKeep, *cMerge;
+    wxCheckBox *cGlobal, *cKeep;
+    wxChoice *cMerge;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
@@ -92,7 +94,7 @@ BlockAligner::BlockAligner(void)
     currentOptions.loopCutoff = 0;
     currentOptions.globalAlignment = false;
     currentOptions.keepExistingBlocks = false;
-    currentOptions.mergeAfterEachSequence = false;
+    currentOptions.mergeType = mergeNone;
 }
 
 static void FreezeBlocks(const BlockMultipleAlignment *multiple,
@@ -131,14 +133,14 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
 
 // global stuff for DP block aligner score callback
 DP_BlockInfo *dpBlocks = NULL;
-const PSSMWrapper *dpPSSM = NULL;
+auto_ptr < BlockMultipleAlignment > dpMultiple;
 const Sequence *dpQuery = NULL;
 
 // sum of scores for residue vs. PSSM
 extern "C" {
 int dpScoreFunction(unsigned int block, unsigned int queryPos)
 {
-    if (!dpBlocks || !dpPSSM || !dpQuery || block >= dpBlocks->nBlocks ||
+    if (!dpBlocks || !dpMultiple.get() || !dpQuery || block >= dpBlocks->nBlocks ||
         queryPos > dpQuery->Length() - dpBlocks->blockSizes[block])
     {
         ERRORMSG("dpScoreFunction() - bad parameters: block " << block << " queryPos " << queryPos <<
@@ -148,7 +150,7 @@ int dpScoreFunction(unsigned int block, unsigned int queryPos)
 
     unsigned int i, masterPos = dpBlocks->blockPositions[block], score = 0;
     for (i=0; i<dpBlocks->blockSizes[block]; ++i)
-        score += dpPSSM->GetPSSMScore(
+        score += dpMultiple->GetPSSM().GetPSSMScore(
             LookupNCBIStdaaNumberFromCharacter(dpQuery->sequenceString[queryPos + i]),
             masterPos + i);
 
@@ -208,15 +210,26 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     const AlignmentList& toRealign, AlignmentList *newAlignments,
     int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer)
 {
+    newAlignments->clear();
+    *nRowsAddedToMultiple = 0;
+
     // show options dialog each time block aligner is run
     if (!SetOptions(NULL)) return false;
-    if (currentOptions.mergeAfterEachSequence && !sequenceViewer) {
+    if (currentOptions.mergeType != mergeNone && !sequenceViewer) {
         ERRORMSG("merge selected but NULL sequenceViewer");
         return false;
     }
 
-    newAlignments->clear();
-    *nRowsAddedToMultiple = 0;
+    unsigned int nAln = toRealign.size(), a = 0;
+    auto_ptr < ProgressMeter > progress;
+    if (nAln > 1) {
+        long u = wxGetNumberFromUser("How many sequences do you want to realign?", "Max:", "Alignments...", nAln, 1, nAln, NULL);
+        if (u <= 0)
+            return false;
+        nAln = (unsigned int) u;
+        progress.reset(new ProgressMeter(NULL, "Running block alignment...", "Working", nAln));
+    }
+
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     multiple->GetUngappedAlignedBlocks(&blocks);
     if (blocks.size() == 0) {
@@ -252,20 +265,25 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     }
     delete loopLengths;
 
-    // set up PSSM
-    dpPSSM = &(multiple->GetPSSM());
+    // store a copy of the multiple alignment used for DP scoring
+    dpMultiple.reset(multiple->Clone());
 
     bool errorsEncountered = false;
-
-    unsigned int nAln = toRealign.size(), a = 0;
-    auto_ptr < ProgressMeter > progress;
-    if (nAln > 1)
-        progress.reset(new ProgressMeter(NULL, "Running block alignment...", "Working", nAln));
 
     AlignmentList::const_iterator s, se = toRealign.end();
     for (s=toRealign.begin(); s!=se; ++s, ++a) {
         if (multiple && (*s)->GetMaster() != multiple->GetMaster())
             ERRORMSG("master sequence mismatch");
+
+        if (a >= nAln) {
+            BlockMultipleAlignment *newAlignment = (*s)->Clone();
+            newAlignment->SetRowDouble(0, -1.0);
+            newAlignment->SetRowDouble(1, -1.0);
+            newAlignment->SetRowStatusLine(0, kEmptyStr);
+            newAlignment->SetRowStatusLine(1, kEmptyStr);
+            newAlignments->push_back(newAlignment);
+            continue;
+        }
         if (nAln > 1)
             progress->SetValue(a);
 
@@ -312,7 +330,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         if (dpStatus == STRUCT_DP_FOUND_ALIGNMENT && dpAlignment) {
 
             // merge or add alignment to list
-            if (currentOptions.mergeAfterEachSequence) {
+            if (currentOptions.mergeType != mergeNone) {
                 if (!sequenceViewer->EditorIsOn())
                     sequenceViewer->TurnOnEditor();
                 if (multiple->MergeAlignment(dpAlignment)) {
@@ -320,8 +338,9 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
                     delete dpAlignment;
                     dpAlignment = NULL;
                     ++(*nRowsAddedToMultiple);
-                    // recalculate PSSM
-                    dpPSSM = &(multiple->GetPSSM());
+                    // update scoring alignment/PSSM only if asked to do so after each sequence
+                    if (currentOptions.mergeType == mergeAfterEach)
+                        dpMultiple.reset(multiple->Clone());
                 }
             }
             if (dpAlignment)
@@ -357,7 +376,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     // cleanup
     DP_DestroyBlockInfo(dpBlocks);
     dpBlocks = NULL;
-    dpPSSM = NULL;
+    dpMultiple.reset();
     dpQuery = NULL;
 
     return true;
@@ -452,10 +471,11 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     item3->Add( cKeep, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
-    wxStaticText *item17 = new wxStaticText( panel, ID_TEXT, wxT("Merge after each row aligned:"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText *item17 = new wxStaticText( panel, ID_TEXT, wxT("When to merge new alignments:"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item17, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    cMerge = new wxCheckBox( panel, ID_C_MERGE, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    cMerge->SetValue(init.mergeAfterEachSequence);
+    wxString choices[3] = { "No Merge", "After Each", "After All" };
+    cMerge = new wxChoice( panel, ID_C_MERGE, wxDefaultPosition, wxDefaultSize, 3, choices );
+    cMerge->SetSelection(init.mergeType);
     item3->Add( cMerge, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
@@ -487,7 +507,7 @@ bool BlockAlignerOptionsDialog::GetValues(BlockAligner::BlockAlignerOptions *opt
 {
     options->globalAlignment = cGlobal->IsChecked();
     options->keepExistingBlocks = cKeep->IsChecked();
-    options->mergeAfterEachSequence = cMerge->IsChecked();
+    options->mergeType = (BlockAligner::EMergeOption) cMerge->GetSelection();
     return (
         fpPercent->GetDouble(&(options->loopPercentile)) &&
         iExtension->GetUnsignedInteger(&(options->loopExtension)) &&
@@ -520,6 +540,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2006/03/21 19:36:50  thiessen
+* add new merge-after-all option to block aligner
+*
 * Revision 1.42  2006/03/20 22:13:49  thiessen
 * add progress meter
 *
