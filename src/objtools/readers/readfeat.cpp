@@ -103,6 +103,7 @@ public:
         eQual_EC_number,
         eQual_evidence,
         eQual_exception,
+        eQual_experiment,
         eQual_frequency,
         eQual_function,
         eQual_gene,
@@ -111,6 +112,8 @@ public:
         eQual_go_component,
         eQual_go_function,
         eQual_go_process,
+        eQual_heterogen,
+        eQual_inference,
         eQual_insertion_seq,
         eQual_label,
         eQual_loccnt,
@@ -121,6 +124,7 @@ public:
         eQual_method,
         eQual_mod_base,
         eQual_muid,
+        eQual_nomenclature,
         eQual_note,
         eQual_number,
         eQual_old_locus_tag,
@@ -138,9 +142,13 @@ public:
         eQual_PubMed,
         eQual_region_name,
         eQual_replace,
+        eQual_ribosomal_slippage,
         eQual_rpt_family,
         eQual_rpt_type,
         eQual_rpt_unit,
+        eQual_rpt_unit_range,
+        eQual_rpt_unit_seq,
+        eQual_sec_str_type,
         eQual_secondary_accession,
         eQual_sequence,
         eQual_site_type,
@@ -155,7 +163,9 @@ public:
         eQual_STS,
         eQual_sts_aliases,
         eQual_sts_dsegs,
+        eQual_trans_splicing,
         eQual_transcript_id,
+        eQual_transcription,
         eQual_transl_except,
         eQual_transl_table,
         eQual_translation,
@@ -201,12 +211,12 @@ private:
     CFeature_table_reader_imp& operator=(const CFeature_table_reader_imp& value);
 
     bool x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
-                                  bool* partial5P, bool* partial3P, bool* ispointP,
+                                  bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
                                   string& featP, string& qualP, string& valP, Int4 offset);
 
     bool x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix *mix,
                                  const string& seqid, Int4 start, Int4 stop,
-                                 bool partial5, bool partial3, bool ispoint);
+                                 bool partial5, bool partial3, bool ispoint, bool isminus);
 
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                                   const string& qual, const string& val);
@@ -265,6 +275,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     TFeatKey ( "D_segment",          CSeqFeatData::eSubtype_D_segment          ),
     TFeatKey ( "enhancer",           CSeqFeatData::eSubtype_enhancer           ),
     TFeatKey ( "exon",               CSeqFeatData::eSubtype_exon               ),
+    TFeatKey ( "gap",                CSeqFeatData::eSubtype_gap                ),
     TFeatKey ( "GC_signal",          CSeqFeatData::eSubtype_GC_signal          ),
     TFeatKey ( "gene",               CSeqFeatData::eSubtype_gene               ),
     TFeatKey ( "Het",                CSeqFeatData::eSubtype_het                ),
@@ -363,6 +374,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "EC_number",            CFeature_table_reader_imp::eQual_EC_number            ),
     TQualKey ( "evidence",             CFeature_table_reader_imp::eQual_evidence             ),
     TQualKey ( "exception",            CFeature_table_reader_imp::eQual_exception            ),
+    TQualKey ( "experiment",           CFeature_table_reader_imp::eQual_experiment           ),
     TQualKey ( "frequency",            CFeature_table_reader_imp::eQual_frequency            ),
     TQualKey ( "function",             CFeature_table_reader_imp::eQual_function             ),
     TQualKey ( "gene",                 CFeature_table_reader_imp::eQual_gene                 ),
@@ -371,6 +383,8 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "go_component",         CFeature_table_reader_imp::eQual_go_component         ),
     TQualKey ( "go_function",          CFeature_table_reader_imp::eQual_go_function          ),
     TQualKey ( "go_process",           CFeature_table_reader_imp::eQual_go_process           ),
+    TQualKey ( "heterogen",            CFeature_table_reader_imp::eQual_heterogen            ),
+    TQualKey ( "inference",            CFeature_table_reader_imp::eQual_inference            ),
     TQualKey ( "insertion_seq",        CFeature_table_reader_imp::eQual_insertion_seq        ),
     TQualKey ( "label",                CFeature_table_reader_imp::eQual_label                ),
     TQualKey ( "loccnt",               CFeature_table_reader_imp::eQual_loccnt               ),
@@ -379,6 +393,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "map",                  CFeature_table_reader_imp::eQual_map                  ),
     TQualKey ( "method",               CFeature_table_reader_imp::eQual_method               ),
     TQualKey ( "mod_base",             CFeature_table_reader_imp::eQual_mod_base             ),
+    TQualKey ( "nomenclature",         CFeature_table_reader_imp::eQual_nomenclature         ),
     TQualKey ( "note",                 CFeature_table_reader_imp::eQual_note                 ),
     TQualKey ( "number",               CFeature_table_reader_imp::eQual_number               ),
     TQualKey ( "old_locus_tag",        CFeature_table_reader_imp::eQual_old_locus_tag        ),
@@ -392,9 +407,13 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "protein_id",           CFeature_table_reader_imp::eQual_protein_id           ),
     TQualKey ( "pseudo",               CFeature_table_reader_imp::eQual_pseudo               ),
     TQualKey ( "replace",              CFeature_table_reader_imp::eQual_replace              ),
+    TQualKey ( "ribosomal_slippage",   CFeature_table_reader_imp::eQual_ribosomal_slippage   ),
     TQualKey ( "rpt_family",           CFeature_table_reader_imp::eQual_rpt_family           ),
     TQualKey ( "rpt_type",             CFeature_table_reader_imp::eQual_rpt_type             ),
     TQualKey ( "rpt_unit",             CFeature_table_reader_imp::eQual_rpt_unit             ),
+    TQualKey ( "rpt_unit_range",       CFeature_table_reader_imp::eQual_rpt_unit_range       ),
+    TQualKey ( "rpt_unit_seq",         CFeature_table_reader_imp::eQual_rpt_unit_seq         ),
+    TQualKey ( "sec_str_type",         CFeature_table_reader_imp::eQual_sec_str_type         ),
     TQualKey ( "secondary_accession",  CFeature_table_reader_imp::eQual_secondary_accession  ),
     TQualKey ( "secondary_accessions", CFeature_table_reader_imp::eQual_secondary_accession  ),
     TQualKey ( "sequence",             CFeature_table_reader_imp::eQual_sequence             ),
@@ -410,7 +429,9 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "STS",                  CFeature_table_reader_imp::eQual_STS                  ),
     TQualKey ( "sts_aliases",          CFeature_table_reader_imp::eQual_sts_aliases          ),
     TQualKey ( "sts_dsegs",            CFeature_table_reader_imp::eQual_sts_dsegs            ),
+    TQualKey ( "trans_splicing",       CFeature_table_reader_imp::eQual_trans_splicing       ),
     TQualKey ( "transcript_id",        CFeature_table_reader_imp::eQual_transcript_id        ),
+    TQualKey ( "transcription",        CFeature_table_reader_imp::eQual_transcription        ),
     TQualKey ( "transl_except",        CFeature_table_reader_imp::eQual_transl_except        ),
     TQualKey ( "transl_table",         CFeature_table_reader_imp::eQual_transl_table         ),
     TQualKey ( "translation",          CFeature_table_reader_imp::eQual_translation          ),
@@ -448,8 +469,10 @@ static const TGenomeKey genome_key_to_subtype [] = {
     TGenomeKey ( "endogenous_virus",          CBioSource::eGenome_endogenous_virus ),
     TGenomeKey ( "extrachrom",                CBioSource::eGenome_extrachrom       ),
     TGenomeKey ( "genomic",                   CBioSource::eGenome_genomic          ),
+    TGenomeKey ( "hydrogenosome",             CBioSource::eGenome_hydrogenosome    ),
     TGenomeKey ( "insertion_seq",             CBioSource::eGenome_insertion_seq    ),
     TGenomeKey ( "kinetoplast",               CBioSource::eGenome_kinetoplast      ),
+    TGenomeKey ( "leucoplast",                CBioSource::eGenome_leucoplast       ),
     TGenomeKey ( "macronuclear",              CBioSource::eGenome_macronuclear     ),
     TGenomeKey ( "mitochondrion",             CBioSource::eGenome_mitochondrion    ),
     TGenomeKey ( "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast      ),
@@ -462,6 +485,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
     TGenomeKey ( "plastid:cyanelle",          CBioSource::eGenome_cyanelle         ),
     TGenomeKey ( "plastid:leucoplast",        CBioSource::eGenome_leucoplast       ),
     TGenomeKey ( "plastid:proplastid",        CBioSource::eGenome_proplastid       ),
+    TGenomeKey ( "proplastid",                CBioSource::eGenome_proplastid       ),
     TGenomeKey ( "proviral",                  CBioSource::eGenome_proviral         ),
     TGenomeKey ( "transposon",                CBioSource::eGenome_transposon       ),
     TGenomeKey ( "unknown",                   CBioSource::eGenome_unknown          ),
@@ -480,22 +504,30 @@ static const TSubSrcKey subsrc_key_to_subtype [] = {
     TSubSrcKey ( "chromosome",           CSubSource::eSubtype_chromosome            ),
     TSubSrcKey ( "clone",                CSubSource::eSubtype_clone                 ),
     TSubSrcKey ( "clone_lib",            CSubSource::eSubtype_clone_lib             ),
+    TSubSrcKey ( "collected_by",         CSubSource::eSubtype_collected_by          ),
+    TSubSrcKey ( "collection_date",      CSubSource::eSubtype_collection_date       ),
     TSubSrcKey ( "country",              CSubSource::eSubtype_country               ),
     TSubSrcKey ( "dev_stage",            CSubSource::eSubtype_dev_stage             ),
     TSubSrcKey ( "endogenous_virus",     CSubSource::eSubtype_endogenous_virus_name ),
     TSubSrcKey ( "environmental_sample", CSubSource::eSubtype_environmental_sample  ),
     TSubSrcKey ( "frequency",            CSubSource::eSubtype_frequency             ),
+    TSubSrcKey ( "fwd_primer_name",      CSubSource::eSubtype_fwd_primer_name       ),
+    TSubSrcKey ( "fwd_primer_seq",       CSubSource::eSubtype_fwd_primer_seq        ),
     TSubSrcKey ( "genotype",             CSubSource::eSubtype_genotype              ),
     TSubSrcKey ( "germline",             CSubSource::eSubtype_germline              ),
     TSubSrcKey ( "haplotype",            CSubSource::eSubtype_haplotype             ),
+    TSubSrcKey ( "identified_by",        CSubSource::eSubtype_identified_by         ),
     TSubSrcKey ( "insertion_seq",        CSubSource::eSubtype_insertion_seq_name    ),
     TSubSrcKey ( "isolation_source",     CSubSource::eSubtype_isolation_source      ),
     TSubSrcKey ( "lab_host",             CSubSource::eSubtype_lab_host              ),
+    TSubSrcKey ( "lat_lon",              CSubSource::eSubtype_lat_lon               ),
     TSubSrcKey ( "map",                  CSubSource::eSubtype_map                   ),
     TSubSrcKey ( "plasmid",              CSubSource::eSubtype_plasmid_name          ),
     TSubSrcKey ( "plastid",              CSubSource::eSubtype_plastid_name          ),
     TSubSrcKey ( "pop_variant",          CSubSource::eSubtype_pop_variant           ),
     TSubSrcKey ( "rearranged",           CSubSource::eSubtype_rearranged            ),
+    TSubSrcKey ( "rev_primer_name",      CSubSource::eSubtype_rev_primer_name       ),
+    TSubSrcKey ( "rev_primer_seq",       CSubSource::eSubtype_rev_primer_seq        ),
     TSubSrcKey ( "segment",              CSubSource::eSubtype_segment               ),
     TSubSrcKey ( "sex",                  CSubSource::eSubtype_sex                   ),
     TSubSrcKey ( "subclone",             CSubSource::eSubtype_subclone              ),
@@ -531,12 +563,15 @@ static const TOrgModKey orgmod_key_to_subtype [] = {
     TOrgModKey ( "group",            COrgMod::eSubtype_group            ),
     TOrgModKey ( "isolate",          COrgMod::eSubtype_isolate          ),
     TOrgModKey ( "nat_host",         COrgMod::eSubtype_nat_host         ),
+    TOrgModKey ( "natural_host",     COrgMod::eSubtype_nat_host         ),
     TOrgModKey ( "old_lineage",      COrgMod::eSubtype_old_lineage      ),
     TOrgModKey ( "old_name",         COrgMod::eSubtype_old_name         ),
     TOrgModKey ( "pathovar",         COrgMod::eSubtype_pathovar         ),
     TOrgModKey ( "serogroup",        COrgMod::eSubtype_serogroup        ),
     TOrgModKey ( "serotype",         COrgMod::eSubtype_serotype         ),
     TOrgModKey ( "serovar",          COrgMod::eSubtype_serovar          ),
+    TOrgModKey ( "spec_host",        COrgMod::eSubtype_nat_host         ),
+    TOrgModKey ( "specific_host",    COrgMod::eSubtype_nat_host         ),
     TOrgModKey ( "specimen_voucher", COrgMod::eSubtype_specimen_voucher ),
     TOrgModKey ( "strain",           COrgMod::eSubtype_strain           ),
     TOrgModKey ( "sub_species",      COrgMod::eSubtype_sub_species      ),
@@ -587,6 +622,7 @@ static const TSiteKey site_key_to_subtype [] = {
     TSiteKey ( "modified",                    CSeqFeatData::eSite_modified                    ),
     TSiteKey ( "mutagenized",                 CSeqFeatData::eSite_mutagenized                 ),
     TSiteKey ( "myristoylation",              CSeqFeatData::eSite_myristoylation              ),
+    TSiteKey ( "nitrosylation",               CSeqFeatData::eSite_nitrosylation               ),
     TSiteKey ( "np binding",                  CSeqFeatData::eSite_np_binding                  ),
     TSiteKey ( "other",                       CSeqFeatData::eSite_other                       ),
     TSiteKey ( "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       ),
@@ -595,7 +631,8 @@ static const TSiteKey site_key_to_subtype [] = {
     TSiteKey ( "signal peptide",              CSeqFeatData::eSite_signal_peptide              ),
     TSiteKey ( "sulfatation",                 CSeqFeatData::eSite_sulfatation                 ),
     TSiteKey ( "transit peptide",             CSeqFeatData::eSite_transit_peptide             ),
-    TSiteKey ( "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        )
+    TSiteKey ( "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        ),
+    TSiteKey ( "unclassified",                CSeqFeatData::eSite_other                       ),
 };
 
 typedef CStaticArrayMap <const char*, const CSeqFeatData::ESite, PNocase_CStr> TSiteMap;
@@ -633,6 +670,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
     TTrnaKey ( "Ile",            'I' ),
     TTrnaKey ( "Isoleucine",     'I' ),
     TTrnaKey ( "Leu",            'L' ),
+    TTrnaKey ( "Leu or Ile",     'J' ),
     TTrnaKey ( "Leucine",        'L' ),
     TTrnaKey ( "Lys",            'K' ),
     TTrnaKey ( "Lysine",         'K' ),
@@ -643,6 +681,8 @@ static const TTrnaKey trna_key_to_subtype [] = {
     TTrnaKey ( "Phenylalanine",  'F' ),
     TTrnaKey ( "Pro",            'P' ),
     TTrnaKey ( "Proline",        'P' ),
+    TTrnaKey ( "Pyl",            'O' ),
+    TTrnaKey ( "Pyrrolysine",    'O' ),
     TTrnaKey ( "Sec",            'U' ),
     TTrnaKey ( "Selenocysteine", 'U' ),
     TTrnaKey ( "Ser",            'S' ),
@@ -658,6 +698,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
     TTrnaKey ( "Tyrosine",       'Y' ),
     TTrnaKey ( "Val",            'V' ),
     TTrnaKey ( "Valine",         'V' ),
+    TTrnaKey ( "Xle",            'J' ),
     TTrnaKey ( "Xxx",            'X' )
 };
 
@@ -668,8 +709,11 @@ static const TTrnaMap sm_TrnaKeys (trna_key_to_subtype, sizeof (trna_key_to_subt
 static const char * single_key_list [] = {
     "environmental_sample",
     "germline",
+    "partial",
     "pseudo",
     "rearranged",
+    "ribosomal_slippage",
+    "trans_splicing"
     "transgenic"
 };
 
@@ -689,12 +733,13 @@ CFeature_table_reader_imp::~CFeature_table_reader_imp(void)
 
 
 bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
-                                                         bool* partial5P, bool* partial3P, bool* ispointP,
+                                                         bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
                                                          string& featP, string& qualP, string& valP, Int4 offset)
 
 {
     SIZE_TYPE      numtkns;
     bool           badNumber = false;
+    bool           isminus = false;
     bool           ispoint = false;
     size_t         len;
     bool           partial5 = false;
@@ -772,6 +817,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int
                     startv = stopv;
                     stopv = swp;
                 }
+                isminus = true;
             }
         }
     }
@@ -781,6 +827,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int
     *partial5P = partial5;
     *partial3P = partial3;
     *ispointP = ispoint;
+    *isminusP = isminus;
     featP = feat;
     qualP = qual;
     valP = val;
@@ -815,6 +862,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (CSeqFeatData& sfdata,
             return true;
         case eQual_locus_tag:
             grp.SetLocus_tag (val);
+            return true;
+        case eQual_nomenclature:
+            /* !!! need to implement !!! */
             return true;
         default:
             break;
@@ -964,8 +1014,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
                     }
                     break;
                 case eQual_anticodon:
+                    /* !!! need to implement !!! */
                     break;
                 case eQual_codon_recognized:
+                    /* !!! need to implement !!! */
                     break;
                 default:
                     break;
@@ -982,49 +1034,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
                                                      EQual qtype, const string& qual, const string& val)
 
 {
-    switch (qtype) {
-        case eQual_allele:
-        case eQual_bound_moiety:
-        case eQual_clone:
-        case eQual_compare:
-        case eQual_cons_splice:
-        case eQual_direction:
-        case eQual_EC_number:
-        case eQual_frequency:
-        case eQual_function:
-        case eQual_insertion_seq:
-        case eQual_label:
-        case eQual_map:
-        case eQual_number:
-        case eQual_old_locus_tag:
-        case eQual_operon:
-        case eQual_organism:
-        case eQual_PCR_conditions:
-        case eQual_phenotype:
-        case eQual_product:
-        case eQual_replace:
-        case eQual_rpt_family:
-        case eQual_rpt_type:
-        case eQual_rpt_unit:
-        case eQual_standard_name:
-        case eQual_transposon:
-        case eQual_usedin:
-            {
-                CSeq_feat::TQual& qlist = sfp->SetQual ();
-                CRef<CGb_qual> gbq (new CGb_qual);
-                gbq->SetQual (qual);
-                if (x_StringIsJustQuotes (val)) {
-                    gbq->SetVal (kEmptyStr);
-                } else {
-                    gbq->SetVal (val);
-                }
-                qlist.push_back (gbq);
-                return true;
-            }
-        default:
-            break;
-    }
-
     CSeqFeatData::ESubtype subtype = sfdata.GetSubtype ();
     switch (subtype) {
         case CSeqFeatData::eSubtype_variation:
@@ -1284,6 +1293,14 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     sfp->SetExcept (true);
                     sfp->SetExcept_text (val);
                     return true;
+                case eQual_ribosomal_slippage:
+                    sfp->SetExcept (true);
+                    sfp->SetExcept_text (val);
+                    return true;
+                case eQual_trans_splicing:
+                    sfp->SetExcept (true);
+                    sfp->SetExcept_text (val);
+                    return true;
                 case eQual_evidence:
                     if (val == "experimental") {
                         sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
@@ -1310,8 +1327,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case eQual_cons_splice:
                 case eQual_direction:
                 case eQual_EC_number:
+                case eQual_experiment:
                 case eQual_frequency:
                 case eQual_function:
+                case eQual_inference:
                 case eQual_insertion_seq:
                 case eQual_label:
                 case eQual_map:
@@ -1327,6 +1346,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case eQual_rpt_family:
                 case eQual_rpt_type:
                 case eQual_rpt_unit:
+                case eQual_rpt_unit_range:
+                case eQual_rpt_unit_seq:
                 case eQual_standard_name:
                 case eQual_transcript_id:
                 case eQual_transposon:
@@ -1370,6 +1391,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     {
                         CGene_ref& grp = sfp->SetGeneXref ();
                         grp.SetLocus_tag (val);
+                        return true;
+                    }
+                case eQual_nomenclature:
+                    {
+                        /* !!! need to implement !!! */
                         return true;
                     }
                 case eQual_db_xref:
@@ -1418,7 +1444,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
 
 bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix *mix,
                                                         const string& seqid, Int4 start, Int4 stop,
-                                                        bool partial5, bool partial3, bool ispoint)
+                                                        bool partial5, bool partial3, bool ispoint, bool isminus)
 
 {
     CSeq_interval::TStrand strand = eNa_strand_plus;
@@ -1427,6 +1453,9 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
         Int4 flip = start;
         start = stop;
         stop = flip;
+        strand = eNa_strand_minus;
+    }
+    if (isminus) {
         strand = eNa_strand_minus;
     }
 
@@ -1486,7 +1515,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     string line;
     string feat, qual, val;
     Int4 start, stop;
-    bool partial5, partial3, ispoint;
+    bool partial5, partial3, ispoint, isminus;
     Int4 offset = 0;
     CSeqFeatData::ESubtype sbtyp = CSeqFeatData::eSubtype_bad;
     CSeqFeatData::E_Choice typ = CSeqFeatData::e_not_set;
@@ -1517,7 +1546,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 // set offset !!!!!!!!
 
             } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
-                                                &ispoint, feat, qual, val, offset)) {
+                                                &ispoint, &isminus, feat, qual, val, offset)) {
 
                 // process line in feature table
 
@@ -1592,7 +1621,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                             // and add first interval
 
-                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint);
+                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
 
                         }
                     } else {
@@ -1614,7 +1643,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             CRef<CSeq_loc> location (new CSeq_loc);
                             mix = &(location->SetMix ());
                             sfp->SetLocation (*location);
-                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint);
+                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
                         }
                     }
 
@@ -1622,7 +1651,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                     // process start - stop multiple interval line
 
-                    x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint);
+                    x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
 
                 } else if ((! qual.empty ()) && (! val.empty ())) {
 
