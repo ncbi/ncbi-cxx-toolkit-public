@@ -75,7 +75,11 @@ public:
     }
         
     void SetMinMatches(TCoord min_matches) {
-        m_MinMatches = min_matches;
+        m_MinSingletonMatches = m_MinMatches = min_matches;
+    }
+        
+    void SetMinSingletonMatches(TCoord min_matches) {
+        m_MinSingletonMatches = min_matches;
     }
 
     static TCoord GetDefaultPenalty(void) {
@@ -159,10 +163,11 @@ public:
 
 private:
 
-    TCoord              m_intron_max;    // max intron size
-    TCoord              m_penalty;       // penalty per compartment
-    TCoord              m_MinMatches;    // min approx matches to report
-    
+    TCoord                m_intron_max;    // max intron size
+    TCoord                m_penalty;       // penalty per compartment
+    TCoord                m_MinMatches;    // min approx matches to report
+    TCoord                m_MinSingletonMatches; // min matches for singleton comps
+
     THitRefs              m_hitrefs;         // input hits
     vector<CCompartment>  m_compartments;    // final compartments
     int                   m_iter;            // GetFirst/Next index
@@ -220,7 +225,8 @@ public:
     CCompartmentAccessor(typename THitRefs::iterator start, 
                          typename THitRefs::iterator finish,
                          TCoord comp_penalty_bps,
-                         TCoord min_matches);
+                         TCoord min_matches,
+                         TCoord min_singleton_matches =numeric_limits<TCoord>::max());
     
     bool GetFirst(THitRefs& compartment);
     bool GetNext(THitRefs& compartment);
@@ -290,6 +296,7 @@ CCompartmentFinder<THit>::CCompartmentFinder(
     m_intron_max(GetDefaultMaxIntron()),
     m_penalty(GetDefaultPenalty()),
     m_MinMatches(1),
+    m_MinSingletonMatches(1),
     m_iter(-1)
 {
     m_hitrefs.resize(finish - start);
@@ -304,7 +311,8 @@ class CQueryMatchAccumulator:
 {
 public:
 
-    CQueryMatchAccumulator(void): m_Finish(-1.0f)
+    CQueryMatchAccumulator(void):
+        m_Finish(-1.0f)
     {}
 
     float operator() (float acm, CRef<THit> ph)
@@ -562,7 +570,9 @@ size_t CCompartmentFinder<THit>::Run()
         }
     }
     
-    if(score_best + m_penalty >= double(m_MinMatches)) {
+    const double min_matches = m_MinSingletonMatches < m_MinMatches? 
+        m_MinSingletonMatches: m_MinMatches;
+    if(score_best + m_penalty >= min_matches) {
 
         int i = li_best->m_hit;
         bool new_compartment = true;
@@ -570,7 +580,8 @@ size_t CCompartmentFinder<THit>::Run()
         while(i != -1) {
 
             if(new_compartment) {
-                if(GetTotalMatches<THit>(hitrefs) >= m_MinMatches) {
+                float mp (GetTotalMatches<THit>(hitrefs));
+                if(mp >= m_MinMatches) {
                     m_compartments.push_back(CCompartment());
                     m_compartments.back().SetMembers(hitrefs);
                 }
@@ -585,7 +596,10 @@ size_t CCompartmentFinder<THit>::Run()
             i = hitstatus[i].m_prev;
         }
 
-        if(GetTotalMatches<THit>(hitrefs) >= m_MinMatches) {
+        float mp (GetTotalMatches<THit>(hitrefs));
+        if(m_compartments.size() == 0 && mp >= m_MinSingletonMatches 
+           || mp >= m_MinMatches) 
+        {
             m_compartments.push_back(CCompartment());
             m_compartments.back().SetMembers(hitrefs);
         }
@@ -640,7 +654,8 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
      typename THitRefs::iterator istart,
      typename THitRefs::iterator ifinish,
      TCoord comp_penalty,
-     TCoord min_matches)
+     TCoord min_matches,
+     TCoord min_singleton_matches)
 {
     const TCoord kMax_TCoord = numeric_limits<TCoord>::max();
 
@@ -683,6 +698,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         CCompartmentFinder<THit> finder (ib, iplus_beg);
         finder.SetPenalty(comp_penalty);
         finder.SetMinMatches(min_matches);
+        finder.SetMinSingletonMatches(min_singleton_matches);
         finder.Run();
         
         // un-flip
@@ -704,6 +720,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         CCompartmentFinder<THit> finder (iplus_beg, ie);
         finder.SetPenalty(comp_penalty);
         finder.SetMinMatches(min_matches);
+        finder.SetMinSingletonMatches(min_singleton_matches);
         finder.Run();
         x_Copy2Pending(finder);
     }}
@@ -771,8 +788,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.6  2005/10/19 17:52:54  kapustin
- * Eliminate min query coverage parameter effectively duplicating min matches threshold
+ * Revision 1.7  2006/03/21 16:16:12  kapustin
+ * +max_singleton_matches parameter
+ *
  *
  * Revision 1.5  2005/10/04 19:33:53  kapustin
  * Limit min distance btw compartments by unaligned term query space only.
