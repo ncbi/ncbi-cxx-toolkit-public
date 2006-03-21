@@ -33,12 +33,19 @@
 
 #include "hitfilter_app.hpp"
 
-#include <algo/align/util/blast_tabular.hpp>
 #include <algo/align/util/hit_filter.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <util/util_exception.hpp>
+
+#include <serial/objistr.hpp>
+#include <serial/serial.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+static const string g_m8("m8"), g_AsnTxt("asntxt"), g_AsnBin("asnbin");
 
 void CAppHitFilter::Init()
 {
@@ -48,47 +55,266 @@ void CAppHitFilter::Init()
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "HitFilter v.2.0.0");
 
+    argdescr->AddDefaultKey("min_idty", "min_idty", 
+                            "Minimal input hit identity",
+                            CArgDescriptions::eDouble, "0.95");
+    
+    argdescr->AddDefaultKey("min_len", "min_len", 
+                            "Minimal input hit length",
+                            CArgDescriptions::eInteger, "500");
+
+    argdescr->AddDefaultKey("fmt_in", "fmt_in", "Input format",
+                            CArgDescriptions::eString, g_m8);
+
+    argdescr->AddOptionalKey("file_in", "file_in", "Input file (stdin otherwise)",
+                             CArgDescriptions::eInputFile,
+                             CArgDescriptions::fBinary);
+
+    argdescr->AddOptionalKey("file_out", "file_out", "Output file (stdout otherwise)",
+                             CArgDescriptions::eOutputFile,
+                             CArgDescriptions::fBinary);    
+    
+    argdescr->AddDefaultKey("fmt_out", "fmt_out", "Output format",
+                            CArgDescriptions::eString, g_m8);
+    
+    argdescr->AddDefaultKey("hits_per_chunk", "hits_per_chunk", 
+                            "Input is split into chunks with the number of hits "
+                            "per chunk limited by this parameter.",
+                            CArgDescriptions::eInteger, 
+                            "1000000");
+
+    argdescr->AddOptionalKey("ids", "ids", "Table to rename sequence IDs.",
+                             CArgDescriptions::eInputFile);
+
+    CArgAllow_Strings* constrain_format = new CArgAllow_Strings;
+    constrain_format->Allow(g_m8)->Allow(g_AsnTxt)->Allow(g_AsnBin);
+    argdescr->SetConstraint("fmt_in", constrain_format);
+    argdescr->SetConstraint("fmt_out", constrain_format);
+
     SetupArgDescriptions(argdescr.release());
 }
 
 
-int CAppHitFilter::Run()
-{ 
-    typedef CConstRef<CSeq_id>     TId;
-    typedef CBlastTabular          THit;
-    typedef CRef<THit>             THitRef;
-    typedef vector<THitRef>        THitRefs;
-    
-    // read hits from stdin
-    THitRefs hitrefs;
-    while(cin) {
+void CAppHitFilter::x_LoadIDs(CNcbiIstream& istr)
+{
+    m_IDs.clear();
+    while(istr) {
+        string ctgid, accver;
+        istr >> ctgid;
+        if(ctgid.size() == 0) {
+            break;
+        }
+        istr >> accver;
+        if(accver.size() == 0) {
+            break;
+        }
+        m_IDs[ctgid] = accver;
+    }
+}
 
-        char line [1024];
-        cin.getline(line, sizeof line, '\n');
-        string s (NStr::TruncateSpaces(line));
-        if(s.size()) {
+const CAppHitFilter::THit::TCoord kMinOutputHitLen = 75;
 
-            THitRef hit (new THit(s.c_str()));
-            hitrefs.push_back(hit);
+void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
+{
+    const CArgs& args = GetArgs();
+    const string fmt_in = args["fmt_in"].AsString();
+    const string fmt_out = args["fmt_out"].AsString();
+    const THit::TCoord min_len = args["min_len"].AsInteger();
+    const double min_idty = args["min_idty"].AsDouble();
+
+    CNcbiIstream& istr = args["file_in"]? args["file_in"].AsInputFile(): cin;
+
+    size_t count = 0;
+    const size_t kReport = 100000;
+    if(fmt_in == g_m8) {
+        while(istr) {
+            char line [1024];
+            istr.getline(line, sizeof line, '\n');
+            string s (NStr::TruncateSpaces(line));
+            if(s.size()) {
+
+                THitRef hit (new THit(s.c_str()));
+                if(hit->GetIdentity() >= min_idty && hit->GetLength() >= min_len) {
+                    phitrefs->push_back(hit);
+                }
+                if(++count % kReport == 0) {
+                    //cerr << "Read " << count << " hits" << endl;
+                }
+            }
         }
     }
+    else {
+        const ESerialDataFormat sfmt ();
 
-    // compute and print coverages
-    {{
-        typedef CHitFilter<THit> THitFilter;
-        cout << "Query coverage = " 
-             << THitFilter::s_GetCoverage(0, hitrefs.begin(), hitrefs.end()) 
-             << endl;
+        const bool  parse_aln = fmt_out != g_m8;
 
-        cout << "Subj coverage = " 
-             << THitFilter::s_GetCoverage(1, hitrefs.begin(), hitrefs.end()) 
-             << endl;
-    }}
+        CObjectIStream* in_ptr =  CObjectIStream::Open(fmt_in == g_AsnTxt? 
+                                  eSerial_AsnText: eSerial_AsnBinary, istr);
+        auto_ptr<CObjectIStream> in (in_ptr);
 
-    // print input hits
-    ITERATE(THitRefs, ii, hitrefs) {
-         cout << **ii << endl;
+        while (!in->EndOfData()) {
+
+            CRef<CSeq_annot> sa (new CSeq_annot);
+            *in >> *sa;
+
+            typedef list<CRef<CSeq_align> > TSeqAlignList;
+            const TSeqAlignList& sa_list = sa->GetData().GetAlign();
+            ITERATE(TSeqAlignList, ii, sa_list) {
+                    
+                CRange<TSeqPos> r = (*ii)->GetSeqRange(0);
+                if(r.GetTo() - r.GetFrom() >= min_len) {
+
+                    THitRef hit (new THit(**ii, parse_aln));
+                    if(hit->GetIdentity() >= min_idty) {
+                        if(hit->GetQueryStrand() == false) {
+                            hit->FlipStrands();
+                        }
+                        phitrefs->push_back(hit);
+                    }
+                }
+                if(++count % kReport == 0) {
+                    //cerr << "Read " << count << " hits" << endl;
+                }
+            }
+        }
     }
+    cerr << "Total accepted hits = " << phitrefs->size() << endl;
+}
+
+
+void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
+{    
+    const CArgs& args = GetArgs();
+    const string fmt = args["fmt_out"].AsString();
+
+    CNcbiOstream& ostr = args["file_out"]? args["file_out"].AsOutputFile(): cout;
+
+    if(fmt == g_m8) {
+        ITERATE(THitRefs, ii, hitrefs) {
+            const THit& hit = **ii;
+            ostr << hit << endl;
+        }
+    }
+    else {
+
+        CRef<CSeq_annot> seq_annot (new CSeq_annot);
+        CSeq_annot::TData::TAlign& align_list = seq_annot->SetData().SetAlign();
+
+        const bool fmt_txt (fmt == g_AsnTxt);
+        ITERATE(THitRefs, ii, hitrefs) {
+            
+            const THit& h = **ii;
+            //cerr << h << endl;
+
+            CRef<CDense_seg> ds (new CDense_seg);
+            const ENa_strand query_strand = h.GetQueryStrand()? eNa_strand_plus: 
+                eNa_strand_minus;
+            const ENa_strand subj_strand = h.GetSubjStrand()? eNa_strand_plus: 
+                eNa_strand_minus;
+            const string xcript (CAlignShadow::s_RunLengthDecode(h.GetTranscript()));
+
+            ds->FromTranscript(h.GetQueryStart(), query_strand,
+                              h.GetSubjStart(), subj_strand,
+                              xcript);
+
+            if(query_strand == eNa_strand_plus  && subj_strand == eNa_strand_plus) {
+                ds->ResetStrands();
+            }
+
+            vector< CRef< CSeq_id > > &ids = ds->SetIds();
+            for(Uint1 where = 0; where < 2; ++where) {
+                CRef<CSeq_id> id;
+                const string strid (h.GetId(where)->GetSeqIdString(true));
+                TMapIds::const_iterator im = m_IDs.find(strid), ime = m_IDs.end();
+                if(im == ime) {
+                    id.Reset(new CSeq_id());
+                    id->Assign(*h.GetId(where));
+                }
+                else {
+                    id.Reset(new CSeq_id(im->second));
+                }
+                ids.push_back(id);
+            }            
+
+            CRef<CSeq_align> seq_align (new CSeq_align);
+            seq_align->SetType(CSeq_align::eType_disc);
+            seq_align->SetSegs().SetDenseg(*ds);
+            align_list.push_back(seq_align);
+        }
+
+        if(fmt_txt) {
+            ostr << MSerial_AsnText << *seq_annot << endl;
+        }
+        else {
+            ostr << MSerial_AsnBinary << *seq_annot;
+        }
+    }
+}
+
+
+template<class TRef>
+bool s_PNullRef(const TRef& hr) {
+    return hr.IsNull();
+}
+
+
+bool s_PHitRefScore(const CAppHitFilter::THitRef& lhs, 
+                    const CAppHitFilter::THitRef& rhs) {
+    return lhs->GetScore() > rhs->GetScore();
+}
+
+int CAppHitFilter::Run()
+{    
+    const CArgs& args = GetArgs();
+    const string fmt_in = args["fmt_in"].AsString();
+    const string fmt_out = args["fmt_out"].AsString();
+
+    if((fmt_out == g_AsnTxt || fmt_out == g_AsnBin) &&
+       (fmt_in != g_AsnTxt && fmt_in != g_AsnBin)) 
+    {
+        NCBI_THROW(CAppHitFilterException, 
+                   eGeneral, 
+                   "For ASN output, input must also be in ASN");
+    }
+
+    if(args["ids"]) {
+        x_LoadIDs(args["ids"].AsInputFile());
+    }
+
+    THitRefs all;
+    x_ReadInputHits(&all);
+    sort(all.begin(), all.end(), s_PHitRefScore);
+
+    const size_t M = args["hits_per_chunk"].AsInteger();
+    const size_t dim = all.size();
+    size_t m = min(dim, M);
+    const THitRefs::iterator ii_beg = all.begin(), ii_end = all.end();
+    THitRefs::iterator ii_hi = ii_beg, ii = ii_beg;
+    while(ii < ii_end) {
+
+        THitRefs::iterator ii_dst = ii + m;
+        if(ii_dst > ii_end) {
+            ii_dst = ii_end;
+        }
+
+        if(ii_hi < ii) {
+            copy(ii, ii_dst, ii_hi);
+            ii_hi += ii_dst - ii;
+            ii = ii_dst;
+        }
+        else {
+            ii_hi = ii = ii_dst;
+        }
+        CStopWatch sw (CStopWatch::eStart);
+        cerr << " cur set size = " << (ii_hi - ii_beg) 
+             << " total processed = " << (ii - ii_beg) << " ... ";
+        CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, kMinOutputHitLen);
+        ii_hi = remove_if(ii_beg, ii_hi, s_PNullRef<THitRef>);
+        cerr << "done in " << sw.Elapsed() << " seconds" << endl;
+    }
+    all.erase(ii_hi, ii_end);
+    
+    x_DumpOutput(all);
 
     return 0;
 }
@@ -114,6 +340,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/21 16:19:12  kapustin
+ * Add multiple greedy reconciliation algorithm for pairwise alignment filtering
+ *
  * Revision 1.6  2005/07/28 12:29:35  kapustin
  * Convert to non-templatized classes where causing compilation incompatibility
  *

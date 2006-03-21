@@ -37,11 +37,11 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
+#include <algo/align/util/blast_tabular.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
-// Exceptions
-//
 
 class CAppHitFilterException : public CException 
 {
@@ -64,9 +64,6 @@ public:
 };
 
 
-// application class
-//
-
 class CAppHitFilter : public CNcbiApplication
 {
 public:
@@ -75,8 +72,18 @@ public:
     virtual int  Run();
     virtual void Exit();
 
+    typedef CBlastTabular          THit;
+    typedef CRef<THit>             THitRef;
+    typedef vector<THitRef>        THitRefs;
+
 private:
 
+    void x_ReadInputHits(THitRefs* phitrefs);
+    void x_DumpOutput(const THitRefs& hitrefs);
+
+    void x_LoadIDs(CNcbiIstream& istr);
+    typedef map<string,string> TMapIds;
+    TMapIds m_IDs;
 };
 
 
@@ -87,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/21 16:19:12  kapustin
+ * Add multiple greedy reconciliation algorithm for pairwise alignment filtering
+ *
  * Revision 1.1  2004/12/21 20:07:47  kapustin
  * Initial revision
  *
