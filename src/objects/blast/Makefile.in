@@ -1,5 +1,4 @@
 ASN_PROJ = blast
 LIB_PROJ = xnetblastcli
-SUB_PROJ = #demo
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
