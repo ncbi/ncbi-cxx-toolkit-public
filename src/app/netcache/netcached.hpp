@@ -153,10 +153,11 @@ struct SNC_ThreadData
     SNC_Request req;                            ///< parsed NC request
     SIC_Request ic_req;                         ///< parsed IC request
     AutoPtr<char, ArrayDeleter<char> >  buffer; ///< operation buffer
+    size_t      buffer_size;
     string      tmp;
 
-    SNC_ThreadData(unsigned int size)
-        : buffer(new char[size + 256]) 
+    SNC_ThreadData(size_t size)
+        : buffer(new char[size + 256]), buffer_size(size /* + 256? */)
     {}
 };
 
@@ -534,6 +535,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/03/21 23:21:41  ucko
+ * Attempt to supply SNC_ThreadData::buffer_size properly.
+ *
  * Revision 1.5  2006/03/09 21:06:37  kuznets
  * Added Get2 command (with client driven disconnect)
  *
