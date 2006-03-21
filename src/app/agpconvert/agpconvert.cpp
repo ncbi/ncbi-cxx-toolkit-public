@@ -35,6 +35,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Date.hpp>
@@ -117,6 +118,10 @@ void CAgpconvertApplication::Init(void)
                              CArgDescriptions::eInputFile);
     arg_desc->AddFlag("no_testval",
                       "Do not validate using testval");
+    arg_desc->AddOptionalKey("outdir", "output_directory",
+                             "Directory for output files "
+                             "(defaults to current directory)",
+                             CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("dl", "definition_line",
                              "Definition line (title descriptor)",
@@ -229,6 +234,19 @@ int CAgpconvertApplication::Run(void)
             ITERATE (CBioseq::TId, id, (*ent)->GetSeq().GetId()) {
                 comp_lengths[(*id)->AsFastaString()] = length;
             }
+        }
+    }
+
+    // user may specify directory for output files
+    string outdir;
+    if (args["outdir"]) {
+        outdir = args["outdir"].AsString();
+        CDirEntry dir_ent(outdir);
+        if (!dir_ent.Exists()) {
+            throw runtime_error(outdir + " does not exist");
+        }
+        if (!dir_ent.IsDir()) {
+            throw runtime_error(outdir + " is not a directory");
         }
     }
 
@@ -488,33 +506,33 @@ int CAgpconvertApplication::Run(void)
             new_entry.SetSeq().SetDescr().Set().push_back(create_date);
 
             // write the entry in asn text
-            string outfname;
+            string outfpath;
             string testval_type_flag;
             if (!submit_templ) {
                 // template a Seq-entry, so write a Seq-entry
-                outfname = id_str + ".ent";
+                outfpath = CDirEntry::MakePath(outdir, id_str, "ent");
                 testval_type_flag = "-e";
-                CNcbiOfstream ostr(outfname.c_str());
+                CNcbiOfstream ostr(outfpath.c_str());
                 ostr << MSerial_AsnText << new_entry;
             } else {
                 // template a Seq-submit, so write a Seq-submit
-                outfname = id_str + ".sqn";
+                outfpath = CDirEntry::MakePath(outdir, id_str, "sqn");
                 testval_type_flag = "-s";
                 CSeq_submit new_submit;
                 new_submit.Assign(*submit_templ);
                 new_submit.SetData().SetEntrys().front().Reset(&new_entry);
-                CNcbiOfstream ostr(outfname.c_str());
+                CNcbiOfstream ostr(outfpath.c_str());
                 ostr << MSerial_AsnText << new_submit;
             }
 
             if (!args["no_testval"]) {
                 // verify using testval
                 string cmd = "testval " + testval_type_flag
-                    + " -q 2 -i \"" + outfname + "\"";
+                    + " -q 2 -i \"" + outfpath + "\"";
                 cout << cmd << endl;
                 CExec::SpawnLP(CExec::eWait, "testval",
                                testval_type_flag.c_str(),
-                               "-q", "2", "-i", outfname.c_str(), 0);
+                               "-q", "2", "-i", outfpath.c_str(), 0);
             }
         }
     }
@@ -546,6 +564,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/21 18:25:17  jcherry
+ * Added optional output directory argument (-outdir)
+ *
  * Revision 1.8  2006/02/22 15:57:56  jcherry
  * Added ability to get taxonomic information from server
  *
