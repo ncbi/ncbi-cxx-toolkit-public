@@ -309,33 +309,26 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 
 
 //-----------------------------------------------------------------------------
-CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
 #if _MSC_VER >= 1400
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
     CMsvc7RegSettings::eMsvc800;
+string CMsvc7RegSettings::sm_MsvcVersionName = "800";
 #else
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
     CMsvc7RegSettings::eMsvc710;
+string CMsvc7RegSettings::sm_MsvcVersionName = "710";
 #endif
 
-CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
 #ifdef _WIN64
+CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
     CMsvc7RegSettings::eMsvcX64;
+string CMsvc7RegSettings::sm_MsvcPlatformName = "x64";
 #else
+CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
     CMsvc7RegSettings::eMsvcWin32;
+string CMsvc7RegSettings::sm_MsvcPlatformName = "Win32";
 #endif
 
-
-CMsvc7RegSettings::EMsvcVersion  CMsvc7RegSettings::GetMsvcVersion(void)
-{
-    return sm_MsvcVersion;
-}
-
-string CMsvc7RegSettings::GetMsvcVersionName(void)
-{
-    if (GetMsvcVersion() == eMsvc710) {
-        return "710";
-    }
-    return "800";
-}
 
 string CMsvc7RegSettings::GetMsvcSection(void)
 {
@@ -344,18 +337,6 @@ string CMsvc7RegSettings::GetMsvcSection(void)
         s += "." + GetMsvcPlatformName();
     }
     return s;
-}
-CMsvc7RegSettings::EMsvcPlatform  CMsvc7RegSettings::GetMsvcPlatform(void)
-{
-    return sm_MsvcPlatform;
-}
-
-string CMsvc7RegSettings::GetMsvcPlatformName(void)
-{
-    if (GetMsvcPlatform() == eMsvcX64) {
-        return "x64";
-    }
-    return "Win32";
 }
 
 CMsvc7RegSettings::CMsvc7RegSettings(void)
@@ -382,7 +363,7 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void) const
 
 bool IsSubdir(const string& abs_parent_dir, const string& abs_dir)
 {
-    return abs_dir.find(abs_parent_dir) == 0;
+    return NStr::StartsWith(abs_dir, abs_parent_dir);
 }
 
 
@@ -405,25 +386,38 @@ string GetOpt(const CNcbiRegistry& registry,
               const string&        opt, 
               const SConfigInfo&   config)
 {
+    const string& version = CMsvc7RegSettings::GetMsvcVersionName();
+    const string& platform = CMsvc7RegSettings::GetMsvcPlatformName();
     string build = GetApp().GetBuildType().GetTypeStr();
     string spec = config.m_Debug ? "debug": "release";
-    string version = CMsvc7RegSettings::GetMsvcVersionName();
-    string platform = CMsvc7RegSettings::GetMsvcPlatformName();
-    list<string> entries;
-    entries.push_front(section);
-    entries.push_front(section + "." + version);
-    entries.push_front(section + "." + platform);
-    entries.push_front(section + "." + build);
-    entries.push_front(section + "." + spec);
-    entries.push_front(section + "." + version + "." + spec);
-    entries.push_front(section + "." + build + "." + spec);
-    entries.push_front(section + "." + spec + "." + config.m_Name);
-    entries.push_front(section + "." + build + "." + spec + "." + config.m_Name);
-    string value;
-    for (list<string>::const_iterator s = entries.begin();
-        s != entries.end() && value.empty(); ++s) {
-        value = registry.GetString(*s, opt, "");
-    }
+    string value, s;
+
+    s.assign(section).append(1,'.').append(build).append(1,'.').append(spec).append(1,'.').append(config.m_Name);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+
+    s.assign(section).append(1,'.').append(spec).append(1,'.').append(config.m_Name);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+
+    s.assign(section).append(1,'.').append(build).append(1,'.').append(spec);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+
+    s.assign(section).append(1,'.').append(version).append(1,'.').append(spec);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+
+    s.assign(section).append(1,'.').append(spec);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+
+    s.assign(section).append(1,'.').append(build);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+
+    s.assign(section).append(1,'.').append(platform);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+
+    s.assign(section).append(1,'.').append(version);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+
+    s.assign(section);
+    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
     return value;
 }
 
@@ -1142,6 +1136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/03/21 18:01:46  gouriano
+ * Optimized GetOpt
+ *
  * Revision 1.49  2006/03/16 16:07:02  gouriano
  * Use MSVC version name in settings
  *
