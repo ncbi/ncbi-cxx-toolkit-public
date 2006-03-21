@@ -447,11 +447,11 @@ corresponding <code>value</code> types: </p>
   </tr>
 </table>
 <h1 id="appendix-2">Appendix 2: Using NCBI's BLAST Servers</h1>
-<p>NCBI provides a C++ wrapper to this interface. The C++ wrapper automatically 
-encodes requests, decodes replies, and handles communication with the server. 
-The C++ wrapper is the only supported way to use this interface.</p>
-<p>NCBI provides a program (<code>src/objects/blast/demo/blastcli.cpp</code>) 
-that demonstrates the use of the C++ wrapper. </p>
+<p>NCBI provides a C++ wrapper to this interface
+(<code>ncbi::blast::CRemoteBlast</code>, as part of the <code>xblast</code>
+ library). The C++ wrapper automatically encodes requests, decodes replies, 
+ and handles communication with the server. The C++ wrapper is the only 
+ supported way to use this interface.</p>
 <h1 id="appendix-3">Appendix 3: Filter Strings</h1>
 <p>Filter strings consist of any number of the following options, separated by 
 spaces or semicolons. For options that take parameters, parameters follow the 
