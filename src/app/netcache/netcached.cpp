@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.2  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.3  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -2070,6 +2070,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2006/03/21 20:54:04  kuznets
+ * Fixed TLS buffer overflow
+ *
  * Revision 1.80  2006/03/09 21:06:37  kuznets
  * Added Get2 command (with client driven disconnect)
  *
