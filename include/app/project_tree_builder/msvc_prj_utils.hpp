@@ -190,17 +190,31 @@ public:
     string            m_MetaMakefile;
     string            m_DllInfo;
 
-    static EMsvcVersion    GetMsvcVersion(void);
-    static string          GetMsvcVersionName(void);
+    static EMsvcVersion    GetMsvcVersion(void)
+    {
+        return sm_MsvcVersion;
+    }
+    static const string&   GetMsvcVersionName(void)
+    {
+        return sm_MsvcVersionName;
+    }
+    static EMsvcPlatform   GetMsvcPlatform(void)
+    {
+        return sm_MsvcPlatform;
+    }
+    static const string&   GetMsvcPlatformName(void)
+    {
+        return sm_MsvcPlatformName;
+    }
     static string          GetMsvcSection(void);
-    static EMsvcPlatform   GetMsvcPlatform(void);
-    static string          GetMsvcPlatformName(void);
 
     string    GetProjectFileFormatVersion(void) const;
     string    GetSolutionFileFormatVersion(void) const;
 private:
     static EMsvcVersion   sm_MsvcVersion;
     static EMsvcPlatform  sm_MsvcPlatform;
+    static string sm_MsvcVersionName;
+    static string sm_MsvcPlatformName;
     CMsvc7RegSettings(const CMsvc7RegSettings&);
     CMsvc7RegSettings& operator= (const CMsvc7RegSettings&);
 };
@@ -494,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/03/21 18:02:23  gouriano
+ * Optimization
+ *
  * Revision 1.32  2006/03/16 16:06:09  gouriano
  * Add Version name
  *
