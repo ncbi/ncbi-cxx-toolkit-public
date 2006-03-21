@@ -254,12 +254,11 @@ typedef CId1ReaderBase TRDR;
 typedef pair<TRDR::ESat, TRDR::ESubSat> TSK;
 typedef pair<const char*, TSK> TSI;
 static const TSI sc_SatIndex[] = {
-    TSI("ANNOT:CDD",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_CDD)),
+    TSI("ANNOT:CDD",  TSK(TRDR::eSat_ANNOT_CDD,  TRDR::eSubSat_CDD)),
     TSI("ANNOT:MGC",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_MGC)),
     TSI("ANNOT:SNP",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_SNP)),
     TSI("ANNOT:SNP GRAPH",TSK(TRDR::eSat_ANNOT,  TRDR::eSubSat_SNP_graph)),
     TSI("ANNOT:TRNA", TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_tRNA)),
-    //TSI("SNP",        TSK(TRDR::eSat_SNP,        TRDR::eSubSat_main)),
     TSI("ti",         TSK(TRDR::eSat_TRACE,      TRDR::eSubSat_main)),
     TSI("TR_ASSM_CH", TSK(TRDR::eSat_TR_ASSM_CH, TRDR::eSubSat_main)),
     TSI("TRACE_ASSM", TSK(TRDR::eSat_TRACE_ASSM, TRDR::eSubSat_main)),
@@ -537,14 +536,8 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
             while ( ext_feat ) {
                 int bit = ext_feat & ~(ext_feat-1);
                 ext_feat -= bit;
-#ifdef GENBANK_USE_SNP_SATELLITE_15
-                if ( bit == eSubSat_SNP ) {
-                    AddSNPBlob_id(ids, gi);
-                    continue;
-                }
-#endif
                 CBlob_id blob_id;
-                blob_id.SetSat(eSat_ANNOT);
+                blob_id.SetSat(GetAnnotSat(bit));
                 blob_id.SetSatKey(gi);
                 blob_id.SetSubSat(bit);
                 ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
@@ -676,12 +669,13 @@ void CId1Reader::x_SetParams(CID1server_maxcomplex& params,
     params.SetMaxplex(eEntry_complexities_entry | bits);
     params.SetGi(0);
     params.SetEnt(blob_id.GetSatKey());
-    if ( blob_id.GetSat() == eSat_ANNOT ) {
+    int sat = blob_id.GetSat();
+    if ( IsAnnotSat(sat) ) {
         params.SetMaxplex(eEntry_complexities_entry); // TODO: TEMP: remove
         params.SetSat("ANNOT:"+NStr::IntToString(blob_id.GetSubSat()));
     }
     else {
-        params.SetSat(NStr::IntToString(blob_id.GetSat()));
+        params.SetSat(NStr::IntToString(sat));
     }
 }
 

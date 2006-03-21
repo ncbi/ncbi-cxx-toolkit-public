@@ -76,7 +76,7 @@ public:
                          TChunkId chunk_id) = 0;
 
     enum ESat {
-        //eSat_SNP        = 15,
+        eSat_ANNOT_CDD  = 10,
         eSat_ANNOT      = 26,
         eSat_TRACE      = 28,
         eSat_TRACE_ASSM = 29,
@@ -94,6 +94,9 @@ public:
         eSubSat_STS  = 1<<6,
         eSubSat_tRNA = 1<<7
     };
+
+    static bool IsAnnotSat(int sat);
+    static ESat GetAnnotSat(int subsat);
 };
 
 

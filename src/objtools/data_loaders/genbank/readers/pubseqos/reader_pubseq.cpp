@@ -451,7 +451,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                 }
 
                 if ( !blob_ids.IsLoaded() ) {
-                    if ( CProcessor::TrySNPSplit() && sat != eSat_ANNOT ) {
+                    if ( CProcessor::TrySNPSplit() && !IsAnnotSat(sat) ) {
                         // main blob
                         CBlob_id blob_id;
                         blob_id.SetSat(sat);
@@ -462,7 +462,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                             while ( ext_feat ) {
                                 int bit = ext_feat & ~(ext_feat-1);
                                 ext_feat -= bit;
-                                blob_id.SetSat(eSat_ANNOT);
+                                blob_id.SetSat(GetAnnotSat(bit));
                                 blob_id.SetSatKey(gi);
                                 blob_id.SetSubSat(bit);
                                 blob_ids.AddBlob_id(blob_id, fBlobHasExtAnnot);

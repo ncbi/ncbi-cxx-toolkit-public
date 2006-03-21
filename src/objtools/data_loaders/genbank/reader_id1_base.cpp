@@ -234,5 +234,17 @@ bool CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
 }
 
 
+bool CId1ReaderBase::IsAnnotSat(int sat)
+{
+    return sat == eSat_ANNOT || sat == eSat_ANNOT_CDD;
+}
+
+
+CId1ReaderBase::ESat CId1ReaderBase::GetAnnotSat(int subsat)
+{
+    return subsat == eSubSat_CDD? eSat_ANNOT_CDD: eSat_ANNOT;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

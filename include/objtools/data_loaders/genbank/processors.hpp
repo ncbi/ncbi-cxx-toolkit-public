@@ -291,7 +291,8 @@ public:
                        CNcbiIstream& stream) const;
 
     enum {
-        eSat_ANNOT = 26
+        eSat_ANNOT_CDD      = 10,
+        eSat_ANNOT          = 26
     };
     enum {
         eSubSat_SNP         = 1<<0,

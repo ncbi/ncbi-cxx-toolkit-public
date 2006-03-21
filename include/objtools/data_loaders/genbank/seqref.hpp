@@ -51,7 +51,7 @@ public:
     typedef TBlobContentsMask TFlags;
 
     enum ESat {
-        eSat_SNP        = 15,
+        eSat_ANNOT_CDD  = 10,
         eSat_ANNOT      = 26,
         eSat_TRACE      = 28,
         eSat_TRACE_ASSM = 29,
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2006/03/21 19:34:32  vasilche
+* Use 10 satellite for CDDs.
+*
 * Revision 1.7  2005/10/26 14:36:47  vasilche
 * Added new external annotations types.
 *

@@ -1668,12 +1668,17 @@ void CProcessor_ExtAnnot::ProcessStream(CReaderRequestResult& result,
 
 bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id)
 {
-    return blob_id.GetSat() == eSat_ANNOT &&
-        (blob_id.GetSubSat() == eSubSat_SNP ||
-         blob_id.GetSubSat() == eSubSat_CDD ||
-         blob_id.GetSubSat() == eSubSat_SNP_graph ||
-         blob_id.GetSubSat() == eSubSat_MGC ||
-         blob_id.GetSubSat() == eSubSat_tRNA);
+    switch ( blob_id.GetSubSat() ) {
+    case eSubSat_SNP:
+    case eSubSat_SNP_graph:
+    case eSubSat_MGC:
+    case eSubSat_tRNA:
+        return blob_id.GetSat() == eSat_ANNOT;
+    case eSubSat_CDD:
+        return blob_id.GetSat() == eSat_ANNOT_CDD;
+    default:
+        return false;
+    }
 }
 
 
