@@ -576,6 +576,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
     case eBlastOpt_EffectiveSearchSpace:
         x_SetParam("EffectiveSearchSpace", v);
         return;
+
+    case eBlastOpt_DbLength:
+        x_SetParam("DbLength", v);
+        return;
         
     default:
         break;
@@ -1876,6 +1880,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2006/03/21 22:36:36  camacho
+* Add support for specifying database length in CBlastOptionsRemote
+*
 * Revision 1.77  2006/03/13 17:54:41  bealer
 * - Allow composition based stats in BlastOptions.
 *
