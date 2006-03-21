@@ -73,7 +73,7 @@ CSplign::CSplign( void )
 {
     m_compartment_penalty = s_GetDefaultCompartmentPenalty();
     m_MinExonIdty = s_GetDefaultMinExonIdty();
-    m_MinCompartmentIdty =s_GetDefaultMinCompartmentIdty();
+    m_MinSingletonIdty = m_MinCompartmentIdty =s_GetDefaultMinCompartmentIdty();
     m_max_genomic_ext = s_GetDefaultMaxGenomicExtent();
     m_endgaps = true;
     m_strand = true;
@@ -117,9 +117,7 @@ bool CSplign::GetStrand( void ) const {
 void CSplign::SetMinExonIdentity( double idty )
 {
     if(!(0 <= idty && idty <= 1)) {
-        NCBI_THROW( CAlgoAlignException,
-                    eBadParameter,
-                    g_msg_BadIdentityThreshold );
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_BadIdentityThreshold );
     }
     else {
         m_MinExonIdty = idty;
@@ -129,12 +127,20 @@ void CSplign::SetMinExonIdentity( double idty )
 void CSplign::SetMinCompartmentIdentity( double idty )
 {
     if(!(0 <= idty && idty <= 1)) {
-        NCBI_THROW( CAlgoAlignException,
-                    eBadParameter,
-                    g_msg_BadIdentityThreshold );
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_BadIdentityThreshold );
     }
     else {
         m_MinCompartmentIdty = idty;
+    }
+}
+
+void CSplign::SetMinSingletonIdentity(double idty)
+{
+    if(!(0 <= idty && idty <= 1)) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_BadIdentityThreshold);
+    }
+    else {
+        m_MinSingletonIdty = idty;
     }
 }
 
@@ -166,8 +172,12 @@ double CSplign::s_GetDefaultMinExonIdty(void)
 }
 
 
-double CSplign::GetMinCompartmentIdentity( void ) const {
+double CSplign::GetMinCompartmentIdentity(void) const {
     return m_MinCompartmentIdty;
+}
+
+double CSplign::GetMinSingletonIdentity(void) const {
+    return m_MinSingletonIdty;
 }
 
 double CSplign::s_GetDefaultMinCompartmentIdty(void)
@@ -206,9 +216,7 @@ void CSplign::PreserveScope(bool preserve_scope)
 void CSplign::SetCompartmentPenalty(double penalty)
 {
     if(penalty < 0 || penalty > 1) {
-        NCBI_THROW( CAlgoAlignException,
-                    eBadParameter,
-                    g_msg_QueryCoverageOutOfRange);
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_QueryCoverageOutOfRange);
     }
     m_compartment_penalty = penalty;
 }
@@ -282,6 +290,16 @@ void CSplign::x_LoadSequence(vector<char>* seq,
         e.SetSeverity(eDiag_Fatal);
         NCBI_RETHROW_SAME(e, "CSplign::x_LoadSequence(): Sequence data problem");
     }
+}
+
+
+void CSplign::ClearMem(void)
+{
+    m_Scope.Reset(NULL);
+    m_pattern.clear();
+    m_alnmap.clear();
+    m_genomic.clear();
+    m_mrna.clear();
 }
 
 
@@ -479,11 +497,13 @@ void CSplign::Run(THitRefs* phitrefs)
     const size_t mrna_size = objects::sequence::GetLength(*id_query, m_Scope);
     const size_t comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
     const size_t min_matches = size_t(m_MinCompartmentIdty * mrna_size);
+    const size_t min_singleton_matches = size_t(m_MinSingletonIdty * mrna_size);
 
     // iterate through compartments
     CCompartmentAccessor<THit> comps (hitrefs.begin(), hitrefs.end(),
                                       comp_penalty_bps,
-                                      min_matches);
+                                      min_matches,
+                                      min_singleton_matches);
 
     size_t dim = comps.GetCount();    
     if(dim > 0) {
@@ -762,7 +782,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             s.m_details.append(sh, 'M');
             s.Update(m_aligner);
             
-            // correct annotation
+            // fix annotation
             const size_t ann_dim = s.m_annot.size();
             if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
 
@@ -779,6 +799,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
     // look for PolyA in trailing segments:
     // if a segment is mostly 'A's then we add it to PolyA
+
+    for(; j >= 0 && m_segments[j].m_exon == false; --j);
     for(; j >= 0; --j) {
         
         const CSplign::SSegment& s = m_segments[j];
@@ -799,6 +821,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
                 min_a_content = 0.599;
             }
         }
+
         if(!s.m_exon) {
             min_a_content = s.m_len > 4? 0.599: -1;
         }
@@ -828,7 +851,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
     m_segments.resize(j + 1);
 
-    // convert coordinates back to the originals
+    // convert coordinates back to original
     NON_CONST_ITERATE(TSegments, jj, m_segments) {
         
         if(rv.m_QueryStrand) {
@@ -1750,6 +1773,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/03/21 16:20:50  kapustin
+ * Various changes, mainly adjust the code with  other libs
+ *
  * Revision 1.47  2006/02/14 15:41:25  kapustin
  * +AlignSingleCompartment()
  *

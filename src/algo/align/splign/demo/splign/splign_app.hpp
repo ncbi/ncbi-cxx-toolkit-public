@@ -134,12 +134,20 @@ protected:
 struct CSnap {
 public:
 
-    CSnap(void){};
+    CSnap(void) {};
 
-    void Init(Uint4 subj_coord, const CMerMatcherIndex::TMatch* pmatch) {
+    void Init(Int4 subj_coord, const CMerMatcherIndex::TMatch* pmatch) {
 
         m_SubjCoord = subj_coord;
         m_MatchPtr = pmatch;
+    }
+
+    Uint4 GetSubjCoord(void) const {
+        return (Uint4)(m_SubjCoord >= 0? m_SubjCoord: -m_SubjCoord);
+    }
+
+    bool IsMasked(void) const {
+        return m_SubjCoord < 0;
     }
 
     // for debugging purpose
@@ -153,7 +161,7 @@ public:
         return ostr;
     }
 
-    Uint4 m_SubjCoord;
+    Int4                            m_SubjCoord; // '-' indicate masked region
     const CMerMatcherIndex::TMatch* m_MatchPtr;
 };
 
@@ -164,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/03/21 16:20:50  kapustin
+ * Various changes, mainly adjust the code with  other libs
+ *
  * Revision 1.18  2006/02/13 19:31:54  kapustin
  * Do not pre-load mRNA
  *

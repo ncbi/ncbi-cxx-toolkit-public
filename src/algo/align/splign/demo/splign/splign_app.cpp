@@ -35,6 +35,7 @@
 #include "splign_app_exception.hpp"
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_system.hpp>
 
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
@@ -123,6 +124,7 @@ void CSplignApp::Init()
          "28");
 
 #ifdef GENOME_PIPELINE
+
     argdescr->AddOptionalKey
         ("querydb", "querydb",
          "[Batch mode - no external hits] "
@@ -131,7 +133,7 @@ void CSplignApp::Init()
          CArgDescriptions::eString);
 
     argdescr->AddOptionalKey
-        ("subjdb", "querydb",
+        ("subjdb", "subjdb",
          "[Incremental mode - no external hits] "
          "Pathname to the blast database of subject "
          "sequences. To create one, use formatdb -o T -p F",
@@ -148,7 +150,7 @@ void CSplignApp::Init()
         "jobs into smaller chunks.",
          CArgDescriptions::eString);
 
-    argdescr->AddOptionalKey("mkmeridx", "mkmeridx", 
+    argdescr->AddOptionalKey("mkidx", "mkidx", 
                              "Base filename to save query (cDNA) mer index.", 
                              CArgDescriptions::eString);
 
@@ -156,7 +158,7 @@ void CSplignApp::Init()
                             "Query mer index volume size (approximate) in MB.", 
                             CArgDescriptions::eInteger, "250");
 
-    argdescr->AddOptionalKey("usemeridx", "usemeridx", 
+    argdescr->AddOptionalKey("useidx", "useidx", 
                              "Query (cDNA) mer index filename to load.", 
                              CArgDescriptions::eInputFile,
                              CArgDescriptions::fBinary); 
@@ -198,8 +200,14 @@ void CSplignApp::Init()
     
     argdescr->AddDefaultKey
         ("min_compartment_idty", "min_compartment_identity",
-         "Minimal overall identity a compartment "
-         "must have in order to be aligned.",
+         "Minimal compartment identity to align.",
+         CArgDescriptions::eDouble,
+         NStr::DoubleToString(CSplign::s_GetDefaultMinCompartmentIdty()));
+    
+    argdescr->AddDefaultKey
+        ("min_singleton_idty", "min_singleton_identity",
+         "Minimal singleton compartment identity to align. Singletons are "
+         "per subject and strand",
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinCompartmentIdty()));
     
@@ -538,7 +546,7 @@ void CSplignApp::x_GetDbBlastHits(CSeqDB& seqdb,
                     (*sa_iter0)->GetSegs().GetDisc().Get();
                 ITERATE(CSeq_align_set::Tdata, sa_iter, sas) {
 
-                    THitRef hitref (new CBlastTabular(**sa_iter));
+                    THitRef hitref (new CBlastTabular(**sa_iter, false));
                     phitrefs->push_back(hitref);
 
                     CSplign::THit::TId id (hitref->GetSubjId());
@@ -761,17 +769,13 @@ bool PSnapOrder(const CSnap& h1, const CSnap& h2)
         return false;
     }
 
-    return h1.m_SubjCoord < h2.m_SubjCoord;
+    return h1.GetSubjCoord() < h2.GetSubjCoord();
 }
 
 
-
 void CSplignApp::x_ProcessSnaps(TSnaps& snaps, CSeqDB& seqdb,
-                                CRef<CSeq_id> seqid_subj,
-                                TSeqPos right_bound)
+                                CRef<CSeq_id> seqid_subj, TSeqPos right_bound)
 {
-    cerr << "Processing snaps...";
-
     const CArgs& args = GetArgs();
 
     const size_t dim = snaps.size();
@@ -782,7 +786,7 @@ void CSplignApp::x_ProcessSnaps(TSnaps& snaps, CSeqDB& seqdb,
     const CSnap& snap = snaps.front();
     Uint4 oid_cur = snap.m_MatchPtr->m_OID;
     Uint2 strand_cur = snap.m_MatchPtr->m_Strand;
-    Uint4 scoord_prev = snap.m_SubjCoord;
+    Uint4 scoord_prev = snap.GetSubjCoord();
     const size_t max_intron = 750 * 1024;
     for(size_t i = 1, i0 = 0; i < dim; ++i) {
 
@@ -795,16 +799,16 @@ void CSplignApp::x_ProcessSnaps(TSnaps& snaps, CSeqDB& seqdb,
         size_t i_begin = i0, i_end = i;
         if(new_oid || new_strand) {
 
-            if(h.m_SubjCoord + max_intron < right_bound) {
+            if(h.GetSubjCoord() + max_intron < right_bound) {
                 do_snap_pair = true;
             }
 
             oid_cur = h.m_MatchPtr->m_OID;
             strand_cur = h.m_MatchPtr->m_Strand;
-            scoord_prev = h.m_SubjCoord;
+            scoord_prev = h.GetSubjCoord();
             i0 = i;
         }
-        else if(h.m_SubjCoord - scoord_prev > max_intron) {
+        else if(h.GetSubjCoord() - scoord_prev > max_intron) {
             do_snap_pair = true;
             i0 = i;
         }
@@ -816,57 +820,183 @@ void CSplignApp::x_ProcessSnaps(TSnaps& snaps, CSeqDB& seqdb,
         if(do_snap_pair) {
 
             THitRefs hitrefs (i_end - i_begin);
-            for(size_t snaps_idx = i_begin, j = 0; snaps_idx < i_end; ++snaps_idx) {
+            Uint4 last_subj_coord = 0xFFFFFFF0;
+            Uint2 last_query_offs = 0xFFF0;
+            size_t j = 0;
+            for(size_t snaps_idx = i_begin; snaps_idx < i_end; ++snaps_idx) {
 
                 CSnap& snap = snaps[snaps_idx];
                 const CMerMatcherIndex::TMatch& match = * snap.m_MatchPtr;
-                TOidToSeqId::const_iterator im = m_Oid2SeqId.find(match.m_OID);
-                CRef<CSeq_id> seqid_query;
-                if(im == m_Oid2SeqId.end()) {
-                    seqid_query = seqdb.GetSeqIDs(match.m_OID).back();
-                    m_Oid2SeqId[match.m_OID] = seqid_query;
-                }
-                else {
-                    seqid_query = im->second;
+
+                // see if we can append to the last hit
+                bool append = false;
+                if(last_subj_coord + 1 == snap.GetSubjCoord()) {
+
+                    if(match.m_Strand && last_query_offs + 1 == match.m_Offset) {
+                        THitRef hitref = hitrefs[j-1];
+                        hitref->SetLength(hitref->GetLength() + 16);
+                        hitref->SetScore(hitref->GetScore() + 16);
+                        hitref->SetQueryStop((match.m_Offset + 1)*16 - 1);
+                        hitref->SetSubjStop(last_subj_coord = snap.GetSubjCoord()+15);
+                        hitref->SetEValue(hitref->GetEValue() && snap.IsMasked());
+                        append = true;
+                    }
+                    else if(!match.m_Strand && match.m_Offset +1 == last_query_offs){
+
+                        THitRef hitref = hitrefs[j-1];
+                        hitref->SetLength(hitref->GetLength() + 16);
+                        hitref->SetScore(hitref->GetScore() + 16);
+                        hitref->SetQueryStart(match.m_Offset*16);
+                        hitref->SetSubjStart(last_subj_coord =snap.GetSubjCoord()+15);
+                        hitref->SetEValue(hitref->GetEValue() && snap.IsMasked());
+                        append = true;
+                    }
                 }
 
-                THitRef hitref (new THit);
-                hitref->SetQueryId(seqid_query);
-                hitref->SetSubjId(seqid_subj);
+                last_query_offs = match.m_Offset;
 
-                if(match.m_Strand) {
-                    hitref->SetSubjStart(snap.m_SubjCoord);
-                    hitref->SetSubjStop(snap.m_SubjCoord + 15);
+                if(!append) {
+
+                    TOidToSeqId::const_iterator im = m_Oid2SeqId.find(match.m_OID);
+                    CRef<CSeq_id> seqid_query;
+                    if(im == m_Oid2SeqId.end()) {
+                        seqid_query = seqdb.GetSeqIDs(match.m_OID).back();
+                        m_Oid2SeqId[match.m_OID] = seqid_query;
+                    }
+                    else {
+                        seqid_query = im->second;
+                    }
+
+                    THitRef hitref (new THit);
+                    hitref->SetQueryId(seqid_query);
+                    hitref->SetSubjId(seqid_subj);
+
+                    if(match.m_Strand) {
+                        hitref->SetSubjStart(snap.GetSubjCoord());
+                        hitref->SetSubjStop(snap.GetSubjCoord() + 15);
+                    }
+                    else {
+                        hitref->SetSubjStart(snap.GetSubjCoord() + 15);
+                        hitref->SetSubjStop(snap.GetSubjCoord());
+                    }
+                    const Uint4 query_min = match.m_Offset << 4;
+                    hitref->SetQueryStart(query_min);
+                    hitref->SetQueryStop(query_min + 15);
+
+                    hitref->SetLength(16);
+                    hitref->SetMismatches(0);
+                    hitref->SetGaps(0);
+                    hitref->SetEValue(snap.IsMasked()? -1: 0);
+                    hitref->SetIdentity(1.0);
+                    hitref->SetScore(16.0);
+
+                    hitrefs[j++] = hitref;
+
+                    last_subj_coord = snap.GetSubjCoord() + 15;
                 }
-                else {
-                    hitref->SetSubjStart(snap.m_SubjCoord + 15);
-                    hitref->SetSubjStop(snap.m_SubjCoord);
-                }
-                const Uint4 query_min = match.m_Offset << 4;
-                hitref->SetQueryStart(query_min);
-                hitref->SetQueryStop(query_min + 15);
-
-                hitref->SetLength(16);
-                hitref->SetMismatches(0);
-                hitref->SetGaps(0);
-                hitref->SetEValue(0);
-                hitref->SetIdentity(1.0);
-                hitref->SetScore(16.0);
-
-                hitrefs[j++] = hitref;
 
                 snap.m_MatchPtr = NULL;
             }
 
+            hitrefs.resize(j);
+
             x_ProcessPair(hitrefs, args);
         }
 
-        scoord_prev = h.m_SubjCoord;
+        scoord_prev = h.GetSubjCoord();
     }
-    cerr << " Ok." << endl;
 }
 
-// #define USE_HITREFS
+
+
+typedef set<Uint4> TOidSet;
+
+void Search(const CMerMatcherIndex& mmidx, const CMerMatcherIndex::TKey& key, 
+            Int4 coord, TSnaps& snaps, TOidSet* oids, bool collect)
+{
+    bool lowz = CMerMatcherIndex::s_IsLowComplexity(key);
+    if(lowz == false) {
+        
+        CMerMatcherIndex::TKey key2 = CMerMatcherIndex::s_FlipKey(key);
+
+        Uint4 nodeidx = mmidx.LookUp(key2);
+        if(nodeidx != numeric_limits<Uint4>::max()) {
+
+            const CMerMatcherIndex::SNodeFlat& node = mmidx.GetNode(nodeidx);
+            size_t idx = snaps.size();
+
+            if(oids == NULL || collect == true) {
+                snaps.resize(idx + node.m_Count);
+            }
+            const CMerMatcherIndex::TMatch* pm = & mmidx.GetMatch(node.m_Data);
+            TOidSet::const_iterator oids_end;
+            if(collect) {
+                oids_end = oids->end();
+            }
+
+            for(size_t term = idx + node.m_Count; idx < term; ++pm) {
+
+                if(oids) {
+                    if(collect) {
+                        snaps[idx++].Init(coord, pm);
+                        oids->insert(pm->m_OID);
+                    }
+                    else {
+                        // restrict
+                        if(oids->find(pm->m_OID) != oids_end) {
+                            snaps.push_back(CSnap());
+                            snaps[idx++].Init(coord, pm);
+                        }
+                    }
+                }
+                else {
+                    snaps[idx++].Init(coord, pm);
+                }
+
+            }
+        }
+    }
+}
+
+
+void SearchMaskedSegment(const objects::CSeqVector& sv, 
+                         const CMerMatcherIndex& mmidx, 
+                         const pair<TSeqPos,TSeqPos>& segment, 
+                         TSnaps& snaps, 
+                         TOidSet& allowed)
+{
+    USING_SCOPE(objects);
+
+    Uint4 key = 0;
+    for(Uint4 i = segment.first, k = 0; i <= segment.second; ++i) {
+
+        char c = sv[i];
+        Uint4 code;
+        switch(c) {
+        case 'A': code = 0; break;
+        case 'C': code = 1; break;
+        case 'G': code = 2; break;
+        case 'T': code = 3; break;
+        default:  code = 4;
+        }
+
+        if(code != 4) {
+
+            key = (key << 2) | code;
+            if(k == 15) {
+                Search(mmidx, key, i - 15, snaps, &allowed, false);
+            }
+            else {
+                ++k;
+            }
+        }
+        else {
+            key = 0;
+            k = 0;
+        }
+    }
+}
+
 
 void CSplignApp::x_DoBatch2_mer(void)
 {
@@ -874,51 +1004,76 @@ void CSplignApp::x_DoBatch2_mer(void)
     USING_SCOPE(blast);
     
     const CArgs& args = GetArgs();
-    const string dbname = args["querydb"].AsString();
-    CSeqDB seqdb (dbname, CSeqDB::eNucleotide);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CBlastDbDataLoader::RegisterInObjectManager(
-        *objmgr, dbname, CBlastDbDataLoader::eNucleotide, 
-        CObjectManager::eDefault);
-
-    CNcbiIstream& istr = args["usemeridx"].AsInputFile();
+    CNcbiIstream& istr = args["useidx"].AsInputFile();
     CMerMatcherIndex mmidx;
     if(!mmidx.Load(istr)) {
         NCBI_THROW(CException, eUnknown, "Mer index file corrupt.");
     }
 
-    CNcbiIstream& ifa = args["subj"].AsInputFile();
+    const string dbname_q = args["querydb"].AsString();
+    CSeqDB seqdb_q (dbname_q, CSeqDB::eNucleotide);
 
-    for(CRef<CSeq_entry> se (ReadFasta(ifa, fReadFasta_OneSeq));
-        se.NotEmpty(); se = ReadFasta(ifa, fReadFasta_OneSeq)) 
+    const string dbname_s = args["subjdb"].AsString();
+    CSeqDB seqdb_s (dbname_s, CSeqDB::eNucleotide);
+
+    /*
+
+    typedef vector<CConstRef<CSeq_loc> > TSeqLocs;
+    TSeqLocs lcv;
+    CNcbiIstream& ifa = args["subj"].AsInputFile();
+    for(CRef<CSeq_entry> se (ReadFasta(ifa, fReadFasta_OneSeq, NULL, &lcv));
+        se.NotEmpty(); se = ReadFasta(ifa, fReadFasta_OneSeq, NULL, &lcv))
     {
         const CSeq_entry::TSeq& bioseq = se->GetSeq();    
         const CSeq_entry::TSeq::TId& sids = bioseq.GetId();
         CRef<CSeq_id> seqid_dna (sids.back());
 
+        m_Splign->ClearMem();
         CRef<CScope> scope (new CScope(*objmgr));
         scope->AddDefaults();
         scope->AddTopLevelSeqEntry(*se);
         m_Splign->SetScope() = scope;
 
-        cerr << "Processing " << seqid_dna->AsFastaString() << endl;
-
         CBioseq_Handle bh = scope->GetBioseqHandle(*seqid_dna);
         CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        CSeqVector::const_iterator vi = sv.begin();
 
-        TSeqPos offset = 0, len = bioseq.GetInst().GetLength();
+        TSeqPos offset = 0;
         const TSeqPos step1m = 1024 * 1024;
-        const TSeqPos step5m = 5 * step1m;
+        const TSeqPos step25m = 25 * step1m;
 
         TSnaps pending;
-#ifdef USE_HITREFS
-        THitRefs hitrefs;
-#endif
+        const TSeqPos len = bioseq.GetInst().GetLength();
+
+        // get masked segments
+        if(lcv.size() != 1) {
+            NCBI_THROW(CSplignAppException, eInternal, 
+                       "Expected single seq-loc for all masked segments" );
+        }
+        CConstRef<CSeq_loc> seqloc (lcv.front());
+        typedef vector<pair<TSeqPos,TSeqPos> > TMaskedSegs;
+        TMaskedSegs masked;
+
+        if(seqloc.NotEmpty() && seqloc->IsNull() == false) {
+
+            const CSeq_loc::TPacked_int& packed_int = seqloc->GetPacked_int();
+            const CSeq_loc::TPacked_int::Tdata& intervals = packed_int.Get();
+            masked.resize(intervals.size());
+            size_t j = 0;
+            ITERATE(CSeq_loc::TPacked_int::Tdata, ii, intervals) {
+                masked[j].first  = (*ii)->GetFrom();
+                masked[j].second = (*ii)->GetTo();
+                ++j;
+            }
+        }
+        seqloc.Reset(NULL);
+        lcv.clear();
+
+        size_t masked_cur = 0, masked_end = masked.size();
+        Uint1 masked_count = 0;
         while(offset < len || pending.size() > 0) {
 
-            TSeqPos from = offset, to = offset + step5m;
+            TSeqPos from = offset, to = offset + step25m;
 
             if(from < len) {
 
@@ -926,51 +1081,46 @@ void CSplignApp::x_DoBatch2_mer(void)
                     to = len - 1;
                 }
 
+                TOidSet allowed;
+
                 Uint4 key = 0;
-                cerr << "From = " << from << " to = " << to << endl;
                 TSnaps snaps;
-                snaps.reserve(2*(to - from));
-                for(Uint4 i = from, k = 0; i < to; ++i, ++vi) {
+                for(Uint4 i = from, k = 0; i < to; ++i) {
+                    
+                    while(masked_cur != masked_end && masked[masked_cur].second < i) {
+                        ++masked_cur;
+                    }
+
+                    if(masked_cur != masked_end && i >= masked[masked_cur].first) {
+                        if(++masked_count > 16) masked_count = 16;
+                    }
+                    else {
+                        if(masked_count > 0) {
+                            --masked_count;
+                        }
+                    }
 
                     Uint4 code;
-                    char c = *vi;
-                    switch(c) {
-                    case 'A': code = 0; break;
-                    case 'C': code = 1; break;
-                    case 'G': code = 2; break;
-                    case 'T': code = 3; break;
-                    default:  code = 4;
+                    if(masked_count <= 16) {
+                        switch(sv[i]) {
+                            case 'A': code = 0; break;
+                            case 'C': code = 1; break;
+                            case 'G': code = 2; break;
+                            case 'T': code = 3; break;
+                            default:  code = 4;
+                        }
                     }
+                    else {
+                        code = 4;
+                    }
+
                     if(code != 4) {
 
                         key = (key << 2) | code;
                         if(k == 15) {
-                            if(CMerMatcherIndex::s_IsLowComplexity(key) == false) {
-
-                                CMerMatcherIndex::TKey key2 = 
-                                    CMerMatcherIndex::s_FlipKey(key);
-
-#ifdef USE_HITREFS
-                                mmidx.GetHits(key2, seqdb, seqid_dna, 
-                                              i-15, &hitrefs);
-#else
-
-                                Uint4 nodeidx = mmidx.LookUp(key2);
-                                if(nodeidx != numeric_limits<Uint4>::max()) {
-
-                                    const CMerMatcherIndex::SNode& node = 
-                                        mmidx.GetNode(nodeidx);
-                                    size_t idx = snaps.size();
-                                    snaps.resize(idx + node.m_Count);
-                                    const CMerMatcherIndex::TMatch* pm =
-                                        & mmidx.GetMatch(node.m_Data);
-                                    for(size_t term = idx + node.m_Count; idx <term;) 
-                                    {
-                                        snaps[idx++].Init(i - 15, pm++);
-                                    }
-                                }
-#endif
-                            }
+                            Search(mmidx, key,
+                                   masked_count == 16? 15 - i: i - 15,
+                                   snaps, NULL, true);
                         }
                         else {
                             ++k;
@@ -982,7 +1132,14 @@ void CSplignApp::x_DoBatch2_mer(void)
                     }
                 }
 
-#ifndef USE_HITREFS
+                // if there were masked segments, look for 'extension' snaps
+                if(allowed.size() > 0) {
+                    for(size_t si = 0; si < masked_end; ++si) {
+                        if(from <= masked[si].second &&  masked[si].second <= to) {
+                            SearchMaskedSegment(sv,mmidx,masked[si],snaps,allowed);
+                        }
+                    }
+                }
 
                 sort(snaps.begin(), snaps.end(), PSnapOrder);
                 TSnaps snaps_tmp (snaps.size() + pending.size());
@@ -996,36 +1153,19 @@ void CSplignApp::x_DoBatch2_mer(void)
                 TSnaps::iterator ii = remove_if(pending.begin(), pending.end(),
                                                 PIsNullPtr);
                 pending.erase(ii, pending.end());
-#endif
             }
             else {
-#ifndef USE_HITREFS
                 x_ProcessSnaps(pending, seqdb, seqid_dna, to);
                 pending.resize(0);
-#endif
             }
 
             offset = (to + 1 >= len)? len: to;
         }
 
-#ifdef USE_HITREFS
-        typedef CHitComparator<CBlastTabular> THitComparator;
-        THitComparator hc (THitComparator::eSubjIdQueryId);
-        stable_sort(hitrefs.begin(), hitrefs.end(), hc);
-
-        THitRefs hitrefs_pair;
-        m_CurHitRef = numeric_limits<size_t>::max();
-        while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
-
-            x_ProcessPair(hitrefs_pair, args); 
-        }
-#endif
-
         if(ifa.eof()) { break; }
     }
-
+*/
 }
-
 
 
 int CSplignApp::Run()
@@ -1042,20 +1182,22 @@ int CSplignApp::Run()
 
     const bool is_query   = args["query"];
     const bool is_subj    = args["subj"];
+
 #ifdef GENOME_PIPELINE
     const bool is_querydb = args["querydb"];
     const bool is_subjdb = args["subjdb"];
     
-    const bool is_mkmeridx = args["mkmeridx"];
-    const bool is_usemeridx = args["usemeridx"];
+    const bool is_mkidx = args["mkidx"];
+    const bool is_useidx = args["useidx"];
 
 #else
     const bool is_querydb = false;
     const bool is_subjdb = false;
 
-    const bool is_mkmeridx = false;
-    const bool is_usemeridx = false;
+    const bool is_mkidx = false;
+    const bool is_useidx = false;
 #endif
+
     const bool is_cross   = args["cross"];
 
     if(is_mklds) {
@@ -1081,33 +1223,22 @@ int CSplignApp::Run()
         return 0;
     }
 
-    if(is_mkmeridx) {
+#ifdef GENOME_PIPELINE
+    if(is_mkidx) {
 
         // create mer index and exit
         const Uint4 max_vol_mem = args["M"].AsInteger()*1024*1024;
-        const Uint1 bytes_per_seg = sizeof(CMerMatcherIndex::TMatch) +
-                                    sizeof(CMerMatcherIndex::SNode);
-        CSeqDB seqdb (args["querydb"].AsString(), CSeqDB::eNucleotide);
-        const int oids_total = seqdb.GetNumOIDs();
-        const double segs_per_oid = 2 * double(seqdb.GetTotalLength()) 
-            / oids_total / 16;
-        const double bytes_per_oid = segs_per_oid * bytes_per_seg;
-        const int oids_per_vol = int(max_vol_mem / bytes_per_oid);
+        const string filename_base (args["mkidx"].AsString());
+        CSeqDB seqdb (args["subjdb"].AsString(), CSeqDB::eNucleotide);
 
-        for(int oid_begin = 0, oid_end = 0, q = 0; 
-            oid_begin < oids_total; ++q, oid_begin = oid_end) 
+        size_t q = 0;
+        for(CSeqDBIter db_iter (seqdb.Begin()); db_iter; ++q) 
         {
-            oid_end = oid_begin + oids_per_vol;
-            if(oid_end > oids_total) {
-                oid_end = oids_total;
-            }
-
-            cout << "Creating mer index for OID range [" << oid_begin
-                 << ", " << oid_end << ')' << endl;
-
+            cout << "Indexing vol " << q << " ... " << flush;
             CMerMatcherIndex mmidx;
-            mmidx.Create(seqdb, oid_begin, oid_end);
-            const string filename = args["mkmeridx"].AsString() + ".v" +
+            size_t rv = mmidx.Create(db_iter, max_vol_mem, 16);
+            cout << "Done (" << rv << ") entries" << endl << flush;
+            const string filename = args["mkidx"].AsString() + ".v" +
                 NStr::IntToString(q) + ".idx";
             CNcbiOfstream ofstr (filename.c_str(), IOS_BASE::binary);
             mmidx.Dump(ofstr);
@@ -1115,6 +1246,7 @@ int CSplignApp::Run()
 
         return 0;
     }
+#endif
 
     // determine mode and verify arguments
     ERunMode run_mode (eNotSet);
@@ -1122,13 +1254,13 @@ int CSplignApp::Run()
     if(is_query && is_subj && !(is_hits || is_querydb || is_ldsdir)) {
         run_mode = ePairwise;
     }
-    else if(is_subj && is_querydb && !(is_query || is_hits || is_ldsdir)) {
-        if(is_usemeridx) {
-            run_mode = eBatch2_mer;
-        }
-        else {
-            run_mode = eBatch2;
-        }
+    else if(is_subj && is_querydb
+            && !(is_useidx || is_query || is_hits || is_ldsdir)) 
+    {
+        run_mode = eBatch2;
+    }
+    else if (is_useidx && is_querydb && is_subjdb) {
+        run_mode = eBatch2_mer;
     }
     else if(is_query && is_subjdb && !(is_subj || is_hits || is_ldsdir)) {
         run_mode = eIncremental;
@@ -1188,10 +1320,10 @@ int CSplignApp::Run()
     // splign and formatter setup    
     m_Splign.Reset(new CSplign);
     m_Splign->SetPolyaDetection(!args["nopolya"]);
-    m_Splign->SetMinCompartmentIdentity(
-                 args["min_compartment_idty"].AsDouble());
     m_Splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
     m_Splign->SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
+    m_Splign->SetMinCompartmentIdentity(args["min_compartment_idty"].AsDouble());
+    m_Splign->SetMinSingletonIdentity(args["min_singleton_idty"].AsDouble());
     m_Splign->SetEndGapDetection(!(args["noendgaps"]));
     m_Splign->SetMaxGenomicExtent(args["max_extent"].AsInteger());
     m_Splign->SetAligner() = aligner;
@@ -1333,6 +1465,11 @@ void CSplignApp::x_GetBl2SeqHits(
 
 void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
 {
+    /*
+    ITERATE(THitRefs, ii, hitrefs) {
+        cerr << (**ii) << endl;
+    }
+    */
 
     const CSplignFormatter::EFlags flags =
 #ifdef GENOME_PIPELINE
@@ -1348,10 +1485,11 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
     CSplign::THit::TId query = hitrefs.front()->GetQueryId();
     CSplign::THit::TId subj  = hitrefs.front()->GetSubjId();
     
-    m_Formatter->SetSeqIds( query, subj );
+    m_Formatter->SetSeqIds(query, subj);
     
     const string strand = args["strand"].AsString();
     CSplign::TResults splign_results;
+
     if(strand == kStrandPlus) {
 
         m_Splign->SetStrand(true);
@@ -1376,8 +1514,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
             m_Splign->SetStartModelId(mid);
             m_Splign->Run(&hitrefs);
             const CSplign::TResults& results = m_Splign->GetResult();
-            copy(results.begin(), results.end(), 
-                 back_inserter(splign_results));
+            copy(results.begin(), results.end(), back_inserter(splign_results));
             mid_plus = m_Splign->GetNextModelId();
         }}
         {{
@@ -1385,8 +1522,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
             m_Splign->SetStartModelId(mid);
             m_Splign->Run(&hits0);
             const CSplign::TResults& results = m_Splign->GetResult();
-            copy(results.begin(), results.end(), 
-                 back_inserter(splign_results));
+            copy(results.begin(), results.end(), back_inserter(splign_results));
             mid_minus = m_Splign->GetNextModelId();
         }}
         mid = max(mid_plus, mid_minus);
@@ -1395,7 +1531,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
         NCBI_THROW(CSplignAppException, eGeneral, 
                    "Auto strand not yet implemented");
     }
-        
+    
     cout << m_Formatter->AsExonTable(&splign_results, flags) << flush;
         
     if(m_AsnOut) {
@@ -1455,14 +1591,14 @@ int main(int argc, const char* argv[])
 
 #ifdef GENOME_PIPELINE
 
-    // pre-scan for mkidx
+    // pre-scan for mkidx0
     for(int i = 1; i < argc; ++i) {
-        if(0 == strcmp(argv[i], "-mkidx")) {
+        if(0 == strcmp(argv[i], "-mkidx0")) {
             
             if(i + 1 == argc) {
                 char err_msg [] = 
                     "ERROR: No FastA files specified to index. "
-                    "Please specify one or more FastA files after -mkidx. "
+                    "Please specify one or more FastA files after -mkidx0. "
                     "Your system may support wildcards "
                     "to specify multiple files.";
                 cerr << err_msg << endl;
@@ -1497,8 +1633,7 @@ int main(int argc, const char* argv[])
             
             return 0;
         }
-    }
-    
+    }    
 
 #endif
 
@@ -1509,6 +1644,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/03/21 16:20:50  kapustin
+ * Various changes, mainly adjust the code with  other libs
+ *
  * Revision 1.62  2006/03/17 15:58:16  kapustin
  * Fix megablast word size option
  *

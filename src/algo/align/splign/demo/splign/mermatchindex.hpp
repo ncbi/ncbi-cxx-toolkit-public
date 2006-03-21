@@ -47,8 +47,8 @@ public:
 
     CMerMatcherIndex(void);
 
-    // create from a seqdb range
-    void Create(CSeqDB& seqdb, int oid_begin, int oid_end);
+    // create using seq db iterator and target size
+    size_t Create(CSeqDBIter& db_iter, size_t max_mem, size_t min_len);
 
     // load from a binary file
     bool Load(CNcbiIstream&);
@@ -63,37 +63,42 @@ public:
     static TKey s_FlipKey(CMerMatcherIndex::TKey key0) ;
 
 
-    Uint4 LookUp(TKey key); // will return numeric_limits<Uint4>::max() if not found;
-                            // index in m_Nodes otherwise
+    Uint4 LookUp(TKey key) const; // will return numeric_limits<Uint4>::max() 
+                                  // if not found; index in m_Nodes otherwise
 
     typedef CSplign::THit    THit;
     typedef CRef<THit>       THitRef;
     typedef vector<THitRef>  THitRefs;
 
-    void GetHits(TKey key, CSeqDB& seqdb, CRef<CSeq_id> seqid_subj, 
-                 Uint4 subj_min, THitRefs* phitrefs);
+    struct SNodeFlat {
 
-    struct SNode {
-
-        SNode(): m_Left(0), m_Right(0), m_Count(0) {}
+        SNodeFlat() {}
 
         TKey  m_Key;
         TData m_Data;
-        Uint4 m_Left;
-        Uint4 m_Right;
         Uint4 m_Count;
 
-        
         // for debug purpose
-        friend ostream& operator << (ostream& ostr, const SNode& m) {
+        friend ostream& operator << (ostream& ostr, const SNodeFlat& m) {
             ostr << m.m_Key << '\t' << m.m_Data << '\t' << m.m_Count;
             return ostr;
         }
 
+        bool operator < (const SNodeFlat& rhs) const {
+            return m_Key < rhs.m_Key;
+        }
     };
 
-    const SNode& GetNode(Uint4 idx) const {
-        return m_Nodes[idx];
+    struct SNode: public SNodeFlat {
+
+        SNode(): m_Left(0), m_Right(0) { m_Count = 0; }
+
+        Uint4 m_Left;
+        Uint4 m_Right;
+    };
+
+    const SNodeFlat& GetNode(Uint4 idx) const {
+        return m_FlatNodes[idx];
     }
     
     struct SMatch {
@@ -115,30 +120,35 @@ public:
     typedef SMatch            TMatch;
 
     const TMatch& GetMatch(Uint4 idx) const {
-        return m_PlainMatches[idx];
+        return m_FlatMatches[idx];
     }
 
 protected:
 
     typedef list<TMatch>      TMatches;
     typedef vector<TMatches>  TMatchVec;
-
     TMatchVec       m_MatchVec;
-    Uint4           m_CurIdxMV;
 
     typedef vector<SNode>     TNodes;
     TNodes          m_Nodes;
-    Uint4           m_CurIdxNodes;
 
-    typedef vector<TMatch>    TPlainMatches;
-    TPlainMatches   m_PlainMatches;
+    typedef vector<SNodeFlat> TFlatNodes;
+    TFlatNodes      m_FlatNodes;
+
+    Uint4           m_CurIdx;
+    Uint4           m_MaxNodeCount;
+    Uint4           m_CurVol;
+    Uint4           m_MaxVolSize;
+
+    typedef vector<TMatch>    TFlatMatches;
+    TFlatMatches   m_FlatMatches;
 
     typedef map<int, CRef<CSeq_id> > TOidToSeqId;
     TOidToSeqId     m_Oid2SeqId;
 
     // indexing
-    void x_AddMatch(TKey key, const TMatch& match);
-    void x_AddNode(TKey key, const TMatch& match);
+    bool x_AddMatch(TKey key, const TMatch& match);
+    bool x_AddNode(TKey key, const TMatch& match);
 
     // dumping
     void x_DiveNode(CNcbiOstream& ostr, Uint4 node_idx, Uint4& match_idx);
@@ -149,6 +159,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.4  2006/03/21 16:20:50  kapustin
+ * Various changes, mainly adjust the code with  other libs
+ *
  * Revision 1.3  2006/02/14 02:21:08  ucko
  * Use [] rather than .at() for compatibility with GCC 2.95.
  *

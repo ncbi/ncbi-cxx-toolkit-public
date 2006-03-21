@@ -48,6 +48,8 @@
 #include "splign_util.hpp"
 #include "messages.hpp"
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -128,7 +130,7 @@ string CSplignFormatter::AsExonTable(
             if(seg.m_exon) {
                 
                 oss << seg.m_annot << '\t';
-                oss << CNWAligner::s_RunLengthEncode(seg.m_details);
+                oss << CAlignShadow::s_RunLengthEncode(seg.m_details);
                 if(print_exon_scores) {
                     oss << '\t' << seg.m_score;
                 }
@@ -530,6 +532,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2006/03/21 16:20:50  kapustin
+ * Various changes, mainly adjust the code with  other libs
+ *
  * Revision 1.21  2006/03/15 02:18:52  ucko
  * +<algorithm> (once indirectly included?) for reverse() and transform().
  *

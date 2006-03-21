@@ -34,6 +34,7 @@
 
 #include "mermatchindex.hpp"
 
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -105,8 +106,10 @@ CMerMatcherIndex::TKey CMerMatcherIndex::s_FlipKey(TKey key0)
 
 
 CMerMatcherIndex::CMerMatcherIndex(void):
-    m_CurIdxMV(0),
-    m_CurIdxNodes(0)
+    m_CurIdx(0),
+    m_MaxNodeCount(0),
+    m_CurVol(0),
+    m_MaxVolSize(0)
 {
 }
 
@@ -124,56 +127,87 @@ CMerMatcherIndex::SMatch::SMatch(Uint4 oid, Uint2 offs, Uint2 strand):
 
 
 // create from a seqdb range
-void CMerMatcherIndex::Create(CSeqDB& seqdb, int oid_begin, int oid_end)
+size_t CMerMatcherIndex::Create(CSeqDBIter& db_iter, size_t max_mem, size_t min_len)
 {
-    if(oid_begin >= oid_end) {
-        NCBI_THROW(CException, eUnknown, "Incorrect oid range");
+    if(!db_iter) {
+        NCBI_THROW(CException, eUnknown, 
+                   "CMerMatcherIndex::Create(): invalid db iterator passed.");
     }
 
-    double s = 0;
-    for(int oid = oid_begin; oid < oid_end; ++oid) {
-        s += seqdb.GetSeqLengthApprox(oid);
-    }
-    const Uint4 Nmax = Uint4(2 * s / 16);
+    const Uint1 bytes_per_seg = (sizeof(CMerMatcherIndex::TMatch) 
+                                + sizeof(CMerMatcherIndex::SNodeFlat));
+    m_MaxNodeCount = 2*((m_MaxVolSize = max_mem) / bytes_per_seg + 1);
 
-    m_Nodes.resize(Nmax);
-    m_CurIdxNodes = 0;
-    m_MatchVec.resize(Nmax);
-    m_CurIdxMV = 0;
+    m_Nodes.resize(m_MaxNodeCount);
+    m_MatchVec.resize(m_MaxNodeCount);
+    m_CurIdx = 0;
 
-    for(int oid = oid_begin; oid < oid_end; ++oid) {
+    size_t rv = 0;
+    for(; db_iter; ++db_iter) {
 
-        const unsigned char* seqdata = 0;
-        int len = seqdb.GetSequence(oid, (const char**)(&seqdata));
+        int len = db_iter.GetLength();
+        if(len < int(min_len)) {
+            continue;
+        }
+        int oid = db_iter.GetOID();
+        const char* seqdata = db_iter.GetData();
+
+        bool max_reached = false;
+        const Uint4 curidx0 = m_CurIdx;
         for(int k = 0; k*4 + 16 <= len; k += 4) {
-
+            
             const TKey* pkey = reinterpret_cast<const TKey*>(seqdata + k);
             TKey key = *pkey, key_rc;
             if(s_IsLowComplexity(key, &key_rc) == false) {
-                x_AddMatch(key, TMatch(oid, k/4, 1));
-                x_AddMatch(key_rc, TMatch(oid, k/4, 0));
+                if(!x_AddMatch(key, TMatch(oid, k/4, 1)) ||
+                   !x_AddMatch(key_rc, TMatch(oid, k/4, 0)))
+                {
+                    max_reached = true;
+                    break;
+                }
             }
         }
-        seqdb.RetSequence((const char**)(&seqdata));
+        
+        if(max_reached) {
+            m_CurIdx = curidx0;
+            break;
+        }
+
+        ++rv;
     }
 
-    m_Nodes.resize(m_CurIdxNodes);
-    m_MatchVec.resize(m_CurIdxMV);
+    m_Nodes.resize(m_CurIdx);
+    m_MatchVec.resize(m_CurIdx);
+
+    // terminate prior nodes
+    NON_CONST_ITERATE(TNodes, ii, m_Nodes) {
+        if(ii->m_Left >= m_CurIdx) {
+            ii->m_Left = 0;
+        }
+        if(ii->m_Right >= m_CurIdx) {
+            ii->m_Right = 0;
+        }
+    }
+
+    return rv;
 }
 
 
-void CMerMatcherIndex::x_AddNode(TKey key, const TMatch& match)
+bool CMerMatcherIndex::x_AddNode(TKey key, const TMatch& match)
 {
-    SNode& node = m_Nodes[m_CurIdxNodes++];
+    SNode& node = m_Nodes[m_CurIdx];
     node.m_Key = key;
-    m_MatchVec[node.m_Data = m_CurIdxMV++].push_back(match);
+    m_MatchVec[node.m_Data = m_CurIdx].push_back(match);
+    ++m_CurIdx;
+    m_CurVol += sizeof(SNodeFlat) + sizeof(TMatch);
+
+    return m_CurVol <= m_MaxVolSize && m_CurIdx < m_MaxNodeCount;
 }
 
 
-void CMerMatcherIndex::x_AddMatch(TKey key, const TMatch& match)
+bool CMerMatcherIndex::x_AddMatch(TKey key, const TMatch& match)
 {
-    const size_t dim = m_Nodes.size();
-    if(dim == 0) {
+    if(m_CurIdx == 0) {
         x_AddNode(key, match);
     }
     else {
@@ -184,26 +218,27 @@ void CMerMatcherIndex::x_AddMatch(TKey key, const TMatch& match)
             SNode& curnode = m_Nodes[j];
             if(key < curnode.m_Key) {
                 if(curnode.m_Left == 0) {
-                    curnode.m_Left = m_CurIdxNodes;
-                    x_AddNode(key, match);
-                    break;
+                    curnode.m_Left = m_CurIdx;
+                    return x_AddNode(key, match);
                 }
                 j = curnode.m_Left;
             }
             else if(key > curnode.m_Key) {
                 if(curnode.m_Right == 0) {
-                    curnode.m_Right = m_CurIdxNodes;
-                    x_AddNode(key, match);                    
-                    break;
+                    curnode.m_Right = m_CurIdx;
+                    return x_AddNode(key, match);
                 }
                 j = curnode.m_Right;
             }
             else {
                 m_MatchVec[curnode.m_Data].push_back(match);
+                m_CurVol += sizeof(TMatch);
                 break;
             }
         }
     }
+
+    return true;
 }
 
 
@@ -211,19 +246,31 @@ void CMerMatcherIndex::x_DiveNode(CNcbiOstream& ostr, Uint4 node_idx,
                                   Uint4& match_idx)
 {
     SNode& node = m_Nodes[node_idx];
-    TMatches& matches = m_MatchVec[node.m_Data];
-    node.m_Data = match_idx;
-    node.m_Count = matches.size();
-    ITERATE(TMatches, ii, matches) {
-        const TMatch& match = *ii;
-        ostr.write(reinterpret_cast<const char*>(&match), sizeof(TMatch));
-        ++match_idx;
-    }
-    //matches.clear();
     
+    if(match_idx != numeric_limits<Uint4>::max()) {
+        
+        // write matches
+        TMatches& matches = m_MatchVec[node.m_Data];
+        node.m_Data = match_idx;
+        node.m_Count = matches.size();
+        ITERATE(TMatches, ii, matches) {
+            const TMatch& match = *ii;
+            ostr.write(reinterpret_cast<const char*>(&match), sizeof(TMatch));
+            ++match_idx;
+        }
+    }
+
     if(node.m_Left > 0) {
         x_DiveNode(ostr, node.m_Left, match_idx);
     }
+
+    if(match_idx == numeric_limits<Uint4>::max()) {
+
+        // write the node
+        const SNodeFlat& nf = node;
+        ostr.write(reinterpret_cast<const char*>(&nf), sizeof nf);        
+    }
+
     if(node.m_Right > 0) {
         x_DiveNode(ostr, node.m_Right, match_idx);
     }
@@ -233,6 +280,7 @@ void CMerMatcherIndex::x_DiveNode(CNcbiOstream& ostr, Uint4 node_idx,
 void CMerMatcherIndex::Dump(CNcbiOstream& ostr)
 {
     //  save the total number of matches
+
     Uint4 mc_total = 0;
     ITERATE(TMatchVec, ii, m_MatchVec) {
         mc_total += ii->size();
@@ -241,14 +289,19 @@ void CMerMatcherIndex::Dump(CNcbiOstream& ostr)
     ostr.write(reinterpret_cast<const char*>(&mc_total), sizeof mc_total);
     
     // traverse the node tree to coalesce and save matches
+
     Uint4 match_idx = 0;
     x_DiveNode(ostr, 0, match_idx);
 
     // save the total of nodes
+
     const Uint4 nodes_total = m_Nodes.size();
     ostr.write(reinterpret_cast<const char*>(&nodes_total), sizeof(nodes_total));
-    ostr.write(reinterpret_cast<const char*>(&m_Nodes.front()), 
-               nodes_total * sizeof(SNode));
+
+    // traverse and save nodes
+
+    match_idx = numeric_limits<Uint4>::max();
+    x_DiveNode(ostr, 0, match_idx);
 }
 
 
@@ -257,90 +310,43 @@ bool CMerMatcherIndex::Load(CNcbiIstream& istr)
     Uint4 mc_total = 0;
     istr.read(reinterpret_cast<char*>(&mc_total), sizeof mc_total);
     if(istr.fail()) return false;
-    m_PlainMatches.resize(mc_total);
-    istr.read(reinterpret_cast<char*>(&m_PlainMatches.front()), 
+    m_FlatMatches.resize(mc_total);
+    istr.read(reinterpret_cast<char*>(&m_FlatMatches.front()), 
               mc_total * sizeof(TMatch));
     if(istr.fail()) return false;
 
     Uint4 nodes_total = 0;
     istr.read(reinterpret_cast<char*>(&nodes_total), sizeof nodes_total);
     if(istr.fail()) return false;
-    m_Nodes.resize(nodes_total);
-    istr.read(reinterpret_cast<char*>(&m_Nodes.front()), nodes_total * sizeof(SNode));
+    m_FlatNodes.resize(nodes_total);
+    istr.read(reinterpret_cast<char*>(&m_FlatNodes.front()), 
+              nodes_total * sizeof(SNodeFlat));
 
     return !istr.fail();
 }
 
 
-Uint4 CMerMatcherIndex::LookUp(TKey key)
+Uint4 CMerMatcherIndex::LookUp(TKey key) const
 {
-    Uint4 j = 0;
-    do {
-        const SNode& node = m_Nodes[j];
-        if(key < node.m_Key) j = node.m_Left;
-        else if(key > node.m_Key) j = node.m_Right;
-        else
-            return j;
-    } while(j > 0);
+    SNodeFlat key_node;
+    key_node.m_Key = key;
+    TFlatNodes::const_iterator ie = m_FlatNodes.end(),
+        ib = m_FlatNodes.begin(),
+        ii = lower_bound(ib, ie, key_node);
 
-    return numeric_limits<Uint4>::max();
+    return (ii == ie || ii->m_Key != key)? 
+        numeric_limits<Uint4>::max():
+        Uint4(ii - ib);
 }
 
-
-void CMerMatcherIndex::GetHits(TKey key, 
-                               CSeqDB& seqdb,
-                               CRef<CSeq_id> seqid_subj,
-                               Uint4 subj_min,
-                               THitRefs* phitrefs)
-{
-    Uint4 node_idx = LookUp(key);
-    if(node_idx != numeric_limits<Uint4>::max()) {
-        
-        const SNode& node = m_Nodes[node_idx];
-        for(Uint4 i = node.m_Data, iend = node.m_Data + node.m_Count; i < iend; ++i) {
-           
-            const TMatch& match = m_PlainMatches[i];
-            TOidToSeqId::const_iterator im = m_Oid2SeqId.find(match.m_OID);
-            CRef<CSeq_id> seqid_query;
-            if(im == m_Oid2SeqId.end()) {
-
-                seqid_query = seqdb.GetSeqIDs(match.m_OID).back();
-                m_Oid2SeqId[match.m_OID] = seqid_query;
-            }
-            else {
-                seqid_query = im->second;
-            }
-
-            THitRef hitref (new THit);
-            hitref->SetQueryId(seqid_query);
-            hitref->SetSubjId(seqid_subj);
-            if(match.m_Strand) {
-                hitref->SetSubjStart(subj_min);
-                hitref->SetSubjStop(subj_min + 15);
-            }
-            else {
-                hitref->SetSubjStart(subj_min + 15);
-                hitref->SetSubjStop(subj_min);
-            }
-            const Uint4 query_min = match.m_Offset << 4;
-            hitref->SetQueryStart(query_min);
-            hitref->SetQueryStop(query_min + 15);
-
-            hitref->SetLength(16);
-            hitref->SetMismatches(0);
-            hitref->SetGaps(0);
-            hitref->SetEValue(0);
-            hitref->SetIdentity(1.0);
-            hitref->SetScore(16.0);
-            phitrefs->push_back(hitref);
-        }
-    }
-}
 
 END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.4  2006/03/21 16:20:50  kapustin
+ * Various changes, mainly adjust the code with  other libs
+ *
  * Revision 1.3  2006/02/14 02:21:08  ucko
  * Use [] rather than .at() for compatibility with GCC 2.95.
  *
