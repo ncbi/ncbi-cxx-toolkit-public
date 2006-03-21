@@ -32,6 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbi_bswap.hpp>
+#include <corelib/ncbistr.hpp>
+#include <util/util_exception.hpp>
 #include <util/transmissionrw.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -187,8 +189,14 @@ ERW_Result CTransmissionReader::x_ReadStart()
     }
     m_ByteSwap = (start_word_coming != start_word);
 
-    _ASSERT(start_word_coming == 0x01020304 || 
-            start_word_coming == 0x04020301);
+    //    _ASSERT(start_word_coming == 0x01020304 || 
+    //            start_word_coming == 0x04030201);
+
+    if (start_word_coming != 0x01020304 &&
+        start_word_coming != 0x04030201)
+        NCBI_THROW(CUtilException, eWrongData,
+                   "Cannot determine the byte order. Ret: " 
+                   + NStr::UIntToString(start_word_coming));
 
     return res;
 }
@@ -215,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/21 17:40:35  didenko
+ * Fixed byte order check
+ *
  * Revision 1.7  2005/08/11 18:57:43  kuznets
  * Fixed bug in IWriter protocol implementation
  *
