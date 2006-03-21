@@ -188,10 +188,6 @@ public:
 
     void    EnableMultipleThreads(bool enable = true);
 
-    // simple RLE helpers
-    static string s_RunLengthEncode(const string& in);
-    static string s_RunLengthDecode(const string& in);
-
     // A naive pattern generator-use cautiously.
     // Do not use on sequences with repeats or error.
     size_t MakePattern(const size_t hit_size = 100, 
@@ -321,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/03/21 16:17:09  kapustin
+ * Move RLE code to xalgoalignutil
+ *
  * Revision 1.45  2005/07/26 16:43:21  kapustin
  * Move MakePattern() to CNWAligner
  *

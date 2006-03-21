@@ -749,63 +749,6 @@ string CNWAligner::GetTranscriptString(void) const
 }
 
 
-string CNWAligner::s_RunLengthEncode(const string& in)
-{
-    string out;
-    const size_t dim = in.size();
-    if(dim == 0) {
-        return kEmptyStr;
-    }
-    const char* p = in.c_str();
-    char c0 = p[0];
-    out.append(1, c0);
-    size_t count = 1;
-    for(size_t k = 1; k < dim; ++k) {
-        char c = p[k];
-        if(c != c0) {
-            c0 = c;
-            if(count > 1) {
-                out += NStr::IntToString(count);
-            }
-            count = 1;
-            out.append(1, c0);
-        }
-        else {
-            ++count;
-        }
-    }
-    if(count > 1) {
-        out += NStr::IntToString(count);
-    }
-    return out;
-}
-
-
-string CNWAligner::s_RunLengthDecode(const string& in)
-{
-    string out;
-    char c = 0;
-    Uint4 N = 0;
-    ITERATE(string, ii, in) {
-
-        if('0' <= *ii && *ii <= '9') {
-            N += 10*N + *ii - '0';
-        }
-        else {
-            if(N > 0) {
-                out.append(N - 1, c);
-                N = 0;
-            }
-            out.push_back(c = *ii);
-        }
-    }
-    if(N > 0) {
-        out.append(N - 1, c);
-    }
-    return out;
-}
-
-
 void CNWAligner::SetProgressCallback ( FProgressCallback prg_callback,
 				       void* data )
 {
@@ -1495,6 +1438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/03/21 16:21:51  kapustin
+ * Move RLE code to xalgoalignutil
+ *
  * Revision 1.69  2005/07/26 16:43:29  kapustin
  * Move MakePattern() to CNWAligner
  *
