@@ -48,7 +48,7 @@ public:
 
     // c'tors
     CBlastTabular(void) {};
-    CBlastTabular(const objects::CSeq_align& seq_align);
+    CBlastTabular(const objects::CSeq_align& seq_align, bool save_xcript = false);
     CBlastTabular(const char* m8);
 
     // getters / setters
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/03/21 16:16:44  kapustin
+ * Support edit transcript string
+ *
  * Revision 1.5  2005/09/12 16:21:34  kapustin
  * Add compartmentization algorithm
  *

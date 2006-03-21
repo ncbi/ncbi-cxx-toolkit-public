@@ -61,7 +61,7 @@ public:
 
     // c'tors
     CAlignShadow(void);
-    CAlignShadow(const objects::CSeq_align& seq_align);
+    CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcript = false);
 
     virtual ~CAlignShadow() {}
 
@@ -120,11 +120,20 @@ public:
     void   SetSubjStop(TCoord pos);
 
     void         Shift(Int4 shift_query, Int4 shift_subj);
-    virtual void Modify(Uint1 where, TCoord new_pos);
+
+    // 0 = query min, 1 = query max, 2 = subj min, 3 = subj max
+    virtual void Modify(Uint1 point, TCoord new_pos);
 
     // tabular serialization
     friend NCBI_XALGOALIGN_EXPORT CNcbiOstream& operator << (CNcbiOstream& os, 
                                       const CAlignShadow& align_shadow);
+
+    // optional alignment transcript
+    typedef string TTranscript;
+    const TTranscript& GetTranscript(void) const;
+    static string s_RunLengthEncode(const string& in);
+    static string s_RunLengthDecode(const string& in);
+
 
 protected:
     
@@ -137,6 +146,11 @@ protected:
 
     // tabular serialization without IDs
     virtual void   x_PartialSerialize(CNcbiOstream& os) const;
+
+    // alignment (edit) transcript is a sequence of elementary 
+    // string editing commands followed by their counts (if > 1), e.g.:M23RI5M40D3M9
+
+    TTranscript m_Transcript;
 };
 
 
@@ -147,6 +161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/03/21 16:16:44  kapustin
+ * Support edit transcript string
+ *
  * Revision 1.15  2006/02/13 19:48:23  kapustin
  * +SwapQS()
  *

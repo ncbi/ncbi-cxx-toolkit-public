@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 const CAlignShadow::TCoord g_UndefCoord 
     = numeric_limits<CAlignShadow::TCoord>::max();
 
-CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align)
+CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcript)
 {
     USING_SCOPE(objects);
 
@@ -98,6 +98,31 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align)
     else {
         m_Box[3] = seq_align.GetSeqStart(1);
         m_Box[2] = seq_align.GetSeqStop(1);
+    }
+
+    if(save_xcript) {
+
+        // compile edit transcript treating diags as matches
+        const CDense_seg::TStarts& starts = ds.GetStarts();
+        const CDense_seg::TLens& lens = ds.GetLens();
+        size_t i = 0;
+        ITERATE(CDense_seg::TLens, ii_lens, lens) {
+            char c;
+            if(starts[i] < 0) {
+                c = 'I';
+            }
+            else if(starts[i+1] < 0) {
+                c = 'D';
+            }
+            else {
+                c = 'M';
+            }
+            m_Transcript.push_back(c);
+            if(*ii_lens > 1) {
+                m_Transcript.append(NStr::IntToString(*ii_lens));
+            }
+            i += 2;
+        }
     }
 }
 
@@ -490,6 +515,12 @@ void CAlignShadow::SetSubjMin(TCoord val)
 }
 
 
+const CAlignShadow::TTranscript& CAlignShadow::GetTranscript(void) const
+{
+    return m_Transcript;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // partial serialization
 
@@ -497,6 +528,9 @@ void CAlignShadow::x_PartialSerialize(CNcbiOstream& os) const
 {
     os << GetQueryStart() + 1 << '\t' << GetQueryStop() + 1 << '\t'
        << GetSubjStart() + 1 << '\t' << GetSubjStop() + 1;
+    if(m_Transcript.size() > 0) {
+        os << '\t' << m_Transcript;
+    }
 }
 
 
@@ -544,6 +578,7 @@ void CAlignShadow::Shift(Int4 shift_query, Int4 shift_subj)
     m_Box[3] += shift_subj;
 }
 
+
 Int4 Round(const double& d)
 {
     const double fd = floor(d);
@@ -551,7 +586,8 @@ Int4 Round(const double& d)
     return Int4(rv);
 }
 
-void CAlignShadow::Modify(Uint1 where, TCoord new_pos)
+
+void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
 {
     TCoord qmin, qmax;
     bool qstrand;
@@ -579,98 +615,227 @@ void CAlignShadow::Modify(Uint1 where, TCoord new_pos)
         sstrand = false;
     }
 
-    TCoord qlen = 1 + qmax - qmin, slen = 1 + smax - smin;
-    double k = double(qlen) / slen;
-
-    Int4 delta_q, delta_s;
-    switch(where) {
-
-    case 0: // query min
-
-        if(new_pos >= qmax) {
-            goto invalid_newpos;
+    bool newpos_invalid = false;
+    if(point <= 1) {
+        if(new_pos < qmin || new_pos > qmax) {
+            newpos_invalid = true;
         }
+    }
+    else {
+        if(new_pos < smin || new_pos > smax) {
+            newpos_invalid = true;
+        }        
+    }
 
-        delta_q = new_pos - qmin;
-        delta_s = Round(delta_q / k);
-
-        SetQueryMin(qmin + delta_q);
-        if(qstrand == sstrand) {
-            SetSubjMin(smin + delta_s);
-        }
-        else {
-            SetSubjMax(smax - delta_s);
-        }
-
-        break;
-
-    case 1: // query max
-
-        if(new_pos <= qmin) {
-            goto invalid_newpos;
-        }
-
-        delta_q = new_pos - qmax;
-        delta_s = Round(delta_q / k);
-
-        SetQueryMax(qmax + delta_q);
-        if(qstrand == sstrand) {
-            SetSubjMax(smax + delta_s);
-        }
-        else {
-            SetSubjMin(smin - delta_s);
-        }
-
-        break;
-
-    case 2: // subj min
-
-        if(new_pos >= smax) {
-            goto invalid_newpos;
-        }
-
-        delta_s = new_pos - smin;
-        delta_q = Round(delta_s * k);
-
-        SetSubjMin(smin + delta_s);
-        if(qstrand == sstrand) {
-            SetQueryMin(qmin + delta_q);
-        }
-        else {
-            SetQueryMax(qmax - delta_q);
-        }
-
-        break;
-
-    case 3: // subj max
-
-        if(new_pos <= smin) {
-            goto invalid_newpos;
-        }
-
-        delta_s = new_pos - smax;
-        delta_q = Round(delta_s * k);
-
-        SetSubjMax(smax + delta_s);
-        if(qstrand == sstrand) {
-            SetQueryMax(qmin + delta_q);
-        }
-        else {
-            SetQueryMin(qmax - delta_q);
-        }
-
-        break;
-
-    default:
+    if(newpos_invalid) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   "CAlignShadow::Modify(): invalid end requested"); 
-    };
+                   "CAlignShadow::Modify(): requested new position invalid"); 
+    }
 
-    return;
+    const bool same_strands = qstrand == sstrand;
 
- invalid_newpos:
-    NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-               "CAlignShadow::Modify(): requested new position invalid"); 
+    TCoord q = 0, s = 0;
+
+    if(m_Transcript.size() > 0) {
+
+        q = GetQueryStart();
+        s = GetSubjStart();
+        Int1 dq = (qstrand? +1: -1), ds = (sstrand?  +1: -1);
+        string xcript (s_RunLengthDecode(m_Transcript));
+        size_t n1 = 0;
+        bool need_trace = true;
+        if(point <= 1) {
+            if(q == new_pos) need_trace = false;
+        }
+        else {
+            if(s == new_pos) need_trace = false;
+        }
+
+        if(need_trace) {
+            ITERATE(TTranscript, ii, xcript) {
+
+                ++n1;
+                switch(*ii) {
+                case 'M': case 'R': q += dq; s += ds; break;
+                case 'D': q += dq; break;
+                case 'I': s += ds; break;
+                default: {
+                    NCBI_THROW(CAlgoAlignUtilException, eInternal,
+                             "CAlignShadow::Modify(): unexpected transcript symbol"); 
+                }
+                }
+
+                if(point <= 1) {
+                    if(q == new_pos) break;
+                }
+                else {
+                    if(s == new_pos) break;
+                }
+            }
+        }
+
+        switch(point) {
+        case 0: // query min
+            SetQueryMin(q);
+            if(same_strands) { SetSubjMin(s); } else { SetSubjMax(s); }
+            break;
+        case 1: // query max
+            SetQueryMax(q);
+            if(same_strands) { SetSubjMax(s); } else { SetSubjMin(s); }
+            break;
+        case 2: // subj min
+            SetSubjMin(s);
+            if(same_strands) { SetQueryMin(q); } else { SetQueryMax(q); }
+            break;
+        case 3: // subj max
+            SetSubjMax(s);
+            if(same_strands) { SetQueryMax(q); } else { SetQueryMin(q); }
+            break;
+        default:
+            NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                       "CAlignShadow::Modify(): Invalid end point requested."); 
+        }
+
+        if(n1 > 0) {
+            if( (point%2) ^ (GetStrand(point/2)? 1: 0) ) {
+                xcript = xcript.substr(n1 - 1, xcript.size() - n1);
+            }
+            else {
+                xcript.resize(n1);
+            }
+            m_Transcript = s_RunLengthEncode(xcript);
+        }
+    }
+    else {
+
+        TCoord qlen = 1 + qmax - qmin, slen = 1 + smax - smin;
+        double k = double(qlen) / slen;
+        Int4 delta_q, delta_s;
+        switch(point) {
+
+        case 0: // query min
+
+            delta_q = new_pos - qmin;
+            delta_s = Round(delta_q / k);
+
+            SetQueryMin(qmin + delta_q);
+            if(same_strands) {
+                SetSubjMin(smin + delta_s);
+            }
+            else {
+                SetSubjMax(smax - delta_s);
+            }
+
+            break;
+
+        case 1: // query max
+
+            delta_q = new_pos - qmax;
+            delta_s = Round(delta_q / k);
+
+            SetQueryMax(qmax + delta_q);
+            if(same_strands) {
+                SetSubjMax(smax + delta_s);
+            }
+            else {
+                SetSubjMin(smin - delta_s);
+            }
+
+            break;
+
+        case 2: // subj min
+
+            delta_s = new_pos - smin;
+            delta_q = Round(delta_s * k);
+
+            SetSubjMin(smin + delta_s);
+            if(same_strands) {
+                SetQueryMin(qmin + delta_q);
+            }
+            else {
+                SetQueryMax(qmax - delta_q);
+            }
+
+            break;
+
+        case 3: // subj max
+
+            delta_s = new_pos - smax;
+            delta_q = Round(delta_s * k);
+
+            SetSubjMax(smax + delta_s);
+            if(same_strands) {
+                SetQueryMax(qmax + delta_q);
+            }
+            else {
+                SetQueryMin(qmin - delta_q);
+            }
+
+            break;
+
+        default:
+            NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                       "CAlignShadow::Modify(): invalid end requested"); 
+        };
+    }
+}
+
+
+string CAlignShadow::s_RunLengthEncode(const string& in)
+{
+    string out;
+    const size_t dim = in.size();
+    if(dim == 0) {
+        return kEmptyStr;
+    }
+    const char* p = in.c_str();
+    char c0 = p[0];
+    out.append(1, c0);
+    size_t count = 1;
+    for(size_t k = 1; k < dim; ++k) {
+        char c = p[k];
+        if(c != c0) {
+            c0 = c;
+            if(count > 1) {
+                out += NStr::IntToString(count);
+            }
+            count = 1;
+            out.append(1, c0);
+        }
+        else {
+            ++count;
+        }
+    }
+    if(count > 1) {
+        out += NStr::IntToString(count);
+    }
+    return out;
+}
+
+
+string CAlignShadow::s_RunLengthDecode(const string& in)
+{
+    string out;
+    char C = 0;
+    Uint4 N = 0;
+    ITERATE(string, ii, in) {
+
+        char c = *ii;
+        if('0' <= c && c <= '9') {
+            N = N * 10 + c - '0';
+        }
+        else {
+            if(N > 0) {
+                out.append(N - 1, C);
+                N = 0;
+            }
+            out.push_back(C = c);
+        }
+    }
+    if(N > 0) {
+        out.append(N - 1, C);
+    }
+    return out;
 }
 
 
@@ -679,6 +844,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.16  2006/03/21 16:18:30  kapustin
+ * Support edit transcript string
+ *
  * Revision 1.15  2006/02/13 19:48:33  kapustin
  * +SwapQS()
  *

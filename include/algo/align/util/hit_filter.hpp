@@ -40,8 +40,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
-
 /////////////////////////////////////////
 // CHitCoverageAccumulator
 
@@ -99,7 +97,6 @@ public:
 
     typedef CRef<THit>              THitRef;
     typedef vector<THitRef>         THitRefs;
-
     typedef typename THit::TCoord   TCoord;
 
     static  TCoord s_GetCoverage(Uint1 where, 
@@ -159,9 +156,194 @@ public:
             }
         }
     }
+
+    // Multiple greedy reconciliation algorithm
+    static void s_RunGreedy(typename THitRefs::iterator hri_beg, 
+                            typename THitRefs::iterator hri_end,
+                            TCoord min_hit_len = 100) {
+
+        if(hri_beg > hri_end) {
+            NCBI_THROW(CAlgoAlignUtilException, eInternal, 
+                       "Invalid input iterator order");
+        }
+
+        const size_t dim = hri_end - hri_beg;
+
+        // compile ordered set of hit ends
+        typename THitRefs::iterator ii = hri_beg;
+        CStopWatch sw (CStopWatch::eStart);
+        THitEnds hit_ends;
+        for(size_t i = 0; i < dim; ++i, ++ii) {
+
+            THitRef& h = *ii;
+            for(Uint1 point = 0; point < 4; ++point) {
+                THitEnd he;
+                he.m_Point = point;
+                he.m_Ptr = &h;
+                he.m_X = h->GetBox()[point];
+                hit_ends.insert(he);
+            }
+        }
+
+        vector<bool> skip (dim, false);
+        vector<bool> del (dim, false);
+        const THitRef* hitref_firstptr = &(*hri_beg);
+
+        while(true) {
+
+            // select the best hit
+            double score_best = 0;
+            typename THitRefs::iterator ii = hri_beg, ii_best = hri_end;
+            for(size_t i = 0; i < dim; ++i, ++ii) {
+                if(skip[i] == false) {
+                    const double score = (*ii)->GetScore();
+                    if(score > score_best) {
+                        ii_best = ii;
+                        score_best = score;
+                    }
+                }
+            }
+
+            if(ii_best == hri_end) {
+                break;
+            }
+
+            // truncate overlaps with the current best hit
+            const THitRef& hc = *ii_best;
+            THitEnd he [4];
+            for(Uint1 point = 0; point < 4; ++point) {
+                he[point].m_Point = point;
+                he[point].m_Ptr = const_cast<THitRef*>(&hc);
+                he[point].m_X = hc->GetBox()[point];
+            }
+
+            for(Uint1 where = 0; where < 2; ++where) {
+
+                const TCoord cmin = hc->GetMin(where);
+                const TCoord cmax = hc->GetMax(where);
+
+                const THitEnd *phe_lo, *phe_hi;
+                const Uint1 i1 = 2*where, i2 = i1 + 1;
+                if(hc->GetStrand(where)) {
+                    phe_lo = &he[i1];
+                    phe_hi = &he[i2];
+                }
+                else {
+                    phe_lo = &he[i2];
+                    phe_hi = &he[i1];
+                }
+                typedef typename THitEnds::iterator THitEndsIter;
+                THitEndsIter ii0 = hit_ends.lower_bound(*phe_lo);
+                THitEndsIter ii1 = hit_ends.lower_bound(*phe_hi);
+                typedef list<THitEndsIter> TIters;
+
+                for(typename THitEnds::iterator ii = ii0; ii != ii1; ++ii) {
+                    
+                    const THitEnd& he = *ii;
+                    const size_t hitrefidx = he.m_Ptr - hitref_firstptr;
+                    const bool alive = !skip[hitrefidx];
+                    const bool self = he.m_Ptr == &hc;
+
+                    if(alive && !self) {
+
+                        int newpos = sx_Cleave(*he.m_Ptr, he.m_Point/2, cmin, cmax, 
+                                               min_hit_len);
+
+                        if(newpos <= -2) { // eliminate
+                            del[hitrefidx] = skip[hitrefidx] = true;
+                        }
+                        if(newpos >= 0) { // truncated
+                            const TCoord* box = (*he.m_Ptr)->GetBox();
+                            {{
+                                THitEnd he2;
+                                he2.m_Point = he.m_Point;
+                                he2.m_Ptr = he.m_Ptr;
+                                he2.m_X = box[he2.m_Point];
+                                hit_ends.insert(he2);
+                            }}
+                            {{
+                                THitEnd he3;
+                                he3.m_Point = (he.m_Point + 2) % 4;
+                                he3.m_Ptr = he.m_Ptr;
+                                he3.m_X = box[he3.m_Point];
+                                hit_ends.insert(he3);
+                            }}
+                        }
+                    }
+                }
+            }
+
+            skip[&hc - hitref_firstptr] = true;
+        }
+
+        ii = hri_beg;
+        for(size_t i = 0; i < dim; ++i, ++ii) {
+            if(del[i]) {
+                ii->Reset(NULL);
+            }
+        }
+    }
+
+protected:
+
+    struct SHitEnd {
+
+        Uint1    m_Point; // 0 = query start, 1 = query stop, 2 = subj start, 3 = stop
+        THitRef* m_Ptr;
+        TCoord   m_X;
+
+        bool operator < (const SHitEnd& rhs) const {
+            
+            const Uint1 where1 = m_Point < 2? 0: 1;
+            const Uint1 where2 = rhs.m_Point < 2? 0: 1;
+            const THit& h1 = **m_Ptr;
+            const THit& h2 = **rhs.m_Ptr;
+            int c = h1.GetId(where1)->CompareOrdered(*h2.GetId(where2));
+            return c < 0? true: (c > 0? false: m_X < rhs.m_X);
+        }
+
+        friend ostream& operator << (ostream& ostr, const SHitEnd& he) {
+            return 
+                ostr << "(Point,Coord) = (" 
+                     << int(he.m_Point) << ", " 
+                     << he.m_X << ")\n"
+                     << **he.m_Ptr;
+        }
+    };
+
+    typedef SHitEnd THitEnd;
+    typedef multiset<THitEnd> THitEnds;
+
+    // return adjusted coordinate; -1 if unaffected; -2 to delete; -3 on exception
+    static int sx_Cleave(THitRef& h, Uint1 where, 
+                         TCoord cmin, TCoord cmax, TCoord min_hit_len) 
+    {
+        int rv = -1;
+
+        try {
+            TCoord lmin = h->GetMin(where), lmax = h->GetMax(where);
+            if(cmin <= lmin && lmax <= cmax) {
+                return -2;
+            }
+            if(lmin <= cmin && cmin <= lmax) {
+                if(cmin == 0) return -1;
+                h->Modify(2*where + 1, lmax = cmin - 1);
+                rv = lmax;
+            }
+            if(lmin <= cmax && cmax <= lmax) {
+                h->Modify(2*where, lmin = cmax + 1);
+                rv = lmin;
+            }
+            if(1 + lmax - lmin < min_hit_len) {
+                return -2;
+            }
+        }
+        catch(CAlgoAlignUtilException&) {
+            rv = -3; // hit would become inconsistent through the adjustment
+        }
+        return rv;
+    }
 };
-
-
 
 
 END_NCBI_SCOPE
@@ -171,6 +353,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/03/21 16:16:44  kapustin
+ * Support edit transcript string
+ *
  * Revision 1.5  2005/09/12 16:21:34  kapustin
  * Add compartmentization algorithm
  *

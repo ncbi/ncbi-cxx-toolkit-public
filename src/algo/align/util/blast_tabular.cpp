@@ -44,8 +44,8 @@ USING_SCOPE(objects);
 // explicit specializations
 
 
-CBlastTabular::CBlastTabular(const CSeq_align& seq_align):
-    TParent(seq_align)
+CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
+    TParent(seq_align, save_xcript)
 {
     const CDense_seg &ds = seq_align.GetSegs().GetDenseg();
     const CDense_seg::TLens& lens = ds.GetLens();
@@ -225,6 +225,9 @@ void CBlastTabular::x_PartialSerialize(CNcbiOstream& os) const
        << TParent::GetSubjStart() + 1 << '\t' 
        << TParent::GetSubjStop() + 1 << '\t'
        << GetEValue() << '\t' << GetScore();
+    if(m_Transcript.size() > 0) {
+        os << '\t' << m_Transcript;
+    }
 }
 
 
@@ -267,15 +270,89 @@ void CBlastTabular::x_PartialDeserialize(const char* m8)
 
 void CBlastTabular::Modify(Uint1 where, TCoord new_pos)
 {
-    const TCoord query_span_old = GetQuerySpan();
-    TParent::Modify(where, new_pos);
-    const TCoord query_span_new = GetQuerySpan();
-    const double kq = double(query_span_new) / query_span_old;
+    const size_t trlen = GetTranscript().size();
+    if(trlen > 0) {
 
-    SetMismatches(TCoord(kq*GetMismatches()));
-    SetGaps(TCoord(kq*GetGaps()));
-    SetLength(TCoord(kq*GetLength()));
-    SetScore(kq*GetScore());
+        
+ /* This is accurate but assumes that mismatches are included
+    in the transcript, not just matches coding for generic diags.
+    So keep it commented out for a while.
+
+        const TCoord matches_old = TCoord(trlen * GetIdentity());
+        TParent::Modify(where, new_pos);
+        const TTranscript& tr_new = GetTranscript();
+
+        TCoord gaps = 0;
+        TCoord matches = 0;
+        TCoord mismatches = 0;
+        bool m = false, mm = false;
+        TCoord mcnt = 0, mmcnt = 0;
+        ITERATE(TTranscript, ii, tr_new) {
+
+            char c = *ii;
+            if(c == 'D' || c == 'I') {
+                ++gaps;
+                if(m) {
+                    matches += mcnt == 0? 1: mcnt;
+                    m = false;
+                }
+                if(mm) {
+                    mismatches += mcnt == 0? 1: mmcnt;
+                    mm = false;
+                }
+            }
+            else if (c == 'M') {
+                m = true;
+                mcnt = 0;
+            }
+            else if (c == 'R') {
+                mm = true;
+                mmcnt = 0;
+            }
+            else if('0' <= c && c <= '9') {
+                if(m) {
+                    mcnt = 10*mcnt + c - '0';
+                }
+                if(mm) {
+                    mmcnt = 10*mmcnt + c - '0';
+                }
+            }
+            else {
+                NCBI_THROW(CAlgoAlignUtilException, eInternal,
+                           "Unexpected transcript symbol.");
+            }
+        }
+        if(m) {
+            matches += mcnt == 0? 1: mcnt;
+        }
+        if(mm) {
+            mismatches += mmcnt == 0? 1: mmcnt;
+        }
+        SetMismatches(mismatches);
+        SetGaps(gaps);
+        SetLength(matches + mismatches + indels);
+        SetScore(GetScore() * matches / double(matches_old));
+ */
+
+        const TCoord trlen_old = s_RunLengthDecode(GetTranscript()).size();
+        TParent::Modify(where, new_pos);
+        const TCoord trlen_new = s_RunLengthDecode(GetTranscript()).size();
+        const double kq = double(trlen_new) / trlen_old;
+        SetMismatches(TCoord(kq*GetMismatches()));
+        SetGaps(TCoord(kq*GetGaps()));
+        SetLength(trlen_new);
+        SetScore(kq*GetScore());
+    }
+    else {
+        const TCoord query_span_old = GetQuerySpan();
+        TParent::Modify(where, new_pos);
+        const TCoord query_span_new = GetQuerySpan();
+        const double kq = double(query_span_new) / query_span_old;
+        SetMismatches(TCoord(kq*GetMismatches()));
+        SetGaps(TCoord(kq*GetGaps()));
+        SetLength(TCoord(kq*GetLength()));
+        SetScore(kq*GetScore());
+    }
 }
 
 END_NCBI_SCOPE
