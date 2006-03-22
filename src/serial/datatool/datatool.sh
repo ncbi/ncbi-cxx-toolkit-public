@@ -2,7 +2,7 @@
 # $Id$
 #
 
-bases="@srcdir@/testdata /am/ncbiapdata/test_data/objects"
+bases="./testdata /am/ncbiapdata/test_data/objects"
 
 do_test() {
     eval args=\""$1"\"

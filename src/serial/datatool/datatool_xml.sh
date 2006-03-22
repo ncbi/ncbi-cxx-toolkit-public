@@ -2,7 +2,7 @@
 # $Id$
 #
 
-base="${1:-@srcdir@/testdata}"
+base="${1:-./testdata}"
 if test ! -d $base; then
     echo "Error -- test data dir not found: $base"
     exit 1
