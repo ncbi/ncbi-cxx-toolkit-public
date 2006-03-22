@@ -157,7 +157,7 @@ struct SNC_ThreadData
     string      tmp;
 
     SNC_ThreadData(size_t size)
-        : buffer(new char[size + 256]), buffer_size(size /* + 256? */)
+        : buffer(new char[size + 256]), buffer_size(size)
     {}
 };
 
@@ -535,6 +535,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/22 14:01:08  kuznets
+ * Missing buffer size declaration
+ *
  * Revision 1.6  2006/03/21 23:21:41  ucko
  * Attempt to supply SNC_ThreadData::buffer_size properly.
  *
