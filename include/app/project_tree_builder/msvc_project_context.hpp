@@ -349,6 +349,7 @@ struct ICompilerTool : public ITool
     virtual string GlobalOptimizations(void)		     const = 0;
     virtual string FavorSizeOrSpeed(void)		         const = 0;
     virtual string BrowseInformation(void)		         const = 0;
+    virtual string ProgramDataBaseFileName(void)	     const = 0;
 };
 
 
@@ -547,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/03/22 20:26:43  gouriano
+ * Added PDB file name option to compiler
+ *
  * Revision 1.26  2006/02/15 19:47:44  gouriano
  * Exclude projects with unmet requirements from BUILD-ALL
  *

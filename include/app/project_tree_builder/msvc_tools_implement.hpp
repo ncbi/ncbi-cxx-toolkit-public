@@ -132,14 +132,16 @@ public:
                       const IMsvcMetaMakefile& meta_makefile,
                       const SConfigInfo&       config,
                       TTargetType              target_type,
-                      const list<string>&      defines)
+                      const list<string>&      defines,
+                      const string&            project_id)
 	    :m_AdditionalIncludeDirectories(additional_include_dirs),
          m_MsvcProjectMakefile         (project_makefile),
          m_RuntimeLibraryOption        (runtimeLibraryOption),
          m_MsvcMetaMakefile            (meta_makefile),
          m_Config                      (config),
          m_Defines                     (defines),
-         m_TargetType                  (target_type)
+         m_TargetType                  (target_type),
+		 m_ProjectId                   (project_id)
     {
     }
 
@@ -217,6 +219,20 @@ public:
     SUPPORT_COMPILER_OPTION(FavorSizeOrSpeed)
     SUPPORT_COMPILER_OPTION(BrowseInformation)
 
+    virtual string ProgramDataBaseFileName(void) const
+    {
+        string pdb_file = 
+            GetCompilerOpt(m_MsvcMetaMakefile,
+                         m_MsvcProjectMakefile,
+                         "ProgramDataBaseFileName", 
+                         m_Config );
+        if( !pdb_file.empty() )
+            return pdb_file;
+
+	    return string("$(IntDir)\\") + m_ProjectId + ".pdb";
+//	    return string("$(OutDir)\\$(ProjectName).pdb");
+    }
+
 private:
     string                   m_AdditionalIncludeDirectories;
     const IMsvcMetaMakefile& m_MsvcProjectMakefile;
@@ -226,6 +242,7 @@ private:
     list<string>             m_Defines;
 
     TTargetType              m_TargetType;
+    string      m_ProjectId;
 
     // No value-type semantics
     CCompilerToolImpl(void);
@@ -753,6 +770,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/03/22 20:26:43  gouriano
+ * Added PDB file name option to compiler
+ *
  * Revision 1.25  2006/01/10 17:39:42  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

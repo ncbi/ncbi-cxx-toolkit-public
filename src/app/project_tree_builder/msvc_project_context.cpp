@@ -969,7 +969,8 @@ s_CreateCompilerTool(const CMsvcPrjGeneralContext& general_context,
         general_context.GetMsvcMetaMakefile(),
         general_context.m_Config,
         general_context.m_Type,
-        project_context.Defines(general_context.m_Config));
+        project_context.Defines(general_context.m_Config),
+        project_context.ProjectId());
 }
 
 
@@ -1076,6 +1077,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/03/22 20:26:10  gouriano
+ * Added PDB file name option to compiler
+ *
  * Revision 1.57  2006/02/15 19:47:24  gouriano
  * Exclude projects with unmet requirements from BUILD-ALL
  *

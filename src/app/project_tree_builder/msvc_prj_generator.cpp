@@ -153,6 +153,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.Compiler(), GlobalOptimizations);
             BIND_TOOLS(tool, msvc_tool.Compiler(), FavorSizeOrSpeed);
             BIND_TOOLS(tool, msvc_tool.Compiler(), BrowseInformation);
+            BIND_TOOLS(tool, msvc_tool.Compiler(), ProgramDataBaseFileName);
 
             conf->SetTool().push_back(tool);
         }}
@@ -482,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/03/22 20:26:10  gouriano
+ * Added PDB file name option to compiler
+ *
  * Revision 1.46  2006/02/22 17:33:23  gouriano
  * Get ready for 64 bits platform
  *
