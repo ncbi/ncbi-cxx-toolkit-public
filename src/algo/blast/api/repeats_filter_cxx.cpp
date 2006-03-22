@@ -258,9 +258,26 @@ s_FillMaskLocFromBlastHSPResults(CBlastQueryVector & query,
         CRef<CBlastQueryFilteredFrames> frames
             (new CBlastQueryFilteredFrames(program, mqr));
         
-        _ASSERT(! frames->QueryIsMulti());
+        vector<CBlastQueryFilteredFrames::ETranslationFrame> used
+            = frames->ListFrames();
         
-        BlastSeqLoc* loc_list = *(*frames)[0];
+        BlastSeqLoc* loc_list = 0;
+        
+        for(int frame_i = 0; frame_i < (int) used.size(); frame_i++) {
+            // Pick frame +1 for nucleotide, or 0 (the only one) for protein.
+            int pframe = used[frame_i];
+            
+            BlastSeqLoc* locs1 = *(*frames)[pframe];
+            frames->Release(pframe);
+            
+            BlastSeqLoc ** pplast = & loc_list;
+            
+            while(*pplast) {
+                pplast = & (*pplast)->next;
+            }
+            
+            *pplast = locs1;
+        }
         
         /* Find all HSP intervals in query */
         for (Int4 hit_index = 0; hit_index < hit_list->hsplist_count; 
@@ -425,6 +442,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.27  2006/03/22 20:07:40  bealer
+ *  - Check in fix for BlastSeqLoc double free.
+ *
  *  Revision 1.26  2006/03/13 16:43:51  bealer
  *  - Fix protein masking issue.
  *
