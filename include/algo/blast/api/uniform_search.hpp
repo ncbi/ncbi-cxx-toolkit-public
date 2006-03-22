@@ -105,40 +105,71 @@ public:
 /// Blast Search Subject
 class NCBI_XBLAST_EXPORT CSearchDatabase : public CObject {
 public:
+    /// Define a list of gis
     typedef vector<int> TGiList;
+
+    /// Molecule of the BLAST database
     enum EMoleculeType {
-        eBlastDbIsProtein,
-        eBlastDbIsNucleotide
+        eBlastDbIsProtein,      ///< protein
+        eBlastDbIsNucleotide    ///< nucleotide
     };
 
+    /// Simple constructor
+    /// @param dbname database name [in]
+    /// @param mol_type molecule type [in]
     CSearchDatabase(const string& dbname, EMoleculeType mol_type);
 
+    /// Constructor with allows an entrez query to be specified
+    /// @param dbname database name [in]
+    /// @param mol_type molecule type [in]
+    /// @param entrez_query entrez query string [in]
     CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                     const string& entrez_query);
 
+    /// Constructor with allows a gi list to be specified
+    /// @param dbname database name [in]
+    /// @param mol_type molecule type [in]
+    /// @param entrez_query entrez query string [in]
     CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                     const TGiList& gilist);
 
+    /// Constructor with allows a gi list and an entrez query to be specified
+    /// @param dbname database name [in]
+    /// @param mol_type molecule type [in]
+    /// @param entrez_query entrez query string [in]
+    /// @param entrez_query entrez query string [in]
     CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                     const string& entrez_query, const TGiList& gilist);
 
+    /// Mutator for the database name
+    /// @param dbname database name [in]
     void SetDatabaseName(const string& dbname);
+    /// Accessor for the database name
     string GetDatabaseName() const;
 
+    /// Mutator for the molecule type
+    /// @param mol_type molecule type [in]
     void SetMoleculeType(EMoleculeType mol_type);
+    /// Accessor for the molecule type
     EMoleculeType GetMoleculeType() const;
 
+    /// Mutator for the entrez query
+    /// @param entrez_query entrez query string [in]
     void SetEntrezQueryLimitation(const string& entrez_query);
+    /// Accessor for the entrez query
     string GetEntrezQueryLimitation() const;
 
+    /// Mutator for the gi list
+    /// @param gilist list of gis [in]
     void SetGiListLimitation(const TGiList& gilist);
+    /// Accessor for the gi list
     const TGiList& GetGiListLimitation() const;
 
 private:
-    string          m_DbName;
-    EMoleculeType   m_MolType;
-    string          m_EntrezQueryLimitation;
-    TGiList         m_GiListLimitation;
+    string          m_DbName;                   ///< database name
+    EMoleculeType   m_MolType;                  ///< molecule type
+    string          m_EntrezQueryLimitation;    ///< entrez query
+    TGiList         m_GiListLimitation;         ///< gi list
 };
 
 
@@ -150,32 +181,45 @@ private:
 class NCBI_XBLAST_EXPORT CSearchResults : public CObject {
 public:
     
+    /// Constructor
+    /// @param align alignments for a single query sequence [in]
+    /// @param errs error messages for this query sequence [in]
     CSearchResults(CRef<objects::CSeq_align_set> align, 
                    const TQueryMessages & errs)
         : m_Alignment(align), m_Errors(errs)
     {
     }
     
+    /// Accessor for the Seq-align results
     CConstRef<objects::CSeq_align_set> GetSeqAlign() const
     {
         return m_Alignment;
     }
     
+    /// Accessor for the query's sequence identifier
     CConstRef<objects::CSeq_id> GetSeqId() const;
     
+    /// Accessor for the error/warning messsages for this query
+    /// @param min_severity minimum severity to report errors [in]
     TQueryMessages GetErrors(int min_severity = eBlastSevError) const;
 
     /// Retrieve the query regions which were masked by BLAST
     /// @param flt_query_regions the return value [in|out]
     void GetMaskedQueryRegions(TMaskedQueryRegions& flt_query_regions) const;
 
+    /// Mutator for the masked query regions, intended to be used by internal
+    /// BLAST APIs to populate this object
+    /// @param flt_query_regions the input value [in]
     void SetMaskedQueryRegions(TMaskedQueryRegions& flt_query_regions);
     
 private:
+    /// alignments for this query
     CRef<objects::CSeq_align_set> m_Alignment;
     
+    /// error/warning messages for this query
     TQueryMessages m_Errors;
 
+    /// this query's masked regions
     TMaskedQueryRegions m_Masks;
 };
 
@@ -187,10 +231,13 @@ private:
 
 class NCBI_XBLAST_EXPORT CSearchResultSet {
 public:
-    CSearchResultSet()
-    {
-    }
+
+    /// Default constructor
+    CSearchResultSet() {}
     
+    /// Parametrized constructor
+    /// @param aligns vector of all queries' alignments [in]
+    /// @param msg_vec vector of all queries' messages [in]
     CSearchResultSet(TSeqAlignVector aligns, TSearchMessages msg_vec);
     
     CSearchResults & operator[](int i)
@@ -198,30 +245,41 @@ public:
         return *m_Results[i];
     }
     
+    /// Allow array-like access with integer indices to CSearchResults 
+    /// contained by this object
+    /// @param i query sequence index [in]
     const CSearchResults & operator[](int i) const
     {
         return *m_Results[i];
     }
     
+    /// Allow array-like access with CSeq_id indices to CSearchResults 
+    /// contained by this object
+    /// @param ident query sequence identifier [in]
     CRef<CSearchResults> operator[](const objects::CSeq_id & ident);
     
+    /// Allow array-like access with CSeq_id indices to const CSearchResults 
+    /// contained by this object
+    /// @param ident query sequence identifier [in]
     CConstRef<CSearchResults> operator[](const objects::CSeq_id & ident) const;
     
+    /// Return the number of results contained by this object
     int GetNumResults() const
     {
         return (int) m_Results.size();
     }
     
+    /// Add results to this object, intended to be used by internal
+    /// BLAST APIs to populate this object
+    /// @param result results for a given query [in]
     void AddResult(CRef<CSearchResults> result)
     {
         m_Results.push_back(result);
     }
     
 private:
-    typedef vector< CRef<CSearchResults> > TResultsVector;
-    
     /// Vector of results.
-    TResultsVector m_Results;
+    vector< CRef<CSearchResults> > m_Results;
 };
 
 
