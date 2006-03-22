@@ -163,6 +163,7 @@
 /* Definitions for NCBI_ALGO.DLL
  */
 #ifdef NCBI_XALGO_EXPORTS
+#  define NCBI_COBALT_EXPORTS
 #  define NCBI_XALGOALIGN_EXPORTS
 #  define NCBI_XALGOSEQ_EXPORTS
 #  define NCBI_XALGOGNOMON_EXPORTS
@@ -744,6 +745,14 @@
 
 /* Export specifier for library xalgoalign
  */
+#ifdef NCBI_COBALT_EXPORTS
+#  define NCBI_COBALT_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_COBALT_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library xalgoalign
+ */
 #ifdef NCBI_XALGOALIGN_EXPORTS
 #  define NCBI_XALGOALIGN_EXPORT __declspec(dllexport)
 #else
@@ -1081,15 +1090,16 @@
 #  define NCBI_ACCESS_EXPORT
 #  define NCBI_BDB_CACHE_EXPORT
 #  define NCBI_BDB_EXPORT
-#  define NCBI_NET_CACHE_EXPORT
-#  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BIOTREE_EXPORT
 #  define NCBI_BLASTDB_EXPORT
 #  define NCBI_BLASTXML_EXPORT
 #  define NCBI_BLAST_EXPORT
+#  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT
 #  define NCBI_CDD_EXPORT
+#  define NCBI_CLEANUP_EXPORT
 #  define NCBI_CN3D_EXPORT
+#  define NCBI_COBALT_EXPORT
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_EXPORT
@@ -1121,6 +1131,7 @@
 #  define NCBI_MMDB2_EXPORT
 #  define NCBI_MMDB3_EXPORT
 #  define NCBI_NCBIMIME_EXPORT
+#  define NCBI_NET_CACHE_EXPORT
 #  define NCBI_OBJPRT_EXPORT
 #  define NCBI_OMSSA_EXPORT
 #  define NCBI_PCASSAY_EXPORT
@@ -1133,33 +1144,33 @@
 #  define NCBI_SEQALIGN_EXPORT
 #  define NCBI_SEQBLOCK_EXPORT
 #  define NCBI_SEQCODE_EXPORT
+#  define NCBI_SEQEDIT_EXPORT
 #  define NCBI_SEQFEAT_EXPORT
 #  define NCBI_SEQLOC_EXPORT
 #  define NCBI_SEQRES_EXPORT
 #  define NCBI_SEQSET_EXPORT
-#  define NCBI_SEQEDIT_EXPORT
 #  define NCBI_SEQTEST_EXPORT
 #  define NCBI_SEQUENCE_EXPORT
 #  define NCBI_SEQ_EXPORT
 #  define NCBI_SUBMIT_EXPORT
 #  define NCBI_TAXON1_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
-#  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_VALERR_EXPORT
-#  define NCBI_CLEANUP_EXPORT
+#  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
 #  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORT
+#  define NCBI_XALGODUSTMASK_EXPORT
 #  define NCBI_XALGOGNOMON_EXPORT
 #  define NCBI_XALGOPHYTREE_EXPORT
 #  define NCBI_XALGOSEQQA_EXPORT
 #  define NCBI_XALGOSEQ_EXPORT
 #  define NCBI_XALGOWINMASK_EXPORT
-#  define NCBI_XALGODUSTMASK_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XALNUTIL_EXPORT
 #  define NCBI_XBLASTFORMAT_EXPORT
 #  define NCBI_XCGI_EXPORT
 #  define NCBI_XCGI_REDIRECT_EXPORT
+#  define NCBI_XCONNEXT_EXPORT
 #  define NCBI_XGRIDCGI_EXPORT
 #  define NCBI_XHTML_EXPORT
 #  define NCBI_XIMAGE_EXPORT
@@ -1167,9 +1178,9 @@
 #  define NCBI_XLOADER_CDD_EXPORT
 #  define NCBI_XLOADER_GENBANK_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
+#  define NCBI_XLOADER_PATCHER_EXPORT
 #  define NCBI_XLOADER_TABLE_EXPORT
 #  define NCBI_XLOADER_TRACE_EXPORT
-#  define NCBI_XLOADER_PATCHER_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJEDIT_EXPORT
 #  define NCBI_XOBJMANIP_EXPORT
@@ -1179,16 +1190,15 @@
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XOBJWRITE_EXPORT
 #  define NCBI_XOMSSA_EXPORT
+#  define NCBI_XREADER_CACHE_EXPORT
 #  define NCBI_XREADER_EXPORT
 #  define NCBI_XREADER_ID1_EXPORT
 #  define NCBI_XREADER_ID2_EXPORT
-#  define NCBI_XREADER_CACHE_EXPORT
 #  define NCBI_XREADER_PUBSEQOS_EXPORT
 #  define NCBI_XREGEXP_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XSQLITE_EXPORT
 #  define NCBI_XUTIL_EXPORT
-#  define NCBI_XCONNEXT_EXPORT
 
 #endif
 
@@ -1210,6 +1220,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.114  2006/03/22 15:59:53  dicuccio
+ * Added export specifier for COBALT.  Reordered dummy defines for Unix.
+ *
  * Revision 1.113  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *
