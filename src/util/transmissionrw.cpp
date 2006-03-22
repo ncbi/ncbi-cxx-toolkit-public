@@ -61,22 +61,36 @@ CTransmissionWriter::~CTransmissionWriter()
     }
 }
 
+namespace {
+class CIOBytesCountGuard 
+{
+public:
+    CIOBytesCountGuard(size_t* ret, const size_t& count)
+        : m_Ret(ret), m_Count(count) 
+    {}
+
+    ~CIOBytesCountGuard() { if (m_Ret) *m_Ret = m_Count; }
+private:
+    size_t* m_Ret;
+    const size_t& m_Count;
+};
+} // namespace
 
 ERW_Result CTransmissionWriter::Write(const void* buf,
                                       size_t      count,
                                       size_t*     bytes_written)
 {
     ERW_Result res;
-    size_t written;
-    if (bytes_written) *bytes_written = 0;
+    size_t wrt_count = 0;
+    CIOBytesCountGuard guard(bytes_written, wrt_count);
 
+    size_t written = 0;
     Int4 cnt = (Int4)count;
     res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
     if (res != eRW_Success) 
         return res;
     if (written != sizeof(cnt))
         return eRW_Error;
-    size_t wrt_count = 0;
     for (const char* ptr = (char*)buf; count > 0; ptr += written) {
         res = m_Wrt->Write(ptr, count, &written);
         count -= written;
@@ -84,7 +98,6 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
         if (res != eRW_Success) 
 	        return res;
     }
-    if (bytes_written) *bytes_written = wrt_count;
     return res;
 }
 
@@ -120,7 +133,8 @@ ERW_Result CTransmissionReader::Read(void*    buf,
                                      size_t*  bytes_read)
 {
     ERW_Result res;
-    if (bytes_read) *bytes_read = 0;
+    size_t read_count = 0;
+    CIOBytesCountGuard guard(bytes_read, read_count);
 
     if (!m_StartRead) {
         res = x_ReadStart();
@@ -145,10 +159,8 @@ ERW_Result CTransmissionReader::Read(void*    buf,
 
     size_t to_read = min(count, m_PacketBytesToRead);
 
-    size_t read;
-    res = m_Rdr->Read(buf, to_read, &read);
-    m_PacketBytesToRead -= read;
-    if (bytes_read) *bytes_read = read;
+    res = m_Rdr->Read(buf, to_read, &read_count);
+    m_PacketBytesToRead -= read_count;
 
     return res;
 }
@@ -210,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/03/22 17:01:37  didenko
+ * Fixed calculation of bytes_read/bytes_written
+ *
  * Revision 1.9  2006/03/22 14:14:07  didenko
  * Cosmetics
  *

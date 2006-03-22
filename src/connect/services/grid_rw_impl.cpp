@@ -48,16 +48,33 @@ CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()
     m_Storage.Reset();
 }
 
+namespace {
+class CIOBytesCountGuard 
+{
+public:
+    CIOBytesCountGuard(size_t* ret, const size_t& count)
+        : m_Ret(ret), m_Count(count) 
+    {}
+
+    ~CIOBytesCountGuard() { if (m_Ret) *m_Ret = m_Count; }
+private:
+    size_t* m_Ret;
+    const size_t& m_Count;
+};
+} // namespace
+
 ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
                                              size_t      count,
                                              size_t*     bytes_written)
 {
-    if (bytes_written) *bytes_written = 0;
+    size_t written = 0;
+    CIOBytesCountGuard guard(bytes_written, written);
+
     if (count == 0) 
         return eRW_Success;
 
     if (m_BlobOstr) 
-        return x_WriteToStream(buf,count,bytes_written);
+        return x_WriteToStream(buf,count, &written);
 
     if (m_Data.size()+count > m_MaxBuffSize) {
         _ASSERT(!m_BlobOstr);
@@ -74,10 +91,10 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
                 return ret;
             }
         }
-        return x_WriteToStream(buf,count,bytes_written);            
+        return x_WriteToStream(buf,count, &written);            
     }
     m_Data.append( (const char*)buf, count);
-    if (bytes_written) *bytes_written = count;
+    written = count;
     return eRW_Success;
 }
 
@@ -93,9 +110,13 @@ ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
                                                        size_t*     bytes_written)
 {
     _ASSERT(m_BlobOstr);
+    CNcbiStreampos pos = m_BlobOstr->tellp();
     m_BlobOstr->write((const char*)buf, count);
+    if (bytes_written) { 
+        *bytes_written = (pos != (CNcbiStreampos)-1) ? m_BlobOstr->tellp() - pos 
+                                                     : count;
+    }
     if (m_BlobOstr->good()) {
-        if (bytes_written) *bytes_written = count;
         return eRW_Success;
     }
     return eRW_Error;
@@ -135,7 +156,8 @@ ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
                                             size_t  count,
                                             size_t* bytes_read)
 {
-    if (bytes_read) *bytes_read = 0;
+    size_t read = 0;
+    CIOBytesCountGuard guard(bytes_read, read);
     if (count == 0)
         return eRW_Success;
         
@@ -147,7 +169,7 @@ ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
             return eRW_Error;
         }
         m_BlobIstr->read((char*) buf, count);
-        if (bytes_read) *bytes_read = m_BlobIstr->gcount();
+        read = m_BlobIstr->gcount();
         return eRW_Success;
     }
     if (m_CurPos == m_Data.end()) {
@@ -158,7 +180,7 @@ ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
         count = bytes_rest;
     memcpy(buf, &*m_CurPos, count);
     advance(m_CurPos, count);
-    if (bytes_read) *bytes_read = count;
+    read = count;
     return eRW_Success;
 }
 
@@ -181,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2006/03/22 17:01:37  didenko
+ * Fixed calculation of bytes_read/bytes_written
+ *
  * Revision 6.3  2006/03/16 15:13:09  didenko
  * Fixed writer algorithm
  * + Comments
