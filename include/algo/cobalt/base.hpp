@@ -1,3 +1,6 @@
+#ifndef ALGO_COBALT___BASE__HPP
+#define ALGO_COBALT___BASE__HPP
+
 /* $Id$
 * ===========================================================================
 *
@@ -35,9 +38,6 @@ Contents: Definitions used by all COBALT aligner components
 
 /// @file base.hpp
 /// Definitions used by all COBALT aligner components
-
-#ifndef _ALGO_COBALT_BASE_HPP_
-#define _ALGO_COBALT_BASE_HPP_
 
 #include <util/range.hpp>
 
@@ -121,18 +121,23 @@ static const int kAlphabetSize = 26;
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-#endif // _ALGO_COBALT_BASE_HPP_
+/* ===================================================================
+ * $Log$
+ * Revision 1.4  2006/03/22 19:23:17  dicuccio
+ * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
+ * specifiers
+ *
+ * Revision 1.3  2005/11/08 18:01:24  papadopo
+ * fix typo
+ *
+ * Revision 1.2  2005/11/08 17:39:56  papadopo
+ * 1. Move includes to the headers that use them
+ * 2. Add doxygen
+ *
+ * Revision 1.1  2005/11/07 18:15:52  papadopo
+ * Initial revision
+ *
+ * ====================================================================
+ */
 
-/*--------------------------------------------------------------------
-  $Log$
-  Revision 1.3  2005/11/08 18:01:24  papadopo
-  fix typo
-
-  Revision 1.2  2005/11/08 17:39:56  papadopo
-  1. Move includes to the headers that use them
-  2. Add doxygen
-
-  Revision 1.1  2005/11/07 18:15:52  papadopo
-  Initial revision
-
---------------------------------------------------------------------*/
+#endif // ALGO_COBALT___BASE__HPP

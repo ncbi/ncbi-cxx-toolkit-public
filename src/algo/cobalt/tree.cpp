@@ -257,21 +257,26 @@ CTree::ComputeTree(const CDistMethods::TMatrix& distances)
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-/*--------------------------------------------------------------------
-  $Log$
-  Revision 1.5  2006/01/11 16:44:44  papadopo
-  handle rerooting a tree whose distance matrix is degenerate
-
-  Revision 1.4  2005/11/21 21:03:00  papadopo
-  fix documentation, add doxygen
-
-  Revision 1.3  2005/11/08 18:42:16  papadopo
-  assert -> _ASSERT
-
-  Revision 1.2  2005/11/08 17:56:56  papadopo
-  ASSERT -> assert
-
-  Revision 1.1  2005/11/07 18:14:01  papadopo
-  Initial revision
-
---------------------------------------------------------------------*/
+/* ====================================================================
+ * $Log$
+ * Revision 1.6  2006/03/22 19:23:17  dicuccio
+ * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
+ * specifiers
+ *
+ * Revision 1.5  2006/01/11 16:44:44  papadopo
+ * handle rerooting a tree whose distance matrix is degenerate
+ *
+ * Revision 1.4  2005/11/21 21:03:00  papadopo
+ * fix documentation, add doxygen
+ *
+ * Revision 1.3  2005/11/08 18:42:16  papadopo
+ * assert -> _ASSERT
+ *
+ * Revision 1.2  2005/11/08 17:56:56  papadopo
+ * ASSERT -> assert
+ *
+ * Revision 1.1  2005/11/07 18:14:01  papadopo
+ * Initial revision
+ *
+ * ====================================================================
+ */

@@ -1,3 +1,6 @@
+#ifndef ALGO_COBALT___HITLIST__HPP
+#define ALGO_COBALT___HITLIST__HPP
+
 /* $Id$
 * ===========================================================================
 *
@@ -36,9 +39,6 @@ Contents: Interface for CHitList class
 /// @file hitlist.hpp
 /// Interface for CHitList class
 
-#ifndef _ALGO_COBALT_HITLIST_HPP_
-#define _ALGO_COBALT_HITLIST_HPP_
-
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/hit.hpp>
 
@@ -46,7 +46,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
 /// An ordered collection of CHit objects
-class CHitList {
+class NCBI_COBALT_EXPORT CHitList
+{
 
 public:
     /// add a reminder of whether a hit should be kept
@@ -191,26 +192,31 @@ private:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-#endif // _ALGO_COBALT_HITLIST_HPP_
+/* ====================================================================
+ * $Log$
+ * Revision 1.7  2006/03/22 19:23:17  dicuccio
+ * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
+ * specifiers
+ *
+ * Revision 1.6  2006/02/22 21:38:11  papadopo
+ * fix typos
+ *
+ * Revision 1.5  2005/11/16 16:59:56  papadopo
+ * replace += operator with Append member
+ *
+ * Revision 1.4  2005/11/15 23:24:15  papadopo
+ * add doxygen
+ *
+ * Revision 1.3  2005/11/08 18:46:22  papadopo
+ * assert -> _ASSERT
+ *
+ * Revision 1.2  2005/11/08 17:40:26  papadopo
+ * ASSERT->assert
+ *
+ * Revision 1.1  2005/11/07 18:15:52  papadopo
+ * Initial revision
+ *
+ * ====================================================================
+ */
 
-/*--------------------------------------------------------------------
-  $Log$
-  Revision 1.6  2006/02/22 21:38:11  papadopo
-  fix typos
-
-  Revision 1.5  2005/11/16 16:59:56  papadopo
-  replace += operator with Append member
-
-  Revision 1.4  2005/11/15 23:24:15  papadopo
-  add doxygen
-
-  Revision 1.3  2005/11/08 18:46:22  papadopo
-  assert -> _ASSERT
-
-  Revision 1.2  2005/11/08 17:40:26  papadopo
-  ASSERT->assert
-
-  Revision 1.1  2005/11/07 18:15:52  papadopo
-  Initial revision
-
---------------------------------------------------------------------*/
+#endif // ALGO_COBALT___HITLIST__HPP

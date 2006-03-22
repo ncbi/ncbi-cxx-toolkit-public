@@ -1,3 +1,6 @@
+#ifndef ALGO_COBALT___DIST__HPP
+#define ALGO_COBALT___DIST__HPP
+
 /* $Id$
 * ===========================================================================
 *
@@ -36,9 +39,6 @@ Contents: Interface for CDistances class
 /// @file dist.hpp
 /// Interface for CDistances class
 
-#ifndef _ALGO_COBALT_DIST_HPP_
-#define _ALGO_COBALT_DIST_HPP_
-
 #include <util/math/matrix.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
 #include <algo/blast/core/blast_stat.h>
@@ -52,7 +52,8 @@ BEGIN_SCOPE(cobalt)
 
 /// Representation of pairwise distances, intended for use
 /// in multiple sequence alignment applications
-class CDistances {
+class NCBI_COBALT_EXPORT CDistances
+{
 
 public:
     /// Create empty distance matrix
@@ -125,23 +126,28 @@ private:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-#endif // _ALGO_COBALT_DIST_HPP_
+/* ====================================================================
+ * $Log$
+ * Revision 1.6  2006/03/22 19:23:17  dicuccio
+ * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
+ * specifiers
+ *
+ * Revision 1.5  2006/01/27 20:56:35  papadopo
+ * input a Karlin block for computing raw scores to bit scores before calculating distances
+ *
+ * Revision 1.4  2005/11/18 20:15:12  papadopo
+ * remove unneeded Karlin block
+ *
+ * Revision 1.3  2005/11/15 20:10:29  papadopo
+ * add doxygen
+ *
+ * Revision 1.2  2005/11/08 17:42:17  papadopo
+ * Rearrange includes to be self-sufficient
+ *
+ * Revision 1.1  2005/11/07 18:15:52  papadopo
+ * Initial revision
+ *
+ * ==================================================================
+ */
 
-/*--------------------------------------------------------------------
-  $Log$
-  Revision 1.5  2006/01/27 20:56:35  papadopo
-  input a Karlin block for computing raw scores to bit scores before calculating distances
-
-  Revision 1.4  2005/11/18 20:15:12  papadopo
-  remove unneeded Karlin block
-
-  Revision 1.3  2005/11/15 20:10:29  papadopo
-  add doxygen
-
-  Revision 1.2  2005/11/08 17:42:17  papadopo
-  Rearrange includes to be self-sufficient
-
-  Revision 1.1  2005/11/07 18:15:52  papadopo
-  Initial revision
-
-  ------------------------------------------------------------------*/
+#endif // ALGO_COBALT___DIST__HPP

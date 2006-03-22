@@ -1,3 +1,6 @@
+#ifndef _ALGO_COBALT_EXCEPTION_HPP
+#define _ALGO_COBALT_EXCEPTION_HPP
+
 /* $Id$
 * ===========================================================================
 *
@@ -34,9 +37,6 @@
 /// Multiple aligner exceptions
 
 
-#ifndef _ALGO_COBALT_EXCEPTION_HPP
-#define _ALGO_COBALT_EXCEPTION_HPP
-
 #include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -56,12 +56,17 @@ public:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-#endif  /* _ALGO_COBALT_EXCEPTION_HPP_ */
 
+/* ======================================================================
+ *   $Log$
+ *   Revision 1.2  2006/03/22 19:23:17  dicuccio
+ *   Cosmetic changes: adjusted include guards; formatted CVS logs; added export
+ *   specifiers
+ *
+ *   Revision 1.1  2006/03/08 15:43:01  papadopo
+ *   multiple aligner exception class
+ *
+ * ======================================================================
+ */
 
-/*----------------------------------------------------------------------
-    $Log$
-    Revision 1.1  2006/03/08 15:43:01  papadopo
-    multiple aligner exception class
-
-----------------------------------------------------------------------*/
+#endif  /* ALGO_COBALT___EXCEPTION__HPP */

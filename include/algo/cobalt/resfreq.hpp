@@ -1,3 +1,6 @@
+#ifndef ALGO_COBALT___RESFREQ__HPP
+#define ALGO_COBALT___RESFREQ__HPP
+
 /* $Id$
 * ===========================================================================
 *
@@ -33,9 +36,6 @@ Contents: Interface for CProfileData
 
 ******************************************************************************/
 
-#ifndef _ALGO_COBALT_RESFREQ_HPP_
-#define _ALGO_COBALT_RESFREQ_HPP_
-
 #include <corelib/ncbifile.hpp>
 #include <algo/cobalt/base.hpp>
 
@@ -46,7 +46,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
 /// Represent databases of PSSM data and residue frequencies
-class CProfileData {
+class NCBI_COBALT_EXPORT CProfileData
+{
 public:
     /// Which collection to retrieve
     typedef enum {
@@ -113,14 +114,19 @@ private:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-#endif /* _ALGO_COBALT_RESFREQ_HPP_ */
+/* ====================================================================
+ * $Log$
+ * Revision 1.3  2006/03/22 19:23:17  dicuccio
+ * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
+ * specifiers
+ *
+ * Revision 1.2  2005/11/15 20:10:29  papadopo
+ * add doxygen
+ *
+ * Revision 1.1  2005/11/10 15:37:59  papadopo
+ * Initial version
+ *
+ * ====================================================================
+ */
 
-/*--------------------------------------------------------------------
-  $Log$
-  Revision 1.2  2005/11/15 20:10:29  papadopo
-  add doxygen
-
-  Revision 1.1  2005/11/10 15:37:59  papadopo
-  Initial version
-
---------------------------------------------------------------------*/
+#endif /* ALGO_COBALT___RESFREQ__HPP */
