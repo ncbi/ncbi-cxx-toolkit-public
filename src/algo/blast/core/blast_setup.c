@@ -529,7 +529,9 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     }
 
     if ( (status = s_BlastSetup_Validate(query_info, *sbpp) != 0)) {
-        *blast_message = Blast_Perror(BLASTERR_INVALIDQUERIES);
+        if (*blast_message == NULL) {
+            *blast_message = Blast_Perror(BLASTERR_INVALIDQUERIES);
+        }
         return 1;
     }
 
