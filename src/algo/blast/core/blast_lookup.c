@@ -114,6 +114,8 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt,
   return LookupTableNew(opt, lut, 0, TRUE);
 }
 
+/** The number of regions into which the concatenated RPS blast
+    database is split */
 #define RPS_BUCKET_SIZE 2048
 
 Int4 RPSLookupTableNew(const BlastRPSInfo *info,
@@ -544,6 +546,12 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
   return totalhits;
 }
 
+/** Add one query-subject pair to the list of such pairs retrieved
+ *  from the RPS blast lookup table.
+ * @param b the List in which the current pair will be placed [in/out]
+ * @param q_off query offset [in]
+ * @param s_off subject offset [in]
+ */
 static void s_AddToRPSBucket(RPSBucket *b, Uint4 q_off, Uint4 s_off)
 {
     BlastOffsetPair* offset_pairs = b->offset_pairs;

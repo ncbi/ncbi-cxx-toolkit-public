@@ -37,6 +37,7 @@ static char const rcsid[] =
     
 #include <algo/blast/core/blast_program.h>
 
+/** Convert an arbitrary integer to true/false */
 #define SAFE_CAST_INT_TO_BOOLEAN(p) (((p) != 0) ? TRUE : FALSE)
 
 /* Classify query sequence */

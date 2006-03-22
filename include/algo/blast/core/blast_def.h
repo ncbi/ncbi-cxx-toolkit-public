@@ -107,8 +107,8 @@ void __sfree(void** x);
  * lookup table.
  */
 typedef struct SSeqRange {
-   Int4 left;
-   Int4 right;
+   Int4 left;  /**< left endpoint of range (zero based) */
+   Int4 right;  /**< right endpoint of range (zero based) */
 } SSeqRange;
 
 /** Used to hold a set of positions, mostly used for filtering. 

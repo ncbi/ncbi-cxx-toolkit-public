@@ -59,7 +59,7 @@ extern "C" {
 #define PSSM_QUERY_MASK         (0x1<<6)
 /** This bit is on if the subject is a PSSM (RPS-BLAST) */
 #define PSSM_SUBJECT_MASK       (0x1<<7)
-/* This bit is on if the query includes a pattern (PHI-BLAST) */
+/** This bit is on if the query includes a pattern (PHI-BLAST) */
 #define PATTERN_QUERY_MASK      (0x1<<8)
 
 /******************** Main BLAST program definitions ***********************/
