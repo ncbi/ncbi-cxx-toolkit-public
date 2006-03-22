@@ -1050,8 +1050,8 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::const_iterator seq1_start_it_i =
                     starts2_i->second->m_StartIts.find(seq1);
-                const TSeqPos& existing_start1 = seq1_start_it_i->second->first;
                 if (seq1_start_it_i != starts2_i->second->m_StartIts.end()) {
+                    const TSeqPos& existing_start1 = seq1_start_it_i->second->first;
                     if (match->m_StrandsDiffer) {
                         delta = existing_start1 + 
                             starts2_i->second->m_Len * width1 - start1;
@@ -1271,6 +1271,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/03/22 16:48:49  gouriano
+* Do not dereference invalid iterator
+*
 * Revision 1.17  2006/03/15 01:24:51  ucko
 * +<algorithm> (once indirectly included?) for lower_bound().
 *
