@@ -1447,9 +1447,14 @@ BLAST_GetNumberOfContexts(EBlastProgramType p)
     return retval;
 }
 
-SBlastProgress* SBlastProgressNew()
+SBlastProgress* SBlastProgressNew(void* user_data)
 {
-    return (SBlastProgress*)calloc(1, sizeof(SBlastProgress));
+    SBlastProgress* retval = (SBlastProgress*)calloc(1, sizeof(SBlastProgress));
+    if ( !retval ) {
+        return NULL;
+    }
+    retval->user_data = user_data;
+    return retval;
 }
 
 SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info)
@@ -1459,5 +1464,13 @@ SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info)
     }
     sfree(progress_info);
     return NULL;
+}
+
+void SBlastProgressReset(SBlastProgress* progress_info)
+{
+    if ( !progress_info ) {
+        return;
+    }
+    progress_info->stage = ePrelimSearch;
 }
 

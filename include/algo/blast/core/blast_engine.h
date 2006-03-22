@@ -79,6 +79,8 @@ extern const char* kBlastReleaseDate;
  * @param results Results of the BLAST search [out]
  * @param interrupt_search function callback to allow interruption of BLAST
  * search [in, optional]
+ * @param progress_info contains information about the progress of the current
+ * BLAST search [in|out]
  */
 Int4 
 Blast_RunFullSearch(EBlastProgramType program_number, 
@@ -94,7 +96,8 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    const BlastDatabaseOptions* db_options,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
    BlastDiagnostics* diagnostics, BlastHSPResults** results,
-   TInterruptFnPtr interrupt_search);
+   TInterruptFnPtr interrupt_search,
+   SBlastProgress* progress_info);
 
 /** Perform the preliminary stage of the BLAST search.
  * @param  program_number Type of BLAST program [in]

@@ -74,7 +74,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p)
     queries.push_back(query);
     subjects.push_back(subject);
 
-    x_InitSeqs(queries, subjects);
+    x_Init(queries, subjects);
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
 }
 
@@ -87,7 +87,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject,
     queries.push_back(query);
     subjects.push_back(subject);
 
-    x_InitSeqs(queries, subjects);
+    x_Init(queries, subjects);
     m_OptsHandle.Reset(&opts);
 }
 
@@ -98,7 +98,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects,
     TSeqLocVector queries;
     queries.push_back(query);
 
-    x_InitSeqs(queries, subjects);
+    x_Init(queries, subjects);
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
 }
 
@@ -109,7 +109,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects,
     TSeqLocVector queries;
     queries.push_back(query);
 
-    x_InitSeqs(queries, subjects);
+    x_Init(queries, subjects);
     m_OptsHandle.Reset(&opts);
 }
 
@@ -117,7 +117,7 @@ CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects,
                  EProgram p)
     : mi_bQuerySetUpDone(false)
 {
-    x_InitSeqs(queries, subjects);
+    x_Init(queries, subjects);
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
 }
 
@@ -125,12 +125,11 @@ CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects,
                  CBlastOptionsHandle& opts)
     : mi_bQuerySetUpDone(false)
 {
-    x_InitSeqs(queries, subjects);
+    x_Init(queries, subjects);
     m_OptsHandle.Reset(&opts);
 }
 
-void CBl2Seq::x_InitSeqs(const TSeqLocVector& queries, 
-                         const TSeqLocVector& subjs)
+void CBl2Seq::x_Init(const TSeqLocVector& queries, const TSeqLocVector& subjs)
 {
     m_tQueries = queries;
     m_tSubjects = subjs;
@@ -142,6 +141,7 @@ void CBl2Seq::x_InitSeqs(const TSeqLocVector& queries,
     mi_pSeqSrc = NULL;
     m_ipFilteredRegions = NULL;
     m_fnpInterrupt = NULL;
+    m_ProgressMonitor = NULL;
 }
 
 CBl2Seq::~CBl2Seq()
@@ -184,7 +184,7 @@ CBl2Seq::Run()
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
     m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
     SetupSearch();
-    ScanDB();
+    RunFullSearch();
     return x_Results2SeqAlign();
 }
 
@@ -194,7 +194,7 @@ CBl2Seq::PartialRun()
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
     m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
     SetupSearch();
-    ScanDB();
+    RunFullSearch();
 }
 
 void 
@@ -265,7 +265,7 @@ CBl2Seq::SetupSearch()
 }
 
 void 
-CBl2Seq::ScanDB()
+CBl2Seq::RunFullSearch()
 {
     mi_pResults = NULL;
     mi_pDiagnostics = Blast_DiagnosticsInit();
@@ -280,6 +280,7 @@ CBl2Seq::ScanDB()
         Blast_HSPListCollectorInit(kOptions.GetProgramType(), blasthit_params,
                                    mi_clsQueryInfo->num_queries, FALSE));
                   
+    SBlastProgressReset(m_ProgressMonitor);
     Int4 status = Blast_RunFullSearch(kOptions.GetProgramType(),
                                       mi_clsQueries, mi_clsQueryInfo, 
                                       mi_pSeqSrc, mi_pScoreBlock, 
@@ -291,7 +292,8 @@ CBl2Seq::ScanDB()
                                       kOptions.GetEffLenOpts(),
                                       NULL, kOptions.GetDbOpts(),
                                       hsp_stream.get(), NULL, mi_pDiagnostics, 
-                                      &mi_pResults, m_fnpInterrupt);
+                                      &mi_pResults, m_fnpInterrupt,
+                                      m_ProgressMonitor);
     if (status) {
         NCBI_THROW(CBlastException, eCoreBlastError,
                    BlastErrorCode2String(status));
@@ -341,6 +343,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.91  2006/03/22 15:03:35  camacho
+ * Expanded interruptible API to support user-provided data
+ *
  * Revision 1.90  2006/03/21 21:00:47  camacho
  * + interruptible api support
  *

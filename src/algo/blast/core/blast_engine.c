@@ -1059,8 +1059,7 @@ s_BlastRunFullSearchCleanUp(BlastGapAlignStruct* gap_align,
                             BlastScoringParameters* score_params,
                             BlastExtensionParameters* ext_params,
                             BlastHitSavingParameters* hit_params,
-                            BlastEffectiveLengthsParameters* eff_len_params,
-                            SBlastProgress* progress_info)
+                            BlastEffectiveLengthsParameters* eff_len_params)
 {
     /* Do not destruct score block here */
     gap_align->sbp = NULL;
@@ -1070,7 +1069,6 @@ s_BlastRunFullSearchCleanUp(BlastGapAlignStruct* gap_align,
     BlastHitSavingParametersFree(hit_params);
     BlastExtensionParametersFree(ext_params);
     BlastEffectiveLengthsParametersFree(eff_len_params);
-    SBlastProgressFree(progress_info);
 }
 
 Int4 
@@ -1087,7 +1085,8 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    const BlastDatabaseOptions* db_options,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info, 
    BlastDiagnostics* diagnostics, BlastHSPResults** results,
-   TInterruptFnPtr interrupt_search)
+   TInterruptFnPtr interrupt_search,
+   SBlastProgress* progress_info)
 {
    Int4 status = 0;
    BlastScoringParameters* score_params = NULL;
@@ -1096,7 +1095,6 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    BlastEffectiveLengthsParameters* eff_len_params = NULL;
    BlastGapAlignStruct* gap_align = NULL;
    SPHIPatternSearchBlk* pattern_blk = NULL;
-   SBlastProgress* progress_info = SBlastProgressNew();
 
    if ((status = 
         BLAST_GapAlignSetUp(program_number, seq_src, score_options, 
@@ -1104,7 +1102,7 @@ Blast_RunFullSearch(EBlastProgramType program_number,
            &score_params, &ext_params, &hit_params, &eff_len_params, 
            &gap_align)) != 0) {
        s_BlastRunFullSearchCleanUp(gap_align, score_params, ext_params, 
-                                   hit_params, eff_len_params, progress_info);
+                                   hit_params, eff_len_params);
        return status;
    }
       
@@ -1115,7 +1113,7 @@ Blast_RunFullSearch(EBlastProgramType program_number,
            db_options, hsp_stream, diagnostics, interrupt_search, 
            progress_info)) != 0) {
        s_BlastRunFullSearchCleanUp(gap_align, score_params, ext_params, 
-                                   hit_params, eff_len_params, progress_info);
+                                   hit_params, eff_len_params);
        return status;
    }
    
@@ -1135,11 +1133,11 @@ Blast_RunFullSearch(EBlastProgramType program_number,
                                interrupt_search, progress_info))
        != 0) {
        s_BlastRunFullSearchCleanUp(gap_align, score_params, ext_params, 
-                                   hit_params, eff_len_params, progress_info);
+                                   hit_params, eff_len_params);
        return status;
    }
 
    s_BlastRunFullSearchCleanUp(gap_align, score_params, ext_params, hit_params,
-                               eff_len_params, progress_info);
+                               eff_len_params);
    return status;
 }

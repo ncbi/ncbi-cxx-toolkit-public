@@ -143,16 +143,20 @@ public:
 
     /// Set a function callback to be invoked by the CORE of BLAST to allow
     /// interrupting a BLAST search in progress.
+    /// @param fnptr pointer to callback function [in]
+    /// @param user_data user data to be attached to SBlastProgress structure
+    /// [in]
     /// @return the previously set TInterruptFnPtr (NULL if none was
     /// provided before)
-    TInterruptFnPtr SetInterruptCallback(TInterruptFnPtr fnptr);
+    TInterruptFnPtr SetInterruptCallback(TInterruptFnPtr fnptr, 
+                                         void* user_data = NULL);
 
 protected:
     /// Process the queries, do setup, and build the lookup table.
     virtual void SetupSearch();
 
     /// Creates a BlastHSPStream and calls the engine.
-    virtual void ScanDB();
+    virtual void RunFullSearch();
 
     /// Return a seqalign list for each query/subject pair, even if it is empty.
     virtual TSeqAlignVector x_Results2SeqAlign();
@@ -164,7 +168,7 @@ private:
     CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
 
     /// Common initialization code for all c-tors
-    void x_InitSeqs(const TSeqLocVector& queries, const TSeqLocVector& subjs);
+    void x_Init(const TSeqLocVector& queries, const TSeqLocVector& subjs);
 
     /// Prohibit copy constructor
     CBl2Seq(const CBl2Seq& rhs);
@@ -196,6 +200,8 @@ private:
 
     /// User-provided interrupt callback
     TInterruptFnPtr                     m_fnpInterrupt;
+    /// Structure to aid in progress monitoring/interruption
+    CSBlastProgress                     m_ProgressMonitor;
 
     /// Resets query data structures
     void x_ResetQueryDs();
@@ -289,9 +295,10 @@ CBl2Seq::GetMessages(TSearchMessages& messages) const
 }
 
 inline TInterruptFnPtr
-CBl2Seq::SetInterruptCallback(TInterruptFnPtr fnptr)
+CBl2Seq::SetInterruptCallback(TInterruptFnPtr fnptr, void* user_data)
 {
     swap(m_fnpInterrupt, fnptr);
+    m_ProgressMonitor.Reset(SBlastProgressNew(user_data));
     return fnptr;
 }
 
@@ -304,6 +311,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2006/03/22 15:03:25  camacho
+* Expanded interruptible API to support user-provided data
+*
 * Revision 1.48  2006/03/21 21:00:17  camacho
 * + interruptible api support
 *

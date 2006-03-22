@@ -288,6 +288,8 @@ DECLARE_AUTO_CLASS_WRAPPER(Blast_Message, Blast_MessageFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastMaskLoc, BlastMaskLocFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastSeqLoc, BlastSeqLocFree);
 
+DECLARE_AUTO_CLASS_WRAPPER(SBlastProgress, SBlastProgressFree);
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 END_SCOPE(blast)
@@ -299,6 +301,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2006/03/22 15:03:25  camacho
+* Expanded interruptible API to support user-provided data
+*
 * Revision 1.72  2006/03/21 21:00:17  camacho
 * + interruptible api support
 *

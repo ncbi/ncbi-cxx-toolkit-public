@@ -231,15 +231,8 @@ typedef enum EBlastStage {
 typedef struct SBlastProgress {
     EBlastStage stage;      /**< Stage of the BLAST search currently in
                               progress */
+    void* user_data;        /**< Pointer to user-provided data */
 } SBlastProgress;
-
-/** Allocates and initializes a new SBlastProgress structure.
- * Implemented in blast_util.c */
-SBlastProgress* SBlastProgressNew();
-
-/** Deallocates a SBlastProgress structure.
- * Implemented in blast_util.c */
-SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info);
 
 /** Prototype for function pointer to determine whether the BLAST search
  * should proceed or be interrupted. If this function returns true, all 
@@ -249,6 +242,21 @@ SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info);
  * block)
  */
 typedef Boolean (*TInterruptFnPtr) (SBlastProgress* progress_info);
+
+/** Allocates and initializes a new SBlastProgress structure.
+ * @param user_data user-provided data (not owned by the resulting structure)
+ * [in]
+ * Implemented in blast_util.c 
+ */
+SBlastProgress* SBlastProgressNew(void* user_data);
+
+/** Deallocates a SBlastProgress structure.
+ * Implemented in blast_util.c */
+SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info);
+
+/** Resets the progress structure to its original state (as if newly allocated)
+ * for a fresh start without touching the user_data field */
+void SBlastProgressReset(SBlastProgress* progress_info);
 
 #ifdef __cplusplus
 }

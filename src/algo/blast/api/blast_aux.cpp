@@ -421,6 +421,17 @@ CBlastSeqLoc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
     }
 }
 
+void
+CSBlastProgress::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+	ddc.SetFrame("SBlastProgress");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("stage", m_Ptr->stage);
+    ddc.Log("user_data", m_Ptr->user_data);
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 BlastSeqLoc*
@@ -796,6 +807,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.91  2006/03/22 15:03:35  camacho
+ * Expanded interruptible API to support user-provided data
+ *
  * Revision 1.90  2006/03/15 02:16:10  ucko
  * +<algorithm> (once indirectly included?) for sort(), reverse(), and unique().
  *
