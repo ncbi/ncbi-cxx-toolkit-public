@@ -358,7 +358,7 @@ public:
         }    
         bool    operator()(position_type pos, const Range& r)  
         { 
-            return pos <= r.GetFirstToOpen();
+            return pos < r.GetFirstToOpen();
         }    
         bool    operator()(const Range& r1, const Range& r2)  
         { 
@@ -370,7 +370,7 @@ public:
         }
         bool    operator()(position_type pos, const Range* r)  
         { 
-            return pos <= r->GetFirstToOpen();
+            return pos < r->GetFirstToOpen();
         }
         bool    operator()(const Range* r1, const Range* r2)  
         { 
@@ -749,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/03/22 16:49:24  gouriano
+ * Corrected comparison
+ *
  * Revision 1.11  2006/03/15 02:33:02  ucko
  * +<algorithm> for lower_bound().
  *
