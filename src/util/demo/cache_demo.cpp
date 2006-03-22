@@ -69,6 +69,8 @@ int CCacheDemoApp::Run(void)
 }
 
 
+// Simple CObject-based cache element. Can be stored in the demo caches
+// using CRef<>-s. Allocates data of the specified size.
 class CObjElement : public CObject
 {
 public:
@@ -85,7 +87,7 @@ void CCacheDemoApp::SimpleCacheDemo(void)
 {
     // Elements of the cache are CObject-derived.
     // The cache does not require any special allocator/remover since
-    // elemnts are stored in CRef-s.
+    // elemnts are stored in CRef<>-s.
     typedef CCache<int, CRef<CObjElement> > TSimpleCache;
     TSimpleCache cache(100);
     // Allocate and insert elements into the cache. Check result.
@@ -96,7 +98,7 @@ void CCacheDemoApp::SimpleCacheDemo(void)
         _ASSERT(result == TSimpleCache::eElement_Added);
     }
     // Try to get the elements from the cache. Some will be missing
-    // Since cache size is less than total number of elements inserted.
+    // since cache size is less than total number of elements inserted.
     for (int i = 0; i < 1000; i++) {
         CRef<CObjElement> element = cache.Get(i);
         if (element) {
@@ -122,7 +124,7 @@ private:
 };
 
 
-// Remove handler for dynamically allocated objects.
+// Remove_element handler for dynamically allocated objects.
 class CDemoHandler_HeapAlloc
 {
 public:
@@ -172,7 +174,9 @@ void CCacheDemoApp::HeapCacheDemo(void)
 }
 
 
-// Max memory size allowed for the cache
+// Max memory size allowed for the cache. This number includes only
+// number of bytes allocated for the internal buffers, as
+// returned by GetSize().
 const size_t kMaxMemCacheSize = 5000;
 
 // Special insert/remove handler which checks total memory
@@ -185,10 +189,12 @@ public:
 
     void RemoveElement(const int& key, CRef<CObjElement> value)
     {
+        // Decrease total memory used upon element removal.
         m_Total -= value->GetSize();
     }
     void InsertElement(const int& key, const CRef<CObjElement>& value)
     {
+        // Increase total memory used upon element insertion.
         m_Total += value->GetSize();
     }
     ECache_InsertFlag CanInsertElement(const int& key,
@@ -230,10 +236,13 @@ void CCacheDemoApp::MemoryCacheDemo(void)
     // Cache capacity must be positive. The real capacity depends on
     // the max memory allowed by the handler.
     TMemCache cache(1);
+    // Fill the cache with elements of different size.
     for (int i = 0; i < 1000; i++) {
         TElement element(new CObjElement(i*10));
         TMemCache::EAddResult result;
         cache.Add(i, element, 1, &result);
+        // The element should be inserted only if its size is less than
+        // the max. allowed size of the cache.
         if (element->GetSize() <= kMaxMemCacheSize) {
             _ASSERT(result == TMemCache::eElement_Added);
         }
@@ -250,8 +259,12 @@ void CCacheDemoApp::MemoryCacheDemo(void)
 }
 
 
+// Max number of elements allowed in the cache.
 const size_t kMaxOverflowCacheSize = 100;
 
+// Special cache handling - elements are inserted as usual unless
+// cache capacity is exceeded. After that all elements are removed
+// and the cache is filled again.
 class CDemoHandler_EmptyOnOverflow
 {
 public:
@@ -260,23 +273,29 @@ public:
 
     void RemoveElement(const int& /*key*/, CRef<CObjElement> /*value*/)
     {
+        // Count the elements removed.
         _ASSERT(m_Count > 0);
         m_Count--;
         if ( m_Overflow  &&  m_Count == 0 ) {
+            // Reset overflow flag if all elements have been removed.
             m_Overflow = false;
         }
     }
     void InsertElement(const int& /*key*/, const CRef<CObjElement>& /*value*/)
     {
+        // Count the elements inserted.
         m_Count++;
     }
     ECache_InsertFlag CanInsertElement(const int& key,
                                        const CRef<CObjElement>& value)
     {
+        // If the overflow is detected, set the flag and request
+        // clean up until the cache is empty.
         if (m_Overflow  ||  m_Count >= kMaxOverflowCacheSize) {
             m_Overflow = true;
             return eCache_NeedCleanup;
         }
+        // If there's no overflow, allow to insert the new element.
         return eCache_CanInsert;
     }
 
@@ -299,7 +318,7 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
     typedef CCache<int, TElement, TEmptyOnOverflowTraits> TEmptyOnOverflowCache;
 
     // Cache capacity must be positive. The real capacity depends on
-    // the max size allowed by the handler.
+    // the max number of elements allowed by the handler.
     TEmptyOnOverflowCache cache(1);
     for (int i = 0; i < 1000; i++) {
         TElement element(new CObjElement(i*10));
@@ -332,8 +351,8 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2006/03/21 16:41:55  grichenk
- * Initial revision
+ * Revision 1.2  2006/03/22 14:51:11  grichenk
+ * Added comments
  *
  *
  * ===========================================================================
