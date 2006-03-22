@@ -49,7 +49,7 @@ CTransmissionWriter::CTransmissionWriter(IWriter* wrt, EOwnership own_writer)
     size_t written;
     ERW_Result res = m_Wrt->Write(&start_word, sizeof(start_word), &written);
     if (res != eRW_Success || written != sizeof(start_word)) {
-        _ASSERT(0);
+        NCBI_THROW(CIOException, eWrite,  "Cannot write the byte order");
     }
 }
 
@@ -68,29 +68,23 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
 {
     ERW_Result res;
     size_t written;
+    if (bytes_written) *bytes_written = 0;
 
     Int4 cnt = (Int4)count;
     res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
-    if (res != eRW_Success) { 
-        if (bytes_written) *bytes_written = 0;
+    if (res != eRW_Success) 
         return res;
-    }
-    if (written != sizeof(cnt)) {
+    if (written != sizeof(cnt))
         return eRW_Error;
-    }
     size_t wrt_count = 0;
     for (const char* ptr = (char*)buf; count > 0; ptr += written) {
         res = m_Wrt->Write(ptr, count, &written);
         count -= written;
         wrt_count += written;
-        if (res != eRW_Success) {
-            if (bytes_written) *bytes_written = 0;
+        if (res != eRW_Success) 
 	        return res;
-        }
     }
-    if (bytes_written) {
-        *bytes_written = wrt_count;
-    }
+    if (bytes_written) *bytes_written = wrt_count;
     return res;
 }
 
@@ -126,6 +120,8 @@ ERW_Result CTransmissionReader::Read(void*    buf,
                                      size_t*  bytes_read)
 {
     ERW_Result res;
+    if (bytes_read) *bytes_read = 0;
+
     if (!m_StartRead) {
         res = x_ReadStart();
         if (res != eRW_Success) {
@@ -138,9 +134,6 @@ ERW_Result CTransmissionReader::Read(void*    buf,
         Int4 cnt;
         res = x_ReadRepeated(&cnt, sizeof(cnt));
         if (res != eRW_Success) { 
-            if (bytes_read) {
-                *bytes_read = 0;
-            }
             return res;
         }
         if (m_ByteSwap) {
@@ -155,14 +148,8 @@ ERW_Result CTransmissionReader::Read(void*    buf,
     size_t read;
     res = m_Rdr->Read(buf, to_read, &read);
     m_PacketBytesToRead -= read;
-    if (bytes_read) {
-        *bytes_read = read;
-    }
-/*
-if (res != eRW_Success) { 
-    _ASSERT(0);
-}
-*/
+    if (bytes_read) *bytes_read = read;
+
     return res;
 }
 
@@ -195,8 +182,8 @@ ERW_Result CTransmissionReader::x_ReadStart()
     if (start_word_coming != 0x01020304 &&
         start_word_coming != 0x04030201)
         NCBI_THROW(CUtilException, eWrongData,
-                   "Cannot determine the byte order. Ret: " 
-                   + NStr::UIntToString(start_word_coming));
+                   "Cannot determine the byte order. Got: " 
+                   + NStr::UIntToString(start_word_coming, 0, 16));
 
     return res;
 }
@@ -223,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/22 14:14:07  didenko
+ * Cosmetics
+ *
  * Revision 1.8  2006/03/21 17:40:35  didenko
  * Fixed byte order check
  *
