@@ -252,8 +252,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
 }
 
 
-template<class TRef>
-bool s_PNullRef(const TRef& hr) {
+bool s_PNullRef(const CAppHitFilter::THitRef& hr) {
     return hr.IsNull();
 }
 
@@ -309,7 +308,7 @@ int CAppHitFilter::Run()
         cerr << " cur set size = " << (ii_hi - ii_beg) 
              << " total processed = " << (ii - ii_beg) << " ... ";
         CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, kMinOutputHitLen);
-        ii_hi = remove_if(ii_beg, ii_hi, s_PNullRef<THitRef>);
+        ii_hi = remove_if(ii_beg, ii_hi, s_PNullRef);
         cerr << "done in " << sw.Elapsed() << " seconds" << endl;
     }
     all.erase(ii_hi, ii_end);
@@ -340,6 +339,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/22 13:54:55  kapustin
+ * Use non-templated predicate to work around some intractable compilers
+ *
  * Revision 1.7  2006/03/21 16:19:12  kapustin
  * Add multiple greedy reconciliation algorithm for pairwise alignment filtering
  *
