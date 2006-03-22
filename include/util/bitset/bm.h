@@ -96,15 +96,6 @@ typedef bm::miniset<bm::block_allocator, bm::set_total_blocks> mem_save_set;
  */
 
 
-/*!
-   @brief Block allocation strategies.
-   @ingroup bvector
-*/
-enum strategy
-{
-    BM_BIT = 0, //!< No GAP compression strategy. All new blocks are bit blocks.
-    BM_GAP = 1  //!< GAP compression is ON.
-};
 
 
 /*!
