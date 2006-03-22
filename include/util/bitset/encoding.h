@@ -45,10 +45,10 @@ class encoder
 {
 public:
     encoder(unsigned char* buf, unsigned size);
-    BMFORCEINLINE void put_8(unsigned char c);
-    BMFORCEINLINE void put_16(bm::short_t  s);
+    void put_8(unsigned char c);
+    void put_16(bm::short_t  s);
     void put_16(const bm::short_t* s, unsigned count);
-    BMFORCEINLINE void put_32(bm::word_t  w);
+    void put_32(bm::word_t  w);
     void put_32(const bm::word_t* w, unsigned count);
     unsigned size() const;
 private:
@@ -85,8 +85,8 @@ class decoder : public decoder_base
 {
 public:
     decoder(const unsigned char* buf);
-    BMFORCEINLINE bm::short_t get_16();
-    BMFORCEINLINE bm::word_t get_32();
+    bm::short_t get_16();
+    bm::word_t get_32();
     void get_32(bm::word_t* w, unsigned count);
     void get_16(bm::short_t* s, unsigned count);
 };
@@ -140,7 +140,7 @@ inline encoder::encoder(unsigned char* buf, unsigned size)
    \brief Puts one character into the encoding buffer.
    \param c - character to encode
 */
-inline void encoder::put_8(unsigned char c)
+BMFORCEINLINE void encoder::put_8(unsigned char c)
 {
     *buf_++ = c;
 }
@@ -150,7 +150,7 @@ inline void encoder::put_8(unsigned char c)
    \brief Puts short word (16 bits) into the encoding buffer.
    \param s - short word to encode
 */
-inline void encoder::put_16(bm::short_t s)
+BMFORCEINLINE void encoder::put_16(bm::short_t s)
 {
     *buf_++ = (unsigned char) s;
     s >>= 8;
@@ -193,7 +193,7 @@ inline unsigned encoder::size() const
    \brief Puts 32 bits word into encoding buffer.
    \param w - word to encode.
 */
-inline void encoder::put_32(bm::word_t w)
+BMFORCEINLINE void encoder::put_32(bm::word_t w)
 {
     *buf_++ = (unsigned char) w;
     *buf_++ = (unsigned char) (w >> 8);
@@ -242,7 +242,7 @@ inline decoder::decoder(const unsigned char* buf)
    \fn bm::short_t decoder::get_16()
    \brief Reads 16bit word from the decoding buffer.
 */
-inline bm::short_t decoder::get_16() 
+BMFORCEINLINE bm::short_t decoder::get_16() 
 {
     bm::short_t a = (bm::short_t)(buf_[0] + ((bm::short_t)buf_[1] << 8));
     buf_ += sizeof(a);
@@ -253,7 +253,7 @@ inline bm::short_t decoder::get_16()
    \fn bm::word_t decoder::get_32()
    \brief Reads 32 bit word from the decoding buffer.
 */
-inline bm::word_t decoder::get_32() 
+BMFORCEINLINE bm::word_t decoder::get_32() 
 {
     bm::word_t a = buf_[0]+ ((unsigned)buf_[1] << 8) +
                    ((unsigned)buf_[2] << 16) + ((unsigned)buf_[3] << 24);
@@ -311,14 +311,14 @@ inline decoder_little_endian::decoder_little_endian(const unsigned char* buf)
 {
 }
 
-inline bm::short_t decoder_little_endian::get_16()
+BMFORCEINLINE bm::short_t decoder_little_endian::get_16()
 {
     bm::short_t a = ((bm::short_t)buf_[0] << 8) + ((bm::short_t)buf_[1]);
     buf_ += sizeof(a);
     return a;
 }
 
-inline bm::word_t decoder_little_endian::get_32() 
+BMFORCEINLINE bm::word_t decoder_little_endian::get_32() 
 {
     bm::word_t a = ((unsigned)buf_[0] << 24)+ ((unsigned)buf_[1] << 16) +
                    ((unsigned)buf_[2] << 8) + ((unsigned)buf_[3]);
