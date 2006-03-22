@@ -1458,5 +1458,6 @@ SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info)
         return NULL;
     }
     sfree(progress_info);
+    return NULL;
 }
 
