@@ -382,42 +382,9 @@ static NCBI_INLINE void  _ComputeIndexIncremental(Int4 wordsize,
   return;
 }
 
-
-/* Given a starting position of a word in a compressed nucleotide sequence, 
- * compute this word's lookup table index
+/** bitfield used to detect ambiguities in uncompressed
+ *  nucleotide letters
  */
-static NCBI_INLINE Uint1* BlastNaLookupInitIndex(Int4 length,
-		          const Uint1* word, Int4* index)
-{
-   Int4 i;
-   
-   *index = 0;
-   for (i = 0; i < length; ++i)
-      *index = ((*index)<<FULL_BYTE_SHIFT) | word[i];
-   return (Uint1 *) (word + length);
-}
-
-/* Recompute the word index given its previous value and the new location 
- *  of the last byte of the word
- */
-static NCBI_INLINE Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask, 
-		      const Uint1* word, Int4 index)
-{
-   return (((index)<<scan_shift) & mask) | *(word);  
-   
-}
-
-/* Given a word computed from full bytes of a compressed sequence, 
- *  shift it by 0-3 bases 
- */
-static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1* s, Int4 index, 
-                      Int4 mask, Uint1 bit)
-{
-   return (((index)<<bit) & mask) | ((*s)>>(FULL_BYTE_SHIFT-bit));
-
-}
-
-
 #define BLAST2NA_MASK 0xfc
 
 /** Compute the lookup index for a word in an uncompressed sequence, without 
