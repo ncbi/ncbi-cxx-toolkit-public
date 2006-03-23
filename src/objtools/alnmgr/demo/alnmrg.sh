@@ -16,7 +16,7 @@ run_prg() {
 
 check_diff() {
 #  cmp -s $test_dir/$1.asn $tmp_out
-  diff -q -w $test_dir/$1.asn $tmp_out
+  diff -w $test_dir/$1.asn $tmp_out
   if test "$?" != 0; then
       echo "FAILURE: $2"
       return_status=1
