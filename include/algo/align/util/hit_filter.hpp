@@ -158,6 +158,7 @@ public:
     }
 
     // Multiple greedy reconciliation algorithm
+
     static void s_RunGreedy(typename THitRefs::iterator hri_beg, 
                             typename THitRefs::iterator hri_end,
                             TCoord min_hit_len = 100) {
@@ -171,7 +172,6 @@ public:
 
         // compile ordered set of hit ends
         typename THitRefs::iterator ii = hri_beg;
-        CStopWatch sw (CStopWatch::eStart);
         THitEnds hit_ends;
         for(size_t i = 0; i < dim; ++i, ++ii) {
 
@@ -184,6 +184,57 @@ public:
                 hit_ends.insert(he);
             }
         }
+
+        // create additional markers for 'hot dogs'
+        typedef const THitEnd* THitEndPtr;
+        typedef list<THitEndPtr> TMarkers;
+        TMarkers mks;
+        typename THit::TId id;
+        id = (*(hit_ends.begin()->m_Ptr))->GetId(hit_ends.begin()->m_Point/2);
+        THitEnds hit_mids;
+        ITERATE(typename THitEnds, ii, hit_ends) {
+            
+            THitEndPtr cur = &(*ii);
+            const Uint1 where = ii->m_Point/2;
+            THitRef* hitrefptr = ii->m_Ptr;
+            if((*hitrefptr)->GetId(where)->CompareOrdered(*id) != 0) {
+                mks.clear();
+                mks.push_back(cur);
+                id = (*hitrefptr)->GetId(where);
+            }
+            else if(ii->m_X == (*hitrefptr)->GetMin(where)) {
+                mks.push_back(cur);
+            }
+            else {
+                const float curscore = (*hitrefptr)->GetScore();
+                typename TMarkers::iterator ii_del = mks.end();
+                NON_CONST_ITERATE(typename TMarkers, ii, mks) {
+                    const THitEnd& he = **ii;
+                    if(he.m_Ptr == hitrefptr) {
+                        ii_del = ii;
+                    }
+                    else if (he.m_X > cur->m_X) {
+                        break;
+                    }
+                    else {
+                        const float s = (*he.m_Ptr)->GetScore();
+                        if(s < curscore){
+                            THitEnd hm;
+                            hm.m_Point = he.m_Point;
+                            hm.m_Ptr = he.m_Ptr;
+                            hm.m_X = ((*hitrefptr)->GetMin(where) 
+                                      + (*hitrefptr)->GetMax(where))/2;
+                            hit_mids.insert(hm);
+                        }
+                    }
+                }
+                if(ii_del != mks.end()) {
+                    mks.erase(ii_del);
+                }
+            }
+        }
+
+        hit_ends.insert(hit_mids.begin(), hit_mids.end());
 
         vector<bool> skip (dim, false);
         vector<bool> del (dim, false);
@@ -234,7 +285,7 @@ public:
                 }
                 typedef typename THitEnds::iterator THitEndsIter;
                 THitEndsIter ii0 = hit_ends.lower_bound(*phe_lo);
-                THitEndsIter ii1 = hit_ends.lower_bound(*phe_hi);
+                THitEndsIter ii1 = hit_ends.upper_bound(*phe_hi);
                 typedef list<THitEndsIter> TIters;
 
                 for(typename THitEnds::iterator ii = ii0; ii != ii1; ++ii) {
@@ -326,7 +377,7 @@ protected:
                 return -2;
             }
             if(lmin <= cmin && cmin <= lmax) {
-                if(cmin == 0) return -1;
+                if(cmin == 0) return -2;
                 h->Modify(2*where + 1, lmax = cmin - 1);
                 rv = lmax;
             }
@@ -353,6 +404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/23 22:00:26  kapustin
+ * Account for nested higher-scorers
+ *
  * Revision 1.6  2006/03/21 16:16:44  kapustin
  * Support edit transcript string
  *
