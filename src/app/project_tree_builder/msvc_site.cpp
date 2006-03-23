@@ -91,7 +91,32 @@ bool CMsvcSite::IsProvided(const string& thing) const
     if ( m_ProvidedThing.find(thing) != m_ProvidedThing.end() ) {
         return true;
     }
-    return IsDescribed(thing);
+
+    bool res = IsDescribed(thing);
+    if ( res) {
+        list<string> components;
+        GetComponents(thing, &components);
+        if (components.empty()) {
+            components.push_back(thing);
+        }
+        // in at least one configuration all components must be ok
+        ITERATE(list<SConfigInfo>, config , GetApp().GetRegSettings().m_ConfigInfo) {
+            res = true;
+            ITERATE(list<string>, p, components) {
+                const string& component = *p;
+                SLibInfo lib_info;
+                GetLibInfo(component, *config, &lib_info);
+                res = IsLibOk(lib_info);
+                if ( !res ) {
+                    break;
+                }
+            }
+            if (res) {
+                break;
+            }
+        }
+    }
+    return res;
 }
 
 
@@ -519,6 +544,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/03/23 18:52:19  gouriano
+ * Enhanced checking requirements
+ *
  * Revision 1.36  2006/02/06 16:35:13  gouriano
  * Added parameterization into 3rd party lib build location
  *
