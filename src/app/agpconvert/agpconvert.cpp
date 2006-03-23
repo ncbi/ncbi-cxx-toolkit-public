@@ -168,6 +168,23 @@ static void s_ParseFastaIds(const string& s, list<CRef<CSeq_id> >& ids)
 }
 
 
+static int s_GetTaxid(const COrg_ref& org_ref) {
+    int taxid = 0;
+    int count = 0;
+    ITERATE (COrg_ref::TDb, db_tag, org_ref.GetDb()) {
+        if ((*db_tag)->GetDb() == "taxon") {
+            count++;
+            taxid = (*db_tag)->GetTag().GetId();
+        }
+    }
+    if (count != 1) {
+        throw runtime_error("found " + NStr::IntToString(count) + " taxids; "
+                            "expected exactly one");
+    }
+    return taxid;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  Run
 
@@ -328,53 +345,78 @@ int CAgpconvertApplication::Run(void)
             source_desc->SetSource().SetSubtype().push_back(sub_source);
         }
         if (args["sn"]) {
-            if (!args["on"] || !args["nt"]) {
-                throw runtime_error("-sn requires -nt and -on");
+            if (!args["on"]) {
+                throw runtime_error("-sn requires -on");
             }
         }
-        if (args["on"]) {
-            if (!args["nt"]) {
-                throw runtime_error("-on requires -nt");
-            }
-        }
-        if (args["nt"]) {
-            int taxid = args["nt"].AsInteger();
-            CRef<CDbtag> dbtag(new CDbtag);
-            dbtag->SetDb("taxon");
-            dbtag->SetTag().SetId(taxid);
-            source_desc->SetSource().SetOrg().SetDb().push_back(dbtag);
+        if (args["on"] || args["nt"]) {
+
             CTaxon1 cl;
             if (!cl.Init()) {
                 throw runtime_error("failure contacting taxonomy server");
             }
-            bool is_species, is_uncultured;
-            string blast_name;
-            CConstRef<COrg_ref> org_ref
-                = cl.GetOrgRef(taxid, is_species, is_uncultured, blast_name);
-            source_desc->SetSource().SetOrg().Assign(*org_ref);
-            source_desc->SetSource().SetOrg().ResetSyn();  // lose any synonyms
-            if (!is_species) {
-                cerr << "** Warning:  taxid " << taxid <<
-                    " is not species level or below" << endl;
+
+            CConstRef<CTaxon2_data> on_result;
+            CRef<CTaxon2_data> nt_result;
+            COrg_ref inp_orgref;
+
+            if (args["on"]) {
+                const string& inp_taxname = args["on"].AsString();
+                inp_orgref.SetTaxname(inp_taxname);
+                if (args["sn"]) {
+                    CRef<COrgMod> mod(new COrgMod);
+                    mod->SetSubtype(COrgMod::eSubtype_strain);
+                    mod->SetSubname(args["sn"].AsString());
+                    inp_orgref.SetOrgname().SetMod().push_back(mod);
+                }
+
+                on_result = cl.LookupMerge(inp_orgref);
+
+                if (!on_result) {
+                    throw runtime_error("taxonomy server lookup failed");
+                }
+                if (!on_result->GetIs_species_level()) {
+                    throw runtime_error("supplied name is not species-level");
+                }
+                if (on_result->GetOrg().GetTaxname() != inp_taxname) {
+                    cerr << "** Warning: taxname returned by server ("
+                         << on_result->GetOrg().GetTaxname()
+                         << ") differs from that supplied with -on ("
+                         << inp_taxname << ")" << endl;
+                }
             }
-            // Check that command line is consistent with what server returns
-            if (!args["on"]) {
-                throw runtime_error("-nt requires -on");
+
+            if (args["nt"]) {
+                int inp_taxid = args["nt"].AsInteger();
+                nt_result = cl.GetById(inp_taxid);
+                if (!nt_result->GetIs_species_level()) {
+                    throw runtime_error("taxid " + NStr::IntToString(inp_taxid)
+                                        + " is not species-level");
+                }
+                nt_result->SetOrg().ResetSyn();  // lose any synonyms
+                int db_taxid = s_GetTaxid(nt_result->GetOrg());
+                if (db_taxid != inp_taxid) {
+                    cerr << "** Warning: taxid returned by server ("
+                         << NStr::IntToString(db_taxid)
+                         << ") differs from that supplied with -nt ("
+                         << inp_taxid << ")" << endl;
+                }
+                if (args["on"]) {
+                    int on_taxid = s_GetTaxid(on_result->GetOrg());
+                    if (on_taxid != db_taxid) {
+                        throw runtime_error("taxid from name lookup ("
+                                            + NStr::IntToString(on_taxid)
+                                            + ") differs from that from "
+                                            + "taxid lookup ("
+                                            + NStr::IntToString(db_taxid) + ")");
+                    }
+                }
             }
-            const string& taxname = args["on"].AsString();
-            if (taxname != org_ref->GetTaxname()) {
-                throw runtime_error("taxname given on command line ("
-                                    + taxname + ") not equal to that "
-                                    "returned by server ("
-                                    + org_ref->GetTaxname()
-                                    + ")");
-            }
-            if (args["sn"]) {
-                CRef<COrgMod> mod(new COrgMod);
-                mod->SetSubtype(COrgMod::eSubtype_strain);
-                mod->SetSubname(args["sn"].AsString());
-                source_desc->SetSource().SetOrg()
-                    .SetOrgname().SetMod().push_back(mod);
+
+            if (args["on"]) {
+                source_desc->SetSource().SetOrg().Assign(inp_orgref);
+            } else {
+                source_desc->SetSource().SetOrg().Assign(nt_result->GetOrg());
             }
         }
         ent_templ.SetSeq().SetDescr().Set().push_back(source_desc);
@@ -564,6 +606,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/03/23 20:53:56  jcherry
+ * Big changes to taxonomic lookup
+ *
  * Revision 1.9  2006/03/21 18:25:17  jcherry
  * Added optional output directory argument (-outdir)
  *
