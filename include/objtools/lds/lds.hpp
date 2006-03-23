@@ -41,6 +41,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CLDS_DataLoader;
+
 //////////////////////////////////////////////////////////////////
 ///
 /// LDS database.
@@ -94,6 +96,9 @@ public:
 
     const string& GetDirName(void) const { return m_LDS_DirName; }
     const string& GetDbName(void) const { return m_LDS_DbName; }
+    
+    CRef<CLDS_DataLoader> GetLoader();
+    void SetLoader( CRef<CLDS_DataLoader> aLoader );
 
 private:
     CLDS_Database(const CLDS_Database&);
@@ -106,6 +111,8 @@ private:
     SLDS_TablesCollection  m_db;
 
     TObjTypeMap            m_ObjTypeMap;
+    
+    CRef<CLDS_DataLoader>  m_Loader;
 };
 
 //////////////////////////////////////////////////////////////////
@@ -120,6 +127,8 @@ public:
     ~CLDS_DatabaseHolder();
 
     void AddDatabase(CLDS_Database* db) { m_DataBases.push_back(db); }
+    void RemoveDatabase(CLDS_Database* db);
+    void RemoveDatabase(int idx) { m_DataBases.erase( m_DataBases.begin() + idx ); }
 
     CLDS_Database* GetDefaultDatabase() 
     { 
@@ -164,6 +173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/03/23 14:49:00  voronov
+ * CRef to DataLoader added
+ *
  * Revision 1.24  2006/02/22 14:31:43  kuznets
  * Added read-only open mode
  *

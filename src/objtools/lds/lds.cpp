@@ -37,9 +37,11 @@
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_object.hpp>
 #include <objtools/lds/lds_files.hpp>
+#include <objtools/data_loaders/lds/lds_dataloader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
 
 
 CLDS_Database::CLDS_Database(const string& db_dir_name, 
@@ -254,9 +256,14 @@ void CLDS_Database::LoadTypeMap()
     }
 }
 
-
-
-
+CRef<CLDS_DataLoader> CLDS_Database::GetLoader()
+{ 
+    return m_Loader; 
+}
+void CLDS_Database::SetLoader( CRef<CLDS_DataLoader> aLoader )
+{
+    m_Loader = aLoader;
+}
 
 
 CLDS_DatabaseHolder::CLDS_DatabaseHolder(CLDS_Database* db) 
@@ -297,6 +304,16 @@ void CLDS_DatabaseHolder::EnumerateAliases(vector<string>* aliases)
     }
 }
 
+void CLDS_DatabaseHolder::RemoveDatabase(CLDS_Database* db)
+{
+    NON_CONST_ITERATE(vector<CLDS_Database*>, it, m_DataBases) {
+        if( *it == db ){
+            m_DataBases.erase( it );
+            break;
+        }
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -304,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/03/23 14:49:10  voronov
+ * CRef to DataLoader added
+ *
  * Revision 1.22  2006/02/22 14:32:06  kuznets
  * Added read-only open mode
  *
