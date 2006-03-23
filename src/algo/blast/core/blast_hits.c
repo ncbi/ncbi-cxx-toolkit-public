@@ -2167,7 +2167,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
    BlastHSPList* hsp_list = *hsp_list_ptr;
    BlastHSP* hsp, *hsp_var;
    BlastHSP** hspp1,** hspp2;
-   Int4 index, index1;
+   Int4 index, index1, last_index1;
    Int4 hspcnt1, hspcnt2, new_hspcnt = 0;
    BlastHSP** new_hsp_array;
   
@@ -2213,8 +2213,26 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
    qsort(hspp1, hspcnt1, sizeof(BlastHSP*), s_DiagCompareHSPs);
    qsort(hspp2, hspcnt2, sizeof(BlastHSP*), s_DiagCompareHSPs);
 
-   for (index=0; index<hspcnt1; index++) {
-      for (index1 = 0; index1<hspcnt2; index1++) {
+   for (index=last_index1=0; index<hspcnt1; index++) {
+
+      /* scan through hspp2 until an HSP is found whose
+         starting diagonal is less than OVERLAP_DIAG_CLOSE
+         diagonals ahead of the current HSP from hspp1 */
+
+      for (index1 = last_index1; index1<hspcnt2; index1++,last_index1++) {
+         /* Skip already deleted HSPs */
+         if (!hspp2[index1])
+            continue;
+         if (s_DiagCompareHSPs(&hspp1[index], &hspp2[index1]) < 
+             OVERLAP_DIAG_CLOSE) {
+             break;
+         }
+      }
+
+      /* attempt to merge the HSPs in hspp2 until their
+         diagonals occur too far away */
+
+      for (; index1<hspcnt2; index1++) {
          /* Skip already deleted HSPs */
          if (!hspp2[index1])
             continue;
