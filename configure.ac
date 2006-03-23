@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.414 2006/03/08 16:26:47 ucko Exp $
+#  $Id: configure.ac,v 1.415 2006/03/23 17:10:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2199,9 +2199,43 @@ AC_SEARCH_LIBS(sched_yield, rt,
 
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(atoll lchown getpagesize getpwuid gettimeofday getuid \
-               nanosleep asprintf vasprintf vsnprintf statfs statvfs \
+               nanosleep asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strdup strndup strtok_r sysmp timegm utimes lutimes)
 AC_LANG_POP(C)
+
+AC_TYPE_SIGNAL
+test "$ac_cv_func_select" = yes  ||  ncbi_cv_func_select_updates_timeout=no
+AC_CACHE_CHECK([whether select updates the timeout when interrupted],
+               ncbi_cv_func_select_updates_timeout,
+   [AC_RUN_IFELSE([AC_LANG_PROGRAM(
+       [[#include <signal.h>
+	 #include <sys/types.h>
+         #ifdef HAVE_SYS_SELECT_H
+         #  include <sys/select.h>
+	 #endif
+	 #ifdef HAVE_SYS_TIME_H
+	 #  include <sys/time.h>
+	 #endif
+	 #ifdef HAVE_UNISTD_H
+	 #  include <unistd.h>
+	 #endif
+         RETSIGTYPE handler(int sig) { }]],
+       [[struct timeval timeout = { 5, 0 };
+         signal(SIGALRM, &handler);
+         alarm(1);
+	 select(0, NULL, NULL, NULL, &timeout);
+	 return timeout.tv_sec == 5;]])],
+       [ncbi_cv_func_select_updates_timeout=yes],
+       [ncbi_cv_func_select_updates_timeout=no],
+       [case "$host_os" in
+          linux) ncbi_cv_func_select_updates_timeout=yes ;;
+	  *) ncbi_cv_func_select_updates_timeout=no ;;
+	esac])])
+if test "$ncbi_cv_func_select_updates_timeout" = yes; then
+   AC_DEFINE(SELECT_UPDATES_TIMEOUT, 1,
+      [Define to 1 if the `select' function updates its timeout when
+       interrupted by a signal.])
+fi
 
 # We want the program to return 0, which is *false* in C.  Also, since
 # use of lowercase seems to be customary if not universal, the default
@@ -3180,7 +3214,7 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
                [Your Berkeley DB version is too old to use.  (Needed 4.3.)])
             with_bdb=no
             ;;
-         4.3.* ) ;;
+         4.3.* | 4.4.* ) ;;
          * )
             AC_MSG_WARN(
                [Untested Berkeley DB version; may prove incompatible.])

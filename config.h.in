@@ -336,6 +336,9 @@
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
 
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
+
 /* Define to 1 if you have `union semun'. */
 #undef HAVE_SEMUN
 
@@ -606,6 +609,13 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#undef RETSIGTYPE
+
+/* Define to 1 if the `select' function updates its timeout when interrupted
+   by a signal. */
+#undef SELECT_UPDATES_TIMEOUT
 
 /* The size of a `char', as computed by sizeof. */
 #undef SIZEOF_CHAR
