@@ -1051,9 +1051,9 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
         return;
     }
 
-    if (!m_Current->Config().IsModeDump()) {
-        x_MergeEqualBioSources(srcs);
-    }
+//    if (!m_Current->Config().IsModeDump()) {
+//        x_MergeEqualBioSources(srcs);
+//    }
     
     // sort by type (descriptor / feature) and location
     sort(srcs.begin(), srcs.end(), SSortSourceByLoc());
@@ -1653,6 +1653,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2006/03/23 16:24:41  ludwigf
+* CHANGED: Disabled merging for source features that differ only by location.
+*
 * Revision 1.54  2006/01/12 19:30:45  ludwigf
 * CHANGED: Using release mode and contig style on a sequence that does not
 *   have a contig now produces an error message and otherwise empty output.
