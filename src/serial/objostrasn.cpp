@@ -313,7 +313,9 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
     m_Output.PutChar('"');
     while ( length > 0 ) {
         char c = *ptr++;
-        FixVisibleChar(c, m_FixMethod, startLine);
+        if ( m_FixMethod != eFNP_Allow ) {
+            FixVisibleChar(c, m_FixMethod, startLine);
+        }
         --length;
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
