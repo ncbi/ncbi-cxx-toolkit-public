@@ -16,7 +16,7 @@ do_test() {
         echo "datatool failed!"
         exit 1
     fi
-    cmp out "$r/$file"
+    diff -w out "$r/$file"
     if test "$?" != 0; then
         echo "wrong result!"
         exit 1

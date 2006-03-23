@@ -20,7 +20,7 @@ for i in "idx" "elink" "note"; do
         echo "datatool failed!"
         exit 1
     fi
-    cmp out "$r/$i.xml"
+    diff -w out "$r/$i.xml"
     if test "$?" != 0; then
         echo "wrong result!"
         exit 1
