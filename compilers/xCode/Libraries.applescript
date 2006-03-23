@@ -150,6 +150,7 @@ property seqcode : {name:"seqcode", path:"objects:seqcode", inc:{"seqcode__.cpp"
 property seqsplit : {name:"seqsplit", path:"objects:seqsplit", inc:{"seqsplit__.cpp", "seqsplit___.cpp"}, asn1:true}
 property seqtest : {name:"seqtest", path:"objects:seqtest", inc:{"seqtest__.cpp", "seqtest___.cpp"}, asn1:true}
 property seqedit : {name:"seqedit", path:"objects:seqedit", inc:{"seqedit__.cpp", "seqedit___.cpp"}, asn1:true}
+property seqtable : {name:"seqtable", path:"objects:seqtable", inc:{"seqtable__.cpp", "seqtable___.cpp"}, asn1:true}
 property submit : {name:"submit", path:"objects:submit", inc:{"submit__.cpp", "submit___.cpp"}, asn1:true}
 property taxon1 : {name:"taxon1", path:"objects:taxon1", inc:{"taxon1__.cpp", "taxon1___.cpp", "taxon1.cpp", "cache.cpp", "utils.cpp", "ctreecont.cpp"}, asn1:true}
 property tinyseq : {name:"tinyseq", path:"objects:tinyseq", inc:{"tinyseq__.cpp", "tinyseq___.cpp"}, asn1:true}
@@ -284,7 +285,7 @@ property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", r
 property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
-property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
+property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqtable, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
 property ncbi_seqext : {name:"ncbi_seqext", libs:{xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit, xobjcleanup}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
 property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate, valerr}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
@@ -326,7 +327,7 @@ property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core g
 property algo_webpage : {name:"algo_webpage", libs:{gui_algo_webpage}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
 property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
 property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_xloader_genbank ncbi_xloader_lds ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub" & FLTK_LIBS, bundle:true, req:true}
-property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table", bundle:true, req:true}
+property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table" & FLTK_LIBS, bundle:true, req:true}
 property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln gui_config" & FLTK_LIBS, bundle:true, req:true}
 property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, bundle:true, req:true}
 property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_misc gui_config" & FLTK_LIBS, bundle:true, req:true}
@@ -437,6 +438,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2006/03/23 19:04:06  lebedev
+ * += seqtable
+ *
  * Revision 1.96  2006/03/20 14:31:32  lebedev
  * ini2reg += gui_utils
  *
