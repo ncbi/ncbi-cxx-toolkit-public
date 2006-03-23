@@ -830,7 +830,9 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                 pseudo = true;
             }
             if (!grp->IsSuppressed()) {
-                gene_syn = x_AddQuals(*grp, pseudo, subtype, overlap_gene.NotEmpty());
+                if ( subtype != CSeqFeatData::eSubtype_primer_bind ) {
+                    gene_syn = x_AddQuals(*grp, pseudo, subtype, overlap_gene.NotEmpty());
+                }
             }
         }
         if ( type != CSeqFeatData::e_Cdregion  &&  type !=  CSeqFeatData::e_Rna ) {
@@ -3800,6 +3802,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2006/03/23 16:23:22  ludwigf
+* CHANGED: Supress /gene qualifier for primer_bind feature.
+*
 * Revision 1.73  2006/03/13 19:44:16  ludwigf
 * REMOVED: Fixup code for compound rpt_type qualifiers.
 * This functionality is now part of BasicCleanup.
