@@ -63,12 +63,12 @@ public:
     /// Cleanup a Seq-entry. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
     /// Cleanup a Seq-submit. 
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_submit& se,  Uint4 options = 0);
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_submit& ss,  Uint4 options = 0);
     /// Cleanup a Bioseq. 
     CConstRef<CCleanupChange> BasicCleanup(CBioseq& bs,     Uint4 options = 0);
     /// Cleanup a Bioseq_set.
     CConstRef<CCleanupChange> BasicCleanup(CBioseq_set& bss, Uint4 options = 0);
-    /// Cleanup a Seq-Annot 
+    /// Cleanup a Seq-Annot.
     CConstRef<CCleanupChange> BasicCleanup(CSeq_annot& sa,  Uint4 options = 0);
     /// Cleanup a Seq-feat. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/03/23 18:30:18  rsmith
+* cosmetic changes.
+*
 * Revision 1.7  2006/03/20 14:20:37  rsmith
 * add BasicCleanup for CSeq_submit
 *
