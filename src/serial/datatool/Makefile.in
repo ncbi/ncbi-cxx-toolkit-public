@@ -6,7 +6,5 @@
 APP_PROJ = datatool
 SUB_PROJ = 
 
-EXTRA_CONFIGURABLES = datatool.sh datatool_xml.sh
-
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
