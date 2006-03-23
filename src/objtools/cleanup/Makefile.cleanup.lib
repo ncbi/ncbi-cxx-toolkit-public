@@ -3,5 +3,6 @@
 # Build library "xcleanup"
 ###############################
 
+ASN_DEP = general biblio seq pub seqset submit
 SRC = cleanup cleanup_feat cleanup_general cleanup_pub cleanup_utils cleanup_biosource cleanupp
 LIB    = xcleanup
