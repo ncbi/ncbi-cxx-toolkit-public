@@ -135,7 +135,7 @@ public:
     const TDimVector&  GetDimVector(size_t i) const;
 
     /// Get modification access to dimension vector
-    TDimVector& PutDimVector(unsigned i);
+    TDimVector& PutDimVector(size_t i);
 
     /// Resize dimesion, create bitset content
     void InitDim(size_t i, size_t dim_size);
@@ -221,6 +221,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/03/23 13:32:10  gouriano
+* Sync PutDimVector declaration and definition
+*
 * Revision 1.1  2006/03/22 19:30:36  kuznets
 * initial revision
 *
