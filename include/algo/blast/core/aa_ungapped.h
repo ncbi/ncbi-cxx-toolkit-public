@@ -246,7 +246,6 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
  *
  * @param matrix the substitution matrix representing the query [in]
  * @param subject subject sequence [in]
- * @param query query sequence [in]
  * @param s_off subject offset [in]
  * @param q_off query offset [in]
  * @param dropoff the X dropoff parameter [in]
