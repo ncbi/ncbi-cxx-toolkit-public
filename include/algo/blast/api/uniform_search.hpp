@@ -129,7 +129,7 @@ public:
     /// Constructor with allows a gi list to be specified
     /// @param dbname database name [in]
     /// @param mol_type molecule type [in]
-    /// @param entrez_query entrez query string [in]
+    /// @param gilist list of gis [in]
     CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                     const TGiList& gilist);
 
@@ -137,7 +137,7 @@ public:
     /// @param dbname database name [in]
     /// @param mol_type molecule type [in]
     /// @param entrez_query entrez query string [in]
-    /// @param entrez_query entrez query string [in]
+    /// @param gilist list of gis [in]
     CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                     const string& entrez_query, const TGiList& gilist);
 
@@ -240,12 +240,15 @@ public:
     /// @param msg_vec vector of all queries' messages [in]
     CSearchResultSet(TSeqAlignVector aligns, TSearchMessages msg_vec);
     
+    /// Allow array-like access with integer indices to CSearchResults 
+    /// contained by this object
+    /// @param i query sequence index [in]
     CSearchResults & operator[](int i)
     {
         return *m_Results[i];
     }
     
-    /// Allow array-like access with integer indices to CSearchResults 
+    /// Allow array-like access with integer indices to const CSearchResults 
     /// contained by this object
     /// @param i query sequence index [in]
     const CSearchResults & operator[](int i) const
