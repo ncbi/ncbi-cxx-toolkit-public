@@ -63,17 +63,23 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
     SetGaps(gaps);
 
     double matches;
-    seq_align.GetNamedScore("num_ident", matches);
+    if(seq_align.GetNamedScore("num_ident", matches) == false) {
+        matches = aln_len - spaces; // just an estimate
+    }
     SetIdentity(float(matches/aln_len));
 
     SetMismatches(aln_len - spaces - TCoord(matches));
 
     double score;
-    seq_align.GetNamedScore("bit_score", score);
+    if(seq_align.GetNamedScore("bit_score", score) == false) {
+        score = 2.f * aln_len;
+    }
     SetScore(float(score));
 
     double evalue;
-    seq_align.GetNamedScore("e_value", evalue);
+    if(seq_align.GetNamedScore("e_value", evalue) == false) {
+        evalue = 0;
+    }
     SetEValue(evalue);
 }
 
