@@ -44,6 +44,20 @@ USING_NCBI_SCOPE;
 typedef CIdDeMux<bm::bvector<> > TIdDeMux;
 
 /// @internal
+class CTestObjDeMux : public IObjDeMux<int>
+{
+public:
+    typedef IObjDeMux<int> TParent;
+public:
+    CTestObjDeMux(){}
+    void GetCoordinates(const int& /*obj*/, unsigned* coord)
+    {
+        coord[0] = 1; coord[1] = 2;
+    }
+};
+
+
+/// @internal
 class CTestIdMux : public CNcbiApplication
 {
 public:
@@ -69,11 +83,18 @@ void CTestIdMux::Init(void)
 ///              small(0)    medium(1)     large(2)
 ///          +-------------+-------------+-------------+ 
 /// vol= 0   |  1,3,5      |  8          | 11, 9       |
-/// vol= 1   |  6,10       |  15,16      | 2, 4        |
+/// vol= 1   |  6,10       |  15,16      | 2, 4, 17    |
 ///          +-------------+-------------+-------------+ 
 /// </pre>
 int CTestIdMux::Run(void)
 {
+    {{
+    CTestObjDeMux obj_demux;
+    unsigned coord[2]; 
+    obj_demux.GetCoordinates(0, coord);
+    assert(coord[0] == 1 && coord[1] == 2);
+    }}
+
     TIdDeMux demux(2);
 
     demux.InitDim(0, 2);
@@ -81,6 +102,12 @@ int CTestIdMux::Run(void)
 
     TIdDeMux::TDimVector& dv0 = demux.PutDimVector(0);
     TIdDeMux::TDimVector& dv1 = demux.PutDimVector(1);
+
+    {{
+    TIdDeMux::TDimentionalPoint pt(2);
+    pt[0] = 1; pt[1] = 2;
+    demux.SetCoordinates(17, pt);
+    }}
 
     dv0[0]->set(1);
     dv0[0]->set(3);
@@ -137,6 +164,16 @@ int CTestIdMux::Run(void)
     assert(pt.size() == 2);
     assert(pt[0] == 1 && pt[1] == 2);
 
+    found = demux.GetCoordinates(17, &pt);
+    assert(found);
+    assert(pt.size() == 2);
+    assert(pt[0] == 1 && pt[1] == 2);
+
+
+    found = demux.GetCoordinates(200, &pt);
+    assert(!found);
+
+
 
     return 0;
 }
@@ -151,6 +188,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/23 13:50:55  kuznets
+ * more tests
+ *
  * Revision 1.1  2006/03/22 19:31:57  kuznets
  * initial revision
  *
