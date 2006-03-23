@@ -112,9 +112,12 @@ ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
     _ASSERT(m_BlobOstr);
     CNcbiStreampos pos = m_BlobOstr->tellp();
     m_BlobOstr->write((const char*)buf, count);
-    if (bytes_written) { 
-        *bytes_written = (pos != (CNcbiStreampos)-1) ? m_BlobOstr->tellp() - pos 
-                                                     : count;
+    if (bytes_written) {
+        if (pos != (CNcbiStreampos)-1) {
+            *bytes_written = m_BlobOstr->tellp();
+        } else {
+            *bytes_written = count;
+        }
     }
     if (m_BlobOstr->good()) {
         return eRW_Success;
@@ -203,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2006/03/23 21:22:52  ucko
+ * Rework slightly to resolve MIPSpro's complaint of mismatched types in ?:.
+ *
  * Revision 6.4  2006/03/22 17:01:37  didenko
  * Fixed calculation of bytes_read/bytes_written
  *
