@@ -47,6 +47,35 @@
 
 BEGIN_NCBI_SCOPE
 
+
+/// Abstract object demultiplexer.
+///
+/// This interface makes translation from an object (any C++ type) to
+/// N-dimentional integer coordinate point describing the object.
+/// In other words this interface is doing property extraction.
+///
+template<class TObj>
+struct IObjDeMux
+{
+    typedef TObj TObject;
+
+    /// Object to coordinates (properties) remap.
+    ///
+    ///  @note Method made C-style for better performance
+    ///        It is also intentinally made NOT virtual for
+    ///        inlining (it is frequently called mathod).
+    ///        All derived classes must be used by their types not as
+    ///        references to the parent (IObjDeMux); 
+    ///        Inheritance is optional in this case.
+    void GetCoordinates(const TObj& obj, unsigned* coord)
+    {
+        _ASSERT(0); // use custom implementation of demux
+    }
+};
+
+
+
+/// Bit-vector factory
 template<class TBV>
 class CBvGapFactory
 {
@@ -54,7 +83,7 @@ public:
     static TBV* Create() { return new TBV(bm::BM_GAP); }
 };
 
-/// Id to coordinates Demultiplexer
+/// Id to coordinates demultiplexer
 ///
 /// This class converts single id into N-dimensional point 
 /// (vector of coordinates)
@@ -131,6 +160,20 @@ public:
     ///
     bool GetCoordinates(unsigned id, TDimentionalPoint* coord) const;
 
+    /// C-style version of coordinates mapping
+    /// 
+    bool GetCoordinatesFast(unsigned id, unsigned* coord) const;
+
+    /// Set id using dimentional point
+    ///
+    /// Method does NOT check if the same id already been assigned 
+    /// to some different coordinates. In other words this method
+    /// allows alternative projections.
+    void SetCoordinates(unsigned id, const TDimentionalPoint& coord);
+
+    /// Set coordinates C-style
+    void SetCoordinatesFast(unsigned id, const unsigned* coord);
+
     /// Get dimension vector
     const TDimVector&  GetDimVector(size_t i) const;
 
@@ -153,6 +196,8 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
+
+
 template<class TBV, class TBVFact>
 CIdDeMux<TBV, TBVFact>::CIdDeMux(size_t N)
 : m_DimSpace(N)
@@ -165,6 +210,14 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinates(unsigned id, TDimentionalPoint* coor
     _ASSERT(coord);
     size_t N = m_DimSpace.size();
     coord->resize(N);
+    return GetCoordinatesFast(id, &((*coord)[0]));
+}
+
+template<class TBV, class TBVFact>
+bool CIdDeMux<TBV, TBVFact>::GetCoordinatesFast(unsigned  id, 
+                                                unsigned* coord) const
+{
+    size_t N = m_DimSpace.size();
     for (size_t i = 0; i < N; ++i) {
         bool dim_found = false;
         const TDimVector& dv = GetDimVector(i);
@@ -175,7 +228,7 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinates(unsigned id, TDimentionalPoint* coor
             const TBitVector& bv = *(dv[j]);
             dim_found = bv[id];
             if (dim_found) {
-                (*coord)[i] = j;
+                coord[i] = j;
                 break;
             }
         } // for j
@@ -184,6 +237,38 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinates(unsigned id, TDimentionalPoint* coor
     } // for i
     return true;
 }
+
+
+template<class TBV, class TBVFact>
+void 
+CIdDeMux<TBV, TBVFact>::SetCoordinates(unsigned id, 
+                                       const TDimentionalPoint& coord)
+{
+    _ASSERT(coord.size() == GetN());
+    SetCoordinatesFast(id, &(coord[0]));
+}
+
+
+template<class TBV, class TBVFact>
+void 
+CIdDeMux<TBV, TBVFact>::SetCoordinatesFast(unsigned id, 
+                                           const unsigned* coord)
+{
+    size_t N = GetN();
+    for (size_t i = 0; i < N; ++i) {
+        TDimVector& dv = PutDimVector(i);
+        unsigned c = coord[i];
+        if (dv.size() <= c) {
+            dv.resize(c+1);
+        }
+        TBitVector* bv = dv[c].get();
+        if (!bv) {
+            dv[c] = bv = TBVFactory::Create();
+        }
+        bv->set(id);
+    } // for i
+}
+
 
 
 template<class TBV, class TBVFact>
@@ -221,6 +306,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/03/23 13:50:16  kuznets
+* Added some C-style (works faster in some situations)
+*
 * Revision 1.2  2006/03/23 13:32:10  gouriano
 * Sync PutDimVector declaration and definition
 *
