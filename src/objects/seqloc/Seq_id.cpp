@@ -705,6 +705,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'E':
             switch (pfx[1]) {
             case 'A':                     return eAcc_gb_patent;
+            case 'B':                     return eAcc_gb_est;
             default:                      return eAcc_unreserved_nuc;
             }
 
@@ -1582,6 +1583,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.123  2006/03/23 18:57:48  ucko
+ * IdentifyAccession: EB -> eAcc_gb_est
+ *
  * Revision 6.122  2006/02/15 17:17:42  ucko
  * Expose ranking methods used for FASTA deflines per Tom Madden's request.
  *
