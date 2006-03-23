@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 /// Abstract object demultiplexer.
 ///
 /// This interface makes translation from an object (any C++ type) to
-/// N-dimentional integer coordinate point describing the object.
+/// N-dimensional integer coordinate point describing the object.
 /// In other words this interface is doing property extraction.
 ///
 template<class TObj>
@@ -92,8 +92,8 @@ public:
 /// Example:
 /// 
 /// Database of BLOBs of various sizes:
-/// Dimention 1  -  DB volumes (every volume holds up to 4GB of BLOBs)
-/// Dimention 2  -  Approximate size of the BLOB (small, medium, large)
+/// Dimension 1  -  DB volumes (every volume holds up to 4GB of BLOBs)
+/// Dimension 2  -  Approximate size of the BLOB (small, medium, large)
 ///
 ///
 /// 2D matrix:
@@ -120,8 +120,8 @@ template<class TBV, class TBVFact=CBvGapFactory<TBV> >
 class CIdDeMux
 {
 public:
-    /// Point in N-dimentional space
-    typedef vector<unsigned> TDimentionalPoint; 
+    /// Point in N-dimensional space
+    typedef vector<unsigned> TDimensionalPoint; 
 
     /// Bitvector describing members of dimension
     typedef TBV      TBitVector;
@@ -158,18 +158,18 @@ public:
     ///
     /// @return FALSE if id cannot be found
     ///
-    bool GetCoordinates(unsigned id, TDimentionalPoint* coord) const;
+    bool GetCoordinates(unsigned id, TDimensionalPoint* coord) const;
 
     /// C-style version of coordinates mapping
     /// 
     bool GetCoordinatesFast(unsigned id, unsigned* coord) const;
 
-    /// Set id using dimentional point
+    /// Set id using dimensional point
     ///
     /// Method does NOT check if the same id already been assigned 
     /// to some different coordinates. In other words this method
     /// allows alternative projections.
-    void SetCoordinates(unsigned id, const TDimentionalPoint& coord);
+    void SetCoordinates(unsigned id, const TDimensionalPoint& coord);
 
     /// Set coordinates C-style
     void SetCoordinatesFast(unsigned id, const unsigned* coord);
@@ -205,7 +205,8 @@ CIdDeMux<TBV, TBVFact>::CIdDeMux(size_t N)
 }
 
 template<class TBV, class TBVFact>
-bool CIdDeMux<TBV, TBVFact>::GetCoordinates(unsigned id, TDimentionalPoint* coord) const
+bool CIdDeMux<TBV, TBVFact>::GetCoordinates(unsigned id, 
+                                            TDimensionalPoint* coord) const
 {
     _ASSERT(coord);
     size_t N = m_DimSpace.size();
@@ -242,7 +243,7 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinatesFast(unsigned  id,
 template<class TBV, class TBVFact>
 void 
 CIdDeMux<TBV, TBVFact>::SetCoordinates(unsigned id, 
-                                       const TDimentionalPoint& coord)
+                                       const TDimensionalPoint& coord)
 {
     _ASSERT(coord.size() == GetN());
     SetCoordinatesFast(id, &(coord[0]));
@@ -306,6 +307,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/03/23 17:08:08  kuznets
+* typo fix
+*
 * Revision 1.3  2006/03/23 13:50:16  kuznets
 * Added some C-style (works faster in some situations)
 *
