@@ -44,6 +44,7 @@ class CBioseq;
 class CBioseq_set;
 class CSeq_annot;
 class CSeq_feat;
+class CSeqFeatData;
 class CSeq_descr;
 class CSeqdesc;
 class CGene_ref;
@@ -113,7 +114,8 @@ private:
     // Cleanup other sub-objects.
     void BasicCleanup(CSeq_descr& sdr, ECleanupMode mode = eCleanup_GenBank);
     void BasicCleanup(CSeqdesc& sd,    ECleanupMode mode = eCleanup_GenBank);
-    void BasicCleanup(CGene_ref& prot_ref);
+    void BasicCleanup(CSeqFeatData& data);
+    void BasicCleanup(CGene_ref& gene_ref);
     void BasicCleanup(CProt_ref& prot_ref);
     void BasicCleanup(CRNA_ref& rna_ref);
     void BasicCleanup(CImp_feat& imf);
@@ -140,6 +142,9 @@ private:
     void BasicCleanup(COrgName& on);
     void BasicCleanup(COrgMod& om);
     void BasicCleanup(CSubSource& ss);
+    void BasicCleanup(CObject_id& oid);
+    void BasicCleanup(CUser_field& field);
+    void BasicCleanup(CUser_object& uo);
     
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
@@ -151,11 +156,6 @@ private:
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
     void x_CleanupImp(CSeq_feat& feat, bool is_embl_or_ddbj);
     void x_CleanupRegion(CSeq_feat& feat);
-    void x_CleanupUserString(string& str);
-    void x_CleanupObject_id(CObject_id& oid);
-    void x_CleanupUserField(CUser_field& field);
-    void x_CleanupUserObject(CUser_object& uo);
-    void x_CleanupUser(CSeq_feat& feat);
     void x_CleanupData(CSeq_feat& feat, bool is_embl_or_ddbj);
     void x_TrimParenthesesAndCommas(string& str);
     void x_CombineSplitQual(string& val, string& new_val);
@@ -190,6 +190,8 @@ private:
     void x_OrgModToSubtype(CBioSource& bs);
     void x_SubtypeCleanup(CBioSource& bs);
     void x_ModToOrgMod(COrg_ref& oref);
+    // cleanup strings in User objects and fields
+    void x_CleanupUserString(string& str);
 
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
@@ -208,6 +210,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/03/23 18:31:40  rsmith
+ * new BasicCleanup routines, particularly User Objects/Fields.
+ *
  * Revision 1.2  2006/03/20 14:22:15  rsmith
  * add cleanup for CSeq_submit
  *
