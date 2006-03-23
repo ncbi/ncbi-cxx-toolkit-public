@@ -5,7 +5,7 @@
 APP = hfilter
 SRC = hitfilter_app
 
-LIB = xalgoalignutil $(SOBJMGR_LDEP)
+LIB = xalgoalignutil xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

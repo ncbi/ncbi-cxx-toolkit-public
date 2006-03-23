@@ -82,8 +82,16 @@ private:
     void x_DumpOutput(const THitRefs& hitrefs);
 
     void x_LoadIDs(CNcbiIstream& istr);
+    void x_LoadRestraints(CNcbiIstream& istr, THitRefs& all);
+
     typedef map<string,string> TMapIds;
     TMapIds m_IDs;
+
+    struct SBuildIDs {
+        string m_id [2];
+    };
+    typedef map<string,SBuildIDs> TMapIdPairs;
+    TMapIdPairs m_IDRevs;
 };
 
 
@@ -94,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/03/23 22:01:53  kapustin
+ * Support external alignment restraints
+ *
  * Revision 1.2  2006/03/21 16:19:12  kapustin
  * Add multiple greedy reconciliation algorithm for pairwise alignment filtering
  *

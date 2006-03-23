@@ -42,6 +42,11 @@
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -67,6 +72,11 @@ void CAppHitFilter::Init()
                             CArgDescriptions::eString, g_m8);
 
     argdescr->AddOptionalKey("file_in", "file_in", "Input file (stdin otherwise)",
+                             CArgDescriptions::eInputFile,
+                             CArgDescriptions::fBinary);
+
+    argdescr->AddOptionalKey("restraints", "restraints",
+                             "Binary ASN file with restraining alignments",
                              CArgDescriptions::eInputFile,
                              CArgDescriptions::fBinary);
 
@@ -98,6 +108,7 @@ void CAppHitFilter::Init()
 void CAppHitFilter::x_LoadIDs(CNcbiIstream& istr)
 {
     m_IDs.clear();
+    m_IDRevs.clear();
     while(istr) {
         string ctgid, accver;
         istr >> ctgid;
@@ -109,6 +120,17 @@ void CAppHitFilter::x_LoadIDs(CNcbiIstream& istr)
             break;
         }
         m_IDs[ctgid] = accver;
+
+        TMapIdPairs::iterator ie = m_IDRevs.end(), im = m_IDRevs.find(accver);
+        if(im == ie) {
+            SBuildIDs build_ids;
+            build_ids.m_id[0] = build_ids.m_id[1] = ctgid;
+            m_IDRevs[accver] = build_ids;
+        }
+        else {
+            SBuildIDs& bi = im->second;
+            bi.m_id[1] = ctgid;
+        }
     }
 }
 
@@ -124,8 +146,6 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
 
     CNcbiIstream& istr = args["file_in"]? args["file_in"].AsInputFile(): cin;
 
-    size_t count = 0;
-    const size_t kReport = 100000;
     if(fmt_in == g_m8) {
         while(istr) {
             char line [1024];
@@ -137,15 +157,10 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
                 if(hit->GetIdentity() >= min_idty && hit->GetLength() >= min_len) {
                     phitrefs->push_back(hit);
                 }
-                if(++count % kReport == 0) {
-                    //cerr << "Read " << count << " hits" << endl;
-                }
             }
         }
     }
     else {
-        const ESerialDataFormat sfmt ();
-
         const bool  parse_aln = fmt_out != g_m8;
 
         CObjectIStream* in_ptr =  CObjectIStream::Open(fmt_in == g_AsnTxt? 
@@ -171,9 +186,6 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
                         }
                         phitrefs->push_back(hit);
                     }
-                }
-                if(++count % kReport == 0) {
-                    //cerr << "Read " << count << " hits" << endl;
                 }
             }
         }
@@ -204,7 +216,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
         ITERATE(THitRefs, ii, hitrefs) {
             
             const THit& h = **ii;
-            //cerr << h << endl;
+            cerr << h << endl;
 
             CRef<CDense_seg> ds (new CDense_seg);
             const ENa_strand query_strand = h.GetQueryStrand()? eNa_strand_plus: 
@@ -280,8 +292,15 @@ int CAppHitFilter::Run()
         x_LoadIDs(args["ids"].AsInputFile());
     }
 
+    THitRefs restraint;
+    if(args["restraints"]) {
+        x_LoadRestraints(args["restraints"].AsInputFile(), restraint);
+    }
+
     THitRefs all;
     x_ReadInputHits(&all);
+
+    copy(restraint.begin(), restraint.end(), back_inserter(all));
     sort(all.begin(), all.end(), s_PHitRefScore);
 
     const size_t M = args["hits_per_chunk"].AsInteger();
@@ -304,18 +323,72 @@ int CAppHitFilter::Run()
         else {
             ii_hi = ii = ii_dst;
         }
-        CStopWatch sw (CStopWatch::eStart);
-        cerr << " cur set size = " << (ii_hi - ii_beg) 
-             << " total processed = " << (ii - ii_beg) << " ... ";
         CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, kMinOutputHitLen);
         ii_hi = remove_if(ii_beg, ii_hi, s_PNullRef);
-        cerr << "done in " << sw.Elapsed() << " seconds" << endl;
     }
     all.erase(ii_hi, ii_end);
     
     x_DumpOutput(all);
 
     return 0;
+}
+
+
+void CAppHitFilter::x_LoadRestraints(CNcbiIstream& istr, THitRefs& all)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope (new CScope (*om));
+    scope->AddDefaults();
+
+    CRef<CSeq_annot> seq_annot (new CSeq_annot);
+    istr >> MSerial_AsnBinary >> *seq_annot;
+    //istr >> MSerial_AsnText >> *seq_annot;
+
+    typedef list<CRef<CSeq_align> > TSeqAlignList;
+    TSeqAlignList& sa_list = seq_annot->SetData().SetAlign();
+    NON_CONST_ITERATE(TSeqAlignList, ii, sa_list) {
+                    
+        CRef<CSeq_align> seq_align = *ii;
+
+        THitRef hit (new THit(*seq_align, true));
+
+        for(Uint1 where = 0; where < 2; ++where) {
+
+            CRef<CSeq_id> id;
+
+            CConstRef<CSeq_id> id0 (hit->GetId(where)); 
+            string accver;
+            if(id0->IsGi()) {
+                const int gi = id0->GetGi();
+                accver = sequence::GetAccessionForGi(gi, *scope);
+            }
+            else {
+                const string seqidstr = id0->AsFastaString();
+                const int gi = sequence::GetGiForAccession(seqidstr, *scope);
+                accver = sequence::GetAccessionForGi(gi, *scope);
+            }
+
+            TMapIdPairs::const_iterator im = m_IDRevs.find(accver), 
+                ime = m_IDRevs.end();
+            if(im == ime) {
+                id.Reset(new CSeq_id());
+                id->Assign(*(hit->GetId(where)));
+            }
+            else {
+                const string ctgid = string("lcl|") + im->second.m_id[where];
+                id.Reset(new CSeq_id(ctgid));
+            }
+            hit->SetId(where, id);
+        }            
+
+        if(hit->GetQueryStrand() == false) {
+            hit->FlipStrands();
+        }
+
+        hit->SetScore(0.5 * numeric_limits<float>::max());
+        all.push_back(hit);
+    }
 }
 
 
@@ -339,6 +412,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/23 22:01:53  kapustin
+ * Support external alignment restraints
+ *
  * Revision 1.8  2006/03/22 13:54:55  kapustin
  * Use non-templated predicate to work around some intractable compilers
  *
