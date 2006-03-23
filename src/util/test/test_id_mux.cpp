@@ -104,7 +104,7 @@ int CTestIdMux::Run(void)
     TIdDeMux::TDimVector& dv1 = demux.PutDimVector(1);
 
     {{
-    TIdDeMux::TDimentionalPoint pt(2);
+    TIdDeMux::TDimensionalPoint pt(2);
     pt[0] = 1; pt[1] = 2;
     demux.SetCoordinates(17, pt);
     }}
@@ -141,7 +141,7 @@ int CTestIdMux::Run(void)
 
     bool found;
 
-    TIdDeMux::TDimentionalPoint pt;
+    TIdDeMux::TDimensionalPoint pt;
     found = demux.GetCoordinates(5, &pt);
     assert(found);
     assert(pt.size() == 2);
@@ -188,6 +188,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/03/23 17:07:46  kuznets
+ * Fixed typo
+ *
  * Revision 1.2  2006/03/23 13:50:55  kuznets
  * more tests
  *
