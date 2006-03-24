@@ -464,13 +464,12 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
     struct timeval delay;
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
-    select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay);
-/*
     while (select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay) < 0) {
+#    if defined(SELECT_UPDATES_TIMEOUT)
         if (errno != EINTR  ||  onsignal == eInterruptOnSignal)
+#    endif
             break;
     }
-*/
 #  endif /*HAVE_NANOSLEEP*/
 
 #elif defined(NCBI_OS_MAC)
@@ -536,6 +535,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/03/24 13:51:33  ivanov
+ * SleepMicroSec [Unix]: use advantage of SELECT_UPDATES_TIMEOUT
+ *
  * Revision 1.51  2006/03/17 14:32:05  ivanov
  * SleepMicroSec() [Unix] -- ignore 'onsignal'parameter for platforms that
  * use select(), sleeping less is more preferble here than sleeping longer.
