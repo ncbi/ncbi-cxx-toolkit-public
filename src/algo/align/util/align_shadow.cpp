@@ -56,21 +56,31 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
     }
 
     const CDense_seg &ds = seq_align.GetSegs().GetDenseg();
-    const CDense_seg::TStrands& strands = ds.GetStrands();
-
     char query_strand = 0, subj_strand = 0;
-    if(strands[0] == eNa_strand_plus || strands[0] == eNa_strand_unknown) {
-        query_strand = '+';
-    }
-    else if(strands[0] == eNa_strand_minus) {
-        query_strand = '-';
-    }
+    if(ds.CanGetStrands()) {
 
-    if(strands[1] == eNa_strand_plus || strands[1] == eNa_strand_unknown) {
-        subj_strand = '+';
+        const CDense_seg::TStrands& strands = ds.GetStrands();
+
+        if(strands.size() >= 2) {
+            if(strands[0] == eNa_strand_plus || strands[0] == eNa_strand_unknown) {
+                query_strand = '+';
+            }
+            else if(strands[0] == eNa_strand_minus) {
+                query_strand = '-';
+            }
+            if(strands[1] == eNa_strand_plus || strands[1] == eNa_strand_unknown) {
+                subj_strand = '+';
+            }
+            else if(strands[1] == eNa_strand_minus) {
+                subj_strand = '-';
+            }
+        }
+        else if(strands.size() == 0) {
+            query_strand = subj_strand = '+';
+        }
     }
-    else if(strands[1] == eNa_strand_minus) {
-        subj_strand = '-';
+    else {
+        query_strand = subj_strand = '+';
     }
 
     if(query_strand == 0 || subj_strand == 0) {
@@ -844,6 +854,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.17  2006/03/24 13:26:04  kapustin
+ * Assume plus strands when initilializing from dense-seg with no strand data
+ *
  * Revision 1.16  2006/03/21 16:18:30  kapustin
  * Support edit transcript string
  *
