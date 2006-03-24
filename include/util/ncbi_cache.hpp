@@ -118,43 +118,14 @@ public:
 };
 
 
-/// Fast cache lock - used by default in MT builds
-class CCacheLock_FastMutex
-{
-public:
-    typedef CFastMutex      TLock;
-    typedef CFastMutexGuard TGuard;
-};
-
-/// Cache lock using CMutex. May be necessary if RemoveElement() makes
-/// calls to the same cache object.
-class CCacheLock_Mutex
-{
-public:
-    typedef CMutex      TLock;
-    typedef CMutexGuard TGuard;
-};
-
-/// NOP cache lock - provides no real MT-safety
-class CCacheLock_Dummy
-{
-public:
-    struct SVoid {
-        ~SVoid(void) {}
-    };
-    typedef SVoid TLock;
-    typedef SVoid TGuard;
-};
-
-
 /// Default cache lock
-typedef CCacheLock_FastMutex TCacheLock_Default;
+typedef CFastMutex TCacheLock_Default;
 
 
 /// Cache traits template.
 /// TKey and TValue define types stored in the cache.
-/// TLock must define TGuard type and TLock subtypes so that a value of type
-/// TLock can be used to initialize TGuard.
+/// TLock must define TWriteLockGuard subtype so that a value of type
+/// TLock can be used to initialize TWriteLockGuard.
 /// TSize is an integer type used for element indexing.
 /// TRemover must provide static method called for each element to be
 /// removed from the cache:
@@ -254,9 +225,8 @@ private:
     typedef typename TCacheSet::iterator         TCacheSet_I;
     typedef map<TKeyType, SValueWithIndex>       TCacheMap;
     typedef typename TCacheMap::iterator         TCacheMap_I;
-    typedef typename TTraits::TLockType          TLockTraits;
-    typedef typename TLockTraits::TGuard         TGuardType;
-    typedef typename TLockTraits::TLock          TLockType;
+    typedef typename TTraits::TLockType          TLockType;
+    typedef typename TLockType::TWriteLockGuard  TGuardType;
     typedef typename TTraits::THandlerType       THandlerType;
 
     // Get next counter value, adjust order of all elements if the counter
@@ -571,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/03/24 22:06:37  grichenk
+ * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
+ *
  * Revision 1.3  2006/03/20 18:54:25  grichenk
  * Added callbacks for element insertion.
  *

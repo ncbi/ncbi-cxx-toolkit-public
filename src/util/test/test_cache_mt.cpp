@@ -65,7 +65,7 @@ public:
 
 
 typedef CElement* TElement;
-typedef CCacheLock_FastMutex TCacheLock;
+typedef CFastMutex TCacheLock;
 typedef CCacheTraits<Uint8,
                      TElement,
                      TCacheLock,
@@ -237,6 +237,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/03/24 22:06:37  grichenk
+ * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
+ *
  * Revision 1.3  2006/03/20 18:54:25  grichenk
  * Added callbacks for element insertion.
  *

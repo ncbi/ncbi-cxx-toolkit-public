@@ -742,6 +742,21 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
+///
+/// CNoMutex --
+///
+/// Fake mutex that does not lock anything.
+///
+/// Allows to create template classes which use CMutex/CFastMutex/CNoMutex as
+/// an argument. In case of CNoMutex no real locking is performed.
+///
+/// @sa
+///   CNoLock
+
+typedef CNoLock CNoMutex;
+
+
+/////////////////////////////////////////////////////////////////////////////
 //
 //  RW-LOCK
 //
@@ -941,6 +956,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/03/24 22:06:37  grichenk
+ * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
+ *
  * Revision 1.39  2005/07/19 20:11:09  ucko
  * Predeclare CRWLock for the sake of G++ 4.
  *

@@ -88,6 +88,7 @@ void CCacheDemoApp::SimpleCacheDemo(void)
     // Elements of the cache are CObject-derived.
     // The cache does not require any special allocator/remover since
     // elemnts are stored in CRef<>-s.
+    // The cache uses default locking (CFastMutex).
     typedef CCache<int, CRef<CObjElement> > TSimpleCache;
     TSimpleCache cache(100);
     // Allocate and insert elements into the cache. Check result.
@@ -146,12 +147,12 @@ public:
 
 void CCacheDemoApp::HeapCacheDemo(void)
 {
-    // Define cache type, override the default insert/remove handler
+    // Define cache type, override the default insert/remove handler.
+    // Set lock type to CNoMutex to avoid locking overhead.
     typedef CHeapElement* TElement;
-    typedef CCacheLock_FastMutex TCacheLock;
     typedef CCacheTraits<int,
                         TElement,
-                        TCacheLock,
+                        CNoMutex,
                         size_t,
                         CDemoHandler_HeapAlloc> THeapCacheTraits;
     typedef CCache<int, TElement, THeapCacheTraits> THeapCache;
@@ -223,12 +224,11 @@ private:
 
 void CCacheDemoApp::MemoryCacheDemo(void)
 {
-    // Override the default insert/remove handler
+    // Override the default insert/remove handler.
     typedef CRef<CObjElement> TElement;
-    typedef CCacheLock_FastMutex TCacheLock;
     typedef CCacheTraits<int,
                         TElement,
-                        TCacheLock,
+                        CFastMutex,
                         size_t,
                         CDemoHandler_MemSize> TMemCacheTraits;
     typedef CCache<int, TElement, TMemCacheTraits> TMemCache;
@@ -309,10 +309,9 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
 {
     // Override the default insert/remove handler
     typedef CRef<CObjElement> TElement;
-    typedef CCacheLock_FastMutex TCacheLock;
     typedef CCacheTraits<int,
                         TElement,
-                        TCacheLock,
+                        CFastMutex,
                         size_t,
                         CDemoHandler_EmptyOnOverflow> TEmptyOnOverflowTraits;
     typedef CCache<int, TElement, TEmptyOnOverflowTraits> TEmptyOnOverflowCache;
@@ -351,8 +350,8 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.2  2006/03/22 14:51:11  grichenk
- * Added comments
+ * Revision 1.3  2006/03/24 22:06:37  grichenk
+ * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
  *
  *
  * ===========================================================================

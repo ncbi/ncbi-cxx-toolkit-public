@@ -181,6 +181,21 @@ private:
 };
 
 
+///
+/// CNoLock is a simple no-op lock which does no real locking.
+/// The class can be used as a template argument instead of normal
+/// locks (e.g. CMutex).
+///
+class CNoLock
+{
+public:
+    typedef CGuard<CNoLock> TReadLockGuard;
+    typedef CGuard<CNoLock> TWriteLockGuard;
+
+    void Lock  (void) const {}
+    void Unlock(void) const {}
+};
+
 
 END_NCBI_SCOPE
 
@@ -188,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/03/24 22:06:37  grichenk
+ * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
+ *
  * Revision 1.4  2005/06/17 15:20:19  vasilche
  * Changed CGuard<> to store locking and unlocking objects using pair_base_member.
  * Changed Lock::() and Unlock::() to return void because it was not used anyway.
