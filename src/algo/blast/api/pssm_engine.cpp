@@ -256,6 +256,8 @@ CPssmEngine::Run()
 /// required by the C API. Used only by CPssmEngine::x_CreatePssmFromFreqRatios
 struct SNcbiMatrix2DoubleMatrix 
 {
+    /// Constructor
+    /// @param m standard c++ toolkit matrix
     SNcbiMatrix2DoubleMatrix(const CNcbiMatrix<double>& m) 
         : m_NumCols(m.GetCols())
     {
@@ -268,6 +270,7 @@ struct SNcbiMatrix2DoubleMatrix
         }
     }
 
+    /// Destructor
     ~SNcbiMatrix2DoubleMatrix() { 
         for (size_t c = 0; c < m_NumCols; c++) {
             delete [] m_Data[c];
@@ -275,11 +278,14 @@ struct SNcbiMatrix2DoubleMatrix
         delete [] m_Data; 
     }
 
+    /// Retrieves data in the format expected by the C CORE APIs
     operator double**() { return m_Data; }
     
 private:
-    double** m_Data;
-    size_t m_NumCols;
+    /// double** representation of a CNcbiMatrix
+    double** m_Data;        
+    /// number of columns in the matrix (for deallocation)
+    size_t m_NumCols;       
 };
 
 CRef<CPssmWithParameters>
@@ -606,6 +612,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2006/03/24 14:43:48  camacho
+ * Doxygen fixes
+ *
  * Revision 1.44  2006/01/12 20:37:30  camacho
  * Use BlastQueryInfoNew
  *

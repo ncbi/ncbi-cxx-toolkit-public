@@ -95,8 +95,11 @@ private:
     /// Prohibit assignment operator
     CBlastRPSInfo& operator=(const CBlastRPSInfo& rhs);
 
+    /// The auxiliary RPS-BLAST file (.aux)
     CRef<CRpsAuxFile> m_AuxFile;
+    /// The PSSM RPS-BLAST file (.rps)
     CRef<CRpsPssmFile> m_PssmFile;
+    /// The lookup table RPS-BLAST file (.loo)
     CRef<CRpsLookupTblFile> m_LutFile;
 
     /// Pointer which contains pointers to data managed by the data members

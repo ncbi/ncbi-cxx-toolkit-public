@@ -150,14 +150,20 @@ class NCBI_XBLAST_EXPORT CThreadable
     enum { kMinNumThreads = 1 };
 
 public:
+    /// Default ctor
     CThreadable(void) : m_NumThreads(kMinNumThreads) {}
+    /// Our virtual destructor
     virtual ~CThreadable(void) {}
+    /// Mutator for the number of threads
+    /// @param nthreads number of threads to use
     void SetNumberOfThreads(size_t nthreads);
+    /// Accessor for the number of threads to use
     size_t GetNumberOfThreads(void) const;
+    /// Returns true if more than 1 thread is specified
     bool IsMultiThreaded(void) const;
 
 protected:
-    size_t m_NumThreads;
+    size_t m_NumThreads;    ///< Keep track of how many threads should be used
 };
 
 
@@ -275,29 +281,32 @@ typedef CStructWrapper<SPHIPatternSearchBlk>    TSPHIPatternSearchBlk;
 /// preliminary and traceback stages of the BLAST search
 struct NCBI_XBLAST_EXPORT SInternalData : public CObject
 {
+    /// Default ctor
     SInternalData();
 
-    // The query sequence data, these fields are "borrowed" from the query
-    // factory (which owns them)
+    /// The query sequence data, these fields are "borrowed" from the query
+    /// factory (which owns them)
     BLAST_SequenceBlk* m_Queries;
+    /// The query information structure
     BlastQueryInfo* m_QueryInfo;
 
+    /// BLAST score block structure
     CRef<TBlastScoreBlk> m_ScoreBlk;
 
-    // in the traceback stage, only needed for PHI-BLAST needs this field to be
-    // populated
+    /// Lookup table, usually only needed in the preliminary stage of the
+    /// search, but for PHI-BLAST it's also needed in the traceback stage.
     CRef<TLookupTableWrap> m_LookupTable;   
 
-    // output from preliminary and traceback stages
+    /// Diagnostic output from preliminary and traceback stages
     CRef<TBlastDiagnostics> m_Diagnostics;  
 
-    // Output of the preliminary stage goes here
+    /// HSP output of the preliminary stage goes here
     CRef<TBlastHSPStream> m_HspStream;
 
-    // The source of subject sequence data
+    /// The source of subject sequence data
     CRef<TBlastSeqSrc> m_SeqSrc;
 
-    // The RPS-BLAST related data
+    /// The RPS-BLAST related data
     CRef<CBlastRPSInfo> m_RpsData;
 };
 
