@@ -363,6 +363,7 @@ int CAgpconvertApplication::Run(void)
             if (args["on"]) {
                 const string& inp_taxname = args["on"].AsString();
                 inp_orgref.SetTaxname(inp_taxname);
+
                 if (args["sn"]) {
                     CRef<COrgMod> mod(new COrgMod);
                     mod->SetSubtype(COrgMod::eSubtype_strain);
@@ -378,11 +379,40 @@ int CAgpconvertApplication::Run(void)
                 if (!on_result->GetIs_species_level()) {
                     throw runtime_error("supplied name is not species-level");
                 }
-                if (on_result->GetOrg().GetTaxname() != inp_taxname) {
+                if (inp_orgref.GetTaxname() != inp_taxname) {
                     cerr << "** Warning: taxname returned by server ("
                          << on_result->GetOrg().GetTaxname()
                          << ") differs from that supplied with -on ("
                          << inp_taxname << ")" << endl;
+                }
+
+                if (args["sn"]) {
+                    const string& inp_strain_name = args["sn"].AsString();
+                    vector<string> strain_names;
+                    ITERATE (COrgName::TMod, mod,
+                             inp_orgref.GetOrgname().GetMod()) {
+                        if ((*mod)->GetSubtype() == COrgMod::eSubtype_strain) {
+                            strain_names.push_back((*mod)->GetSubname());
+                        }
+                    }
+                    if (!(strain_names.size() == 1
+                          && strain_names[0] == inp_strain_name)) {
+                        cerr << "** Warning: strain name " << inp_strain_name
+                             << " provided but server lookup yielded";
+                        if (strain_names.empty()) {
+                            cerr << " no strain name" << endl;
+                        } else {
+                            for (unsigned int i = 0;
+                                 i < strain_names.size();
+                                 ++i) {
+                                if (i > 0) {
+                                    cerr << " and";
+                                }
+                                cerr << " " << strain_names[i];
+                            }
+                            cerr << endl;
+                        }
+                    }
                 }
             }
 
@@ -408,7 +438,8 @@ int CAgpconvertApplication::Run(void)
                                             + NStr::IntToString(on_taxid)
                                             + ") differs from that from "
                                             + "taxid lookup ("
-                                            + NStr::IntToString(db_taxid) + ")");
+                                            + NStr::IntToString(db_taxid)
+                                            + ")");
                     }
                 }
             }
@@ -606,6 +637,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/03/24 15:16:18  jcherry
+ * Taxonomic lookup changes
+ *
  * Revision 1.10  2006/03/23 20:53:56  jcherry
  * Big changes to taxonomic lookup
  *
