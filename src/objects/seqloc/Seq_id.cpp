@@ -1273,15 +1273,18 @@ SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
     string ss = NStr::TruncateSpaces(s, NStr::eTrunc_Both);
     list<string> fasta_pieces;
     NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
-    if ((fasta_pieces.size() < 2  ||  isdigit((unsigned char)ss[0]))
-        &&  ss.find_first_not_of(kDigits) != NPOS) {
+    if ((fasta_pieces.size() < 2  ||  isdigit((unsigned char)ss[0]))) {
+        CRef<CSeq_id> id(new CSeq_id);
         // In this context, it's probably reasonable to expect GIs to be
         // tagged with gi| and to treat untagged numeric IDs as local.
-        CRef<CSeq_id> id(new CSeq_id);
-        try {
-            id->Set(ss);
-        } catch (CSeqIdException&) {
+        if (ss.find_first_not_of(kDigits) == NPOS) {
             id->Set(e_Local, ss);
+        } else {
+            try {
+                id->Set(ss);
+            } catch (CSeqIdException&) {
+                id->Set(e_Local, ss);
+            }
         }
         ids.push_back(id);
         return 1;
@@ -1583,6 +1586,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.124  2006/03/24 21:30:37  ucko
+ * Really fix ParseFastaIds' handling of untagged numeric IDs.
+ *
  * Revision 6.123  2006/03/23 18:57:48  ucko
  * IdentifyAccession: EB -> eAcc_gb_est
  *
