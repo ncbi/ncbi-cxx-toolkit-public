@@ -144,7 +144,7 @@ CNcbiIstream& CBlobStorage_NetCache::GetIStream(const string& key,
         if( !fstr.get() || !fstr->good()) {
             fstr.reset();
             NCBI_THROW(CBlobStorageException, eReader, 
-                       "Reader couldn't create a temporary file.");
+                       "Reader couldn't create a temporary file. BlobKey: " + key);
         }
 
         char buf[1024];
@@ -161,7 +161,7 @@ CNcbiIstream& CBlobStorage_NetCache::GetIStream(const string& key,
         if( !m_IStream.get() || !m_IStream->good()) {
             m_IStream.reset();
             NCBI_THROW(CBlobStorageException,
-                       eReader, "Reader couldn't create a input stream.");
+                       eReader, "Reader couldn't create a input stream. BlobKey: " + key);
         }
 
     }
@@ -172,13 +172,15 @@ string CBlobStorage_NetCache::GetBlobAsString(const string& data_id)
 {
     size_t b_size = 0;
     auto_ptr<IReader> reader = x_GetReader(data_id, b_size, eLockWait);
-    //    vector<char> buf(b_size);
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
-    if( reader->Read(buf.get(), b_size) != eRW_Success )
+    string buf(b_size,0);
+    //AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
+    ERW_Result res = reader->Read(&*buf.begin(), b_size);
+    if( res != eRW_Success && res != eRW_Eof)
         NCBI_THROW(CBlobStorageException,
-                   eReader, "Reader couldn't read a blob.");
-    buf.get()[b_size] = 0;   
-    return string(buf.get());
+                   eReader, "Reader couldn't read a blob. BlobKey: " + data_id);
+    //    buf.get()[b_size] = 0;   
+    //return string(buf.get());
+    return buf;
 }
 
 CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
@@ -206,14 +208,14 @@ CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
         }
         if (!writer.get()) {
             NCBI_THROW(CBlobStorageException,
-                       eWriter, "Writer couldn't be created.");
+                       eWriter, "Writer couldn't be created. BlobKey: " + key);
         }
         m_OStream.reset( new CWStream(writer.release(), 0,0, 
                                       CRWStreambuf::fOwnWriter));
         if( !m_OStream.get() || !m_OStream->good()) {
             m_OStream.reset();
             NCBI_THROW(CBlobStorageException,
-                       eWriter, "Writer couldn't create an ouput stream.");
+                       eWriter, "Writer couldn't create an ouput stream. BlobKey: " + key);
         }
 
     } else {
@@ -395,6 +397,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2006/03/27 15:29:06  didenko
+ * Fixes handling of empty blobs
+ *
  * Revision 6.4  2006/03/15 17:20:35  didenko
  * +IsValidKey method
  * Added new CBlobStorageExecption error codes
