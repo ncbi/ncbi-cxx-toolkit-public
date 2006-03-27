@@ -259,6 +259,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         }        
         else {
             if (CollectParams(grid_ctx)) {
+                bool finished = false;
                 // Get a job submiter
                 CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
                 // Submit a job
@@ -270,7 +271,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                     unsigned long sleep_time = m_FirstDelay*1000;
                     const unsigned long interval = 500;
                     long count = sleep_time / interval;
-                    bool finished = false;
                     finished = x_CheckJobStatus(grid_ctx);
                     for(; count > 0; --count) {
                         if (finished)
@@ -281,8 +281,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                     if( !finished ) {
                         OnJobSubmitted(grid_ctx);
                         RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
-                    }
-        
+                    }        
                 } 
                 catch (CNetScheduleException& ex) {
                     if (ex.GetErrCode() == 
@@ -290,10 +289,14 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                         OnQueueIsBusy(grid_ctx);
                     else
                         OnJobFailed(ex.what(), grid_ctx);
+                    finished = true;
                 }
                 catch (exception& ex) {
                     OnJobFailed(ex.what(), grid_ctx);
+                    finished = true;
                 }
+                if (finished)
+                    grid_ctx.Clear();
 
             }
             else {
@@ -428,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/03/27 15:32:23  didenko
+ * Fixed error URLs generation
+ *
  * Revision 1.29  2006/03/15 17:30:12  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *
