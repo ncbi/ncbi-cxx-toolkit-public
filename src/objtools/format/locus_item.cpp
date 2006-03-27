@@ -455,7 +455,20 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
             break;
         }
     }
-
+    if ( ctx.IsProt() ) {
+        const CSeq_feat* cds = GetCDSForProduct(bsh);
+        if ( cds ) {
+            CBioseq_Handle nuc = 
+                bsh.GetScope().GetBioseqHandle(cds->GetLocation());
+            ITERATE (CBioseq_Handle::TId, iter, nuc.GetId()) {
+                if (*iter  &&  iter->GetSeqId()->IsPatent()) {
+                    m_Division = "PAT";
+                    break;
+                }
+            }
+        }
+    }
+    
     // more complicated code for division, if necessary, goes here
 
     for (CSeqdesc_CI gb_desc(bsh, CSeqdesc::e_Genbank); gb_desc; ++gb_desc) {
@@ -616,6 +629,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2006/03/27 16:32:47  ludwigf
+* CHANGED: Genpept display will now check the associated cdregion's bioseq
+*  for the presence of "patent" seq-ids (This affects the content of the
+*  locus line).
+*
 * Revision 1.19  2005/06/03 17:00:39  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
