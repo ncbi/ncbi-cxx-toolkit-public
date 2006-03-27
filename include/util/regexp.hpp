@@ -170,7 +170,7 @@ public:
     /// to retrieve pattern and subpatterns. Calling GetMatch() causes
     /// the entire search to be performed again. If you want to retrieve
     /// a different pattern/subpattern from an already performed search,
-    /// it is more efficient to use GetSub or GetResults.
+    /// it is more efficient to use GetSub() or GetResults().
     /// @param str
     ///   String to search.
     /// @param offset
@@ -186,13 +186,30 @@ public:
     ///   Return (sub) match with number idx or empty string when no match
     ///   found or if noreturn is true.
     /// @sa
-    ///   EMatch, GetSub(), GetResult()
+    ///   EMatch, GetSub, GetResult
     string GetMatch(
         const string& str,
         size_t        offset   = 0,
         size_t        idx      = 0,
         TMatch        flags    = fMatch_default,
         bool          noreturn = false
+    );
+
+    /// Check existence substring which match a specified pattern.
+    ///
+    /// Using IsMatch() reset all results from previous GetMatch() call.
+    /// The subsequent NumFound() always returns 1 for successful IsMatch().
+    /// @param str
+    ///   String to search.
+    /// @param flags
+    ///   Flags to match.
+    /// @return
+    ///   Return TRUE if a string corresponding to the match to pattern.
+    /// @sa
+    ///   EMatch, GetMatch, NumFound
+    bool IsMatch(
+        const string& str,
+        TMatch        flags = fMatch_default
     );
 
     /// Get pattern/subpattern from previous GetMatch().
@@ -217,7 +234,7 @@ public:
     ///   Return the number of patterns + subpatterns found as a result
     ///   of the most recent GetMatch() call.
     /// @sa
-    ///   GetMatch()
+    ///   GetMatch, IsMatch
     int NumFound() const;
 
     /// Get location of pattern/subpattern.
@@ -233,6 +250,9 @@ public:
     /// @sa
     ///   GetMatch(), NumFound()
     const int* GetResults(size_t idx) const;
+
+    /// Escape all regular expression meta characters in the string.
+    static string Escape(const string& str);
 
 private:
     // Disable copy constructor and assignment operator.
@@ -580,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/03/27 19:46:55  ivanov
+ * CRegexp:: added methods Escape(), IsMatch()
+ *
  * Revision 1.16  2005/10/20 20:00:15  vakatov
  * Remember to close DOXYGEN group
  *

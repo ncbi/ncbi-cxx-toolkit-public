@@ -177,14 +177,54 @@ string CRegexp::GetMatch(
     bool          noreturn)
 {
     int x_flags = s_GetRealMatchFlags(flags);
-    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.c_str(), (int)str.length(),
-                           (int)offset, x_flags, m_Results,
+    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.c_str(),
+                           (int)str.length(), (int)offset,
+                           x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
     if ( noreturn ) {
         return kEmptyStr;
     } else {
         return GetSub(str, idx);
     }
+}
+
+
+bool CRegexp::IsMatch(const string& str, TMatch flags)
+{
+    int x_flags = s_GetRealMatchFlags(flags);
+    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.c_str(),
+                           (int)str.length(),  0, x_flags, m_Results, 3);
+    return m_NumFound > 0;
+}
+
+
+string CRegexp::Escape(const string& str)
+{
+    static char special[] = ".?*+$^[](){}/\\|-";
+
+    // Find first special character
+    SIZE_TYPE prev = 0;
+    SIZE_TYPE pos = str.find_first_of(special, prev);
+    if ( pos == NPOS ) {
+        // All characters are good - return original string
+        return str;
+    }
+    CNcbiOstrstream out;
+    do {
+        // Write first good characters in one chunk
+        out.write(str.data() + prev, pos - prev);
+        // Escape char
+        out.put('\\');
+        out.put(str[pos]);
+        // Find next
+        prev = pos + 1;
+        pos = str.find_first_of(special, prev);
+    } while (pos != NPOS);
+
+    // Write remaining part of the string
+    out.write(str.data() + prev, str.length() - prev);
+    // Return encoded string
+	return CNcbiOstrstreamToString(out);
 }
 
 
@@ -411,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/03/27 19:47:05  ivanov
+ * CRegexp:: added methods Escape(), IsMatch()
+ *
  * Revision 1.14  2005/10/20 19:33:39  vakatov
  * Authors += Vladimir Ivanov
  *
