@@ -811,7 +811,6 @@ string AlignmentUtility::GetSeqIdStringForRow(unsigned int row) {
 
     if (sequence) {
         idStr = SequenceIdToString(*sequence);
-        idStr += " at row " + NStr::IntToString(row + 1) + '>';
     }
     return idStr;
 }
@@ -838,6 +837,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/03/27 17:03:48  lanczyck
+* do not print row with the sequence id string
+*
 * Revision 1.26  2006/03/27 16:34:52  lanczyck
 * add a few utility methods to AlignmentUtility
 *
