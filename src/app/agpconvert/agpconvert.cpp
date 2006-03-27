@@ -185,6 +185,16 @@ static int s_GetTaxid(const COrg_ref& org_ref) {
 }
 
 
+// Helper for removing old-name OrgMod's
+struct SIsOldName
+{
+    bool operator()(CRef<COrgMod> mod)
+    {
+        return mod->GetSubtype() == COrgMod::eSubtype_old_name;
+    }
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  Run
 
@@ -384,6 +394,13 @@ int CAgpconvertApplication::Run(void)
                          << on_result->GetOrg().GetTaxname()
                          << ") differs from that supplied with -on ("
                          << inp_taxname << ")" << endl;
+                    // an old-name OrgMod will have been added
+                    COrgName::TMod& mod = inp_orgref.SetOrgname().SetMod();
+                    mod.erase(remove_if(mod.begin(), mod.end(), SIsOldName()),
+                              mod.end());
+                    if (mod.empty()) {
+                        inp_orgref.SetOrgname().ResetMod();
+                    }
                 }
 
                 if (args["sn"]) {
@@ -637,6 +654,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/03/27 16:01:33  jcherry
+ * Remove old-name OrgMod when it's put in by CTaxon1::LookupMerge
+ *
  * Revision 1.11  2006/03/24 15:16:18  jcherry
  * Taxonomic lookup changes
  *
