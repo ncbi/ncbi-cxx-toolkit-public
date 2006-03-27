@@ -96,12 +96,12 @@ if test $? -ne 0; then
        wholelist=`echo $wholelist $list` 
     done
     wholelist=`for s in $wholelist; do echo $s; done | sort | uniq`
-fi
 
-for s in $wholelist; do
-    echo " $services " | grep " $s " 2>&1 >/dev/null
-    test $? -ne 0 && missing_services=`echo $missing_services $s`
-done 
+    for s in $wholelist; do
+        echo " $services " | grep " $s " 2>&1 >/dev/null
+        test $? -ne 0 && missing_services=`echo $missing_services $s`
+    done 
+fi
 
 for service in `echo $services $hosts`; do
    echo "-------------------------------------------------------"
