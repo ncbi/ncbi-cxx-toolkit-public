@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.3  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.4  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1917,7 +1917,8 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 NS_RETURN_ERROR("Misformed SUBMIT request")
             }
             char *ptr = req->input;
-            for (++s; *s != '"'; ++s) {
+            for (++s; true; ++s) {
+                if (*s == '"' && *(s-1) != '\\') break;
                 NS_CHECKEND(s, "Misformed SUBMIT request")
                 NS_CHECKSIZE(ptr-req->input, kNetScheduleMaxDataSize);
                 *ptr++ = *s;
@@ -1932,7 +1933,8 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             if (*s == '"') {
                 ptr = req->progress_msg;
 
-                for (++s; *s != '"'; ++s) {
+                for (++s; true; ++s) {
+                    if (*s == '"' && *(s-1) != '\\') break;
                     NS_CHECKEND(s, "Misformed SUBMIT request")
                     NS_CHECKSIZE(ptr-req->progress_msg, 
                                  kNetScheduleMaxDataSize);
@@ -2022,7 +2024,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 NS_RETURN_ERROR("Misformed MPUT request")
             }
             char *ptr = req->progress_msg;
-            for (++s; *s; ++s) {
+            for (++s; true; ++s) {
                 if (*s == '"' && *(s-1) != '\\') break;
                 NS_CHECKEND(s, "Misformed MPUT request")
                 NS_CHECKSIZE(ptr-req->progress_msg, kNetScheduleMaxDataSize);
@@ -2111,7 +2113,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 NS_RETURN_ERROR("Misformed PUT request")
             }
             char *ptr = req->output;
-            for (++s; *s; ++s) {
+            for (++s; true; ++s) {
                 if (*s == '"' && *(s-1) != '\\') break;
                 NS_CHECKEND(s, "Misformed PUT request")
                 NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDataSize);
@@ -2210,7 +2212,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             if (*s !='"') {
                 NS_RETURN_ERROR("Misformed PUT error request")
             }
-            for (++s; *s; ++s) {
+            for (++s; true; ++s) {
                 if (*s == '"' && *(s-1) != '\\') break;
                 NS_CHECKEND(s, "Misformed PUT error request")
                 req->err_msg.push_back(*s);
@@ -2692,6 +2694,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/03/27 15:26:07  didenko
+ * Fixed request's input parsing
+ *
  * Revision 1.68  2006/03/17 14:25:29  kuznets
  * Force reschedule (to re-try failed jobs)
  *
