@@ -76,6 +76,17 @@ static bool ReadCD(const string& filename, CCdd *cdd)
     return readOK;
 }
 
+string RefinerRowSelectorCodeToStr(const RefinerRowSelectorCode& code) {
+    if (code == eRandomSelectionOrder) 
+        return "random (shuffled between cycles)";
+    else if (code == eWorstScoreFirst)
+        return "worst to best self-hit score";
+    else if (code == eBestScoreFirst)
+        return "best to best self-hit score";
+    else 
+        return "UNKNOWN!!";
+
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
@@ -128,6 +139,10 @@ void CAlignmentRefiner::Init(void)
     //  number of rows in the CD, and it is not guaranteed that each row will be chosen)
 //    argDescr->AddOptionalKey("nr", "integer", "absolute number of LOO attempts per LOO cycle (defaults to all eligible rows in alignment except the master)\n", argDescr->eInteger);
 //    argDescr->SetConstraint("nr", new CArgAllow_Integers(1, N_MAX_ROWS));
+
+    //  Row selection order for LOO: randomly or based on the self-hit to the initial alignment.
+    argDescr->AddDefaultKey("selection_order", "integer", "Method for row selection in LOO phase:\n0 == randomly (default)\n1 == increasing self-hit row score to input alignment's PSSM\n2 == decreasing self-hit row score to input alignment's PSSM\n", argDescr->eInteger, "0");
+    argDescr->SetConstraint("selection_order", new CArgAllow_Integers(0, 2));
 
     //  declare whether structures are to be among the rows left out
     argDescr->AddFlag("fix_structs", "do not perform LOO refinement on structures (i.e., those sequences having a PDB identifier)", true);
@@ -320,7 +335,7 @@ int CAlignmentRefiner::Run(void)
 
     //  Fill out data structure for block editing parameters.  
     //  By default, edit blocks -- must explicitly skip with the -be_fix option.
-    RefinerResultCode beParamResult = ExtractBEArgs(message);
+    RefinerResultCode beParamResult = ExtractBEArgs(nBlocksFromAU, message);
     if (beParamResult != eRefinerResultOK) {
         ERROR_MESSAGE_CL(message);
         return beParamResult;
@@ -391,6 +406,7 @@ int CAlignmentRefiner::Run(void)
 
 RefinerResultCode CAlignmentRefiner::ExtractLOOArgs(unsigned int nAlignedBlocks, string& msg) {
 
+    int selectionOrder;
     unsigned int nBlocksMade, nExtra, extra;
 
     // Get arguments
@@ -402,6 +418,23 @@ RefinerResultCode CAlignmentRefiner::ExtractLOOArgs(unsigned int nAlignedBlocks,
     m_loo.doLOO      = (!args["no_LOO"]);
     m_loo.fixStructures = (args["fix_structs"]);
     m_loo.extrasAreRows = (!args["extras_are_blocks"]);
+
+
+    //  Anything unrecognized is treated as 'random' ordering.
+    selectionOrder = args["selection_order"].AsInteger();
+    switch (selectionOrder) {
+    case 1:
+        m_loo.selectorCode = eWorstScoreFirst;
+        break;
+    case 2:
+        m_loo.selectorCode = eBestScoreFirst;
+        break;
+    case 0:
+    default:
+        m_loo.selectorCode = eRandomSelectionOrder;
+        break;
+    };
+
 
     if (m_loo.doLOO) {
         m_loo.fullSequence = (args["fs"]);
@@ -425,9 +458,9 @@ RefinerResultCode CAlignmentRefiner::ExtractLOOArgs(unsigned int nAlignedBlocks,
                m_loo.rowsToExclude.push_back(extra);
            }
        }
-        //  'false' == don't exclude any blocks using extra cmd line arguments;
-        nBlocksMade   = GetBlocksToAlign(nAlignedBlocks, m_loo.blocks, msg, !m_loo.extrasAreRows);
-        msg = "Made " + NStr::UIntToString(nBlocksMade) + " blocks in ExtractLOOArgs.\n";
+       //  'false' == don't exclude any blocks using extra cmd line arguments;
+       nBlocksMade   = GetBlocksToAlign(nAlignedBlocks, m_loo.blocks, msg, !m_loo.extrasAreRows);
+       msg = "Freeze " + NStr::UIntToString(nAlignedBlocks - nBlocksMade) + " blocks in ExtractLOOArgs.\n";
     }
     return result;
 }
@@ -484,7 +517,7 @@ unsigned int  CAlignmentRefiner::GetBlocksToAlign(unsigned int nBlocks, vector<u
 }
 
 
-RefinerResultCode CAlignmentRefiner::ExtractBEArgs(string& msg) {
+RefinerResultCode CAlignmentRefiner::ExtractBEArgs(unsigned int nAlignedBlocks, string& msg) {
 
     // Get arguments
     CArgs args = GetArgs();
@@ -594,6 +627,12 @@ RefinerResultCode CAlignmentRefiner::ExtractBEArgs(string& msg) {
         m_blockEdit.minBlockSize = (unsigned) args["be_minSize"].AsInteger();
         m_blockEdit.columnMethod2 = eInvalidColumnScorerMethod;
 
+        //  Exclude blocks in the same way done for LOO...
+        vector<unsigned int> blocksToAlign;
+        unsigned int nBlocksMade   = GetBlocksToAlign(nAlignedBlocks, blocksToAlign, msg, true);
+        m_blockEdit.editableBlocks.clear();
+        m_blockEdit.editableBlocks.insert(blocksToAlign.begin(), blocksToAlign.end());
+        msg = "Freeze " + NStr::UIntToString(nAlignedBlocks - nBlocksMade) + " blocks in ExtractBEArgs.\n";
     }
 
     return result;
@@ -604,15 +643,27 @@ void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool ech
 
     static string yes = "Yes", no = "No";
 
+    CArgs args = GetArgs();
+    unsigned int nExtra = (unsigned int) args.GetNExtra();
+
     if ((!echoLOO && !echoBE) || (echoLOO && echoBE)) {
         echoStream << "Global Refinement Parameters:" << endl;
         echoStream << "=================================" << endl;
         echoStream << "Number of trials = " << m_nTrials << endl;
         echoStream << "Number of cycles per trial = " << m_nCycles << endl;
         echoStream << "Alignment score deviation threshold = " << m_scoreDeviationThreshold << endl;
-        echoStream << "Quiet mode? " << ((m_quietMode) ? "ON" : "OFF") << endl;
+
+        if (nExtra > 0) {
+            echoStream << "Extra argument(s) freeze " << ((m_loo.extrasAreRows) ? "Row:\n    " : "Block:\n    ");
+            for (size_t extra = 1; extra <= nExtra; ++extra) {
+                echoStream << args[extra].AsInteger() << "  ";
+            }
+        } else {
+            echoStream << "No extra arguments that exclude specific rows/blocks from refinement." << endl;
+        }
 //    echoStream << "Quiet details mode? " << ((m_quietDetails) ? "ON" : "OFF") << endl;
 //    echoStream << "Forced threshold (for MC only) = " << m_forcedThreshold << endl;
+        echoStream << "Quiet mode? " << ((m_quietMode) ? "ON" : "OFF") << endl;
         echoStream << endl;
     }
 
@@ -620,10 +671,11 @@ void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool ech
         echoStream << "Leave-One_Out parameters:" << endl;
         echoStream << "=================================" << endl;
         echoStream << "LOO on?  " << ((m_loo.doLOO) ? yes : no) << endl;
-        echoStream << "Number left out between score recomputation = " << m_loo.lno << endl;
+        echoStream << "Row selection order:  " << RefinerRowSelectorCodeToStr(m_loo.selectorCode) << endl;
+        echoStream << "Number left out between PSSM recomputation = " << m_loo.lno << endl;
+
         echoStream << "Freeze alignment of rows with structure?  " << ((m_loo.fixStructures) ? yes : no) << endl;
         echoStream << "Use full sequence or aligned footprint?  " << ((m_loo.fullSequence) ? "Full" : "Aligned") << endl;
-        echoStream << "Extra arguments refer to rows or blocks?  " << ((m_loo.extrasAreRows) ? "Rows" : "Blocks") << endl;
         echoStream << "N-terminal extension allowed = " << m_loo.nExt << endl;
         echoStream << "C-terminal extension allowed = " << m_loo.cExt << endl;
 
@@ -762,6 +814,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/27 16:44:49  lanczyck
+ * add selection-order option; modify parameter printing; fix block freezing for consistency between LOO and BE phases
+ *
  * Revision 1.8  2006/01/19 20:35:20  lanczyck
  * send all diag messages to same stream
  *

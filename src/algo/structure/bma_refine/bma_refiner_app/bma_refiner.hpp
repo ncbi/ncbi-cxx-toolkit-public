@@ -80,7 +80,7 @@ private:
     BlockEditingParams m_blockEdit;    
 
     RefinerResultCode ExtractLOOArgs(unsigned int nAlignedBlocks, string& msg);
-    RefinerResultCode ExtractBEArgs(string& msg);
+    RefinerResultCode ExtractBEArgs(unsigned int nAlignedBlocks, string& msg);
 
     unsigned int GetBlocksToAlign(unsigned int nBlocks, vector<unsigned int>& blocks, string& msg, bool useExtras);
 
@@ -98,6 +98,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/27 16:44:49  lanczyck
+ * add selection-order option; modify parameter printing; fix block freezing for consistency between LOO and BE phases
+ *
  * Revision 1.1  2005/06/28 13:44:35  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *
