@@ -12,12 +12,14 @@ LIB =   xbma_refiner \
         xstruct_util \
         xstruct_dp \
         xblast composition_adjustment seqdb blastdb xnetblastcli xnetblast \
-        tables xobjsimple xobjutil \
+        tables \
         cdd \
         scoremat \
         cn3d \
         mmdb \
-        $(OBJMGR_LIBS)
+        $(SOBJMGR_LDEP) xconnect
+
+#        $(OBJMGR_LIBS)
 
 CXXFLAGS   = $(FAST_CXXFLAGS)
 
