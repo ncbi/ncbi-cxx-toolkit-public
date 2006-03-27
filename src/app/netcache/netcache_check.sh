@@ -106,7 +106,7 @@ done
 for service in `echo $services $hosts`; do
    echo "-------------------------------------------------------"
    printf '%-40s' "Testing service '$service'"
-   $CHECK_EXEC ./netcache_check $service > $res_file 2>&1
+   $CHECK_EXEC netcache_check $service > $res_file 2>&1
    if test $? -eq 0 ; then
       echo ":OK"
       n_ok=`expr $n_ok + 1`
