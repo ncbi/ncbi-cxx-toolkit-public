@@ -67,6 +67,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/taxon1/taxon1.hpp>
 
+#include <algorithm>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -654,6 +655,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/03/27 16:56:25  jcherry
+ * #include <algorithm>
+ *
  * Revision 1.12  2006/03/27 16:01:33  jcherry
  * Remove old-name OrgMod when it's put in by CTaxon1::LookupMerge
  *
