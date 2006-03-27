@@ -280,56 +280,79 @@ public:
                   bool          & simpler);
     
 private:
+    /// Stores a key for an ISAM file.
+    ///
+    /// This class stores a key of either of the types used by ISAM
+    /// files.  It provides functionality for ordering comparisons of
+    /// keys.
+    
     class SIsamKey {
     public:
         // If case insensitive string comparisons are desired, the
         // keys should be upcased before calling these methods.
         
+        /// Constructor.
         SIsamKey()
             : m_IsSet(false), m_NKey(-1)
         {
         }
         
+        /// Returns true if this object has an assigned value.
         bool IsSet()
         {
             return m_IsSet;
         }
         
+        /// Assign a numeric value to this object.
         void SetNumeric(int ident)
         {
             m_IsSet = true;
             m_NKey = ident;
         }
         
+        /// Assign a string value to this object.
         void SetString(const string & ident)
         {
             m_IsSet = true;
             m_SKey = ident;
         }
         
+        /// Returns true if the provided integer compares as lower
+        /// than the assigned lower boundary for this ISAM file.
         bool OutsideFirstBound(int ident)
         {
             return (m_IsSet && (ident < m_NKey));
         }
         
+        /// Returns true if the provided string compares as lower than
+        /// the assigned lower boundary for this ISAM file.
         bool OutsideFirstBound(const string & ident)
         {
             return (m_IsSet && (ident < m_SKey));
         }
         
+        /// Returns true if the provided integer compares as higher
+        /// than the assigned upper boundary for this ISAM file.
         bool OutsideLastBound(int ident)
         {
             return (m_IsSet && (ident > m_NKey));
         }
         
+        /// Returns true if the provided string compares as lower than
+        /// the assigned upper boundary for this ISAM file.
         bool OutsideLastBound(const string & ident)
         {
             return (m_IsSet && (ident > m_SKey));
         }
         
     private:
+        /// True if this object has an assigned value.
         bool   m_IsSet;
+        
+        /// The key, if it is a number.
         int    m_NKey;
+        
+        /// The key, if it is a string.
         string m_SKey;
     };
     
@@ -865,23 +888,48 @@ private:
                             int            & isam_key,
                             int            & isam_data);
     
+    /// Map a data page.
+    ///
+    /// The caller provides an index into the sample file.  The page
+    /// of data is mapped, and a pointer is returned.  In addition,
+    /// the starting index (start) of the data is returned, along with
+    /// the number of elements in that page.
+    ///
+    /// @param sample_index Index into the index (i.e. pni) file. [in]
+    /// @param start Index of first element of the page.          [out]
+    /// @param num_elements Number of elements in the page.       [out]
+    /// @param data_page_begin Pointer to the returned data.      [out]
+    /// @param locked The lock holder object for this thread.     [out]
     void x_MapDataPage(int                sample_index,
                        int              & start,
                        int              & num_elements,
                        SNumericKeyData ** data_page_begin,
                        CSeqDBLockHold   & locked);
     
+    /// Get a particular data element from a data page.
+    /// @param dpage A pointer to that page in memory.  [in]
+    /// @param index The index of the element to fetch. [in]
+    /// @param key   The returned key.   [out]
+    /// @param data  The returned value. [out]
     void x_GetDataElement(SNumericKeyData * dpage,
                           int               index,
                           int             & key,
                           int             & data);
     
+    /// Find the least and greatest keys in this ISAM file.
     void x_FindIndexBounds(CSeqDBLockHold & locked);
     
+    /// Check whether a numeric key is within this volume's bounds.
+    /// @param key The key for which to do the check.
+    /// @param locked The lock holder object for this thread.
     bool x_OutOfBounds(int key, CSeqDBLockHold & locked);
     
+    /// Check whether a string key is within this volume's bounds.
+    /// @param key The key for which to do the check.
+    /// @param locked The lock holder object for this thread.
     bool x_OutOfBounds(string key, CSeqDBLockHold & locked);
     
+    /// Converts a string to upper case.
     static void x_Upper(string & s)
     {
         for(size_t i = 0; i < s.size(); i++) {

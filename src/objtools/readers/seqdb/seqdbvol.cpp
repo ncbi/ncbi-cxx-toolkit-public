@@ -1605,6 +1605,18 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     return BDLS;
 }
 
+/// Compare two deflines for ordering purposes.
+///
+/// Given a CSeq_id, the ranking function produces an integer based on
+/// the type of id involved.  Each defline is searched for the Seq-id
+/// for which the ranking function produces the lowest number.  Then
+/// the best ranks of each defline are compared.  The defline with the
+/// lower rank is considered to come first in the ordering.
+///
+/// @param d1 A defline.
+/// @param d2 Another one.
+/// @param rank_func A ranking function.
+/// @return true if d1 comes before d2 in the defined ordering.
 static
 bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
                       const CRef<CBlast_def_line>& d2,
@@ -1664,6 +1676,7 @@ bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
     return rv;
 }
 
+/// Ranking function for protein databases.
 inline
 bool s_DeflineCompareAA(const CRef<CBlast_def_line>& d1,
                         const CRef<CBlast_def_line>& d2)
@@ -1671,6 +1684,7 @@ bool s_DeflineCompareAA(const CRef<CBlast_def_line>& d1,
     return s_DeflineCompare(d1, d2, CSeq_id::FastaAARank);
 }
 
+/// Ranking function for nucleotide databases.
 inline
 bool s_DeflineCompareNA(const CRef<CBlast_def_line>& d1,
                         const CRef<CBlast_def_line>& d2)
@@ -1678,6 +1692,7 @@ bool s_DeflineCompareNA(const CRef<CBlast_def_line>& d1,
     return s_DeflineCompare(d1, d2, CSeq_id::FastaNARank);
 }
 
+/// Sorts a defline set for a protein database.
 void s_SortDeflineSetAA(CRef<CBlast_def_line_set> s1)
 {
     if (s1.Empty()) {
@@ -1689,6 +1704,7 @@ void s_SortDeflineSetAA(CRef<CBlast_def_line_set> s1)
     }
 }
 
+/// Sorts a defline set for a nucleotide database.
 void s_SortDeflineSetNA(CRef<CBlast_def_line_set> s1)
 {
     if (s1.Empty()) {

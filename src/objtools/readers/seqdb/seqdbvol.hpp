@@ -490,13 +490,16 @@ public:
     }
     
 private:
+    /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;
     
+    /// Returns true if this volume has a GI list.
     bool x_HaveGiList() const
     {
         return ! (m_UserGiList.Empty() && m_VolumeGiLists.empty());
     }
     
+    /// Returns true if this volume's GI list, if any, has this GI.
     bool x_FilterHasGi(int gi) const
     {
         if (m_UserGiList.NotEmpty()) {

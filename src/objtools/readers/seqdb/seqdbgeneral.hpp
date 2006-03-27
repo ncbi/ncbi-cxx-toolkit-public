@@ -46,6 +46,16 @@ BEGIN_NCBI_SCOPE
 
 // Byte-order-nonspecific (long) versions
 
+/// Reads a network order integer and returns a value.
+///
+/// Integer types stored in platform-independent blast database files
+/// usually have network byte order.  This template builds a function
+/// which reads such an integer and returns its value. It may or may
+/// not need to swap the integer, depending on the endianness of the
+/// platform.  If the integer is not aligned to a multiple of the size
+/// of the data type, it will still be read byte-wise rather than
+/// word-wise.  This is done to avoid bus errors on some platforms.
+
 template<typename T>
 inline T SeqDB_GetStdOrdUnaligned(const T * stdord_obj)
 {
@@ -79,6 +89,18 @@ inline T SeqDB_GetStdOrdUnaligned(const T * stdord_obj)
 #endif
 }
 
+/// Read an unaligned integer into memory.
+///
+/// This template builds a function that reads an integer (on any
+/// platform) by reading one byte at a time and assembling the value.
+/// The word "Broken" refers to fact that the integer in question is
+/// in the opposite of network byte order, and this function is called
+/// in those cases.  (Currently, this only happens for the 8 byte
+/// volume size stored in the index file.)
+///
+/// @param stdord_obj Location of non-network-order object.
+/// @return Value of that object.
+
 template<typename T>
 inline T SeqDB_GetBrokenUnaligned(const T * stdord_obj)
 {
@@ -100,9 +122,16 @@ inline T SeqDB_GetBrokenUnaligned(const T * stdord_obj)
 
 // Macro Predicates for binary qualities
 
+// These macros are for positive numbers.
+
+/// Discretely tests whether an integer is a power of two.
 #define IS_POWER_OF_TWO(x)    (((x) & ((x)-1)) == 0)
+
+/// Checks if a number is congruent to zero, modulo a power of 2.
 #define ALIGNED_TO_POW2(x,y)  (! ((x) & (0-y)))
 
+/// Is the provided pointer aligned to the size (which must be a power
+/// of two) of the type to which it points?
 #define PTR_ALIGNED_TO_SELF_SIZE(x) \
     (IS_POWER_OF_TWO(sizeof(*x)) && ALIGNED_TO_POW2((size_t)(x), sizeof(*x)))
 
@@ -111,6 +140,9 @@ inline T SeqDB_GetBrokenUnaligned(const T * stdord_obj)
 
 #ifdef WORDS_BIGENDIAN
 
+/// Read a network order integer value.
+/// @param stdord_obj Location in memory of network order integer.
+/// @return Value of the integer read from memory.
 template<typename T>
 inline T SeqDB_GetStdOrd(const T * stdord_obj)
 {
@@ -121,6 +153,9 @@ inline T SeqDB_GetStdOrd(const T * stdord_obj)
     }
 }
 
+/// Read a non-network-order integer value.
+/// @param stdord_obj Location in memory of integer.
+/// @return Value of the integer read from memory.
 template<typename T>
 inline T SeqDB_GetBroken(const T * stdord_obj)
 {
@@ -129,12 +164,18 @@ inline T SeqDB_GetBroken(const T * stdord_obj)
 
 #else
 
+/// Read a network order integer value.
+/// @param stdord_obj Location in memory of network order integer.
+/// @return Value of the integer read from memory.
 template<typename T>
 inline T SeqDB_GetStdOrd(const T * stdord_obj)
 {
     return SeqDB_GetStdOrdUnaligned(stdord_obj);
 }
 
+/// Read a non-network-order integer value.
+/// @param stdord_obj Location in memory of integer.
+/// @return Value of the integer read from memory.
 template<typename T>
 inline T SeqDB_GetBroken(const T * stdord_obj)
 { 
@@ -154,12 +195,18 @@ inline T SeqDB_GetBroken(const T * stdord_obj)
 
 /// Higher Performance String Assignment
 /// 
-/// It looks like the default assignments and modifiers (ie insert,
-/// operator = and operator +=) for strings do not use the capacity
-/// doubling algorithm such as vector::push_back() uses.  For our
-/// purposes, they sometimes should.  The following assignment
-/// function provides this.
-
+/// Gcc's default assignment and modifier methods (insert, operator =
+/// and operator += for instance) for strings do not use the capacity
+/// doubling technique (i.e. as used by vector::push_back()) until the
+/// length is about the size of a disk block.  For our purposes, they
+/// often should use doubling.  The following assignment function
+/// provides the doubling functionality for assignment.  I use the
+/// assign(char*,char*) overload because it does not discard excess
+/// capacity.
+///
+/// @param dst Destination of assigned data.
+/// @param bp Start of memory containing new value.
+/// @param ep Start of memory containing new value.
 inline void
 s_SeqDB_QuickAssign(string & dst, const char * bp, const char * ep)
 {
@@ -182,10 +229,9 @@ s_SeqDB_QuickAssign(string & dst, const char * bp, const char * ep)
 
 /// Higher Performance String Assignment
 /// 
-/// String to string version, using the above function.  I use the
-/// (char*,char*) version of string::assign() since I've found that it
-/// does not discard excess capacity.
-
+/// String to string assignment, using the above function.
+/// @param dst Destination string.
+/// @param src Input string.
 inline void
 s_SeqDB_QuickAssign(string & dst, const string & src)
 {
@@ -207,27 +253,37 @@ s_SeqDB_QuickAssign(string & dst, const string & src)
 
 class CSeqDB_Substring {
 public:
+    /// Constructor, builds empty substring.
     CSeqDB_Substring()
         : m_Begin(0), m_End(0)
     {
     }
     
+    /// Construct a substring for a string literal.
+    /// @param s A null terminated string literal.
     explicit CSeqDB_Substring(const char * s)
         : m_Begin(s)
     {
         m_End = s + strlen(s);
     }
     
+    /// Construct a substring for a C++ std::string.
+    /// @param s An existing std::string object.
     explicit CSeqDB_Substring(const string & s)
         : m_Begin(s.data()), m_End(s.data() + s.size())
     {
     }
     
+    /// Construct a substring for a range of memory.
+    /// @param b Start of the range of memory.
+    /// @param e End of the memory range.
     CSeqDB_Substring(const char * b, const char * e)
         : m_Begin(b), m_End(e)
     {
     }
     
+    /// Return the data by assigning it to a string.
+    /// @param s The substring data is returned here.
     void GetString(string & s) const
     {
         if (m_Begin != m_End) {
@@ -237,6 +293,8 @@ public:
         }
     }
     
+    /// Return the data by quick-assigning it to a string.
+    /// @param s The substring data is returned here.
     void GetStringQuick(string & s) const
     {
         if (m_Begin != m_End) {
@@ -246,6 +304,9 @@ public:
         }
     }
     
+    /// Find last instance of a character in the substring.
+    /// @param ch The character for which to search.
+    /// @return The offset of the last instance of ch or -1.
     int FindLastOf(char ch) const
     {
         for (const char * p = m_End - 1;  p >= m_Begin;  --p) {
@@ -257,6 +318,14 @@ public:
         return -1;
     }
     
+    /// Disinclude data from the beginning of the string.
+    ///
+    /// Unlike std::string versions of this type of functionality,
+    /// this version works in constant time without reallocating or
+    /// copying data.  Removing more bytes than the string contains
+    /// empties the substring, and is not an error.
+    ///
+    /// @param n The number of characters to remove.
     void EraseFront(int n)
     {
         m_Begin += n;
@@ -266,6 +335,14 @@ public:
         }
     }
     
+    /// Disinclude data from the end of the string.
+    ///
+    /// Unlike std::string versions of this type of functionality,
+    /// this version works in constant time without reallocating or
+    /// copying data.  Removing more bytes than the string contains
+    /// empties the substring, and is not an error.
+    ///
+    /// @param n The number of characters to remove.
     void EraseBack(int n)
     {
         m_End -= n;
@@ -275,42 +352,59 @@ public:
         }
     }
     
+    /// Change the length of the string.
+    ///
+    /// The substring will be increased or reduced.  Normally this is
+    /// used to reduce the string length; increasing it is legal, but
+    /// requires the calling code to understand more about the "real"
+    /// underlying data in order to be useful.  Note that newly added
+    /// bytes are not zeroed out by this method.
+    ///
+    /// @param n The number of characters to remove.
     void Resize(int n)
     {
         m_End = m_Begin + n;
     }
     
+    /// Reset the string to an empty state.
     void Clear()
     {
         m_End = m_Begin = 0;
     }
     
+    /// Return the length of the string in bytes.
     int Size() const
     {
         return m_End-m_Begin;
     }
     
+    /// Returns a reference to a specific character of the string.
     const char & operator[](int n) const
     {
         return m_Begin[n];
     }
     
+    /// Returns a pointer to the start of the string.
     const char * GetBegin() const
     {
         return m_Begin;
     }
     
+    /// Returns a pointer to the end of the string, which is always a
+    /// pointer to the character past the last included character.
     const char * GetEnd() const
     {
         return m_End;
     }
     
+    /// Returns true iff the string is empty.
     bool Empty() const
     {
         return m_Begin == m_End;
     }
     
-    bool operator ==(const CSeqDB_Substring & other)
+    /// Compares the contents of the string to another substring.
+    bool operator ==(const CSeqDB_Substring & other) const
     {
         int sz = Size();
         
@@ -322,7 +416,10 @@ public:
     }
     
 private:
+    /// Points to the beginning of the string's data or null.
     const char * m_Begin;
+    
+    /// Points to the end of the string (post notation) or null.
     const char * m_End;
 };
 
@@ -427,6 +524,36 @@ CSeqDB_Substring SeqDB_GetBaseName(CSeqDB_Substring s);
 //
 // Design uses constructors (composition) and getters (seperation).
 
+// Theory:
+//
+// Each class wraps an ordinary string object.  The methods written
+// for each class are simple enough to be self documenting.  One might
+// ask, what is the purpose of these classes?
+//
+// These types represent a kind of object oriented "immune system".
+// The goal of an immune system is to recognize and catalog the
+// acceptable elements in a complex system and reject all other
+// elements.  In this case, these classes enumerate the kinds of
+// operations that SeqDB uses on directory / filename paths.
+//
+// Each of these types represents part of a pathname.  Many of the
+// possible combinations of methods and types here would not make any
+// sense - you could not find a filename from a directory name for
+// instance - so we can omit that method on that class.  It is a
+// common logical mistake to try to get a piece of information from a
+// given path sub-element, that does not have that information.  For
+// example, trying to find the directory of a path means removing a
+// filename, but if this were done twice, the last directory component
+// would be removed by the second attempt.
+//
+// The main reason for using these types is to convert such errors
+// into compile time errors, or remove them entirely.  A second
+// purpose of this design is to catalog all the types of operations
+// that CSeqDB uses on path components and to aggregate that code
+// here.  Thirdly, by providing names to the methods, it is possible
+// to find locations where a given operation is done by searching the
+// code base for those names.
+
 
 /// CSeqDB_BaseName
 /// 
@@ -434,32 +561,38 @@ CSeqDB_Substring SeqDB_GetBaseName(CSeqDB_Substring s);
 
 class CSeqDB_BaseName {
 public:
+    /// Constructor taking a string.
     explicit CSeqDB_BaseName(const string & n)
         : m_Value(n)
     {
     }
     
+    /// Constructor taking a substring.
     explicit CSeqDB_BaseName(const CSeqDB_Substring & n)
     {
         n.GetString(m_Value);
     }
     
+    /// Returns the base name as a string.
     const string & GetBaseNameS() const
     {
         return m_Value;
     }
     
+    /// Returns the base name as a substring.
     CSeqDB_Substring GetBaseNameSub() const
     {
         return CSeqDB_Substring(m_Value);
     }
     
-    bool operator ==(const CSeqDB_BaseName & other)
+    /// Compares the basename to another basename.
+    bool operator ==(const CSeqDB_BaseName & other) const
     {
         return m_Value == other.m_Value;
     }
     
 private:
+    /// The base name.
     string m_Value;
 };
 
@@ -470,31 +603,38 @@ private:
 
 class CSeqDB_FileName {
 public:
+    /// Default constructor.
     CSeqDB_FileName()
     {
     }
     
+    /// Construct a filename using the given string.
     explicit CSeqDB_FileName(const string & n)
         : m_Value(n)
     {
     }
     
+    /// Get the filename as a string.
     const string & GetFileNameS() const
     {
         return m_Value;
     }
     
+    /// Get the filename as a substring.
     CSeqDB_Substring GetFileNameSub() const
     {
         return CSeqDB_Substring(m_Value);
     }
     
+    /// Assign a new filename to this object.
+    /// @param sub The filename to assign here.
     void Assign(const CSeqDB_Substring & sub)
     {
         sub.GetStringQuick(m_Value);
     }
     
 private:
+    /// The filename.
     string m_Value;
 };
 
@@ -505,38 +645,45 @@ private:
 
 class CSeqDB_DirName {
 public:
+    /// Constructor taking a string.
     explicit CSeqDB_DirName(const string & n)
         : m_Value(n)
     {
     }
     
+    /// Constructor taking a substring.
     explicit CSeqDB_DirName(const CSeqDB_Substring & n)
     {
         n.GetString(m_Value);
     }
     
+    /// Get the directory name as a string.
     const string & GetDirNameS() const
     {
         return m_Value;
     }
     
+    /// Get the directory name as a substring.
     CSeqDB_Substring GetDirNameSub() const
     {
         return CSeqDB_Substring(m_Value);
     }
     
+    /// Assign a new directory name from a string.
     CSeqDB_DirName & operator =(const CSeqDB_DirName & other)
     {
         s_SeqDB_QuickAssign(m_Value, other.GetDirNameS());
         return *this;
     }
     
+    /// Assign a new directory name from a substring.
     void Assign(const CSeqDB_Substring & sub)
     {
         sub.GetStringQuick(m_Value);
     }
     
 private:
+    /// The directory name.
     string m_Value;
 };
 
@@ -547,20 +694,30 @@ private:
 
 class CSeqDB_BasePath {
 public:
+    /// Construct an empty path.
     CSeqDB_BasePath()
     {
     }
     
+    /// Constructor taking a string.
     explicit CSeqDB_BasePath(const string & bp)
         : m_Value(bp)
     {
     }
     
+    /// Constructor taking a substring.
     explicit CSeqDB_BasePath(const CSeqDB_Substring & bp)
     {
         bp.GetString(m_Value);
     }
     
+    /// Constructor taking a directory and filename.
+    ///
+    /// The given directory and filename will be combined to form the
+    /// basepath.
+    ///
+    /// @param d The directory.
+    /// @param b The base name.
     CSeqDB_BasePath(const CSeqDB_DirName  & d,
                     const CSeqDB_BaseName & b)
     {
@@ -570,10 +727,14 @@ public:
                           m_Value);
     }
     
-    // Join a directory and a path, for example, "/public/blast/dbs"
-    // and "primates/baboon.nal".  If the second element starts with a
-    // "/", the directory argument will be discarded.
-    
+    /// Constructor taking a directory and basepath.
+    ///
+    /// The given directory and basepath will be combined to form the
+    /// basepath.  If the provided base path is absolute (its first
+    /// character is a path delimiter) it will be used unmodified.
+    ///
+    /// @param d The directory.
+    /// @param b The base path.
     CSeqDB_BasePath(const CSeqDB_DirName  & d,
                     const CSeqDB_BasePath & b)
     {
@@ -583,65 +744,72 @@ public:
                           m_Value);
     }
     
+    /// Return the portion of this path representing the directory.
     CSeqDB_Substring FindDirName() const
     {
         _ASSERT(Valid());
         return SeqDB_GetDirName( CSeqDB_Substring(m_Value) );
     }
     
+    /// Return the portion of this path representing the base name.
     CSeqDB_Substring FindBaseName() const
     {
         _ASSERT(Valid());
         return SeqDB_GetBaseName( CSeqDB_Substring( m_Value) );
     }
     
+    /// Return the portion of this path representing the file name.
     CSeqDB_Substring FindFileName() const
     {
         _ASSERT(Valid());
         return SeqDB_GetFileName( CSeqDB_Substring( m_Value ) );
     }
     
+    /// Return this path as a string.
     const string & GetBasePathS() const
     {
         return m_Value;
     }
     
+    /// Return this path as a substring.
     CSeqDB_Substring GetBasePathSub() const
     {
         return CSeqDB_Substring( m_Value );
     }
     
-    bool operator ==(const CSeqDB_BasePath & other)
+    /// Compare this value to another base path.
+    bool operator ==(const CSeqDB_BasePath & other) const
     {
         return m_Value == other.m_Value;
     }
     
-    // Methods like this should be put in class of the "most complete"
-    // of the two arguments.
-    
+    /// Return true if the value is not empty.
     bool Valid() const
     {
-        //_ASSERT(m_Value == SeqDB_GetBasePath(m_Value));
         return ! m_Value.empty();
     }
     
+    /// Assign the value from another base path object.
     CSeqDB_BasePath & operator =(const CSeqDB_BasePath & other)
     {
         s_SeqDB_QuickAssign(m_Value, other.GetBasePathS());
         return *this;
     }
     
+    /// Assign the value from a substring.
     void Assign(const CSeqDB_Substring & sub)
     {
         sub.GetStringQuick(m_Value);
     }
     
+    /// Assign the value from a string.
     void Assign(const string & path)
     {
         s_SeqDB_QuickAssign(m_Value, path);
     }
     
 private:
+    /// The value stored here.
     string m_Value;
 };
 
@@ -656,21 +824,37 @@ private:
 
 class CSeqDB_Path {
 public:
+    /// Construct an empty path.
     CSeqDB_Path()
     {
     }
     
+    /// Constructor taking a string.
     explicit CSeqDB_Path(const string & n)
         : m_Value(n)
     {
     }
     
+    /// Constructor taking a directory and filename.
+    ///
+    /// The given directory and filename will be combined to form the
+    /// path.  This version takes substrings.
+    ///
+    /// @param dir The directory.
+    /// @param file The base name.
     CSeqDB_Path(const CSeqDB_Substring & dir,
                 const CSeqDB_Substring & file)
     {
         SeqDB_CombinePath(dir, file, 0, m_Value);
     }
     
+    /// Constructor taking a directory and filename.
+    ///
+    /// The given directory and filename will be combined to form the
+    /// path.  This version takes encapsulated types.
+    ///
+    /// @param dir The directory.
+    /// @param file The base name.
     CSeqDB_Path(const CSeqDB_DirName  & dir,
                 const CSeqDB_FileName & file)
     {
@@ -680,6 +864,15 @@ public:
                           m_Value);
     }
     
+    /// Constructor taking a basepath and extension.
+    ///
+    /// The given basepath will be combined with the provided
+    /// extension.
+    ///
+    /// @param bp The base path.
+    /// @param ext1 First character of the file extension.
+    /// @param ext2 Second character of the file extension.
+    /// @param ext3 Third character of the file extension.
     CSeqDB_Path(const CSeqDB_BasePath & bp, char ext1, char ext2, char ext3)
     {
         const string & base = bp.GetBasePathS();
@@ -692,6 +885,16 @@ public:
         m_Value += ext3;
     }
     
+    /// Constructor taking a directory, filename, and extension.
+    ///
+    /// The given directory and basename will be combined, along with
+    /// the provided extension.
+    ///
+    /// @param d The directory name.
+    /// @param b The base name.
+    /// @param ext1 First character of the file extension.
+    /// @param ext2 Second character of the file extension.
+    /// @param ext3 Third character of the file extension.
     CSeqDB_Path(const CSeqDB_DirName  & d,
                 const CSeqDB_BaseName & b,
                 char                    ext1,
@@ -711,59 +914,74 @@ public:
                           m_Value);
     }
     
+    /// Returns true if this object has a value.
     bool Valid() const
     {
         return ! m_Value.empty();
     }
     
+    /// Get the path as a string.
     const string & GetPathS() const
     {
         _ASSERT(Valid());
         return m_Value;
     }
     
+    /// Returns the portion of this path containing the directory.
     CSeqDB_Substring FindDirName() const
     {
         _ASSERT(Valid());
         return SeqDB_GetDirName( CSeqDB_Substring(m_Value) );
     }
     
+    /// Returns the portion of this path containing the base path.
     CSeqDB_Substring FindBasePath() const
     {
         _ASSERT(Valid());
         return SeqDB_GetBasePath( CSeqDB_Substring(m_Value) );
     }
     
+    /// Returns the portion of this path containing the base name.
     CSeqDB_Substring FindBaseName() const
     {
         _ASSERT(Valid());
         return SeqDB_GetBaseName( CSeqDB_Substring(m_Value) );
     }
     
+    /// Returns the portion of this path containing the file name.
     CSeqDB_Substring FindFileName() const
     {
         _ASSERT(Valid());
         return SeqDB_GetFileName( CSeqDB_Substring( m_Value ) );
     }
     
-    bool operator ==(const CSeqDB_Path & other)
+    /// Returns true if the paths are equal.
+    bool operator ==(const CSeqDB_Path & other) const
     {
         return m_Value == other.m_Value;
     }
     
+    /// Assigns the provided value to this path.
     CSeqDB_Path & operator =(const CSeqDB_Path & other)
     {
         s_SeqDB_QuickAssign(m_Value, other.GetPathS());
         return *this;
     }
     
+    /// Assigns the provided value to this path.
     void Assign(const string & path)
     {
         s_SeqDB_QuickAssign(m_Value, path);
     }
     
-    // Combines the directory from a path with a filename.
-    
+    /// Combines the directory from a path with a filename.
+    ///
+    /// Removes the filename from the provided path and attaches the
+    /// given filename in its place, assigning the result to this
+    /// object.
+    ///
+    /// @param dir_src The directory of this path will be used.
+    /// @param fname This filename will be used.
     void ReplaceFilename(const CSeqDB_Path      & dir_src,
                          const CSeqDB_Substring & fname)
     {
@@ -771,6 +989,7 @@ public:
     }
     
 private:
+    /// The string containing this path.
     string m_Value;
 };
 
@@ -854,13 +1073,18 @@ struct SSeqDBSlice {
     }
     
     /// Constructor
+    /// @param b The beginning of the range.
+    /// @param e The end of the range.
     SSeqDBSlice(int b, int e)
         : begin (b),
           end   (e)
     {
     }
     
+    /// First oid in range.
     int begin;
+    
+    /// OID after last included oid.
     int end;
 };
 
