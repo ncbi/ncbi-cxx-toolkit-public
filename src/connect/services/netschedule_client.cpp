@@ -306,7 +306,6 @@ string CNetScheduleClient::SubmitJob(const string& input,
         m_Tmp.append(affinity_token);
         m_Tmp.append("\"");
     }
-
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -731,9 +730,15 @@ CNetScheduleClient::GetStatus(const string& job_key,
 
         if (*str && *str == '"') {
             ++str;
+            for( ;*str && *str; ++str) {
+                if (*str == '"' && *(str-1) != '\\') break;
+                output->push_back(*str);
+            }
+            /*
             for( ;*str && *str != '"'; ++str) {
                 output->push_back(*str);
             }
+            */
         }
         *output = NStr::ParseEscapes(*output);
         if (err_msg || input) {
@@ -1661,6 +1666,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/03/27 15:27:18  didenko
+ * Fixed request's output parsing
+ *
  * Revision 1.49  2006/03/15 17:30:12  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *
