@@ -43,6 +43,7 @@
 
 // NewBlast includes
 #include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h> // Needed for BlastMaskLoc & BlastSeqLoc
@@ -170,6 +171,32 @@ typedef list< CRef<CSeqLocInfo> > TMaskedQueryRegions;
 /// @note this supports tra
 typedef vector< TMaskedQueryRegions > TSeqLocInfoVector;
 
+/** Function object to assist in finding all CSeqLocInfo objects which
+ * corresponds to a given frame.
+ */
+class CFrameFinder : public unary_function<CRef<CSeqLocInfo>, bool>
+{
+public:
+    /// Convenience typedef
+    typedef CSeqLocInfo::ETranslationFrame ETranslationFrame;
+
+    /// ctor
+    /// @param frame the translation frame [in]
+    CFrameFinder(ETranslationFrame frame) : m_Frame(frame) {}
+
+    /// Returns true if its argument's frame corresponds to the one used to
+    /// create this object
+    /// @param seqlocinfo the object to examine [in]
+    bool operator() (const CRef<CSeqLocInfo>& seqlocinfo) const {
+        if (seqlocinfo.Empty()) {
+            NCBI_THROW(CBlastException, eInvalidArgument, 
+                       "Empty CRef<CSeqLocInfo>!");
+        }
+        return (seqlocinfo->GetFrame() == m_Frame) ? true : false;
+    }
+private:
+    ETranslationFrame m_Frame;  ///< Frame to look for
+};
 
 /// Build a TMaskedQueryRegions from a Packed CSeq_loc.
 /// @param sloc Seq-loc describing masked query regions.
@@ -301,6 +328,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2006/03/27 13:47:14  camacho
+* Relocation of CFrameFinder
+*
 * Revision 1.73  2006/03/22 15:03:25  camacho
 * Expanded interruptible API to support user-provided data
 *

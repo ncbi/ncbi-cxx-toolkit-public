@@ -44,7 +44,6 @@
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/core/blast_seqsrc_impl.h>
 #include "blast_setup.hpp"
 #include "blast_aux_priv.hpp"
@@ -807,6 +806,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.92  2006/03/27 13:47:21  camacho
+ * Relocation of CFrameFinder
+ *
  * Revision 1.91  2006/03/22 15:03:35  camacho
  * Expanded interruptible API to support user-provided data
  *
