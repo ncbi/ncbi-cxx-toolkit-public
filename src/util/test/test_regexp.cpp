@@ -38,6 +38,8 @@
 #include <util/regexp.hpp>
 #include <util/arg_regexp.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
 
 USING_NCBI_SCOPE;
 
@@ -85,23 +87,23 @@ int CRegexApplication::Run(void)
     
     // String to find matching pattern in
     const string text
-        ("The quick brown fox jumped over the lazy dogs.\n"             \
-         "Now is the time for all good men to come to the aid of "      \
-         "their country.\nTwas the night before Christmas and all "     \
-         "through the house, not a\n creature was stirring, not "       \
-         "even a mouse.\n");
+       ("The quick brown fox jumped over the lazy dogs.\n"             \
+        "Now is the time for all good men to come to the aid of "      \
+        "their country.\nTwas the night before Christmas and all "     \
+        "through the house, not a\n creature was stirring, not "       \
+        "even a mouse.\n");
 
     // Display pattern and sub pattern matches
     LOG_POST(pattern.GetMatch(text));
     for (int k = 1;  k < pattern.NumFound();  k++) {
         LOG_POST(pattern.GetSub(text, 1));
-    }    
-    
+    }
+
     LOG_POST(string(33, '-'));
 
     // Set new pattern and ignore case
+
     pattern.Set("t\\w*e", CRegexp::fCompile_ignore_case);
-    
     // Find all matches to pattern
     size_t start = 0;
     while (start != string::npos) {
@@ -113,10 +115,10 @@ int CRegexApplication::Run(void)
             break;
         }
     }
-
     LOG_POST(string(33, '-'));
 
     // Same as above but using GetResults() instead of return string
+
     start = 0;
     for (;;) {
         pattern.GetMatch(text, start, 0, CRegexp::fMatch_default, true);
@@ -128,6 +130,42 @@ int CRegexApplication::Run(void)
             break;
         }
     }
+    LOG_POST(string(33, '-'));
+
+    // Match() test
+
+    pattern.Set("d?g");
+    assert(!pattern.IsMatch(""));
+    assert( pattern.NumFound() <= 0);
+    assert( pattern.IsMatch("dog"));
+    assert( pattern.NumFound() == 1);
+    assert(!pattern.IsMatch("DOG"));
+    assert( pattern.IsMatch("dog dog"));
+    assert( pattern.NumFound() == 1);
+    assert(!pattern.IsMatch("doc"));
+    assert( pattern.NumFound() <= 0);
+
+
+    // Escape special metacharacters test
+
+    assert(CRegexp::Escape("a+b") == "a\\+b");
+    assert(CRegexp::Escape("^.*[0-9]\\{3\\}") ==
+                           "\\^\\.\\*\\[0\\-9\\]\\\\\\{3\\\\\\}");
+    assert(CRegexp::Escape("a_b") == "a_b");
+    assert(CRegexp::Escape("") == "");
+
+    pattern.Set("d.*g");
+    assert( pattern.IsMatch("dog"));
+    pattern.Set(CRegexp::Escape("d.*g"));
+    assert(!pattern.IsMatch("dog"));
+    assert( pattern.IsMatch("d.*g"));
+
+    pattern.Set(CRegexp::Escape("[0-9]{3}"));
+    assert(!pattern.IsMatch("123"));
+    assert( pattern.IsMatch("[0-9]{3}"));
+
+    pattern.Set(CRegexp::Escape(".?*+$^[](){}/\\|-"));
+    assert(pattern.IsMatch(".?*+$^[](){}/\\|-"));
 
     return 0;
 }
@@ -149,6 +187,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/27 19:48:05  ivanov
+ * Added tests for Escape(), IsMatch()
+ *
  * Revision 1.8  2006/01/09 12:37:36  ivanov
  * Use LOG_POST instead of cout
  *
