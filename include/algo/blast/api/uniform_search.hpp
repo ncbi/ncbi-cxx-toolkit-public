@@ -288,20 +288,19 @@ private:
 
 /// Single Iteration Blast Database Search
 /// 
-/// FIXME: update comment
-///
-/// This class is the top-level Uniform Search Interface for blast
-/// searches.  Concrete subclasses of this class will create and
-/// return concrete subclasses of the IBlastDbSearch class.  Use this
-/// class when you need to write code that decribes an algorithm over
-/// the abstract IBlastDbSearch API, and is ignorant of the concrete
-/// type of search it is performing.
+/// This class is the top-level Uniform Search interface for blast
+/// searches.  Concrete subclasses of this class will accept blast
+/// options, perform blast searches, and produce CSearchResultSets
+/// as output.  This class does not accept queries, however, so code
+/// that provides the queries to the search will need to work with the
+/// interfaces derived from this class.
 
 class ISearch : public CObject {
 public:
     // Configuration
     
     /// Configure the search
+    /// @param options The search will be configured with these options.
     virtual void SetOptions(CRef<CBlastOptionsHandle> options) = 0;
     
     /// Set the subject database(s) to search
@@ -311,14 +310,21 @@ public:
     virtual CSearchResultSet Run() = 0;
 };
 
+
+/// Single Iteration Search of Sequence(s) Against Blast Database(s)
+/// 
+/// This interface class adds query-specific information to the
+/// ISearch interface.  This version works with sequence queries.
+
 class ISeqSearch : public ISearch {
 public:
-
+    /// Destructor
     virtual ~ISeqSearch() {}
     
     // Inputs
     
     /// Set the queries to search
+    /// @param query_factory This supplies the queries for which to search.
     virtual void SetQueryFactory(CRef<IQueryFactory> query_factory) = 0;
 };
 
@@ -328,6 +334,7 @@ public:
 /// @note the CSearchResultSet that is returned from the Run method will
 /// always contain 0 or 1 CSearchResults objects, as PSI-BLAST cannot do
 /// multiple-PSSM searches
+
 class IPssmSearch : public ISearch {
 public:
 
