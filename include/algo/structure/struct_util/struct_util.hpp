@@ -75,6 +75,9 @@ public:
     // Get the BlockMultipleAlignment (implies IBM); returns NULL on failure
     const BlockMultipleAlignment * GetBlockMultipleAlignment(void);
 
+    // Check if the BlockMultipleAlignment has been built.
+    bool IsBlockMultipleAlignmentBuilt() const { return (m_currentMultiple != NULL);}
+
     // Configure object with a different alignment - clones the bma passed in.
     // New bma may have deleted or reordered rows, but for any rows having new
     // sequences those sequences must be explicitly added.
@@ -109,6 +112,17 @@ public:
         double percentile, unsigned int extension, unsigned int cutoff,         // to calculate max loop lengths
         std::vector<unsigned int>& queryFrom, std::vector<unsigned int>& queryTo);        // range on realigned row to search
 
+    // Convenience methods to avoid explicit manipulation of the underlying BlockMultipleAlignment.
+    // Avoid repeated calls to 'const' versions --> clones 'this' each time if the underlying
+    // m_currentMultiple object does not already exist.
+    // If necessary, non-const versions build m_currentMultiple as a side-effect.
+    unsigned int GetNRows();
+    unsigned int GetNRows() const;
+    bool IsRowPDB(unsigned int row);
+    bool IsRowPDB(unsigned int row) const;
+    std::string GetSeqIdStringForRow(unsigned int row);
+    std::string GetSeqIdStringForRow(unsigned int row) const;
+
 private:
     // sequence data
     SeqEntryList m_seqEntries;
@@ -137,6 +151,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/03/27 16:34:19  lanczyck
+* add a few utility methods to AlignmentUtility
+*
 * Revision 1.13  2005/10/24 23:26:59  thiessen
 * switch to C++ PSSM generation
 *

@@ -40,6 +40,7 @@
 #include <algo/structure/struct_util/struct_util.hpp>
 #include <algo/structure/struct_util/su_sequence_set.hpp>
 #include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
 #include "su_private.hpp"
 #include "su_alignment_set.hpp"
 #include <algo/structure/struct_util/su_pssm.hpp>
@@ -743,11 +744,103 @@ int AlignmentUtility::ScoreRowByPSSM(unsigned int row)
     return score;
 }
 
+unsigned int AlignmentUtility::GetNRows() {
+    const BlockMultipleAlignment* bma = GetBlockMultipleAlignment();
+    return (bma) ? bma->NRows() : 0;
+}
+
+unsigned int AlignmentUtility::GetNRows() const {
+    unsigned int nRows = 0;
+    if (m_currentMultiple) {
+        nRows = m_currentMultiple->NRows();
+    } else {
+        AlignmentUtility* dummy = Clone();
+        nRows = (dummy) ? dummy->GetNRows() : 0;
+        delete dummy;
+    }
+    return nRows;
+}
+
+bool AlignmentUtility::IsRowPDB(unsigned int row) {
+    bool result = false;
+    const BlockMultipleAlignment* bma = GetBlockMultipleAlignment();
+    const Sequence* sequence = (bma) ? bma->GetSequenceOfRow(row) : NULL;
+
+    if (sequence) {
+        result = sequence->GetPreferredIdentifier().IsPdb();
+    }
+
+    return result;
+}
+
+bool AlignmentUtility::IsRowPDB(unsigned int row) const {
+    bool result = false;
+    if (m_currentMultiple) {
+        const Sequence* sequence = m_currentMultiple->GetSequenceOfRow(row);
+        if (sequence) {
+            result = sequence->GetPreferredIdentifier().IsPdb();
+        }
+    } else {
+        AlignmentUtility* dummy = Clone();
+        result = (dummy && dummy->IsRowPDB(row));
+    }
+    return result;
+}
+
+string SequenceIdToString(const Sequence& sequence) {
+
+    static const string defStr = "Non-GI/PDB Sequence Type";
+    string s = defStr;
+    const CSeq_id& id = sequence.GetPreferredIdentifier();
+
+    if (id.IsPdb()) {
+        char chain = id.GetPdb().GetChain();
+        s = "PDB " + id.GetPdb().GetMol().Get() + '_' + chain;
+    } else if (id.IsGi()) {
+        s = "GI " + NStr::IntToString(id.GetGi());
+    }
+    return s;
+}
+
+string AlignmentUtility::GetSeqIdStringForRow(unsigned int row) {
+
+    static const string defStr = "<Could not find a sequence for row ";
+    string idStr = defStr + NStr::IntToString(row + 1) + '>';
+    const BlockMultipleAlignment* bma = GetBlockMultipleAlignment();
+    const Sequence* sequence = (bma) ? bma->GetSequenceOfRow(row) : NULL;
+
+    if (sequence) {
+        idStr = SequenceIdToString(*sequence);
+        idStr += " at row " + NStr::IntToString(row + 1) + '>';
+    }
+    return idStr;
+}
+
+string AlignmentUtility::GetSeqIdStringForRow(unsigned int row) const {
+    static const string defStr = "<Could not find a sequence for row ";
+    string idStr = defStr + NStr::IntToString(row + 1) + '>';
+    if (m_currentMultiple) {
+        const Sequence* sequence = m_currentMultiple->GetSequenceOfRow(row);
+        if (sequence) {
+            idStr = SequenceIdToString(*sequence);
+        }
+    } else {
+        AlignmentUtility* dummy = Clone();
+        if (dummy) {
+            idStr = dummy->GetSeqIdStringForRow(row);
+        }
+    }
+    return idStr;
+}
+
 END_SCOPE(struct_util)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2006/03/27 16:34:52  lanczyck
+* add a few utility methods to AlignmentUtility
+*
 * Revision 1.25  2006/01/19 20:36:26  lanczyck
 * change info message in LeaveNOut
 *
