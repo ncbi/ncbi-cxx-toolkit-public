@@ -115,18 +115,27 @@ class NCBI_XOBJREAD_EXPORT CSeqDBGiList : public CObject {
 public:
     /// Structure that holds GI-OID pairs.
     struct SGiOid {
+        /// Constuct an SGiOid element from the given gi and oid.
+        /// @param gi_in A GI, or 0 if none is available.
+        /// @param oid_in An OID, or -1 if none is available.
         SGiOid(int gi_in = 0, int oid_in = -1)
             : gi(gi_in), oid(oid_in)
         {
         }
         
+        /// The GI or 0 if unknown.
         int gi;
+        
+        /// The OID or -1 if unknown.
         int oid;
     };
     
     /// Possible sorting states
     enum ESortOrder {
+        /// The array is unsorted or the sortedness is unknown.
         eNone,
+        
+        /// The array is sorted by GI.
         eGi
     };
     
@@ -144,10 +153,17 @@ public:
     /// Test for existence of a GI.
     bool FindGi(int gi);
     
-    /// Find a GI and return the associated OID.
+    /// Try to find a GI and return the associated OID.
+    /// @param gi The gi for which to search. [in]
+    /// @param oid The resulting oid if found. [out]
+    /// @return True if the GI was found.
     bool GiToOid(int gi, int & oid);
     
     /// Find a GI, returning the index and the associated OID.
+    /// @param gi The gi for which to search. [in]
+    /// @param oid The resulting oid if found. [out]
+    /// @param oid The index of this GI if found. [out]
+    /// @return True if the GI was found.
     bool GiToOid(int gi, int & oid, int & index);
     
     /// Access an element of the array.
@@ -180,7 +196,10 @@ public:
     void GetGiList(vector<int>& gis) const;
     
 protected:
-    ESortOrder     m_CurrentOrder;
+    /// Indicates the current sort order, if any, of this container.
+    ESortOrder m_CurrentOrder;
+    
+    /// Pairs of GIs and OIDs.
     vector<SGiOid> m_GisOids;
     
 private:
@@ -198,9 +217,25 @@ private:
     CSeqDBGiList & operator=(const CSeqDBGiList & other);
 };
 
-
+/// Read a binary-format GI list from a file.
+///
+/// @param name The name of the file. [in]
+/// @param gis The GIs returned by this function. [out]
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis);
+
+/// Read a text or binary GI list from an area of memory.
+///
+/// The GIs in a memory region are read into the provided SGiOid
+/// vector.  The GI half of each element of the vector is assigned,
+/// but the OID half will be left as -1.  If the in_order parameter is
+/// not null, the function will test the GIs for orderedness.  It will
+/// set the bool to which in_order points to true if so, false if not.
+///
+/// @param fbeginp The start of the memory region holding the GI list. [in]
+/// @param fendp   The end of the memory region holding the GI list. [in]
+/// @param gis     The GIs returned by this function. [out]
+/// @param in_order If non-null, returns true iff the GIs were in order. [out]
 
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadMemoryGiList(const char                   * fbeginp,
@@ -208,10 +243,35 @@ void SeqDB_ReadMemoryGiList(const char                   * fbeginp,
                             vector<CSeqDBGiList::SGiOid> & gis,
                             bool                         * in_order = 0);
 
+/// Read a text or binary GI list from a file.
+///
+/// The GIs in a file are read into the provided SGiOid vector.  The
+/// GI half of each element of the vector is assigned, but the OID
+/// half will be left as -1.  If the in_order parameter is not null,
+/// the function will test the GIs for orderedness.  It will set the
+/// bool to which in_order points to true if so, false if not.
+///
+/// @param fbeginp The start of the memory region holding the GI list. [in]
+/// @param fendp   The end of the memory region holding the GI list. [in]
+/// @param gis     The GIs returned by this function. [out]
+/// @param in_order If non-null, returns true iff the GIs were in order. [out]
+
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadGiList(const string                 & fname,
                       vector<CSeqDBGiList::SGiOid> & gis,
                       bool                         * in_order = 0);
+
+/// Read a text or binary GI list from a file.
+///
+/// The GIs in a file are read into the provided int vector.  If the
+/// in_order parameter is not null, the function will test the GIs for
+/// orderedness.  It will set the bool to which in_order points to
+/// true if so, false if not.
+///
+/// @param fbeginp The start of the memory region holding the GI list. [in]
+/// @param fendp   The end of the memory region holding the GI list. [in]
+/// @param gis     The GIs returned by this function. [out]
+/// @param in_order If non-null, returns true iff the GIs were in order. [out]
 
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadGiList(const string  & fname,
@@ -252,15 +312,25 @@ typedef map< string, TSeqDBAliasFileVersions > TSeqDBAliasFileValues;
 /// given taxid.
 
 struct SSeqDBTaxInfo {
+    /// Default constructor
     SSeqDBTaxInfo()
         : taxid(0)
     {
     }
     
-    int    taxid;
+    /// An identifier for this species or taxonomic group.
+    int taxid;
+    
+    /// Scientific name, such as "Aotus vociferans".
     string scientific_name;
+    
+    /// Common name, such as "noisy night monkey".
     string common_name;
+    
+    /// A simple category name, such as "birds".
     string blast_name;
+    
+    /// A string of length 1 indicating the "Super Kingdom".
     string s_kingdom;
 };
 
