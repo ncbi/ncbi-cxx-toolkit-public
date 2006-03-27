@@ -86,15 +86,17 @@ n_ok=0
 n_err=0
 sum_list=''
 
-service_machines="service0 service1 service2 service3"
-mask="NC_.*"
-
-for s in $service_machines ; do
-    list=`$lbsmc -g $s 0 2>&1 | tail +7 | cut -f1 -d' ' | sed '/-/{x;q;}' | grep -s "$mask"`
-    test -n list  ||  list=""
-    wholelist=`echo $wholelist $list`
-done
-wholelist=`for s in $wholelist; do echo $s; done | sort | uniq`
+os=`env | grep "OS=" | grep -i "Windows"`
+if test $? -ne 0; then
+    service_machines="service0 service1 service2 service3"
+    mask="NC_.*"
+    for s in $service_machines ; do
+       list=`$lbsmc -g $s 0 2>&1 | tail +7 | cut -f1 -d' ' | sed '/-/{x;q;}' | grep -s "$mask"`
+       test -n list  ||  list=""
+       wholelist=`echo $wholelist $list` 
+    done
+    wholelist=`for s in $wholelist; do echo $s; done | sort | uniq`
+fi
 
 for s in $wholelist; do
     echo " $services " | grep " $s " 2>&1 >/dev/null
