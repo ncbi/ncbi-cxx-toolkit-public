@@ -124,7 +124,7 @@ protected:
 class CBMARefinerLOOPhase : public CBMARefinerPhase {
 public:
 
-    CBMARefinerLOOPhase(LeaveOneOutParams looParams, bool doShuffle = true) : CBMARefinerPhase(true), m_looParams(looParams), m_shuffleRowsAtStart(doShuffle) {
+    CBMARefinerLOOPhase(LeaveOneOutParams looParams) : CBMARefinerPhase(true), m_looParams(looParams) {
         m_noScalarChangeValue = 0;
     }
 
@@ -151,7 +151,6 @@ private:
     //  To support 
 
     LeaveOneOutParams m_looParams;
-    bool  m_shuffleRowsAtStart;
     static CRowSelector* m_rowSelector;
 
     static CRowSelector* MakeRowSelector(AlignmentUtility* au, const LeaveOneOutParams& looParams, string& message, unsigned int nRowsRequested, bool makeUnique);
@@ -207,6 +206,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/03/27 16:38:18  lanczyck
+ * refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector
+ *
  * Revision 1.3  2005/11/23 01:01:14  lanczyck
  * freeze specified blocks in both LOO and BE phases;
  * add support for a callback for a progress meter

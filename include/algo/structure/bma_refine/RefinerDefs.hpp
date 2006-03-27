@@ -78,6 +78,11 @@ enum RefinerResultCode {
     eRefinerResultPhaseSkipped = 100
 };
 
+enum RefinerRowSelectorCode {
+    eRandomSelectionOrder = 0,
+    eWorstScoreFirst,
+    eBestScoreFirst
+};
 
 struct LeaveOneOutParams {
     bool doLOO;
@@ -90,9 +95,11 @@ struct LeaveOneOutParams {
     //  If this fraction or higher of LOO operations in a phase have no 
     //  score change, stop future LOO phases.
     double  sameScoreThreshold;
+
     unsigned int seed;   //  for determining order of row selection
     unsigned int lno;    //  number of rows to leave out between PSSM recalculation
     vector<unsigned int> rowsToExclude;  //  specify extra row numbers to exclude
+    RefinerRowSelectorCode selectorCode; //  specify the method for setting order rows undergo LOO
 
     //  Parameters passed to block-aligner
     double percentile;
@@ -113,6 +120,7 @@ struct LeaveOneOutParams {
         sameScoreThreshold = 0;
         seed = 0;
         lno = 1;
+        selectorCode = eRandomSelectionOrder;
 
         percentile = 1.0;
         extension = 0;
@@ -144,6 +152,7 @@ struct LeaveOneOutParams {
         seed = rhs.seed;
         lno = rhs.lno;
         rowsToExclude.assign(rhs.rowsToExclude.begin(), rhs.rowsToExclude.end());
+        selectorCode = rhs.selectorCode;
 
         percentile = rhs.percentile;
         extension = rhs.extension;
@@ -221,6 +230,8 @@ struct BlockEditingParams {
         columnMethod2 = rhs.columnMethod2;
 
         editableBlocks = rhs.editableBlocks;
+//        editableBlocks.clear();
+//        editableBlocks.insert(rhs.editableBlocks.begin(), rhs.editableBlocks.end());
     }
 };
 
@@ -274,6 +285,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/03/27 16:38:18  lanczyck
+ * refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector
+ *
  * Revision 1.6  2005/11/28 21:47:40  lanczyck
  * remove unnecessary static (?!) callback fn definition
  *

@@ -49,30 +49,26 @@ USING_SCOPE(struct_util);
 
 BEGIN_SCOPE(align_refine)
 
-// class for standalone application
+// pure virtual base class;  SetSequence() must be overloaded in subclasses.
 class CRowSelector
 {
 public:
 
     static const unsigned int INVALID_ROW;
 
-    CRowSelector(unsigned int nRows, bool unique  = true, unsigned int seed = 0);
-    CRowSelector(unsigned int nRows, unsigned int nTotal, bool unique = true, unsigned int seed = 0);
-    CRowSelector(const AlignmentUtility* au, bool unique = true, unsigned int seed = 0);
-    CRowSelector(const AlignmentUtility* au, unsigned int nTotal, bool unique = true, unsigned int seed = 0);
+    CRowSelector(unsigned int nRows, bool unique);
+    CRowSelector(unsigned int nRows, unsigned int nTotal, bool unique);
 
     bool HasNext(void);           // if extend this class, make HasNext virtual
     unsigned int  GetNext(void);  // if extend this class, make GetNext virtual
     void Reset();  // start from begining; keeps the same sequence
-    void Shuffle(bool clearExcludedRows = false);// using the same parameters, make a new sequence & reset the selector
+
+//    virtual void Shuffle(bool clearExcludedRows = false);// using the same parameters, make a new sequence & reset the selector
 
     unsigned int GetNumRows(void) const;  
     unsigned int GetNumSelected(void) const;
     unsigned int GetSequenceSize(void) const;
 
-    //  Rows corresponding to structures in an alignment are excluded from the possible 
-    //  selections; only has an effect if m_au is non-Null.  Also adjusts m_nSelections.
-    void ExcludeStructureRows();  
     bool ExcludeRow(unsigned int row);
     unsigned int  GetNumExcluded() const;
 
@@ -80,29 +76,27 @@ public:
     string PrintSequence(unsigned int first = 0, unsigned int last = 0, bool sorted = false) const;
 
     //  Print the entire state (except for the AlignmentUtility object)
-    string Print() const;
+    virtual string Print() const;
 
     virtual ~CRowSelector() {};
 
-private:
+protected:
 
-    void Init(unsigned int nSelections, unsigned int seed);  // called only from c-tors
-    void SetSequence();
+    //  Determine the order in which rows will be selected.
+    virtual void SetSequence() = 0;
+
+
+    void Init(unsigned int nRows, unsigned int nSelections);
     void ClearExclusions();   //  also resets m_nSelections to original value
+
+
+
+    bool  m_unique;      //  flag:  true indicates that when possible, integers in the sequence are unique
 
     unsigned int   m_nRows;       //  number of possible values
     unsigned int   m_nSelections; //  total number of selections allowed; equals m_nRows unless specified
                          //  or there are excluded row numbers.
-    unsigned int   m_nSelected;   //  counts how many selections have been requested by clients of this instance
-
-    //  optionally, based the row selector on properties of a given alignment
-    const AlignmentUtility* m_au;  
-
-    bool  m_unique;      //  flag:  true indicates that when possible, integers in the sequence are unique
-
-    CRandom* m_rng;  //  random number generator; must be initialized in ctor
-
-
+    unsigned int   m_nSelected;       //  counts how many selections have been requested by clients
     unsigned int   m_origNSelections; //  number of selections allowed as specified in initial construction;
                              //  may use if want to unset some exclusions
 
@@ -111,6 +105,78 @@ private:
 
 };
 
+
+class CRandomRowSelector : public CRowSelector
+{
+public:
+
+    CRandomRowSelector(unsigned int nRows, bool unique  = true, unsigned int seed = 0);
+    CRandomRowSelector(unsigned int nRows, unsigned int nTotal, bool unique = true, unsigned int seed = 0);
+
+    // using the same parameters, make a new sequence & reset the selector
+    void Shuffle(bool clearExcludedRows = false);
+
+    //  Print the entire state (except for the AlignmentUtility object)
+    //virtual string Print() const;
+
+    virtual ~CRandomRowSelector() { delete m_rng;};
+
+private:
+
+    //  Manditory overload...
+    virtual void SetSequence();
+
+    void InitRNG(unsigned int seed);  // called only from c-tors
+
+    CRandom* m_rng;  //  random number generator; must be initialized in ctor
+};
+
+
+class CAlignmentBasedRowSelector : public CRowSelector
+{
+public:
+
+    CAlignmentBasedRowSelector(const AlignmentUtility* au, bool unique, bool bestToWorst);
+    //  nTotal is constrained to be no more than the number of rows in 'au'.
+    CAlignmentBasedRowSelector(const AlignmentUtility* au, unsigned int nTotal, bool unique, bool bestToWorst);
+
+    // *** Does this method make sense here??? ***
+    // using the same parameters, make a new sequence & reset the selector  
+    //  void Shuffle(bool clearExcludedRows = false);
+
+//    void ExcludeStructureRows(bool skipMaster, vector<unsigned int>* excludedStructureRows = NULL);  
+
+    //  Print the entire state (except for the AlignmentUtility object)
+    //virtual string Print() const;
+
+    //  Replace the m_au object with a clone of the newAU.  Recompute a new order and score->row mapping.
+    //  Any existing row number exclusions are still respected when possible.
+    bool Update(const AlignmentUtility* newAU, unsigned int nTotal = 0, bool bestToWorst = false);
+
+    virtual ~CAlignmentBasedRowSelector() { delete m_au;}
+
+private:
+
+    //  Manditory overload...
+    virtual void SetSequence();
+
+    void InitAU(const AlignmentUtility* au, unsigned int nSelections);  // if zero is passed, # selections == # rows in m_au.
+
+    //  the alignment on which selection order is based; class has ownership of this object
+    AlignmentUtility* m_au;  
+
+    typedef multimap<double, unsigned int> ScoreMap;
+    typedef ScoreMap::iterator ScoreMapIt;
+    typedef ScoreMap::reverse_iterator ScoreMapRit;
+    typedef ScoreMap::value_type ScoreMapVT;
+
+    //  Maintain a map of scores to row numbers in the AU.  The flag m_sortBestToWorst tells if 
+    //  the selection order is in terms of decreasing (true) or increasing (false) score.
+    bool m_sortBestToWorst;
+    ScoreMap m_scoresToRow;
+};
+
+
 END_SCOPE(align_refine)
 
 #endif // AR_ROW_SELECTOR__HPP
@@ -118,6 +184,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/03/27 16:38:18  lanczyck
+* refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector
+*
 * Revision 1.1  2005/06/28 13:45:25  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *
