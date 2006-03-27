@@ -627,6 +627,7 @@ public:
         x_ClrAmb();
     }
     
+    /// Verify the integrity of this object and subobjects.
     void Verify()
     {
         m_HdrLease.Verify();

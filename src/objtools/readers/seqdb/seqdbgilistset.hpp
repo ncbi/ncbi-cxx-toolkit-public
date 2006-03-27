@@ -113,6 +113,16 @@ public:
                            CSeqDBLockHold  & locked);
     
 private:
+    /// Translate a volume gilist from the user gilist.
+    ///
+    /// If the user chooses to filter the entire database with a user
+    /// GI list, then by definition, only GIs in that list can be part
+    /// of the set of GIs (and therefore OIDs) that are interesting to
+    /// this instance of SeqDB.  So rather than translate the GI lists
+    /// from each volume directly from the ISAM file, the translated
+    /// user GI list is used to translate the per-volume GI lists.
+    ///
+    /// @param gilist The volume GI list.
     void x_TranslateFromUserList(CSeqDBGiList & gilist);
     
     /// Memory management layer object.

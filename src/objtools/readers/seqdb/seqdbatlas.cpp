@@ -149,6 +149,10 @@ void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg)
     }
 }
 
+/// Build and throw a file-not-found exception.
+///
+/// @param fname The name of the unfound file. [in]
+
 static void s_SeqDB_FileNotFound(const string & fname)
 {
     string msg("File [");

@@ -66,13 +66,6 @@ void CSeqDBAliasNode::x_Tokenize(const string & dbnames)
 }
 
 
-/// Public Constructor
-///
-/// This is the user-visible constructor, which builds the top level
-/// node in the dbalias node tree.  This design effectively treats the
-/// user-input database list as if it were an alias file containing
-/// only the DBLIST specification.
-
 CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                                  const string   & dbname_list,
                                  char             prot_nucl,
@@ -327,11 +320,22 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
     }
 }
 
+/// Parse a name-value pair.
+///
+/// The specified section of memory, corresponding to a line from an
+/// alias file or group alias file, is read, and the name and value
+/// are returned in the provided strings, whose capacity is managed
+/// via the quick assignment function.
+///
+/// @param bp The memory region starts here. [in]
+/// @param ep The end of the memory region. [in]
+/// @param name The field name is returned here. [out]
+/// @param value The field value is returned here. [out]
 
-static void s_SeqDB_ReadLine(const char       * bp,
-                             const char       * ep,
-                             string           & name,
-                             string           & value)
+static void s_SeqDB_ReadLine(const char * bp,
+                             const char * ep,
+                             string     & name,
+                             string     & value)
 {
     name.erase();
     value.erase();
@@ -392,6 +396,30 @@ void CSeqDBAliasSets::x_DbToIndexName(const CSeqDB_Path & dbpath,
 }
 
 
+
+/// Find starting points of included data in the group alias file.
+///
+/// This function scans the memory region containing the group alias
+/// file's data, looking for the string provided as the key.  The key
+/// marks the start of each alias file included in the group alias
+/// file.  This code compiles a list of pointers representing the
+/// starts and ends of the interesting data within the group alias
+/// file memory region.
+///
+/// The first pointer returned here is the start of a line containing
+/// the alias file string, then a pointer to the end of that line,
+/// then a pointer to the start of the next line containing the key,
+/// and so on, repeating.  Finally, the pointer to the end of the data
+/// is returned.  Therefore, to find the names of all the alias files,
+/// you would examine the range from p0 to p1, p2 to p3, and so on.
+/// To find the contents of the alias files, you would examine p1 to
+/// p2, p3 to p4, and so on.  The last pointer is appended because it
+/// makes it easier to write the loop in the recieving code.
+///
+/// @param bp The memory region starts here. [in]
+/// @param ep The end of the memory region. [in]
+/// @param key The seperating string. [out]
+/// @param offsets [out]
 static void
 s_SeqDB_FindOffsets(const char   * bp,
                     const char   * ep,
@@ -413,6 +441,12 @@ s_SeqDB_FindOffsets(const char   * bp,
         }
         
         if (found) {
+            // This snippet of code verifies that the key found by the
+            // above loop is either at the start of the memory region,
+            // or is the first non-whitespace on the line it inhabits.
+            // If a database title includes the phrase ALIAS_FILE, we
+            // don't treat it as the start of a new alias file.
+            
             const char * p2 = p - 1;
             
             while((p2 >= bp) && !SEQDB_ISEOL(*p2)) {
@@ -475,6 +509,8 @@ void CSeqDBAliasSets::x_ReadAliasSetFile(const CSeqDB_Path & aset_path,
         TAliasGroup & group = m_Groups[aset_path.GetPathS()];
         
         for(size_t i = 0; i < last_start; i += 2) {
+            // The line being read here is "ALIAS_FILE <filename>"
+            
             s_SeqDB_ReadLine(offsets[i],
                              offsets[i+1],
                              name,

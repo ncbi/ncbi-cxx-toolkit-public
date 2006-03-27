@@ -113,19 +113,21 @@ void seqdb_log(int cl, const char * s1, int s2);
        _ASSERT(m_ClassMark == x_GetClassMark()); \
    }
 
+/// Make the marker of this class invalid.
 #define BREAK_MARKER() m_ClassMark |= 0x20202020;
 
 #else
 
-/// Define memory marker for class.
+/// Define memory marker for class  (release mode code elision)
 #define CLASS_MARKER_FIELD(a)
 
-/// Initializer for constructor
+/// Initializer for constructor (release mode code elision)
 #define INIT_CLASS_MARK()
 
-/// Assertion to verify the marker
+/// Assertion to verify the marker (release mode code elision)
 #define CHECK_MARKER()
 
+/// Make the marker of this class invalid (release mode code elision)
 #define BREAK_MARKER()
 
 #endif
@@ -653,6 +655,7 @@ public:
     ///   True if this object is before "other" in the ordering.
     inline bool operator < (const CRegionMap & other) const;
     
+    /// Verify the marker values (only in debug mode).
     void Verify()
     {
 #ifdef _DEBUG
@@ -819,6 +822,7 @@ public:
         return m_Data == 0;
     }
     
+    /// Verify the integrity of this object.
     void Verify() const
     {
         CHECK_MARKER();
@@ -1330,12 +1334,18 @@ public:
         return m_CurAlloc;
     }
     
+    /// Verify the integrity of this object and subobjects.
+    /// @param locked
+    ///   The lock hold object for this thread. [in]
     void Verify(CSeqDBLockHold & locked)
     {
         Lock(locked);
         Verify(true);
     }
     
+    /// Verify the integrity of this object and subobjects.
+    /// @param already_locked
+    ///   True if the lock is already held, false if not. [in]
     void Verify(bool already_locked)
     {
 #ifdef _DEBUG

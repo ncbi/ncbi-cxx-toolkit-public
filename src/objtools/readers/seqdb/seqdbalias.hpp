@@ -234,15 +234,54 @@ public:
     {
     }
     
+    /// Read an alias file given the path.
+    ///
+    /// This finds an alias file, or an equivalent section of a group
+    /// alias file, given a filename.  The contents of the file (or of
+    /// the corresponding part of the group file) are returned as a
+    /// pair of pointers to the start and end of the buffer stored in
+    /// the string that contains this data.  This code triggers the
+    /// parsing of the entire group alias file if it exists and has
+    /// not hithereto been read.  Group alias files could replace
+    /// individual alias files, but at the moment, both will always be
+    /// present.  If the group alias file does exist, it is assumed to
+    /// be authoritative and complete.
+    ///
+    /// @param dbpath The name of the alias file (if it exists).
+    /// @param bp The start of the alias file contents. [out]
+    /// @param ep The end of the alias file contents. [out]
+    /// @param locked The lock holder object for this thread. [in]
+    /// @return True if an alias file (or equivalent data) was found.
     bool ReadAliasFile(const CSeqDB_Path  & dbpath,
                        const char        ** bp,
                        const char        ** ep,
                        CSeqDBLockHold     & locked);
     
+    /// Resolve the alias file path.
+    ///
+    /// Given a partial path and name designating a particular db
+    /// alias file, this method finds the absolute path of the group
+    /// index file for that alias file, or if that is not found, the
+    /// individual alias file.
+    ///
+    /// @param dbpath The path to the file. [in]
+    /// @param resolved The resolved path is returned here. [out]
+    /// @param locked The lock holder object for this thread. [in]
+    /// @return True if the path was found.
     bool FindAliasPath(const CSeqDB_Path & dbpath,
                        CSeqDB_Path       * resolved,
                        CSeqDBLockHold    & locked);
     
+    /// Find a file given a partial path and name.
+    ///
+    /// Given a path designating a particular disk file, this method
+    /// finds the absolute path of that file.  The filename is assumed
+    /// to contain the correct extension.
+    ///
+    /// @param dbpath The partial path to the file, with extension. [in]
+    /// @param resolved The resolved path is returned here. [out]
+    /// @param locked The lock holder object for this thread. [in]
+    /// @return True if the path was found.
     bool FindBlastDBPath(const CSeqDB_Path & dbname,
                          CSeqDB_Path       & resolved,
                          CSeqDBLockHold    & locked)
@@ -262,6 +301,20 @@ public:
         return false;
     }
     
+    /// Find a file given a partial path and name.
+    ///
+    /// Given a path designating a particular disk file, this method
+    /// finds the absolute path of that file.  The filename is assumed
+    /// to not contain an extension.  Instead, the user indicates the
+    /// type of database (p or n) and the function will search for
+    /// that kind of database volume or alias file ('pin' or 'pal' for
+    /// protein, 'nin' or 'nal' for nucleotide.)
+    ///
+    /// @param dbpath The partial path to the file. [in]
+    /// @param dbtype The type of sequences used. [in]
+    /// @param resolved The resolved path is returned here. [out]
+    /// @param locked The lock holder object for this thread. [in]
+    /// @return True if the path was found.
     bool FindBlastDBPath(const CSeqDB_BasePath & dbname,
                          char                    dbtype,
                          CSeqDB_BasePath       & resolved,
@@ -283,16 +336,50 @@ public:
     }
     
 private:
+    /// Find a file given a partial path and name.
+    ///
+    /// Given a path designating a particular disk file, this method
+    /// finds the absolute path of that file.  The user indicates the
+    /// type of database (p or n) to find appropriate extensions for
+    /// index or alias files, or specifies exact=true if the filename
+    /// already has the correct extension.  Before the filesystem is
+    /// consulted, however, the m_PathLookup map is checked to see if
+    /// an answer to this query already exists.
+    ///
+    /// @param dbpath The partial path to the file. [in]
+    /// @param dbtype The type of sequences in the DB. [in]
+    /// @param exact Specify true if the extension is present. [in]
+    /// @param resolved The resolved path is returned here. [out]
+    /// @param locked The lock holder object for this thread. [in]
+    /// @return True if the path was found.
     bool x_FindBlastDBPath(const string   & dbname,
                            char             dbtype,
                            bool             exact,
                            string         & resolved,
                            CSeqDBLockHold & locked);
     
+    /// Find the path of a group index from an alias file name.
+    ///
+    /// This method takes the path of an alias file as input.  The
+    /// filename is extracted and returned in alias_name.  The name
+    /// of the associated group index file is computed and returned
+    /// in index_path.  This consists of the directory of the alias
+    /// file combined with the standard group index filename.
+    ///
+    /// @param fname Location of the individual alias file. [in]
+    /// @param index_path Location of the group index file. [out]
+    /// @param alias_fname Filename portion of the alias file. [out]
     void x_DbToIndexName(const CSeqDB_Path & fname,
                          CSeqDB_Path       & index_name,
                          CSeqDB_FileName   & alias_name);
     
+    /// Read the contents of the group alias file.
+    ///
+    /// This reads a group alias file.  The individual alias file
+    /// contents are stored in m_Groups, but are not parsed yet.
+    ///
+    /// @param group_fname The filename for the group file. [in]
+    /// @param locked The lock holder object for this thread. [in]
     void x_ReadAliasSetFile(const CSeqDB_Path & group_fname,
                             CSeqDBLockHold    & locked);
     
@@ -305,7 +392,7 @@ private:
     /// Full index filename to aggregated alias file.
     typedef map< string, TAliasGroup > TAliasGroupMap;
     
-    /// Alias groups
+    /// Alias groups.
     TAliasGroupMap m_Groups;
     
     /// Caches results of FindBlastDBPath
@@ -558,6 +645,22 @@ public:
     ///   The alias file values will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv) const;
     
+    /// Add computed values to alias node lacking them.
+    ///
+    /// Some of the standard alias file key/values pairs are, in fact,
+    /// designed to override for values found in the corresponding
+    /// volumes.  The callers of the GetAliasFileValues() method may
+    /// want to use these values on a per-alias-file basis.  But of
+    /// these values are only present in the alias file if the author
+    /// of that file wanted to replace the value found in the volume.
+    /// 
+    /// This method iterates over the alias file nodes, filling in
+    /// values found in the volumes, in those cases where the alias
+    /// file did not override the value.  Only those values that have
+    /// been useful to a user of CSeqDB are added via this method,
+    /// which so only includes the TITLE.
+    ///
+    /// @param volset The set of volumes for this database.
     void CompleteAliasFileValues(const CSeqDBVolSet & volset);
     
 private:
@@ -591,7 +694,7 @@ private:
     /// @param recurse
     ///   Node history for cycle detection
     /// @param locked
-    ///   The lock holder object for this thread
+    ///   The lock holder object for this thread. [in]
     /// @param alias_sets
     ///   An alias file caching and combining layer.
     CSeqDBAliasNode(CSeqDBAtlas           & atlas,
@@ -612,7 +715,7 @@ private:
     /// @param fn
     ///   The name of the alias file
     /// @param locked
-    ///   The lock holder object for this thread
+    ///   The lock holder object for this thread. [in]
     void x_ReadValues(const CSeqDB_Path & fn, CSeqDBLockHold & locked);
     
     /// Read one line of the alias file
@@ -658,7 +761,7 @@ private:
     /// @param recurse
     ///   Set of all ancestor nodes for this node.
     /// @param locked
-    ///   The lock holder object for this thread
+    ///   The lock holder object for this thread. [in]
     void x_ExpandAliases(const CSeqDB_BasePath & this_name,
                          char                    prot_nucl,
                          CSeqDBAliasStack      & recurse,
@@ -689,7 +792,7 @@ private:
     /// @param prot_nucl
     ///   Indicates whether this is a protein or nucleotide database
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock hold object for this thread. [in]
     void x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked);
     
     /// Add an OID list filter to a volume
@@ -758,9 +861,15 @@ private:
                          const char       ** ep,
                          CSeqDBLockHold    & locked);
     
+    /// Tokenize (split) the list of database names.
+    ///
+    /// The provided string is split using the space character as a
+    /// delimiter.  The resulting names are added to the m_DBList
+    /// vector and will become sub-nodes or opened as volumes.
+    ///
+    /// @param dbnames Space seperated list of database names.
     void x_Tokenize(const string & dbnames);
     
-
     /// Type used to store a set of volume names for each node
     typedef vector<CSeqDB_BasePath> TVolNames;
     

@@ -110,6 +110,7 @@ class CSeqDBImpl {
     typedef TSeqDBAliasFileValues TAliasFileValues;
     
 public:
+    /// Defines types of database summary information.
     typedef CSeqDB::ESummaryType ESummaryType;
     
     /// Constructor
@@ -400,7 +401,8 @@ public:
                     int         & end_chunk,
                     vector<int> & oid_list,
                     int         * oid_state);
-
+    
+    /// Restart chunk iteration at the beginning of the database.
     void ResetInternalChunkBookmark();
     
     /// Get list of database names.

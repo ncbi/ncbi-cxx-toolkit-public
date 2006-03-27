@@ -209,7 +209,8 @@ static bool s_SeqDB_DBExists(const string   & dbname,
     return false;
 }
 
-
+/// Returns the character used to seperate path components in the
+/// current operating system or platform.
 static string s_GetPathSplitter()
 {
     const char * splitter = 0;
