@@ -691,11 +691,10 @@ void CRemoteBlast::x_SetOneParam(const char * name, const int * x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void 
-CRemoteBlast::x_SetOneParam(objects::CBlast4_value::TSeq_loc_list& query_masks)
+void CRemoteBlast::x_SetOneParam(CRef<objects::CBlast4_mask> mask)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
-    v->SetSeq_loc_list() = query_masks;
+    v->SetQuery_mask(*mask);
         
     CRef<CBlast4_parameter> p(new CBlast4_parameter);
     // as dictated by internal/blast/interfaces/blast4/params.hpp
@@ -788,36 +787,38 @@ CRemoteBlast::x_SetMaskingLocationsForQueries(const TSeqLocInfoVector&
     m_QueryMaskingLocations = const_cast<TSeqLocInfoVector&>(masking_locations);
 }
 
-/// Auxiliary functor used in CRemoteBlast::x_QueryMaskingLocationsToNetwork()
-struct SSeq_locLessComparator :
-    public binary_function< CRef<CSeq_loc>,
-                            CRef<CSeq_loc>,
-                            bool>
+/** Creates a Blast4-mask which is supposed to contain all masked locations for
+ * a given query sequence and frame, all of which are in the packed_int
+ * argument.
+ */
+static CRef<CBlast4_mask> 
+s_CreateBlastMask(const CPacked_seqint& packed_int, EBlastProgramType program)
 {
-    result_type operator() (const first_argument_type& a,
-                            const second_argument_type& b) const {
-        // first compare the Seq-ids ...
-        if (a->GetId()->AsFastaString() < b->GetId()->AsFastaString()) {
-            return true;
-        } else {
+    CRef<CBlast4_mask> retval(new CBlast4_mask);
 
-            // then compare the Seq-interval
-            const CSeq_interval& si_a = a->GetInt();
-            const CSeq_interval& si_b = b->GetInt();
-
-            if (si_a.GetFrom() < si_b.GetFrom()) {
-                return true;
-            } else {
-                if (si_a.GetTo() < si_b.GetTo()) {
-                    return true;
-                }
-            }
-
-        }
-        return false;
+    CRef<CSeq_loc> seqloc(new CSeq_loc);
+    ITERATE(CPacked_seqint::Tdata, masked_region, packed_int.Get()) {
+        CRef<CSeq_interval> seqint
+            (new CSeq_interval(const_cast<CSeq_id&>((*masked_region)->GetId()), 
+                          (*masked_region)->GetFrom(), 
+                          (*masked_region)->GetTo()));
+        seqloc->SetPacked_int().Set().push_back(seqint);
     }
-};
+    retval->SetLocations().push_back(seqloc);
 
+    /// The frame can only be notset for protein queries or plus1 for
+    /// nucleotide queries
+    EBlast4_frame_type frame =
+        (Blast_QueryIsNucleotide(program) || Blast_QueryIsTranslated(program))
+        ? eBlast4_frame_type_plus1
+        : eBlast4_frame_type_notset;
+    retval->SetFrame(frame);
+
+    return retval;
+}
+
+// Puts in each Blast4-mask all the masks that correspond to the same query 
+// and the same frame.
 void
 CRemoteBlast::x_QueryMaskingLocationsToNetwork()
 {
@@ -827,32 +828,41 @@ CRemoteBlast::x_QueryMaskingLocationsToNetwork()
 
     m_CBOH->GetOptions().GetRemoteProgramAndService_Blast3(m_Program, 
                                                            m_Service);
+    EBlastProgramType program = NetworkProgram2BlastProgramType(m_Program,
+                                                                m_Service);
 
-    // Use a set to keep unique copies of the masks. For nucleotide
-    // queries, it is assumed that only the plus strand of the mask will be
-    // sent. Note that in spite of this convention, masks for nucleotide
-    // queries are sent with the frame as notset.
-    typedef set< CRef<CSeq_loc>, SSeq_locLessComparator> TUniqueMasks;
-    TUniqueMasks unique_query_masks;
-
-    CRef<CPacked_seqint> packed_seqint(new CPacked_seqint);
     ITERATE(TSeqLocInfoVector, query_masks, m_QueryMaskingLocations) {
+
+        if (query_masks->empty()) {
+            continue;
+        }
+
+        // auxiliary to avoid adding the same warning if there are multiple
+        // masked locations on the negative strand for a single query
+        bool negative_strand_found = false;
+
+        CRef<CPacked_seqint> packed_int(new CPacked_seqint);
         ITERATE(TMaskedQueryRegions, mask, *query_masks) {
-            const CSeq_interval& seqint = (*mask)->GetInterval();
-            CRef<CSeq_loc> sl(new CSeq_loc(const_cast<CSeq_id&>(seqint.GetId()),
-                                           seqint.GetFrom(),
-                                           seqint.GetTo()));
-            if (unique_query_masks.insert(sl).second) {
-                packed_seqint->AddInterval(seqint);
+            if ((*mask)->GetFrame() == CSeqLocInfo::eFramePlus1 ||
+                (*mask)->GetFrame() == CSeqLocInfo::eFrameNotSet) {
+                packed_int->AddInterval((*mask)->GetInterval());
+            } else {
+                if ( !negative_strand_found) {
+                    const CSeq_interval& seqint = (*mask)->GetInterval();
+                    string warning("Ignoring masked locations on negative ");
+                    warning += string("strand for query '");
+                    warning += seqint.GetId().AsFastaString() + string("'");
+                    m_Warn.push_back(warning);
+                    negative_strand_found = true;
+                }
             }
         }
+
+        CRef<CBlast4_mask> network_mask = 
+            s_CreateBlastMask(*packed_int, program);
+        x_SetOneParam(network_mask);
     }
-    if ( !packed_seqint->Get().empty() ) {
-        CBlast4_value::TSeq_loc_list seqloc_list(1);
-        seqloc_list.front().Reset(new CSeq_loc);
-        seqloc_list.front()->SetPacked_int(*packed_seqint);
-        x_SetOneParam(seqloc_list);
-    }
+
 }
 
 void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
@@ -1369,6 +1379,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2006/03/27 13:48:12  camacho
+* Use Blast4-mask for masked query regions
+*
 * Revision 1.40  2006/03/14 16:00:02  bealer
 * - Get program, service, and database without fetch if possible.
 *
