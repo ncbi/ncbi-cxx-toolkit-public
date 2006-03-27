@@ -55,7 +55,8 @@ public:
     /// @param rdr 
     ///    Reader to transmit data (comm. level)
     ///
-    CTransmissionReader(IReader* rdr, EOwnership own_reader = eNoOwnership);
+    explicit CTransmissionReader(IReader* rdr, 
+                                 EOwnership own_reader = eNoOwnership);
     virtual ~CTransmissionReader();
 
     size_t GetPacketBytesToRead() const { return m_PacketBytesToRead; }
@@ -94,9 +95,15 @@ private:
 class NCBI_XUTIL_EXPORT CTransmissionWriter : public IWriter
 {
 public:
+    enum ESendEofPacket {
+        eSendEofPacket,     ///< Writer will     send EOF packet in the descructor
+        eDontSendEofPacket  ///< Writer will not send EOF packet in the descructor
+    };
     /// Constructed on another IWriter (comm. level)
     ///
-    CTransmissionWriter(IWriter* wrt, EOwnership own_writer = eNoOwnership);
+    explicit CTransmissionWriter(IWriter* wrt, 
+                                 EOwnership own_writer = eNoOwnership,
+                                 ESendEofPacket send_eof = eDontSendEofPacket );
     virtual ~CTransmissionWriter();
 
     virtual ERW_Result Write(const void* buf,
@@ -109,8 +116,17 @@ public:
     IWriter& GetWriter() { _ASSERT(m_Wrt); return *m_Wrt; }
 
 private:
+    ERW_Result x_WritePacket(const void* buf,
+                             size_t      count,
+                             size_t&     bytes_written);
+
+private:
+    CTransmissionWriter(const CTransmissionWriter&);
+    CTransmissionWriter& operator=(CTransmissionWriter&);
+private:
     IWriter*     m_Wrt;
     EOwnership   m_OwnWrt;
+    ESendEofPacket m_SendEof;
 };
 
 
@@ -120,6 +136,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/03/27 15:23:01  didenko
+ * Added an option which tells CTransmissionWriter to send the EOF
+ * packet when it is destructed.
+ *
  * Revision 1.4  2006/02/15 17:40:25  lavr
  * IReader/IWriter API moved (along with RWStream[buf]) to corelib
  *

@@ -38,17 +38,21 @@
 
 BEGIN_NCBI_SCOPE
 
+static const Uint4 sStartWord = 0x01020304;
+static const Uint4 sEndPacket = 0xFFFFFFFF;
 
-CTransmissionWriter::CTransmissionWriter(IWriter* wrt, EOwnership own_writer)
+CTransmissionWriter::CTransmissionWriter(IWriter* wrt, 
+                                         EOwnership own_writer,
+                                         ESendEofPacket send_eof)
     : m_Wrt(wrt),
-      m_OwnWrt(own_writer)
+      m_OwnWrt(own_writer),
+      m_SendEof(send_eof)
 {
     _ASSERT(wrt);
 
-    Int4 start_word = 0x01020304;
     size_t written;
-    ERW_Result res = m_Wrt->Write(&start_word, sizeof(start_word), &written);
-    if (res != eRW_Success || written != sizeof(start_word)) {
+    ERW_Result res = m_Wrt->Write(&sStartWord, sizeof(sStartWord), &written);
+    if (res != eRW_Success || written != sizeof(sStartWord)) {
         NCBI_THROW(CIOException, eWrite,  "Cannot write the byte order");
     }
 }
@@ -56,6 +60,9 @@ CTransmissionWriter::CTransmissionWriter(IWriter* wrt, EOwnership own_writer)
 
 CTransmissionWriter::~CTransmissionWriter()
 {
+    if (m_SendEof == eSendEofPacket) {
+        m_Wrt->Write(&sEndPacket, sizeof(sEndPacket));       
+    }
     if (m_OwnWrt) {
         delete m_Wrt;
     }
@@ -84,23 +91,41 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
     size_t wrt_count = 0;
     CIOBytesCountGuard guard(bytes_written, wrt_count);
 
+    if(count == sEndPacket) {
+        const char* b = (const char*)buf;
+        size_t cnt = count / 2;
+        res = x_WritePacket(b, cnt, wrt_count);
+        if (res != eRW_Success)
+            return res;
+        size_t wrt_count1 = 0;
+        res = x_WritePacket(b+cnt, count - cnt, wrt_count1);
+        wrt_count += wrt_count1;
+        return res;
+    }
+    return x_WritePacket(buf, count, wrt_count);
+}
+
+ERW_Result CTransmissionWriter::x_WritePacket(const void* buf,
+                                              size_t      count,
+                                              size_t&     bytes_written)
+{
+    bytes_written = 0;
+    Uint4 cnt = (Uint4)count;
     size_t written = 0;
-    Int4 cnt = (Int4)count;
-    res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
+    ERW_Result res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
     if (res != eRW_Success) 
         return res;
     if (written != sizeof(cnt))
         return eRW_Error;
     for (const char* ptr = (char*)buf; count > 0; ptr += written) {
         res = m_Wrt->Write(ptr, count, &written);
-        count -= written;
-        wrt_count += written;
         if (res != eRW_Success) 
 	        return res;
+        count -= written;
+        bytes_written += written;
     }
     return res;
 }
-
 
 ERW_Result CTransmissionWriter::Flush(void)
 {
@@ -145,7 +170,7 @@ ERW_Result CTransmissionReader::Read(void*    buf,
 
     // read packet header
     while (m_PacketBytesToRead == 0) {
-        Int4 cnt;
+        Uint4 cnt;
         res = x_ReadRepeated(&cnt, sizeof(cnt));
         if (res != eRW_Success) { 
             return res;
@@ -156,6 +181,9 @@ ERW_Result CTransmissionReader::Read(void*    buf,
             m_PacketBytesToRead = cnt;
         }
     }
+
+    if (m_PacketBytesToRead == sEndPacket) 
+        return  eRW_Eof;
 
     size_t to_read = min(count, m_PacketBytesToRead);
 
@@ -179,19 +207,18 @@ ERW_Result CTransmissionReader::x_ReadStart()
     m_StartRead = true;
 
     ERW_Result res;
-    unsigned start_word = 0x01020304;
     unsigned start_word_coming;
 
     res = x_ReadRepeated(&start_word_coming, sizeof(start_word_coming));
     if (res != eRW_Success) {
         return res;
     }
-    m_ByteSwap = (start_word_coming != start_word);
+    m_ByteSwap = (start_word_coming != sStartWord);
 
     //    _ASSERT(start_word_coming == 0x01020304 || 
     //            start_word_coming == 0x04030201);
 
-    if (start_word_coming != 0x01020304 &&
+    if (start_word_coming != sStartWord &&
         start_word_coming != 0x04030201)
         NCBI_THROW(CUtilException, eWrongData,
                    "Cannot determine the byte order. Got: " 
@@ -222,6 +249,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/03/27 15:23:01  didenko
+ * Added an option which tells CTransmissionWriter to send the EOF
+ * packet when it is destructed.
+ *
  * Revision 1.10  2006/03/22 17:01:37  didenko
  * Fixed calculation of bytes_read/bytes_written
  *

@@ -377,6 +377,27 @@ int CTestTransmission::Run(void)
     assert(total_read = tsize);
     }}
 
+    // ---------------------------
+    // test eof packet
+    {{
+    CTestMemWriter wrt(buf, sizeof(buf));
+    char b = 35;
+    {
+    CTransmissionWriter twrt(&wrt, eNoOwnership, CTransmissionWriter::eSendEofPacket);
+
+    twrt.Write(&b, 1);
+    }
+    CTestMemReader rdr(buf, sz);
+    CTransmissionReader trdr(&rdr);
+
+    char c = 0;
+    trdr.Read(&c, 1);
+
+    assert(b==c);
+    res = trdr.Read(&c,1);
+    assert(res==eRW_Eof);
+    }}
+
     LOG_POST("OK");
 
     return 0;
@@ -391,6 +412,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/03/27 15:23:01  didenko
+ * Added an option which tells CTransmissionWriter to send the EOF
+ * packet when it is destructed.
+ *
  * Revision 1.4  2006/01/09 12:53:37  ivanov
  * Use LOG_POST instead of cout
  *
