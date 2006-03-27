@@ -37,7 +37,6 @@
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
 #include <algo/structure/bma_refine/RefinerPhase.hpp>
 #include <algo/structure/bma_refine/AlignRefineScorer.hpp>
 #include <algo/structure/bma_refine/BlockEditor.hpp>
@@ -58,45 +57,6 @@ CRowSelector* CBMARefinerLOOPhase::m_rowSelector = NULL;
 //  Misc functions for operating on an AlignmentUtility object 
 //  (move these elsewhere eventually!).
 //
-
-unsigned int GetNRowsFromAU(const AlignmentUtility* au) {
-    unsigned int result = 0;
-    if (au && const_cast<AlignmentUtility*>(au)->GetBlockMultipleAlignment()) {
-        result = const_cast<AlignmentUtility*>(au)->GetBlockMultipleAlignment()->NRows();
-    }
-    return result;
-}
-
-bool   IsRowPDBInAU(const AlignmentUtility* au, unsigned int row) {
-    bool result = false;
-    AlignmentUtility* nonConstAU = const_cast<AlignmentUtility*>(au);
-    const BlockMultipleAlignment* bma = (nonConstAU) ? nonConstAU->GetBlockMultipleAlignment() : NULL;
-    const Sequence* sequence = (bma) ? bma->GetSequenceOfRow(row) : NULL;
-
-    if (sequence) {
-        result = sequence->GetPreferredIdentifier().IsPdb();
-    }
-
-    return result;
-}
-
-string GetSeqIdStringForRowFromAU(const AlignmentUtility* au, unsigned int row) {
-    AlignmentUtility* nonConstAU = const_cast<AlignmentUtility*>(au);
-    const BlockMultipleAlignment* bma = (nonConstAU) ? nonConstAU->GetBlockMultipleAlignment() : NULL;
-    const Sequence* sequence = (bma) ? bma->GetSequenceOfRow(row) : NULL;
-
-    if (sequence) {
-        const CSeq_id& id = sequence->GetPreferredIdentifier();
-        if (id.IsPdb()) {
-            char chain = id.GetPdb().GetChain();
-            return "PDB " + id.GetPdb().GetMol().Get() + '_' + chain;
-        } else if (id.IsGi()) {
-            return "GI " + NStr::IntToString(id.GetGi());
-        }
-    }
-
-    return "<Non-GI/PDB Sequence Type at row " + NStr::IntToString(row + 1) + '>';
-}
 
 
 
@@ -188,7 +148,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     map<unsigned int, Ranges> rangesBeforeLOOMap, rangesAfterLOOMap;
 
     //  In past we tried to accept only score-improving moves; preserve that capability.
-    bool acceptAll = true;
+    bool rowSelectorExisted, acceptAll = true;
     AlignmentUtility* auRollbackCopy = NULL;
 
     if (!m_looParams.doLOO) {
@@ -197,6 +157,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
 
     //  Make the row selector if needed.
+    rowSelectorExisted = (m_rowSelector != NULL);
     if (!m_rowSelector) {
         MakeRowSelector(au, m_looParams, message, 0, true);
         if (writeDetails) {
@@ -211,11 +172,17 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         return eRefinerResultRangeForRefinementError;
     }
 
-    if (m_shuffleRowsAtStart) {
+    if (m_looParams.selectorCode == eRandomSelectionOrder) {
         if (writeDetails) {
             TERSE_INFO_MESSAGE_CL("    (Reshuffled the row selection order for this " << lnoString << " phase...)\n");
         }
-        m_rowSelector->Shuffle();
+        ((CRandomRowSelector*) m_rowSelector)->Shuffle();
+    } else if (rowSelectorExisted) {
+        //  Update the row ordering based on the new alignment (if the first phase, don't need to).
+        if (writeDetails) {
+            TERSE_INFO_MESSAGE_CL("    (Recomputed the row selection order due to refinements prior to this " << lnoString << " phase...)\n");
+        }
+        ((CAlignmentBasedRowSelector*) m_rowSelector)->Update(au, 0, (m_looParams.selectorCode == eBestScoreFirst));
     }
 
     //TERSE_INFO_MESSAGE_CL(arting while loop over rows in DoPhase\n");
@@ -236,7 +203,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         tos.push_back(m_looParams.tos[row]);
 
 
-        seqIdStr = GetSeqIdStringForRowFromAU(au, row);
+        seqIdStr = au->GetSeqIdStringForRow(row);
 
         score = (TScoreType) rowScorer.ComputeScore(*au);  //GetScore(*au);
         if (nRowsTried == 0) {
@@ -320,7 +287,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 row = rows[i];
 //                TERSE_INFO_MESSAGE_CL(  about to do rowScorer.ComputeBlockScores after LOO for row " << row);
                 rowScore = rowScorer.ComputeBlockScores(*au, m_finalBlockScores[row], row);
-                seqIdStr = GetSeqIdStringForRowFromAU(au, row);
+                seqIdStr = au->GetSeqIdStringForRow(row);
 
                 if (writeDetails) {
                     TERSE_INFO_MESSAGE_CL("    " << lnoMethod << " for " << seqIdStr << " at row " << row+1 << " (before " << lnoString << " rowScore = " << beforeLOORowScores[row] 
@@ -487,6 +454,9 @@ CRowSelector* CBMARefinerLOOPhase::MakeRowSelector(AlignmentUtility* au, const L
     if (!au || !looParams.doLOO) {
         return rowSelector;
     }
+    delete m_rowSelector;
+    m_rowSelector = NULL;
+
 
     int extra;
     int nRows = 0;
@@ -496,12 +466,28 @@ CRowSelector* CBMARefinerLOOPhase::MakeRowSelector(AlignmentUtility* au, const L
     set<unsigned int> rowSet;
 
     msg.erase();
-    nRows = GetNRowsFromAU(au);
-    if (nRowsRequested > 0) {
-        m_rowSelector = new CRowSelector(nRows, nRowsRequested, makeUnique, looParams.seed);
+    nRows = au->GetNRows();
+    if (looParams.selectorCode != eRandomSelectionOrder) {
+        //  false final parameter --> worst rows refine first
+        bool doBestFirst = (looParams.selectorCode == eBestScoreFirst);
+        if (nRowsRequested > 0) {
+            rowSelector = new CAlignmentBasedRowSelector(au, nRowsRequested, makeUnique, doBestFirst);  
+            TRACE_MESSAGE_CL("Made alignment based selector; have " << nRows << " rows; requested " << nRowsRequested << "; doBestFirst " << doBestFirst << ".");
+        } else {
+            rowSelector = new CAlignmentBasedRowSelector(au, makeUnique, doBestFirst);  
+            TRACE_MESSAGE_CL("Made alignment based selector; have " << nRows << " rows; doBestFirst " << doBestFirst << ".");
+        } 
     } else {
-        m_rowSelector = new CRowSelector(au, makeUnique, looParams.seed);
+        if (nRowsRequested > 0) {
+            rowSelector = new CRandomRowSelector(nRows, nRowsRequested, makeUnique, looParams.seed);
+            TRACE_MESSAGE_CL("Made random selector; have " << nRows << " rows; requested " << nRowsRequested << ".");
+        } else {
+            rowSelector = new CRandomRowSelector(nRows, makeUnique, looParams.seed);
+            TRACE_MESSAGE_CL("Made random selector; have " << nRows << ".");
+        }
     }
+
+    m_rowSelector = rowSelector;
 
     //  Take care of excluded rows.  
     //  Always exclude the master; conditionally exclude structures.
@@ -509,13 +495,25 @@ CRowSelector* CBMARefinerLOOPhase::MakeRowSelector(AlignmentUtility* au, const L
         m_rowSelector->ExcludeRow(0);
         if (looParams.fixStructures) {
             for (int i = 1; i < nRows; ++i) {
-                if (IsRowPDBInAU(au, i)) {
+                if (au->IsRowPDB(i)) {
                     m_rowSelector->ExcludeRow(i);
-                    pdbId = GetSeqIdStringForRowFromAU(au, i);
+                    pdbId = au->GetSeqIdStringForRow(i);
                     TRACE_MESSAGE_CL("    Fixed alignment for structure " << pdbId << "; skip LOO for row " << i+1 << "\n");
                 }
             }
+/*
+            if (looParams.selectorCode == eRandomSelectionOrder) {
+            } else { 
+                vector<unsigned int> structureRows;
+                ((CAlignmentBasedRowSelector*)m_rowSelector)->ExcludeStructureRows(true, &structureRows);
+                for (unsigned int i = 0; i < structureRows.size(); ++i) {
+                    pdbId = au->GetSeqIdStringForRow(structureRows[i]);
+                    TRACE_MESSAGE_CL("    Fixed alignment for structure " << pdbId << "; skip LOO for row " << structureRows[i]+1 << "\n");
+                }
+            }
+*/
         }
+
         for (unsigned int i = 0; i < nExtra; ++i) {
             extra = looParams.rowsToExclude[i];
             if (extra < nRows && extra > 0) {
@@ -864,6 +862,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/03/27 16:42:19  lanczyck
+ * refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector; move alignment utility methods into AlignmentUtility class from RefinerPhase
+ *
  * Revision 1.10  2005/11/23 01:02:10  lanczyck
  * freeze specified blocks in both LOO and BE phases;
  * add support for a callback for a progress meter

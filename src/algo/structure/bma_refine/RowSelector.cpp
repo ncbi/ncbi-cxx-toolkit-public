@@ -43,45 +43,24 @@ BEGIN_SCOPE(align_refine)
 
 const unsigned int CRowSelector::INVALID_ROW = kMax_UInt;
 
-CRowSelector::CRowSelector(unsigned int nRows, bool unique, unsigned int seed) : m_nRows(0), m_nSelections(0), m_nSelected(0), m_au(NULL), m_unique(unique), m_rng(NULL) {
+CRowSelector::CRowSelector(unsigned int nRows, bool unique) : m_unique(unique), m_nRows(0), m_nSelections(0), m_nSelected(0) {
 
+    Init(nRows, nRows);
+}
+
+
+CRowSelector::CRowSelector(unsigned int nRows, unsigned int nTotal, bool unique) : m_unique(unique), m_nRows(0), m_nSelections(0), m_nSelected(0) {
+
+    Init(nRows, (nTotal > 0) ? nTotal : nRows);
+}
+
+
+void CRowSelector::Init(unsigned int nRows, unsigned int nSelections) {
     if (nRows >= 0) {
         m_nRows = nRows;
     }
-    Init(m_nRows, seed);
-}
-
-
-CRowSelector::CRowSelector(unsigned int nRows, unsigned int nTotal, bool unique, unsigned int seed) : m_nRows(0), m_nSelections(0), m_nSelected(0), m_au(NULL), m_unique(unique), m_rng(NULL) {
-
-    if (nRows >= 0) {
-        m_nRows = nRows;
-    }
-    Init((nTotal > 0) ? nTotal : m_nRows, seed);
-}
-
-
-CRowSelector::CRowSelector(const AlignmentUtility* au, bool unique, unsigned int seed) : m_nRows(0), m_nSelections(0), m_nSelected(0), m_au(au), m_unique(unique), m_rng(NULL) {
-    if (m_au && const_cast<AlignmentUtility*>(m_au)->GetBlockMultipleAlignment()) {
-        m_nRows = const_cast<AlignmentUtility*>(m_au)->GetBlockMultipleAlignment()->NRows();
-    }
-    Init(m_nRows, seed);
-}
-
-CRowSelector::CRowSelector(const AlignmentUtility* au, unsigned int nTotal, bool unique, unsigned int seed) : m_nRows(0), m_nSelections(0), m_nSelected(0), m_au(au), m_unique(unique), m_rng(NULL) {
-    if (m_au && const_cast<AlignmentUtility*>(m_au)->GetBlockMultipleAlignment()) {
-        m_nRows = const_cast<AlignmentUtility*>(m_au)->GetBlockMultipleAlignment()->NRows();
-    }
-    Init((nTotal > 0) ? nTotal : m_nRows, seed);
-}
-
-void CRowSelector::Init(unsigned int nSelections, unsigned int seed) {
     m_nSelections = nSelections;
     m_origNSelections = nSelections;
-
-    m_rng = (seed > 0) ? new CRandom(seed) : new CRandom(CurrentTime().GetTimeT());
-        
-    SetSequence();
 }
 
 
@@ -148,12 +127,6 @@ void CRowSelector::Reset() {
     m_nSelected = 0;
 }
 
-void CRowSelector::Shuffle(bool clearExcludedRows) {
-    m_nSelected = 0;
-    if (clearExcludedRows) ClearExclusions();
-    SetSequence();
-}
-
 unsigned int CRowSelector::GetNumRows(void) const {
     return m_nRows;
 }
@@ -166,19 +139,12 @@ unsigned int CRowSelector::GetSequenceSize(void) const {
     return m_sequence.size();
 }
 
-void CRowSelector::ExcludeStructureRows() {
-
-    if (m_au) {
-        
-    }
-}
-
 bool CRowSelector::ExcludeRow(unsigned int row) {
 
     bool isExcluded = false;
     unsigned int nTimes = 0;
 
-    //cout << "Excluding row " << row+1 << " in sequence." << endl;
+    //cout << "Excluding row " << row+1 << " in sequence; initial sequence:  "  << Print() << endl;
     //  'row' must be in range, in m_sequence and not already excluded.
     if (row < m_nRows && find(m_excluded.begin(), m_excluded.end(), row) == m_excluded.end()) {
         ITERATE (vector<unsigned int>, it, m_sequence) {
@@ -198,8 +164,8 @@ bool CRowSelector::ExcludeRow(unsigned int row) {
         m_excluded.push_back(row);
         isExcluded = true;
     }
+    //cout << "excluded row " << row << " in sequence:  " << Print();
     return isExcluded;
-    //cout << "excluded row " << row << " in sequence:  " << PrintSequence();
 }
 
 void CRowSelector::ClearExclusions(void) {
@@ -211,7 +177,37 @@ unsigned int CRowSelector::GetNumExcluded(void) const {
     return m_excluded.size();
 }
 
-void CRowSelector::SetSequence(void) {
+
+//  ==================================================
+//  Random-order row selector
+//  ==================================================
+
+CRandomRowSelector::CRandomRowSelector(unsigned int nRows, bool unique, unsigned int seed) : CRowSelector(nRows, unique), m_rng(NULL) {
+
+    InitRNG(seed);
+}
+
+
+CRandomRowSelector::CRandomRowSelector(unsigned int nRows, unsigned int nTotal, bool unique, unsigned int seed) : CRowSelector(nRows, nTotal, unique), m_rng(NULL) {
+
+    InitRNG(seed);
+}
+
+void CRandomRowSelector::InitRNG(unsigned int seed) {
+
+    m_rng = (seed > 0) ? new CRandom(seed) : new CRandom(CurrentTime().GetTimeT());
+    SetSequence();
+}
+
+
+void CRandomRowSelector::Shuffle(bool clearExcludedRows) {
+    m_nSelected = 0;
+    if (clearExcludedRows) ClearExclusions();
+    SetSequence();
+}
+
+
+void CRandomRowSelector::SetSequence(void) {
 
     vector<unsigned int> allowedValues(m_nRows);
     unsigned int randomSelection, nExcluded = m_excluded.size();
@@ -262,11 +258,117 @@ void CRowSelector::SetSequence(void) {
     }
 }
 
+
+
+//  ==================================================
+//  Alignment-based row selector
+//  ==================================================
+
+CAlignmentBasedRowSelector::CAlignmentBasedRowSelector(const AlignmentUtility* au, bool unique, bool bestToWorst) : CRowSelector(0, unique), m_au(NULL), m_sortBestToWorst(bestToWorst) {
+
+    InitAU(au, 0);
+}
+
+CAlignmentBasedRowSelector::CAlignmentBasedRowSelector(const AlignmentUtility* au, unsigned int nTotal, bool unique, bool bestToWorst) : CRowSelector(0, nTotal, unique), m_au(NULL), m_sortBestToWorst(bestToWorst) {
+
+    InitAU(au, (nTotal > 0) ? nTotal : 0);
+}
+
+void CAlignmentBasedRowSelector::InitAU(const AlignmentUtility* au, unsigned int nSelections) {
+
+    unsigned int nRows = 0;
+
+    if (m_au) delete m_au;
+
+    m_au = (au) ? au->Clone() : NULL;
+    nRows = (m_au) ? m_au->GetNRows() : 0;
+
+    //  Constrain nSelections to not exceed number of rows available.
+    if (nSelections == 0 || nSelections > nRows) nSelections = nRows;
+
+    CRowSelector::Init(nRows, nSelections);
+
+    SetSequence();
+}
+
+/*
+void CAlignmentBasedRowSelector::ExcludeStructureRows(bool skipMaster, vector<unsigned int>* excludedStructureRows) {
+
+    if (excludedStructureRows) excludedStructureRows->clear();
+    if (!m_au) return;
+
+    unsigned int initRow = (skipMaster) ? 1 : 0;
+    for (unsigned int i = initRow; i < m_nRows; ++i) {
+        if (m_au->IsRowPDB(i)) {
+            ExcludeRow(i);
+            if (excludedStructureRows) excludedStructureRows->push_back(i);
+        }
+    }
+}
+*/
+
+void CAlignmentBasedRowSelector::SetSequence(void) {
+
+    vector<unsigned int> allowedValues(m_nRows);
+    unsigned int thisSelection, nExcluded = m_excluded.size();
+    unsigned int i;
+    double rowScore;
+    bool isExcluded;
+
+    if (!m_au) return;
+
+    m_sequence.clear();
+    m_scoresToRow.clear();
+
+    //  Get the scores for all rows.
+    for (i = 0; i < m_nRows; ++i) {
+        rowScore = (double) m_au->ScoreRowByPSSM(i);
+        m_scoresToRow.insert(ScoreMapVT(rowScore, i));
+    }
+
+    if (m_sortBestToWorst) {
+        ScoreMapIt smIt = m_scoresToRow.begin(), smEnd = m_scoresToRow.end();
+        for (i = 0; smIt != smEnd && i < m_nSelections; ++smIt) {
+            thisSelection = smIt->second;
+            isExcluded = (nExcluded > 0 && find(m_excluded.begin(), m_excluded.end(), thisSelection) != m_excluded.end());
+            if (!isExcluded) {
+                m_sequence.push_back(thisSelection);
+                ++i;
+            }
+
+        }
+    } else {
+        ScoreMapRit smRit = m_scoresToRow.rbegin(), smRend = m_scoresToRow.rend();
+        for (i = 0; smRit != smRend && i < m_nSelections; ++smRit) {
+            thisSelection = smRit->second;
+            isExcluded = (nExcluded > 0 && find(m_excluded.begin(), m_excluded.end(), thisSelection) != m_excluded.end());
+            if (!isExcluded) {
+                m_sequence.push_back(thisSelection);
+                ++i;
+            }
+
+        }
+    }
+
+}
+
+bool CAlignmentBasedRowSelector::Update(const AlignmentUtility* newAU, unsigned int nSelection, bool bestToWorst) {
+    if (!newAU) return false;
+
+    m_sortBestToWorst = bestToWorst;
+    Reset();
+    InitAU(newAU, (nSelection > 0) ? nSelection : 0);
+    return (m_au != NULL);
+}
+
 END_SCOPE(align_refine)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/03/27 16:42:19  lanczyck
+* refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector; move alignment utility methods into AlignmentUtility class from RefinerPhase
+*
 * Revision 1.2  2005/06/29 01:32:33  ucko
 * Rework ExcludeRow to avoid count(), as WorkShop's STL implementation
 * doesn't support the standard syntax. :-/
