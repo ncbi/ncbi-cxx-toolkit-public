@@ -165,7 +165,7 @@ int s_convert_ai_errno(int ai_errno)
 struct hostent   *
 tds_gethostbyname_r(const char *servername, struct hostent *result, char *buffer, int buflen, int *h_errnop)
 {
-#ifndef _REENTRANT
+#if defined(NETDB_REENTRANT)  ||  !defined(_REENTRANT)
         return gethostbyname(servername);
 
 #else
@@ -253,7 +253,7 @@ socklen_t s_make_sa(const char *addr, int len, int type, void *buf, int blen)
 struct hostent   *
 tds_gethostbyaddr_r(const char *addr, int len, int type, struct hostent *result, char *buffer, int buflen, int *h_errnop)
 {
-#ifndef _REENTRANT
+#if defined(NETDB_REENTRANT)  ||  !defined(_REENTRANT)
         return gethostbyaddr(addr, len, type);
 
 #else
@@ -342,7 +342,7 @@ struct servent *
 tds_getservbyname_r(const char *name, char *proto, struct servent *result, char *buffer, int buflen)
 {
 
-#ifndef _REENTRANT
+#if defined(NETDB_REENTRANT)  ||  !defined(_REENTRANT)
         return getservbyname(name, proto);
 
 #else
