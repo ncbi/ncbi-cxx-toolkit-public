@@ -33,6 +33,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_dispd.h"
 #include "ncbi_lbsmd.h"
+#include "ncbi_local.h"
 #include "ncbi_priv.h"
 #include <ctype.h>
 #include <stdlib.h>
@@ -190,7 +191,8 @@ static SERV_ITER s_Open(const char*          service,
     assert(n_skip == iter->n_skip);
 
     if (!net_info) {
-        if (!(op = SERV_LBSMD_Open(iter, info, host_info, 0))) {
+        if (!(op = SERV_LOCAL_Open(iter, info, host_info))  &&
+            !(op = SERV_LBSMD_Open(iter, info, host_info, 0))) {
             /* LBSMD failed in non-DISPD mapping */
             SERV_Close(iter);
             return 0;
@@ -200,7 +202,8 @@ static SERV_ITER s_Open(const char*          service,
             iter->type |= fSERV_Firewall;
         if (net_info->stateless)
             iter->stateless = 1;
-        if ((net_info->lb_disable
+        if (!(op = SERV_LOCAL_Open(iter, info, host_info))           &&
+            (net_info->lb_disable
              ||  !(op = SERV_LBSMD_Open(iter, info, host_info, 1)))  &&
             !(op = SERV_DISPD_Open(iter, net_info, info, host_info))) {
             SERV_Close(iter);
@@ -671,6 +674,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.77  2006/03/28 18:28:29  lavr
+ * Open now calls to see whether local (registry-conf) is available
+ *
  * Revision 6.76  2006/03/05 17:47:55  lavr
  * +SERV_ITER::time, new VT::Update proto, SERV_OpenP() to return HINFO
  *
