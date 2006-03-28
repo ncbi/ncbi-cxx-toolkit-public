@@ -162,11 +162,13 @@ public:
     /// Find a GI, returning the index and the associated OID.
     /// @param gi The gi for which to search. [in]
     /// @param oid The resulting oid if found. [out]
-    /// @param oid The index of this GI if found. [out]
+    /// @param index The index of this GI (if found). [out]
     /// @return True if the GI was found.
     bool GiToOid(int gi, int & oid, int & index);
     
     /// Access an element of the array.
+    /// @param index The index of the element to access. [in]
+    /// @return A reference to the GI/OID pair.
     const SGiOid & operator[](int index) const
     {
         return m_GisOids[index];
@@ -219,10 +221,10 @@ private:
 
 /// Read a binary-format GI list from a file.
 ///
-/// @param name The name of the file. [in]
+/// @param name The name of the file containing GIs. [in]
 /// @param gis The GIs returned by this function. [out]
 NCBI_XOBJREAD_EXPORT
-void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis);
+void SeqDB_ReadBinaryGiList(const string & name, vector<int> & gis);
 
 /// Read a text or binary GI list from an area of memory.
 ///
@@ -251,9 +253,8 @@ void SeqDB_ReadMemoryGiList(const char                   * fbeginp,
 /// the function will test the GIs for orderedness.  It will set the
 /// bool to which in_order points to true if so, false if not.
 ///
-/// @param fbeginp The start of the memory region holding the GI list. [in]
-/// @param fendp   The end of the memory region holding the GI list. [in]
-/// @param gis     The GIs returned by this function. [out]
+/// @param fname    The name of the GI list file. [in]
+/// @param gis      The GIs returned by this function. [out]
 /// @param in_order If non-null, returns true iff the GIs were in order. [out]
 
 NCBI_XOBJREAD_EXPORT
@@ -263,14 +264,13 @@ void SeqDB_ReadGiList(const string                 & fname,
 
 /// Read a text or binary GI list from a file.
 ///
-/// The GIs in a file are read into the provided int vector.  If the
+/// The GIs in a file are read into the provided vector<int>.  If the
 /// in_order parameter is not null, the function will test the GIs for
 /// orderedness.  It will set the bool to which in_order points to
 /// true if so, false if not.
 ///
-/// @param fbeginp The start of the memory region holding the GI list. [in]
-/// @param fendp   The end of the memory region holding the GI list. [in]
-/// @param gis     The GIs returned by this function. [out]
+/// @param fname    The name of the GI list file. [in]
+/// @param gis      The GIs returned by this function. [out]
 /// @param in_order If non-null, returns true iff the GIs were in order. [out]
 
 NCBI_XOBJREAD_EXPORT
