@@ -1715,6 +1715,9 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     _ASSERT(job_id);
     _ASSERT(input);
 
+    unsigned dead_locks = 0;       // dead lock counter
+    unsigned max_dead_locks = 10;  // max. dead lock repeats
+
     time_t curr = time(0);
     
     bool need_update;
@@ -1724,6 +1727,7 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
                                done_job_id, &need_update,
                                m_LQueue.aff_map_lock);
     bool done_rec_updated;
+    bool use_db_mutex;
 
 
     // Use of local database is an optimization to increase parallelism
@@ -1731,9 +1735,8 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     // same page (in this case we have to repeat the operation
     // In our case we just have to use an external mutex sync. all the time
     // (xGetLocalDb() is commented out)
-    SQueueDB* pqdb = 0; // x_GetLocalDb();
-    bool use_db_mutex;
-
+repeat_transaction:
+    SQueueDB* pqdb = x_GetLocalDb();
     if (pqdb) {
         // we use private (this thread only data file)
         use_db_mutex = false;
@@ -1744,18 +1747,15 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
 
     unsigned job_aff_id = 0;
 
-    CBDB_Transaction trans(*(pqdb->GetEnv()), 
-                           CBDB_Transaction::eTransASync,
-                           CBDB_Transaction::eNoAssociation);
-
     try {
+        CBDB_Transaction trans(*(pqdb->GetEnv()), 
+                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eNoAssociation);
 
-        //CFastMutexGuard guard(m_LQueue.lock);
         if (use_db_mutex) {
             m_LQueue.lock.Lock();
         }
         pqdb->SetTransaction(&trans);
-
 
         CBDB_FileCursor* pcur;
         if (use_db_mutex) {
@@ -1808,15 +1808,26 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
             m_LQueue.lock.Unlock();
         }
 
-    } catch(...) {
+        trans.Commit();
+
+    }
+    catch (CBDB_ErrnoException& ex) {
+        if (use_db_mutex) {
+            m_LQueue.lock.Unlock();
+        }
+        if (ex.IsDeadLock()) {
+            if (++dead_locks < max_dead_locks) {
+                goto repeat_transaction;
+            }
+        }
+        throw;
+    }
+    catch (...) {
         if (use_db_mutex) {
             m_LQueue.lock.Unlock();
         }
         throw;
     }
-
-
-    trans.Commit();
 
 
     if (job_aff_id) {
@@ -3515,6 +3526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/03/28 20:37:56  kuznets
+ * Trying to work around deadlock by repeating transaction
+ *
  * Revision 1.64  2006/03/28 19:35:17  kuznets
  * Commented out use of local database to fix dead lock
  *
