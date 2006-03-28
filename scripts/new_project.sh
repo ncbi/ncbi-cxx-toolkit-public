@@ -280,7 +280,7 @@ touch tmp$$
 if test ! -f ../$proj_name/tmp$$ ; then
    test -d $proj_name || mkdir $proj_name
 fi
-if test $proj_type = lib -a -n $proj_subtype ; then
+if test $proj_type = lib -a -n "$proj_subtype" ; then
    if test -f ../../src/$proj_name/tmp$$; then
       mkdir -p ../../include/$proj_name
    elif test -f ../src/tmp$$; then
