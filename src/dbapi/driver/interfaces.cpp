@@ -314,9 +314,7 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
         if ( !conn_attr.pool_name.empty() ) {
             // use a pool name
             NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
-                CDB_Connection* t_con
-                    = dynamic_cast<CDB_Connection*> (*it);
-                if (!t_con) { continue; }
+                I_Connection* t_con(*it);
                 
                 // There is no pool name check here. We assume that a connection
                 // pool contains connections with appropriate server names only.
@@ -336,9 +334,7 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
 
             // try to use a server name
             NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
-                CDB_Connection* t_con
-                    = dynamic_cast<CDB_Connection*> (*it);
-                if (!t_con) { continue; }
+                I_Connection* t_con(*it);
                 
                 if (conn_attr.srv_name.compare(t_con->ServerName()) == 0) {
                     m_NotInUse.erase(it);
@@ -552,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/03/28 22:31:00  ssikorsk
+ * Deleted needless dynamic_cast.
+ *
  * Revision 1.15  2006/03/09 19:01:37  ssikorsk
  * Replaced types of I_DriverContext's m_NotInUse and
  * m_InUse from CPointerPot to list<I_Connection*>.
