@@ -593,7 +593,6 @@ void CQueueDataBase::MountQueue(const string& queue_name,
     string fname = string("jsq_") + queue_name + string(".db");
     q->db.SetEnv(*m_Env);
 
-    q->db.SetPageSize(8 * 1024);
     q->db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
 
     fname = string("jsq_") + queue_name + string("_affid.idx");
@@ -3526,6 +3525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/03/28 21:41:17  kuznets
+ * Use default page size.Hope smaller p-size reduce collisions
+ *
  * Revision 1.66  2006/03/28 21:21:22  kuznets
  * cleaned up comments
  *
