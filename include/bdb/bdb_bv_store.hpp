@@ -215,8 +215,34 @@ public:
         TBvStoreVolumeFile*  db_medium;
         TBvStoreVolumeFile*  db_large;
 
-        SVolume() { db_small = db_medium = db_large = 0; }
-        ~SVolume(){ delete db_small; delete db_medium; delete db_large; }
+        TBitVector*          bv_descr_small;
+        TBitVector*          bv_descr_medium;
+        TBitVector*          bv_descr_large;
+
+
+        SVolume() 
+        { 
+            db_small = db_medium = db_large = 0; 
+            bv_descr_small = bv_descr_medium = bv_descr_large = 0;
+        }
+        ~SVolume()
+        { 
+            delete db_small; delete db_medium; delete db_large; 
+            delete bv_descr_small; delete bv_descr_medium; 
+            delete bv_descr_large;
+        }
+    };
+
+    /// Split statistics
+    struct SplitStat
+    {
+        unsigned large_cnt;
+        unsigned medium_cnt;
+        unsigned small_cnt;
+        SplitStat() 
+        {
+            large_cnt = medium_cnt = small_cnt = 0;
+        }
     };
 
     typedef vector<SVolume*>  TVolumeDir;
@@ -242,6 +268,15 @@ public:
     /// Get direct access to volume desriptor (use carefully)
     TBitVector& GetVolumeDescr(unsigned vol_num);
 
+    /// Restore volume description from the volume files by
+    /// scanning the database (can be very expensive)
+    void LoadVolumeDescr(unsigned vol_num);
+
+    /// Load volume descriptions 
+    /// for each volume scans the databases to load volume descriptors
+    /// (very expensive)
+    void LoadVolumeDescr();
+
     /// Find first volume with the specified id
     /// #return -1 - not found
     int FindVolume(unsigned id);
@@ -257,11 +292,14 @@ public:
 
     EBDB_ErrCode ReadVectorOr(unsigned    id, 
                               TBitVector* bv, 
-                              EScanMode   scan_mode = eScanAllVolumes);
+                              EScanMode   scan_mode = eScanAllVolumes,
+                              SplitStat*  split_stat = 0);
 
     EBDB_ErrCode ReadVectorOr(TBvStoreVolumeFile& v,
+                              const TBitVector*   bv_descr, 
                               unsigned            id, 
                               TBitVector*         bv);
+
 
     EBDB_ErrCode BlobSize(unsigned   id, 
                           size_t*    blob_size, 
@@ -632,11 +670,24 @@ int CBDB_IdSplitBvStore<TBV>::FindVolume(unsigned id)
 template<class TBV>
 EBDB_ErrCode 
 CBDB_IdSplitBvStore<TBV>::ReadVectorOr(TBvStoreVolumeFile& v,
+                                       const TBitVector*   bv_descr,
                                        unsigned            id, 
                                        TBitVector*         bv)
 {
-    v.id = id;
-    return v.ReadVector(bv);
+    // first check if description bitvector contains this id
+    // pre-screening eliminates a lot of expensive BDB scans
+    bool search_in_slice;
+    if (bv_descr) {
+        search_in_slice = (*bv_descr)[id]; 
+    } else {
+        search_in_slice = true;  // no descriptor vector, search in file
+    }
+
+    if (search_in_slice) {
+        v.id = id;
+        return v.ReadVector(bv);
+    }
+    return eBDB_NotFound;
 }
 
 
@@ -644,7 +695,8 @@ template<class TBV>
 EBDB_ErrCode 
 CBDB_IdSplitBvStore<TBV>::ReadVectorOr(unsigned    id, 
                                        TBitVector* bv,
-                                       EScanMode   scan_mode)
+                                       EScanMode   scan_mode,
+                                       SplitStat*  split_stat)
 {
     EBDB_ErrCode err = eBDB_NotFound;
     for (unsigned int i = 0; i < m_VolumeDict.size(); ++i) {
@@ -653,22 +705,37 @@ CBDB_IdSplitBvStore<TBV>::ReadVectorOr(unsigned    id,
             SVolume& vol = GetVolume(i);
 
             {{
-            EBDB_ErrCode e = ReadVectorOr(*vol.db_large, id, bv);
+            EBDB_ErrCode e = this->ReadVectorOr(*vol.db_large, 
+                                          vol.bv_descr_large, id, bv);
             if (e == eBDB_Ok) { 
+                if (split_stat) {
+                    split_stat->large_cnt++;
+                }
+                err = e;
+                if (scan_mode == eScanFirstFound) break;
+            }
+            
+            }}
+            {{
+            EBDB_ErrCode e = this->ReadVectorOr(*vol.db_medium,
+                                          vol.bv_descr_medium,
+                                          id, bv);
+            if (e == eBDB_Ok) { 
+                if (split_stat) {
+                    split_stat->medium_cnt++;
+                }
                 err = e;
                 if (scan_mode == eScanFirstFound) break;
             }
             }}
             {{
-            EBDB_ErrCode e = ReadVectorOr(*vol.db_medium, id, bv);
+            EBDB_ErrCode e = this->ReadVectorOr(*vol.db_small, 
+                                          vol.bv_descr_small,
+                                          id, bv);
             if (e == eBDB_Ok) { 
-                err = e;
-                if (scan_mode == eScanFirstFound) break;
-            }
-            }}
-            {{
-            EBDB_ErrCode e = ReadVectorOr(*vol.db_small, id, bv);
-            if (e == eBDB_Ok) { 
+                if (split_stat) {
+                    split_stat->small_cnt++;
+                }
                 err = e;
                 if (scan_mode == eScanFirstFound) break;
             }
@@ -886,6 +953,10 @@ CBDB_IdSplitBvStore<TBV>::CreateVolumeFile(ERecSizeType rsize)
     }
     if (rsize == eLarge) {
         vol->SetPageSize(32 * 1024);
+    } else {
+        if (rsize == eMedium) {
+            vol->SetPageSize(16 * 1024);
+        }
     }
     return vol;
 }
@@ -897,11 +968,47 @@ CBDB_IdSplitBvStore<TBV>::SelectVolumeFile(SVolume* vol, size_t rec_size)
     if (rec_size <= 384) {
         return vol->db_small;
     }
-    if (rec_size <= 2048) {
+    if (rec_size <= 4096) {
         return vol->db_medium;
     }
     return vol->db_large;
 }
+
+template<class TBV>
+void CBDB_IdSplitBvStore<TBV>::LoadVolumeDescr()
+{
+    for (unsigned int i = 0; i < m_VolumeDict.size(); ++i) {
+        this->LoadVolumeDescr(i);
+    }
+}
+
+template<class TBV>
+void CBDB_IdSplitBvStore<TBV>::LoadVolumeDescr(unsigned vol_num)
+{
+    SVolume& vol = this->GetVolume(vol_num);
+
+    if (vol.bv_descr_small == 0) {
+        vol.bv_descr_small = new TBitVector(bm::BM_GAP);
+    } else {
+        vol.bv_descr_small->clear(true);
+    }
+    if (vol.bv_descr_medium == 0) {
+        vol.bv_descr_medium = new TBitVector(bm::BM_GAP);
+    } else {
+        vol.bv_descr_medium->clear(true);
+    }
+    if (vol.bv_descr_large == 0) {
+        vol.bv_descr_large = new TBitVector(bm::BM_GAP);
+    } else {
+        vol.bv_descr_large->clear(true);
+    }
+
+    vol.db_small->ReadIds(vol.bv_descr_small);
+    vol.db_medium->ReadIds(vol.bv_descr_medium);
+    vol.db_large->ReadIds(vol.bv_descr_large);
+
+}
+
 
 
 template<class TBV>
@@ -966,7 +1073,8 @@ void CBDB_IdSplitBvStore<TBV>::LoadStore(SBDB_BvStore_Id<TBV>& in_store,
         vol_file->UpdateInsert(blob_ptr, blob_size);
 
         vol_cnt += blob_size;        
-        if (++rec_cnt == volume_rec_limit || vol_cnt > blobs_total) {
+        if ((++rec_cnt == volume_rec_limit && volume_rec_limit != 0) || 
+            (blobs_total != 0 && vol_cnt > blobs_total)) {
             LOG_POST("BDB Split volume: " << curr_vol_idx);
             ++curr_vol_idx;
             rec_cnt = vol_cnt = 0; vol_descr_bv = 0; vol_file = 0;
@@ -1027,6 +1135,7 @@ void SBDB_BvStore_Id<TBV>::ReadIds(TBitVector* id_bv)
 
     } // while
 }
+
 
 
 
@@ -1200,12 +1309,16 @@ void CBDB_MatrixBvStore<TBV, TM>::LoadMatrixDescriptions(
 }
 
 
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/03/28 16:48:13  kuznets
+ * code cleanup
+ *
  * Revision 1.10  2006/03/09 19:13:11  ucko
  * Tweak to work around weird build failures with WorkShop 5.3 on Solaris/x86.
  *
