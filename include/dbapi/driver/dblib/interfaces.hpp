@@ -147,6 +147,8 @@ const unsigned int kTDSMaxNameLen = kDBLibMaxNameLen;
 ///  CDBLibContext::
 ///
 
+class CDblibContextRegistry;
+
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBLibContext : public I_DriverContext
 {
     friend class CDB_Connection;
@@ -212,9 +214,10 @@ protected:
     virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
     
 private:
-    short                 m_PacketSize;
-    LOGINREC*             m_Login;
-    int                   m_TDSVersion;
+    short                  m_PacketSize;
+    LOGINREC*              m_Login;
+    int                    m_TDSVersion;
+    CDblibContextRegistry* m_Registry;
 
 #ifdef FTDS_IN_USE
     unsigned int          m_LoginTimeout; // inherited from ftds
@@ -225,6 +228,12 @@ private:
                                  const string&   user_name,
                                  const string&   passwd,
                                  TConnectionMode mode);
+    void x_AddToRegistry(void);
+    void x_RemoveFromRegistry(void);
+    void x_SetRegistry(CDblibContextRegistry* registry);
+    void x_Close(void);
+
+    friend class CDblibContextRegistry;
 };
 
 
@@ -1002,6 +1011,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/03/28 19:16:55  ssikorsk
+ * Added finalization logic to CDBLibContext
+ *
  * Revision 1.31  2006/01/23 13:14:04  ssikorsk
  * Renamed CDBLibContext::MakeConnection to MakeIConnection.
  *

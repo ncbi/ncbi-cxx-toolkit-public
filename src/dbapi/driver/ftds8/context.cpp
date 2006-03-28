@@ -35,6 +35,7 @@
 
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
@@ -45,7 +46,7 @@
 
 #ifdef NCBI_FTDS
 #if defined(NCBI_OS_MSWIN)
-#include <winsock2.h>
+#  include <winsock2.h>
 #endif
 #endif
 
@@ -53,6 +54,101 @@ BEGIN_NCBI_SCOPE
 
 
 static const CDiagCompileInfo kBlankCompileInfo;
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CDblibContextRegistry (Singleton)
+//
+
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDblibContextRegistry
+{
+public:
+    static CDblibContextRegistry& Instance(void);
+    
+    void Add(CDBLibContext* ctx);
+    void Remove(CDBLibContext* ctx);
+    void ClearAll(void);
+    static void StaticClearAll(void);
+    
+private:
+    CDblibContextRegistry(void);
+    ~CDblibContextRegistry(void);
+    
+    mutable CFastMutex m_Mutex;
+    vector<CDBLibContext*> registry_;
+    
+    friend class CSafeStaticPtr<CDblibContextRegistry>;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+CDblibContextRegistry::CDblibContextRegistry(void)
+{
+}
+
+CDblibContextRegistry::~CDblibContextRegistry(void)
+{
+    ClearAll();
+}
+
+CDblibContextRegistry&
+CDblibContextRegistry::Instance(void)
+{
+    static CSafeStaticPtr<CDblibContextRegistry> instance;
+    
+    return instance.Get();
+}
+
+void 
+CDblibContextRegistry::Add(CDBLibContext* ctx)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    vector<CDBLibContext*>::iterator it = find(registry_.begin(), 
+                                              registry_.end(), 
+                                              ctx);
+    if (it == registry_.end()) {
+        registry_.push_back(ctx);
+    }
+}
+
+void 
+CDblibContextRegistry::Remove(CDBLibContext* ctx)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    registry_.erase(find(registry_.begin(), 
+                         registry_.end(), 
+                         ctx));
+}
+
+
+void 
+CDblibContextRegistry::ClearAll(void)
+{
+    if (!registry_.empty())
+    {
+        CFastMutexGuard mg(m_Mutex);
+        if (!registry_.empty()) {
+            // Remove dependency from this registry ...
+            NON_CONST_ITERATE(vector<CDBLibContext*>, it, registry_) {
+                (*it)->x_SetRegistry(NULL);
+            }
+
+            // Close all managed CTLibContext ...
+            NON_CONST_ITERATE(vector<CDBLibContext*>, it, registry_) {
+                (*it)->x_Close();
+            }
+            registry_.clear();
+        }
+    }
+}
+
+void 
+CDblibContextRegistry::StaticClearAll(void)
+{
+    CDblibContextRegistry::Instance().ClearAll();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -88,9 +184,10 @@ extern "C" {
 static CTDSContext* g_pTDSContext = NULL;
 
 
-CTDSContext::CTDSContext(DBINT version) 
-: m_PacketSize(0)
-, m_TDSVersion(version)
+CTDSContext::CTDSContext(DBINT version) :
+    m_PacketSize(0),
+    m_TDSVersion(version),
+    m_Registry(NULL)
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
@@ -130,6 +227,29 @@ CTDSContext::CTDSContext(DBINT version)
     m_Login = dblogin();
 }
 
+void 
+CTDSContext::x_AddToRegistry(void)
+{
+    if (m_Registry) {
+        m_Registry->Add(this);
+    }
+}
+
+void 
+CTDSContext::x_RemoveFromRegistry(void)
+{
+    if (m_Registry) {
+        m_Registry->Remove(this);
+    }
+}
+
+void 
+CTDSContext::x_SetRegistry(CDblibContextRegistry* registry)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    m_Registry = registry;
+}
 
 bool CTDSContext::ConnectedToMSSQLServer(void) const
 {
@@ -222,23 +342,30 @@ bool CTDSContext::IsAbleTo(ECapability cpb) const
 CTDSContext::~CTDSContext()
 {
     try {
-        if (g_pTDSContext) {
-            CFastMutexGuard mg(m_Mtx);
-            if (g_pTDSContext) {
-                // close all connections first
-                CloseAllConn();
-
-                dbloginfree(m_Login);
-                dbexit();
-                g_pTDSContext = 0;
-
-#if defined(NCBI_OS_MSWIN)
-                WSACleanup();
-#endif
-            }
-        }
+        x_Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
+}
+
+void
+CTDSContext::x_Close(void)
+{
+    if (g_pTDSContext) {
+        CFastMutexGuard mg(m_Mtx);
+        if (g_pTDSContext) {
+            // close all connections first
+            CloseAllConn();
+
+            dbloginfree(m_Login);
+            dbexit();
+            g_pTDSContext = 0;
+            x_RemoveFromRegistry();
+
+#if defined(NCBI_OS_MSWIN)
+            WSACleanup();
+#endif
+        }
+    }
 }
 
 
@@ -668,6 +795,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/03/28 19:16:56  ssikorsk
+ * Added finalization logic to CDBLibContext
+ *
  * Revision 1.61  2006/03/15 20:10:53  ssikorsk
  * Made more MT-safe.
  *
