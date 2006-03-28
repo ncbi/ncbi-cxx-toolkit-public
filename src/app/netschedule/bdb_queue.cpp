@@ -1726,7 +1726,12 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     bool done_rec_updated;
 
 
-    SQueueDB* pqdb = x_GetLocalDb();
+    // Use of local database is an optimization to increase parallelism
+    // Unfortunately BerkeleyDB can return DB_LOCK_DEADLOCK when we access the
+    // same page (in this case we have to repeat the operation
+    // In our case we just have to use an external mutex sync. all the time
+    // (xGetLocalDb() is commented out)
+    SQueueDB* pqdb = 0; // x_GetLocalDb();
     bool use_db_mutex;
 
     if (pqdb) {
@@ -1758,7 +1763,6 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         } else {
             pcur = x_GetLocalCursor(trans);
         }
-        //CBDB_FileCursor& cur = *GetCursor(trans);
         CBDB_FileCursor& cur = *pcur;
         {{
             CBDB_CursorGuard cg(cur);
@@ -3511,6 +3515,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/03/28 19:35:17  kuznets
+ * Commented out use of local database to fix dead lock
+ *
  * Revision 1.63  2006/03/17 14:40:25  kuznets
  * fixed warning
  *
