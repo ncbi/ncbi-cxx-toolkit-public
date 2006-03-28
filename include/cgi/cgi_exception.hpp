@@ -345,7 +345,9 @@ public:
         eImplNotSet,    ///< Session implementaion is not set
         eDeleted,       ///< Session has been deleted
         eSessionDoesnotExist, ///< Session does not exsit;
-        eImplException  ///< Implementation exception
+        eImplException, ///< Implementation exception
+        eAttrNotFound,  ///< Attribute not found
+        eNotLoaded      ///< Session is not loaded
     };
     virtual const char* GetErrCodeString(void) const
     {
@@ -355,6 +357,8 @@ public:
         case eDeleted:        return "Session has been deleted";
         case eSessionDoesnotExist: return "Session does not exsit";
         case eImplException:  return "Implementaion exception";
+        case eAttrNotFound:   return "Attribute not found";
+        case eNotLoaded:      return "Session is not loaded";
         default:         return CException::GetErrCodeString();
         }
     }
@@ -398,6 +402,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/03/28 16:58:56  didenko
+ * + eAttNotFound and eNotLoaded codes for CCgiSessionException
+ *
  * Revision 1.14  2006/01/18 19:45:22  ssikorsk
  * Added an extra argument to CException::x_Init
  *
