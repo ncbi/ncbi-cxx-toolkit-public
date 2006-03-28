@@ -204,12 +204,11 @@ void CSplignApp::Init()
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinCompartmentIdty()));
     
-    argdescr->AddDefaultKey
+    argdescr->AddOptionalKey
         ("min_singleton_idty", "min_singleton_identity",
          "Minimal singleton compartment identity to align. Singletons are "
          "per subject and strand",
-         CArgDescriptions::eDouble,
-         NStr::DoubleToString(CSplign::s_GetDefaultMinCompartmentIdty()));
+         CArgDescriptions::eDouble);
     
     argdescr->AddDefaultKey
         ("max_extent", "max_extent",
@@ -1321,9 +1320,16 @@ int CSplignApp::Run()
     m_Splign.Reset(new CSplign);
     m_Splign->SetPolyaDetection(!args["nopolya"]);
     m_Splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
+
     m_Splign->SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
     m_Splign->SetMinCompartmentIdentity(args["min_compartment_idty"].AsDouble());
-    m_Splign->SetMinSingletonIdentity(args["min_singleton_idty"].AsDouble());
+    if(args["min_singleton_idty"]) {
+        m_Splign->SetMinSingletonIdentity(args["min_singleton_idty"].AsDouble());
+    }
+    else {
+        m_Splign->SetMinSingletonIdentity(m_Splign->GetMinCompartmentIdentity());
+    }
+
     m_Splign->SetEndGapDetection(!(args["noendgaps"]));
     m_Splign->SetMaxGenomicExtent(args["max_extent"].AsInteger());
     m_Splign->SetAligner() = aligner;
@@ -1644,6 +1650,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/03/28 16:17:17  kapustin
+ * Specify min signleton idty as an optional rather than default argument
+ *
  * Revision 1.63  2006/03/21 16:20:50  kapustin
  * Various changes, mainly adjust the code with  other libs
  *
