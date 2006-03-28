@@ -1650,7 +1650,7 @@ string NStr::PrintableString(const string&      str,
 			return CNcbiOstrstreamToString(out);
         }
     }
-    // All characters are good - return orignal string
+    // All characters are good - return original string
     return str;
 }
 
@@ -1701,7 +1701,7 @@ string NStr::JavaScriptEncode(const string& str)
             return CNcbiOstrstreamToString(out);
         }
     }
-    // All characters are good - return orignal string
+    // All characters are good - return original string
     return str;
 }
 
@@ -2418,6 +2418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.175  2006/03/28 16:31:12  ivanov
+ * Some comment spellings
+ *
  * Revision 1.174  2006/02/13 19:47:35  ucko
  * Tweak CVS log to avoid accidental comment-end markers.
  *
