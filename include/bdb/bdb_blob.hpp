@@ -106,6 +106,14 @@ public:
     /// Get LOB size. Becomes available right after successfull Fetch.
     size_t LobSize() const;
 
+    /// Get LOB size. Becomes available right after successfull Fetch.
+    size_t BlobSize() const { return LobSize(); }
+
+    /// Read BLOB into vector. 
+    /// If BLOB does not fit, method resizes the vector to accomodate.
+    /// 
+    EBDB_ErrCode ReadRealloc(vector<char>& buffer, size_t* buf_size);
+
     /// Copy LOB data into the 'buf'.
     /// Throw an exception if buffer size 'size' is less than LOB size.
     ///
@@ -119,6 +127,18 @@ public:
     CBDB_BLobStream* CreateStream();
 
 };
+
+/// Variant of BLOB storage for integer key database
+///
+class NCBI_BDB_EXPORT CBDB_IdBlobFile : public CBDB_BLobFile
+{
+public:
+    CBDB_FieldUint4        id;  ///< ID key
+public:
+    CBDB_IdBlobFile(EDuplicateKeys dup_keys = eDuplicatesDisable,
+                    EDBType        db_type  = eBtree);
+};
+
 
 /// Berkeley DB BLOB File stream. 
 ///
@@ -248,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/03/28 16:34:55  kuznets
+ * +ReadRealloc()
+ *
  * Revision 1.18  2005/12/14 19:26:22  kuznets
  * Added support for queue db type
  *

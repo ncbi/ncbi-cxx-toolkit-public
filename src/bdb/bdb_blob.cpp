@@ -86,6 +86,44 @@ EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf,
     return eBDB_Ok;
 }
 
+ 
+EBDB_ErrCode 
+CBDB_BLobFile::ReadRealloc(vector<char>& buffer, size_t* buf_size)
+{
+    EBDB_ErrCode ret;
+    if (buffer.size() == 0) {
+        buffer.resize(10);
+    }
+    while(1) {
+        try {
+            void* p = &buffer[0];
+            ret = Fetch(&p, buffer.size(), eReallocForbidden);
+            if (ret != eBDB_Ok) {
+                if (buf_size) {
+                    *buf_size = 0;
+                }
+                return ret;
+            }
+            if (buf_size) {
+                *buf_size = LobSize();
+            }
+        }
+        catch (CBDB_ErrnoException& ex) {
+            // check if we have insufficient buffer
+            if (ex.IsBufferSmall() || ex.IsNoMem()) {
+                // increase the buffer and re-read
+                unsigned buf_size = LobSize();
+                buffer.resize(buf_size);
+            } else {
+                throw;
+            }
+            continue;
+        }
+        break;
+    } // while
+    return ret;
+}
+
 
 EBDB_ErrCode CBDB_BLobFile::GetData(void* buf, size_t size) {
     return Fetch(&buf, size, eReallocForbidden); }
@@ -134,7 +172,23 @@ CBDB_BLobStream* CBDB_BLobFile::CreateStream() {
         return new CBDB_BLobStream(m_DB, dbt, LobSize(), GetTxn());
     }
     // no lob yet (write stream)
-    return new CBDB_BLobStream(m_DB, dbt, 0, GetTxn()); }
+    return new CBDB_BLobStream(m_DB, dbt, 0, GetTxn()); 
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_IdBlobFile::
+//
+
+
+CBDB_IdBlobFile::CBDB_IdBlobFile(EDuplicateKeys dup_keys,
+                                 EDBType        db_type)
+: CBDB_BLobFile(dup_keys, db_type)
+{
+    BindKey("id", &id);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_BLobFile::
@@ -410,6 +464,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/03/28 16:37:28  kuznets
+ * +ReadRealloc()
+ *
  * Revision 1.24  2006/01/13 14:42:44  vasilche
  * Fixed comparison in assert() call.
  *
