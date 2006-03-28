@@ -561,7 +561,7 @@ protected:
     enum EStatisticsOptions 
     {
         eStatisticsAll,
-        eStaticticsBrief,
+        eStaticticsBrief
     };
 
     void PrintStatistics(CNcbiOstream&      out, 
@@ -905,6 +905,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/03/28 22:03:30  vakatov
+ * Heed the warning, kill a comma
+ *
  * Revision 1.50  2006/03/13 16:19:50  kuznets
  * +StringToStatus()
  *
