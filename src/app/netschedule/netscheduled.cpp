@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.4  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.5  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -800,6 +800,7 @@ end_version_control:
         msg += socket.GetPeerAddress();
         msg += " ";
         msg += tdata->auth;
+        msg += tdata->request;
 
         ERR_POST(msg);
 
@@ -817,6 +818,7 @@ end_version_control:
         msg += socket.GetPeerAddress();
         msg += " ";
         msg += tdata->auth;
+        msg += tdata->request;
 
         ERR_POST(msg);
 
@@ -837,7 +839,8 @@ end_version_control:
             msg += socket.GetPeerAddress();
             msg += " ";
             msg += tdata->auth;
-
+            msg += tdata->request;
+        
             ERR_POST(msg);
 
             msg = m_LocalTimer.GetLocalTime().AsString() + msg;
@@ -853,6 +856,7 @@ end_version_control:
             msg += socket.GetPeerAddress();
             msg += " ";
             msg += tdata->auth;
+            msg += tdata->request;
 
             ERR_POST(msg);
 
@@ -880,6 +884,7 @@ end_version_control:
         msg += socket.GetPeerAddress();
         msg += " ";
         msg += tdata->auth;
+        msg += tdata->request;
 
         ERR_POST(msg);
 
@@ -903,6 +908,7 @@ end_version_control:
         msg += socket.GetPeerAddress();
         msg += " ";
         msg += tdata->auth;
+        msg += tdata->request;
 
         ERR_POST(msg);
 
@@ -2694,6 +2700,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/03/28 20:51:35  didenko
+ * Added printing of the request content into the log file when an error is acquired.
+ *
  * Revision 1.69  2006/03/27 15:26:07  didenko
  * Fixed request's input parsing
  *
