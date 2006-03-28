@@ -230,17 +230,18 @@ public:
     /// @param data    buffer pointer
     /// @param size    LOB data size in bytes
     ///
-    EBDB_ErrCode Insert(unsigned int id, 
+    EBDB_ErrCode Insert(unsigned  id, 
                         const void* data, size_t size);
 
     /// Update or insert BLOB
-    EBDB_ErrCode UpdateInsert(unsigned int id, 
+    EBDB_ErrCode UpdateInsert(unsigned id, 
                               const void* data, size_t size);
 
     /// Read BLOB into vector. 
     /// If BLOB does not fit, method resizes the vector to accomodate.
     /// 
-    EBDB_ErrCode ReadRealloc(vector<char>& buffer, size_t* buf_size);
+    EBDB_ErrCode ReadRealloc(unsigned id, 
+	                         vector<char>& buffer, size_t* buf_size);
 
 
     /// Fetch LOB record directly into the provided '*buf'.
@@ -263,7 +264,9 @@ public:
                           size_t*    blob_size);
 
     /// Delete BLOB
-    EBDB_ErrCode Delete(unsigned id, EIgnoreError on_error=eThrowOnError);
+    EBDB_ErrCode Delete(unsigned id, 
+	                    CBDB_RawFile::EIgnoreError on_error = 
+						                        CBDB_RawFile::eThrowOnError);
 
 
 protected:
@@ -344,10 +347,11 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::~CBDB_BlobSpitStore()
 template<class TBV, class TObjDeMux, class TL>
 void CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::CloseVolumes()
 {
-    NON_CONST_ITERATE(TVolumeVect, it, m_Volumes) {
-        SVolume* v = *it;
-        delete v;
-    }
+
+	for (size_t i = 0; i < m_Volumes.size(); ++i) {
+		SVolume* v = m_Volumes[i];
+		delete v;
+	}
 }
 
 template<class TBV, class TObjDeMux, class TL>
@@ -401,7 +405,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int id,
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
 CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Delete(unsigned     id, 
-                                               EIgnoreError on_error)
+                                               CBDB_RawFile::EIgnoreError on_error)
 {
     unsigned coord[2];
     bool found;
@@ -447,7 +451,8 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Fetch(unsigned     id,
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::ReadRealloc(vector<char>& buffer, 
+CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::ReadRealloc(unsigned      id,
+                                                    vector<char>& buffer, 
                                                     size_t*       buf_size)
 {
     unsigned coord[2];
@@ -463,7 +468,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::ReadRealloc(vector<char>& buffer,
     {{
         TLockGuard lg(*(dbp.lock));
         dbp.db->id = id;
-        EBDB_ErrCode e = vol.db->ReadRealloc(buffer, buf_size);
+        EBDB_ErrCode e = dbp.db->ReadRealloc(id, buffer, buf_size);
         return e;
     }}
 
@@ -487,7 +492,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id,
     {{
         TLockGuard lg(*(dbp.lock));
         dbp.db->id = id;
-        EBDB_ErrCode e = vol.db->Fetch();
+        EBDB_ErrCode e = dbp.db->Fetch();
         if (e != eBDB_Ok) {
             return e;
         }
@@ -532,7 +537,6 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::LoadIdDeMux(TIdDeMux&      de_mux,
                                                    TDeMuxStore&   dict_file)
 {
     CBDB_FileCursor cur(dict_file);
-    size_t N = de_mux.GetN();
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
 
@@ -569,7 +573,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(const TIdDeMux& de_mux,
 {
     size_t N = de_mux.GetN();
     for (size_t i = 0; i < N; ++i) {
-        const TIdDeMux::TDimVector& dv =de_mux.GetDimVector(i);
+        const typename TIdDeMux::TDimVector& dv = de_mux.GetDimVector(i);
 
         for (size_t j = 0; j < dv.size(); ++j) {
             dict_file.dim = i; 
@@ -685,6 +689,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/28 17:17:03  kuznets
+ * Fixed GCC compilation issues
+ *
  * Revision 1.1  2006/03/28 16:41:59  kuznets
  * Initial revision
  *
