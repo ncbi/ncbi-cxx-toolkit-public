@@ -479,7 +479,6 @@ void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
     }
     const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
     CPacked_seqpnt::TPoints* dst_pnts = 0;
-    bool last_truncated = false;
     ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
         TSeqPos dst_pos = ConvertPos(*i);
         if ( dst_pos != kInvalidSeqPos ) {
@@ -1631,6 +1630,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2006/03/28 22:14:42  vakatov
+* Heed warning, kill unuser var
+*
 * Revision 1.55  2006/03/16 18:58:30  grichenk
 * Indicate intervals truncated while mapping by fuzz lim tl/tr.
 *
