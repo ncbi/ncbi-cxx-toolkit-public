@@ -53,7 +53,7 @@ class CNetScheduleCheck : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
-    void Run(CNetScheduleClient& nc_client);
+    int Run(CNetScheduleClient& nc_client);
 };
 
 
@@ -93,38 +93,106 @@ int CNetScheduleCheck::Run(void)
 
     unsigned short port = 0;
     string host, port_str;
+    auto_ptr<CNetScheduleClient> nc;
+    string client_name = "netschedule_amdin";
     bool b = NStr::SplitInTwo(host_service, ":", host, port_str);
     if (b) {
         port = atoi(port_str.c_str());
-
-        CNetScheduleClient nc(host, port, "netschedule_control", queue);
-        Run(nc);
-
+        
+        nc.reset(new CNetScheduleClient(host, port, client_name, queue));
+                 
     } else {  // LB name
-        CNetScheduleClient_LB nc("netschedule_admin", 
-                                  host_service, "noname");
-        Run(nc);
+        nc.reset(new CNetScheduleClient_LB(client_name, 
+                                           host_service, queue));
     }
 
-    return 0;
+    return Run(*nc);
 }
 
-void CNetScheduleCheck::Run(CNetScheduleClient& nc)
+int CNetScheduleCheck::Run(CNetScheduleClient& nc)
 {
     CArgs args = GetArgs();
 
     const string input = "Hello ";
+    const string output = "DONE ";
     string job_key = nc.SubmitJob(input);
 
-    SleepMilliSec(2 * 1000);
+    while ( true ) {
+        SleepSec(1);
 
-    string input_str;
-    for (int retry = 0; retry < 10; ++retry) {
-        bool job_exists = nc.GetJob(&job_key, &input_str);
+        string job_key1;
+        string input1;
+        bool job_exists = nc.GetJob(&job_key1, &input1);
         if (job_exists) {
-            nc.PutResult(job_key, 0, "DONE");
+            if (job_key1 != job_key)
+                nc.ReturnJob(job_key1);
+            else {
+                if (input1 != input) {
+                    string err = "Job's (" + job_key1 + 
+                        ") input does not match.(" + input + ") ["+ input1 +"]";
+                    nc.PutFailure(job_key1,err);
+                } else {
+                    nc.PutResult(job_key1, 0, output);
+                }
+                break;
+            }
         }
     }
+
+    int ret = 0;
+    string err;
+    bool check_again = true;
+    while(check_again) {
+        check_again = false;
+        SleepSec(1);
+
+        string output1;
+        string input1;
+        CNetScheduleClient::EJobStatus status = nc.GetStatus(job_key, 
+                                                             &ret,
+                                                             &output1,
+                                                             &err,
+                                                             &input1);
+        switch(status) {
+            
+        case CNetScheduleClient::eJobNotFound:
+            ret = 210;
+            err = "Job (" + job_key +") is lost.";
+            break;
+        case CNetScheduleClient::eReturned:
+            ret = 211;
+            nc.CancelJob(job_key);
+            err = "Job (" + job_key +") is returned.";
+            break;
+        case CNetScheduleClient::eCanceled:
+            ret = 212;
+            err = "Job (" + job_key +") is canceled.";
+            break;           
+        case CNetScheduleClient::eFailed:
+            ret = 213;
+            break;
+        case CNetScheduleClient::eDone:
+            if (ret != 0) {
+                err = "Job (" + job_key +") is done, but retcode is not zero.";
+            } else if (output1 != output) {
+                err = "Job (" + job_key + ") is done, output does not match.(" 
+                    + output + ") ["+ output1 +"]";
+                ret = 214;
+            } else if (input1 != input) {
+                err = "Job (" + job_key +") is done, input does not match.(" 
+                    + input + ") ["+ input1 +"]";
+                ret = 215;
+            }
+            break;
+        case CNetScheduleClient::ePending:
+        case CNetScheduleClient::eRunning:
+        default:
+            check_again = true;
+        }
+    }
+    if (ret != 0)
+        ERR_POST(err);
+    return ret;
 }
 
 
@@ -137,6 +205,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/28 16:12:51  didenko
+ * Extended NetSchedule check
+ *
  * Revision 1.1  2005/06/06 13:07:21  kuznets
  * +netschedule_check
  *
