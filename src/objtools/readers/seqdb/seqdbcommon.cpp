@@ -370,8 +370,13 @@ CSeqDBGiList::CSeqDBGiList()
 }
 
 
+/// Compare SGiOid structs by OID.
 class CSeqDB_SortOidLessThan {
 public:
+    /// Test whether lhs is less than (occurs before) rhs.
+    /// @param lhs Left hand side of less-than operator. [in]
+    /// @param rhs Right hand side of less-than operator. [in]
+    /// @return True if lhs has a lower OID than rhs.
     int operator()(const CSeqDBGiList::SGiOid & lhs,
                    const CSeqDBGiList::SGiOid & rhs)
     {
@@ -380,8 +385,13 @@ public:
 };
 
 
+/// Compare SGiOid structs by GI.
 class CSeqDB_SortGiLessThan {
 public:
+    /// Test whether lhs is less than (occurs before) rhs.
+    /// @param lhs Left hand side of less-than operator. [in]
+    /// @param rhs Right hand side of less-than operator. [in]
+    /// @return True if lhs has a lower GI than rhs.
     int operator()(const CSeqDBGiList::SGiOid & lhs,
                    const CSeqDBGiList::SGiOid & rhs)
     {

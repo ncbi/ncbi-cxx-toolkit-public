@@ -45,16 +45,30 @@ USING_NCBI_SCOPE;
 
 class CStressTestThread : public CThread {
 public:
+    /// Constructor.
+    /// @param db Database with which to test. [in]
+    /// @param num_iter Number of iterations to do. [in]
+    /// @param oid_range Range of OIDs to use for the test. [in]
     CStressTestThread(CRef<CSeqDB> db, int num_iter, int oid_range);
+    
+    /// Destructor.
     ~CStressTestThread();
     
-    virtual void* Main(void);
-    virtual void OnExit(void);
+    /// Main action of this thread.
+    virtual void* Main();
+    
+    /// Action to take on exit.
+    virtual void OnExit();
     
 private:
+    /// Database with which to test.
     CRef<CSeqDB> m_Db;
-    int          m_Count;
-    int          m_OidRange;
+    
+    /// Number of iterations to do.
+    int m_Count;
+    
+    /// Range of OIDs to use for the test.
+    int m_OidRange;
 };
 
 string short_log(double x)
@@ -73,7 +87,7 @@ string short_log(double x)
     return string("<") + string(z, i, 1) + string(">");
 }
 
-void * CStressTestThread::Main(void)
+void * CStressTestThread::Main()
 {
     int qq = 0;
     
@@ -149,7 +163,7 @@ void * CStressTestThread::Main(void)
     return NULL;
 }
 
-void CStressTestThread::OnExit(void)
+void CStressTestThread::OnExit()
 {
 }
 
@@ -178,10 +192,14 @@ void run_stress(CRef<CSeqDB> db, int num_threads, int num_iter, int oid_range)
     }
 }
 
+/// Command line arguments for stress test.
 class CStressArgs {
 public:
+    /// Map of options to their parameters.
     typedef map< string, string > TArgMap;
     
+    /// Add values from the specified vector of arguments.
+    /// @param args Vector of arguments. [in]
     void AddValues(const vector<string> & args)
     {
         for(size_t i = 0; i < args.size();) {
@@ -215,6 +233,9 @@ public:
         }
     }
     
+    /// Get the value of an integer option.
+    /// @param key Option name. [in]
+    /// @param value Value of option key. [out]
     bool Get(const string & key, int & value)
     {
         if (m_Argmap.find(key) != m_Argmap.end()) {
@@ -224,6 +245,9 @@ public:
         return false;
     }
     
+    /// Get the value of a string option.
+    /// @param key Option name. [in]
+    /// @param value Value of option key. [out]
     bool Get(const string & key, string & value)
     {
         if (m_Argmap.find(key) != m_Argmap.end()) {
@@ -233,6 +257,9 @@ public:
         return false;
     }
     
+    /// Get the value of a boolean option.
+    /// @param key Option name. [in]
+    /// @param value Value of option key. [out]
     bool Get(const string & key, bool & value)
     {
         if (m_Argmap.find(key) != m_Argmap.end()) {
@@ -243,6 +270,7 @@ public:
     }
     
 private:
+    /// Map of options to their arguments.
     TArgMap m_Argmap;
 };
 

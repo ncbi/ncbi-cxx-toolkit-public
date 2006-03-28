@@ -278,7 +278,7 @@ public:
     /// finds the absolute path of that file.  The filename is assumed
     /// to contain the correct extension.
     ///
-    /// @param dbpath The partial path to the file, with extension. [in]
+    /// @param dbname The partial path to the file, with extension. [in]
     /// @param resolved The resolved path is returned here. [out]
     /// @param locked The lock holder object for this thread. [in]
     /// @return True if the path was found.
@@ -310,7 +310,7 @@ public:
     /// that kind of database volume or alias file ('pin' or 'pal' for
     /// protein, 'nin' or 'nal' for nucleotide.)
     ///
-    /// @param dbpath The partial path to the file. [in]
+    /// @param dbname The partial path to the file. [in]
     /// @param dbtype The type of sequences used. [in]
     /// @param resolved The resolved path is returned here. [out]
     /// @param locked The lock holder object for this thread. [in]
@@ -346,9 +346,9 @@ private:
     /// consulted, however, the m_PathLookup map is checked to see if
     /// an answer to this query already exists.
     ///
-    /// @param dbpath The partial path to the file. [in]
+    /// @param dbname The partial path to the file. [in]
     /// @param dbtype The type of sequences in the DB. [in]
-    /// @param exact Specify true if the extension is present. [in]
+    /// @param exact Specify true if dbname contains the extension. [in]
     /// @param resolved The resolved path is returned here. [out]
     /// @param locked The lock holder object for this thread. [in]
     /// @return True if the path was found.
@@ -367,8 +367,8 @@ private:
     /// file combined with the standard group index filename.
     ///
     /// @param fname Location of the individual alias file. [in]
-    /// @param index_path Location of the group index file. [out]
-    /// @param alias_fname Filename portion of the alias file. [out]
+    /// @param index_name Location of the group index file. [out]
+    /// @param alias_name Filename portion of the alias file. [out]
     void x_DbToIndexName(const CSeqDB_Path & fname,
                          CSeqDB_Path       & index_name,
                          CSeqDB_FileName   & alias_name);
