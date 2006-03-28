@@ -1376,7 +1376,7 @@ void CPhrap_Contig::x_AddBaseSegFeats(CRef<CSeq_annot>& annot) const
         ITERATE(TBaseSegs, bs, bs_set->second) {
             TSignedSeqPos rd_start = read->GetStart();
             while (rd_start < TSignedSeqPos(GetPaddedLength())) {
-                TSignedSeqPos aln_start = rd_start + read->GetAlignedFrom();
+                //TSignedSeqPos aln_start = rd_start + read->GetAlignedFrom();
                 TSignedSeqPos aln_stop = rd_start + read->GetAlignedTo();
                 if (/*TSignedSeqPos(bs->m_Start) >= aln_start  &&*/
                     TSignedSeqPos(bs->m_End) <= aln_stop) {
@@ -2376,6 +2376,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/03/28 22:20:13  vakatov
+* Heed warning, kill unused var
+*
 * Revision 1.14  2006/02/09 15:52:29  grichenk
 * Allow aligned segment to be shorter than base segment.
 * Skip WR tag; skip CT and RT tags if sequence is not available.
