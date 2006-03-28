@@ -283,8 +283,9 @@ void CAlignmentBasedRowSelector::InitAU(const AlignmentUtility* au, unsigned int
     m_au = (au) ? au->Clone() : NULL;
     nRows = (m_au) ? m_au->GetNRows() : 0;
 
-    //  Constrain nSelections to not exceed number of rows available.
-    if (nSelections == 0 || nSelections > nRows) nSelections = nRows;
+    //  Constrain nSelections to not exceed number of rows available less
+    //  the number of current exclusions.
+    if (nSelections == 0 || nSelections > nRows) nSelections = nRows - m_excluded.size();
 
     CRowSelector::Init(nRows, nSelections);
 
@@ -327,23 +328,25 @@ void CAlignmentBasedRowSelector::SetSequence(void) {
     }
 
     if (m_sortBestToWorst) {
-        ScoreMapIt smIt = m_scoresToRow.begin(), smEnd = m_scoresToRow.end();
-        for (i = 0; smIt != smEnd && i < m_nSelections; ++smIt) {
-            thisSelection = smIt->second;
-            isExcluded = (nExcluded > 0 && find(m_excluded.begin(), m_excluded.end(), thisSelection) != m_excluded.end());
-            if (!isExcluded) {
-                m_sequence.push_back(thisSelection);
-                ++i;
-            }
-
-        }
-    } else {
         ScoreMapRit smRit = m_scoresToRow.rbegin(), smRend = m_scoresToRow.rend();
         for (i = 0; smRit != smRend && i < m_nSelections; ++smRit) {
             thisSelection = smRit->second;
             isExcluded = (nExcluded > 0 && find(m_excluded.begin(), m_excluded.end(), thisSelection) != m_excluded.end());
             if (!isExcluded) {
                 m_sequence.push_back(thisSelection);
+//                cout << "row " << thisSelection << "; score " << smRit->first << endl;
+                ++i;
+            }
+
+        }
+    } else {
+        ScoreMapIt smIt = m_scoresToRow.begin(), smEnd = m_scoresToRow.end();
+        for (i = 0; smIt != smEnd && i < m_nSelections; ++smIt) {
+            thisSelection = smIt->second;
+            isExcluded = (nExcluded > 0 && find(m_excluded.begin(), m_excluded.end(), thisSelection) != m_excluded.end());
+            if (!isExcluded) {
+                m_sequence.push_back(thisSelection);
+//                cout << "row " << thisSelection << "; score " << smIt->first << endl;
                 ++i;
             }
 
@@ -366,6 +369,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/03/28 18:31:21  lanczyck
+* bug fix:  consider excluded rows when setting number of selections
+*
 * Revision 1.3  2006/03/27 16:42:19  lanczyck
 * refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector; move alignment utility methods into AlignmentUtility class from RefinerPhase
 *
