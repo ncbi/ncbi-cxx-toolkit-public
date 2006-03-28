@@ -106,7 +106,7 @@ void CAlignmentRefiner::Init(void)
     argDescr->AddDefaultKey("o", "CdBasenameOut", "basename of output CD(s) containing refined alignment; output saved to 'basename_<number>.acd'; ascii text by default", argDescr->eString, "refiner");
 
     //  Number of trials
-    argDescr->AddDefaultKey("n", "integer", "number of independent trials (restarts from original alignment)", argDescr->eInteger, "1");
+    argDescr->AddDefaultKey("n", "integer", "number of independent trials (restarts from original alignment)\nNOTE:  only relevant if use random selection order of rows; ignored if deterministic selection order used (see 'selection_order' below)", argDescr->eInteger, "1");
     argDescr->SetConstraint("n", new CArgAllow_Integers(1, N_MAX_TRIALS));
 
     //  Number of cycles per trial (a cycle consists of a LOO phase followed by a 
@@ -330,8 +330,14 @@ int CAlignmentRefiner::Run(void)
         return looParamResult;
     }
 
-    //EchoSettings(detailsStream, true, false);
+    //  If using a fixed selection order based on row-scores of the
+    //  initial alignment, no need to do multiple trials.
+    if (m_nTrials > 1 && m_loo.selectorCode != eRandomSelectionOrder) {
+        m_nTrials = 1;
+        WARNING_MESSAGE_CL("For deterministic row-selection order, multiple trials are redundant.\nSetting number of trials to one and continuing.\n");
+    }
 
+    //EchoSettings(detailsStream, true, false);
 
     //  Fill out data structure for block editing parameters.  
     //  By default, edit blocks -- must explicitly skip with the -be_fix option.
@@ -501,7 +507,7 @@ unsigned int  CAlignmentRefiner::GetBlocksToAlign(unsigned int nBlocks, vector<u
         if (nExtra > 0) {
             skip = false;
             for (size_t extra = 1; extra <= nExtra; ++extra) {
-                if (args[extra].AsInteger() == (int) i) {
+                if (args[extra].AsInteger() - 1 == (int) i) {
                     skip = true;
                     break;
                 }
@@ -512,7 +518,7 @@ unsigned int  CAlignmentRefiner::GetBlocksToAlign(unsigned int nBlocks, vector<u
         msg.append(NStr::UIntToString(i+1) + " ");
         if ((last-first+1)%15 == 0 && first != 0) msg.append("\n");
     }
-
+    //TERSE_INFO_MESSAGE_CL("message in GetBlocksToAlign:\n" << msg);
     return blocks.size();
 }
 
@@ -658,6 +664,7 @@ void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool ech
             for (size_t extra = 1; extra <= nExtra; ++extra) {
                 echoStream << args[extra].AsInteger() << "  ";
             }
+            echoStream << endl;
         } else {
             echoStream << "No extra arguments that exclude specific rows/blocks from refinement." << endl;
         }
@@ -814,6 +821,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/03/28 18:32:04  lanczyck
+ * output changes; reset m_trials to 1 when use deterministic ordering in LOO; remove some debug statements
+ *
  * Revision 1.9  2006/03/27 16:44:49  lanczyck
  * add selection-order option; modify parameter printing; fix block freezing for consistency between LOO and BE phases
  *

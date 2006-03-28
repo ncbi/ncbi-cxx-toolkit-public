@@ -122,6 +122,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     bool recomputeScores = false;
     bool writeDetails = (detailsStream != NULL || m_verbose);
     IOS_BASE::fmtflags initFlags = (detailsStream) ? detailsStream->flags() : cout.flags();
+    EDiagSev originalPostLevel;
 
 
     string message, seqIdStr;
@@ -185,7 +186,8 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         ((CAlignmentBasedRowSelector*) m_rowSelector)->Update(au, 0, (m_looParams.selectorCode == eBestScoreFirst));
     }
 
-    //TERSE_INFO_MESSAGE_CL(arting while loop over rows in DoPhase\n");
+    //TERSE_INFO_MESSAGE_CL("Printing row selector details:\n" << m_rowSelector->Print());
+
     tries = 0;
     sumShifts = 0;
     while (m_rowSelector->HasNext() && au) {
@@ -246,18 +248,19 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
             }
         }
             
-        //  Change diag level just for the LOO/LNO call.
-        //if (!m_verbose) SetDiagPostLevel(eDiag_Error);
-        EDiagSev originalPostLevel = SetDiagPostLevel(eDiag_Error);
-        //                cout << "##### row: " << row+1 << " perc " << percentileLOO << "; ext " << extensionLOO << " cut " << cutoffLOO << " from/to " << queryFrom[row] << " " << queryTo[row] << endl;
-
-        //  If LOO failed continue to the next row (rollbacks first, if created a copy earlier)
-        //TERSE_INFO_MESSAGE_CL(  about to do LOO for row " << row);
-//        if (!au->DoLeaveOneOut(row, m_looParams.blocks, m_looParams.percentile, m_looParams.extension,
-//                               m_looParams.cutoff, m_looParams.froms[row], m_looParams.tos[row])) {
-
         //  Accummulate enough rows...
         if (rows.size() < m_looParams.lno && m_rowSelector->HasNext()) continue;
+
+        if (m_looParams.lno > 1) {
+            //for (unsigned kj = 0; kj < rows.size(); ++kj) {
+            //    TERSE_INFO_MESSAGE_CL("left out row " << kj << ":  " << rows[kj]);
+            //}
+            TERSE_INFO_MESSAGE_CL("    Next " << rows.size() << " rows left out before the next PSSM recalculation...\n");
+        }
+        //TERSE_INFO_MESSAGE_CL(m_rowSelector->Print());
+
+        //  Change diag level just for the LOO/LNO call.
+        originalPostLevel = SetDiagPostLevel(eDiag_Error);
 
         if (!au->DoLeaveNOut(rows, m_looParams.blocks, m_looParams.percentile, m_looParams.extension,
                                m_looParams.cutoff, froms, tos)) {
@@ -338,7 +341,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 if (writeDetails) {
                     string& msg = (score == oldScore) ? noChange : accepted;
 //                    TERSE_INFO_MESSAGE_CL(O move" << msg << "for " << seqIdStr << " at row " << row+1 << ".  oldScore = " << oldScore << "; new score = " << score);
-                    TERSE_INFO_MESSAGE_CL("    " << lnoString << " move" << msg << ".  oldScore = " << oldScore << "; new score = " << score);
+                    TERSE_INFO_MESSAGE_CL("    " << lnoString << " move" << msg << ".  oldScore = " << oldScore << "; new score = " << score << "\n\n");
                 }
                 if (score == oldScore) {
                     ++scoreSame;
@@ -554,7 +557,7 @@ unsigned int CBMARefinerLOOPhase::AnalyzeRowShifts(const Ranges& before, const R
     for (i = 0; i < nBlocks; ++i) {
 
         if (i == 0 && writeDetails) {
-            TERSE_INFO_MESSAGE_CL("\n    Shift analysis for row " << row+1 << ":");
+            TERSE_INFO_MESSAGE_CL("    Shift analysis for row " << row+1 << ":");
         }
 
         diffFrom = after[i].from - before[i].from;
@@ -862,6 +865,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/03/28 18:32:04  lanczyck
+ * output changes; reset m_trials to 1 when use deterministic ordering in LOO; remove some debug statements
+ *
  * Revision 1.11  2006/03/27 16:42:19  lanczyck
  * refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector; move alignment utility methods into AlignmentUtility class from RefinerPhase
  *
