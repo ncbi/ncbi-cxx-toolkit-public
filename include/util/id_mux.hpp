@@ -175,10 +175,16 @@ public:
     void SetCoordinatesFast(unsigned id, const unsigned* coord);
 
     /// Get dimension vector
+    /// @param i
+    ///    Dimension index
     const TDimVector&  GetDimVector(size_t i) const;
 
     /// Get modification access to dimension vector
     TDimVector& PutDimVector(size_t i);
+
+    /// Assign projection idx for dimension i.
+    /// Class takes ownership of bv
+    void SetProjection(size_t i, size_t idx, TBitVector* bv);
 
     /// Resize dimesion, create bitset content
     void InitDim(size_t i, size_t dim_size);
@@ -288,6 +294,17 @@ CIdDeMux<TBV, TBVFact>::PutDimVector(size_t i)
     return m_DimSpace[i];
 }
 
+template<class TBV, class TBVFact>
+void 
+CIdDeMux<TBV, TBVFact>::SetProjection(size_t i, size_t idx, TBitVector* bv)
+{
+    TDimVector& dv = this->PutDimVector(i);
+    if (dv.size() < idx + 1) {
+        dv.resize(idx + 1);
+    }
+    dv[idx] = bv;
+}
+
 
 template<class TBV, class TBVFact>
 void CIdDeMux<TBV, TBVFact>::InitDim(size_t i, size_t dim_size)
@@ -307,6 +324,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/03/28 14:45:25  kuznets
+* +SetProjection()
+*
 * Revision 1.4  2006/03/23 17:08:08  kuznets
 * typo fix
 *
