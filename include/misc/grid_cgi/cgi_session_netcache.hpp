@@ -152,27 +152,6 @@ private:
 };
 
 
-
-
-class CCgiSessionNCException : public CException
-{
-public:
-    enum EErrCode {
-        eNotLoaded
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch ( GetErrCode() ) {
-        case eNotLoaded:  return "eNotLoaded";
-        default:          return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CCgiSessionNCException, CException);
-};
-
-
 END_NCBI_SCOPE
 
 
@@ -182,6 +161,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/28 17:01:13  didenko
+ * - CCgiSessionNCException
+ * Throw en exception when a requested attribute is not found in the session
+ *
  * Revision 1.8  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

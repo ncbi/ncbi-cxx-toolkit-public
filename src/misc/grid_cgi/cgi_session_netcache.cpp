@@ -30,10 +30,11 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbistre.hpp>
+//#include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 
 #include <cgi/ncbicgi.hpp>
+#include <cgi/cgi_exception.hpp>
 
 #include <misc/grid_cgi/cgi_session_netcache.hpp>
 
@@ -123,9 +124,12 @@ CNcbiIstream& CCgiSession_NetCache::GetAttrIStream(const string& name,
     Reset();
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
+        NCBI_THROW(CCgiSessionException, eAttrNotFound, " : " + name);
+        /*
         static CNcbiIstrstream sEmptyStream("",streamsize(0));
         if (size) *size = 0;
         return sEmptyStream;
+        */
     }
     return m_Storage->GetIStream(i->second, size);
 }
@@ -140,12 +144,7 @@ CNcbiOstream& CCgiSession_NetCache::GetAttrOStream(const string& name)
 
 void CCgiSession_NetCache::SetAttribute(const string& name, const string& value)
 {
-    x_CheckStatus();
-    Reset();
-    m_Dirty = true;
-    string& blobid = m_Blobs[name];
-    CNcbiOstream& os = m_Storage->CreateOStream(blobid);
-    os << value;
+    GetAttrOStream(name) << value;
     Reset();
 }
 string CCgiSession_NetCache::GetAttribute(const string& name) const
@@ -154,7 +153,8 @@ string CCgiSession_NetCache::GetAttribute(const string& name) const
     const_cast<CCgiSession_NetCache*>(this)->Reset();
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
-        return "";
+        NCBI_THROW(CCgiSessionException, eAttrNotFound, " : " + name);
+        //        return "";
     }
     return m_Storage->GetBlobAsString(i->second);
 }
@@ -206,8 +206,7 @@ void CCgiSession_NetCache::Reset()
 void CCgiSession_NetCache::x_CheckStatus() const
 {
     if (!m_Loaded)
-        NCBI_THROW(CCgiSessionNCException,
-                   eNotLoaded, "The Session is not loaded.");
+        NCBI_THROW(CCgiSessionException,  eNotLoaded, "");
 }
 
 END_NCBI_SCOPE
@@ -218,6 +217,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/03/28 17:01:13  didenko
+ * - CCgiSessionNCException
+ * Throw en exception when a requested attribute is not found in the session
+ *
  * Revision 1.9  2006/02/27 15:41:29  gouriano
  * Be more specific about istrstream constructor
  *
