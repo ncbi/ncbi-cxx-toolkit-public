@@ -92,6 +92,8 @@ public:
     /// Accessor for the most recently used PSSM
     CConstRef<objects::CPssmWithParameters> GetPssm() const;
 
+    /// Set the desired result type
+    /// @param type of result requested [in]
     void SetResultType(EResultType type);
 
 private:

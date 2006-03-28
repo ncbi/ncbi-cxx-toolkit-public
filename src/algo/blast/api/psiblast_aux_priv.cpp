@@ -76,7 +76,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
-                             CConstRef<CPssmWithParameters> pssm,
+                             CConstRef<objects::CPssmWithParameters> pssm,
                              TSearchMessages& messages,
                              CConstRef<CBlastOptions> options)
 {
@@ -281,7 +281,7 @@ PsiBlastAddAncilliaryPssmData(CPssmWithParameters& pssm,
     pssm.SetParams().SetRpsdbparams().SetGapExtend(gap_extend);
 }
 
-void PsiBlastComputePssmScores(CRef<CPssmWithParameters> pssm,
+void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts)
 {
     CConstRef<CBioseq> query(&pssm->GetPssm().GetQuery().GetSeq());
@@ -328,7 +328,7 @@ s_GetEvalue(const CScore& score)
     return numeric_limits<double>::max();
 }
 
-double GetLowestEvalue(const CDense_seg::TScores& scores)
+double GetLowestEvalue(const objects::CDense_seg::TScores& scores)
 {
     double retval = numeric_limits<double>::max();
     double tmp;

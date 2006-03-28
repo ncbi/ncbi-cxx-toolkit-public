@@ -567,10 +567,10 @@ PsiBlastAddAncilliaryPssmData(CPssmWithParameters& pssm,
                               int gap_open, 
                               int gap_extend);
 
-CRef<CPssmWithParameters> 
-PsiBlastComputePssmFromAlignment(const CBioseq& query,
-                                 CConstRef<CSeq_align_set> alignment,
-                                 CRef<CScope> database_scope,
+CRef<objects::CPssmWithParameters> 
+PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
+                                 CConstRef<objects::CSeq_align_set> alignment,
+                                 CRef<objects::CScope> database_scope,
                                  const CPSIBlastOptionsHandle& opts_handle,
                                  PSIDiagnosticsRequest* diagnostics_request)
 {
@@ -711,6 +711,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2006/03/28 19:55:28  camacho
+* Doxygen fixes
+*
 * Revision 1.70  2006/03/13 16:43:51  bealer
 * - Fix protein masking issue.
 *

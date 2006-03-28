@@ -129,14 +129,30 @@ public:
                        const PSIBlastOptions& opts,
                        const char* matrix_name = NULL,
                        const PSIDiagnosticsRequest* diags = NULL);
+
+    /// virtual destructor
     virtual ~CPsiBlastInputData();
 
+    /// The work to process the alignment is done here
     void Process();
+
+    /// Get the query sequence used as master for the multiple sequence
+    /// alignment in ncbistdaa encoding.
     unsigned char* GetQuery();
+
+    /// Get the query's length
     unsigned int GetQueryLength();
+
+    /// Obtain the multiple sequence alignment structure
     PSIMsa* GetData();
+
+    /// Obtain the options for the PSSM engine
     const PSIBlastOptions* GetOptions();
+
+    /// Obtain the name of the underlying matrix to use when building the PSSM
     const char* GetMatrixName();
+
+    /// Obtain the diagnostics data that is requested from the PSSM engine
     const PSIDiagnosticsRequest* GetDiagnosticsRequest();
 
 private:
@@ -218,6 +234,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/03/28 19:57:31  camacho
+ * Doxygen fixes
+ *
  * Revision 1.13  2005/11/14 15:24:56  camacho
  * Implemented alignment processor to extract relevant sequences for PSSM generation
  *
