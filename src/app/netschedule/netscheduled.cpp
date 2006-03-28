@@ -562,7 +562,7 @@ void CNetScheduleServer::Process(SOCK sock)
             version_control_done = true;
         }
 
-        while (1) {
+        for (unsigned cmd = 0; true; (cmd>=100?cmd=0:++cmd)) {
 
             size_t n_read;
             io_st = socket.ReadLine(tdata->request,
@@ -779,7 +779,20 @@ end_version_control:
             default:
                 _ASSERT(0);
             } // switch
-        } // while
+
+            // abort permanent connection session if shutdown requested
+            //
+            // the cmd counter condition here is used to make sure that
+            // client is not interrupted immediately but had a chance 
+            // to return job results to the queue (if it is a worker)
+            // (rather useless attempt to shutdown gracefully)
+            if ((cmd > 10) && ShutdownRequested()) {
+                WriteMsg(socket, "ERR:", 
+                    "NetSchedule server is shutting down. Session aborted.");
+                break;
+            }
+
+        } // for 
 
         // read trailing input (see netcached.cpp for more comments on "why?")
         STimeout to; to.sec = to.usec = 0;
@@ -2700,6 +2713,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/03/28 21:20:39  kuznets
+ * Permanent connection interruption on shutdown
+ *
  * Revision 1.70  2006/03/28 20:51:35  didenko
  * Added printing of the request content into the log file when an error is acquired.
  *
