@@ -1729,12 +1729,12 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     bool done_rec_updated;
     bool use_db_mutex;
 
-
-    // Use of local database is an optimization to increase parallelism
-    // Unfortunately BerkeleyDB can return DB_LOCK_DEADLOCK when we access the
-    // same page (in this case we have to repeat the operation
-    // In our case we just have to use an external mutex sync. all the time
-    // (xGetLocalDb() is commented out)
+    // When working with the same database file concurrently there is
+    // chance of internal Berkeley DB deadlock.(They say this is legal!)
+    // In this case Berkeley DB returns an error code(DB_LOCK_DEADLOCK)
+    // and recovery is up to the application.
+    // If it happens I repeat the transaction several times.
+    //
 repeat_transaction:
     SQueueDB* pqdb = x_GetLocalDb();
     if (pqdb) {
@@ -3526,6 +3526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/03/28 21:21:22  kuznets
+ * cleaned up comments
+ *
  * Revision 1.65  2006/03/28 20:37:56  kuznets
  * Trying to work around deadlock by repeating transaction
  *
