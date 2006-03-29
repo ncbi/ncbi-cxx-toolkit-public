@@ -1301,17 +1301,18 @@ public:
     /// Start the timer.
     void Start(void);
 
-    /// Return time elapsed since Start() or Restart() call (in seconds).
-    /// Result is underfined if Start() or Restart() wasn't previously called.
+    /// Return time elapsed since first Start() or last Restart() call
+    /// (in seconds).
+    /// Result is undefined if Start() or Restart() wasn't previously called.
     double Elapsed(void) const;
 
     /// Suspend the timer.
     /// Next Start() call continue to count time accured before.
     void Stop(void);
 
-    /// Return time elapsed since Start() or Restart() call (in seconds).
-    /// Start new timer after that.
-    /// Result is underfined if Start() or Restart() wasn't previously called.
+    /// Return time elapsed since first Start() or last Restart() call
+    /// (in seconds). Start new timer after that.
+    /// Result is undefined if Start() or Restart() wasn't previously called.
     double Restart(void);
 
     /// Set the current stopwatch time format.
@@ -1987,7 +1988,7 @@ double CStopWatch::Elapsed() const
 inline
 void CStopWatch::Stop()
 {
-    m_Total += Elapsed();
+    m_Total += GetTimeMark() - m_Start;
 }
 
 
@@ -2010,6 +2011,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/03/29 14:10:31  ivanov
+ * Fixed CStopWatch::Stop() to correctly count accumulated time
+ *
  * Revision 1.56  2005/12/19 18:02:01  ucko
  * Use NCBI_DEPRECATED_CTOR in CStopWatch to restore compatibility with
  * MS Visual Studio 2005.
