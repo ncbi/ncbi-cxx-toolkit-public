@@ -57,7 +57,7 @@ USING_SCOPE(blast);
 static void s_SplitCommandLine(string s, vector<string>& result)
 {
     bool in_quotes = false;
-    char quote_char;
+    char quote_char = 0;  // initialize to avoid compiler warning
     bool in_space = true;
     // tack on a space so we can deal with end generically
     s += ' ';
@@ -747,6 +747,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/03/29 14:46:43  jcherry
+ * Avoid compiler warning
+ *
  * Revision 1.8  2005/12/21 19:41:23  jcherry
  * Give significance to double quotes (like single quotes) in
  * blast parameter strings
