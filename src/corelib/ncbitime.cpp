@@ -2037,7 +2037,7 @@ int CFastLocalTime::GetLocalTimezone(void)
 CStopWatch::CStopWatch(bool start)
 {
     m_Total = 0;
-   if ( start ) {
+    if ( start ) {
         Start();
     }
 }
@@ -2142,6 +2142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/03/29 14:09:10  ivanov
+ * Cosmetic change
+ *
  * Revision 1.70  2006/01/05 17:09:21  ivanov
  * Fixed warnings on Workshop compiler in 64-bit configurations
  *
