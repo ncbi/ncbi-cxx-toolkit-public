@@ -373,18 +373,35 @@ protected:
 
         try {
             TCoord lmin = h->GetMin(where), lmax = h->GetMax(where);
+
+            int ldif = cmin - lmin, rdif = lmax - cmax;
+
             if(cmin <= lmin && lmax <= cmax) {
                 return -2;
             }
-            if(lmin <= cmin && cmin <= lmax) {
-                if(cmin == 0) return -2;
-                h->Modify(2*where + 1, lmax = cmin - 1);
-                rv = lmax;
+            if(ldif > rdif) {
+                if(lmin <= cmin && cmin <= lmax) {
+                    if(cmin == 0) return -2;
+                    h->Modify(2*where + 1, lmax = cmin - 1);
+                    rv = lmax;
+                }
+                if(lmin <= cmax && cmax <= lmax) {
+                    h->Modify(2*where, lmin = cmax + 1);
+                    rv = lmin;
+                }
             }
-            if(lmin <= cmax && cmax <= lmax) {
-                h->Modify(2*where, lmin = cmax + 1);
-                rv = lmin;
+            else {
+                if(lmin <= cmax && cmax <= lmax) {
+                    h->Modify(2*where, lmin = cmax + 1);
+                    rv = lmin;
+                }
+                if(lmin <= cmin && cmin <= lmax) {
+                    if(cmin == 0) return -2;
+                    h->Modify(2*where + 1, lmax = cmin - 1);
+                    rv = lmax;
+                }
             }
+
             if(1 + lmax - lmin < min_hit_len) {
                 return -2;
             }
@@ -404,6 +421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/29 15:45:54  kapustin
+ * Optimize alignment truncation when resolving overlaps to leave more alignment where possible
+ *
  * Revision 1.7  2006/03/23 22:00:26  kapustin
  * Account for nested higher-scorers
  *
