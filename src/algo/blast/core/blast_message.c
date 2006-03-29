@@ -36,6 +36,12 @@ static char const rcsid[] =
 
 #include <algo/blast/core/blast_message.h>
 
+/** Allocate a new SMessageOrigin structure
+ * @param filename name of the file [in]
+ * @param lineno line number in the file above [in]
+ * @return newly allocated structure or NULL in case of memory allocation
+ * failure.
+ */
 SMessageOrigin* SMessageOriginNew(char* filename, unsigned int lineno)
 {
     SMessageOrigin* retval = NULL;
@@ -54,6 +60,10 @@ SMessageOrigin* SMessageOriginNew(char* filename, unsigned int lineno)
     return retval;
 }
 
+/** Deallocate a SMessageOrigin structure
+ * @param msgo structure to deallocate [in]
+ * @return NULL
+ */
 SMessageOrigin* SMessageOriginFree(SMessageOrigin* msgo)
 {
     if (msgo) {
@@ -177,6 +187,9 @@ Blast_Message* Blast_PerrorEx(Int2 error_code,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2006/03/29 13:59:53  camacho
+ * Doxygen fixes
+ *
  * Revision 1.21  2006/03/21 21:00:52  camacho
  * + interruptible api support
  *

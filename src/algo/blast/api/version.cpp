@@ -57,6 +57,7 @@ CVersion::Print(void) const
     return os.str();
 }
 
+/// References for the various BLAST publications
 static const string kReferences[(int)CReference::eMaxPublications+1] = {
     // eGappedBlast
     "Altschul, Stephen F., Thomas L. Madden, \
@@ -86,6 +87,7 @@ compositionally adjusted substitution matrices\", FEBS J. 272:5101-5109.",
     kEmptyStr
 };
                  
+/// Pubmed URLs to retrieve the references defined above
 static const string kPubMedUrls[(int)CReference::eMaxPublications+1] = {
     // eGappedBlast
     "http://www.ncbi.nlm.nih.gov/\

@@ -67,7 +67,7 @@ public:
     string GetReleaseDate(void) const;
 
 private:
-    string m_ReleaseDate;
+    string m_ReleaseDate;   ///< date of the most recent release
 };
 
 /// Static object which defines the current version of the BLAST engine
