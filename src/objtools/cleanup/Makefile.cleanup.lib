@@ -4,5 +4,7 @@
 ###############################
 
 ASN_DEP = general biblio seq pub seqset submit
-SRC = cleanup cleanup_feat cleanup_general cleanup_pub cleanup_utils cleanup_biosource cleanupp
-LIB    = xcleanup
+SRC = cleanup cleanupp cleanup_feat cleanup_general cleanup_pub \
+      cleanup_utils cleanup_biosource cleanup_gbqual
+      
+LIB = xcleanup
