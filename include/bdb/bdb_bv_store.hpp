@@ -530,7 +530,7 @@ CBDB_BvStore<TBV>::WriteVector(const TBitVector&  bv,
         bv_to_store = &bv;
     }
 
-    struct TBitVector::statistics st1;
+    typename TBitVector::statistics st1;
     bv_to_store->calc_stat(&st1);
 
     if (st1.max_serialize_mem > m_Buffer.size()) {
@@ -1316,6 +1316,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/03/29 15:24:08  ucko
+ * Tweak WriteVector for compatibility with GCC 2.95.
+ *
  * Revision 1.11  2006/03/28 16:48:13  kuznets
  * code cleanup
  *
