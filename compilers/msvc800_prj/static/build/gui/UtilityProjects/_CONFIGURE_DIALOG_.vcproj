@@ -75,7 +75,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configure solution : $(SolutionName)"
-						CommandLine="@echo on&#x0D;&#x0A;set PTB_PATH=$(ProjectDir)..\..\..\bin\$(ConfigurationName)&#x0D;&#x0A;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#x0D;&#x0A;set SLN_PATH=$(SolutionPath)&#x0D;&#x0A;cd $(InputDir)&#x0D;&#x0A;copy /Y $(InputFileName) $(InputName).bat&#x0D;&#x0A;call $(InputName).bat&#x0D;&#x0A;del /Q $(InputName).bat&#x0D;&#x0A;&#x0D;&#x0A;"
+                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\bin\$(ConfigurationName)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
 						AdditionalDependencies=""
 						Outputs="$(InputPath).aanofile.out"
 					/>
@@ -86,7 +86,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configure solution : $(SolutionName)"
-						CommandLine="@echo on&#x0D;&#x0A;set PTB_PATH=$(ProjectDir)..\..\..\bin\$(ConfigurationName)&#x0D;&#x0A;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#x0D;&#x0A;set SLN_PATH=$(SolutionPath)&#x0D;&#x0A;cd $(InputDir)&#x0D;&#x0A;copy /Y $(InputFileName) $(InputName).bat&#x0D;&#x0A;call $(InputName).bat&#x0D;&#x0A;del /Q $(InputName).bat&#x0D;&#x0A;&#x0D;&#x0A;"
+                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\bin\$(ConfigurationName)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
 						AdditionalDependencies=""
 						Outputs="$(InputPath).aanofile.out"
 					/>

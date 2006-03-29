@@ -5,13 +5,18 @@
 	Name="-CONFIGURE-DIALOG-"
 	ProjectGUID="{6DEFDB58-C014-4026-A166-299146BD9947}"
 	RootNamespace="MasterProject"
-	Keyword="ManagedCProj">
+	Keyword="ManagedCProj"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
 		<Platform
-			Name="x64"/>
+			Name="x64"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="ReleaseDLL|Win32"
@@ -19,15 +24,19 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="10"
 			CharacterSet="2"
-			ManagedExtensions="TRUE">
+			>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCCustomBuildTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCMIDLTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="ReleaseDLL|x64"
@@ -35,15 +44,20 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="10"
 			CharacterSet="2"
-			ManagedExtensions="TRUE">
+			>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCCustomBuildTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -51,26 +65,31 @@
 	<Files>
 		<Filter
 			Name="Configure"
-			Filter="">
+			>
 			<File
-				RelativePath="configure_dialog._">
+				RelativePath="configure_dialog._"
+				>
 				<FileConfiguration
-					Name="ReleaseDLL|Win32">
+					Name="ReleaseDLL|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configure solution : $(SolutionName)"
-						CommandLine="@echo on&#x0D;&#x0A;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\$(ConfigurationName)&#x0D;&#x0A;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\&#x0D;&#x0A;set SLN_PATH=$(SolutionPath)&#x0D;&#x0A;cd $(InputDir)&#x0D;&#x0A;copy /Y $(InputFileName) $(InputName).bat&#x0D;&#x0A;call $(InputName).bat&#x0D;&#x0A;del /Q $(InputName).bat&#x0D;&#x0A;"
+                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\$(ConfigurationName)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
 						AdditionalDependencies=""
-						Outputs="$(InputPath).aanofile.out"/>
+						Outputs="$(InputPath).aanofile.out"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseDLL|x64">
+					Name="ReleaseDLL|x64"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configure solution : $(SolutionName)"
-						CommandLine="@echo on&#x0D;&#x0A;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\$(ConfigurationName)&#x0D;&#x0A;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\&#x0D;&#x0A;set SLN_PATH=$(SolutionPath)&#x0D;&#x0A;cd $(InputDir)&#x0D;&#x0A;copy /Y $(InputFileName) $(InputName).bat&#x0D;&#x0A;call $(InputName).bat&#x0D;&#x0A;del /Q $(InputName).bat&#x0D;&#x0A;"
+                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\$(ConfigurationName)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
 						AdditionalDependencies=""
-						Outputs="$(InputPath).aanofile.out"/>
+						Outputs="$(InputPath).aanofile.out"
+					/>
 				</FileConfiguration>
 			</File>
 		</Filter>

@@ -1,98 +1,34 @@
 <?xml version="1.0" encoding="Windows-1252"?>
-<VisualStudioProject
-	ProjectType="Visual C++"
-	Version="7.10"
-	Name="-CONFIGURE-DIALOG-"
-	ProjectGUID="{6DEFDB58-C014-4026-A166-299146BD9947}"
-	RootNamespace="MasterProject"
-	Keyword="ManagedCProj">
-	<Platforms>
-		<Platform
-			Name="Win32"/>
-	</Platforms>
-	<Configurations>
-		<Configuration
-			Name="DebugDLL|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="10"
-			CharacterSet="2"
-			ManagedExtensions="TRUE">
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-		</Configuration>
-		<Configuration
-			Name="ReleaseDLL|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="10"
-			CharacterSet="2"
-			ManagedExtensions="TRUE">
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-		</Configuration>
-	</Configurations>
-	<References>
-	</References>
-	<Files>
-		<Filter
-			Name="Configure"
-			Filter="">
-			<File
-				RelativePath="configure_dialog._">
-				<FileConfiguration
-					Name="DebugDLL|Win32">
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Configure solution : $(SolutionName)"
-						CommandLine="@echo on
-set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\Release
-set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..
-set SLN_PATH=$(SolutionPath)
-devenv /build Release /project project_tree_builder.exe ..\..\..\..\static\build\app\project_tree_builder\project_tree_builder.sln
-if errorlevel 1 exit 1
-cd $(InputDir)
-copy /Y $(InputFileName) $(InputName).bat
-call $(InputName).bat
-del /Q $(InputName).bat
-"
-						AdditionalDependencies=""
-						Outputs="$(InputPath).aanofile.out"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseDLL|Win32">
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Configure solution : $(SolutionName)"
-						CommandLine="@echo on
-set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\Release
-set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..
-set SLN_PATH=$(SolutionPath)
-devenv /build Release /project project_tree_builder.exe ..\..\..\..\static\build\app\project_tree_builder\project_tree_builder.sln
-if errorlevel 1 exit 1
-cd $(InputDir)
-copy /Y $(InputFileName) $(InputName).bat
-call $(InputName).bat
-del /Q $(InputName).bat
-"
-						AdditionalDependencies=""
-						Outputs="$(InputPath).aanofile.out"/>
-				</FileConfiguration>
-			</File>
-		</Filter>
-	</Files>
-	<Globals>
-	</Globals>
+<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="-CONFIGURE-DIALOG-" Keyword="ManagedCProj" RootNamespace="MasterProject">
+  <Platforms>
+    <Platform Name="Win32"></Platform>
+  </Platforms>
+  <Configurations>
+    <Configuration Name="DebugDLL|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+  </Configurations>
+  <References></References>
+  <Files>
+    <Filter Name="Configure" Filter="">
+      <File RelativePath="configure_dialog._">
+        <FileConfiguration Name="DebugDLL|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\Release&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;devenv /build Release /project project_tree_builder.exe ..\..\..\..\static\build\app\project_tree_builder\project_tree_builder.sln&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;" Outputs="$(InputPath).aanofile.out" Description="Configure solution : $(SolutionName)"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\Release&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;devenv /build Release /project project_tree_builder.exe ..\..\..\..\static\build\app\project_tree_builder\project_tree_builder.sln&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;" Outputs="$(InputPath).aanofile.out" Description="Configure solution : $(SolutionName)"></Tool>
+        </FileConfiguration>
+      </File>
+    </Filter>
+  </Files>
+  <Globals></Globals>
 </VisualStudioProject>
