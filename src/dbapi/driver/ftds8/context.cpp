@@ -44,6 +44,8 @@
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
+#include <algorithm>
+
 #ifdef NCBI_FTDS
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
@@ -795,6 +797,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/03/29 21:31:39  ucko
+ * +<algorithm> for find()
+ *
  * Revision 1.63  2006/03/28 20:08:17  ssikorsk
  * Killed all CRs
  *
