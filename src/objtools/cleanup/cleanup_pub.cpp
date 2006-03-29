@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+#include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/biblio/Cit_gen.hpp>
@@ -56,6 +57,42 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+// CPubdesc cleanup
+
+static bool s_IsOnlinePub(const CPubdesc& pd)
+{
+    if (pd.IsSetPub()) {
+        ITERATE (CPubdesc::TPub::Tdata, it, pd.GetPub().Get()) {
+            if ((*it)->IsGen()) {
+                const CCit_gen& gen = (*it)->GetGen();
+                if (gen.IsSetCit()  &&
+                    NStr::StartsWith(gen.GetCit(), "Online Publication", NStr::eNocase)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+void CCleanup_imp::BasicCleanup(CPubdesc& pd)
+{
+    if (pd.IsSetPub()) {
+        BasicCleanup(pd.SetPub());
+    }
+    
+    CLEAN_STRING_MEMBER(pd, Name);
+    
+    if (s_IsOnlinePub(pd)) {
+        TRUNCATE_SPACES(pd, Comment);
+    } else {
+        CLEAN_STRING_MEMBER(pd, Comment);
+    }
+}
+
 
 static bool s_FixInitials(const CPub_equiv& equiv)
 {
@@ -403,6 +440,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/03/29 16:35:02  rsmith
+ * Move BasicCleanup(CPubdesc) from cleanpp.cpp to here.
+ *
  * Revision 1.1  2006/03/14 20:21:50  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *
