@@ -60,6 +60,8 @@ public:
 
     // destructor
     ~CGb_qual(void);
+    
+    int Compare(const CGb_qual& gbqual) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -83,6 +85,20 @@ CGb_qual::CGb_qual(const TQual& qual, const TVal& val)
     SetVal(val);
 }
 
+
+inline
+int CGb_qual::Compare(const CGb_qual& gbqual) const
+{
+    if (GetQual() != gbqual.GetQual()) {
+        return (GetQual() < gbqual.GetQual() ? -1 : 1);
+    }
+    if (GetVal() != gbqual.GetVal()) {
+        return (GetVal() < gbqual.GetVal() ? -1 : 1);
+    }
+    return 0;
+}
+
+
 /////////////////// end of CGb_qual inline methods
 
 
@@ -95,6 +111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/03/29 16:28:43  rsmith
+* add Compare method.
+*
 * Revision 1.2  2006/03/14 20:21:51  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *
