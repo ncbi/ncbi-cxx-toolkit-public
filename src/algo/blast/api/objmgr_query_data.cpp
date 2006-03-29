@@ -385,7 +385,7 @@ CObjMgr_QueryFactory::CObjMgr_QueryFactory(TSeqLocVector& queries)
     : m_SSeqLocVector(&queries), m_SeqLocs(0), m_OwnSeqLocs(false)
 {
     if (queries.empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument, "Empty SSeqLocVector");
+        NCBI_THROW(CBlastException, eInvalidArgument, "Empty TSeqLocVector");
     }
 }
 
