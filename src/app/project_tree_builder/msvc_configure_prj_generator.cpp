@@ -81,6 +81,16 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par  + "\n";
     m_CustomBuildCommand += "set TREE_ROOT=" + tree_root_par + "\n";
     m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par  + "\n";
+    m_CustomBuildCommand += "set PTB_PLATFORM=$(PlatformName)\n";
+    string lock_ptb_config = "lock_ptb_config.bat";
+    string lock_ptb_config_path = "$(ProjectDir)" +
+        CDirEntry::AddTrailingPathSeparator(
+            CDirEntry::CreateRelativePath(project_dir, 
+                CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Compilers, 
+                                      GetApp().GetRegSettings().m_CompilersSubdir)));
+    m_CustomBuildCommand += "call \"" + lock_ptb_config_path +
+        lock_ptb_config + "\" ON \"" + lock_ptb_config_path + "\"\n";
+    m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     //
 
     // Build command for project_tree_builder.sln
@@ -124,6 +134,8 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     m_CustomBuildCommand += "cd $(InputDir)\n";
     m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
     m_CustomBuildCommand += "call $(InputName).bat\n";
+    m_CustomBuildCommand += "call \"" + lock_ptb_config_path +
+        lock_ptb_config + "\" OFF \"" + lock_ptb_config_path + "\"\n";
     m_CustomBuildCommand += "del /Q $(InputName).bat\n";
 
     CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
@@ -211,6 +223,11 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
+    ofs << "@echo off" << endl
+        << "echo ******************************************************************************" << endl
+        << "echo Running -CONFIGURE- please wait" << endl
+        << "echo ******************************************************************************" << endl
+        << "@echo on" << endl;
     ofs << "\"%PTB_PATH%\\project_tree_builder.exe\"";
 
     if ( m_DllBuild )
@@ -244,7 +261,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
         << "echo -CONFIGURE- has succeeded" << endl
         << "echo Configuration log was saved at \"file://%SLN_PATH%_configuration_log.txt\"" << endl
         << "echo ******************************************************************************" << endl
-        << "exit 0" << endl
+        << "exit /b 0" << endl
         << endl
         << ":report_error" << endl
         << "echo ******************************************************************************" << endl
@@ -255,7 +272,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
         ofs << "if not .%DIAG_SILENT_ABORT%==. ";
     }
     ofs << "start \"\" \"%SLN_PATH%_configuration_log.txt\"" << endl
-        << "exit 1" << endl;
+        << "exit /b 1" << endl;
 }
 
 
@@ -266,6 +283,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/03/29 13:36:14  gouriano
+ * Added configure lock
+ *
  * Revision 1.28  2006/01/23 18:26:15  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *
