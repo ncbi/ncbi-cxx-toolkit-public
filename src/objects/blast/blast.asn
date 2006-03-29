@@ -35,6 +35,7 @@ EXPORTS
 
 IMPORTS
     Bioseq                  FROM NCBI-Sequence
+    Seq-data                FROM NCBI-Sequence
     Bioseq-set              FROM NCBI-Seqset
     PssmWithParameters      FROM NCBI-ScoreMat
     Seq-id,
@@ -63,7 +64,8 @@ Blast4-request-body ::= CHOICE {
     get-search-results      Blast4-get-search-results-request,
     get-sequences           Blast4-get-sequences-request,
     queue-search            Blast4-queue-search-request,
-    get-request-info        Blast4-get-request-info-request
+    get-request-info        Blast4-get-request-info-request,
+    get-sequence-parts      Blast4-get-seq-parts-request
 }
 
 Blast4-finish-params-request ::= SEQUENCE {
@@ -127,6 +129,23 @@ Blast4-get-request-info-reply ::= SEQUENCE {
     program-options         Blast4-parameters
 }
 
+-- Fetch parts of a sequence a-la cart.
+
+Blast4-get-seq-parts-request ::= SEQUENCE {
+    database                Blast4-database,
+    id                      Seq-id,
+    need-meta-data          BOOLEAN,
+    
+    -- If end is 0, no data will be fetched.  If end is past the
+    -- length of the sequence, it will be adjusted to the end of
+    -- the sequence (this allows fetching of the first chunk in
+    -- cases where the length is not yet known).
+    
+    start                   INTEGER OPTIONAL,
+    end                     INTEGER OPTIONAL
+}
+
+
 --  --------------------------------------------------------------------
 --
 --  Replies
@@ -149,7 +168,8 @@ Blast4-reply-body ::= CHOICE {
     get-sequences           Blast4-get-sequences-reply,
     queue-search            Blast4-queue-search-reply,
     get-queries             Blast4-get-queries-reply,
-    get-request-info        Blast4-get-request-info-reply
+    get-request-info        Blast4-get-request-info-reply,
+    get-sequence-parts      Blast4-get-seq-parts-reply
 }
 
 Blast4-finish-params-reply ::= Blast4-parameters
@@ -185,6 +205,13 @@ Blast4-queue-search-reply ::= SEQUENCE {
 
 Blast4-get-queries-reply ::= SEQUENCE {
     queries                 Blast4-queries
+}
+
+Blast4-get-seq-parts-reply ::= SEQUENCE {
+    bioseq                  Bioseq OPTIONAL,
+    ids                     SEQUENCE OF Seq-id OPTIONAL,
+    length                  INTEGER OPTIONAL,
+    data                    Seq-data OPTIONAL
 }
 
 --  --------------------------------------------------------------------
