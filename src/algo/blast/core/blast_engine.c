@@ -883,7 +883,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
    db_length = BlastSeqSrcGetTotLen(seq_src);
 
-   itr = BlastSeqSrcIteratorNew();
+   itr = BlastSeqSrcIteratorNewEx(MAX(BlastSeqSrcGetNumSeqs(seq_src)/100,1));
 
    /* iterate over all subject sequences */
    while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr)) 
