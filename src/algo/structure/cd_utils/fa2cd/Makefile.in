@@ -1,0 +1,7 @@
+# $Id$
+# Meta-makefile(non-redundification demo project)
+#############################################
+
+APP_PROJ = fa2cd
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

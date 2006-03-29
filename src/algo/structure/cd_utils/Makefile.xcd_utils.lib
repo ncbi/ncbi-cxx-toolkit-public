@@ -47,6 +47,8 @@ SRC = \
 	cuTaxTree \
 	cuSeqTreeAsnizer \
 	cuSeqTreeRootedLayout \
-	cuSeqTreeAPI
+	cuSeqTreeAPI \
+    cuReadFastaWrapper \
+    cuSeqAnnotFromFasta
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
