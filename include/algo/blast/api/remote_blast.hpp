@@ -258,13 +258,12 @@ public:
     /// @return Reference to PHI alignment set.
     CRef<objects::CBlast4_phi_alignments> GetPhiAlignments(void);
     
-    /// Get the query mask from the results.
-    /// @return Reference to a Blast4_mask object.
-    CRef<objects::CBlast4_mask> GetMask(void);
-    
     /// Get the Karlin/Altschul parameter blocks produced by the search.
     /// @return List of references to KA blocks.
     list< CRef<objects::CBlast4_ka_block > > GetKABlocks(void);
+
+    /// Get the queries' masked locations
+    TSeqLocInfoVector GetMasks(void);
     
     /// Get the search statistics block as a list of strings.
     /// 
@@ -358,6 +357,10 @@ public:
 private:
     /// An alias for the most commonly used part of the Blast4 search results.
     typedef objects::CBlast4_get_search_results_reply TGSRR;
+
+    /// Get the query masks from the results.
+    /// @return list of references to Blast4_mask object.
+    TGSRR::TMasks x_GetMasks(void);
     
     /// Various states the search can be in.
     ///
@@ -578,9 +581,19 @@ private:
 /** Converts the return value of CSeqLocInfo::GetFrame into the
  * Blast4-frame-type field. Note that for non-translated queries, this value
  * should be set to notset (value = 0).
+ * @param frame frame as specified by CSeqLocInfo::ETranslationFrame
+ * @param program CORE BLAST program type
  */
 objects::EBlast4_frame_type
 FrameNumber2NetworkFrame(int frame, EBlastProgramType program);
+
+/** Converts Blast4-frame-type into CSeqLocInfo::ETranslationFrame 
+ * @param frame frame as specified by objects::EBlast4_frame_type
+ * @param program CORE BLAST program type
+ */
+CSeqLocInfo::ETranslationFrame
+NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame, 
+                         EBlastProgramType program);
 
 /// Function to convert from program and service name into the CORE BLAST
 /// program type
@@ -600,6 +613,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/03/29 20:02:23  camacho
+ * Replace GetMask() in favor of GetMasks() returning a TSeqLocInfoVector
+ *
  * Revision 1.30  2006/03/27 13:48:00  camacho
  * Use Blast4-mask for masked query regions
  *

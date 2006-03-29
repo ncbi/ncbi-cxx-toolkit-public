@@ -367,16 +367,80 @@ CRef<objects::CBlast4_phi_alignments> CRemoteBlast::GetPhiAlignments(void)
     return rv;
 }
 
-CRef<objects::CBlast4_mask> CRemoteBlast::GetMask(void)
+// N.B.: this function assumes that the BLAST 4 server sends the query masked
+// locations for each query adjacent to one another in the list of masks (i.e.:
+// masks-for-query1-frameA, masks-for-query1-frameB, ...,
+// masks-for-query2-frameA, masks-for-query2-frameB, ... etc).
+TSeqLocInfoVector
+CRemoteBlast::GetMasks(void)
 {
-    CRef<CBlast4_mask> rv;
+    TSeqLocInfoVector retval;
+    retval.resize(GetQueries()->GetNumQueries());
+
+    TGSRR::TMasks network_masks = x_GetMasks();
+    if (network_masks.empty()) {
+        return retval;
+    }
+
+    EBlastProgramType program = NetworkProgram2BlastProgramType(m_Program,
+                                                                m_Service);
+    CConstRef<CSeq_id> previous_seqid;
+    size_t query_index = 0;
+
+    ITERATE(TGSRR::TMasks, masks_for_frame, network_masks) {
+
+        _ASSERT(masks_for_frame->NotEmpty());
+
+        CConstRef<CSeq_id> current_seqid
+            ((*masks_for_frame)->GetLocations().front()->GetId());
+        if (previous_seqid.Empty()) {
+            previous_seqid = current_seqid;
+        }
+
+        // determine which query are we setting the masks for...
+        TMaskedQueryRegions* mqr = NULL;
+        if (CSeq_id::e_YES == current_seqid->Compare(*previous_seqid)) {
+            mqr = &retval[query_index];
+        } else {
+            mqr = &retval[++query_index];
+            previous_seqid = current_seqid;
+        }
+
+        // all the masks for a given query and frame are in a single
+        // Packed-seqint
+        _ASSERT((*masks_for_frame)->GetLocations().size() == (size_t) 1);
+        _ASSERT((*masks_for_frame)->GetLocations().front().NotEmpty());
+        CRef<CSeq_loc> masks =
+            (*masks_for_frame)->GetLocations().front();
+        _ASSERT(masks->IsPacked_int());
+
+        const CPacked_seqint& packed_int = masks->GetPacked_int();
+        const EBlast4_frame_type frame = (*masks_for_frame)->GetFrame();
+        ITERATE(CPacked_seqint::Tdata, mask, packed_int.Get()) {
+            CRef<CSeq_interval> si
+                (new CSeq_interval(const_cast<CSeq_id&>((*mask)->GetId()), 
+                                   (*mask)->GetFrom(), (*mask)->GetTo()));
+            CRef<CSeqLocInfo> sli
+                (new CSeqLocInfo(si, NetworkFrame2FrameNumber(frame, program)));
+            mqr->push_back(sli);
+        }
+    }
+
+    _ASSERT(query_index == GetQueries()->GetNumQueries() - 1);
+
+    return retval;
+}
+
+CRemoteBlast::TGSRR::TMasks CRemoteBlast::x_GetMasks(void)
+{
+    TGSRR::TMasks rv;
     
     TGSRR * gsrr = x_GetGSRR();
     
-    if (gsrr && gsrr->CanGetMask()) {
-        rv = & (gsrr->SetMask());
+    if (gsrr && gsrr->CanGetMasks()) {
+        rv = gsrr->SetMasks();
     }
-    
+
     return rv;
 }
 
@@ -668,6 +732,7 @@ void CRemoteBlast::x_Init(const string & RID)
     m_Pending    = true;
     m_Verbose    = eSilent;
     m_NeedConfig = eNoConfig;
+    m_QueryMaskingLocations.clear();
 }
 
 void CRemoteBlast::x_SetAlgoOpts(void)
@@ -1370,6 +1435,28 @@ FrameNumber2NetworkFrame(int frame, EBlastProgramType program)
     }
 }
 
+CSeqLocInfo::ETranslationFrame
+NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame, 
+                         EBlastProgramType program)
+{
+    if (Blast_QueryIsTranslated(program)) {
+        switch (frame) {
+        case eBlast4_frame_type_plus1:  return CSeqLocInfo::eFramePlus1;
+        case eBlast4_frame_type_plus2:  return CSeqLocInfo::eFramePlus2;
+        case eBlast4_frame_type_plus3:  return CSeqLocInfo::eFramePlus3;
+        case eBlast4_frame_type_minus1: return CSeqLocInfo::eFrameMinus1;
+        case eBlast4_frame_type_minus2: return CSeqLocInfo::eFrameMinus2;
+        case eBlast4_frame_type_minus3: return CSeqLocInfo::eFrameMinus3;
+        default: abort();
+        }
+    } else if (Blast_QueryIsNucleotide(program)) {
+        _ASSERT(frame == eBlast4_frame_type_plus1);
+        return CSeqLocInfo::eFramePlus1;
+    } else {
+        return CSeqLocInfo::eFrameNotSet;
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -1379,6 +1466,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2006/03/29 20:02:45  camacho
+* Replace GetMask() in favor of GetMasks() returning a TSeqLocInfoVector
+*
 * Revision 1.41  2006/03/27 13:48:12  camacho
 * Use Blast4-mask for masked query regions
 *
