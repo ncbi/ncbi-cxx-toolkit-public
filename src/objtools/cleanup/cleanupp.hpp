@@ -163,10 +163,6 @@ private:
     bool x_HandleGbQualOnProt(CSeq_feat& feat, const string& qual, const string& val);
     void x_CleanupDbxref(CSeq_feat& feat);
 
-    // Rna_ref cleanup.
-    void x_CleanupExtName(CRNA_ref& rna_ref);
-    void x_CleanupExtTRNA(CRNA_ref& rna_ref);
-
     // Gb_qual cleanup.
     void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);
     void x_SortUniqueQuals(CSeq_feat::TQual& quals);
@@ -209,6 +205,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/03/29 19:42:16  rsmith
+ * Delete   x_CleanupExtName(CRNA_ref& rna_ref);
+ * and x_CleanupExtTRNA(CRNA_ref& rna_ref);
+ *
  * Revision 1.4  2006/03/29 16:38:14  rsmith
  * various implementation declaration changes.
  *
