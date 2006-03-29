@@ -150,6 +150,9 @@ public:
     /// Set Berkeley DB memory cache size for the file (default is 256K).
     void SetCacheSize(unsigned int cache_size);
 
+    /// Turn OFF reverse splitting
+    void RevSplitOff();
+
     const string& FileName() const;
     const string& Database() const;
 
@@ -248,6 +251,7 @@ protected:
 private:
     bool             m_DB_Attached;  //!< TRUE if m_DB doesn't belong here
     bool             m_ByteSwapped;  //!< TRUE if file created on a diff.arch.
+    bool             m_RevSplitOff;  //!< TRUE if reverse splitting is off
     string           m_FileName;     //!< filename
     string           m_Database;     //!< db name in file (optional)
     unsigned         m_PageSize;
@@ -601,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/03/29 17:38:16  kuznets
+ * +RevSplitOff()
+ *
  * Revision 1.43  2005/12/14 19:26:22  kuznets
  * Added support for queue db type
  *

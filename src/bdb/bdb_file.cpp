@@ -85,6 +85,7 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys, EDBType db_type)
   m_RecLen(0),
   m_DB_Attached(false),
   m_ByteSwapped(false),
+  m_RevSplitOff(false),
   m_PageSize(0),
   m_CacheSize(256 * 1024),
   m_DuplicateKeys(dup_keys)
@@ -276,6 +277,11 @@ void CBDB_RawFile::SetCacheSize(unsigned int cache_size)
 }
 
 
+void CBDB_RawFile::RevSplitOff()
+{
+    m_RevSplitOff = true;
+}
+
 void CBDB_RawFile::SetTransaction(CBDB_Transaction* trans)
 {
     if (m_Trans) {
@@ -328,6 +334,11 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
 
     if (DuplicatesAllowed()) {
         ret = m_DB->set_flags(m_DB, DB_DUP);
+        BDB_CHECK(ret, 0);
+    }
+
+    if (m_RevSplitOff) {
+        ret = m_DB->set_flags(m_DB, DB_REVSPLITOFF);
         BDB_CHECK(ret, 0);
     }
 
@@ -1242,6 +1253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/03/29 17:38:05  kuznets
+ * +RevSplitOff()
+ *
  * Revision 1.58  2006/03/15 15:55:32  kuznets
  * File closing message made Info message
  *
