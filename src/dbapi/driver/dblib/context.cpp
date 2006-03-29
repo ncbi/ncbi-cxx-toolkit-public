@@ -50,6 +50,7 @@
 // #  include "../ncbi_win_hook.hpp"
 #endif
 
+#include <algorithm>
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE
@@ -1229,6 +1230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/03/29 21:26:37  ucko
+ * +<algorithm> for find()
+ *
  * Revision 1.70  2006/03/28 20:07:17  ssikorsk
  * Killed all CRs
  *
