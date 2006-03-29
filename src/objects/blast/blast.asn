@@ -167,7 +167,11 @@ Blast4-get-programs-reply ::= SEQUENCE OF Blast4-program-info
 Blast4-get-search-results-reply ::= SEQUENCE {
     alignments              Seq-align-set OPTIONAL,
     phi-alignments          Blast4-phi-alignments OPTIONAL,
-    mask                    Blast4-mask OPTIONAL,
+
+    -- Masking locations for the query sequence(s). Each element of this set
+    -- corresponds to a single query's translation frame as appropriate.
+    masks                   SEQUENCE OF Blast4-mask OPTIONAL,
+
     ka-blocks               SEQUENCE OF Blast4-ka-block OPTIONAL,
     search-stats            SEQUENCE OF VisibleString OPTIONAL,
     pssm                    PssmWithParameters OPTIONAL
@@ -282,6 +286,20 @@ Blast4-ka-block ::= SEQUENCE {
     gapped                  BOOLEAN
 }
 
+-- Masking locations for a query's frame. The locations field is a single
+-- Seq-loc of type Packed-int, which contains all the masking locations for the
+-- translation frame specified by the frame field.
+-- Notes:
+-- On input (i.e.: when the client specifies masking locations as a
+-- Blast4-parameter), in the case of protein queries, the frame field must 
+-- always be notset, in the case of nucleotide queries (regardless of whether 
+-- the search will translate these or not), the frame must be plus1. Masking 
+-- locations in the translated encoding are not permitted.
+-- On output (i.e.: when blast 4 server encodes these as part of the 
+-- Blast4-get-search-results-reply), the same conventions as above apply for
+-- non-translated protein and nucleotide queries, but in the case of translated
+-- nucleotide queries, the frame field can be specified in any of the
+-- translation frames as appropriate.
 Blast4-mask ::= SEQUENCE {
     locations               SEQUENCE OF Seq-loc,
     frame                   Blast4-frame-type
@@ -370,9 +388,11 @@ Blast4-value ::= CHOICE {
     bioseq-set              Bioseq-set,
     seq-align-set           Seq-align-set,
 
-    -- scalar and list of Blast4-masks
-    query-mask              Blast4-mask,
-    query-mask-list         SEQUENCE OF Blast4-mask
+    -- Intended to represent user-provided masking locations for a single query
+    -- sequence (name field in Blast4-parameter should be "LCaseMask").
+    -- Multiple Blast4-parameters of this type are needed to specify masking
+    -- locations for multiple queries.
+    query-mask              Blast4-mask
 }
 
 END
