@@ -79,6 +79,8 @@
 #include <algo/structure/cd_utils/cuReadFastaWrapper.hpp>
 #include <algo/structure/cd_utils/cuSeqAnnotFromFasta.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
@@ -346,7 +348,7 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
         columnStrings.clear();
         residueCount.assign(maxLen, 0);
         sequence = m_sequences[i];
-        len = min(sequence.length(), masterLen);
+        len = min((unsigned int)sequence.length(), masterLen);
         for (j = 0; j < len; ++j) {
             uc = toupper((unsigned char) sequence[j]);
 //            if (uc != 'X' && isalpha(uc)) {
@@ -747,6 +749,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/29 20:06:27  ucko
+ * Ensure that min's arguments have the same type in MakeAsIsSeqAnnot.
+ * Add an include directive for <algorithm>, which may help the MSVC build.
+ *
  * Revision 1.1  2006/03/29 15:44:07  lanczyck
  * add files for fasta->cd converter; change Makefile accordingly
  *
