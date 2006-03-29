@@ -100,7 +100,8 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
 
 ERW_Result CStringOrBlobStorageWriter::Flush(void)
 {
-    m_Storage.Reset();
+    if (m_BlobOstr)
+        m_BlobOstr->flush();
     return eRW_Success;       
 }
 
@@ -136,12 +137,12 @@ CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
     : m_Data(data), m_Storage(storage), m_BlobIstr(NULL)
 {
     if (m_Storage.IsKeyValid(data)) {
-        try {
-            m_BlobIstr = &m_Storage.GetIStream(m_Data, &data_size, lock_mode);
-        } catch (CBlobStorageException& ex) {
-            if (ex.GetErrCode() != CBlobStorageException::eBlobNotFound)
-                throw;
-        }
+        //        try {
+        m_BlobIstr = &m_Storage.GetIStream(m_Data, &data_size, lock_mode);
+        //        } catch (CBlobStorageException& ex) {
+        //            if (ex.GetErrCode() != CBlobStorageException::eBlobNotFound)
+        //                throw;
+        //        }
     }
     if (!m_BlobIstr) {
         m_CurPos = m_Data.begin();
@@ -206,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2006/03/29 21:53:25  didenko
+ * Fixed Flush method
+ *
  * Revision 6.5  2006/03/23 21:22:52  ucko
  * Rework slightly to resolve MIPSpro's complaint of mismatched types in ?:.
  *
