@@ -611,10 +611,52 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
         CRNA_ref::TExt& ext = rr.SetExt();
         switch (ext.Which()) {
             case CRNA_ref::TExt::e_Name:
-                x_CleanupExtName(rr);
+                {
+                    static const string rRNA = " rRNA";
+                    static const string kRibosomalrRna = " ribosomal rRNA";
+                    
+                    _ASSERT(rr.IsSetExt()  &&  rr.GetExt().IsName());
+                    
+                    string& name = rr.SetExt().SetName();
+                    CleanString(name);
+                    
+                    if (name.empty()) {
+                        rr.ResetExt();
+                    } else if (rr.IsSetType()) {
+                        switch (rr.GetType()) {
+                            case CRNA_ref::eType_rRNA:
+                            {{
+                                size_t len = name.length();
+                                if (len >= rRNA.length()                       &&
+                                    NStr::EndsWith(name, rRNA, NStr::eNocase)  &&
+                                    !NStr::EndsWith(name, kRibosomalrRna, NStr::eNocase)) {
+                                    name.replace(len - rRNA.length(), name.size(), kRibosomalrRna);
+                                }
+                                break;
+                            }}
+                            case CRNA_ref::eType_tRNA:
+                            {{
+                                // !!!
+                                break;
+                            }}
+                            case CRNA_ref::eType_other:
+                            {{
+                                if (NStr::EqualNocase(name, "its1")) {
+                                    name = "internal transcribed spacer 1";
+                                } else if (NStr::EqualNocase(name, "its2")) {
+                                    name = "internal transcribed spacer 2";
+                                } else if (NStr::EqualNocase(name, "its3")) {
+                                    name = "internal transcribed spacer 3";
+                                }
+                                break;
+                            }}
+                            default:
+                                break;
+                        }
+                    }
+                }
                 break;
             case CRNA_ref::TExt::e_TRNA:
-                x_CleanupExtTRNA(rr);
                 break;
             default:
                 break;
@@ -622,59 +664,6 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
     }
 }
 
-
-void CCleanup_imp::x_CleanupExtName(CRNA_ref& rr)
-{
-    static const string rRNA = " rRNA";
-    static const string kRibosomalrRna = " ribosomal rRNA";
-    
-    _ASSERT(rr.IsSetExt()  &&  rr.GetExt().IsName());
-    
-    string& name = rr.SetExt().SetName();
-    CleanString(name);
-    
-    if (name.empty()) {
-        rr.ResetExt();
-    } else if (rr.IsSetType()) {
-        switch (rr.GetType()) {
-            case CRNA_ref::eType_rRNA:
-            {{
-                size_t len = name.length();
-                if (len >= rRNA.length()                       &&
-                    NStr::EndsWith(name, rRNA, NStr::eNocase)  &&
-                    !NStr::EndsWith(name, kRibosomalrRna, NStr::eNocase)) {
-                    name.replace(len - rRNA.length(), name.size(), kRibosomalrRna);
-                }
-                break;
-            }}
-            case CRNA_ref::eType_tRNA:
-            {{
-                // !!!
-                break;
-            }}
-            case CRNA_ref::eType_other:
-            {{
-                if (NStr::EqualNocase(name, "its1")) {
-                    name = "internal transcribed spacer 1";
-                } else if (NStr::EqualNocase(name, "its2")) {
-                    name = "internal transcribed spacer 2";
-                } else if (NStr::EqualNocase(name, "its3")) {
-                    name = "internal transcribed spacer 3";
-                }
-                break;
-            }}
-            default:
-                break;
-        }
-    }
-}
-
-
-void CCleanup_imp::x_CleanupExtTRNA(CRNA_ref& rr)
-{
-    _ASSERT(rr.IsSetExt()  &&  rr.GetExt().IsTRNA());
-    // !!!
-}
 
 
 // Imp_feat cleanup
@@ -737,6 +726,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/03/29 19:40:13  rsmith
+ * Consolidate BasicCleanup(CRNA_ref) stuff.
+ *
  * Revision 1.4  2006/03/29 16:36:56  rsmith
  * Move all gbqual stuff to its own file.
  * Lots of other refactoring.
