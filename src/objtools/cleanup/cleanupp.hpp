@@ -34,6 +34,7 @@
 */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -145,25 +146,21 @@ private:
     void BasicCleanup(CObject_id& oid);
     void BasicCleanup(CUser_field& field);
     void BasicCleanup(CUser_object& uo);
-    
+
+    void BasicCleanup(CSeq_feat& feat, CSeqFeatData& data, bool is_embl_or_ddbj);
+    bool BasicCleanup(CSeq_feat& feat, CGb_qual& qual,  bool is_embl_or_ddbj);
+
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
     void x_MoveDbxrefToFeat(CSeq_feat& feat);
-    void x_CleanupGene(CSeq_feat& feat);
-    void x_CleanupSite(CSeq_feat& feat);
-    void x_CleanupProt(CSeq_feat& feat);
     void x_CleanupRna(CSeq_feat& feat);
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
-    void x_CleanupImp(CSeq_feat& feat, bool is_embl_or_ddbj);
-    void x_CleanupRegion(CSeq_feat& feat);
-    void x_CleanupData(CSeq_feat& feat, bool is_embl_or_ddbj);
     void x_TrimParenthesesAndCommas(string& str);
     void x_CombineSplitQual(string& val, string& new_val);
     bool x_HandleGbQualOnGene(CSeq_feat& feat, const string& qual, const string& val);
     bool x_HandleGbQualOnCDS(CSeq_feat& feat, const string& qual, const string& val);
     bool x_HandleGbQualOnRna(CSeq_feat& feat, const string& qual, const string& val, bool is_embl_or_ddbj);
     bool x_HandleGbQualOnProt(CSeq_feat& feat, const string& qual, const string& val);
-    void x_CleanupQual(CSeq_feat& feat, bool is_embl_or_ddbj);
     void x_CleanupDbxref(CSeq_feat& feat);
 
     // Rna_ref cleanup.
@@ -171,6 +168,8 @@ private:
     void x_CleanupExtTRNA(CRNA_ref& rna_ref);
 
     // Gb_qual cleanup.
+    void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);
+    void x_SortUniqueQuals(CSeq_feat::TQual& quals);
     void x_CleanupConsSplice(CGb_qual& gbq);
     void x_CleanupRptUnit(CGb_qual& gbq);
 
@@ -210,6 +209,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/03/29 16:38:14  rsmith
+ * various implementation declaration changes.
+ *
  * Revision 1.3  2006/03/23 18:31:40  rsmith
  * new BasicCleanup routines, particularly User Objects/Fields.
  *
