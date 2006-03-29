@@ -1158,6 +1158,7 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
        into the translated subject_range; shifting in this manner
        is necessary for BLAST_CheckStartForGappedAlignment */
     hsp->subject.offset       -= subject_range->begin;
+    hsp->subject.end          -= subject_range->begin;
     hsp->subject.gapped_start -= subject_range->begin;
 
     if(BLAST_CheckStartForGappedAlignment(hsp, query_data->data,
@@ -1183,6 +1184,7 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
     /* Undo the shift so there is no side effect on the incoming HSP
        list. */
     hsp->subject.offset       += subject_range->begin;
+    hsp->subject.end          += subject_range->begin;
     hsp->subject.gapped_start += subject_range->begin;
 
     gapAlign->gap_x_dropoff = gapping_params->x_dropoff;
