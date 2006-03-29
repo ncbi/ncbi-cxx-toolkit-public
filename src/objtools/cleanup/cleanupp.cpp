@@ -207,10 +207,13 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd, ECleanupMode mode)
         case CSeqdesc::e_Method:
             break;
         case CSeqdesc::e_Name:
+            CleanString( sd.SetName() );
             break;
         case CSeqdesc::e_Title:
+            CleanString( sd.SetTitle() );
             break;
         case CSeqdesc::e_Org:
+            BasicCleanup(sd.SetOrg() );
             break;
         case CSeqdesc::e_Comment:
             s_SeqDescCommentCleanup( sd.SetComment() );
@@ -228,14 +231,17 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd, ECleanupMode mode)
             BasicCleanup(sd.SetPub());
             break;
         case CSeqdesc::e_Region:
+            CleanString( sd.SetRegion() );
             break;
         case CSeqdesc::e_User:
+            BasicCleanup( sd.SetUser() );
             break;
         case CSeqdesc::e_Sp:
             break;
         case CSeqdesc::e_Dbxref:
             break;
         case CSeqdesc::e_Embl:
+            // BasicCleanup( sd.SetEmbl() ); // no BasicCleanup( CEMBL_block& ) yet.
             break;
         case CSeqdesc::e_Create_date:
             break;
@@ -275,41 +281,6 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
 }
 
 
-// CPubdesc cleanup
-
-static bool s_IsOnlinePub(const CPubdesc& pd)
-{
-    if (pd.IsSetPub()) {
-        ITERATE (CPubdesc::TPub::Tdata, it, pd.GetPub().Get()) {
-            if ((*it)->IsGen()) {
-                const CCit_gen& gen = (*it)->GetGen();
-                if (gen.IsSetCit()  &&
-                    NStr::StartsWith(gen.GetCit(), "Online Publication", NStr::eNocase)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
-
-void CCleanup_imp::BasicCleanup(CPubdesc& pd)
-{
-    if (pd.IsSetPub()) {
-        BasicCleanup(pd.SetPub());
-    }
-    
-    CLEAN_STRING_MEMBER(pd, Name);
-    
-    if (s_IsOnlinePub(pd)) {
-        TRUNCATE_SPACES(pd, Comment);
-    } else {
-        CLEAN_STRING_MEMBER(pd, Comment);
-    }
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -317,6 +288,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/03/29 16:33:43  rsmith
+ * Cleanup strings in Seqdesc. Move Pub functions to cleanup_pub.cpp
+ *
  * Revision 1.2  2006/03/20 14:22:15  rsmith
  * add cleanup for CSeq_submit
  *
