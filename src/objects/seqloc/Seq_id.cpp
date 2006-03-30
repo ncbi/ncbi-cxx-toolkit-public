@@ -689,9 +689,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'A': case 'B': case 'C':           return eAcc_ddbj_est;
             case 'D':                               return eAcc_ddbj_patent;
             case 'E':                               return eAcc_ddbj_gss;
-                // no specific assignments for DF-DM yet
-            case 'F': case 'G': case 'H': case 'I': 
-            case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
+            case 'F':                               return eAcc_ddbj_con;
+                // no specific assignments for DG-DM yet
+            case 'G': case 'H': case 'I': case 'J':
+            case 'K': case 'L': case 'M':           return eAcc_ddbj_other_nuc;
             case 'N': case 'R': case 'T': case 'V':
             case 'W': case 'Y':                     return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
@@ -1586,6 +1587,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.125  2006/03/30 14:53:32  ucko
+ * IdentifyAccession: DDBJ has specifically assigned DF to CON sequences.
+ *
  * Revision 6.124  2006/03/24 21:30:37  ucko
  * Really fix ParseFastaIds' handling of untagged numeric IDs.
  *
