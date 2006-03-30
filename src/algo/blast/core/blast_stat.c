@@ -2763,6 +2763,14 @@ void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
    sfree(beta_arr);
 }
 
+/** Splits an ArrayOf8 into two arrays of supported gap costs.  One is for non-affine 
+ * (megablast linear values) and the other is for standard (typically affine) values.
+ * @param input the array to be split [in]
+ * @param normal the standard (typically affine) values [out]
+ * @param non_affine the megablast (linear) values [out]
+ * @param split Boolean specifying whether the non-affine values are populated [out]
+ * @return 0 on success, -1 on error
+*/
 static Int2
 s_SplitArrayOf8(const array_of_8* input, const array_of_8** normal, const array_of_8** non_affine, Boolean *split)
 {
@@ -4351,6 +4359,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.139  2006/03/30 14:53:36  madden
+ * Doxygen comment
+ *
  * Revision 1.138  2006/01/12 20:36:37  camacho
  * Changes to Blast_ScoreBlkKbpUngappedCalc to set invalid contexts
  *
