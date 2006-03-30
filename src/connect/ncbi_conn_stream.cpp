@@ -103,6 +103,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
     : CConn_IOStream(SOCK_CreateConnector(host.c_str(), port, max_try),
                      timeout, buf_size)
 {
+    return;
 }
 
 
@@ -113,6 +114,7 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
     : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, max_try),
                      timeout, buf_size)
 {
+    return;
 }
 
 
@@ -171,6 +173,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             timeout),
                      timeout, buf_size)
 {
+    return;
 }
 
 
@@ -189,6 +192,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                             timeout),
                      timeout, buf_size)
 {
+    return;
 }
 
 
@@ -245,36 +249,59 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                                timeout),
                      timeout, buf_size)
 {
+    return;
 }
 
 
-static CONNECTOR s_MemoryConnectorBuilder(BUF        buf,
-                                          CRWLock*   lk,
-                                          EOwnership lk_owner,
-                                          MT_LOCK*   lock)
+static CONNECTOR s_MemoryConnectorBuilder(const void* ptr,
+                                          size_t      size,
+                                          BUF*        buf,
+                                          EOwnership  owner)
 {
-    *lock = MT_LOCK_cxx2c(lk,
-                          lk_owner == eTakeOwnership ? 1/*true*/ : 0/*false*/);
-    return MEMORY_CreateConnectorEx(buf, *lock);
+    BUF tmp;
+    if (ptr  &&  size) {
+        tmp = 0;
+        if (!(owner == eTakeOwnership
+              ? BUF_Append(&tmp, ptr, size)
+              : BUF_Write (&tmp, ptr, size))) {
+            NCBI_THROW(CIO_Exception, eUnknown,
+                       "CConn_MemoryStream::ctor cannot create buffer");
+        }
+        *buf = tmp;
+    } else {
+        tmp  = (BUF) ptr;
+        *buf = owner == eTakeOwnership ? tmp : 0;
+    }
+    return MEMORY_CreateConnectorEx(tmp);
 }
 
 
-CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
-                                       EOwnership lk_owner,
-                                       streamsize buf_size)
-    : CConn_IOStream(s_MemoryConnectorBuilder(0, lk, lk_owner, &m_Lock),
-                     0, buf_size), m_Buf(0)
+CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
+    : CConn_IOStream(s_MemoryConnectorBuilder(0, 0, &m_Buf, eTakeOwnership),
+                     0, buf_size), m_Ptr(0)
 {
+    return;
 }
 
 
-CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
-                                       CRWLock*   lk,
-                                       EOwnership lk_owner,
-                                       streamsize buf_size)
-    : CConn_IOStream(s_MemoryConnectorBuilder(buf, lk, lk_owner, &m_Lock),
-                     0, buf_size), m_Buf(buf)
+CConn_MemoryStream::CConn_MemoryStream(BUF         buf,
+                                       EOwnership  owner,
+                                       streamsize  buf_size)
+    : CConn_IOStream(s_MemoryConnectorBuilder(buf, 0, &m_Buf, owner),
+                     0, buf_size), m_Ptr(0)
 {
+    return;
+}
+
+
+CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
+                                       size_t      size,
+                                       EOwnership  owner,
+                                       streamsize  buf_size)
+    : CConn_IOStream(s_MemoryConnectorBuilder(ptr, size, &m_Buf, owner),
+                     0, buf_size), m_Ptr(owner == eTakeOwnership ? ptr : 0)
+{
+    return;
 }
 
 
@@ -285,7 +312,7 @@ CConn_MemoryStream::~CConn_MemoryStream()
     rdbuf(0);
 #endif
     BUF_Destroy(m_Buf);
-    MT_LOCK_Delete(m_Lock);
+    delete[] (char*) m_Ptr;
 }
 
 
@@ -343,6 +370,7 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
     : CConn_IOStream(PIPE_CreateConnector(cmd, args, create_flags, &m_Pipe),
                      timeout, buf_size), m_Pipe()
 {
+    return;
 }
 
 
@@ -363,6 +391,7 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
     : CConn_IOStream(NAMEDPIPE_CreateConnector(pipename, pipebufsize),
                      timeout, buf_size)
 {
+    return;
 }
 
 
@@ -398,6 +427,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2006/03/30 17:40:40  lavr
+ * CConn_MemoryStream:  Remove unnecessary locks;  add mem. area ctor
+ *
  * Revision 6.51  2006/03/04 17:03:26  lavr
  * Do not include ncbi_assert.h, change assert -> _ASSERT
  *
