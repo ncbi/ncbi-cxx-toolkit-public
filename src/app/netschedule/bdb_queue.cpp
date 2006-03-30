@@ -1716,7 +1716,7 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     _ASSERT(input);
 
     unsigned dead_locks = 0;       // dead lock counter
-    unsigned max_dead_locks = 10;  // max. dead lock repeats
+    unsigned max_dead_locks = 100;  // max. dead lock repeats
 
     time_t curr = time(0);
     
@@ -1817,6 +1817,7 @@ repeat_transaction:
         }
         if (ex.IsDeadLock()) {
             if (++dead_locks < max_dead_locks) {
+                //                ERR_POST( "Got a deadlock. Trying again.");
                 goto repeat_transaction;
             }
         }
@@ -3526,6 +3527,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/03/30 16:12:40  didenko
+ * Increased the max_dead_locks number
+ *
  * Revision 1.68  2006/03/29 17:39:42  kuznets
  * Turn off reverse splitting for main queue file to reduce collisions
  *
