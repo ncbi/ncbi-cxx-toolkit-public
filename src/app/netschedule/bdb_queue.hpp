@@ -96,10 +96,13 @@ public:
     ///    Size of in-memory LOG (when 0 log is put to disk)
     ///    In memory LOG is not durable, put it to memory
     ///    only if you need better performance 
+    /// @param max_trans
+    ///    Maximum number of active transactions
     void Open(const string& path, 
               unsigned      cache_ram_size,
               unsigned      max_locks,
-              unsigned      log_mem_size);
+              unsigned      log_mem_size,
+              unsigned      max_trans);
 
     void ReadConfig(const IRegistry& reg, unsigned* min_run_timeout);
 
@@ -523,6 +526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/03/30 17:38:55  kuznets
+ * Set max. transactions according to number of active threads
+ *
  * Revision 1.43  2006/03/17 14:25:29  kuznets
  * Force reschedule (to re-try failed jobs)
  *

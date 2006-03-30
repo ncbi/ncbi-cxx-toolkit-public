@@ -189,7 +189,8 @@ CQueueDataBase::~CQueueDataBase()
 void CQueueDataBase::Open(const string& path, 
                           unsigned      cache_ram_size,
                           unsigned      max_locks,
-                          unsigned      log_mem_size)
+                          unsigned      log_mem_size,
+                          unsigned      max_trans)
 {
     m_Path = CDirEntry::AddTrailingPathSeparator(path);
 
@@ -250,10 +251,13 @@ void CQueueDataBase::Open(const string& path,
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
         }
-        unsigned max_locks = m_Env->GetMaxLocks();
+        //unsigned max_locks = m_Env->GetMaxLocks();
         if (max_locks) {
             m_Env->SetMaxLocks(max_locks);
             m_Env->SetMaxLockObjects(max_locks);
+        }
+        if (max_trans) {
+            m_Env->SetTransactionMax(max_trans);
         }
 
         m_Env->OpenWithTrans(path.c_str(), CBDB_Env::eThreaded);
@@ -3527,6 +3531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/03/30 17:38:55  kuznets
+ * Set max. transactions according to number of active threads
+ *
  * Revision 1.69  2006/03/30 16:12:40  didenko
  * Increased the max_dead_locks number
  *

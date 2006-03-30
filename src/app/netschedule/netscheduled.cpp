@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.5  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.6  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2596,8 +2596,15 @@ int CNetScheduleDApp::Run(void)
                                  CConfig::eErr_NoThrow, 0);
         LOG_POST(Info << "Mounting database at: " << db_path);
 
+        unsigned max_threads =
+            reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
+
+        // two transactions per thread should be enough
+        unsigned max_trans = max_threads * 2;
+
         auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
-        qdb->Open(db_path, mem_size, max_locks, log_mem_size);
+
+        qdb->Open(db_path, mem_size, max_locks, log_mem_size, max_trans);
 
 
         int port = 
@@ -2643,8 +2650,6 @@ int CNetScheduleDApp::Run(void)
         qdb->RunNotifThread();
 
 
-        unsigned max_threads =
-            reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
         unsigned init_threads =
             reg.GetInt("server", "init_threads", 5, 0, CNcbiRegistry::eReturn);
         unsigned network_timeout =
@@ -2713,6 +2718,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/03/30 17:38:55  kuznets
+ * Set max. transactions according to number of active threads
+ *
  * Revision 1.71  2006/03/28 21:20:39  kuznets
  * Permanent connection interruption on shutdown
  *
