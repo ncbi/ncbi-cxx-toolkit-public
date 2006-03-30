@@ -309,9 +309,9 @@ I_DriverContext::GetHostName(void) const
 CDB_Connection* 
 I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
 {
-    if (conn_attr.reusable  &&  !m_NotInUse.empty()) {
+    if (conn_attr.reusable && !m_NotInUse.empty()) {
         // try to get a connection from the pot
-        if ( !conn_attr.pool_name.empty() ) {
+        if (!conn_attr.pool_name.empty()) {
             // use a pool name
             NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
                 I_Connection* t_con(*it);
@@ -322,15 +322,18 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
                     m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return Create_Connection(*t_con);
+                    } 
+                    else {
+                        delete t_con;
                     }
-                    delete t_con;
                 }
             }
         }
         else {
 
-            if ( conn_attr.srv_name.empty() )
+            if ( conn_attr.srv_name.empty() ) {
                 return NULL;
+            }
 
             // try to use a server name
             NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
@@ -340,17 +343,38 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
                     m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return Create_Connection(*t_con);
+                    } 
+                    else {
+                        delete t_con;
                     }
-                    delete t_con;
                 }
             }
         }
     }
 
-    if((conn_attr.mode & fDoNotConnect) != 0) {
+    if ((conn_attr.mode & fDoNotConnect) != 0) {
         return NULL;
     }
     
+    // Precondition check.
+    if (conn_attr.srv_name.empty() ||  
+        conn_attr.user_name.empty() ||  
+        conn_attr.passwd.empty()) {
+        string err_msg("Insufficient info/credentials to connect.");
+        
+        if (conn_attr.srv_name.empty()) {
+            err_msg += " Server name has not been set.";
+        }
+        if (conn_attr.user_name.empty()) {
+            err_msg += " User name has not been set.";
+        }
+        if (conn_attr.passwd.empty()) {
+            err_msg += " Password has not been set.";
+        }
+        
+        DATABASE_DRIVER_ERROR( err_msg, 200010 );
+    }
+        
     I_Connection* t_con = MakeIConnection(conn_attr);
     
     return Create_Connection(*t_con);
@@ -388,25 +412,6 @@ I_DriverContext::Connect(const string&   srv_name,
     conn_attr.reusable = reusable;
     conn_attr.pool_name = pool_name;
 
-    // Precondition check.
-    if (conn_attr.srv_name.empty() ||  
-        conn_attr.user_name.empty() ||  
-        conn_attr.passwd.empty()) {
-        string err_msg("Insufficient info/credentials to connect.");
-        
-        if (conn_attr.srv_name.empty()) {
-            err_msg += " Server name has not been set.";
-        }
-        if (conn_attr.user_name.empty()) {
-            err_msg += " User name has not been set.";
-        }
-        if (conn_attr.passwd.empty()) {
-            err_msg += " Password has not been set.";
-        }
-        
-        DATABASE_DRIVER_ERROR( err_msg, 200010 );
-    }
-        
     CDB_Connection* t_con = 
         CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
             *this, 
@@ -446,25 +451,6 @@ I_DriverContext::ConnectValidated(const string&   srv_name,
     conn_attr.reusable = reusable;
     conn_attr.pool_name = pool_name;
 
-    // Precondition check.
-    if (conn_attr.srv_name.empty() ||  
-        conn_attr.user_name.empty() ||  
-        conn_attr.passwd.empty()) {
-        string err_msg("Insufficient info/credentials to connect.");
-        
-        if (conn_attr.srv_name.empty()) {
-            err_msg += " Server name has not been set.";
-        }
-        if (conn_attr.user_name.empty()) {
-            err_msg += " User name has not been set.";
-        }
-        if (conn_attr.passwd.empty()) {
-            err_msg += " Password has not been set.";
-        }
-        
-        DATABASE_DRIVER_ERROR( err_msg, 200010 );
-    }
-        
     validator.DoNotDeleteThisObject();
     CDB_Connection* t_con = 
         CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
@@ -548,6 +534,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/03/30 16:27:04  ssikorsk
+ * Allow to use empty server name, user name and password
+ * with a connection pool.
+ *
  * Revision 1.16  2006/03/28 22:31:00  ssikorsk
  * Deleted needless dynamic_cast.
  *
