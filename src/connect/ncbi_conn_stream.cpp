@@ -270,7 +270,7 @@ static CONNECTOR s_MemoryConnectorBuilder(const void* ptr,
         }
         *buf = tmp;
     } else {
-        tmp  = (BUF) ptr;
+        tmp  = (BUF)(size ? 0 : ptr);
         *buf = owner == eTakeOwnership ? tmp : 0;
     }
     return MEMORY_CreateConnectorEx(tmp);
@@ -428,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2006/03/30 19:33:30  lavr
+ * s_MemoryConnectorBuilder():  fixup
+ *
  * Revision 6.53  2006/03/30 17:46:05  lavr
  * Add return statement into all empty-bodied ctors (to ease debugging)
  *
