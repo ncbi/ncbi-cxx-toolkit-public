@@ -92,10 +92,11 @@ class CConn_Streambuf; // Forward declaration
 const streamsize kConn_DefaultBufSize = 4096;
 
 
-/*
- * Helper hook-up class that installs default logging/registry/locking
- * (but only if they have not yet been installed explicitly by user).
- */
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Helper hook-up class that installs default logging/registry/locking
+/// (but only if they have not yet been installed explicitly by user).
+///
 
 class NCBI_XCONNECT_EXPORT CConn_IOStreamBase
 {
@@ -104,16 +105,18 @@ protected:
 };
 
 
-/*
- * Base class, derived from "std::iostream", does both input
- * and output, using the specified CONNECTOR.  Input operations
- * can be tied to the output ones by setting 'do_tie' to 'true'
- * (default), which means that any input attempt first flushes
- * the output queue from the internal buffers.  'buf_size'
- * designates the size of the I/O buffers, which reside in between
- * the stream and underlying connector (which in turn may do
- * further buffering, if needed).
- */
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Base class, derived from "std::iostream", does both input
+/// and output, using the specified CONNECTOR.  Input operations
+/// can be tied to the output ones by setting 'do_tie' to 'true'
+/// (default), which means that any input attempt first flushes
+/// the output queue from the internal buffers.  'buf_size'
+/// designates the size of the I/O buffers, which reside in between
+/// the stream and underlying connector (which in turn may do
+/// further buffering, if needed).
+///
 
 class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConn_IOStreamBase,
                                             public CNcbiIostream
@@ -144,12 +147,13 @@ private:
 
 
 
-/*
- * This stream exchanges data in a TCP channel, using socket interface.
- * The endpoint is specified as host/port pair.  The maximal
- * number of connection attempts is given as 'max_try'.
- * More details on that: <connect/ncbi_socket_connector.h>.
- */
+/////////////////////////////////////////////////////////////////////////////
+///
+/// This stream exchanges data in a TCP channel, using socket interface.
+/// The endpoint is specified as host/port pair.  The maximal
+/// number of connection attempts is given as 'max_try'.
+/// More details on that: <connect/ncbi_socket_connector.h>.
+///
 
 class NCBI_XCONNECT_EXPORT CConn_SocketStream : public CConn_IOStream
 {
@@ -179,31 +183,32 @@ private:
 
 
 
-/*
- * This stream exchanges data with an HTTP server found by URL:
- * http://host[:port]/path[?args]
- *
- * Note that 'path' must include a leading slash,
- * 'args' can be empty, in which case the '?' is not appended to the path.
- *
- * 'User_header' (if not empty) should be a sequence of lines
- * in the form 'HTTP-tag: Tag value', separated by '\r\n', and
- * '\r\n'-terminated. It is included in the HTTP-header of each transaction.
- *
- * More elaborate specification of the server can be done via
- * SConnNetInfo structure, which otherwise will be created with the
- * use of a standard registry section to obtain default values from
- * (details: <connect/ncbi_connutil.h>).  No user header is added if
- * the argument is passed as default (or empty string).  To make
- * sure the user header is passed empty, delete it from net_info
- * by ConnNetInfo_DeleteUserHeader(net_info).
- *
- * THCC_Flags and other details: <connect/ncbi_http_connector.h>.
- *
- * Provided 'timeout' is set at connection level, and if different from
- * CONN_DEFAULT_TIMEOUT, it overrides a value supplied by HTTP connector
- * (the latter value is kept in SConnNetInfo::timeout).
- */
+/////////////////////////////////////////////////////////////////////////////
+///
+/// This stream exchanges data with an HTTP server found by URL:
+/// http://host[:port]/path[?args]
+///
+/// Note that 'path' must include a leading slash,
+/// 'args' can be empty, in which case the '?' is not appended to the path.
+///
+/// 'User_header' (if not empty) should be a sequence of lines
+/// in the form 'HTTP-tag: Tag value', separated by '\r\n', and
+/// '\r\n'-terminated. It is included in the HTTP-header of each transaction.
+///
+/// More elaborate specification of the server can be done via
+/// SConnNetInfo structure, which otherwise will be created with the
+/// use of a standard registry section to obtain default values from
+/// (details: <connect/ncbi_connutil.h>).  No user header is added if
+/// the argument is passed as default (or empty string).  To make
+/// sure the user header is passed empty, delete it from net_info
+/// by ConnNetInfo_DeleteUserHeader(net_info).
+///
+/// THCC_Flags and other details: <connect/ncbi_http_connector.h>.
+///
+/// Provided 'timeout' is set at connection level, and if different from
+/// CONN_DEFAULT_TIMEOUT, it overrides a value supplied by HTTP connector
+/// (the latter value is kept in SConnNetInfo::timeout).
+///
 
 class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_IOStream
 {
@@ -242,19 +247,20 @@ private:
 
 
 
-/*
- * This stream exchanges the data with a named service, in a
- * constraint that the service is implemented as one of the specified
- * server 'types' (details: <connect/ncbi_server_info.h>).
- *
- * Additional specifications can be passed in the SConnNetInfo structure,
- * otherwise created by using service name as a registry section
- * to obtain the information from (details: <connect/ncbi_connutil.h>).
- *
- * Provided 'timeout' is set at connection level, and if different from
- * CONN_DEFAULT_TIMEOUT, it overrides a value supplied by underlying
- * connector (the latter value is kept in SConnNetInfo::timeout).
- */
+/////////////////////////////////////////////////////////////////////////////
+///
+/// This stream exchanges the data with a named service, in a
+/// constraint that the service is implemented as one of the specified
+/// server 'types' (details: <connect/ncbi_server_info.h>).
+///
+/// Additional specifications can be passed in the SConnNetInfo structure,
+/// otherwise created by using service name as a registry section
+/// to obtain the information from (details: <connect/ncbi_connutil.h>).
+///
+/// Provided 'timeout' is set at connection level, and if different from
+/// CONN_DEFAULT_TIMEOUT, it overrides a value supplied by underlying
+/// connector (the latter value is kept in SConnNetInfo::timeout).
+///
 
 class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
 {
@@ -275,24 +281,36 @@ private:
 
 
 
-class CRWLock; // Forward declaration
-
-/*
- * In-memory stream.
- */
+/////////////////////////////////////////////////////////////////////////////
+///
+/// In-memory stream
+///
 
 class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
 {
 public:
-    CConn_MemoryStream(CRWLock*   lk = 0,
-                       EOwnership lk_owner = eTakeOwnership,
-                       streamsize buf_size = kConn_DefaultBufSize);
-    // Build a stream on top of NCBI buffer (which could in turn
-    // be built over a memory area of a specified size).
-    CConn_MemoryStream(BUF        buf,
-                       CRWLock*   lk = 0,
-                       EOwnership lk_owner= eTakeOwnership,
-                       streamsize buf_size = kConn_DefaultBufSize);
+    CConn_MemoryStream(streamsize  buf_size = kConn_DefaultBufSize);
+    /// Build a stream on top of NCBI buffer (which in turn
+    /// can be have built over a memory area of a specified size).
+    /// BUF's ownership is assumed by the stream as specified in "owner".
+    CConn_MemoryStream(BUF         buf,
+                       EOwnership  owner    = eTakeOwnership,
+                       streamsize  buf_size = kConn_DefaultBufSize);
+    /// Build a stream on top of an existing data area of a specified size.
+    /// The contents of the area is what will be read first from the stream.
+    /// Writing to the stream will _not_ modify the contents of the area.
+    /// Ownership of the area is controlled by "owner" parameter, and
+    /// if the ownership is retained by the caller, then the entire area
+    /// contents are copied into an internal buffer at the constructor.
+    /// Please note that passing the ownership of the memory area means that
+    /// it will be deleted by "delete[] (char*)" at the stream dtor.
+    /// If any special considerations are to be done for deleting the area
+    /// (like deleting an object or an array of objects), then the
+    /// ownership must not be passed to the stream.
+    CConn_MemoryStream(const void* ptr,
+                       size_t      size,
+                       EOwnership  owner    = eTakeOwnership,
+                       streamsize  buf_size = kConn_DefaultBufSize);
     virtual ~CConn_MemoryStream();
 
     NCBI_DEPRECATED
@@ -302,8 +320,8 @@ public:
     char*   ToCStr(void);      ///< '\0'-terminated; delete when done using it 
 
 protected:
-    MT_LOCK m_Lock;            ///< I/O interlock
-    BUF     m_Buf;             ///< Underlying buffer (if used)
+    BUF         m_Buf;         ///< Underlying buffer (if owned)
+    const void* m_Ptr;         ///< Pointer to read memory area (if owned)
 
 private:
     // Disable copy constructor and assignment.
@@ -333,7 +351,7 @@ public:
     CPipe& GetPipe(void) { return m_Pipe; }
 
 protected:
-    CPipe  m_Pipe; ///< Underlying pipe.
+    CPipe m_Pipe; ///< Underlying pipe.
 
 private:
     // Disable copy constructor and assignment.
@@ -403,6 +421,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.41  2006/03/30 17:40:13  lavr
+ * CConn_MemoryStream:  Remove unnecessary locks;  add mem. area ctor
+ * Overall:  Doxygenize comments
+ *
  * Revision 6.40  2006/02/13 18:45:07  lavr
  * CConn_MemoryStream::ToString(string&) marked with NCBI_DEPRECATED
  *
