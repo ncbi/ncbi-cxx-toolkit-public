@@ -185,7 +185,8 @@ CScorematPssmConverter::GetScores(CConstRef<objects::CPssmWithParameters>
     }
 
     if ( !pssm_asn->GetPssm().CanGetFinalData() ||
-         !pssm_asn->GetPssm().GetFinalData().CanGetScores() ) {
+         !pssm_asn->GetPssm().GetFinalData().CanGetScores() ||
+         pssm_asn->GetPssm().GetFinalData().GetScores().empty() ) {
         throw runtime_error("Cannot obtain scores from ASN.1 PSSM");
     }
 
@@ -227,7 +228,8 @@ CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters>
     }
 
     if ( !pssm_asn->GetPssm().CanGetIntermediateData() ||
-         !pssm_asn->GetPssm().GetIntermediateData().CanGetFreqRatios() ) {
+         !pssm_asn->GetPssm().GetIntermediateData().CanGetFreqRatios() ||
+         pssm_asn->GetPssm().GetIntermediateData().GetFreqRatios().empty() ) {
         throw runtime_error("Cannot obtain frequency ratios from ASN.1 PSSM");
     }
 
