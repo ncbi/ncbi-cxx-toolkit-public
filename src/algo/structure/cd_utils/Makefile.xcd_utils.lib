@@ -51,4 +51,6 @@ SRC = \
     cuReadFastaWrapper \
     cuSeqAnnotFromFasta
 
+DLL_LIB = xobjread
+
 CPPFLAGS = $(ORIG_CPPFLAGS)
