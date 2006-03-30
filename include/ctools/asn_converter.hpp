@@ -86,8 +86,7 @@ inline TCpp* CAsnConverter<TCpp, TC>::FromC(const TC* c_obj, TCpp* cpp_obj)
         return 0;
     }
 
-    CONNECTOR      connector = MEMORY_CreateConnector();
-    CConn_IOStream conn_stream(connector);
+    CConn_MemoryStream conn_stream;
 
     AsnIoPtr aip = CreateAsnConn(conn_stream.GetCONN(), eAsnConn_Output,
                                  eAsnConn_Binary);
@@ -104,8 +103,7 @@ inline TCpp* CAsnConverter<TCpp, TC>::FromC(const TC* c_obj, TCpp* cpp_obj)
 template <typename TCpp, typename TC>
 inline TC* CAsnConverter<TCpp, TC>::ToC(const TCpp& cpp_obj)
 {
-    CONNECTOR      connector = MEMORY_CreateConnector();
-    CConn_IOStream conn_stream(connector);
+    CConn_MemoryStream conn_stream;
 
     CObjectOStreamAsnBinary oos(conn_stream);
     oos << cpp_obj;
@@ -124,6 +122,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/03/30 18:15:20  lavr
+ * Use CConn_MemoryStream directly
+ *
  * Revision 1.6  2006/03/30 18:12:34  lavr
  * Adjust for lock-less MEMORY_Connector API
  *
