@@ -212,6 +212,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                             timeout),
                      timeout, buf_size)
 {
+    return;
 }
 
 
@@ -427,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2006/03/30 17:46:05  lavr
+ * Add return statement into all empty-bodied ctors (to ease debugging)
+ *
  * Revision 6.52  2006/03/30 17:40:40  lavr
  * CConn_MemoryStream:  Remove unnecessary locks;  add mem. area ctor
  *
