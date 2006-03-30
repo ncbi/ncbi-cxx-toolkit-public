@@ -911,6 +911,16 @@ BlastSeqLocReverse(const BlastSeqLoc* filter_in, Int4 query_length)
    return filter_out;
 }
 
+/** Calculates the mask locations one context at a time.
+ * @param query_blk sequence [in]
+ * @param query_info information about sequences [in]
+ * @param context which context is this?  [in]
+ * @param program_number program (blastn, blastp, etc.) [in]
+ * @param filter_options instructions for producing mask [in]
+ * @param filter_out results of filtering operations [out]
+ * @param blast_message any error or warning messages [out]
+ * @return zero on success
+ */
 static Int2
 s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, 
                                      const BlastQueryInfo* query_info, 
