@@ -47,7 +47,6 @@
  */
 typedef struct {
     BUF         buf;
-    MT_LOCK     lock;
     int/*bool*/ own_buf;
     EIO_Status  r_status;
     EIO_Status  w_status;
@@ -123,22 +122,17 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
-    int written;
 
     if ( !size )
         return eIO_Success;
 
-    MT_LOCK_Do(xxx->lock, eMT_Lock);
-    written = BUF_Write(&xxx->buf, buf, size);
-    MT_LOCK_Do(xxx->lock, eMT_Unlock);
-    if ( !written ) {
+    if (BUF_Write(&xxx->buf, buf, size)) {
+        *n_written    = size;
+        xxx->w_status = eIO_Success;
+    } else
         xxx->w_status = eIO_Unknown;
-        return eIO_Unknown;
-    }
 
-    *n_written = size;
-    xxx->w_status = eIO_Success;
-    return eIO_Success;
+    return xxx->w_status;
 }
 
 
@@ -155,16 +149,10 @@ static EIO_Status s_VT_Read
     if ( !size )
         return eIO_Success;
 
-    MT_LOCK_Do(xxx->lock, eMT_Lock);
-    *n_read = BUF_Read(xxx->buf, buf, size);
-    MT_LOCK_Do(xxx->lock, eMT_Unlock);
-    if ( !*n_read ) {
-        xxx->r_status = eIO_Closed;
-        return eIO_Closed;
-    }
-    xxx->r_status = eIO_Success;
+    xxx->r_status = (!(*n_read = BUF_Read(xxx->buf, buf, size))
+                     ? eIO_Closed : eIO_Success);
 
-    return eIO_Success;
+    return xxx->r_status;
 }
 
 
@@ -243,20 +231,19 @@ static void s_Destroy
  *  EXTERNAL -- the connector's "constructors"
  ***********************************************************************/
 
-extern CONNECTOR MEMORY_CreateConnector(MT_LOCK lock)
+extern CONNECTOR MEMORY_CreateConnector(void)
 {
-    return MEMORY_CreateConnectorEx(0, lock);
+    return MEMORY_CreateConnectorEx(0);
 }
 
 
-extern CONNECTOR MEMORY_CreateConnectorEx(BUF buf, MT_LOCK lock)
+extern CONNECTOR MEMORY_CreateConnectorEx(BUF buf)
 {
     CONNECTOR         ccc = (SConnector*)       malloc(sizeof(SConnector));
     SMemoryConnector* xxx = (SMemoryConnector*) malloc(sizeof(*xxx));
 
     /* initialize internal data structures */
     xxx->buf     = buf;
-    xxx->lock    = lock;
     xxx->own_buf = buf ? 0/*false*/ : 1/*true*/;
 
     /* initialize connector data */
@@ -273,6 +260,9 @@ extern CONNECTOR MEMORY_CreateConnectorEx(BUF buf, MT_LOCK lock)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2006/03/30 17:40:56  lavr
+ * MEMORY_Connector:  Remove unnecessary lock
+ *
  * Revision 6.9  2006/01/11 20:21:38  lavr
  * Uniform creation/fill-up of connector structures
  *
