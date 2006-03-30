@@ -181,6 +181,10 @@ public:
     /// Set timeout value for transactions in microseconds (1 000 000 in sec)
     void SetTransactionTimeout(unsigned timeout);
 
+    /// Set number of active transaction
+    /// see DB_ENV->set_tx_max for more details
+    void SetTransactionMax(unsigned tx_max);
+
     /// Specify that test-and-set mutexes should spin tas_spins times 
     /// without blocking
     void SetTasSpins(unsigned tas_spins);
@@ -228,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/03/30 17:27:42  kuznets
+ * +SetTransactionMax()
+ *
  * Revision 1.25  2006/02/21 14:40:08  kuznets
  * Added LSN recovery options
  *

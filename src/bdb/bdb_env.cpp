@@ -366,6 +366,14 @@ void CBDB_Env::SetMaxLocks(unsigned locks)
 }
 
 
+void CBDB_Env::SetTransactionMax(unsigned tx_max)
+{
+    _ASSERT(tx_max);
+    int ret = m_Env->set_tx_max(m_Env, tx_max);
+    BDB_CHECK(ret, "DB_ENV::set_tx_max");
+}
+
+
 void CBDB_Env::LsnReset(const char* file_name)
 {
     int ret = m_Env->lsn_reset(m_Env, const_cast<char*>(file_name), 0);
@@ -500,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/03/30 17:27:55  kuznets
+ * +SetTransactionMax()
+ *
  * Revision 1.36  2006/02/21 15:45:03  ucko
  * Add a const_cast to LsnReset for the sake of DB 4.3.  (This should be
  * safe, as its code never actually tries to modify the argument.)
