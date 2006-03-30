@@ -56,7 +56,7 @@ InitSeqInfoSrc(const BlastSeqSrc* seqsrc)
 {
     string db_name;
     if (const char* seqsrc_name = BlastSeqSrcGetName(seqsrc)) {
-        db_name = string(seqsrc_name);
+        db_name.assign(seqsrc_name);
     }
     if (db_name.empty()) {
         NCBI_THROW(CBlastException, eNotSupported,
