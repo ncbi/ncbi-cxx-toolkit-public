@@ -49,10 +49,10 @@ int main(void)
     assert(data_file);
 
      /* Run the tests */
-    connector = MEMORY_CreateConnector(0);
+    connector = MEMORY_CreateConnector();
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBounceCheck);
 
-    connector = MEMORY_CreateConnector(0);
+    connector = MEMORY_CreateConnectorEx(0);
     CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
     /* Cleanup and Exit */
@@ -65,6 +65,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2006/03/30 17:46:40  lavr
+ * Adjust for lock-less MEMORY_Connector API
+ *
  * Revision 6.4  2002/12/04 16:58:49  lavr
  * Move change log to end
  *
