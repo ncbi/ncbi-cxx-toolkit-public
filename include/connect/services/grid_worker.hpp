@@ -67,7 +67,7 @@ class CNcbiEnvironment;
 /// The worker node job class can use this class to get 
 /// configuration parameters.
 ///
-class IWorkerNodeInitContext
+class NCBI_XCONNECT_EXPORT IWorkerNodeInitContext
 {
 public:
     virtual ~IWorkerNodeInitContext() {}
@@ -585,6 +585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/03/30 16:52:35  jcherry
+ * Added export specifier
+ *
  * Revision 1.39  2006/03/15 17:30:11  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *
