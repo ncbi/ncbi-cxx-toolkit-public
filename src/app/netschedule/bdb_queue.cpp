@@ -48,6 +48,9 @@
 
 BEGIN_NCBI_SCOPE
 
+const unsigned k_max_dead_locks = 100;  // max. dead lock repeats
+
+
 /// Mutex to guard vector of busy IDs 
 DEFINE_STATIC_FAST_MUTEX(x_NetSchedulerMutex_BusyID);
 
@@ -1558,28 +1561,57 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
         js_guard.Release();
         return;
     }
+    bool rec_updated;
+    SSubmitNotifInfo si;
     time_t curr = time(0);
 
     SQueueDB& db = m_LQueue.db;
-    CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
-                           CBDB_Transaction::eNoAssociation);
 
-    SSubmitNotifInfo si;
-    bool rec_updated;
-    {{
-    CFastMutexGuard guard(m_LQueue.lock);
-    db.SetTransaction(&trans);
-    CBDB_FileCursor& cur = *GetCursor(trans);
-    CBDB_CursorGuard cg(cur);
-    rec_updated = 
-        x_UpdateDB_PutResultNoLock(db, curr, cur, 
-                                   job_id, ret_code, output, &si);
-    }}
+    for (unsigned repeat = 0; true; ) {
+        try {
+            CBDB_Transaction trans(*db.GetEnv(), 
+                                CBDB_Transaction::eTransASync,
+                                CBDB_Transaction::eNoAssociation);
 
+            {{
+            CFastMutexGuard guard(m_LQueue.lock);
+            db.SetTransaction(&trans);
+            CBDB_FileCursor& cur = *GetCursor(trans);
+            CBDB_CursorGuard cg(cur);
+            rec_updated = 
+                x_UpdateDB_PutResultNoLock(db, curr, cur, 
+                                        job_id, ret_code, output, &si);
+            }}
 
-    trans.Commit();
-    js_guard.Release();
+            trans.Commit();
+            js_guard.Release();
+        } 
+        catch (CBDB_ErrnoException& ex) {
+            if (ex.IsDeadLock()) {
+                if (++repeat < k_max_dead_locks) {
+                    if (m_LQueue.monitor.IsMonitorActive()) {
+                        m_LQueue.monitor.SendString(
+                            "DeadLock repeat in CQueue::PutResult");
+                    }
+                    SleepMilliSec(250);
+                    continue;
+                }
+            } else 
+            if (ex.IsNoMem()) {
+                if (++repeat < k_max_dead_locks) {
+                    if (m_LQueue.monitor.IsMonitorActive()) {
+                        m_LQueue.monitor.SendString(
+                            "No resource repeat in CQueue::PutResult");
+                    }
+                    SleepMilliSec(250);
+                    continue;
+                }
+            }
+            ERR_POST("Too many transaction repeats in CQueue::PutResult.");
+            throw;
+        }
+        break;
+    } // for
 
     if (remove_from_tl) {
         RemoveFromTimeLine(job_id);
@@ -1720,7 +1752,6 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     _ASSERT(input);
 
     unsigned dead_locks = 0;       // dead lock counter
-    unsigned max_dead_locks = 100;  // max. dead lock repeats
 
     time_t curr = time(0);
     
@@ -1820,11 +1851,27 @@ repeat_transaction:
             m_LQueue.lock.Unlock();
         }
         if (ex.IsDeadLock()) {
-            if (++dead_locks < max_dead_locks) {
-                //                ERR_POST( "Got a deadlock. Trying again.");
+            if (++dead_locks < k_max_dead_locks) {
+                if (m_LQueue.monitor.IsMonitorActive()) {
+                    m_LQueue.monitor.SendString(
+                        "DeadLock repeat in CQueue::JobExchange");
+                }
+                SleepMilliSec(250);
+                goto repeat_transaction;
+            } 
+        }
+        else
+        if (ex.IsNoMem()) {
+            if (++dead_locks < k_max_dead_locks) {
+                if (m_LQueue.monitor.IsMonitorActive()) {
+                    m_LQueue.monitor.SendString(
+                        "No resource repeat in CQueue::PutResult");
+                }
+                SleepMilliSec(250);
                 goto repeat_transaction;
             }
         }
+        ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
         throw;
     }
     catch (...) {
@@ -3531,6 +3578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/03/30 20:54:23  kuznets
+ * Improved handling of BDB resource conflicts
+ *
  * Revision 1.70  2006/03/30 17:38:55  kuznets
  * Set max. transactions according to number of active threads
  *
