@@ -168,8 +168,10 @@ public:
 
     int Do(CWorkerNodeJobContext& context) 
     {
-        //        LOG_POST( CTime(CTime::eCurrent).AsString() 
-        //                  << ": " << context.GetJobKey() + " " + context.GetJobInput());
+        if (context.IsLogRequested()) {
+            LOG_POST( CTime(CTime::eCurrent).AsString() 
+                      << ": " << context.GetJobKey() + " " + context.GetJobInput());
+        }
 
         m_Request.Receive(context.GetIStream());
         vector<string> args;
@@ -187,10 +189,15 @@ public:
         m_Result.SetRetCode(ret); 
         m_Result.Send(context.GetOStream());
 
-        //        LOG_POST( CTime(CTime::eCurrent).AsString() 
-        //                  << ": Job " << context.GetJobKey() << " is done. ");
-        if (!canceled)
+        string stat = " is canceled.";
+        if (!canceled) {
             context.CommitJob();
+            stat = " is done.";
+        }
+        if (context.IsLogRequested()) {
+            LOG_POST( CTime(CTime::eCurrent).AsString() 
+                      << ": Job " << context.GetJobKey() << stat);
+        }
         return 0;
     }
 private:
@@ -252,6 +259,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/03/30 16:13:18  didenko
+ * + optional jobs logging
+ *
  * Revision 1.7  2006/03/16 15:14:41  didenko
  * Renamed CRemoteJob... to CRemoteApp...
  *
