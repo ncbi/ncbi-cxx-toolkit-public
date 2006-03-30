@@ -50,6 +50,12 @@ void CJobQueueCleanerThread::DoJob(void)
     } 
     catch (CBDB_ErrnoException& ex)
     {
+        if (ex.IsNoMem()) {
+            ERR_POST(Error << 
+                "BDB reported resource shortage in cleaning thread. Ignored.");
+            return;
+        }
+
         int err_no = ex.BDB_GetErrno();
         if (err_no == DB_RUNRECOVERY) {
             ERR_POST("Fatal Berkeley DB error: DB_RUNRECOVERY");
@@ -66,6 +72,7 @@ void CJobQueueCleanerThread::DoJob(void)
         ERR_POST(Error << "Error when cleaning queue: " 
                         << ex.what()
                         << " cleaning thread has been stopped.");
+        RequestStop();
     }
 }
 
@@ -102,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/03/30 19:09:59  kuznets
+ * Ignore resource allocation error
+ *
  * Revision 1.2  2005/03/09 17:37:17  kuznets
  * Added node notification thread and execution control timeline
  *
