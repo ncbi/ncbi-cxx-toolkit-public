@@ -455,6 +455,25 @@ public:
 
     /// Create new connection to specified server (within this context).
     /// It is your responsibility to delete the returned connection object.
+    /// reusable - controls connection pooling mechanism. If it is set to true
+    /// then a connection will be added to a pool  of connections instead of 
+    /// closing.
+    ///
+    /// pool_name - name of a pool to which this connection is going to belong.
+    /// 
+    /// srv_name, user_name and passwd may be set to empty string.
+    ///
+    /// If pool_name is provided then connection will be taken from a pool 
+    /// having this name if a pool is not empty.
+    /// It is your responsibility to put connections with the same 
+    /// server/user/password values in a pool.
+    /// If a pool name is not provided but a server name (srv_name) is provided
+    /// instead then connection with the same name will be taken from a pool of 
+    /// connections if a pool is not empty.
+    /// If a pool is empty then new connection will be created unless you passed
+    /// mode = fDoNotConnect. In this case NULL will be returned.
+    /// If you did not provide either a pool name or a server name then NULL will
+    /// be returned.
     virtual CDB_Connection* Connect
     (const string&   srv_name,
      const string&   user_name,
@@ -463,7 +482,27 @@ public:
      bool            reusable  = false,
      const string&   pool_name = kEmptyStr);
 
+    /// Create new connection to specified server (within this context).
+    /// It is your responsibility to delete the returned connection object.
+    /// reusable - controls connection pooling mechanism. If it is set to true
+    /// then a connection will be added to a pool  of connections instead of 
+    /// closing.
     ///
+    /// pool_name - name of a pool to which this connection is going to belong.
+    /// 
+    /// srv_name, user_name and passwd may be set to empty string.
+    ///
+    /// If pool_name is provided then connection will be taken from a pool 
+    /// having this name if a pool is not empty.
+    /// It is your responsibility to put connections with the same 
+    /// server/user/password values in a pool.
+    /// If a pool name is not provided but a server name (srv_name) is provided
+    /// instead then connection with the same name will be taken from a pool of 
+    /// connections if a pool is not empty.
+    /// If a pool is empty then new connection will be created unless you passed
+    /// mode = fDoNotConnect. In this case NULL will be returned.
+    /// If you did not provide either a pool name or a server name then NULL will
+    /// be returned.
     CDB_Connection* ConnectValidated
     (const string&   srv_name,
      const string&   user_name,
@@ -670,6 +709,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/03/30 16:24:45  ssikorsk
+ * Added more documentation to I_DriverContext::Connect and
+ * ConnectValidated.
+ *
  * Revision 1.41  2006/03/09 19:01:16  ssikorsk
  * Replaced types of I_DriverContext's m_NotInUse and
  * m_InUse from CPointerPot to list<I_Connection*>.
