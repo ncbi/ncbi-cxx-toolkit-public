@@ -52,14 +52,14 @@ extern "C" {
 
 
 /* Create new CONNECTOR structure to handle a data transfer in-memory.
- * Use lock (may be NULL) to protect write/read operations.
+ * Onwership of "buf" (if passed non-NULL) is not assumed by the connector.
  * Return NULL on error.
  */
-extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnector(MT_LOCK lock);
+extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnector(void);
 
 
-extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnectorEx(BUF     buf,
-                                                               MT_LOCK lock);
+extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnectorEx(BUF buf);
+
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -72,6 +72,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnectorEx(BUF     buf,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2006/03/30 17:39:24  lavr
+ * MEMORY_Connector: Remove unnecessary lock
+ *
  * Revision 6.5  2004/10/27 18:44:14  lavr
  * +MEMORY_CreateConnectorEx()
  *
