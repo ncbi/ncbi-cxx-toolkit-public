@@ -136,7 +136,7 @@ private:
 };
 
 /// typedef for the messages for an individual query sequence
-class TQueryMessages : public vector< CRef<CSearchMessage> >
+class NCBI_XBLAST_EXPORT TQueryMessages : public vector< CRef<CSearchMessage> >
 {
 public:
     void SetQueryId(const string& id);
@@ -149,7 +149,7 @@ private:
 
 /// typedef for the messages for an entire BLAST search, which could be
 /// comprised of multiple query sequences
-class TSearchMessages : public vector<TQueryMessages>
+class NCBI_XBLAST_EXPORT TSearchMessages : public vector<TQueryMessages>
 {
 public:
     bool HasMessages() const;
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2006/03/30 19:17:34  jcherry
+* Added export specifiers
+*
 * Revision 1.24  2006/01/24 15:14:09  camacho
 * Change TSearchMessages and TQueryMessages from typedefs to classes
 *

@@ -584,6 +584,7 @@ private:
  * @param frame frame as specified by CSeqLocInfo::ETranslationFrame
  * @param program CORE BLAST program type
  */
+NCBI_XBLAST_EXPORT
 objects::EBlast4_frame_type
 FrameNumber2NetworkFrame(int frame, EBlastProgramType program);
 
@@ -591,6 +592,7 @@ FrameNumber2NetworkFrame(int frame, EBlastProgramType program);
  * @param frame frame as specified by objects::EBlast4_frame_type
  * @param program CORE BLAST program type
  */
+NCBI_XBLAST_EXPORT
 CSeqLocInfo::ETranslationFrame
 NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame, 
                          EBlastProgramType program);
@@ -601,6 +603,7 @@ NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame,
 /// subclasses (look for SetRemoteProgramAndService_Blast3 in include tree)
 /// @note This function needs to be updated if the program/service name
 /// combinations change
+NCBI_XBLAST_EXPORT
 EBlastProgramType
 NetworkProgram2BlastProgramType(const string& program, const string& service);
 
@@ -613,6 +616,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/03/30 19:17:34  jcherry
+ * Added export specifiers
+ *
  * Revision 1.31  2006/03/29 20:02:23  camacho
  * Replace GetMask() in favor of GetMasks() returning a TSeqLocInfoVector
  *
