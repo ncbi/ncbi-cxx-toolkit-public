@@ -1356,6 +1356,8 @@ protected:
 private:
     double m_Start;  ///< Start time value.
     double m_Total;  ///< Accumulated elapsed time.
+    EStart m_State;  ///< Stopwatch state (started/stopped)
+
 };
 
 
@@ -1966,6 +1968,7 @@ inline
 CStopWatch::CStopWatch(EStart state)
 {
     m_Total = 0;
+    m_State = eStop;
     if ( state == eStart ) {
         Start();
     }
@@ -1974,6 +1977,7 @@ CStopWatch::CStopWatch(EStart state)
 inline
 void CStopWatch::Start()
 {
+    m_State = eStart;
     m_Start = GetTimeMark();
 }
 
@@ -1981,6 +1985,9 @@ void CStopWatch::Start()
 inline
 double CStopWatch::Elapsed() const
 {
+    if ( m_State == eStop ) {
+        return m_Total;
+    }
     return m_Total + GetTimeMark() - m_Start;
 }
 
@@ -1989,6 +1996,7 @@ inline
 void CStopWatch::Stop()
 {
     m_Total += GetTimeMark() - m_Start;
+    m_State = eStop;
 }
 
 
@@ -1998,6 +2006,7 @@ double CStopWatch::Restart()
     double previous = m_Start;
     double elapsed = m_Total + (m_Start = GetTimeMark()) - previous;
     m_Total = 0;
+    m_State = eStart;
     return elapsed;
 }
 
@@ -2011,6 +2020,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/03/31 15:55:01  ivanov
+ * CStopWatch: fixed another bug with accumulated time and Elapsed()
+ *
  * Revision 1.57  2006/03/29 14:10:31  ivanov
  * Fixed CStopWatch::Stop() to correctly count accumulated time
  *
