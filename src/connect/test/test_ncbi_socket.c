@@ -487,6 +487,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
 
     /* goto */
  l_reconnect: /* reconnection loopback */
+    SOCK_SetDataLogging(sock, eOn);
 
     status = SOCK_SetTimeout(sock, eIO_Read,  &r_to);
     assert(status == eIO_Success);
@@ -535,6 +536,8 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             break;
 
         default:
+            fprintf(log_fp, "[ERROR] TS2::read: status = %d\n",
+                    (int) status);
             assert(0);
             return;
         } /* switch */
@@ -566,6 +569,8 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
                 assert(status == eIO_Success);
                 break;
             default:
+                fprintf(log_fp, "[ERROR] TS2::write: status = %d\n",
+                        (int) status);
                 assert(0);
                 return;
             } /* switch */
@@ -627,7 +632,7 @@ static void TEST__server(unsigned short port)
     fprintf(log_fp, "[INFO] TEST__server(port = %hu)\n", port);
 
     /* Create listening socket */
-    status = LSOCK_Create(port, 1, &lsock);
+    status = LSOCK_CreateEx(port, 1, &lsock, fLSCE_LogDefault);
     assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */
@@ -935,6 +940,9 @@ extern int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2006/03/31 19:58:22  lavr
+ * Added more data logging
+ *
  * Revision 6.22  2006/01/27 17:12:15  lavr
  * Replace obsolete call names with current ones
  *
