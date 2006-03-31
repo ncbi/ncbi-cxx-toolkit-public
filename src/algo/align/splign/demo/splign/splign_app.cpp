@@ -62,13 +62,13 @@
 
 BEGIN_NCBI_SCOPE
 
-const char kQuality_high[] = "high";
-const char kQuality_low[] = "low";
+static const char kQuality_high[] = "high";
+static const char kQuality_low[] = "low";
 
-const char kStrandPlus[] = "plus";
-const char kStrandMinus[] = "minus";
-const char kStrandBoth[] = "both";
-const char kStrandAuto[] = "auto";
+static const char kStrandPlus[] = "plus";
+static const char kStrandMinus[] = "minus";
+static const char kStrandBoth[] = "both";
+static const char kStrandAuto[] = "auto";
 
 void CSplignApp::Init()
 {
@@ -1650,6 +1650,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/03/31 19:11:20  kapustin
+ * Refine common argument set
+ *
  * Revision 1.64  2006/03/28 16:17:17  kapustin
  * Specify min signleton idty as an optional rather than default argument
  *

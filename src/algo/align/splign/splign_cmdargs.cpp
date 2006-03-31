@@ -39,25 +39,14 @@
 
 BEGIN_NCBI_SCOPE
 
-
-const char kQuality_high[] = "high";
-const char kQuality_low[] = "low";
-
-const char kStrandPlus[] = "plus";
-const char kStrandMinus[] = "minus";
-const char kStrandBoth[] = "both";
-const char kStrandAuto[] = "auto";
-
+static const char kStrandPlus[] = "plus";
+static const char kStrandMinus[] = "minus";
+static const char kStrandBoth[] = "both";
+static const char kStrandAuto[] = "auto";
 
 
 void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
-{
-    argdescr->AddFlag("cross", "Cross-species mode");
-
-    argdescr->AddDefaultKey
-        ("strand", "strand", "Spliced sequence's strand.",
-         CArgDescriptions::eString, kStrandPlus);
-    
+{    
     argdescr->AddFlag ("noendgaps",
                        "Skip detection of unaligning regions at the ends.",
                        true);
@@ -138,13 +127,7 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
         ("Wi3", "Wi3", "Arbitrary intron score",
          CArgDescriptions::eInteger,
          NStr::IntToString(CSplicedAligner16::GetDefaultWi(3)).c_str());
-    
-    CArgAllow_Strings* constrain_strand = new CArgAllow_Strings;
-    constrain_strand->Allow(kStrandPlus)->Allow(kStrandMinus)
-        ->Allow(kStrandBoth)->Allow(kStrandAuto);
-    
-    argdescr->SetConstraint("strand", constrain_strand);
-    
+        
     CArgAllow* constrain01 = new CArgAllow_Doubles(0,1);
     argdescr->SetConstraint("min_compartment_idty", constrain01);
     argdescr->SetConstraint("min_exon_idty", constrain01);
@@ -167,6 +150,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/03/31 19:11:20  kapustin
+ * Refine common argument set
+ *
  * Revision 1.2  2006/03/31 17:14:27  kuznets
  * +ArgsToSplign()
  *
