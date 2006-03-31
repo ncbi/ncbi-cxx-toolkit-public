@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.415 2006/03/23 17:10:16 ucko Exp $
+#  $Id: configure.ac,v 1.416 2006/03/31 20:02:59 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -4608,6 +4608,9 @@ local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
 
 ## requires semaphores (lacking on older versions of Cygwin and Darwin)
 test $ncbi_cv_sys_semaphores = no  &&  with_local_lbsm=no
+## disable by default even on newer Cygwin, as its semaphores don't
+## actually work very well
+test $OSTYPE = cygwin  &&  : ${with_local_lbsm=no}
 
 for fff in $local_lbsm ; do
    if test ! -f ${real_srcdir}/src/connect/${fff}.c ; then
