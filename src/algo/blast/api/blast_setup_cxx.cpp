@@ -1092,11 +1092,11 @@ Uint1 GetSentinelByte(EBlastEncoding encoding) THROWS((CBlastException))
 {
     switch (encoding) {
     case eBlastEncodingProtein:
-        return NULLB;
+        return kProtSentinel;
 
     case eBlastEncodingNcbi4na:
     case eBlastEncodingNucleotide:
-        return 0xF;
+        return kNuclSentinel;
 
     default:
         NCBI_THROW(CBlastException, eNotSupported, "Unsupported encoding");
@@ -1576,6 +1576,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.110  2006/03/31 17:32:24  camacho
+ * Use constants for sentinel values
+ *
  * Revision 1.109  2006/03/15 22:39:54  camacho
  * Minor change
  *
