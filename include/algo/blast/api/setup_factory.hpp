@@ -146,9 +146,6 @@ WrapStruct(TData * obj, TData* (*del)(TData*))
 /// algorithm. Ensures that this number is greater than or equal to 1.
 class NCBI_XBLAST_EXPORT CThreadable
 {
-    /// Never have less than 1 thread
-    enum { kMinNumThreads = 1 };
-
 public:
     /// Default ctor
     CThreadable(void) : m_NumThreads(kMinNumThreads) {}
@@ -164,6 +161,9 @@ public:
 
 protected:
     size_t m_NumThreads;    ///< Keep track of how many threads should be used
+
+    /// Never have less than 1 thread
+    enum { kMinNumThreads = 1 };
 };
 
 
