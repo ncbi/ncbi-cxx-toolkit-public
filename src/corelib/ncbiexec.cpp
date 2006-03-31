@@ -381,9 +381,10 @@ int CExec::RunSilent(EMode mode, const char *cmdname,
 	cmdline += argv;
     va_list vargs;
     va_start(vargs, argv);
-    while ( va_arg(vargs, const char*) ) {
+    const char* p = NULL;
+    while ( (p = va_arg(vargs, const char*)) ) {
 	    cmdline += " "; 
-	    cmdline += va_arg(vargs, const char*);
+	    cmdline += p;
     }
     va_end(vargs);
 
@@ -437,6 +438,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/03/31 17:51:40  dicuccio
+ * CExec::RunSilent(): Fixed bugs in handling of varargs: make sure to trap the
+ * returned pointer and use it in appending to a string
+ *
  * Revision 1.29  2006/03/20 15:46:41  ivanov
  * + CExec::RunSilent()
  *
