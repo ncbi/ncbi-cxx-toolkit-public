@@ -107,9 +107,15 @@ const Uint1 AMINOACID_TO_NCBISTDAA[128] = {
  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+const Uint1 kProtSentinel = NULLB;
+const Uint1 kNuclSentinel = 0xF;
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/03/31 17:32:40  camacho
+ * Added constants for sentinel values
+ *
  * Revision 1.4  2006/02/16 18:47:18  camacho
  * + encoding translations for O and J
  *
