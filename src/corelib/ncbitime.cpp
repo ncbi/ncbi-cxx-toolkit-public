@@ -2037,6 +2037,7 @@ int CFastLocalTime::GetLocalTimezone(void)
 CStopWatch::CStopWatch(bool start)
 {
     m_Total = 0;
+    m_State = eStop;
     if ( start ) {
         Start();
     }
@@ -2142,6 +2143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/03/31 15:59:39  ivanov
+ * CStopWatch::CStopWatch(bool) - added stopwatch state initialization
+ *
  * Revision 1.71  2006/03/29 14:09:10  ivanov
  * Cosmetic change
  *
