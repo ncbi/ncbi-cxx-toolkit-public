@@ -155,6 +155,9 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
 
 }
 
+void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
+{
+}
 
 
 END_NCBI_SCOPE
@@ -164,6 +167,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/03/31 17:14:27  kuznets
+ * +ArgsToSplign()
+ *
  * Revision 1.1  2006/03/31 16:56:57  kuznets
  * initial revision
  *

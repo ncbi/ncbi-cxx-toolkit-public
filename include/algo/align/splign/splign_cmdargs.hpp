@@ -42,10 +42,13 @@ BEGIN_NCBI_SCOPE
 class NCBI_XALGOALIGN_EXPORT CSplignArgUtil
 {
 public:
-    /// Setup core splign argument descriptions
+    /// Setup core splign argument descriptions for the application
     static
     void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
+    /// Translate command line arguments into splign algorithm core settings
+    static
+    void ArgsToSplign(CSplign* splign, const CArgs& args);
 };
 
 END_NCBI_SCOPE
@@ -53,6 +56,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/03/31 17:15:00  kuznets
+ * +ArgsToSplign()
+ *
  * Revision 1.1  2006/03/31 16:56:12  kuznets
  * initial revision
  *
