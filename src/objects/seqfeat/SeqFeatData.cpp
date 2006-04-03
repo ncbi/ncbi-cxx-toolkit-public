@@ -2173,6 +2173,291 @@ const string& CSeqFeatData::GetQulifierAsString(EQualifier qual)
     return (iter != sc_QualPairs.end()) ? iter->second : kEmptyStr;
 }
 
+/////////////////// end of CSeqFeatData methods
+
+
+ 
+const CFeatList* CSeqFeatData::GetFeatList()
+{
+    static auto_ptr<CFeatList> theFeatList;
+
+    if ( !theFeatList.get() ) {
+        DEFINE_STATIC_MUTEX(s_Mutex);
+        CMutexGuard LOCK(s_Mutex);
+        if ( !theFeatList.get() ) {
+            theFeatList.reset(new CFeatList());
+        }
+    }
+    return theFeatList.get();
+}
+
+
+namespace {
+
+CFeatListItem config_item_init[] = {
+    CFeatListItem( CSeqFeatData::e_not_set,   CSeqFeatData::eSubtype_any,   "All",  "Master" ),
+    CFeatListItem( CSeqFeatData::e_Gene,      CSeqFeatData::eSubtype_gene,  "Gene", "Gene" ),
+    CFeatListItem( CSeqFeatData::e_Org,      CSeqFeatData::eSubtype_org,   "Org",  "Org" ),
+    CFeatListItem( CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion,  "CDS",  "CDS" ),
+
+    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_any,   "Protein, All",  "Prot Master" ),
+    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_prot,  "Protein", "Prot" ),
+    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_preprotein,    "PreProtein", "PreProtein" ),
+    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_mat_peptide_aa,    "Mature Peptide AA", "Mat-Peptide AA" ),
+    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_sig_peptide_aa,    "Signal Peptide AA", "Sig-Peptide AA" ),
+    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_transit_peptide_aa,    "Transit Peptide AA", "Transit-Peptide AA" ),
+
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_any,   "RNA, All" , "RNA Master" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_preRNA,  "precursor_RNA",   "precursor_RNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_mRNA,  "mRNA", "mRNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_tRNA,  "tRNA", "tRNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_rRNA,  "rRNA", "rRNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_snRNA,  "snRNA", "snRNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_scRNA,  "scRNA", "scRNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_snoRNA,  "sno_RNA", "sno_RNA" ),
+    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_otherRNA,  "misc_RNA",  "misc_RNA" ),
+
+    CFeatListItem( CSeqFeatData::e_Pub,     CSeqFeatData::eSubtype_pub,   "Pub", "Pub" ),
+    CFeatListItem( CSeqFeatData::e_Seq,     CSeqFeatData::eSubtype_seq,   "Seq", "Seq" ),
+    
+    CFeatListItem( CSeqFeatData::e_Imp,     CSeqFeatData::eSubtype_any,   "Import All", "Import Master" ),
+
+    CFeatListItem( CSeqFeatData::e_Region,   CSeqFeatData::eSubtype_region,    "region",     "region" ),
+    CFeatListItem( CSeqFeatData::e_Comment,  CSeqFeatData::eSubtype_comment,    "comment",     "comment" ),
+    CFeatListItem( CSeqFeatData::e_Bond,     CSeqFeatData::eSubtype_bond,    "bond",     "bond" ),
+    CFeatListItem( CSeqFeatData::e_Site,     CSeqFeatData::eSubtype_site,    "site",     "site" ),
+    CFeatListItem( CSeqFeatData::e_Rsite,    CSeqFeatData::eSubtype_rsite,    "rsite",     "rsite" ),
+    CFeatListItem( CSeqFeatData::e_User,     CSeqFeatData::eSubtype_user,    "user",     "user" ),
+    CFeatListItem( CSeqFeatData::e_Txinit,   CSeqFeatData::eSubtype_txinit,    "txinit",     "txinit" ),
+    CFeatListItem( CSeqFeatData::e_Num,      CSeqFeatData::eSubtype_num,    "num",     "num" ),
+    CFeatListItem( CSeqFeatData::e_Psec_str, CSeqFeatData::eSubtype_psec_str,    "psec_str",     "psec_str" ),
+    CFeatListItem( CSeqFeatData::e_Non_std_residue,     CSeqFeatData::eSubtype_non_std_residue,    "non_std_residue",     "non_std_residue" ),
+    CFeatListItem( CSeqFeatData::e_Het,      CSeqFeatData::eSubtype_het,    "het",     "het" ),
+    CFeatListItem( CSeqFeatData::e_Biosrc,   CSeqFeatData::eSubtype_biosrc,    "biosrc",     "biosrc" ),
+};
+} // unnamed namespace
+
+
+/**
+    CFeatListItem comparator
+    to sort the set properly.
+*/
+bool CFeatListItem::operator<(const CFeatListItem& rhs) const {
+    if (m_Type == rhs.m_Type) {
+        // the 'Any' subtype should sort lower than anything else in that type.
+        if (m_Subtype == CSeqFeatData::eSubtype_any) {
+            return rhs.m_Subtype != CSeqFeatData::eSubtype_any;
+        }
+        if ( rhs.m_Subtype == CSeqFeatData::eSubtype_any) {
+            return false;
+        }
+        return m_Subtype < rhs.m_Subtype;
+    }
+    return m_Type < rhs.m_Type;
+}
+
+
+/*****
+    CFeatList definitions.
+*****/
+
+CFeatList::CFeatList()
+{
+    x_Init();
+}
+
+
+bool CFeatList::TypeValid(int type, int subtype) const
+{
+    const_iterator ci_it = m_FeatTypes.find(CFeatListItem(type, subtype, "", ""));
+    if (ci_it == m_FeatTypes.end()) {
+        return false;
+    }
+    return true;
+}
+
+
+bool CFeatList::GetItem(int type, int subtype, CFeatListItem& config_item) const
+{
+    const_iterator ci_it = m_FeatTypes.find(CFeatListItem(type, subtype, "", ""));
+    if (ci_it == m_FeatTypes.end()) {
+        return false;
+    }
+    config_item = *ci_it;
+    return true;
+}
+
+
+bool CFeatList::GetItemBySubtype(int subtype,  CFeatListItem& config_item) const
+{
+    TSubtypeMap::const_iterator fm_it = m_FeatTypeMap.find(subtype);
+    if (fm_it == m_FeatTypeMap.end()) {
+        return false;
+    }
+    config_item = fm_it->second;
+    return true;
+}
+
+
+bool CFeatList::GetItemByDescription(const string& desc, CFeatListItem& config_item) const
+{
+    const_iterator ci_it = begin();
+    for (; ci_it != end(); ++ci_it) {
+        if (ci_it->GetDescription() == desc) {
+            config_item = *ci_it;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CFeatList::GetTypeSubType(const string& desc, int& type, int& subtype) const
+{
+    CFeatListItem config_item;
+    if ( GetItemByDescription(desc, config_item) ) {
+        type = config_item.GetType();
+        subtype = config_item.GetSubtype();
+        return true;
+    }
+    return false;
+}
+
+bool CFeatList::GetItemByKey(const string& key, CFeatListItem& config_item) const
+{
+    const_iterator ci_it = begin();
+    for (; ci_it != end(); ++ci_it) {
+        if (ci_it->GetStoragekey() == key) {
+            config_item = *ci_it;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+string CFeatList::GetDescription(int type, int subtype) const
+{
+    CFeatListItem config_item;
+    if (!GetItem(type, subtype, config_item)) {
+        return kEmptyStr;
+    }
+    return config_item.GetDescription();
+}
+
+
+string CFeatList::GetStoragekey(int type, int subtype) const
+{
+    CFeatListItem config_item;
+    if (!GetItem(type, subtype, config_item)) {
+        return kEmptyStr;
+    }
+    return config_item.GetStoragekey();
+}
+
+
+string CFeatList::GetStoragekey(int subtype) const
+{
+    CFeatListItem config_item;
+    if (!GetItemBySubtype(subtype, config_item)) {
+        return kEmptyStr;
+    }
+    return config_item.GetStoragekey();
+}
+
+
+vector<string> CFeatList::GetStoragekeys(int subtype) const
+{
+    vector<string> keys;
+    keys.push_back(GetStoragekey(CSeqFeatData::e_not_set, CSeqFeatData::eSubtype_any));
+    if (subtype != CSeqFeatData::eSubtype_any) {
+        CFeatListItem item;
+        if (GetItemBySubtype(subtype, item)) {
+            CFeatListItem sub_master_item;
+            if (GetItem(item.GetType(), CSeqFeatData::eSubtype_any, sub_master_item)) {
+                keys.push_back(sub_master_item.GetStoragekey());
+            }
+            keys.push_back(item.GetStoragekey());
+        }
+    }
+
+    return keys;
+}
+
+size_t CFeatList::size() const
+{
+    return m_FeatTypes.size();
+}
+
+
+CFeatList::const_iterator CFeatList::begin() const
+{
+    return m_FeatTypes.begin();
+}
+
+
+CFeatList::const_iterator CFeatList::end() const
+{
+    return m_FeatTypes.end();
+}
+
+
+void CFeatList::x_Init()
+{
+    size_t  config_item_size = sizeof(config_item_init)/sizeof(CFeatListItem);
+    for (size_t i = 0; i < config_item_size; ++i ) {
+        bool config_items_init_no_dups =
+           m_FeatTypes.insert(config_item_init[i]).second;
+        _ASSERT(config_items_init_no_dups);
+    }
+    
+    for (const SImportEntry* iep = kImportTable; iep < kImportTableEnd; ++iep) {
+        CFeatListItem item(CSeqFeatData::GetTypeFromSubtype(iep->m_Subtype), 
+                           iep->m_Subtype, iep->m_Name, iep->m_Name);
+        bool config_items_init_no_dups =
+            m_FeatTypes.insert(item).second;
+        _ASSERT(config_items_init_no_dups);
+    }
+
+    ITERATE(CFeatList, it, m_FeatTypes) {
+        const CFeatListItem& item = *it;
+        int subtype = item.GetSubtype();
+        if (subtype != CSeqFeatData::eSubtype_any  ||  item.GetType() == CSeqFeatData::e_not_set) {
+            // only enter the main Master item, no other master items.
+            // else subtypes are not unique.
+            m_FeatTypeMap[subtype] = item;
+        }
+    }
+}
+
+
+/// return a list of all the feature descriptions for a menu or other control.
+void CFeatList::GetDescriptions(vector<string> &descs, bool hierarchical) const
+{
+    descs.clear();
+
+
+    ITERATE (TFeatTypeContainer, iter, m_FeatTypes) {
+        string  this_desc = iter->GetDescription();
+
+        if (hierarchical) {
+            string parent_desc;
+            if (iter->GetSubtype() != CSeqFeatData::eSubtype_any) {
+                parent_desc = GetDescription(iter->GetType(), CSeqFeatData::eSubtype_any);
+            } else if (iter->GetType() != CSeqFeatData::e_not_set) {
+                parent_desc = this_desc;
+            }
+
+            if ( ! parent_desc.empty()) {
+                this_desc = parent_desc + "/" + this_desc;
+            }
+        }
+
+        descs.push_back(this_desc);
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -2181,6 +2466,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.29  2006/04/03 17:06:19  rsmith
+* move Feat Config LIst from gui/config to SeqFeatData
+*
 * Revision 6.28  2005/12/06 18:01:57  ludwigf
 * FIXED: Added feature qualifier "evidence".
 * I had removed that qualifier a few weeks back, thus making it illegal not

@@ -73,12 +73,15 @@
 
 // generated includes
 #include <objects/seqfeat/SeqFeatData_.hpp>
+#include <set>
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+class CFeatList;
 
 class NCBI_SEQFEAT_EXPORT CSeqFeatData : public CSeqFeatData_Base
 {
@@ -317,6 +320,8 @@ public:
     // Convert a qualifier from an enumerated value to a string representation.
     static const string& GetQulifierAsString(EQualifier qual);
 
+    static const CFeatList* CSeqFeatData::GetFeatList();
+
 private:
     mutable ESubtype m_Subtype; // cached
 
@@ -370,6 +375,126 @@ const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(void) cons
 /////////////////// end of CSeqFeatData inline methods
 
 
+
+
+/// CFeatListItem - basic configuration data for one "feature" type.
+/// "feature" expanded to include things that are not SeqFeats.
+class NCBI_SEQFEAT_EXPORT CFeatListItem
+{
+public:
+    CFeatListItem() {}
+    CFeatListItem(int type, int subtype, const char* desc, const char* key)
+    : m_Type(type)
+    , m_Subtype(subtype)
+    , m_Description(desc)
+    , m_StorageKey(key) {}
+    
+    bool operator<(const CFeatListItem& rhs) const;
+    
+    int         GetType() const;
+    int         GetSubtype() const;
+    string      GetDescription() const;
+    string      GetStoragekey() const;
+    
+private:
+    int         m_Type;         ///< Feature type, or e_not_set for default values.
+    int         m_Subtype;      ///< Feature subtype or eSubtype_any for default values.
+    string      m_Description;  ///< a string for display purposes.
+    string      m_StorageKey;   ///< a short string to use as a key or part of a key
+                                ///< when storing a value by key/value string pairs.
+};
+
+
+// Inline methods.
+
+inline
+int CFeatListItem::GetType() const
+{ return m_Type; }
+
+inline
+int CFeatListItem::GetSubtype() const
+{ return m_Subtype; }
+
+inline
+string CFeatListItem::GetDescription() const
+{ return m_Description; }
+
+inline
+string CFeatListItem::GetStoragekey() const
+{ return m_StorageKey; }
+
+
+/// CConfigurableItems - a static list of items that can be configured.
+///
+/// One can iterate through all items. Iterators dereference to CFeatListItem.
+/// One can also get an item by type and subtype.
+
+class NCBI_SEQFEAT_EXPORT CFeatList
+{
+private:
+    typedef set<CFeatListItem>    TFeatTypeContainer;
+    
+public:
+    
+    CFeatList();
+    
+    bool    TypeValid(int type, int subtype) const;
+    
+    /// can get all static information for one type/subtype.
+    bool    GetItem(int type, int subtype, CFeatListItem& config_item) const;
+    bool    GetItemBySubtype(int subtype,  CFeatListItem& config_item) const;
+    
+    bool    GetItemByDescription(const string& desc, CFeatListItem& config_item) const;
+    bool    GetItemByKey(const string& key, CFeatListItem& config_item) const;
+    
+    /// Get the displayable description of this type of feature.
+    string      GetDescription(int type, int subtype) const;
+    
+    /// Get the feature's type and subtype from its description.
+    /// return true on success, false if type and subtype are not valid.
+    bool        GetTypeSubType(const string& desc, int& type, int& subtype) const;
+    
+    /// Get the key used to store this type of feature.
+    string      GetStoragekey(int type, int subtype) const;
+    /// Get the key used to store this type of feature by only subtype.
+    string      GetStoragekey(int subtype) const;
+    
+    /// Get hierarchy of keys above this subtype, starting with "Master"
+    /// example, eSubtype_gene, will return {"Master", "Gene"}
+    /// but eSubtype_allele will return {"Master", "Import", "allele"}
+    vector<string>  GetStoragekeys(int subtype) const;
+    
+    /// return a list of all the feature descriptions for a menu or other control.
+    /// if hierarchical is true use in an Fl_Menu_ descendant to make hierarchical menus.
+    void    GetDescriptions(
+                            vector<string> &descs,          ///> output, list of description strings.
+                            bool hierarchical = false       ///> make descriptions hierachical, separated by '/'.
+                            ) const;
+    
+    // Iteratable list of key values (type/subtype).
+    // can iterate through all values including defaults or with only
+    // real Feature types/subtypes.
+    typedef TFeatTypeContainer::const_iterator const_iterator;
+    
+    size_t          size() const;
+    const_iterator  begin() const;
+    const_iterator  end() const;
+private:
+        /// initialize our container of feature types and descriptions.
+        void    x_Init(void);
+    
+    TFeatTypeContainer    m_FeatTypes;    ///> all valid types and subtypes.
+    
+    typedef map<int, CFeatListItem>   TSubtypeMap;
+    TSubtypeMap    m_FeatTypeMap; ///> indexed by subtype only.
+};
+
+/// You can have your own copy of the FeatConfgList, but usually
+/// you will want to get a pointer to a static copy from here.
+NCBI_SEQFEAT_EXPORT
+const CFeatList* GetFeatConfigList();
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -381,6 +506,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/04/03 17:06:19  rsmith
+* move Feat Config LIst from gui/config to SeqFeatData
+*
 * Revision 1.12  2005/11/16 15:09:41  ludwigf
 * ADDED: New GB qualifiers "/ribosomal_slippage" and "/trans_plicing".
 *
