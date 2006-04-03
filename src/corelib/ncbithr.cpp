@@ -560,7 +560,7 @@ bool CThread::Run(TRunMode flags)
     xncbi_Validate(pthread_attr_init (&attr) == 0,
                    "CThread::Run() - error initializing thread attributes");
     if ( ! (flags & fRunUnbound) ) {
-#if defined(NCBI_OS_BSD)
+#if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_CYGWIN)
         xncbi_Validate(pthread_attr_setscope(&attr,
                                              PTHREAD_SCOPE_PROCESS) == 0,
                        "CThread::Run() - error setting thread scope");
@@ -748,6 +748,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/04/03 21:42:29  vakatov
+ * Use PTHREAD_SCOPE_PROCESS rather than PTHREAD_SCOPE_SYSTEM on Cygwin,
+ * as Cygwin (like BSD) returns an error otherwise
+ *
  * Revision 1.36  2006/03/06 17:43:57  vasilche
  * Fixed cleanup of CTls<> objects and values.
  *
