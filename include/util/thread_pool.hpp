@@ -44,6 +44,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <util/util_exception.hpp>
 
@@ -141,16 +142,23 @@ public:
           m_RequestCounter(0xFFFFFF)
         { _ASSERT(max_size > 0); }
 
-    /// Put a request into the queue. Throws exception if full.
+    /// Put a request into the queue.  If the queue remains full for
+    /// the duration of the (optional) timeout, throw an exception.
     ///
     /// @param request
     ///   Request
     /// @param priority
-    ///   A priority of the request. The higher the priority 
-    ///   the sooner the request will be processed.   
-    TItemHandle  Put(const TRequest& request, TUserPriority priority = 0); 
+    ///   The priority of the request. The higher the priority 
+    ///   the sooner the request will be processed.
+    /// @param timeout_sec
+    ///   Number of whole seconds in timeout
+    /// @param timeout_nsec
+    ///   Number of additional nanoseconds in timeout
+    TItemHandle  Put(const TRequest& request, TUserPriority priority = 0,
+                     unsigned int timeout_sec = 0,
+                     unsigned int timeout_nsec = 0);
 
-    /// Wait for the room in the queue up to
+    /// Wait for room in the queue for up to
     /// timeout_sec + timeout_nsec/1E9 seconds.
     ///
     /// @param timeout_sec
@@ -377,7 +385,9 @@ public:
     ///   A priority of the request. The higher the priority 
     ///   the sooner the request will be processed.   
     TItemHandle AcceptRequest(const TRequest& request,
-                              TUserPriority priority = 0);
+                              TUserPriority priority = 0,
+                              unsigned int timeout_sec = 0,
+                              unsigned int timeout_nsec = 0);
 
     /// Puts a request in the queue with the highest priority
     /// It will run a new thread even if the maximum of allowed threads 
@@ -385,7 +395,9 @@ public:
     ///
     /// @param request
     ///   A request
-    TItemHandle AcceptUrgentRequest(const TRequest& request);
+    TItemHandle AcceptUrgentRequest(const TRequest& request,
+                                    unsigned int timeout_sec = 0,
+                                    unsigned int timeout_nsec = 0);
 
     /// Wait for the room in the queue up to
     /// timeout_sec + timeout_nsec/1E9 seconds.
@@ -461,7 +473,9 @@ private:
     friend class CThreadInPool<TRequest>;
     TItemHandle x_AcceptRequest(const TRequest& req, 
                                 TUserPriority priority,
-                                bool urgent);
+                                bool urgent,
+                                unsigned int timeout_sec = 0,
+                                unsigned int timeout_nsec = 0);
 
 };
 
@@ -599,14 +613,35 @@ private:
 
 template <typename TRequest>
 typename CBlockingQueue<TRequest>::TItemHandle
-CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority)
+CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
+                              unsigned int timeout_sec,
+                              unsigned int timeout_nsec)
 {
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
     if (q.size() == m_MaxSize) {
-        NCBI_THROW(CBlockingQueueException, eFull, "CBlockingQueue<>::Put: "
-                   "attempt to insert into a full queue");
+        CTime     start(CTime::eCurrent, CTime::eGmt);
+        CTimeSpan span (timeout_sec, timeout_nsec);
+        while (span.GetSign() == ePositive  &&  q.size() == m_MaxSize) {
+            // Temporarily release the mutex while waiting, to avoid deadlock.
+            // See WaitForRoom's comments for more details.
+            guard.Release();
+            if (m_PutSem.TryWait(span.GetCompleteSeconds(),
+                                 span.GetNanoSecondsAfterSecond())) {
+                guard.Guard(m_Mutex);
+                m_PutSem.TryWait();
+                m_PutSem.Post();
+            } else {
+                guard.Guard(m_Mutex);
+            }
+            span -= CurrentTime(CTime::eGmt) - start;
+        }
+        if (q.size() == m_MaxSize) {
+            NCBI_THROW(CBlockingQueueException, eFull,
+                       "CBlockingQueue<>::Put: "
+                       "attempt to insert into a full queue");
+        }
     } else if (q.empty()) {
         m_GetSem.Post();
     }
@@ -853,17 +888,21 @@ template <typename TRequest>
 inline
 typename CPoolOfThreads<TRequest>::TItemHandle
 CPoolOfThreads<TRequest>::AcceptRequest(const TRequest& req, 
-                                             TUserPriority priority)
+                                        TUserPriority priority,
+                                        unsigned int timeout_sec,
+                                        unsigned int timeout_nsec)
 {
-    return x_AcceptRequest(req, priority, false);
+    return x_AcceptRequest(req, priority, false, timeout_sec, timeout_nsec);
 }
 
 template <typename TRequest>
 inline
 typename CPoolOfThreads<TRequest>::TItemHandle
-CPoolOfThreads<TRequest>::AcceptUrgentRequest(const TRequest& req)
+CPoolOfThreads<TRequest>::AcceptUrgentRequest(const TRequest& req,
+                                              unsigned int timeout_sec,
+                                              unsigned int timeout_nsec)
 {
-    return x_AcceptRequest(req, 0xFF, true);
+    return x_AcceptRequest(req, 0xFF, true, timeout_sec, timeout_nsec);
 }
 
 template <typename TRequest>
@@ -900,7 +939,9 @@ inline
 typename CPoolOfThreads<TRequest>::TItemHandle
 CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req, 
                                           TUserPriority priority,
-                                          bool urgent)
+                                          bool urgent,
+                                          unsigned int timeout_sec,
+                                          unsigned int timeout_nsec)
 {
     bool new_thread = false;
     TItemHandle handle;
@@ -914,7 +955,7 @@ CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
                        "CPoolOfThreads<>::x_AcceptRequest: "
                        "attempt to insert into a full queue");
         }
-        handle = m_Queue.Put(req, priority);
+        handle = m_Queue.Put(req, priority, timeout_sec, timeout_nsec);
         if (m_Delta.Add(1) >= m_Threshold
             &&  m_ThreadCount.Get() < m_MaxThreads) {
             // Add another thread to the pool because they're all busy.
@@ -961,6 +1002,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2006/04/03 19:46:34  ucko
+* CBlockingQueue<>::Put, CPoolOfThreads<>::[x_]Accept[Urgent]Request:
+* Accept an optional timeout in which space may become available,
+* defaulting to zero for consistency with existing behavior.
+*
 * Revision 1.35  2006/03/15 19:17:02  ucko
 * Work around "impossible" timeouts that can befall worker threads, and
 * update the relevant exception's message to name the right function.
