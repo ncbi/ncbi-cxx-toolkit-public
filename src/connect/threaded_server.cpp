@@ -44,13 +44,19 @@ class CSocketRequest : public CStdRequest
 public:
     CSocketRequest(CThreadedServer& server, SOCK sock)
         : m_Server(server), m_Sock(sock) {}
-    virtual void Process(void)
-        { m_Server.Process(m_Sock); }
+    virtual void Process(void);
 
 private:
     CThreadedServer& m_Server;
     SOCK             m_Sock;
 };
+
+void CSocketRequest::Process(void)
+{
+    try {
+        m_Server.Process(m_Sock);
+    } STD_CATCH_ALL("CThreadedServer")
+}
 
 
 void CThreadedServer::x_Init(void)
@@ -104,7 +110,7 @@ void CThreadedServer::Run(void)
                     lsock.Close();
                 }
             } catch (CBlockingQueueException&) {
-                _ASSERT(!m_TemporarilyStopListening);
+                _ASSERT( !m_TemporarilyStopListening );
                 ProcessOverflow(sock.GetSOCK());
             }
         } else if (status == eIO_Timeout) {
@@ -126,6 +132,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.17  2006/04/03 16:21:28  ucko
+ * CSocketRequest::Process: make sure to contain (and log) any exceptions
+ * the user's Process method throws.
+ *
  * Revision 6.16  2006/02/01 16:23:38  lavr
  * Introduce CThreadedServer::x_Init() to be able to init connect lib if needed
  *
