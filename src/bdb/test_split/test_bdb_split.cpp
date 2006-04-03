@@ -148,6 +148,14 @@ int CBDB_SplitTest::Run(void)
         res = strcmp(buf_read, "test large 2");
         assert(res == 0);
 
+        size_t buf_size;
+        vector<char> chbuf(10);
+        err = split_store.ReadRealloc(4, chbuf, &buf_size);
+        assert(err == eBDB_Ok);
+        res = strcmp(&chbuf[0], "test large 2");
+        assert(res == 0);
+
+
         }}
 
     }
@@ -182,6 +190,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/04/03 13:15:27  kuznets
+ * +test for ReadRealloc()
+ *
  * Revision 1.1  2006/03/29 16:59:27  kuznets
  * Moving bdb split test to a separate directory
  *
