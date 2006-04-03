@@ -1518,11 +1518,16 @@ vector<string>& NStr::TokenizePattern(const string& str,
     if ( !arr.size() ) {
         // Count number of tokens to determine the array size
         size_t tokens = 0;
-        
-        for (pos = 0, prev_pos = 0; pos != NPOS; ) {
+        for (pos = 0, prev_pos = 0; ; ) {
             pos = str.find(pattern, prev_pos);
-            if ( merge != eMergeDelims  ||
-                (pos != NPOS  &&  pos > prev_pos) ) {
+            if ( merge != eMergeDelims  ||  pos > prev_pos ) {
+                if (pos == NPOS) {
+                    if (merge != eMergeDelims  ||  
+                        prev_pos < str.length() ) {
+                        ++tokens;
+                    }
+                    break;
+                }
                 ++tokens;
             }
             prev_pos = pos + pattern.length();
@@ -1531,9 +1536,21 @@ vector<string>& NStr::TokenizePattern(const string& str,
     }
 
     // Tokenization
-    for (pos = 0, prev_pos = 0; pos != NPOS; ) {
+    for (pos = 0, prev_pos = 0; ; ) {
         pos = str.find(pattern, prev_pos);
-        if ( merge != eMergeDelims  ||  (pos != NPOS  &&  pos > prev_pos) ) {
+        if ( merge != eMergeDelims  ||  pos > prev_pos ) {
+            if (pos == NPOS) {
+                if (merge != eMergeDelims  ||  
+                    prev_pos < str.length() ) {
+                    // Avoid using temporary objects
+                    // ~ arr.push_back(str.substr(prev_pos));
+                    arr.push_back(kEmptyStr);
+                    arr.back().assign(str, prev_pos,
+                                      str.length() - prev_pos);
+                }
+                break;
+            }
+            // Avoid using temporary objects
             // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
             arr.push_back(kEmptyStr);
             arr.back().assign(str, prev_pos, pos - prev_pos);
@@ -2418,6 +2435,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.176  2006/04/03 19:23:07  ivanov
+ * NStr::TokenizePattern() -- fixed bug with processing last
+ * token in the string
+ *
  * Revision 1.175  2006/03/28 16:31:12  ivanov
  * Some comment spellings
  *
