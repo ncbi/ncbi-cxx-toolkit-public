@@ -54,11 +54,20 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // ===========================  Internal error types  ==========================
 
-#define ERR_CODE_BEGIN(x) x##BEGIN
+#define ERR_CODE_BEGIN(x)  x##BEGIN
 #define ERR_CODE_END(x) x##END
 
+/*
+    Validation errors can be saved as data objects.  So we must
+    take care that these error code numbers do not change.
+    Only add new codes at the ends of groups. (right before ERR_CODE_END(...)).
+    Only add new groups of error codes at the end of enums, (right before eErr_Max).
+    Do not change the initialization constants (e.g. = 1000 )
+    eErr_Max must always be the last.
+*/
 enum EErrType {
     eErr_ALL = 0,
+    eErr_UNKNOWN,
 
     ERR_CODE_BEGIN(SEQ_INST),
     eErr_SEQ_INST_ExtNotAllowed,
@@ -112,7 +121,7 @@ enum EErrType {
     eErr_SEQ_INST_BadHTGSeq,
     ERR_CODE_END(SEQ_INST),
 
-    ERR_CODE_BEGIN(SEQ_DESCR),
+    ERR_CODE_BEGIN(SEQ_DESCR) = 1000,
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
     eErr_SEQ_DESCR_FileOpenCollision,
@@ -145,7 +154,7 @@ enum EErrType {
     eErr_SEQ_DESCR_TransgenicProblem,
     ERR_CODE_END(SEQ_DESCR),
 
-    ERR_CODE_BEGIN(GENERIC),
+    ERR_CODE_BEGIN(GENERIC) = 2000,
     eErr_GENERIC_NonAsciiAsn,
     eErr_GENERIC_Spell,
     eErr_GENERIC_AuthorListHasEtAl,
@@ -155,7 +164,7 @@ enum EErrType {
     eErr_GENERIC_MedlineEntryPub,
     ERR_CODE_END(GENERIC),
 
-    ERR_CODE_BEGIN(SEQ_PKG),
+    ERR_CODE_BEGIN(SEQ_PKG) = 3000,
     eErr_SEQ_PKG_NoCdRegionPtr,
     eErr_SEQ_PKG_NucProtProblem,
     eErr_SEQ_PKG_SegSetProblem,
@@ -171,7 +180,7 @@ enum EErrType {
     eErr_SEQ_PKG_GraphPackagingProblem,
     ERR_CODE_END(SEQ_PKG),
 
-    ERR_CODE_BEGIN(SEQ_FEAT),
+    ERR_CODE_BEGIN(SEQ_FEAT) = 4000,
     eErr_SEQ_FEAT_InvalidForType,
     eErr_SEQ_FEAT_PartialProblem,
     eErr_SEQ_FEAT_PartialsInconsistent,
@@ -259,7 +268,7 @@ enum EErrType {
     eErr_SEQ_FEAT_ImproperBondLocation,
     ERR_CODE_END(SEQ_FEAT),
 
-    ERR_CODE_BEGIN(SEQ_ALIGN),
+    ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
     eErr_SEQ_ALIGN_DensegLenStart,
@@ -280,7 +289,7 @@ enum EErrType {
     eErr_SEQ_ALIGN_BlastAligns,
     ERR_CODE_END(SEQ_ALIGN),
 
-    ERR_CODE_BEGIN(SEQ_GRAPH),
+    ERR_CODE_BEGIN(SEQ_GRAPH) = 6000,
     eErr_SEQ_GRAPH_GraphMin,
     eErr_SEQ_GRAPH_GraphMax,
     eErr_SEQ_GRAPH_GraphBelow,
@@ -299,11 +308,11 @@ enum EErrType {
     eErr_SEQ_GRAPH_GraphOverlap,
     ERR_CODE_END(SEQ_GRAPH),
 
-    ERR_CODE_BEGIN(INTERNAL),
-    eErr_Internal_Exception,
+    ERR_CODE_BEGIN(INTERNAL) = 7000,
+    eErr_INTERNAL_Exception,
     ERR_CODE_END(INTERNAL),
 
-    eErr_UNKNOWN
+    eErr_MAX
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -319,19 +328,19 @@ public:
     // severity with proper type.
     EDiagSev                GetSeverity  (void) const;
     // Error code
-    const string&           GetErrCode  (void) const;
+    string                  GetErrCode  (void) const;
     static unsigned int     GetErrCount(void);
     // Error group (SEQ_FEAT, SEQ_INST etc.)
     const string&           GetErrGroup (void) const;
     // Verbose message
-    const string&           GetVerbose  (void) const;
+    string                  GetVerbose  (void) const;
     // Offending object
     const CSerialObject&    GetObject   (void) const;
     bool                    IsSetObject (void) const;
 
     // Convert Severity from enum to a string representation
-    static const string& ConvertSeverity(EDiagSev sev);
-    static const string& ConvertErrCode(unsigned int);
+    static const string&    ConvertSeverity(EDiagSev sev);
+    static string           ConvertErrCode(unsigned int);
 
     bool IsSetContext(void) const;
     const CSeq_entry& GetContext(void) const;
@@ -411,6 +420,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/04/03 17:10:08  rsmith
+* make Err values permanent. Move into objects/valerr
+*
 * Revision 1.3  2006/03/16 14:14:41  rsmith
 * add IsSetObject()
 *
