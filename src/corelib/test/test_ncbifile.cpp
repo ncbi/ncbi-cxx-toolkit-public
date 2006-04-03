@@ -461,7 +461,14 @@ static void s_TEST_File(void)
         cout << "File modification time : " << mtime.AsString() << endl;
         cout << "File last access time  : " << atime.AsString() << endl;
         assert( f.GetTime(&mtime, 0 , &atime) );
-        CTime mtime_new(mtime), atime_new(atime);
+        CTime mtime_cmp(mtime), mtime_new(mtime), atime_new(atime);
+        // Use mtime_cmp time object to compare modification time of the file,
+        // because mtime_new and SetTime() can be affected by
+        // Daylight Saving Time changes.
+        mtime_cmp.AddDay(-2);
+        // Account daylight savings time for file local times
+        mtime_new.SetTimeZonePrecision(CTime::eDay);
+        atime_new.SetTimeZonePrecision(CTime::eDay);
         mtime_new.AddDay(-2);
         atime_new.AddDay(-1);
         assert( f.SetTime(&mtime_new, 0, &atime_new) );
@@ -470,7 +477,7 @@ static void s_TEST_File(void)
         cout << "File modification time : " << mtime.AsString() << endl;
         cout << "File last access time  : " << atime.AsString() << endl;
         // Compare times with second precission (ignoring nanoseconds)
-        assert( mtime - mtime_new < CTimeSpan(1,0));
+        assert( mtime - mtime_cmp < CTimeSpan(1,0));
 
         // Remove the file
         assert( f.Remove() );
@@ -804,10 +811,10 @@ static void s_TEST_MemoryFile(void)
             _TROUBLE;
         } catch (CFileException&) { }
 
-        // Map empty file, expect an exception also.
+        // Map empty file.
+        // Do not expect an exception here (special case)
         CMemoryFile m(s_FileName);
         assert( m.GetPtr() == 0);
-        // Do not expect an exception here (special case)
         assert( m.GetSize() == 0);
     }}
 
@@ -921,6 +928,31 @@ static void s_TEST_MemoryFile(void)
         // Flushing data to disk at memory unmapping in the destructor
     }}
 
+    // Extend() test
+    {{
+        off_t offset = 2;
+        CMemoryFile m(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                      CMemoryFile::eMMS_Shared, offset, 3);
+        char* p0 = (char*)m.GetPtr();
+        assert( m.GetFileSize() == (Int8)s_DataLen );
+        assert( m.GetSize() == 3 );
+        assert( m.GetOffset() == offset );
+
+        // Extend() without remapping (to end of file)
+        char* p1 = (char*)m.Extend();
+        assert( p1 == p0 );
+        assert( m.GetFileSize() == (Int8)s_DataLen );
+        assert( m.GetSize() == s_DataLen - offset );
+        assert( m.GetOffset() == offset );
+        assert( memcmp(s_Data + offset, p1, m.GetSize()) == 0 );
+        
+        // Extend() with remapping
+        char* p2 = (char*)m.Extend(1000);
+        assert( m.GetFileSize() == 1000 + offset );
+        assert( m.GetSize() == 1000 );
+        assert( m.GetOffset() == offset );
+        assert( memcmp(s_Data + offset, p2, 4) == 0 );
+    }}
     // Remove the file
     assert( f.Remove() );
   
@@ -1041,6 +1073,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/04/03 19:44:33  ivanov
+ * s_TEST_File() -- fixed test for setting file modification time,
+ * that can be affected by Daylight Saving Time changes.
+ *
  * Revision 1.55  2006/02/23 19:43:52  ivanov
  * Added test for CDirEntry::SplitPathEx
  *
