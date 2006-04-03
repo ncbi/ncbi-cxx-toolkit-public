@@ -3188,7 +3188,7 @@ s_BlastOOFTracebackToGapEditScript(GapPrelimEditBlock *rev_prelim_tback,
             num_nuc += total_actions;;
         }
     }
-    e_script->size = i;  /* If we broke out early then we truncate the edit script. */
+    e_script->size = MIN(i+1, e_script->size);  /* If we broke out early then we truncate the edit script. */
 
     extra_needed = 0;
     for (i=0; i<e_script->size; i++)
