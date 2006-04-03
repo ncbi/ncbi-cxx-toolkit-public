@@ -58,7 +58,7 @@ typedef EMatrixAdjustRule
               const char *);
 
 
-/* Return eDontAdjustMatrix unconditionally */
+/** Return eDontAdjustMatrix unconditionally */
 static EMatrixAdjustRule
 s_NeverAdjustMatrix(int Len_query, int Len_match,
                   const double * P_query, const double * P_match,
@@ -75,7 +75,7 @@ s_NeverAdjustMatrix(int Len_query, int Len_match,
 }
 
 
-/* Return eCompoScaleOldMatrix unconditionally */
+/** Return eCompoScaleOldMatrix unconditionally */
 static EMatrixAdjustRule
 s_JustScaleOldMatrix(int Len_query, int Len_match,
                      const double * P_query, const double * P_match,
