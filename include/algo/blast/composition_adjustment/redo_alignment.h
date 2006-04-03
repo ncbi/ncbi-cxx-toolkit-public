@@ -310,7 +310,7 @@ typedef struct Blast_RedoAlignParams {
     int RE_pseudocounts;    /**< number of pseudocounts to use in
                                  relative-entropy based composition
                                  adjustment. */
-    int subject_is_translated; /** true if the subject is translated */
+    int subject_is_translated; /**< true if the subject is translated */
     int ccat_query_length;  /**< length of the concatenated query, or
                                 just the length of the query if not
                                 concatenated */
