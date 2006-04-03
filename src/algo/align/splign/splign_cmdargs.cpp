@@ -176,8 +176,6 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
         aligner->SetWi(i, args[arg_name.c_str()].AsInteger());
     }
     splign->SetAligner() = aligner;
-
-    splign->SetStartModelId(1);
 }
 
 
@@ -188,6 +186,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/04/03 15:21:43  kapustin
+ * Do not reset starting model id
+ *
  * Revision 1.4  2006/04/03 15:02:18  kuznets
  * implementation of AgrsToSplign()
  *
