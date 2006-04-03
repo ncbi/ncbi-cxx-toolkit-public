@@ -882,15 +882,20 @@ Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, EBlastEncoding encoding,
 Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk, 
                             const BlastQueryInfo* query_info)
 {
-   Uint1* buffer,* seq = NULL,* tmp_seq;
-   Int4 total_length, index, offset, i, context;
+   Uint1* buffer,* seq = NULL;
+   Int4 index;
    Int4 length[CODON_LENGTH];
-   
-   total_length = QueryInfo_GetSeqBufLen(query_info);
+   Int4 total_length = QueryInfo_GetSeqBufLen(query_info);
+
    /* Allocate 1 extra byte for a final sentinel. */ 
    buffer = (Uint1*) malloc(total_length+1);
 
    for (index = 0; index <= query_info->last_context; index += CODON_LENGTH) {
+      int i;
+
+      if (query_info->contexts[index].query_length == 0)  /* Indicates this context is not searched. */
+         continue;
+
       seq = &buffer[query_info->contexts[index].query_offset];
 
       for (i = 0; i < CODON_LENGTH; ++i) {
@@ -899,8 +904,9 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
       }
       
       for (i = 0; ; ++i) {
-         context = i % 3;
-         offset = i / 3;
+         Uint1 *tmp_seq;
+         Int4 context = i % 3;
+         Int4 offset = i / 3;
          if (offset >= length[context]) {
             /* Once one frame is past its end, we are done */
             break;
