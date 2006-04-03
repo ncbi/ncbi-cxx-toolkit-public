@@ -140,6 +140,44 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
 
 void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
 {
+    splign->SetEndGapDetection(!(args["noendgaps"]));
+
+    splign->SetPolyaDetection(!args["nopolya"]);
+
+    splign->SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
+
+    splign->SetMinCompartmentIdentity(
+                 args["min_compartment_idty"].AsDouble());
+
+    if(args["min_singleton_idty"]) {
+        splign->SetMinSingletonIdentity(args["min_singleton_idty"].AsDouble());
+    }
+    else {
+        splign->SetMinSingletonIdentity(splign->GetMinCompartmentIdentity());
+    }
+
+    splign->SetMaxGenomicExtent(args["max_extent"].AsInteger());
+
+    splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
+
+
+    CRef<CSplicedAligner> aligner(
+        static_cast<CSplicedAligner*>(new CSplicedAligner16));
+        
+    aligner->SetWm(args["Wm"].AsInteger());
+    aligner->SetWms(args["Wms"].AsInteger());
+    aligner->SetWg(args["Wg"].AsInteger());
+    aligner->SetWs(args["Ws"].AsInteger());
+    aligner->SetScoreMatrix(NULL);
+
+    for(size_t i = 0, n = aligner->GetSpliceTypeCount(); i < n; ++i) {
+        string arg_name ("Wi");
+        arg_name += NStr::IntToString(i);
+        aligner->SetWi(i, args[arg_name.c_str()].AsInteger());
+    }
+    splign->SetAligner() = aligner;
+
+    splign->SetStartModelId(1);
 }
 
 
@@ -150,6 +188,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/04/03 15:02:18  kuznets
+ * implementation of AgrsToSplign()
+ *
  * Revision 1.3  2006/03/31 19:11:20  kapustin
  * Refine common argument set
  *
