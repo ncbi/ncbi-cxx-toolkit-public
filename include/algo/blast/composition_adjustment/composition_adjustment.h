@@ -36,9 +36,6 @@
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/composition_adjustment/compo_mode_condition.h>
 
-/** Number of amino acids, including nonstandard ones */
-#define COMPO_PROTEIN_ALPHABET 26
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -52,24 +49,23 @@ enum { eGapChar = 0, eBchar = 2, eDchar = 4, eEchar = 5, eNchar = 13,
 /**
  * Represents the composition of an amino-acid sequence */
 typedef struct Blast_AminoAcidComposition {
-    double prob[26];         /**< probabilities of each amino acid, including
-                                  nonstandard amino acids */
+    double prob[26];         /**< probabilities of each amino acid */
     int numTrueAminoAcids;   /**< number of true amino acids in the sequence,
-                                  omitting X characters */
+                                  omitting nonstandard amino acids */
 } Blast_AminoAcidComposition;
 
 
 /**
- * Compute the amino acid composition of a sequence.
+ * Compute the true amino acid composition of a sequence, ignoring
+ * ambiguity characters and other nonstandard characters.
  *
  * @param composition      the computed composition
  * @param sequence         a sequence of amino acids
  * @param length           length of the sequence
  */
 NCBI_XBLAST_EXPORT
-void
-Blast_ReadAaComposition(Blast_AminoAcidComposition * composition,
-                           const Uint1 * sequence, int length);
+void Blast_ReadAaComposition(Blast_AminoAcidComposition * composition,
+                             const Uint1 * sequence, int length);
 
 
 /** Information about a amino-acid substitution matrix */
@@ -104,30 +100,14 @@ void Blast_MatrixInfoFree(Blast_MatrixInfo ** ss);
 
 /** Work arrays used to perform composition-based matrix adjustment */
 typedef struct Blast_CompositionWorkspace {
-    int flag;              /**< determines which of the optimization
-                                problems are solved */
     double ** mat_b;       /**< joint probabilities for the matrix in
                                 standard context */
-    double ** score_old;   /**< score of the matrix in standard context
-                                with scale Lambda == 1 */
     double ** mat_final;   /**< optimized target frequencies */
-    double ** score_final; /**< optimized score matrix */
 
-    double RE_final;       /**< the relative entropy used, either
-                                re_o_implicit or re_o_newcontext */
-    double RE_o_implicit;  /**< used for eRelEntropyOldMatrixOldContext
-                                mode */
-
-    double * first_seq_freq;          /**< freq vector of first seq */
-    double * second_seq_freq;         /**< freq. vector for the second. */
-    double * first_standard_freq;     /**< background freq vector of first
-                                           seq using matrix */
-    double * second_standard_freq;    /**< background freq vector for
-                                                   the second. */
-    double * first_seq_freq_wpseudo;  /**< freq vector of first seq
-                                           w/pseudocounts */
-    double * second_seq_freq_wpseudo; /**< freq. vector for the
-                                           second seq w/pseudocounts */
+    double * first_standard_freq;     /**< background frequency vector
+                                           of the first sequence */
+    double * second_standard_freq;    /**< background frequency vector of
+                                           the second sequence */
 } Blast_CompositionWorkspace;
 
 
@@ -148,6 +128,16 @@ int Blast_CompositionWorkspaceInit(Blast_CompositionWorkspace * NRrecord,
  * Blast_CompositionWorkspace. */
 NCBI_XBLAST_EXPORT
 void Blast_CompositionWorkspaceFree(Blast_CompositionWorkspace ** NRrecord);
+
+/**
+ * Compute the entropy of the scoring matrix implicit in a set of
+ * target substitution frequencies.
+ *
+ * It is assumed that the background frequencies of the sequences
+ * being compared are consistent with the substitution frequencies.
+ */
+NCBI_XBLAST_EXPORT
+double Blast_TargetFreqEntropy(double ** target_freq);
 
 
 /**
@@ -208,6 +198,10 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
  *
  * to optimize a score matrix to a given set of letter frequencies.
  *
+ * @param matrix       the newly computed matrix [out]
+ * @param matrix_adjust_rule    the rule to use when computing the matrix;
+ *                              affects how the relative entropy is
+ *                              constrained
  * @param length1      adjusted length (not counting X) of the first
  *                     sequence
  * @param length2      adjusted length of the second sequence
@@ -223,17 +217,20 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
  * @param NRrecord     a Blast_CompositionWorkspace that contains
  *                     fields used for the composition adjustment and
  *                     that will hold the output.
- * @param lambdaComputed   the new computed value of lambda
+ * @param matrixInfo   information about the underlying, non-adjusted,
+ *                     scoring matrix.
  *
  * @return 0 on success, 1 on failure to converge, -1 for out-of-memory
  */
 NCBI_XBLAST_EXPORT
-int Blast_CompositionMatrixAdj(int length1, int length2,
+int Blast_CompositionMatrixAdj(int ** matrix,
+                               EMatrixAdjustRule matrix_adjust_rule,
+                               int length1, int length2,
                                const double *probArray1,
                                const double *probArray2,
                                int pseudocounts, double specifiedRE,
                                Blast_CompositionWorkspace * NRrecord,
-                               double * lambdaComputed);
+                               const Blast_MatrixInfo * matrixInfo);
 
 
 /**
@@ -306,6 +303,151 @@ void Blast_Int4MatrixFromFreq(Int4 **matrix, int alphsize,
  */
 NCBI_XBLAST_EXPORT
 double Blast_GetRelativeEntropy(const double A[], const double B[]);
+
+
+/**
+ * Compute the relative entropy of the scoring matrix that is
+ * consistent with a set of target frequencies (old frequencies) when
+ * that matrix is applied to a search with a different (new)
+ * compositional context.
+ *
+ * @param entropy       the computed entropy
+ * @param Lambda        the implicit scale of the matrix in the new context
+ * @param iter_count    the number of iterations used in computing Lambda;
+ *                      provided for display purposes
+ * @param target_freq   20x20 matrix of target frequencies for the ARND...
+ *                      alphabet
+ * @param row_prob      residue probabilities for the sequence corresponding
+ *                      to the rows of the matrix; not usually consistent
+ *                      with target_freq
+ * @param col_prob      residue probabilities for the sequence corresponding
+ *                      to the columns of the matrix
+ * @return    zero on success; -1 on out of memory; 1 on failure.
+ *
+ * A nonzero return is rare, and typically indicates that the entropy
+ * could not be computed because the matrix had positive average
+ * score, or no positive score with nonzero probability
+ */
+NCBI_XBLAST_EXPORT
+int Blast_EntropyOldFreqNewContext(double * entropy, double * Lambda,
+                                   int * iter_count, double ** target_freq,
+                                   const double row_prob[],
+                                   const double col_prob[]);
+
+/**
+ * Convert a matrix of frequency ratios to a matrix of scores.
+ * @param matrix            the matrix
+ * @param rows              number of rows in the matrix
+ * @param cols              number of rows in the matrix
+ * @param Lambda            scale of the scores
+ */
+NCBI_XBLAST_EXPORT
+void
+Blast_FreqRatioToScore(double ** matrix, int rows, int cols, double Lambda);
+
+
+/**
+ *  Given a matrix of target frequencies, divide all elements by the
+ *  character probabilities to get a matrix of frequency ratios.
+ *
+ *  @param ratios       on entry, target frequencies; on exit, frequency
+ *                      ratios
+ *  @param alphsize     size of the alphabet
+ *  @param row_prob     character probabilities in the sequence corresponding
+ *                      to the rows of "ratios"
+ *  @param col_prob     character probabilities in the sequence corresponding
+ *                      to the columns of "ratios"
+ *
+ * For any indices i, j for which row_prob[i] == 0 or col_prob[j] == 0, the
+ * matrix entry is untouched; it is assumed that the calling routine knows
+ * how to deal with these entries, since this routine does not.
+ */
+NCBI_XBLAST_EXPORT
+void Blast_CalcFreqRatios(double ** ratios, int alphsize,
+                          double row_prob[], double col_prob[]);
+
+
+/**
+ * Find the weighted average of a set of observed probabilities with a
+ * set of "background" probabilities.  All array parameters have
+ * length COMPO_NUM_TRUE_AA.
+ *
+ * @param probs                   on entry, observed probabilities; on
+ *                                exit, weighted average probabilities.
+ * @param number_of_observations  the number of characters used to
+ *                                form the observed_freq array
+ * @param background_probs        the probability of characters in a
+ *                                standard sequence.
+ * @param pseudocounts            the number of "standard" characters
+ *                                to be added to form the weighted
+ *                                average.
+ */
+NCBI_XBLAST_EXPORT
+void Blast_ApplyPseudocounts(double * probs,
+                             int number_of_observations,
+                             const double * background_probs,
+                             int pseudocounts);
+
+/**
+ * Given a score matrix the character frequencies in two sequences,
+ * compute the ungapped statistical parameter Lambda.
+ *
+ * If the average score for a composition is negative, then
+ * statistical parameter Lambda exists and is the unique, positive
+ * solution to
+ *
+ *    phi(lambda) = sum_{i,j} P_1(i) P_2(j) exp(S_{ij} lambda) - 1 = 0,
+ *
+ * where S_{ij} is the matrix "score" and P_1 and P_2 are row_probs and
+ * col_probs respectively.
+ *
+ * @param *plambda      the computed lambda
+ * @param *piterations  the number of iterations needed to compute Lambda,
+ *                      or max_iterations if Lambda could not be computed.
+ * @param score         a scoring matrix
+ * @param alphsize      the size of the alphabet
+ * @param row_prob      the frequencies for the sequence corresponding to
+ *                      the rows of the matrix
+ * @param col_prob      the frequencies for the sequence corresponding to
+ *                      the columns of the matrix
+ * @param lambda_tolerance     the desired relative precision for Lambda
+ * @param function_tolerance   the desired maximum magnitude for
+ *                             phi(lambda)
+ * @param max_iterations the maximum number of permitted iterations.
+ *
+ * Note that Lambda does not exist unless the average score is negative.
+ *
+ * Comments on the algorithm used may be found in
+ * composition_adjustment.c.
+ */
+NCBI_XBLAST_EXPORT
+void Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
+                                   double ** score, int alphsize,
+                                   const double row_prob[],
+                                   const double col_prob[],
+                                   double lambda_tolerance,
+                                   double function_tolerance,
+                                   int max_iterations);
+
+/**
+ * Calculate the entropy of a matrix relative to background
+ * probabilities for two sequences.
+ *
+ * @param matrix       a scoring matrix
+ * @param alphsize     size of the alphabet for matrix
+ * @param row_prob     probabilities for the sequence corresponding to
+ *                     the rows of matrix.
+ * @param col_prob     probabilities for the sequence corresponding to
+ *                     the columns of matrix.
+ * @param Lambda       the statistical parameter Lambda for the
+ *                     scoring system; can be calculated from the
+ *                     matrix and the sequence probabilities, but it
+ *                     is assumed to already be known.
+ */
+NCBI_XBLAST_EXPORT
+double
+Blast_MatrixEntropy(double ** matrix, int alphsize, const double row_prob[],
+                    const double col_prob[], double Lambda);
 
 #ifdef __cplusplus
 }
