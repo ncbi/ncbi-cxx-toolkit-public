@@ -39,7 +39,7 @@ global newProject
 
 (* external globals *)
 global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
-global libTypeDLL, cpuOptimization, zeroLink, fixContinue
+global libTypeDLL, cpuOptimization, zeroLink, fixContinue, xcodeVersion, projFile
 
 (**)
 
@@ -170,6 +170,12 @@ script ProjBuilder
 		addPair(mainGroup, "MAINGROUP")
 		addPair(buildStyleDebug, "BUILDSTYLE__Development")
 		addPair(buildStyleRelease, "BUILDSTYLE__Deployment")
+		
+		if xcodeVersion is 1 then
+			addPair(39, "objectVersion")
+		else if xcodeVersion is 2 then
+			addPair(42, "objectVersion")
+		end if
 		log "Done initialize ProjBuilder"
 	end Initialize
 	
@@ -399,7 +405,7 @@ script ProjBuilder
 		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
 		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
 		
-		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Genome Workbench Disk Image", |none|:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
+		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Genome Workbench Disk Image", none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
 		copy "SCRIPTPHASE__GBENCH_DISK" to the beginning of |buildPhases| of theTarget
 		addPair(aScriptPhase, "SCRIPTPHASE__GBENCH_DISK")
 		addPair(theTarget, "TARGET__GBENCH_DISK")
@@ -409,11 +415,11 @@ script ProjBuilder
 		
 		(* Target: Build Everything *)
 		copy "TARGET__BUILD_APP" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Applications", |none|:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Applications", none:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
 		copy "TARGET__BUILD_LIB" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Libraries", |none|:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Libraries", none:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
 		copy "TARGET__BUILD_ALL" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All", |none|:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All", none:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
 		
 		
 		(* add frameworks*)
@@ -434,12 +440,14 @@ script ProjBuilder
 		(* Create a record from two lists *)
 		set objects of newProject to CreateRecordFromList(objValues, objKeys)
 		
+		
+		
 		try -- create some folders
-			set shScript to "if test ! -d " & TheOUTPath & "/NCBI.xcode ; then mkdir " & TheOUTPath & "/NCBI.xcode ; fi"
+			set shScript to "if test ! -d " & TheOUTPath & "/" & projFile & " ; then mkdir " & TheOUTPath & "/" & projFile & " ; fi"
 			do shell script shScript
 		end try
 		
-		set fullProjName to (TheOUTPath & "/NCBI.xcode/project.pbxproj") as string
+		set fullProjName to (TheOUTPath & "/" & projFile & "/project.pbxproj") as string
 		(* Call NSDictionary method to save data as XML property list *)
 		--call method "writeToFile:atomically:" of newProject with parameters {"/Users/lebedev/111.txt", "YES"}
 		--call method "writeToFile:atomically:" of newProject with parameters {"/Users/lebedev/!test.xcode/project.pbxproj", "YES"}
@@ -629,6 +637,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/04/03 12:03:56  lebedev
+ * Directly support Xcode 2.0 format (no need to upgrade project file every time)
+ *
  * Revision 1.41  2006/03/07 16:16:25  lebedev
  * Linker flags added to fix dynamic_cast across shared boundaries issue
  *

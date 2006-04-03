@@ -39,7 +39,7 @@ global ToolkitSource
 global ProjBuilderLib
 
 global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
-global libTypeDLL, cpuOptimization, zeroLink, fixContinue
+global libTypeDLL, cpuOptimization, zeroLink, fixContinue, xcodeVersion, projFile
 
 
 (* ==== 3rd party libarary properties ==== *)
@@ -426,8 +426,8 @@ on CreateProject()
 	x_AddtoLog("Saving project file")
 	tell ProjBuilderLib to SaveProjectFile()
 	
-	x_AddtoLog("Opening generated project: " & TheOUTPath & "/NCBI.xCode")
-	do shell script "open " & TheOUTPath & "/NCBI.xCode" -- Open Project
+	x_AddtoLog("Opening generated project: " & TheOUTPath & "/" & projFile)
+	do shell script "open " & TheOUTPath & "/" & projFile -- Open Project
 	x_AddtoLog("Done")
 	
 	tell application "Xcode"
@@ -596,10 +596,18 @@ on ValidatePaths()
 		--return "The Output folder was not found at: " & TheOUTPath
 	end if
 	
-	set libTypeDLL to content of button "libType" of window "Main" -- DLL or Static
+	set libTypeDLL to true --content of button "libType" of window "Main" -- DLL or Static
 	set cpuOptimization to content of button "cpuOpt" of window "Main" -- CPU specific optimization
-	set zeroLink to content of button "zeroLink" of window "Main" -- Use Zero Link
+	set zeroLink to false --content of button "zeroLink" of window "Main" -- Use Zero Link
 	set fixContinue to content of button "fixCont" of window "Main" -- Use Fix & Continue
+	set xcodeVersion to current row of matrix "xcodeVer" of window "Main" -- Xcode version 1.5 / 2.0+
+	
+	-- Xcode file format:
+	if xcodeVersion is 1 then
+		set projFile to "NCBI.xcode"
+	else if xcodeVersion is 2 then
+		set projFile to "NCBI.xcodeproj"
+	end if
 	
 	return "" -- no errors found
 end ValidatePaths
@@ -651,6 +659,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/04/03 12:03:56  lebedev
+ * Directly support Xcode 2.0 format (no need to upgrade project file every time)
+ *
  * Revision 1.18  2006/03/06 18:31:12  lebedev
  * AppleScript warning fixed
  *
