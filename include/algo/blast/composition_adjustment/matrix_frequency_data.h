@@ -37,9 +37,6 @@
 extern "C" {
 #endif
 
-/** Number of standard amino acids */
-#define COMPO_NUM_TRUE_AA 20
-
 /**
  * Get joint probabilities for the named matrix.
  *
