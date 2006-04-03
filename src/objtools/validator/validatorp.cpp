@@ -591,7 +591,7 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exeption while validating feature. EXCEPTION: ") +
                 e.what(), sf);
             return true;
@@ -625,7 +625,7 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exeption while validating descriptor. EXCEPTION: ") +
                 e.what(), ctx, *di);
             return true;
@@ -656,7 +656,7 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exeption while validating bioseq. EXCEPTION: ") +
                 e.what(), bs);
             return true;
@@ -692,7 +692,7 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exeption while validating bioseq set. EXCEPTION: ") +
                 e.what(), *si);
             return true;
@@ -720,7 +720,7 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exeption while validating alignment. EXCEPTION: ") +
                 e.what(), sa);
             return true;
@@ -747,7 +747,7 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exeption while validating graph. EXCEPTION: ") +
                 e.what(), sg);
             return true;
@@ -782,7 +782,7 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exeption while validating annotation. EXCEPTION: ") +
                 e.what(), sn);
             return true;
@@ -810,7 +810,7 @@ bool CValidError_imp::Validate
                 }
             }
         } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_Internal_Exception,
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exeption while validating annotation. EXCEPTION: ") +
                 e.what(), sd);
             return true;
@@ -1774,7 +1774,7 @@ void CValidError_imp::ValidateSeqLoc
         } catch( const exception& e ) {
             string label;
             lit->GetLabel(&label);
-            PostErr(eDiag_Error, eErr_Internal_Exception,  
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,  
                 "Exception caught while validating location " +
                 label + ". Exception: " + e.what(), obj);
                 
@@ -2676,6 +2676,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2006/04/03 17:07:40  rsmith
+* regularize name of INTERNAL error
+*
 * Revision 1.72  2006/02/16 21:56:53  rsmith
 * Use new objects::valerr class to store validation errors.
 *
