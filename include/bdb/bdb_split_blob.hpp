@@ -468,7 +468,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::ReadRealloc(unsigned      id,
     {{
         TLockGuard lg(*(dbp.lock));
         dbp.db->id = id;
-        EBDB_ErrCode e = dbp.db->ReadRealloc(id, buffer, buf_size);
+        EBDB_ErrCode e = dbp.db->ReadRealloc(buffer, buf_size);
         return e;
     }}
 
@@ -689,6 +689,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/04/03 13:16:01  kuznets
+ * Fixed ReadRealloc()
+ *
  * Revision 1.2  2006/03/28 17:17:03  kuznets
  * Fixed GCC compilation issues
  *
