@@ -62,19 +62,18 @@ static int alphaConvert[COMPO_PROTEIN_ALPHABET] =
  * not be attained. */
 static const int kCompositionMargin = 20;
 
-#define SCORE_BOUND            0.0000000001 /**< average scores below 
+#define SCORE_BOUND            0.0000000001 /**< average scores below
                                                  -SCORE_BOUND are considered
                                                  effectively nonnegative, and
                                                  Newton's method will
                                                  will terminate */
-#define LAMBDA_STEP_FRACTION   0.5          /**< default step fraction in
-                                                 Newton's method */
-#define INITIAL_LAMBDA         1.0          /**< initial value for Newton's
-                                                 method */
-#define LAMBDA_ITERATION_LIMIT 300          /**< iteration limit for Newton's
+#define LAMBDA_ITERATION_LIMIT 100          /**< iteration limit for Newton's
                                                  method. */
 #define LAMBDA_ERROR_TOLERANCE 0.0000001    /**< bound on error for estimating
                                                  lambda */
+#define LAMBDA_FUNCTION_TOLERANCE 0000001   /**< bound on the difference 
+                                                 between the expected value
+                                                 of exp(lambda x S) and 1 */
 
 /** bound on error for Newton's method */
 static const double kCompoAdjustErrTolerance = 0.00000001;
@@ -83,86 +82,32 @@ static const int kCompoAdjustIterationLimit = 2000;
 /** relative entropy of BLOSUM62 */
 static const double kFixedReBlosum62 = 0.44;
 
-/**
- * Find the weighted average of a set of observed probabilities with a
- * set of "background" probabilities.  All array parameters have
- * length COMPO_NUM_TRUE_AA.
- *
- * @param probs_with_pseudo       an array of weighted averages [out]
- * @param normalized_probs        observed frequencies, normalized to sum
- *                                to 1.0 [out]
- * @param observed_freq           observed frequencies, not necessarily
- *                                normalized to sum to 1.0. [in]
- * @param background_probs        the probability of characters in a
- *                                standard sequence.
- * @param number_of_observations  the number of characters used to
- *                                form the observed_freq array
- * @param pseudocounts            the number of "standard" characters
- *                                to be added to form the weighted
- *                                average.
- */
-static void
-Blast_ApplyPseudocounts(double * probs_with_pseudo,
-                        double * normalized_probs,
-                        const double * observed_freq,
-                        int number_of_observations,
-                        const double * background_probs,
-                        int pseudocounts)
+
+/* Documented in composition_adjustment.h. */
+void
+Blast_ApplyPseudocounts(double * probs,
+                    int number_of_observations,
+                    const double * background_probs,
+                    int pseudocounts)
 {
     int i;                 /* loop index */
     double weight;         /* weight assigned to pseudocounts */
     double sum;            /* sum of the observed frequencies */
-    double dpseudocounts; /* pseudocounts as a double */
-
-    dpseudocounts = pseudocounts;
+    /* pseudocounts as a double */
+    double dpseudocounts = pseudocounts;
 
     /* Normalize probabilities */
     sum = 0.0;
     for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-        sum += observed_freq[i];
+        sum += probs[i];
     }
-    if (sum > 0) {
-        for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-            normalized_probs[i] = observed_freq[i]/sum;
-        }
+    if (sum == 0.0) {  /* Can't normalize a zero vector */
+        sum = 1.0;
     }
     weight = dpseudocounts / (number_of_observations + dpseudocounts);
     for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-        probs_with_pseudo[i] =
-            (1.0 - weight) * normalized_probs[i] +
-            weight * background_probs[i];
-    }
-}
-
-
-/**
- * Create a score matrix from a set of target frequencies.  The scores
- * are scaled so that the Karlin-Altschul statistical parameter Lambda
- * equals (within numerical precision) 1.0.
- *
- * @param score        the new score matrix [out]
- * @param alphsize     the number of rows and columns of score
- * @param freq         a matrix of target frequencies [in]
- * @param row_sum      sum of each row of freq [in]
- * @param col_sum      sum of each column of freq[in]
- */
-static void
-Blast_ScoreMatrixFromFreq(double ** score, int alphsize, double ** freq,
-                          const double row_sum[], const double col_sum[])
-{
-    int i, j;          /* array indices */
-    double sum;        /* sum of values in freq; used to normalize freq */
-
-    sum = 0.0;
-    for (i = 0;  i < alphsize;  i++) {
-        for (j = 0; j < alphsize;  j++) {
-            sum +=  freq[i][j];
-        }
-    }
-    for (i = 0;  i < alphsize;  i++) {
-        for (j = 0; j < alphsize;  j++) {
-            score[i][j] = log(freq[i][j] / sum / row_sum[i] / col_sum[j]);
-        }
+        probs[i] = (1.0 - weight) * probs[i] / sum
+            + weight * background_probs[i];
     }
 }
 
@@ -193,12 +138,258 @@ Blast_GetRelativeEntropy(const double A[], const double B[])
 }
 
 
+
+/* Blast_CalcLambdaFullPrecision -- interface documented in
+ * composition_adjustment.h.
+ *
+ * If the average score for a composition is negative, then
+ * statistical parameter Lambda exists and is the unique, positive
+ * solution to
+ *
+ *    phi(lambda) = sum_{i,j} P_1(i) P_2(j) exp(S_{ij} lambda) - 1 = 0,
+ *
+ * where S_{ij} is the matrix "score" and P_1 and P_2 are row_probs and
+ * col_probs respectively.
+ *
+ * It is simpler to solve this problem in x = exp(-lambda) than it is
+ * to solve it in lambda, because we know that for x, a solution lies
+ * in [0,1].  Furthermore, if M is the largest S_{ij} so that P_1(i)
+ * and P_2(j) are nonzero, then the function
+ *
+ *    f(x) = -x^M - sum_{i,j} P_1(i) P_2(j) x^{M - S_{ij}},
+ *
+ * obtained by multiplying phi(lambda) by x^M, is well behaved in
+ * (0,1] -- if the scores are integers, it is a polynomial.  Since x = 0
+ * is not a solution, x solves f(x) = 0 in [0,1), if and only if
+ * lambda = -ln(x) is a positive solution to phi(lambda).  Therefore,
+ * we may define a safeguarded Newton iteration to find a solution of
+ * f(x) = 0.
+ *
+ * For the most part, this is a standard safeguarded Newton iteration:
+ * define an interval of uncertainty [a,b] with f(a) > 0 and f(b) < 0
+ * (except for the initial value b = 1, where f(b) = 0); evaluate the
+ * function and use the sign of that value to shrink the interval of
+ * uncertainty; compute a Newton step; and if the Newton step suggests
+ * a point outside the interval of uncertainty or fails to decrease
+ * the function sufficiently, then bisect.  There are three further
+ * details needed to understand the algorithm:
+ *
+ * 1)  If y the unique solution in [0,1], then f is positive to the left of
+ *     y, and negative to the right.  Therefore, we may determine whether
+ *     the Newton step -f(x)/f'(x) is moving toward, or away from, y by
+ *     examining the sign of f'(x).  If f'(x) >= 0, we bisect, instead
+ *     of taking the Newton step.
+ * 2)  There is a neighborhood around x = 1 for which f'(x) >= 0,
+ *     so (1) prevents convergence to x = 1.
+ * 3)  Conditions like  fabs(p) < lambda_tolerance * x * (1-x) are used in
+ *     convergence criteria because these values translate to a bound
+ *     on the relative error in lambda.  This is proved in the
+ *     "Blast Scoring Parameters" document that accompanies the BLAST
+ *     code.
+ *
+ * We have observed that in typical cases the safeguarded Newton
+ * iteration on f(x) requires half the iterations of a Newton
+ * iteration on phi(lambda). More importantly, the iteration on f(x)
+ * is robust and doesn't overflow; defining a robust safeguarded
+ * Newton iteration on phi(lambda) that cannot converge to zero and
+ * that is protected against overflow is more difficult.  So (despite
+ * the length of this comment) the Newton iteration on f(x) is the
+ * simpler solution.
+ */
+void
+Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
+                              double ** score, int alphsize,
+                              const double row_prob[],
+                              const double col_prob[],
+                              double lambda_tolerance,
+                              double function_tolerance,
+                              int max_iterations)
+{
+    double f = 4;               /* The current function value; initially
+                                   set to a value greater than any possible
+                                   real value of f */
+    double left = 0, right = 1; /* (left, right) is an interval containing
+                                   a solution */
+    double x = 0.367879441171;  /* The current iterate; initially exp(-1) */
+    int is_newton = 0;          /* true if the last iteration was a Newton
+                                   step; initially false */
+    int i, j, k;                /* iteration indices */
+    double max_score = COMPO_SCORE_MIN;
+
+    /* Find the maximum score with nonzero probability */
+    for (i = 0;  i < alphsize;  i++) {
+        if (row_prob[i] == 0.0) {
+            continue;
+        }
+        for (j = 0;  j < alphsize;  j++) {
+            if (col_prob[j] == 0.0) {
+                continue;
+            }
+            if (max_score < score[i][j]) {
+                max_score = score[i][j];
+            }
+        }
+    }
+    for (k = 0;  k < max_iterations;  k++) {
+        double slope;               /* slope of f at x */
+        double fold = f;            /* previous value of f */
+        double x_pow_max_score;     /* x raised to the power max_score */
+        double lambda = -log(x);    /* the iterate lambda, see above */
+        int was_newton = is_newton; /* true if the previous iteration
+                                       was a Newton step; instead of a
+                                       bisection step */
+        /* Evaluate the function and its derivative */
+        x_pow_max_score = exp(-max_score * lambda);
+        f = -x_pow_max_score;
+        slope = max_score * f / x;
+        for (i = 0;  i < alphsize;  i++) {
+            if (row_prob[i] == 0.0) {
+                continue;
+            }
+            for (j = 0;  j < alphsize;  j++) {
+                double ff;  /* a term in the sum used to compute f */
+
+               if (col_prob[j] == 0.0) {
+                   continue;
+               }
+               if (max_score != score[i][j]) {
+                   double diff_score = max_score - score[i][j];
+
+                   ff = row_prob[i] * col_prob[j] * exp(-lambda * diff_score);
+                   slope += diff_score * ff / x;
+               } else {
+                   ff = row_prob[i] * col_prob[j];
+               }
+               f += ff;
+            }
+        }
+        /* Finished evaluating the function and its derivative */
+        if (f > 0) {
+            left = x; /* move the left endpoint */
+        } else if (f < 0) {
+            right = x; /* move the right endpoint */
+        } else { /* f == 0 */
+            break; /* x is an exact solution */
+        }
+        if (right - left <= 2 * left * (1 - right) * lambda_tolerance &&
+            fabs(f/x_pow_max_score) <= function_tolerance) {
+            /* The midpoint of the interval converged */
+            x = (left + right) / 2;
+            break;
+        }
+        if ((was_newton && fabs(f) > .9 * fabs(fold))
+            /* if the previous iteration was a Newton step but didn't
+             * decrease f sufficiently; or */
+             || slope >= 0
+             /* if a Newton step will move us away from the desired solution */
+        ) {/* then */
+            x = (left + right)/2;  /* bisect */
+        } else {
+            double p = -f/slope;   /* The Newton step */
+            double y = x + p;      /* The proposed next iterate */
+            if (y <= left || y >= right) { /* The proposed iterate is
+                                              not in (left,right) */
+                x = (left + right)/2;  /* bisect */
+            } else {/* The proposed iterate is in (left,right). Accept it. */
+                is_newton = 1;
+                x = y;
+                if (fabs(p) <= lambda_tolerance * x * (1-x) &&
+                    fabs(f/x_pow_max_score) <= function_tolerance) break;
+            }
+        }
+    }  /* End for all iterations k */
+    *plambda = -log(x);
+    *piterations = k;
+}
+
+
+/* Documented in composition_adjustment.h. */
+double
+Blast_MatrixEntropy(double ** matrix, int alphsize, const double row_prob[],
+                    const double col_prob[], double Lambda)
+{
+    int i, j;
+    double entropy = 0.0;
+    for (i = 0;  i < alphsize;  i++) {
+        for (j = 0;  j < alphsize;  j++) {
+            /* the score at (i,j), rescaled to nats */
+            double nat_score = Lambda * matrix[i][j];
+            entropy += nat_score * exp(nat_score) * row_prob[i] * col_prob[j];
+        }
+    }
+    return entropy;
+}
+
+
+
+/* Documented in composition_adjustment.h. */
+double
+Blast_TargetFreqEntropy(double ** target_freq)
+{
+    int i, j;
+    double entropy;
+    double row_prob[COMPO_NUM_TRUE_AA] = {0,};
+    double col_prob[COMPO_NUM_TRUE_AA] = {0,};
+
+    for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
+        for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
+            row_prob[i] += target_freq[i][j];
+            col_prob[j] += target_freq[i][j];
+        }
+    }
+    entropy = 0.0;
+    for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
+        for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
+            double freq = target_freq[i][j];
+            entropy += freq * log(freq / row_prob[i] / col_prob[j]);
+        }
+    }
+    return entropy;
+}
+
+
+/* Documented in composition_adjustment.h. */
+void
+Blast_CalcFreqRatios(double ** ratios, int alphsize,
+                     double row_prob[], double col_prob[])
+{
+    int i, j;
+    for (i = 0;  i < alphsize;  i++) {
+        if (row_prob[i] > 0) {
+            for (j = 0;  j < alphsize;  j++) {
+                if (col_prob[j] > 0) {
+                    ratios[i][j] /= (row_prob[i] * col_prob[j]);
+                }
+            }
+        }
+    }
+}
+
+
+/* Documented in composition_adjustment.h. */
+void
+Blast_FreqRatioToScore(double ** matrix, int rows, int cols, double Lambda)
+{
+    int i;
+    for (i = 0;  i < rows;  i++) {
+        int j;
+        for (j = 0;  j < cols;  j++) {
+            if (0.0 == matrix[i][j]) {
+                matrix[i][j] = COMPO_SCORE_MIN;
+            } else {
+                matrix[i][j] = log(matrix[i][j])/Lambda;
+            }
+        }
+    }
+}
+
+
 /**
- * Convert letter probabilities from a 26-letter NCBIstdaa alphabet to
+ * Convert letter probabilities from the NCBIstdaa alphabet to
  * a 20 letter ARND... amino acid alphabet. (@see alphaConvert)
  *
- * @param inputLetterProbs    the 26-letter probabilities [in]
- * @param outputLetterProbs   the 20-letter probabilities [out]
+ * @param outputLetterProbs   the ARND letter probabilities [out]
+ * @param inputLetterProbs    the NCBIstdaa letter probabilities [in]
  */
 static void
 s_GatherLetterProbs(double * outputLetterProbs,
@@ -213,107 +404,235 @@ s_GatherLetterProbs(double * outputLetterProbs,
     }
 }
 
-
 /**
- * Scatter and scale a matrix of scores for a 20 letter ARND...  amino
- * acid alphabet into a matrix for a 26 letter NCBIstdaa alphabet
- * (@see alphaConvert), leaving scores for any character not present
- * in the smaller alphabet untouched.
+ * Convert letter probabilities from a a 20 letter ARND... amino acid
+ * alphabet to the NCBIstdaa alphabet, (@see alphaConvert) setting
+ * probabilities for nonstandard characters to zero.
  *
- * @param dMatrix         frequency ratios for the 26 letter alphabet [out]
- * @param dMatrixTrueAA   frequency ratios for the 20 letter alphabet [in]
- * @param scale           multiply the elements in dMatrixTrueAA by
- *                        scale when applying the scatter.
+ * @param std_probs   the NCBIstdaa letter probabilities [out]
+ * @param probs       the ARND letter probabilities [in]
  */
 static void
-s_ScatterScores(double ** dMatrix,
-                double scale,
-                double ** dMatrixTrueAA)
+s_UnpackLetterProbs(double std_probs[], const double probs[])
 {
-    int p, c; /*indices over positions and characters*/
+    int c; /*index over characters*/
 
-    for (p = 0;  p < COMPO_PROTEIN_ALPHABET;  p++) {
-        for (c = 0;  c < COMPO_PROTEIN_ALPHABET;  c++) {
-            if (((-1) != alphaConvert[p]) && ((-1) != alphaConvert[c])) {
-                dMatrix[p][c] =
-                    scale * dMatrixTrueAA[alphaConvert[p]][alphaConvert[c]];
+    for (c = 0;  c < COMPO_PROTEIN_ALPHABET;  c++) {
+        if ((-1) != alphaConvert[c]) {
+            std_probs[c] = probs[alphaConvert[c]];
+        } else {
+            std_probs[c] = 0.0;
+        }
+    }
+}
+
+
+/**
+ * Set the probabilities for the two-character ambiguity characters.
+ * @param probs     the probabilities for the NCBIstdaa alphabet.
+ *                  On entry, values for the standard amino acids must
+ *                  be set; on exit, values for the two-character
+ *                  ambiguities will also be set.
+ */
+static void
+s_SetPairAmbigProbsToSum(double probs[])
+{
+    probs[eBchar] = probs[eDchar] + probs[eNchar];
+    probs[eZchar] = probs[eEchar] + probs[eQchar];
+}
+
+
+/* Documented in composition_adjustment.h. */
+int
+Blast_EntropyOldFreqNewContext(double * entropy,
+                               double * Lambda,
+                               int * iter_count,
+                               double ** target_freq,
+                               const double row_prob[],
+                               const double col_prob[])
+{
+    int i, j;
+    int status = 1;
+    double ** scores;
+    double old_col_prob[COMPO_NUM_TRUE_AA] = {0.0,};
+    double old_row_prob[COMPO_NUM_TRUE_AA] = {0.0,};
+    double avg_score = 0.0;
+
+    *entropy = 0;
+    status = 1;
+
+    /* Calculate the matrix "scores" from the target frequencies */
+    scores = Nlm_DenseMatrixNew(COMPO_NUM_TRUE_AA, COMPO_NUM_TRUE_AA);
+    if (scores == NULL) {
+        return -1;
+    }
+    for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
+        for (j = 0;  j < COMPO_NUM_TRUE_AA; j++) {
+            old_row_prob[i] += target_freq[i][j];
+            old_col_prob[j] += target_freq[i][j];
+        }
+    }
+    for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
+        memcpy(scores[i], target_freq[i], COMPO_NUM_TRUE_AA * sizeof(double));
+    }
+    Blast_CalcFreqRatios(scores, COMPO_NUM_TRUE_AA,
+                         old_row_prob, old_col_prob);
+    Blast_FreqRatioToScore(scores, COMPO_NUM_TRUE_AA, COMPO_NUM_TRUE_AA, 1.0);
+    /* Finished calculating the matrix "scores" */
+
+    /* Check the average score to be sure it is negative; otherwise
+     * the entropy is meaningless */
+    avg_score = 0.0;
+    for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
+        for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
+           avg_score += scores[i][j] * row_prob[i] * col_prob[j];
+        }
+    }
+    if (avg_score < 0) {
+        Blast_CalcLambdaFullPrecision(Lambda, iter_count, scores,
+                                      COMPO_NUM_TRUE_AA, row_prob,
+                                      col_prob, LAMBDA_ERROR_TOLERANCE,
+                                      LAMBDA_FUNCTION_TOLERANCE,
+                                      LAMBDA_ITERATION_LIMIT);
+        if (*iter_count <=  LAMBDA_ITERATION_LIMIT) {
+            *entropy = Blast_MatrixEntropy(scores, COMPO_NUM_TRUE_AA,
+                                           row_prob, col_prob, *Lambda);
+            status = 0;
+        }
+    }
+    Nlm_DenseMatrixFree(&scores);
+    return status;
+}
+
+
+/**
+ * Convert a matrix of target frequencies for the ARND alphabet of
+ * true amino acids to a set of target frequencies for the NCBIstdaa
+ * alphabet, filling in value for the two-character ambiguities (but
+ * not X).
+ *
+ * @param StdFreq      frequencies in the NCBIstdaa alphabet [output]
+ * @param freq         frequencies in the ARND alphabet [input]
+ */
+static void
+s_TrueAaToStdTargetFreqs(double ** StdFreq, double ** freq)
+{
+    /* Note I'm using a rough convention for this routine that uppercase
+     * letters refer to quantities in the standard (larger) alphabet
+     * and lowercase letters refer to the true amino acid (smaller)
+     * alphabet.
+     */
+    const int small_alphsize = COMPO_NUM_TRUE_AA;
+    const int StdAlphsize = COMPO_PROTEIN_ALPHABET;
+    int A, B;          /* characters in the std (big) alphabet */
+    int a, b;          /* characters in the small alphabet */
+    double sum;        /* sum of values in target_freq; used to normalize */
+    sum = 0.0;
+    for (a = 0;  a < small_alphsize;  a++) {
+        for (b = 0;  b < small_alphsize;  b++) {
+            sum +=  freq[a][b];
+        }
+    }
+    for (A = 0;  A < StdAlphsize;  A++) {
+        /* for all rows */
+        if (alphaConvert[A] < 0) {
+            /* the row corresponds to a nonstandard reside */
+            for (B = 0;  B < StdAlphsize;  B++) {
+                StdFreq[A][B] = 0.0;
             }
+        } else {
+            /* the row corresponds to a standard reside */
+            a = alphaConvert[A];
+
+            for (B = 0;  B < StdAlphsize;  B++) {
+                /* for all columns */
+                if (alphaConvert[B] < 0) {
+                    /* the column corresponds to a nonstandard reside */
+                    StdFreq[A][B] = 0.0;
+                } else {
+                    /* the column corresponds to a standard reside */
+                    b = alphaConvert[B];
+                    StdFreq[A][B] = freq[a][b] / sum;
+                }
+            }
+            /* Set values for two-character ambiguities */
+            StdFreq[A][eBchar] = StdFreq[A][eDchar] + StdFreq[A][eNchar];
+            StdFreq[A][eZchar] = StdFreq[A][eEchar] + StdFreq[A][eQchar];
         }
     }
+    /* Add rows to set values for two-character ambiguities */
+    memcpy(StdFreq[eBchar], StdFreq[eDchar], StdAlphsize * sizeof(double));
+    Nlm_AddVectors(StdFreq[eBchar], StdAlphsize, 1.0, StdFreq[eNchar]);
+
+    memcpy(StdFreq[eZchar], StdFreq[eEchar], StdAlphsize * sizeof(double));
+    Nlm_AddVectors(StdFreq[eZchar], StdAlphsize, 1.0, StdFreq[eQchar]);
 }
 
 
 /**
- * Average the scores for two characters to get scores for an
- * ambiguity character than represents either of the two original
- * characters.
- *
- * @param dMatrix    score matrix -- on entry contains the score data
- *                   for characters A and B, and on exit also contains
- *                   the score data for ambigAB.
- * @param A          a character in the alphabet
- * @param B          another character in the alphabet
- * @param ambigAB    the combined ambiguity character
+ * Calculate values for the X ambiguity score, give an vector of scores and
+ * a set of character probabilities.
+ * @param M            a vector of scores
+ * @param incM         stride between elements of M; used to pass a column
+ *                     of a score matrix to this routine by setting incM
+ *                     to the number of elements in a column.
+ * @param probs        background probabilities for a sequence.
  */
-static void
-Blast_AverageScores(double ** dMatrix, int A, int B, int ambigAB)
+static double
+s_CalcXScore(double * M, int incM, const double probs[])
 {
-    int i;           /* iteration index */
-    double sum;      /* sum of scores */
+    int j;                   /* iteration index */
+    double score_iX = 0.0;   /* score of character i substituted by X */
 
-    for (i = 0;  i < COMPO_PROTEIN_ALPHABET;  i++) {
-        if (-1 != alphaConvert[i]) {
-            sum = dMatrix[i][A] + dMatrix[i][B];
-            dMatrix[i][ambigAB] = sum/2.0;
-            sum = dMatrix[A][i] + dMatrix[B][i];
-            dMatrix[ambigAB][i] = sum/2.0;
+    for (j = 0;  j < COMPO_PROTEIN_ALPHABET;  j++) {
+        if (alphaConvert[j] >= 0) {
+            /* If the column corresponds to a true amino acid */
+            score_iX += M[j * incM] * probs[j];
         }
     }
-    /* Because ambiguity characters are rare, we assume a match of
-     * ambiguity characters represents a match of the true residues, and
-     * so only include matches when computing the average score. */
-    sum = dMatrix[A][A] + dMatrix[B][B];
-    dMatrix[ambigAB][ambigAB] = sum/2.0;
+    return score_iX;
 }
 
 
 /**
- * Set scores for substitutions that involve the nonstandard amino
- * acids in the NCBIstdaa alphabet: the ambiguity characters 'B' and
- * 'Z'; the "don't care" character 'X'; the atypical amino acid 'U'
- * (Selenocysteine); the stop codon '*'; and the gap or end of
- * sequence character '-'.
+ * Given a standard matrix with the scores for true amino acid, and
+ * pairwise ambiguity scores set, calculate and set the scores for the
+ * X and U (Selenocystiene) characters.
  *
- * @param dMatrix      a matrix that on entry contains scores for all the
- *                     true amino acids, and on exit also contains the
- *                     scores for the nonstandard amino acids.
- * @param startMatrix  rounded amino acid substitution scores in
- *                     standard context [in]
+ * @param M             a scoring matrix
+ * @param row_probs     character frequencies for the sequence corresponding
+ *                      to the rows of M.
+ * @param col_probs     character frequencies for the sequence corresponding
+ *                      to the columns of M.
  */
 static void
-Blast_SetNonstandardAaScores(double **dMatrix, int **startMatrix)
+s_SetXUScores(double ** M, const double row_probs[], const double col_probs[])
 {
-    int i; /* loop index */
-    /* An array containing those special characters whose score will be
-       set using startFreqRatios */
-    int specialChars[4] =
-    { eGapChar,  eXchar, eSelenocysteine, eStopChar };
+    int i;                      /* iteration index */
+    double score_XX = 0.0;      /* score of matching an X to an X */
+    /* A shorter name for COMPO_PROTEIN_ALPHABET */
+    const int alphsize = COMPO_PROTEIN_ALPHABET;
 
-    /* Set the scores for ambiguity characters B and Z */
-    Blast_AverageScores(dMatrix, eDchar, eNchar, eBchar);
-    Blast_AverageScores(dMatrix, eEchar, eQchar, eZchar);
+    for (i = 0;  i < alphsize;  i++) {
+        if (alphaConvert[i] >= 0) {
+            M[i][eXchar] = s_CalcXScore(M[i], 1, col_probs);
+            score_XX += M[i][eXchar] * row_probs[i];
 
-    /* (B,Z) mismatches are so rare we simply set their score to zero. */
-    dMatrix[eBchar][eZchar] = dMatrix[eZchar][eBchar] = 0.0;
-
-    /* Set the other characters using the startMatrix */
-    for (i = 0;  i < 4;  i++) {
-        int A, B;     /* Two characters in the alphabet */
-        A = specialChars[i];
-        for (B = 0;  B < COMPO_PROTEIN_ALPHABET;  B++) {
-            dMatrix[A][B] = startMatrix[A][B];
-            dMatrix[B][A] = startMatrix[B][A];
+            M[eXchar][i] = s_CalcXScore(&M[0][i], alphsize, row_probs);
         }
+    }
+    M[eXchar][eXchar] = score_XX;
+
+    /* Set X scores for pairwise ambiguity characters */
+    M[eBchar][eXchar] = s_CalcXScore(M[eBchar], 1, col_probs);
+    M[eXchar][eBchar] = s_CalcXScore(&M[0][eBchar], alphsize, row_probs);
+
+    M[eZchar][eXchar] = s_CalcXScore(M[eZchar], 1, col_probs);
+    M[eXchar][eZchar] = s_CalcXScore(&M[0][eZchar], alphsize, row_probs);
+    /* Copy X scores to U */
+    memcpy(M[eSelenocysteine], M[eXchar], alphsize * sizeof(double));
+    for (i = 0;  i < alphsize;  i++) {
+        M[i][eSelenocysteine] = M[i][eXchar];
     }
 }
 
@@ -327,7 +646,8 @@ static long Nint(double x)
 
 
 /**
- * Round a matrix of floating point scores.
+ * Round a floating point matrix of scores to produce an integer matrix of
+ * scores.
  *
  * @param matrix             the matrix of integer valued scores [out]
  * @param floatScoreMatrix   the matrix of floating point valued
@@ -335,8 +655,8 @@ static long Nint(double x)
  * @param numPositions       the number of rows of the matrices.
  */
 static void
-s_RoundScoreMatrix(int **matrix, double **floatScoreMatrix,
-                   int numPositions)
+s_RoundScoreMatrix(int **matrix, int numPositions,
+                   double **floatScoreMatrix)
 {
     int p, c; /*indices over positions and characters*/
 
@@ -349,6 +669,64 @@ s_RoundScoreMatrix(int **matrix, double **floatScoreMatrix,
             }
         }
     }
+}
+
+
+/**
+ * Given a set of target frequencies and two sets of character
+ * probabilities for the true amino acids in the ARND alphabet,
+ * calculate a scoring matrix that has valid entries for all
+ * characters in the NCBIstdaa amino acid alphabet.
+ *
+ * @param Matrix        the newly computed matrix
+ * @param target_freq   target frequencies for true amino acids (20x20)
+ * @param StartMatrix   a matrix containing values for the stop character
+ * @param row_prob      probabilities of true amino acids in the sequence
+ *                      corresponding to the rows of matrix (length = 20)
+ * @param col_prob      probabilities of true amino acids in the sequence
+ *                      corresponding to the columns of matrix (length = 20)
+ * @param Lambda        the desired scale of this matrix
+ */
+static int
+s_ScoresStdAlphabet(int ** Matrix, double ** target_freq, int ** StartMatrix,
+                    const double row_prob[], const double col_prob[],
+                    double Lambda)
+{
+    /* Note: I'm using a rough convention for this routine that uppercase
+     * letters refer to quantities in the standard (larger) alphabet
+     * and lowercase letters refer to the true amino acid (smaller)
+     * alphabet.
+     */
+    int i;
+    /* row and column probabilities in the NCBIstdaa alphabet */
+    double RowProb[COMPO_PROTEIN_ALPHABET];
+    double ColProb[COMPO_PROTEIN_ALPHABET];
+    /* A double precision score matrix */
+    double ** Scores = Nlm_DenseMatrixNew(COMPO_PROTEIN_ALPHABET,
+                                          COMPO_PROTEIN_ALPHABET);
+    if (Scores == NULL) {
+        return -1;
+    }
+    s_UnpackLetterProbs(RowProb, row_prob);
+    s_SetPairAmbigProbsToSum(RowProb);
+
+    s_UnpackLetterProbs(ColProb, col_prob);
+    s_SetPairAmbigProbsToSum(ColProb);
+
+    s_TrueAaToStdTargetFreqs(Scores, target_freq);
+    Blast_CalcFreqRatios(Scores, COMPO_PROTEIN_ALPHABET, RowProb, ColProb);
+    Blast_FreqRatioToScore(Scores, COMPO_PROTEIN_ALPHABET,
+                           COMPO_PROTEIN_ALPHABET, Lambda);
+    s_SetXUScores(Scores, RowProb, ColProb);
+
+    s_RoundScoreMatrix(Matrix, COMPO_PROTEIN_ALPHABET, Scores);
+    Nlm_DenseMatrixFree(&Scores);
+
+    for (i = 0;  i < COMPO_PROTEIN_ALPHABET;  i++) {
+        Matrix[i][eStopChar] = StartMatrix[i][eStopChar];
+        Matrix[eStopChar][i] = StartMatrix[eStopChar][i];
+    }
+    return 0;
 }
 
 
@@ -404,8 +782,8 @@ static void s_GetScoreRange(int * obs_min, int * obs_max,
  */
 static int
 s_GetMatrixScoreProbs(double **scoreProb, int * obs_min, int * obs_max,
-                            int **matrix, const double *subjectProbArray,
-                            const double *queryProbArray)
+                      int **matrix, const double *subjectProbArray,
+                      const double *queryProbArray)
 {
     int aa;          /* index of an amino-acid in the 20 letter
                         alphabet */
@@ -497,58 +875,29 @@ void
 Blast_Int4MatrixFromFreq(Int4 **matrix, int alphsize,
                          double ** freq, double Lambda)
 {
-    int i,j; /*loop indices*/
+    /* TODO: Eliminate this routine, or change its API.  The void return
+     * value means that the routine cannot fail (and so cannot allocate
+     * memory) but alphsize suggests that it can use an arbitrarily large
+     * alphabet, while in truth the largest alphabet it can handle is
+     * COMPO_PROTEIN_ALPHABET.
+     *
+     * The routine exists in its current form because API changes
+     * to this library are very disruptive.  It should be changed the next
+     * time an API change is inevitable */
+
+    double dMatrixStore[COMPO_PROTEIN_ALPHABET];
+    double * dMatrix[1];
+    int i;
+    
+    dMatrix[0] = dMatrixStore;
+
+    assert(alphsize <= COMPO_PROTEIN_ALPHABET);
 
     for (i = 0;  i < alphsize;  i++) {
-        for (j = 0;  j < alphsize;  j++) {
-            if (0.0 == freq[i][j]) {
-                matrix[i][j] = COMPO_SCORE_MIN;
-            } else {
-                double temp = log(freq[i][j])/Lambda;
-                matrix[i][j] = Nint(temp);
-            }
-        }
+        memcpy(dMatrix[0], freq[i], alphsize * sizeof(double));
+        Blast_FreqRatioToScore(dMatrix, 1, COMPO_PROTEIN_ALPHABET, Lambda);
+        s_RoundScoreMatrix(&matrix[i], 1, dMatrix);
     }
-}
-
-
-/**
- * Fill in one row of a score matrix; used by the s_ScaleMatrix
- * routine to fill in all rows. (@sa s_ScaleMatrix)
- *
- * @param matrixRow      a row of the matrix to be filled in [out].
- * @param startMatrixRow a row of rounded amino acid substitution scores in
- *                       standard context [in]
- * @param freqRatiosRow  a row of frequency ratios of starting matrix [in]
- * @param Lambda         a Karlin-Altschul parameter. [in]
- * @param LambdaRatio    ratio of correct Lambda to it's original value [in]
- */
-static void
-s_ScaleMatrixRow(int *matrixRow, const int *startMatrixRow,
-                 const double *freqRatiosRow,
-                 double Lambda, double LambdaRatio)
-{
-    int c;              /* column index */
-    double temp;        /* intermediate term in computation*/
-
-    for (c = 0;  c < COMPO_PROTEIN_ALPHABET;  c++) {
-        switch (c) {
-        case eGapChar: case eXchar: case eSelenocysteine: case eStopChar:
-            /* Don't scale these nonstandard residues */
-            matrixRow[c] = startMatrixRow[c];
-            break;
-
-        default:
-            if (0.0 == freqRatiosRow[c]) {
-                matrixRow[c] = COMPO_SCORE_MIN;
-            } else {
-                temp = log(freqRatiosRow[c]);
-                temp = temp/Lambda;
-                temp = temp * LambdaRatio;
-                matrixRow[c] = Nint(temp);
-            } /* end else 0.0 != freqRatiosRow[c] */
-        } /* end switch(c) */
-    } /* end for c */
 }
 
 
@@ -582,7 +931,8 @@ Blast_MatrixInfoNew(int rows, int positionBased)
         ss->startMatrix  = Nlm_Int4MatrixNew(rows + 1, COMPO_PROTEIN_ALPHABET);
         if (ss->startMatrix == NULL)
             goto error_return;
-        ss->startFreqRatios = Nlm_DenseMatrixNew(rows + 1, COMPO_PROTEIN_ALPHABET);
+        ss->startFreqRatios = Nlm_DenseMatrixNew(rows + 1,
+                                                 COMPO_PROTEIN_ALPHABET);
         if (ss->startFreqRatios == NULL)
             goto error_return;
         for (i = 0;  i < COMPO_PROTEIN_ALPHABET;  i++) {
@@ -600,44 +950,81 @@ normal_return:
 
 
 /**
- * Fill in the entries of a score matrix with compositionally adjusted
- * values.  (@sa Blast_CompositionBasedStats)
+ * Fill in all scores for a PSSM at a given scale Lambda.
  *
- * @param matrix       preallocated matrix to be filled in [out]
- * @param ss           data used to compute matrix scores
- * @param LambdaRatio  ratio of correct Lambda to its value in
- *                     standard context.
+ * @param matrix       the newly computed matrix [output]
+ * @param rows         number of positions (rows) in the PSSM
+ * @param freq_ratios  frequency ratios defining the PSSM
+ * @param start_matrix an existing PSSM; used to set values for the
+ *                     stop character.
+ * @param col_prob     letter probabilities
+ * @param Lambda       scale of the new matrix
  */
 static void
-s_ScaleMatrix(int **matrix, const Blast_MatrixInfo * ss,
-              double LambdaRatio)
+s_ScalePSSM(int **matrix, int rows, double ** freq_ratios,
+            int ** start_matrix, const double col_prob[], double Lambda)
 {
     int p;          /* index over matrix rows */
+    /* A row of scores corresponding to one position in the PSSM */
+    double row[COMPO_PROTEIN_ALPHABET];
+    /* A matrix with one row */
+    double * row_matrix[1];
 
-    if (ss->positionBased) {
-        /* scale the matrix rows unconditionally */
-        for (p = 0;  p < ss->rows;  p++) {
-            s_ScaleMatrixRow(matrix[p], ss->startMatrix[p],
-                             ss->startFreqRatios[p],
-                             ss->ungappedLambda, LambdaRatio);
-        }
-    } else {
-        /* Scale only the rows for true amino acids and ambiguous residues
-         * B and Z. */
-        for (p = 0;  p < COMPO_PROTEIN_ALPHABET;  p++) {
-            switch (p) {
-            case eGapChar: case eXchar: case eSelenocysteine: case eStopChar:
-                /* Do not scale the scores of nonstandard amino acids. */
-                memcpy(matrix[p], ss->startMatrix[p],
-                       COMPO_PROTEIN_ALPHABET * sizeof(int));
-                break;
-            default:
-                s_ScaleMatrixRow(matrix[p], ss->startMatrix[p],
-                                 ss->startFreqRatios[p],
-                                 ss->ungappedLambda, LambdaRatio);
-            }
-        }
+    row_matrix[0] = row;
+
+    for (p = 0;  p < rows;  p++) {
+        memcpy(row, freq_ratios[p], sizeof(row));
+
+        Blast_FreqRatioToScore(row_matrix, 1, COMPO_PROTEIN_ALPHABET, Lambda);
+        row[eXchar] = s_CalcXScore(row, 1, col_prob);
+        row[eSelenocysteine] = row[eXchar];
+        s_RoundScoreMatrix(&matrix[p], 1, row_matrix);
+
+        matrix[p][eStopChar] = start_matrix[p][eStopChar];
     }
+}
+
+
+/**
+ * Fill in all scores for a scoring matrix for the NCBIstdaa alphabet
+ * at a given scale Lambda.
+ *
+ * @param matrix       the newly computed matrix [output]
+ * @param freq_ratios  frequency ratios defining the PSSM
+ * @param start_matrix an existing matrix; used to set values for the
+ *                     stop character.
+ * @param row_prob     letter probabilities for the sequence
+ *                     corresponding to the rows of the matrix.
+ * @param col_prob     letter probabilities for the sequence
+ *                     corresponding to the columns of the matrix.
+ * @param Lambda       scale of the new matrix
+ */
+static int
+s_ScaleSquareMatrix(int **matrix, double ** freq_ratios, int ** start_matrix,
+                    const double row_prob[], const double col_prob[],
+                    double Lambda)
+{
+    /* A shorter name for COMPO_PROTEIN_ALPHABET; the size of the alphabet */
+    const int alphsize = COMPO_PROTEIN_ALPHABET;
+    double ** scores;     /* a double precision matrix of scores */
+    int i;                /* iteration index */
+
+    scores = Nlm_DenseMatrixNew(alphsize, alphsize);
+    if (scores == 0) return -1;
+
+    for (i = 0;  i < alphsize;  i++) {
+        memcpy(scores[i], freq_ratios[i], alphsize * sizeof(double));
+    }
+    Blast_FreqRatioToScore(scores, alphsize, alphsize, Lambda);
+    s_SetXUScores(scores, row_prob, col_prob);
+    s_RoundScoreMatrix(matrix, alphsize, scores);
+    for (i = 0;  i < alphsize;  i++) {
+        matrix[i][eStopChar] = start_matrix[i][eStopChar];
+        matrix[eStopChar][i] = start_matrix[eStopChar][i];
+    }
+    Nlm_DenseMatrixFree(&scores);
+
+    return 0;
 }
 
 
@@ -655,10 +1042,11 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
                             double (*calc_lambda)(double*,int,int,double))
 {
     double correctUngappedLambda; /* new value of ungapped lambda */
-    int obs_min, obs_max;
-    double *scoreArray;
-    int out_of_memory;
-    
+    int obs_min, obs_max;         /* smallest and largest score in the
+                                     unscaled matrix */
+    double *scoreArray;           /* an array of score probabilities */
+    int out_of_memory;            /* status flag to indicate out of memory */
+
     if (ss->positionBased) {
         out_of_memory =
             s_GetPssmScoreProbs(&scoreArray, &obs_min, &obs_max,
@@ -668,7 +1056,7 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
             s_GetMatrixScoreProbs(&scoreArray, &obs_min, &obs_max,
                                   ss->startMatrix, resProb, queryProb);
     }
-    if (out_of_memory) 
+    if (out_of_memory)
         return -1;
     correctUngappedLambda =
         calc_lambda(scoreArray, obs_min, obs_max, ss->ungappedLambda);
@@ -684,7 +1072,14 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
     *LambdaRatio = MAX(*LambdaRatio, LambdaRatioLowerBound);
 
     if (*LambdaRatio > 0) {
-        s_ScaleMatrix(matrix, ss, *LambdaRatio);
+        double scaledLambda = ss->ungappedLambda/(*LambdaRatio);
+        if (ss->positionBased) {
+            s_ScalePSSM(matrix, ss->rows, ss->startFreqRatios,
+                        ss->startMatrix, resProb, scaledLambda);
+        } else {
+            s_ScaleSquareMatrix(matrix, ss->startFreqRatios, ss->startMatrix,
+                                queryProb, resProb, scaledLambda);
+        }
     }
     free(scoreArray);
 
@@ -697,29 +1092,25 @@ void
 Blast_ReadAaComposition(Blast_AminoAcidComposition * composition,
                         const Uint1 * sequence, int length)
 {
-    int frequency[COMPO_PROTEIN_ALPHABET]; /*frequency of each letter*/
-    int i; /*index*/
-    int localLength; /*reduce for X characters*/
-    double * resProb = composition->prob;
+    int i; /* iteration index */
 
-    localLength = length;
-    for (i = 0;  i < COMPO_PROTEIN_ALPHABET;  i++)
-        frequency[i] = 0;
-    for (i = 0;  i < length;  i++) {
-        if (eXchar != sequence[i])
-            frequency[sequence[i]]++;
-        else
-            localLength--;
-    }
+    /* fields of composition as local variables */
+    int numTrueAminoAcids = 0;
+    double * prob = composition->prob;
+
     for (i = 0;  i < COMPO_PROTEIN_ALPHABET;  i++) {
-        if (frequency[i] == 0)
-            resProb[i] = 0.0;
-        else {
-            double freq = frequency[i];
-            resProb[i] = freq / (double) localLength;
+        prob[i] = 0.0;
+    }
+    for (i = 0;  i < length;  i++) {
+        if (alphaConvert[sequence[i]] >= 0) {
+            prob[sequence[i]]++;
+            numTrueAminoAcids++;
         }
     }
-    composition->numTrueAminoAcids = localLength;
+    composition->numTrueAminoAcids = numTrueAminoAcids;
+    for (i = 0;  i < COMPO_PROTEIN_ALPHABET;  i++) {
+        prob[i] /= numTrueAminoAcids;
+    }
 }
 
 
@@ -781,13 +1172,7 @@ Blast_CompositionWorkspaceFree(Blast_CompositionWorkspace ** pNRrecord)
     if (NRrecord != NULL) {
         free(NRrecord->first_standard_freq);
         free(NRrecord->second_standard_freq);
-        free(NRrecord->first_seq_freq);
-        free(NRrecord->second_seq_freq);
-        free(NRrecord->first_seq_freq_wpseudo);
-        free(NRrecord->second_seq_freq_wpseudo);
 
-        Nlm_DenseMatrixFree(&NRrecord->score_old);
-        Nlm_DenseMatrixFree(&NRrecord->score_final);
         Nlm_DenseMatrixFree(&NRrecord->mat_final);
         Nlm_DenseMatrixFree(&NRrecord->mat_b);
 
@@ -810,12 +1195,6 @@ Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew()
 
     NRrecord->first_standard_freq      = NULL;
     NRrecord->second_standard_freq     = NULL;
-    NRrecord->first_seq_freq           = NULL;
-    NRrecord->second_seq_freq          = NULL;
-    NRrecord->first_seq_freq_wpseudo   = NULL;
-    NRrecord->second_seq_freq_wpseudo  = NULL;
-    NRrecord->score_old                = NULL;
-    NRrecord->score_final              = NULL;
     NRrecord->mat_final                = NULL;
     NRrecord->mat_b                    = NULL;
 
@@ -826,30 +1205,6 @@ Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew()
     NRrecord->second_standard_freq =
         (double *) malloc(COMPO_NUM_TRUE_AA * sizeof(double));
     if (NRrecord->second_standard_freq == NULL) goto error_return;
-
-    NRrecord->first_seq_freq =
-        (double *) malloc(COMPO_NUM_TRUE_AA * sizeof(double));
-    if (NRrecord->first_seq_freq == NULL) goto error_return;
-
-    NRrecord->second_seq_freq =
-        (double *) malloc(COMPO_NUM_TRUE_AA * sizeof(double));
-    if (NRrecord->second_seq_freq == NULL) goto error_return;
-
-    NRrecord->first_seq_freq_wpseudo =
-        (double *) malloc(COMPO_NUM_TRUE_AA * sizeof(double));
-    if (NRrecord->first_seq_freq_wpseudo == NULL) goto error_return;
-
-    NRrecord->second_seq_freq_wpseudo =
-        (double *) malloc(COMPO_NUM_TRUE_AA * sizeof(double));
-    if (NRrecord->second_seq_freq_wpseudo == NULL) goto error_return;
-
-    NRrecord->score_old   = Nlm_DenseMatrixNew(COMPO_NUM_TRUE_AA,
-                                               COMPO_NUM_TRUE_AA);
-    if (NRrecord->score_old == NULL) goto error_return;
-
-    NRrecord->score_final = Nlm_DenseMatrixNew(COMPO_NUM_TRUE_AA,
-                                               COMPO_NUM_TRUE_AA);
-    if (NRrecord->score_final == NULL) goto error_return;
 
     NRrecord->mat_final   = Nlm_DenseMatrixNew(COMPO_NUM_TRUE_AA,
                                                COMPO_NUM_TRUE_AA);
@@ -862,9 +1217,6 @@ Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew()
     for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
         NRrecord->first_standard_freq[i] =
             NRrecord->second_standard_freq[i] = 0.0;
-        NRrecord->first_seq_freq[i] = NRrecord->second_seq_freq[i] = 0.0;
-        NRrecord->first_seq_freq_wpseudo[i] =
-            NRrecord->second_seq_freq_wpseudo[i] = 0.0;
     }
 
     goto normal_return;
@@ -880,29 +1232,10 @@ int
 Blast_CompositionWorkspaceInit(Blast_CompositionWorkspace * NRrecord,
                                const char *matrixName)
 {
-    double re_o_implicit = 0.0;    /* implicit relative entropy of
-                                      starting matrix */
-    int i, j;                      /* loop indices */
-
     if (0 == Blast_GetJointProbsForMatrix(NRrecord->mat_b,
                                           NRrecord->first_standard_freq,
                                           NRrecord->second_standard_freq,
                                           matrixName)) {
-        for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-            for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
-                re_o_implicit +=
-                    NRrecord->mat_b[i][j] * log(NRrecord->mat_b[i][j] /
-                                                NRrecord->
-                                                first_standard_freq[i] /
-                                                NRrecord->
-                                                second_standard_freq[j]);
-                NRrecord->score_old[i][j] =
-                    log(NRrecord->mat_b[i][j] /
-                        NRrecord->first_standard_freq[i] /
-                        NRrecord->second_standard_freq[j]);
-            }
-        }
-        NRrecord->RE_o_implicit = re_o_implicit;
         return 0;
     } else {
         fprintf(stderr,
@@ -913,157 +1246,20 @@ Blast_CompositionWorkspaceInit(Blast_CompositionWorkspace * NRrecord,
 }
 
 
-/** compute Lambda and if flag set according return re_o_newcontext,
-    otherwise return 0.0, also test for the possibility of average
-    score >= 0 */
-static double
-Blast_CalcLambdaForComposition(Blast_CompositionWorkspace * NRrecord,
-                               int compute_re,
-                               double * lambdaToReturn)
-{
-    int iteration_count;   /* counter for number of iterations of
-                              Newton's method */
-    int i, j;              /* loop indices */
-    double sum;            /* used to compute the sum for estimating
-                              lambda */
-    double lambda_error;   /* error when estimating lambda */
-    double lambda;         /* scale parameter of the Extreme Value
-                              Distribution of scores */
-    double ave_score;      /* average score in new context */
-    double slope;          /* used to compute the derivative when
-                              estimating lambda */
-    double re_to_return;   /* relative entropy if using old joint
-                              probabilities*/
-
-    lambda_error    = 1.0;
-    *lambdaToReturn = 1.0;
-    re_to_return    = 0.0;
-
-    if (eRelEntropyOldMatrixNewContext == NRrecord->flag) {
-        ave_score = 0.0;
-        for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-            for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
-                ave_score +=
-                    NRrecord->score_old[i][j] * NRrecord->first_seq_freq[i] *
-                    NRrecord->second_seq_freq[j];
-            }
-        }
-    }
-    if ((eRelEntropyOldMatrixNewContext == NRrecord->flag) &&
-        (ave_score >= (-SCORE_BOUND))) {
-        /* fall back to no constraint mode when average score becomes
-           global alignment-like */
-        NRrecord->flag = eUnconstrainedRelEntropy;
-
-        printf("scoring matrix has nonnegative average score %12.8f,"
-               " reset to mode 0 \n", ave_score);
-    }
-    /* Need to find the relative entropy here. */
-    if (compute_re) {
-        slope = 0.0;
-        lambda = INITIAL_LAMBDA;
-        while(slope <= LAMBDA_ERROR_TOLERANCE) {
-            /* making sure iteration starting point belongs to nontrivial
-               fixed point */
-            lambda = 2.0 * lambda;
-            for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-                for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
-                    if (eRelEntropyOldMatrixNewContext == NRrecord->flag) {
-                        slope +=
-                            NRrecord->score_old[i][j] *
-                            exp(NRrecord->score_old[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                    } else {
-                        slope +=
-                            NRrecord->score_final[i][j] *
-                            exp(NRrecord->score_final[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                    }
-                }
-            }
-        }
-        iteration_count = 0;
-        while ((fabs(lambda_error) > LAMBDA_ERROR_TOLERANCE) &&
-               (iteration_count < LAMBDA_ITERATION_LIMIT)) {
-            sum = 0.0;
-            slope = 0.0;
-            for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-                for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
-                    if (eRelEntropyOldMatrixNewContext == NRrecord->flag) {
-                        sum +=
-                            exp(NRrecord->score_old[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                        slope +=
-                            NRrecord->score_old[i][j] *
-                            exp(NRrecord->score_old[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                    } else {
-                        if(eUnconstrainedRelEntropy == NRrecord->flag) {
-                            sum +=
-                                exp(NRrecord->score_final[i][j] * lambda) *
-                                NRrecord->first_seq_freq[i] *
-                                NRrecord->second_seq_freq[j];
-                            slope +=
-                                NRrecord->score_final[i][j] *
-                                exp(NRrecord->score_final[i][j] * lambda) *
-                                NRrecord->first_seq_freq[i] *
-                                NRrecord->second_seq_freq[j];
-                        }
-                    }
-                }
-            }
-            lambda_error = (1.0 - sum) / slope;
-            lambda = lambda + LAMBDA_STEP_FRACTION * lambda_error;
-            iteration_count++;
-        }
-        *lambdaToReturn = lambda;
-        printf("Lambda iteration count %d\n", iteration_count );
-        printf("the lambda value = %f \t sum of jp = %12.10f \n", lambda,
-               sum);
-        re_to_return = 0.0;
-        for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-            for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
-                if (eRelEntropyOldMatrixNewContext == NRrecord->flag) {
-                    double scaledScore = lambda * NRrecord->score_old[i][j];
-                    re_to_return += scaledScore * exp(scaledScore) *
-                        NRrecord->first_seq_freq[i] *
-                        NRrecord->second_seq_freq[j];
-                } else {
-                    if (eUnconstrainedRelEntropy == NRrecord->flag) {
-                        double scaledScore =
-                            lambda * NRrecord->score_final[i][j];
-
-                        re_to_return += scaledScore * exp(scaledScore) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                    }
-                }
-            }
-        }
-    }
-    return re_to_return;
-}
-
-
 /* Documented in composition_adjustment.h. */
 int
-Blast_CompositionMatrixAdj(int length1,
+Blast_CompositionMatrixAdj(int ** matrix,
+                           EMatrixAdjustRule matrix_adjust_rule,
+                           int length1,
                            int length2,
-                           const double * probArray1,
-                           const double * probArray2,
+                           const double * stdaa_row_probs,
+                           const double * stdaa_col_probs,
                            int pseudocounts,
                            double specifiedRE,
                            Blast_CompositionWorkspace * NRrecord,
-                           double * lambdaComputed)
+                           const Blast_MatrixInfo * matrixInfo)
 {
     int i;                         /* loop indices */
-    double re_o_newcontext = 0.0;  /* relative entropy implied by
-                                      input single sequence
-                                      probabilities */
     static int total_iterations = 0;   /* total iterations among all
                                           calls to
                                           compute_new_score_matrix */
@@ -1075,51 +1271,67 @@ Blast_CompositionMatrixAdj(int length1,
                                       compute_new_score_matrix */
     int status;                    /* status code for operations that may
                                       fail */
+    double row_probs[COMPO_NUM_TRUE_AA];
+    double col_probs[COMPO_NUM_TRUE_AA];
+    double RE_final;
+
     /*Is the relative entropy constrained? Behaves as boolean for now*/
     int constrain_rel_entropy =
-        eUnconstrainedRelEntropy != NRrecord->flag;
+        eUnconstrainedRelEntropy != matrix_adjust_rule;
 
-    Blast_ApplyPseudocounts(NRrecord->first_seq_freq_wpseudo,
-                            NRrecord->first_seq_freq, probArray1, length1,
-                            NRrecord->first_standard_freq, pseudocounts);
-    /* plug in frequencies for second sequence, will be the matching
-       sequence in BLAST */
-    Blast_ApplyPseudocounts(NRrecord->second_seq_freq_wpseudo,
-                            NRrecord->second_seq_freq, probArray2, length2,
-                            NRrecord->second_standard_freq, pseudocounts);
-    *lambdaComputed = 1.0;
-    re_o_newcontext =
-        Blast_CalcLambdaForComposition(
-            NRrecord, (NRrecord->flag == eRelEntropyOldMatrixNewContext),
-            lambdaComputed);
-    switch (NRrecord->flag) {
+    s_GatherLetterProbs(row_probs, stdaa_row_probs);
+    s_GatherLetterProbs(col_probs, stdaa_col_probs);
+
+    switch (matrix_adjust_rule) {
     case eUnconstrainedRelEntropy:
         /* Initialize to a arbitrary value; it won't be used */
-        NRrecord->RE_final = 0.0;
+        RE_final = 0.0;
         break;
     case eRelEntropyOldMatrixNewContext:
-        NRrecord->RE_final = re_o_newcontext;
+        {
+            double entropy, Lambda;
+            int iter_count;
+            status = Blast_EntropyOldFreqNewContext(&entropy, &Lambda,
+                                                    &iter_count,
+                                                    NRrecord->mat_b,
+                                                    row_probs, col_probs);
+            if (status < 0) {
+                return status;
+            } else if (status > 0) {
+                /* Failed to compute the entropy; leave the entropy
+                 * unconstrained */
+                status = 0;
+                constrain_rel_entropy = 0;
+                RE_final = 0.0;
+            } else {
+                RE_final = entropy;
+            }
+        }
         break;
     case eRelEntropyOldMatrixOldContext:
-        NRrecord->RE_final = NRrecord->RE_o_implicit;
+        RE_final = Blast_TargetFreqEntropy(NRrecord->mat_b);
         break;
     case eUserSpecifiedRelEntropy:
-        NRrecord->RE_final = specifiedRE;
+        RE_final = specifiedRE;
         break;
     default:  /* I assert that we can't get here */
         fprintf(stderr, "Unknown flag for setting relative entropy"
                 "in composition matrix adjustment");
         exit(1);
     }
+    Blast_ApplyPseudocounts(row_probs, length1,
+                            NRrecord->first_standard_freq, pseudocounts);
+    Blast_ApplyPseudocounts(col_probs, length2,
+                            NRrecord->second_standard_freq, pseudocounts);
+
     status =
         Blast_OptimizeTargetFrequencies(&NRrecord->mat_final[0][0],
                                         COMPO_NUM_TRUE_AA,
                                         &new_iterations,
                                         &NRrecord->mat_b[0][0],
-                                        NRrecord->first_seq_freq_wpseudo,
-                                        NRrecord->second_seq_freq_wpseudo,
+                                        row_probs, col_probs,
                                         constrain_rel_entropy,
-                                        NRrecord->RE_final,
+                                        RE_final,
                                         kCompoAdjustErrTolerance,
                                         kCompoAdjustIterationLimit);
     total_iterations += new_iterations;
@@ -1127,17 +1339,10 @@ Blast_CompositionMatrixAdj(int length1,
         max_iterations = new_iterations;
 
     if (status == 0) {
-        Blast_ScoreMatrixFromFreq(NRrecord->score_final,
-                                  COMPO_NUM_TRUE_AA,
-                                  NRrecord->mat_final,
-                                  NRrecord->first_seq_freq_wpseudo,
-                                  NRrecord->second_seq_freq_wpseudo);
-        if (NRrecord->flag == eUnconstrainedRelEntropy) {
-            /* Compute the unconstrained relative entropy */
-            (void) Blast_CalcLambdaForComposition(NRrecord, 1, lambdaComputed);
-        }
-        /* success if and only if the computed lambda is positive */
-        status = (*lambdaComputed > 0) ? 0 : 1;
+        status = s_ScoresStdAlphabet(matrix, NRrecord->mat_final,
+                                     matrixInfo->startMatrix,
+                                     row_probs, col_probs,
+                                     matrixInfo->ungappedLambda);
     } else if (status == -1) {
         /* out of memory */
         status = -1;
@@ -1146,11 +1351,11 @@ Blast_CompositionMatrixAdj(int length1,
         fprintf(stderr, "bad probabilities from sequence 1, length %d\n",
                 length1);
         for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++)
-            fprintf(stderr, "%15.12f\n", probArray1[i]);
+            fprintf(stderr, "%15.12f\n", row_probs[i]);
         fprintf(stderr, "bad probabilities from sequence 2, length %d\n",
                 length2);
         for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++)
-            fprintf(stderr, "%15.12f\n", probArray2[i]);
+            fprintf(stderr, "%15.12f\n", col_probs[i]);
         fflush(stderr);
         status = 1;
     }
@@ -1179,11 +1384,6 @@ Blast_AdjustScores(Int4 ** matrix,
         composition_adjust_mode == eCompositionBasedStats) {
         /* Use old-style composition-based statistics unconditionally. */
         *matrix_adjust_rule =  eCompoScaleOldMatrix;
-        return Blast_CompositionBasedStats(matrix, &LambdaRatio,
-                                           matrixInfo,
-                                           query_composition->prob,
-                                           subject_composition->prob,
-                                           calc_lambda);
     } else {
         /* else call Yi-Kuo's code to choose mode for matrix adjustment. */
 
@@ -1201,53 +1401,26 @@ Blast_AdjustScores(Int4 ** matrix,
                                          permutedMatchProbs,
                                          matrixInfo->matrixName,
                                          composition_adjust_mode);
-        /* compute and plug in new matrix here */
-        if (eCompoScaleOldMatrix == *matrix_adjust_rule) {
-            /* Yi-Kuo's code chose to use composition-based stats */
-            return Blast_CompositionBasedStats(matrix, &LambdaRatio,
-                                               matrixInfo,
-                                               query_composition->prob,
-                                               subject_composition->prob,
-                                               calc_lambda);
-        } else {
-            /* else use compositionally adjusted scoring matrices */
-            double correctUngappedLambda; /* new value of ungapped lambda */
-            double ** REscoreMatrix = NULL;
-            int status = 0;
-            REscoreMatrix = Nlm_DenseMatrixNew(COMPO_PROTEIN_ALPHABET,
-                                               COMPO_PROTEIN_ALPHABET);
-            if (REscoreMatrix != NULL) {
-                NRrecord->flag = *matrix_adjust_rule;
-                status =
-                    Blast_CompositionMatrixAdj(query_composition->
-                                               numTrueAminoAcids,
-                                               subject_composition->
-                                               numTrueAminoAcids,
-                                               permutedQueryProbs,
-                                               permutedMatchProbs,
-                                               RE_pseudocounts,
-                                               kFixedReBlosum62,
-                                               NRrecord,
-                                               &correctUngappedLambda);
-                if (status == 0) {
-                    LambdaRatio =
-                        correctUngappedLambda / matrixInfo->ungappedLambda;
-                    if (LambdaRatio <= 0) {
-                        status = 1;
-                    }
-                }
-                if (status == 0) {
-                    s_ScatterScores(REscoreMatrix, LambdaRatio,
-                                    NRrecord->score_final);
-                    /*scale matrix in floating point*/
-                    Blast_SetNonstandardAaScores(REscoreMatrix,
-                                                 matrixInfo->startMatrix);
-                    s_RoundScoreMatrix(matrix, REscoreMatrix,
-                                       COMPO_PROTEIN_ALPHABET);
-                }
-                Nlm_DenseMatrixFree(&REscoreMatrix);
-            }
-            return status;
-        } /* end else use compositionally adjusted scoring matrices */
-    } /* end else call Yi-Kuo's code to choose mode for matrix adjustment. */
+    }  /* end else call Yi-Kuo's code to choose mode for matrix adjustment. */
+
+    if (eCompoScaleOldMatrix == *matrix_adjust_rule) {
+        return Blast_CompositionBasedStats(matrix, &LambdaRatio, matrixInfo,
+                                           query_composition->prob,
+                                           subject_composition->prob,
+                                           calc_lambda);
+    } else {
+        return
+            Blast_CompositionMatrixAdj(matrix,
+                                       *matrix_adjust_rule,
+                                       query_composition->
+                                       numTrueAminoAcids,
+                                       subject_composition->
+                                       numTrueAminoAcids,
+                                       query_composition->prob,
+                                       subject_composition->prob,
+                                       RE_pseudocounts,
+                                       kFixedReBlosum62,
+                                       NRrecord,
+                                       matrixInfo);
+    }
 }
