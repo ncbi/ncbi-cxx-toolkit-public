@@ -82,16 +82,6 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     m_CustomBuildCommand += "set TREE_ROOT=" + tree_root_par + "\n";
     m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par  + "\n";
     m_CustomBuildCommand += "set PTB_PLATFORM=$(PlatformName)\n";
-    string lock_ptb_config = "lock_ptb_config.bat";
-    string lock_ptb_config_path = "$(ProjectDir)" +
-        CDirEntry::AddTrailingPathSeparator(
-            CDirEntry::CreateRelativePath(project_dir, 
-                CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Compilers, 
-                                      GetApp().GetRegSettings().m_CompilersSubdir)));
-    m_CustomBuildCommand += "call \"" + lock_ptb_config_path +
-        lock_ptb_config + "\" ON \"" + lock_ptb_config_path + "\"\n";
-    m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
-    //
 
     // Build command for project_tree_builder.sln
     if (m_BuildPtb) {
@@ -128,6 +118,15 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
         m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     }
 
+    string lock_ptb_config = "lock_ptb_config.bat";
+    string lock_ptb_config_path = "$(ProjectDir)" +
+        CDirEntry::AddTrailingPathSeparator(
+            CDirEntry::CreateRelativePath(project_dir, 
+                CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Compilers, 
+                                      GetApp().GetRegSettings().m_CompilersSubdir)));
+    m_CustomBuildCommand += "call \"" + lock_ptb_config_path +
+        lock_ptb_config + "\" ON \"" + lock_ptb_config_path + "\"\n";
+    m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     // Make *.bat file from source file of this custom build.
     // This file ( see CreateProjectFileItem below )
     // will use defines PTB_PATH, TREE_ROOT and SLN_PATH mentioned above
@@ -283,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/04/03 16:44:54  gouriano
+ * Put configure lock only after building PTB
+ *
  * Revision 1.29  2006/03/29 13:36:14  gouriano
  * Added configure lock
  *
