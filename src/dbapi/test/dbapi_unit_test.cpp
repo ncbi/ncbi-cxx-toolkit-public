@@ -2060,21 +2060,80 @@ CDBAPIUnitTest::Test_StatementParameters(void)
     // Very first test ...
     {
         string sql;
-        sql  = " INSERT INTO " + GetTableName() + "(int_field) VALUES( @value ) \n";
-
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        
+        {
+            sql  = " INSERT INTO " + GetTableName() + 
+                "(int_field) VALUES( @value ) \n";
 
-        auto_stmt->SetParam( CVariant(0), "@value" );
-        // Execute a statement with parameters ...
-        auto_stmt->ExecuteUpdate( sql );
+            auto_stmt->SetParam( CVariant(0), "@value" );
+            // Execute a statement with parameters ...
+            auto_stmt->ExecuteUpdate( sql );
 
-        // !!! Do not forget to clear a parameter list ....
-        // Workaround for the ctlib driver ...
-        auto_stmt->ClearParamList();
+            auto_stmt->SetParam( CVariant(1), "@value" );
+            // Execute a statement with parameters ...
+            auto_stmt->ExecuteUpdate( sql );
 
-        sql  = " SELECT int_field, int_field FROM " + GetTableName() + " ORDER BY int_field";
-        // Execute a statement without parameters ...
-        auto_stmt->ExecuteUpdate( sql );
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
+        }
+
+
+        {
+            sql  = " SELECT int_field, int_field FROM " + GetTableName() + 
+                " ORDER BY int_field";
+            // Execute a statement without parameters ...
+            auto_stmt->ExecuteUpdate( sql );
+        }
+        
+        // Get number of records ...
+        {
+            auto_stmt->SendSql( "SELECT COUNT(*) FROM " + GetTableName() );
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 2 ); 
+            DumpResults(auto_stmt);
+        }
+        
+        // Read first inserted value back ...
+        {
+            auto_stmt->SetParam( CVariant(0), "@value" );
+            auto_stmt->SendSql( " SELECT int_field FROM " + GetTableName() +
+                                " WHERE int_field = @value");
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 0 ); 
+            DumpResults(auto_stmt);
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
+        }
+
+        // Read second inserted value back ...
+        {
+            auto_stmt->SetParam( CVariant(1), "@value" );
+            auto_stmt->SendSql( " SELECT int_field FROM " + GetTableName() +
+                                " WHERE int_field = @value");
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 1 ); 
+            DumpResults(auto_stmt);
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
+        }
+        
+        // Clean previously inserted data ...
+        {
+            auto_stmt->ExecuteUpdate( "DELETE FROM " + GetTableName() );
+        }
     }
 }
 
@@ -3650,6 +3709,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.70  2006/04/03 14:37:08  ssikorsk
+ * Improved Test_StatementParameters
+ *
  * Revision 1.69  2006/02/22 17:11:24  ssikorsk
  * Added Test_HasMoreResults to the test-suite.
  *
