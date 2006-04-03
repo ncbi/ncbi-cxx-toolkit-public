@@ -104,12 +104,14 @@ namespace std {
         }
 
         %typemap(out) list<T> {
-            $result = PyList_New(0);
+            $result = PyList_New($1.size());
+            unsigned int i = 0;
             for (list<T >::iterator it = $1.begin();
                  it != $1.end(); ++it) {
                 T* ptr = new T(*it);
-                PyList_Append($result, SWIG_NewPointerObj((void *) ptr,
-                              $descriptor(T *), 1));
+                PyList_SetItem($result, i, SWIG_NewPointerObj((void *) ptr,
+                               $descriptor(T *), 1));
+                ++i;
             }
         }
 
@@ -245,11 +247,12 @@ namespace std {
         }
 
         %typemap(out) list<T > {
-            $result = PyList_New(0);
+            $result = PyList_New($1.size());
+            unsigned int i = 0;
             for (list<T >::iterator it = $1.begin();
                  it != $1.end();  ++it) {
-                T* ptr = new T(*it);
-                PyList_Append($result, FROM_CPP(*it));
+                PyList_SetItem($result, i, FROM_CPP(*it));
+                ++i;
             }
         }
 
@@ -366,6 +369,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/04/03 13:58:21  jcherry
+ * Fixed memory leak in "out" typemaps
+ *
  * Revision 1.2  2005/08/01 17:24:05  jcherry
  * Fixed handling of pass by const & and const *
  *
