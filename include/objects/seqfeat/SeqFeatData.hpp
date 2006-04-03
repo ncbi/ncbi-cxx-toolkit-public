@@ -384,11 +384,11 @@ class NCBI_SEQFEAT_EXPORT CFeatListItem
 public:
     CFeatListItem() {}
     CFeatListItem(int type, int subtype, const char* desc, const char* key)
-    : m_Type(type)
-    , m_Subtype(subtype)
-    , m_Description(desc)
-    , m_StorageKey(key) {}
-    
+        : m_Type(type)
+        , m_Subtype(subtype)
+        , m_Description(desc)
+        , m_StorageKey(key) {}
+        
     bool operator<(const CFeatListItem& rhs) const;
     
     int         GetType() const;
@@ -437,6 +437,7 @@ private:
 public:
     
     CFeatList();
+    ~CFeatList();
     
     bool    TypeValid(int type, int subtype) const;
     
@@ -489,6 +490,28 @@ private:
     TSubtypeMap    m_FeatTypeMap; ///> indexed by subtype only.
 };
 
+inline
+size_t CFeatList::size() const
+{
+    return m_FeatTypes.size();
+}
+
+
+inline
+CFeatList::const_iterator CFeatList::begin() const
+{
+    return m_FeatTypes.begin();
+}
+
+
+inline
+CFeatList::const_iterator CFeatList::end() const
+{
+    return m_FeatTypes.end();
+}
+
+
+
 /// You can have your own copy of the FeatConfgList, but usually
 /// you will want to get a pointer to a static copy from here.
 NCBI_SEQFEAT_EXPORT
@@ -506,6 +529,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/04/03 20:23:23  dicuccio
+* Cosmetic clean-ups; promoted some functions to inline
+*
 * Revision 1.13  2006/04/03 17:06:19  rsmith
 * move Feat Config LIst from gui/config to SeqFeatData
 *

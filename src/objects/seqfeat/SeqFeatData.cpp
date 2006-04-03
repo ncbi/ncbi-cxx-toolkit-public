@@ -2192,9 +2192,9 @@ const CFeatList* CSeqFeatData::GetFeatList()
 }
 
 
-namespace {
+//////////////////////////////////////////////////////////////////////////////
 
-CFeatListItem config_item_init[] = {
+static CFeatListItem sc_ConfigItemInit[] = {
     CFeatListItem( CSeqFeatData::e_not_set,   CSeqFeatData::eSubtype_any,   "All",  "Master" ),
     CFeatListItem( CSeqFeatData::e_Gene,      CSeqFeatData::eSubtype_gene,  "Gene", "Gene" ),
     CFeatListItem( CSeqFeatData::e_Org,      CSeqFeatData::eSubtype_org,   "Org",  "Org" ),
@@ -2235,14 +2235,14 @@ CFeatListItem config_item_init[] = {
     CFeatListItem( CSeqFeatData::e_Het,      CSeqFeatData::eSubtype_het,    "het",     "het" ),
     CFeatListItem( CSeqFeatData::e_Biosrc,   CSeqFeatData::eSubtype_biosrc,    "biosrc",     "biosrc" ),
 };
-} // unnamed namespace
 
 
 /**
     CFeatListItem comparator
     to sort the set properly.
 */
-bool CFeatListItem::operator<(const CFeatListItem& rhs) const {
+bool CFeatListItem::operator<(const CFeatListItem& rhs) const
+{
     if (m_Type == rhs.m_Type) {
         // the 'Any' subtype should sort lower than anything else in that type.
         if (m_Subtype == CSeqFeatData::eSubtype_any) {
@@ -2266,6 +2266,10 @@ CFeatList::CFeatList()
     x_Init();
 }
 
+
+CFeatList::~CFeatList()
+{
+}
 
 bool CFeatList::TypeValid(int type, int subtype) const
 {
@@ -2384,30 +2388,12 @@ vector<string> CFeatList::GetStoragekeys(int subtype) const
     return keys;
 }
 
-size_t CFeatList::size() const
-{
-    return m_FeatTypes.size();
-}
-
-
-CFeatList::const_iterator CFeatList::begin() const
-{
-    return m_FeatTypes.begin();
-}
-
-
-CFeatList::const_iterator CFeatList::end() const
-{
-    return m_FeatTypes.end();
-}
-
-
 void CFeatList::x_Init()
 {
-    size_t  config_item_size = sizeof(config_item_init)/sizeof(CFeatListItem);
+    size_t  config_item_size = sizeof(sc_ConfigItemInit)/sizeof(CFeatListItem);
     for (size_t i = 0; i < config_item_size; ++i ) {
         bool config_items_init_no_dups =
-           m_FeatTypes.insert(config_item_init[i]).second;
+           m_FeatTypes.insert(sc_ConfigItemInit[i]).second;
         _ASSERT(config_items_init_no_dups);
     }
     
@@ -2466,6 +2452,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.30  2006/04/03 20:23:24  dicuccio
+* Cosmetic clean-ups; promoted some functions to inline
+*
 * Revision 6.29  2006/04/03 17:06:19  rsmith
 * move Feat Config LIst from gui/config to SeqFeatData
 *
