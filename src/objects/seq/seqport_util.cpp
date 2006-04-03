@@ -6105,7 +6105,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 7 ,\n",
     " 15\n",
     " }\n",
-    " } ,\n",
+    " }\n",
     " } ,                                  -- end of codes\n",
     " maps {\n",
     " {\n",
@@ -6495,6 +6495,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2006/04/03 19:59:29  ucko
+ * Fix previous commit to eliminate a stray comma that the C Toolkit
+ * presumably ignored.
+ *
  * Revision 6.25  2006/04/03 16:22:49  ucko
  * Update embedded copy of seqcode.prt to incorporate new amino acid codes.
  *
