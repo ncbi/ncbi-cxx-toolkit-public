@@ -81,6 +81,7 @@ for lib in $LIBS; do
     
     if [ $name = "jpegsrc.v6b" ]; then
         name="jpeg-6b"
+		conf="--prefix="$DEST" --enable-shared"
     fi
 
 	

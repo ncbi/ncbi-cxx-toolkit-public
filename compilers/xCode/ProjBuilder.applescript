@@ -172,9 +172,9 @@ script ProjBuilder
 		addPair(buildStyleRelease, "BUILDSTYLE__Deployment")
 		
 		if xcodeVersion is 1 then
-			addPair(39, "objectVersion")
+			set |objectVersion| of newProject to "39"
 		else if xcodeVersion is 2 then
-			addPair(42, "objectVersion")
+			set |objectVersion| of newProject to "42"
 		end if
 		log "Done initialize ProjBuilder"
 	end Initialize
@@ -405,7 +405,7 @@ script ProjBuilder
 		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
 		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
 		
-		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Genome Workbench Disk Image", none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
+		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Genome Workbench Disk Image", |none|:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
 		copy "SCRIPTPHASE__GBENCH_DISK" to the beginning of |buildPhases| of theTarget
 		addPair(aScriptPhase, "SCRIPTPHASE__GBENCH_DISK")
 		addPair(theTarget, "TARGET__GBENCH_DISK")
@@ -415,11 +415,11 @@ script ProjBuilder
 		
 		(* Target: Build Everything *)
 		copy "TARGET__BUILD_APP" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Applications", none:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Applications", |none|:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
 		copy "TARGET__BUILD_LIB" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Libraries", none:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Libraries", |none|:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
 		copy "TARGET__BUILD_ALL" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All", none:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All", |none|:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
 		
 		
 		(* add frameworks*)
@@ -637,6 +637,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/04/03 12:23:57  lebedev
+ * Some meaningful toolpits added
+ *
  * Revision 1.42  2006/04/03 12:03:56  lebedev
  * Directly support Xcode 2.0 format (no need to upgrade project file every time)
  *

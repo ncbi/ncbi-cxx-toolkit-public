@@ -438,6 +438,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2006/04/03 12:23:57  lebedev
+ * Some meaningful toolpits added
+ *
  * Revision 1.97  2006/03/23 19:04:06  lebedev
  * += seqtable
  *
@@ -727,3 +730,11 @@ end script
  * Initial revision
  * ===========================================================================
  *)
+
+on cell value theObject row theRow table column tableColumn
+	(*Add your script here.*)
+end cell value
+
+on number of rows theObject
+	(*Add your script here.*)
+end number of rows
