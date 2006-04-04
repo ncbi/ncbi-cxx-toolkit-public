@@ -214,7 +214,10 @@ Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
     int is_newton = 0;          /* true if the last iteration was a Newton
                                    step; initially false */
     int i, j, k;                /* iteration indices */
+    /* maximum score that occurs with nonzero probability */
     double max_score = COMPO_SCORE_MIN;
+    /* average score */
+    double avg_score = 0.0;
 
     /* Find the maximum score with nonzero probability */
     for (i = 0;  i < alphsize;  i++) {
@@ -227,14 +230,16 @@ Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
             }
             if (max_score < score[i][j]) {
                 max_score = score[i][j];
+                avg_score += row_prob[i] * col_prob[j] * score[i][j];
             }
         }
     }
-    if (max_score <= 0.0) { 
-        /* The iteration cannot converge if maxscore is nonpositive;
-         * lambda doesn't exist */
+    if (max_score <= 0.0 || avg_score >= 0) { 
+        /* The iteration cannot converge if max_score is nonpositive
+         * or the average score is nonnegative; lambda doesn't exist */
         *piterations = max_iterations;
         *plambda = -1.0;
+        return;
     }
     for (k = 0;  k < max_iterations;  k++) {
         double slope;               /* slope of f at x */
@@ -332,8 +337,9 @@ Blast_MatrixEntropy(double ** matrix, int alphsize, const double row_prob[],
 double
 Blast_TargetFreqEntropy(double ** target_freq)
 {
-    int i, j;
-    double entropy;
+    int i, j;          /* iteration indices */
+    double entropy;    /* the entropy to be returned */
+    /* Row probabilities consistent with the target frequencies */
     double row_prob[COMPO_NUM_TRUE_AA] = {0,};
     double col_prob[COMPO_NUM_TRUE_AA] = {0,};
 
@@ -457,12 +463,17 @@ Blast_EntropyOldFreqNewContext(double * entropy,
                                const double row_prob[],
                                const double col_prob[])
 {
+    /* iteration indices */
     int i, j;
+    /* Status flag; will be set to zero on success */
     int status = 1;
+    /* A matrix of scores in the context constistent with the target 
+     * frequencies */
     double ** scores;
+    /* Row and column probabilities consistent with the target
+     * frequencies; the old context */
     double old_col_prob[COMPO_NUM_TRUE_AA] = {0.0,};
     double old_row_prob[COMPO_NUM_TRUE_AA] = {0.0,};
-    double avg_score = 0.0;
 
     *entropy = 0;
     status = 1;
@@ -486,25 +497,15 @@ Blast_EntropyOldFreqNewContext(double * entropy,
     Blast_FreqRatioToScore(scores, COMPO_NUM_TRUE_AA, COMPO_NUM_TRUE_AA, 1.0);
     /* Finished calculating the matrix "scores" */
 
-    /* Check the average score to be sure it is negative; otherwise
-     * the entropy is meaningless */
-    avg_score = 0.0;
-    for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
-        for (j = 0;  j < COMPO_NUM_TRUE_AA;  j++) {
-           avg_score += scores[i][j] * row_prob[i] * col_prob[j];
-        }
-    }
-    if (avg_score < 0) {
-        Blast_CalcLambdaFullPrecision(Lambda, iter_count, scores,
-                                      COMPO_NUM_TRUE_AA, row_prob,
-                                      col_prob, LAMBDA_ERROR_TOLERANCE,
-                                      LAMBDA_FUNCTION_TOLERANCE,
-                                      LAMBDA_ITERATION_LIMIT);
-        if (*iter_count <=  LAMBDA_ITERATION_LIMIT) {
-            *entropy = Blast_MatrixEntropy(scores, COMPO_NUM_TRUE_AA,
-                                           row_prob, col_prob, *Lambda);
-            status = 0;
-        }
+    Blast_CalcLambdaFullPrecision(Lambda, iter_count, scores,
+                                  COMPO_NUM_TRUE_AA, row_prob,
+                                  col_prob, LAMBDA_ERROR_TOLERANCE,
+                                  LAMBDA_FUNCTION_TOLERANCE,
+                                  LAMBDA_ITERATION_LIMIT);
+    if (*iter_count <  LAMBDA_ITERATION_LIMIT) {
+        *entropy = Blast_MatrixEntropy(scores, COMPO_NUM_TRUE_AA,
+                                       row_prob, col_prob, *Lambda);
+        status = 0;
     }
     Nlm_DenseMatrixFree(&scores);
     return status;
@@ -528,6 +529,7 @@ s_TrueAaToStdTargetFreqs(double ** StdFreq, double ** freq)
      * and lowercase letters refer to the true amino acid (smaller)
      * alphabet.
      */
+    /* Shorter names for the sizes of the two alphabets */
     const int small_alphsize = COMPO_NUM_TRUE_AA;
     const int StdAlphsize = COMPO_PROTEIN_ALPHABET;
     int A, B;          /* characters in the std (big) alphabet */
