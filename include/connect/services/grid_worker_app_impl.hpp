@@ -78,6 +78,9 @@ private:
     typedef map<const CWorkerNodeJobContext*, CTime> TActiveJobs;
     TActiveJobs    m_ActiveJobs;
     mutable CMutex m_ActiveJobsMutex;
+private:
+    CWorkerNodeStatistics(const CWorkerNodeStatistics&);
+    CWorkerNodeStatistics& operator=(const CWorkerNodeStatistics&);
 };
 
 
@@ -132,6 +135,9 @@ private:
     auto_ptr<CWorkerNodeStatistics> m_Statistics;
 
     string GetLogName(void) const;
+private:
+    CGridWorkerApp_Impl(const CGridWorkerApp_Impl&);
+    CGridWorkerApp_Impl& operator=(const CGridWorkerApp_Impl&);
 };
 
 
@@ -163,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/04/04 19:54:34  didenko
+ * Disabled copy constractor and assignment operator
+ *
  * Revision 1.6  2006/04/04 19:15:01  didenko
  * Added max_failed_jobs parameter to a worker node configuration.
  *
