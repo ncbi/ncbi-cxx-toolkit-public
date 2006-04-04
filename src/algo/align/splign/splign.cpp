@@ -117,7 +117,7 @@ bool CSplign::GetStrand( void ) const {
 void CSplign::SetMinExonIdentity( double idty )
 {
     if(!(0 <= idty && idty <= 1)) {
-        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_BadIdentityThreshold );
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_BadIdentityThreshold);
     }
     else {
         m_MinExonIdty = idty;
@@ -127,7 +127,7 @@ void CSplign::SetMinExonIdentity( double idty )
 void CSplign::SetMinCompartmentIdentity( double idty )
 {
     if(!(0 <= idty && idty <= 1)) {
-        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_BadIdentityThreshold );
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_BadIdentityThreshold);
     }
     else {
         m_MinCompartmentIdty = idty;
@@ -366,7 +366,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     }
     
     if(err) {
-        NCBI_THROW( CAlgoAlignException, eBadParameter, err );
+        NCBI_THROW(CAlgoAlignException, eBadParameter, err);
     }
     else {
 
@@ -463,9 +463,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 void CSplign::Run(THitRefs* phitrefs)
 {
     if(!phitrefs) {
-        NCBI_THROW(CAlgoAlignException,
-                   eInternal,
-                   "Unexpected NULL pointers");
+        NCBI_THROW(CAlgoAlignException, eInternal, "Unexpected NULL pointers");
     }
 
     THitRefs& hitrefs = *phitrefs;
@@ -479,15 +477,11 @@ void CSplign::Run(THitRefs* phitrefs)
     }
   
     if(m_aligner.IsNull()) {
-        NCBI_THROW(CAlgoAlignException,
-                   eNotInitialized,
-                   g_msg_AlignedNotSpecified);
+        NCBI_THROW(CAlgoAlignException, eNotInitialized, g_msg_AlignedNotSpecified);
     }
     
     if(hitrefs.size() == 0) {
-        NCBI_THROW(CAlgoAlignException,
-                   eNoData,
-                   g_msg_EmptyHitVectorPassed );
+        NCBI_THROW(CAlgoAlignException, eNoData, g_msg_EmptyHitVectorPassed);
     }
 
     m_result.clear();
@@ -560,7 +554,7 @@ void CSplign::Run(THitRefs* phitrefs)
                 throw;
             }
 
-            m_result.push_back(SAlignedCompartment(0,true,e.GetMsg().c_str()));
+            m_result.push_back(SAlignedCompartment(0, true, e.GetMsg().c_str()));
             ++m_model_id;
         }
         smin = same_strand? box[3] + 1: 0;
@@ -636,245 +630,251 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     THitRefs* phitrefs, size_t range_left, size_t range_right )
 {    
     SAlignedCompartment rv;
-    m_segments.clear();
-    
-    if(range_left > range_right) {
-        NCBI_THROW( CAlgoAlignException, eInternal,
-                    g_msg_InvalidRange);
-    }
 
-    XFilter(phitrefs);
+    try {
+        m_segments.clear();
     
-    if(phitrefs->size() == 0) {
-        NCBI_THROW( CAlgoAlignException, eNoData,
-                    g_msg_NoHitsAfterFiltering);
-    }
-    
-    const size_t mrna_size = m_mrna.size();
-    
-    if( !m_strand ) {
-        
-        // adjust the hits
-        for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
-
-            THitRef& h = (*phitrefs)[i];
-            THit::TCoord a0 = mrna_size - h->GetQueryMin() - 1;
-            THit::TCoord a1 = mrna_size - h->GetQueryMax() - 1;
-            const bool new_strand = ! (h->GetSubjStrand());
-            h->SetQueryStart(a1);
-            h->SetQueryStop(a0);
-            h->SetSubjStrand(new_strand);
+        if(range_left > range_right) {
+            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidRange);
         }
-    }
-    
-    m_polya_start = m_nopolya? kMax_UInt: x_TestPolyA();
-    
-    if(m_polya_start < kMax_UInt) {
 
-        // cleave off hits beyond cds
-        CleaveOffByTail(phitrefs, m_polya_start); 
+        XFilter(phitrefs);
+    
         if(phitrefs->size() == 0) {
-            NCBI_THROW( CAlgoAlignException,
-                        eNoData,
-                        g_msg_NoHitsBeyondPolya );
+            NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoHitsAfterFiltering);
         }
-    }
     
-    // find regions of interest on mRna (query)
-    // and contig (subj)
-    THit::TCoord span [4];
-    CHitFilter<THit>::s_GetSpan(*phitrefs, span);
-    THit::TCoord qmin = span[0], qmax = span[1], 
-        smin = span[2], smax = span[3];    
-
-    // select terminal genomic extents based on uncovered end sizes
-    THit::TCoord extent_left = x_GetGenomicExtent(qmin);
-    THit::TCoord qspace = m_mrna.size() - qmax + 1;
-    THit::TCoord extent_right = x_GetGenomicExtent(qspace);
-
-    bool ctg_strand = phitrefs->front()->GetSubjStrand();
-
-    if(ctg_strand) {
-
-        smin = max(0, int(smin - extent_left));
-        smax += extent_right;
-    }
-    else {
-        smin = max(0, int(smin - extent_right));
-        smax += extent_left;
-    }
-
-    // regardless of hits, all cDNA is aligned (without the tail, if any)
-    qmin = 0;
-    qmax = m_polya_start < kMax_UInt? m_polya_start - 1: mrna_size - 1;
+        const size_t mrna_size = m_mrna.size();
     
-    if(smin < range_left) {
-        smin = range_left;
-    }
-    if(smax > range_right) {
-        smax = range_right;
-    }
-
-    m_genomic.clear();
-    x_LoadSequence(&m_genomic, *(phitrefs->front()->GetSubjId()), 
-                   smin, smax, true);
-    
-    const THit::TCoord ctg_end = smin + m_genomic.size();
-    if(ctg_end - 1 < smax) { // perhabs adjust smax
-        smax = ctg_end - 1;
-    }
-
-    if(!ctg_strand) {
-
-        // make reverse complementary
-        // for the contig's area of interest
-        reverse (m_genomic.begin(), m_genomic.end());
-        transform(m_genomic.begin(), m_genomic.end(), m_genomic.begin(),
-                  SCompliment());
-
-        // flip hits
-        NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
-
-            THitRef& h = *ii;
-            THit::TCoord a2 = smax - (h->GetSubjMax() - smin);
-            THit::TCoord a3 = smax - (h->GetSubjMin() - smin);
-            h->SetSubjStart(a2);
-            h->SetSubjStop(a3);
-        }
-    }
-
-    rv.m_QueryStrand = m_strand;
-    rv.m_SubjStrand  = ctg_strand;
-    
-    // shift hits so that they originate from zero
-
-    NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
-        (*ii)->Shift( -qmin, -smin);
-    }  
-    
-    x_SetPattern(phitrefs);
-    x_Run(&m_mrna.front(), &m_genomic.front());
-
-    const size_t seg_dim = m_segments.size();
-    if(seg_dim == 0) {
-        NCBI_THROW(CAlgoAlignException, eNoData, g_msg_NoAlignment);
-    }
-    
-    // try to extend the last segment into the PolyA area  
-    if(m_polya_start < kMax_UInt && seg_dim && m_segments[seg_dim-1].m_exon) {
-        CSplign::SSegment& s = const_cast<CSplign::SSegment&>(
-                                   m_segments[seg_dim-1]);
-        const char* p0 = &m_mrna.front() + s.m_box[1] + 1;
-        const char* q = &m_genomic.front() + s.m_box[3] + 1;
-        const char* p = p0;
-        const char* pe = &m_mrna.front() + mrna_size;
-        const char* qe = &m_genomic.front() + m_genomic.size();
-        for(; p < pe && q < qe; ++p, ++q) {
-            if(*p != 'A') break;
-            if(*p != *q) break;
-        }
+        if( !m_strand ) {
         
-        const size_t sh = p - p0;
-        if(sh) {
-            // resize
-            s.m_box[1] += sh;
-            s.m_box[3] += sh;
-            s.m_details.append(sh, 'M');
-            s.Update(m_aligner);
-            
-            // fix annotation
-            const size_t ann_dim = s.m_annot.size();
-            if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
+            // adjust the hits
+            for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
 
-                s.m_annot[ann_dim - 2] = q < qe? *q: ' ';
-                ++q;
-                s.m_annot[ann_dim - 1] = q < qe? *q: ' ';
-            }
-            
-            m_polya_start += sh;
-        }
-    }
-
-    int j = seg_dim - 1;
-    
-    // look for PolyA in trailing segments:
-    // if a segment is mostly 'A's then we add it to PolyA
-
-    for(; j >= 0 && m_segments[j].m_exon == false; --j);
-    for(; j >= 0; --j) {
-        
-        const CSplign::SSegment& s = m_segments[j];
-
-        const char* p0 = &m_mrna[qmin] + s.m_box[0];
-        const char* p1 = &m_mrna[qmin] + s.m_box[1] + 1;
-        size_t count = 0;
-        for(const char* pc = p0; pc != p1; ++pc) {
-            if(*pc == 'A') ++count;
-        }
-        
-        double min_a_content = 0.799;
-        // also check splices
-        if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
-            bool consensus = CSplign::SSegment::s_IsConsensusSplice(
-                                 m_segments[j-1].GetDonor(), s.GetAcceptor());
-            if(!consensus) {
-                min_a_content = 0.599;
+                THitRef& h = (*phitrefs)[i];
+                THit::TCoord a0 = mrna_size - h->GetQueryMin() - 1;
+                THit::TCoord a1 = mrna_size - h->GetQueryMax() - 1;
+                const bool new_strand = ! (h->GetSubjStrand());
+                h->SetQueryStart(a1);
+                h->SetQueryStop(a0);
+                h->SetSubjStrand(new_strand);
             }
         }
-
-        if(!s.m_exon) {
-            min_a_content = s.m_len > 4? 0.599: -1;
-        }
-        
-        const size_t len = p1 - p0;
-        if(double(count)/len < min_a_content) {
-            break;
-        }
-    }
-
-    if(j >= 0 && j < int(seg_dim - 1)) {
-        m_polya_start = m_segments[j].m_box[1] + 1;
-    }
-
-    // test if we have at least one exon
-    bool some_exons = false;
-    for(int i = 0; i <= j; ++i ) {
-        if(m_segments[i].m_exon) {
-            some_exons = true;
-            break;
-        }
-    }
-    if(!some_exons) {
-        NCBI_THROW( CAlgoAlignException, eNoData,
-                    g_msg_NoExonsAboveIdtyLimit);
-    }
     
-    m_segments.resize(j + 1);
+        m_polya_start = m_nopolya? kMax_UInt: x_TestPolyA();
+    
+        if(m_polya_start < kMax_UInt) {
 
-    // convert coordinates back to original
-    NON_CONST_ITERATE(TSegments, jj, m_segments) {
-        
-        if(rv.m_QueryStrand) {
-            jj->m_box[0] += qmin;
-            jj->m_box[1] += qmin;
+            // cleave off hits beyond cds
+            CleaveOffByTail(phitrefs, m_polya_start); 
+            if(phitrefs->size() == 0) {
+                NCBI_THROW(CAlgoAlignException, eNoAlignment, 
+                           g_msg_NoHitsBeyondPolya);
+            }
+        }
+    
+        // find regions of interest on mRna (query)
+        // and contig (subj)
+        THit::TCoord span [4];
+        CHitFilter<THit>::s_GetSpan(*phitrefs, span);
+        THit::TCoord qmin = span[0], qmax = span[1], 
+            smin = span[2], smax = span[3];    
+
+        // select terminal genomic extents based on uncovered end sizes
+        THit::TCoord extent_left = x_GetGenomicExtent(qmin);
+        THit::TCoord qspace = m_mrna.size() - qmax + 1;
+        THit::TCoord extent_right = x_GetGenomicExtent(qspace);
+
+        bool ctg_strand = phitrefs->front()->GetSubjStrand();
+
+        if(ctg_strand) {
+
+            smin = max(0, int(smin - extent_left));
+            smax += extent_right;
         }
         else {
-            jj->m_box[0] = mrna_size - jj->m_box[0] - 1;
-            jj->m_box[1] = mrna_size - jj->m_box[1] - 1;
+            smin = max(0, int(smin - extent_right));
+            smax += extent_left;
         }
+
+        // regardless of hits, all cDNA is aligned (without the tail, if any)
+        qmin = 0;
+        qmax = m_polya_start < kMax_UInt? m_polya_start - 1: mrna_size - 1;
+    
+        if(smin < range_left) {
+            smin = range_left;
+        }
+        if(smax > range_right) {
+            smax = range_right;
+        }
+
+        m_genomic.clear();
+        x_LoadSequence(&m_genomic, *(phitrefs->front()->GetSubjId()), 
+                       smin, smax, true);
+    
+        const THit::TCoord ctg_end = smin + m_genomic.size();
+        if(ctg_end - 1 < smax) { // perhabs adjust smax
+            smax = ctg_end - 1;
+        }
+
+        if(!ctg_strand) {
+
+            // make reverse complementary
+            // for the contig's area of interest
+            reverse (m_genomic.begin(), m_genomic.end());
+            transform(m_genomic.begin(), m_genomic.end(), m_genomic.begin(),
+                      SCompliment());
+
+            // flip hits
+            NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
+
+                THitRef& h = *ii;
+                THit::TCoord a2 = smax - (h->GetSubjMax() - smin);
+                THit::TCoord a3 = smax - (h->GetSubjMin() - smin);
+                h->SetSubjStart(a2);
+                h->SetSubjStop(a3);
+            }
+        }
+
+        rv.m_QueryStrand = m_strand;
+        rv.m_SubjStrand  = ctg_strand;
+    
+        // shift hits so that they originate from zero
+
+        NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
+            (*ii)->Shift( -qmin, -smin);
+        }  
+    
+        x_SetPattern(phitrefs);
+        x_Run(&m_mrna.front(), &m_genomic.front());
+
+        const size_t seg_dim = m_segments.size();
+        if(seg_dim == 0) {
+            NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
+        }
+    
+        // try to extend the last segment into the PolyA area  
+        if(m_polya_start < kMax_UInt && seg_dim && m_segments[seg_dim-1].m_exon) {
+            CSplign::SSegment& s = 
+                const_cast<CSplign::SSegment&>(m_segments[seg_dim-1]);
+            const char* p0 = &m_mrna.front() + s.m_box[1] + 1;
+            const char* q = &m_genomic.front() + s.m_box[3] + 1;
+            const char* p = p0;
+            const char* pe = &m_mrna.front() + mrna_size;
+            const char* qe = &m_genomic.front() + m_genomic.size();
+            for(; p < pe && q < qe; ++p, ++q) {
+                if(*p != 'A') break;
+                if(*p != *q) break;
+            }
         
-        if(jj->m_exon) {
-            if(rv.m_SubjStrand) {
-                jj->m_box[2] += smin;
-                jj->m_box[3] += smin;
+            const size_t sh = p - p0;
+            if(sh) {
+                // resize
+                s.m_box[1] += sh;
+                s.m_box[3] += sh;
+                s.m_details.append(sh, 'M');
+                s.Update(m_aligner);
+            
+                // fix annotation
+                const size_t ann_dim = s.m_annot.size();
+                if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
+
+                    s.m_annot[ann_dim - 2] = q < qe? *q: ' ';
+                    ++q;
+                    s.m_annot[ann_dim - 1] = q < qe? *q: ' ';
+                }
+            
+                m_polya_start += sh;
+            }
+        }
+
+        int j = seg_dim - 1;
+    
+        // look for PolyA in trailing segments:
+        // if a segment is mostly 'A's then we add it to PolyA
+
+        for(; j >= 0 && m_segments[j].m_exon == false; --j);
+        for(; j >= 0; --j) {
+        
+            const CSplign::SSegment& s = m_segments[j];
+
+            const char* p0 = &m_mrna[qmin] + s.m_box[0];
+            const char* p1 = &m_mrna[qmin] + s.m_box[1] + 1;
+            size_t count = 0;
+            for(const char* pc = p0; pc != p1; ++pc) {
+                if(*pc == 'A') ++count;
+            }
+        
+            double min_a_content = 0.799;
+            // also check splices
+            if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
+                bool consensus = CSplign::SSegment
+                   ::s_IsConsensusSplice(m_segments[j-1].GetDonor(), s.GetAcceptor());
+                if(!consensus) {
+                    min_a_content = 0.599;
+                }
+            }
+
+            if(!s.m_exon) {
+                min_a_content = s.m_len > 4? 0.599: -1;
+            }
+        
+            const size_t len = p1 - p0;
+            if(double(count)/len < min_a_content) {
+                break;
+            }
+        }
+
+        if(j >= 0 && j < int(seg_dim - 1)) {
+            m_polya_start = m_segments[j].m_box[1] + 1;
+        }
+
+        // test if we have at least one exon
+        bool some_exons = false;
+        for(int i = 0; i <= j; ++i ) {
+            if(m_segments[i].m_exon) {
+                some_exons = true;
+                break;
+            }
+        }
+        if(!some_exons) {
+            NCBI_THROW(CAlgoAlignException, eNoAlignment,g_msg_NoExonsAboveIdtyLimit);
+        }
+    
+        m_segments.resize(j + 1);
+
+        // convert coordinates back to original
+        NON_CONST_ITERATE(TSegments, jj, m_segments) {
+        
+            if(rv.m_QueryStrand) {
+                jj->m_box[0] += qmin;
+                jj->m_box[1] += qmin;
             }
             else {
-                jj->m_box[2] = smax - jj->m_box[2];
-                jj->m_box[3] = smax - jj->m_box[3];
+                jj->m_box[0] = mrna_size - jj->m_box[0] - 1;
+                jj->m_box[1] = mrna_size - jj->m_box[1] - 1;
+            }
+        
+            if(jj->m_exon) {
+                if(rv.m_SubjStrand) {
+                    jj->m_box[2] += smin;
+                    jj->m_box[3] += smin;
+                }
+                else {
+                    jj->m_box[2] = smax - jj->m_box[2];
+                    jj->m_box[3] = smax - jj->m_box[3];
+                }
             }
         }
+    } // try
+
+    catch(CException& e) {
+        if(e.GetErrCode() != CAlgoAlignException::eNoAlignment) {
+            e.SetSeverity(eDiag_Fatal);
+            throw;
+        }
     }
-    
+
     return rv;
 }
 
@@ -1639,9 +1639,7 @@ void CSplign::SAlignedCompartment::ToBuffer(TNetCacheBuffer* target) const
     using namespace splign_local;
 
     if(target == 0) {
-        NCBI_THROW( CAlgoAlignException,
-                    eBadParameter,
-                    g_msg_NullPointerPassed);
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_NullPointerPassed);
     }
 
     const size_t core_size = sizeof m_id + sizeof m_error + m_msg.size() + 1
@@ -1691,8 +1689,7 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
     const size_t min_size = sizeof m_id + sizeof m_error + 1 
         + sizeof m_QueryStrand + sizeof m_SubjStrand;
     if(source.size() < min_size) {
-        NCBI_THROW(CAlgoAlignException, eInternal,
-                   g_msg_NetCacheBufferIncomplete);
+        NCBI_THROW(CAlgoAlignException, eInternal, g_msg_NetCacheBufferIncomplete);
     }
     
     const char* p =  &source.front();
@@ -1718,9 +1715,7 @@ void CSplign::SSegment::ToBuffer(TNetCacheBuffer* target) const
     using namespace splign_local;
 
     if(target == 0) {
-        NCBI_THROW( CAlgoAlignException,
-                    eBadParameter,
-                    g_msg_NullPointerPassed );
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_NullPointerPassed );
     }
     
     const size_t total_size = sizeof m_exon + sizeof m_idty + 
@@ -1750,8 +1745,7 @@ void CSplign::SSegment::FromBuffer(const TNetCacheBuffer& source)
         + sizeof m_box + 1 + 1 + sizeof m_score;
 
     if(source.size() < min_size) {
-        NCBI_THROW(CAlgoAlignException, eInternal,
-               g_msg_NetCacheBufferIncomplete);
+        NCBI_THROW(CAlgoAlignException, eInternal, g_msg_NetCacheBufferIncomplete);
     }
     
     const char* p = &source.front();
@@ -1773,6 +1767,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/04/04 22:28:33  kapustin
+ * Tackle error code/severity handling
+ *
  * Revision 1.48  2006/03/21 16:20:50  kapustin
  * Various changes, mainly adjust the code with  other libs
  *
