@@ -230,6 +230,12 @@ Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
             }
         }
     }
+    if (max_score <= 0.0) { 
+        /* The iteration cannot converge if maxscore is nonpositive;
+         * lambda doesn't exist */
+        *piterations = max_iterations;
+        *plambda = -1.0;
+    }
     for (k = 0;  k < max_iterations;  k++) {
         double slope;               /* slope of f at x */
         double fold = f;            /* previous value of f */
