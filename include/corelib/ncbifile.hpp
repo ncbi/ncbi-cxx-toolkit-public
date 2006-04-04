@@ -1900,7 +1900,7 @@ public:
     CMemoryFileSegment(SMemoryFileHandle& handle,
                        SMemoryFileAttrs&  attrs,
                        off_t              offset,
-                       size_t             lendth);
+                       size_t             length);
 
     /// Destructor.
     ///
@@ -2010,6 +2010,9 @@ private:
     off_t   m_OffsetReal;  ///< Corrected starting offset of the
                            ///< mapped area from beginning of file.
     size_t  m_LengthReal;  ///< Corrected length of the mapped area.
+
+    // Friend classes
+    friend class CMemoryFile;
 };
 
 
@@ -2023,10 +2026,9 @@ private:
 /// Note, that all mapped into memory file segments have equal protect and
 /// share attributes, because they restricted with file open mode.
 /// Note, that the mapping file must exists and have non-zero length.
-/// This class cannot increase size of mapped file. If the size of
-/// the mapped file changes, the effect of references to portions of
-/// the mapped region that correspond to added or removed portions of the
-/// file is unspecified.
+/// This class cannot increase size of the mapped file. If its size
+/// changes, the effect of references to portions of the mapped region
+/// that correspond to added or removed portions of the file is unspecified.
 ///
 /// Throws an exceptions on error.
 
@@ -2053,24 +2055,25 @@ public:
     /// Calls Unmap() and cleans up memory.
     ~CMemoryFileMap(void);
 
-    /// Map file segment if it is mapped.
+    /// Map file segment.
     ///
     /// @param offset
     ///   The file offset where mapping is to begin. If the offset is not
     ///   a multiple of the allocation granularity, that it can be decreased 
     ///   to match it. The "length" value will be automatically increased on
     ///   the difference between passed and real offsets. The real offset can
-    ///   be obtained using GetOffset(). The parameter must be more than 0.
+    ///   be obtained using GetRealOffset(). Cannot accept values less than 0.
     /// @param length
     ///   Number of bytes to map. This value can be increased if "offset"
     ///   is not a multiple of the allocation granularity.
-    ///   The real length of mapped region can be obtained using GetSize().
+    ///   The real length of mapped region can be obtained using
+    ///   GetRealSize() method.
     ///   The value 0 means that all file size will be mapped.
     /// @return
     ///   - Pointer to start of data, or
     ///   - NULL if mapped to a file of zero length, or if not mapped.
     /// @sa
-    ///   Unmap
+    ///   Unmap, GetOffset, GetSize, GetRealOffset, GetRealSize
     void* Map(off_t offset, size_t length);
 
     /// Unmap file segment.
@@ -2097,17 +2100,17 @@ public:
     /// @return
     ///   Offset in bytes of mapped segment from beginning of the file.
     ///   Returned value is a value of "offset" parameter passed
-    ///   to MapSegment() method for specified "ptr".
+    ///   to Map() method for specified "ptr".
     off_t GetOffset(void* ptr) const;
 
     /// Get length of the mapped segment.
     ///
     /// @param prt
-    ///   Pointer to mapped data returned by MapSegment().
+    ///   Pointer to mapped data returned by Map().
     /// @return
     ///   Length in bytes of the mapped area.
     ///   Returned value is a value of "length" parameter passed
-    ///   to MapSegment() method for specified "ptr".
+    ///   to Map() method for specified "ptr".
     size_t GetSize(void* ptr) const;
 
     /// Get length of the mapped file.
@@ -2122,10 +2125,20 @@ public:
     /// memory pages to the underlying file.
     ///
     /// NOTE: By default data will be flushed in the destructor.
+    /// @param prt
+    ///   Pointer to mapped data returned by Map().
     /// @return
     ///   - TRUE, if all data was flushed successfully.
     ///   - FALSE, if an error occurs.
     bool Flush(void* ptr) const;
+
+    /// Get pointer to memory mapped file segment by pointer to data.
+    ///
+    /// @param prt
+    ///   Pointer to mapped data returned by Map().
+    /// @return
+    ///   Pointer to memory file mapped segment. 
+    const CMemoryFileSegment* GetMemoryFileSegment(void* ptr) const;
 
     /// Advise on memory map usage.
     ///
@@ -2140,15 +2153,15 @@ public:
     ///   EMemMapAdvise, MemMapAdviseAddr
     bool MemMapAdvise(void* ptr, EMemMapAdvise advise) const;
 
-private:
-    // Open file mapping for file with name m_FileName.
+protected:
+    /// Open file mapping for file with name m_FileName.
     void x_Open(void);
 
-    // Unmap mapped memory and close all handles.
+    /// Unmap mapped memory and close mapped file.
     void x_Close(void);
 
-    // Get segment by pointer to data.
-    CMemoryFileSegment* x_Get(void* ptr) const;
+    /// Get pointer to memory mapped file segment by pointer to data.
+    CMemoryFileSegment* x_GetMemoryFileSegment(void* ptr) const;
 
 protected:
     string              m_FileName;  ///< File name. 
@@ -2172,10 +2185,11 @@ protected:
 /// mapped segment only.
 ///
 /// Note, that the mapping file must exists and have non-zero length.
-/// This class cannot increase size of mapped file. If the size of
-/// the mapped file changes, the effect of references to portions of
-/// the mapped region that correspond to added or removed portions of the
-/// file is unspecified.
+/// In commom case this class cannot increase size of the mapped file.
+/// Only Extend() method can increase file size in some cases.
+/// If the size of the mapped file changes otherwise, that the effect
+/// of references to portions of the mapped region that correspond to
+/// added or removed portions of the file is unspecified.
 ///
 /// Throws an exceptions on error.
 
@@ -2192,41 +2206,75 @@ public:
     /// @param share_attr
     ///   Specify if change to memory mapped file can be shared or not.
     /// @param offset
-    ///   The file offset where mapping is to begin. If the offset is not
-    ///   a multiple of the allocation granularity, that it can be decreased 
-    ///   to match it. The "length" value will be automatically increased on
-    ///   the difference between passed and real offsets. The real offset can
-    ///   be obtained using GetOffset(). The parameter must be more than 0.
+    ///   The file offset where mapping is to begin.
     /// @param length
-    ///   Number of bytes to map. This value can be increased if "offset"
-    ///   is not a multiple of the allocation granularity.
-    ///   The real length of mapped region can be obtained using GetSize().
+    ///   Number of bytes to map.
     ///   The value 0 means that all file size will be mapped.
     /// @sa
-    ///   EMemMapProtect, EMemMapShare
+    ///   EMemMapProtect, EMemMapShare, Map
     CMemoryFile(const string&  file_name,
                 EMemMapProtect protect_attr = eMMP_Read,
                 EMemMapShare   share_attr   = eMMS_Shared,
                 off_t          offset       = 0,
                 size_t         lendth       = 0);
 
+    /// Map file.
+    ///
+    /// @param offset
+    ///   The file offset where mapping is to begin. If the offset is not
+    ///   a multiple of the allocation granularity, that it can be decreased 
+    ///   to match it. The "length" value will be automatically increased on
+    ///   the difference between passed and real offsets. The real offset can
+    ///   be obtained using GetRealOffset(). Cannot accept values less than 0.
+    /// @param length
+    ///   Number of bytes to map. This value can be increased if "offset"
+    ///   is not a multiple of the allocation granularity.
+    ///   The real length of mapped region can be obtained using
+    ///   GetRealSize() method.
+    ///   The value 0 means that file will be mapped from 'offset'
+    ///   to the end of file.
+    /// @return
+    ///   - Pointer to start of data, or
+    ///   - NULL if mapped to a file of zero length, or if not mapped.
+    /// @sa
+    ///   Unmap, GetPtr, GetOffset, GetSize, Extend
+    void* Map(off_t offset = 0, size_t length = 0);
+
     /// Unmap file if mapped.
     ///
     /// @return
     ///   TRUE on success; or FALSE on error.
+    /// @sa
+    ///   Map, Extend
     bool Unmap(void);
+
+    /// Extend length of the mapped region.
+    ///
+    /// If the sum of the current offset (from Map()) and new size of
+    /// the mapped region is more than current file size, that file size will
+    /// be increased, added space filed with zeros and mapped region will
+    /// be remapped. The region will be remapped also in the case, when it
+    /// is wider than currently allocated memory pages.
+    /// @param new_length
+    ///   New length of the mapped region. 
+    ///   The value 0 means that file will be mapped from 'offset'
+    ///   to the end of file.
+    /// @return
+    ///   New pointer to start of data.
+    /// @sa
+    ///   GetPtr, GetOffset, GetSize
+    void* Extend(size_t new_lendth = 0);
 
     /// Get pointer to beginning of data.
     ///
     /// @return
     ///   Pointer to start of data.
+    /// @sa
+    ///   Map, Extend
     void* GetPtr(void) const;
 
     /// Get offset of the mapped area from beginning of the file.
     ///
-    /// The offset can be adjusted to system's memory allocation granularity
-    /// value and can differ from "offset" parameter in the class constructor
-    /// or in the Map() method.
     /// @return
     ///   Offset in bytes of mapped area from beginning of the file.
     off_t GetOffset(void) const;
@@ -2265,7 +2313,7 @@ private:
     void x_Verify(void) const;
 
 private:
-    void* m_Ptr;  ///< Pointer to mapped view of file.
+    void* m_Ptr;   ///< Pointer to mapped view of file.
 };
 
 
@@ -2586,17 +2634,22 @@ off_t CMemoryFileSegment::GetRealOffset(void) const
 
 // CMemoryFileMap
 
+inline const CMemoryFileSegment* 
+CMemoryFileMap::GetMemoryFileSegment(void* ptr) const
+{
+    return x_GetMemoryFileSegment(ptr);
+}
 
 inline
 off_t CMemoryFileMap::GetOffset(void* ptr) const
 {
-    return x_Get(ptr)->GetOffset();
+    return GetMemoryFileSegment(ptr)->GetOffset();
 }
 
 inline
 size_t CMemoryFileMap::GetSize(void* ptr) const
 {
-    return x_Get(ptr)->GetSize();
+    return GetMemoryFileSegment(ptr)->GetSize();
 }
 
 inline
@@ -2608,13 +2661,13 @@ Int8 CMemoryFileMap::GetFileSize(void) const
 inline
 bool CMemoryFileMap::Flush(void* ptr) const
 {
-    return x_Get(ptr)->Flush();
+    return GetMemoryFileSegment(ptr)->Flush();
 }
 
 inline
 bool CMemoryFileMap::MemMapAdvise(void* ptr, EMemMapAdvise advise) const
 {
-    return x_Get(ptr)->MemMapAdvise(advise);
+    return GetMemoryFileSegment(ptr)->MemMapAdvise(advise);
 }
 
 
@@ -2666,6 +2719,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/04/04 14:03:16  ivanov
+ * CMemoryFile:: -- addded Extend() method.
+ * Some cosmetics and comments fixes
+ *
  * Revision 1.74  2006/02/22 19:39:56  ivanov
  * + CDirEntry::SplitPathEx
  *
