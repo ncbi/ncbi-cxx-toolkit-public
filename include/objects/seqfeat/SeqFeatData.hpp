@@ -320,7 +320,7 @@ public:
     // Convert a qualifier from an enumerated value to a string representation.
     static const string& GetQulifierAsString(EQualifier qual);
 
-    static const CFeatList* CSeqFeatData::GetFeatList();
+    static const CFeatList* GetFeatList();
 
 private:
     mutable ESubtype m_Subtype; // cached
@@ -490,6 +490,7 @@ private:
     TSubtypeMap    m_FeatTypeMap; ///> indexed by subtype only.
 };
 
+
 inline
 size_t CFeatList::size() const
 {
@@ -511,13 +512,6 @@ CFeatList::const_iterator CFeatList::end() const
 }
 
 
-
-/// You can have your own copy of the FeatConfgList, but usually
-/// you will want to get a pointer to a static copy from here.
-NCBI_SEQFEAT_EXPORT
-const CFeatList* GetFeatConfigList();
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -529,6 +523,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/04/04 18:57:55  rsmith
+* Remove obsolete declaration of GetFeatConfigList()
+*
 * Revision 1.14  2006/04/03 20:23:23  dicuccio
 * Cosmetic clean-ups; promoted some functions to inline
 *
