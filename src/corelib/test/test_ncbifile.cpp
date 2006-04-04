@@ -928,7 +928,6 @@ static void s_TEST_MemoryFile(void)
         // Flushing data to disk at memory unmapping in the destructor
     }}
 
-#if 0
     // Extend() test
     {{
         off_t offset = 2;
@@ -954,7 +953,6 @@ static void s_TEST_MemoryFile(void)
         assert( m.GetOffset() == offset );
         assert( memcmp(s_Data + offset, p2, 4) == 0 );
     }}
-#endif
     // Remove the file
     assert( f.Remove() );
   
@@ -1075,8 +1073,12 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/04/04 14:04:06  ivanov
+ * Enable CMemoryFile::Extend test
+ *
  * Revision 1.57  2006/04/03 20:08:45  ucko
- * Conditionalize out test for CMemoryFile::Extend, which is not yet in CVS itself.
+ * Conditionalize out test for CMemoryFile::Extend, which is not yet
+ * in CVS itself.
  *
  * Revision 1.56  2006/04/03 19:44:33  ivanov
  * s_TEST_File() -- fixed test for setting file modification time,
