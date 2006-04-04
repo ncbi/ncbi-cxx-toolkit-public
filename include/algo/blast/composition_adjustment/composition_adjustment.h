@@ -35,13 +35,14 @@
 #include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/composition_adjustment/compo_mode_condition.h>
+#include <algo/blast/composition_adjustment/composition_constants.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Some characters in the 26 letter NCBIstdaa alphabet, including
-   ambiguity characters, selenocysteine and the stop character. */
+/* Some characters in the NCBIstdaa alphabet, including ambiguity
+   characters, selenocysteine and the stop character. */
 enum { eGapChar = 0, eBchar = 2, eDchar = 4, eEchar = 5, eNchar = 13,
        eQchar = 15, eXchar = 21, eZchar = 23, eSelenocysteine = 24,
        eStopChar = 25};
@@ -49,7 +50,7 @@ enum { eGapChar = 0, eBchar = 2, eDchar = 4, eEchar = 5, eNchar = 13,
 /**
  * Represents the composition of an amino-acid sequence */
 typedef struct Blast_AminoAcidComposition {
-    double prob[26];         /**< probabilities of each amino acid */
+    double prob[COMPO_PROTEIN_ALPHABET];   /**< probabilities of each amino acid */
     int numTrueAminoAcids;   /**< number of true amino acids in the sequence,
                                   omitting nonstandard amino acids */
 } Blast_AminoAcidComposition;
