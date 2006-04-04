@@ -49,7 +49,7 @@ class CAlgoAlignException : public CException
 {
 public:
     enum EErrCode {
-        eInternal,
+        eInternal = 100,
         eBadParameter,
         eInvalidMatrix,
         eMemoryLimit,
@@ -57,6 +57,7 @@ public:
         eIncorrectSequenceOrder,
         eInvalidSpliceTypeIndex,
 	eNoData,
+	eNoAlignment,
 	eNotInitialized,
         eFormat
     };
@@ -78,6 +79,8 @@ public:
             return "Splice type index out of range";
 	case eNoData:
 	    return "No data available";
+	case eNoAlignment:
+	    return "No alignment found";
         case eNotInitialized:
             return "Object not properly initialized";
         case eFormat:
@@ -99,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/04/04 22:07:42  kapustin
+ * +eNoAlignment err code
+ *
  * Revision 1.2  2005/06/02 14:16:48  kapustin
  * Invalidate score matrix after setting match and mismatch scores
  *
