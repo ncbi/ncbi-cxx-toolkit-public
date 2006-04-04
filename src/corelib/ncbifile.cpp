@@ -1169,7 +1169,7 @@ bool CDirEntry::SetTime(CTime* modification,
     struct timeval tvp[2];
     tvp[0].tv_sec  = last_access->GetTimeT();
     tvp[0].tv_usec = last_access->NanoSecond() / 1000;
-    tvp[1].tv_sec  = modification->GetTimeT();;
+    tvp[1].tv_sec  = modification->GetTimeT();
     tvp[1].tv_usec = modification->NanoSecond() / 1000;
 
 #    ifdef HAVE_LUTIMES
@@ -3557,7 +3557,6 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
         m_OffsetReal -= (m_Offset % s_VirtualMemoryPageSize);
         m_LengthReal += (m_Offset % s_VirtualMemoryPageSize);
     }
-
     // Map file view to memory
     string errmsg;
 #if defined(NCBI_OS_MSWIN)
@@ -3645,7 +3644,7 @@ bool CMemoryFileSegment::MemMapAdvise(EMemMapAdvise advise) const
     if ( !m_DataPtr ) {
         return false;
     }
-    return MemMapAdviseAddr(m_DataPtr, m_Length, advise);
+    return MemMapAdviseAddr(m_DataPtrReal, m_LengthReal, advise);
 }
 
 
@@ -3654,6 +3653,10 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
                                EMemMapShare   share)
     : m_FileName(file_name), m_Handle(0), m_Attrs(0)
 {
+#if defined(NCBI_OS_MSWIN)
+    // Name of a file-mapping object cannot contain '\'
+    m_FileName = NStr::Replace(m_FileName, "\\", "/");
+#endif
     // Translate attributes 
     m_Attrs = s_TranslateAttrs(protect, share);
 
@@ -3680,6 +3683,10 @@ CMemoryFileMap::~CMemoryFileMap(void)
 {
     // Unmap used memory and close file
     x_Close();
+    // Clean up allocated memory
+    if ( m_Attrs ) {
+        delete m_Attrs;
+    }
 }
 
 
@@ -3690,7 +3697,20 @@ void* CMemoryFileMap::Map(off_t offset, size_t length)
         // Always return 0 if a file is unmapped or have zero length.
         return 0;
     }
-    // Map view of file
+    // Map file wholly if the length of the mapped region is not specified
+    if ( !length ) {
+        Int8 file_size = GetFileSize() - offset;
+        if ( file_size > kMax_UInt ) {
+            length = kMax_UInt;
+        } else if ( file_size > 0 ) {
+            length = (size_t)file_size;
+        } else {
+            NCBI_THROW(CFileException, eMemoryMap,
+                "CMemoryFileMap: Specified offset of the mapping region "
+                "exceeds file size");
+        }
+    }
+    // Map file segment
     CMemoryFileSegment* segment =  
         new CMemoryFileSegment(*m_Handle, *m_Attrs, offset, length);
     void* ptr = segment->GetPtr();
@@ -3758,14 +3778,12 @@ void CMemoryFileMap::x_Open(void)
     for (;;) { // quasi-TRY block
 
 #if defined(NCBI_OS_MSWIN)
-        // Name of a file-mapping object cannot contain '\'
-        string x_name = NStr::Replace(m_FileName, "\\", "/");
         errmsg = ": ";
 
         // If failed to attach to an existing file-mapping object then
         // create a new one (based on the specified file)
         m_Handle->hMap = OpenFileMapping(m_Attrs->map_access, false,
-                                         x_name.c_str());
+                                         m_FileName.c_str());
         if ( !m_Handle->hMap ) { 
 
             // NOTE:
@@ -3778,12 +3796,12 @@ void CMemoryFileMap::x_Open(void)
             DWORD x_file_access = GENERIC_READ | GENERIC_WRITE;
             DWORD x_map_protect = PAGE_READWRITE;
 
-            hFile = CreateFile(x_name.c_str(), x_file_access, 
+            hFile = CreateFile(m_FileName.c_str(), x_file_access, 
                                m_Attrs->file_share, NULL,
                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if ( (hFile == INVALID_HANDLE_VALUE)  &&
                  (m_Attrs->file_access != x_file_access) ) {
-                hFile = CreateFile(x_name.c_str(), m_Attrs->file_access, 
+                hFile = CreateFile(m_FileName.c_str(), m_Attrs->file_access, 
                                    m_Attrs->file_share, NULL,
                                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,NULL);
                 x_map_protect = m_Attrs->map_protect;
@@ -3797,12 +3815,12 @@ void CMemoryFileMap::x_Open(void)
 
             m_Handle->hMap = CreateFileMapping(hFile, NULL,
                                                x_map_protect,
-                                               0, 0, x_name.c_str());
+                                               0, 0, m_FileName.c_str());
             if ( !m_Handle->hMap  &&
                  (m_Attrs->map_protect != x_map_protect) ) {
                 m_Handle->hMap = CreateFileMapping(hFile, NULL,
                                                    m_Attrs->map_protect,
-                                                   0, 0, x_name.c_str());
+                                                   0, 0, m_FileName.c_str());
             }
             CloseHandle(hFile);
             if ( !m_Handle->hMap ) {
@@ -3848,14 +3866,11 @@ void CMemoryFileMap::x_Close()
         delete m_Handle;
         m_Handle  = 0;
     }
-    if ( m_Attrs ) {
-        delete m_Attrs;
-        m_Attrs = 0;
-    }
 }
 
 
-CMemoryFileSegment* CMemoryFileMap::x_Get(void* ptr) const
+CMemoryFileSegment* 
+CMemoryFileMap::x_GetMemoryFileSegment(void* ptr) const
 {
     if ( !m_Handle  &&  !m_Handle->hMap ) {
         NCBI_THROW(CFileException, eMemoryMap,
@@ -3882,16 +3897,18 @@ CMemoryFile::CMemoryFile(const string&  file_name,
     if ( !m_Handle  ||  !m_Handle->hMap ) {
         return;
     }
-    // Map file wholly if the length of mapped region is not specified
-    if ( !length ) {
-        Int8 file_size = GetFileSize();
-        if ( file_size > kMax_UInt ) {
-            length = kMax_UInt;
-        } else {
-            length = (size_t)file_size;
-        }
+    Map(offset, length);
+}
+
+
+void* CMemoryFile::Map(off_t offset, size_t length)
+{
+    // Unmap if already mapped
+    if ( m_Ptr ) {
+        Unmap();
     }
-    m_Ptr = Map(offset, length);
+    m_Ptr = CMemoryFileMap::Map(offset, length);
+    return m_Ptr;
 }
 
 
@@ -3903,6 +3920,81 @@ bool CMemoryFile::Unmap()
     bool status = CMemoryFileMap::Unmap(m_Ptr);
     m_Ptr = 0;
     return status;
+}
+
+
+void* CMemoryFile::Extend(size_t length)
+{
+    x_Verify();
+
+    // Get current mapped segment
+    CMemoryFileSegment* segment = x_GetMemoryFileSegment(m_Ptr);
+    off_t offset = segment->GetOffset();
+
+    // Get file size
+    Int8 file_size = GetFileSize();
+
+    // Map file wholly if the length of the mapped region is not specified
+    if ( !length ) {
+        Int8 fs = file_size - offset;
+        if ( fs > kMax_UInt ) {
+            length = kMax_UInt;
+        } else if ( fs > 0 ) {
+            length = (size_t)fs;
+        } else {
+            NCBI_THROW(CFileException, eMemoryMap,
+                "CMemoryFile: Specified offset of the mapping region "
+                "exceeds file size");
+        }
+    }
+
+    // Changing file size is necessary
+    if (offset + length > file_size) {
+        x_Close();
+        // Open file for append
+#if defined(NCBI_OS_MSWIN)
+        int fd = _open(m_FileName.c_str(), _O_APPEND |_O_BINARY |_O_WRONLY,0);
+#elif defined(NCBI_OS_UNIX)
+        int fd = open(m_FileName.c_str(), O_APPEND | O_WRONLY, 0);
+#endif
+        if ( fd < 0 ) {
+            NCBI_THROW(CFileException, eMemoryMap,
+                "CMemoryFile: Unable to open file \"" + m_FileName +
+                "\" for change its size");
+        }
+
+        // Extend file size
+        char* buf  = new char[kDefaultBufferSize];
+        memset(buf, '\0', kDefaultBufferSize);
+        string errmsg;
+        size_t cnt = (size_t)((Int8)length + offset - file_size);
+        do {
+            int x_written = write(fd, (void*) buf, 
+                cnt > kDefaultBufferSize ? kDefaultBufferSize : cnt);
+            if ( x_written < 0 ) {
+                if (errno != EINTR) {
+                    errmsg = strerror(errno);
+                    break;
+                }
+                continue;
+            }
+            cnt -= x_written;
+        }
+        while (cnt > 0);
+
+        // Cleanup
+        delete[] buf;
+        close(fd);
+        if ( cnt ) {
+            NCBI_THROW(CFileException, eMemoryMap,
+                "CMemoryFile: Unable to extend file size: " + errmsg);
+        }
+        // Reopen file for mapping
+        x_Open();
+    }
+    // Remap current region
+    Map(offset, length);
+    return GetPtr();
 }
 
 
@@ -3921,6 +4013,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.139  2006/04/04 14:03:24  ivanov
+ * CMemoryFile:: -- addded Extend() method.
+ * CMemoryFileSegment::MemMapAdvise() -- fixed mapped range.
+ * Some cosmetics and other small fixes.
+ *
  * Revision 1.138  2006/02/22 19:40:08  ivanov
  * + CDirEntry::SplitPathEx
  *
