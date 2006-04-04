@@ -58,6 +58,7 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/seqport_util.hpp>
 
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
@@ -422,7 +423,27 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
 
 
 typedef pair<Int8, CConstRef<CSeq_feat> > TFeatScore;
-typedef list<TFeatScore> TFeatScores;
+typedef vector<TFeatScore> TFeatScores;
+
+template <class T, class U>
+struct SPairLessByFirst
+    : public binary_function< pair<T,U>, pair<T,U>, bool >
+{
+    bool operator()(const pair<T,U>& p1, const pair<T,U>& p2) const
+    {
+        return p1.first < p2.first;
+    }
+};
+
+template <class T, class U>
+struct SPairLessBySecond
+    : public binary_function< pair<T,U>, pair<T,U>, bool >
+{
+    bool operator()(const pair<T,U>& p1, const pair<T,U>& p2) const
+    {
+        return p1.second < p2.second;
+    }
+};
 
 static
 void x_GetBestOverlappingFeat(const CSeq_loc& loc,
@@ -502,30 +523,34 @@ void x_GetBestOverlappingFeat(const CSeq_loc& loc,
 
             TFeatScore sc(cur_diff,
                           CConstRef<CSeq_feat>(&feat_it->GetMappedFeature()));
-            if (feats.size()  &&  sc.first < feats.front().first) {
-                feats.push_front(sc);
-            } else {
-                feats.push_back(sc);
-            }
+            feats.push_back(sc);
         }
     }
     catch (CException&) {
         _TRACE("x_GetBestOverlappingFeat(): error: feature iterator failed");
     }
+
+    std::sort(feats.begin(), feats.end(),
+              SPairLessByFirst< Int8, CConstRef<CSeq_feat> >());
 }
 
 
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,
                                             EOverlapType overlap_type,
-                                            CScope& scope)
+                                            CScope& scope,
+                                            TBestFeatOpts opts)
 {
     TFeatScores scores;
     x_GetBestOverlappingFeat(loc,
                              feat_type, CSeqFeatData::eSubtype_any,
                              overlap_type, scores, scope);
     if (scores.size()) {
-        return scores.front().second;
+        if (opts & fBestFeat_FavorLonger) {
+            return scores.back().second;
+        } else {
+            return scores.front().second;
+        }
     }
     return CConstRef<CSeq_feat>();
 }
@@ -534,7 +559,8 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::ESubtype feat_type,
                                             EOverlapType overlap_type,
-                                            CScope& scope)
+                                            CScope& scope,
+                                            TBestFeatOpts opts)
 {
     TFeatScores scores;
     x_GetBestOverlappingFeat(loc,
@@ -542,7 +568,11 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
         overlap_type, scores, scope);
 
     if (scores.size()) {
-        return scores.front().second;
+        if (opts & fBestFeat_FavorLonger) {
+            return scores.back().second;
+        } else {
+            return scores.front().second;
+        }
     }
     return CConstRef<CSeq_feat>();
 }
@@ -596,7 +626,7 @@ CConstRef<CSeq_feat> GetBestOverlapForSNP(const CSeq_feat& snp_feat,
                                           bool search_both_strands)
 {
     return x_GetBestOverlapForSNP(snp_feat, type, CSeqFeatData::eSubtype_any,
-        scope, search_both_strands);
+                                  scope, search_both_strands);
 }
 
 
@@ -680,7 +710,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
     // check for transcript_id; this is a fast check
     string transcript_id = cds_feat.GetNamedQual("transcript_id");
     if ( !transcript_id.empty() ) {
-        ITERATE (list<TFeatScore>, feat_iter, feats) {
+        ITERATE (vector<TFeatScore>, feat_iter, feats) {
             const CSeq_feat& feat = *feat_iter->second;
             string other_transcript_id =
                 feat.GetNamedQual("transcript_id");
@@ -980,6 +1010,34 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
         return gene_feat;
     }
 
+    ///
+    /// compare gene xrefs to see if ew can find a match
+    ///
+    const CGene_ref* ref = mrna_feat.GetGeneXref();
+    if (ref) {
+        if (ref->IsSuppressed()) {
+            /// 'suppress' case
+            return gene_feat;
+        }
+
+        string ref_str;
+        ref->GetLabel(&ref_str);
+
+        ITERATE (TFeatScores, feat_it, feats) {
+            const CSeq_feat& feat      = *feat_it->second;
+            const CGene_ref& other_ref = feat.GetData().GetGene();
+            string other_ref_str;
+            other_ref.GetLabel(&other_ref_str);
+            if (ref_str == other_ref_str) {
+                gene_feat = &feat;
+                return gene_feat;
+            }
+        }
+    }
+
+    ///
+    /// compare by dbxrefs
+    ///
     if (mrna_feat.IsSetDbxref()) {
         int gene_id = 0;
         ITERATE (CSeq_feat::TDbxref, dbxref, mrna_feat.GetDbxref()) {
@@ -1001,22 +1059,6 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
                         return gene_feat;
                     }
                 }
-            }
-        }
-    }
-
-    const CGene_ref* ref = mrna_feat.GetGeneXref();
-    if (ref) {
-        string ref_str;
-        ref->GetLabel(&ref_str);
-        ITERATE (TFeatScores, feat_it, feats) {
-            const CSeq_feat& feat      = *feat_it->second;
-            const CGene_ref& other_ref = feat.GetData().GetGene();
-            string other_ref_str;
-            other_ref.GetLabel(&other_ref_str);
-            if (ref_str == other_ref_str) {
-                gene_feat = &feat;
-                return gene_feat;
             }
         }
     }
@@ -1055,8 +1097,14 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
     // next: see if we can match based on gene xref
     const CGene_ref* ref = cds_feat.GetGeneXref();
     if (ref) {
+        if (ref->IsSuppressed()) {
+            /// 'suppress' case
+            return feat_ref;
+        }
+
         string ref_str;
         ref->GetLabel(&ref_str);
+
         ITERATE (TFeatScores, feat_it, feats) {
             const CSeq_feat& feat = *feat_it->second;
 
@@ -1103,49 +1151,9 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
         return;
     }
 
-    int gene_id = 0;
-    if (gene_feat.IsSetDbxref()) {
-        ITERATE (CSeq_feat::TDbxref, dbxref, gene_feat.GetDbxref()) {
-            if ((*dbxref)->GetDb() == "GeneID"  ||
-                (*dbxref)->GetDb() == "LocusID") {
-                gene_id = (*dbxref)->GetTag().GetId();
-                break;
-            }
-        }
-    }
-
-    /// first, check to see if we can match based on gene_id
-    if (gene_id) {
-        size_t count = 0;
-        for ( ;  feat_it;  ++feat_it) {
-            CConstRef<CSeq_feat> ref(&feat_it->GetOriginalFeature());
-
-            ECompare comp = sequence::Compare(gene_feat.GetLocation(),
-                                              feat_it->GetLocation(),
-                                              &scope);
-            if (comp != eSame  &&  comp != eContains) {
-                continue;
-            }
-
-            if (feat_it->IsSetDbxref()) {
-                ITERATE (CSeq_feat::TDbxref, dbxref, feat_it->GetDbxref()) {
-                    if (((*dbxref)->GetDb() == "GeneID"  ||
-                         (*dbxref)->GetDb() == "LocusID")  &&
-                        (*dbxref)->GetTag().GetId() == gene_id) {
-                        mrna_feats.push_back(ref);
-                        ++count;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (count) {
-            return;
-        }
-    }
-
-    /// gene_id not found, look for gene ref
+    ///
+    /// pass 1: compare by gene xref
+    ///
     {{
          const CGene_ref& ref = gene_feat.GetData().GetGene();
          string ref_str;
@@ -1155,7 +1163,13 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
 
              const CGene_ref* other_ref =
                  feat_it->GetOriginalFeature().GetGeneXref();
-             if ( !other_ref ) {
+             if ( !other_ref  ||  other_ref->IsSuppressed() ) {
+                 continue;
+             }
+
+             string other_ref_str;
+             other_ref->GetLabel(&other_ref_str);
+             if (other_ref_str != ref_str) {
                  continue;
              }
 
@@ -1163,12 +1177,6 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
                                                feat_it->GetLocation(),
                                                &scope);
              if (comp != eSame  &&  comp != eContains) {
-                 continue;
-             }
-
-             string other_ref_str;
-             other_ref->GetLabel(&other_ref_str);
-             if (other_ref_str != ref_str) {
                  continue;
              }
 
@@ -1182,12 +1190,67 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
          }
      }}
 
+    ///
+    /// pass 2: compare by gene id
+    ///
+    {{
+        int gene_id = 0;
+        if (gene_feat.IsSetDbxref()) {
+            ITERATE (CSeq_feat::TDbxref, dbxref, gene_feat.GetDbxref()) {
+                if ((*dbxref)->GetDb() == "GeneID"  ||
+                    (*dbxref)->GetDb() == "LocusID") {
+                    gene_id = (*dbxref)->GetTag().GetId();
+                    break;
+                }
+            }
+        }
+
+        if (gene_id) {
+            size_t count = 0;
+            feat_it.Rewind();
+            for ( ;  feat_it;  ++feat_it) {
+                /// check the suppress case
+                /// regardless of the gene-id binding, we always ignore these
+                const CGene_ref* other_ref =
+                    feat_it->GetOriginalFeature().GetGeneXref();
+                if ( !other_ref  ||  other_ref->IsSuppressed() ) {
+                    continue;
+                }
+
+                CConstRef<CSeq_feat> ref(&feat_it->GetOriginalFeature());
+
+                ECompare comp = sequence::Compare(gene_feat.GetLocation(),
+                                                feat_it->GetLocation(),
+                                                &scope);
+                if (comp != eSame  &&  comp != eContains) {
+                    continue;
+                }
+
+                if (feat_it->IsSetDbxref()) {
+                    ITERATE (CSeq_feat::TDbxref, dbxref, feat_it->GetDbxref()) {
+                        if (((*dbxref)->GetDb() == "GeneID"  ||
+                            (*dbxref)->GetDb() == "LocusID")  &&
+                            (*dbxref)->GetTag().GetId() == gene_id) {
+                            mrna_feats.push_back(ref);
+                            ++count;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (count) {
+                return;
+            }
+        }
+    }}
+
     // gene doesn't have a gene_id or a gene ref
     CConstRef<CSeq_feat> feat =
         sequence::GetBestOverlappingFeat(gene_feat.GetLocation(),
                                          CSeqFeatData::eSubtype_mRNA,
                                          sequence::eOverlap_CheckIntervals,
-                                         scope);
+                                         scope, opts);
     if (feat) {
         mrna_feats.push_back(feat);
     }
@@ -1213,7 +1276,7 @@ void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
             sequence::GetBestOverlappingFeat(gene_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_cdregion,
                                              sequence::eOverlap_CheckIntervals,
-                                             scope);
+                                             scope, opts);
         if (feat) {
             cds_feats.push_back(feat);
         }
@@ -1252,7 +1315,7 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
 
     if ( !feat_ref ) {
         feat_ref = sequence::GetBestOverlappingFeat
-            (feat.GetLocation(), feat_type, overlap_type, scope);
+            (feat.GetLocation(), feat_type, overlap_type, scope, opts);
     }
 
     return feat_ref;
@@ -1303,7 +1366,7 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
 
     if ( !feat_ref ) {
         feat_ref = GetBestOverlappingFeat
-            (feat.GetLocation(), subtype, overlap_type, scope);
+            (feat.GetLocation(), subtype, overlap_type, scope, opts);
     }
 
     return feat_ref;
@@ -1431,6 +1494,204 @@ CBioseq_Handle GetParentForPart(const CBioseq_Handle& part)
 
     return seg;
 }
+
+
+CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
+                                     TSeqPos from, TSeqPos to,
+                                     const CSeq_id_Handle& new_seq_id,
+                                     TCreateBioseqFlags opts,
+                                     int delta_seq_level)
+{
+    CRef<CBioseq> bioseq(new CBioseq);
+    CSeq_inst& inst = bioseq->SetInst();
+
+    if (opts & fBioseq_CreateDelta) {
+        ///
+        /// create a delta-seq to match the base sequence in this range
+        ///
+        inst.SetRepr(CSeq_inst::eRepr_delta);
+
+        SSeqMapSelector sel(CSeqMap::fDefaultFlags);
+        sel.SetRange(from, to)
+            .SetResolveCount(delta_seq_level);
+        CSeqMap_CI map_iter(bsh, sel);
+
+        TSeqPos bioseq_len = 0;
+        for ( ;  map_iter;  ++map_iter) {
+            TSeqPos seq_start = map_iter.GetRefPosition();
+            TSeqPos seq_end   = map_iter.GetRefEndPosition() - 1;
+
+            if (map_iter.GetEndPosition() > to) {
+                seq_end -= map_iter.GetEndPosition() - to;
+            }
+
+            TSeqPos len = seq_end - seq_start + 1;
+
+            switch (map_iter.GetType()) {
+            case CSeqMap::eSeqGap:
+                /// add a gap only for our length
+                inst.SetExt().SetDelta().AddLiteral(len);
+                bioseq_len += len;
+                break;
+
+            case CSeqMap::eSeqData:
+                {{
+                    ///
+                    /// copy the data chunk
+                    /// this is potentially truncated
+                    ///
+                    CRef<CDelta_seq> seq(new CDelta_seq);
+                    seq->SetLiteral().SetLength(len);
+                    CSeq_data& data = seq->SetLiteral().SetSeq_data();
+                    data.Assign(map_iter.GetRefData());
+                    if (len != map_iter.GetLength()) {
+                        switch (data.Which()) {
+                        case CSeq_data::e_Iupacna:
+                            data.SetIupacna().Set().resize(len);
+                            break;
+                        case CSeq_data::e_Ncbi2na:
+                            data.SetNcbi2na().Set()
+                                .resize(len / 4 + (len % 4 ? 1 : 0));
+                            break;
+                        case CSeq_data::e_Ncbi4na:
+                            data.SetNcbi4na().Set()
+                                .resize(len / 2 + (len % 2 ? 1 : 0));
+                            break;
+                        case CSeq_data::e_Ncbi8na:
+                            data.SetNcbi8na().Set().resize(len);
+                            break;
+                        case CSeq_data::e_Ncbipna:
+                            data.SetNcbipna().Set().resize(len * 5);
+                            break;
+                        case CSeq_data::e_Iupacaa:
+                            data.SetIupacaa().Set().resize(len);
+                            break;
+                        case CSeq_data::e_Ncbi8aa:
+                            data.SetNcbi8aa().Set().resize(len);
+                            break;
+                        case CSeq_data::e_Ncbieaa:
+                            data.SetNcbieaa().Set().resize(len);
+                            break;
+                        case CSeq_data::e_Ncbipaa:
+                            data.SetNcbipaa().Set().resize(len * 25);
+                            break;
+                        case CSeq_data::e_Ncbistdaa:
+                            data.SetNcbistdaa().Set().resize(len);
+                            break;
+                        }
+                    }
+                    inst.SetExt().SetDelta().Set().push_back(seq);
+                    bioseq_len += len;
+                }}
+                break;
+
+            case CSeqMap::eSeqSubMap:
+                break;
+
+            case CSeqMap::eSeqRef:
+                {{
+                    ///
+                    /// create a segment referring to our far delta seq
+                    ///
+                    inst.SetExt().SetDelta()
+                        .AddSeqRange(*map_iter.GetRefSeqid().GetSeqId(),
+                                    seq_start, seq_end,
+                                    (map_iter.GetRefMinusStrand() ?
+                                    eNa_strand_minus : eNa_strand_plus));
+                    bioseq_len += len;
+                }}
+                break;
+            case CSeqMap::eSeqEnd:
+                break;
+
+            case CSeqMap::eSeqChunk:
+                break;
+            }
+
+            if (map_iter.GetEndPosition() > to) {
+                break;
+            }
+        }
+        inst.SetLength(bioseq_len);
+    } else {
+        ///
+        /// just create a raw sequence
+        ///
+        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+        string seq;
+        vec.GetSeqData(from, to, seq);
+        TSeqPos len = seq.size();
+        if (bsh.IsNa()) {
+            inst.SetSeq_data().SetIupacna().Set().swap(seq);
+            CSeqportUtil::Pack(&inst.SetSeq_data(), len);
+        } else {
+            inst.SetSeq_data().SetIupacaa().Set().swap(seq);
+        }
+        inst.SetRepr(CSeq_inst::eRepr_raw);
+        inst.SetLength(len);
+    }
+
+    /// Make sure we copy our mol-type
+    inst.SetMol(bsh.GetInst_Mol());
+
+    /// set our seq-id
+    CRef<CSeq_id> id(new CSeq_id);
+    id->Assign(*new_seq_id.GetSeqId());
+    bioseq->SetId().push_back(id);
+
+    ///
+    /// copy descriptors, if requested
+    ///
+    if (opts & fBioseq_CopyDescriptors) {
+        CSeqdesc_CI desc_it(bsh);
+        for ( ;  desc_it;  ++desc_it) {
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            desc->Assign(*desc_it);
+            bioseq->SetDescr().Set().push_back(desc);
+        }
+    }
+
+    ///
+    /// copy annotations, if requested
+    ///
+    if (opts & fBioseq_CopyAnnot) {
+        CSeq_loc from_loc;
+        from_loc.SetInt().SetFrom(from);
+        from_loc.SetInt().SetTo  (to);
+        from_loc.SetId(*bsh.GetSeqId());
+
+        CSeq_loc to_loc;
+        to_loc.SetInt().SetFrom(0);
+        to_loc.SetInt().SetTo(to - from);
+        to_loc.SetId(*id);
+
+        CSeq_loc_Mapper mapper(from_loc, to_loc, &bsh.GetScope());
+
+        CRef<CSeq_annot> annot(new CSeq_annot);
+
+        SAnnotSelector sel;
+        sel.SetResolveAll()
+            .SetResolveDepth(delta_seq_level);
+        CFeat_CI feat_iter(bsh, TSeqRange(from, to), sel);
+        for ( ;  feat_iter;  ++feat_iter) {
+            CRef<CSeq_loc> loc = mapper.Map(feat_iter->GetLocation());
+            if ( !loc ) {
+                continue;
+            }
+            CRef<CSeq_feat> feat(new CSeq_feat);
+            feat->Assign(feat_iter->GetOriginalFeature());
+            feat->SetLocation(*loc);
+            annot->SetData().SetFtable().push_back(feat);
+        }
+
+        if (annot->IsSetData()) {
+            bioseq->SetAnnot().push_back(annot);
+        }
+    }
+
+    return bioseq;
+}
+
 
 
 END_SCOPE(sequence)
@@ -2520,6 +2781,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.137  2006/04/04 13:21:42  dicuccio
+* Added option to favor the longest item among the best matching features.
+* Added options to all versions of GetBestOverlappingFeature().
+* Tweaked order of comparisons in GetBestGeneForMrna(), GetBestGeneForCds().
+* Added CreateBioseqFromBioseq()
+*
 * Revision 1.136  2006/03/01 19:06:54  vasilche
 * Avoid premature deletion of Seq-loc.
 *

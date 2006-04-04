@@ -222,6 +222,9 @@ enum EBestFeatOpts {
     /// additional sequences
     fBestFeat_NoExpensive = 0x02,
 
+    /// favor longer features over shorter features
+    fBestFeat_FavorLonger = 0x04,
+
     /// default options: do everything
     fBestFeat_Defaults = 0
 };
@@ -231,12 +234,14 @@ NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,
                                             EOverlapType overlap_type,
-                                            CScope& scope);
+                                            CScope& scope,
+                                            TBestFeatOpts opts = fBestFeat_Defaults);
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::ESubtype feat_type,
                                             EOverlapType overlap_type,
-                                            CScope& scope);
+                                            CScope& scope,
+                                            TBestFeatOpts opts = fBestFeat_Defaults);
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
@@ -414,6 +419,55 @@ const CMolInfo* GetMolInfo(const CBioseq_Handle& handle);
 NCBI_XOBJUTIL_EXPORT
 CBioseq_Handle GetBioseqFromSeqLoc(const CSeq_loc& loc, CScope& scope,
     CScope::EGetBioseqFlag flag = CScope::eGetBioseq_Loaded);
+
+
+/// Create a constructed bioseq from a location
+/// This function will construct a bioseq from a given location, using a set of
+/// options to control how the bioseq should be represented.  Options here
+/// include:
+///  - create a far-pointing delta-seq or a raw sequence
+///      - specify the depth of recursion for the delta bioseq
+///  - copy all bioseq descriptors
+/// @param bsh
+///   Source bioseq handle
+/// @param from
+///   Starting position of sequence
+/// @param to
+///   Ending position of sequence
+/// @param new_seq_id
+///   Seq-id for the newly created sequence
+/// @param opts
+///   The set of flags controlling how the sequence should be created
+/// @param delta_seq_level
+///   Level of recursion from which to pull the delta-seq components
+///   Level 0 = use the components in the source sequence;
+///   Level 1 = use the components from the components in the source sequence
+/// @return
+///   Newly created bioseq
+
+enum ECreateBioseqFlags {
+    //< Create a delta sequence.  If this is not present, a raw sequence
+    //< is created
+    fBioseq_CreateDelta = 0x01,
+
+    //< Copy all descriptors into the new bioseq
+    fBioseq_CopyDescriptors = 0x02,
+
+    //< Project all annotations onto the new bioseq, and
+    //< create a new annotation for these
+    fBioseq_CopyAnnot = 0x04,
+
+    fBioseq_Defaults = fBioseq_CreateDelta
+};
+typedef int TCreateBioseqFlags;
+
+NCBI_XOBJUTIL_EXPORT
+CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
+                                     TSeqPos from, TSeqPos to,
+                                     const CSeq_id_Handle& new_seq_id,
+                                     TCreateBioseqFlags opts = fBioseq_Defaults,
+                                     int delta_seq_level = 1);
+
 
 /* @} */
 
@@ -705,6 +759,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.66  2006/04/04 13:21:41  dicuccio
+* Added option to favor the longest item among the best matching features.
+* Added options to all versions of GetBestOverlappingFeature().
+* Tweaked order of comparisons in GetBestGeneForMrna(), GetBestGeneForCds().
+* Added CreateBioseqFromBioseq()
+*
 * Revision 1.65  2006/02/09 20:30:23  ucko
 * The versions of CFastaOstream::Write that set up a temporary OM scope
 * no longer need to take non-const arguments.
