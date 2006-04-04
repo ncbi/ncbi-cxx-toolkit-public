@@ -88,6 +88,9 @@ private:
 
     typedef map<string, AutoPtr<IRequestProcessor> > TProcessorCont;
     TProcessorCont m_Processors;
+
+    CWorkerNodeControlThread(const CWorkerNodeControlThread&);
+    CWorkerNodeControlThread& operator=(const CWorkerNodeControlThread&);
 };
 
 END_NCBI_SCOPE
@@ -95,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/04 20:14:04  didenko
+ * Disabled copy constractors and assignment operators
+ *
  * Revision 1.3  2006/01/18 17:47:42  didenko
  * Added JobWatchers mechanism
  * Reimplement worker node statistics as a JobWatcher

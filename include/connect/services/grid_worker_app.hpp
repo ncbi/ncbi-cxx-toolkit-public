@@ -74,6 +74,9 @@ public:
 
 private:
     const CNcbiApplication& m_App;
+
+    CDefalutWorkerNodeInitContext(const CDefalutWorkerNodeInitContext&);
+    CDefalutWorkerNodeInitContext& operator=(const CDefalutWorkerNodeInitContext&);
 };
 
 /// Main Worker Node application
@@ -117,6 +120,9 @@ protected:
 private:
     mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
     auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
+
+    CGridWorkerApp(const CGridWorkerApp&);
+    CGridWorkerApp& operator=(const CGridWorkerApp&);
 };
 
 #define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)     \
@@ -145,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/04/04 20:14:04  didenko
+ * Disabled copy constractors and assignment operators
+ *
  * Revision 1.13  2006/02/27 14:50:20  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

@@ -295,6 +295,10 @@ private:
 
     CWorkerNodeIdleThread& m_Thread;
     bool m_RunAgain;
+
+private:
+    CWorkerNodeIdleTaskContext(const CWorkerNodeIdleTaskContext&);
+    CWorkerNodeIdleTaskContext& operator=(const CWorkerNodeIdleTaskContext&);
 };
 
 /// Worker Node Idle Task Interaface
@@ -585,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/04/04 20:14:04  didenko
+ * Disabled copy constractors and assignment operators
+ *
  * Revision 1.40  2006/03/30 16:52:35  jcherry
  * Added export specifier
  *

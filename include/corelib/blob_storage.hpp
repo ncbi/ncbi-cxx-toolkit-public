@@ -171,6 +171,10 @@ public:
 private:
     const TPluginManagerParamTree* m_Params;
     EOwnership m_Owner;
+
+private:
+    CBlobStorageFactory(const CBlobStorageFactory&);
+    CBlobStorageFactory& operator=(const CBlobStorageFactory&);
 };
 
 
@@ -264,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/04/04 20:14:04  didenko
+ * Disabled copy constractors and assignment operators
+ *
  * Revision 1.4  2006/03/15 17:20:35  didenko
  * +IsValidKey method
  * Added new CBlobStorageExecption error codes

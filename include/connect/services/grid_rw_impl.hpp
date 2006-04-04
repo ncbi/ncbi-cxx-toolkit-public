@@ -72,6 +72,10 @@ private:
     IBlobStorage& m_Storage;
     CNcbiOstream* m_BlobOstr;
     string&       m_Data;
+
+private:
+    CStringOrBlobStorageWriter(const CStringOrBlobStorageWriter&);
+    CStringOrBlobStorageWriter& operator=(const CStringOrBlobStorageWriter&);
 };
 
 
@@ -103,6 +107,10 @@ private:
     IBlobStorage& m_Storage;
     CNcbiIstream* m_BlobIstr;
     string::const_iterator m_CurPos;
+
+private:
+    CStringOrBlobStorageReader(const CStringOrBlobStorageReader&);
+    CStringOrBlobStorageReader& operator=(const CStringOrBlobStorageReader&);
 };
 
 END_NCBI_SCOPE
@@ -110,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/04/04 20:14:04  didenko
+ * Disabled copy constractors and assignment operators
+ *
  * Revision 1.2  2006/03/16 15:13:08  didenko
  * Fixed writer algorithm
  * + Comments

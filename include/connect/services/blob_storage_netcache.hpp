@@ -140,6 +140,9 @@ private:
     TCacheFlags m_CacheFlags;
     string*  m_CreatedBlobId;
     string   m_TempDir;
+
+    CBlobStorage_NetCache(const CBlobStorage_NetCache&);
+    CBlobStorage_NetCache& operator=(CBlobStorage_NetCache&);
 };
 
 extern NCBI_BLOBSTORAGE_NETCACHE_EXPORT const char* kBlobStorageNetCacheDriverName;
@@ -163,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/04/04 20:14:04  didenko
+ * Disabled copy constractors and assignment operators
+ *
  * Revision 1.5  2006/03/15 17:20:35  didenko
  * +IsValidKey method
  * Added new CBlobStorageExecption error codes
