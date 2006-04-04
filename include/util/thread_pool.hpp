@@ -621,8 +621,13 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
     // Having the mutex, we can safely drop "volatile"
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
     if (q.size() == m_MaxSize) {
+        if (timeout_nsec >= (unsigned long)kMax_Long) {
+            timeout_nsec = kMax_Long;
+        }
         CTime     start(CTime::eCurrent, CTime::eGmt);
-        CTimeSpan span (timeout_sec, timeout_nsec);
+        CTimeSpan span (min((long)timeout_sec,
+                            kMax_Long - (long)timeout_nsec / 1000000000),
+                        timeout_nsec);
         while (span.GetSign() == ePositive  &&  q.size() == m_MaxSize) {
             // Temporarily release the mutex while waiting, to avoid deadlock.
             // See WaitForRoom's comments for more details.
@@ -1002,6 +1007,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2006/04/04 14:08:24  ucko
+* CBlockingQueue<>::Put: tweak new timeout logic to ensure getting
+* nonnegative CTimeSpan components.
+*
 * Revision 1.36  2006/04/03 19:46:34  ucko
 * CBlockingQueue<>::Put, CPoolOfThreads<>::[x_]Accept[Urgent]Request:
 * Accept an optional timeout in which space may become available,
