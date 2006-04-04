@@ -51,8 +51,7 @@ public:
     
     static CGridGlobals& GetInstance();
 
-    int GetNewJobNumber();
-    void SetMaxJobsAllowed(int value) { m_MaxJobsAllowed = value; }
+    unsigned int GetNewJobNumber();
 
     bool ReuseJobObject() const { return m_ReuseJobObject; }
     void  SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
@@ -72,8 +71,7 @@ private:
     CGridGlobals();
     static auto_ptr<CGridGlobals> sm_Instance;       
 
-    int m_JobsStarted;
-    int m_MaxJobsAllowed;
+    CAtomicCounter m_JobsStarted;
     bool m_ReuseJobObject;
 
     volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
@@ -90,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/04 19:15:01  didenko
+ * Added max_failed_jobs parameter to a worker node configuration.
+ *
  * Revision 1.3  2006/02/16 15:39:09  didenko
  * If an instance of a job's class could not be create then the worker node
  * should shutdown itself.

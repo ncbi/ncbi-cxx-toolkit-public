@@ -55,7 +55,8 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CWorkerNodeStatistics : public IWorkerNodeJobWatcher
 {
 public:
-    CWorkerNodeStatistics();
+    CWorkerNodeStatistics(unsigned int max_jobs_allowed, 
+                          unsigned int max_failures_allowed);
     virtual ~CWorkerNodeStatistics();
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event);
 
@@ -64,12 +65,15 @@ public:
 
     const CTime& GetStartTime() const { return m_StartTime; }
 private:        
+    unsigned int m_JobsStarted;
     unsigned int m_JobsSucceed;
     unsigned int m_JobsFailed;
     unsigned int m_JobsReturned;
     unsigned int m_JobsCanceled;
     unsigned int m_JobsLost;
     const CTime  m_StartTime;
+    const unsigned int m_MaxJobsAllowed;
+    const unsigned int m_MaxFailuresAllowed;
 
     typedef map<const CWorkerNodeJobContext*, CTime> TActiveJobs;
     TActiveJobs    m_ActiveJobs;
@@ -125,7 +129,7 @@ private:
     auto_ptr<CRotatingLogStream> m_ErrLog;
     CNcbiApplication& m_App;
     bool m_SingleThreadForced;
-    CWorkerNodeStatistics m_Statistics;
+    auto_ptr<CWorkerNodeStatistics> m_Statistics;
 
     string GetLogName(void) const;
 };
@@ -159,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/04/04 19:15:01  didenko
+ * Added max_failed_jobs parameter to a worker node configuration.
+ *
  * Revision 1.5  2006/02/01 16:39:01  didenko
  * Added Idle Task facility to the Grid Worker Node Framework
  *

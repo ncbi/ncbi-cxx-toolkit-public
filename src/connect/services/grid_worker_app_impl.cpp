@@ -117,9 +117,11 @@ private:
 //
 //     CWorkerNodeStatictics
 /// @internal
-CWorkerNodeStatistics::CWorkerNodeStatistics()
-    : m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
-      m_JobsCanceled(0), m_JobsLost(0), m_StartTime(CTime::eCurrent)
+CWorkerNodeStatistics::CWorkerNodeStatistics(unsigned int max_jobs_allowed, 
+                                             unsigned int max_failures_allowed)
+    : m_JobsStarted(0), m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
+      m_JobsCanceled(0), m_JobsLost(0), m_StartTime(CTime::eCurrent),
+      m_MaxJobsAllowed(max_jobs_allowed), m_MaxFailuresAllowed(max_failures_allowed)
 {
 }
 CWorkerNodeStatistics::~CWorkerNodeStatistics() 
@@ -134,6 +136,14 @@ void CWorkerNodeStatistics::Notify(const CWorkerNodeJobContext& job,
         {
             CMutexGuard guard(m_ActiveJobsMutex);
             m_ActiveJobs[&job] = CTime(CTime::eCurrent);
+            ++m_JobsStarted;
+            if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
+                LOG_POST("The maximum number of allowed jobs (" 
+                         << m_MaxJobsAllowed << ") has been reached.\n" 
+                         << "Sending the shutdown request." );
+                CGridGlobals::GetInstance().
+                    RequestShutdown(CNetScheduleClient::eNormalShutdown);
+            }
         }
         break;       
     case eJobStopped :
@@ -144,6 +154,13 @@ void CWorkerNodeStatistics::Notify(const CWorkerNodeJobContext& job,
         break;
     case eJobFailed :
         ++m_JobsFailed;
+        if (m_MaxFailuresAllowed > 0 && m_JobsFailed > m_MaxFailuresAllowed - 1) {
+                LOG_POST("The maximum number of failed jobs (" 
+                         << m_MaxFailuresAllowed << ") has been reached.\n" 
+                         << "Sending the shutdown request." );
+                CGridGlobals::GetInstance().
+                    RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            }
         break;
     case eJobSucceed :
         ++m_JobsSucceed;
@@ -485,6 +502,9 @@ int CGridWorkerApp_Impl::Run()
     unsigned int max_total_jobs = 
         reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
 
+    unsigned int max_failed_jobs = 
+        reg.GetInt("server","max_failed_jobs",0,0,IRegistry::eReturn);
+
     bool is_daemon =
         reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
 
@@ -546,7 +566,8 @@ int CGridWorkerApp_Impl::Run()
     // from this moment on the server is silent...
     SetDiagStream(m_ErrLog.get());
     AttachJobWatcher(*(new CLogWatcher(m_ErrLog.get())), eTakeOwnership);
-    AttachJobWatcher(m_Statistics);
+    m_Statistics.reset(new CWorkerNodeStatistics(max_total_jobs, max_failed_jobs));
+    AttachJobWatcher(*m_Statistics);
 
 
     m_WorkerNode.reset(new CGridWorkerNode(GetJobFactory(), 
@@ -562,9 +583,7 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetNSTimeout(ns_timeout);
     m_WorkerNode->SetUseEmbeddedInput(use_embedded_input);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
-    CGridGlobals::GetInstance().SetMaxJobsAllowed(max_total_jobs);
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
-    //    m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
     m_WorkerNode->SetMasterWorkerNodes(masters);
     m_WorkerNode->SetAdminHosts(admin_hosts);
     m_WorkerNode->ActivateServerLog(server_log);
@@ -581,7 +600,7 @@ int CGridWorkerApp_Impl::Run()
 
     {{
     CWorkerNodeControlThread control_server(control_port, *m_WorkerNode,
-                                            m_Statistics);
+                                            *m_Statistics);
     CRef<CGridWorkerNodeThread> worker_thread(
                                 new CGridWorkerNodeThread(control_server));
     worker_thread->Run();
@@ -590,7 +609,7 @@ int CGridWorkerApp_Impl::Run()
     if (CGridGlobals::GetInstance().
         GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
         LOG_POST("\n=================== NEW RUN : " 
-                 << m_Statistics.GetStartTime().AsString()
+                 << m_Statistics->GetStartTime().AsString()
                  << " ===================\n"
                  << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
                  << "Waiting for control commands on TCP port " << control_port << "\n"
@@ -658,6 +677,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.18  2006/04/04 19:15:02  didenko
+ * Added max_failed_jobs parameter to a worker node configuration.
+ *
  * Revision 6.17  2006/03/15 17:30:12  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *

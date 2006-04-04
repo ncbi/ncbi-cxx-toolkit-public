@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
 
 CGridGlobals::CGridGlobals()
-    : m_JobsStarted(0), m_MaxJobsAllowed(0), m_ReuseJobObject(false),
+    : m_ReuseJobObject(false),
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown)
 {
 }
@@ -51,27 +51,15 @@ CGridGlobals::~CGridGlobals()
 /* static */
 CGridGlobals& CGridGlobals::GetInstance()
 {
-    CMutex mutex;
-    CMutexGuard guard(mutex);
     if ( !sm_Instance.get() )
         sm_Instance.reset(new CGridGlobals);
     return *sm_Instance;
 }
 
 
-int CGridGlobals::GetNewJobNumber()
+unsigned int CGridGlobals::GetNewJobNumber()
 {
-    CMutex mutex;
-    CMutexGuard guard(mutex);
-    int tmp = m_JobsStarted;
-    ++m_JobsStarted;
-    if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
-        LOG_POST("The maximum number of allowed jobs (" 
-                 << m_MaxJobsAllowed << ") has been reached.\n" 
-                 << "Sending the shutdown request." );
-        RequestShutdown(CNetScheduleClient::eNormalShutdown);
-    }
-    return tmp;
+    return (unsigned int)m_JobsStarted.Add(1);
 }
 
 END_NCBI_SCOPE
@@ -79,6 +67,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/04/04 19:15:02  didenko
+ * Added max_failed_jobs parameter to a worker node configuration.
+ *
  * Revision 6.2  2006/02/15 19:48:34  didenko
  * Added new optional config parameter "reuse_job_object" which allows reusing
  * IWorkerNodeJob objects in the jobs' threads instead of creating
