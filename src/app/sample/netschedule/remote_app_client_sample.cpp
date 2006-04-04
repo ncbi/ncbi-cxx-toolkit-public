@@ -63,6 +63,7 @@ public:
 protected:
 
     void PrintJobInfo(const string& job_key);
+    void ShowBlob(const string& blob_key);
 
     virtual bool UseProgressMessage() const { return false; }
     virtual bool UsePermanentConnection() const { return true; }
@@ -95,16 +96,28 @@ void CRemoteAppClientSampleApp::Init(void)
                              "Get job's info",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("showblob", 
+                             "blob",
+                             "Show blob content",
+                             CArgDescriptions::eString);
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
 
-const char* kData = 
-    "====================================================================================================";
+const string kData = 
+    "!====================================================================================================!";
 int CRemoteAppClientSampleApp::Run(void)
 {
+
+ 
+
     CArgs args = GetArgs();
 
+    if (args["showblob"]) {
+        ShowBlob(args["showblob"].AsString());
+        return 0;
+    }
     if (args["jobinfo"]) {
         PrintJobInfo(args["jobinfo"].AsString());
         return 0;
@@ -126,19 +139,17 @@ int CRemoteAppClientSampleApp::Run(void)
         CNcbiOstream& os = request.GetStdIn();
         /*
         if (i % 5 == 0) {
-            os.write(kData,100);
+            os.write(kData.c_str(),kData.size());
             os << endl << i << endl;
-            os.write(kData,100);
-            os.write(kData,100);
-            os.write(kData,100);
-            os.write(kData,100);
-            } else*/
-
+            os.write(kData.c_str(),kData.size());
+            os.write(kData.c_str(),kData.size());
+            os.write(kData.c_str(),kData.size());
+            os.write(kData.c_str(),kData.size());
+         } else 
+        */
             os << "Request data";
 
-
-        request.SetCmdLine("-a aaa -f=/tmp/dddd.f -d=/tmp/dddd.f1 -s=/tmp/dddd.f");
-        //        request.AddFileForTransfer("/tmp/dddd.f");
+        request.SetCmdLine("-a sss -f=/tmp/dddd.f1");
         //        request.AddFileForTransfer("/tmp/dddd.f1");
 
         // Get a job submiter
@@ -177,6 +188,8 @@ int CRemoteAppClientSampleApp::Run(void)
                 
                 NcbiCout << "Job : " << *it << NcbiEndl;
                 NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
+                if (result.GetRetCode()==-1) 
+                    failed_jobs.push_back(*it);
                 NcbiCout << "StdOut : " <<  NcbiEndl;
                 NcbiCout << result.GetStdOut().rdbuf();
                 NcbiCout.clear();
@@ -192,6 +205,7 @@ int CRemoteAppClientSampleApp::Run(void)
             if (status == CNetScheduleClient::eFailed) {
                 ERR_POST( "Job " << *it << " failed : " 
                              << job_status.GetErrorMessage() );
+                failed_jobs.push_back(*it);
                 done_jobs.push_back(it);
             }
 
@@ -212,7 +226,21 @@ int CRemoteAppClientSampleApp::Run(void)
             NcbiCout << "Still waiting..." << NcbiEndl;
         }
     }
+
+    LOG_POST("==================== All finished ==================");
+    for(TJobKeys::iterator it = job_keys.begin();
+        it != job_keys.end(); ++it) {
+        PrintJobInfo(*it);
+    }
     return 0;
+}
+
+void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
+{
+    CBlobStorageFactory factory(GetConfig());
+    auto_ptr<IBlobStorage> storage(factory.CreateInstance());
+    string str = storage->GetBlobAsString(blob_key);
+    NcbiCout << str << NcbiEndl;
 }
 
 void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
@@ -260,6 +288,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/04 19:15:34  didenko
+ * Added ShowBlob method
+ *
  * Revision 1.3  2006/03/16 15:14:41  didenko
  * Renamed CRemoteJob... to CRemoteApp...
  *
