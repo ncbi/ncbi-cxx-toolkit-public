@@ -1021,8 +1021,12 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
         }    
         
         char urlBuf[2048];
+        string temp_class_info = kClassInfo + " ";
         if (gi > 0) {
-            sprintf(urlBuf, kEntrezUrl.c_str(), db, gi, dopt, 
+           
+            sprintf(urlBuf, kEntrezUrl.c_str(), 
+                    (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
+                    temp_class_info.c_str() : "", db, gi, dopt, 
                     (m_AlignOption & eNewTargetWindow) ? 
                     "TARGET=\"EntrezView\"" : "");
             urlLink = urlBuf;
@@ -1032,7 +1036,9 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
                 const CDbtag& dtg = wid->GetGeneral();
                 const string& dbName = dtg.GetDb();
                 if(NStr::CompareNocase(dbName, "TI") == 0){
-                    sprintf(urlBuf, kTraceUrl.c_str(), 
+                    sprintf(urlBuf, kTraceUrl.c_str(),
+                            (m_AlignOption & eShowInfoOnMouseOverSeqid) ?
+                            temp_class_info.c_str() : "",
                             wid->GetSeqIdString().c_str());
                     urlLink = urlBuf;
                 } else { //future use
@@ -1326,8 +1332,14 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                    && m_AlignOption&eShowIdentity && has_mismatch){
                     out<< "</b></font>";         
                 } 
-                
+               
                 if(urlLink != NcbiEmptyString){
+                    //mouse over seqid defline
+                    if(m_AlignOption&eHtml &&
+                       m_AlignOption&eShowInfoOnMouseOverSeqid) {
+                        out << "<span>" <<
+                            GetTitle(m_AV->GetBioseqHandle(row)) << "</span>";
+                    }
                     out<<"</a>";   
                 }
                 
@@ -2673,7 +2685,8 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     }
     
     str = s_MakeURLSafe(dbtmp == NULL ? (char*) "nr" : dbtmp);
-    link += "<a href=\"";
+    link +=  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
+        ("<a " + kClassInfo + " " + "href=\"") : "<a href=\"";
     if (toolUrl.find("?") == string::npos){
         link += toolUrl + "?" + "db=" + str + "&na=" + (m_IsDbNa? "1" : "0");
     } else {
@@ -3126,6 +3139,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.114  2006/04/05 17:39:48  jianye
+*added mouseover defline info
+*
 *Revision 1.113  2006/03/15 16:45:02  jianye
 *correct font tag
 *

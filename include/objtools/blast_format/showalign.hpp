@@ -133,7 +133,11 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
                                         //is chosen
         eHyperLinkSlaveSeqid = (1 << 19),    //Hyperlink slave seqids 
         eHyperLinkMasterSeqid = (1 << 20),    //Hyperlink master seqids 
-        eDisplayTreeView = (1 << 21)         // Display tree feature
+        eDisplayTreeView = (1 << 21),         // Display tree feature
+        eShowInfoOnMouseOverSeqid = (1 << 22)  //show defline when mouse
+                                               //seqid. Note you need 
+                                               //seperate style sheet functions
+                                               //for this to work
     };
     
     ///Middle line style option
@@ -598,6 +602,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.49  2006/04/05 17:40:27  jianye
+*added mouseover defline info
+*
 *Revision 1.48  2006/03/09 21:23:12  jianye
 *added sum_n report
 *
