@@ -53,6 +53,7 @@ CUser_field::~CUser_field(void)
 }
 
 
+
 /// add fields to the current user field
 CUser_field& CUser_field::AddField(const string& label, int value)
 {
@@ -185,14 +186,21 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
     NStr::Split(str, delim, toks);
 
     CConstRef<CUser_field> f(this);
+    if ( !f->GetData().IsFields() ) {
+        if (toks.size() == 1  &&
+            f->GetLabel().IsStr()  &&  f->GetLabel().GetStr() == toks.front()) {
+            return f;
+        } else {
+            return CConstRef<CUser_field>();
+        }
+    }
+
     list<string>::const_iterator last = toks.end();
     --last;
 
     ITERATE (list<string>, iter, toks) {
         CConstRef<CUser_field> new_f;
-        if ( !f->GetData().IsFields() ) {
-            return new_f; // null, at this point...
-        }
+
         ITERATE (TData::TFields, field_iter, f->GetData().GetFields()) {
             const CUser_field& field = **field_iter;
             if (field.GetLabel().IsStr()
@@ -287,7 +295,7 @@ bool CUser_field::HasField(const string& str,
 
 /// delete a named field.
 bool CUser_field::DeleteField(const string& str,
-              const string& delim)
+                              const string& delim)
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -325,7 +333,6 @@ bool CUser_field::DeleteField(const string& str,
 }
 
 
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -335,6 +342,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/04/05 14:00:12  dicuccio
+* Added additional check to see if the final field lands on the current object
+*
 * Revision 1.7  2005/03/16 13:40:00  rsmith
 * Add DeleteField() method.
 *
