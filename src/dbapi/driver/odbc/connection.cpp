@@ -286,23 +286,7 @@ void CODBC_Connection::Release()
 CODBC_Connection::~CODBC_Connection()
 {
     try {
-        if (Refresh()) {
-            switch(SQLDisconnect(m_Link)) {
-            case SQL_SUCCESS_WITH_INFO:
-            case SQL_ERROR:
-                ReportErrors();
-            case SQL_SUCCESS:
-                break;
-            default:
-                {
-                    string err_message = "SQLDisconnect failed (memory corruption suspected)" + GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 410009 );
-                }
-            }
-        }
-        if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
-            ReportErrors();
-        }
+        Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
      
@@ -317,6 +301,36 @@ void CODBC_Connection::DropCmd(CDB_BaseEnt& cmd)
 bool CODBC_Connection::Abort()
 {
     SQLDisconnect(m_Link);
+    return false;
+}
+
+bool CODBC_Connection::Close(void)
+{
+    if (Refresh()) {
+        try {
+            switch(SQLDisconnect(m_Link)) {
+            case SQL_SUCCESS_WITH_INFO:
+            case SQL_ERROR:
+                ReportErrors();
+            case SQL_SUCCESS:
+                break;
+            default:
+                {
+                    string err_message = "SQLDisconnect failed (memory corruption suspected)" + GetDiagnosticInfo();
+                    DATABASE_DRIVER_ERROR( err_message, 410009 );
+                }
+            }
+
+            if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
+                ReportErrors();
+            }
+
+            m_Link = NULL;
+            return true;
+        }
+        NCBI_CATCH_ALL( kEmptyStr )
+    }
+
     return false;
 }
 
@@ -649,6 +663,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/04/05 14:32:51  ssikorsk
+ * Implemented CODBC_Connection::Close
+ *
  * Revision 1.20  2006/02/28 15:14:30  ssikorsk
  * Replaced argument type SQLINTEGER on SQLLEN where needed.
  *
