@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 3, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 4, 0, 0);
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
@@ -123,6 +123,11 @@ public:
     // Returns: true - if succeed
     //          false - if not
     virtual bool Abort();
+
+    /// Close an open connection.
+    /// Returns: true - if successfully closed an open connection.
+    ///          false - if not
+    virtual bool Close(void);
 
 private:
     I_Connection* m_Connect;
@@ -507,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/04/05 14:20:57  ssikorsk
+ * Added CDB_Connection::Close
+ *
  * Revision 1.19  2006/01/04 18:56:09  ssikorsk
  * Changed xdbapi version from 2.1.0 to 3.0.0.
  *
