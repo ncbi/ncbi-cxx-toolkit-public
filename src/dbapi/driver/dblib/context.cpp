@@ -47,7 +47,7 @@
 
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
-// #  include "../ncbi_win_hook.hpp"
+#  include "../ncbi_win_hook.hpp"
 #endif
 
 #include <algorithm>
@@ -73,23 +73,36 @@ public:
     void ClearAll(void);
     static void StaticClearAll(void);
     
+    bool ExitProcessIsPatched(void) const
+    {
+        return m_ExitProcessPatched;
+    }
+
 private:
     CDblibContextRegistry(void);
     ~CDblibContextRegistry(void);
     
-    mutable CFastMutex m_Mutex;
-    vector<CDBLibContext*> registry_;
+    mutable CMutex          m_Mutex;
+    vector<CDBLibContext*>  m_Registry;
+    bool                    m_ExitProcessPatched;
     
     friend class CSafeStaticPtr<CDblibContextRegistry>;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
-CDblibContextRegistry::CDblibContextRegistry(void)
+CDblibContextRegistry::CDblibContextRegistry(void) :
+m_ExitProcessPatched(false)
 {
 #if defined(NCBI_OS_MSWIN)
 
-    // NWinHook::COnExitProcess::Instance().Add(CDblibContextRegistry::StaticClearAll);
+    try {
+        NWinHook::COnExitProcess::Instance().Add(CDblibContextRegistry::StaticClearAll);
+        m_ExitProcessPatched = true;
+    } catch (const NWinHook::CWinHookException&) {
+        // Just in case ...
+        m_ExitProcessPatched = false;
+    }
 
 #endif
 }
@@ -110,44 +123,37 @@ CDblibContextRegistry::Instance(void)
 void 
 CDblibContextRegistry::Add(CDBLibContext* ctx)
 {
-    CFastMutexGuard mg(m_Mutex);
+    CMutexGuard mg(m_Mutex);
     
-    vector<CDBLibContext*>::iterator it = find(registry_.begin(), 
-                                              registry_.end(), 
-                                              ctx);
-    if (it == registry_.end()) {
-        registry_.push_back(ctx);
+    vector<CDBLibContext*>::iterator it = find(m_Registry.begin(), 
+                                               m_Registry.end(), 
+                                               ctx);
+    if (it == m_Registry.end()) {
+        m_Registry.push_back(ctx);
     }
 }
 
 void 
 CDblibContextRegistry::Remove(CDBLibContext* ctx)
 {
-    CFastMutexGuard mg(m_Mutex);
+    CMutexGuard mg(m_Mutex);
     
-    registry_.erase(find(registry_.begin(), 
-                         registry_.end(), 
-                         ctx));
+    m_Registry.erase(find(m_Registry.begin(), 
+                          m_Registry.end(), 
+                          ctx));
 }
 
 
 void 
 CDblibContextRegistry::ClearAll(void)
 {
-    if (!registry_.empty())
+    if (!m_Registry.empty())
     {
-        CFastMutexGuard mg(m_Mutex);
-        if (!registry_.empty()) {
-            // Remove dependency from this registry ...
-            NON_CONST_ITERATE(vector<CDBLibContext*>, it, registry_) {
-                (*it)->x_SetRegistry(NULL);
-            }
+        CMutexGuard mg(m_Mutex);
 
-            // Close all managed CTLibContext ...
-            NON_CONST_ITERATE(vector<CDBLibContext*>, it, registry_) {
-                (*it)->x_Close();
-            }
-            registry_.clear();
+        while ( !m_Registry.empty() ) {
+            // x_Close will unregister and remove handler from the registry. 
+            m_Registry.back()->x_Close(false);
         }
     }
 }
@@ -411,27 +417,34 @@ CDBLibContext::~CDBLibContext()
 }
 
 void
-CDBLibContext::x_Close(void)
+CDBLibContext::x_Close(bool delete_conn)
 {
     if (g_pContext) {
         CFastMutexGuard mg(m_Mtx);
         if (g_pContext) {
-            // close all connections first
-            CloseAllConn();
+            if (x_SafeToFinalize()) {
+                // close all connections first
+                if (delete_conn) {
+                    DeleteAllConn();
+                } else {
+                    CloseAllConn();
+                }
 
 #ifdef MS_DBLIB_IN_USE
-            dbfreelogin(m_Login);
-            dbwinexit();
+                dbfreelogin(m_Login);
+                dbwinexit();
 #else
-            dbloginfree(m_Login);
-            try {
-                // This function can fail if we try to connect to MS SQL server
-                // using Sybase client.
-                dbexit();
-            }
-            NCBI_CATCH_ALL( "dbexit() call failed. This usually happens when "
-                "Sybase client has been used to connect to a MS SQL Server." )
+                dbloginfree(m_Login);
+                try {
+                    // This function can fail if we try to connect to MS SQL server
+                    // using Sybase client.
+                    dbexit();
+                }
+                NCBI_CATCH_ALL( "dbexit() call failed. This usually happens when "
+                    "Sybase client has been used to connect to a MS SQL Server." )
 #endif
+            }
+
             g_pContext = NULL;
             x_RemoveFromRegistry();
 
@@ -442,6 +455,14 @@ CDBLibContext::x_Close(void)
     }
 }
 
+bool CDBLibContext::x_SafeToFinalize(void) const
+{
+    if (m_Registry) {
+        return m_Registry->ExitProcessIsPatched();
+    }
+
+    return true;
+}
 
 void CDBLibContext::DBLIB_SetApplicationName(const string& app_name)
 {
@@ -1230,6 +1251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/04/05 14:30:17  ssikorsk
+ * Improved CDBLibContext::x_Close
+ *
  * Revision 1.71  2006/03/29 21:26:37  ucko
  * +<algorithm> for find()
  *
