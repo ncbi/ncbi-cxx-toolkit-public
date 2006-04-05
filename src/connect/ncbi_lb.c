@@ -44,7 +44,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
     SLB_Candidate* cand;
     size_t i = 0, n;
 
-    assert(bonus > 1.0);
+    assert(bonus >= 1.0);
     assert(iter  &&  get_candidate);
     if (iter->ismask  ||  iter->promiscuous)
         return 0/*first entry (DISPD: probably) fits*/;
