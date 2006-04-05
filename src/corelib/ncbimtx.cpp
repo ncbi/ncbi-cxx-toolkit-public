@@ -61,8 +61,19 @@ void SSystemFastMutex::InitializeHandle(void)
     xncbi_Validate((m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
                    "Mutex creation failed");
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_Validate(pthread_mutex_init(&m_Handle, 0) == 0,
-                   "Mutex creation failed");
+#  if defined(NCBI_OS_CYGWIN)
+    if (pthread_mutex_init(&m_Handle, 0) != 0) {
+        // On Cygwin, there was an attempt to check the mutex state,
+        // which in some cases (uninitialized memory) could cause
+        // a fake EBUSY error. This bug seems to have been fixed
+        // (just looked at the source code; never tested) in the early 2006.
+        memset(&m_Handle, 0, sizeof(m_Handle));
+#  endif  /* NCBI_OS_CYGWIN */
+        xncbi_Validate(pthread_mutex_init(&m_Handle, 0) == 0,
+                       "Mutex creation failed");
+#  if defined(NCBI_OS_CYGWIN)
+    }
+#  endif  /* NCBI_OS_CYGWIN */
 #endif
 }
 
@@ -1017,6 +1028,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/04/05 21:54:21  vakatov
+ * [CYGWIN]  Workaround a bug in the pthread_mutex_init() implementation
+ *
  * Revision 1.19  2005/04/22 19:34:35  vasilche
  * Use xncbi_Verify() instead of assert when checking result of function call.
  *
