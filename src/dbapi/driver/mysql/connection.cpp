@@ -40,8 +40,9 @@ BEGIN_NCBI_SCOPE
 CMySQL_Connection::CMySQL_Connection(CMySQLContext* cntx,
                                      const string&  srv_name,
                                      const string&  user_name,
-                                     const string&  passwd)
-    : m_Context(cntx)
+                                     const string&  passwd) : 
+    m_Context(cntx),
+    m_IsOpen(false)
 {
     if ( !mysql_init(&m_MySQL) ) {
         DATABASE_DRIVER_WARNING( "Failed: mysql_init", 800001 );
@@ -53,12 +54,19 @@ CMySQL_Connection::CMySQL_Connection(CMySQLContext* cntx,
                              NULL, 0, NULL, 0)) {
         DATABASE_DRIVER_WARNING( "Failed: mysql_real_connect", 800002 );
     }
+
+    m_IsOpen = true;
 }
 
 
 CMySQL_Connection::~CMySQL_Connection()
 {
-    mysql_close(&m_MySQL);
+    try {
+        // Close is a virtual function but it is safe to call it from a destructor
+        // because it is defined in this class.
+        Close();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -195,6 +203,19 @@ bool CMySQL_Connection::Abort()
     return false;
 }
 
+bool CMySQL_Connection::Close(void)
+{
+    if (m_IsOpen) {
+        try {
+            mysql_close(&m_MySQL);
+            m_IsOpen = false;
+            return true;
+        } 
+        NCBI_CATCH_ALL( kEmptyStr )
+    }
+
+    return false;
+}
 
 END_NCBI_SCOPE
 
@@ -203,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/04/05 14:32:25  ssikorsk
+ * Implemented CMySQL_Connection::Close
+ *
  * Revision 1.8  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
