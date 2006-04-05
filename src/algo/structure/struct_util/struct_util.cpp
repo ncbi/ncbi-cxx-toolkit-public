@@ -435,17 +435,50 @@ bool AlignmentUtility::DoLeaveNOut(
 
     unsigned int nRows, row;
     unsigned int queryFrom, queryTo;
-    unsigned int nToRealign = rowsToRealign.size();
+    unsigned int nToRealign = rowsToRealign.size(), nFailed = 0;
+    set<unsigned int> failed;
+    string failedMsg, rowStr;
 
     // first we need to do IBM -> BlockMultipleAlignment
     if (!m_currentMultiple && !DoIBM())
             return false;
 
+    // Set is used only to remove duplicates; since we don't
+    // recompute PSSM between block aligner calls, the order the rows
+    // are left out is not important when put back into 'sortedRowsToRealign'.
+    unsigned int nDifferentToRealign;
+    vector<unsigned int> sortedRowsToRealign;
+    set<unsigned int> setOfRows;
+    setOfRows.insert(rowsToRealign.begin(), rowsToRealign.end());      
+    set<unsigned int>::iterator setIt, setEnd = setOfRows.end();
+
+    nRows = m_currentMultiple->NRows();
+    nDifferentToRealign = setOfRows.size();
+    if (nToRealign != nDifferentToRealign) {
+        WARNING_MESSAGE("Duplicate rows found among list of rows to leave out skipped\n(repeated applications of LNO on a single row has no affect)");
+//        return false;
+    }
+
+    // now pull out the valid rows we can realigning
+    for (setIt = setOfRows.begin(); setIt != setEnd; ++setIt) {
+        if (*setIt < 1 || *setIt >= nRows) {
+            WARNING_MESSAGE("Skipping invalid row number " << *setIt);
+        } else {
+            sortedRowsToRealign.push_back(*setIt);
+            TRACE_MESSAGE("extracting for realignment: "
+                          << m_currentMultiple->GetSequenceOfRow(*setIt)->IdentifierString());
+        }
+
+    }
+    nDifferentToRealign = sortedRowsToRealign.size();
+
+
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     m_currentMultiple->GetUngappedAlignedBlocks(&blocks);
-    nRows = m_currentMultiple->NRows();
-    if (nToRealign > nRows - LNO_MIN_NROWS_REMAINING) {
-        ERROR_MESSAGE("need at least " << nRows - LNO_MIN_NROWS_REMAINING << " alignment rows to leave out " << nToRealign << " rows.");
+
+//    if (nToRealign > nRows - LNO_MIN_NROWS_REMAINING) {
+    if (nDifferentToRealign > nRows - LNO_MIN_NROWS_REMAINING) {
+        ERROR_MESSAGE("need at least " << nRows - LNO_MIN_NROWS_REMAINING << " alignment rows to leave out " << nDifferentToRealign << " different rows.");
         return false;
     }
     if (blocks.size() == 0) {
@@ -462,16 +495,6 @@ bool AlignmentUtility::DoLeaveNOut(
     bool status = false;
     DP_BlockInfo *dpBlocks = NULL;
     DP_AlignmentResult *dpResult = NULL;
-
-    vector<unsigned int> sortedRowsToRealign;
-    set<unsigned int> setOfRows;
-    setOfRows.insert(rowsToRealign.begin(), rowsToRealign.end());      // sorts rows left out
-    set<unsigned int>::reverse_iterator setRevIt, setRevEnd = setOfRows.rend();
-
-    if (nToRealign != setOfRows.size()) {
-        ERROR_MESSAGE("duplicate rows found among list of rows to leave out (repeated application of LNO on a single row has no affect)");
-        return false;
-    }
 
     bool prevState = CException::EnableBackgroundReporting(false);
 
@@ -494,23 +517,12 @@ bool AlignmentUtility::DoLeaveNOut(
         }
         delete[] loopLengths;
 
-        // now pull out the rows we're realigning, in decending order of row number
-        for (setRevIt = setOfRows.rbegin(), r=0; setRevIt != setRevEnd; ++setRevIt, ++r) {
-            sortedRowsToRealign.push_back(*setRevIt);
-            TRACE_MESSAGE("extracting for realignment: "
-                          << m_currentMultiple->GetSequenceOfRow(*setRevIt)->IdentifierString());
-            if (*setRevIt < 1 || *setRevIt >= nRows) {
-                string s = "invalid row number " + NStr::UIntToString(*setRevIt);
-                THROW_MESSAGE(s);
-            }
-        }
-
         //  Extract rows in decreasing row-number order.
         BlockMultipleAlignment::AlignmentList::iterator toRealignIt, toRealignEnd;
         if (!m_currentMultiple->ExtractRows(sortedRowsToRealign, &toRealign))
             THROW_MESSAGE("ExtractRows() failed");
-        if (nToRealign != toRealign.size()) {
-            THROW_MESSAGE("Not as many entries in toRealign as number of rows to realign");
+        if (nDifferentToRealign != toRealign.size()) {
+            THROW_MESSAGE("Not as many entries in toRealign as number of different rows to realign");
         }
 
         // fill out the rest of the DP_BlockInfo structure
@@ -535,8 +547,9 @@ bool AlignmentUtility::DoLeaveNOut(
         //  Block-align each of the extracted rows.
         toRealignIt = toRealign.begin();
         toRealignEnd = toRealign.end();
-        for (i=0; i < nToRealign; ++i, ++toRealignIt) {
+        for (i=0; i < nDifferentToRealign; ++i, ++toRealignIt) {
             row = sortedRowsToRealign[i];
+            rowStr = NStr::UIntToString(row) + " (" + GetSeqIdStringForRow(row) + ")\n";
 
             //  find correct from/to in the original unsorted vectors
             r = 0;
@@ -547,7 +560,10 @@ bool AlignmentUtility::DoLeaveNOut(
                 queryFrom = queryFromVec[r];
                 queryTo   = queryToVec[r];
             } else {  //  should never happen...
-                THROW_MESSAGE("could not find expected row in original unsorted list");
+                ++nFailed;
+                failed.insert(row);
+                failedMsg.append("in original sorted list could not find expected row " + rowStr);
+                continue;
             }
 
             (*toRealignIt)->GetUngappedAlignedBlocks(&blocks);
@@ -562,8 +578,10 @@ bool AlignmentUtility::DoLeaveNOut(
             if (queryTo == kMax_UInt)
                 queryTo = r - 1;
             if (queryFrom >= r || queryTo >= r || queryFrom > queryTo) {
-                string s = "bad queryFrom/To range for row " + NStr::UIntToString(row);
-                THROW_MESSAGE(s);
+                ++nFailed;
+                failed.insert(row);
+                failedMsg.append("bad queryFrom/To range for row " + rowStr);
+                continue;
             }
             TRACE_MESSAGE("row " << row << " length = " << r << ";  queryFrom " << queryFrom << ", queryTo " << queryTo);
 
@@ -585,24 +603,42 @@ bool AlignmentUtility::DoLeaveNOut(
                     originalScore += GetPSSMScoreOfCharWithAverageOfBZ(
                         m_currentMultiple->GetPSSM(), masterRange->from + i, g_dpQuery->m_sequenceString[range->from + i]);
             }
-            INFO_MESSAGE("score of extracted row with PSSM(N-" << nToRealign << ") before realignment: " << originalScore);
+            INFO_MESSAGE("score of extracted row with PSSM(N-" << nDifferentToRealign << ") before realignment: " << originalScore);
 
             // call the block aligner
             if (DP_GlobalBlockAlign(dpBlocks, ScoreByPSSM, queryFrom, queryTo, &dpResult) != STRUCT_DP_FOUND_ALIGNMENT ||
-                dpResult->nBlocks != blocks.size() || dpResult->firstBlock != 0)
-                THROW_MESSAGE("DP_GlobalBlockAlign() failed");
-            INFO_MESSAGE("score of new alignment of extracted row with PSSM(N-" << nToRealign << "): " << dpResult->score);
+                dpResult->nBlocks != blocks.size() || dpResult->firstBlock != 0) {
+                ++nFailed;
+                failed.insert(row);
+                failedMsg.append("DP_GlobalBlockAlign() failed for row " + rowStr);
+            } else {
 
-            // adjust new alignment according to dp result
-            BlockMultipleAlignment::ModifiableUngappedAlignedBlockList modBlocks;
-            (*toRealignIt)->GetModifiableUngappedAlignedBlocks(&modBlocks);
-            for (b=0; b<modBlocks.size(); ++b) {
-                if (realignBlock[b]) {
-                    modBlocks[b]->SetRangeOfRow(1,
-                                                dpResult->blockPositions[b], dpResult->blockPositions[b] + dpBlocks->blockSizes[b] - 1);
-                } else {
-                    if ((int)dpResult->blockPositions[b] != modBlocks[b]->GetRangeOfRow(1)->from)    // just to check...
-                        THROW_MESSAGE("dpResult block doesn't match frozen position on slave");
+                INFO_MESSAGE("score of new alignment of extracted row with PSSM(N-" << nDifferentToRealign << "): " << dpResult->score);
+
+                // Adjust new alignment according to dp result; first check if any of the
+                // blocks will present a problem so we don't modify N-terminal blocks if an
+                // error is encountered in a more C-terminal block.
+                BlockMultipleAlignment::ModifiableUngappedAlignedBlockList modBlocks;
+                (*toRealignIt)->GetModifiableUngappedAlignedBlocks(&modBlocks);
+                for (b=0; b<modBlocks.size(); ++b) {
+                    if (!realignBlock[b]) {
+                        // just to check...
+                        if ((int)dpResult->blockPositions[b] != modBlocks[b]->GetRangeOfRow(1)->from) {
+                            ++nFailed;
+                            failed.insert(row);
+                            failedMsg.append("dpResult block doesn't match frozen position on slave for row " + rowStr);
+                            break;
+                        }
+                    }
+                }
+                if (failed.count(row) == 0) {
+                    for (b=0; b<modBlocks.size(); ++b) {
+                        if (realignBlock[b]) {
+                            modBlocks[b]->SetRangeOfRow(1,
+                                                        dpResult->blockPositions[b], dpResult->blockPositions[b] + dpBlocks->blockSizes[b] - 1);
+
+                        }
+                    }
                 }
             }
 
@@ -610,27 +646,39 @@ bool AlignmentUtility::DoLeaveNOut(
             dpResult = NULL;
         }
 
+
+        //  The toRealign container will hold the orignial, unmodified alignment
+        //  obtained by ExtractRows above.
+        if (nFailed > 0) {
+            ERROR_MESSAGE("DoLeaveNOut encountered problems realigning some rows.\nThe rows implicated will be left unchanged:" + failedMsg + "\n\n");
+        }
+
         // merge realigned rows back onto the end of the multiple alignment,
         // in order of increasing row number
         TRACE_MESSAGE("merging DP results back into multiple alignment");
         toRealignIt = toRealign.end();
         --toRealignIt;
-        for (int j=nToRealign-1; j >=0; --j, --toRealignIt) {
+
+        //  Failures here are fatal as the re-aligned sequence cannot be replaced
+        //  back in its original location in the alignment.
+        for (int j=nDifferentToRealign-1; j >=0; --j, --toRealignIt) {
+            row = sortedRowsToRealign[j];
+            rowStr = NStr::UIntToString(row) + " (" + GetSeqIdStringForRow(row) + ")";
             if (!m_currentMultiple->MergeAlignment(*toRealignIt))
-                THROW_MESSAGE("MergeAlignment() failed");
+                THROW_MESSAGE("MergeAlignment() failed for row " + rowStr);
 
             // move extracted row back to where it was
             vector < unsigned int > rowOrder(m_currentMultiple->NRows());
             for (r=0; r<m_currentMultiple->NRows(); ++r) {
-                if (r < sortedRowsToRealign[j])
+                if (r < row) 
                     rowOrder[r] = r;
-                else if (r == sortedRowsToRealign[j])
+                else if (r == row)
                     rowOrder[r] = m_currentMultiple->NRows() - 1;
                 else
                     rowOrder[r] = r - 1;
             }
-            if (!m_currentMultiple->ReorderRows(rowOrder))
-                THROW_MESSAGE("ReorderRows() failed");
+            if (!m_currentMultiple->ReorderRows(rowOrder)) 
+                THROW_MESSAGE("ReorderRows() failed when reinserting row " + rowStr);
         }
 
         // remove other alignment data, since it no longer matches the multiple
@@ -639,7 +687,7 @@ bool AlignmentUtility::DoLeaveNOut(
         status = true;
 
     } catch (CException& e) {
-        ERROR_MESSAGE("DoLeaveOneOut(): exception: " << e.GetMsg());
+        ERROR_MESSAGE("DoLeaveNOut(): exception: " << e.GetMsg());
     }
 
     CException::EnableBackgroundReporting(prevState);
@@ -837,6 +885,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/04/05 19:23:03  lanczyck
+* DoLeaveNOut:  try and recover from some previously thrown errors by doing nothing to a row that failed block alignment or has block constraint errors;\nmessage modifications
+*
 * Revision 1.27  2006/03/27 17:03:48  lanczyck
 * do not print row with the sequence id string
 *
