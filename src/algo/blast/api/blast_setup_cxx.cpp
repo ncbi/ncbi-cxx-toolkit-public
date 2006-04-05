@@ -68,12 +68,6 @@ s_QueryInfo_SetContext(BlastQueryInfo*   qinfo,
                        EBlastProgramType prog)
 {
     ASSERT(index <= static_cast<Uint4>(qinfo->last_context));
-    qinfo->contexts[index].frame = BLAST_ContextToFrame(prog, index);
-    ASSERT(qinfo->contexts[index].frame != INT1_MAX);
-    
-    qinfo->contexts[index].query_index =
-        Blast_GetQueryIndexFromContext(index, prog);
-    ASSERT(qinfo->contexts[index].query_index != -1);
     
     if (index) {
         Uint4 prev_loc = qinfo->contexts[index-1].query_offset;
@@ -1576,6 +1570,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.111  2006/04/05 20:48:15  camacho
+ * Move initialization of BlastContextInfo::{query_index,frame} to
+ * BlastQueryInfoNew.
+ *
  * Revision 1.110  2006/03/31 17:32:24  camacho
  * Use constants for sentinel values
  *

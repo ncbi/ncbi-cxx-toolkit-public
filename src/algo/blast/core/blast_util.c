@@ -742,6 +742,13 @@ BlastQueryInfo* BlastQueryInfoNew(EBlastProgramType program, int num_queries)
     } else {
         int i;
         for (i = 0; i < retval->last_context + 1; i++) {
+            retval->contexts[i].query_index =
+                Blast_GetQueryIndexFromContext(i, program);
+            ASSERT(retval->contexts[i].query_index != -1);
+
+            retval->contexts[i].frame = BLAST_ContextToFrame(program,  i);
+            ASSERT(retval->contexts[i].frame != INT1_MAX);
+
             retval->contexts[i].is_valid = TRUE;
         }
     }
