@@ -529,14 +529,12 @@ static void TestDiag(void)
     diag << Warning << "Message without datetime stamp" << Endm;
     SetDiagPostFlag(eDPF_DateTime);
 
-    EDiagSev prev_sev;
-    IgnoreDiagDieLevel(true, &prev_sev);
+    IgnoreDiagDieLevel(true);
     {{
         CNcbiDiag x_diag;
         x_diag << Fatal << "Fatal message w/o exit()/abort()!" << Endm;
     }}
     IgnoreDiagDieLevel(false);
-    SetDiagDieLevel(prev_sev);
 
     CStringException ex(DIAG_COMPILE_INFO, NULL,
                         CStringException::eConvert, "A fake exception", 12345);
@@ -1057,6 +1055,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2006/04/05 18:57:32  lavr
+ * Adjust for IgnoreDiagDieLevel() prototype
+ *
  * Revision 1.107  2006/03/01 17:55:46  gouriano
  * Do not convert pointer to long
  *
