@@ -53,8 +53,8 @@ CDataSource::~CDataSource()
         Notify(CDbapiDeletedEvent(this));
         
         // We won't delete context unless all connections are closed.
-        // This will cause a memory leack but it also will make valgrind
-        // happy.
+        // This will cause a memory leak but it also will prevent from
+        // accessing an already freed memory.
         if (m_context->NofConnections() == 0) {
             delete m_context;
         }
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/05 16:30:01  ssikorsk
+ * Added more detailed comment to the previous fix.
+ *
  * Revision 1.21  2006/04/05 15:54:09  ssikorsk
  * Do not delete I_DriverContext in CDataSource::~CDataSource if there are
  * open connections.
