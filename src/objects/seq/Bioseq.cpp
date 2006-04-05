@@ -131,7 +131,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
 }
 
 
-CBioseq::CBioseq(const CSeq_loc& loc, string str_id)
+CBioseq::CBioseq(const CSeq_loc& loc, const string& str_id)
     : m_ParentEntry(0)
 {
     CBioseq::TId& id_list = SetId();
@@ -238,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.24  2006/04/05 13:56:22  dicuccio
+ * use kEmptyStr instead of ""
+ *
  * Revision 6.23  2006/03/14 20:21:51  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *

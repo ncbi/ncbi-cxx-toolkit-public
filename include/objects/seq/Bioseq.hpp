@@ -79,7 +79,7 @@ public:
     // type by seq-loc). The location is splitted into simple
     // locations (intervals, points, whole-s etc.) and put into
     // ext::delta.
-    CBioseq(const CSeq_loc& loc, string str_id = "");
+    CBioseq(const CSeq_loc& loc, const string& str_id = kEmptyStr);
 
     enum ELabelType {
         eType,
@@ -151,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/04/05 13:56:22  dicuccio
+ * use kEmptyStr instead of ""
+ *
  * Revision 1.19  2006/03/14 20:21:51  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *
