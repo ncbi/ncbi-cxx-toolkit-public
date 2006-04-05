@@ -82,6 +82,11 @@ CSplign::CSplign( void )
     m_MaxCompsPerQuery = 0;
 }
 
+CSplign::~CSplign()
+{
+}
+
+
 CRef<CSplign::TAligner>& CSplign::SetAligner( void ) {
     return m_aligner;
 }
@@ -1767,6 +1772,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/04/05 13:55:22  dicuccio
+ * Added destructor, forbiddent copy constructor
+ *
  * Revision 1.49  2006/04/04 22:28:33  kapustin
  * Tackle error code/severity handling
  *

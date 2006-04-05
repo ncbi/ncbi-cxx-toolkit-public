@@ -57,6 +57,7 @@ public:
     typedef CSplicedAligner TAligner;
 
     CSplign(void);
+    ~CSplign();
 
     // setters and getters
     CRef<TAligner>&     SetAligner(void);
@@ -256,6 +257,10 @@ protected:
                           THit::TCoord start,
                           THit::TCoord finish,
                           bool retain);
+
+    /// forbidden
+    CSplign(const CSplign&);
+    CSplign& operator=(const CSplign&);
 };
 
 
@@ -265,6 +270,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2006/04/05 13:55:23  dicuccio
+ * Added destructor, forbiddent copy constructor
+ *
  * Revision 1.34  2006/03/21 16:17:33  kapustin
  * Support max singleton idty parameter
  *
