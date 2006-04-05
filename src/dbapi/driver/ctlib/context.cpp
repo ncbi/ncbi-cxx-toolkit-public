@@ -45,6 +45,7 @@
 
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock.h>
+#  include "../ncbi_win_hook.hpp"
 #else
 #  include <unistd.h>
 #endif
@@ -54,78 +55,112 @@ BEGIN_NCBI_SCOPE
 
 
 static const CDiagCompileInfo kBlankCompileInfo;
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTLibContextRegistry (Singleton)
 //
 
-class CTLibContextRegistry
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContextRegistry
 {
 public:
     static CTLibContextRegistry& Instance(void);
     
     void Add(CTLibContext* ctx);
     void Remove(CTLibContext* ctx);
-    
+    void ClearAll(void);
+    static void StaticClearAll(void);
+
+    bool ExitProcessIsPatched(void) const
+    {
+        return m_ExitProcessPatched;
+    }
+
 private:
     CTLibContextRegistry(void);
     ~CTLibContextRegistry(void);
     
-    mutable CFastMutex m_Mutex;
-    vector<CTLibContext*> registry_;
+    mutable CMutex          m_Mutex;
+    vector<CTLibContext*>   m_Registry;
+    bool                    m_ExitProcessPatched;
     
     friend class CSafeStaticPtr<CTLibContextRegistry>;
 };
 
 
-CTLibContextRegistry::CTLibContextRegistry(void)
+/////////////////////////////////////////////////////////////////////////////
+CTLibContextRegistry::CTLibContextRegistry(void) :
+m_ExitProcessPatched(false)
 {
+#if defined(NCBI_OS_MSWIN)
+
+    try {
+        NWinHook::COnExitProcess::Instance().Add(CTLibContextRegistry::StaticClearAll);
+        m_ExitProcessPatched = true;
+    } catch (const NWinHook::CWinHookException&) {
+        // Just in case ...
+        m_ExitProcessPatched = false;
+    }
+
+#endif
 }
 
 CTLibContextRegistry::~CTLibContextRegistry(void)
 {
-    CFastMutexGuard mg(m_Mutex);
-    
-    // Remove dependency from this registry ...
-    NON_CONST_ITERATE(vector<CTLibContext*>, it, registry_) {
-        (*it)->x_SetRegistry(NULL);
-    }
-    
-    // Close all managed CTLibContext ...
-    NON_CONST_ITERATE(vector<CTLibContext*>, it, registry_) {
-        (*it)->Close();
-    }
+    ClearAll();
 }
 
-CTLibContextRegistry& 
+CTLibContextRegistry&
 CTLibContextRegistry::Instance(void)
 {
     static CSafeStaticPtr<CTLibContextRegistry> instance;
     
-    return *instance;
+    return instance.Get();
 }
 
 void 
 CTLibContextRegistry::Add(CTLibContext* ctx)
 {
-    CFastMutexGuard mg(m_Mutex);
+    CMutexGuard mg(m_Mutex);
     
-    vector<CTLibContext*>::iterator it = find(registry_.begin(), 
-                                             registry_.end(), 
-                                             ctx);
-    if (it == registry_.end()) {
-        registry_.push_back(ctx);
+    vector<CTLibContext*>::iterator it = find(m_Registry.begin(), 
+                                              m_Registry.end(), 
+                                              ctx);
+    if (it == m_Registry.end()) {
+        m_Registry.push_back(ctx);
     }
 }
 
 void 
 CTLibContextRegistry::Remove(CTLibContext* ctx)
 {
-    CFastMutexGuard mg(m_Mutex);
+    CMutexGuard mg(m_Mutex);
     
-    registry_.erase(find(registry_.begin(), 
-                         registry_.end(), 
-                         ctx));
+    m_Registry.erase(find(m_Registry.begin(), 
+                          m_Registry.end(), 
+                          ctx));
+}
+
+
+void 
+CTLibContextRegistry::ClearAll(void)
+{
+    if (!m_Registry.empty())
+    {
+        CMutexGuard mg(m_Mutex);
+
+        while ( !m_Registry.empty() ) {
+            // x_Close will unregister and remove handler from the registry. 
+            m_Registry.back()->x_Close(false);
+        }
+    }
+}
+
+void 
+CTLibContextRegistry::StaticClearAll(void)
+{
+    CTLibContextRegistry::Instance().ClearAll();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -155,8 +190,7 @@ CS_START_EXTERN_C
     }
 CS_END_EXTERN_C
 
-CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
-m_Registry(&CTLibContextRegistry::Instance())
+CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
@@ -249,6 +283,7 @@ m_Registry(&CTLibContextRegistry::Instance())
         p_pot->Add((TPotItem) this);
     }
     
+    m_Registry = &CTLibContextRegistry::Instance();
     x_AddToRegistry();
 }
 
@@ -332,29 +367,37 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
     case eBcp:
     case eReturnITDescriptors:
     case eReturnComputeResults:
-    return true;
+        return true;
     default:
-    break;
+        break;
     }
+
     return false;
 }
 
 CTLibContext::~CTLibContext()
 {
     try {
-        Close();
+        x_Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
 void 
-CTLibContext::Close(void)
+CTLibContext::x_Close(bool delete_conn)
 {
     if ( CTLIB_GetContext() ) {
         CFastMutexGuard mg(m_Mtx);
         if (CTLIB_GetContext()) {
-            CloseAllConn();
+
+            if (x_SafeToFinalize()) {
+                if (delete_conn) {
+                    DeleteAllConn();
+                } else {
+                    CloseAllConn();
+                }
+            }
             
             CS_INT       outlen;
             CPointerPot* p_pot = 0;
@@ -370,12 +413,13 @@ CTLibContext::Close(void)
                 if (p_pot->NofItems() == 0) { 
                     // this is a last driver for this context
                     delete p_pot;
-#if !defined(NCBI_OS_MSWIN)
-                    if (ct_exit(CTLIB_GetContext(), CS_UNUSED) != CS_SUCCEED) {
-                        ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
+
+                    if (x_SafeToFinalize()) {
+                        if (ct_exit(CTLIB_GetContext(), CS_UNUSED) != CS_SUCCEED) {
+                            ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
+                        }
+                        cs_ctx_drop(CTLIB_GetContext());
                     }
-                    cs_ctx_drop(CTLIB_GetContext());
-#endif
                 }
             }
             
@@ -385,6 +429,14 @@ CTLibContext::Close(void)
     }
 }
 
+bool CTLibContext::x_SafeToFinalize(void) const
+{
+    if (m_Registry) {
+        return m_Registry->ExitProcessIsPatched();
+    }
+
+    return true;
+}
 
 void CTLibContext::CTLIB_SetApplicationName(const string& a_name)
 {
@@ -1226,6 +1278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/04/05 14:27:56  ssikorsk
+ * Implemented CTLibContext::Close
+ *
  * Revision 1.66  2006/03/15 19:57:09  ssikorsk
  * Replaced "static auto_ptr" with "static CSafeStaticPtr".
  *
