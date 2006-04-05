@@ -257,9 +257,9 @@ void CDBL_Connection::Release()
 CDBL_Connection::~CDBL_Connection()
 {
     try {
-        Refresh();
-        dbclose(m_Link);
-        m_Link = NULL;
+        // Close is a virtual function but it is safe to call it from a destructor
+        // because it is defined in this class.
+        Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -281,6 +281,21 @@ bool CDBL_Connection::Abort()
         close(fdw);
     }
     return (fdr >= 0 || fdw >= 0);
+}
+
+bool CDBL_Connection::Close(void)
+{
+    if (m_Link) {
+        try {
+            Refresh();
+            dbclose(m_Link);
+            m_Link = NULL;
+            return true;
+        }
+        NCBI_CATCH_ALL( kEmptyStr )
+    }
+
+    return false;
 }
 
 bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
@@ -636,6 +651,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/04/05 14:30:50  ssikorsk
+ * Implemented CDBL_Connection::Close
+ *
  * Revision 1.22  2006/02/22 15:56:40  ssikorsk
  * CHECK_DRIVER_FATAL --> CHECK_DRIVER_ERROR
  *
