@@ -59,13 +59,11 @@ BEGIN_SCOPE(blast)
  * @param qinfo  Query info structure containing contexts. [in/out]
  * @param index  Index of the context to fill. [in]
  * @param length Length of this context. [in]
- * @param prog   Program type of this search. [in]
  */
 static void
 s_QueryInfo_SetContext(BlastQueryInfo*   qinfo,
                        Uint4             index,
-                       Uint4             length,
-                       EBlastProgramType prog)
+                       Uint4             length)
 {
     ASSERT(index <= static_cast<Uint4>(qinfo->last_context));
     
@@ -163,20 +161,18 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                 switch (strand) {
                 case eNa_strand_plus:
                     ctx_len = (i<3) ? prot_length : 0;
-                    s_QueryInfo_SetContext(query_info, ctx_index + i, ctx_len, 
-                                           prog);
+                    s_QueryInfo_SetContext(query_info, ctx_index + i, ctx_len);
                     break;
 
                 case eNa_strand_minus:
                     ctx_len = (i<3) ? 0 : prot_length;
-                    s_QueryInfo_SetContext(query_info, ctx_index + i, ctx_len, 
-                                           prog);
+                    s_QueryInfo_SetContext(query_info, ctx_index + i, ctx_len);
                     break;
 
                 case eNa_strand_both:
                 case eNa_strand_unknown:
                     s_QueryInfo_SetContext(query_info, ctx_index + i, 
-                                           prot_length, prog);
+                                           prot_length);
                     break;
 
                 default:
@@ -189,30 +185,26 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
             if (is_na) {
                 switch (strand) {
                 case eNa_strand_plus:
-                    s_QueryInfo_SetContext(query_info, ctx_index, length,
-                                           prog);
-                    s_QueryInfo_SetContext(query_info, ctx_index+1, 0, prog);
+                    s_QueryInfo_SetContext(query_info, ctx_index, length);
+                    s_QueryInfo_SetContext(query_info, ctx_index+1, 0);
                     break;
 
                 case eNa_strand_minus:
-                    s_QueryInfo_SetContext(query_info, ctx_index, 0, prog);
-                    s_QueryInfo_SetContext(query_info, ctx_index+1, length,
-                                           prog);
+                    s_QueryInfo_SetContext(query_info, ctx_index, 0);
+                    s_QueryInfo_SetContext(query_info, ctx_index+1, length);
                     break;
 
                 case eNa_strand_both:
                 case eNa_strand_unknown:
-                    s_QueryInfo_SetContext(query_info, ctx_index, length,
-                                           prog);
-                    s_QueryInfo_SetContext(query_info, ctx_index+1, length,
-                                           prog);
+                    s_QueryInfo_SetContext(query_info, ctx_index, length);
+                    s_QueryInfo_SetContext(query_info, ctx_index+1, length);
                     break;
 
                 default:
                     abort();
                 }
             } else {    // protein
-                s_QueryInfo_SetContext(query_info, ctx_index, length, prog);
+                s_QueryInfo_SetContext(query_info, ctx_index, length);
             }
         }
         ctx_index += kNumContexts;
@@ -1570,6 +1562,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.112  2006/04/05 21:00:58  camacho
+ * Remove unused argument from s_QueryInfo_SetContext
+ *
  * Revision 1.111  2006/04/05 20:48:15  camacho
  * Move initialization of BlastContextInfo::{query_index,frame} to
  * BlastQueryInfoNew.
