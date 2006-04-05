@@ -254,8 +254,7 @@ void CTDS_Connection::Release()
 CTDS_Connection::~CTDS_Connection()
 {
     try {
-        Refresh();
-        dbclose(m_Link);
+        Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -277,6 +276,21 @@ bool CTDS_Connection::Abort()
         close(fdw);
     }
     return (fdr >= 0 || fdw >= 0);
+}
+
+bool CTDS_Connection::Close(void)
+{
+    if (m_Link) {
+        try {
+            Refresh();
+            dbclose(m_Link);
+            m_Link = NULL;
+            return true;
+        }
+        NCBI_CATCH_ALL( kEmptyStr )
+    }
+
+    return false;
 }
 
 bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
@@ -558,6 +572,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/04/05 14:31:52  ssikorsk
+ * Implemented CTDS_Connection::Close
+ *
  * Revision 1.15  2006/02/22 15:15:51  ssikorsk
  * *** empty log message ***
  *
