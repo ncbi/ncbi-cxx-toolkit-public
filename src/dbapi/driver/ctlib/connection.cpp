@@ -349,20 +349,6 @@ CTL_Connection::~CTL_Connection()
     NCBI_CATCH_ALL( kEmptyStr )
 }
 
-void
-CTL_Connection::Close(void)
-{
-    if (x_GetSybaseConn()) {
-        if (!Refresh()  ||  ct_close(x_GetSybaseConn(), CS_UNUSED) != CS_SUCCEED) {
-            ct_close(x_GetSybaseConn(), CS_FORCE_CLOSE);
-        }
-
-        ct_con_drop(x_GetSybaseConn());
-        
-        m_Link = NULL;
-    }
-}
-
 
 void CTL_Connection::DropCmd(CDB_BaseEnt& cmd)
 {
@@ -562,6 +548,26 @@ bool CTL_Connection::Abort()
     return false;
 }
 
+bool CTL_Connection::Close(void)
+{
+    if (x_GetSybaseConn()) {
+        try {
+            if (!Refresh()  ||  ct_close(x_GetSybaseConn(), CS_UNUSED) != CS_SUCCEED) {
+                ct_close(x_GetSybaseConn(), CS_FORCE_CLOSE);
+            }
+
+            ct_con_drop(x_GetSybaseConn());
+
+            m_Link = NULL;
+
+            return true;
+        }
+        NCBI_CATCH_ALL( kEmptyStr )
+    }
+
+    return false;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -715,7 +721,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/04/05 14:28:35  ssikorsk
+ * Implemented CTL_Connection::Close
+ *
  * Revision 1.25  2006/03/06 19:51:37  ssikorsk
+ *
  * Added method Close/CloseForever to all context/command-aware classes.
  * Use getters to access Sybase's context and command handles.
  *
