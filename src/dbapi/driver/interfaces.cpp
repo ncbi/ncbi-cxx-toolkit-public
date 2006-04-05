@@ -390,6 +390,20 @@ I_DriverContext::CloseAllConn(void)
     m_NotInUse.clear();
 
     ITERATE(TConnPool, it, m_InUse) {
+        (*it)->Close();
+    }
+}
+
+void 
+I_DriverContext::DeleteAllConn(void)
+{
+    // close all connections first
+    ITERATE(TConnPool, it, m_NotInUse) {
+        delete *it;
+    }
+    m_NotInUse.clear();
+
+    ITERATE(TConnPool, it, m_InUse) {
         delete *it;
     }
     m_InUse.clear();
@@ -534,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/04/05 14:26:28  ssikorsk
+ * Implemented I_DriverContext::DeleteAllConn
+ *
  * Revision 1.17  2006/03/30 16:27:04  ssikorsk
  * Allow to use empty server name, user name and password
  * with a connection pool.
