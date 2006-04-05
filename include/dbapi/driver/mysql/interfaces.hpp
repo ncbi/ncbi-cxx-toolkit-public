@@ -138,6 +138,11 @@ protected:
     //          false - if not
     virtual bool Abort();
 
+    /// Close an open connection.
+    /// Returns: true - if successfully closed an open connection.
+    ///          false - if not
+    virtual bool Close(void);
+
 private:
     friend class CMySQL_LangCmd;
     friend class CMySQL_RowResult;
@@ -145,6 +150,7 @@ private:
     CMySQLContext* m_Context;
     MYSQL          m_MySQL;
     CDB_ResultProcessor* m_ResProc;
+    bool m_IsOpen;
 };
 
 
@@ -270,6 +276,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/04/05 14:22:32  ssikorsk
+ * Added CMySQL_Connection::Close
+ *
  * Revision 1.17  2006/01/23 13:16:29  ssikorsk
  * Renamed CMySQLContext::MakeConnection to MakeIConnection.
  *
