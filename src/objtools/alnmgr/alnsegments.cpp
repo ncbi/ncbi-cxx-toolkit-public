@@ -267,10 +267,10 @@ CAlnMixSegments::Build(bool gap_join,
 
 
     if (remove_leading_and_trailing_gaps) {
-        while (m_Segments.front()->m_StartIts.size() < 2) {
+        while (m_Segments.size()  &&  m_Segments.front()->m_StartIts.size() < 2) {
             m_Segments.pop_front();
         }
-        while (m_Segments.back()->m_StartIts.size() < 2) {
+        while (m_Segments.size()  &&  m_Segments.back()->m_StartIts.size() < 2) {
             m_Segments.pop_back();
         }
     }
@@ -580,6 +580,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/04/05 14:01:05  dicuccio
+* Don't call front() if the collection is empty
+*
 * Revision 1.9  2006/03/14 22:38:30  todorov
 * + remove_leading_and_trailing_gaps
 *
