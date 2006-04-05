@@ -132,8 +132,9 @@ static const string& s_GetMatchType(const CSeq_id& ref_id, const CSeq_id& tgt_id
 static const CSeq_id& s_GetTargetId(const CSeq_id& id, CScope& scope)
 {
     try {
-	return *(sequence::GetId(id, scope, sequence::eGetId_ForceAcc).GetSeqId());
-    } catch (CException& e) {
+        return *(sequence::GetId(id, scope, sequence::eGetId_ForceAcc).GetSeqId());
+    }
+    catch (CException&) {
     }
     return id;
 }
@@ -349,6 +350,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/04/05 14:01:35  dicuccio
+* Cosmetic changes
+*
 * Revision 1.6  2005/09/08 16:16:46  shomrat
 * Fixed match type
 *
