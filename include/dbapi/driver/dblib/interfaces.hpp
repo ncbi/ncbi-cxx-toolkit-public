@@ -231,7 +231,8 @@ private:
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);
     void x_SetRegistry(CDblibContextRegistry* registry);
-    void x_Close(void);
+    void x_Close(bool delete_conn = true);
+    bool x_SafeToFinalize(void) const;
 
     friend class CDblibContextRegistry;
 };
@@ -301,6 +302,11 @@ protected:
     /// Returns: true - if succeed
     ///          false - if not
     virtual bool Abort(void);
+
+    /// Close an open connection.
+    /// Returns: true - if successfully closed an open connection.
+    ///          false - if not
+    virtual bool Close(void);
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
@@ -1011,6 +1017,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/04/05 14:21:54  ssikorsk
+ * Added CDBL_Connection::Close
+ *
  * Revision 1.33  2006/03/28 20:04:43  ssikorsk
  * Lilled al CRs
  *
