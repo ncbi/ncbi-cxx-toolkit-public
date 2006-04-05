@@ -68,9 +68,6 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public I_DriverContext
 public:
     CTLibContext(bool reuse_context = true, CS_INT version = CS_VERSION_110);
     virtual ~CTLibContext(void);
-    
-    // Deinitialize all internal structures.
-    void Close(void);
 
 public:
     //
@@ -123,6 +120,9 @@ private:
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);
     void x_SetRegistry(CTLibContextRegistry* registry);
+    // Deinitialize all internal structures.
+    void x_Close(bool delete_conn = true);
+    bool x_SafeToFinalize(void) const;
     
     friend class CTLibContextRegistry;
 };
@@ -149,8 +149,6 @@ protected:
                    bool reusable, const string& pool_name);
     virtual ~CTL_Connection(void);
     
-    void Close(void);
-
 protected:
     virtual bool IsAlive(void);
 
@@ -194,6 +192,11 @@ protected:
     // Returns: true - if succeed
     //          false - if not
     virtual bool Abort(void);
+
+    /// Close an open connection.
+    /// Returns: true - if successfully closed an open connection.
+    ///          false - if not
+    virtual bool Close(void);
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
@@ -345,9 +348,9 @@ protected:
     virtual CDB_Result* Open(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-				 bool log_it = true);
+                 bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-					 bool log_it = true);
+                     bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool Close(void);
@@ -497,10 +500,10 @@ protected:
     virtual bool            SkipItem(void);
 
     CS_RETCODE my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
-							  CS_VOID* buffer,
-							  CS_INT buflen, CS_INT *outlen);
+                              CS_VOID* buffer,
+                              CS_INT buflen, CS_INT *outlen);
     CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
-						  CDB_Object* item_buf);
+                          CDB_Object* item_buf);
     CS_COMMAND* x_GetSybaseCmd(void) const { return m_Cmd; }
 
 protected:
@@ -662,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/04/05 14:21:29  ssikorsk
+ * Added CTL_Connection::Close
+ *
  * Revision 1.24  2006/03/06 19:50:02  ssikorsk
  * Added method Close/CloseForever to all context/command-aware classes.
  * Use getters to access Sybase's context and command handles.
