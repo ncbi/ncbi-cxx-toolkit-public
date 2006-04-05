@@ -62,13 +62,14 @@ public:
     
     void Add(CODBCContext* ctx);
     void Remove(CODBCContext* ctx);
+    void ClearAll(void);
     
 private:
     CODBCContextRegistry(void);
     ~CODBCContextRegistry(void);
     
-    mutable CFastMutex m_Mutex;
-    vector<CODBCContext*> registry_;
+    mutable CMutex          m_Mutex;
+    vector<CODBCContext*>   m_Registry;
     
     friend class CSafeStaticPtr<CODBCContextRegistry>;
 };
@@ -80,17 +81,7 @@ CODBCContextRegistry::CODBCContextRegistry(void)
 
 CODBCContextRegistry::~CODBCContextRegistry(void)
 {
-    CFastMutexGuard mg(m_Mutex);
-    
-    // Remove dependency from this registry ...
-    NON_CONST_ITERATE(vector<CODBCContext*>, it, registry_) {
-        (*it)->x_SetRegistry(NULL);
-    }
-    
-    // Close all managed CTLibContext ...
-    NON_CONST_ITERATE(vector<CODBCContext*>, it, registry_) {
-        (*it)->Close();
-    }
+    ClearAll();
 }
 
 CODBCContextRegistry& 
@@ -104,24 +95,38 @@ CODBCContextRegistry::Instance(void)
 void 
 CODBCContextRegistry::Add(CODBCContext* ctx)
 {
-    CFastMutexGuard mg(m_Mutex);
+    CMutexGuard mg(m_Mutex);
     
-    vector<CODBCContext*>::iterator it = find(registry_.begin(), 
-                                             registry_.end(), 
-                                             ctx);
-    if (it == registry_.end()) {
-        registry_.push_back(ctx);
+    vector<CODBCContext*>::iterator it = find(m_Registry.begin(), 
+                                              m_Registry.end(), 
+                                              ctx);
+    if (it == m_Registry.end()) {
+        m_Registry.push_back(ctx);
     }
 }
 
 void 
 CODBCContextRegistry::Remove(CODBCContext* ctx)
 {
-    CFastMutexGuard mg(m_Mutex);
+    CMutexGuard mg(m_Mutex);
     
-    registry_.erase(find(registry_.begin(), 
-                         registry_.end(), 
-                         ctx));
+    m_Registry.erase(find(m_Registry.begin(), 
+                          m_Registry.end(), 
+                          ctx));
+}
+
+void 
+CODBCContextRegistry::ClearAll(void)
+{
+    if (!m_Registry.empty())
+    {
+        CMutexGuard mg(m_Mutex);
+
+        while ( !m_Registry.empty() ) {
+            // x_Close will unregister and remove handler from the registry. 
+            m_Registry.back()->x_Close(false);
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -383,19 +388,23 @@ CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
 CODBCContext::~CODBCContext()
 {
     try {
-        Close();
+        x_Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
 
 void
-CODBCContext::Close(void)
+CODBCContext::x_Close(bool delete_conn)
 {
     if ( m_Context ) {
         CFastMutexGuard mg(m_Mtx);
         if (m_Context) {
             // close all connections first
-            CloseAllConn();
+            if (delete_conn) {
+                DeleteAllConn();
+            } else {
+                CloseAllConn();
+            }
 
             int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
             switch( rc ) {
@@ -705,6 +714,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/04/05 14:33:16  ssikorsk
+ * Improved CODBCContext::x_Close
+ *
  * Revision 1.45  2006/03/15 19:56:37  ssikorsk
  * Replaced "static auto_ptr" with "static CSafeStaticPtr".
  *
