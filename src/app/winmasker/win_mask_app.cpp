@@ -281,10 +281,11 @@ void CWinMaskApplication::Init(void)
 int CWinMaskApplication::Run (void)
 {
     CRef<CObjectManager> om(CObjectManager::GetInstance());
+
+#if 0
     CGBDataLoader::RegisterInObjectManager(
         *om, new CId2Reader, CObjectManager::eDefault );
 
-#if 0
     if( GetArgs()["dbg"].AsBoolean() )
         SetDiagTrace( eDT_Enable );
 #endif
@@ -411,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.17  2006/04/05 19:55:56  morgulis
+ * Removed registration of id2reader.
+ *
  * Revision 1.16  2005/11/21 16:49:15  morgulis
  * 1. Fixed a bug causing infinite loop in the case of empty genome.
  * 2. Added possibility to use substring matching with -ids and -exclude-ids
