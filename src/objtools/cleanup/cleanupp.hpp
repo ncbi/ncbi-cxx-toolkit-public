@@ -92,7 +92,7 @@ enum ECleanupMode
 };
 
 
-class NCBI_CLEANUP_EXPORT CCleanup_imp
+class CCleanup_imp
 {
 public:
     CCleanup_imp(CRef<CCleanupChange> changes, Uint4 options = 0);
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/04/05 14:01:22  dicuccio
+ * Don't export internal classes
+ *
  * Revision 1.5  2006/03/29 19:42:16  rsmith
  * Delete   x_CleanupExtName(CRNA_ref& rna_ref);
  * and x_CleanupExtTRNA(CRNA_ref& rna_ref);
