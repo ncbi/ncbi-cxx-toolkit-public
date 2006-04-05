@@ -561,6 +561,7 @@ protected:
     CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr);
     virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr) = 0;
     void CloseAllConn(void);
+    void DeleteAllConn(void);
     
     /// Used connections
     TConnPool m_NotInUse;
@@ -680,7 +681,12 @@ protected:
     /// destroing any objects associated with a connection.
     /// Returns: true - if succeed
     ///          false - if not
-    virtual bool Abort(void)= 0;
+    virtual bool Abort(void) = 0;
+
+    /// Close an open connection.
+    /// Returns: true - if successfully closed an open connection.
+    ///          false - if not
+    virtual bool Close(void) = 0;
 };
 
 
@@ -709,6 +715,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/04/05 14:20:23  ssikorsk
+ * Added I_Connection::Close
+ *
  * Revision 1.42  2006/03/30 16:24:45  ssikorsk
  * Added more documentation to I_DriverContext::Connect and
  * ConnectValidated.
