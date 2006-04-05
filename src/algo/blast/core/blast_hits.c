@@ -2305,10 +2305,13 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
 void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset)
 {
    Int4 index;
-   BlastHSP* hsp;
+
+   if (offset == 0) {
+       return;
+   }
 
    for (index=0; index<hsp_list->hspcnt; index++) {
-      hsp = hsp_list->hsp_array[index];
+      BlastHSP* hsp = hsp_list->hsp_array[index];
       hsp->subject.offset += offset;
       hsp->subject.end += offset;
       hsp->subject.gapped_start += offset;
