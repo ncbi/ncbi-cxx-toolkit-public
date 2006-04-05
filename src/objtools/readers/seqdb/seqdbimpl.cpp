@@ -466,6 +466,25 @@ int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
                "OID not in valid range.");
 }
 
+CRef<CSeq_data> CSeqDBImpl::GetSeqData(int     oid,
+                                       TSeqPos begin,
+                                       TSeqPos end) const
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    int vol_oid = 0;
+    
+    m_Atlas.Lock(locked);
+    
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        return vol->GetSeqData(vol_oid, begin, end, locked);
+    }
+    
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
+}
+
 int CSeqDBImpl::GetAmbigSeq(int               oid,
                             char           ** buffer,
                             int               nucl_code,

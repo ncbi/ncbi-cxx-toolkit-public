@@ -46,6 +46,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -788,6 +789,24 @@ public:
     /// @param info
     ///   A structure containing taxonomic description strings.
     void GetTaxInfo(int taxid, SSeqDBTaxInfo & info) const;
+    
+    /// Fetch data as a CSeq_data object.
+    ///
+    /// All or part of the sequence is fetched in a CSeq_data object.
+    /// The portion of the sequence returned is specified by begin and
+    /// end.  An exception will be thrown if begin is greater than or
+    /// equal to end, or if end is greater than or equal to the length
+    /// of the sequence.  Begin and end should be specified in bases;
+    /// a range like (0,1) specifies 1 base, not 2.  Nucleotide data
+    /// will always be returned in ncbi4na format.
+    ///
+    /// @param oid    Specifies the sequence to fetch.
+    /// @param begin  Specifies the start of the data to get. [in]
+    /// @param end    Specifies the end of the data to get.   [in]
+    /// @return The sequence data as a Seq-data object.
+    CRef<CSeq_data> GetSeqData(int     oid,
+                               TSeqPos begin,
+                               TSeqPos end) const;
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

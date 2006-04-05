@@ -261,6 +261,17 @@ int CSeqDB::GetSequence(int oid, const char ** buffer) const
     return rv;
 }
 
+CRef<CSeq_data> CSeqDB::GetSeqData(int     oid,
+                                   TSeqPos begin,
+                                   TSeqPos end) const
+{
+    m_Impl->Verify();
+    CRef<CSeq_data> rv = m_Impl->GetSeqData(oid, begin, end);
+    m_Impl->Verify();
+    
+    return rv;
+}
+
 int CSeqDB::GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const
 {
     m_Impl->Verify();

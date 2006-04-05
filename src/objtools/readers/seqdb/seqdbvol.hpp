@@ -489,6 +489,27 @@ public:
         m_VolumeGiLists.push_back(gilist);
     }
     
+    /// Fetch data as a CSeq_data object.
+    ///
+    /// All or part of the sequence is fetched in a CSeq_data object.
+    /// The portion of the sequence returned is specified by begin and
+    /// end.  An exception will be thrown if begin is greater than or
+    /// equal to end, or if end is greater than or equal to the length
+    /// of the sequence.  Begin and end should be specified in bases;
+    /// a range like (0,1) specifies 1 base, not 2.  Nucleotide data
+    /// will always be returned in ncbi4na format.
+    ///
+    /// @param oid    Specifies the sequence to fetch.
+    /// @param begin  Specifies the start of the data to get. [in]
+    /// @param end    Specifies the end of the data to get.   [in]
+    /// @param locked The lock holder object for this thread. [in|out]
+    /// @return The sequence data as a Seq-data object.
+    CRef<CSeq_data>
+    CSeqDBVol::GetSeqData(int              oid,
+                          TSeqPos          begin,
+                          TSeqPos          end,
+                          CSeqDBLockHold & locked) const;
+    
 private:
     /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;

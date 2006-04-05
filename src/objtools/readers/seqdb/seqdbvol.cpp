@@ -2143,5 +2143,75 @@ Uint8 CSeqDBVol::x_GetSeqResidueOffset(int oid, CSeqDBLockHold & locked) const
     return start_offset;
 }
 
+CRef<CSeq_data>
+CSeqDBVol::GetSeqData(int              oid,
+                      TSeqPos          begin,
+                      TSeqPos          end,
+                      CSeqDBLockHold & locked) const
+{
+    // This design was part of the BlastDbDataLoader code.
+    
+    m_Atlas.Lock(locked);
+    
+    CRef<CSeq_data> seq_data(new CSeq_data);
+    
+    if (m_IsAA) {
+        const char * buffer(0);
+        TSeqPos      length(0);
+        
+        length = x_GetSequence(oid, & buffer, false, locked, false);
+        
+        if ((begin >= end) || (end > length)) {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "Begin and end offsets are not valid.");
+        }
+        
+        seq_data->SetNcbistdaa().Set().assign(buffer + begin, buffer + end);
+    } else {
+        // This code builds an array and packs the output in 4 bit
+        // format for NA.  No attempt is made to find an optimal
+        // packing for the data.
+        
+        int nucl_code(kSeqDBNuclNcbiNA8);
+        
+        SSeqDBSlice slice(begin, end);
+        
+        char    * buffer(0);
+        TSeqPos   length(0);
+        
+        length = x_GetAmbigSeq(oid,
+                               & buffer,
+                               nucl_code,
+                               eAtlas,
+                               & slice,
+                               locked);
+        
+        if ((begin >= end) || (end > length)) {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "Begin and end offsets are not valid.");
+        }
+        
+        vector<char> v4;
+        v4.reserve((length+1)/2);
+        
+        TSeqPos length_whole = length & -2;
+        
+        for(TSeqPos i = 0; i < length_whole; i += 2) {
+            v4.push_back((buffer[i] << 4) | buffer[i+1]);
+        }
+        
+        if (length_whole != length) {
+            _ASSERT((length_whole) == (length-1));
+            v4.push_back(buffer[length_whole] << 4);
+        }
+        
+        seq_data->SetNcbi4na().Set().swap(v4);
+    }
+    
+    return seq_data;
+}
+
 END_NCBI_SCOPE
 
