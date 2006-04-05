@@ -438,6 +438,7 @@ TDiagPostFlags& CDiagBuffer::s_GetPostFlags(void)
 
 TDiagPostFlags CDiagBuffer::sm_TraceFlags         = eDPF_Trace;
 
+bool           CDiagBuffer::sm_IgnoreToDie        = false;
 EDiagSev       CDiagBuffer::sm_DieSeverity        = eDiag_Fatal;
 
 EDiagTrace     CDiagBuffer::sm_TraceDefault       = eDT_Default;
@@ -504,8 +505,9 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
         GetSeverityChangeEnabledFirstTime();
     }
 
-    if (diag.GetSeverity() < sm_PostSeverity  ||
-        (diag.GetSeverity() == eDiag_Trace  &&  !GetTraceEnabled())) {
+    EDiagSev sev = diag.GetSeverity();
+    if ((sev < sm_PostSeverity  &&  (sev < sm_DieSeverity  ||  sm_IgnoreToDie))
+        ||  (sev == eDiag_Trace  &&  !GetTraceEnabled())) {
         return false;
     }
 
@@ -521,14 +523,16 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 
 void CDiagBuffer::Flush(void)
 {
+    EDiagSev sev = m_Diag->GetSeverity();
+
     // Do nothing if diag severity is lower than allowed
-    if ( !m_Diag  ||  m_Diag->GetSeverity() < sm_PostSeverity  ||
-        (m_Diag->GetSeverity() == eDiag_Trace  &&  !GetTraceEnabled()) ) {
+    if (!m_Diag  ||
+        (sev < sm_PostSeverity  &&  (sev < sm_DieSeverity  ||  sm_IgnoreToDie))
+        ||  (sev == eDiag_Trace  &&  !GetTraceEnabled())) {
         return;
     }
 
     CNcbiOstrstream* ostr = dynamic_cast<CNcbiOstrstream*>(m_Stream);
-    EDiagSev sev = m_Diag->GetSeverity();
     const char* message = 0;
     size_t size = 0;
     if ( ostr->pcount() ) {
@@ -583,7 +587,7 @@ void CDiagBuffer::Flush(void)
 
     Reset(*m_Diag);
 
-    if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace) {
+    if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace  &&  !sm_IgnoreToDie) {
         m_Diag = 0;
 #if defined(NCBI_OS_MAC)
         if ( g_Mac_SpecialEnvironment ) {
@@ -1224,22 +1228,12 @@ extern EDiagSev SetDiagDieLevel(EDiagSev die_sev)
 }
 
 
-extern void IgnoreDiagDieLevel(bool ignore, EDiagSev* prev_sev)
+extern bool IgnoreDiagDieLevel(bool ignore)
 {
-    if (!!ignore != !!prev_sev) {
-        NCBI_THROW(CCoreException, eInvalidArg,
-                   "IgnoreDiagDieLevel() -- Illegal 'ignore'/'prev_sev' "
-                   "combination");
-    }
-
     CMutexGuard LOCK(s_DiagMutex);
-    if ( ignore ) {
-        *prev_sev = CDiagBuffer::sm_DieSeverity;
-        CDiagBuffer::sm_DieSeverity = eDiag_Trace;
-    } else {
-        CDiagBuffer::sm_DieSeverity = eDiag_Fatal;
-        CNcbiDiag diag(eDiag_Info);
-    }
+    bool retval = CDiagBuffer::sm_IgnoreToDie;
+    CDiagBuffer::sm_IgnoreToDie = ignore;
+    return retval;
 }
 
 
@@ -1618,6 +1612,7 @@ CDiagRestorer::CDiagRestorer(void)
     m_PostFlags             = buf.sx_GetPostFlags();
     m_PostSeverity          = buf.sm_PostSeverity;
     m_PostSeverityChange    = buf.sm_PostSeverityChange;
+    m_IgnoreToDie           = buf.sm_IgnoreToDie;
     m_DieSeverity           = buf.sm_DieSeverity;
     m_TraceDefault          = buf.sm_TraceDefault;
     m_TraceEnabled          = buf.sm_TraceEnabled;
@@ -1640,6 +1635,7 @@ CDiagRestorer::~CDiagRestorer(void)
         buf.sx_GetPostFlags()     = m_PostFlags;
         buf.sm_PostSeverity       = m_PostSeverity;
         buf.sm_PostSeverityChange = m_PostSeverityChange;
+        buf.sm_IgnoreToDie        = m_IgnoreToDie;
         buf.sm_DieSeverity        = m_DieSeverity;
         buf.sm_TraceDefault       = m_TraceDefault;
         buf.sm_TraceEnabled       = m_TraceEnabled;
@@ -1931,6 +1927,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.112  2006/04/05 18:57:12  lavr
+ * Reimplement IgnoreDiagDieLevel() [and change prototype to final form]
+ * BUGFIX: Make sure the program dies even if PostLevel is higher than DieLevel
+ *
  * Revision 1.111  2006/03/02 16:36:12  vakatov
  * Use UInt8ToString() for 'size_t'
  *
