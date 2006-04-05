@@ -109,29 +109,29 @@ CCompressionStreambuf::~CCompressionStreambuf()
     // Finalize processors
 
     CCompressionStreamProcessor* sp;
-    const string msg_where("CCompressionStreambuf::~CCompressionStreambuf: ");
-    const string msg_overflow("Overflow occured, lost some processed data "
-                              "through call Finalize()");
-    const string msg_error("Finalize() failed");
+    #define msg_where    "CCompressionStreambuf::~CCompressionStreambuf: "
+    #define msg_overflow "Overflow occured, lost some processed data " \
+                         "through call Finalize()"
+    #define msg_error    "Finalize() failed"
 
     sp = GetStreamProcessor(CCompressionStream::eRead);
     if ( sp  &&  !sp->m_Finalized ) {
         Finalize(CCompressionStream::eRead);
         if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
-            ERR_POST(msg_where + msg_overflow);
+            ERR_POST(msg_where << msg_overflow);
         }
         if ( sp->m_LastStatus == CP::eStatus_Error ) {
-            ERR_POST(msg_where + msg_error);
+            ERR_POST(msg_where << msg_error);
         }
     }
     sp = GetStreamProcessor(CCompressionStream::eWrite);
     if ( sp  &&  !sp->m_Finalized ) {
         Finalize(CCompressionStream::eWrite);
         if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
-            ERR_POST(msg_where + msg_overflow);
+            ERR_POST(msg_where << msg_overflow);
         }
         if ( sp->m_LastStatus == CP::eStatus_Error ) {
-            ERR_POST(msg_where + msg_error);
+            ERR_POST(msg_where << msg_error);
         }
     }
     delete[] m_Buf;
@@ -527,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/04/05 19:54:30  ivanov
+ * ~CCompressionStreambuf() -- replaced const strings to defines
+ *
  * Revision 1.24  2006/01/23 13:26:50  ivanov
  * Return changes introduced in R1.21 with accidentally removed line of code
  *
