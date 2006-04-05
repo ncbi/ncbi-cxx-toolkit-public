@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Aleksey Grichenko
+ * Authors:  Denis Vakatov, Aleksey Grichenko, Eugene Vasilchenko
  *
  * File Description:
  *   Multi-threading -- fast mutexes
@@ -1022,12 +1022,16 @@ void CSemaphore::Post(unsigned int count)
 #endif
 }
 
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/04/05 21:56:08  vakatov
+ * Authors +=  Eugene Vasilchenko
+ *
  * Revision 1.20  2006/04/05 21:54:21  vakatov
  * [CYGWIN]  Workaround a bug in the pthread_mutex_init() implementation
  *
