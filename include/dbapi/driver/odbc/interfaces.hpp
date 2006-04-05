@@ -112,8 +112,6 @@ public:
     CODBCContext(SQLLEN version = SQL_OV_ODBC3, bool use_dsn= false);
     virtual ~CODBCContext(void);
     
-    void Close();
-
 public:
     //
     // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
@@ -163,6 +161,8 @@ private:
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);
     void x_SetRegistry(CODBCContextRegistry* registry);
+    void x_Close(bool delete_conn = true);
+
     
     friend class CODBCContextRegistry;
 };
@@ -241,6 +241,11 @@ protected:
     // Returns: true - if succeed
     //          false - if not
     virtual bool Abort(void);
+
+    /// Close an open connection.
+    /// Returns: true - if successfully closed an open connection.
+    ///          false - if not
+    virtual bool Close(void);
 
 protected:
     string GetDiagnosticInfo(void) const
@@ -731,6 +736,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/04/05 14:22:56  ssikorsk
+ * Added CODBC_Connection::Close
+ *
  * Revision 1.24  2006/03/06 22:14:23  ssikorsk
  * Added CODBCContext::Close
  *
