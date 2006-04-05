@@ -192,6 +192,11 @@ bool CDB_Connection::Abort()
     return m_Connect->Abort();
 }
 
+bool CDB_Connection::Close(void)
+{
+    CHECK_CONNECTION(m_Connect);
+    return m_Connect->Close();
+}
 
 ////////////////////////////////////////////////////////////////////////////
 //  CDB_Result::
@@ -722,6 +727,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/05 14:26:53  ssikorsk
+ * Implemented CDB_Connection::Close
+ *
  * Revision 1.21  2005/12/06 19:27:31  ssikorsk
  * Revamp code to use GetResultSet/SetResultSet methods
  * instead of raw data access.
