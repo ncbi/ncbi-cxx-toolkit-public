@@ -249,12 +249,12 @@ void I_DriverContext::CloseUnusedConnections(const string&   srv_name,
 unsigned int I_DriverContext::NofConnections(const string& srv_name,
                                           const string& pool_name) const
 {
-
+    CFastMutexGuard mg(m_Mtx);
+    
     if ( srv_name.empty() && pool_name.empty()) {
         return m_InUse.size() + m_NotInUse.size();
     }
 
-    CFastMutexGuard mg(m_Mtx);
     int n = 0;
     TConnPool::value_type con;
 
@@ -548,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/04/05 15:51:32  ssikorsk
+ * Widen protection scope of I_DriverContext::NofConnections
+ *
  * Revision 1.18  2006/04/05 14:26:28  ssikorsk
  * Implemented I_DriverContext::DeleteAllConn
  *
