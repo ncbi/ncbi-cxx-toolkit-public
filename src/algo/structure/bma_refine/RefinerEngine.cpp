@@ -43,20 +43,20 @@ const unsigned int CBMARefinerEngine::MIN_TRIALS_FOR_CONVERGENCE = 2;
 const double CBMARefinerEngine::SCORE_DEV_THRESH_DEFAULT = 0.01;
 
 
-CBMARefinerEngine::CBMARefinerEngine(unsigned int nCycles, unsigned int nTrials, bool verbose, double scoreDeviationThreshold)
+CBMARefinerEngine::CBMARefinerEngine(unsigned int nCycles, unsigned int nTrials, bool looFirst, bool verbose, double scoreDeviationThreshold)
 {
 
-    Initialize(nCycles, nTrials, verbose, scoreDeviationThreshold);
+    Initialize(nCycles, nTrials, looFirst, verbose, scoreDeviationThreshold);
 };
 
-CBMARefinerEngine::CBMARefinerEngine(const LeaveOneOutParams& looParams, const BlockEditingParams& beParams, unsigned int nCycles, unsigned int nTrials, bool verbose, double scoreDeviationThreshold) {
+CBMARefinerEngine::CBMARefinerEngine(const LeaveOneOutParams& looParams, const BlockEditingParams& beParams, unsigned int nCycles, unsigned int nTrials, bool looFirst, bool verbose, double scoreDeviationThreshold) {
 
-    Initialize(nCycles, nTrials, verbose, scoreDeviationThreshold);
+    Initialize(nCycles, nTrials, looFirst, verbose, scoreDeviationThreshold);
     SetLOOParams(looParams);
     SetBEParams(beParams);
 }
 
-void CBMARefinerEngine::Initialize(unsigned int nCycles, unsigned int nTrials, bool verbose, double scoreDeviationThreshold) {
+void CBMARefinerEngine::Initialize(unsigned int nCycles, unsigned int nTrials, bool looFirst, bool verbose, double scoreDeviationThreshold) {
     m_nTrials = (nTrials > 0) ? nTrials : NTRIALS_DEFAULT;
     m_verbose = verbose;
     m_scoreDeviationThreshold = scoreDeviationThreshold;
@@ -65,7 +65,7 @@ void CBMARefinerEngine::Initialize(unsigned int nCycles, unsigned int nTrials, b
     }
 
     m_originalAlignment = NULL;
-    m_trial = new CBMARefinerTrial(nCycles, verbose);
+    m_trial = new CBMARefinerTrial(nCycles, looFirst, verbose);
 }
 
 CBMARefinerEngine::~CBMARefinerEngine() {
@@ -75,6 +75,10 @@ CBMARefinerEngine::~CBMARefinerEngine() {
 
 unsigned int CBMARefinerEngine::NumCycles() const {
  return (m_trial) ? m_trial->NumCycles() : 0;
+}
+
+bool CBMARefinerEngine:: IsLNOFirst() const {
+ return (m_trial) ? m_trial->IsLOOFirst() : false;
 }
 
 TScoreType CBMARefinerEngine::GetInitialScore() const {
@@ -139,9 +143,17 @@ bool CBMARefinerEngine::GetBEParams(BlockEditingParams& beParams) const
 
 AlignmentUtility* CBMARefinerEngine::GetBestRefinedAlignment() const {
 
-    AlignmentUtility* tmp, *bestRefinedAlignment = NULL;
+    RefinedAlignmentsRevCIt revIt, revEnd;
+    AlignmentUtility* tmp = NULL, *bestRefinedAlignment = NULL;
     if (m_perTrialResults.size() > 0) {
-        tmp = m_perTrialResults.rbegin()->second.au;
+        revEnd = m_perTrialResults.rend();
+        revIt  = m_perTrialResults.rbegin();
+        for (; revIt != revEnd; ++revIt) {
+            if (revIt->first != REFINER_INVALID_SCORE && revIt->second.au != NULL) {
+                tmp = revIt->second.au;
+                break;
+            }
+        }
         bestRefinedAlignment = (tmp) ? tmp->Clone() : NULL;
     }
     return bestRefinedAlignment;
@@ -152,6 +164,8 @@ AlignmentUtility* CBMARefinerEngine::GetBestRefinedAlignment() const {
 
 RefinerResultCode CBMARefinerEngine::Refine(ncbi::objects::CCdd& cdd, ostream* detailsStream, TFProgressCallback callback) {
 
+    bool installedNewAlignment = false;
+    RefinedAlignmentsRevCIt revIt, revEnd;
     AlignmentUtility* originalAlignment = new AlignmentUtility(cdd.GetSequences(), cdd.GetSeqannot());
     RefinerResultCode result = Refine(originalAlignment, detailsStream, callback);
 
@@ -159,10 +173,21 @@ RefinerResultCode CBMARefinerEngine::Refine(ncbi::objects::CCdd& cdd, ostream* d
     //  Install alignment w/ highest score in the original CD.
     if (m_perTrialResults.size() > 0) {
         if (result == eRefinerResultOK) {
-            cdd.SetSeqannot() = m_perTrialResults.rbegin()->second.au->GetSeqAnnots();
+            revEnd = m_perTrialResults.rend();
+            revIt  = m_perTrialResults.rbegin();
+            for (; revIt != revEnd; ++revIt) {
+                if (revIt->first != REFINER_INVALID_SCORE && revIt->second.au != NULL) {
+                    cdd.SetSeqannot() = revIt->second.au->GetSeqAnnots();
+                    installedNewAlignment = true;
+                    break;
+                }
+            }
         }
-    } else {
+    }
+
+    if (!installedNewAlignment) {
         result = eRefinerResultNoResults;
+        ERROR_MESSAGE_CL("Could not refine alignment using with specified parameters.\nAlignment of input CD unchanged");
     }
 
     delete originalAlignment;
@@ -240,7 +265,7 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream, TFProgres
             m_perTrialResults.insert(RefinedAlignmentsVT(m_trial->GetFinalScore(), RefinerAU(i+1, au->Clone())));
         } else {
             LOG_MESSAGE_CL("Original alignment score = " << GetInitialScore() << ":  Invalid final score\n");
-            ERROR_MESSAGE_CL("Problem in trial " << i+1 << ": returned with error code " << (int) resultCode << "\nSkipping to next scheduled trial.");
+            ERROR_MESSAGE_CL("Problem in trial " << i+1 << ": refiner error code " << (int) resultCode << "\nSkipping to next scheduled trial");
             m_perTrialResults.insert(RefinedAlignmentsVT(REFINER_INVALID_SCORE, RefinerAU(i+1, NULL)));
             continue;
         }

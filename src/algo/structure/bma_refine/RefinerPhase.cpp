@@ -271,7 +271,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 ERROR_MESSAGE_CL(lnoMethod << " failed for " << seqIdStr << " at row " << row+1 << ".\nRollback & continue.");
                 continue;
             } else {
-                ERROR_MESSAGE_CL(lnoMethod << " failed during call involving " << seqIdStr << " at row " << row+1 << ".\nTerminating phase at processing of " << nRowsTried << "-th row.");
+                ERROR_MESSAGE_CL(lnoMethod << " failed during call involving " << seqIdStr << " at row " << row+1 << ".\n(This often results from too-strict loop-length constraints or parameter inconsistencies.\n)Terminating phase at processing of " << nRowsTried << "-th row left out");
                 return (m_looParams.lno > 1) ? eRefinerResultLeaveNOutExecutionError : eRefinerResultLeaveOneOutExecutionError;
             }
 
@@ -865,6 +865,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/04/05 19:26:32  lanczyck
+ * allow for changing order of phases in a cycle; handle case where DoPhase fails (e.g., can't do block alignment in LOO phase) w/o crashing
+ *
  * Revision 1.12  2006/03/28 18:32:04  lanczyck
  * output changes; reset m_trials to 1 when use deterministic ordering in LOO; remove some debug statements
  *

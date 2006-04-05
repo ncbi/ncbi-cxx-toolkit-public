@@ -47,7 +47,7 @@ BEGIN_SCOPE(align_refine)
 const unsigned int CBMARefinerTrial::NCYCLES_DEFAULT = 1;
 bool CBMARefinerTrial::m_cyclesCreated = false;
 
-CBMARefinerTrial::CBMARefinerTrial(unsigned int nCycles, bool verbose) : m_saveIntermediateAlignments(false), m_loo(NULL), m_blockEdit(NULL)
+CBMARefinerTrial::CBMARefinerTrial(unsigned int nCycles, bool looFirst, bool verbose) : m_saveIntermediateAlignments(false), m_looFirst(looFirst), m_loo(NULL), m_blockEdit(NULL)
 {
     m_cycles.clear();
     if (nCycles > 0) {
@@ -187,7 +187,7 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
                 TRACE_MESSAGE_CL("Cycle " << i+1 << " not saving intermediate alignments.  Score = " << finalScore << "; made change = " << madeChange << "\n");
             }
         } else {
-            WARNING_MESSAGE_CL("Cycle " << i+1 << " reports a problem (code " << (int) cycleResult << "); assigning cycle an invalid final score.\n");
+            WARNING_MESSAGE_CL("Cycle " << i+1 << " reports a problem (code " << (int) cycleResult << "); assigning cycle an invalid final score and terminating trial.\n");
             finalScore = REFINER_INVALID_SCORE;
             m_trialResults.insert(RefinedAlignmentsVT(finalScore, RefinerAU(i, NULL)));
         }
@@ -196,7 +196,7 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
 
     //  Block scores (summed over rows) for entire trial
     //  ** if block number changes this needs to be fixed!!!!  **
-    if (writeDetails) {
+    if (writeDetails && finalScore != REFINER_INVALID_SCORE) {
         IOS_BASE::fmtflags initFlags = (detailsStream) ? detailsStream->flags() : cout.flags();
 
         rowScorer.ComputeBlockScores(*au, finalBlockScores);
@@ -217,7 +217,8 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
     return cycleResult;
 }
 
-//  Default implementation of virtual function:  LOO phase + BE phase
+//  Default implementation of virtual function:  LOO phase + BE phase if looFirst true,
+//  BE phase + LOO phase if looFirst false
 bool CBMARefinerTrial::CreateCycles() {
 
 //    static bool cyclesCreated = false;
@@ -239,12 +240,21 @@ bool CBMARefinerTrial::CreateCycles() {
         if (cycle) {
             cycle->SetVerbose(m_verbose);
 
-            //  Default implementation:  LOO phase followed by BE phase
-            if (cycle->AddPhase(*m_loo) && cycle->AddPhase(*m_blockEdit)) {
-                m_cycles[i] = cycle;
+            //  Default implementation:  one LOO phase and one BE phase
+            if (m_looFirst) {
+                if (cycle->AddPhase(*m_loo) && cycle->AddPhase(*m_blockEdit)) {
+                    m_cycles[i] = cycle;
+                } else {
+                    result = false;
+                    delete cycle;
+                }
             } else {
-                result = false;
-                delete cycle;
+                if (cycle->AddPhase(*m_blockEdit) && cycle->AddPhase(*m_loo)) {
+                    m_cycles[i] = cycle;
+                } else {
+                    result = false;
+                    delete cycle;
+                }
             }
         } else {
             result = false;
@@ -261,6 +271,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/04/05 19:26:32  lanczyck
+ * allow for changing order of phases in a cycle; handle case where DoPhase fails (e.g., can't do block alignment in LOO phase) w/o crashing
+ *
  * Revision 1.6  2005/11/23 01:02:10  lanczyck
  * freeze specified blocks in both LOO and BE phases;
  * add support for a callback for a progress meter

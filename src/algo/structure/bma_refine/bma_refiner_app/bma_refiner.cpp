@@ -360,7 +360,7 @@ int CAlignmentRefiner::Run(void)
 
     TRACE_MESSAGE_CL("Entering refiner engine...\n");
 
-    CBMARefinerEngine refinerEngine(m_loo, m_blockEdit, m_nCycles, m_nTrials, !m_quietMode, m_scoreDeviationThreshold);
+    CBMARefinerEngine refinerEngine(m_loo, m_blockEdit, m_nCycles, m_nTrials, true, !m_quietMode, m_scoreDeviationThreshold);
     RefinerResultCode result = refinerEngine.Refine(au, &detailsStream);
 
 
@@ -385,6 +385,11 @@ int CAlignmentRefiner::Run(void)
 
     for (; rcit != rend; ++rcit, ++n) {
         trial = rcit->second.iteration;
+        if (rcit->second.au == NULL) {
+            detailsStream << "Problem in trial " << trial << " -> no refined alignment available." << endl << endl;
+            continue;
+        }
+
         detailsStream << "Alignment " << n << ":  Score = " << rcit->first << " (trial " << trial << ")" << endl;
         if (n < nToWrite) {
             err.erase();
@@ -821,6 +826,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/04/05 19:26:32  lanczyck
+ * allow for changing order of phases in a cycle; handle case where DoPhase fails (e.g., can't do block alignment in LOO phase) w/o crashing
+ *
  * Revision 1.10  2006/03/28 18:32:04  lanczyck
  * output changes; reset m_trials to 1 when use deterministic ordering in LOO; remove some debug statements
  *
