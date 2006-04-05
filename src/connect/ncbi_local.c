@@ -31,8 +31,10 @@
  *
  */
 
-#include "ncbi_local.h"
+#include "ncbi_ansi_ext.h"
+#include "ncbi_comm.h"
 #include "ncbi_lb.h"
+#include "ncbi_local.h"
 #include "ncbi_priv.h"
 #include <string.h>
 #include <stdlib.h>
@@ -55,37 +57,281 @@ extern "C" {
 
 struct SLOCAL_Data {
     SLB_Candidate* cand;
+    size_t       i_cand;
     size_t       n_cand;
     size_t       a_cand;
+    int/*bool*/  reset;
 };
 
 
-static SLB_Candidate* s_GetCandidate(void* user_data, size_t n)
+static int/*bool*/ s_AddService(const SSERV_Info* info,
+                                struct SLOCAL_Data* data)
+{
+    if (data->a_cand <= data->n_cand) {
+        size_t n = data->a_cand + 10;
+        SLB_Candidate* temp = (data->cand
+                               ? realloc(data->cand, n * sizeof(*data->cand))
+                               : malloc (            n * sizeof(*data->cand)));
+        if (!temp)
+            return 0/*false*/;
+        data->a_cand = n;
+        data->cand   = temp;
+    }
+
+    data->cand[data->n_cand++].info = info;
+    return 1/*true*/;
+}
+
+
+static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
+{
+    struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
+    const TSERV_Type type = iter->type & ~fSERV_Firewall;
+    int/*bool*/ ok = 0/*failed*/;
+    SSERV_Info* info;
+    char* buf;
+    int n;
+
+    if (!(buf = malloc(strlen(name) + 80)))
+        return 0/*failed*/;
+
+    info = 0;
+    for (n = 0;  n <= 100;  n++) {
+        char service[1024];
+        const char* c;
+
+        if (info) {
+            free((void*) info);
+            info = 0;
+        }
+        sprintf(buf, DEF_CONN_REG_SECTION "_LOCAL_SERVER_%s_%d", name, n);
+        if (!(c = getenv(strupr(buf)))) {
+            sprintf(buf, DEF_CONN_REG_SECTION "_LOCAL_SERVER_%d", n);
+            CORE_REG_GET(name, buf, service, sizeof(service) - 1, 0);
+            if (!*service)
+                continue;
+            c = service;
+        }
+        if (!(info = SERV_ReadInfoEx
+              (c, iter->ismask  ||  iter->reverse_dns ? name : ""))) {
+            break;
+        }
+        if (!iter->reverse_dns  &&  info->type != fSERV_Dns) {
+            if (type != fSERV_Any  &&  !(type & info->type))
+                continue;  /* type doesn't match */
+            if (type == fSERV_Any  &&  info->type == fSERV_Dns)
+                continue;  /* DNS entries have to be req'd explicitly */
+            if (iter->stateless && info->sful && !(info->type & fSERV_Http))
+                continue;  /* skip stateful only servers */
+        }
+        if (iter->external  &&  info->locl)
+            continue;  /* external mapping for local server not allowed */
+        if (!info->host  ||  (info->locl & 0xF0)) {
+            static unsigned int s_LocalHost = 0;
+            if (!s_LocalHost)
+                s_LocalHost = SOCK_gethostbyname(0);
+            if (!info->host)
+                info->host = s_LocalHost;
+            if ((info->locl & 0xF0)  &&  info->host != s_LocalHost)
+                continue;  /* private server */
+        }
+        if (!info->rate)
+            info->rate = LBSM_DEFAULT_RATE;
+        if (!info->time)
+            info->time = LBSM_DEFAULT_TIME;
+
+        if (!s_AddService(info, data))
+            break;
+
+        info = 0;
+        ok = 1/*succeeded*/;
+    }
+    if (info)
+        free((void*) info);
+
+    free(buf);
+    return ok/*whatever*/;
+}
+
+
+#define CONN_LOCAL_SERVICES "LOCAL_SERVICES"
+
+
+static int/*bool*/ s_LoadServices(SERV_ITER iter)
+{
+    int/*bool*/ ok = 0/*false*/;
+    char services[1024];
+    const char* c;
+    char* s;
+
+    if (!iter->ismask) {
+        ok = s_LoadSingleService(iter->name, iter);
+        if (!ok  ||  !iter->reverse_dns)
+            return ok;
+    }
+
+    if (!(c = getenv(DEF_CONN_REG_SECTION "_" CONN_LOCAL_SERVICES))  ||  !*c) {
+        CORE_REG_GET(DEF_CONN_REG_SECTION, CONN_LOCAL_SERVICES,
+                     services, sizeof(services) - 1, 0);
+        if (!*services)
+            return ok;
+    } else
+        strncpy0(services, c, sizeof(services) - 1);
+
+    s = services;
+    ok = 0/*false*/;
+    for (s += strspn(s, " \t");  *s;  s += strspn(s, " \t")) {
+        size_t len = strcspn(s, " \t");
+        assert(len);
+        if (s[len])
+            s[len++] = '\0';
+        if (!(c = SERV_ServiceName(s)))
+            break;
+        if ((iter->reverse_dns  ||  UTIL_MatchesMask(c, iter->name))  &&
+            s_LoadSingleService(c, iter)) {
+            ok = 1/*succeeded*/;
+        }
+        free((void*) c);
+        s += len;
+    }
+
+    return ok/*whatever*/;
+}
+
+
+static int s_Sort(const void* p1, const void* p2)
+{
+    const SLB_Candidate* c1 = (const SLB_Candidate*) p1;
+    const SLB_Candidate* c2 = (const SLB_Candidate*) p2;
+    if (c1->info->type == fSERV_Dns  ||  c2->info->type == fSERV_Dns) {
+        if (c1->info->type != fSERV_Dns)
+            return -1;
+        if (c2->info->type != fSERV_Dns)
+            return  1;
+    }
+    if ((int) c1->info->type < (int) c2->info->type)
+        return -1;
+    if ((int) c1->info->type > (int) c2->info->type)
+        return  1;
+    return 0;
+}
+
+
+static SLB_Candidate* s_GetCandidate(void* user_data, size_t i)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) user_data;
-    return n < data->n_cand ? &data->cand[n] : 0;
+    return i < data->i_cand ? &data->cand[i] : 0;
 }
 
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
+    const TSERV_Type type = iter->type & ~fSERV_Firewall;
+    int/*bool*/ dns_info_seen = 0/*false*/;
     SSERV_Info* info;
-    size_t n;
+    size_t i, n;
 
     assert(data);
-    if (!data->n_cand)
-        return 0;
-
-    for (n = 0; n < data->n_cand; n++)
-        data->cand[n].status = data->cand[n].info->rate;
-    n = LB_Select(iter, data, s_GetCandidate, 1.0);
-    info = (SSERV_Info*) data->cand[n].info;
-    info->rate = data->cand[n].status;
-    if (n < --data->n_cand) {
-        memmove(data->cand + n, data->cand + n + 1,
-                (data->n_cand - n)*sizeof(*data->cand));
+    if (data->reset) {
+        data->reset = 0/*false*/;
+        if (!s_LoadServices(iter))
+            return 0;
+        if (data->n_cand > 1)
+            qsort(data->cand, data->n_cand, sizeof(*data->cand), s_Sort);
     }
+
+    i = 0;
+    data->i_cand = 0;
+    while (i < data->n_cand) {
+        info = (SSERV_Info*) data->cand[i].info;
+        if (info->rate > 0.0  ||  iter->promiscuous) {
+            const char* c = SERV_NameOfInfo(info);
+            for (n = 0;  n < iter->n_skip;  n++) {
+                const SSERV_Info* skip = iter->skip[n];
+                const char* s = SERV_NameOfInfo(skip);
+                if (*s) {
+                    assert(iter->ismask  ||  iter->reverse_dns);
+                    if (strcasecmp(s, c) == 0
+                        &&  ((skip->type == fSERV_Dns  &&  !skip->host)  ||
+                             SERV_EqualInfo(skip, info))) {
+                        break;
+                    }
+                } else if (SERV_EqualInfo(skip, info))
+                    break;
+                if (iter->reverse_dns  &&  skip->type == fSERV_Dns
+                    &&  skip->host == info->host
+                    &&  (!skip->port  ||  skip->port == info->port)) {
+                    break;
+                }
+            }
+        } else
+            n = 0;
+        if (!iter->ismask) {
+            if (type == fSERV_Any) {
+                if (iter->reverse_dns  &&  info->type != fSERV_Dns)
+                    dns_info_seen = 1/*true*/;
+            } else if ((type & info->type)  &&  info->type == fSERV_Dns)
+                dns_info_seen = 1/*true*/;
+        }
+        if (n < iter->n_skip) {
+            if (i < --data->n_cand) {
+                memmove(data->cand + i, data->cand + i + 1,
+                        (data->n_cand - i) * sizeof(*data->cand));
+            }
+            free(info);
+        } else {
+            if (type != fSERV_Any  &&  !(type & info->type))
+                break;
+            if (type == fSERV_Any  &&  info->type == fSERV_Dns)
+                break;
+            data->i_cand++;
+            data->cand[i].status = info->rate < 0.0 ? 0.0 : info->rate;
+            if (iter->promiscuous)
+                break;
+            i++;
+        }
+    }
+
+    if (data->i_cand) {
+        n = LB_Select(iter, data, s_GetCandidate, 1.0);
+        info = (SSERV_Info*) data->cand[n].info;
+        if (iter->reverse_dns  &&  info->type != fSERV_Dns) {
+            dns_info_seen = 0/*false*/;
+            for (i = 0;  i < data->n_cand;  i++) {
+                SSERV_Info* temp = (SSERV_Info*) data->cand[i].info;
+                if (temp->type != fSERV_Dns   ||
+                    temp->host != info->host  ||  temp->port != info->port) {
+                    continue;
+                }
+                if (!iter->ismask)
+                    dns_info_seen = 1/*true*/;
+                if (iter->external  &&  temp->locl)
+                    continue; /* external mapping req'd; local server */
+                assert(!(temp->locl & 0xF0)); /* no private DNS */
+                if (temp->rate > 0.0  ||  iter->promiscuous) {
+                    data->cand[i].status = data->cand[n].status;
+                    info = temp;
+                    n = i;
+                    break;
+                }
+            }
+            if (i >= data->n_cand  &&  dns_info_seen)
+                info = 0;
+        }
+
+        if (info) {
+            info->rate  = data->cand[n].status;
+            info->time += iter->time;
+            if (n < --data->n_cand) {
+                memmove(data->cand + n, data->cand + n + 1,
+                        (data->n_cand - n) * sizeof(*data->cand));
+            }
+        }
+    } else if (iter->last  ||  iter->n_skip  ||  !dns_info_seen)
+        info = 0;
+    else if ((info = SERV_CreateDnsInfo(0)) != 0)
+        info->time = NCBI_TIME_INFINITE;
 
     if (host_info)
         *host_info = 0;
@@ -103,23 +349,22 @@ static void s_Reset(SERV_ITER iter)
             free((void*) data->cand[i].info);
         data->n_cand = 0;
     }
+    data->reset = 1/*true*/;
 }
 
 
 static void s_Close(SERV_ITER iter)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
-    assert(!data->n_cand); /* s_Reset() had to be called before */
-    if (data->cand)
+    assert(!data->n_cand  &&  data->reset); /* s_Reset() has been called */
+    if (data->cand) {
+        assert(data->a_cand);
+        data->a_cand = 0;
         free(data->cand);
+        data->cand = 0;
+    }
     free(data);
     iter->data = 0;
-}
-
-
-static int/*bool*/ s_LoadServices(SERV_ITER iter)
-{
-    return 0/*false*/;
 }
 
 
@@ -132,8 +377,6 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
                                     SSERV_Info** info, HOST_INFO* u/*unused*/)
 {
     struct SLOCAL_Data* data;
-
-    return 0/*for now*/;
 
     if (!iter->ismask  &&  strpbrk(iter->name, "?*"))
         return 0/*failed to start unallowed wildcard search*/;
@@ -153,6 +396,8 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
         s_Close(iter);
         return 0;
     }
+    if (data->n_cand > 1)
+        qsort(data->cand, data->n_cand, sizeof(*data->cand), s_Sort);
 
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
@@ -164,6 +409,9 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2006/04/05 15:06:55  lavr
+ * Fully implemented and working
+ *
  * Revision 1.1  2006/03/28 18:27:32  lavr
  * Initial revision (not yet working)
  *
