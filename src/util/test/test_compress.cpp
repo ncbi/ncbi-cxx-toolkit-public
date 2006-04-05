@@ -91,8 +91,10 @@ void CTestCompressor<TCompression, TCompressionFile,
     TStreamCompressor, TStreamDecompressor>
     ::Run(const char* src_buf)
 {
-    char* dst_buf = new char[kBufLen];
-    char* cmp_buf = new char[kBufLen];
+    AutoArray<char> dst_buf_arr(kBufLen);
+    AutoArray<char> cmp_buf_arr(kBufLen);
+    char* dst_buf = dst_buf_arr.get();
+    char* cmp_buf = cmp_buf_arr.get();
 
     size_t dst_len, out_len;
     bool result;
@@ -515,7 +517,8 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    char* src_buf = new char[kBufLen];
+    AutoArray<char> src_buf_arr(kBufLen);
+    char* src_buf = src_buf_arr.get();
     assert(src_buf);
 
     // Preparing a data for compression
@@ -564,6 +567,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/04/05 13:22:04  vasilche
+ * Removed memory leak.
+ *
  * Revision 1.13  2006/01/06 16:58:03  ivanov
  * Use LOG_POST instead of cout
  *
