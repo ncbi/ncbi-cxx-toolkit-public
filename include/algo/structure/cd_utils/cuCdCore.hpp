@@ -66,7 +66,7 @@ public:
 	};
 
     CCdCore(void);                                      // constructor
-    ~CCdCore(void);                                     // destructor
+    virtual ~CCdCore(void);                             // destructor
 
     /*  CD identifier methods */
     string GetAccession(int& Version) const;              // get accession and version of CD
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/04/05 19:28:12  lanczyck
+ * allow for changing order of phases in a cycle
+ *
  * Revision 1.2  2005/04/19 21:46:20  ucko
  * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
  *

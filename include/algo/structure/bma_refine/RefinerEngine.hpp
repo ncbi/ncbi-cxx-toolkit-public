@@ -50,8 +50,8 @@ class CBMARefinerEngine
 
 public:
 
-    CBMARefinerEngine(unsigned int nCycles, unsigned int nTrials = 1, bool verbose = false, double scoreDeviationThreshold = 0.01);
-    CBMARefinerEngine(const LeaveOneOutParams& looParams, const BlockEditingParams& beParams, unsigned int nCycles, unsigned int nTrials = 1, bool verbose = false, double scoreDeviationThreshold = 0.01);
+    CBMARefinerEngine(unsigned int nCycles, unsigned int nTrials = 1, bool looFirst = true, bool verbose = false, double scoreDeviationThreshold = 0.01);
+    CBMARefinerEngine(const LeaveOneOutParams& looParams, const BlockEditingParams& beParams, unsigned int nCycles, unsigned int nTrials = 1, bool looFirst = true, bool verbose = false, double scoreDeviationThreshold = 0.01);
     ~CBMARefinerEngine();
 
     void SetLOOParams(const LeaveOneOutParams& looParams);
@@ -64,6 +64,7 @@ public:
 
     const RefinedAlignments& GetAllResults() const {return m_perTrialResults;}
 
+    bool IsLNOFirst() const;
     unsigned int NumTrials() const {return m_nTrials;}
     unsigned int NumCycles() const;
 
@@ -109,7 +110,7 @@ private:
     //  Require a minimum # of trials to claim convergence.
     bool IsConverged(string& message) const;
 
-    void Initialize(unsigned int nCycles, unsigned int nTrials, bool verbose, double scoreDeviationThreshold);
+    void Initialize(unsigned int nCycles, unsigned int nTrials, bool looFirst, bool verbose, double scoreDeviationThreshold);
     void CleanUp(bool deleteOriginalAlignment);
 
 };

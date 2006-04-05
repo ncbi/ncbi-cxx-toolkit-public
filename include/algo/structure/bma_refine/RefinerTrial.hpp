@@ -44,7 +44,7 @@ BEGIN_SCOPE(align_refine)
 class CBMARefinerCycle;
 
 
-// class for standalone application
+// Class for default refiner trial:  one LOO phase and one BE phase per cycle.
 class CBMARefinerTrial
 {
 
@@ -53,7 +53,7 @@ class CBMARefinerTrial
 
 public:
 
-    CBMARefinerTrial(unsigned int nCycles = NCYCLES_DEFAULT, bool verbose = false);
+    CBMARefinerTrial(unsigned int nCycles = NCYCLES_DEFAULT, bool looFirst = true, bool verbose = false);
 
     virtual ~CBMARefinerTrial();
 
@@ -80,6 +80,7 @@ public:
     const LeaveOneOutParams* GetLOOParams() const {return m_loo;}
     const BlockEditingParams* GetBEParams() const {return m_blockEdit;}
 
+    bool IsLOOFirst() const {return m_looFirst;}
     unsigned int NumCycles() const {return m_cycles.size();}
     unsigned int NumCyclesRun() const {return m_trialResults.size();}
 
@@ -87,6 +88,7 @@ protected:
 
     bool m_verbose;  //  more output written to detailsStream
     bool m_saveIntermediateAlignments;
+    bool m_looFirst;
 
     LeaveOneOutParams*  m_loo;
     BlockEditingParams* m_blockEdit;    
@@ -99,7 +101,7 @@ protected:
 
     //  Return true only if all cycles and phases therein are created successfully.
     //  This method intended to configure subclasses to get cycles w/ the
-    //  proper set of phases.  By default:  cycle == one LOO phase followed
+    //  proper set of phases.  By default (m_looFirst true):  cycle == one LOO phase followed
     //  by one BE phase.
     virtual bool CreateCycles();
 
@@ -114,6 +116,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/05 19:28:12  lanczyck
+ * allow for changing order of phases in a cycle
+ *
  * Revision 1.3  2005/11/23 01:01:14  lanczyck
  * freeze specified blocks in both LOO and BE phases;
  * add support for a callback for a progress meter
