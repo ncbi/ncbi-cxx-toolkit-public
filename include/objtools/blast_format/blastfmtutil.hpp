@@ -50,12 +50,16 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE (objects);
 
 ///blast related url
+
+///class info
+const static string kClassInfo = "class=\"info\"";
+
 ///entrez
-const string kEntrezUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entre\
+const string kEntrezUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/entre\
 z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
 
 ///trace db
-const string kTraceUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces\
+const string kTraceUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/Traces\
 /trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
 
 ///genome button
@@ -338,6 +342,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.21  2006/04/05 17:41:02  jianye
+change url for mouseover info
+
 Revision 1.20  2006/03/01 18:38:28  jianye
 added positives and frame info
 
