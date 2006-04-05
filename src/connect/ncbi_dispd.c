@@ -304,7 +304,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     info->rate = data->cand[n].status;
     if (n < --data->n_cand) {
         memmove(data->cand + n, data->cand + n + 1,
-                (data->n_cand - n)*sizeof(*data->cand));
+                (data->n_cand - n) * sizeof(*data->cand));
     }
 
     if (host_info)
@@ -404,6 +404,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.79  2006/04/05 14:59:32  lavr
+ * Small fixup
+ *
  * Revision 6.78  2006/03/05 17:38:12  lavr
  * Adjust for SERV_ITER to now carry time (s_Update)
  *
