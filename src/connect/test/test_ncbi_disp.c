@@ -64,7 +64,7 @@ int main(int argc, const char* argv[])
     ConnNetInfo_Destroy(net_info);
     if (iter) {
         HOST_INFO hinfo;
-        CORE_LOGF(eLOG_Trace,("Service mapper %s has been successfully opened",
+        CORE_LOGF(eLOG_Trace,("%s service mapper has been successfully opened",
                               SERV_MapperName(iter)));
         while ((info = SERV_GetNextInfoEx(iter, &hinfo)) != 0) {
             char* info_str = SERV_WriteInfo(info);
@@ -140,6 +140,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2006/04/05 15:07:09  lavr
+ * Print mapper name first
+ *
  * Revision 6.22  2006/03/05 17:43:01  lavr
  * Log service mapper name; extract affinities (if any)
  *
