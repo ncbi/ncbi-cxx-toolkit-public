@@ -144,7 +144,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
         
         char url_buf[2048];
         if (gi > 0) {
-            sprintf(url_buf, kEntrezUrl.c_str(), db, gi, dopt,
+            sprintf(url_buf, kEntrezUrl.c_str(), "", db, gi, dopt,
                     open_new_window ? "TARGET=\"EntrezView\"" : "");
             url_link = url_buf;
         } else {//seqid general, dbtag specified
@@ -154,7 +154,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
                 if(NStr::CompareNocase(dbname, "TI") == 0){
                     string actual_id;
                     wid->GetLabel(&actual_id, CSeq_id::eContent);
-                    sprintf(url_buf, kTraceUrl.c_str(), actual_id.c_str());
+                    sprintf(url_buf, kTraceUrl.c_str(), "", actual_id.c_str());
                     url_link = url_buf;
                 }
             }
@@ -951,6 +951,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.25  2006/04/05 17:40:06  jianye
+*adjust to new defs
+*
 *Revision 1.24  2006/03/15 16:46:55  jianye
 *use title from seqalign bioseq as the first one
 *
