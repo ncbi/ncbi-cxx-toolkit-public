@@ -173,8 +173,8 @@ RefinerResultCode CBMARefinerEngine::Refine(ncbi::objects::CCdd& cdd, ostream* d
     //  Install alignment w/ highest score in the original CD.
     if (m_perTrialResults.size() > 0) {
         if (result == eRefinerResultOK) {
-            revEnd = m_perTrialResults.rend();
-            revIt  = m_perTrialResults.rbegin();
+            revEnd = GetAllResults().rend();
+            revIt  = GetAllResults().rbegin();
             for (; revIt != revEnd; ++revIt) {
                 if (revIt->first != REFINER_INVALID_SCORE && revIt->second.au != NULL) {
                     cdd.SetSeqannot() = revIt->second.au->GetSeqAnnots();
