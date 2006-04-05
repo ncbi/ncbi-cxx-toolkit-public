@@ -76,8 +76,8 @@ private:
     CDblibContextRegistry(void);
     ~CDblibContextRegistry(void);
     
-    mutable CFastMutex m_Mutex;
-    vector<CDBLibContext*> registry_;
+    mutable CMutex          m_Mutex;
+    vector<CDBLibContext*>  m_Registry;
     
     friend class CSafeStaticPtr<CDblibContextRegistry>;
 };
@@ -104,44 +104,37 @@ CDblibContextRegistry::Instance(void)
 void 
 CDblibContextRegistry::Add(CDBLibContext* ctx)
 {
-    CFastMutexGuard mg(m_Mutex);
+    CMutexGuard mg(m_Mutex);
     
-    vector<CDBLibContext*>::iterator it = find(registry_.begin(), 
-                                              registry_.end(), 
-                                              ctx);
-    if (it == registry_.end()) {
-        registry_.push_back(ctx);
+    vector<CDBLibContext*>::iterator it = find(m_Registry.begin(), 
+                                               m_Registry.end(), 
+                                               ctx);
+    if (it == m_Registry.end()) {
+        m_Registry.push_back(ctx);
     }
 }
 
 void 
 CDblibContextRegistry::Remove(CDBLibContext* ctx)
 {
-    CFastMutexGuard mg(m_Mutex);
+    CMutexGuard mg(m_Mutex);
     
-    registry_.erase(find(registry_.begin(), 
-                         registry_.end(), 
-                         ctx));
+    m_Registry.erase(find(m_Registry.begin(), 
+                          m_Registry.end(), 
+                          ctx));
 }
 
 
 void 
 CDblibContextRegistry::ClearAll(void)
 {
-    if (!registry_.empty())
+    if (!m_Registry.empty())
     {
-        CFastMutexGuard mg(m_Mutex);
-        if (!registry_.empty()) {
-            // Remove dependency from this registry ...
-            NON_CONST_ITERATE(vector<CDBLibContext*>, it, registry_) {
-                (*it)->x_SetRegistry(NULL);
-            }
+        CMutexGuard mg(m_Mutex);
 
-            // Close all managed CTLibContext ...
-            NON_CONST_ITERATE(vector<CDBLibContext*>, it, registry_) {
-                (*it)->x_Close();
-            }
-            registry_.clear();
+        while ( !m_Registry.empty() ) {
+            // x_Close will unregister and remove handler from the registry. 
+            m_Registry.back()->x_Close(false);
         }
     }
 }
@@ -350,24 +343,36 @@ CTDSContext::~CTDSContext()
 }
 
 void
-CTDSContext::x_Close(void)
+CTDSContext::x_Close(bool delete_conn)
 {
     if (g_pTDSContext) {
         CFastMutexGuard mg(m_Mtx);
         if (g_pTDSContext) {
-            // close all connections first
-            CloseAllConn();
+            if (x_SafeToFinalize()) {
+                // close all connections first
+                if (delete_conn) {
+                    DeleteAllConn();
+                } else {
+                    CloseAllConn();
+                }
 
-            dbloginfree(m_Login);
-            dbexit();
-            g_pTDSContext = 0;
-            x_RemoveFromRegistry();
+                dbloginfree(m_Login);
+                dbexit();
+
+                g_pTDSContext = NULL;
+                x_RemoveFromRegistry();
+            }
 
 #if defined(NCBI_OS_MSWIN)
             WSACleanup();
 #endif
         }
     }
+}
+
+bool CTDSContext::x_SafeToFinalize(void) const
+{
+    return true;
 }
 
 
@@ -797,6 +802,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/04/05 14:31:28  ssikorsk
+ * Improved CTDSContext::x_Close
+ *
  * Revision 1.64  2006/03/29 21:31:39  ucko
  * +<algorithm> for find()
  *
