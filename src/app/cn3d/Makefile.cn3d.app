@@ -75,7 +75,7 @@ LIB =	xcd_utils xbma_refiner xstruct_util xstruct_dp xstruct_thread \
 	pub medline biblio general taxon1 blastdb xnetblast \
 	xregexp xser xutil xconnect xncbi $(Z_LIB) $(PCRE_LIB)
 
-WXWIDGETS_INSTALL = $(HOME)/wxWidgets-install
+WXWIDGETS_INSTALL = /home/thiessen/wxWidgets-install
 ifeq ($(DEBUG_SFX),Debug)
 	WXWIDGETS_CONFIG_DEBUG = --debug=yes
 else
