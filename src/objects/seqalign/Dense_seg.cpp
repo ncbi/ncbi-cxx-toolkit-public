@@ -285,7 +285,13 @@ void CDense_seg::TrimEndGaps()
         }
     }
 
-    delete_ranges.push_back(TSignedSeqRange(0, i));
+    if (i == GetNumseg() + 1) {
+        /// error case - all gapped, so don't bother
+        return;
+    }
+    if (i != 0) {
+        delete_ranges.push_back(TSignedSeqRange(0, i));
+    }
 
     /// trailing gap segments next
     for (i = GetNumseg() - 1;  i >= 0;  --i) {
@@ -303,7 +309,9 @@ void CDense_seg::TrimEndGaps()
         }
     }
 
-    delete_ranges.push_back(TSignedSeqRange(i + 1, GetNumseg()));
+    if (i != GetNumseg() - 1) {
+        delete_ranges.push_back(TSignedSeqRange(i + 1, GetNumseg()));
+    }
 
     list<TSignedSeqRange>::reverse_iterator iter = delete_ranges.rbegin();
     list<TSignedSeqRange>::reverse_iterator end  = delete_ranges.rend();
@@ -315,13 +323,23 @@ void CDense_seg::TrimEndGaps()
 
         /// we can trim the first i segments
         if (IsSetStrands()) {
+            size_t size = GetStrands().size();
+            _ASSERT(GetStrands().size() > r.GetTo() * GetDim());
             SetStrands().erase(SetStrands().begin() + r.GetFrom() * GetDim(),
                                SetStrands().begin() + r.GetTo()   * GetDim());
         }
-        SetStarts().erase(SetStarts().begin() + r.GetFrom() * GetDim(),
-                          SetStarts().begin() + r.GetTo()   * GetDim());
-        SetLens().erase(SetLens().begin() + r.GetFrom(),
-                        SetLens().begin() + r.GetTo());
+        if (IsSetStarts()) {
+            size_t size = GetStarts().size();
+            _ASSERT(GetStarts().size() > r.GetTo() * GetDim());
+            SetStarts().erase(SetStarts().begin() + r.GetFrom() * GetDim(),
+                              SetStarts().begin() + r.GetTo()   * GetDim());
+        }
+        if (IsSetLens()) {
+            size_t size = GetLens().size();
+            _ASSERT(GetLens().size() > r.GetTo());
+            SetLens().erase(SetLens().begin() + r.GetFrom(),
+                            SetLens().begin() + r.GetTo());
+        }
     }
 
     /// fix our number of segments
@@ -1119,6 +1137,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2006/04/05 14:00:43  dicuccio
+* Added additional _ASSERT()s, error checks
+*
 * Revision 1.25  2006/03/15 15:49:04  dicuccio
 * Added TrimEndGaps()
 *
