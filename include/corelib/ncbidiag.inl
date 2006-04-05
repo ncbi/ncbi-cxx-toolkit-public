@@ -84,7 +84,7 @@ class CDiagBuffer
     NCBI_XNCBI_EXPORT
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     NCBI_XNCBI_EXPORT
-    friend void IgnoreDiagDieLevel(bool ignore, EDiagSev* prev_sev);
+    friend bool IgnoreDiagDieLevel(bool ignore);
 
     // Others
     NCBI_XNCBI_EXPORT
@@ -173,6 +173,7 @@ private:
     static EDiagSev       sm_PostSeverity;
     static EDiagSevChange sm_PostSeverityChange;
                                            // severity level changing status
+    static bool           sm_IgnoreToDie;
     static EDiagSev       sm_DieSeverity;
     static EDiagTrace     sm_TraceDefault; // default state of tracing
     static bool           sm_TraceEnabled; // current state of tracing
@@ -639,6 +640,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/04/05 18:55:54  lavr
+ * Reimplement IgnoreDiagDieLevel() [and change prototype to final form]
+ *
  * Revision 1.55  2006/02/16 13:17:57  lavr
  * SEEKOFF -> PUBSEEKOFF (SEEKOFF is obsolescent a long ago)
  *

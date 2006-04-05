@@ -838,17 +838,17 @@ extern void SetDiagFixedPostLevel(EDiagSev post_sev);
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 
-/// Ignore the die level settings.
+/// Ignore the die level settings.  Return previous setting.
 ///
 /// WARNING!!! -- not recommended for use unless you are real desperate:
 /// By passing TRUE to this function you can make your application
 /// never exit/abort regardless of the level set by SetDiagDieLevel().
 /// But be warned this is usually a VERY BAD thing to do!
 /// -- because any library code counts on at least "eDiag_Fatal" to exit
-/// unconditionally, and thus what happens after "eDiag_Fatal" is posted is
-/// in general totally unpredictable! Therefore, use it on your own risk.
+/// unconditionally, and thus what happens once "eDiag_Fatal" has been posted,
+/// is, in general, totally unpredictable!  Therefore, use it on your own risk.
 NCBI_XNCBI_EXPORT
-extern void IgnoreDiagDieLevel(bool ignore, EDiagSev* prev_sev = 0);
+extern bool IgnoreDiagDieLevel(bool ignore);
 
 /// Abort handler function type.
 typedef void (*FAbortHandler)(void);
@@ -1161,6 +1161,7 @@ private:
     TDiagPostFlags    m_PostFlags;             ///< Post flags
     EDiagSev          m_PostSeverity;          ///< Post severity
     EDiagSevChange    m_PostSeverityChange;    ///< Severity change
+    bool              m_IgnoreToDie;           ///< Ignore to die on die sev
     EDiagSev          m_DieSeverity;           ///< Die level severity
     EDiagTrace        m_TraceDefault;          ///< Default trace setting
     bool              m_TraceEnabled;          ///< Trace enabled?
@@ -1316,6 +1317,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.102  2006/04/05 18:55:54  lavr
+ * Reimplement IgnoreDiagDieLevel() [and change prototype to final form]
+ *
  * Revision 1.101  2006/03/02 16:28:53  vakatov
  * Some comments and code styling
  *
