@@ -61,10 +61,11 @@ public:
     CAsnConverter(FWrite writer, FRead reader)
         : m_Write(writer), m_Read(reader) { }
 
-    // Creates and returns a new object if cpp_obj is null.
-    TCpp* FromC(const TC* c_obj, TCpp* cpp_obj = 0);
-    // Always returns a new object, as that's how C readers work.
-    TC*   ToC  (const TCpp& cpp_obj);
+    /// Creates and returns a new object if cpp_obj is null.
+    TCpp* FromC(const TC* c_obj, TCpp* cpp_obj = 0,
+                EAsnConn_Format format = eAsnConn_Binary);
+    /// Always returns a new object, as that's how C readers work.
+    TC*   ToC  (const TCpp& cpp_obj, EAsnConn_Format format = eAsnConn_Binary);
 
 private:
     FWrite m_Write;
@@ -79,8 +80,21 @@ private:
 // inline functions
 
 
+inline
+ESerialDataFormat MapAcfToSdf(EAsnConn_Format format) {
+    switch (format) {
+    case eAsnConn_Binary:  return eSerial_AsnBinary;
+    case eAsnConn_Text:    return eSerial_AsnText;
+    default:               _TROUBLE;
+    }
+    return eSerial_None;
+}
+
+
 template <typename TCpp, typename TC>
-inline TCpp* CAsnConverter<TCpp, TC>::FromC(const TC* c_obj, TCpp* cpp_obj)
+inline
+TCpp* CAsnConverter<TCpp, TC>::FromC(const TC* c_obj, TCpp* cpp_obj,
+                                     EAsnConn_Format format)
 {
     if ( !c_obj ) {
         return 0;
@@ -89,25 +103,28 @@ inline TCpp* CAsnConverter<TCpp, TC>::FromC(const TC* c_obj, TCpp* cpp_obj)
     CConn_MemoryStream conn_stream;
 
     AsnIoPtr aip = CreateAsnConn(conn_stream.GetCONN(), eAsnConn_Output,
-                                 eAsnConn_Binary);
+                                 format);
     m_Write(const_cast<TC*>(c_obj), aip, 0);
     AsnIoFlush(aip);
 
     CRef<TCpp> cpp_ref(cpp_obj ? cpp_obj : new TCpp);
-    CObjectIStreamAsnBinary ois(conn_stream);
-    ois >> *cpp_ref;
+    auto_ptr<CObjectIStream> ois(CObjectIStream::Open
+                                 (MapAcfToSdf(format), conn_stream));
+    *ois >> *cpp_ref;
     return cpp_ref.Release();
 }
 
 
 template <typename TCpp, typename TC>
-inline TC* CAsnConverter<TCpp, TC>::ToC(const TCpp& cpp_obj)
+inline
+TC* CAsnConverter<TCpp, TC>::ToC(const TCpp& cpp_obj, EAsnConn_Format format)
 {
     CConn_MemoryStream conn_stream;
 
-    CObjectOStreamAsnBinary oos(conn_stream);
-    oos << cpp_obj;
-    oos.Flush();
+    auto_ptr<CObjectOStream> oos(CObjectOStream::Open
+                                 (MapAcfToSdf(format), conn_stream));
+    *oos << cpp_obj;
+    oos->Flush();
 
     AsnIoPtr aip = CreateAsnConn(conn_stream.GetCONN(), eAsnConn_Input,
                                  eAsnConn_Binary);
@@ -122,6 +139,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/04/05 17:03:00  ucko
+ * Add optional format arguments to FromC and ToC, but continue to
+ * default to binary mode for efficiency.
+ *
  * Revision 1.7  2006/03/30 18:15:20  lavr
  * Use CConn_MemoryStream directly
  *
