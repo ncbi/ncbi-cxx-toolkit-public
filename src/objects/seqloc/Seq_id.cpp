@@ -689,10 +689,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'A': case 'B': case 'C':           return eAcc_ddbj_est;
             case 'D':                               return eAcc_ddbj_patent;
             case 'E':                               return eAcc_ddbj_gss;
-            case 'F':                               return eAcc_ddbj_con;
+            case 'F': case 'G':                     return eAcc_ddbj_con;
                 // no specific assignments for DG-DM yet
-            case 'G': case 'H': case 'I': case 'J':
-            case 'K': case 'L': case 'M':           return eAcc_ddbj_other_nuc;
+            case 'H': case 'I': case 'J': case 'K':
+            case 'L': case 'M':                     return eAcc_ddbj_other_nuc;
             case 'N': case 'R': case 'T': case 'V':
             case 'W': case 'Y':                     return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
@@ -1587,6 +1587,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.126  2006/04/06 15:59:34  ucko
+ * DDBJ changes its use of DF from CON to scaffold/CON and will be using
+ * DG for CON entries.  [We represent both as eAcc_ddbj_con.]
+ *
  * Revision 6.125  2006/03/30 14:53:32  ucko
  * IdentifyAccession: DDBJ has specifically assigned DF to CON sequences.
  *
