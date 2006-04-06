@@ -416,7 +416,8 @@ void Blast_ApplyPseudocounts(double * probs,
  *                             phi(lambda)
  * @param max_iterations the maximum number of permitted iterations.
  *
- * Note that Lambda does not exist unless the average score is negative.
+ * Note that Lambda does not exist unless the average score is negative and
+ * the largest score that occurs with nonzero probability is positive.
  *
  * Comments on the algorithm used may be found in
  * composition_adjustment.c.
