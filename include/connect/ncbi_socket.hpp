@@ -95,7 +95,7 @@ public:
     /// @li <b>NOTE 1:</b>  the created underlying "SOCK" will be owned by the
     /// "CSocket";
     /// @li <b>NOTE 2:</b>  timeout from the argument becomes new eIO_Open 
-    timeout.
+    /// timeout.
     ///
     /// @param host
     ///
@@ -112,7 +112,7 @@ public:
 
 
     /// Variant of the above, which takes host as a binary value in 
-    network b.o.
+    /// network b.o.
     /// @param host
     ///  network byte order
     /// @param port
@@ -920,6 +920,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2006/04/06 19:04:08  ucko
+ * Correct sloppily word-wrapped comments.
+ *
  * Revision 6.47  2006/04/06 18:39:27  serovav
  * corrected markup
  *
