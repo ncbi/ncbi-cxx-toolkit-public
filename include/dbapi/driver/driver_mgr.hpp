@@ -34,6 +34,9 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/public.hpp>
+#include <string>
+#include <vector>
+#include <map>
 
 
 /** @addtogroup DbDrvMgr
@@ -111,6 +114,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/04/06 21:27:27  ssikorsk
+ * + #include <string>
+ * + #include <vector>
+ * + #include <map>
+ *
  * Revision 1.20  2006/03/09 16:52:04  ssikorsk
  * Added methods ResetDllSearchPath,  SetDllStdSearchPath,
  * GetDllStdSearchPath to the C_DriverMgr class.

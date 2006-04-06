@@ -40,7 +40,10 @@
 #  include <connect/ext/ncbi_dblb_svcmapper.hpp>
 #endif
 
+#include <string>
+#include <vector>
 #include <set>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -268,6 +271,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/04/06 21:26:50  ssikorsk
+ * + #include <string>
+ * + #include <vector>
+ * + #include <map>
+ *
  * Revision 1.2  2006/01/26 12:04:10  ssikorsk
  * Added classes CDBUDRandomMapper, CDBUDPriorityMapper, CDBUniversalMapper
  *   and macro DBLB_INSTALL_DEFAULT;
