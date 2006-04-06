@@ -1288,12 +1288,6 @@ s_SavedParametersNew(Int4 rows,
     for (i = 0;  i < numQueries;  i++) {
         sp->kbp_gap_orig[i] = NULL;
     }
-    for (i = 0;  i < numQueries;  i++) {
-        sp->kbp_gap_orig[i] = Blast_KarlinBlkNew();
-        if (sp->kbp_gap_orig[i] == NULL) {
-            goto error_return;
-        }
-    }
     if (compo_adjust_mode != eNoCompositionBasedStats) {
         if (positionBased) {
             sp->origMatrix = Nlm_Int4MatrixNew(rows, BLASTAA_SIZE);
@@ -1321,7 +1315,7 @@ error_return:
  * @param compo_adjust_mode  composition adjustment mode [in]
  * @param positionBased     is this search position-based [in]
  */
-static void
+static int
 s_RecordInitialSearch(BlastKappa_SavedParameters * searchParams,
                       BlastScoreBlk* sbp,
                       const BlastScoringParameters* scoring,
@@ -1337,7 +1331,15 @@ s_RecordInitialSearch(BlastKappa_SavedParameters * searchParams,
     searchParams->scale_factor = scoring->scale_factor;
 
     for (i = 0;  i < searchParams->num_queries;  i++) { 
-        Blast_KarlinBlkCopy(searchParams->kbp_gap_orig[i], sbp->kbp_gap[i]);
+        if (sbp->kbp_gap[i] != NULL) {
+            /* There is a kbp_gap for query i and it must be copied */
+            searchParams->kbp_gap_orig[i] = Blast_KarlinBlkNew();
+            if (searchParams->kbp_gap_orig[i] == NULL) {
+                return -1;
+            }
+            Blast_KarlinBlkCopy(searchParams->kbp_gap_orig[i],
+                                sbp->kbp_gap[i]);
+        }
     }
 
     if (compo_adjust_mode != eNoCompositionBasedStats) {
@@ -1357,6 +1359,7 @@ s_RecordInitialSearch(BlastKappa_SavedParameters * searchParams,
             }
         }
     }
+    return 0;
 }
 
 
@@ -1377,9 +1380,11 @@ s_RescaleSearch(BlastScoreBlk* sbp,
 {
     int i;
     for (i = 0;  i < num_queries;  i++) {
-        Blast_KarlinBlk * kbp = sbp->kbp_gap[i];
-        kbp->Lambda /= scale_factor;
-        kbp->logK = log(kbp->K);
+        if (sbp->kbp_gap[i] != NULL) {
+            Blast_KarlinBlk * kbp = sbp->kbp_gap[i];
+            kbp->Lambda /= scale_factor;
+            kbp->logK = log(kbp->K);
+        }
     }
 
     sp->gap_open = BLAST_Nint(sp->gap_open  * scale_factor);
@@ -1417,7 +1422,10 @@ s_RestoreSearch(BlastScoreBlk* sbp,
     scoring->scale_factor = searchParams->scale_factor;
 
     for (i = 0;  i < searchParams->num_queries;  i++) {
-        Blast_KarlinBlkCopy(sbp->kbp_gap[i], searchParams->kbp_gap_orig[i]);
+        if (sbp->kbp_gap[i] != NULL) {
+            Blast_KarlinBlkCopy(sbp->kbp_gap[i],
+                                searchParams->kbp_gap_orig[i]);
+        }
     }
     if(compo_adjust_mode != eNoCompositionBasedStats) {
         int  j;             /* iteration index */
@@ -1565,7 +1573,8 @@ s_GappingParamsNew(BlastKappa_GappingParamsContext * context,
     }
     
     for (i = 0;  i < num_queries;  i++) {
-        if (context->sbp->kbp_gap[i]->Lambda < min_lambda) {
+        if (context->sbp->kbp_gap[i] != NULL &&
+            context->sbp->kbp_gap[i]->Lambda < min_lambda) {
             min_lambda = context->sbp->kbp_gap[i]->Lambda;
         }
     }
@@ -1792,9 +1801,13 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         status_code = -1;
         goto function_cleanup;
     }
-    s_RecordInitialSearch(savedParams, sbp, scoringParams,
-                          queryInfo->max_length, compo_adjust_mode,
-                          positionBased);
+    status_code =
+        s_RecordInitialSearch(savedParams, sbp, scoringParams,
+                              queryInfo->max_length, compo_adjust_mode,
+                              positionBased);
+    if (status_code != 0) {
+        goto function_cleanup;
+    }
     if (compo_adjust_mode != eNoCompositionBasedStats) {
         if((0 == strcmp(scoringParams->options->matrix, "BLOSUM62_20"))) {
             localScalingFactor = SCALING_FACTOR / 10;
