@@ -83,6 +83,16 @@ public:
             return tmp;
         }
 
+    // use ASNTOOL-compatible formatting when writing Int8 and Uint8 types
+    void SetCStyleBigInt(bool set=true)
+    {
+        m_CStyleBigInt = set;
+    }
+    bool GetCStyleBigInt(void) const
+    {
+        return m_CStyleBigInt;
+    }
+
 protected:
     void WriteByte(Uint1 byte);
     template<typename T> void WriteBytesOf(const T& value, size_t count);
@@ -194,6 +204,7 @@ private:
     size_t m_CurrentTagLength;
     Int8 m_CurrentTagLimit;
     stack<Int8> m_Limits;
+    bool m_CStyleBigInt;
 
     void StartTag(TByte code);
     void EndTag(void);
@@ -216,6 +227,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2006/04/06 13:09:25  gouriano
+* Added option to write Int8 data in ASNTOOL-compatible way
+*
 * Revision 1.52  2006/03/10 14:51:23  gouriano
 * Categorized methods
 *

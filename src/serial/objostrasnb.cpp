@@ -63,7 +63,8 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsnBinary(CNcbiOstream& out,
 
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnBinary, out), m_FixMethod(how)
+    : CObjectOStream(eSerial_AsnBinary, out), m_FixMethod(how),
+      m_CStyleBigInt(false)
 {
 #if CHECK_OUTSTREAM_INTEGRITY
     m_CurrentPosition = 0;
@@ -75,7 +76,8 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  bool deleteOut,
                                                  EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnBinary, out, deleteOut), m_FixMethod(how)
+    : CObjectOStream(eSerial_AsnBinary, out, deleteOut), m_FixMethod(how),
+      m_CStyleBigInt(false)
 {
 #if CHECK_OUTSTREAM_INTEGRITY
     m_CurrentPosition = 0;
@@ -603,13 +605,21 @@ void CObjectOStreamAsnBinary::WriteUint4(Uint4 data)
 
 void CObjectOStreamAsnBinary::WriteInt8(Int8 data)
 {
-    WriteSysTag(eInteger);
+    if ( m_CStyleBigInt ) {
+        WriteShortTag(eApplication, ePrimitive, eInteger);
+    } else {
+        WriteSysTag(eInteger);
+    }
     WriteNumberValue(data);
 }
 
 void CObjectOStreamAsnBinary::WriteUint8(Uint8 data)
 {
-    WriteSysTag(eInteger);
+    if ( m_CStyleBigInt ) {
+        WriteShortTag(eApplication, ePrimitive, eInteger);
+    } else {
+        WriteSysTag(eInteger);
+    }
     WriteNumberValue(data);
 }
 
@@ -1204,6 +1214,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.106  2006/04/06 13:09:51  gouriano
+* Added option to write Int8 data in ASNTOOL-compatible way
+*
 * Revision 1.105  2006/01/26 15:08:04  gouriano
 * Corrected length when writing bit string
 *
