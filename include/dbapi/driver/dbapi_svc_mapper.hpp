@@ -40,7 +40,6 @@
 #  include <connect/ext/ncbi_dblb_svcmapper.hpp>
 #endif
 
-#include <string>
 #include <vector>
 #include <set>
 #include <map>
@@ -271,6 +270,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/06 22:25:46  ssikorsk
+ * - #include <string>
+ *
  * Revision 1.3  2006/04/06 21:26:50  ssikorsk
  * + #include <string>
  * + #include <vector>

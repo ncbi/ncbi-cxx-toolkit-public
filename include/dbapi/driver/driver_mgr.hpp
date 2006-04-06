@@ -34,7 +34,6 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/public.hpp>
-#include <string>
 #include <vector>
 #include <map>
 
@@ -114,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/06 22:26:00  ssikorsk
+ * - #include <string>
+ *
  * Revision 1.21  2006/04/06 21:27:27  ssikorsk
  * + #include <string>
  * + #include <vector>

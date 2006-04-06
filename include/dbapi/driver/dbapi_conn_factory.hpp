@@ -35,7 +35,6 @@
 
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
-#include <string>
 #include <map>
 #include <vector>
 #include <memory>
@@ -275,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/04/06 22:25:27  ssikorsk
+ * - #include <string>
+ *
  * Revision 1.4  2006/04/06 21:26:11  ssikorsk
  * + #include <string>
  * + #include <map>
