@@ -81,7 +81,8 @@ private:
 ///
 ///  CSocket::
 ///
-/// @li <b>NOTE:</b>  For documentation see SOCK_***() functions in "ncbi_socket.h".
+/// @li <b>NOTE:</b>  For documentation see SOCK_***() functions in
+/// "ncbi_socket.h".
 ///        Initially, all timeouts are infinite.
 ///
 
@@ -91,8 +92,10 @@ public:
     CSocket(void);
 
     /// Create a client-side socket connected to "host:port".
-    /// @li <b>NOTE 1:</b>  the created underlying "SOCK" will be owned by the "CSocket";
-    /// @li <b>NOTE 2:</b>  timeout from the argument becomes new eIO_Open timeout.
+    /// @li <b>NOTE 1:</b>  the created underlying "SOCK" will be owned by the
+    /// "CSocket";
+    /// @li <b>NOTE 2:</b>  timeout from the argument becomes new eIO_Open 
+    timeout.
     ///
     /// @param host
     ///
@@ -103,12 +106,13 @@ public:
     /// @param log
     ///
     CSocket(const string&   host,
-            unsigned short  port,      
+            unsigned short  port,
             const STimeout* timeout = kInfiniteTimeout,
             ESwitch         log     = eDefault);
 
 
-    /// Variant of the above, which takes host as a binary value in network b.o.
+    /// Variant of the above, which takes host as a binary value in 
+    network b.o.
     /// @param host
     ///  network byte order
     /// @param port
@@ -117,8 +121,8 @@ public:
     ///
     /// @param log
     ///
-    CSocket(unsigned int    host,      
-            unsigned short  port,      
+    CSocket(unsigned int    host,
+            unsigned short  port,
             const STimeout* timeout = kInfiniteTimeout,
             ESwitch         log     = eDefault);
 
@@ -136,45 +140,51 @@ public:
 
     /// Connect to "host:port".
     /// @li <b>NOTE 1:</b>  should not be called if already connected;
-    /// @li <b>NOTE 2:</b>  timeout from the argument becomes new eIO_Open timeout.
-    /// 
+    /// @li <b>NOTE 2:</b>  timeout from the argument becomes new eIO_Open
+    /// timeout.
+    ///
     /// @param host
-    /// 
+    ///
     /// @param port
     ///  always in host byte order
     /// @param timeout
-    /// 
+    ///
     /// @param log
-    /// 
+    ///
     EIO_Status Connect(const string&   host,
-                       unsigned short  port,      
+                       unsigned short  port,
                        const STimeout* timeout = kDefaultTimeout,
                        ESwitch         log     = eDefault);
 
     /// Reconnect to the same address.
-    /// @li <b>NOTE 1:</b>   the socket must not be closed by the time this call is made;
-    /// @li <b>NOTE 2:</b> not for the sockets created by CListeningSocket::Accept();
-    /// @li <b>NOTE 3:</b>   timeout from the argument becomes new eIO_Open timeout.
+    /// @li <b>NOTE 1:</b>   the socket must not be closed by the time this
+    /// call is made;
+    /// @li <b>NOTE 2:</b> not for the sockets created by
+    /// CListeningSocket::Accept();
+    /// @li <b>NOTE 3:</b>   timeout from the argument becomes new eIO_Open
+    /// timeout.
     ///
     /// @param timeout
-    /// 
+    ///
     EIO_Status Reconnect(const STimeout* timeout = kDefaultTimeout);
 
     /// @param how
-    /// 
+    ///
     EIO_Status Shutdown(EIO_Event how);
 
-    /// @li <b>NOTE:</b>  closes the undelying SOCK only if it is owned by this "CSocket"!
+    /// @li <b>NOTE:</b>  closes the undelying SOCK only if it is owned by
+    /// this "CSocket"!
     ///
     EIO_Status Close(void);
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::Poll() to wait on several sockets at once
+    /// @li <b>NOTE:</b>  use CSocketAPI::Poll() to wait on several sockets
+    /// at once
     ///
     /// @param event
-    /// 
+    ///
     /// @param timeout
-    /// 
-    EIO_Status Wait(EIO_Event       event, 
+    ///
+    EIO_Status Wait(EIO_Event       event,
                     const STimeout* timeout);
 
     /// @li <b>NOTE 1:</b>  by default, initially all timeouts are infinite;
@@ -183,21 +193,21 @@ public:
     ///          of eIO_Read and eIO_Write ones.
     ///
     /// @param  event
-    /// 
+    ///
     /// @param timeout
-    /// 
+    ///
     EIO_Status      SetTimeout(EIO_Event        event,
                                const STimeout*  timeout);
     const STimeout* GetTimeout(EIO_Event event) const;
 
     /// @param buf
-    /// 
+    ///
     /// @param size
-    /// 
+    ///
     /// @param n_read
-    /// 
+    ///
     /// @param how
-    /// 
+    ///
     EIO_Status Read(void*           buf,
                     size_t          size,
                     size_t*         n_read = 0,
@@ -205,56 +215,56 @@ public:
 
     /// Read up to '\r\n', '\n' or '\0', discarding any of the EOLs
     /// @param str
-    /// 
+    ///
     EIO_Status ReadLine(string& str);
 
     /// @param buf
-    /// 
+    ///
     /// @param size
-    /// 
+    ///
     /// @param n_read
-    /// 
+    ///
     EIO_Status ReadLine(char*     buf,
                         size_t    size,
                         size_t*   n_read = 0);
 
     /// @param buf
-    /// 
+    ///
     /// @param size
-    /// 
+    ///
     EIO_Status PushBack(const void*  buf,
                         size_t       size);
 
     /// @param buf
-    /// 
+    ///
     /// @param size
-    /// 
+    ///
     /// @param n_written
-    /// 
+    ///
     /// @param how
-    /// 
-    EIO_Status Write(const void*      buf, 
-                     size_t           size, 
+    ///
+    EIO_Status Write(const void*      buf,
+                     size_t           size,
                      size_t*          n_written = 0,
                      EIO_WriteMethod  how = eIO_WritePersist);
 
     EIO_Status Abort(void);
 
-    /// @li  <b>NOTE 1:</b>  either of "host", "port" can be NULL to opt out from
-    ///          obtaining the corresponding value;
+    /// @li  <b>NOTE 1:</b>  either of "host", "port" can be NULL to opt out
+    ///          from obtaining the corresponding value;
     /// @li  <b>NOTE 2:</b> both "*host" and "*port" come out in the same
-    ///          byte order requested by the third argument.  
+    ///          byte order requested by the third argument.
     ///
     /// @param host
-    /// 
+    ///
     /// @param port
-    /// 
+    ///
     /// @param byte_order
-    /// 
-     void GetPeerAddress(unsigned int*      host, 
+    ///
+     void GetPeerAddress(unsigned int*      host,
                          unsigned short*    port,
                          ENH_ByteOrder      byte_order) const;
-    /// @return 
+    /// @return
     ///  Textual string representing the peer's address
     string GetPeerAddress(void) const;
 
@@ -262,7 +272,7 @@ public:
     /// @return
     ///  Previous ownership mode.
     /// @param if_to_own
-    /// 
+    ///
     EOwnership SetOwnership(EOwnership if_to_own);
 
     // Access to the underlying "SOCK" and the system-specific socket handle.
@@ -271,38 +281,43 @@ public:
     /// @param handle_buf
     ///
     /// @param handle_size
-    /// 
+    ///
     virtual EIO_Status GetOSHandle(void*    handle_buf,
                                    size_t   handle_size) const;
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::SetReadOnWrite() to set the default value
+    /// @li <b>NOTE:</b>  use CSocketAPI::SetReadOnWrite() to set the default
+    /// value
     ///
     /// @param read_on_write
-    /// 
+    ///
     ESwitch SetReadOnWrite(ESwitch read_on_write = eOn);
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::SetDataLogging() to set the default value
+    /// @li <b>NOTE:</b>  use CSocketAPI::SetDataLogging() to set the default
+    /// value
     ///
     /// @param log
-    /// 
+    ///
     ESwitch SetDataLogging(ESwitch log = eOn);
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::SetInterruptOnSignal() to set the default value
+    /// @li <b>NOTE:</b>  use CSocketAPI::SetInterruptOnSignal() to set the
+    /// default value
     ///
     /// @param interrupt
-    /// 
+    ///
     ESwitch SetInterruptOnSignal(ESwitch interrupt = eOn);
 
-    /// @li <b>NOTE:</b>  see comments for SOCK_SetReuseAddress() in ncbi_socket.h
+    /// @li <b>NOTE:</b>  see comments for SOCK_SetReuseAddress() in
+    /// ncbi_socket.h
     ///
     /// @param reuse
-    /// 
+    ///
     void    SetReuseAddress(ESwitch reuse = eOff);
 
-    /// @li <b>NOTE:</b>  see comments for SOCK_DisableOSSendDelay() in ncbi_socket.h
+    /// @li <b>NOTE:</b>  see comments for SOCK_DisableOSSendDelay() in
+    /// ncbi_socket.h
     ///
     /// @param on_off
-    /// 
+    ///
     void    DisableOSSendDelay(bool on_off = true);
 
     bool IsClientSide(void) const;
@@ -315,11 +330,11 @@ public:
     /// @li <b>NOTE:</b>  "if_to_own" applies to the (new) "sock"
     ///
     /// @param sock
-    /// 
+    ///
     /// @param if_to_own
-    /// 
+    ///
     /// @param whence
-    /// 
+    ///
     void Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence);
 
 protected:
@@ -331,19 +346,19 @@ protected:
     /// eIO_Open
     STimeout*  o_timeout;
     /// eIO_Read
-    STimeout*  r_timeout; 
+    STimeout*  r_timeout;
     /// eIO_Write
     STimeout*  w_timeout;
     /// eIO_Close
-    STimeout*  c_timeout; 
+    STimeout*  c_timeout;
     /// storage for o_timeout
-    STimeout  oo_timeout; 
+    STimeout  oo_timeout;
     /// storage for r_timeout
     STimeout  rr_timeout;
     /// storage for w_timeout
     STimeout  ww_timeout;
     /// storage for c_timeout
-    STimeout  cc_timeout; 
+    STimeout  cc_timeout;
 
 private:
     /// disable copy constructor and assignment
@@ -359,25 +374,27 @@ private:
 ///
 ///    Datagram socket
 ///
-/// @li <b>NOTE:</b>  for documentation see DSOCK_***() functions in "ncbi_socket.h"
+/// @li <b>NOTE:</b>  for documentation see DSOCK_***() functions in
+/// "ncbi_socket.h"
 ///
 
 class NCBI_XCONNECT_EXPORT CDatagramSocket : public CSocket
 {
 public:
-    /// @li <b>NOTE:</b>  the created underlying "SOCK" will be owned by the object
+    /// @li <b>NOTE:</b>  the created underlying "SOCK" will be owned by the
+    /// object
     ///
     /// @param do_log
-    /// 
+    ///
     CDatagramSocket(ESwitch do_log = eDefault);
 
     /// @param port
-    /// 
+    ///
     EIO_Status Bind(unsigned short port);
 
   
     /// @param host
-    /// 
+    ///
     /// @param port
     ///  "port" is in host byte order
     EIO_Status Connect(const string& host, unsigned short port);
@@ -390,34 +407,34 @@ public:
     EIO_Status Connect(unsigned int host, unsigned short port);
 
     /// @param timeout
-    /// 
+    ///
     EIO_Status Wait(const STimeout* timeout = kInfiniteTimeout);
 
     /// @param data
-    /// 
+    ///
     /// @param datalen
-    /// 
+    ///
     /// @param host
-    /// 
+    ///
     /// @param port
     ///  host byte order
     EIO_Status Send(const void*     data    = 0,
                     size_t          datalen = 0,
                     const string&   host    = string(),
-                    unsigned short  port    = 0);  
+                    unsigned short  port    = 0);
 
     /// @param buf
-    /// 
+    ///
     /// @param buflen
     ///
     /// @param msglen
-    /// 
+    ///
     /// @param sender_host
-    /// 
+    ///
     /// @param sender_port
-    /// 
+    ///
     /// @param maxmsglen
-    /// 
+    ///
     EIO_Status Recv(void*           buf         = 0,
                     size_t          buflen      = 0,
                     size_t*         msglen      = 0,
@@ -426,22 +443,22 @@ public:
                     size_t          maxmsglen   = 0);
 
     /// @param direction
-    /// 
+    ///
     EIO_Status Clear(EIO_Event direction);
 
     /// @param do_broadcast
-    /// 
+    ///
     EIO_Status SetBroadcast(bool do_broadcast = true);
 
 protected:
     /// @li <b>NOTE:</b> these calls are not valid with datagram sockets
     ///
     /// @param how
-    /// 
+    ///
     EIO_Status Shutdown(EIO_Event how);
 
     /// @param timeout
-    /// 
+    ///
     EIO_Status Reconnect(const STimeout* timeout);
 
     EIO_Status Abort(void);
@@ -460,7 +477,8 @@ private:
 ///
 ///    Listening socket (to accept connections on the server side)
 ///
-/// @li <b>NOTE:</b>  for documentation see LSOCK_***() functions in "ncbi_socket.h"
+/// @li <b>NOTE:</b>  for documentation see LSOCK_***() functions in
+/// "ncbi_socket.h"
 ///
 
 class NCBI_XCONNECT_EXPORT CListeningSocket : public CPollable
@@ -471,11 +489,11 @@ public:
     /// @li <b>NOTE:</b>  "port" ought to be in host byte order
     ///
     /// @param port
-    /// 
+    ///
     /// @param backlog
-    /// 
+    ///
     /// @param flags
-    /// 
+    ///
     CListeningSocket(unsigned short port,
                      unsigned short backlog = 5,
                      TLSCE_Flags    flags   = fLSCE_LogDefault);
@@ -490,11 +508,11 @@ public:
     /// @li <b>NOTE:</b>  "port" ought to be in host byte order
     ///
     /// @param port
-    /// 
+    ///
     /// @param backlog
-    /// 
+    ///
     /// @param flags
-    /// 
+    ///
     EIO_Status Listen(unsigned short port,
                       unsigned short backlog = 5,
                       TLSCE_Flags    flags   = fLSCE_LogDefault);
@@ -502,37 +520,39 @@ public:
     /// @li <b>NOTE:</b> the created "CSocket" will own its underlying "SOCK"
     ///
     /// @param sock
-    /// 
+    ///
     /// @param timeout
-    /// 
+    ///
     EIO_Status Accept(CSocket*&       sock,
                       const STimeout* timeout = kInfiniteTimeout) const;
 
     /// @param sock
-    /// 
+    ///
     /// @param timeout
-    /// 
+    ///
     EIO_Status Accept(CSocket&        sock,
                       const STimeout* timeout = kInfiniteTimeout) const;
 
-    /// @li <b>NOTE:</b>  closes the undelying LSOCK only if it is owned by this object!
+    /// @li <b>NOTE:</b>  closes the undelying LSOCK only if it is owned by
+    /// this object!
     ///
     EIO_Status Close(void);
 
     /// Specify if this "CListeningSocket" is to own the underlying "LSOCK".
     /// @param if_to_own
-    /// 
+    ///
     /// @return
     ///  Previous ownership mode.
     EOwnership SetOwnership(EOwnership if_to_own);
 
-    /// Access to the underlying "LSOCK" and the system-specific socket handle
+    /// Access to the underlying "LSOCK" and the system-specific socket
+    /// handle
     LSOCK              GetLSOCK   (void) const;
 
     /// @param handle_buf
-    /// 
+    ///
     /// @param handle_size
-    /// 
+    ///
     virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
 protected:
@@ -541,7 +561,7 @@ protected:
 
 private:
     /// disable copy constructor and assignment
-     CListeningSocket(const CListeningSocket&);
+    CListeningSocket(const CListeningSocket&);
     CListeningSocket& operator= (const CListeningSocket&);
 };
 
@@ -553,7 +573,8 @@ private:
 ///
 ///    Global settings related to the socket API
 ///
-/// @li <b>NOTE:</b>  for documentation see SOCK_***() functions in "ncbi_socket.h"
+/// @li <b>NOTE:</b>  for documentation see SOCK_***() functions in
+/// "ncbi_socket.h"
 ///
 
 class NCBI_XCONNECT_EXPORT CSocketAPI
@@ -561,7 +582,7 @@ class NCBI_XCONNECT_EXPORT CSocketAPI
 public:
     /// Generic
     /// @param t
-    /// 
+    ///
     static const STimeout* SetSelectInternalRestartTimeout(const STimeout* t);
     static void         AllowSigPipe(void);
     static EIO_Status   Initialize  (void);
@@ -569,29 +590,30 @@ public:
 
     /// Defaults  (see also per-socket CSocket::SetReadOnWrite, etc.)
     /// @param read_on_write
-    /// 
+    ///
     static ESwitch SetReadOnWrite       (ESwitch read_on_write);
 
     /// @param log
-    /// 
+    ///
     static ESwitch SetDataLogging       (ESwitch log);
 
     /// @param interrupt
-    /// 
+    ///
     static ESwitch SetInterruptOnSignal (ESwitch interrupt);
 
     /// @param reuse
-    /// 
+    ///
     static ESwitch SetReuseAddress      (ESwitch reuse);
 
-    /// @li <b>NOTE:</b>  use CSocket::Wait() to wait for I/O event(s) on a single socket
+    /// @li <b>NOTE:</b>  use CSocket::Wait() to wait for I/O event(s) on a
+    /// single socket
     ///
     /// @param m_Pollable
-    /// 
+    ///
     /// @param m_Event
-    /// 
+    ///
     /// @param m_REvent
-    /// 
+    ///
     struct SPoll {
         CPollable* m_Pollable;
         EIO_Event  m_Event;
@@ -606,12 +628,12 @@ public:
 
     /// Misc  (mostly BSD-like); "host" ought to be in network byte order
     /// empty str on err
-    static string       gethostname  (void);                
+    static string       gethostname  (void);
     static string       ntoa         (unsigned int  host);
     /// empty str on err
-    static string       gethostbyaddr(unsigned int  host); 
+    static string       gethostbyaddr(unsigned int  host);
     /// 0 on error
-    static unsigned int gethostbyname(const string& hostname); 
+    static unsigned int gethostbyname(const string& hostname);
 
     static unsigned int   HostToNetLong (unsigned int   value);
     static unsigned int   NetToHostLong (unsigned int   value);
@@ -646,7 +668,7 @@ inline EIO_Status CSocket::Shutdown(EIO_Event how)
 
 inline EIO_Status CSocket::Wait(EIO_Event event, const STimeout* timeout)
 {
-    return m_Socket ? SOCK_Wait(m_Socket, event, timeout) : eIO_Closed; 
+    return m_Socket ? SOCK_Wait(m_Socket, event, timeout) : eIO_Closed;
 }
 
 
@@ -898,6 +920,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2006/04/06 18:39:27  serovav
+ * corrected markup
+ *
  * Revision 6.46  2006/03/31 17:11:03  serovav
  * added markup for Doxygen
  *
