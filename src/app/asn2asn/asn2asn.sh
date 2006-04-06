@@ -25,9 +25,9 @@ do_test() {
         echo "asn2asn failed!"
         exit 1
     fi
-    if cmp out $r/$2; then
+    if diff -w out $r/$2; then
         :
-    elif test -f $r/$2.2 && cmp out $r/$2.2; then
+    elif test -f $r/$2.2 && diff -w out $r/$2.2; then
         :
     else
         echo "wrong result!"
