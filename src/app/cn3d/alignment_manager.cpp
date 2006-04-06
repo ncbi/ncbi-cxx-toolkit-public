@@ -1223,7 +1223,7 @@ void AlignmentManager::RefineAlignment(void)
 
     if (okay) {
 
-        if (resultAUs.size() > 0) {
+        if (resultAUs.size() > 0 && resultAUs.front() != NULL) {
 
             // just use first returned alignment for now; convert asn data into BlockMultipleAlignment
             PairwiseAlignmentList pairs;
@@ -1245,8 +1245,9 @@ void AlignmentManager::RefineAlignment(void)
                 sequenceViewer->ReplaceAlignment(multiple, refined.release());
             else
                 ERRORMSG("AlignmentManager::RefineAlignment() - problem converting refinement result");
+        } else {
+            ERRORMSG("AlignmentManager::RefineAlignment() - failed to make a refined alignment. Alignment unchanged.");
         }
-        // else cancelled
 
     } else {
         ERRORMSG("AlignmentManager::RefineAlignment() - refinement failed. Alignment unchanged.");
@@ -1261,6 +1262,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2006/04/06 21:42:39  lanczyck
+* make sure a non-null refined alignment is available before trying to use it
+*
 * Revision 1.108  2005/11/28 21:14:38  thiessen
 * add block and row selection mechanism to refiner
 *
