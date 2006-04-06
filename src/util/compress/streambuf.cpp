@@ -191,7 +191,11 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
             }
         } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
     }
-
+    // Write remaining data from buffers to underlying stream
+    if ( dir == CCompressionStream::eWrite  &&
+         m_Writer->m_Begin != m_Writer->m_End ) {
+        WriteOutBufToStream(true);
+    }
     // Cleanup
     sp->m_Processor->End();
     sp->m_Finalized = true;
@@ -420,11 +424,12 @@ bool CCompressionStreambuf::ProcessStreamWrite()
 }
 
 
-bool CCompressionStreambuf::WriteOutBufToStream(void)
+bool CCompressionStreambuf::WriteOutBufToStream(bool force_write)
 {
     // Write data from out buffer to the underlying stream only if the buffer
-    // is full or an overflow/endofdata occurs.
-    if ( (m_Writer->m_End == m_Writer->m_OutBuf + m_Writer->m_OutBufSize)  ||
+    // is full or an overflow/endofdata occurs, or 'force_write' is TRUE.
+    if ( force_write  || 
+         (m_Writer->m_End == m_Writer->m_OutBuf + m_Writer->m_OutBufSize)  ||
          m_Writer->m_LastStatus == CP::eStatus_Overflow  ||
          m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
 
@@ -527,6 +532,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/04/06 18:11:37  ivanov
+ * Finalize() -- fixed bug with possible loss of already processed data
+ * in an output streams.
+ *
  * Revision 1.25  2006/04/05 19:54:30  ivanov
  * ~CCompressionStreambuf() -- replaced const strings to defines
  *

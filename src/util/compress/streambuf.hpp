@@ -107,7 +107,7 @@ protected:
     // Write data from the out buffer to the underlying stream.
     // NOTE: for writing processor only (m_Writer).
     // Helper method for ProcessStreamWrite/Sync/Finish.
-    bool WriteOutBufToStream(void);
+    bool WriteOutBufToStream(bool force_write = false);
 
 protected:
     CNcbiIos*     m_Stream;   // Underlying I/O stream
@@ -180,6 +180,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/04/06 18:11:37  ivanov
+ * Finalize() -- fixed bug with possible loss of already processed data
+ * in an output streams.
+ *
  * Revision 1.9  2006/01/23 13:27:19  ivanov
  * Minor formatting
  *
