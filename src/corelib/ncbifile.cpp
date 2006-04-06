@@ -3924,7 +3924,11 @@ void CMemoryFileMap::x_Create(Uint8 length)
         pmode |= S_IWRITE;
 
     // Create new file
+#ifdef NCBI_OS_MSWIN
     int fd = _creat(m_FileName.c_str(), pmode);
+#else
+    int fd = creat(m_FileName.c_str(), pmode);
+#endif
     if ( fd < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
             "CMemoryFileMap: Unable to create file \"" + m_FileName + "\"");
@@ -3937,11 +3941,11 @@ void CMemoryFileMap::x_Create(Uint8 length)
 void CMemoryFileMap::x_Extend(Uint8 length)
 {
     // Open file for append
-    int fd = _open(m_FileName.c_str(), 
 #if defined(NCBI_OS_MSWIN)
-                   O_BINARY |
+    int fd = _open(m_FileName.c_str(), O_BINARY | O_APPEND | O_WRONLY, 0);
+#else
+    int fd = open(m_FileName.c_str(), O_APPEND | O_WRONLY, 0);
 #endif
-                   O_APPEND | O_WRONLY, 0);
     if ( fd < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
             "CMemoryFileMap: Unable to open file \"" + m_FileName +
@@ -4061,6 +4065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.141  2006/04/06 14:44:07  ucko
+ * _open and _creat are Windows-specific; use the regular versions elsewhere.
+ *
  * Revision 1.140  2006/04/06 14:24:57  ivanov
  * CMemoryFile[Map] -- added constructor parameters for automatic
  * creating/extend mapped file.
