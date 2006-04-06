@@ -68,11 +68,24 @@ CDriverManager::CDriverManager()
 CDriverManager::~CDriverManager()
 {
     try {
-        map<string, IDataSource*>::iterator i_ds_list = m_ds_list.begin();
-
-        for( ; i_ds_list != m_ds_list.end(); ++i_ds_list ) {
-            delete (*i_ds_list).second;
+        typedef map<string, IDataSource*> TContainer;
+        
+        ITERATE(TContainer, it, m_ds_list) {
+            IDataSource* ds = it->second;
+            
+            if (ds) {
+                // We won't delete IDataSource unless all connections 
+                // are closed, because deleting of IDataSource will also 
+                // delete all connections.
+                // This will cause a memory leak but it also will prevent from
+                // accessing an already freed memory or even application
+                // crash..
+                if (ds->GetDriverContext()->NofConnections() == 0) {
+                    delete ds;
+                }            
+            }
         }
+        
         m_ds_list.clear();
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -160,6 +173,10 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.22  2006/04/06 19:07:04  ssikorsk
+* Do not delete IDataSource from CDriverManager::~CDriverManager
+* if this datasource still has open connections
+*
 * Revision 1.21  2005/12/28 13:10:29  ssikorsk
 * Restore CSafeStaticPtr-based singleton
 *
