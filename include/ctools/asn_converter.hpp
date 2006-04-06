@@ -123,11 +123,15 @@ TC* CAsnConverter<TCpp, TC>::ToC(const TCpp& cpp_obj, EAsnConn_Format format)
 
     auto_ptr<CObjectOStream> oos(CObjectOStream::Open
                                  (MapAcfToSdf(format), conn_stream));
+    CObjectOStreamAsnBinary* bin_stream
+        = dynamic_cast<CObjectOStreamAsnBinary*>(oos.get());
+    if (bin_stream) {
+        bin_stream->SetCStyleBigInt(true);
+    }
     *oos << cpp_obj;
     oos->Flush();
 
-    AsnIoPtr aip = CreateAsnConn(conn_stream.GetCONN(), eAsnConn_Input,
-                                 eAsnConn_Binary);
+    AsnIoPtr aip = CreateAsnConn(conn_stream.GetCONN(), eAsnConn_Input, format);
     return (TC*)m_Read(aip, 0);
 }
 
@@ -139,6 +143,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/04/06 15:56:07  ucko
+ * ToC: properly honor requests to use text mode, and ensure that Int8
+ * fields get handled correctly in binary mode as well.
+ *
  * Revision 1.8  2006/04/05 17:03:00  ucko
  * Add optional format arguments to FromC and ToC, but continue to
  * default to binary mode for efficiency.
