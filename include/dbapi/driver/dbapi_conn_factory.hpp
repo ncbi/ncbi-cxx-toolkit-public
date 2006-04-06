@@ -35,6 +35,10 @@
 
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
+#include <string>
+#include <map>
+#include <vector>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -271,6 +275,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/06 21:26:11  ssikorsk
+ * + #include <string>
+ * + #include <map>
+ * + #include <vector>
+ * + #include <memory>
+ *
  * Revision 1.3  2006/01/26 12:01:40  ssikorsk
  * Improved class CTrivialConnValidator.
  *
