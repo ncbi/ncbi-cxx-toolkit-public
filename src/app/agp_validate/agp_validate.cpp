@@ -605,7 +605,7 @@ int CAgpValidateApplication::x_CheckIntField(int line_num, const string& field,
     } catch (...) {
     }
 
-    if (field_value <= 0 and log_error) {
+    if (field_value <= 0  &&  log_error) {
         COLLECT_VALIDATE_ERROR("The " << field_name << 
                                " field must be a positive integer");
     }
@@ -1190,6 +1190,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/04/06 20:35:51  ucko
+ * Replace "and" with "&&" for compatibility with GCC 2.95.
+ *
  * Revision 1.1  2006/03/29 19:51:12  friedman
  * Initial version
  *
