@@ -142,7 +142,8 @@ Blast_GetRelativeEntropy(const double A[], const double B[])
 /* Blast_CalcLambdaFullPrecision -- interface documented in
  * composition_adjustment.h.
  *
- * If the average score for a composition is negative, then
+ * If the average score for a composition is negative, and the maximum
+ * score that occurs with nonzero probability is positive, then
  * statistical parameter Lambda exists and is the unique, positive
  * solution to
  *
