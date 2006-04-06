@@ -793,8 +793,9 @@ static void s_TEST_MemoryFile(void)
 
     CFile f(s_FileName);
 
-    // Create test file 
+    // Create empty test file 
     {{
+        assert( !f.Exists() );
         CNcbiOfstream fs(s_FileName, ios::out | ios::binary);
         assert( fs.good() );
         fs.close();
@@ -805,20 +806,40 @@ static void s_TEST_MemoryFile(void)
 
     // Common file checks
     {{
-        // Map absent file, expect an exception.
+        // Map absent file in open mode, expect an exception.
         try {
             CMemoryFile m("some_absent_file_name");
             _TROUBLE;
         } catch (CFileException&) { }
+        {{
+            // Map empty file.
+            // Do not expect an exception here (special case)
+            CMemoryFile m(s_FileName);
+            assert( m.GetPtr() == 0);
+            assert( m.GetSize() == 0);
 
-        // Map empty file.
-        // Do not expect an exception here (special case)
-        CMemoryFile m(s_FileName);
-        assert( m.GetPtr() == 0);
-        assert( m.GetSize() == 0);
+            // Create new file
+            CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                        CMemoryFile::eMMS_Shared, 0, s_DataLen,
+                        CMemoryFile::eCreate, s_DataLen * 2);
+            assert( f.GetLength() == s_DataLen * 2 );
+
+            // Extend file size of existent file
+            CMemoryFile m2(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                        CMemoryFile::eMMS_Shared, 0, s_DataLen,
+                        CMemoryFile::eExtend, s_DataLen * 3);
+            assert( f.GetLength() == s_DataLen * 3 );
+
+            // Full unmapping is necessary to reduce file size.
+        }}
+        // Rewrite old file.
+        CMemoryFile m3(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                    CMemoryFile::eMMS_Shared, 0, s_DataLen,
+                    CMemoryFile::eCreate, 0);
+        assert( f.GetLength() == 0 );
     }}
 
-    // Write something into out test file
+    // Write data into out test file
     {{
         CNcbiOfstream fs(s_FileName, ios::out | ios::binary);
         fs.write(s_Data, s_DataLen);
@@ -953,7 +974,8 @@ static void s_TEST_MemoryFile(void)
         assert( m.GetOffset() == offset );
         assert( memcmp(s_Data + offset, p2, 4) == 0 );
     }}
-    // Remove the file
+
+    // Remove test file
     assert( f.Remove() );
   
     // CMemoryFileMap test  
@@ -1073,6 +1095,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/04/06 14:24:42  ivanov
+ * CMemoryFile[Map] -- added constructor parameters for automatic
+ * creating/extend mapped file.
+ *
  * Revision 1.58  2006/04/04 14:04:06  ivanov
  * Enable CMemoryFile::Extend test
  *

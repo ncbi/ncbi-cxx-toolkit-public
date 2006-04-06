@@ -3650,16 +3650,23 @@ bool CMemoryFileSegment::MemMapAdvise(EMemMapAdvise advise) const
 
 CMemoryFileMap::CMemoryFileMap(const string&  file_name,
                                EMemMapProtect protect,
-                               EMemMapShare   share)
+                               EMemMapShare   share,
+                               EOpenMode      mode,
+                               Uint8          max_file_len)
     : m_FileName(file_name), m_Handle(0), m_Attrs(0)
 {
 #if defined(NCBI_OS_MSWIN)
     // Name of a file-mapping object cannot contain '\'
     m_FileName = NStr::Replace(m_FileName, "\\", "/");
 #endif
+
     // Translate attributes 
     m_Attrs = s_TranslateAttrs(protect, share);
 
+    // Create file if necessary
+    if ( mode == eCreate ) {
+        x_Create(max_file_len);
+    }
     // Check file size
     Int8 file_size = GetFileSize();
     if ( file_size < 0 ) {
@@ -3667,6 +3674,12 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
             "CMemoryFileMap: The mapped file \"" + m_FileName +
             "\" must exists");
     }
+    // Extend file size if necessary
+    if ( mode == eExtend  &&  max_file_len > (Uint8)file_size) {
+        x_Extend(max_file_len - file_size);
+        file_size = (Int8)max_file_len;
+    }
+
     // Open file
     if ( file_size == 0 ) {
         // Special case -- file is empty
@@ -3868,6 +3881,76 @@ void CMemoryFileMap::x_Close()
     }
 }
 
+// Write 'length' zero bytes into file and close file descriptor.
+void s_AppendZeros(int fd, Uint8 length)
+{
+    char* buf  = new char[kDefaultBufferSize];
+    memset(buf, '\0', kDefaultBufferSize);
+    string errmsg;
+    do {
+        int x_written = write(fd, (void*) buf, 
+            length > kDefaultBufferSize ? kDefaultBufferSize :
+                                            (size_t)length);
+        if ( x_written < 0 ) {
+            if (errno != EINTR) {
+                errmsg = strerror(errno);
+                break;
+            }
+            continue;
+        }
+        length -= x_written;
+    }
+    while (length);
+
+    // Cleanup
+    delete[] buf;
+    close(fd);
+    if ( length ) {
+        NCBI_THROW(CFileException, eMemoryMap,
+            "CMemoryFileMap: Unable to extend file size: " + errmsg);
+    }
+
+}
+
+
+void CMemoryFileMap::x_Create(Uint8 length)
+{
+    int pmode = S_IREAD;
+#if defined(NCBI_OS_MSWIN)
+    if (m_Attrs->file_access & (GENERIC_READ | GENERIC_WRITE)) 
+#elif defined(NCBI_OS_UNIX)
+    if (m_Attrs->file_access & O_RDWR) 
+#endif
+        pmode |= S_IWRITE;
+
+    // Create new file
+    int fd = _creat(m_FileName.c_str(), pmode);
+    if ( fd < 0 ) {
+        NCBI_THROW(CFileException, eMemoryMap,
+            "CMemoryFileMap: Unable to create file \"" + m_FileName + "\"");
+    }
+    // and fill it with zeros
+    s_AppendZeros(fd, length);
+}
+
+
+void CMemoryFileMap::x_Extend(Uint8 length)
+{
+    // Open file for append
+    int fd = _open(m_FileName.c_str(), 
+#if defined(NCBI_OS_MSWIN)
+                   O_BINARY |
+#endif
+                   O_APPEND | O_WRONLY, 0);
+    if ( fd < 0 ) {
+        NCBI_THROW(CFileException, eMemoryMap,
+            "CMemoryFileMap: Unable to open file \"" + m_FileName +
+            "\" for change its size");
+    }
+    // and extend it with zeros
+    s_AppendZeros(fd, length);
+}
+
 
 CMemoryFileSegment* 
 CMemoryFileMap::x_GetMemoryFileSegment(void* ptr) const
@@ -3890,8 +3973,11 @@ CMemoryFile::CMemoryFile(const string&  file_name,
                          EMemMapProtect protect,
                          EMemMapShare   share,
                          off_t          offset,
-                         size_t         length)
-    : CMemoryFileMap(file_name, protect, share), m_Ptr(0)
+                         size_t         length,
+                         EOpenMode      mode,
+                         Uint8          max_file_len)
+
+    : CMemoryFileMap(file_name, protect, share, mode, max_file_len), m_Ptr(0)
 {
     // Check that file is ready for mapping to memory
     if ( !m_Handle  ||  !m_Handle->hMap ) {
@@ -3951,45 +4037,7 @@ void* CMemoryFile::Extend(size_t length)
     // Changing file size is necessary
     if (offset + length > file_size) {
         x_Close();
-        // Open file for append
-#if defined(NCBI_OS_MSWIN)
-        int fd = _open(m_FileName.c_str(), _O_APPEND |_O_BINARY |_O_WRONLY,0);
-#elif defined(NCBI_OS_UNIX)
-        int fd = open(m_FileName.c_str(), O_APPEND | O_WRONLY, 0);
-#endif
-        if ( fd < 0 ) {
-            NCBI_THROW(CFileException, eMemoryMap,
-                "CMemoryFile: Unable to open file \"" + m_FileName +
-                "\" for change its size");
-        }
-
-        // Extend file size
-        char* buf  = new char[kDefaultBufferSize];
-        memset(buf, '\0', kDefaultBufferSize);
-        string errmsg;
-        size_t cnt = (size_t)((Int8)length + offset - file_size);
-        do {
-            int x_written = write(fd, (void*) buf, 
-                cnt > kDefaultBufferSize ? kDefaultBufferSize : cnt);
-            if ( x_written < 0 ) {
-                if (errno != EINTR) {
-                    errmsg = strerror(errno);
-                    break;
-                }
-                continue;
-            }
-            cnt -= x_written;
-        }
-        while (cnt > 0);
-
-        // Cleanup
-        delete[] buf;
-        close(fd);
-        if ( cnt ) {
-            NCBI_THROW(CFileException, eMemoryMap,
-                "CMemoryFile: Unable to extend file size: " + errmsg);
-        }
-        // Reopen file for mapping
+        x_Extend(offset + length - file_size);
         x_Open();
     }
     // Remap current region
@@ -4013,6 +4061,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.140  2006/04/06 14:24:57  ivanov
+ * CMemoryFile[Map] -- added constructor parameters for automatic
+ * creating/extend mapped file.
+ *
  * Revision 1.139  2006/04/04 14:03:24  ivanov
  * CMemoryFile:: -- addded Extend() method.
  * CMemoryFileSegment::MemMapAdvise() -- fixed mapped range.

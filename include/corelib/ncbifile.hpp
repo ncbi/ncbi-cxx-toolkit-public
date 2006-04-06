@@ -1825,6 +1825,15 @@ public:
         eMMS_Private      ///< Changes are private (write do not change file)
     } EMemMapShare;
 
+    /// Memory file open mode.
+    enum EOpenMode {
+        eCreate,          ///< Create new file or rewrite existent with zeros.
+        eOpen,            ///< Open existent file, throw exception otherwise.
+        eExtend,          ///< Extend file size with zeros if it exist,
+                          ///< throw exception otherwise.
+        eDefault = eOpen  ///< Default open mode
+    };
+
     /// Constructor.
     ///
     CMemoryFile_Base(void);
@@ -2025,10 +2034,10 @@ private:
 ///
 /// Note, that all mapped into memory file segments have equal protect and
 /// share attributes, because they restricted with file open mode.
-/// Note, that the mapping file must exists and have non-zero length.
-/// This class cannot increase size of the mapped file. If its size
-/// changes, the effect of references to portions of the mapped region
-/// that correspond to added or removed portions of the file is unspecified.
+/// Note, that the mapping file must exists or can be create/extended.
+/// If file size changes after mapping, the effect of references to portions
+/// of the mapped region that correspond to added or removed portions of
+/// the file is unspecified.
 ///
 /// Throws an exceptions on error.
 
@@ -2044,11 +2053,19 @@ public:
     ///   Specify operations permitted on memory mapped file.
     /// @param share_attr
     ///   Specify if change to memory mapped file can be shared or not.
+    /// @param mode
+    ///   File open mode.
+    /// @param max_file_len
+    ///   The size of created file if 'mode' parameter is eCreate or eExtend.
+    ///   File will be never truncated if open mode is eExtend and real file
+    ///   size is more that specified maximum length.
     /// @sa
-    ///   EMemMapProtect, EMemMapShare
+    ///   EMemMapProtect, EMemMapShare, EOpenMode
     CMemoryFileMap(const string&  file_name,
                    EMemMapProtect protect_attr = eMMP_Read,
-                   EMemMapShare   share_attr   = eMMS_Shared);
+                   EMemMapShare   share_attr   = eMMS_Shared,
+                   EOpenMode      mode         = eDefault,
+                   Uint8          max_file_len = 0);
 
     /// Destructor.
     ///
@@ -2156,9 +2173,12 @@ public:
 protected:
     /// Open file mapping for file with name m_FileName.
     void x_Open(void);
-
     /// Unmap mapped memory and close mapped file.
     void x_Close(void);
+    /// Create new file or rewrite existent with zeros.
+    void x_Create(Uint8 length);
+    /// Extend file size on 'length' zero bytes.
+    void x_Extend(Uint8 length);
 
     /// Get pointer to memory mapped file segment by pointer to data.
     CMemoryFileSegment* x_GetMemoryFileSegment(void* ptr) const;
@@ -2184,12 +2204,10 @@ protected:
 /// This is a simple version of the CMemoryFileMap class, supported one
 /// mapped segment only.
 ///
-/// Note, that the mapping file must exists and have non-zero length.
-/// In commom case this class cannot increase size of the mapped file.
-/// Only Extend() method can increase file size in some cases.
-/// If the size of the mapped file changes otherwise, that the effect
-/// of references to portions of the mapped region that correspond to
-/// added or removed portions of the file is unspecified.
+/// Note, that the mapping file must exists or can be create/extended.
+/// If file size changes after mapping, the effect of references to portions
+/// of the mapped region that correspond to added or removed portions of
+/// the file is unspecified.
 ///
 /// Throws an exceptions on error.
 
@@ -2210,13 +2228,23 @@ public:
     /// @param length
     ///   Number of bytes to map.
     ///   The value 0 means that all file size will be mapped.
+    /// @param mode
+    ///   File open mode.
+    /// @param max_file_len
+    ///   The size of created file if 'mode' parameter is eCreate or eExtend.
+    ///   File will be never truncated if open mode is eExtend and real file
+    ///   size is more that specified maximum length.
+    /// @sa
+    ///   EMemMapProtect, EMemMapShare, EOpenMode
     /// @sa
     ///   EMemMapProtect, EMemMapShare, Map
     CMemoryFile(const string&  file_name,
                 EMemMapProtect protect_attr = eMMP_Read,
                 EMemMapShare   share_attr   = eMMS_Shared,
                 off_t          offset       = 0,
-                size_t         lendth       = 0);
+                size_t         lendth       = 0,
+                EOpenMode      mode         = eDefault,
+                Uint8          max_file_len = 0);
 
     /// Map file.
     ///
@@ -2250,11 +2278,11 @@ public:
 
     /// Extend length of the mapped region.
     ///
-    /// If the sum of the current offset (from Map()) and new size of
+    /// If the sum of the current offset (from Map() method) and new size of
     /// the mapped region is more than current file size, that file size will
     /// be increased, added space filed with zeros and mapped region will
     /// be remapped. The region will be remapped also in the case, when it
-    /// is wider than currently allocated memory pages.
+    /// is wider/narrower than currently allocated memory pages.
     /// @param new_length
     ///   New length of the mapped region. 
     ///   The value 0 means that file will be mapped from 'offset'
@@ -2719,6 +2747,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/04/06 14:24:32  ivanov
+ * CMemoryFile[Map] -- added constructor parameters for automatic
+ * creating/extend mapped file.
+ *
  * Revision 1.75  2006/04/04 14:03:16  ivanov
  * CMemoryFile:: -- addded Extend() method.
  * Some cosmetics and comments fixes
