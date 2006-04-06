@@ -204,13 +204,13 @@ private:
     size_t m_CurrentTagLength;
     Int8 m_CurrentTagLimit;
     stack<Int8> m_Limits;
-    bool m_CStyleBigInt;
 
     void StartTag(TByte code);
     void EndTag(void);
     void SetTagLength(size_t length);
 #endif
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars
+    bool m_CStyleBigInt;
 };
 
 
@@ -227,6 +227,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2006/04/06 14:47:50  ucko
+* Declare m_CStyleBigInt unconditionally.
+*
 * Revision 1.53  2006/04/06 13:09:25  gouriano
 * Added option to write Int8 data in ASNTOOL-compatible way
 *
