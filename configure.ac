@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.416 2006/03/31 20:02:59 ucko Exp $
+#  $Id: configure.ac,v 1.417 2006/04/07 17:32:09 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -701,10 +701,11 @@ if test "$with_mt" = "yes" ; then
     * )   AC_MSG_ERROR([Do not know how to build MT-safe with compiler $CXX $compiler_ver]) ;;
    esac
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT -D_THREAD_SAFE"
-   case "$host_os" in
-     solaris* )  THREAD_LIBS=${THREAD_LIBS:="-lpthread -lposix4"} ;;
-     freebsd* )  ;; # -pthread already substitutes libc_r for libc
-     *        )  THREAD_LIBS=${THREAD_LIBS:="-lpthread"} ;;
+   case "$host_os:$compiler" in
+     solaris2.10:GCC ) : ${THREAD_LIBS:="-lposix4"} ;;
+     solaris*        ) : ${THREAD_LIBS:="-lpthread -lposix4"} ;;
+     freebsd*        ) ;; # -pthread already substitutes libc_r for libc
+     *               ) : ${THREAD_LIBS:="-lpthread"} ;;
    esac
    LIBS="$LIBS $THREAD_LIBS"
    mt_sfx="MT"
@@ -3697,10 +3698,14 @@ if test "$with_fltk" != "no"; then
    FLTK_BINPATH=${FLTK_BINPATH:="$FLTK_ARCH_PATH/bin"}
    FLTK_LIBPATH=${FLTK_LIBPATH:="$FLTK_ARCH_PATH/lib"}
    FLTK_INCLUDE=
+   case "$host_os:$compiler" in
+      solaris2.10:GCC ) filter='sed -e s/-lpthread//g' ;;
+      *               ) filter=cat ;;
+   esac
    AC_CACHE_CHECK([for FLTK in $FLTK_ARCH_PATH], ncbi_cv_lib_fltk,
       [if test -x "$FLTK_BINPATH/fltk-config" ; then
           FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
-          FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
+          FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags | $filter`
 
           CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
           LIBS="$FLTK_LIBS $orig_LIBS"
@@ -3727,17 +3732,17 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$FLTK_INCLUDE"; then
       FLTK_INCLUDE=`$FLTK_CONFIG --cxxflags --use-gl`
-      FLTK_LIBS=`$FLTK_CONFIG --ldflags`
+      FLTK_LIBS=`$FLTK_CONFIG --ldflags | $filter`
    fi
-   FLTK_LIBS_GL=`$FLTK_CONFIG --ldflags --use-gl`
-   FLTK_LIBS_IMAGES=`$FLTK_CONFIG --ldflags --use-images`
-   FLTK_LIBS_ALL=`$FLTK_CONFIG --ldflags --use-gl --use-images`
+   FLTK_LIBS_GL=`$FLTK_CONFIG --ldflags --use-gl | $filter`
+   FLTK_LIBS_IMAGES=`$FLTK_CONFIG --ldflags --use-images | $filter`
+   FLTK_LIBS_ALL=`$FLTK_CONFIG --ldflags --use-gl --use-images | $filter`
    # Also supply static versions for use in CGIs to be deployed to servers
    # without access to the shared libraries.
-   FLTK_STATIC_LIBS=`$FLTK_CONFIG --ldstaticflags`
-   FLTK_STATIC_LIBS_GL=`$FLTK_CONFIG --ldstaticflags --use-gl`
-   FLTK_STATIC_LIBS_IMAGES=`$FLTK_CONFIG --ldstaticflags --use-images`
-   FLTK_STATIC_LIBS_ALL=`$FLTK_CONFIG --ldstaticflags --use-gl --use-images`
+   FLTK_STATIC_LIBS=`$FLTK_CONFIG --ldstaticflags | $filter`
+   FLTK_STATIC_LIBS_GL=`$FLTK_CONFIG --ldstaticflags --use-gl | $filter`
+   FLTK_STATIC_LIBS_IMAGES=`$FLTK_CONFIG --ldstaticflags --use-images | $filter`
+   FLTK_STATIC_LIBS_ALL=`$FLTK_CONFIG --ldstaticflags --use-gl --use-images | $filter`
    AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
 fi
 
