@@ -231,8 +231,8 @@ Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
             }
             if (max_score < score[i][j]) {
                 max_score = score[i][j];
-                avg_score += row_prob[i] * col_prob[j] * score[i][j];
             }
+            avg_score += row_prob[i] * col_prob[j] * score[i][j];
         }
     }
     if (max_score <= 0.0 || avg_score >= 0) { 
