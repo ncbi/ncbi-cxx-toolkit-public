@@ -74,7 +74,7 @@ static char const rcsid[] =
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
 NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 2;
 NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 14;
-NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Apr-9-2006";
+NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Apr-09-2006";
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
