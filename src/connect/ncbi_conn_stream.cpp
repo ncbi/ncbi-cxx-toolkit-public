@@ -216,23 +216,33 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
 }
 
 
+const SConnNetInfo*
+CConn_ServiceStream::kDefaultConnNetInfo = (const SConnNetInfo*)(-1);
+
+
 static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                                            TSERV_Type            types,
                                            const SConnNetInfo*   a_net_info,
                                            const SSERVICE_Extra* params,
                                            const STimeout*       timeout)
 {
-    SConnNetInfo* net_info = a_net_info ?
-        ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(service);
-    if (!net_info)
+    SConnNetInfo* net_info;
+    if (!a_net_info) {
+        net_info = 0;
+    } else if (!(net_info = (a_net_info ==
+                             CConn_ServiceStream::kDefaultConnNetInfo
+                             ? ConnNetInfo_Create(service)
+                             : ConnNetInfo_Clone(a_net_info)))) {
         return 0;
-    if (timeout && timeout != kDefaultTimeout) {
+    }
+    if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
         net_info->timeout = 0;
     CONNECTOR c = SERVICE_CreateConnectorEx(service, types, net_info, params);
-    ConnNetInfo_Destroy(net_info);
+    if (net_info)
+        ConnNetInfo_Destroy(net_info);
     return c;
 }
 
@@ -428,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.55  2006/04/07 21:03:33  lavr
+ * +CConn_ServiceStream::kDefaultConnNetInfo
+ *
  * Revision 6.54  2006/03/30 19:33:30  lavr
  * s_MemoryConnectorBuilder():  fixup
  *
