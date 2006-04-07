@@ -29,6 +29,8 @@
  *
  */
 
+%immutable kClassInfo;  // SWIG is trying to assign to the constant
+
 %%
 
 objtools/blast_format/blastfmtutil.hpp
@@ -43,6 +45,9 @@ objtools/blast_format/vectorscreen.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/04/07 12:40:06  jcherry
+ * Keep SWIG from treating kClassInfo as non-const
+ *
  * Revision 1.1  2005/12/29 17:48:52  jcherry
  * Initial version
  *
