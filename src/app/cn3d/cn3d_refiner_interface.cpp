@@ -44,6 +44,8 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <algorithm>
+
 #ifdef __WXMSW__
 #include <windows.h>
 #include <wx/msw/winundef.h>
@@ -197,7 +199,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
         sitEnd = sanityCheckFailures.end();
         for (sit = sanityCheckFailures.begin(); sit != sitEnd; ++sit) {
             warnMsg.append("   Request to exclude invalid row number " + NStr::UIntToString(*sit + 1) + " ignored./n");
-            m_rowsToExclude.erase(remove(m_rowsToExclude.begin(), m_rowsToExclude.end(), *sit));
+			remove(m_rowsToExclude.begin(), m_rowsToExclude.end(), *sit);
         }
     }
 
@@ -213,7 +215,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
         sitEnd = sanityCheckFailures.end();
         for (sit = sanityCheckFailures.begin(); sit != sitEnd; ++sit) {
             warnMsg.append("   Request to exclude invalid block number " + NStr::UIntToString(*sit + 1) + " ignored./n");
-            m_blocksToRefine.erase(remove(m_blocksToRefine.begin(), m_blocksToRefine.end(), *sit));
+			remove(m_blocksToRefine.begin(), m_blocksToRefine.end(), *sit);
         }
         nToRefine = m_blocksToRefine.size();
     }
@@ -989,6 +991,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/04/07 22:48:32  thiessen
+* small header change to prevent compilation failure under some platforms
+*
 * Revision 1.13  2006/04/06 21:44:45  lanczyck
 * refiner interface changes:  add ability to turn LOO/block shifting off, ability to specify block edits occur before LOO in a cycle and use worst->best self-hit order for LOO instead of only random ordering
 *

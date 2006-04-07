@@ -4,7 +4,7 @@
 # Build application "cn3d"
 #################################
 
-REQUIRES = objects wxWidgets OpenGL Z PNG
+REQUIRES = objects wxWidgets OpenGL PNG
 
 APP = cn3d
 
