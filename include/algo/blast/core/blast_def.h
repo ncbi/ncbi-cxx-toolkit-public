@@ -62,8 +62,17 @@ extern const int kUngappedHSPNumMax;
 #define CODON_LENGTH 3
 #endif
 
-/** for traslated gapped searches, this is the default value in nucleotides of
- *  longest_intron */
+/** For translated gapped searches, this is the default value in
+ * nucleotides of longest_intron (for ungapped translated searches,
+ * the default value of longest_intron is zero, which causes a legacy
+ * method of HSP linking that does not use longest_intron to be
+ * invoked).
+ *
+ * The value 122 corresponds to 40 amino acids: 40 codons * 3
+ * nucleotides per codon + up to 2 frame shifts.  40 amino acids is
+ * the maximum gap size in the untranslated sequence, so
+ * DEFAULT_LONGEST_INTRON makes these two gap sizes equal.
+ */ 
 #ifndef DEFAULT_LONGEST_INTRON
 #define DEFAULT_LONGEST_INTRON 122
 #endif
