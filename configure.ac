@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.417 2006/04/07 17:32:09 ucko Exp $
+#  $Id: configure.ac,v 1.418 2006/04/08 17:34:49 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -723,6 +723,16 @@ CFLAGS="$MT_FLAG $CFLAGS"
 CXXFLAGS="$MT_FLAG $CXXFLAGS"
 LDFLAGS="$MT_FLAG $LDFLAGS"
 
+case "$compiler" in
+   GCC | ICC )
+      orig_LDFLAGS=$LDFLAGS
+      LDFLAGS="-Wl,-E $LDFLAGS"
+      AC_CACHE_CHECK([whether $CC supports -Wl,-E], ncbi_cv_prog_cc_wl_e,
+         [AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+             [ncbi_cv_prog_cc_wl_e=yes], [ncbi_cv_prog_cc_wl_e=no])])
+      test "$ncbi_cv_prog_cc_wl_e" = yes  ||  LDFLAGS=$orig_LDFLAGS
+      ;;
+esac
 
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
@@ -738,19 +748,10 @@ case "$host_os:$compiler" in
    STRIP="@:"
    ;;
 
- linux*:GCC )
-   LDFLAGS="-Wl,-E $LDFLAGS"
-   ;;
-
  linux*:ICC )
-   LDFLAGS="-Wl,-E $LDFLAGS"
    # "incomplete type is not allowed" should be an error, not a warning!
    CFLAGS="-we70 $CFLAGS"
    CXXFLAGS="-we70 $CXXFLAGS"
-   ;;
-
- freebsd*:GCC )
-   LDFLAGS="-Wl,-E $LDFLAGS"
    ;;
 
  irix*:GCC )
