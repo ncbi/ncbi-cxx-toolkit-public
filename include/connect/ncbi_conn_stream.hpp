@@ -265,13 +265,10 @@ private:
 class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
 {
 public:
-    // A special constant, do not attempt to dereference!
-    static const SConnNetInfo* kDefaultConnNetInfo;
-
     CConn_ServiceStream
     (const string&         service,
      TSERV_Type            types    = fSERV_Any,
-     const SConnNetInfo*   net_info = kDefaultConnNetInfo,
+     const SConnNetInfo*   net_info = 0,
      const SSERVICE_Extra* params   = 0,
      const STimeout*       timeout  = kDefaultTimeout,
      streamsize            buf_size = kConn_DefaultBufSize);
@@ -424,8 +421,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 6.42  2006/04/07 21:03:11  lavr
- * +CConn_ServiceStream::kDefaultConnNetInfo
+ * Revision 6.43  2006/04/08 04:27:40  lavr
+ * Rollback to R6.41
  *
  * Revision 6.41  2006/03/30 17:40:13  lavr
  * CConn_MemoryStream:  Remove unnecessary locks;  add mem. area ctor
