@@ -234,8 +234,7 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                              ? ConnNetInfo_Create(service)
                              : ConnNetInfo_Clone(a_net_info)))) {
         return 0;
-    }
-    if (timeout  &&  timeout != kDefaultTimeout) {
+    } else if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
@@ -438,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2006/04/08 04:17:17  lavr
+ * Fix forgotten else clause in ServiceConnectorBuilder
+ *
  * Revision 6.55  2006/04/07 21:03:33  lavr
  * +CConn_ServiceStream::kDefaultConnNetInfo
  *
