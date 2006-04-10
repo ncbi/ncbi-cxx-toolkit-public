@@ -199,7 +199,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
         sitEnd = sanityCheckFailures.end();
         for (sit = sanityCheckFailures.begin(); sit != sitEnd; ++sit) {
             warnMsg.append("   Request to exclude invalid row number " + NStr::UIntToString(*sit + 1) + " ignored./n");
-			remove(m_rowsToExclude.begin(), m_rowsToExclude.end(), *sit);
+			m_rowsToExclude.erase(remove(m_rowsToExclude.begin(), m_rowsToExclude.end(), *sit));
         }
     }
 
@@ -215,7 +215,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
         sitEnd = sanityCheckFailures.end();
         for (sit = sanityCheckFailures.begin(); sit != sitEnd; ++sit) {
             warnMsg.append("   Request to exclude invalid block number " + NStr::UIntToString(*sit + 1) + " ignored./n");
-			remove(m_blocksToRefine.begin(), m_blocksToRefine.end(), *sit);
+			m_blocksToRefine.erase(remove(m_blocksToRefine.begin(), m_blocksToRefine.end(), *sit));
         }
         nToRefine = m_blocksToRefine.size();
     }
@@ -991,6 +991,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/04/10 15:21:40  thiessen
+* undo part of previous fix (vector element removal
+*
 * Revision 1.14  2006/04/07 22:48:32  thiessen
 * small header change to prevent compilation failure under some platforms
 *
