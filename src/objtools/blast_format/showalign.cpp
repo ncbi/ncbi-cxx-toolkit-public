@@ -1447,6 +1447,54 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     delete [] taxid;
 }
 
+CRef<CAlnVec> CDisplaySeqalign::x_GetAlnVecForSeqalign(const CSeq_align& align)
+{
+    
+    //make alnvector
+    CRef<CAlnVec> avRef;
+    CConstRef<CSeq_align> finalAln;
+    if (align.GetSegs().Which() == CSeq_align::C_Segs::e_Std) {
+        CRef<CSeq_align> densegAln = align.CreateDensegFromStdseg();
+        if (m_AlignOption & eTranslateNucToNucAlignment) { 
+            finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
+        } else {
+            finalAln = densegAln;
+        }            
+    } else if(align.GetSegs().Which() == 
+              CSeq_align::C_Segs::e_Denseg){
+        if (m_AlignOption & eTranslateNucToNucAlignment) { 
+            finalAln = align.CreateTranslatedDensegFromNADenseg();
+        } else {
+            finalAln = &align;
+        }
+    } else if(align.GetSegs().Which() == 
+              CSeq_align::C_Segs::e_Dendiag){
+        CRef<CSeq_align> densegAln = 
+            CBlastFormatUtil::CreateDensegFromDendiag(align);
+        if (m_AlignOption & eTranslateNucToNucAlignment) { 
+            finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
+        } else {
+            finalAln = densegAln;
+        }
+    } else {
+        NCBI_THROW(CException, eUnknown, 
+                   "Seq-align should be Denseg, Stdseg or Dendiag!");
+    }
+    CRef<CDense_seg> finalDenseg(new CDense_seg);
+    const CTypeConstIterator<CDense_seg> ds = ConstBegin(*finalAln);
+    if((ds->IsSetStrands() 
+        && ds->GetStrands().front()==eNa_strand_minus) 
+       && !(ds->IsSetWidths() && ds->GetWidths()[0] == 3)){
+        //show plus strand if master is minus for non-translated case
+        finalDenseg->Assign(*ds);
+        finalDenseg->Reverse();
+        avRef = new CAlnVec(*finalDenseg, m_Scope);   
+    } else {
+        avRef = new CAlnVec(*ds, m_Scope);
+    }    
+    
+    return avRef;
+}
 
 void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
 {   
@@ -1502,55 +1550,52 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
           because we will need seg information form all hsp's with the same id
           for genome url link.  As a result we show hsp's with the same id 
           as a group*/
+
+        //get segs first
+        if (toolUrl.find("dumpgnl.cgi") != string::npos 
+            || (m_AlignOption & eLinkout)) {
+            /*need to construct segs for dumpgnl and
+              get sub-sequence for long sequences*/
+            for (CSeq_align_set::Tdata::const_iterator 
+                     iter =  actual_aln_list.Get().begin(); 
+                 iter != actual_aln_list.Get().end() 
+                     && num_align<m_NumAlignToShow; iter++, num_align++) {
+                //make alnvector
+                CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(**iter);
+                string idString = avRef->GetSeqId(1).GetSeqIdString();
+                if(m_Segs.count(idString) > 0){ 
+                    //already has seg, concatenate
+                    /*Note that currently it's not necessary to 
+                      use map to store this information.  
+                      But I already implemented this way for 
+                      previous version.  Will keep this way as
+                      it's more flexible if we change something*/
+                    
+                    m_Segs[idString] += "," 
+                        + NStr::IntToString(avRef->GetSeqStart(1))
+                        + "-" + 
+                        NStr::IntToString(avRef->GetSeqStop(1));
+                } else {//new segs
+                    m_Segs.
+                        insert(map<string, string>::
+                               value_type(idString, 
+                                          NStr::
+                                          IntToString(avRef->GetSeqStart(1))
+                                          + "-" + 
+                                          NStr::IntToString(avRef->GetSeqStop(1))));
+                }
+            }	    
+            
+        } 
         list <SAlnInfo*> avList;        
         CConstRef<CSeq_id> previousId, subid;
-        bool isFirstAln = true;
         for (CSeq_align_set::Tdata::const_iterator 
                  iter =  actual_aln_list.Get().begin(); 
              iter != actual_aln_list.Get().end() 
                  && num_align<m_NumAlignToShow; iter++, num_align++) {
             //make alnvector
-            CRef<CAlnVec> avRef;
-            CRef<CSeq_align> finalAln;
-            if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
-                CRef<CSeq_align> densegAln = (*iter)->CreateDensegFromStdseg();
-                if (m_AlignOption & eTranslateNucToNucAlignment) { 
-                    finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
-                } else {
-                    finalAln = densegAln;
-                }            
-            } else if((*iter)->GetSegs().Which() == 
-                      CSeq_align::C_Segs::e_Denseg){
-                if (m_AlignOption & eTranslateNucToNucAlignment) { 
-                    finalAln = (*iter)->CreateTranslatedDensegFromNADenseg();
-                } else {
-                    finalAln = (*iter);
-                }
-            } else if((*iter)->GetSegs().Which() == 
-                      CSeq_align::C_Segs::e_Dendiag){
-                CRef<CSeq_align> densegAln = 
-                    CBlastFormatUtil::CreateDensegFromDendiag(**iter);
-                if (m_AlignOption & eTranslateNucToNucAlignment) { 
-                    finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
-                } else {
-                    finalAln = densegAln;
-                }
-            } else {
-                NCBI_THROW(CException, eUnknown, 
-                           "Seq-align should be Denseg, Stdseg or Dendiag!");
-            }
-            CRef<CDense_seg> finalDenseg(new CDense_seg);
-            const CTypeIterator<CDense_seg> ds = Begin(*finalAln);
-            if((ds->IsSetStrands() 
-                && ds->GetStrands().front()==eNa_strand_minus) 
-               && !(ds->IsSetWidths() && ds->GetWidths()[0] == 3)){
-                //show plus strand if master is minus for non-translated case
-                finalDenseg->Assign(*ds);
-                finalDenseg->Reverse();
-                avRef = new CAlnVec(*finalDenseg, m_Scope);   
-            } else {
-                avRef = new CAlnVec(*ds, m_Scope);
-            }        
+            CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(**iter);
+            
             if(!(avRef.Empty())){
                 //Note: do not switch the set order per calnvec specs.
                 avRef->SetGenCode(m_SlaveGeneticCode);
@@ -1558,19 +1603,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 try{
                     const CBioseq_Handle& handle = avRef->GetBioseqHandle(1);
                     if(handle){
-                        subid=&(avRef->GetSeqId(1));
-                    
-                        if(!isFirstAln && !subid->Match(*previousId)) {
-                            //this aln is a new id, show result for previous id
-                            x_DisplayAlnvecList(out, avList);
-                            
-                            for(list<SAlnInfo*>::iterator 
-                                    iterAv = avList.begin();
-                                iterAv != avList.end(); iterAv ++){
-                                delete(*iterAv);
-                            }
-                            avList.clear();   
-                        }
+                      
                         //save the current alnment regardless
                         SAlnInfo* alnvecInfo = new SAlnInfo;
                         int num_ident;
@@ -1584,35 +1617,19 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                                                        alnvecInfo->comp_adj_method);
                         alnvecInfo->alnvec = avRef;
                         avList.push_back(alnvecInfo);
-                        if (toolUrl.find("dumpgnl.cgi") != string::npos 
-                           || (m_AlignOption & eLinkout)){
-                            /*need to construct segs for dumpgnl and
-                              get sub-sequence for long sequences*/
-                            string idString = avRef->GetSeqId(1).GetSeqIdString();
-                            if(m_Segs.count(idString) > 0){ 
-                                //already has seg, concatenate
-                                /*Note that currently it's not necessary to 
-                                  use map to store this information.  
-                                  But I already implemented this way for 
-                                  previous version.  Will keep this way as
-                                  it's more flexible if we change something*/
+                        
+                        subid=&(avRef->GetSeqId(1));
+                        x_DisplayAlnvecList(out, avList,
+                                            previousId.Empty() || 
+                                            !subid->Match(*previousId));
                             
-                                m_Segs[idString] += "," 
-                                    + NStr::IntToString(avRef->GetSeqStart(1))
-                                    + "-" + 
-                                    NStr::IntToString(avRef->GetSeqStop(1));
-                            } else {//new segs
-                                m_Segs.insert(map<string, string>::
-                                              value_type(idString, 
-                                                         NStr::
-                                                         IntToString\
-                                                         (avRef->GetSeqStart(1))
-                                                         + "-" + 
-                                                         NStr::IntToString\
-                                                         (avRef->GetSeqStop(1))));
-                            }
-                        }	    
-                        isFirstAln = false;
+                        for(list<SAlnInfo*>::iterator 
+                                iterAv = avList.begin();
+                            iterAv != avList.end(); iterAv ++){
+                            delete(*iterAv);
+                        }
+                        avList.clear();   
+                        
                         previousId = subid;
                     }                
                 } catch (const CException&){
@@ -1620,15 +1637,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 }
             }
         } 
-        //Show here for the last one 
-        if(!avList.empty()){
-            x_DisplayAlnvecList(out, avList);
-            for(list<SAlnInfo*>::iterator iterAv = avList.begin(); 
-                iterAv != avList.end(); iterAv ++){
-                delete(*iterAv);
-            }
-            avList.clear();
-        }
+
     } else if(m_AlignOption&eMergeAlign){ //multiple alignment
         CRef<CAlnMix>* mix = new CRef<CAlnMix>[k_NumFrame]; 
         //each for one frame for translated alignment
@@ -2801,14 +2810,14 @@ CDisplaySeqalign::PrepareBlastUngappedSeqalign(const CSeq_align_set& alnset)
 
 
 void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, 
-                                           list<SAlnInfo*>& av_list) 
+                                           list<SAlnInfo*>& av_list,
+                                           bool show_defline) 
 {
-    bool isFirstAlnInList = true;
     for(list<SAlnInfo*>::iterator iterAv = av_list.begin();
         iterAv != av_list.end(); iterAv ++){
         m_AV = (*iterAv)->alnvec;
         const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
-        if(isFirstAlnInList && (m_AlignOption&eShowBlastInfo)) {
+        if(show_defline && (m_AlignOption&eShowBlastInfo)) {
             if(!(m_AlignOption & eShowNoDeflineInfo)){
                 x_PrintDefLine(bsp_handle, (*iterAv)->use_this_gi, out);
                 // out<<"          Length="<<bsp_handle.GetBioseqLength()<<endl;
@@ -2895,7 +2904,6 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
         
         x_DisplayAlnvec(out);
         out<<endl;
-        isFirstAlnInList = false;
     }
 }
 
@@ -3139,6 +3147,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.115  2006/04/10 21:42:23  jianye
+*output each hsp instead of each hit
+*
 *Revision 1.114  2006/04/05 17:39:48  jianye
 *added mouseover defline info
 *

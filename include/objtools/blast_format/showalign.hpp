@@ -546,7 +546,8 @@ private:
     ///@param out: output stream
     ///@param av_list: alnvec list
     ///
-    void x_DisplayAlnvecList(CNcbiOstream& out, list < SAlnInfo * >& av_list);
+    void x_DisplayAlnvecList(CNcbiOstream& out, list < SAlnInfo * >& av_list,
+                             bool show_defline);
 
     ///output dynamic feature url
     ///@param out: output stream
@@ -593,6 +594,8 @@ private:
                          string& master_feat_str,
                          CNcbiOstream& out);
 
+    CRef<CAlnVec> x_GetAlnVecForSeqalign(const CSeq_align& align); 
+
 };
 
 /***********************Inlines************************/
@@ -602,6 +605,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.50  2006/04/10 21:43:00  jianye
+*output each hsp instead of each hit
+*
 *Revision 1.49  2006/04/05 17:40:27  jianye
 *added mouseover defline info
 *
