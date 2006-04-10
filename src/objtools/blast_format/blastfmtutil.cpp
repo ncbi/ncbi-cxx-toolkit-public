@@ -583,20 +583,22 @@ void
 CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
                                                  const CSeq_align_set& source)
 {
-    _ASSERT(source.IsSet());
-
-    for(CSeq_align_set::Tdata::const_iterator iter = source.Get().begin();
-        iter != source.Get().end(); iter++) {
-        if((*iter)->IsSetSegs()){
-            const CSeq_align::TSegs& seg = (*iter)->GetSegs();
-            if(seg.IsDisc()){
-                const CSeq_align_set& set = seg.GetDisc();
-                for(CSeq_align_set::Tdata::const_iterator iter2 =
-                        set.Get().begin(); iter2 != set.Get().end(); iter2 ++) {
-                    target.Set().push_back(*iter2);
+    if (source.IsSet() && source.CanGet()) {
+        
+        for(CSeq_align_set::Tdata::const_iterator iter = source.Get().begin();
+            iter != source.Get().end(); iter++) {
+            if((*iter)->IsSetSegs()){
+                const CSeq_align::TSegs& seg = (*iter)->GetSegs();
+                if(seg.IsDisc()){
+                    const CSeq_align_set& set = seg.GetDisc();
+                    for(CSeq_align_set::Tdata::const_iterator iter2 =
+                            set.Get().begin(); iter2 != set.Get().end(); 
+                        iter2 ++) {
+                        target.Set().push_back(*iter2);
+                    }
+                } else {
+                    target.Set().push_back(*iter);
                 }
-            } else {
-                target.Set().push_back(*iter);
             }
         }
     }
