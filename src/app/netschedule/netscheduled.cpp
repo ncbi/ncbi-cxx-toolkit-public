@@ -227,9 +227,21 @@ public:
 
     /// Take request code from the socket and process the request
     virtual void  Process(SOCK sock);
-    virtual bool ShutdownRequested(void) { return m_Shutdown; }
+    virtual bool ShutdownRequested(void) 
+	{
+		if (m_Shutdown) {
+			LOG_POST(Info << "Shutdown flag set! Signal=" << m_SigNum); 
+		} 
+		return m_Shutdown; 
+	}
         
-    void SetShutdownFlag() { if (!m_Shutdown) m_Shutdown = true; }
+    void SetShutdownFlag(int signum = 0) 
+	{ 
+		if (!m_Shutdown) {
+			m_Shutdown = true; 
+			m_SigNum = signum;
+		}
+	}
     
     /// Override some parent parameters
     virtual void SetParams()
@@ -389,6 +401,7 @@ private:
     unsigned           m_HostNetAddr;
     unsigned           m_LocalNetAddr;
     bool               m_Shutdown; 
+	int                m_SigNum;  ///< Shutdown signal number
     /// Time to wait for the client (seconds)
     unsigned           m_InactivityTimeout;
     
@@ -460,6 +473,7 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
                                        bool            is_log)
 : CThreadedServer(port),
     m_Shutdown(false),
+	m_SigNum(0),
     m_InactivityTimeout(network_timeout),
     m_StartTime(CTime::eCurrent),
     m_AccessLog("ns_access.log", 100 * 1024 * 1024)
@@ -2512,12 +2526,11 @@ void CNetScheduleDApp::Init(void)
 
 
 /// @internal
-extern "C" void Threaded_Server_SignalHandler( int )
+extern "C" void Threaded_Server_SignalHandler( int signum)
 {
     if (s_netschedule_server && 
         (!s_netschedule_server->ShutdownRequested()) ) {
-        s_netschedule_server->SetShutdownFlag();
-        LOG_POST("Interrupt signal. Shutdown requested.");
+        s_netschedule_server->SetShutdownFlag(signum);
     }
 }
 
@@ -2718,6 +2731,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/04/10 15:16:24  kuznets
+ * Collect detailed info on shutdown by signal
+ *
  * Revision 1.72  2006/03/30 17:38:55  kuznets
  * Set max. transactions according to number of active threads
  *
@@ -2780,159 +2796,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 1.52  2005/08/17 14:24:37  kuznets
  * Improved err checking
- *
- * Revision 1.51  2005/08/16 13:45:26  kuznets
- * Added monitoring for batch submissions
- *
- * Revision 1.50  2005/08/15 17:39:48  kuznets
- * Use C-style ReadLine for better performance
- *
- * Revision 1.49  2005/08/15 13:29:46  kuznets
- * Implemented batch job submission
- *
- * Revision 1.48  2005/08/10 19:20:46  kuznets
- * Set connection accept timeout 1sec
- *
- * Revision 1.47  2005/07/14 13:12:56  kuznets
- * Added load balancer
- *
- * Revision 1.46  2005/06/27 15:52:20  kuznets
- * Minor change in statistics
- *
- * Revision 1.45  2005/06/20 13:31:08  kuznets
- * Added access control for job submitters and worker nodes
- *
- * Revision 1.44  2005/06/03 16:27:36  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.43  2005/05/17 14:25:00  ucko
- * Tweak ProcessShutdown to avoid jumping over a variable declaration.
- *
- * Revision 1.42  2005/05/17 13:52:08  kuznets
- * Restrictions (optional) on server shutdown
- *
- * Revision 1.41  2005/05/16 16:21:26  kuznets
- * Added available queues listing
- *
- * Revision 1.40  2005/05/12 18:37:33  kuznets
- * Implemented config reload
- *
- * Revision 1.39  2005/05/12 13:11:16  kuznets
- * Added netschedule_admin to the list of admin tools
- *
- * Revision 1.38  2005/05/06 13:07:32  kuznets
- * Fixed bug in cleaning database
- *
- * Revision 1.37  2005/05/05 16:07:15  kuznets
- * Added individual job dumping
- *
- * Revision 1.36  2005/05/04 19:09:43  kuznets
- * Added queue dumping
- *
- * Revision 1.35  2005/05/03 19:46:00  kuznets
- * Fixed bug in remote monitoring
- *
- * Revision 1.34  2005/05/02 14:44:40  kuznets
- * Implemented remote monitoring
- *
- * Revision 1.33  2005/04/28 17:40:26  kuznets
- * Added functions to rack down forgotten nodes
- *
- * Revision 1.32  2005/04/27 18:12:16  kuznets
- * Logging improved
- *
- * Revision 1.31  2005/04/27 15:00:18  kuznets
- * Improved error messaging
- *
- * Revision 1.30  2005/04/26 18:31:04  kuznets
- * Corrected bug in daemonization
- *
- * Revision 1.29  2005/04/25 18:20:59  kuznets
- * Added daeminization.
- *
- * Revision 1.28  2005/04/21 13:38:05  kuznets
- * Version increment
- *
- * Revision 1.27  2005/04/20 15:59:33  kuznets
- * Progress message to Submit
- *
- * Revision 1.26  2005/04/19 19:34:12  kuznets
- * Adde progress report messages
- *
- * Revision 1.25  2005/04/11 13:53:51  kuznets
- * Implemented logging
- *
- * Revision 1.24  2005/04/06 12:39:55  kuznets
- * + client version control
- *
- * Revision 1.23  2005/03/31 19:28:34  kuznets
- * Corrected use of prep macros
- *
- * Revision 1.22  2005/03/31 19:18:29  kuznets
- * Added build date to version string" netscheduled.cpp
- *
- * Revision 1.21  2005/03/29 16:48:54  kuznets
- * Removed dead code
- *
- * Revision 1.20  2005/03/24 16:42:25  kuznets
- * Fixed bug in command parser
- *
- * Revision 1.19  2005/03/22 19:02:54  kuznets
- * Reflecting chnages in connect layout
- *
- * Revision 1.18  2005/03/22 16:16:10  kuznets
- * Statistics improvement: added database information
- *
- * Revision 1.17  2005/03/21 13:08:24  kuznets
- * + STAT command support
- *
- * Revision 1.16  2005/03/17 20:37:07  kuznets
- * Implemented FPUT
- *
- * Revision 1.15  2005/03/17 16:05:21  kuznets
- * Sensible error message if timeout expired
- *
- * Revision 1.14  2005/03/17 14:07:19  kuznets
- * Fixed bug in request parsing
- *
- * Revision 1.13  2005/03/15 20:14:30  kuznets
- * Implemented notification to client waiting for job
- *
- * Revision 1.12  2005/03/15 14:52:39  kuznets
- * Better datagram socket management, DropJob implemenetation
- *
- * Revision 1.11  2005/03/10 14:19:57  kuznets
- * Implemented individual run timeouts
- *
- * Revision 1.10  2005/03/09 17:37:16  kuznets
- * Added node notification thread and execution control timeline
- *
- * Revision 1.9  2005/03/04 12:06:41  kuznets
- * Implenyed UDP callback to clients
- *
- * Revision 1.8  2005/02/28 12:24:17  kuznets
- * New job status Returned, better error processing and queue management
- *
- * Revision 1.7  2005/02/23 19:16:38  kuznets
- * Implemented garbage collection thread
- *
- * Revision 1.6  2005/02/22 16:13:00  kuznets
- * Performance optimization
- *
- * Revision 1.5  2005/02/14 17:57:41  kuznets
- * Fixed a bug in queue procesing
- *
- * Revision 1.4  2005/02/14 14:42:52  kuznets
- * Overloaded ProcessOverflow to better detect queue shortage
- *
- * Revision 1.3  2005/02/10 19:59:40  kuznets
- * Implemented GET and PUT
- *
- * Revision 1.2  2005/02/09 18:56:42  kuznets
- * Implemented SUBMIT, CANCEL, STATUS, SHUTDOWN
- *
- * Revision 1.1  2005/02/08 16:42:55  kuznets
- * Initial revision
  *
  *
  * ===========================================================================
