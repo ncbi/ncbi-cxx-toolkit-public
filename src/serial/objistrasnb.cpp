@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2006/04/10 18:47:29  gouriano
+* Corrected reading of unsigned int
+*
 * Revision 1.87  2006/01/27 19:55:25  gouriano
 * Corrected serialization of NULL pointers
 *
@@ -784,9 +787,6 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
         }
         --length;
         n = in.ReadByte();
-        if ( (n & 0x80) != 0 ) {
-            in.ThrowError(in.fOverflow, "overflow error");
-        }
     }
     else if ( length == sizeof(data) ) {
         --length;
