@@ -575,8 +575,7 @@ int CBlastApplication::Run(void)
        }
 
     } catch (const CBlastException& exptn) {
-       cerr << exptn.GetErrCodeString() << endl;
-       exptn.ReportAll();
+       cerr << exptn.what() << endl;
        status = exptn.GetErrCode();
     }
 
