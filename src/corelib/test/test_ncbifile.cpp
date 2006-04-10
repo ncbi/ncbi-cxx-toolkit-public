@@ -208,7 +208,7 @@ static void s_TEST_CheckPath(void)
     assert( d.NormalizePath("..\\..\\..\\..")   == "..\\..\\..\\.." );
     assert( d.NormalizePath("dir\\\\dir\\\\")   == "dir\\dir" );
     assert( d.NormalizePath("\\\\machine\\dir") == "\\\\machine\\dir");
-    assert( d.NormalizePath("\\\\?\\x")         == "\\x" );
+    assert( d.NormalizePath("\\\\?\\x")         == "x" );
     assert( d.NormalizePath("\\\\?\\UNC\\m\\d") == "\\\\m\\d" );
     assert( d.NormalizePath("dir/file")         == "dir\\file" );
     assert( d.NormalizePath("/")                == "\\" );
@@ -1095,6 +1095,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/04/10 12:37:13  ivanov
+ * MSWin: CDirEntry::NormalizePath -- remove leading '\\?\' from path,
+ * do not replace it with '\'.
+ *
  * Revision 1.59  2006/04/06 14:24:42  ivanov
  * CMemoryFile[Map] -- added constructor parameters for automatic
  * creating/extend mapped file.

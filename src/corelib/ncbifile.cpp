@@ -709,8 +709,10 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                 case 2: case 4: // got a UNC path (\\... or \\?\UNC\...)
                     head.push_back(kEmptyStr);
                     // fall through
-                case 1: case 3/*?*/: // normal volume-less absolute path
+                case 1:         // normal volume-less absolute path
                     head.push_back(kEmptyStr);
+                    break;
+                case 3/*?*/:    // normal path, absolute or relative
                     break;
                 }
 #endif
@@ -4065,6 +4067,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.142  2006/04/10 12:37:13  ivanov
+ * MSWin: CDirEntry::NormalizePath -- remove leading '\\?\' from path,
+ * do not replace it with '\'.
+ *
  * Revision 1.141  2006/04/06 14:44:07  ucko
  * _open and _creat are Windows-specific; use the regular versions elsewhere.
  *
