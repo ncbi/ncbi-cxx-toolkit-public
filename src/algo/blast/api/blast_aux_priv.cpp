@@ -100,7 +100,7 @@ Blast_Message2TSearchMessages(const Blast_Message* blmsg,
     for (int i = query_info->first_context; 
          i <= query_info->last_context; i++) {
 
-        if ( !kCtxInfo[i].is_valid ) {
+        if ( !kCtxInfo[i].is_valid && blmsg->message ) {
             string msg(blmsg->message);
             CRef<CSearchMessage> sm(new CSearchMessage(blmsg->severity,
                                                        kCtxInfo[i].query_index,
