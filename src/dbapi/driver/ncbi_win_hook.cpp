@@ -42,6 +42,250 @@ namespace NWinHook
 {
 
     ///////////////////////////////////////////////////////////////////////////////
+    ///
+
+    class CModuleInstance {
+    public:
+        CModuleInstance(char *pszName, HMODULE hModule);
+        ~CModuleInstance(void);
+
+        void AddModule(CModuleInstance* pModuleInstance);
+        void ReleaseModules(void);
+
+        /// Returns Full path and filename of the executable file for the process or DLL
+        char*    GetName(void) const;
+        /// Sets Full path and filename of the executable file for the process or DLL
+        void     SetName(char *pszName);
+        /// Returns module handle
+        HMODULE  GetModule(void) const;
+        void     SetModule(HMODULE module);
+        /// Returns only the filename of the executable file for the process or DLL
+        char*   GetBaseName(void) const;
+
+    private:
+        char        *m_pszName;
+        HMODULE      m_hModule;
+
+    protected:
+        typedef vector<CModuleInstance*> TInternalList;
+
+        TInternalList m_pInternalList;
+    };
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///
+    class CExeModuleInstance;
+
+    class CLibHandler {
+    public:
+        CLibHandler(void);
+        virtual ~CLibHandler(void);
+
+        virtual BOOL PopulateModules(CModuleInstance* pProcess) = 0;
+        virtual BOOL PopulateProcess(DWORD dwProcessId, BOOL bPopulateModules) = 0;
+        CExeModuleInstance* GetExeModuleInstance(void) const {
+            return (m_pProcess.get());
+        }
+
+    protected:
+        auto_ptr<CExeModuleInstance> m_pProcess;
+    };
+
+    ///////////////////////////////////////////////////////////////////////////////
+    typedef BOOL (WINAPI * FEnumProcesses)(DWORD * lpidProcess,
+                                           DWORD   cb,
+                                           DWORD * cbNeeded
+                                           );
+
+    typedef BOOL (WINAPI * FEnumProcessModules)(HANDLE hProcess,
+                                                HMODULE *lphModule,
+                                                DWORD cb,
+                                                LPDWORD lpcbNeeded
+                                                );
+
+    typedef DWORD (WINAPI * FGetModuleFileNameExA)(HANDLE hProcess,
+                                                   HMODULE hModule,
+                                                   LPSTR lpFilename,
+                                                   DWORD nSize
+                                                   );
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// class CPsapiHandler
+    ///
+    class CPsapiHandler : public CLibHandler {
+    public:
+        CPsapiHandler(void);
+        virtual ~CPsapiHandler(void);
+
+        BOOL Initialize(void);
+        void Finalize(void);
+        virtual BOOL PopulateModules(CModuleInstance* pProcess);
+        virtual BOOL PopulateProcess(DWORD dwProcessId, BOOL bPopulateModules);
+
+    private:
+        HMODULE               m_hModPSAPI;
+        FEnumProcesses        m_pfnEnumProcesses;
+        FEnumProcessModules   m_pfnEnumProcessModules;
+        FGetModuleFileNameExA m_pfnGetModuleFileNameExA;
+    };
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    //                   typedefs for ToolHelp32 functions
+    //
+    typedef HANDLE (WINAPI * FCreateToolHelp32Snapshot) (DWORD dwFlags,
+                                                         DWORD th32ProcessID
+                                                         );
+
+    typedef BOOL (WINAPI * FProcess32First) (HANDLE hSnapshot,
+                                             LPPROCESSENTRY32 lppe
+                                             );
+
+    typedef BOOL (WINAPI * FProcess32Next) (HANDLE hSnapshot,
+                                            LPPROCESSENTRY32 lppe
+                                            );
+
+    typedef BOOL (WINAPI * FModule32First) (HANDLE hSnapshot,
+                                            LPMODULEENTRY32 lpme
+                                            );
+
+    typedef BOOL (WINAPI * FModule32Next) (HANDLE hSnapshot,
+                                           LPMODULEENTRY32 lpme
+                                           );
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// class CToolhelpHandler
+    ///
+    class CToolhelpHandler : public CLibHandler {
+    public:
+        CToolhelpHandler(void);
+        virtual ~CToolhelpHandler(void);
+
+        BOOL Initialize(void);
+        virtual BOOL PopulateModules(CModuleInstance* pProcess);
+        virtual BOOL PopulateProcess(DWORD dwProcessId, BOOL bPopulateModules);
+
+    private:
+        BOOL ModuleFirst(HANDLE hSnapshot, PMODULEENTRY32 pme) const;
+        BOOL ModuleNext(HANDLE hSnapshot, PMODULEENTRY32 pme) const;
+        BOOL ProcessFirst(HANDLE hSnapshot, PROCESSENTRY32* pe32) const;
+        BOOL ProcessNext(HANDLE hSnapshot, PROCESSENTRY32* pe32) const;
+
+        // ToolHelp function pointers
+        FCreateToolHelp32Snapshot m_pfnCreateToolhelp32Snapshot;
+        FProcess32First           m_pfnProcess32First;
+        FProcess32Next            m_pfnProcess32Next;
+        FModule32First            m_pfnModule32First;
+        FModule32Next             m_pfnModule32Next;
+    };
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// The taskManager dynamically decides whether to use ToolHelp
+    /// library or PSAPI
+    /// This is a proxy class to redirect calls to a handler ...
+    ///
+    class CTaskManager {
+    public:
+        CTaskManager(void);
+        ~CTaskManager(void);
+
+        BOOL PopulateProcess(DWORD dwProcessId, BOOL bPopulateModules) const;
+        CExeModuleInstance* GetProcess(void) const;
+
+    private:
+        CLibHandler       *m_pLibHandler;
+    };
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// class CHookedFunction
+    ///
+    class CHookedFunction {
+    public:
+        CHookedFunction(PCSTR             pszCalleeModName,
+                        PCSTR             pszFuncName,
+                        PROC              pfnOrig,
+                        PROC              pfnHook
+                        );
+        ~CHookedFunction(void);
+
+        PCSTR GetCalleeModName(void) const;
+        PCSTR GetFuncName(void) const;
+        PROC GetPfnHook(void) const;
+        PROC GetPfnOrig(void) const;
+        /// Set up a new hook function
+        BOOL HookImport(void);
+        /// Restore the original API handler
+        BOOL UnHookImport(void);
+        /// Replace the address of the function in the IAT of a specific module
+        BOOL ReplaceInOneModule(PCSTR   pszCalleeModName,
+                                PROC    pfnCurrent,
+                                PROC    pfnNew,
+                                HMODULE hmodCaller
+                                );
+        /// Indicates whether the hooked function is mandatory one
+        BOOL IsMandatory(void);
+
+    private:
+        BOOL    m_bHooked;
+        char    m_szCalleeModName[MAX_PATH];
+        char    m_szFuncName[MAX_PATH];
+        PROC    m_pfnOrig;
+        PROC    m_pfnHook;
+        /// Maximum private memory address
+        static  PVOID   sm_pvMaxAppAddr;
+
+        /// Perform actual replacing of function pointers
+        BOOL DoHook(BOOL bHookOrRestore,
+                    PROC pfnCurrent,
+                    PROC pfnNew
+                    );
+
+        /// Replace the address of a imported function entry  in all modules
+        BOOL ReplaceInAllModules(BOOL   bHookOrRestore,
+                                 PCSTR  pszCalleeModName,
+                                 PROC   pfnCurrent,
+                                 PROC   pfnNew
+                                 );
+    };
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    typedef HMODULE (WINAPI *FLoadLibraryA)(LPCSTR lpLibFileName);
+    typedef HMODULE (WINAPI *FLoadLibraryW)(LPCWSTR lpLibFileName);
+    typedef HMODULE (WINAPI *FLoadLibraryExA)(LPCSTR lpLibFileName,
+                                              HANDLE hFile,
+                                              DWORD dwFlags
+                                              );
+    typedef HMODULE (WINAPI *FLoadLibraryExW)(LPCWSTR lpLibFileName,
+                                              HANDLE hFile,
+                                              DWORD dwFlags
+                                              );
+    typedef FARPROC (WINAPI *FGetProcAddress)(HMODULE hModule,
+                                              LPCSTR lpProcName
+                                              );
+    typedef VOID (WINAPI *FExitProcess)(UINT uExitCode);
+
+    ///////////////////////////////////////////////////////////////////////////////
+    FGetProcAddress g_GetProcAddress = reinterpret_cast<FGetProcAddress>
+        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "GetProcAddress"));
+    FLoadLibraryA g_LoadLibraryA = reinterpret_cast<FLoadLibraryA>
+        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryA"));
+    FLoadLibraryW g_LoadLibraryW = reinterpret_cast<FLoadLibraryW>
+        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryW"));
+    FLoadLibraryExA g_LoadLibraryExA = reinterpret_cast<FLoadLibraryExA>
+        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryExA"));
+    FLoadLibraryExW g_LoadLibraryExW = reinterpret_cast<FLoadLibraryExW>
+        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryExW"));
+    FExitProcess g_ExitProcess = reinterpret_cast<FExitProcess>
+        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "ExitProcess"));
+
+    ///////////////////////////////////////////////////////////////////////////////
     const char* 
     CWinHookException::GetErrCodeString(void) const
     {
@@ -78,6 +322,31 @@ namespace NWinHook
         friend class CSafeStaticPtr<CPEi386>;
     };
 
+    ///////////////////////////////////////////////////////////////////////////////
+    /// class CExeModuleInstance
+    ///
+    /// Represents exactly one loaded EXE module
+    ///
+    class CExeModuleInstance : public CModuleInstance {
+    public:
+        CExeModuleInstance(CLibHandler* pLibHandler,
+                           char*        pszName,
+                           HMODULE      hModule,
+                           DWORD        dwProcessId
+                           );
+        ~CExeModuleInstance(void);
+
+        /// Returns process id
+        DWORD GetProcessId(void) const;
+        BOOL PopulateModules(void);
+        size_t GetModuleCount(void) const;
+        CModuleInstance* GetModuleByIndex(DWORD dwIndex) const;
+
+    private:
+        DWORD        m_dwProcessId;
+        CLibHandler* m_pLibHandler;
+    };
+
     /////////////////////////////////////////////////////////////////////////////
     static BOOL IsToolHelpSupported(void)
     {
@@ -85,10 +354,10 @@ namespace NWinHook
         HMODULE hModToolHelp;
         PROC    pfnCreateToolhelp32Snapshot;
 
-        hModToolHelp = ::LoadLibrary( "KERNEL32.DLL" );
+        hModToolHelp = g_LoadLibraryA( "KERNEL32.DLL" );
         if (hModToolHelp != NULL) {
             pfnCreateToolhelp32Snapshot = 
-            ::GetProcAddress(hModToolHelp,
+            g_GetProcAddress(hModToolHelp,
                              "CreateToolhelp32Snapshot"
                              );
             bResult = (pfnCreateToolhelp32Snapshot != NULL);
@@ -104,7 +373,7 @@ namespace NWinHook
         BOOL bResult = FALSE;
         HMODULE hModPSAPI = NULL;
 
-        hModPSAPI = ::LoadLibrary( "PSAPI.DLL" );
+        hModPSAPI = g_LoadLibraryA( "PSAPI.DLL" );
         bResult = (hModPSAPI != NULL);
         if (bResult) {
             ::FreeLibrary(hModPSAPI);
@@ -295,21 +564,21 @@ namespace NWinHook
         // be sure that PSAPI.DLL has been installed
         //
         if (NULL == m_hModPSAPI) {
-            m_hModPSAPI = ::LoadLibraryA("PSAPI.DLL");
+            m_hModPSAPI = g_LoadLibraryA("PSAPI.DLL");
         }
 
         if (NULL != m_hModPSAPI) {
             m_pfnEnumProcesses = 
             (FEnumProcesses)
-            ::GetProcAddress(m_hModPSAPI,"EnumProcesses");
+            g_GetProcAddress(m_hModPSAPI,"EnumProcesses");
 
             m_pfnEnumProcessModules = 
             (FEnumProcessModules)
-            ::GetProcAddress(m_hModPSAPI, "EnumProcessModules");
+            g_GetProcAddress(m_hModPSAPI, "EnumProcessModules");
 
             m_pfnGetModuleFileNameExA = 
             (FGetModuleFileNameExA)
-            ::GetProcAddress(m_hModPSAPI, "GetModuleFileNameExA");
+            g_GetProcAddress(m_hModPSAPI, "GetModuleFileNameExA");
 
         }
 
@@ -490,22 +759,22 @@ namespace NWinHook
         BOOL           bResult = FALSE;
         HINSTANCE      hInstLib;
 
-        hInstLib = ::LoadLibraryA("Kernel32.DLL");
+        hInstLib = g_LoadLibraryA("Kernel32.DLL");
         if (NULL != hInstLib) {
             // We must link to these functions of Kernel32.DLL explicitly. Otherwise
             // a module using this code would fail to load under Windows NT, which does not
             // have the Toolhelp32 functions in the Kernel32.
             m_pfnCreateToolhelp32Snapshot = 
                 (FCreateToolHelp32Snapshot)
-                    ::GetProcAddress(hInstLib, "CreateToolhelp32Snapshot");
+                    g_GetProcAddress(hInstLib, "CreateToolhelp32Snapshot");
             m_pfnProcess32First = (FProcess32First)
-                                  ::GetProcAddress(hInstLib, "Process32First");
+                                  g_GetProcAddress(hInstLib, "Process32First");
             m_pfnProcess32Next = (FProcess32Next)
-                                 ::GetProcAddress(hInstLib, "Process32Next");
+                                 g_GetProcAddress(hInstLib, "Process32Next");
             m_pfnModule32First = (FModule32First)
-                                 ::GetProcAddress(hInstLib, "Module32First");
+                                 g_GetProcAddress(hInstLib, "Module32First");
             m_pfnModule32Next = (FModule32Next)
-                                ::GetProcAddress(hInstLib, "Module32Next");
+                                g_GetProcAddress(hInstLib, "Module32Next");
 
             ::FreeLibrary( hInstLib );
 
@@ -1114,7 +1383,7 @@ namespace NWinHook
 
     ///////////////////////////////////////////////////////////////////////////////
     CApiHookMgr::CApiHookMgr() :
-    m_bSystemFuncsHooked(FALSE)
+        m_bSystemFuncsHooked(FALSE)
     {
         HookSystemFuncs();
     }
@@ -1214,7 +1483,7 @@ namespace NWinHook
             // It's possible that the requested module is not loaded yet
             // so lets try to load it.
             if (pfnOrig != NULL) {
-                HMODULE hmod = ::LoadLibraryA(pszCalleeModName);
+                HMODULE hmod = g_LoadLibraryA(pszCalleeModName);
                 if (NULL != hmod) {
                     pfnOrig = GetProcAddressWindows(
                         ::GetModuleHandleA(pszCalleeModName),
@@ -1327,7 +1596,7 @@ namespace NWinHook
 
     HMODULE WINAPI CApiHookMgr::MyLoadLibraryA(PCSTR pszModuleName)
     {
-        HMODULE hmod = ::LoadLibraryA(pszModuleName);
+        HMODULE hmod = g_LoadLibraryA(pszModuleName);
         GetInstance().HackModuleOnLoad(hmod, 0);
 
         return (hmod);
@@ -1335,7 +1604,7 @@ namespace NWinHook
 
     HMODULE WINAPI CApiHookMgr::MyLoadLibraryW(PCWSTR pszModuleName)
     {
-        HMODULE hmod = ::LoadLibraryW(pszModuleName);
+        HMODULE hmod = g_LoadLibraryW(pszModuleName);
         GetInstance().HackModuleOnLoad(hmod, 0);
 
         return (hmod);
@@ -1345,7 +1614,9 @@ namespace NWinHook
                                                  HANDLE hFile,
                                                  DWORD  dwFlags)
     {
-        HMODULE hmod = ::LoadLibraryExA(pszModuleName, hFile, dwFlags);
+        HMODULE hmod = g_LoadLibraryExA(pszModuleName, 
+                                        hFile, 
+                                        dwFlags);
         GetInstance().HackModuleOnLoad(hmod, 0);
 
         return (hmod);
@@ -1355,7 +1626,9 @@ namespace NWinHook
                                                  HANDLE hFile,
                                                  DWORD dwFlags)
     {
-        HMODULE hmod = ::LoadLibraryExW(pszModuleName, hFile, dwFlags);
+        HMODULE hmod = g_LoadLibraryExW(pszModuleName, 
+                                                      hFile, 
+                                                      dwFlags);
         GetInstance().HackModuleOnLoad(hmod, 0);
 
         return (hmod);
@@ -1385,7 +1658,7 @@ namespace NWinHook
     FARPROC WINAPI CApiHookMgr::GetProcAddressWindows(HMODULE hmod, 
                                                       PCSTR pszProcName)
     {
-        return (::GetProcAddress(hmod, pszProcName));
+        return (g_GetProcAddress(hmod, pszProcName));
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1393,12 +1666,12 @@ namespace NWinHook
         m_ModDbghelp(NULL),
         m_ImageDirectoryEntryToData(NULL)
     {
-        m_ModDbghelp = ::LoadLibrary( "DBGHELP.DLL" );
+        m_ModDbghelp = g_LoadLibraryA( "DBGHELP.DLL" );
 
         if (m_ModDbghelp != NULL) {
             m_ImageDirectoryEntryToData = 
                 reinterpret_cast<FImageDirectoryEntryToData>(
-                    ::GetProcAddress(m_ModDbghelp,
+                    g_GetProcAddress(m_ModDbghelp,
                                     "ImageDirectoryEntryToData"
                                     ));
             if (!m_ImageDirectoryEntryToData ) {
@@ -1509,7 +1782,7 @@ namespace NWinHook
     {
         COnExitProcess::Instance().ClearAll();
 
-        ::ExitProcess(uExitCode);
+        g_ExitProcess(uExitCode);
     }
 
 }
@@ -1521,6 +1794,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/04/10 22:28:59  ssikorsk
+ * Replaced raw calls to the Windows API with calls to previously stored
+ * pointers to functions.
+ *
  * Revision 1.1  2006/04/05 14:05:48  ssikorsk
  * Initial version
  *
