@@ -94,15 +94,29 @@ public:
         eWrite,
         eUnknownMember
     };
+
+    NCBI_EXCEPTION_DEFAULT(CUnassignedMember,CSerialException);
+
+public:
     virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
+#if 0
+	switch ( GetErrCode() ) {
         case eGet:            return "eGet";
         case eWrite:          return "eWrite";
         case eUnknownMember:  return "eUnknownMember";
         default:              return CException::GetErrCodeString();
         }
+#else
+        // At least with ICC 9.0 on 64-bit Linux in Debug and MT mode
+	// there is an apparent bug that causes the above "switch" based
+	// variant of this function to misbehave and crash with SEGV...
+    TErrCode e = GetErrCode();
+    if (e == eGet)           {return "eGet";}
+    if (e == eWrite)         {return "eWrite";}
+    if (e == eUnknownMember) {return "eUnknownMember";}
+    return CException::GetErrCodeString();
+#endif
     }
-    NCBI_EXCEPTION_DEFAULT(CUnassignedMember,CSerialException);
 };
 
 
@@ -152,6 +166,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/04/11 18:56:49  gouriano
+* Work around ICC9.0 bug
+*
 * Revision 1.21  2006/01/18 19:45:23  ssikorsk
 * Added an extra argument to CException::x_Init
 *
