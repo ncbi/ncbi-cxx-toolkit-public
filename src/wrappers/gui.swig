@@ -75,7 +75,8 @@ gui/types.hpp
 gui/utils/dialog.hpp
 
 gui/config/feat_config_inherited.hpp
-gui/config/feat_config_list.hpp
+// .cpp is no longer compiled
+//gui/config/feat_config_list.hpp
 gui/config/feat_show.hpp
 gui/config/settings.hpp
 gui/config/settings_set.hpp
@@ -319,6 +320,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/04/11 14:57:52  jcherry
+ * Dropped gui/config/feat_config_list.hpp, which is apparently obsolete
+ *
  * Revision 1.10  2006/02/27 18:22:38  jcherry
  * Reflect changes to gui/core
  *
