@@ -241,7 +241,7 @@ void I_DriverContext::CloseUnusedConnections(const string&   srv_name,
         if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
         
-        m_NotInUse.erase(it);
+        it = --m_NotInUse.erase(it);
         delete con;
     }
 }
@@ -319,7 +319,7 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
                 // There is no pool name check here. We assume that a connection
                 // pool contains connections with appropriate server names only.
                 if (conn_attr.pool_name.compare(t_con->PoolName()) == 0) {
-                    m_NotInUse.erase(it);
+                    it = --m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return Create_Connection(*t_con);
                     } 
@@ -340,7 +340,7 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
                 I_Connection* t_con(*it);
                 
                 if (conn_attr.srv_name.compare(t_con->ServerName()) == 0) {
-                    m_NotInUse.erase(it);
+                    it = --m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return Create_Connection(*t_con);
                     } 
@@ -548,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/04/11 18:39:33  ssikorsk
+ * Fixed erasing of an element from a std::list.
+ *
  * Revision 1.19  2006/04/05 15:51:32  ssikorsk
  * Widen protection scope of I_DriverContext::NofConnections
  *
