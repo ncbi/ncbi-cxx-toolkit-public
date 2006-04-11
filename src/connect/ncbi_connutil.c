@@ -915,11 +915,12 @@ extern SOCK URL_Connect
     char        buffer[80];
     size_t      headersize;
     const char* x_args = 0;
+    size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
     const char* x_req_r; /* "POST "/"GET " */
 
     /* check the args */
-    if (!host  ||  !*host  ||  !port  ||  !path  ||  !*path  ||
-        (user_hdr  &&  *user_hdr  &&  user_hdr[strlen(user_hdr)-1] != '\n')) {
+    if (!host  ||  !*host  ||  !port  ||
+        (user_hdr  &&  *user_hdr  &&  user_hdr[user_hdr_len - 1] != '\n')) {
         CORE_LOG(eLOG_Error, "[URL_Connect]  Bad arguments");
         assert(0);
         return 0/*error*/;
@@ -971,7 +972,7 @@ extern SOCK URL_Connect
     if (/* {POST|GET} <path>?<args> HTTP/1.0\r\n */
         !BUF_Write(&buf, x_req_r, strlen(x_req_r))            ||
         !BUF_Write(&buf, path,    strlen(path))               ||
-        (x_args
+        (x_args  &&  *x_args
          &&  (!BUF_Write(&buf, X_REQ_Q, sizeof(X_REQ_Q) - 1)  ||
               !BUF_Write(&buf, x_args,  strlen(x_args))))     ||
         !BUF_Write(&buf,       X_REQ_E, sizeof(X_REQ_E) - 1)  ||
@@ -982,8 +983,8 @@ extern SOCK URL_Connect
         !BUF_Write(&buf, "\r\n", 2)                           ||
 
         /* <user_header> */
-        (user_hdr
-         &&  !BUF_Write(&buf, user_hdr, strlen(user_hdr)))    ||
+        (user_hdr  &&  *user_hdr
+         &&  !BUF_Write(&buf, user_hdr, user_hdr_len))        ||
 
         /* Content-Length: <content_length>\r\n\r\n */
         (req_method != eReqMethod_Get
@@ -1977,6 +1978,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.102  2006/04/11 13:51:23  lavr
+ * URL_Connect():  Relax on parameter checking
+ *
  * Revision 6.101  2006/03/19 01:40:17  lavr
  * Yet another fix for s_IsSufficientAddress()
  *
