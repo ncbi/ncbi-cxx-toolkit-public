@@ -147,7 +147,9 @@ public:
     /// Structure describes the indexed object
     struct SObjectDescr
     {
-        SObjectDescr() : pos(0) {}
+        SObjectDescr() 
+		: id(0), is_object(false), format(CFormatGuess::eUnknown), pos(0)  
+		{}
         int                     id;
         bool                    is_object;
         string                  type_str;
@@ -197,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/04/11 19:14:12  kuznets
+ * More careful initialization of SObjectDescr
+ *
  * Revision 1.13  2005/11/21 18:51:10  jcherry
  * Added export specifier for CLDS_Query::CSequenceFinder, plus explicit
  * destructor (required for export)
