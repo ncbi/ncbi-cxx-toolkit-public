@@ -37,6 +37,7 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include "blast_aux_priv.hpp"
 #include <algo/blast/core/blast_seqsrc.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 

@@ -34,6 +34,7 @@
 #define __BLAST_UTIL__
 
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_encoding.h>
 
 #ifdef __cplusplus
@@ -198,64 +199,6 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
 NCBI_XBLAST_EXPORT
 Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number);
 
-/** Given a context from BLAST engine core, return the query index.
- * @param context Context saved in a BlastHSP structure [in]
- * @param program Type of BLAST program [in]
- * @return Query index in a set of queries or -1 on error
- */
-NCBI_XBLAST_EXPORT
-Int4 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program);
-
-/** Allocate memory for query information structure */
-NCBI_XBLAST_EXPORT
-BlastQueryInfo* BlastQueryInfoNew(EBlastProgramType program, int num_queries);
-
-/** Deallocate memory for query information structure */
-NCBI_XBLAST_EXPORT
-BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);
-
-/** Duplicates the query information structure */
-NCBI_XBLAST_EXPORT
-BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info);
-
-/** Obtains the sequence length for a given query in the query, without taking
- * into consideration any applicable translations 
- * @param qinfo BlastQueryInfo structure [in]
- * @param program CORE program type [in]
- * @param query_index number of the query 
- * (query_index < BlastQueryInfo::num_queries) [in]
- * @return the length of the query sequence requested
- */
-Int4 BlastQueryInfoGetQueryLength(const BlastQueryInfo* qinfo,
-                                  EBlastProgramType program,
-                                  Int4 query_index);
-
-/** Create auxiliary query structures with all data corresponding
- * to a single query sequence within a concatenated set. Allocates the 
- * structures if the pointers are NULL on input; otherwise only changes the
- * contents.
- * @param one_query_info_ptr Pointer to the query information structure for a 
- *                           single query. Allocated and filled here, so the
- *                           caller of this function will be responsible for
- *                           freeing it. [out]
- * @param one_query_ptr Pointer to the query sequence block structure; allocated
- *                      here, but the contents are not allocated; it is still 
- *                      safe to free by the caller after use. [out]
- * @param query_info Query information structure containing information about a 
- *                   concatenated set. [in]
- * @param query Query sequence block corresponding to a concatenated set of 
- *              queries. [in]
- * @param query_index Which query index to create the auxiliary structures 
- *                    for? [in]
- * @return -1 if memory allocation failed; 0 on success
- */
-NCBI_XBLAST_EXPORT
-Int2 Blast_GetOneQueryStructs(BlastQueryInfo** one_query_info_ptr, 
-                              BLAST_SequenceBlk** one_query_ptr,
-                              const BlastQueryInfo* query_info, 
-                              BLAST_SequenceBlk* query, Int4 query_index);
-
-
 /** Convert a sequence in ncbi4na or blastna encoding into a packed sequence
  * in ncbi2na encoding. Needed for 2 sequences BLASTn comparison.
  * @param buffer original sequence data (one base per byte) [in]
@@ -331,42 +274,6 @@ Int4 FrameToContext(Int2 frame);
 /** The following binary search routine assumes that array A is filled. */
 NCBI_XBLAST_EXPORT
 Int4 BSearchInt4(Int4 n, Int4* A, Int4 size);
-
-
-/** Search BlastContextInfo structures for the specified offset */
-NCBI_XBLAST_EXPORT
-Int4 BSearchContextInfo(Int4 n, BlastQueryInfo * A);
-
-
-/** Get the number of bytes required for the concatenated sequence
- * buffer, given a query info structure.  The context data should
- * already be assigned.
- * @param qinfo  Query info structure. [in/out]
- * @return Number of bytes for all queries and inter-query marks.
- */
-Uint4
-QueryInfo_GetSeqBufLen(const BlastQueryInfo* qinfo);
-
-
-/** Copy the context query offsets to an allocated array of Int4.
- * @param info Describes the concatenated query.
- * @return Allocated array.
- */
-NCBI_XBLAST_EXPORT
-Int4 * ContextOffsetsToOffsetArray(BlastQueryInfo* info);
-
-
-/** Copy the context query offsets from an array of Int4, allocating
- * the context array if needed.
- * @param info Destination for the values.
- * @param new_offsets Array of values to copy from.
- * @param prog        The blast program type.
- */
-NCBI_XBLAST_EXPORT
-void OffsetArrayToContextOffsets(BlastQueryInfo    * info,
-                                 Int4              * new_offsets,
-                                 EBlastProgramType   prog);
-
 
 /** Get the standard amino acid probabilities. This is basically a wrapper for 
  * BlastScoreBlkNew() and Blast_ResFreqStdComp() from blast_stat.c with a more

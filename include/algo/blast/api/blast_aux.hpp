@@ -44,6 +44,7 @@
 // NewBlast includes
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h> // Needed for BlastMaskLoc & BlastSeqLoc
@@ -328,6 +329,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2006/04/11 15:47:31  camacho
+* Reorganization of BlastQueryInfo structure
+*
 * Revision 1.74  2006/03/27 13:47:14  camacho
 * Relocation of CFrameFinder
 *

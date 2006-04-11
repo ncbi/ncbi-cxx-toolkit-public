@@ -36,6 +36,7 @@
 #define __BLAST_STAT__
 
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_message.h>
 
 #ifdef __cplusplus
