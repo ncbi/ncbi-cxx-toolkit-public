@@ -1272,6 +1272,9 @@ SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
                                  bool allow_partial_failure)
 {
     string ss = NStr::TruncateSpaces(s, NStr::eTrunc_Both);
+    if (ss.empty()) {
+        return 0;
+    }
     list<string> fasta_pieces;
     NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
     if ((fasta_pieces.size() < 2  ||  isdigit((unsigned char)ss[0]))) {
@@ -1587,6 +1590,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.127  2006/04/11 15:07:20  ucko
+ * ParseFastaIds: when fed an empty string (or just whitespace), return 0
+ * rather than storing a blank local ID.
+ *
  * Revision 6.126  2006/04/06 15:59:34  ucko
  * DDBJ changes its use of DF from CON to scaffold/CON and will be using
  * DG for CON entries.  [We represent both as eAcc_ddbj_con.]
