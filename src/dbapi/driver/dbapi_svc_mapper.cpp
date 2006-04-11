@@ -568,9 +568,15 @@ CDBUDPriorityMapper::Exclude(const string& service,
     
     TServerUsageMap& usage_map = m_ServiceUsageMap[service];
     
-    NON_CONST_ITERATE(TServerUsageMap, su_it, usage_map) {
-        if (su_it->second == server) {
-            usage_map.erase(su_it);
+    // Remove elements ...
+    for (TServerUsageMap::iterator it = usage_map.begin(); 
+         it != usage_map.end();) {
+        
+        if (it->second == server) {
+            usage_map.erase(it++);
+        }
+        else {
+            ++it;
         }
     }
 }
@@ -709,6 +715,9 @@ CDBServiceMapperTraits<CDBUniversalMapper>::GetName(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/04/11 18:38:45  ssikorsk
+ * Fixed erasing of an element from a multimap in CDBUDPriorityMapper::Exclude
+ *
  * Revision 1.5  2006/02/22 16:05:35  ssikorsk
  * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
  *
