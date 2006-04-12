@@ -126,15 +126,7 @@ const CSplign::TResults& CSplignSimple::Run(void)
     }
 
     if(hitrefs.size()) {
-
         m_Splign->Run(&hitrefs);
-
-        const CSplign::TResults &splignRes = m_Splign->GetResult();        
-        ITERATE(CSplign::TResults, resI, splignRes) {
-            if (resI->m_error) {
-                NCBI_THROW(CException, eUnknown, resI->m_msg);
-            }
-        }
     }
 
     return m_Splign->GetResult();
@@ -171,6 +163,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.20  2006/04/12 16:36:25  kapustin
+* Do not throw on failed compartments
+*
 * Revision 1.19  2005/12/07 15:49:58  kapustin
 * Protect scope by default
 *
