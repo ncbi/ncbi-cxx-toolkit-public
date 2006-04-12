@@ -119,6 +119,7 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
     int score;
     int top_score = 0;
     int length_top_match;
+    double e_value_top_match;
     CRef<CSeq_align> top_match;
     ITERATE (list<CRef<CSeq_align> >, aln, annot->GetData().GetAlign()) {
         const CSeq_id& match_id = *(*aln)->GetSegs().GetDenseg().GetIds()[1];
@@ -151,8 +152,12 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
         *top_match->GetSegs().GetDenseg().GetIds()[1];
     CBioseq_Handle hand = scope.GetBioseqHandle(top_match_id);
     length_top_match = hand.GetBioseqLength();
+    if (!top_match->GetNamedScore("e_value", e_value_top_match)) {
+        throw runtime_error("No e-value found");
+    }
 
     result->SetOutput_data().AddField("best_score", top_score);
+    result->SetOutput_data().AddField("e_value_top_match", e_value_top_match);
     result->SetOutput_data()
             .AddField("length_top_match", length_top_match);
     result->SetOutput_data().AddField("id_top_match",
@@ -170,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/04/12 14:16:18  jcherry
+ * Added "e_value_top_match" result
+ *
  * Revision 1.6  2006/01/18 15:19:12  jcherry
  * Added id and title of top match of interest
  *
