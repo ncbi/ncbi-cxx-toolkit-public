@@ -106,6 +106,9 @@ public:
     /// Returns TRUE if error is BerkeleyDB DB_LOCK_DEADLOCK
     bool IsDeadLock() const;
 
+    /// If it is DB_RUNRECOVERY error
+    bool IsRecovery() const;
+
     NCBI_EXCEPTION_DEFAULT2(CBDB_ErrnoException, CParent, int);
 };
 
@@ -194,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/12 13:28:55  kuznets
+ * +IsRecovery()
+ *
  * Revision 1.21  2005/12/12 13:51:14  ivanov
  * CBDB_ErrnoException:: Reflect changes in the CErrnoTemplExceptionEx
  *

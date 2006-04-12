@@ -78,12 +78,20 @@ bool CBDB_ErrnoException::IsDeadLock() const
     return (BDB_GetErrno() == DB_LOCK_DEADLOCK);
 }
 
+bool CBDB_ErrnoException::IsRecovery() const
+{
+    return (BDB_GetErrno() == DB_RUNRECOVERY);
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/04/12 13:29:07  kuznets
+ * +IsRecovery()
+ *
  * Revision 1.7  2005/12/12 14:12:23  ivanov
  * + #include <corelib/ncbidbg.hpp>
  *
