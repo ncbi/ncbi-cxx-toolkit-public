@@ -409,9 +409,10 @@ size_t CCompartmentFinder<THit>::Run()
             h->GetSubjMin(),
             h->GetSubjMax()
         };
+
 //#define CF_DBG_TRACE
 #ifdef CF_DBG_TRACE
-        cerr << *h << endl;
+        cerr << "***" << *h << endl;
 #endif
         typename list<SQueryMark>::iterator li0 
             = lower_bound(li_b, li_e, SQueryMark(hbox[1], 0, -2, kMax_TCoord));
@@ -421,8 +422,10 @@ size_t CCompartmentFinder<THit>::Run()
         typename list<SQueryMark>::iterator li_best_ext = li_b;
         double best_open_score = kMinusInf;
         typename list<SQueryMark>::iterator li_best_open = li_b;
+
+        double intron_penalty_be = 0.0;
         
-        for( typename list<SQueryMark>::iterator li = li_b; li != li_e; ++li) {
+        for(typename list<SQueryMark>::iterator li = li_b; li != li_e; ++li) {
             
             THitRef phc;
             typename THit::TCoord phcbox[4];
@@ -485,12 +488,14 @@ size_t CCompartmentFinder<THit>::Run()
                         subj_space * kPenaltyPerIntronBase: 0.0;
 
                     const double ext_score = li_score +
-                        identity * (hbox[1] - q0 + 1) +
-                        intron_penalty;
+                        identity * (hbox[1] - q0 + 1);
 
-                    if(ext_score > best_ext_score) {
+                    if(ext_score + intron_penalty > 
+                       best_ext_score + intron_penalty_be)
+                    {
                         best_ext_score = ext_score;
                         li_best_ext = li;
+                        intron_penalty_be = intron_penalty;
                     }
 #ifdef CF_DBG_TRACE
                     cerr << "\tGood for extension with score = " 
@@ -515,7 +520,7 @@ size_t CCompartmentFinder<THit>::Run()
                          << score_open << endl;
 #endif
             }
-        }
+        } // li
         
         typename SHitStatus::EType hit_type;
         int prev_hit;
@@ -542,7 +547,9 @@ size_t CCompartmentFinder<THit>::Run()
             updated = true;
         }
         else {
-            if(best_score >= li0->m_score) {
+            
+            const double dif = best_score - li0->m_score;
+            if(dif >= 0.0) { // kludge around optimizer bug - compare the difference
                 li0->m_score = best_score;
                 li0->m_hit = i;
                 updated = true;
@@ -556,6 +563,10 @@ size_t CCompartmentFinder<THit>::Run()
         }
     }
     
+#ifdef CF_DBG_TRACE
+    cerr << "\n\n--- BACKTRACE ---\n";
+#endif
+
     // *** backtrace ***
     // - find query mark with the highest score
     // - trace it back until the dummy
@@ -589,6 +600,10 @@ size_t CCompartmentFinder<THit>::Run()
                 new_compartment = false;
             }
             hitrefs.push_back(m_hitrefs[i]);
+
+#ifdef CF_DBG_TRACE
+            cerr << *(m_hitrefs[i]) << endl;
+#endif            
             
             if(hitstatus[i].m_type == SHitStatus::eOpening) {
                 new_compartment = true;
@@ -788,6 +803,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/04/12 16:28:25  kapustin
+ * Use intron penalities only when discirminating between extension candidates
+ *
  * Revision 1.7  2006/03/21 16:16:12  kapustin
  * +max_singleton_matches parameter
  *
