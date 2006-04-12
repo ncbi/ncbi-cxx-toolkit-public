@@ -130,7 +130,8 @@ EKozakStrength s_GetKozakStrength(const CSeqVector& vec, TSeqPos pos)
         (vec[pos - 3] == 'A' || vec[pos - 3] == 'G')) {
         ++score;
     }
-    if (vec[pos + 3] == 'G') {
+    if (vec.size() > pos + 3 &&
+        vec[pos + 3] == 'G') {
         ++score;
     }
     return EKozakStrength(score);
@@ -907,6 +908,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/04/12 15:11:38  jcherry
+ * Fix for Kozak strength for starts at very 3' end
+ *
  * Revision 1.22  2006/02/21 15:26:45  jcherry
  * Deal with CDS features that lack an annotated product
  *
