@@ -493,10 +493,15 @@ void CSplign::Run(THitRefs* phitrefs)
 
     THit::TId id_query (hitrefs.front()->GetQueryId());
 
-    const size_t mrna_size = objects::sequence::GetLength(*id_query, m_Scope);
-    const size_t comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
-    const size_t min_matches = size_t(m_MinCompartmentIdty * mrna_size);
-    const size_t min_singleton_matches = size_t(m_MinSingletonIdty * mrna_size);
+    const TSeqPos mrna_size = objects::sequence::GetLength(*id_query, m_Scope);
+    if(mrna_size == numeric_limits<TSeqPos>::max()) {
+        NCBI_THROW(CAlgoAlignException, eNoData, 
+                   string("Sequence not found: ") + id_query->AsFastaString());
+    }
+    
+    const TSeqPos comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
+    const TSeqPos min_matches = size_t(m_MinCompartmentIdty * mrna_size);
+    const TSeqPos min_singleton_matches = size_t(m_MinSingletonIdty * mrna_size);
 
     // iterate through compartments
     CCompartmentAccessor<THit> comps (hitrefs.begin(), hitrefs.end(),
@@ -506,7 +511,7 @@ void CSplign::Run(THitRefs* phitrefs)
 
     size_t dim = comps.GetCount();    
     if(dim > 0) {
-        
+ 
         // pre-load cDNA
         m_mrna.clear();
         x_LoadSequence(&m_mrna, *id_query, 0, 
@@ -527,6 +532,7 @@ void CSplign::Run(THitRefs* phitrefs)
     if(m_MaxCompsPerQuery > 0 && dim > m_MaxCompsPerQuery) {
         dim = m_MaxCompsPerQuery;
     }
+
     for(size_t i = 0; i < dim; ++i, box += 4) {
         
         if(i+1 == dim) {
@@ -553,7 +559,7 @@ void CSplign::Run(THitRefs* phitrefs)
             m_result.push_back(ac);
         }
 
-        catch(CException& e) {
+        catch(CAlgoAlignException& e) {
             
             if(e.GetSeverity() == eDiag_Fatal) {
                 throw;
@@ -596,7 +602,7 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
         m_mrna.resize(0);
     }
 
-    catch(CException& e) {
+    catch(CAlgoAlignException& e) {
 
         m_mrna.resize(0);        
 
@@ -651,7 +657,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
         const size_t mrna_size = m_mrna.size();
     
-        if( !m_strand ) {
+        if(m_strand == false) {
         
             // adjust the hits
             for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
@@ -664,6 +670,18 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
                 h->SetQueryStop(a0);
                 h->SetSubjStrand(new_strand);
             }
+        }
+
+        const size_t max_intron = 1048575; // 2^20
+        size_t prev = 0;
+        ITERATE(THitRefs, ii, *phitrefs) {
+            const THitRef& h = *ii;
+            if(prev > 0 && h->GetSubjMin() >= prev + max_intron) {
+                NCBI_THROW(CAlgoAlignException, eNoAlignment,
+                           "Compartment inconsistent upon filtering "
+                           "because of extra long introns");
+            }
+            prev = h->GetSubjMax();
         }
     
         m_polya_start = m_nopolya? kMax_UInt: x_TestPolyA();
@@ -792,13 +810,11 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
                 m_polya_start += sh;
             }
         }
-
-        int j = seg_dim - 1;
     
         // look for PolyA in trailing segments:
         // if a segment is mostly 'A's then we add it to PolyA
 
-        for(; j >= 0 && m_segments[j].m_exon == false; --j);
+        int j = seg_dim - 1, j0 = j;
         for(; j >= 0; --j) {
         
             const CSplign::SSegment& s = m_segments[j];
@@ -824,19 +840,22 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
                 min_a_content = s.m_len > 4? 0.599: -1;
             }
         
-            const size_t len = p1 - p0;
-            if(double(count)/len < min_a_content) {
-                break;
+
+            if(double(count)/(p1 - p0) < min_a_content) {
+                if(s.m_exon) break;
+            }
+            else {
+                j0 = j - 1;
             }
         }
 
-        if(j >= 0 && j < int(seg_dim - 1)) {
-            m_polya_start = m_segments[j].m_box[1] + 1;
+        if(j0 >= 0 && j0 < int(seg_dim - 1)) {
+            m_polya_start = m_segments[j0].m_box[1] + 1;
         }
 
-        // test if we have at least one exon
+        // test if we have at least one exon before poly(a)
         bool some_exons = false;
-        for(int i = 0; i <= j; ++i ) {
+        for(int i = 0; i <= j0; ++i ) {
             if(m_segments[i].m_exon) {
                 some_exons = true;
                 break;
@@ -846,7 +865,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             NCBI_THROW(CAlgoAlignException, eNoAlignment,g_msg_NoExonsAboveIdtyLimit);
         }
     
-        m_segments.resize(j + 1);
+        m_segments.resize(j0 + 1);
 
         // convert coordinates back to original
         NON_CONST_ITERATE(TSegments, jj, m_segments) {
@@ -873,11 +892,16 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         }
     } // try
 
-    catch(CException& e) {
-        if(e.GetErrCode() != CAlgoAlignException::eNoAlignment) {
+    catch(CAlgoAlignException& e) {
+        
+        const CException::TErrCode errcode = e.GetErrCode();
+        const bool severe = 
+            errcode != CAlgoAlignException::eNoAlignment && 
+            errcode != CAlgoAlignException::eMemoryLimit;
+        if(severe) {
             e.SetSeverity(eDiag_Fatal);
-            throw;
         }
+        throw;
     }
 
     return rv;
@@ -1772,6 +1796,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/04/12 16:32:50  kapustin
+ * Fix an issue with truncated non-polya R-GAP's
+ *
  * Revision 1.50  2006/04/05 13:55:22  dicuccio
  * Added destructor, forbiddent copy constructor
  *
