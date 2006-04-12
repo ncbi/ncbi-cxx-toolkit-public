@@ -78,12 +78,14 @@ public:
 
     /// Open LDS database (Read/Write mode by default)
     void Open(EOpenMode omode = eReadWrite);
+    /// Reopen the LDS database
+    void ReOpen();
 
     /// Flush all cache buffers to disk
     void Sync();
 
     /// Return reference on database tables
-    SLDS_TablesCollection& GetTables() { return m_db; }
+    SLDS_TablesCollection& GetTables() { return *m_db; }
 
     const TObjTypeMap& GetObjTypeMap() const { return m_ObjTypeMap; }
 
@@ -108,11 +110,12 @@ private:
     string                 m_LDS_DbName;
     string                 m_Alias;
 
-    SLDS_TablesCollection  m_db;
+    auto_ptr<SLDS_TablesCollection> m_db;
 
     TObjTypeMap            m_ObjTypeMap;
     
     CRef<CLDS_DataLoader>  m_Loader;
+    EOpenMode              m_OpenMode;
 };
 
 //////////////////////////////////////////////////////////////////
@@ -173,6 +176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/04/12 13:30:07  kuznets
+ * +ReOpen()
+ *
  * Revision 1.25  2006/03/23 14:49:00  voronov
  * CRef to DataLoader added
  *
