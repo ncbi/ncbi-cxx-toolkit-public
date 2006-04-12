@@ -3,7 +3,7 @@
 ASN_DEP = seqtest
 
 SRC = seqtest xcript_tests prot_prod_tests blastp_tests \
-	single_aln_tests
+	single_aln_tests seq_id_tests
 LIB = xalgoseqqa
 
 CXXFLAGS = $(FAST_CXXFLAGS)

@@ -38,6 +38,7 @@
 #include <algo/seqqa/prot_prod_tests.hpp>
 #include <algo/seqqa/blastp_tests.hpp>
 #include <algo/seqqa/single_aln_tests.hpp>
+#include <algo/seqqa/seq_id_tests.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbitime.hpp>
 #include <objects/general/Date.hpp>
@@ -157,6 +158,9 @@ void CSeqTestManager::RegisterStandardTests()
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestProtProd_EntrezNeighbors);
 
+    RegisterTest(CSeq_id::GetTypeInfo(),
+                 new CTestSeqId_Biomol);
+
     RegisterTest(CSeq_annot::GetTypeInfo(),
                  new CTestBlastp_All);
 
@@ -229,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/04/12 19:38:58  jcherry
+ * Added biomol tests for all Seq-id's
+ *
  * Revision 1.11  2006/02/13 14:53:41  jcherry
  * Added counts of ambiguous residues
  *
