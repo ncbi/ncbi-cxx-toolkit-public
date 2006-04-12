@@ -742,7 +742,7 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     TSeqPos buflen;             // length of buffer allocated
     TSeqPos i;                  // loop index of original sequence
     TAutoUint1Ptr safe_buf;     // contains buf to ensure exception safety
-    vector<TSeqPos> replaced_selenocysteins; // Selenocystein residue positions
+    vector<TSeqPos> replaced_residues; // Substituted residue positions
     vector<TSeqPos> invalid_residues;        // Invalid residue positions
 
     sv.SetCoding(CSeq_data::e_Ncbistdaa);
@@ -756,9 +756,11 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     safe_buf.reset(buf);
     *buf_var++ = GetSentinelByte(eBlastEncodingProtein);
     for (i = 0; i < sv.size(); i++) {
-        // Change Selenocysteine to X
-        if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U']) {
-            replaced_selenocysteins.push_back(i);
+        // Change unsupported residues to X
+        if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U'] ||
+            sv[i] == AMINOACID_TO_NCBISTDAA[(int)'O'] ||
+            sv[i] == AMINOACID_TO_NCBISTDAA[(int)'J']) {
+            replaced_residues.push_back(i);
             *buf_var++ = AMINOACID_TO_NCBISTDAA[(int)'X'];
         } else if (!s_IsValidResidue(sv[i])) {
             invalid_residues.push_back(i);
@@ -776,11 +778,11 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     }
 
     *buf_var++ = GetSentinelByte(eBlastEncodingProtein);
-    if (warnings && replaced_selenocysteins.size() > 0) {
-        *warnings += "Selenocysteine (U) replaced by X at positions ";
-        *warnings += NStr::IntToString(replaced_selenocysteins[0]);
-        for (i = 1; i < replaced_selenocysteins.size(); i++) {
-            *warnings += ", " + NStr::IntToString(replaced_selenocysteins[i]);
+    if (warnings && replaced_residues.size() > 0) {
+        *warnings += "One or more U, O, or J characters replaced by X at positions ";
+        *warnings += NStr::IntToString(replaced_residues[0]);
+        for (i = 1; i < replaced_residues.size(); i++) {
+            *warnings += ", " + NStr::IntToString(replaced_residues[i]);
         }
     }
     return SBlastSequence(safe_buf.release(), buflen);
@@ -1562,6 +1564,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.113  2006/04/12 14:47:42  papadopo
+ * replace U, O, or J protein letters with X
+ *
  * Revision 1.112  2006/04/05 21:00:58  camacho
  * Remove unused argument from s_QueryInfo_SetContext
  *
