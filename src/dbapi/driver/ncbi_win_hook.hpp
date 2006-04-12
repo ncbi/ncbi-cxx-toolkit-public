@@ -95,7 +95,14 @@ namespace NWinHook
 
         bool HaveHookedFunctions(void) const 
         {
-            return(m_FunctionList.size() > 0);
+//             return(m_FunctionList.size() > 0);
+            size_t num = 0;
+
+            ITERATE(TModuleList, it, m_ModuleList) {
+                num += it->second.size();
+            }
+
+            return (num > 0);
         }
 
     private:
@@ -109,6 +116,10 @@ namespace NWinHook
                                       DWORD   dwFuncOrdinalNum,
                                       PSTR    pszFuncName
                                       );
+        void GetFunctionNameByOrdinal(HMODULE hmodOriginal,
+                                      DWORD   dwFuncOrdinalNum,
+                                      PSTR    pszFuncName
+                                      );
 
     private:
         struct SNocaseCmp {
@@ -117,8 +128,13 @@ namespace NWinHook
             }
         };
         typedef map<string, CHookedFunction*, SNocaseCmp> TFunctionList;
+        typedef map<void*, TFunctionList> TModuleList;
+        typedef map<string, TFunctionList, SNocaseCmp> TModuleNameList;
 
-        TFunctionList m_FunctionList;
+        // TFunctionList m_FunctionList;
+        TModuleList     m_ModuleList;
+        TModuleNameList m_ModuleNameList;
+
         friend class CApiHookMgr;
     };
 
@@ -249,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/04/12 21:57:37  ssikorsk
+ * Changed implementation of CHookedFunctions
+ *
  * Revision 1.2  2006/04/10 22:26:25  ssikorsk
  * Moved some class declarations into cpp.
  *

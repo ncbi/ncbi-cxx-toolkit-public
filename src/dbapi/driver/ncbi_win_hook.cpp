@@ -207,13 +207,14 @@ namespace NWinHook
     ///
     class CHookedFunction {
     public:
-        CHookedFunction(PCSTR             pszCalleeModName,
-                        PCSTR             pszFuncName,
-                        PROC              pfnOrig,
-                        PROC              pfnHook
+        CHookedFunction(PCSTR   pszCalleeModName,
+                        PCSTR   pszFuncName,
+                        PROC    pfnOrig,
+                        PROC    pfnHook
                         );
         ~CHookedFunction(void);
 
+        HMODULE GetCalleeMod(void) const;
         PCSTR GetCalleeModName(void) const;
         PCSTR GetFuncName(void) const;
         PROC GetPfnHook(void) const;
@@ -233,6 +234,7 @@ namespace NWinHook
 
     private:
         BOOL    m_bHooked;
+        HMODULE m_CalleeMod;
         char    m_szCalleeModName[MAX_PATH];
         char    m_szFuncName[MAX_PATH];
         PROC    m_pfnOrig;
@@ -925,12 +927,15 @@ namespace NWinHook
     {
         CHookedFunction* pHook;
 
-        ITERATE(TFunctionList, it, m_FunctionList) {
-            pHook = it->second;
-            pHook->UnHookImport();
-            delete pHook;
+        ITERATE(TModuleList, mod_it, m_ModuleList) {
+            ITERATE(TFunctionList, it, mod_it->second) {
+                pHook = it->second;
+                pHook->UnHookImport();
+                delete pHook;
+            }
         }
-        m_FunctionList.clear();
+        m_ModuleList.clear();
+        m_ModuleNameList.clear();
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -949,11 +954,14 @@ namespace NWinHook
                                      PROC  pfnHook
                                      ) :
     m_bHooked(FALSE),
+    m_CalleeMod(NULL),
     m_pfnOrig(pfnOrig),
     m_pfnHook(pfnHook) 
     {
         strcpy(m_szCalleeModName, pszCalleeModName);
         strcpy(m_szFuncName, pszFuncName);
+
+        m_CalleeMod = ::GetModuleHandle(m_szCalleeModName);
 
         if (sm_pvMaxAppAddr == NULL) {
             // Functions with address above lpMaximumApplicationAddress require
@@ -978,6 +986,11 @@ namespace NWinHook
     CHookedFunction::~CHookedFunction(void)
     {
         UnHookImport();
+    }
+
+    HMODULE CHookedFunction::GetCalleeMod(void) const
+    {
+        return m_CalleeMod;
     }
 
     PCSTR CHookedFunction::GetCalleeModName(void) const
@@ -1219,18 +1232,6 @@ namespace NWinHook
     }
 
     ///////////////////////////////////////////////////////////////////////////////
-    CHookedFunction* CHookedFunctions::GetHookedFunction(HMODULE hmodOriginal,
-                                                         PCSTR   pszFuncName
-                                                         )
-    {
-        char szFileName[MAX_PATH];
-        ::GetModuleFileName(hmodOriginal, szFileName, MAX_PATH);
-        // We must extract only the name and the extension
-        ExtractModuleFileName(szFileName);
-
-        return (GetHookedFunction(szFileName, pszFuncName));
-    }
-
     BOOL CHookedFunctions::GetFunctionNameFromExportSection(
         HMODULE hmodOriginal,
         DWORD   dwFuncOrdinalNum,
@@ -1316,13 +1317,23 @@ namespace NWinHook
         GetFunctionNameFromExportSection(hmodOriginal, dwFuncOrdinalNum, pszFuncName);
     }
 
+    void CHookedFunctions::GetFunctionNameByOrdinal(HMODULE hmodOriginal,
+                                                    DWORD   dwFuncOrdinalNum,
+                                                    PSTR    pszFuncName
+                                                    )
+    {
+        // Take the name from the export section of the DLL
+        GetFunctionNameFromExportSection(hmodOriginal, dwFuncOrdinalNum, pszFuncName);
+    }
 
-    CHookedFunction* CHookedFunctions::GetHookedFunction(PCSTR   pszCalleeModName,
-                                                         PCSTR   pszFuncName
-                                                         )
+
+    CHookedFunction* 
+    CHookedFunctions::GetHookedFunction(PCSTR pszCalleeModName,
+                                        PCSTR pszFuncName)
     {
         CHookedFunction* pHook = NULL;
         char szFuncName[MAX_PATH];
+
         // Prevent accessing invalid pointers and examine values
         // for APIs exported by ordinal
         if ((pszFuncName) &&
@@ -1331,15 +1342,69 @@ namespace NWinHook
             strcpy(szFuncName, pszFuncName);
         }
         else {
-            GetFunctionNameByOrdinal(pszCalleeModName, (DWORD)pszFuncName, szFuncName);
+            GetFunctionNameByOrdinal(pszCalleeModName, 
+                                     (DWORD)pszFuncName, 
+                                     szFuncName);
         }
-        // Search in the map only if we have found the name of the requested function
+
+        // Search in the map only if we have found the name of the requested 
+        // function
         if (strlen(szFuncName) > 0) {
-            char szKey[MAX_PATH];
-            // iterators can be used to check if an entry is in the map
-            TFunctionList::const_iterator citr = m_FunctionList.find( szKey );
-            if (citr != m_FunctionList.end())
-                pHook = citr->second;
+            // Get a module by name ...
+            TModuleNameList::const_iterator mn_it = 
+                m_ModuleNameList.find(pszCalleeModName);
+
+            if (mn_it != m_ModuleNameList.end()) {
+                const TFunctionList& fn_list = mn_it->second;
+
+                // Get the function by name ...
+                TFunctionList::const_iterator fn_it = fn_list.find(szFuncName);
+                if (fn_it != fn_list.end()) {
+                    pHook = fn_it->second;
+                }
+            }
+        }
+
+        return (pHook);
+    }
+
+
+    CHookedFunction* 
+    CHookedFunctions::GetHookedFunction(HMODULE hmodOriginal,
+                                        PCSTR pszFuncName)
+    {
+        CHookedFunction* pHook = NULL;
+        char szFuncName[MAX_PATH];
+
+        // Prevent accessing invalid pointers and examine values
+        // for APIs exported by ordinal
+        if ((pszFuncName) &&
+            ((DWORD)pszFuncName > 0xFFFF) &&
+            strlen(pszFuncName)) {
+            strcpy(szFuncName, pszFuncName);
+        }
+        else {
+            GetFunctionNameByOrdinal(hmodOriginal, 
+                                     (DWORD)pszFuncName, 
+                                     szFuncName);
+        }
+
+        // Search in the map only if we have found the name of the requested 
+        // function
+        if (strlen(szFuncName) > 0) {
+            // Get a module by name ...
+            TModuleList::const_iterator mod_it = 
+                m_ModuleList.find(hmodOriginal);
+
+            if (mod_it != m_ModuleList.end()) {
+                const TFunctionList& fn_list = mod_it->second;
+
+                // Get the function by name ...
+                TFunctionList::const_iterator fn_it = fn_list.find(szFuncName);
+                if (fn_it != fn_list.end()) {
+                    pHook = fn_it->second;
+                }
+            }
         }
 
         return (pHook);
@@ -1350,11 +1415,11 @@ namespace NWinHook
     {
         BOOL bResult = FALSE;
         if (NULL != pHook) {
-            char szKey[MAX_PATH];
-            // Find where szKey is or should be
-            TFunctionList::iterator lb = m_FunctionList.lower_bound(szKey);
-            // Adds pair(pszKey, pObject) to the map
-            m_FunctionList.insert( lb, TFunctionList::value_type(szKey, pHook) );
+            m_ModuleNameList[pHook->GetCalleeModName()][pHook->GetFuncName()] = 
+                pHook;
+            m_ModuleList[pHook->GetCalleeMod()][pHook->GetFuncName()] = 
+                pHook;
+
             bResult = TRUE;
         }
         return (bResult);
@@ -1365,13 +1430,36 @@ namespace NWinHook
         BOOL bResult = FALSE;
         try {
             if (NULL != pHook) {
-                char szKey[MAX_PATH];
-                // Find where szKey is located
-                TFunctionList::iterator itr = m_FunctionList.find(szKey);
-                if (itr != m_FunctionList.end()) {
-                    delete itr->second;
-                    m_FunctionList.erase(itr);
+                // Remove from m_ModuleNameList ...
+                TModuleNameList::iterator mn_it = 
+                    m_ModuleNameList.find(pHook->GetCalleeModName());
+
+                if (mn_it != m_ModuleNameList.end()) {
+                    TFunctionList& fn_list = mn_it->second;
+                    TFunctionList::iterator fn_it = 
+                        fn_list.find(pHook->GetFuncName());
+
+                    if (fn_it != fn_list.end()) {
+                        delete fn_it->second;
+                        fn_list.erase(fn_it);
+                    }
                 }
+
+                // Remove from m_ModuleList ...
+                TModuleList::iterator mod_it = 
+                    m_ModuleList.find(pHook->GetCalleeMod());
+
+                if (mod_it != m_ModuleList.end()) {
+                    TFunctionList& fn_list = mod_it->second;
+                    TFunctionList::iterator fn_it = 
+                        fn_list.find(pHook->GetFuncName());
+
+                    if (fn_it != fn_list.end()) {
+                        // An element is already deleted ...
+                        fn_list.erase(fn_it);
+                    }
+                }
+
                 bResult = TRUE;
             }
         }
@@ -1580,79 +1668,117 @@ namespace NWinHook
             CFastMutexGuard guard(m_Mutex);
 
             CHookedFunction* pHook;
-            ITERATE(CHookedFunctions::TFunctionList, 
-                    it, 
-                    m_pHookedFunctions.m_FunctionList) {
+            ITERATE(CHookedFunctions::TModuleNameList, 
+                    mn_it, 
+                    m_pHookedFunctions.m_ModuleNameList) {
 
-                pHook = it->second;
-                pHook->ReplaceInOneModule(pHook->GetCalleeModName(),
-                                          pHook->GetPfnOrig(),
-                                          pHook->GetPfnHook(),
-                                          hmod
-                                          );
+                const CHookedFunctions::TFunctionList& fn_list = mn_it->second;
+
+                ITERATE(CHookedFunctions::TFunctionList, 
+                        it, 
+                        fn_list) {
+
+                    pHook = it->second;
+                    pHook->ReplaceInOneModule(pHook->GetCalleeModName(),
+                                              pHook->GetPfnOrig(),
+                                              pHook->GetPfnHook(),
+                                              hmod
+                                              );
+                }
             }
+
         }
     }
 
     HMODULE WINAPI CApiHookMgr::MyLoadLibraryA(PCSTR pszModuleName)
     {
-        HMODULE hmod = g_LoadLibraryA(pszModuleName);
-        GetInstance().HackModuleOnLoad(hmod, 0);
+        HMODULE hmod = NULL;
 
-        return (hmod);
+        try {
+            hmod = g_LoadLibraryA(pszModuleName);
+            GetInstance().HackModuleOnLoad(hmod, 0);
+        } catch (...) {
+            return NULL;
+        }
+
+        return hmod;
     }
 
     HMODULE WINAPI CApiHookMgr::MyLoadLibraryW(PCWSTR pszModuleName)
     {
-        HMODULE hmod = g_LoadLibraryW(pszModuleName);
-        GetInstance().HackModuleOnLoad(hmod, 0);
+        HMODULE hmod = NULL;
 
-        return (hmod);
+        try {
+            hmod = g_LoadLibraryW(pszModuleName);
+            GetInstance().HackModuleOnLoad(hmod, 0);
+        } catch (...) {
+            return NULL;
+        }
+
+        return hmod;
     }
 
     HMODULE WINAPI CApiHookMgr::MyLoadLibraryExA(PCSTR  pszModuleName,
                                                  HANDLE hFile,
                                                  DWORD  dwFlags)
     {
-        HMODULE hmod = g_LoadLibraryExA(pszModuleName, 
-                                        hFile, 
-                                        dwFlags);
-        GetInstance().HackModuleOnLoad(hmod, 0);
+        HMODULE hmod = NULL;
 
-        return (hmod);
+        try {
+            hmod = g_LoadLibraryExA(pszModuleName, 
+                                    hFile, 
+                                    dwFlags);
+            GetInstance().HackModuleOnLoad(hmod, 0);
+        } catch (...) {
+            return NULL;
+        }
+
+        return hmod;
     }
 
     HMODULE WINAPI CApiHookMgr::MyLoadLibraryExW(PCWSTR pszModuleName,
                                                  HANDLE hFile,
                                                  DWORD dwFlags)
     {
-        HMODULE hmod = g_LoadLibraryExW(pszModuleName, 
-                                                      hFile, 
-                                                      dwFlags);
-        GetInstance().HackModuleOnLoad(hmod, 0);
+        HMODULE hmod = NULL;
 
-        return (hmod);
+        try {
+            hmod = g_LoadLibraryExW(pszModuleName, 
+                                    hFile, 
+                                    dwFlags);
+            GetInstance().HackModuleOnLoad(hmod, 0);
+        } catch (...) {
+            return NULL;
+        }
+
+        return hmod;
     }
 
     FARPROC WINAPI CApiHookMgr::MyGetProcAddress(HMODULE hmod, 
                                                  PCSTR pszProcName)
     {
-        // Get the original address of the function
-        FARPROC pfn = GetProcAddressWindows(hmod, pszProcName);
+        FARPROC pfn = NULL;
 
-        // Attempt to locate if the function has been hijacked
-        CHookedFunction* pFuncHook =
-        GetInstance().GetHookedFunction(hmod,
-                                        pszProcName
-                                        );
+        try {
+            // Attempt to locate if the function has been hijacked
+            CHookedFunction* pFuncHook =
+                GetInstance().GetHookedFunction(hmod,
+                                                pszProcName
+                                                );
 
-        if (pFuncHook != NULL) {
-            // The address to return matches an address we want to hook
-            // Return the hook function address instead
-            pfn = pFuncHook->GetPfnHook();
+            if (pFuncHook != NULL) {
+                // The address to return matches an address we want to hook
+                // Return the hook function address instead
+                pfn = pFuncHook->GetPfnHook();
+            } else {
+                // Get the original address of the function
+                pfn = GetProcAddressWindows(hmod, pszProcName);
+            }
+        } catch (...) {
+            return NULL;
         }
 
-        return (pfn);
+        return pfn;
     }
 
     FARPROC WINAPI CApiHookMgr::GetProcAddressWindows(HMODULE hmod, 
@@ -1794,6 +1920,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/04/12 21:57:37  ssikorsk
+ * Changed implementation of CHookedFunctions
+ *
  * Revision 1.2  2006/04/10 22:28:59  ssikorsk
  * Replaced raw calls to the Windows API with calls to previously stored
  * pointers to functions.
