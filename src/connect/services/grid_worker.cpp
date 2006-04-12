@@ -285,7 +285,7 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_LogRequested(false), m_OnHold(false),
-      m_HoldSem(0,10000), m_UseEmbeddedInput(false)
+      m_HoldSem(0,10000), m_UseEmbeddedStorage(false)
 {
 }
 
@@ -665,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/04/12 19:03:49  didenko
+ * Renamed parameter "use_embedded_input" to "use_embedded_storage"
+ *
  * Revision 1.45  2006/03/15 17:30:12  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *

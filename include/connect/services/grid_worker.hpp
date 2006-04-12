@@ -476,8 +476,8 @@ public:
     void SetAdminHosts(const string& hosts);
     bool IsHostInAdminHostsList(const string& host) const;
 
-    void SetUseEmbeddedInput(bool on_off) { m_UseEmbeddedInput = on_off; }
-    bool IsEmeddedInputUsed() const { return m_UseEmbeddedInput; }
+    void SetUseEmbeddedStorage(bool on_off) { m_UseEmbeddedStorage = on_off; }
+    bool IsEmeddedStorageUsed() const { return m_UseEmbeddedStorage; }
     /// Start jobs execution.
     ///
     void Start();
@@ -529,7 +529,7 @@ private:
     volatile bool                m_OnHold;
     CSemaphore                   m_HoldSem;
     mutable CFastMutex           m_HoldMutex;
-    bool                         m_UseEmbeddedInput;
+    bool                         m_UseEmbeddedStorage;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
@@ -589,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/04/12 19:03:48  didenko
+ * Renamed parameter "use_embedded_input" to "use_embedded_storage"
+ *
  * Revision 1.41  2006/04/04 20:14:04  didenko
  * Disabled copy constractors and assignment operators
  *

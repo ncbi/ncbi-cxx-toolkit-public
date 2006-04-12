@@ -195,9 +195,15 @@ void CGridCgiApplication::InitGridClient()
         CBlobStorageFactory cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
-    bool use_embedded_input = 
-        GetConfig().GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
-                            CNcbiRegistry::eReturn);
+    bool use_embedded_input = false;
+    if (!GetConfig().Get(kNetScheduleDriverName, "use_embedded_storage").empty())
+        use_embedded_input = GetConfig().
+            GetBool(kNetScheduleDriverName, "use_embedded_storage", false, 0, 
+                    CNcbiRegistry::eReturn);
+    else
+        use_embedded_input = GetConfig().
+            GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+                    CNcbiRegistry::eReturn);
 
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
                                        automatic_cleanup? 
@@ -431,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/04/12 19:03:49  didenko
+ * Renamed parameter "use_embedded_input" to "use_embedded_storage"
+ *
  * Revision 1.30  2006/03/27 15:32:23  didenko
  * Fixed error URLs generation
  *

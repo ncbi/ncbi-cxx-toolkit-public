@@ -43,12 +43,12 @@ CGridClient::CGridClient(CNetScheduleClient& ns_client,
                          IBlobStorage& storage,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg,
-                         bool use_embedded_input)
+                         bool use_embedded_storage)
 : m_NSClient(ns_client), m_NSStorage(storage)
 {
     m_JobSubmiter.reset(new CGridJobSubmiter(*this,
                                              progress_msg == eProgressMsgOn,
-                                             use_embedded_input));
+                                             use_embedded_storage));
     m_JobStatus.reset(new CGridJobStatus(*this, 
                                          cleanup == eAutomaticCleanup,
                                          progress_msg == eProgressMsgOn));
@@ -82,9 +82,9 @@ void CGridClient::RemoveDataBlob(const string& data_key)
 //
 CGridJobSubmiter::CGridJobSubmiter(CGridClient& grid_client, 
                                    bool use_progress,
-                                   bool use_embedded_input)
+                                   bool use_embedded_storage)
     : m_GridClient(grid_client), m_UseProgress(use_progress), 
-      m_UseEmbeddedInput(use_embedded_input)
+      m_UseEmbeddedStorage(use_embedded_storage)
 {
 }
 
@@ -97,7 +97,7 @@ void CGridJobSubmiter::SetJobInput(const string& input)
 }
 CNcbiOstream& CGridJobSubmiter::GetOStream()
 {
-    size_t max_data_size = m_UseEmbeddedInput ? kNetScheduleMaxDataSize : 0;
+    size_t max_data_size = m_UseEmbeddedStorage ? kNetScheduleMaxDataSize : 0;
     IWriter* writer = 
         new CStringOrBlobStorageWriter(max_data_size,
                                        m_GridClient.GetStorage(),
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/04/12 19:03:49  didenko
+ * Renamed parameter "use_embedded_input" to "use_embedded_storage"
+ *
  * Revision 1.7  2006/03/15 17:30:12  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *

@@ -115,8 +115,9 @@ CNcbiOstream& CGridThreadContext::GetOStream()
 {
     _ASSERT(m_JobContext);
     if (m_Writer.get()) {
-        size_t max_data_size =  m_JobContext->GetWorkerNode().IsEmeddedInputUsed() ?
-            kNetScheduleMaxDataSize : 0;
+        size_t max_data_size = 
+            m_JobContext->GetWorkerNode().IsEmeddedStorageUsed() ?
+                                         kNetScheduleMaxDataSize : 0;
         IWriter* writer = 
             new CStringOrBlobStorageWriter(max_data_size,
                                            *m_Writer,
@@ -347,6 +348,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.18  2006/04/12 19:03:49  didenko
+ * Renamed parameter "use_embedded_input" to "use_embedded_storage"
+ *
  * Revision 6.17  2006/03/15 17:30:12  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *

@@ -513,8 +513,14 @@ int CGridWorkerApp_Impl::Run()
     string admin_hosts = 
             reg.GetString("server", "admin_hosts", "");
 
-    bool use_embedded_input = 
-        reg.GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+    bool use_embedded_input = false;
+    if (!reg.Get(kNetScheduleDriverName, "use_embedded_storage").empty())
+        use_embedded_input = reg.
+            GetBool(kNetScheduleDriverName, "use_embedded_storage", false, 0, 
+                    CNcbiRegistry::eReturn);
+    else
+        use_embedded_input = reg.
+            GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
                     CNcbiRegistry::eReturn);
 
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
@@ -581,7 +587,7 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetMaxThreads(max_threads);
     m_WorkerNode->SetInitThreads(init_threads);
     m_WorkerNode->SetNSTimeout(ns_timeout);
-    m_WorkerNode->SetUseEmbeddedInput(use_embedded_input);
+    m_WorkerNode->SetUseEmbeddedStorage(use_embedded_input);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
     m_WorkerNode->SetMasterWorkerNodes(masters);
@@ -677,6 +683,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2006/04/12 19:03:49  didenko
+ * Renamed parameter "use_embedded_input" to "use_embedded_storage"
+ *
  * Revision 6.18  2006/04/04 19:15:02  didenko
  * Added max_failed_jobs parameter to a worker node configuration.
  *

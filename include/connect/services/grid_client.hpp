@@ -82,12 +82,12 @@ public:
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
-    CGridJobSubmiter(CGridClient&, bool use_progress, bool use_embedded_input);
+    CGridJobSubmiter(CGridClient&, bool use_progress, bool use_embedded_storage);
 
     CGridClient& m_GridClient;
     string       m_Input;
     bool         m_UseProgress;
-    bool         m_UseEmbeddedInput;
+    bool         m_UseEmbeddedStorage;
     auto_ptr<CNcbiOstream> m_WStream;
 
     /// The copy constructor and the assignment operator
@@ -204,7 +204,7 @@ public:
                 IBlobStorage& storage,
                 ECleanUp cleanup,
                 EProgressMsg progress_msg,
-                bool use_embedded_input = false);
+                bool use_embedded_storage = false);
 
     /// Destructor
     ///
@@ -260,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/04/12 19:03:48  didenko
+ * Renamed parameter "use_embedded_input" to "use_embedded_storage"
+ *
  * Revision 1.8  2006/03/15 17:30:11  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *

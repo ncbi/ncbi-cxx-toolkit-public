@@ -75,9 +75,15 @@ void CGridClientApp::Init(void)
         CGridClient::eProgressMsgOn :
         CGridClient::eProgressMsgOff;
 
-    bool use_embedded_input = 
-        GetConfig().GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
-                            CNcbiRegistry::eReturn);
+    bool use_embedded_input = false;
+    if (!GetConfig().Get(kNetScheduleDriverName, "use_embedded_storage").empty())
+        use_embedded_input = GetConfig().
+            GetBool(kNetScheduleDriverName, "use_embedded_storage", false, 0, 
+                    CNcbiRegistry::eReturn);
+    else
+        use_embedded_input = GetConfig().
+            GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+                    CNcbiRegistry::eReturn);
 
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
                                        cleanup, pmsg, use_embedded_input));
@@ -101,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/04/12 19:03:49  didenko
+ * Renamed parameter "use_embedded_input" to "use_embedded_storage"
+ *
  * Revision 1.9  2006/03/15 17:30:12  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *
