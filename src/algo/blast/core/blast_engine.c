@@ -120,7 +120,7 @@ s_BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
 static void 
 s_TranslateHSPsToDNAPCoord(EBlastProgramType program, 
                            BlastInitHitList* init_hitlist, 
-                           BlastQueryInfo* query_info,
+                           const BlastQueryInfo* query_info,
                            Int2 subject_frame, Int4 subject_length, 
                            Int4 offset)
 {

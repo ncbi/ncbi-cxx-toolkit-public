@@ -2038,7 +2038,7 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
  */
 static void 
 s_GetRelativeCoordinates(const BLAST_SequenceBlk* query, 
-                       BlastQueryInfo* query_info, 
+                       const BlastQueryInfo* query_info, 
                        BlastInitHSP* init_hsp, BLAST_SequenceBlk* query_out,
                        BlastInitHSP* init_hsp_out, Int4* context_out)
 {
