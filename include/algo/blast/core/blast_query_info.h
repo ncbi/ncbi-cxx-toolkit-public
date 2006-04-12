@@ -92,6 +92,18 @@ BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info);
 NCBI_XBLAST_EXPORT
 Int4 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program);
 
+/** Retrieve a query sequence's search space
+ * @param qinfo BlastQueryInfo structure [in]
+ * @param program CORE program type [in]
+ * @param query_index number of the query 
+ * (query_index < BlastQueryInfo::num_queries) [in]
+ * @return the search space of the query sequence requested or 0 if this is not
+ * set */
+Int8
+BlastQueryInfoGetEffSearchSpace(const BlastQueryInfo* qinfo,
+                                EBlastProgramType program,
+                                Int4 query_index);
+
 /** Obtains the sequence length for a given query in the query, without taking
  * into consideration any applicable translations 
  * @param qinfo BlastQueryInfo structure [in]
@@ -131,7 +143,7 @@ Int2 Blast_GetOneQueryStructs(BlastQueryInfo** one_query_info_ptr,
 
 /** Search BlastContextInfo structures for the specified offset */
 NCBI_XBLAST_EXPORT
-Int4 BSearchContextInfo(Int4 n, BlastQueryInfo * A);
+Int4 BSearchContextInfo(Int4 n, const BlastQueryInfo * A);
 
 /** Get the number of bytes required for the concatenated sequence
  * buffer, given a query info structure.  The context data should

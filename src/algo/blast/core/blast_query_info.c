@@ -188,7 +188,28 @@ Int4 BlastQueryInfoGetQueryLength(const BlastQueryInfo* qinfo,
     }
 }
 
-Int4 BSearchContextInfo(Int4 n, BlastQueryInfo * A)
+/* FIXME: should the EBlastProgramType be added as a member of the
+ * BlastQueryInfo structure? Without it, there's many operations that can't be
+ * done, so it doesn't make sense to have them separate... */
+Int8
+BlastQueryInfoGetEffSearchSpace(const BlastQueryInfo* qinfo,
+                                EBlastProgramType program,
+                                Int4 query_index)
+{
+    Int8 retval = 0;
+    Int4 i = 0;
+    const Uint4 kNumContexts = BLAST_GetNumberOfContexts(program);
+    ASSERT(query_index < qinfo->num_queries);
+
+    for (i = query_index*kNumContexts; i < (query_index+1)*kNumContexts; i++) {
+        if ( (retval = qinfo->contexts[i].eff_searchsp) != 0) {
+            break;
+        }
+    }
+    return retval;
+}
+
+Int4 BSearchContextInfo(Int4 n, const BlastQueryInfo * A)
 {
     Int4 m=0, b=0, e=0, size=0;
     
