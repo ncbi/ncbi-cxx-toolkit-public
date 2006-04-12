@@ -90,6 +90,13 @@
     fun:__gconv_*
 }
 
+{
+    write(buf)/pthread
+    Memcheck:Param
+    write(buf)
+    obj:/lib/libpthread-*.so
+}
+
 #-------- libc -----------------------------------------------------------------
 
 {
