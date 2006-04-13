@@ -218,7 +218,11 @@ void I_DriverContext::x_Recycle(I_Connection* conn, bool conn_reusable)
 {
     CFastMutexGuard mg(m_Mtx);
 
-    m_InUse.erase(find(m_InUse.begin(), m_InUse.end(), conn));
+    TConnPool::iterator it = find(m_InUse.begin(), m_InUse.end(), conn);
+    
+    if (it != m_InUse.end()) {
+        m_InUse.erase(it);
+    }
 
     if ( conn_reusable ) {
         m_NotInUse.push_back(conn);
@@ -548,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/04/13 15:10:25  ssikorsk
+ * Fixed erasing of an element from a std::list.in x_Recycle
+ *
  * Revision 1.20  2006/04/11 18:39:33  ssikorsk
  * Fixed erasing of an element from a std::list.
  *
