@@ -119,9 +119,13 @@ CDblibContextRegistry::Remove(CDBLibContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
     
-    m_Registry.erase(find(m_Registry.begin(), 
-                          m_Registry.end(), 
-                          ctx));
+    vector<CDBLibContext*>::iterator it = find(m_Registry.begin(), 
+                                              m_Registry.end(), 
+                                              ctx);
+    
+    if (it != m_Registry.end()) {
+        m_Registry.erase(it);
+    }
 }
 
 
@@ -802,6 +806,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/04/13 15:12:36  ssikorsk
+ * Fixed erasing of an element from a std::vector.
+ *
  * Revision 1.65  2006/04/05 14:31:28  ssikorsk
  * Improved CTDSContext::x_Close
  *

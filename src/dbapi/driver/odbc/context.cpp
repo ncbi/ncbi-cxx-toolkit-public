@@ -110,9 +110,13 @@ CODBCContextRegistry::Remove(CODBCContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
     
-    m_Registry.erase(find(m_Registry.begin(), 
-                          m_Registry.end(), 
-                          ctx));
+    vector<CODBCContext*>::iterator it = find(m_Registry.begin(), 
+                                              m_Registry.end(), 
+                                              ctx);
+    
+    if (it != m_Registry.end()) {
+        m_Registry.erase(it);
+    }
 }
 
 void 
@@ -714,6 +718,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/04/13 15:12:54  ssikorsk
+ * Fixed erasing of an element from a std::vector.
+ *
  * Revision 1.46  2006/04/05 14:33:16  ssikorsk
  * Improved CODBCContext::x_Close
  *

@@ -137,9 +137,13 @@ CTLibContextRegistry::Remove(CTLibContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
     
-    m_Registry.erase(find(m_Registry.begin(), 
-                          m_Registry.end(), 
-                          ctx));
+    vector<CTLibContext*>::iterator it = find(m_Registry.begin(), 
+                                              m_Registry.end(), 
+                                              ctx);
+    
+    if (it != m_Registry.end()) {
+        m_Registry.erase(it);
+    }
 }
 
 
@@ -1278,6 +1282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/04/13 15:11:56  ssikorsk
+ * Fixed erasing of an element from a std::vector.
+ *
  * Revision 1.67  2006/04/05 14:27:56  ssikorsk
  * Implemented CTLibContext::Close
  *
