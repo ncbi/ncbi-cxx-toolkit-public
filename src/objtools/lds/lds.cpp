@@ -103,11 +103,14 @@ void CLDS_Database::Create()
         }
 
     }}
+	
+    m_db.reset(new SLDS_TablesCollection);
 
     LOG_POST(Info << "Creating LDS table: " << "file");
 
-    fname = m_LDS_DirName + "lds_file.db"; 
-    m_db->file_db.Open(fname.c_str(),
+    fname = m_LDS_DirName + "lds_file.db";
+	const char* c = fname.c_str(); 
+    m_db->file_db.Open(c,
                       "file",
                       CBDB_RawFile::eCreate);
 
@@ -334,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/04/13 16:33:53  kuznets
+ * Fixed bug in creation of LDS database
+ *
  * Revision 1.24  2006/04/12 13:30:22  kuznets
  * +ReOpen()
  *
