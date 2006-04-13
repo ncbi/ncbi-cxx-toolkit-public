@@ -56,7 +56,8 @@ namespace NWinHook
     {
     public:
         enum EErrCode {
-            eDbghelp
+            eDbghelp,
+            eDisabled
         };
 
         /// Translate from the error code value to its string representation.
@@ -265,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/13 14:49:21  ssikorsk
+ * Added eDisabled error code to CWinHookException.
+ *
  * Revision 1.3  2006/04/12 21:57:37  ssikorsk
  * Changed implementation of CHookedFunctions
  *
