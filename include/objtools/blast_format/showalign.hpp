@@ -542,11 +542,11 @@ private:
                       CAlnMap::TSeqPosList& insert_length, 
                       int line_aln_stop);
 
-    ///display alnvec list
+    ///display alnvec info
     ///@param out: output stream
-    ///@param av_list: alnvec list
+    ///@param aln_vec_info: alnvec list
     ///
-    void x_DisplayAlnvecList(CNcbiOstream& out, list < SAlnInfo * >& av_list,
+    void x_DisplayAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,
                              bool show_defline);
 
     ///output dynamic feature url
@@ -605,6 +605,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.51  2006/04/13 17:07:19  jianye
+*x_DisplayAlnvecList to x_DisplayAlnvecList
+*
 *Revision 1.50  2006/04/10 21:43:00  jianye
 *output each hsp instead of each hit
 *

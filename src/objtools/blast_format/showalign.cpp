@@ -1587,7 +1587,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
             }	    
             
         } 
-        list <SAlnInfo*> avList;        
+  
         CConstRef<CSeq_id> previousId, subid;
         for (CSeq_align_set::Tdata::const_iterator 
                  iter =  actual_aln_list.Get().begin(); 
@@ -1616,19 +1616,13 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                                                        alnvecInfo->use_this_gi,
                                                        alnvecInfo->comp_adj_method);
                         alnvecInfo->alnvec = avRef;
-                        avList.push_back(alnvecInfo);
-                        
+                       
                         subid=&(avRef->GetSeqId(1));
-                        x_DisplayAlnvecList(out, avList,
+                        x_DisplayAlnvecInfo(out, alnvecInfo,
                                             previousId.Empty() || 
                                             !subid->Match(*previousId));
-                            
-                        for(list<SAlnInfo*>::iterator 
-                                iterAv = avList.begin();
-                            iterAv != avList.end(); iterAv ++){
-                            delete(*iterAv);
-                        }
-                        avList.clear();   
+                       
+                        delete(alnvecInfo);
                         
                         previousId = subid;
                     }                
@@ -2809,102 +2803,99 @@ CDisplaySeqalign::PrepareBlastUngappedSeqalign(const CSeq_align_set& alnset)
 }
 
 
-void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, 
-                                           list<SAlnInfo*>& av_list,
+void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out, 
+                                           SAlnInfo* aln_vec_info,
                                            bool show_defline) 
 {
-    for(list<SAlnInfo*>::iterator iterAv = av_list.begin();
-        iterAv != av_list.end(); iterAv ++){
-        m_AV = (*iterAv)->alnvec;
-        const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
-        if(show_defline && (m_AlignOption&eShowBlastInfo)) {
-            if(!(m_AlignOption & eShowNoDeflineInfo)){
-                x_PrintDefLine(bsp_handle, (*iterAv)->use_this_gi, out);
-                // out<<"          Length="<<bsp_handle.GetBioseqLength()<<endl;
-                out<<"Length="<<bsp_handle.GetBioseqLength()<<endl;
-            }
-            if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
-               && (m_AlignOption&eShowBl2seqLink)) {
-                const CBioseq_Handle& query_handle=m_AV->GetBioseqHandle(0);
-                const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
-                CSeq_id_Handle query_seqid = GetId(query_handle, eGetId_Best);
-                CSeq_id_Handle subject_seqid =
-                    GetId(subject_handle, eGetId_Best);
-                int query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
-                int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
-                
-                char buffer[512];
-                
-                sprintf(buffer, kBl2seqUrl.c_str(), m_Rid.c_str(), 
-                        query_gi > 0 ? 
-                        NStr::IntToString(query_gi).c_str():query_seqid.\
-                        GetSeqId()->AsFastaString().c_str(),
-                        subject_gi > 0 ? 
-                        NStr::IntToString(subject_gi).c_str():subject_seqid.\
-                        GetSeqId()->AsFastaString().c_str()); 
-                out << buffer << endl;
-            }
-            out << endl;
+  
+    m_AV = aln_vec_info->alnvec;
+    const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
+    if(show_defline && (m_AlignOption&eShowBlastInfo)) {
+        if(!(m_AlignOption & eShowNoDeflineInfo)){
+            x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, out);
+            out<<"Length="<<bsp_handle.GetBioseqLength()<<endl;
         }
-        
-        //output dynamic feature lines
-        if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMergeAlign) 
-           && (m_AlignOption&eDynamicFeature) 
-           && (int)m_AV->GetBioseqHandle(1).GetBioseqLength() 
-           >= k_GetDynamicFeatureSeqLength){ 
-            if(m_DynamicFeature){
-                x_PrintDynamicFeatures(out);
-            } 
+        if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
+           && (m_AlignOption&eShowBl2seqLink)) {
+            const CBioseq_Handle& query_handle=m_AV->GetBioseqHandle(0);
+            const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
+            CSeq_id_Handle query_seqid = GetId(query_handle, eGetId_Best);
+            CSeq_id_Handle subject_seqid =
+                GetId(subject_handle, eGetId_Best);
+            int query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
+            int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
+            
+            char buffer[512];
+            
+            sprintf(buffer, kBl2seqUrl.c_str(), m_Rid.c_str(), 
+                    query_gi > 0 ? 
+                    NStr::IntToString(query_gi).c_str():query_seqid.    \
+                    GetSeqId()->AsFastaString().c_str(),
+                    subject_gi > 0 ? 
+                    NStr::IntToString(subject_gi).c_str():subject_seqid. \
+                    GetSeqId()->AsFastaString().c_str()); 
+            out << buffer << endl;
         }
-        if (m_AlignOption&eShowBlastInfo) {
-            string evalue_buf, bit_score_buf;
-            CBlastFormatUtil::GetScoreString((*iterAv)->evalue, 
-                                             (*iterAv)->bits, evalue_buf, 
-                                             bit_score_buf);
-            //add id anchor for mapviewer link
-            string type_temp = m_BlastType;
-            type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
-            if(m_AlignOption&eHtml && 
-               (type_temp.find("genome") != string::npos ||
-                type_temp == "mapview" || 
-                type_temp == "mapview_prev" || 
-                type_temp == "gsfasta")){
-                string subj_id_str;
-                char buffer[126];
-                int master_start = m_AV->GetSeqStart(0) + 1;
-                int master_stop = m_AV->GetSeqStop(0) + 1;
-                int subject_start = m_AV->GetSeqStart(1) + 1;
-                int subject_stop = m_AV->GetSeqStop(1) + 1;
-                
-                m_AV->GetSeqId(1).GetLabel(&subj_id_str, CSeq_id::eContent);
-             
-                sprintf(buffer, "<a name = %s_%d_%d_%d_%d_%d></a>",
-                        subj_id_str.c_str(), (*iterAv)->score,
-                        min(master_start, master_stop),
-                        max(master_start, master_stop),
-                        min(subject_start, subject_stop),
-                        max(subject_start, subject_stop));
-                        
-                out << buffer << endl; 
-            }
-            out<<" Score = "<<bit_score_buf<<" ";
-            out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
-            out<<"Expect";
-            if ((*iterAv)->sum_n > 0) {
-                out << "(" << (*iterAv)->sum_n << ")";
-            }
-
-            out << " = " << evalue_buf;
-            if ((*iterAv)->comp_adj_method == 1)
-                out << ", Method: Composition-based stats.";
-            else if ((*iterAv)->comp_adj_method == 2)
-                out << ", Method: Compositional matrix adjust.";
-            out << endl;
-        }
-        
-        x_DisplayAlnvec(out);
-        out<<endl;
+        out << endl;
     }
+    
+    //output dynamic feature lines
+    if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMergeAlign) 
+       && (m_AlignOption&eDynamicFeature) 
+       && (int)m_AV->GetBioseqHandle(1).GetBioseqLength() 
+       >= k_GetDynamicFeatureSeqLength){ 
+        if(m_DynamicFeature){
+            x_PrintDynamicFeatures(out);
+        } 
+    }
+    if (m_AlignOption&eShowBlastInfo) {
+        string evalue_buf, bit_score_buf;
+        CBlastFormatUtil::GetScoreString(aln_vec_info->evalue, 
+                                         aln_vec_info->bits, evalue_buf, 
+                                         bit_score_buf);
+        //add id anchor for mapviewer link
+        string type_temp = m_BlastType;
+        type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
+        if(m_AlignOption&eHtml && 
+           (type_temp.find("genome") != string::npos ||
+            type_temp == "mapview" || 
+            type_temp == "mapview_prev" || 
+            type_temp == "gsfasta")){
+            string subj_id_str;
+            char buffer[126];
+            int master_start = m_AV->GetSeqStart(0) + 1;
+            int master_stop = m_AV->GetSeqStop(0) + 1;
+            int subject_start = m_AV->GetSeqStart(1) + 1;
+            int subject_stop = m_AV->GetSeqStop(1) + 1;
+            
+            m_AV->GetSeqId(1).GetLabel(&subj_id_str, CSeq_id::eContent);
+            
+            sprintf(buffer, "<a name = %s_%d_%d_%d_%d_%d></a>",
+                    subj_id_str.c_str(), aln_vec_info->score,
+                    min(master_start, master_stop),
+                    max(master_start, master_stop),
+                    min(subject_start, subject_stop),
+                    max(subject_start, subject_stop));
+            
+            out << buffer << endl; 
+        }
+        out<<" Score = "<<bit_score_buf<<" ";
+        out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
+        out<<"Expect";
+        if (aln_vec_info->sum_n > 0) {
+            out << "(" << aln_vec_info->sum_n << ")";
+        }
+        
+        out << " = " << evalue_buf;
+        if (aln_vec_info->comp_adj_method == 1)
+            out << ", Method: Composition-based stats.";
+        else if (aln_vec_info->comp_adj_method == 2)
+            out << ", Method: Compositional matrix adjust.";
+        out << endl;
+    }
+        
+    x_DisplayAlnvec(out);
+    out<<endl;
 }
 
 
@@ -3147,6 +3138,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.116  2006/04/13 17:07:28  jianye
+*x_DisplayAlnvecList to x_DisplayAlnvecList
+*
 *Revision 1.115  2006/04/10 21:42:23  jianye
 *output each hsp instead of each hit
 *
