@@ -338,6 +338,9 @@ void CNetCacheServer::Process_IC_GetBlobOwner(ICache&              ic,
     WriteMsg(sock, "OK:", owner);
 }
 
+bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait);
+
+
 void CNetCacheServer::Process_IC_Read(ICache&              ic,
                                       CSocket&             sock, 
                                       SIC_Request&         req,
@@ -392,6 +395,9 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
 //        stat.comm_elapsed += sw.Elapsed();
 //        ++stat.io_blocks;
 
+        s_WaitForReadSocket(sock, 5);
+        ReadStr(sock, &(tdata.tmp));
+
         return;
 
     } // inline BLOB
@@ -437,6 +443,9 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
     if (!read_flag) {
         goto blob_not_found;
     }
+
+    s_WaitForReadSocket(sock, 5);
+    ReadStr(sock, &(tdata.tmp));
 
 }
 
@@ -488,6 +497,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/04/13 16:57:22  kuznets
+ * Add processing of OK on read from the client
+ *
  * Revision 1.8  2006/03/21 20:54:04  kuznets
  * Fixed TLS buffer overflow
  *

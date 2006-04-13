@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.3  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.4  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -404,7 +404,6 @@ void CNetCacheServer::ProcessOverflow(SOCK sock)
 
 
 /// @internal
-static
 bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 {
     STimeout to = {time_to_wait, 0};
@@ -658,7 +657,6 @@ void CNetCacheServer::Process(SOCK sock)
 
             while (ReadStr(socket, &(tdata->request))) {
                 string& rq = tdata->request;
-                //ERR_POST(rq);
                 if (rq.length() < 2) { 
                     WriteMsg(socket, "ERR:", "Invalid request");
                     x_RegisterProtocolErr(eError, rq);
@@ -678,6 +676,9 @@ void CNetCacheServer::Process(SOCK sock)
                 if (rq[0] == 'S' && rq[1] == 'M') {  // Session management
                     ProcessSM(socket, rq);
                     break; // need to disconnect after reg-unreg
+                } else 
+                if (rq[0] == 'O' && rq[1] == 'K') {
+                    continue;
                 } else {
                     tdata->req.Init();
                     ProcessNC(socket, 
@@ -2070,6 +2071,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2006/04/13 16:57:22  kuznets
+ * Add processing of OK on read from the client
+ *
  * Revision 1.81  2006/03/21 20:54:04  kuznets
  * Fixed TLS buffer overflow
  *
