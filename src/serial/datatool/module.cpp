@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2006/04/13 12:58:54  gouriano
+* Added optional file name suffix to modular DTD or schema
+*
 * Revision 1.41  2005/07/11 18:20:37  gouriano
 * Corrected schema module file name
 *
@@ -156,6 +159,8 @@
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE
+
+string CDataTypeModule::s_ModuleFileSuffix;
 
 CDataTypeModule::CDataTypeModule(const string& n)
     : m_Errors(false), m_Name(n)
@@ -407,14 +412,16 @@ string CDataTypeModule::GetDTDFileNameBase(void) const
 }
 
 static
-void PrintModularDTDModuleReference(CNcbiOstream& out, const string name)
+void PrintModularDTDModuleReference(CNcbiOstream& out,
+    const string& name, const string& suffix)
 {
     string fileName = DTDFileNameBase(name);
     string pubName = DTDPublicModuleName(name);
-    out <<
-        "\n"
-        "<!ENTITY % "<<fileName<<"_module PUBLIC \"-//NCBI//"<<pubName<<" Module//EN\" \""<<fileName<<".mod.dtd\">\n"
-        "%"<<fileName<<"_module;\n";
+    out 
+        << "\n<!ENTITY % "
+        << fileName << "_module PUBLIC \"-//NCBI//" << pubName << " Module//EN\" \""
+        << fileName << suffix << ".mod.dtd\">\n%"
+        << fileName << "_module;\n";
 }
 
 void CDataTypeModule::PrintDTDModular(CNcbiOstream& out) const
@@ -425,7 +432,7 @@ void CDataTypeModule::PrintDTDModular(CNcbiOstream& out) const
         "  The actual ELEMENT and ENTITY declarations are in the modules.\n"
         "  This file is used to put them together.\n"
         "-->\n";
-    PrintModularDTDModuleReference(out, "NCBI-Entity");
+    PrintModularDTDModuleReference(out, "NCBI-Entity", GetModuleFileSuffix());
 
     list<string> l;
 //    l.assign(m_ImportRef.begin(), m_ImportRef.end());
@@ -434,7 +441,7 @@ void CDataTypeModule::PrintDTDModular(CNcbiOstream& out) const
     }
     l.sort();
     ITERATE (list<string>, i, l) {
-        PrintModularDTDModuleReference(out, (*i));
+        PrintModularDTDModuleReference(out, (*i), GetModuleFileSuffix());
     }
 }
 
@@ -454,7 +461,8 @@ void CDataTypeModule::PrintXMLSchemaModular(CNcbiOstream& out) const
     }
     l.sort();
     ITERATE (list<string>, i, l) {
-        out << "<xs:include schemaLocation=\"" << DTDFileNameBase(*i) << ".mod.xsd\"/>\n";
+        out << "<xs:include schemaLocation=\"" << DTDFileNameBase(*i)
+            <<  GetModuleFileSuffix() << ".mod.xsd\"/>\n";
     }
 }
 

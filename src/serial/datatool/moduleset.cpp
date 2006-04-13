@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2006/04/13 12:58:54  gouriano
+* Added optional file name suffix to modular DTD or schema
+*
 * Revision 1.37  2005/06/06 17:40:42  gouriano
 * Added generation of modular XML schema
 *
@@ -194,7 +197,8 @@ void CFileModules::PrintDTD(CNcbiOstream& out) const
 void CFileModules::PrintDTDModular(void) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
-        string fileNameBase = (*mi)->GetDTDFileNameBase();
+        string fileNameBase =
+            (*mi)->GetDTDFileNameBase() + (*mi)->GetModuleFileSuffix();
         {
             string fileName = fileNameBase + ".mod.dtd";
             CNcbiOfstream out(fileName.c_str());
@@ -215,7 +219,8 @@ void CFileModules::PrintDTDModular(void) const
 void CFileModules::PrintXMLSchemaModular(void) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
-        string fileNameBase = (*mi)->GetDTDFileNameBase();
+        string fileNameBase =
+            (*mi)->GetDTDFileNameBase() + (*mi)->GetModuleFileSuffix();
         {
             string fileName = fileNameBase + ".mod.xsd";
             CNcbiOfstream out(fileName.c_str());

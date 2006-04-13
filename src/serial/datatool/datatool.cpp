@@ -45,6 +45,8 @@
 #include <serial/datatool/dtdlexer.hpp>
 #include <serial/datatool/parser.hpp>
 #include <serial/datatool/dtdparser.hpp>
+//#include <serial/datatool/xsdlexer.hpp>
+//#include <serial/datatool/xsdparser.hpp>
 #include <serial/datatool/moduleset.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/type.hpp>
@@ -70,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,2,2) );
+    SetVersion( CVersionInfo(1,3,0) );
 }
 
 void CDataTool::Init(void)
@@ -101,6 +103,9 @@ void CDataTool::Init(void)
     d->AddOptionalKey("fxs", "XMLSchemaFile",
                       "write XML Schema file (\"-fxs m\" writes modular Schema file)",
                       CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("ms", "moduleSuffix",
+                      "suffix of modular DTD or Schema file name",
+                      CArgDescriptions::eString);
 
     // data arguments
     d->AddOptionalKey("v", "valueFile",
@@ -256,6 +261,9 @@ bool CDataTool::ProcessModules(void)
             CDataType::SetEnforcedStdXml(true);
         }
         if ( fx.AsString() == "m" ) {
+            if ( const CArgValue& ms = args["ms"] ) {
+                CDataTypeModule::SetModuleFileSuffix(ms.AsString());
+            }
             generator.ResolveImportRefs();
             generator.GetMainModules().PrintDTDModular();
         } else {
@@ -269,6 +277,9 @@ bool CDataTool::ProcessModules(void)
             CDataType::SetEnforcedStdXml(true);
         }
         if ( ax.AsString() == "m" ) {
+            if ( const CArgValue& ms = args["ms"] ) {
+                CDataTypeModule::SetModuleFileSuffix(ms.AsString());
+            }
             generator.ResolveImportRefs();
             generator.GetMainModules().PrintXMLSchemaModular();
         } else {
@@ -610,6 +621,15 @@ SourceFile::EType CDataTool::LoadDefinitions(
                     fileSet.AddFile(parser.Modules(name));
                 }
                 break;
+/*
+            case SourceFile::eXSD:
+                {
+                    XSDLexer lexer(fName,name);
+                    XSDParser parser(lexer);
+                    fileSet.AddFile(parser.Modules(name));
+                }
+                break;
+*/
             }
         }
     }
@@ -630,6 +650,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.89  2006/04/13 12:58:54  gouriano
+* Added optional file name suffix to modular DTD or schema
+*
 * Revision 1.88  2005/12/20 13:58:57  gouriano
 * Replaced list::merge by more appropriate list::insert
 *

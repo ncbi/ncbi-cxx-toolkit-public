@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/04/13 12:59:08  gouriano
+* Added optional file name suffix to modular DTD or schema
+*
 * Revision 1.12  2005/06/29 15:10:16  gouriano
 * Resolve all module dependencies when generating modular DTD or schema
 *
@@ -181,6 +184,15 @@ public:
             return m_Imports;
         }
     bool AddImportRef(const string& imp);
+    
+    static void SetModuleFileSuffix(const string& suffix)
+    {
+        s_ModuleFileSuffix = suffix;
+    }
+    static string GetModuleFileSuffix(void)
+    {
+        return s_ModuleFileSuffix;
+    }
 
 private:
     bool m_Errors;
@@ -200,6 +212,7 @@ private:
     TTypesByName m_ExportedTypes;
     TImportsByName m_ImportedTypes;
     set<string> m_ImportRef;
+    static string s_ModuleFileSuffix;
 };
 
 END_NCBI_SCOPE
