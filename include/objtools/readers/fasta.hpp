@@ -34,28 +34,201 @@
 *
 */
 
-#include <objects/seqset/Seq_entry.hpp>
+#include <corelib/ncbi_limits.hpp>
+#include <util/line_reader.hpp>
+#include <objects/seq/Bioseq.hpp>
+// #include <objects/seqset/Seq_entry.hpp>
+#include <stack>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-enum EReadFastaFlags {
-    fReadFasta_AssumeNuc  = 0x1,  // type to use if no revealing accn found
-    fReadFasta_AssumeProt = 0x2,
-    fReadFasta_ForceType  = 0x4,  // force type regardless of accession
-    fReadFasta_NoParseID  = 0x8,  // treat name as local ID regardless of |s
-    fReadFasta_ParseGaps  = 0x10, // make a delta sequence if gaps found
-    fReadFasta_OneSeq     = 0x20, // just read the first sequence found
-    fReadFasta_AllSeqIds  = 0x40, // read Seq-ids past the first ^A (see note)
-    fReadFasta_NoSeqData  = 0x80, // parse the deflines but skip the data
-    fReadFasta_RequireID  = 0x100 // reject deflines that lack IDs
-};
-typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
+class CSeq_data;
+class CSeq_entry;
+class CSeq_id;
+class CSeq_loc;
 
-// Note on fReadFasta_AllSeqIds: some databases (notably nr) have
-// merged identical sequences, stringing their deflines together with
-// control-As.  Normally, the reader stops at the first control-A;
-// however, this flag makes it parse all the IDs.
+class CSeqIdGenerator;
+
+class NCBI_XOBJREAD_EXPORT CFastaReader {
+public:
+    /// Note on fAllSeqIds: some databases (notably nr) have merged
+    /// identical sequences, joining their deflines together with
+    /// control-As.  Normally, the reader stops at the first
+    /// control-A; however, this flag makes it parse all the IDs.
+    enum EFlags {
+        fAssumeNuc  = 0x1,   ///< Assume nucs unless accns indicate otherwise
+        fAssumeProt = 0x2,   ///< Assume prots unless accns indicate otherwise
+        fForceType  = 0x4,   ///< Force specified type regardless of accession
+        fNoParseID  = 0x8,   ///< Generate an ID (whole defline -> title)
+        fParseGaps  = 0x10,  ///< Make a delta sequence if gaps found
+        fOneSeq     = 0x20,  ///< Just read the first sequence found
+        fAllSeqIds  = 0x40,  ///< Read Seq-ids past the first ^A (see note)
+        fNoSeqData  = 0x80,  ///< Parse the deflines but skip the data
+        fRequireID  = 0x100, ///< Reject deflines that lack IDs
+        fDLOptional = 0x200  ///< Don't require a leading defline
+    };
+    typedef int TFlags; ///< binary OR of EFlags
+
+    CFastaReader(ILineReader& reader, TFlags flags = 0);
+    virtual ~CFastaReader(void);
+
+    /// If this method encounters a segmented set, it will return the
+    /// whole thing.
+    virtual CRef<CSeq_entry> ReadOneSeq(void);
+
+    CRef<CSeq_entry> ReadSet(int max_seqs = kMax_Int);
+
+    /// @param reference_row
+    ///   0-based; the special value -1 yields a full (pseudo-?)N-way alignment.
+    CRef<CSeq_entry> ReadAlignedSet(int reference_row);
+
+    // also allow changing?
+    TFlags GetFlags(void) const { return m_Flags.top(); }
+
+    typedef CRef<CSeq_loc> TMask;
+    typedef vector<TMask>  TMasks;
+
+    /// Directs the *following* call to ReadOneSeq to note the locations
+    /// of lowercase letters.
+    /// @return
+    ///     A smart pointer to the Seq-loc that will be populated.
+    CRef<CSeq_loc> SaveMask(void);
+
+    void SaveMasks(TMasks* masks) { m_MaskVec = masks; }
+
+    const CBioseq::TId& GetIDs(void) const    { return m_CurrentSeq->GetId(); }
+    const CSeq_id&      GetBestID(void) const { return *m_BestID; }
+
+    const CSeqIdGenerator& GetIDGenerator(void) const { return *m_IDGenerator; }
+    CSeqIdGenerator&       SetIDGenerator(void)       { return *m_IDGenerator; }
+    void                   SetIDGenerator(CSeqIdGenerator& gen);
+
+protected:
+    enum EInternalFlags {
+        fAligning = 0x40000000,
+        fInSegSet = 0x20000000
+    };
+
+    typedef CTempString TStr;
+
+    virtual CRef<CSeq_entry> x_ReadSegSet(void);
+
+    virtual void   ParseDefLine  (const TStr& s);
+    virtual bool   ParseIDs      (const TStr& s);
+    virtual size_t ParseRange    (const TStr& s);
+    virtual void   ParseTitle    (const TStr& s);
+    virtual bool   IsValidLocalID(const string& s);
+    virtual void   GenerateID    (void);
+    virtual void   ParseDataLine (const TStr& s);
+    virtual void   x_CloseGap    (TSeqPos len);
+    virtual void   x_OpenMask    (void);
+    virtual void   x_CloseMask   (void);
+    virtual void   AssembleSeq   (void);
+    virtual void   AssignMolType (void);
+    virtual void   SaveSeqData   (CSeq_data& seq_data, const TStr& raw_string);
+
+    typedef int                         TRowNum;
+    typedef map<TRowNum, TSignedSeqPos> TSubMap;
+    // align coord -> row -> seq coord
+    typedef map<TSeqPos, TSubMap>       TStartsMap;
+    typedef vector<CRef<CSeq_id> >      TIds;
+
+    CRef<CSeq_entry> x_ReadSeqsToAlign(TIds& ids);
+    void             x_AddPairwiseAlignments(CSeq_annot& annot, const TIds& ids,
+                                             TRowNum reference_row);
+    void             x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids);
+
+    // inline utilities 
+    void CloseGap(void);
+    void OpenMask(void);
+    void CloseMask(void)
+        { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
+    SIZE_TYPE StreamPosition(void) const
+        { return NcbiStreamposToInt8(m_LineReader->GetPosition()); }
+
+    ILineReader&  GetLineReader(void)         { return *m_LineReader; }
+    bool          TestFlag(EFlags flag) const { return GetFlags() & flag; }
+    bool          TestFlag(EInternalFlags flag) const
+        { return GetFlags() & flag; }
+    CBioseq::TId& SetIDs(void)                { return m_CurrentSeq->SetId(); }
+
+    enum EPosType {
+        eRawPos,
+        ePosWithGaps,
+        ePosWithGapsAndSegs
+    };
+    TSeqPos GetCurrentPos(EPosType pos_type);
+
+private:
+    struct SGap {
+        TSeqPos pos; // 0-based, and NOT counting previous gaps
+        TSeqPos len; // may be zero for gaps of unknown length
+    };
+    typedef vector<SGap> TGaps;
+
+    CRef<ILineReader>     m_LineReader;
+    stack<TFlags>         m_Flags;
+    CRef<CBioseq>         m_CurrentSeq;
+    TMask                 m_CurrentMask;
+    TMask                 m_NextMask;
+    TMasks *              m_MaskVec;
+    CRef<CSeqIdGenerator> m_IDGenerator;
+    string                m_SeqData;
+    TGaps                 m_Gaps;
+    TSeqPos               m_CurrentPos; // does not count gaps
+    TSeqPos               m_ExpectedEnd;
+    TSeqPos               m_MaskRangeStart;
+    TSeqPos               m_SegmentBase;
+    TSeqPos               m_CurrentGapLength;
+    TSeqPos               m_TotalGapLength;
+    CRef<CSeq_id>         m_BestID;
+    TStartsMap            m_Starts;
+    TRowNum               m_Row;
+    TSeqPos               m_Offset;
+};
+
+
+class NCBI_XOBJREAD_EXPORT CSeqIdGenerator : public CObject
+{
+public:
+    typedef CAtomicCounter::TValue TInt;
+    CSeqIdGenerator(TInt counter = 1, const string& prefix = kEmptyStr,
+                    const string& suffix = kEmptyStr)
+        : m_Prefix(prefix), m_Suffix(suffix)
+        { m_Counter.Set(counter); }
+
+    CRef<CSeq_id> GenerateID(bool advance);
+    /// Equivalent to GenerateID(false)
+    CRef<CSeq_id> GenerateID(void) const;
+    
+    const string& GetPrefix (void)  { return m_Prefix;        }
+    TInt          GetCounter(void)  { return m_Counter.Get(); }
+    const string& GetSuffix (void)  { return m_Suffix;        }
+
+    void SetPrefix (const string& s)  { m_Prefix  = s;    }
+    void SetCounter(TInt n)           { m_Counter.Set(n); }
+    void SetSuffix (const string& s)  { m_Suffix  = s;    }
+
+private:
+    string         m_Prefix, m_Suffix;
+    CAtomicCounter m_Counter;
+};
+
+
+enum EReadFastaFlags {
+    fReadFasta_AssumeNuc  = CFastaReader::fAssumeNuc,
+    fReadFasta_AssumeProt = CFastaReader::fAssumeProt,
+    fReadFasta_ForceType  = CFastaReader::fForceType,
+    fReadFasta_NoParseID  = CFastaReader::fNoParseID,
+    fReadFasta_ParseGaps  = CFastaReader::fParseGaps,
+    fReadFasta_OneSeq     = CFastaReader::fOneSeq,
+    fReadFasta_AllSeqIds  = CFastaReader::fAllSeqIds,
+    fReadFasta_NoSeqData  = CFastaReader::fNoSeqData,
+    fReadFasta_RequireID  = CFastaReader::fRequireID
+};
+typedef CFastaReader::TFlags TReadFastaFlags;
+
 
 // keeps going until EOF or parse error (-> CParseException) unless
 // fReadFasta_OneSeq is set
@@ -64,7 +237,6 @@ NCBI_XOBJREAD_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
                            int* counter = 0,
                            vector<CConstRef<CSeq_loc> >* lcv = 0);
-
 
 
 //////////////////////////////////////////////////////////////////
@@ -116,6 +288,42 @@ void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner,
                                         TReadFastaFlags  fread_flags);
 
 
+/////////////////// CFastaReader inline methods
+
+
+inline
+void CFastaReader::CloseGap(void)
+{
+    if (m_CurrentGapLength > 0) {
+        x_CloseGap(m_CurrentGapLength);
+    }
+    m_CurrentGapLength = 0;
+}
+
+inline
+void CFastaReader::OpenMask()
+{
+    if (m_MaskRangeStart == kInvalidSeqPos  &&  m_CurrentMask.NotEmpty()) {
+        x_OpenMask();
+    }
+}
+
+inline
+TSeqPos CFastaReader::GetCurrentPos(EPosType pos_type)
+{
+    TSeqPos pos = m_CurrentPos;
+    switch (pos_type) {
+    case ePosWithGapsAndSegs:
+        pos += m_SegmentBase; // fall through
+    case ePosWithGaps:
+        pos += m_TotalGapLength; // fall through
+    case eRawPos:
+        return pos;
+    default:
+        return kInvalidSeqPos;
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -124,6 +332,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/04/13 14:44:00  ucko
+* Add a new class-based FASTA reader, but leave the existing reader
+* alone for now.
+*
 * Revision 1.10  2005/10/17 12:19:35  rsmith
 * initialize streampos members.
 *

@@ -34,10 +34,12 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/fasta.hpp>
+#include "fasta_aln_builder.hpp"
 #include <objtools/readers/reader_exception.hpp>
 
 #include <corelib/ncbiutil.hpp>
 #include <util/format_guess.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 
 #include <objects/general/Object_id.hpp>
 
@@ -46,12 +48,17 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/NCBIeaa.hpp>
 #include <objects/seq/IUPACna.hpp>
+#include <objects/seq/Seg_ext.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/seqport_util.hpp>
+
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -60,12 +67,842 @@
 #include <objects/seqloc/Seq_point.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 #include <ctype.h>
 
+// #define REPLACE_OLD_INTERFACE 1
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+template <typename TStack>
+class CTempPusher
+{
+public:
+    typedef typename TStack::value_type TValue;
+    CTempPusher(TStack& s, const TValue& v) : m_Stack(s) { s.push(v); }
+    ~CTempPusher() { _ASSERT( !m_Stack.empty() );  m_Stack.pop(); }    
+
+private:
+    TStack& m_Stack;
+};
+
+typedef CTempPusher<stack<CFastaReader::TFlags> > CFlagGuard;
+
+// The FASTA reader uses these heavily, but the standard versions
+// aren't inlined on as many configurations as one might hope, and we
+// don't necessarily want locale-dependent behavior anyway.
+
+inline bool s_ASCII_IsUpper(unsigned char c)
+{
+    return c >= 'A'  &&  c <= 'Z';
+}
+
+inline bool s_ASCII_IsLower(unsigned char c)
+{
+    return c >= 'a'  &&  c <= 'z';
+}
+
+inline bool s_ASCII_IsAlpha(unsigned char c)
+{
+    return s_ASCII_IsUpper(c)  ||  s_ASCII_IsLower(c);
+}
+
+inline unsigned char s_ASCII_ToUpper(unsigned char c)
+{
+    return s_ASCII_IsLower(c) ? c + 'A' - 'a' : c;
+}
+
+CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
+    : m_LineReader(&reader), m_MaskVec(0), m_IDGenerator(new CSeqIdGenerator)
+{
+    m_Flags.push(flags);
+}
+
+CFastaReader::~CFastaReader(void)
+{
+    _ASSERT(m_Flags.size() == 1);
+}
+
+CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
+{
+    m_CurrentSeq.Reset(new CBioseq);
+    // m_CurrentMask.Reset();
+    m_SeqData.erase();
+    m_Gaps.clear();
+    m_CurrentPos = 0;
+    m_MaskRangeStart = kInvalidSeqPos;
+    if ( !TestFlag(fInSegSet) ) {
+        if (m_MaskVec  &&  m_NextMask.IsNull()) {
+            m_MaskVec->push_back(SaveMask());
+        }
+        m_CurrentMask.Reset(m_NextMask);
+        m_NextMask.Reset();
+        m_SegmentBase = 0;
+        m_Offset = 0;
+    }
+    m_CurrentGapLength = m_TotalGapLength = 0;
+
+    bool need_defline = true;
+    while ( !GetLineReader().AtEOF() ) {
+        char c = GetLineReader().PeekChar();
+        if (GetLineReader().AtEOF()) {
+            NCBI_THROW2(CObjReaderParseException, eEOF,
+                        "CFastaReader: Input stream no longer valid",
+                        StreamPosition());
+        }
+        if (c == '>') {
+            if (need_defline) {
+                ParseDefLine(*++GetLineReader());
+                need_defline = false;
+            } else {
+                // start of the next sequence
+                break;
+            }
+        } else if (strchr("#!\n\r", c)) {
+            // no content, just a comment or blank line
+            ++GetLineReader();
+            continue;
+        } else if (c == '[') {
+            return x_ReadSegSet();
+        } else if (c == ']') {
+            if (need_defline) {
+                NCBI_THROW2(CObjReaderParseException, eEOF,
+                            "CFastaReader: Reached end of segmented set",
+                            StreamPosition());
+            } else {
+                break;
+            }
+        } else if (need_defline) {
+            if (TestFlag(fDLOptional)) {
+                ParseDefLine(">");
+            } else {
+                NCBI_THROW2(CObjReaderParseException, eNoDefline,
+                            "CFastaReader: Input doesn't start with"
+                            " a defline or comment",
+                            StreamPosition());
+            }
+        } else if ( !TestFlag(fNoSeqData) ) {
+            ParseDataLine(*++GetLineReader());
+        }
+    }
+
+    AssembleSeq();
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSeq(*m_CurrentSeq);
+    return entry;
+}
+
+CRef<CSeq_entry> CFastaReader::x_ReadSegSet(void)
+{
+    CFlagGuard guard(m_Flags, GetFlags() | fInSegSet);
+    CRef<CSeq_entry> entry(new CSeq_entry), master(new CSeq_entry), parts;
+
+    _ASSERT(GetLineReader().PeekChar() == '[');
+    try {
+        ++GetLineReader();
+        parts = ReadSet();
+    } catch (CObjReaderParseException&) {
+        if (GetLineReader().AtEOF()) {
+            throw;
+        } else if (GetLineReader().PeekChar() == ']') {
+            ++GetLineReader();
+        } else {
+            throw;
+        }
+    }
+    if (GetLineReader().AtEOF()) {
+        NCBI_THROW2(CObjReaderParseException, eBadSegSet,
+                    "CFastaReader: Segmented set not properly terminated",
+                    StreamPosition());
+    } else if (!parts->IsSet()  ||  parts->GetSet().GetSeq_set().empty()) {
+        NCBI_THROW2(CObjReaderParseException, eBadSegSet,
+                    "CFastaReader: Segmented set contains no sequences",
+                    StreamPosition());
+    }
+
+    const CBioseq& first_seq = parts->GetSet().GetSeq_set().front()->GetSeq();
+    CBioseq& master_seq = master->SetSeq();
+    CSeq_inst& inst = master_seq.SetInst();
+    // XXX - work out less generic ID?
+    CRef<CSeq_id> id(SetIDGenerator().GenerateID(true));
+    if (m_CurrentMask) {
+        m_CurrentMask->SetId(*id);
+    }
+    master_seq.SetId().push_back(id);
+    inst.SetRepr(CSeq_inst::eRepr_seg);
+    inst.SetMol(first_seq.GetInst().GetMol());
+    inst.SetLength(GetCurrentPos(ePosWithGapsAndSegs));
+    CSeg_ext& ext = inst.SetExt().SetSeg();
+    ITERATE (CBioseq_set::TSeq_set, it, parts->GetSet().GetSeq_set()) {
+        CRef<CSeq_loc>      seg_loc(new CSeq_loc);
+        const CBioseq::TId& seg_ids = (*it)->GetSeq().GetId();
+        CRef<CSeq_id>       seg_id  = FindBestChoice(seg_ids, CSeq_id::Score);
+        seg_loc->SetWhole(*seg_id);
+        ext.Set().push_back(seg_loc);
+    }
+
+    parts->SetSet().SetClass(CBioseq_set::eClass_parts);
+    entry->SetSet().SetClass(CBioseq_set::eClass_segset);
+    entry->SetSet().SetSeq_set().push_back(master);
+    entry->SetSet().SetSeq_set().push_back(parts);
+    return entry;
+}
+
+CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    if (TestFlag(fOneSeq)) {
+        max_seqs = 1;
+    }
+    for (int i = 0;  i < max_seqs  &&  !GetLineReader().AtEOF();  ++i) {
+        try {
+            CRef<CSeq_entry> entry2(ReadOneSeq());
+            if (max_seqs == 1) {
+                return entry2;
+            }
+            entry->SetSet().SetSeq_set().push_back(entry2);
+        } catch (CObjReaderParseException& e) {
+            if (e.GetErrCode() == CObjReaderParseException::eEOF) {
+                break;
+            } else {
+                throw;
+            }
+        }
+    }
+    if (entry->IsSet()  &&  entry->GetSet().GetSeq_set().size() == 1) {
+        return entry->SetSet().SetSeq_set().front();
+    } else {
+        return entry;
+    }
+}
+
+CRef<CSeq_loc> CFastaReader::SaveMask(void)
+{
+    m_NextMask.Reset(new CSeq_loc);
+    return m_NextMask;
+}
+
+void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
+{
+    m_IDGenerator.Reset(&gen);
+}
+
+void CFastaReader::ParseDefLine(const TStr& s)
+{
+    size_t start = 1, pos, len = s.length(), title_start;
+    do {
+        bool has_id = true;
+        if (TestFlag(fNoParseID)) {
+            title_start = start;
+        } else {
+            for (pos = start;  pos < len;  ++pos) {
+                if ((unsigned char) s[pos] <= ' ') { // assumes ASCII
+                    break;
+                }
+            }
+            size_t range_len = ParseRange(TStr(s.data(), start, pos - start));
+            has_id = ParseIDs(TStr(s.data(), start, pos - start - range_len));
+            title_start = pos + 1;
+            // trim leading whitespace from title (is this appropriate?)
+            while (isblank((unsigned char) s[title_start])) {
+                ++title_start;
+            }
+        }
+        for (pos = title_start + 1;  pos < len;  ++pos) {
+            if ((unsigned char) s[pos] < ' ') {
+                break;
+            }
+        }
+        if ( !has_id ) {
+            // no IDs after all, so take the whole line as a title
+            // (done now rather than earlier to avoid rescanning)
+            title_start = start;
+        }
+        if (pos <= len) {
+            ParseTitle(TStr(s.data(), title_start, pos - title_start));
+        }
+        start = pos + 1;
+    } while (TestFlag(fAllSeqIds)  &&  start < len  &&  s[start - 1] == '\1');
+
+    if (GetIDs().empty()) {
+        // No [usable] IDs
+        if (TestFlag(fRequireID)) {
+            NCBI_THROW2(CObjReaderParseException, eNoIDs,
+                        "CFastaReader: Defline lacks a proper ID",
+                        StreamPosition());
+        }
+        GenerateID();
+    }
+
+    m_BestID = FindBestChoice(GetIDs(), CSeq_id::Score);
+}
+
+bool CFastaReader::ParseIDs(const TStr& s)
+{
+    string str(s.data(), s.length());
+    CBioseq::TId& ids = SetIDs();
+    // CBioseq::TId  old_ids = ids;
+    size_t count = 0;
+    if (str.find('|') != NPOS) {
+        try {
+            count = CSeq_id::ParseFastaIds(ids, str, true); // be generous
+        } catch (CSeqIdException&) {
+            // swap(ids, old_ids);
+        }
+    }
+    if ( !count ) {
+        if (IsValidLocalID(str)) {
+            ids.push_back(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, str)));
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+size_t CFastaReader::ParseRange(const TStr& s)
+{
+    bool    on_start = false;
+    TSeqPos start = 0, end = 0, mult = 1;
+    size_t  pos;
+    for (pos = s.length() - 1;  pos > 0;  --pos) {
+        unsigned char c = s[pos];
+        if (c >= '0'  &&  c <= '9') {
+            if (on_start) {
+                start += (c - '0') * mult;
+            } else {
+                end += (c - '0') * mult;
+            }
+            mult *= 10;
+        } else if (c == '-'  &&  !on_start  &&  mult > 1) {
+            on_start = true;
+            mult = 1;
+        } else if (c == ':'  &&  on_start  &&  mult > 1) {
+            break;
+        } else {
+            return 0; // syntax error
+        }
+    }
+    if (start > end  ||  s[pos] != ':') {
+        return 0;
+    }
+    if (start > 0) {
+        SGap gap = { 0, start };
+        m_Gaps.push_back(gap);
+    }
+    m_ExpectedEnd = end;
+    return s.length() - pos;
+}
+
+void CFastaReader::ParseTitle(const TStr& s)
+{
+    CRef<CSeqdesc> desc(new CSeqdesc);
+    desc->SetTitle().assign(s.data(), s.length());
+    m_CurrentSeq->SetDescr().Set().push_back(desc);
+}
+
+bool CFastaReader::IsValidLocalID(const string& s)
+{
+    static const char* const kLegal =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.";
+    return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
+}
+
+void CFastaReader::GenerateID(void)
+{
+    SetIDs().push_back(SetIDGenerator().GenerateID(true));
+}
+
+void CFastaReader::ParseDataLine(const TStr& s)
+{
+    size_t len = s.length();
+    if (m_SeqData.capacity() < m_SeqData.size() + len) {
+        // ensure exponential capacity growth to avoid quadratic runtime
+        m_SeqData.reserve(2 * max(m_SeqData.capacity(), len));
+    }
+    m_SeqData.resize(m_CurrentPos + len);
+    for (size_t pos = 0;  pos < len;  ++pos) {
+        unsigned char c = s[pos];
+        if (c == '-'  &&  TestFlag(fParseGaps)) {
+            CloseMask();
+            // OpenGap();
+            size_t pos2 = pos + 1;
+            while (pos2 < len  &&  s[pos2] == '-') {
+                ++pos2;
+            }
+            m_CurrentGapLength += pos2 - pos;
+            pos = pos2 - 1;
+        } else if (s_ASCII_IsAlpha(c)  ||  c == '-'  ||  c == '*') {
+            CloseGap();
+            if (s_ASCII_IsLower(c)) {
+                m_SeqData[m_CurrentPos] = s_ASCII_ToUpper(c);
+                CloseMask();
+            } else {
+                m_SeqData[m_CurrentPos] = c;
+                CloseMask();
+            }
+            ++m_CurrentPos;
+        } else if (c == ';') {
+            // comment -- ignore rest of line
+            break;
+        } else if ( !isspace(c) ) {
+            ERR_POST(Warning << "CFastaReader: Ignoring invalid residue "
+                     << c << " at position " << (StreamPosition() + pos - len));
+        }
+    }
+    m_SeqData.resize(m_CurrentPos);
+}
+
+void CFastaReader::x_CloseGap(TSeqPos len)
+{
+    _ASSERT(len > 0  &&  TestFlag(fParseGaps));
+    if (TestFlag(fAligning)) {
+        TSeqPos pos = GetCurrentPos(ePosWithGapsAndSegs);
+        m_Starts[pos + m_Offset][m_Row] = CFastaAlignmentBuilder::kNoPos;
+        m_Offset += len;
+        m_Starts[pos + m_Offset][m_Row] = pos;
+    } else {
+        TSeqPos pos = GetCurrentPos(eRawPos);
+        // Special case -- treat a lone hyphen at the end of a line as
+        // a gap of unknown length.
+        if (len == 1) {
+            TSeqPos l = m_SeqData.length();
+            if (l == pos  ||  l == pos + (*GetLineReader()).length()) {
+                len = 0;
+            }
+        }
+        SGap gap = { pos, len };
+        m_Gaps.push_back(gap);
+        m_TotalGapLength += len;
+        m_CurrentGapLength = 0;
+    }
+}
+
+void CFastaReader::x_OpenMask(void)
+{
+    _ASSERT(m_MaskRangeStart == kInvalidSeqPos);
+    m_MaskRangeStart = GetCurrentPos(ePosWithGapsAndSegs);
+}
+
+void CFastaReader::x_CloseMask(void)
+{
+    _ASSERT(m_MaskRangeStart != kInvalidSeqPos);
+    m_CurrentMask->SetPacked_int().AddInterval
+        (GetBestID(), m_MaskRangeStart, GetCurrentPos(ePosWithGapsAndSegs) - 1);
+    m_MaskRangeStart = kInvalidSeqPos;
+}
+
+void CFastaReader::AssembleSeq(void)
+{
+    CSeq_inst& inst = m_CurrentSeq->SetInst();
+
+    CloseGap();
+    CloseMask();
+    if (TestFlag(fInSegSet)) {
+        m_SegmentBase += GetCurrentPos(ePosWithGaps);
+    }
+    AssignMolType();
+    if (m_Gaps.empty()) {
+        _ASSERT(m_TotalGapLength == 0);
+        if (m_SeqData.empty()) {
+            inst.SetRepr(CSeq_inst::eRepr_virtual);
+        } else {
+            inst.SetRepr(CSeq_inst::eRepr_raw);
+            inst.SetLength(GetCurrentPos(eRawPos));
+            SaveSeqData(inst.SetSeq_data(), m_SeqData);
+        }
+    } else {
+        CDelta_ext& delta_ext = inst.SetExt().SetDelta();
+        inst.SetRepr(CSeq_inst::eRepr_delta);
+        inst.SetLength(GetCurrentPos(ePosWithGaps));
+        SIZE_TYPE n = m_Gaps.size();
+        for (SIZE_TYPE i = 0;  i < n;  ++i) {
+            if (i == 0  &&  m_Gaps[i].pos > 0) {
+                CRef<CDelta_seq> seq0_ds(new CDelta_seq);
+                CSeq_literal&    seq0_lit = seq0_ds->SetLiteral();
+                seq0_lit.SetLength(m_Gaps[i].pos);
+                SaveSeqData(seq0_lit.SetSeq_data(),
+                            TStr(m_SeqData, 0, m_Gaps[i].pos));
+                delta_ext.Set().push_back(seq0_ds);
+            }
+
+            CRef<CDelta_seq> gap_ds(new CDelta_seq);
+            if (m_Gaps[i].len == 0) { // unknown length
+                gap_ds->SetLoc().SetNull();
+            } else {
+                gap_ds->SetLiteral().SetLength(m_Gaps[i].len);
+            }
+            delta_ext.Set().push_back(gap_ds);
+
+            TSeqPos next_start = (i == n-1) ? m_CurrentPos : m_Gaps[i+1].pos;
+            if (next_start == m_Gaps[i].pos) {
+                continue;
+            }
+
+            CRef<CDelta_seq> seq_ds(new CDelta_seq);
+            CSeq_literal&    seq_lit = seq_ds->SetLiteral();
+            TSeqPos          seq_len = next_start - m_Gaps[i].pos;
+            seq_lit.SetLength(seq_len);
+            SaveSeqData(seq_lit.SetSeq_data(),
+                        TStr(m_SeqData, m_Gaps[i].pos, seq_len));
+            delta_ext.Set().push_back(seq_ds);
+        }
+    }
+}
+
+void CFastaReader::AssignMolType(void)
+{
+    CSeq_inst& inst = m_CurrentSeq->SetInst();
+    // Did the user insist on a specific type?
+    if (TestFlag(fForceType)) {
+        switch (GetFlags() & (fAssumeNuc | fAssumeProt)) {
+        case fAssumeNuc:   inst.SetMol(CSeq_inst::eMol_na);  break;
+        case fAssumeProt:  inst.SetMol(CSeq_inst::eMol_aa);  break;
+        default:           _TROUBLE;
+        }
+        return;
+    }
+    
+    // Does any ID imply a specific type?
+    ITERATE (CBioseq::TId, it, GetIDs()) {
+        CSeq_id::EAccessionInfo acc_info = (*it)->IdentifyAccession();
+        if (acc_info & CSeq_id::fAcc_nuc) {
+            _ASSERT ( !(acc_info & CSeq_id::fAcc_prot) );
+            inst.SetMol(CSeq_inst::eMol_na);
+            return;
+        } else if (acc_info & CSeq_id::fAcc_prot) {
+            inst.SetMol(CSeq_inst::eMol_aa);
+            return;
+        }
+        // XXX - verify that other IDs aren't contradictory?
+    }
+
+    // Did the user specify a default type?
+    switch (GetFlags() & (fAssumeNuc | fAssumeProt)) {
+    case fAssumeNuc:   inst.SetMol(CSeq_inst::eMol_na);  return;
+    case fAssumeProt:  inst.SetMol(CSeq_inst::eMol_aa);  return;
+    }
+
+    if (m_SeqData.empty()) {
+        // nothing else to go on, but that's OK
+        return;
+    }
+
+    // Do the residue frequencies suggest a specific type?
+    SIZE_TYPE length = min(m_SeqData.length(), SIZE_TYPE(4096));
+    switch (CFormatGuess::SequenceType(m_SeqData.data(), length)) {
+    case CFormatGuess::eNucleotide:  inst.SetMol(CSeq_inst::eMol_na);  return;
+    case CFormatGuess::eProtein:     inst.SetMol(CSeq_inst::eMol_aa);  return;
+    default:
+        NCBI_THROW2(CObjReaderParseException, eAmbiguous,
+                    "CFastaReader: unable to determine sequence type",
+                    StreamPosition());
+    }
+}
+
+void CFastaReader::SaveSeqData(CSeq_data& seq_data, const TStr& raw_string)
+{
+    SIZE_TYPE len = raw_string.length();
+    if (m_CurrentSeq->IsAa()) {
+        seq_data.SetNcbieaa().Set().assign(raw_string.data(),
+                                           len);
+    } else {
+        // nucleotide -- pack to ncbi2na, or at least ncbi4na
+        vector<char> v((len+1) / 2, '\0');
+        CSeqUtil::ECoding coding;
+        CSeqConvert::Pack(raw_string.data(), len, CSeqUtil::e_Iupacna, &v[0],
+                          coding);
+        if (coding == CSeqUtil::e_Ncbi2na) {
+            seq_data.SetNcbi2na().Set().assign(v.begin(),
+                                               v.begin() + (len + 3) / 4);
+        } else {
+            swap(seq_data.SetNcbi4na().Set(), v);
+        }
+    }
+}
+
+CRef<CSeq_entry> CFastaReader::ReadAlignedSet(int reference_row)
+{
+    TIds             ids;
+    CRef<CSeq_entry> entry = x_ReadSeqsToAlign(ids);
+    CRef<CSeq_annot> annot(new CSeq_annot);
+
+    if (reference_row >= 0) {
+        x_AddPairwiseAlignments(*annot, ids, reference_row);
+    } else {
+        x_AddMultiwayAlignment(*annot, ids);
+    }
+    entry->SetSet().SetAnnot().push_back(annot);
+    return entry;
+}
+
+CRef<CSeq_entry> CFastaReader::x_ReadSeqsToAlign(TIds& ids)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    vector<TSeqPos>  lengths;
+
+    CFlagGuard guard(m_Flags, GetFlags() | fAligning | fParseGaps);
+
+    for (m_Row = 0, m_Starts.clear();  !GetLineReader().AtEOF();  ++m_Row) {
+        try {
+            // must mark m_Starts prior to reading in case of leading gaps
+            m_Starts[0][m_Row] = 0;
+            CRef<CSeq_entry> entry2(ReadOneSeq());
+            entry->SetSet().SetSeq_set().push_back(entry2);
+            CRef<CSeq_id> id(new CSeq_id);
+            id->Assign(GetBestID());
+            ids.push_back(id);
+            lengths.push_back(GetCurrentPos(ePosWithGapsAndSegs) + m_Offset);
+            _ASSERT(lengths.size() == size_t(m_Row) + 1);
+            // redundant if there was a trailing gap, but that should be okay
+            m_Starts[lengths[m_Row]][m_Row] = CFastaAlignmentBuilder::kNoPos;
+        } catch (CObjReaderParseException&) {
+            if (GetLineReader().AtEOF()) {
+                break;
+            } else {
+                throw;
+            }
+        }
+    }
+    // check whether lengths are all equal, and warn if they differ?
+    return entry;
+}
+
+void CFastaReader::x_AddPairwiseAlignments(CSeq_annot& annot, const TIds& ids,
+                                           TRowNum reference_row)
+{
+    typedef CFastaAlignmentBuilder TBuilder;
+    typedef CRef<TBuilder>         TBuilderRef;
+
+    TRowNum             rows = m_Row;
+    vector<TBuilderRef> builders(rows);
+    
+    for (TRowNum r = 0;  r < rows;  ++r) {
+        if (r != reference_row) {
+            builders[r].Reset(new TBuilder(ids[reference_row], ids[r]));
+        }
+    }
+    ITERATE (TStartsMap, it, m_Starts) {
+        const TSubMap& submap = it->second;
+        TSubMap::const_iterator rr_it2 = submap.find(reference_row);
+        if (rr_it2 == submap.end()) { // reference unchanged
+            ITERATE (TSubMap, it2, submap) {
+                int r = it2->first;
+                _ASSERT(r != reference_row);
+                builders[r]->AddData(it->first, TBuilder::kContinued,
+                                     it2->second);
+            }
+        } else { // reference changed; all rows need updating
+            TSubMap::const_iterator it2 = submap.begin();
+            for (TRowNum r = 0;  r < rows;  ++r) {
+                if (it2 != submap.end()  &&  r == it2->first) {
+                    if (r != reference_row) {
+                        builders[r]->AddData(it->first, rr_it2->second,
+                                             it2->second);
+                    }
+                    ++it2;
+                } else {
+                    _ASSERT(r != reference_row);
+                    builders[r]->AddData(it->first, rr_it2->second,
+                                         TBuilder::kContinued);
+                }
+            }
+        }
+    }
+
+    // finalize and store the alignments
+    CSeq_annot::TData::TAlign& annot_align = annot.SetData().SetAlign();
+    for (TRowNum r = 0;  r < rows;  ++r) {
+        if (r != reference_row) {
+            annot_align.push_back(builders[r]->GetCompletedAlignment());
+        }
+    }
+}
+
+void CFastaReader::x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids)
+{
+    TRowNum              rows = m_Row;
+    CRef<CSeq_align>     sa(new CSeq_align);
+    CDense_seg&          ds   = sa->SetSegs().SetDenseg();
+    CDense_seg::TStarts& dss  = ds.SetStarts();
+
+    sa->SetType(CSeq_align::eType_not_set);
+    sa->SetDim(rows);
+    ds.SetDim(rows);
+    ds.SetIds() = ids;
+    dss.reserve((m_Starts.size() - 1) * rows);
+
+    TSeqPos old_len = 0;
+    for (TStartsMap::const_iterator next = m_Starts.begin(), it = next++;
+         next != m_Starts.end();  it = next++) {
+        TSeqPos len = next->first - it->first;
+        _ASSERT(len > 0);
+        ds.SetLens().push_back(len);
+
+        const TSubMap&          submap = it->second;
+        TSubMap::const_iterator it2 = submap.begin();
+        for (TRowNum r = 0;  r < rows;  ++r) {
+            if (it2 != submap.end()  &&  r == it2->first) {
+                dss.push_back(it2->second);
+                ++it2;
+            } else {
+                _ASSERT(dss.size() >= size_t(rows)  &&  old_len > 0);
+                TSignedSeqPos last_pos = dss[dss.size() - rows];
+                if (last_pos == CFastaAlignmentBuilder::kNoPos) {
+                    dss.push_back(last_pos);
+                } else {
+                    dss.push_back(last_pos + old_len);
+                }
+            }
+        }
+
+        it = next;
+        old_len = len;
+    }
+    ds.SetNumseg(ds.GetLens().size());
+    annot.SetData().SetAlign().push_back(sa);
+}
+
+
+CRef<CSeq_id> CSeqIdGenerator::GenerateID(bool advance)
+{
+    CNcbiOstrstream oss;
+    oss << m_Prefix
+        << (advance ? m_Counter.Add(1) - 1 : m_Counter.Get())
+        << m_Suffix;
+    return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local,
+                                     CNcbiOstrstreamToString(oss)));
+}
+
+CRef<CSeq_id> CSeqIdGenerator::GenerateID(void) const
+{
+    return const_cast<CSeqIdGenerator*>(this)->GenerateID(false);
+}
+
+
+#ifdef REPLACE_OLD_INTERFACE
+
+class CCounterManager
+{
+public:
+    CCounterManager(CSeqIdGenerator& generator, int* counter)
+        : m_Generator(generator), m_Counter(counter)
+        { if (counter) { generator.SetCounter(*counter); } }
+    ~CCounterManager()
+        { if (m_Counter) { *m_Counter = m_Generator.GetCounter(); } }
+
+private:
+    CSeqIdGenerator& m_Generator;
+    int*             m_Counter;
+};
+
+CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
+                           int* counter, vector<CConstRef<CSeq_loc> >* lcv)
+{
+    CStreamLineReader lr(in);
+    CFastaReader      reader(lr, flags);
+    CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
+    if (lcv) {
+        reader.SaveMasks(reinterpret_cast<CFastaReader::TMasks*>(lcv));
+    }
+    return reader.ReadSet();
+}
+
+
+class CFastaMapper : public CFastaReader
+{
+public:
+    typedef CFastaReader TParent;
+
+    CFastaMapper(ILineReader& reader, SFastaFileMap* fasta_map, TFlags flags);
+
+protected:
+    void ParseDefLine(const TStr& s);
+    void ParseTitle(const TStr& s);
+    void AssembleSeq(void);
+
+private:
+    SFastaFileMap*             m_Map;
+    SFastaFileMap::SFastaEntry m_MapEntry;
+};
+
+CFastaMapper::CFastaMapper(ILineReader& reader, SFastaFileMap* fasta_map,
+                           TFlags flags)
+    : TParent(reader, flags), m_Map(fasta_map)
+{
+    _ASSERT(fasta_map);
+    fasta_map->file_map.resize(0);
+}
+
+void CFastaMapper::ParseDefLine(const TStr& s)
+{
+    TParent::ParseDefLine(s); // We still want the default behavior.
+    m_MapEntry.seq_id = GetIDs().front()->AsFastaString(); // XXX -- GetBestID?
+    m_MapEntry.all_seq_ids.resize(0);
+    ITERATE (CBioseq::TId, it, GetIDs()) {
+        m_MapEntry.all_seq_ids.push_back((*it)->AsFastaString());
+    }
+    m_MapEntry.stream_offset = StreamPosition() - s.length();
+}
+
+void CFastaMapper::ParseTitle(const TStr& s)
+{
+    TParent::ParseTitle(s);
+    m_MapEntry.description = s;
+}
+
+void CFastaMapper::AssembleSeq(void)
+{
+    TParent::AssembleSeq();
+    m_Map->file_map.push_back(m_MapEntry);
+}
+
+
+void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
+{
+    static const CFastaReader::TFlags kFlags
+        = CFastaReader::fAssumeNuc | CFastaReader::fAllSeqIds
+        | CFastaReader::fNoSeqData;
+
+    if ( !input.is_open() ) {
+        return;
+    }
+
+    CStreamLineReader lr(input);
+    CFastaMapper      mapper(lr, fasta_map, kFlags);
+    mapper.ReadSet();
+}
+
+
+void ScanFastaFile(IFastaEntryScan* scanner, 
+                   CNcbiIfstream&   input,
+                   TReadFastaFlags  fread_flags)
+{
+    if ( !input.is_open() ) {
+        return;
+    }
+
+    CStreamLineReader lr(input);
+    CFastaReader      reader(lr, fread_flags);
+
+    for (;;) {
+        try {
+            CNcbiStreampos   pos = lr.GetPosition();
+            CRef<CSeq_entry> se  = reader.ReadOneSeq();
+            if (se->IsSeq()) {
+                scanner->EntryFound(se, pos);
+            }
+        } catch (CObjReaderParseException& e) {
+            if ( !lr.AtEOF() ) {
+                throw;
+            }
+        }
+    }
+}
+
+#else
 
 static SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
 {
@@ -619,6 +1456,7 @@ void ScanFastaFile(IFastaEntryScan* scanner,
     }
 }
 
+#endif
 
 IFastaEntryScan::~IFastaEntryScan()
 {
@@ -634,6 +1472,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2006/04/13 14:44:18  ucko
+* Add a new class-based FASTA reader, but leave the existing reader
+* alone for now.
+*
 * Revision 1.26  2006/02/17 15:40:18  ucko
 * ReadFasta: correct off-by-one error in lowercase-interval reporting
 * caught by Josh Cherry.

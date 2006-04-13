@@ -47,13 +47,23 @@ class CObjReaderParseException :
     public CParseTemplException<CObjReaderException>
 {
 public:
-    enum EErrCode {
-        eFormat
+    enum EErrCode { ///< Some of these are pretty specialized
+        eFormat, ///< catch-all
+        eEOF,
+        eNoDefline,
+        eNoIDs,
+        eAmbiguous,
+        eBadSegSet
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
         case eFormat:    return "eFormat";
+        case eEOF:       return "eEOF";
+        case eNoDefline: return "eNoDefline";
+        case eNoIDs:     return "eNoIDs";
+        case eAmbiguous: return "eAmbiguous";
+        case eBadSegSet: return "eBadSegSet";
         default:         return CException::GetErrCodeString();
         }
     }
@@ -68,6 +78,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/04/13 14:44:00  ucko
+* Add a new class-based FASTA reader, but leave the existing reader
+* alone for now.
+*
 * Revision 1.3  2004/08/19 13:09:12  dicuccio
 * Dropped export specifier on inlined exceptions
 *
