@@ -45,6 +45,8 @@
 
 #include "netcached.hpp"
 
+bool s_WaitForReadSocket(ncbi::CSocket& sock, unsigned time_to_wait);
+
 BEGIN_NCBI_SCOPE
 
 
@@ -338,9 +340,6 @@ void CNetCacheServer::Process_IC_GetBlobOwner(ICache&              ic,
     WriteMsg(sock, "OK:", owner);
 }
 
-bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait);
-
-
 void CNetCacheServer::Process_IC_Read(ICache&              ic,
                                       CSocket&             sock, 
                                       SIC_Request&         req,
@@ -497,6 +496,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/04/13 18:09:12  ucko
+ * Move s_WaitForReadSocket's declaration outside of ncbi::.
+ *
  * Revision 1.9  2006/04/13 16:57:22  kuznets
  * Add processing of OK on read from the client
  *
