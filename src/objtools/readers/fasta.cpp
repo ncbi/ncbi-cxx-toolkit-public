@@ -306,7 +306,7 @@ void CFastaReader::ParseDefLine(const TStr& s)
             has_id = ParseIDs(TStr(s.data(), start, pos - start - range_len));
             title_start = pos + 1;
             // trim leading whitespace from title (is this appropriate?)
-            while (isblank((unsigned char) s[title_start])) {
+            while (isspace((unsigned char) s[title_start])) {
                 ++title_start;
             }
         }
@@ -1472,6 +1472,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/04/13 17:25:18  ucko
+* Replace isblank with isspace, as Windows only has the latter.
+*
 * Revision 1.27  2006/04/13 14:44:18  ucko
 * Add a new class-based FASTA reader, but leave the existing reader
 * alone for now.
