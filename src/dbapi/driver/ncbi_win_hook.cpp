@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 
@@ -292,8 +293,9 @@ namespace NWinHook
     CWinHookException::GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eDbghelp:  return "eDbghelp";
-        default:        return CException::GetErrCodeString();
+        case eDbghelp:      return "eDbghelp";
+        case eDisabled:     return "eDisabled";
+        default:            return CException::GetErrCodeString();
         }
     }
 
@@ -1473,6 +1475,30 @@ namespace NWinHook
     CApiHookMgr::CApiHookMgr() :
         m_bSystemFuncsHooked(FALSE)
     {
+        // A static variable below is used to check for enabling of tracing
+        // when CNcbiApplication is not available any more.
+        static enabled_from_registry = false;
+
+        CNcbiApplication* app = CNcbiApplication::Instance();
+
+        if (app) {
+            // Get current registry ...
+            const IRegistry& registry = app->GetConfig();
+
+            if (!registry.GetBool("WIN_HOOK", "ENABLED", true)) {
+                NCBI_THROW(CWinHookException, 
+                        eDisabled, 
+                        "Windows API hooking is disabled from registry.");
+            } 
+            else {
+                enabled_from_registry = true;
+            }
+        } else if (!enabled_from_registry) {
+            NCBI_THROW(CWinHookException, 
+                    eDisabled, 
+                    "Windows API hooking is disabled from registry.");
+        }
+
         HookSystemFuncs();
     }
 
@@ -1920,6 +1946,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/13 14:50:45  ssikorsk
+ * Allow to disable Windows API hooking from application's registry.
+ *
  * Revision 1.3  2006/04/12 21:57:37  ssikorsk
  * Changed implementation of CHookedFunctions
  *
