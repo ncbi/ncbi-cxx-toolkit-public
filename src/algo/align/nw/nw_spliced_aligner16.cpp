@@ -37,15 +37,34 @@
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/nw/align_exception.hpp>
 
+//#include <emmintrin.h>
+
 BEGIN_NCBI_SCOPE
+
 
 const unsigned char g_nwspl_donor[splice_type_count_16][2] = {
     {'G','T'}, {'G','C'}, {'A','T'}, {'?','?'}
 };
 
+/// 16-bit donor table
+const unsigned short g_nwspl_donor_16[splice_type_count_16] = {
+    ('G' << 8) | 'T',   // GT
+    ('G' << 8) | 'C',   // GC
+    ('A' << 8) | 'T',   // AT
+    ('?' << 8) | '?'    // ??
+};
+
 const unsigned char g_nwspl_acceptor[splice_type_count_16][2] = {
     {'A','G'}, {'A','G'}, {'A','C'}, {'?','?'}
 };
+
+const unsigned short g_nwspl_acceptor_16[splice_type_count_16] = {
+    ('A' << 8) | 'G',  // AG
+    ('A' << 8) | 'G',  // AG
+    ('A' << 8) | 'C',  // AC
+    ('?' << 8) | '?'   // ??
+};
+
 
 const unsigned char g_topidx = splice_type_count_16 - 1;
 
@@ -114,7 +133,6 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
     const size_t N1 = data->m_len1 + 1;
     const size_t N2 = data->m_len2 + 1;
-
     vector<TScore> stl_rowV (N2), stl_rowF (N2);
     TScore* rowV    = &stl_rowV[0];
     TScore* rowF    = &stl_rowF[0];
@@ -122,12 +140,12 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     // index calculation: [i,j] = i*n2 + j
     vector<Uint2> stl_bm (N1*N2);
     vector<Uint1> stl_bm_ext (N1*N2, 0);
-    Uint2* backtrace_matrix = &stl_bm[0];
-    Uint1* backtrace_matrix_ext = &stl_bm_ext[0];
+    Uint2* NCBI_RESTRICT backtrace_matrix = &stl_bm[0];
+    Uint1* NCBI_RESTRICT backtrace_matrix_ext = &stl_bm_ext[0];
     TScore* pV = rowV - 1;
 
-    const char* seq1 = m_Seq1 + data->m_offset1 - 1;
-    const char* seq2 = m_Seq2 + data->m_offset2 - 1;
+    const char* NCBI_RESTRICT seq1 = m_Seq1 + data->m_offset1 - 1;
+    const char* NCBI_RESTRICT seq2 = m_Seq2 + data->m_offset2 - 1;
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
@@ -152,17 +170,31 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     Uint2 tracer;
 
     // store candidate donors
-    size_t* jAllDonors [splice_type_count_16];
-    TScore* vAllDonors [splice_type_count_16];
+    size_t* jAllDonors_d[splice_type_count_16];
+    TScore* vAllDonors_d[splice_type_count_16];
+	
+    size_t  jTail_d[splice_type_count_16];
+	size_t  jHead_d[splice_type_count_16];
+    TScore  vBestDonor_d[splice_type_count_16];
+    size_t  jBestDonor_d[splice_type_count_16];
+	
+	// declare restrict aliases for arrays
+	size_t** NCBI_RESTRICT jAllDonors = jAllDonors_d;
+	TScore** NCBI_RESTRICT vAllDonors = vAllDonors_d;
+	
+	size_t* NCBI_RESTRICT jTail = jTail_d;
+	size_t* NCBI_RESTRICT jHead = jHead_d;
+	TScore* NCBI_RESTRICT vBestDonor = vBestDonor_d;
+	size_t* NCBI_RESTRICT jBestDonor = jBestDonor_d;
+	
+	
     vector<size_t> stl_jAllDonors (splice_type_count_16 * N2);
     vector<TScore> stl_vAllDonors (splice_type_count_16 * N2);
     for(unsigned char st = 0; st < splice_type_count_16; ++st) {
         jAllDonors[st] = &stl_jAllDonors[st*N2];
         vAllDonors[st] = &stl_vAllDonors[st*N2];
     }
-    size_t  jTail[splice_type_count_16], jHead[splice_type_count_16];
-    TScore  vBestDonor [splice_type_count_16];
-    size_t  jBestDonor [splice_type_count_16];
+		
 
     // fake row
     rowV[0] = kInfMinus;
@@ -171,6 +203,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
         rowV[k] = rowF[k] = kInfMinus;
     }
     k = 0;
+
 
     size_t i, j = 0, k0;
     unsigned char ci;
@@ -189,30 +222,31 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
         }
 
         if(i == N1 - 1 && bFreeGapRight1) {
-                wg1 = ws1 = 0;
+        	wg1 = ws1 = 0;
         }
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
             
         // detect donor candidate
-        if(N2 > 2) {
-	  for(unsigned char st = 0; st < g_topidx; ++st) {
-                if(seq2[1] == g_nwspl_donor[st][0] &&
-                   seq2[2] == g_nwspl_donor[st][1]) {
-
-                    jAllDonors[st][jTail[st]] = j;
-                    vAllDonors[st][jTail[st]] = V;
-                    ++(jTail[st]);
+        if (N2 > 2) {
+            unsigned short v1 = (seq2[1] << 8) | seq2[2];
+	        for(unsigned char st = 0; st < g_topidx; ++st) {
+                if (v1 == g_nwspl_donor_16[st]) {
+                    size_t tl = jTail[st]++;
+                    jAllDonors[st][tl] = j;
+                    vAllDonors[st][tl] = V;
                 }
             }
         }
         // the first max value
-        jAllDonors[g_topidx][jTail[g_topidx]] = j;
-        vAllDonors[g_topidx][jTail[g_topidx]] = V_max = V;
-        ++(jTail[3]);
+        {{
+        size_t tl = jTail[g_topidx]++;
+        jAllDonors[g_topidx][tl] = j;
+        vAllDonors[g_topidx][tl] = V_max = V;
+        }}
 
         for (j = 1; j < N2; ++j, ++k) {
-            
+            			
             G = pV[j] + sm[ci][(unsigned char)seq2[j]];
             pV[j] = V;
 
@@ -258,43 +292,65 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
                 }
             }
 
-            // find out if there are new donors
-            for(unsigned char st = 0; st < splice_type_count_16; ++st) {
-
-                if(jTail[st] > jHead[st])  {
-                    if(j - jAllDonors[st][jHead[st]] >= m_IntronMinSize) {
-                        if(vAllDonors[st][jHead[st]] > vBestDonor[st]) {
-                            vBestDonor[st] = vAllDonors[st][jHead[st]];
-                            jBestDonor[st] = jAllDonors[st][jHead[st]];
-                        }
-                        ++(jHead[st]);
-                    }
-                }
-            }
+            // find out if there are new donors (loop unroll)
+            {{
+            #define NW_NDON_EVAL(st_idx) \
+                { \
+                size_t jt = jTail[st_idx]; \
+                size_t jh = jHead[st_idx]; \
+                if ((jt > jh) && \
+                    (j - jAllDonors[st_idx][jh] >= m_IntronMinSize))  { \
+                                                                        \
+                    if (vAllDonors[st_idx][jh] > vBestDonor[st_idx]) {  \
+                        vBestDonor[st_idx] = vAllDonors[st_idx][jh];    \
+                        jBestDonor[st_idx] = jAllDonors[st_idx][jh];    \
+                    } \
+					++jHead[st_idx]; \
+                } \
+                } 
+            NW_NDON_EVAL(0)
+            NW_NDON_EVAL(1)
+            NW_NDON_EVAL(2)
+            NW_NDON_EVAL(3)
+            #undef NW_NDON_EVAL
+            }}
                 
             // check splice signal
+            //                       (loop unrolling)
             size_t intron_length = kMax_UInt;
-	    for(unsigned char st = 0; st < splice_type_count_16; ++st) {
+            {{
+            unsigned short v1 = (seq2[j-1] << 8) | seq2[j];
+            TScore v_best_d;
 
-                const bool some_donors = vBestDonor[st] > kInfMinus;
-                if(seq2[j-1] == g_nwspl_acceptor[st][0] &&
-                   seq2[j] == g_nwspl_acceptor[st][1] && some_donors
-                   || st == g_topidx && some_donors) {
+            #define NW_SIG_EVAL(st_idx) \
+                v_best_d = vBestDonor[st_idx]; \
+                if ((v1 == g_nwspl_acceptor_16[st_idx]) && \
+                    (v_best_d > kInfMinus)) { \
+                    vAcc = v_best_d + m_Wi[st_idx]; \
+                    if (vAcc > V) { \
+                        V = vAcc; intron_length = j - jBestDonor[st_idx]; \
+                    } \
+                } 
 
-                    vAcc = vBestDonor[st] + m_Wi[st];
-                    if(vAcc > V) {
-                        V = vAcc;
-                        intron_length = j - jBestDonor[st];
-                    }
+            NW_SIG_EVAL(0)
+            NW_SIG_EVAL(1)
+            NW_SIG_EVAL(2)
+            // iteration 3 (last element) is a bit different...
+            v_best_d = vBestDonor[3];
+            if (v_best_d > kInfMinus) {
+                vAcc = v_best_d + m_Wi[3];
+                if(vAcc > V) {
+                    V = vAcc; intron_length = j - jBestDonor[3];
                 }
             }
+            #undef NW_SIG_EVAL
+            }}
 
-            if(intron_length != kMax_UInt) {
-
+            if (intron_length != kMax_UInt) {
                 if(intron_length > 1048575) {
                     // no space to record introns longer than 2^20
                     NCBI_THROW(CAlgoAlignException, eInternal,
-                               g_msg_IntronTooLong);
+                                g_msg_IntronTooLong);
                 }
 
                 backtrace_matrix_ext[k] = (0xFF000 & intron_length) >> 12;
@@ -305,30 +361,33 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
             // detect donor candidate
             if(j < N2 - 2) {
-                for(unsigned char st = 0; st < g_topidx; ++st) {
-                    
-                    if( seq2[j+1] == g_nwspl_donor[st][0] &&
-                        seq2[j+2] == g_nwspl_donor[st][1] &&
-                        V > vBestDonor[st]  ) {
-                        
-                        jAllDonors[st][jTail[st]] = j;
-                        vAllDonors[st][jTail[st]] = V;
-                        ++(jTail[st]);
-                    }
-                }
+                unsigned short v1 = (seq2[j+1] << 8) | seq2[j+2];
+                #define NW_DON_EVAL(st_idx) \
+                    if( (v1 == g_nwspl_donor_16[st_idx]) &&  \
+                        (V > vBestDonor[st_idx])){  \
+                        size_t tl = jTail[st_idx]++; \
+                        jAllDonors[st_idx][tl] = j; \
+                        vAllDonors[st_idx][tl] = V; \
+                    } \
+
+                NW_DON_EVAL(0)
+                NW_DON_EVAL(1)
+                NW_DON_EVAL(2)
+                #undef NW_DON_EVAL
             }
             
             // detect new best value
             if(V > V_max) {
-                jAllDonors[g_topidx][jTail[g_topidx]] = j;
-                vAllDonors[g_topidx][jTail[g_topidx]] = V_max = V;
-                ++(jTail[3]);
+                size_t tl = jTail[g_topidx]++;
+                jAllDonors[g_topidx][tl] = j;
+                vAllDonors[g_topidx][tl] = V_max = V;
             }
-        }
+        
+        } // for j
 
         pV[j] = V;
 
-        if(i == 0) {
+        if (i == 0) {
             V0 = wgleft2;
             wg1 = m_Wg;
             ws1 = m_Ws;
@@ -597,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/13 18:23:50  kuznets
+ * Performance optimization
+ *
  * Revision 1.21  2005/04/14 15:28:17  kapustin
  * Use extra byte per cell to keep splice jumps up to 1MB
  *
