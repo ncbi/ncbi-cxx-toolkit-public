@@ -1,38 +1,38 @@
 #ifndef CTOOLS___ASN_CONVERTER__HPP
 #define CTOOLS___ASN_CONVERTER__HPP
 
-/*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Denis Vakatov, Aaron Ucko
-*
-* File Description:
-*   Templates for converting ASN.1-based objects between NCBI's C and C++
-*   in-memory layouts.
-*
-*/
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Denis Vakatov, Aaron Ucko
+ *
+ * File Description:
+ *   Templates for converting ASN.1-based objects between NCBI's C and C++
+ *   in-memory layouts.
+ *
+ */
 
 #include <connect/ncbi_conn_stream.hpp>
 #include <ctools/asn_connection.h>
@@ -49,8 +49,11 @@
 
 BEGIN_NCBI_SCOPE
 
-#define DECLARE_ASN_CONVERTER(TCpp, TC, name) \
-CAsnConverter<TCpp, TC> name((AsnWriteFunc)TC##AsnWrite, (AsnReadFunc)TC##AsnRead)
+
+#define DECLARE_ASN_CONVERTER(TCpp, TC, name)             \
+CAsnConverter<TCpp, TC> name((AsnWriteFunc) TC##AsnWrite, \
+                             (AsnReadFunc)  TC##AsnRead)
+
 
 template <typename TCpp, typename TC>
 class CAsnConverter
@@ -81,7 +84,8 @@ private:
 
 
 inline
-ESerialDataFormat MapAcfToSdf(EAsnConn_Format format) {
+ESerialDataFormat MapAcfToSdf(EAsnConn_Format format)
+{
     switch (format) {
     case eAsnConn_Binary:  return eSerial_AsnBinary;
     case eAsnConn_Text:    return eSerial_AsnText;
@@ -131,8 +135,9 @@ TC* CAsnConverter<TCpp, TC>::ToC(const TCpp& cpp_obj, EAsnConn_Format format)
     *oos << cpp_obj;
     oos->Flush();
 
-    AsnIoPtr aip = CreateAsnConn(conn_stream.GetCONN(), eAsnConn_Input, format);
-    return (TC*)m_Read(aip, 0);
+    AsnIoPtr aip = CreateAsnConn(conn_stream.GetCONN(), eAsnConn_Input,
+                                 format);
+    return (TC*) m_Read(aip, 0);
 }
 
 
@@ -141,8 +146,10 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- *
  * $Log$
+ * Revision 1.10  2006/04/14 20:08:50  lavr
+ * Formally reformatted to fit 80-column page
+ *
  * Revision 1.9  2006/04/06 15:56:07  ucko
  * ToC: properly honor requests to use text mode, and ensure that Int8
  * fields get handled correctly in binary mode as well.
@@ -172,7 +179,6 @@ END_NCBI_SCOPE
  * Revision 1.1  2002/08/08 18:18:01  ucko
  * Add central template class for converting ASN.1-based objects between
  * C and C++ representations.
- *
  *
  * ===========================================================================
  */
