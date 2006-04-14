@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.6  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.7  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2731,6 +2731,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/04/14 12:43:28  kuznets
+ * Fixed crash when deleting affinity records
+ *
  * Revision 1.73  2006/04/10 15:16:24  kuznets
  * Collect detailed info on shutdown by signal
  *

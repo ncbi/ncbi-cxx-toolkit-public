@@ -837,13 +837,24 @@ void CQueueDataBase::Purge()
             global_del_rec += del_rec;
             m_PurgeLastId += del_rec;
 
+            // ----------------------------------------------
+            // Clean pending jobs
+
+            del_rec = jq.CheckDeleteBatch(batch_size, 
+                                          CNetScheduleClient::ePending);
+            total_del_rec += del_rec;
+            global_del_rec += del_rec;
+            m_PurgeLastId += del_rec;
+
             // do not delete more than certain number of 
             // records from the queue in one Purge
             if (total_del_rec >= 1000) {
-                SleepMilliSec(1000);
+                SleepMilliSec(200);
                 break;
+            } else {
+                SleepMilliSec(2000);
             }
-
+            
 
             {{
                 CFastMutexGuard guard(m_PurgeLock);
@@ -911,7 +922,7 @@ void CQueueDataBase::RunPurgeThread()
 # ifdef NCBI_THREADS
        LOG_POST(Info << "Starting guard and cleaning thread.");
        m_PurgeThread.Reset(
-           new CJobQueueCleanerThread(*this, 15, 5));
+           new CJobQueueCleanerThread(*this, 2, 5));
        m_PurgeThread->Run();
 # else
         LOG_POST(Warning << 
@@ -2940,7 +2951,9 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
     if (cur.FetchFirst() != eBDB_Ok) {
         return true; // already deleted
     }
+
     int status = db.status;
+/*
     if (! (
            (status == (int) CNetScheduleClient::eDone) ||
            (status == (int) CNetScheduleClient::eCanceled) ||
@@ -2949,7 +2962,7 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
         ) {
         return true;
     }
-
+*/
     unsigned queue_ttl = m_LQueue.timeout;
     job_ttl = db.timeout;
     if (job_ttl <= 0) {
@@ -2959,6 +2972,12 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
 
     time_submit = db.time_submit;
     time_done = db.time_done;
+
+    // pending jobs expire just as done jobs
+    if (time_done == 0 && status == (int) CNetScheduleClient::ePending) {
+        time_done = time_submit;
+    }
+
     if (time_done == 0) { 
         if (time_submit + (job_ttl * 10) > (unsigned)curr) {
             return false;
@@ -2970,7 +2989,6 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
     }
 
     x_DeleteDBRec(db, cur);
-    //cur.Delete(CBDB_File::eIgnoreError);
 
     }}
     trans.Commit();
@@ -3074,6 +3092,10 @@ void CQueueDataBase::CQueue::ClearAffinityIdx()
     // get list of all affinity tokens in the index
     {{
     CFastMutexGuard guard(m_LQueue.lock);
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+    m_LQueue.aff_idx.SetTransaction(&trans);
     CBDB_FileCursor cur(m_LQueue.aff_idx);
     cur.SetCondition(CBDB_FileCursor::eGE);
     while (cur.Fetch() == eBDB_Ok) {
@@ -3578,6 +3600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/04/14 12:43:28  kuznets
+ * Fixed crash when deleting affinity records
+ *
  * Revision 1.71  2006/03/30 20:54:23  kuznets
  * Improved handling of BDB resource conflicts
  *

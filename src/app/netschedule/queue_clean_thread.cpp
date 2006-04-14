@@ -74,6 +74,11 @@ void CJobQueueCleanerThread::DoJob(void)
                         << " cleaning thread has been stopped.");
         RequestStop();
     }
+    catch (...)
+    {
+        int a = 0;
+        throw;
+    }
 }
 
 
@@ -109,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/14 12:43:28  kuznets
+ * Fixed crash when deleting affinity records
+ *
  * Revision 1.3  2006/03/30 19:09:59  kuznets
  * Ignore resource allocation error
  *
