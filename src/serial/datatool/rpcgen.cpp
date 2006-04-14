@@ -224,7 +224,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPublic() << "    typedef "
                            << s_QualClassName(m_Source.m_RequestChoiceType)
                            << " TRequestChoice;\n";
-        code.ClassPrivate() << "    TRequest m_DefaultRequest;\n\n";
+        code.ClassPrivate() << "    CRef<TRequest> m_DefaultRequest;\n\n";
     } else {
         code.ClassPublic() << "    typedef TRequest TRequestChoice;\n";
     }
@@ -262,6 +262,9 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         }
         code.AddInitializer("Tparent", args);
     }}
+    if ( !m_Source.m_RequestElement.empty() ) {
+        code.AddInitializer("m_DefaultRequest", "new TRequest");
+    }
 
     // This should just be a simple using-declaration, but that breaks
     // on GCC 2.9x at least, even with a full parent class name :-/
@@ -294,21 +297,21 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         code.MethodStart(true)
             << "const " << treq << "& " << class_base
             << "::GetDefaultRequest(void) const\n"
-            << "{\n    return m_DefaultRequest;\n}\n\n";
+            << "{\n    return *m_DefaultRequest;\n}\n\n";
         code.MethodStart(true)
             << treq << "& " << class_base << "::SetDefaultRequest(void)\n"
-            << "{\n    return m_DefaultRequest;\n}\n\n";
+            << "{\n    return *m_DefaultRequest;\n}\n\n";
         code.MethodStart(true)
             << "void " << class_base << "::SetDefaultRequest(const " << treq
             << "& request)\n"
-            << "{\n    m_DefaultRequest.Assign(request);\n}\n\n\n";
+            << "{\n    m_DefaultRequest->Assign(request);\n}\n\n\n";
 
         code.MethodStart(false)
             << "void " << class_base << "::Ask(const " << treq
             << "Choice& req, " << trep << "& reply)\n"
             << "{\n"
             << "    TRequest request;\n"
-            << "    request.Assign(m_DefaultRequest);\n"
+            << "    request.Assign(*m_DefaultRequest);\n"
             // We have to copy req because SetXxx() wants a non-const ref.
             << "    request" << setter << ".Assign(req);\n"
             << "    Ask(request, reply);\n"
@@ -319,7 +322,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "Choice::E_Choice wanted)\n"
             << "{\n"
             << "    TRequest request;\n"
-            << "    request.Assign(m_DefaultRequest);\n"
+            << "    request.Assign(*m_DefaultRequest);\n"
             // We have to copy req because SetXxx() wants a non-const ref.
             << "    request" << setter << ".Assign(req);\n"
             << "    Ask(request, reply, wanted);\n"
@@ -519,6 +522,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/04/14 16:08:41  ucko
+* Store m_DefaultRequest by (smart) pointer rather than value, in case
+* users keep their own pointers to it around longer than one might expect.
+*
 * Revision 1.15  2005/12/02 21:50:07  ucko
 * Fix (and clarify) warnings emitted when init or fini requires a payload.
 *
