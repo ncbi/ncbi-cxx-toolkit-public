@@ -237,8 +237,18 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 
-extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask(const char* name,
-                                                         const char* mask);
+
+extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMaskEx
+(const char* name,
+ const char* mask,
+ int/*bool*/ ignore_case
+);
+
+/* Same as UTIL_MatchesMaskEx(name, mask, 1) */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
+(const char* name,
+ const char* mask
+);
 
 
 #ifdef __cplusplus
@@ -252,6 +262,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask(const char* name,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2006/04/14 20:07:55  lavr
+ * +UTIL_MatchesMaskEx()
+ *
  * Revision 6.22  2005/07/11 18:09:14  lavr
  * +UTIL_MatchesMask()
  *

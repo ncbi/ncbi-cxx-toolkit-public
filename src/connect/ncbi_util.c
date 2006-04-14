@@ -496,7 +496,8 @@ extern const char* CORE_GetPlatform(void)
 }
 
 
-int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
+extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
+                                      int/*bool*/ ignore_case)
 {
     for (;;) {
         char c = *mask++;
@@ -515,14 +516,18 @@ int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
             if (!c)
                 return 1/*true*/;
             while (*name) {
-                if (UTIL_MatchesMask(name, mask))
+                if (UTIL_MatchesMaskEx(name, mask, ignore_case))
                     return 1/*true*/;
                 name++;
             }
             return 0/*false*/;
         default:
             d = *name++;
-            if (tolower((unsigned char) c) != tolower((unsigned char) d))
+            if (ignore_case) {
+                c = tolower((unsigned char) c);
+                d = tolower((unsigned char) d);
+            }
+            if (c != d)
                 return 0/*false*/;
             break;
         }
@@ -532,9 +537,18 @@ int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
 }
 
 
+extern int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
+{
+    return UTIL_MatchesMaskEx(name, mask, 1/*ignore case*/);
+}
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2006/04/14 20:09:28  lavr
+ * +UTIL_MatchesMaskEx()
+ *
  * Revision 6.33  2005/07/11 18:09:33  lavr
  * +UTIL_MatchesMask()
  *
