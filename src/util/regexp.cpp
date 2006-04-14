@@ -341,7 +341,11 @@ size_t CRegexpUtil::Replace(
         result = re.GetResults(0);
         m_Content.replace(result[0], result[1] - result[0], x_replace);
         n_replace++;
-        start_pos = result[0] + max(x_replace.length(), (size_t) 1);
+        start_pos = result[0] + x_replace.length();
+        // Guard against endless loop when regular expression
+        // can match the empty string.
+        if ( !x_replace.length() &&  result[0] == result[1] )
+            start_pos++;
     }
     return n_replace;
 }
@@ -451,6 +455,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/04/14 16:21:49  ivanov
+ * Fixed CRegexpUtil::Replace() to correct replace repeating search
+ * patterns to empty string.
+ *
  * Revision 1.15  2006/03/27 19:47:05  ivanov
  * CRegexp:: added methods Escape(), IsMatch()
  *
