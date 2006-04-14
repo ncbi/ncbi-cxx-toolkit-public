@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.4  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.5  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -309,7 +309,8 @@ CNetCacheServer::~CNetCacheServer()
 void CNetCacheServer::StartSessionManagement(
                                 unsigned session_shutdown_timeout)
 {
-    LOG_POST(Info << "Starting session management thread.");
+    LOG_POST(Info << "Starting session management thread. timeout=" 
+                  << session_shutdown_timeout);
     m_SessionMngThread.Reset(
         new CSessionManagementThread(*this,
                             session_shutdown_timeout, 10, 2));
@@ -404,7 +405,7 @@ void CNetCacheServer::ProcessOverflow(SOCK sock)
 
 
 /// @internal
-bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
+bool CNetCacheServer::WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 {
     STimeout to = {time_to_wait, 0};
     EIO_Status io_st = sock.Wait(eIO_Read, &to);
@@ -649,11 +650,11 @@ void CNetCacheServer::Process(SOCK sock)
         STimeout to = {m_InactivityTimeout, 0};
         socket.SetTimeout(eIO_ReadWrite , &to);
 
-        s_WaitForReadSocket(socket, m_InactivityTimeout);
+        WaitForReadSocket(socket, m_InactivityTimeout);
 
         if (ReadStr(socket, &(tdata->auth))) {
             
-            s_WaitForReadSocket(socket, m_InactivityTimeout);
+            WaitForReadSocket(socket, m_InactivityTimeout);
 
             while (ReadStr(socket, &(tdata->request))) {
                 string& rq = tdata->request;
@@ -917,7 +918,7 @@ void CNetCacheServer::ProcessGet2(CSocket&               sock,
         bool lock_accuired = guard.Lock(req_id, 0);
         if (!lock_accuired) {  // BLOB is locked by someone else
             WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
-            s_WaitForReadSocket(sock, 5);
+            WaitForReadSocket(sock, 5);
             ReadStr(sock, &(tdata.tmp));
             //SleepMilliSec(100); // giving the client a time to disconnect
             return;
@@ -940,7 +941,7 @@ blob_not_found:
             msg += req_id;
             WriteMsg(sock, "ERR:", msg);
 
-            s_WaitForReadSocket(sock, 5);
+            WaitForReadSocket(sock, 5);
             ReadStr(sock, &(tdata.tmp));
             return;
     }
@@ -948,7 +949,7 @@ blob_not_found:
     if (ba_descr.blob_size == 0) {
         WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
 
-        s_WaitForReadSocket(sock, 5);
+        WaitForReadSocket(sock, 5);
         ReadStr(sock, &(tdata.tmp));
         return;
     }
@@ -992,7 +993,7 @@ blob_not_found:
         stat.comm_elapsed += sw.Elapsed();
         ++stat.io_blocks;
 
-        s_WaitForReadSocket(sock, 5);
+        WaitForReadSocket(sock, 5);
         ReadStr(sock, &(tdata.tmp));
         return;
 
@@ -1040,7 +1041,7 @@ blob_not_found:
         goto blob_not_found;
     }
 
-    s_WaitForReadSocket(sock, 5);
+    WaitForReadSocket(sock, 5);
     ReadStr(sock, &(tdata.tmp));
 }
 
@@ -1412,7 +1413,7 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock,
     bool ret_flag = true;
 
     while (ret_flag && expected_size) {
-        if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
+        if (!WaitForReadSocket(sock, m_InactivityTimeout)) {
             break;
         }
 
@@ -1459,7 +1460,7 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock,
     bool ret_flag = true;
 
     while (ret_flag) {
-        if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
+        if (!WaitForReadSocket(sock, m_InactivityTimeout)) {
             break;
         }
 
@@ -1504,7 +1505,7 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock,
     bool ret_flag = true;
 
     while (ret_flag) {
-        if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
+        if (!WaitForReadSocket(sock, m_InactivityTimeout)) {
             break;
         }
 
@@ -2036,11 +2037,12 @@ int CNetCacheDApp::Run(void)
         {{
             bool session_mng = 
                 reg.GetBool("server", "session_mng", 
-                            CConfig::eErr_NoThrow, false);
+                            false, 0, IRegistry::eReturn);
             if (session_mng) {
                 unsigned session_shutdown_timeout =
                     reg.GetInt("server", "session_shutdown_timeout", 
-                               CConfig::eErr_NoThrow, 0);
+                               60, 0, IRegistry::eReturn);
+
                 thr_srv->StartSessionManagement(session_shutdown_timeout);
             }
         }}
@@ -2071,6 +2073,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2006/04/14 16:09:00  kuznets
+ * Fixed bug when session management shutdowns the server even if we do not want to
+ *
  * Revision 1.82  2006/04/13 16:57:22  kuznets
  * Add processing of OK on read from the client
  *

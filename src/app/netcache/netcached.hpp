@@ -458,6 +458,8 @@ private:
     bool IsLog() const;
 
     ICache* GetLocalCache(const string& cache_name);
+    static
+    bool WaitForReadSocket(CSocket& sock, unsigned time_to_wait);
 
 private:
     bool x_CheckBlobId(CSocket&       sock,
@@ -535,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/04/14 16:09:00  kuznets
+ * Fixed bug when session management shutdowns the server even if we do not want to
+ *
  * Revision 1.7  2006/03/22 14:01:08  kuznets
  * Missing buffer size declaration
  *

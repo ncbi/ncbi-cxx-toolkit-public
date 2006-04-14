@@ -45,8 +45,6 @@
 
 #include "netcached.hpp"
 
-bool s_WaitForReadSocket(ncbi::CSocket& sock, unsigned time_to_wait);
-
 BEGIN_NCBI_SCOPE
 
 
@@ -394,7 +392,7 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
 //        stat.comm_elapsed += sw.Elapsed();
 //        ++stat.io_blocks;
 
-        s_WaitForReadSocket(sock, 5);
+        WaitForReadSocket(sock, 5);
         ReadStr(sock, &(tdata.tmp));
 
         return;
@@ -443,7 +441,7 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
         goto blob_not_found;
     }
 
-    s_WaitForReadSocket(sock, 5);
+    WaitForReadSocket(sock, 5);
     ReadStr(sock, &(tdata.tmp));
 
 }
@@ -496,6 +494,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/04/14 16:09:00  kuznets
+ * Fixed bug when session management shutdowns the server even if we do not want to
+ *
  * Revision 1.10  2006/04/13 18:09:12  ucko
  * Move s_WaitForReadSocket's declaration outside of ncbi::.
  *
