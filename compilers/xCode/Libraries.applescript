@@ -326,7 +326,7 @@ property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_
 property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
 property algo_webpage : {name:"algo_webpage", libs:{gui_algo_webpage}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
 property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
-property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_xloader_genbank ncbi_xloader_lds ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub" & FLTK_LIBS, bundle:true, req:true}
+property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq gui_services ncbi_algo ncbi_xloader_genbank ncbi_xloader_lds ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub" & FLTK_LIBS, bundle:true, req:true}
 property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table" & FLTK_LIBS, bundle:true, req:true}
 property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln gui_config" & FLTK_LIBS, bundle:true, req:true}
 property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, bundle:true, req:true}
@@ -439,6 +439,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2006/04/14 13:07:54  lebedev
+ * dload_basic += gui_services
+ *
  * Revision 1.99  2006/04/03 17:12:57  rsmith
  * add to dep: of gui_widgets and ini2reg. Add test_basic_cleanup
  *
