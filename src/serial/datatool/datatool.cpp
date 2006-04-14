@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,3,0) );
+    SetVersion( CVersionInfo(1,3,1) );
 }
 
 void CDataTool::Init(void)
@@ -650,6 +650,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.90  2006/04/14 17:34:02  gouriano
+* Corrected generation of DTD for SEQUENCE OF SEQUENCE type
+*
 * Revision 1.89  2006/04/13 12:58:54  gouriano
 * Added optional file name suffix to modular DTD or schema
 *

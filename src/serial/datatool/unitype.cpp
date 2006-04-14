@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2006/04/14 17:34:02  gouriano
+* Corrected generation of DTD for SEQUENCE OF SEQUENCE type
+*
 * Revision 1.37  2005/10/12 17:00:19  gouriano
 * Replace C_E class name in unisequence types by something more unique
 * Add typedef in generated code to provide backward compatibility
@@ -371,7 +374,7 @@ void CUniSequenceDataType::FixTypeTree(void) const
 #endif
         }
     }
-    m_ElementType->SetParent(this, name);
+    m_ElementType->SetParent(this, name, "E");
     m_ElementType->SetInSet(this);
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/04/14 17:33:02  gouriano
+* Corrected generation of DTD for SEQUENCE OF SEQUENCE type
+*
 * Revision 1.27  2005/10/12 17:00:46  gouriano
 * Replace C_E class name in unisequence types by something more unique
 * Add typedef in generated code to provide backward compatibility
@@ -315,7 +318,7 @@ public:
     static string GetTemplateMacro(const string& tmpl);
 */
 
-    void SetParent(const CDataType* parent, const string& memberName);
+    void SetParent(const CDataType* parent, const string& memberName, string xmlName=kEmptyStr);
     void SetParent(const CDataTypeModule* module, const string& typeName);
     virtual void FixTypeTree(void) const;
 
@@ -391,6 +394,7 @@ private:
     const CDataType* m_ParentType;       // parent type
     const CDataTypeModule* m_Module;
     string m_MemberName;
+    string m_XmlName;
     int m_SourceLine;
     CComments m_Comments;
     CDataMember* m_DataMember;

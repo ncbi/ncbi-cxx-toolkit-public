@@ -210,13 +210,15 @@ void CDataType::AddReference(const CReferenceDataType* reference)
     m_References->push_back(reference);
 }
 
-void CDataType::SetParent(const CDataType* parent, const string& memberName)
+void CDataType::SetParent(const CDataType* parent, const string& memberName,
+                          string xmlName)
 {
     _ASSERT(parent != 0);
     _ASSERT(m_ParentType == 0 && m_Module == 0 && m_MemberName.empty());
     m_ParentType = parent;
     m_Module = parent->GetModule();
     m_MemberName = memberName;
+    m_XmlName = xmlName;
     _ASSERT(m_Module != 0);
     if (m_DataMember && m_DataMember->GetDefault()) {
         m_DataMember->GetDefault()->SetModule(m_Module);
@@ -366,7 +368,8 @@ string CDataType::XmlTagName(void) const
     }
     else {
         // member
-        return parent->XmlTagName() + '_' + m_MemberName;
+        return parent->XmlTagName() + '_' +
+            (m_XmlName.empty() ? m_MemberName : m_XmlName);
     }
 }
 
@@ -714,6 +717,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.84  2006/04/14 17:34:02  gouriano
+* Corrected generation of DTD for SEQUENCE OF SEQUENCE type
+*
 * Revision 1.83  2005/08/05 15:11:40  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
