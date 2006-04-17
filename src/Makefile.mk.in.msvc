@@ -39,10 +39,11 @@ EnableFunctionLevelLinking=FALSE
 
 [Compiler.release]
 DebugInformationFormat=0
+OptimizeForProcessor=3
 Optimization=2
 MinimalRebuild=FALSE
 GlobalOptimizations=TRUE
-InlineFunctionExpansion=1
+InlineFunctionExpansion=2
 FavorSizeOrSpeed=1
 OmitFramePointers=TRUE
 BasicRuntimeChecks=0
