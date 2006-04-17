@@ -293,6 +293,7 @@ struct SLockedQueue
     // queue parameters
     int                             timeout;       ///< Result exp. timeout
     int                             notif_timeout; ///< Notification interval
+    bool                            delete_done;   ///< Delete done jobs
 
     // List of active worker node listeners waiting for pending jobs
 
@@ -345,6 +346,7 @@ struct SLockedQueue
     SLockedQueue(const string& queue_name) 
         : timeout(3600), 
           notif_timeout(7), 
+          delete_done(false),
           last_notif(0), 
           q_notif("NCBI_JSQ_"),
           run_time_line(0),
@@ -413,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/04/17 15:46:54  kuznets
+ * Added option to remove job when it is done (similar to LSF)
+ *
  * Revision 1.1  2006/02/06 14:10:29  kuznets
  * Added job affinity
  *

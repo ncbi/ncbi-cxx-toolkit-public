@@ -111,7 +111,8 @@ public:
                     int           notif_timeout,
                     int           run_timeout,
                     int           run_timeout_precision,
-                    const string& program_name);
+                    const string& program_name,
+                    bool          delete_done);
     void Close();
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
@@ -356,6 +357,9 @@ public:
                               unsigned add_job_id,
                               time_t   curr);
     private:
+
+        void x_DropJob(unsigned job_id);
+
         /// Put done job, then find the pending job.
         /// This method takes into account jobs available
         /// in the job status matrix and current 
@@ -526,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/04/17 15:46:54  kuznets
+ * Added option to remove job when it is done (similar to LSF)
+ *
  * Revision 1.44  2006/03/30 17:38:55  kuznets
  * Set max. transactions according to number of active threads
  *

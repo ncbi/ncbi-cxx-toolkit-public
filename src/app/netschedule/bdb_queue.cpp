@@ -421,7 +421,8 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
 
         string program_name = reg.GetString(sname, "program", kEmptyStr);
 
-
+        bool delete_when_done = reg.GetBool(sname, "delete_done", 
+                                            false, 0, IRegistry::eReturn);
 
         bool qexists = m_QueueCollection.QueueExists(qname);
 
@@ -433,12 +434,14 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
                 << "   Run timeout:           " << run_timeout           << "\n"
                 << "   Run timeout precision: " << run_timeout_precision << "\n"
                 << "   Programs:              " << program_name          << "\n"
+                << "   Delete done:           " << delete_when_done      << "\n"
             );
             MountQueue(qname, timeout, 
                         notif_timeout, 
                         run_timeout, 
                         run_timeout_precision,
-                        program_name);
+                        program_name,
+                        delete_when_done);
         } else { // update non-critical queue parameters
             SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
             queue.program_version_list.Clear();
@@ -586,7 +589,8 @@ void CQueueDataBase::MountQueue(const string& queue_name,
                                 int           notif_timeout,
                                 int           run_timeout,
                                 int           run_timeout_precision,
-                                const string& program_name)
+                                const string& program_name,
+                                bool          delete_done)
 {
     _ASSERT(m_Env);
 
@@ -609,6 +613,7 @@ void CQueueDataBase::MountQueue(const string& queue_name,
 
     q->timeout = timeout;
     q->notif_timeout = notif_timeout;
+    q->delete_done = delete_done;
     q->last_notif = time(0);
 
     q->affinity_dict.Open(*m_Env, queue_name);
@@ -1524,6 +1529,19 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 
 void CQueueDataBase::CQueue::DropJob(unsigned job_id)
 {
+    x_DropJob(job_id);
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::DropJob() job id=";
+        msg += NStr::IntToString(job_id);
+        m_LQueue.monitor.SendString(msg);
+    }
+}
+
+void CQueueDataBase::CQueue::x_DropJob(unsigned job_id)
+{
     SQueueDB& db = m_LQueue.db;
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
@@ -1549,14 +1567,6 @@ void CQueueDataBase::CQueue::DropJob(unsigned job_id)
 
     trans.Commit();
     
-
-    if (m_LQueue.monitor.IsMonitorActive()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
-        msg += " CQueue::DropJob() job id=";
-        msg += NStr::IntToString(job_id);
-        m_LQueue.monitor.SendString(msg);
-    }
 }
 
 void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
@@ -1565,8 +1575,8 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                                        bool          remove_from_tl)
 {
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
-                                   job_id,
-                                   CNetScheduleClient::eDone);
+                                job_id,
+                                CNetScheduleClient::eDone);
     CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
     if (m_LQueue.status_tracker.IsCancelCode(st)) {
         js_guard.Release();
@@ -1699,12 +1709,16 @@ CQueueDataBase::CQueue::x_UpdateDB_PutResultNoLock(
         subm_info->subm_timeout = db.subm_timeout;
     }
 
-    db.status = (int) CNetScheduleClient::eDone;
-    db.ret_code = ret_code;
-    db.output = output;
-    db.time_done = curr;
+    if (m_LQueue.delete_done) {
+        cur.Delete();
+    } else {
+        db.status = (int) CNetScheduleClient::eDone;
+        db.ret_code = ret_code;
+        db.output = output;
+        db.time_done = curr;
 
-    cur.Update();
+        cur.Update();
+    }
     return true;
 }
 
@@ -3600,6 +3614,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/04/17 15:46:54  kuznets
+ * Added option to remove job when it is done (similar to LSF)
+ *
  * Revision 1.72  2006/04/14 12:43:28  kuznets
  * Fixed crash when deleting affinity records
  *

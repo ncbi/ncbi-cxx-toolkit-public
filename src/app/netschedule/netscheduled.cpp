@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.7  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.8  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2643,9 +2643,11 @@ int CNetScheduleDApp::Run(void)
 
 
 
+        // mount default queue
         string qname = "noname";
         LOG_POST(Info << "Mounting queue: " << qname);
-        qdb->MountQueue(qname, 3600, 7, 3600, 1800, kEmptyStr); // default queue
+        qdb->MountQueue(qname, 3600, 7, 3600, 1800, 
+                        kEmptyStr, false/*do not delete done*/);
 
 
         // Scan and mount queues
@@ -2731,6 +2733,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/04/17 15:46:54  kuznets
+ * Added option to remove job when it is done (similar to LSF)
+ *
  * Revision 1.74  2006/04/14 12:43:28  kuznets
  * Fixed crash when deleting affinity records
  *
