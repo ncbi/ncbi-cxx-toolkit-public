@@ -485,6 +485,7 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            int         proc_post,
                            int         thr_post,
                            int         iter)
+    : m_Data(0)
 {
     m_Severity   = severity;
     m_Buffer     = buf;
@@ -505,7 +506,6 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_ThrPost    = thr_post;
     m_Iteration  = iter;
 }
-
 
 
 ///////////////////////////////////////////////////////
@@ -640,6 +640,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/04/17 15:37:43  grichenk
+ * Added code to parse a string back into SDiagMessage
+ *
  * Revision 1.56  2006/04/05 18:55:54  lavr
  * Reimplement IgnoreDiagDieLevel() [and change prototype to final form]
  *

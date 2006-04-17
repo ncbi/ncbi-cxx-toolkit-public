@@ -401,7 +401,7 @@ public:
     /// Prints start message if AutoWrite flag is set.
     TUID GetUID(void) const;
     /// Return string representation of UID
-    string GetStringUID(void) const;
+    string GetStringUID(TUID uid = 0) const;
 
     /// Set AutoWrite flag. If set, each property is posted to the current
     /// diag stream when a new value is set.
@@ -887,6 +887,13 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 
 
 
+/// Forward declarations
+class CTime;
+
+/// Internal structure to hold diag message string data.
+struct SDiagMessageData;
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// SDiagMessage --
@@ -923,6 +930,10 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
                  int         thr_post  = 0,
                  int         iter      = 0);
 
+    /// Parse a string back into SDiagMessage
+    SDiagMessage(const string& message);
+    ~SDiagMessage(void);
+
     mutable EDiagSev m_Severity;   ///< Severity level
     const char*      m_Buffer;     ///< Not guaranteed to be '\0'-terminated!
     size_t           m_BufferLen;  ///< Length of m_Buffer
@@ -942,6 +953,11 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     int              m_ProcPost;   ///< Number of the post in the process
     int              m_ThrPost;    ///< Number of the post in the thread
     int              m_Iteration;  ///< FastCGI iteration
+
+    /// Get UID from current context or parsed from a string
+    CDiagContext::TUID GetUID(void) const;
+    /// Get time and date - current or parsed.
+    CTime GetTime(void) const;
 
     // Compose a message string in the standard format(see also "flags"):
     //    "<file>", line <line>: <severity>: [<prefix>] <message> [EOL]
@@ -966,6 +982,8 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     CNcbiOstream& x_OldWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     CNcbiOstream& x_NewWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     string x_GetModule(void) const;
+private:
+    SDiagMessageData* m_Data;
 };
 
 /// Insert message in output stream.
@@ -1317,6 +1335,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.103  2006/04/17 15:37:43  grichenk
+ * Added code to parse a string back into SDiagMessage
+ *
  * Revision 1.102  2006/04/05 18:55:54  lavr
  * Reimplement IgnoreDiagDieLevel() [and change prototype to final form]
  *

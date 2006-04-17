@@ -284,13 +284,15 @@ CDiagContext::TUID CDiagContext::GetUID(void) const
 }
 
 
-string CDiagContext::GetStringUID(void) const
+string CDiagContext::GetStringUID(TUID uid) const
 {
-    char buf[13];
-    Int8 uid = GetUID();
+    char buf[14];
+    if (uid == 0) {
+        uid = GetUID();
+    }
     int time = int(uid >> 16);
     int pid = int(uid & 0xFFFF);
-    sprintf(buf, "%08X%04X", time, pid);
+    sprintf(buf, "@%08X%04X", time, pid);
     return string(buf);
 }
 
@@ -652,6 +654,346 @@ int CDiagBuffer::GetProcessPostNumber(bool inc)
 ///////////////////////////////////////////////////////
 //  CDiagMessage::
 
+
+struct SDiagMessageData
+{
+    SDiagMessageData(void) : m_UID(0) {}
+    ~SDiagMessageData(void) {}
+
+    string m_Message;
+    string m_File;
+    string m_Module;
+    string m_Class;
+    string m_Function;
+    string m_Prefix;
+    string m_ErrText;
+
+    CDiagContext::TUID m_UID;
+    CTime              m_Time;
+};
+
+
+// Read two integers (the second one is optional) separated by '/'
+// if msg starts with prefix.
+void s_ReadDiagInt(const string& msg,
+                   size_t& pos,
+                   const string& prefix,
+                   int* val1,
+                   int* val2 = 0)
+{
+    if (pos >= msg.length()) {
+        return;
+    }
+    _ASSERT(val1);
+    *val1 = 0;
+    if (val2) *val2 = 0;
+    size_t plen = prefix.length();
+    if (msg.substr(pos, plen) == prefix) {
+        size_t p = msg.find(' ', pos);
+        if (p == NPOS) {
+            p = msg.length();
+        }
+        string tmp = msg.substr(pos + plen, p - pos - plen);
+        size_t p2 = tmp.find('/');
+        if (p2 == NPOS) {
+            p2 = tmp.length();
+        }
+        *val1 = NStr::StringToInt(tmp.substr(0, p2));
+        if (val2  &&  p2 < tmp.length()) {
+            *val2 = NStr::StringToInt(tmp.substr(p2 + 1, tmp.length()));
+        }
+        pos = p + 1;
+    }
+}
+
+
+bool s_ReadDiagFile(const string& msg,
+                    size_t& pos,
+                    string& file,
+                    size_t& line)
+{
+    if (pos >= msg.length()) {
+        return false;
+    }
+    bool res = false;
+    line = 0;
+    if (msg[pos] == '"') {
+        size_t p_close = msg.find('"', pos + 1);
+        if (p_close == NPOS) {
+            return false;
+        }
+        file = msg.substr(pos + 1, p_close - pos - 1);
+        pos = p_close + 1;
+        if (msg[pos] == ','  ||  msg[pos] == ':') {
+            pos += 2;
+        }
+        res = true;
+    }
+    if (msg.substr(pos, 5) == "line ") {
+        pos += 5;
+        size_t p_colon = msg.find(':', pos);
+        if (p_colon == NPOS) {
+            pos -= 5;
+            return false;
+        }
+        line = NStr::StringToUInt(msg.substr(pos, p_colon - pos));
+        pos = p_colon + 2;
+        res = true;
+    }
+    return res;
+}
+
+
+void s_ReadDiagModule(const string& msg,
+                      size_t& pos,
+                      size_t p_ws,
+                      string& module,
+                      int& err_code,
+                      int& err_subcode,
+                      string& err_text)
+{
+    err_code = 0;
+    err_subcode = 0;
+    string tmp = msg.substr(pos, p_ws - pos);
+    size_t p_open_br = msg.find('(', pos);
+    if (p_open_br != NPOS) {
+        size_t p_close_br = msg.find(')', pos);
+        if (p_close_br == NPOS) {
+            return;
+        }
+        size_t p = msg.find('(', p_open_br + 1);
+        while (p != NPOS  &&  p < p_close_br) {
+            p_close_br = msg.find(')', p_close_br + 1);
+            if (p_close_br == NPOS) {
+                return;
+            }
+            p = msg.find('(', p + 1);
+        }
+        if (p_close_br > p_ws) {
+            // space in the error text
+            p_ws = p_close_br + 1;
+            tmp = msg.substr(pos, p_ws - pos);
+        }
+        if (p_ws < msg.length()  &&  msg[p_ws] != ' ') {
+            return;
+        }
+        p_open_br -= pos;
+        if (p_close_br == NPOS  ||  msg[p_close_br] != ')') {
+            return;
+        }
+        p_close_br -= pos;
+        size_t p_dot = tmp.find('.');
+        if (p_dot != NPOS) {
+            // Try to read error code/subcode
+            try {
+                err_code = NStr::StringToInt(
+                    tmp.substr(p_open_br + 1, p_dot - p_open_br - 1));
+                err_subcode = NStr::StringToInt(
+                    tmp.substr(p_dot + 1, p_close_br - p_dot - 1));
+            }
+            catch (CStringException) {
+                p_dot = NPOS; // try to parse as error text
+            }
+        }
+        if (p_dot == NPOS) {
+            // Read error text
+            err_text =
+                tmp.substr(p_open_br + 1, p_close_br - p_open_br - 1);
+        }
+    }
+    else {
+        p_open_br = tmp.length();
+    }
+    module = tmp.substr(0, p_open_br);
+    pos += tmp.length() + 1;
+}
+
+
+SDiagMessage::SDiagMessage(const string& message)
+    : m_Severity(eDiagSevMin),
+      m_Buffer(0),
+      m_BufferLen(0),
+      m_File(0),
+      m_Module(0),
+      m_Class(0),
+      m_Function(0),
+      m_Line(0),
+      m_ErrCode(0),
+      m_ErrSubCode(0),
+      m_Flags(0),
+      m_Prefix(0),
+      m_ErrText(0),
+      m_PID(0),
+      m_TID(0),
+      m_ProcPost(0),
+      m_ThrPost(0),
+      m_Iteration(0),
+      m_Data(0)
+{
+    size_t pos = 0;
+    size_t len = message.length();
+    string tmp;
+    m_Data = new SDiagMessageData;
+    // UID
+    if (message[0] == '@') {
+        static const size_t kUID_Length = 12;
+        if (len > kUID_Length + 1  &&
+            message[kUID_Length + 1] == '#') {
+            // Ignore diag-context properties
+            return;
+        }
+        size_t p = message.find(' ');
+        if (p == NPOS) {
+            p = len;
+        }
+        if (p == kUID_Length + 1) {
+            try {
+                m_Data->m_UID =
+                    NStr::StringToInt8(message.substr(1, p - 1), 0, 16);
+                pos = p + 1;
+            }
+            catch (CStringException) {
+                // Ignore invalid UID
+            }
+        }
+    }
+    if (pos >= len) {
+        return;
+    }
+    // Date/time
+    try {
+        size_t p = message.find(' ', pos);
+        if (p == NPOS) {
+            p = pos;
+        }
+        p = message.find(' ', p + 1);
+        if (p == NPOS) {
+            p = len;
+        }
+        tmp = message.substr(pos, p - pos);
+        m_Data->m_Time = CTime(tmp, "M/D/y h:m:s");
+        pos = p + 1;
+    }
+    catch (CTimeException) {
+        // No date/time;
+    }
+    catch (CStringException) {
+        // No date/time;
+    }
+    try {
+        // PID/TID
+        s_ReadDiagInt(message, pos, "P:", &m_PID, &m_TID);
+    }
+    catch (CStringException) {
+    }
+    try {
+        // Iteration
+        s_ReadDiagInt(message, pos, "I:", &m_Iteration);
+    }
+    catch (CStringException) {
+    }
+    try {
+        // Process/thread post number
+        s_ReadDiagInt(message, pos, "#", &m_ProcPost, &m_ThrPost);
+    }
+    catch (CStringException) {
+    }
+    if (pos >= len) {
+        return;
+    }
+
+    // Position of the diag message
+    size_t p_sep = message.find("---", pos);
+    if (p_sep == NPOS) {
+        p_sep = len;
+    }
+
+    // Detect and read module and file/line
+    if ( p_sep > pos  &&
+        !s_ReadDiagFile(message, pos, m_Data->m_File, m_Line) ) {
+        // Module may be present or next item is severity/location/text
+        size_t p_ws = message.find(' ', pos);
+        if (p_ws == NPOS) p_ws = len;
+        size_t p_colon = message.find(':', pos);
+        if (p_colon == NPOS) p_colon = len;
+        if (p_ws < p_colon) {
+            // Module is present
+            s_ReadDiagModule(message, pos, p_ws,
+                m_Data->m_Module, m_ErrCode, m_ErrSubCode, m_Data->m_ErrText);
+            m_Module = m_Data->m_Module.empty() ?
+                0 : m_Data->m_Module.c_str();
+            m_ErrText = m_Data->m_ErrText.empty() ?
+                0 : m_Data->m_ErrText.c_str();
+            // Try again to read file/line
+            s_ReadDiagFile(message, pos, m_Data->m_File, m_Line);
+        }
+    }
+    m_File = m_Data->m_File.empty() ? 0 : m_Data->m_File.c_str();
+    if (pos >= len) {
+        return;
+    }
+
+    // Severity, location
+    size_t p_col = message.find(':', pos);
+    char next_char = p_col + 1 < len ? message[p_col + 1] : 0;
+    // Severity
+    if (p_col < p_sep  &&  next_char == ' ') {
+        string severity = message.substr(pos, p_col - pos);
+        if ( CNcbiDiag::StrToSeverityLevel(severity.c_str(), m_Severity) ) {
+            pos = p_col + 2;
+            p_col = message.find(':', pos);
+            next_char = p_col + 1 < len ? message[p_col + 1] : 0;
+        }
+    }
+    // Location
+    if (p_col < p_sep  &&  next_char == ':') {
+        size_t p_ws = message.find(' ', p_col);
+        if (p_ws == NPOS) {
+            p_ws = len;
+        }
+        m_Data->m_Class = message.substr(pos, p_col - pos);
+        m_Class = m_Data->m_Class.empty() ?
+            0 : m_Data->m_Class.c_str();
+        if (message[p_ws - 2] == '('  &&  message[p_ws - 1] == ')') {
+            pos = p_col + 2;
+            m_Data->m_Function = message.substr(pos, p_ws - pos - 2);
+            m_Function = m_Data->m_Function.empty() ?
+                0 : m_Data->m_Function.c_str();
+            pos = p_ws + 1;
+        }
+    }
+    // Skip message seperator if any
+    if (p_sep < len  &&  pos == p_sep) {
+        pos += 4;
+    }
+    // All the rest is the message
+    m_Data->m_Message = message.substr(pos, len);
+    m_Buffer = m_Data->m_Message.empty() ?
+        0 : m_Data->m_Message.c_str();
+    m_BufferLen = m_Data->m_Message.length();
+}
+
+
+SDiagMessage::~SDiagMessage(void)
+{
+    if ( m_Data ) {
+        delete m_Data;
+    }
+}
+
+
+CDiagContext::TUID SDiagMessage::GetUID(void) const
+{
+    return m_Data ? m_Data->m_UID : GetDiagContext().GetUID();
+}
+
+
+CTime SDiagMessage::GetTime(void) const
+{
+    return m_Data ? m_Data->m_Time : CTime(CTime::eCurrent);
+}
+
+
 void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 {
     CNcbiOstrstream ostr;
@@ -877,23 +1219,12 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     // UID
     bool print_uid = IsSetDiagPostFlag(eDPF_UID, m_Flags);
     if ( print_uid ) {
-        os << GetDiagContext().GetStringUID() << " ";
+        os << GetDiagContext().GetStringUID(GetUID()) << " ";
     }
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
-        static const char timefmt[] = "%D %T ";
-        time_t t = time(0);
-        char datetime[32];
-        struct tm* tm;
-#ifdef HAVE_LOCALTIME_R
-        struct tm temp;
-        localtime_r(&t, &temp);
-        tm = &temp;
-#else
-        tm = localtime(&t);
-#endif /*HAVE_LOCALTIME_R*/
-        NStr::strftime(datetime, sizeof(datetime), timefmt, tm);
-        os << datetime;
+        static const char timefmt[] = "M/D/y h:m:s ";
+        os << GetTime().AsString(timefmt);
     }
     // PID/TID
     bool print_pid = IsSetDiagPostFlag(eDPF_PID, m_Flags);
@@ -1927,6 +2258,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.113  2006/04/17 15:37:43  grichenk
+ * Added code to parse a string back into SDiagMessage
+ *
  * Revision 1.112  2006/04/05 18:57:12  lavr
  * Reimplement IgnoreDiagDieLevel() [and change prototype to final form]
  * BUGFIX: Make sure the program dies even if PostLevel is higher than DieLevel
