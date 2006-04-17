@@ -161,6 +161,7 @@ public:
 
     static void s_RunGreedy(typename THitRefs::iterator hri_beg, 
                             typename THitRefs::iterator hri_end,
+                            THitRefs* phits_new,
                             TCoord min_hit_len = 100) {
 
         if(hri_beg > hri_end) {
@@ -168,171 +169,265 @@ public:
                        "Invalid input iterator order");
         }
 
-        const size_t dim = hri_end - hri_beg;
+        const size_t dim0 = hri_end - hri_beg;
+        THitRefs all;
+        
+        size_t dim_factor = 2;
+        bool restart = true;
+        
+        vector<bool> del;
 
-        // compile ordered set of hit ends
-        typename THitRefs::iterator ii = hri_beg;
-        THitEnds hit_ends;
-        for(size_t i = 0; i < dim; ++i, ++ii) {
-
-            THitRef& h = *ii;
-            for(Uint1 point = 0; point < 4; ++point) {
-                THitEnd he;
-                he.m_Point = point;
-                he.m_Ptr = &h;
-                he.m_X = h->GetBox()[point];
-                hit_ends.insert(he);
-            }
-        }
-
-        // create additional markers for 'hot dogs'
-        typedef const THitEnd* THitEndPtr;
-        typedef list<THitEndPtr> TMarkers;
-        TMarkers mks;
-        typename THit::TId id;
-        id = (*(hit_ends.begin()->m_Ptr))->GetId(hit_ends.begin()->m_Point/2);
-        THitEnds hit_mids;
-        ITERATE(typename THitEnds, ii, hit_ends) {
+        while(restart) {
             
-            THitEndPtr cur = &(*ii);
-            const Uint1 where = ii->m_Point/2;
-            THitRef* hitrefptr = ii->m_Ptr;
-            if((*hitrefptr)->GetId(where)->CompareOrdered(*id) != 0) {
-                mks.clear();
-                mks.push_back(cur);
-                id = (*hitrefptr)->GetId(where);
-            }
-            else if(ii->m_X == (*hitrefptr)->GetMin(where)) {
-                mks.push_back(cur);
-            }
-            else {
-                const float curscore = (*hitrefptr)->GetScore();
-                typename TMarkers::iterator ii_del = mks.end();
-                NON_CONST_ITERATE(typename TMarkers, ii, mks) {
-                    const THitEnd& he = **ii;
-                    if(he.m_Ptr == hitrefptr) {
-                        ii_del = ii;
-                    }
-                    else if (he.m_X > cur->m_X) {
-                        break;
-                    }
-                    else {
-                        const float s = (*he.m_Ptr)->GetScore();
-                        if(s < curscore){
-                            THitEnd hm;
-                            hm.m_Point = he.m_Point;
-                            hm.m_Ptr = he.m_Ptr;
-                            hm.m_X = ((*hitrefptr)->GetMin(where) 
-                                      + (*hitrefptr)->GetMax(where))/2;
-                            hit_mids.insert(hm);
-                        }
-                    }
-                }
-                if(ii_del != mks.end()) {
-                    mks.erase(ii_del);
-                }
-            }
-        }
+            restart = false;
 
-        hit_ends.insert(hit_mids.begin(), hit_mids.end());
+            all.resize(dim0);
+            copy(hri_beg, hri_end, all.begin());
+            all.reserve(dim_factor * dim0);
 
-        vector<bool> skip (dim, false);
-        vector<bool> del (dim, false);
-        const THitRef* hitref_firstptr = &(*hri_beg);
+            const typename THitRefs::iterator all_beg = all.begin();
 
-        while(true) {
+            // compile ordered set of hit ends
+            typename THitRefs::iterator ii = all_beg;
+            THitEnds hit_ends;
+            for(size_t i = 0; i < dim0; ++i, ++ii) {
 
-            // select the best hit
-            double score_best = 0;
-            typename THitRefs::iterator ii = hri_beg, ii_best = hri_end;
-            for(size_t i = 0; i < dim; ++i, ++ii) {
-                if(skip[i] == false) {
-                    const double score = (*ii)->GetScore();
-                    if(score > score_best) {
-                        ii_best = ii;
-                        score_best = score;
-                    }
+                THitRef& h = *ii;
+                for(Uint1 point = 0; point < 4; ++point) {
+                    THitEnd he;
+                    he.m_Point = point;
+                    he.m_Ptr = &h;
+                    he.m_X = h->GetBox()[point];
+                    hit_ends.insert(he);
                 }
             }
 
-            if(ii_best == hri_end) {
-                break;
-            }
-
-            // truncate overlaps with the current best hit
-            const THitRef& hc = *ii_best;
-            THitEnd he [4];
-            for(Uint1 point = 0; point < 4; ++point) {
-                he[point].m_Point = point;
-                he[point].m_Ptr = const_cast<THitRef*>(&hc);
-                he[point].m_X = hc->GetBox()[point];
-            }
-
-            for(Uint1 where = 0; where < 2; ++where) {
-
-                const TCoord cmin = hc->GetMin(where);
-                const TCoord cmax = hc->GetMax(where);
-
-                const THitEnd *phe_lo, *phe_hi;
-                const Uint1 i1 = 2*where, i2 = i1 + 1;
-                if(hc->GetStrand(where)) {
-                    phe_lo = &he[i1];
-                    phe_hi = &he[i2];
+            // create additional markers for potential 'hot dogs'
+            typedef const THitEnd* THitEndPtr;
+            typedef list<THitEndPtr> TMarkers;
+            TMarkers mks;
+            typename THit::TId id;
+            id = (*(hit_ends.begin()->m_Ptr))->GetId(hit_ends.begin()->m_Point/2);
+            THitEnds hit_mids;
+            ITERATE(typename THitEnds, ii, hit_ends) {
+            
+                THitEndPtr cur = &(*ii);
+                const Uint1 where = ii->m_Point/2;
+                THitRef* hitrefptr = ii->m_Ptr;
+                if((*hitrefptr)->GetId(where)->CompareOrdered(*id) != 0) {
+                    mks.clear();
+                    mks.push_back(cur);
+                    id = (*hitrefptr)->GetId(where);
+                }
+                else if(ii->m_X == (*hitrefptr)->GetMin(where)) {
+                    mks.push_back(cur);
                 }
                 else {
-                    phe_lo = &he[i2];
-                    phe_hi = &he[i1];
-                }
-                typedef typename THitEnds::iterator THitEndsIter;
-                THitEndsIter ii0 = hit_ends.lower_bound(*phe_lo);
-                THitEndsIter ii1 = hit_ends.upper_bound(*phe_hi);
-                typedef list<THitEndsIter> TIters;
-
-                for(typename THitEnds::iterator ii = ii0; ii != ii1; ++ii) {
-                    
-                    const THitEnd& he = *ii;
-                    const size_t hitrefidx = he.m_Ptr - hitref_firstptr;
-                    const bool alive = !skip[hitrefidx];
-                    const bool self = he.m_Ptr == &hc;
-
-                    if(alive && !self) {
-
-                        int newpos = sx_Cleave(*he.m_Ptr, he.m_Point/2, cmin, cmax, 
-                                               min_hit_len);
-
-                        if(newpos <= -2) { // eliminate
-                            del[hitrefidx] = skip[hitrefidx] = true;
+                    const float curscore = (*hitrefptr)->GetScore();
+                    typename TMarkers::iterator ii_del = mks.end();
+                    NON_CONST_ITERATE(typename TMarkers, ii, mks) {
+                        const THitEnd& he = **ii;
+                        if(he.m_Ptr == hitrefptr) {
+                            ii_del = ii;
                         }
-                        if(newpos >= 0) { // truncated
-                            const TCoord* box = (*he.m_Ptr)->GetBox();
-                            {{
+                        else if (he.m_X > cur->m_X) {
+                            break;
+                        }
+                        else {
+                            const float s = (*he.m_Ptr)->GetScore();
+                            if(s < curscore){
+                                THitEnd hm;
+                                hm.m_Point = he.m_Point;
+                                hm.m_Ptr = he.m_Ptr;
+                                hm.m_X = ((*hitrefptr)->GetMin(where) 
+                                          + (*hitrefptr)->GetMax(where))/2;
+                                hit_mids.insert(hm);
+                            }
+                        }
+                    }
+                    if(ii_del != mks.end()) {
+                        mks.erase(ii_del);
+                    }
+                }
+            }
+
+            hit_ends.insert(hit_mids.begin(), hit_mids.end());
+
+            vector<bool> skip (dim0, false);
+            skip.reserve(dim_factor * dim0);
+            del.assign(dim0, false);
+            del.reserve(dim_factor * dim0);
+
+            const THitRef* hitref_firstptr = &(*all_beg);
+            size_t dim = dim0;
+            while(restart == false) {
+
+                // select the best hit
+                double score_best = 0;
+                typename THitRefs::iterator ii = all_beg, ii_best = all.end();
+                for(size_t i = 0; i < dim; ++i, ++ii) {
+                    if(skip[i] == false) {
+                        const double score = (*ii)->GetScore();
+                        if(score > score_best) {
+                            ii_best = ii;
+                            score_best = score;
+                        }
+                    }
+                }
+
+                if(ii_best == all.end()) {
+                    break;
+                }
+
+                // truncate overlaps with the current best hit
+                const THitRef& hc = *ii_best;
+                const bool is_constraint = hc->GetScore() > 1e20;
+                THitEnd he [4];
+                for(Uint1 point = 0; point < 4; ++point) {
+
+                    he[point].m_Point = point;
+                    he[point].m_Ptr = const_cast<THitRef*>(&hc);
+                    if(is_constraint == false) {
+                        he[point].m_X = hc->GetBox()[point];
+                    }
+                    else {
+                        const typename THit::TCoord a = 0, 
+                            b = numeric_limits<typename THit::TCoord>::max();
+                        he[point].m_X = (point % 2 == 0) && hc->GetStrand(point / 2)?
+                            a: b;
+                    }
+                }
+
+                for(Uint1 where = 0; where < 2; ++where) {
+
+                    const TCoord cmin = hc->GetMin(where);
+                    const TCoord cmax = hc->GetMax(where);
+
+                    const THitEnd *phe_lo, *phe_hi;
+                    const Uint1 i1 = 2*where, i2 = i1 + 1;
+                    if(hc->GetStrand(where)) {
+                        phe_lo = &he[i1];
+                        phe_hi = &he[i2];
+                    }
+                    else {
+                        phe_lo = &he[i2];
+                        phe_hi = &he[i1];
+                    }
+                    typedef typename THitEnds::iterator THitEndsIter;
+                    THitEndsIter ii0 = hit_ends.lower_bound(*phe_lo);
+                    THitEndsIter ii1 = hit_ends.upper_bound(*phe_hi);
+
+                    for(typename THitEnds::iterator ii = ii0; ii != ii1; ++ii) {
+                    
+                        const THitEnd& he = *ii;
+                        const size_t hitrefidx = he.m_Ptr - hitref_firstptr;
+                        const bool alive       = skip[hitrefidx] == false;
+                        const bool self        = he.m_Ptr == &hc;
+
+                        if(alive && !self) {
+
+                            THitRef hit_new;
+                            int newpos 
+                                = sx_Cleave(*he.m_Ptr, he.m_Point/2, cmin, cmax, 
+                                            min_hit_len, & hit_new);
+
+                            if(newpos <= -2) { // eliminate
+                                del[hitrefidx] = skip[hitrefidx] = true;
+                            }
+
+                            if(newpos >= 0) { // truncated or split
+
+                                const TCoord* box = (*he.m_Ptr)->GetBox();
+
                                 THitEnd he2;
                                 he2.m_Point = he.m_Point;
                                 he2.m_Ptr = he.m_Ptr;
                                 he2.m_X = box[he2.m_Point];
                                 hit_ends.insert(he2);
-                            }}
-                            {{
+
                                 THitEnd he3;
                                 he3.m_Point = (he.m_Point + 2) % 4;
                                 he3.m_Ptr = he.m_Ptr;
                                 he3.m_X = box[he3.m_Point];
                                 hit_ends.insert(he3);
-                            }}
+
+                                if(hit_new.NotEmpty()) {
+                                
+                                    if(++dim > 2 * dim0) {
+                                        dim_factor *= 2;
+                                        restart = true;
+                                        break;
+                                    }
+
+                                    all.push_back(hit_new);
+                                    THitRef* ptr = & all.back();
+                                    del.push_back(false);
+                                    skip.push_back(false);
+
+                                    Uint1 point = he.m_Point;
+                                    Uint1 where = point / 2;
+
+                                    THitEnd he2;
+                                    he2.m_Point = point;
+                                    he2.m_Ptr = ptr;
+                                    he2.m_X = (box[point]== hit_new->GetStart(where))?
+                                        hit_new->GetStop(where): 
+                                        hit_new->GetStart(where);
+                                    hit_ends.insert(he2);
+
+                                    point = (he.m_Point + 2) % 4;
+                                    where = point / 2;
+
+                                    THitEnd he3;
+                                    he3.m_Point = point;
+                                    he3.m_Ptr = ptr;
+                                    he3.m_X = (box[point]==hit_new->GetStart(where))?
+                                        hit_new->GetStop(where):
+                                        hit_new->GetStart(where);
+                                    hit_ends.insert(he3);
+
+                                    // TODO: add midpoints for potential 
+                                    // hot dogs as above
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            skip[&hc - hitref_firstptr] = true;
+                skip[&hc - hitref_firstptr] = true;
+            }
         }
 
-        ii = hri_beg;
+        typename THitRefs::iterator all_beg = all.begin(), ii = all_beg;
+        const size_t dim = all.size();
         for(size_t i = 0; i < dim; ++i, ++ii) {
             if(del[i]) {
                 ii->Reset(NULL);
             }
         }
+
+        typename THitRefs::iterator idst = hri_beg, isrc = all_beg, 
+            isrc_end = all.end();
+        while(isrc != isrc_end && idst != hri_end) {
+            if(isrc->NotEmpty()) {
+                *idst++ = *isrc;
+            }
+            ++isrc;
+        }
+
+        while(idst != hri_end) {
+            idst++ -> Reset(NULL);
+        }
+
+        phits_new->resize(0);
+        while(isrc != isrc_end) {
+            phits_new->push_back(*isrc++);
+        }
+    }
+
+    // helper predicate
+    static bool s_PNullRef(const THitRef& hr) {
+        return hr.IsNull();
     }
 
 protected:
@@ -365,11 +460,14 @@ protected:
     typedef SHitEnd THitEnd;
     typedef multiset<THitEnd> THitEnds;
 
-    // return adjusted coordinate; -1 if unaffected; -2 to delete; -3 on exception
+    // return adjusted coordinate; -1 if unaffected; -2 to delete; -3 on exception;
+    // 0 on split.
     static int sx_Cleave(THitRef& h, Uint1 where, 
-                         TCoord cmin, TCoord cmax, TCoord min_hit_len) 
+                         TCoord cmin, TCoord cmax, TCoord min_hit_len,
+                         THitRef* pnew_hit) 
     {
         int rv = -1;
+        pnew_hit->Reset(NULL);
 
         try {
             TCoord lmin = h->GetMin(where), lmax = h->GetMax(where);
@@ -379,7 +477,17 @@ protected:
             if(cmin <= lmin && lmax <= cmax) {
                 return -2;
             }
-            if(ldif > rdif) {
+
+            if(ldif > int(min_hit_len) && rdif > int(min_hit_len)) {
+                
+                // create a new hit
+                pnew_hit->Reset(new THit (*h));
+                h->Modify(2*where + 1, lmax = cmin - 1);
+                (*pnew_hit)->Modify(2*where, lmin = cmax + 1);
+                return 0;
+            }
+            else if(ldif > rdif) {
+
                 if(lmin <= cmin && cmin <= lmax) {
                     if(cmin == 0) return -2;
                     h->Modify(2*where + 1, lmax = cmin - 1);
@@ -391,6 +499,7 @@ protected:
                 }
             }
             else {
+
                 if(lmin <= cmax && cmax <= lmax) {
                     h->Modify(2*where, lmin = cmax + 1);
                     rv = lmin;
@@ -400,6 +509,7 @@ protected:
                     h->Modify(2*where + 1, lmax = cmin - 1);
                     rv = lmax;
                 }
+
             }
 
             if(1 + lmax - lmin < min_hit_len) {
@@ -421,8 +531,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/04/17 19:26:15  kapustin
+ * Better support for higher-scoring nested hits in MGR
+ *
  * Revision 1.8  2006/03/29 15:45:54  kapustin
- * Optimize alignment truncation when resolving overlaps to leave more alignment where possible
+ * Optimize alignment truncation when resolving overlaps to 
+ * leave more alignment where possible
  *
  * Revision 1.7  2006/03/23 22:00:26  kapustin
  * Account for nested higher-scorers
