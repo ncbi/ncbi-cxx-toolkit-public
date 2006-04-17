@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CCleanup_imp::CCleanup_imp(CRef<CCleanupChange> changes, Uint4 options)
-: m_Changes(changes), m_Options(options)
+: m_Changes(changes), m_Options(options), m_Mode(eCleanup_GenBank)
 {
 }
 
@@ -65,8 +65,56 @@ CCleanup_imp::~CCleanup_imp()
 }
 
 
+static ECleanupMode s_GetCleanupMode(const CBioseq& seq)
+{
+    ITERATE (CBioseq::TId, it, seq.GetId()) {
+        const CSeq_id& id = **it;
+        if (id.IsEmbl()  ||  id.IsTpe()) {
+            return eCleanup_EMBL;
+        } else if (id.IsDdbj()  ||  id.IsTpd()) {
+            return eCleanup_DDBJ;
+        } else if (id.IsSwissprot()) {
+            return eCleanup_SwissProt;
+        }
+    }
+    
+    return eCleanup_GenBank;
+}
+
+
+static ECleanupMode s_GetCleanupMode(const CBioseq_set& bsst)
+{
+    CTypeConstIterator<CBioseq> seq(ConstBegin(bsst));
+    if (seq) {
+        ECleanupMode cm = s_GetCleanupMode(*seq);
+        if (cm != eCleanup_GenBank) {
+            return cm;
+        }
+    }
+    return eCleanup_GenBank;
+}
+
+
+void CCleanup_imp::Setup(const CSeq_entry& se)
+{
+    // Set cleanup mode.
+    switch (se.Which()) {
+        case CSeq_entry::e_Seq:
+        {
+            m_Mode = s_GetCleanupMode(se.GetSeq());        
+            break;            
+        }
+        case CSeq_entry::e_Set:
+        {
+            m_Mode = s_GetCleanupMode(se.GetSet());        
+            break;            
+        }
+    }
+}
+
 void CCleanup_imp::BasicCleanup(CSeq_entry& se)
 {
+    Setup(se);
     switch (se.Which()) {
         case CSeq_entry::e_Seq:
             BasicCleanup(se.SetSeq());
@@ -104,85 +152,63 @@ void CCleanup_imp::BasicCleanup(CSeq_submit& ss)
 }
 
 
-static ECleanupMode s_GetCleanupMode(const CBioseq& seq)
-{
-    ITERATE (CBioseq::TId, it, seq.GetId()) {
-        const CSeq_id& id = **it;
-        if (id.IsEmbl()  ||  id.IsTpe()) {
-            return eCleanup_EMBL;
-        } else if (id.IsDdbj()  ||  id.IsTpd()) {
-            return eCleanup_DDBJ;
-        } else if (id.IsSwissprot()) {
-            return eCleanup_SwissProt;
-        }
-    }
-    
-    return eCleanup_GenBank;
-}
-
-
-static ECleanupMode s_GetCleanupMode(const CBioseq_set& bsst)
-{
-    CTypeConstIterator<CBioseq> seq(ConstBegin(bsst));
-    if (seq) {
-        ECleanupMode cm = s_GetCleanupMode(*seq);
-        if (cm != eCleanup_GenBank) {
-            return cm;
-        }
-    }
-    return eCleanup_GenBank;
-}
-
-
 void CCleanup_imp::BasicCleanup(CBioseq_set& bss)
 {
-    ECleanupMode mode = s_GetCleanupMode(bss);
-    
     if (bss.IsSetAnnot()) {
         NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
-            BasicCleanup(**it, mode);
+            BasicCleanup(**it);
         }
     }
     if (bss.IsSetDescr()) {
-        BasicCleanup(bss.SetDescr(), mode);
+        BasicCleanup(bss.SetDescr());
     }
     if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
         NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            BasicCleanup(**it);
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    BasicCleanup(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    BasicCleanup(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
         }
     }
 }
 
 
 void CCleanup_imp::BasicCleanup(CBioseq& bs)
-{
-    ECleanupMode mode = s_GetCleanupMode(bs);
-    
+{    
     if (bs.IsSetAnnot()) {
         NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
-            BasicCleanup(**it, mode);
+            BasicCleanup(**it);
         }
     }
     if (bs.IsSetDescr()) {
-        BasicCleanup(bs.SetDescr(), mode);
+        BasicCleanup(bs.SetDescr());
     }
 }
 
 
-void CCleanup_imp::BasicCleanup(CSeq_annot& sa, ECleanupMode mode)
+void CCleanup_imp::BasicCleanup(CSeq_annot& sa)
 {
     if (sa.IsSetData()  &&  sa.GetData().IsFtable()) {
         NON_CONST_ITERATE (CSeq_annot::TData::TFtable, it, sa.SetData().SetFtable()) {
-            BasicCleanup(**it, mode);
+            BasicCleanup(**it);
         }
     }
 }
 
 
-void CCleanup_imp::BasicCleanup(CSeq_descr& sdr, ECleanupMode mode)
+void CCleanup_imp::BasicCleanup(CSeq_descr& sdr)
 {
     NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-        BasicCleanup(**it, mode);
+        BasicCleanup(**it);
     }
 }
 
@@ -197,7 +223,7 @@ static void s_SeqDescCommentCleanup( CSeqdesc::TComment& comment )
 };
 
 
-void CCleanup_imp::BasicCleanup(CSeqdesc& sd, ECleanupMode mode)
+void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
 {
     switch (sd.Which()) {
         case CSeqdesc::e_Mol_type:
@@ -288,6 +314,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/04/17 17:03:12  rsmith
+ * Refactoring. Get rid of cleanup-mode parameters.
+ *
  * Revision 1.3  2006/03/29 16:33:43  rsmith
  * Cleanup strings in Seqdesc. Move Pub functions to cleanup_pub.cpp
  *

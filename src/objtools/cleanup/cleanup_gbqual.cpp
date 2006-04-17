@@ -112,44 +112,37 @@ void CCleanup_imp::x_TrimParenthesesAndCommas(string& str)
 }
 
 
-void CCleanup_imp::x_CombineSplitQual(string& val, string& new_val)
+bool CCleanup_imp::BasicCleanup(CGene_ref& gene, const CGb_qual& gb_qual)
 {
-    if (NStr::Find(val, new_val) != NPOS) {
-        return;
-    }
+    const string& qual = gb_qual.GetQual();
+    const string& val  = gb_qual.GetVal();
 
-    x_TrimParenthesesAndCommas(val);
-    x_TrimParenthesesAndCommas(new_val);
-
-    val.insert(0, "(");
-    ((val += ',') += new_val) += ')';
-}
-
-
-bool CCleanup_imp::x_HandleGbQualOnGene(CSeq_feat& feat, const string& qual, const string& val)
-{
-    _ASSERT(feat.GetData().IsGene());
-
-    CGene_ref& gene = feat.SetData().SetGene();
-
-    bool retval = true;
+    bool retval = false;
     if (NStr::EqualNocase(qual, "map")) {
-        if (gene.IsSetMaploc()  ||  NStr::IsBlank(val)) {
-            retval = false;
-        } else {
+        if (! (gene.IsSetMaploc()  ||  NStr::IsBlank(val)) ) {
+            retval = true;
             gene.SetMaploc(val);
         }
     } else if (NStr::EqualNocase(qual, "allele")) {
-        if (gene.IsSetAllele()  ||  NStr::IsBlank(val)) {
-            retval = false;
-        } else {
+        if ( ! (gene.IsSetAllele()  ||  NStr::IsBlank(val)) ) {
+            retval = true;
             gene.SetAllele(val);
         }
     } else if (NStr::EqualNocase(qual, "locus_tag")) {
-        if (gene.IsSetLocus_tag()  ||  NStr::IsBlank(val)) {
-            retval = false;
-        } else {
+        if ( ! (gene.IsSetLocus_tag()  ||  NStr::IsBlank(val)) ) {
+            retval = true;
             gene.SetLocus_tag(val);
+        }
+    } else if (NStr::EqualNocase(qual, "gene")  &&  ! NStr::IsBlank(val)) {
+        retval = true;
+        if ( ! gene.IsSetLocus() ) {
+            gene.SetLocus(val);
+        } else if (gene.GetLocus() != val) {
+            CGene_ref::TSyn::const_iterator syn_it = 
+                find(gene.GetSyn().begin(), gene.GetSyn().end(), val);
+            if (syn_it == gene.GetSyn().end()) {
+                gene.SetSyn().push_back(val);
+            }            
         }
     }
 
@@ -157,12 +150,11 @@ bool CCleanup_imp::x_HandleGbQualOnGene(CSeq_feat& feat, const string& qual, con
 }
 
 
-bool CCleanup_imp::x_HandleGbQualOnCDS(CSeq_feat& feat, const string& qual, const string& val)
+bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual)
 {
-    _ASSERT(feat.GetData().IsCdregion());
-
-    CSeq_feat::TData::TCdregion& cds = feat.SetData().SetCdregion();
-
+    const string& qual = gb_qual.GetQual();
+    const string& val  = gb_qual.GetVal();
+    
     // transl_except qual -> Cdregion.code_break
     if (NStr::EqualNocase(qual, "transl_except")) {
         return false ; // s_ParseCodeBreak(feat, val);
@@ -216,14 +208,13 @@ bool CCleanup_imp::x_HandleGbQualOnCDS(CSeq_feat& feat, const string& qual, cons
 }
 
 
-bool CCleanup_imp::x_HandleGbQualOnRna(CSeq_feat& feat, const string& qual, const string& val, bool is_embl_or_ddbj)
+bool CCleanup_imp::BasicCleanup(CRNA_ref& rna, const CGb_qual& gb_qual)
 {
-    _ASSERT(feat.GetData().IsRna());
-
-    CSeq_feat::TData::TRna& rna = feat.SetData().SetRna();
+    const string& qual = gb_qual.GetQual();
+    const string& val  = gb_qual.GetVal();
 
     bool is_std_name = NStr::EqualNocase(qual, "standard_name");
-    if (NStr::EqualNocase(qual, "product")  ||  (is_std_name  &&  !is_embl_or_ddbj)) {
+    if (NStr::EqualNocase(qual, "product")  ||  (is_std_name  &&  ! x_IsEmblDdbj() )) {
         if (rna.IsSetType()) {
             if (rna.GetType() == CRNA_ref::eType_unknown) {
                 rna.SetType(CRNA_ref::eType_other);
@@ -247,11 +238,10 @@ bool CCleanup_imp::x_HandleGbQualOnRna(CSeq_feat& feat, const string& qual, cons
 }
 
 
-bool CCleanup_imp::x_HandleGbQualOnProt(CSeq_feat& feat, const string& qual, const string& val)
-{
-    _ASSERT(feat.GetData().IsProt());
-    
-    CSeq_feat::TData::TProt& prot = feat.SetData().SetProt();
+bool CCleanup_imp::BasicCleanup(CProt_ref& prot, const CGb_qual& gb_qual)
+{    
+    const string& qual = gb_qual.GetQual();
+    const string& val  = gb_qual.GetVal();
 
     if (NStr::EqualNocase(qual, "product")  ||  NStr::EqualNocase(qual, "standard_name")) {
         if (!prot.IsSetName()  ||  NStr::IsBlank(prot.GetName().front())) {
@@ -367,7 +357,7 @@ void CCleanup_imp::x_ExpandCombinedQuals(CSeq_feat::TQual& quals)
 
 
 
-bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual,  bool is_embl_or_ddbj)
+bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
 {
     // return true if we should delete this gb_qual.
     
@@ -432,6 +422,14 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual,  bool is_emb
     } else if (NStr::EqualNocase(qual, "pseudo")) {
         feat.SetPseudo(true);
         return true;  // mark qual for deletion
+    } else if (data.IsGene()  &&  BasicCleanup(data.SetGene(), gb_qual)) {
+        return true;  // mark qual for deletion
+    } else if (data.IsCdregion()  &&  BasicCleanup(feat, data.SetCdregion(), gb_qual) ) {
+        return true;  // mark qual for deletion
+    } else if (data.IsRna()  &&  BasicCleanup(data.SetRna(), gb_qual)) {
+        return true;  // mark qual for deletion
+    } else if (data.IsProt()  &&  BasicCleanup(data.SetProt(), gb_qual)) {
+        return true;  // mark qual for deletion
     } else if (NStr::EqualNocase(qual, "gene")) {
         if (!NStr::IsBlank(val)) {
             CRef<CSeqFeatXref> xref(new CSeqFeatXref);
@@ -444,17 +442,44 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual,  bool is_emb
             // not legal on anything but CDS, so remove it
             return true;  // mark qual for deletion
         }
-    } else if (data.IsGene()  &&  x_HandleGbQualOnGene(feat, qual, val)) {
-        return true;  // mark qual for deletion
-    } else if (data.IsCdregion()  &&  x_HandleGbQualOnCDS(feat, qual, val)) {
-        return true;  // mark qual for deletion
-    } else if (data.IsRna()  &&  x_HandleGbQualOnRna(feat, qual, val, is_embl_or_ddbj)) {
-        return true;  // mark qual for deletion
-    } else if (data.IsProt()  &&  x_HandleGbQualOnProt(feat, qual, val)) {
-        return true;  // mark qual for deletion
     }
 
     return false;
+}
+
+
+static bool s_IsJustQuotes(const string& str)
+{
+    ITERATE (string, it, str) {
+        if ((*it > ' ')  &&  (*it != '"')  &&  (*it  != '\'')) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+void CCleanup_imp::BasicCleanup(CGb_qual& gbq)
+{
+    CLEAN_STRING_MEMBER(gbq, Qual);
+    if (!gbq.IsSetQual()) {
+        gbq.SetQual(kEmptyStr);
+    }
+    
+    CLEAN_STRING_MEMBER(gbq, Val);
+    if (gbq.IsSetVal()  &&  s_IsJustQuotes(gbq.GetVal())) {
+        gbq.ResetVal();
+    }
+    if (!gbq.IsSetVal()) {
+        gbq.SetVal(kEmptyStr);
+    }
+    _ASSERT(gbq.IsSetQual()  &&  gbq.IsSetVal());
+    
+    if (NStr::EqualNocase(gbq.GetQual(), "cons_splice")) {
+        x_CleanupConsSplice(gbq);
+    } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit")) {
+        x_CleanupRptUnit(gbq);
+    }
 }
 
 
@@ -533,6 +558,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/04/17 17:03:12  rsmith
+ * Refactoring. Get rid of cleanup-mode parameters.
+ *
  * Revision 1.1  2006/03/29 16:32:23  rsmith
  * Initial commit.
  *

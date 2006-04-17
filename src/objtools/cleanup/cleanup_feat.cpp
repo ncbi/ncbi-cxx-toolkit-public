@@ -67,6 +67,7 @@ void CCleanup_imp::x_CleanupExcept_text(string& except_text)
     if (NStr::Find(except_text, "ribosome slippage") == NPOS     &&
         NStr::Find(except_text, "trans splicing") == NPOS        &&
         NStr::Find(except_text, "alternate processing") == NPOS  &&
+        NStr::Find(except_text, "adjusted for low quality genome") == NPOS  &&
         NStr::Find(except_text, "non-consensus splice site") == NPOS) {
         return;
     }
@@ -84,6 +85,8 @@ void CCleanup_imp::x_CleanupExcept_text(string& except_text)
                 text = "trans-splicing";
             } else if (text == "alternate processing") {
                 text = "alternative processing";
+            } else if (text == "adjusted for low quality genome") {
+                text = "adjusted for low-quality genome";
             } else if (text == "non-consensus splice site") {
                 text = "nonconsensus splice site";
             }
@@ -100,41 +103,6 @@ static bool s_IsEmptyGeneRef(const CGene_ref& gref)
     return (!gref.IsSetLocus()  &&  !gref.IsSetAllele()  &&
         !gref.IsSetDesc()  &&  !gref.IsSetMaploc()  &&  !gref.IsSetDb()  &&
         !gref.IsSetSyn()  &&  !gref.IsSetLocus_tag());
-}
-
-
-void CCleanup_imp::x_MoveDbxrefToFeat(CSeq_feat& feat)
-{
-    CSeq_feat::TData::TGene& g = feat.SetData().SetGene();
-
-    // move db_xref from Gene-ref to feature
-    if (g.IsSetDb()) {
-        copy(g.GetDb().begin(), g.GetDb().end(), back_inserter(feat.SetDbxref()));
-        g.ResetDb();
-    }
-
-    // move db_xref from gene xrefs to feature
-    if (feat.IsSetXref()) {
-        CSeq_feat::TXref& xrefs = feat.SetXref();
-        CSeq_feat::TXref::iterator it = xrefs.begin();
-        while (it != xrefs.end()) {
-            CSeqFeatXref& xref = **it;
-            if (xref.IsSetData()  &&  xref.GetData().IsGene()) {
-                CGene_ref& gref = xref.SetData().SetGene();
-                if (gref.IsSetDb()) {
-                    copy(gref.GetDb().begin(), gref.GetDb().end(), 
-                        back_inserter(feat.SetDbxref()));
-                    gref.ResetDb();
-                }
-                // remove gene xref if it has no values set
-                if (s_IsEmptyGeneRef(gref)) {
-                    it = xrefs.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        }
-    }
 }
 
 
@@ -198,24 +166,6 @@ static bool s_IsInformativeName(const string& name)
 }
 
 
-// === RNA
-
-
-/*
- void CCleanup_imp::x_CleanupRna(CSeq_feat& feat)
-{
-    _ASSERT(feat.IsSetData()  &&  feat.GetData().IsRna());
-
-    CSeq_feat::TData& data = feat.SetData();
-    CSeq_feat::TData::TRna& rna = data.SetRna();
-    
-    if (rna.IsSetExt()  &&  rna.GetExt().IsName()) {
-        string &name = rna.SetExt().SetName();
-    }
-
-    // !!! more?
-}
-*/
 
 // === Imp
 
@@ -309,7 +259,7 @@ void CCleanup_imp::BasicCleanup(CSeqFeatData& data)
 }
 
 
-void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data, bool is_embl_or_ddbj) 
+void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data) 
 {
     // change things in the feat based on what is in data and vice versa.
     // does not call any other BasicCleanup routine.
@@ -327,7 +277,34 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data, bool is_emb
             }
                 
                 // move db_xrefs from the Gene-ref or gene Xrefs to the feature
-            x_MoveDbxrefToFeat(feat);
+                // move db_xref from Gene-ref to feature
+            if (gene.IsSetDb()) {
+                copy(gene.GetDb().begin(), gene.GetDb().end(), back_inserter(feat.SetDbxref()));
+                gene.ResetDb();
+            }
+            
+            // move db_xref from gene xrefs to feature
+            if (feat.IsSetXref()) {
+                CSeq_feat::TXref& xrefs = feat.SetXref();
+                CSeq_feat::TXref::iterator it = xrefs.begin();
+                while (it != xrefs.end()) {
+                    CSeqFeatXref& xref = **it;
+                    if (xref.IsSetData()  &&  xref.GetData().IsGene()) {
+                        CGene_ref& gref = xref.SetData().SetGene();
+                        if (gref.IsSetDb()) {
+                            copy(gref.GetDb().begin(), gref.GetDb().end(), 
+                                 back_inserter(feat.SetDbxref()));
+                            gref.ResetDb();
+                        }
+                        // remove gene xref if it has no values set
+                        if (s_IsEmptyGeneRef(gref)) {
+                            it = xrefs.erase(it);
+                        } else {
+                            ++it;
+                        }
+                    }
+                }
+            }
         }
         break;
     case CSeqFeatData::e_Org:
@@ -370,7 +347,6 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data, bool is_emb
         }
         break;
     case CSeqFeatData::e_Rna:
-        // x_CleanupRna(feat); // doesn't do anything at this time.
         break;
     case CSeqFeatData::e_Pub:
         break;
@@ -389,7 +365,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data, bool is_emb
                 const CImp_feat::TKey& key = imp.GetKey();
                 
                 if (key == "CDS") {
-                    if (!is_embl_or_ddbj) {
+                    if ( ! x_IsEmblDdbj() ) {
                         data.SetCdregion();
                         //s_CleanupCdregion(feat);
                     }
@@ -399,7 +375,6 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data, bool is_emb
                         CSeqFeatData::TRna& rna = data.SetRna();
                         rna.SetType(rna_type_it->second);
                         BasicCleanup(rna);
-                        // x_CleanupRna(feat);
                     } else {
                         // !!! need to find protein bioseq without object manager
                     }
@@ -508,7 +483,7 @@ void CCleanup_imp::x_CleanupDbxref(CSeq_feat& feat)
 
 
 // BasicCleanup
-void CCleanup_imp::BasicCleanup(CSeq_feat& f, ECleanupMode mode)
+void CCleanup_imp::BasicCleanup(CSeq_feat& f)
 {
     if (!f.IsSetData()) {
         return;
@@ -524,10 +499,8 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f, ECleanupMode mode)
         x_CleanupExcept_text(f.SetExcept_text());
     }
 
-    bool is_embl_or_ddbj = (mode == eCleanup_EMBL  ||  mode == eCleanup_DDBJ);
-
     BasicCleanup(f.SetData());
-    BasicCleanup(f, f.SetData(), is_embl_or_ddbj);
+    BasicCleanup(f, f.SetData());
 
     if (f.IsSetDbxref()) {
        x_CleanupDbxref(f);
@@ -542,7 +515,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f, ECleanupMode mode)
             // clean up this qual.
             BasicCleanup(gb_qual);
             // cleanup the feature given this qual.
-            if (BasicCleanup(f, gb_qual, is_embl_or_ddbj)) {
+            if (BasicCleanup(f, gb_qual)) {
                 it = f.SetQual().erase(it);
             } else {
                 ++it;
@@ -647,8 +620,10 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
                                     name = "internal transcribed spacer 2";
                                 } else if (NStr::EqualNocase(name, "its3")) {
                                     name = "internal transcribed spacer 3";
+                                } else if (NStr::EqualNocase(name, "its")) {
+                                    name = "internal transcribed spacer";
+                                    break;
                                 }
-                                break;
                             }}
                             default:
                                 break;
@@ -682,41 +657,6 @@ void CCleanup_imp::BasicCleanup(CImp_feat& imf)
 }
 
 
-static bool s_IsJustQuotes(const string& str)
-{
-    ITERATE (string, it, str) {
-        if ((*it > ' ')  &&  (*it != '"')  &&  (*it  != '\'')) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-void CCleanup_imp::BasicCleanup(CGb_qual& gbq)
-{
-    CLEAN_STRING_MEMBER(gbq, Qual);
-    if (!gbq.IsSetQual()) {
-        gbq.SetQual(kEmptyStr);
-    }
-    
-    CLEAN_STRING_MEMBER(gbq, Val);
-    if (gbq.IsSetVal()  &&  s_IsJustQuotes(gbq.GetVal())) {
-        gbq.ResetVal();
-    }
-    if (!gbq.IsSetVal()) {
-        gbq.SetVal(kEmptyStr);
-    }
-    _ASSERT(gbq.IsSetQual()  &&  gbq.IsSetVal());
-    
-    if (NStr::EqualNocase(gbq.GetQual(), "cons_splice")) {
-        x_CleanupConsSplice(gbq);
-    } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit")) {
-        x_CleanupRptUnit(gbq);
-    }
-}
-
-
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -726,6 +666,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/04/17 17:03:12  rsmith
+ * Refactoring. Get rid of cleanup-mode parameters.
+ *
  * Revision 1.5  2006/03/29 19:40:13  rsmith
  * Consolidate BasicCleanup(CRNA_ref) stuff.
  *

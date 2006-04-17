@@ -85,6 +85,7 @@ class CCleanupChange;
 /// SwissProt records. All other types are handaled as GenBank records.
 enum ECleanupMode
 {
+    eCleanup_NotSet,
     eCleanup_EMBL,
     eCleanup_DDBJ,
     eCleanup_SwissProt,
@@ -107,14 +108,16 @@ public:
     /// Cleanup a Bioseq_set.
     void BasicCleanup(CBioseq_set& bss);
     /// Cleanup a Seq-Annot. 
-    void BasicCleanup(CSeq_annot& sa,  ECleanupMode mode = eCleanup_GenBank);
+    void BasicCleanup(CSeq_annot& sa);
     /// Cleanup a Seq-feat.
-    void BasicCleanup(CSeq_feat& sf,   ECleanupMode mode = eCleanup_GenBank);
+    void BasicCleanup(CSeq_feat& sf);
 
 private:
+    void Setup(const CSeq_entry& se);
+
     // Cleanup other sub-objects.
-    void BasicCleanup(CSeq_descr& sdr, ECleanupMode mode = eCleanup_GenBank);
-    void BasicCleanup(CSeqdesc& sd,    ECleanupMode mode = eCleanup_GenBank);
+    void BasicCleanup(CSeq_descr& sdr);
+    void BasicCleanup(CSeqdesc& sd);
     void BasicCleanup(CSeqFeatData& data);
     void BasicCleanup(CGene_ref& gene_ref);
     void BasicCleanup(CProt_ref& prot_ref);
@@ -147,20 +150,19 @@ private:
     void BasicCleanup(CUser_field& field);
     void BasicCleanup(CUser_object& uo);
 
-    void BasicCleanup(CSeq_feat& feat, CSeqFeatData& data, bool is_embl_or_ddbj);
-    bool BasicCleanup(CSeq_feat& feat, CGb_qual& qual,  bool is_embl_or_ddbj);
+    void BasicCleanup(CSeq_feat& feat, CSeqFeatData& data);
+    bool BasicCleanup(CSeq_feat& feat, CGb_qual& qual);
+    bool BasicCleanup(CGene_ref& gene, const CGb_qual& gb_qual);
+    bool BasicCleanup(CRNA_ref& rna, const CGb_qual& gb_qual);
+    bool BasicCleanup(CProt_ref& rna, const CGb_qual& gb_qual);
+    bool BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual);
 
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
-    void x_MoveDbxrefToFeat(CSeq_feat& feat);
     void x_CleanupRna(CSeq_feat& feat);
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
     void x_TrimParenthesesAndCommas(string& str);
     void x_CombineSplitQual(string& val, string& new_val);
-    bool x_HandleGbQualOnGene(CSeq_feat& feat, const string& qual, const string& val);
-    bool x_HandleGbQualOnCDS(CSeq_feat& feat, const string& qual, const string& val);
-    bool x_HandleGbQualOnRna(CSeq_feat& feat, const string& qual, const string& val, bool is_embl_or_ddbj);
-    bool x_HandleGbQualOnProt(CSeq_feat& feat, const string& qual, const string& val);
     void x_CleanupDbxref(CSeq_feat& feat);
 
     // Gb_qual cleanup.
@@ -188,12 +190,16 @@ private:
     // cleanup strings in User objects and fields
     void x_CleanupUserString(string& str);
 
+    bool    x_IsEmblDdbj() const {
+        return m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ;
+    }
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
     CCleanup_imp& operator= (const CCleanup_imp&);
     
     CRef<CCleanupChange>    m_Changes;
     Uint4                   m_Options;
+    ECleanupMode            m_Mode;
 };
 
 
@@ -205,6 +211,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/04/17 17:03:12  rsmith
+ * Refactoring. Get rid of cleanup-mode parameters.
+ *
  * Revision 1.6  2006/04/05 14:01:22  dicuccio
  * Don't export internal classes
  *
