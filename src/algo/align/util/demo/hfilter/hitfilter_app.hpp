@@ -81,8 +81,9 @@ private:
     void x_ReadInputHits(THitRefs* phitrefs);
     void x_DumpOutput(const THitRefs& hitrefs);
 
+    void x_LoadConstraints(CNcbiIstream& istr, THitRefs& all);
+
     void x_LoadIDs(CNcbiIstream& istr);
-    void x_LoadRestraints(CNcbiIstream& istr, THitRefs& all);
 
     typedef map<string,string> TMapIds;
     TMapIds m_IDs;
@@ -102,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/17 19:33:23  kapustin
+ * Advance hfilter application
+ *
  * Revision 1.3  2006/03/23 22:01:53  kapustin
  * Support external alignment restraints
  *

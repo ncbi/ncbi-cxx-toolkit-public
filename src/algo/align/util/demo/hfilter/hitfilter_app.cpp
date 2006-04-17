@@ -37,6 +37,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <util/util_exception.hpp>
 
 #include <serial/objistr.hpp>
@@ -51,6 +52,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 static const string g_m8("m8"), g_AsnTxt("asntxt"), g_AsnBin("asnbin");
+static const CAppHitFilter::THit::TCoord kMinOutputHitLen = 75;
 
 void CAppHitFilter::Init()
 {
@@ -75,14 +77,17 @@ void CAppHitFilter::Init()
                              CArgDescriptions::eInputFile,
                              CArgDescriptions::fBinary);
 
-    argdescr->AddOptionalKey("restraints", "restraints",
-                             "Binary ASN file with restraining alignments",
+    argdescr->AddOptionalKey("constraints", "constraints",
+                             "Binary ASN file with constraining alignments",
                              CArgDescriptions::eInputFile,
                              CArgDescriptions::fBinary);
 
     argdescr->AddOptionalKey("file_out", "file_out", "Output file (stdout otherwise)",
                              CArgDescriptions::eOutputFile,
                              CArgDescriptions::fBinary);    
+    
+    argdescr->AddOptionalKey("m", "m","Text description/comment to add to the output",
+                             CArgDescriptions::eString);
     
     argdescr->AddDefaultKey("fmt_out", "fmt_out", "Output format",
                             CArgDescriptions::eString, g_m8);
@@ -100,6 +105,12 @@ void CAppHitFilter::Init()
     constrain_format->Allow(g_m8)->Allow(g_AsnTxt)->Allow(g_AsnBin);
     argdescr->SetConstraint("fmt_in", constrain_format);
     argdescr->SetConstraint("fmt_out", constrain_format);
+    
+    CArgAllow* constrain_minlen = new CArgAllow_Integers(kMinOutputHitLen, 1000000);
+    argdescr->SetConstraint("min_len", constrain_minlen);
+    
+    CArgAllow* constrain_minidty = new CArgAllow_Doubles(0.0, 1.0);
+    argdescr->SetConstraint("min_idty", constrain_minidty);
 
     SetupArgDescriptions(argdescr.release());
 }
@@ -134,7 +145,6 @@ void CAppHitFilter::x_LoadIDs(CNcbiIstream& istr)
     }
 }
 
-const CAppHitFilter::THit::TCoord kMinOutputHitLen = 75;
 
 void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
 {
@@ -190,7 +200,6 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
             }
         }
     }
-    cerr << "Total accepted hits = " << phitrefs->size() << endl;
 }
 
 
@@ -201,7 +210,14 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
 
     CNcbiOstream& ostr = args["file_out"]? args["file_out"].AsOutputFile(): cout;
 
+    string comment (args["m"]? args["m"].AsString(): "");
+
     if(fmt == g_m8) {
+
+        if(comment.size() > 0) {
+            ostr << "# " << comment << endl;
+        }
+
         ITERATE(THitRefs, ii, hitrefs) {
             const THit& hit = **ii;
             ostr << hit << endl;
@@ -216,7 +232,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
         ITERATE(THitRefs, ii, hitrefs) {
             
             const THit& h = **ii;
-            cerr << h << endl;
+            //cerr << h << endl;
 
             CRef<CDense_seg> ds (new CDense_seg);
             const ENa_strand query_strand = h.GetQueryStrand()? eNa_strand_plus: 
@@ -235,7 +251,11 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
 
             vector< CRef< CSeq_id > > &ids = ds->SetIds();
             for(Uint1 where = 0; where < 2; ++where) {
-                CRef<CSeq_id> id;
+
+                CRef<CSeq_id> id (new CSeq_id);
+                id->Assign(*h.GetId(where));
+                
+                /*
                 const string strid (h.GetId(where)->GetSeqIdString(true));
                 TMapIds::const_iterator im = m_IDs.find(strid), ime = m_IDs.end();
                 if(im == ime) {
@@ -245,13 +265,24 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
                 else {
                     id.Reset(new CSeq_id(im->second));
                 }
+                */
+
                 ids.push_back(id);
-            }            
+            }
+
+            CDense_seg::TScores& scores = ds->SetScores();
+            CRef<CScore> score (new CScore);
+            score->SetValue().SetReal(h.GetScore());
+            scores.push_back(score);
 
             CRef<CSeq_align> seq_align (new CSeq_align);
             seq_align->SetType(CSeq_align::eType_disc);
             seq_align->SetSegs().SetDenseg(*ds);
             align_list.push_back(seq_align);
+        }
+
+        if(comment.size() > 0) {
+            seq_annot->AddComment(comment);
         }
 
         if(fmt_txt) {
@@ -261,11 +292,6 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             ostr << MSerial_AsnBinary << *seq_annot;
         }
     }
-}
-
-
-bool s_PNullRef(const CAppHitFilter::THitRef& hr) {
-    return hr.IsNull();
 }
 
 
@@ -293,8 +319,8 @@ int CAppHitFilter::Run()
     }
 
     THitRefs restraint;
-    if(args["restraints"]) {
-        x_LoadRestraints(args["restraints"].AsInputFile(), restraint);
+    if(args["constraints"]) {
+        x_LoadConstraints(args["constraints"].AsInputFile(), restraint);
     }
 
     THitRefs all;
@@ -323,8 +349,17 @@ int CAppHitFilter::Run()
         else {
             ii_hi = ii = ii_dst;
         }
-        CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, kMinOutputHitLen);
-        ii_hi = remove_if(ii_beg, ii_hi, s_PNullRef);
+        THitRefs hits_new;
+        CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, &hits_new, kMinOutputHitLen);
+        sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
+        THitRefs::iterator ii_hi0 = ii_hi;
+        ii_hi = remove_if(ii_beg, ii_hi, CHitFilter<THit>::s_PNullRef);
+        THitRefs::iterator jj = hits_new.begin(), jje = hits_new.end();
+        for(;jj != jje && ii_hi != ii_hi0; *ii_hi++ = *jj++);
+        if(jj != jje) {
+            cerr << "Warning: space from eliminated alignments "
+                 << "not enough for all splits. " << endl;
+        }
     }
     all.erase(ii_hi, ii_end);
     
@@ -334,7 +369,7 @@ int CAppHitFilter::Run()
 }
 
 
-void CAppHitFilter::x_LoadRestraints(CNcbiIstream& istr, THitRefs& all)
+void CAppHitFilter::x_LoadConstraints(CNcbiIstream& istr, THitRefs& all)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
@@ -347,6 +382,7 @@ void CAppHitFilter::x_LoadRestraints(CNcbiIstream& istr, THitRefs& all)
 
     typedef list<CRef<CSeq_align> > TSeqAlignList;
     TSeqAlignList& sa_list = seq_annot->SetData().SetAlign();
+    THit::TCoord maxlen = 0;
     NON_CONST_ITERATE(TSeqAlignList, ii, sa_list) {
                     
         CRef<CSeq_align> seq_align = *ii;
@@ -387,7 +423,20 @@ void CAppHitFilter::x_LoadRestraints(CNcbiIstream& istr, THitRefs& all)
         }
 
         hit->SetScore(0.5 * numeric_limits<float>::max());
+
         all.push_back(hit);
+
+        if(hit->GetLength() > maxlen) {
+            maxlen = hit->GetLength();
+        }
+
+        // cerr << *hit << endl;
+    }
+
+    float score_factor = 0.25 / maxlen;
+    NON_CONST_ITERATE(THitRefs, ii, all) {
+        THitRef& h = *ii;
+        h->SetScore(h->GetScore() * (1 + score_factor * h->GetLength()));
     }
 }
 
@@ -412,8 +461,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/04/17 19:33:23  kapustin
+ * Advance hfilter application
+ *
  * Revision 1.9  2006/03/23 22:01:53  kapustin
- * Support external alignment restraints
+ * Support external alignment constraints
  *
  * Revision 1.8  2006/03/22 13:54:55  kapustin
  * Use non-templated predicate to work around some intractable compilers
