@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: build_exec.bat,v 1.8 2006/02/22 15:14:41 gouriano Exp $
+REM $Id: build_exec.bat,v 1.9 2006/04/17 19:08:13 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -38,10 +38,13 @@ goto be_build
 
 :be_abort
 rem You should specify logfile or you will not see an output
-echo Usage: "%0 <solution> <command> <cfg> <target> <logfile>"
+echo Usage: "%0 <solution> <command> <arch> <cfg> <target> <logfile>"
 exit 1
 
 :be_build
+set arch=Win32
+if _%3_ == _64_ set arch=x64
+
 rem Next command should be executed last! No other code after it, please.
 
-%DEVENV% %1 /%2 %3 /project "%4" /out "%5"
+%DEVENV% %1 /%2 "%4|%arch%" /project "%5" /out "%6"

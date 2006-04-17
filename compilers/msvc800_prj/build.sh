@@ -9,7 +9,9 @@
 
 script="$0"
 cfgs="${1:-DebugDLL ReleaseDLL}"
- 
+arch="$2"
+
+
 ########### Global variables
 
 dirs='static dll'
@@ -17,6 +19,11 @@ sol_static="ncbi_cpp.sln gui\ncbi_gui.sln"
 #sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln gbench\ncbi_gbench.sln"
 sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln"
 timer="date +'%H:%M'"
+
+
+dirs='static'
+sol_static="ncbi_cpp.sln"
+
 
 ########## Functions
 
@@ -29,7 +36,7 @@ error()
 
 generate_msvc8_error_check_file() {
   cat <<-EOF >$1
-	/.*--* (Reb|B)uild( All | )started: Project:/ {
+	/.*--*E:\cxx\compilers\msvc800_prj\build.sh (Reb|B)uild( All | )started: Project:/ {
 	  expendable = ""
 	}
 
@@ -67,9 +74,9 @@ done
 
 
 # Configuration to build configure
-cfg_configure=ReleaseDLL
-
+cfg_configure='ReleaseDLL'
 out=".build.$$"
+
 
 # Configure
 
@@ -83,7 +90,7 @@ for dir in $dirs ; do
      start=`eval $timer`
      echo Start time: $start
      echo "INFO: Configure \"$dir\\$alias\""
-     $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg_configure "-CONFIGURE-" $out
+     $build_dir/build_exec.bat "$dir\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
      status=$?
      cat $out
      rm -f $out >/dev/null 2>&1
@@ -114,7 +121,7 @@ for cfg in $cfgs ; do
        start=`eval $timer`
        echo Start time: $start
        echo "INFO: Building \"$dir\\$cfg\\$alias\""
-       $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg "-BUILD-ALL-" $out
+       $build_dir/build_exec.bat "$dir\\build\\$sol" build "" "$cfg" "-BUILD-ALL-" $out
        status=$?
        cat $out
        echo "Build time: $start - `eval $timer`"
