@@ -45,9 +45,6 @@
 
 #include <serial/iterator.hpp>
 
-#include <gui/objutils/edit.hpp>
-#include <gui/objutils/bioseq_edit.hpp>
-
 #include <objtools/format/context.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -670,6 +667,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/04/17 17:42:21  ucko
+* Drop extraneous and disconcerting inclusion of gui headers.
+*
 * Revision 1.2  2006/04/17 17:39:37  ucko
 * Fix capitalization of header filenames.
 *
