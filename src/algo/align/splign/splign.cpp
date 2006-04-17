@@ -248,8 +248,7 @@ void CSplign::x_LoadSequence(vector<char>* seq,
     try {
     
         if(m_Scope.IsNull()) {
-            NCBI_THROW(CAlgoAlignException, eInternal, 
-                       "Splign scope not set.");
+            NCBI_THROW(CAlgoAlignException, eInternal, "Splign scope not set");
         }
 
         CBioseq_Handle bh = m_Scope->GetBioseqHandle(seqid);
@@ -314,17 +313,34 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     THitComparator sorter (THitComparator::eQueryMin);
     stable_sort(phitrefs->begin(), phitrefs->end(), sorter);
 
+    const size_t max_intron = 1048575; // 2^20
+    size_t prev = 0;
+    ITERATE(THitRefs, ii, *phitrefs) {
+        const THitRef& h = *ii;
+        if(prev > 0) {
+
+            const bool consistent = h->GetSubjStrand()?
+                (h->GetSubjStart() < prev + max_intron):
+                (h->GetSubjStart() + max_intron > prev);
+            if(!consistent) {
+                const string errmsg = g_msg_CompartmentInconsistent
+                    + string(" (extra long introns)");
+                NCBI_THROW(CAlgoAlignException, eNoAlignment, errmsg);
+            }
+        }
+        prev = h->GetSubjStop();
+    }
+
     vector<size_t> pattern0;
     vector<bool> imperfect;
     for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
 
         const THitRef& h = (*phitrefs)[i];
         if(h->GetQuerySpan() >= 10) {
-            
-            pattern0.push_back( h->GetQueryMin() );
-            pattern0.push_back( h->GetQueryMax() );
-            pattern0.push_back( h->GetSubjMin() );
-            pattern0.push_back( h->GetSubjMax() );
+            pattern0.push_back(h->GetQueryMin());
+            pattern0.push_back(h->GetQueryMax());
+            pattern0.push_back(h->GetSubjMin());
+            pattern0.push_back(h->GetSubjMax());
             bool imprf = h->GetIdentity() < 1.00 ||
                 h->GetQuerySpan() != h->GetSubjSpan();
             imperfect.push_back(imprf);
@@ -339,39 +355,54 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     
     // verify some conditions on the input hit pattern
     size_t dim = pattern0.size();
-    const char* err = 0;
+    CNcbiOstrstream ostr_err;
+    bool severe = false;
     if(dim % 4 == 0) {
 
         for(size_t i = 0; i < dim; i += 4) {
             
             if(pattern0[i] > pattern0[i+1] || pattern0[i+2] > pattern0[i+3]) {
-                err = "Pattern hits must be specified in plus strand";
+                ostr_err << "Pattern hits must be specified in plus strand";
+                severe = true;
                 break;
             }
             
             if(i > 4) {
-                if(pattern0[i] <= pattern0[i-3]
-                   || pattern0[i+2] <= pattern0[i-1]) {
-
-                    err = "Pattern hits coordinates must be sorted";
+                if(pattern0[i] <= pattern0[i-3] || pattern0[i+2] <= pattern0[i-1]) {
+                    ostr_err << g_msg_CompartmentInconsistent
+                             << string(" (hits not sorted)");
                     break;
                 }
             }
             
             if(pattern0[i+1] >= SeqLen1 || pattern0[i+3] >= SeqLen2) {
-
-                err = "One or several pattern hits are out of range";
+                ostr_err << "One or several pattern hits are out of range";
                 break;
             }
         }
 
     }
     else {
-        err = "Pattern must have a dimension multiple of four";
+        ostr_err << "Pattern must have a dimension multiple of four";
+        severe = true;
     }
     
-    if(err) {
-        NCBI_THROW(CAlgoAlignException, eBadParameter, err);
+    if(severe) {
+        ostr_err << " (query = " 
+                 << phitrefs->front()->GetQueryId()->AsFastaString() 
+                 << " , subj = "
+                 << phitrefs->front()->GetSubjId()->AsFastaString() << ')'
+                 << endl;
+    }
+
+    const string err = CNcbiOstrstreamToString(ostr_err);
+    if(err.size() > 0) {
+        if(severe) {
+            NCBI_THROW(CAlgoAlignException, eBadParameter, err);
+        }
+        else {
+            NCBI_THROW(CAlgoAlignException, eNoAlignment, err);
+        }
     }
     else {
 
@@ -670,18 +701,6 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
                 h->SetQueryStop(a0);
                 h->SetSubjStrand(new_strand);
             }
-        }
-
-        const size_t max_intron = 1048575; // 2^20
-        size_t prev = 0;
-        ITERATE(THitRefs, ii, *phitrefs) {
-            const THitRef& h = *ii;
-            if(prev > 0 && h->GetSubjMin() >= prev + max_intron) {
-                NCBI_THROW(CAlgoAlignException, eNoAlignment,
-                           "Compartment inconsistent upon filtering "
-                           "because of extra long introns");
-            }
-            prev = h->GetSubjMax();
         }
     
         m_polya_start = m_nopolya? kMax_UInt: x_TestPolyA();
@@ -1796,6 +1815,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/04/17 19:30:11  kapustin
+ * Move intron max length check to x_SetPattern to assure proper hit order
+ *
  * Revision 1.51  2006/04/12 16:32:50  kapustin
  * Fix an issue with truncated non-polya R-GAP's
  *
