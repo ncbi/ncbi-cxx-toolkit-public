@@ -1618,6 +1618,10 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         alnvecInfo->alnvec = avRef;
                        
                         subid=&(avRef->GetSeqId(1));
+                        if(!previousId.Empty() && 
+                           !subid->Match(*previousId)){
+                            m_Scope.ResetHistory();  //release memory 
+                        }
                         x_DisplayAlnvecInfo(out, alnvecInfo,
                                             previousId.Empty() || 
                                             !subid->Match(*previousId));
@@ -1626,7 +1630,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         
                         previousId = subid;
                     }                
-                } catch (const CException&){
+                } catch (const CException& e){
+                    out << e.what();
                     continue;
                 }
             }
@@ -3138,6 +3143,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.117  2006/04/17 15:56:04  jianye
+*reset history
+*
 *Revision 1.116  2006/04/13 17:07:28  jianye
 *x_DisplayAlnvecList to x_DisplayAlnvecList
 *
