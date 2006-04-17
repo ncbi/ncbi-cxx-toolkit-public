@@ -137,6 +137,12 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
 }
 
 
+CAlignShadow::CAlignShadow(void)
+{
+    m_Box[0] = m_Box[1] = m_Box[2] = m_Box[3] = g_UndefCoord;
+}
+
+
 CNcbiOstream& operator << (CNcbiOstream& os, const CAlignShadow& align_shadow)
 {
     USING_SCOPE(objects);
@@ -147,16 +153,6 @@ CNcbiOstream& operator << (CNcbiOstream& os, const CAlignShadow& align_shadow)
     align_shadow.x_PartialSerialize(os);
     
     return os;
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-// ctors/initializers
-
-CAlignShadow::CAlignShadow(void)
-{
-    m_Box[0] = m_Box[1] = m_Box[2] = m_Box[3] = g_UndefCoord;
 }
 
 
@@ -292,6 +288,11 @@ void CAlignShadow::FlipStrands(void)
 {
     SetQueryStrand(!GetQueryStrand());
     SetSubjStrand(!GetSubjStrand());
+    if(m_Transcript.size()) {
+        m_Transcript = s_RunLengthDecode(m_Transcript);
+        reverse(m_Transcript.begin(), m_Transcript.end());
+        m_Transcript = s_RunLengthEncode(m_Transcript);
+    }
 }
 
 
@@ -652,6 +653,7 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
         s = GetSubjStart();
         Int1 dq = (qstrand? +1: -1), ds = (sstrand?  +1: -1);
         string xcript (s_RunLengthDecode(m_Transcript));
+
         size_t n1 = 0;
         bool need_trace = true;
         if(point <= 1) {
@@ -676,12 +678,14 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
                 }
 
                 if(point <= 1) {
-                    if(q == new_pos) break;
+                    if(q == new_pos + dq) break;
                 }
                 else {
-                    if(s == new_pos) break;
+                    if(s == new_pos + ds) break;
                 }
             }
+            q -= dq;
+            s -= ds;
         }
 
         switch(point) {
@@ -854,6 +858,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.18  2006/04/17 19:31:42  kapustin
+ * Fix off-by-one bug when adjusting coordinate with transcript
+ *
  * Revision 1.17  2006/03/24 13:26:04  kapustin
  * Assume plus strands when initilializing from dense-seg with no strand data
  *
