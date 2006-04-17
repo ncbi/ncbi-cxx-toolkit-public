@@ -1468,7 +1468,7 @@ void CPhrap_Contig::x_AddReadLocFeats(CRef<CSeq_annot>& annot) const
                 0, GetUnpaddedPos(rd_stop - GetPaddedLength())));
             if ( FlagSet(fPhrap_PadsToFuzz) ) {
                 rg2->SetFuzz_from().SetP_m(0);
-                rg2->SetFuzz_from().
+                rg2->SetFuzz_to().
                     SetP_m(rd_stop - GetPaddedLength() - rg2->GetTo());
             }
             prod.SetPacked_int().Set().push_back(rg2);
@@ -2376,6 +2376,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/04/17 15:39:28  grichenk
+* Fixed fuzz-to on multi-range locations
+*
 * Revision 1.15  2006/03/28 22:20:13  vakatov
 * Heed warning, kill unused var
 *
