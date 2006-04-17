@@ -8,6 +8,6 @@ SRC = netcache_check
 LIB = xconnserv xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-#CHECK_REQUIRES = unix
-CHECK_CMD  = netcache_check.sh
-CHECK_COPY = netcache_check.sh
+CHECK_CMD     = netcache_check.sh
+CHECK_COPY    = netcache_check.sh
+CHECK_TIMEOUT = 250
