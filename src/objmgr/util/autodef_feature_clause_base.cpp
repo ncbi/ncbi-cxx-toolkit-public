@@ -39,9 +39,9 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objects/seq/seq_descr.hpp>
-#include <objects/seq/seqdesc.hpp>
-#include <objects/seq/bioseq.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -469,12 +469,12 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
                    && NStr::Equal(m_ClauseList[k]->GetInterval(), m_ClauseList[k+2]->GetInterval())
                    && m_ClauseList[k+1]->DisplayAlleleName()
                    && m_ClauseList[k]->DisplayAlleleName()) {
-            print_comma = TRUE;  	
+            print_comma = true;  	
         } else if (k > 0 && !is_last
                    && ! oneafter_has_interval_change && ! onebefore_has_interval_change
                    && (m_ClauseList[k+1]->DisplayAlleleName ()
                        || m_ClauseList[k]->DisplayAlleleName())) {
-            print_comma = TRUE;  	
+            print_comma = true;  	
         }
  
         if (!NStr::IsBlank(m_ClauseList[k]->GetInterval())
@@ -974,6 +974,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/04/17 17:38:45  ucko
+* Fix capitalization of header filenames, and of "true".
+*
 * Revision 1.1  2006/04/17 16:25:05  bollin
 * files for automatically generating definition lines, using a combination
 * of modifiers to make definition lines unique within a set and listing the
