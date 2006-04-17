@@ -27,7 +27,7 @@ const char g_msg_NoHitsBeyondPolya [] =
 const char g_msg_NoAlignment [] = "No alignment found";
 
 const char g_msg_NoExonsAboveIdtyLimit [] =
-    "No exons found above identity limit.";
+    "No exons found above identity limit";
 
 const char g_msg_NullPointerPassed [] =
     "NULL pointer passed for argument";
@@ -38,5 +38,8 @@ const char g_msg_NetCacheBufferIncomplete [] =
 const char g_msg_UnknownTranscriptSymbol[] = "Unknown symbol in transcript: ";
 
 const char g_msg_SequenceNotFound[] = "Could not find the proper sequence";
+
+const char g_msg_CompartmentInconsistent[] = 
+     "Compartment inconsistent upon filtering";
 
 #endif
