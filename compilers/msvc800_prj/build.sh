@@ -21,10 +21,6 @@ sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln"
 timer="date +'%H:%M'"
 
 
-dirs='static'
-sol_static="ncbi_cpp.sln"
-
-
 ########## Functions
 
 error()
