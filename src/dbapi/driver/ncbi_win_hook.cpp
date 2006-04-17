@@ -1477,7 +1477,7 @@ namespace NWinHook
     {
         // A static variable below is used to check for enabling of tracing
         // when CNcbiApplication is not available any more.
-        static enabled_from_registry = false;
+        static bool enabled_from_registry = false;
 
         CNcbiApplication* app = CNcbiApplication::Instance();
 
@@ -1946,6 +1946,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/04/17 13:04:23  ivanov
+ * Added missed bool type specifier
+ *
  * Revision 1.4  2006/04/13 14:50:45  ssikorsk
  * Allow to disable Windows API hooking from application's registry.
  *
