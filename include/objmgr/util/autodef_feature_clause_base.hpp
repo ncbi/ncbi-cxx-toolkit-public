@@ -34,7 +34,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objects/seqfeat/seq_feat.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/04/17 17:39:36  ucko
+* Fix capitalization of header filenames.
+*
 * Revision 1.1  2006/04/17 16:25:01  bollin
 * files for automatically generating definition lines, using a combination
 * of modifiers to make definition lines unique within a set and listing the

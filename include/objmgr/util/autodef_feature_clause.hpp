@@ -35,7 +35,7 @@
 
 #include <objmgr/util/autodef_feature_clause_base.hpp>
 #include <objmgr/bioseq_handle.hpp>
-#include <objects/seq/molinfo.hpp>
+#include <objects/seq/MolInfo.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/04/17 17:39:36  ucko
+* Fix capitalization of header filenames.
+*
 * Revision 1.1  2006/04/17 16:25:01  bollin
 * files for automatically generating definition lines, using a combination
 * of modifiers to make definition lines unique within a set and listing the

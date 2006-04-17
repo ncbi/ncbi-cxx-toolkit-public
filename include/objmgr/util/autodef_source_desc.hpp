@@ -34,13 +34,13 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objects/seqfeat/biosource.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/orgmod.hpp>
-#include <objects/seqfeat/subsource.hpp>
-#include <objects/seqfeat/orgname.hpp>
-#include <objects/seqfeat/seq_feat.hpp>
-#include <objects/seq/molinfo.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seq/MolInfo.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
@@ -85,6 +85,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/04/17 17:39:37  ucko
+* Fix capitalization of header filenames.
+*
 * Revision 1.1  2006/04/17 16:25:01  bollin
 * files for automatically generating definition lines, using a combination
 * of modifiers to make definition lines unique within a set and listing the
