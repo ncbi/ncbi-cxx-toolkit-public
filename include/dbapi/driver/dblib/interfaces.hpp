@@ -38,45 +38,47 @@
 #include <dbapi/driver/util/pointer_pot.hpp>
 
 #ifdef MS_DBLIB_IN_USE
-#    define CDBLibContext       CMSDBLibContext
-#    define CDBL_Connection     CMSDBL_Connection
-#    define CDBL_LangCmd        CMSDBL_LangCmd
-#    define CDBL_RPCCmd         CMSDBL_RPCCmd
-#    define CDBL_CursorCmd      CMSDBL_CursorCmd
-#    define CDBL_BCPInCmd       CMSDBL_BCPInCmd
-#    define CDBL_SendDataCmd    CMSDBL_SendDataCmd
-#    define CDBL_RowResult      CMSDBL_RowResult
-#    define CDBL_ParamResult    CMSDBL_ParamResult
-#    define CDBL_ComputeResult  CMSDBL_ComputeResult
-#    define CDBL_StatusResult   CMSDBL_StatusResult
-#    define CDBL_CursorResult   CMSDBL_CursorResult
-#    define CDBL_BlobResult     CMSDBL_BlobResult
-#    define CDBL_ITDescriptor   CMSDBL_ITDescriptor
-#    define SDBL_ColDescr       CMSDBL_ColDescr
+#    define CDBLibContext           CMSDBLibContext
+#    define CDBL_Connection         CMSDBL_Connection
+#    define CDBL_LangCmd            CMSDBL_LangCmd
+#    define CDBL_RPCCmd             CMSDBL_RPCCmd
+#    define CDBL_CursorCmd          CMSDBL_CursorCmd
+#    define CDBL_BCPInCmd           CMSDBL_BCPInCmd
+#    define CDBL_SendDataCmd        CMSDBL_SendDataCmd
+#    define CDBL_RowResult          CMSDBL_RowResult
+#    define CDBL_ParamResult        CMSDBL_ParamResult
+#    define CDBL_ComputeResult      CMSDBL_ComputeResult
+#    define CDBL_StatusResult       CMSDBL_StatusResult
+#    define CDBL_CursorResult       CMSDBL_CursorResult
+#    define CDBL_BlobResult         CMSDBL_BlobResult
+#    define CDBL_ITDescriptor       CMSDBL_ITDescriptor
+#    define SDBL_ColDescr           CMSDBL_ColDescr
+#    define CDblibContextRegistry   CMSDBLContextRegistry
 #endif // MS_DBLIB_IN_USE
 
 #ifdef FTDS_IN_USE
 #    include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
 #    include <cspublic.h>
 
-#    define CDBLibContext       CTDSContext
-#    define CDBL_Connection     CTDS_Connection
-#    define CDBL_LangCmd        CTDS_LangCmd
-#    define CDBL_RPCCmd         CTDS_RPCCmd
-#    define CDBL_CursorCmd      CTDS_CursorCmd
-#    define CDBL_BCPInCmd       CTDS_BCPInCmd
-#    define CDBL_SendDataCmd    CTDS_SendDataCmd
-#    define CDBL_RowResult      CTDS_RowResult
-#    define CDBL_ParamResult    CTDS_ParamResult
-#    define CDBL_ComputeResult  CTDS_ComputeResult
-#    define CDBL_StatusResult   CTDS_StatusResult
-#    define CDBL_CursorResult   CTDS_CursorResult
-#    define CDBL_BlobResult     CTDS_BlobResult
-#    define CDBL_ITDescriptor   CTDS_ITDescriptor
-#    define SDBL_ColDescr       STDS_ColDescr
+#    define CDBLibContext           CTDSContext
+#    define CDBL_Connection         CTDS_Connection
+#    define CDBL_LangCmd            CTDS_LangCmd
+#    define CDBL_RPCCmd             CTDS_RPCCmd
+#    define CDBL_CursorCmd          CTDS_CursorCmd
+#    define CDBL_BCPInCmd           CTDS_BCPInCmd
+#    define CDBL_SendDataCmd        CTDS_SendDataCmd
+#    define CDBL_RowResult          CTDS_RowResult
+#    define CDBL_ParamResult        CTDS_ParamResult
+#    define CDBL_ComputeResult      CTDS_ComputeResult
+#    define CDBL_StatusResult       CTDS_StatusResult
+#    define CDBL_CursorResult       CTDS_CursorResult
+#    define CDBL_BlobResult         CTDS_BlobResult
+#    define CDBL_ITDescriptor       CTDS_ITDescriptor
+#    define SDBL_ColDescr           STDS_ColDescr
+#    define CDblibContextRegistry   CTDSContextRegistry
 
-#    define DBLIB_dberr_handler TDS_dberr_handler
-#    define DBLIB_dbmsg_handler TDS_dbmsg_handler
+#    define DBLIB_dberr_handler     TDS_dberr_handler
+#    define DBLIB_dbmsg_handler     TDS_dbmsg_handler
 
 #    define DBLIB_SetApplicationName    TDS_SetApplicationName
 #    define DBLIB_SetHostName           TDS_SetHostName
@@ -1017,6 +1019,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/04/18 16:23:58  ssikorsk
+ * Define another name for CDblibContextRegistry in case of
+ * msdblib and ftds drivers.
+ *
  * Revision 1.34  2006/04/05 14:21:54  ssikorsk
  * Added CDBL_Connection::Close
  *
