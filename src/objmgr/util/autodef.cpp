@@ -52,7 +52,10 @@ BEGIN_SCOPE(objects)
 
             
 CAutoDef::CAutoDef()
-    : m_SuppressAltSplicePhrase(false)
+    : m_SuppressAltSplicePhrase(false),
+      m_FeatureListType(eListAllFeatures),
+      m_ProductFlag(CBioSource::eGenome_unknown),
+      m_AltSpliceFlag(false)
 {
     m_ComboList.clear();
 }
@@ -563,7 +566,7 @@ string OrganelleByGenome(unsigned int genome_val)
     return organelle;
 }
 
-string CAutoDef::x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq_Handle bh, unsigned int product_flag)
+string CAutoDef::x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq_Handle bh)
 {
     bool pluralize = false;
     
@@ -602,7 +605,7 @@ string CAutoDef::x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq
     if (!NStr::IsBlank(ending)) {
         ending = "; " + ending;
     } else {
-        ending = OrganelleByGenome(product_flag);
+        ending = OrganelleByGenome(m_ProductFlag);
         if (NStr::IsBlank(ending)) {
             if (!NStr::IsBlank(genome_from_mods)) {
                 ending = "; " + genome_from_mods;
@@ -621,7 +624,8 @@ string CAutoDef::x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq
     return ending;
 }
 
-string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh, EFeatureListType feature_list_type, unsigned int product_flag, bool alt_splice_flag)
+
+string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh)
 {
     // for protein sequences, use sequence::GetTitle
     if (bh.CanGetInst() && bh.GetInst().CanGetMol() && bh.GetInst().GetMol() == CSeq_inst::eMol_aa) {
@@ -640,16 +644,16 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
         break;
     }
     string feature_clauses = "";
-    if (feature_list_type == eListAllFeatures) {
+    if (m_FeatureListType == eListAllFeatures) {
         feature_clauses = " " + x_GetFeatureClauses(bh, true, true);
-        feature_clauses += x_GetFeatureClauseProductEnding(feature_clauses, bh, product_flag);
-        if (alt_splice_flag) {
+        feature_clauses += x_GetFeatureClauseProductEnding(feature_clauses, bh);
+        if (m_AltSpliceFlag) {
             feature_clauses += ", alternatively spliced";
         }
         feature_clauses += ".";
-    } else if (feature_list_type == eCompleteSequence) {
+    } else if (m_FeatureListType == eCompleteSequence) {
         feature_clauses = ", complete sequence";
-    } else if (feature_list_type == eCompleteGenome) {
+    } else if (m_FeatureListType == eCompleteGenome) {
         string organelle = OrganelleByGenome(genome_val);
         if (!NStr::IsBlank(organelle)) {
             feature_clauses = " " + organelle;
@@ -667,6 +671,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/04/18 14:50:36  bollin
+* set defline options as member variables for CAutoDef class
+*
 * Revision 1.3  2006/04/17 17:42:21  ucko
 * Drop extraneous and disconcerting inclusion of gui headers.
 *

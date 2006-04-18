@@ -72,10 +72,11 @@ public:
     string GetOneSourceDescription(CBioseq_Handle bh);
     void CAutoDef::DoAutoDef();
     
-    string GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh, 
-                         EFeatureListType feature_list_type = eListAllFeatures, 
-                         unsigned int product_flag = CBioSource::eGenome_unknown, 
-                         bool alt_splice_flag = false);
+    void SetFeatureListType(EFeatureListType feature_list_type) { m_FeatureListType = feature_list_type; }
+    void SetProductFlag (unsigned int product_flag) { m_ProductFlag = product_flag; }
+    void SetAltSpliceFlag (bool alt_splice_flag) { m_AltSpliceFlag = alt_splice_flag; }
+    
+    string GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh);
     
     typedef vector<CAutoDefModifierCombo *> TModifierComboVector;
     
@@ -86,13 +87,17 @@ private:
     TModifierComboVector  m_ComboList;
     bool m_SuppressAltSplicePhrase;
     
+    EFeatureListType m_FeatureListType;
+    unsigned int m_ProductFlag;
+    bool         m_AltSpliceFlag;
+    
     void x_SortModifierListByRank(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
     void x_GetModifierIndexList(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
 
     string CAutoDef::x_GetSourceDescriptionString (CAutoDefModifierCombo *mod_combo, const CBioSource& bsrc);
     
     string x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags, bool gene_cluster_opp_strand);
-    string x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq_Handle bh, unsigned int product_flag);
+    string x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq_Handle bh);
     bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags);
     CAutoDefParsedtRNAClause *x_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, string &comment, bool is_first);
 
@@ -108,6 +113,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/04/18 14:50:41  bollin
+* set defline options as member variables for CAutoDef class
+*
 * Revision 1.2  2006/04/17 17:39:36  ucko
 * Fix capitalization of header filenames.
 *
