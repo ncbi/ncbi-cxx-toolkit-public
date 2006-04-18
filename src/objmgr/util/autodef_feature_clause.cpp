@@ -68,7 +68,9 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
     m_ProductName = "";
     m_ProductNameChosen = false;
     
-    if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene) {
+    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    
+    if (subtype == CSeqFeatData::eSubtype_gene) {
         m_GeneName = x_GetGeneName(m_MainFeat.GetData().GetGene());
         if (m_MainFeat.GetData().GetGene().CanGetAllele()) {
             m_AlleleName = m_MainFeat.GetData().GetGene().GetAllele();
@@ -81,6 +83,10 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
     
     m_ClauseLocation = new CSeq_loc();
     m_ClauseLocation->Add(m_MainFeat.GetLocation());
+    
+    if (subtype == CSeqFeatData::eSubtype_operon || IsGeneCluster()) {
+        m_SuppressSubfeatures = true;
+    }
 }
 
 
@@ -664,39 +670,41 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         return true;
     }
     
-    if (IsSatelliteClause() || subtype == CSeqFeatData::eSubtype_promoter) {
+    if (IsSatelliteClause() || subtype == CSeqFeatData::eSubtype_promoter || subtype == CSeqFeatData::eSubtype_operon) {
         return false;
     }
     
     bool has_3UTR = false;
     unsigned int num_non3UTRclauses = 0;
     
-    // label subclauses
-    // check to see if 3'UTR is present, and whether there are any other features
-    for (k = 0; k < m_ClauseList.size(); k++) {
-        m_ClauseList[k]->Label();
-        if (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_3UTR) {
-            has_3UTR = true;
-        } else {
-            num_non3UTRclauses++;
+    if (!m_SuppressSubfeatures) {
+        // label subclauses
+        // check to see if 3'UTR is present, and whether there are any other features
+        for (k = 0; k < m_ClauseList.size(); k++) {
+            m_ClauseList[k]->Label();
+            if (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_3UTR) {
+                has_3UTR = true;
+            } else {
+                num_non3UTRclauses++;
+            }
         }
-    }
     
-    // label any subclauses
-    if (num_non3UTRclauses > 0) {
-        bool suppress_final_and = true;
-        if ((subtype == CSeqFeatData::eSubtype_cdregion && ! m_ClauseInfoOnly) || has_3UTR) {
-            suppress_final_and = true;
-        }
+        // label any subclauses
+        if (num_non3UTRclauses > 0) {
+            bool suppress_final_and = true;
+            if ((subtype == CSeqFeatData::eSubtype_cdregion && ! m_ClauseInfoOnly) || has_3UTR) {
+                suppress_final_and = true;
+            }
         
-        // ConsolidateClauses
+            // ConsolidateClauses
         
-        // create subclause list for interval
-        interval += ListClauses(false, suppress_final_and);
+            // create subclause list for interval
+            interval += ListClauses(false, suppress_final_and);
         
-        interval += ", ";
-        if (has_3UTR && subtype == CSeqFeatData::eSubtype_cdregion && ! m_ClauseInfoOnly) {
-            interval += "and 3' UTR";
+            interval += ", ";
+            if (has_3UTR && subtype == CSeqFeatData::eSubtype_cdregion && ! m_ClauseInfoOnly) {
+                interval += "and 3' UTR";
+            }
         }
     }
     
@@ -756,11 +764,16 @@ sequence::ECompare CAutoDefFeatureClause::CompareLocation(const CSeq_loc& loc)
 
 bool CAutoDefFeatureClause::SameStrand(const CSeq_loc& loc)
 {
-    if (loc.GetStrand() == m_ClauseLocation->GetStrand()) {
-        return true;
-    } else {
+    ENa_strand loc_strand = loc.GetStrand();
+    ENa_strand this_strand = m_ClauseLocation->GetStrand();
+    
+    if ((loc_strand == eNa_strand_minus && this_strand != eNa_strand_minus)
+        || (loc_strand != eNa_strand_minus && this_strand == eNa_strand_minus)) {
         return false;
+    } else {
+        return true;
     }
+    
 }
 
 bool CAutoDefFeatureClause::IsPartial()
@@ -1313,7 +1326,7 @@ CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CS
     NStr::TruncateSpacesInPlace(comment);
     m_Description = comment;
     m_DescriptionChosen = true;
-
+    m_SuppressSubfeatures = true;
 }
 
 
@@ -1334,6 +1347,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/04/18 20:13:58  bollin
+* added option to suppress transposon and insertion sequence subfeaures
+* corrected bug in CAutoDefFeatureClause::SameStrand
+*
 * Revision 1.4  2006/04/18 16:56:16  bollin
 * added support for parsing misc_RNA features
 *

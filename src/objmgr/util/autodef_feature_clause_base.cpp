@@ -60,6 +60,7 @@ CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base() :
                               m_IsAltSpliced(false),
                               m_HasmRNA(false),
                               m_HasGene(false),
+                              m_SuppressSubfeatures(false),
                               m_DeleteMe(false)
 {
 }
@@ -942,6 +943,18 @@ void CAutoDefFeatureClause_Base::CountUnknownGenes()
 }
 
 
+void CAutoDefFeatureClause_Base::SuppressTransposonAndInsertionSequenceSubfeatures()
+{
+    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
+        if (m_ClauseList[k]->IsTransposon() || m_ClauseList[k]->IsInsertionSequence()) {
+            m_ClauseList[k]->SuppressSubfeatures();
+        } else {
+            m_ClauseList[k]->SuppressTransposonAndInsertionSequenceSubfeatures();
+        }
+    }
+}
+
+
 CAutoDefUnknownGeneList::CAutoDefUnknownGeneList(bool suppress_locus_tags)
                   : CAutoDefFeatureClause_Base(suppress_locus_tags)
 {
@@ -973,6 +986,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/04/18 20:13:58  bollin
+* added option to suppress transposon and insertion sequence subfeaures
+* corrected bug in CAutoDefFeatureClause::SameStrand
+*
 * Revision 1.3  2006/04/18 01:05:07  ucko
 * Don't bother clear()ing freshly allocated strings, particularly given
 * that it would have been necessary to call erase() instead for

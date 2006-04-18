@@ -55,7 +55,8 @@ CAutoDef::CAutoDef()
     : m_SuppressAltSplicePhrase(false),
       m_FeatureListType(eListAllFeatures),
       m_ProductFlag(CBioSource::eGenome_unknown),
-      m_AltSpliceFlag(false)
+      m_AltSpliceFlag(false),
+      m_RemoveTransposonAndInsertionSequenceSubfeatures(false)
 {
     m_ComboList.clear();
 }
@@ -553,6 +554,10 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags
     // to be listed as there own clause
     main_clause.RemoveGenesMentionedElsewhere();
     main_clause.RemoveDeletedSubclauses();
+    
+    if (m_RemoveTransposonAndInsertionSequenceSubfeatures) {
+        main_clause.SuppressTransposonAndInsertionSequenceSubfeatures();
+    }
 
     main_clause.Label();
 
@@ -805,6 +810,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/04/18 20:13:58  bollin
+* added option to suppress transposon and insertion sequence subfeaures
+* corrected bug in CAutoDefFeatureClause::SameStrand
+*
 * Revision 1.5  2006/04/18 16:56:16  bollin
 * added support for parsing misc_RNA features
 *
