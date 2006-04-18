@@ -100,7 +100,7 @@ private:
     string x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq_Handle bh);
     bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags);
     CAutoDefParsedtRNAClause *x_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, string &comment, bool is_first);
-
+    bool x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags);
 
 
 
@@ -113,6 +113,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/04/18 16:54:22  bollin
+* added support for parsing misc_RNA features
+*
 * Revision 1.3  2006/04/18 14:50:41  bollin
 * set defline options as member variables for CAutoDef class
 *

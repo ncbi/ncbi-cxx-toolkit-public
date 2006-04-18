@@ -143,8 +143,20 @@ public:
     virtual bool IsIntergenicSpacer() { return true; }
 };
 
+class NCBI_XOBJUTIL_EXPORT CAutoDefParsedClause : public CAutoDefFeatureClause
+{
+public:
+    CAutoDefParsedClause(CBioseq_Handle bh, const CSeq_feat &main_feat, bool is_first, bool is_last);
+    ~CAutoDefParsedClause();
+    void SetTypeword(string typeword) { m_Typeword = typeword; m_TypewordChosen = true; }
+    void SetDescription(string description) { m_Description = description; m_DescriptionChosen = true; }
+    void SetTypewordFirst(bool typeword_first) { m_ShowTypewordFirst = typeword_first; }
+    virtual bool IsRecognizedFeature() { return true; }
+    
+protected:
+};
 
-class NCBI_XOBJUTIL_EXPORT CAutoDefParsedtRNAClause : public CAutoDefFeatureClause
+class NCBI_XOBJUTIL_EXPORT CAutoDefParsedtRNAClause : public CAutoDefParsedClause
 {
 public:
     CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, string gene_name, string product_name, bool is_first, bool is_last);
@@ -152,7 +164,6 @@ public:
 
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() { return CSeqFeatData::eSubtype_tRNA; }
 };
-
 
 class NCBI_XOBJUTIL_EXPORT CAutoDefParsedIntergenicSpacerClause : public CAutoDefIntergenicSpacerClause
 {
@@ -179,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/04/18 16:54:22  bollin
+* added support for parsing misc_RNA features
+*
 * Revision 1.2  2006/04/17 17:39:36  ucko
 * Fix capitalization of header filenames.
 *

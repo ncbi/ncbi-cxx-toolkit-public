@@ -1257,17 +1257,14 @@ CAutoDefParsedIntergenicSpacerClause::~CAutoDefParsedIntergenicSpacerClause()
 }
 
 
-CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, 
-                                                   string gene_name, string product_name, 
-                                                   bool is_first, bool is_last)
-                                                   : CAutoDefFeatureClause (bh, main_feat)
+CAutoDefParsedtRNAClause::~CAutoDefParsedtRNAClause()
 {
-    m_Typeword = "gene";
-    m_TypewordChosen = true;
-    m_GeneName = gene_name;
-    m_ProductName = product_name;
-    m_ProductNameChosen = true;
-    
+}
+
+
+CAutoDefParsedClause::CAutoDefParsedClause(CBioseq_Handle bh, const CSeq_feat &main_feat, bool is_first, bool is_last)
+                                       : CAutoDefFeatureClause (bh, main_feat)
+{
     // adjust partialness of location
     bool partial5 = m_ClauseLocation->IsPartialStart(eExtreme_Biological) && is_first;
     bool partial3 = m_ClauseLocation->IsPartialStop(eExtreme_Biological) && is_last;
@@ -1275,9 +1272,21 @@ CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq
     m_ClauseLocation->SetPartialStop(partial3, eExtreme_Biological);
 }
 
-
-CAutoDefParsedtRNAClause::~CAutoDefParsedtRNAClause()
+CAutoDefParsedClause::~CAutoDefParsedClause()
 {
+}
+
+
+CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, 
+                                                   string gene_name, string product_name, 
+                                                   bool is_first, bool is_last)
+                                                   : CAutoDefParsedClause (bh, main_feat, is_first, is_last)
+{
+    m_Typeword = "gene";
+    m_TypewordChosen = true;
+    m_GeneName = gene_name;
+    m_ProductName = product_name;
+    m_ProductNameChosen = true;
 }
 
 
@@ -1325,6 +1334,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/04/18 16:56:16  bollin
+* added support for parsing misc_RNA features
+*
 * Revision 1.3  2006/04/18 01:04:59  ucko
 * Don't bother clear()ing freshly allocated strings, particularly given
 * that it would have been necessary to call erase() instead for

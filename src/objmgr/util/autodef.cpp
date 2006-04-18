@@ -358,6 +358,135 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
 }
     
 
+// Some misc_RNA clauses have a comment that actually lists multiple
+// features.  These functions create a clause for each element in the
+// comment.
+static string misc_words [] = {
+  "internal transcribed spacer",
+  "external transcribed spacer",
+  "ribosomal RNA intergenic spacer",
+  "ribosomal RNA",
+  "intergenic spacer"
+};
+
+typedef enum {
+  MISC_RNA_WORD_INTERNAL_SPACER = 0,
+  MISC_RNA_WORD_EXTERNAL_SPACER,
+  MISC_RNA_WORD_RNA_INTERGENIC_SPACER,
+  MISC_RNA_WORD_RNA,
+  MISC_RNA_WORD_INTERGENIC_SPACER,
+  NUM_MISC_RNA_WORDS
+} MiscWord;
+
+static string separators [] = {
+  ", and ",
+  " and ",
+  ", ",
+  "; "
+};
+
+#define num_separators 3
+
+
+bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+{
+//    string label = "";
+    string comment = "";
+    unsigned int pos;
+    bool is_first = true;
+    
+//    feature::GetLabel(cf, &label, feature::eContent);
+    if (cf.CanGetComment()) {
+        comment = cf.GetComment();
+    }
+    if (NStr::IsBlank(comment)) {
+        return false;
+    }
+    
+    if (NStr::StartsWith(comment, "contains ")) {
+        comment = comment.substr(9);
+    }
+    
+    pos = NStr::Find(comment, "spacer");
+    if (pos == NCBI_NS_STD::string::npos) {
+        return false;
+    }
+    
+    while (!NStr::IsBlank(comment)) {
+        string this_label = comment;
+        unsigned int first_separator = NCBI_NS_STD::string::npos;
+        unsigned int separator_len = 0;
+        for (unsigned int i = 0; i < 4; i++) {
+            pos = NStr::Find(comment, separators[i]);
+            if (pos != NCBI_NS_STD::string::npos 
+                && (first_separator == NCBI_NS_STD::string::npos
+                    || pos < first_separator)) {
+                first_separator = pos;
+                separator_len = separators[i].length();
+            }
+        }
+        
+        if (first_separator != NCBI_NS_STD::string::npos) {
+            this_label = comment.substr(0, first_separator);
+            comment = comment.substr(first_separator + separator_len);
+        } else {
+            comment = "";
+        }
+    
+        // find first of the recognized words to occur in the string
+        unsigned int first_word = NCBI_NS_STD::string::npos;
+        unsigned int word_id = 0;
+    
+        for (unsigned int i = 0; i < NUM_MISC_RNA_WORDS && first_word == NCBI_NS_STD::string::npos; i++) {
+            first_word = NStr::Find (this_label, misc_words[i]);
+            if (first_word != NCBI_NS_STD::string::npos) {
+                word_id = i;
+            }
+        }
+        if (first_word == NCBI_NS_STD::string::npos) {
+            continue;
+        }
+        
+        // check to see if any other clauses are present
+        bool is_last = true;
+        for (unsigned int i = 0; i < NUM_MISC_RNA_WORDS && is_last; i++) {
+            if (NStr::Find (comment, misc_words[i]) != NCBI_NS_STD::string::npos) {
+                is_last = false;
+            }
+        }
+
+        // create a clause of the appropriate type
+        CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, is_first, is_last);        
+        string description = "";
+        if (word_id == MISC_RNA_WORD_INTERNAL_SPACER
+            || word_id == MISC_RNA_WORD_EXTERNAL_SPACER
+            || word_id == MISC_RNA_WORD_RNA_INTERGENIC_SPACER
+            || word_id == MISC_RNA_WORD_INTERGENIC_SPACER) {
+            if (first_word == 0) {
+                new_clause->SetTypewordFirst(true);
+                description = this_label.substr(misc_words[word_id].length());
+            } else {
+                new_clause->SetTypewordFirst(false);
+                description = this_label.substr(0, first_word);
+            }
+            new_clause->SetTypeword(misc_words[word_id]);
+        } else if (word_id == MISC_RNA_WORD_RNA) {
+            description = this_label;
+            new_clause->SetTypeword("gene");
+            new_clause->SetTypewordFirst(false);
+        }
+        NStr::TruncateSpacesInPlace(description);
+        new_clause->SetDescription(description);
+        
+        new_clause->SetSuppressLocusTag(suppress_locus_tags);
+        
+        main_clause.AddSubclause(new_clause);
+        is_first = false;   
+    }       
+    return !is_first;
+}
+
+
 string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags, bool gene_cluster_opp_strand)
 {
     CAutoDefFeatureClause_Base main_clause(suppress_locus_tags);
@@ -381,6 +510,11 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags
             delete new_clause;
             x_AddIntergenicSpacerFeatures(bh, cf, main_clause, suppress_locus_tags);
             new_clause = NULL;
+        } else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_otherRNA) {
+            if (x_AddMiscRNAFeatures(bh, cf, main_clause, suppress_locus_tags)) {
+                delete new_clause;
+                new_clause = NULL;
+            }
         } else if (new_clause->IsGeneCluster()) {
             delete new_clause;
             new_clause = new CAutoDefGeneClusterClause(bh, cf);
@@ -671,6 +805,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/04/18 16:56:16  bollin
+* added support for parsing misc_RNA features
+*
 * Revision 1.4  2006/04/18 14:50:36  bollin
 * set defline options as member variables for CAutoDef class
 *
