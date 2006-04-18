@@ -257,6 +257,34 @@ CEntrez2Client::GetDocsums(int uid, const string& db)
 }
 
 
+string
+CEntrez2Client::GetAffinity(const CEntrez2_request& request) const
+{
+    const CE2Request& e2req = request.GetRequest();
+    switch (e2req.Which()) {
+    case CE2Request::e_Eval_boolean:
+        {{
+            const string& db = e2req.GetEval_boolean().GetQuery().GetDb();
+            if (!db.empty()) {
+                return "DBAF=" + db;
+            }
+        }}
+        break;
+    case CE2Request::e_Get_docsum:
+        {{
+            const string& db = e2req.GetGet_docsum().GetDb();
+            if (!db.empty()) {
+                return "DBAF=" + db;
+            }
+        }}
+        break;
+    default:
+        break;
+    }
+    return kEmptyStr;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -266,6 +294,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/04/18 21:17:25  lavr
+* Added affinity mechanism of the request
+*
 * Revision 1.15  2005/03/28 16:09:25  jcherry
 * Gave Query method the ability to pass back the CEntrez2_reply
 * from the server

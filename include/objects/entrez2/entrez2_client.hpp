@@ -121,6 +121,10 @@ public:
     CRef<CEntrez2_docsum_list> GetDocsums(int uid,
                                           const string& db);
 
+protected:
+    /// Get DB affinity of the request
+    virtual string GetAffinity(const CEntrez2_request& request) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CEntrez2Client(const CEntrez2Client& value);
@@ -152,6 +156,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/04/18 21:17:24  lavr
+* Added affinity mechanism of the request
+*
 * Revision 1.10  2005/03/28 16:09:25  jcherry
 * Gave Query method the ability to pass back the CEntrez2_reply
 * from the server

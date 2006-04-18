@@ -83,6 +83,9 @@ public:
                           EIO_Event direction = eIO_ReadWrite);
 
 protected:
+    virtual string GetAffinity(const TRequest& request) const;
+              void SetAffinity(const string& affinity);
+
     /// These run with m_Mutex already acquired.
     virtual void x_Connect(void);
     virtual void x_Disconnect(void);
@@ -108,6 +111,7 @@ private:
     auto_ptr<CObjectIStream> m_In;
     auto_ptr<CObjectOStream> m_Out;
     string                   m_Service; ///< Used by default Connect().
+    string                   m_Affinity;
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     const STimeout*          m_Timeout; ///< Cloned if not special.
@@ -176,6 +180,25 @@ void CRPCClient<TRequest, TReply>::Reset(void)
 
 template <class TRequest, class TReply>
 inline
+string CRPCClient<TRequest, TReply>::GetAffinity(const TRequest& ) const
+{
+    return kEmptyStr;
+}
+
+
+template <class TRequest, class TReply>
+inline
+void CRPCClient<TRequest, TReply>::SetAffinity(const string& affinity)
+{
+    if (affinity != m_Affinity) {
+        Disconnect();
+    }
+    m_Affinity = affinity;
+}
+
+
+template <class TRequest, class TReply>
+inline
 EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
                                                     EIO_Event direction)
 {
@@ -213,6 +236,7 @@ void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
     unsigned int tries = 0;
     for (;;) {
         try {
+            SetAffinity(GetAffinity(request));
             Connect(); // No-op if already connected
             *m_Out << request;
             *m_In >> reply;
@@ -288,6 +312,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/04/18 21:17:24  lavr
+* Added affinity mechanism of the request
+*
 * Revision 1.11  2005/12/28 19:09:47  ucko
 * Tweak Ask once more, as we may encounter transient CIOExceptions as
 * well as transient CSerialExceptions, and should retry in both cases.
