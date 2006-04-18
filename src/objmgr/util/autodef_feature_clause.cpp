@@ -474,7 +474,6 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         }
     } else {
         string label;
-        label.clear();
         
         if (m_MainFeat.CanGetProduct()) {
             CConstRef<CSeq_feat> prot = GetBestOverlappingFeat(m_MainFeat.GetProduct(),
@@ -530,7 +529,6 @@ bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
 {
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
     string label;
-    label.clear();
     
     feature::GetLabel(m_MainFeat, &label, feature::eContent);
 
@@ -1327,6 +1325,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/04/18 01:04:59  ucko
+* Don't bother clear()ing freshly allocated strings, particularly given
+* that it would have been necessary to call erase() instead for
+* compatibility with GCC 2.95.
+*
 * Revision 1.2  2006/04/17 17:39:37  ucko
 * Fix capitalization of header filenames.
 *

@@ -312,7 +312,6 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
     unsigned int last_interval_change_before_end = x_LastIntervalChangeBeforeEnd();
     
     string full_clause_list;
-    full_clause_list.clear();
     
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
         oneafter_has_detail_change = false;
@@ -974,6 +973,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/04/18 01:05:07  ucko
+* Don't bother clear()ing freshly allocated strings, particularly given
+* that it would have been necessary to call erase() instead for
+* compatibility with GCC 2.95.
+*
 * Revision 1.2  2006/04/17 17:38:45  ucko
 * Fix capitalization of header filenames, and of "true".
 *
