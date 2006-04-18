@@ -2392,17 +2392,17 @@ void CFeatList::x_Init()
 {
     size_t  config_item_size = sizeof(sc_ConfigItemInit)/sizeof(CFeatListItem);
     for (size_t i = 0; i < config_item_size; ++i ) {
-        bool config_items_init_no_dups =
+        bool feat_items_init_no_dups =
            m_FeatTypes.insert(sc_ConfigItemInit[i]).second;
-        _ASSERT(config_items_init_no_dups);
+        _VERIFY(feat_items_init_no_dups);
     }
     
     for (const SImportEntry* iep = kImportTable; iep < kImportTableEnd; ++iep) {
         CFeatListItem item(CSeqFeatData::GetTypeFromSubtype(iep->m_Subtype), 
                            iep->m_Subtype, iep->m_Name, iep->m_Name);
-        bool config_items_init_no_dups =
+        bool import_items_init_no_dups =
             m_FeatTypes.insert(item).second;
-        _ASSERT(config_items_init_no_dups);
+        _VERIFY(import_items_init_no_dups);
     }
 
     ITERATE(CFeatList, it, m_FeatTypes) {
@@ -2452,6 +2452,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.31  2006/04/18 17:05:45  rsmith
+* _ASSERT -> _VERIFY to eliminate compiler warnings.
+*
 * Revision 6.30  2006/04/03 20:23:24  dicuccio
 * Cosmetic clean-ups; promoted some functions to inline
 *
