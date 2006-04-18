@@ -113,6 +113,10 @@ public:
    
     virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause) { return false; }
     virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) { return false; }
+    
+    virtual void SuppressTransposonAndInsertionSequenceSubfeatures();
+    
+    void SuppressSubfeatures() { m_SuppressSubfeatures = true; }
    
 protected:
     CAutoDefFeatureClause_Base();
@@ -137,6 +141,8 @@ protected:
     string m_ProductName;
     bool   m_ProductNameChosen;
     bool m_SuppressLocusTag;
+    
+    bool   m_SuppressSubfeatures;
     
     bool   m_DeleteMe;
 
@@ -164,6 +170,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/04/18 20:12:37  bollin
+* added option to suppress transposon and insertion sequence subfeatures
+*
 * Revision 1.2  2006/04/17 17:39:36  ucko
 * Fix capitalization of header filenames.
 *

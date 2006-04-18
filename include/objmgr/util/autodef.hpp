@@ -75,6 +75,7 @@ public:
     void SetFeatureListType(EFeatureListType feature_list_type) { m_FeatureListType = feature_list_type; }
     void SetProductFlag (unsigned int product_flag) { m_ProductFlag = product_flag; }
     void SetAltSpliceFlag (bool alt_splice_flag) { m_AltSpliceFlag = alt_splice_flag; }
+    void SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress) { m_RemoveTransposonAndInsertionSequenceSubfeatures = suppress; }
     
     string GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh);
     
@@ -88,8 +89,9 @@ private:
     bool m_SuppressAltSplicePhrase;
     
     EFeatureListType m_FeatureListType;
-    unsigned int m_ProductFlag;
-    bool         m_AltSpliceFlag;
+    unsigned int     m_ProductFlag;
+    bool             m_AltSpliceFlag;
+    bool             m_RemoveTransposonAndInsertionSequenceSubfeatures;
     
     void x_SortModifierListByRank(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
     void x_GetModifierIndexList(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
@@ -113,6 +115,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/04/18 20:12:37  bollin
+* added option to suppress transposon and insertion sequence subfeatures
+*
 * Revision 1.4  2006/04/18 16:54:22  bollin
 * added support for parsing misc_RNA features
 *
