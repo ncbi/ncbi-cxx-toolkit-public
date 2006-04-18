@@ -243,6 +243,8 @@ protected:
 
     size_t       m_MaxCompsPerQuery;
 
+    size_t       m_MinPatternHitLength;
+
     SAlignedCompartment x_RunOnCompartment( THitRefs* hitrefs,
                                             size_t range_left,
                                             size_t range_right );
@@ -270,6 +272,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2006/04/18 17:08:36  kapustin
+ * Use member to hold min length for pattern hit
+ *
  * Revision 1.35  2006/04/05 13:55:23  dicuccio
  * Added destructor, forbiddent copy constructor
  *
