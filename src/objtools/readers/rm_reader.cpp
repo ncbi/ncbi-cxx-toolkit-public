@@ -234,26 +234,22 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry )
                
         CRef<CGb_qual> sw_score( new CGb_qual );
         sw_score->SetQual( "sw_score" );
-        ::sprintf( tempBuffer, "%d", swScore );
-        sw_score->SetVal( tempBuffer );
+        sw_score->SetVal( NStr::IntToString(swScore) );
         qual_list.push_back( sw_score );
                
         CRef<CGb_qual> perc_div( new CGb_qual );
         perc_div->SetQual( "perc_div" );
-        ::sprintf( tempBuffer, "%f", percDiv );
-        perc_div->SetVal( tempBuffer );
+        perc_div->SetVal( NStr::DoubleToString(percDiv) );
         qual_list.push_back( perc_div );
                
         CRef<CGb_qual> perc_del( new CGb_qual );
         perc_del->SetQual( "perc_del" );
-        ::sprintf( tempBuffer, "%f", percDel );
-        perc_del->SetVal( tempBuffer );
+        perc_del->SetVal( NStr::DoubleToString(percDel) );
         qual_list.push_back( perc_del );
                
         CRef<CGb_qual> perc_ins( new CGb_qual );
         perc_ins->SetQual( "perc_ins" );
-        ::sprintf( tempBuffer, "%f", percIns );
-        perc_ins->SetVal( tempBuffer );
+        perc_ins->SetVal( NStr::DoubleToString(percIns) );
         qual_list.push_back( perc_ins );
                
         ftable.push_back( feat );
@@ -309,6 +305,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/04/18 16:05:19  ucko
+ * Use NStr::{Int,Double}ToString rather than printf, which might not
+ * have been declared.
+ *
  * Revision 1.1  2006/04/18 11:36:35  ludwigf
  * INIT: Implementation of the RepeatMasker OUT file reader.
  *
