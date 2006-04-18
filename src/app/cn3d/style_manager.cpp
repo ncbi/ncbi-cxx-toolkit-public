@@ -615,15 +615,12 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         else
             generalStyle = &(settings.nucleotideSidechains);
 
-    } else { // Residue::eUnknownAtom
+    } else { // Residue::eUnknownAtom: basically anything not explicitly marked
+             // solvent is treated as heterogen for style purposes
         if (molecule->IsSolvent())
             generalStyle = &(settings.solvents);
-        else if (molecule->IsHeterogen())
+        else
             generalStyle = &(settings.heterogens);
-        else {
-            ERRORMSG("StyleManager::GetAtomStyle() - confused about molecule/atom classification");
-            return false;
-        }
     }
     if ((!backboneStyle && !generalStyle) || (backboneStyle && generalStyle)) {
         ERRORMSG("StyleManager::GetAtomStyle() - confused about style settings");
@@ -1688,6 +1685,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2006/04/18 17:59:33  thiessen
+* handle protein chain with unknown residue
+*
 * Revision 1.90  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
