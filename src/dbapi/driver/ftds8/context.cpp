@@ -290,6 +290,14 @@ bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 }
 
 
+void CTDSContext::SetClientCharset(const char* charset) const
+{
+    _ASSERT( m_Login );
+    _ASSERT( charset );
+
+    DBSETLCHARSET( m_Login, const_cast<char*>(charset) );
+}
+
 I_Connection* 
 CTDSContext::MakeIConnection(const SConnAttr& conn_attr)
 {
@@ -697,6 +705,7 @@ CDbapiFtdsCF2::CreateInstance(
 
         // Optional parameters ...
         CS_INT page_size = 0;
+        string client_charset;
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
@@ -736,6 +745,8 @@ CDbapiFtdsCF2::CreateInstance(
                     }
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
+                } else if ( v.id == "client_charset" ) {
+                    client_charset = v.value;
                 }
             }
         }
@@ -746,6 +757,11 @@ CDbapiFtdsCF2::CreateInstance(
         // Set parameters ...
         if ( page_size ) {
             drv->TDS_SetPacketSize( page_size );
+        }
+
+        // Set client's charset ...
+        if ( !client_charset.empty() ) {
+            drv->SetClientCharset( client_charset.c_str() );
         }
     }
     return drv;
@@ -806,6 +822,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/04/18 19:07:13  ssikorsk
+ * Added "client_charset" to DriverContext's attributes.
+ *
  * Revision 1.66  2006/04/13 15:12:36  ssikorsk
  * Fixed erasing of an element from a std::vector.
  *
