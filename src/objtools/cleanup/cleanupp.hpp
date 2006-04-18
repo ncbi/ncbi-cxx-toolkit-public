@@ -82,7 +82,7 @@ class CSubSource;
 class CCleanupChange;
 
 /// right now a slightly different cleanup is performed for EMBL/DDBJ and
-/// SwissProt records. All other types are handaled as GenBank records.
+/// SwissProt records. All other types are handled as GenBank records.
 enum ECleanupMode
 {
     eCleanup_NotSet,
@@ -114,6 +114,7 @@ public:
 
 private:
     void Setup(const CSeq_entry& se);
+    void Finish(CSeq_entry& se);
 
     // Cleanup other sub-objects.
     void BasicCleanup(CSeq_descr& sdr);
@@ -161,13 +162,10 @@ private:
     void x_CleanupExcept_text(string& except_text);
     void x_CleanupRna(CSeq_feat& feat);
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
-    void x_TrimParenthesesAndCommas(string& str);
     void x_CombineSplitQual(string& val, string& new_val);
-    void x_CleanupDbxref(CSeq_feat& feat);
 
     // Gb_qual cleanup.
     void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);
-    void x_SortUniqueQuals(CSeq_feat::TQual& quals);
     void x_CleanupConsSplice(CGb_qual& gbq);
     void x_CleanupRptUnit(CGb_qual& gbq);
 
@@ -190,9 +188,6 @@ private:
     // cleanup strings in User objects and fields
     void x_CleanupUserString(string& str);
 
-    bool    x_IsEmblDdbj() const {
-        return m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ;
-    }
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
     CCleanup_imp& operator= (const CCleanup_imp&);
@@ -211,6 +206,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/04/18 14:32:36  rsmith
+ * refactoring
+ *
  * Revision 1.7  2006/04/17 17:03:12  rsmith
  * Refactoring. Get rid of cleanup-mode parameters.
  *

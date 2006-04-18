@@ -58,59 +58,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // seq-feat.qual
 
-struct SGb_QualCompare
-{
-    // is q1 < q2
-    bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
-        return (q1->Compare(*q1) < 0);
-    }
-};
-
-struct SGb_QualEqual
-{
-    // is q1 == q2
-    bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
-        return (q1->Compare(*q1) == 0);
-    }
-};
-
-
-void CCleanup_imp::x_SortUniqueQuals(CSeq_feat::TQual& quals)
-{
-    // sort/uniquequalsdb_xrefs
-    stable_sort(quals.begin(), quals.end(), SGb_QualCompare());
-    CSeq_feat::TQual::iterator it = unique(quals.begin(), quals.end(), SGb_QualEqual());
-    quals.erase(it, quals.end());
-    
-}
-
-
-void CCleanup_imp::x_TrimParenthesesAndCommas(string& str)
-{
-    string::iterator it;
-    for (it = str.begin(); it != str.end(); ++it) {
-        char ch = *it;
-        if (ch == '\0'  ||  (ch >= ' ' &&  ch != '('  &&  ch != ',')) {
-            break;
-        }
-    }
-
-    if (it != str.end()) {
-        str.erase(str.begin(), it);
-    }
-
-    for (it = str.end(); it != str.begin(); --it) {
-        char ch = *it;
-        if (ch == '\0'  ||  (ch >= ' ' &&  ch != '('  &&  ch != ',')) {
-            break;
-        }
-    }
-
-    if (it != str.begin()) {
-        str.erase(it);
-    }
-}
-
 
 bool CCleanup_imp::BasicCleanup(CGene_ref& gene, const CGb_qual& gb_qual)
 {
@@ -214,7 +161,7 @@ bool CCleanup_imp::BasicCleanup(CRNA_ref& rna, const CGb_qual& gb_qual)
     const string& val  = gb_qual.GetVal();
 
     bool is_std_name = NStr::EqualNocase(qual, "standard_name");
-    if (NStr::EqualNocase(qual, "product")  ||  (is_std_name  &&  ! x_IsEmblDdbj() )) {
+    if (NStr::EqualNocase(qual, "product")  ||  (is_std_name  &&  ! (m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ) )) {
         if (rna.IsSetType()) {
             if (rna.GetType() == CRNA_ref::eType_unknown) {
                 rna.SetType(CRNA_ref::eType_other);
@@ -351,7 +298,6 @@ void CCleanup_imp::x_ExpandCombinedQuals(CSeq_feat::TQual& quals)
     
     if ( ! new_quals.empty() ) {
         quals.insert(quals.end(), new_quals.begin(), new_quals.end());
-        x_SortUniqueQuals(quals);        
     }
 }
 
@@ -558,6 +504,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/04/18 14:32:36  rsmith
+ * refactoring
+ *
  * Revision 1.2  2006/04/17 17:03:12  rsmith
  * Refactoring. Get rid of cleanup-mode parameters.
  *

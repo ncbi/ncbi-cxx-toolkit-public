@@ -65,51 +65,46 @@ CCleanup_imp::~CCleanup_imp()
 }
 
 
-static ECleanupMode s_GetCleanupMode(const CBioseq& seq)
-{
-    ITERATE (CBioseq::TId, it, seq.GetId()) {
-        const CSeq_id& id = **it;
-        if (id.IsEmbl()  ||  id.IsTpe()) {
-            return eCleanup_EMBL;
-        } else if (id.IsDdbj()  ||  id.IsTpd()) {
-            return eCleanup_DDBJ;
-        } else if (id.IsSwissprot()) {
-            return eCleanup_SwissProt;
-        }
-    }
-    
-    return eCleanup_GenBank;
-}
-
-
-static ECleanupMode s_GetCleanupMode(const CBioseq_set& bsst)
-{
-    CTypeConstIterator<CBioseq> seq(ConstBegin(bsst));
-    if (seq) {
-        ECleanupMode cm = s_GetCleanupMode(*seq);
-        if (cm != eCleanup_GenBank) {
-            return cm;
-        }
-    }
-    return eCleanup_GenBank;
-}
-
-
 void CCleanup_imp::Setup(const CSeq_entry& se)
 {
-    // Set cleanup mode.
+    /*** Set cleanup mode. ***/
+    
+    CConstRef<CBioseq> first_bioseq;
     switch (se.Which()) {
         case CSeq_entry::e_Seq:
         {
-            m_Mode = s_GetCleanupMode(se.GetSeq());        
+            first_bioseq.Reset(&se.GetSeq());
             break;            
         }
         case CSeq_entry::e_Set:
         {
-            m_Mode = s_GetCleanupMode(se.GetSet());        
+            CTypeConstIterator<CBioseq> seq(ConstBegin(se.GetSet()));
+            if (seq) {
+                first_bioseq.Reset(&*seq);
+            }
             break;            
         }
     }
+    
+    m_Mode = eCleanup_GenBank;
+    if (first_bioseq) {
+        ITERATE (CBioseq::TId, it, first_bioseq->GetId()) {
+            const CSeq_id& id = **it;
+            if (id.IsEmbl()  ||  id.IsTpe()) {
+                m_Mode = eCleanup_EMBL;
+            } else if (id.IsDdbj()  ||  id.IsTpd()) {
+                m_Mode = eCleanup_DDBJ;
+            } else if (id.IsSwissprot()) {
+                m_Mode = eCleanup_SwissProt;
+            }
+        }        
+    }
+}
+
+
+void CCleanup_imp::Finish(CSeq_entry& se)
+{
+    // cleanup for Cleanup.
 }
 
 void CCleanup_imp::BasicCleanup(CSeq_entry& se)
@@ -126,6 +121,7 @@ void CCleanup_imp::BasicCleanup(CSeq_entry& se)
         default:
             break;
     }
+    Finish(se);
 }
 
 
@@ -314,6 +310,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/04/18 14:32:36  rsmith
+ * refactoring
+ *
  * Revision 1.4  2006/04/17 17:03:12  rsmith
  * Refactoring. Get rid of cleanup-mode parameters.
  *

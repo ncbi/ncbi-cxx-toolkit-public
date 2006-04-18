@@ -276,8 +276,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                 }
             }
                 
-                // move db_xrefs from the Gene-ref or gene Xrefs to the feature
-                // move db_xref from Gene-ref to feature
+            // move Gene-ref.db to the Seq-feat.dbxref
             if (gene.IsSetDb()) {
                 copy(gene.GetDb().begin(), gene.GetDb().end(), back_inserter(feat.SetDbxref()));
                 gene.ResetDb();
@@ -365,7 +364,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                 const CImp_feat::TKey& key = imp.GetKey();
                 
                 if (key == "CDS") {
-                    if ( ! x_IsEmblDdbj() ) {
+                    if ( ! (m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ) ) {
                         data.SetCdregion();
                         //s_CleanupCdregion(feat);
                     }
@@ -457,29 +456,22 @@ struct SDbtagEqual
 };
 
 
-void CCleanup_imp::x_CleanupDbxref(CSeq_feat& feat)
+struct SGb_QualCompare
 {
-    _ASSERT(feat.IsSetDbxref());
-
-    CSeq_feat::TDbxref& dbxref = feat.SetDbxref();
-
-    // dbxrefs cleanup
-    CSeq_feat::TDbxref::iterator it = dbxref.begin();
-    while (it != dbxref.end()) {
-        if (it->Empty()) {
-            it = dbxref.erase(it);
-            continue;
-        }
-        BasicCleanup(**it);
-
-        ++it;
+    // is q1 < q2
+    bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
+        return (q1->Compare(*q1) < 0);
     }
+};
 
-    // sort/unique db_xrefs
-    stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
-    it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
-    dbxref.erase(it, dbxref.end());
-}   
+
+struct SGb_QualEqual
+{
+    // is q1 == q2
+    bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
+        return (q1->Compare(*q1) == 0);
+    }
+};
 
 
 // BasicCleanup
@@ -503,10 +495,26 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
     BasicCleanup(f, f.SetData());
 
     if (f.IsSetDbxref()) {
-       x_CleanupDbxref(f);
+        CSeq_feat::TDbxref& dbxref = f.SetDbxref();
+        
+        // dbxrefs cleanup
+        CSeq_feat::TDbxref::iterator it = dbxref.begin();
+        while (it != dbxref.end()) {
+            if (it->Empty()) {
+                it = dbxref.erase(it);
+                continue;
+            }
+            BasicCleanup(**it);
+            
+            ++it;
+        }
+        
+        // sort/unique db_xrefs
+        stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
+        it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
+        dbxref.erase(it, dbxref.end());
     }
     if (f.IsSetQual()) {
-        x_SortUniqueQuals(f.SetQual());
         
         CSeq_feat::TQual::iterator it = f.SetQual().begin();
         CSeq_feat::TQual::iterator it_end = f.SetQual().end();
@@ -523,6 +531,12 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         }
         // expand out all combined quals.
         x_ExpandCombinedQuals(f.SetQual());
+        
+        // sort/uniquequalsdb_xrefs
+        CSeq_feat::TQual& quals = f.SetQual();
+        stable_sort(quals.begin(), quals.end(), SGb_QualCompare());
+        CSeq_feat::TQual::iterator erase_it = unique(quals.begin(), quals.end(), SGb_QualEqual());
+        quals.erase(erase_it, quals.end());
     }
 }
 
@@ -666,6 +680,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/04/18 14:32:36  rsmith
+ * refactoring
+ *
  * Revision 1.6  2006/04/17 17:03:12  rsmith
  * Refactoring. Get rid of cleanup-mode parameters.
  *
