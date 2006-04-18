@@ -117,7 +117,7 @@ for cfg in $cfgs ; do
        start=`eval $timer`
        echo Start time: $start
        echo "INFO: Building \"$dir\\$cfg\\$alias\""
-       $build_dir/build_exec.bat "$dir\\build\\$sol" build "" "$cfg" "-BUILD-ALL-" $out
+       $build_dir/build_exec.bat "$dir\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
        status=$?
        cat $out
        echo "Build time: $start - `eval $timer`"
