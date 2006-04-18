@@ -638,8 +638,6 @@ IReader* CNetCacheClient::GetData(const string& key,
         
             if (blob_size) {
                 *blob_size = bsize;
-            } else {
-                *blob_size = 0;
             }
         }
     } else {
@@ -1180,6 +1178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/04/18 20:38:04  kuznets
+ * Fixed access to NULL address
+ *
  * Revision 1.65  2006/03/20 19:15:22  didenko
  * Modified the GET method in a way that the client side initiates
  * SOCKET connection closing.
