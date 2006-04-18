@@ -76,7 +76,6 @@ void CJobQueueCleanerThread::DoJob(void)
     }
     catch (...)
     {
-        int a = 0;
         throw;
     }
 }
@@ -114,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/04/18 15:35:34  kuznets
+ * Removed unused variable
+ *
  * Revision 1.4  2006/04/14 12:43:28  kuznets
  * Fixed crash when deleting affinity records
  *
