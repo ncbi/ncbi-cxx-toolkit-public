@@ -964,13 +964,12 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
     /* fields of params, as local variables */
     Blast_MatrixInfo * scaledMatrixInfo = params->matrix_info;
     ECompoAdjustModes compo_adjust_mode = params->compo_adjust_mode;
-    int positionBased = params->positionBased;
     int RE_pseudocounts = params->RE_pseudocounts;
     int subject_is_translated = params->subject_is_translated;
     BlastCompo_GappingParams * gapping_params = params->gapping_params;
     const Blast_RedoAlignCallbacks * callbacks = params->callbacks;
 
-    assert((int) compo_adjust_mode < 2 || !positionBased);
+    assert((int) compo_adjust_mode < 2 || !params->positionBased);
     for (query_index = 0;  query_index < numQueries;  query_index++) {
         alignments[query_index] = NULL;
     }
