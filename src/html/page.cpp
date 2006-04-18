@@ -280,7 +280,6 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
 
     // File
     if ( !m_TemplateFile.empty() ) {
-        CNcbiIfstream is(m_TemplateFile.c_str());
         if ( sm_CacheTemplateFiles == eCTF_Enable ) {
             TTemplateCache::const_iterator i 
                 = s_TemplateCache.find(m_TemplateFile);
@@ -288,10 +287,12 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
                 pstr = i->second;
             } else {
                 pstr = new string();
+                CNcbiIfstream is(m_TemplateFile.c_str());
                 x_LoadTemplate(is, *pstr);
                 s_TemplateCache[m_TemplateFile] = pstr;
             }
         } else {
+            CNcbiIfstream is(m_TemplateFile.c_str());
             if ( print_template ) {
                 return x_PrintTemplate(is, out, mode);
             }
@@ -692,6 +693,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/04/18 17:51:56  ivanov
+ * CHTMLPage::CreateTemplate() -- do not open template file stream
+ * in the case if specified template was already cached.
+ *
  * Revision 1.49  2006/01/25 17:55:22  ivanov
  * Split up x_CreateTemplate to x_LoadTemplate and x_PrintTemplate.
  * Restored feature of creating templates while printing to avoid latency
