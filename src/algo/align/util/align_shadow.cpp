@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <algo/align/util/align_shadow.hpp>
 
+#include <algorithm>
 #include <numeric>
 
 #include <math.h>
@@ -858,6 +859,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.19  2006/04/18 01:08:32  ucko
+ * +<algorithm> for reverse()
+ *
  * Revision 1.18  2006/04/17 19:31:42  kapustin
  * Fix off-by-one bug when adjusting coordinate with transcript
  *
