@@ -37,7 +37,6 @@
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/nw/align_exception.hpp>
 
-//#include <emmintrin.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -178,23 +177,21 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     TScore  vBestDonor_d[splice_type_count_16];
     size_t  jBestDonor_d[splice_type_count_16];
 	
-	// declare restrict aliases for arrays
-	size_t** NCBI_RESTRICT jAllDonors = jAllDonors_d;
-	TScore** NCBI_RESTRICT vAllDonors = vAllDonors_d;
-	
-	size_t* NCBI_RESTRICT jTail = jTail_d;
-	size_t* NCBI_RESTRICT jHead = jHead_d;
-	TScore* NCBI_RESTRICT vBestDonor = vBestDonor_d;
-	size_t* NCBI_RESTRICT jBestDonor = jBestDonor_d;
-	
+    // declare restrict aliases for arrays
+    size_t** NCBI_RESTRICT jAllDonors = jAllDonors_d;
+    TScore** NCBI_RESTRICT vAllDonors = vAllDonors_d;
+    
+    size_t* NCBI_RESTRICT jTail = jTail_d;
+    size_t* NCBI_RESTRICT jHead = jHead_d;
+    TScore* NCBI_RESTRICT vBestDonor = vBestDonor_d;
+    size_t* NCBI_RESTRICT jBestDonor = jBestDonor_d;
 	
     vector<size_t> stl_jAllDonors (splice_type_count_16 * N2);
     vector<TScore> stl_vAllDonors (splice_type_count_16 * N2);
     for(unsigned char st = 0; st < splice_type_count_16; ++st) {
         jAllDonors[st] = &stl_jAllDonors[st*N2];
         vAllDonors[st] = &stl_vAllDonors[st*N2];
-    }
-		
+    }		
 
     // fake row
     rowV[0] = kInfMinus;
@@ -203,7 +200,6 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
         rowV[k] = rowF[k] = kInfMinus;
     }
     k = 0;
-
 
     size_t i, j = 0, k0;
     unsigned char ci;
@@ -305,7 +301,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
                         vBestDonor[st_idx] = vAllDonors[st_idx][jh];    \
                         jBestDonor[st_idx] = jAllDonors[st_idx][jh];    \
                     } \
-					++jHead[st_idx]; \
+		    ++jHead[st_idx]; \
                 } \
                 } 
             NW_NDON_EVAL(0)
@@ -319,38 +315,42 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
             //                       (loop unrolling)
             size_t intron_length = kMax_UInt;
             {{
-            unsigned short v1 = (seq2[j-1] << 8) | seq2[j];
-            TScore v_best_d;
+                TScore v_best_d;
+                if(j >= m_IntronMinSize) {
+                    unsigned short v1 = (seq2[j-1] << 8) | seq2[j];
 
-            #define NW_SIG_EVAL(st_idx) \
-                v_best_d = vBestDonor[st_idx]; \
-                if ((v1 == g_nwspl_acceptor_16[st_idx]) && \
-                    (v_best_d > kInfMinus)) { \
-                    vAcc = v_best_d + m_Wi[st_idx]; \
-                    if (vAcc > V) { \
-                        V = vAcc; intron_length = j - jBestDonor[st_idx]; \
-                    } \
-                } 
-
-            NW_SIG_EVAL(0)
-            NW_SIG_EVAL(1)
-            NW_SIG_EVAL(2)
-            // iteration 3 (last element) is a bit different...
-            v_best_d = vBestDonor[3];
-            if (v_best_d > kInfMinus) {
-                vAcc = v_best_d + m_Wi[3];
-                if(vAcc > V) {
-                    V = vAcc; intron_length = j - jBestDonor[3];
+#define NW_SIG_EVAL(st_idx) \
+                    v_best_d = vBestDonor[st_idx]; \
+                    if ((v1 == g_nwspl_acceptor_16[st_idx]) && \
+                        (v_best_d > kInfMinus)) \
+                    { \
+                        vAcc = v_best_d + m_Wi[st_idx]; \
+                        if (vAcc > V) { \
+                            V = vAcc; intron_length = j - jBestDonor[st_idx]; \
+                        } \
+                    } 
+                    
+                    NW_SIG_EVAL(0)
+                    NW_SIG_EVAL(1)
+                    NW_SIG_EVAL(2)
                 }
-            }
+
+                // iteration 3 (last element) is a bit different...
+                v_best_d = vBestDonor[3];
+                if (v_best_d > kInfMinus) {
+                    vAcc = v_best_d + m_Wi[3];
+                    if(vAcc > V) {
+                        V = vAcc; intron_length = j - jBestDonor[3];
+                    }
+                }
             #undef NW_SIG_EVAL
             }}
 
             if (intron_length != kMax_UInt) {
                 if(intron_length > 1048575) {
                     // no space to record introns longer than 2^20
-                    NCBI_THROW(CAlgoAlignException, eInternal,
-                                g_msg_IntronTooLong);
+                    NCBI_THROW(CAlgoAlignException, eNoAlignment,
+                               g_msg_IntronTooLong);
                 }
 
                 backtrace_matrix_ext[k] = (0xFF000 & intron_length) >> 12;
@@ -656,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/04/19 14:49:31  kapustin
+ * Eliminate acceptor checks until min intron length is reached
+ *
  * Revision 1.22  2006/04/13 18:23:50  kuznets
  * Performance optimization
  *
