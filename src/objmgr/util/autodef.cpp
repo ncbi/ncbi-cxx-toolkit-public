@@ -56,7 +56,8 @@ CAutoDef::CAutoDef()
       m_FeatureListType(eListAllFeatures),
       m_ProductFlag(CBioSource::eGenome_unknown),
       m_AltSpliceFlag(false),
-      m_RemoveTransposonAndInsertionSequenceSubfeatures(false)
+      m_RemoveTransposonAndInsertionSequenceSubfeatures(false),
+      m_Cancelled(false)
 {
     m_ComboList.clear();
 }
@@ -810,6 +811,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/04/19 12:41:27  bollin
+* changes for configuring automatic definition line from dialog
+*
 * Revision 1.6  2006/04/18 20:13:58  bollin
 * added option to suppress transposon and insertion sequence subfeaures
 * corrected bug in CAutoDefFeatureClause::SameStrand
