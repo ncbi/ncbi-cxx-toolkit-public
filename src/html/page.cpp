@@ -624,7 +624,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
     }
     catch (...) {
         // Clean up allocated memory for input file template
-        if  ( is  &&  is != istrm ) {
+        if  ( is  &&  is != &istrm ) {
             delete is;
         }
         throw;
@@ -721,6 +721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/04/19 17:49:53  ucko
+ * Fix invalid comparison (pointer vs. reference) in previous revision.
+ *
  * Revision 1.51  2006/04/19 15:24:15  ivanov
  * CHTMLPage:: fixed LoadTemplateLibFile() and SetTemplateFile() to
  * minimize system calls if file template caching is enabled
