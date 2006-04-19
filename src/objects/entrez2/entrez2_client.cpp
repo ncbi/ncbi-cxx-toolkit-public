@@ -40,19 +40,19 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
-
-#include <objects/entrez2/Entrez2_db_id.hpp>
-#include <objects/entrez2/Entrez2_link_id.hpp>
-#include <objects/entrez2/Entrez2_db_id.hpp>
-#include <objects/entrez2/Entrez2_id.hpp>
-#include <objects/entrez2/Entrez2_get_links.hpp>
-#include <objects/entrez2/Entrez2_id_list.hpp>
-#include <objects/entrez2/Entrez2_limits.hpp>
-
 #include <objects/entrez2/Entrez2_boolean_element.hpp>
 #include <objects/entrez2/Entrez2_boolean_exp.hpp>
-#include <objects/entrez2/Entrez2_eval_boolean.hpp>
 #include <objects/entrez2/Entrez2_boolean_reply.hpp>
+#include <objects/entrez2/Entrez2_db_id.hpp>
+#include <objects/entrez2/Entrez2_eval_boolean.hpp>
+#include <objects/entrez2/Entrez2_get_links.hpp>
+#include <objects/entrez2/Entrez2_hier_query.hpp>
+#include <objects/entrez2/Entrez2_id.hpp>
+#include <objects/entrez2/Entrez2_id_list.hpp>
+#include <objects/entrez2/Entrez2_limits.hpp>
+#include <objects/entrez2/Entrez2_link_id.hpp>
+#include <objects/entrez2/Entrez2_term_pos.hpp>
+#include <objects/entrez2/Entrez2_term_query.hpp>
 
 #include <algorithm>
 
@@ -278,6 +278,38 @@ CEntrez2Client::GetAffinity(const CEntrez2_request& request) const
             }
         }}
         break;
+    case CE2Request::e_Get_term_pos:
+        {{
+            const string& db = e2req.GetGet_term_pos().GetDb();
+            if (!db.empty()) {
+                return "DBAF=" + db;
+            }
+        }}
+        break;
+    case CE2Request::e_Get_term_list:
+        {{
+            const string& db = e2req.GetGet_term_list().GetDb();
+            if (!db.empty()) {
+                return "DBAF=" + db;
+            }
+        }}
+        break;
+    case CE2Request::e_Get_term_hierarchy:
+        {{
+            const string& db = e2req.GetGet_term_hierarchy().GetDb();
+            if (!db.empty()) {
+                return "DBAF=" + db;
+            }
+        }}
+        break;
+    case CE2Request::e_Get_link_counts:
+        {{
+            const string& db = e2req.GetGet_link_counts().GetDb();
+            if (!db.empty()) {
+                return "DBAF=" + db;
+            }
+        }}
+        break;
     default:
         break;
     }
@@ -294,6 +326,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/04/19 01:43:43  lavr
+* Rearrange included headers; extract DB affinity from most requests
+*
 * Revision 1.16  2006/04/18 21:17:25  lavr
 * Added affinity mechanism of the request
 *
