@@ -573,21 +573,27 @@ extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
                                          const char*   arg,
                                          const char*   val)
 {
-    const char* amp = "&";
+    size_t len, used;
 
     if (!arg || !*arg)
         return 1/*success*/;
-    if (!info->args[0])
-        amp = "";
-    if (strlen(info->args) + strlen(amp) + strlen(arg) +
-        (val ? 1 + strlen(val) : 0) >= sizeof(info->args))
+
+    used = strlen(info->args);
+    len  = strlen(arg);
+    
+    if (used + (used ? 1/*&*/ : 0) + len +
+        (val && *val ? 1/*=*/ + strlen(val) : 0) >= sizeof(info->args)) {
         return 0/*failure*/;
-    strcat(info->args, amp);
-    strcat(info->args, arg);
-    if (!val || !*val)
-        return 1/*success*/;
-    strcat(info->args, "=");
-    strcat(info->args, val);
+    }
+
+    if (used)
+        info->args[used++] = '&';
+    strcpy(info->args + used, arg);
+    if (val && *val) {
+        used += len;
+        info->args[used++] = '=';
+        strcpy(info->args + used, val);
+    }
     return 1/*success*/;
 }
 
@@ -596,25 +602,27 @@ extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
                                           const char*   arg,
                                           const char*   val)
 {
-    char amp = '&';
-    size_t off;
+    size_t len, off, used;
 
     if (!arg || !*arg)
         return 1/*success*/;
-    if (!info->args[0])
-        amp = '\0';
-    off = strlen(arg) + (val && *val ? 1 + strlen(val) : 0) + (amp ? 1 : 0);
-    if (off + strlen(info->args) >= sizeof(info->args))
+
+    used = strlen(info->args);
+    len  = strlen(arg);
+    off  = len + (val && *val ? 1/*=*/ + strlen(val) : 0) + (used? 1/*&*/ : 0);
+
+    if (off + used >= sizeof(info->args))
         return 0/*failure*/;
-    if (amp)
-        memmove(&info->args[off], info->args, strlen(info->args) + 1);
+
+    if (used)
+        memmove(info->args + off, info->args, used + 1);
     strcpy(info->args, arg);
     if (val && *val) {
-        strcat(info->args, "=");
-        strcat(info->args, val);
+        info->args[len++] = '=';
+        strcpy(info->args + len, val);
     }
-    if (amp)
-        info->args[off - 1] = amp;
+    if (used)
+        info->args[off - 1] = '&';
     return 1/*success*/;
 }
 
@@ -1978,6 +1986,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.103  2006/04/19 01:38:48  lavr
+ * ConnNetInfo_{Append|Prepend}Arg sped-up considerably
+ *
  * Revision 6.102  2006/04/11 13:51:23  lavr
  * URL_Connect():  Relax on parameter checking
  *
