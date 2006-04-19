@@ -226,6 +226,15 @@ template<bool T> struct all_set
 
 template<bool T> typename all_set<T>::all_set_block all_set<T>::_block;
 
+/// XOR swap two scalar variables
+template<typename W> 
+void xor_swap(W& x, W& y) 
+{
+    BM_ASSERT(&x != &y);
+    x ^= y;
+    y ^= x;
+    x ^= y;
+}
 
 
 //---------------------------------------------------------------------
@@ -3200,7 +3209,7 @@ template<typename T,typename B> unsigned bit_list(T w, B* bits)
         w >>= 8;
         octet += 8;
     } while (w);
-    return bp - bits;
+    return (unsigned)(bp - bits);
 }
 
 

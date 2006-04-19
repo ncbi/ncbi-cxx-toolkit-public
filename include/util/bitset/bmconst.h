@@ -30,7 +30,7 @@ For more information please visit:  http://bmagic.sourceforge.net
 namespace bm
 {
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined (_WIN64)
 
 typedef unsigned __int64 id64_t;
 

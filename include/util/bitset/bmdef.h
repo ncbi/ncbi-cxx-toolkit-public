@@ -40,17 +40,17 @@
 
 #else
 
-# if ULONG_MAX == 0xffffffff   // 32-bit
-
-#  define BMPTR_SETBIT0(ptr)   ( ((bm::id_t)ptr) | 1 )
-#  define BMPTR_CLEARBIT0(ptr) ( ((bm::id_t)ptr) & ~(bm::id_t)1 )
-#  define BMPTR_TESTBIT0(ptr)  ( ((bm::id_t)ptr) & 1 )
-
-# else // 64-bit
+# if ULONG_MAX != 0xffffffff || defined(_WIN64)  // 64-bit
 
 #  define BMPTR_SETBIT0(ptr)   ( ((bm::id64_t)ptr) | 1 )
 #  define BMPTR_CLEARBIT0(ptr) ( ((bm::id64_t)ptr) & ~(bm::id64_t)1 )
 #  define BMPTR_TESTBIT0(ptr)  ( ((bm::id64_t)ptr) & 1 )
+
+# else // 32-bit
+
+#  define BMPTR_SETBIT0(ptr)   ( ((bm::id_t)ptr) | 1 )
+#  define BMPTR_CLEARBIT0(ptr) ( ((bm::id_t)ptr) & ~(bm::id_t)1 )
+#  define BMPTR_TESTBIT0(ptr)  ( ((bm::id_t)ptr) & 1 )
 
 # endif
 

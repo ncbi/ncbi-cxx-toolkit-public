@@ -1193,7 +1193,7 @@ public:
         if (this != &bv) 
         {
             blockman_.swap(bv.blockman_);
-            size_ ^= bv.size_ ^= size_ ^= bv.size_; // xor swap
+            bm::xor_swap(size_,bv.size_);
     #ifdef BMCOUNTOPT
             BMCOUNT_VALID(false)
             bv.recalc_count();
@@ -2189,7 +2189,7 @@ void bvector<Alloc, MS>::stat(unsigned blocks) const
             if (blockman_.is_block_gap(nb)) // gap block
             {
                unsigned bc = gap_bit_count(BMGAP_PTR(blk));
-               unsigned sum = gap_control_sum(BMGAP_PTR(blk));
+               /*unsigned sum = */gap_control_sum(BMGAP_PTR(blk));
                unsigned level = gap_level(BMGAP_PTR(blk));
                 count += bc;
                unsigned len = gap_length(BMGAP_PTR(blk))-1;

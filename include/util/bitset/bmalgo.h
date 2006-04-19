@@ -837,22 +837,22 @@ void export_array(BV& bv, It first, It last)
 {
     typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
     unsigned inp_word_size = sizeof(*first);
-    unsigned array_size = last - first;
-    unsigned bit_cnt = array_size * inp_word_size * 8;
+    size_t array_size = last - first;
+    size_t bit_cnt = array_size * inp_word_size * 8;
     int block_type;
     bm::word_t tmp;
     unsigned b1, b2, b3, b4;
 
     if (bit_cnt >= bv.size())
-        bv.resize(bit_cnt + 1);
+		bv.resize((bm::id_t)bit_cnt + 1);
     else 
-        bv.set_range(bit_cnt, bv.size() - 1, false);
+		bv.set_range((bm::id_t)bit_cnt, bv.size() - 1, false);
     
     switch (inp_word_size)
     {
     case 1:
         {
-            unsigned word_cnt = array_size / 4;
+            size_t word_cnt = array_size / 4;
             for (unsigned i = 0; i < bm::set_total_blocks; ++i)
             {
                 bm::word_t* blk = 
@@ -879,8 +879,8 @@ void export_array(BV& bv, It first, It last)
                 } 
                 else 
                 {
-                    unsigned to_convert = last - first;
-                    for (unsigned j = 0; j < to_convert / 4; ++j)
+                    size_t to_convert = last - first;
+                    for (size_t j = 0; j < to_convert / 4; ++j)
                     {
                         b1 = *first++; b2 = *first++;
                         b3 = *first++; b4 = *first++;
@@ -906,7 +906,7 @@ void export_array(BV& bv, It first, It last)
         break;
     case 2:
         {
-            unsigned word_cnt = array_size / 2;
+            size_t word_cnt = array_size / 2;
             for (unsigned i = 0; i < bm::set_total_blocks; ++i)
             {
                 bm::word_t* blk = 
@@ -932,7 +932,7 @@ void export_array(BV& bv, It first, It last)
                 } 
                 else 
                 {
-                    unsigned to_convert = last - first;
+                    size_t to_convert = last - first;
                     for (unsigned j = 0; j < to_convert / 2; ++j)
                     {
                         b1 = *first++; b2 = *first++;
@@ -954,7 +954,7 @@ void export_array(BV& bv, It first, It last)
         break;
     case 4:
         {
-            unsigned word_cnt = array_size;
+            size_t word_cnt = array_size;
             for (unsigned i = 0; i < bm::set_total_blocks; ++i)
             {
                 bm::word_t* blk = 
