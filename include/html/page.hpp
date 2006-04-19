@@ -249,7 +249,7 @@ private:
     ///
     /// This is an internal version that works only with streams.
     /// @param is
-    ///   Menu type to enable
+    ///   Input stream to read template from
     /// @param size
     ///   Size of input, if known (0 otherwise).
     /// @param includes
@@ -257,7 +257,7 @@ private:
     ///   Used only for loading template libraries from files
     /// @param file_name
     ///   Name of the template library file.
-    ///   Used only in LoadTemplateLibFile() for error reporting.
+    ///   Used only by LoadTemplateLibFile().
     /// @sa
     ///   LoadTemplateLibFile(), LoadTemplateLibString(),
     ///   LoadTemplateLibBuffer(), LoadTemplateLibStream()
@@ -412,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/04/19 15:21:23  ivanov
+ * Minor comment changes
+ *
  * Revision 1.38  2006/01/25 17:55:14  ivanov
  * Split up x_CreateTemplate to x_LoadTemplate and x_PrintTemplate.
  * Restored feature of creating templates while printing to avoid latency
