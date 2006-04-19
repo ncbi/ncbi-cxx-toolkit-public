@@ -268,7 +268,7 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
     SConnNetInfo* net_info;
     if (!m_Affinity.empty()) {
         net_info = ConnNetInfo_Create(m_Service.c_str());
-        ConnNetInfo_AppendArg(net_info, m_Affinity.c_str(), 0);
+        ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0);
     } else {
         net_info = 0;
     }
@@ -321,6 +321,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/04/19 02:14:06  lavr
+ * CRPCClient::x_Connect: Use PostOverrideArg instead of AppendArg
+ *
  * Revision 1.13  2006/04/19 01:01:50  lavr
  * Pass affinity info via dispatcher parameters
  *
