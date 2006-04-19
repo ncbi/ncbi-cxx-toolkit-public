@@ -1042,8 +1042,14 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                                            &subject, &window->subject_range,
                                            matchingSeq->length,
                                            gapping_params);
-                    s_WithDistinctEnds(&newAlign, &alignments[query_index],
-                                       callbacks->free_align_traceback);
+                    if (newAlign->score >= params->cutoff_s) {
+                        s_WithDistinctEnds(&newAlign, &alignments[query_index],
+                                           callbacks->free_align_traceback);
+                    } else {
+                        BlastCompo_AlignmentsFree(&newAlign,
+                                                  callbacks->
+                                                  free_align_traceback);
+                    }
                 }
             } /* end if in_align is not contained...*/
         } /* end for all alignments in this window */
