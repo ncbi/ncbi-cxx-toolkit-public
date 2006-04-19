@@ -2,36 +2,36 @@
 #define SERIAL___RPCBASE__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Aaron Ucko, NCBI
-*
-* File Description:
-*   Generic template class for ASN.1/XML RPC clients
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Aaron Ucko, NCBI
+ *
+ * File Description:
+ *   Generic template class for ASN.1/XML RPC clients
+ *
+ */
 
 #include <connect/ncbi_conn_stream.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -265,8 +265,17 @@ inline
 void CRPCClient<TRequest, TReply>::x_Connect(void)
 {
     _ASSERT( !m_Service.empty() );
-    x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, 0, 0,
+    SConnNetInfo* net_info;
+    if (!m_Affinity.empty()) {
+        net_info = ConnNetInfo_Create(m_Service.c_str());
+        ConnNetInfo_AppendArg(net_info, m_Affinity.c_str(), 0);
+    } else {
+        net_info = 0;
+    }
+    x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, net_info, 0,
                                         m_Timeout));
+    // No-op on NULL net_info
+    ConnNetInfo_Destroy(net_info);
 }
 
 
@@ -309,52 +318,55 @@ END_NCBI_SCOPE
 
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.12  2006/04/18 21:17:24  lavr
-* Added affinity mechanism of the request
-*
-* Revision 1.11  2005/12/28 19:09:47  ucko
-* Tweak Ask once more, as we may encounter transient CIOExceptions as
-* well as transient CSerialExceptions, and should retry in both cases.
-*
-* Revision 1.10  2004/09/24 14:32:04  ucko
-* Rework Ask's logic; it now propagates exceptions when it's hit the
-* retry limit, and periodically attempts full resyncs.
-*
-* Revision 1.9  2004/09/10 16:10:23  vasilche
-* Delete object streams before iostream to avoid access to freed objects.
-*
-* Revision 1.8  2004/06/23 01:10:25  ucko
-* More tweaking: cast away const before deleting cloned timeout structures.
-*
-* Revision 1.7  2004/06/22 22:57:35  ucko
-* Fix typo in SetTimeout.
-*
-* Revision 1.6  2004/06/22 21:10:03  ucko
-* Add accessors for service, format, and retry limit.
-* Save requested timeout, and apply it to new connections; this should
-* be particularly useful when the client's not yet actually connected.
-*
-* Revision 1.5  2004/03/16 19:41:41  gorelenk
-* Fixed errors inside implementation of
-* CRPCClient<TRequest, TReply>::SetTimeout .
-*
-* Revision 1.4  2003/12/16 20:55:32  dicuccio
-* Fixed compiler warning on MSVC - unreferenced exception variable removed
-*
-* Revision 1.3  2003/12/12 21:31:43  ucko
-* Support (configurably) retrying requests that run into I/O errors.
-* Partially doxygenize.
-*
-* Revision 1.2  2003/04/15 16:18:43  siyan
-* Added doxygen support
-*
-* Revision 1.1  2002/11/13 00:46:05  ucko
-* Add RPC client generator; CVS logs to end in generate.?pp
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.13  2006/04/19 01:01:50  lavr
+ * Pass affinity info via dispatcher parameters
+ *
+ * Revision 1.12  2006/04/18 21:17:24  lavr
+ * Added affinity mechanism of the request
+ *
+ * Revision 1.11  2005/12/28 19:09:47  ucko
+ * Tweak Ask once more, as we may encounter transient CIOExceptions as
+ * well as transient CSerialExceptions, and should retry in both cases.
+ *
+ * Revision 1.10  2004/09/24 14:32:04  ucko
+ * Rework Ask's logic; it now propagates exceptions when it's hit the
+ * retry limit, and periodically attempts full resyncs.
+ *
+ * Revision 1.9  2004/09/10 16:10:23  vasilche
+ * Delete object streams before iostream to avoid access to freed objects.
+ *
+ * Revision 1.8  2004/06/23 01:10:25  ucko
+ * More tweaking: cast away const before deleting cloned timeout structures.
+ *
+ * Revision 1.7  2004/06/22 22:57:35  ucko
+ * Fix typo in SetTimeout.
+ *
+ * Revision 1.6  2004/06/22 21:10:03  ucko
+ * Add accessors for service, format, and retry limit.
+ * Save requested timeout, and apply it to new connections; this should
+ * be particularly useful when the client's not yet actually connected.
+ *
+ * Revision 1.5  2004/03/16 19:41:41  gorelenk
+ * Fixed errors inside implementation of
+ * CRPCClient<TRequest, TReply>::SetTimeout .
+ *
+ * Revision 1.4  2003/12/16 20:55:32  dicuccio
+ * Fixed compiler warning on MSVC - unreferenced exception variable removed
+ *
+ * Revision 1.3  2003/12/12 21:31:43  ucko
+ * Support (configurably) retrying requests that run into I/O errors.
+ * Partially doxygenize.
+ *
+ * Revision 1.2  2003/04/15 16:18:43  siyan
+ * Added doxygen support
+ *
+ * Revision 1.1  2002/11/13 00:46:05  ucko
+ * Add RPC client generator; CVS logs to end in generate.?pp
+ *
+ * ===========================================================================
+ */
 
 #endif  /* SERIAL___RPCBASE__HPP */
