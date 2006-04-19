@@ -460,7 +460,7 @@ struct SGb_QualCompare
 {
     // is q1 < q2
     bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
-        return (q1->Compare(*q1) < 0);
+        return (q1->Compare(*q2) < 0);
     }
 };
 
@@ -469,7 +469,7 @@ struct SGb_QualEqual
 {
     // is q1 == q2
     bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
-        return (q1->Compare(*q1) == 0);
+        return (q1->Compare(*q2) == 0);
     }
 };
 
@@ -680,6 +680,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/04/19 19:59:59  ludwigf
+ * FIXED: Comparision routines for GB qualifiers.
+ *
  * Revision 1.7  2006/04/18 14:32:36  rsmith
  * refactoring
  *
