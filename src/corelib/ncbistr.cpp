@@ -1402,13 +1402,16 @@ string NStr::Replace(const string& src,
 
 
 list<string>& NStr::Split(const string& str, const string& delim,
-                          list<string>& arr, EMergeDelims merge)
+                          list<string>& arr, EMergeDelims merge,
+                          vector<SIZE_TYPE>* token_pos)
 {
     // Special cases
     if (str.empty()) {
         return arr;
     } else if (delim.empty()) {
         arr.push_back(str);
+        if (token_pos)
+            token_pos->push_back(0);
         return arr;
     }
 
@@ -1425,12 +1428,16 @@ list<string>& NStr::Split(const string& str, const string& delim,
             // ~ arr.push_back(str.substr(prev_pos));
             arr.push_back(kEmptyStr);
             arr.back().assign(str, prev_pos, str.length() - prev_pos);
+            if (token_pos)
+                token_pos->push_back(prev_pos);
             break;
         } else {
             // Avoid using temporary objects
             // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
             arr.push_back(kEmptyStr);
             arr.back().assign(str, prev_pos, pos - prev_pos);
+            if (token_pos)
+                token_pos->push_back(prev_pos);
             ++pos;
         }
     }
@@ -1439,13 +1446,16 @@ list<string>& NStr::Split(const string& str, const string& delim,
 
 
 vector<string>& NStr::Tokenize(const string& str, const string& delim,
-                               vector<string>& arr, EMergeDelims merge)
+                               vector<string>& arr, EMergeDelims merge,
+                               vector<SIZE_TYPE>* token_pos)
 {
     // Special cases
     if (str.empty()) {
         return arr;
     } else if (delim.empty()) {
         arr.push_back(str);
+        if (token_pos)
+            token_pos->push_back(0);
         return arr;
     }
 
@@ -1471,6 +1481,9 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
             ++pos;
         }
         arr.reserve(tokens);
+        if (token_pos)
+            token_pos->reserve(tokens);
+
     }
 
     // Tokenization
@@ -1486,12 +1499,16 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
             // ~ arr.push_back(str.substr(prev_pos));
             arr.push_back(kEmptyStr);
             arr.back().assign(str, prev_pos, str.length() - prev_pos);
+            if (token_pos)
+                token_pos->push_back(prev_pos);
             break;
         } else {
             // Avoid using temporary objects
             // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
             arr.push_back(kEmptyStr);
             arr.back().assign(str, prev_pos, pos - prev_pos);
+            if (token_pos)
+                token_pos->push_back(prev_pos);
             ++pos;
         }
     }
@@ -1501,13 +1518,16 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
 
 vector<string>& NStr::TokenizePattern(const string& str,
                                       const string& pattern,
-                                      vector<string>& arr, EMergeDelims merge)
+                                      vector<string>& arr, EMergeDelims merge,
+                                      vector<SIZE_TYPE>* token_pos)
 {
     // Special cases
     if (str.empty()) {
         return arr;
     } else if (pattern.empty()) {
         arr.push_back(str);
+        if (token_pos)
+            token_pos->push_back(0);
         return arr;
     }
 
@@ -1533,6 +1553,8 @@ vector<string>& NStr::TokenizePattern(const string& str,
             prev_pos = pos + pattern.length();
         }
         arr.reserve(tokens);
+        if (token_pos)
+            token_pos->reserve(tokens);
     }
 
     // Tokenization
@@ -1547,6 +1569,8 @@ vector<string>& NStr::TokenizePattern(const string& str,
                     arr.push_back(kEmptyStr);
                     arr.back().assign(str, prev_pos,
                                       str.length() - prev_pos);
+                    if (token_pos)
+                        token_pos->push_back(prev_pos);
                 }
                 break;
             }
@@ -1554,6 +1578,8 @@ vector<string>& NStr::TokenizePattern(const string& str,
             // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
             arr.push_back(kEmptyStr);
             arr.back().assign(str, prev_pos, pos - prev_pos);
+            if (token_pos)
+                token_pos->push_back(prev_pos);
         }
         prev_pos = pos + pattern.length();
     }
@@ -2435,6 +2461,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.177  2006/04/19 18:38:40  ivanov
+ * Added additional optional parameter to Split(), Tokenize() and
+ * TokenizePattern() to get tokens' positions in source string
+ *
  * Revision 1.176  2006/04/03 19:23:07  ivanov
  * NStr::TokenizePattern() -- fixed bug with processing last
  * token in the string

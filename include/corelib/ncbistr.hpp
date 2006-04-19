@@ -1488,6 +1488,8 @@ public:
     ///   Whether to merge the delimiters or not. The default setting of
     ///   eMergeDelims means that delimiters that immediately follow each other
     ///   are treated as one delimiter.
+    /// @param token_pos
+    ///   Optional array for the tokens' positions in "str".
     /// @return 
     ///   The list "arr" is also returned.
     /// @sa
@@ -1495,7 +1497,8 @@ public:
     static list<string>& Split(const string& str,
                                const string& delim,
                                list<string>& arr,
-                               EMergeDelims  merge = eMergeDelims);
+                               EMergeDelims  merge = eMergeDelims,
+                               vector<SIZE_TYPE>* token_pos = NULL);
 
     /// Tokenize a string using the specified set of char delimiters.
     ///
@@ -1511,6 +1514,8 @@ public:
     ///   Whether to merge the delimiters or not. The default setting of
     ///   eNoMergeDelims means that delimiters that immediately follow each
     ///    other are treated as separate delimiters.
+    /// @param token_pos
+    ///   Optional array for the tokens' positions in "str".
     /// @return 
     ///   The list "arr" is also returned.
     /// @sa
@@ -1518,7 +1523,8 @@ public:
     static vector<string>& Tokenize(const string&   str,
                                     const string&   delim,
                                     vector<string>& arr,
-                                    EMergeDelims    merge = eNoMergeDelims);
+                                    EMergeDelims    merge = eNoMergeDelims,
+                                    vector<SIZE_TYPE>* token_pos = NULL);
 
     /// Tokenize a string using the specified delimiter (string).
     ///
@@ -1534,6 +1540,8 @@ public:
     ///   Whether to merge the delimiters or not. The default setting of
     ///   eNoMergeDelims means that delimiters that immediately follow each
     ///   other are treated as separate delimiters.
+    /// @param token_pos
+    ///   Optional array for the tokens' positions in "str".
     /// @return 
     ///   The list "arr" is also returned.
     /// @sa
@@ -1542,7 +1550,8 @@ public:
     vector<string>& TokenizePattern(const string&   str,
                                     const string&   delim,
                                     vector<string>& arr,
-                                    EMergeDelims    merge = eNoMergeDelims);
+                                    EMergeDelims    merge = eNoMergeDelims,
+                                    vector<SIZE_TYPE>* token_pos = NULL);
 
     /// Split a string into two pieces using the specified delimiters
     ///
@@ -3146,6 +3155,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.103  2006/04/19 18:38:23  ivanov
+ * Added additional optional parameter to Split(), Tokenize() and
+ * TokenizePattern() to get tokens' positions in source string
+ *
  * Revision 1.102  2006/02/06 15:46:58  ivanov
  * Replaced class-based NStr::TStringToNumFlags to int-based counterparts
  *
