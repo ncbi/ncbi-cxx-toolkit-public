@@ -36,12 +36,6 @@
 
 #include <connect/ncbi_types.h>
 
-#ifndef NCBI_DEPRECATED
-#  define NCBI_SERVICE_MISC_DEPRECATED
-#else
-#  define NCBI_SERVICE_MISC_DEPRECATED NCBI_DEPRECATED
-#endif
-
 
 /** @addtogroup ServiceSupport
  *
@@ -58,11 +52,11 @@ extern "C" {
  *
  * Current implememtation does pretty good shmem caching, so this call becomes
  * rather specific and fits only for some special occasions like CAF module.
- * Set default behavior of keeping attached/detaching LBSM heap
- * (if has been attached) upon service iterator closure.
+ * Is sets default behavior of either keeping attached or detaching LBSM heap
+ * (if it has been attached) upon service iterator closure.
  * By default, on SERV_Close() the heap gets detached, but this may not be
  * desirable in a long-run applications that use service iterators intensively,
- * and would like to avoid rapid successtions of attaching/detaching.
+ * and would like to avoid rapid successions of attaching/detaching.
  * The function returns a setting that has been previously in effect.
  * OnOff == eDefault has no effect but returns the current setting.
  *
@@ -71,10 +65,6 @@ extern "C" {
  */
 extern NCBI_XCONNECT_EXPORT
 ESwitch LBSMD_KeepHeapAttached(ESwitch OnOff);
-
-/* ATTENTION:  NEVER EVER USE THIS CALL */
-extern NCBI_XCONNECT_EXPORT NCBI_SERVICE_MISC_DEPRECATED
-ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
 
 
 #ifdef __cplusplus
@@ -88,6 +78,9 @@ ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2006/04/19 14:44:28  lavr
+ * Retire deprecated deprecated LBSM_KeepHeapAttached()
+ *
  * Revision 1.5  2006/03/16 19:02:08  lavr
  * Scream about LBSMD_KeepHeapAttached
  *
