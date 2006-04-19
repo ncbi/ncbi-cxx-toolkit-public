@@ -683,7 +683,7 @@ extern int/*bool*/ ConnNetInfo_PreOverrideArg(SConnNetInfo* info,
 {
     if (!arg || !*arg)
         return 1/*success*/;
-    ConnNetInfo_DeleteArg(info, arg);
+    ConnNetInfo_DeleteAllArgs(info, arg);
     return ConnNetInfo_PrependArg(info, arg, val);
 }
 
@@ -694,7 +694,7 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
 {
     if (!arg || !*arg)
         return 1/*success*/;
-    ConnNetInfo_DeleteArg(info, arg);
+    ConnNetInfo_DeleteAllArgs(info, arg);
     return ConnNetInfo_AppendArg(info, arg, val);
 }
 
@@ -1986,6 +1986,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.104  2006/04/19 02:12:06  lavr
+ * Call DeleteAllArgs when doing argument overrides
+ *
  * Revision 6.103  2006/04/19 01:38:48  lavr
  * ConnNetInfo_{Append|Prepend}Arg sped-up considerably
  *
