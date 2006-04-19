@@ -30,6 +30,7 @@
  *
  */
 
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_util.h>
@@ -301,6 +302,7 @@ static void TEST_MIME(void)
 
 static void TEST_ConnNetInfo(void)
 {
+    size_t n;
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
 
     assert(net_info);
@@ -333,6 +335,36 @@ static void TEST_ConnNetInfo(void)
                                  "My-Tag8: \t \r\n");
     printf("HTTP User Header after second extend:\n\"%s\"\n",
            net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+
+    for (n = 0; n < sizeof(net_info->args); n++)
+        net_info->args[n] = "0123456789"[rand() % 10];
+
+    strncpy0(net_info->args, "a=b&b=c&c=d", sizeof(net_info->args) - 1);
+    printf("HTTP Arg: \"%s\"\n", net_info->args);
+
+    ConnNetInfo_PrependArg(net_info, "d=e", 0);
+    ConnNetInfo_PrependArg(net_info, "e", "f");
+    printf("HTTP Arg after prepend: \"%s\"\n", net_info->args);
+
+    ConnNetInfo_AppendArg(net_info, "f=g", 0);
+    ConnNetInfo_AppendArg(net_info, "g", "h");
+    printf("HTTP Arg after append: \"%s\"\n", net_info->args);
+
+    ConnNetInfo_PreOverrideArg(net_info, "a=z", 0);
+    ConnNetInfo_PreOverrideArg(net_info, "b", "y");
+    printf("HTTP Arg after pre-override: \"%s\"\n", net_info->args);
+
+    ConnNetInfo_PostOverrideArg(net_info, "c=x", 0);
+    ConnNetInfo_PostOverrideArg(net_info, "d", "w");
+    printf("HTTP Arg after post-override: \"%s\"\n", net_info->args);
+
+    ConnNetInfo_DeleteArg(net_info, "e");
+    ConnNetInfo_DeleteArg(net_info, "f=p");
+    printf("HTTP Arg after delete: \"%s\"\n", net_info->args);
+
+    ConnNetInfo_DeleteAllArgs(net_info, "g&h&p=q&a=b");
+    printf("HTTP Arg after delete-all: \"%s\"\n", net_info->args);
+
     ConnNetInfo_Destroy(net_info);
 }
 
@@ -374,6 +406,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2006/04/19 01:39:16  lavr
+ * ConnNetInfo_*Arg tests added
+ *
  * Revision 6.22  2006/01/31 17:12:07  lavr
  * CONNUTIL_GetUsername() test added
  *
