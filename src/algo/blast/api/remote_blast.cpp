@@ -1426,13 +1426,16 @@ FrameNumber2NetworkFrame(int frame, EBlastProgramType program)
         case -3: return eBlast4_frame_type_minus3;
         default: abort();
         }
-    } else if (Blast_QueryIsNucleotide(program)) {
+        _TROUBLE;
+    }
+    
+    if (Blast_QueryIsNucleotide(program)) {
         _ASSERT(frame == -1 || frame == 1);
         // For some reason, the return value here is not set...
         return eBlast4_frame_type_notset;
-    } else {
-        return eBlast4_frame_type_notset;
     }
+    
+    return eBlast4_frame_type_notset;
 }
 
 CSeqLocInfo::ETranslationFrame
@@ -1449,12 +1452,15 @@ NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame,
         case eBlast4_frame_type_minus3: return CSeqLocInfo::eFrameMinus3;
         default: abort();
         }
-    } else if (Blast_QueryIsNucleotide(program)) {
+        _TROUBLE;
+    }
+    
+    if (Blast_QueryIsNucleotide(program)) {
         _ASSERT(frame == eBlast4_frame_type_plus1);
         return CSeqLocInfo::eFramePlus1;
-    } else {
-        return CSeqLocInfo::eFrameNotSet;
     }
+    
+    return CSeqLocInfo::eFrameNotSet;
 }
 
 END_SCOPE(blast)
@@ -1466,6 +1472,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2006/04/19 15:06:37  bealer
+* - Fix warning for 64 bit win compile.
+*
 * Revision 1.42  2006/03/29 20:02:45  camacho
 * Replace GetMask() in favor of GetMasks() returning a TSeqLocInfoVector
 *
