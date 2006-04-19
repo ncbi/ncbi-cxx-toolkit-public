@@ -265,10 +265,10 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
 
 /* Convenience routines to manipulate SConnNetInfo::args[].
  * In "arg" all routines below assume to have a single arg name
- * or an "arg=value" pair. In the former case, additional "val"
+ * or an "arg=value" pair.  In the former case, additional "val"
  * may be supplied separately (and will be prepended by "=" if
- * necessary). In the latter case, having a non-zero string in
- * "val" may result in an erroneous behavior. Ampersand (&) gets
+ * necessary).  In the latter case, having a non-zero string in
+ * "val" may result in an erroneous behavior.  Ampersand (&) gets
  * automatically added to keep the arg list correct.
  * Return value (if any): none-zero on success; 0 on error.
  */
@@ -299,14 +299,14 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteAllArgs
  const char*   args
  );
 
-/* same as sequence Delete then Prepend, see above */
+/* same as sequence DeleteAll(arg) then Prepend(arg, val), see above */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PreOverrideArg
 (SConnNetInfo* info,
  const char*   arg,
  const char*   val
  );
 
-/* same as sequence Delete then Append, see above */
+/* same as sequence DeleteAll(arg) then Append(arg, val), see above */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
 (SConnNetInfo* info,
  const char*   arg,
@@ -746,6 +746,9 @@ extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2006/04/19 02:26:05  lavr
+ * Document ConnNetInfo_{Pre|Post}OverrideArg in more details
+ *
  * Revision 6.51  2006/02/23 15:46:16  lavr
  * Clean ChangeLog
  *
