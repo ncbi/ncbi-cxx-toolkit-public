@@ -350,19 +350,19 @@ static void TEST_ConnNetInfo(void)
     ConnNetInfo_AppendArg(net_info, "g", "h");
     printf("HTTP Arg after append: \"%s\"\n", net_info->args);
 
-    ConnNetInfo_PreOverrideArg(net_info, "a=z", 0);
-    ConnNetInfo_PreOverrideArg(net_info, "b", "y");
+    ConnNetInfo_PreOverrideArg(net_info, "a=z&b", "y");
+    ConnNetInfo_PreOverrideArg(net_info, "c", "x");
     printf("HTTP Arg after pre-override: \"%s\"\n", net_info->args);
 
-    ConnNetInfo_PostOverrideArg(net_info, "c=x", 0);
-    ConnNetInfo_PostOverrideArg(net_info, "d", "w");
+    ConnNetInfo_PostOverrideArg(net_info, "d=w&e", "v");
+    ConnNetInfo_PostOverrideArg(net_info, "f", "u");
     printf("HTTP Arg after post-override: \"%s\"\n", net_info->args);
 
-    ConnNetInfo_DeleteArg(net_info, "e");
-    ConnNetInfo_DeleteArg(net_info, "f=p");
+    ConnNetInfo_DeleteArg(net_info, "g");
+    ConnNetInfo_DeleteArg(net_info, "h=n");
     printf("HTTP Arg after delete: \"%s\"\n", net_info->args);
 
-    ConnNetInfo_DeleteAllArgs(net_info, "g&h&p=q&a=b");
+    ConnNetInfo_DeleteAllArgs(net_info, "a=b&p=q&f=d");
     printf("HTTP Arg after delete-all: \"%s\"\n", net_info->args);
 
     ConnNetInfo_Destroy(net_info);
@@ -406,6 +406,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2006/04/19 02:22:57  lavr
+ * Modify test for Pre/Post overrides of SConnNetInfo::args
+ *
  * Revision 6.23  2006/04/19 01:39:16  lavr
  * ConnNetInfo_*Arg tests added
  *
