@@ -598,7 +598,7 @@ s_CalcXScore(double * M, int incM, const double probs[])
             score_iX += M[j * incM] * probs[j];
         }
     }
-    return score_iX;
+    return score_iX <= -1.0 ? score_iX : -1.0;
 }
 
 
@@ -1389,7 +1389,13 @@ Blast_AdjustScores(Int4 ** matrix,
 {
     double LambdaRatio;      /* the ratio of the corrected
                                 lambda to the original lambda */
-
+    if (query_composition->numTrueAminoAcids == 0 ||
+        subject_composition->numTrueAminoAcids == 0) {
+        /* Either the query or subject contains only amibiguity
+           characters, most likely because the entire subject has been
+           SEGed.  Compositional adjustment is meaningless. */
+        return 1;
+    }
     if (matrixInfo->positionBased ||
         composition_adjust_mode == eCompositionBasedStats) {
         /* Use old-style composition-based statistics unconditionally. */
