@@ -571,6 +571,23 @@ void
 __printMsa(const char* filename, const _PSIMsa* msa);
 #endif /* _DEBUG */
 
+/** Enable NCBI structure group customization to discard the query sequence,
+ * as this really isn't the result of a PSI-BLAST iteration, but rather an
+ * artificial consensus sequence of the multiple sequence alignment
+ * constructed by them. This should be called after _PSIPurgeBiasedSegments.
+ */
+void
+_PSIStructureGroupCustomization(_PSIMsa* msa);
+
+/** Structure group validation function for multiple sequence alignment 
+ * structure. Should be called after _PSIStructureGroupCustomization.
+ * @param msa multiple sequence alignment data structure [in]
+ * @return One of the errors defined above if validation fails or bad
+ * parameter is passed in, else PSI_SUCCESS
+ */
+int
+_PSIValidateMSA_StructureGroup(const _PSIMsa* msa);
+
 #ifdef __cplusplus
 }
 #endif
@@ -580,6 +597,9 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2006/04/19 19:16:49  camacho
+ * Refactoring of structure group customization and addition of validation
+ *
  * Revision 1.29  2005/05/24 12:49:24  camacho
  * doxygen fix
  *
