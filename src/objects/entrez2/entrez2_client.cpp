@@ -260,60 +260,37 @@ CEntrez2Client::GetDocsums(int uid, const string& db)
 string
 CEntrez2Client::GetAffinity(const CEntrez2_request& request) const
 {
-    const CE2Request& e2req = request.GetRequest();
+    const CE2Request&     e2req = request.GetRequest();
+    const CEntrez2_db_id* db    = 0;
+
     switch (e2req.Which()) {
     case CE2Request::e_Eval_boolean:
-        {{
-            const string& db = e2req.GetEval_boolean().GetQuery().GetDb();
-            if (!db.empty()) {
-                return "DBAF=" + db;
-            }
-        }}
+        db = &e2req.GetEval_boolean().GetQuery().GetDb();
         break;
     case CE2Request::e_Get_docsum:
-        {{
-            const string& db = e2req.GetGet_docsum().GetDb();
-            if (!db.empty()) {
-                return "DBAF=" + db;
-            }
-        }}
+        db = &e2req.GetGet_docsum().GetDb();
         break;
     case CE2Request::e_Get_term_pos:
-        {{
-            const string& db = e2req.GetGet_term_pos().GetDb();
-            if (!db.empty()) {
-                return "DBAF=" + db;
-            }
-        }}
+        db = &e2req.GetGet_term_pos().GetDb();
         break;
     case CE2Request::e_Get_term_list:
-        {{
-            const string& db = e2req.GetGet_term_list().GetDb();
-            if (!db.empty()) {
-                return "DBAF=" + db;
-            }
-        }}
+        db = &e2req.GetGet_term_list().GetDb();
         break;
     case CE2Request::e_Get_term_hierarchy:
-        {{
-            const string& db = e2req.GetGet_term_hierarchy().GetDb();
-            if (!db.empty()) {
-                return "DBAF=" + db;
-            }
-        }}
+        db = &e2req.GetGet_term_hierarchy().GetDb();
         break;
     case CE2Request::e_Get_link_counts:
-        {{
-            const string& db = e2req.GetGet_link_counts().GetDb();
-            if (!db.empty()) {
-                return "DBAF=" + db;
-            }
-        }}
+        db = &e2req.GetGet_link_counts().GetDb();
         break;
     default:
         break;
     }
-    return kEmptyStr;
+
+    if (db  &&  !db->Get().empty()) {
+        return "DBAF=" + db->Get();
+    } else {
+        return kEmptyStr;
+    }
 }
 
 
@@ -326,6 +303,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/04/19 17:28:55  ucko
+* Rework GetAffinity to consolidate common logic.
+*
 * Revision 1.17  2006/04/19 01:43:43  lavr
 * Rearrange included headers; extract DB affinity from most requests
 *
