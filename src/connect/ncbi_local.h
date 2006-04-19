@@ -42,9 +42,9 @@ extern "C" {
 #endif
 
 
-const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER           iter,
-                                    SSERV_Info**        info,
-                                    HOST_INFO*          host_info);
+const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER    iter,
+                                    SSERV_Info** info,
+                                    HOST_INFO*   host_info);
 
 
 #ifdef __cplusplus
@@ -55,6 +55,9 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER           iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2006/04/19 14:46:37  lavr
+ * Formatting -- the API should be considered fully functional
+ *
  * Revision 1.1  2006/03/28 18:27:32  lavr
  * Initial revision (not yet working)
  *
