@@ -80,6 +80,7 @@ CSplign::CSplign( void )
     m_nopolya = false;
     m_model_id = 0;
     m_MaxCompsPerQuery = 0;
+    m_MinPatternHitLength = 10;
 }
 
 CSplign::~CSplign()
@@ -316,7 +317,12 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     const size_t max_intron = 1048575; // 2^20
     size_t prev = 0;
     ITERATE(THitRefs, ii, *phitrefs) {
+
         const THitRef& h = *ii;
+        if(h->GetQuerySpan() < m_MinPatternHitLength) {
+            continue;
+        }
+
         if(prev > 0) {
 
             const bool consistent = h->GetSubjStrand()?
@@ -336,7 +342,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
 
         const THitRef& h = (*phitrefs)[i];
-        if(h->GetQuerySpan() >= 10) {
+        if(h->GetQuerySpan() >= m_MinPatternHitLength) {
             pattern0.push_back(h->GetQueryMin());
             pattern0.push_back(h->GetQueryMax());
             pattern0.push_back(h->GetSubjMin());
@@ -649,6 +655,10 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
 }
 
 
+static bool IsNullRef(const CSplign::THitRef& hr) {
+    return hr.IsNull();
+}
+
 
 // naive polya detection
 size_t CSplign::x_TestPolyA(void)
@@ -710,8 +720,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             // cleave off hits beyond cds
             CleaveOffByTail(phitrefs, m_polya_start); 
             if(phitrefs->size() == 0) {
-                NCBI_THROW(CAlgoAlignException, eNoAlignment, 
-                           g_msg_NoHitsBeyondPolya);
+                NCBI_THROW(CAlgoAlignException,eNoAlignment,g_msg_NoHitsBeyondPolya);
             }
         }
     
@@ -1815,6 +1824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/04/19 14:47:10  kapustin
+ * Eliminate hits shorter than the cut-off when pre-checking for max intron length
+ *
  * Revision 1.52  2006/04/17 19:30:11  kapustin
  * Move intron max length check to x_SetPattern to assure proper hit order
  *
