@@ -687,7 +687,7 @@ public:
                        EConstraintNegate  negate = eConstraint);
 
     /// Set current arguments group name. When printing descriptions for
-    /// optionol arguments (on -help command), they will be arranged by
+    /// optional arguments (on -help command), they will be arranged by
     /// group name. Empty group name resets the group. Arguments without
     /// group are listed first immediately after mandatory arguments.
     void SetCurrentGroup(const string& group);
@@ -1295,6 +1295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/04/19 14:17:35  lavr
+ * Fix typo
+ *
  * Revision 1.51  2006/02/27 19:58:12  grichenk
  * Fixed warnings
  *
