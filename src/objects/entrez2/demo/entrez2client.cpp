@@ -30,7 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -50,8 +49,9 @@
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
-using namespace ncbi;
-using namespace objects;
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 class CEntrez2ClientApp : public CNcbiApplication
@@ -152,9 +152,6 @@ void CEntrez2ClientApp::Init(void)
 
 int CEntrez2ClientApp::Run(void)
 {
-    // Setup application registry, error log, and MT-lock for CONNECT library
-    CONNECT_Init(&GetConfig());
-
     CArgs args = GetArgs();
 
     string db          = args["db"].AsString();
@@ -425,6 +422,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/04/19 14:18:56  lavr
+ * Remove explicit [default] CONNECT_Init() -- no longer necessary
+ *
  * Revision 1.5  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
