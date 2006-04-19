@@ -114,15 +114,7 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
         }
         if (!(info = SERV_ReadInfoEx
               (c, iter->ismask  ||  iter->reverse_dns ? name : ""))) {
-            break;
-        }
-        if (!iter->reverse_dns  &&  info->type != fSERV_Dns) {
-            if (type != fSERV_Any  &&  !(type & info->type))
-                continue;  /* type doesn't match */
-            if (type == fSERV_Any  &&  info->type == fSERV_Dns)
-                continue;  /* DNS entries have to be req'd explicitly */
-            if (iter->stateless && info->sful && !(info->type & fSERV_Http))
-                continue;  /* skip stateful only servers */
+            continue;
         }
         if (iter->external  &&  info->locl)
             continue;  /* external mapping for local server not allowed */
@@ -134,6 +126,14 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
                 info->host = s_LocalHost;
             if ((info->locl & 0xF0)  &&  info->host != s_LocalHost)
                 continue;  /* private server */
+        }
+        if (!iter->reverse_dns  &&  info->type != fSERV_Dns) {
+            if (type != fSERV_Any  &&  !(type & info->type))
+                continue;  /* type doesn't match */
+            if (type == fSERV_Any  &&  info->type == fSERV_Dns)
+                continue;  /* DNS entries have to be req'd explicitly */
+            if (iter->stateless && info->sful && !(info->type & fSERV_Http))
+                continue;  /* skip stateful only servers */
         }
         if (!info->rate)
             info->rate = LBSM_DEFAULT_RATE;
@@ -409,6 +409,9 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2006/04/19 14:45:55  lavr
+ * Unconditionally skip internal servers in external searches
+ *
  * Revision 1.2  2006/04/05 15:06:55  lavr
  * Fully implemented and working
  *
