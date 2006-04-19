@@ -60,15 +60,15 @@ public:
     void SetSubSourceType(CSubSource::ESubtype subsrc_type);
     void ValueFound(string val_found);
     
-    bool AnyPresent();
-    bool AllUnique() { return m_AllUnique; }
-    bool AllPresent() { return m_AllPresent; }
-    bool IsUnique() { return m_IsUnique; }
-    bool IsOrgMod() { return m_IsOrgMod; }
-    CSubSource::ESubtype GetSubSourceType() { return m_SubSrcType; }
-    COrgMod::ESubtype GetOrgModType() { return m_OrgModType; }
+    bool AnyPresent() const;
+    bool AllUnique() const { return m_AllUnique; }
+    bool AllPresent() const { return m_AllPresent; }
+    bool IsUnique() const { return m_IsUnique; }
+    bool IsOrgMod() const { return m_IsOrgMod; }
+    CSubSource::ESubtype GetSubSourceType() const { return m_SubSrcType; }
+    COrgMod::ESubtype GetOrgModType() const { return m_OrgModType; }
 
-    unsigned int GetRank();
+    unsigned int GetRank() const;
     typedef vector<string> TValueVector;
     
 private:
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/04/19 13:43:50  dicuccio
+* Stylistic changes.  Made several accessors const.
+*
 * Revision 1.2  2006/04/17 17:39:36  ucko
 * Fix capitalization of header filenames.
 *

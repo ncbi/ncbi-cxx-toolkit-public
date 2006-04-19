@@ -120,7 +120,7 @@ void CAutoDefAvailableModifier::ValueFound(string val_found)
 }
 
 
-bool CAutoDefAvailableModifier::AnyPresent() 
+bool CAutoDefAvailableModifier::AnyPresent() const
 {
     if (m_ValueList.size() > 0) {
         return true;
@@ -130,7 +130,7 @@ bool CAutoDefAvailableModifier::AnyPresent()
 }
 
 
-unsigned int CAutoDefAvailableModifier::GetRank() 
+unsigned int CAutoDefAvailableModifier::GetRank() const
 {
     if (m_IsOrgMod) {
         if (m_OrgModType == COrgMod::eSubtype_strain) {
@@ -176,6 +176,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/04/19 13:43:50  dicuccio
+* Stylistic changes.  Made several accessors const.
+*
 * Revision 1.3  2006/04/17 17:42:21  ucko
 * Drop extraneous and disconcerting inclusion of gui headers.
 *

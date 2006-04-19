@@ -706,7 +706,8 @@ string OrganelleByGenome(unsigned int genome_val)
     return organelle;
 }
 
-string CAutoDef::x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq_Handle bh)
+string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
+                                                 CBioseq_Handle bh)
 {
     bool pluralize = false;
     
@@ -811,6 +812,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2006/04/19 13:43:50  dicuccio
+* Stylistic changes.  Made several accessors const.
+*
 * Revision 1.7  2006/04/19 12:41:27  bollin
 * changes for configuring automatic definition line from dialog
 *

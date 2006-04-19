@@ -66,18 +66,18 @@ public:
     CAutoDef();
     ~CAutoDef();
  
-    void AddSources (CSeq_entry_Handle se);
-    void AddSources (CBioseq_Handle bh);
-    CAutoDefModifierCombo *FindBestModifierCombo();
+    void AddSources(CSeq_entry_Handle se);
+    void AddSources(CBioseq_Handle bh);
+    CAutoDefModifierCombo* FindBestModifierCombo();
     string GetOneSourceDescription(CBioseq_Handle bh);
-    void CAutoDef::DoAutoDef();
+    void DoAutoDef();
     
-    void SetFeatureListType(unsigned int feature_list_type) { m_FeatureListType = feature_list_type; }
-    void SetProductFlag (unsigned int product_flag) { m_ProductFlag = product_flag; }
-    void SetAltSpliceFlag (bool alt_splice_flag) { m_AltSpliceFlag = alt_splice_flag; }
-    void SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress) { m_RemoveTransposonAndInsertionSequenceSubfeatures = suppress; }
+    void SetFeatureListType(unsigned int feature_list_type);
+    void SetProductFlag (unsigned int product_flag);
+    void SetAltSpliceFlag (bool alt_splice_flag);
+    void SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress);
     
-    string GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh);
+    string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
     
     typedef vector<CAutoDefModifierCombo *> TModifierComboVector;
     
@@ -96,20 +96,64 @@ private:
     bool         m_AltSpliceFlag;
     bool         m_RemoveTransposonAndInsertionSequenceSubfeatures;
     
-    void x_SortModifierListByRank(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
-    void x_GetModifierIndexList(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
+    void x_SortModifierListByRank
+        (TModifierIndexVector& index_list,
+         CAutoDefSourceDescription::TAvailableModifierVector& modifier_list);
+    void x_GetModifierIndexList
+        (TModifierIndexVector& index_list,
+         CAutoDefSourceDescription::TAvailableModifierVector& modifier_list);
 
-    string CAutoDef::x_GetSourceDescriptionString (CAutoDefModifierCombo *mod_combo, const CBioSource& bsrc);
+    string x_GetSourceDescriptionString(CAutoDefModifierCombo* mod_combo,
+                                        const CBioSource& bsrc);
     
-    string x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags, bool gene_cluster_opp_strand);
-    string x_GetFeatureClauseProductEnding(string feature_clauses, CBioseq_Handle bh);
-    bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags);
-    CAutoDefParsedtRNAClause *x_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, string &comment, bool is_first);
-    bool x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags);
-
+    string x_GetFeatureClauses(CBioseq_Handle bh,
+                               bool suppress_locus_tags,
+                               bool gene_cluster_opp_strand);
+    string x_GetFeatureClauseProductEnding(const string& feature_clauses,
+                                           CBioseq_Handle bh);
+    bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh,
+                                       const CSeq_feat& cf,
+                                       CAutoDefFeatureClause_Base& main_clause,
+                                       bool suppress_locus_tags);
+    CAutoDefParsedtRNAClause* x_tRNAClauseFromNote(CBioseq_Handle bh,
+                                                   const CSeq_feat& cf,
+                                                   string &comment,
+                                                   bool is_first);
+    bool x_AddMiscRNAFeatures(CBioseq_Handle bh,
+                              const CSeq_feat& cf,
+                              CAutoDefFeatureClause_Base& main_clause,
+                              bool suppress_locus_tags);
     bool m_Cancelled;
 
 };  //  end of CAutoDef
+
+
+inline
+void CAutoDef::SetFeatureListType(unsigned int feature_list_type)
+{
+    m_FeatureListType = feature_list_type;
+}
+
+
+inline
+void CAutoDef::SetProductFlag(unsigned int product_flag)
+{
+    m_ProductFlag = product_flag;
+}
+
+
+inline
+void CAutoDef::SetAltSpliceFlag (bool alt_splice_flag)
+{
+    m_AltSpliceFlag = alt_splice_flag;
+}
+
+
+inline
+void CAutoDef::SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress)
+{
+    m_RemoveTransposonAndInsertionSequenceSubfeatures = suppress;
+}
 
 
 END_SCOPE(objects)
@@ -118,6 +162,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/04/19 13:43:50  dicuccio
+* Stylistic changes.  Made several accessors const.
+*
 * Revision 1.6  2006/04/19 12:40:50  bollin
 * changes for configuring automatic definition line generator from dialog
 *
