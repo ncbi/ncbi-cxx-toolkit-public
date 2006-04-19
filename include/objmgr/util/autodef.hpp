@@ -72,7 +72,7 @@ public:
     string GetOneSourceDescription(CBioseq_Handle bh);
     void CAutoDef::DoAutoDef();
     
-    void SetFeatureListType(EFeatureListType feature_list_type) { m_FeatureListType = feature_list_type; }
+    void SetFeatureListType(unsigned int feature_list_type) { m_FeatureListType = feature_list_type; }
     void SetProductFlag (unsigned int product_flag) { m_ProductFlag = product_flag; }
     void SetAltSpliceFlag (bool alt_splice_flag) { m_AltSpliceFlag = alt_splice_flag; }
     void SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress) { m_RemoveTransposonAndInsertionSequenceSubfeatures = suppress; }
@@ -81,6 +81,9 @@ public:
     
     typedef vector<CAutoDefModifierCombo *> TModifierComboVector;
     
+    void Cancel() { m_Cancelled = true; }
+    bool Cancelled() { return m_Cancelled; }
+    
 private:
     typedef vector<unsigned int> TModifierIndexVector;
     typedef vector<CSeq_entry_Handle> TSeqEntryHandleVector;
@@ -88,10 +91,10 @@ private:
     TModifierComboVector  m_ComboList;
     bool m_SuppressAltSplicePhrase;
     
-    EFeatureListType m_FeatureListType;
-    unsigned int     m_ProductFlag;
-    bool             m_AltSpliceFlag;
-    bool             m_RemoveTransposonAndInsertionSequenceSubfeatures;
+    unsigned int m_FeatureListType;
+    unsigned int m_ProductFlag;
+    bool         m_AltSpliceFlag;
+    bool         m_RemoveTransposonAndInsertionSequenceSubfeatures;
     
     void x_SortModifierListByRank(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
     void x_GetModifierIndexList(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
@@ -104,7 +107,7 @@ private:
     CAutoDefParsedtRNAClause *x_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, string &comment, bool is_first);
     bool x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags);
 
-
+    bool m_Cancelled;
 
 };  //  end of CAutoDef
 
@@ -115,6 +118,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/04/19 12:40:50  bollin
+* changes for configuring automatic definition line generator from dialog
+*
 * Revision 1.5  2006/04/18 20:12:37  bollin
 * added option to suppress transposon and insertion sequence subfeatures
 *
