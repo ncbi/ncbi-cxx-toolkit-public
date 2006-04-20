@@ -316,7 +316,7 @@ CDB_MultiEx::ReportErrorStack(ostream& out) const
     }
     if ( record_num > m_NofRooms ) {
         out << " *** Too many exceptions -- the last ";
-        out << NStr::UIntToString( record_num - m_NofRooms );
+        out << NStr::UInt8ToString( record_num - m_NofRooms );
         out << " exceptions are not shown ***";
     }
 
@@ -519,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/20 22:16:31  ssikorsk
+ * Replaced NStr::UIntToString with NStr::UInt8ToString for x64 sake.
+ *
  * Revision 1.21  2006/03/01 19:50:13  ssikorsk
  * Replaced static variable with CSafeStaticPtr.
  *
