@@ -104,9 +104,9 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
             free((void*) info);
             info = 0;
         }
-        sprintf(buf, DEF_CONN_REG_SECTION "_LOCAL_SERVER_%s_%d", name, n);
+        sprintf(buf, "%s_" REG_CONN_LOCAL_SERVER "_%d", name, n);
         if (!(c = getenv(strupr(buf)))) {
-            sprintf(buf, DEF_CONN_REG_SECTION "_LOCAL_SERVER_%d", n);
+            sprintf(buf, REG_CONN_LOCAL_SERVER "_%d", n);
             CORE_REG_GET(name, buf, service, sizeof(service) - 1, 0);
             if (!*service)
                 continue;
@@ -154,9 +154,6 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
 }
 
 
-#define CONN_LOCAL_SERVICES "LOCAL_SERVICES"
-
-
 static int/*bool*/ s_LoadServices(SERV_ITER iter)
 {
     int/*bool*/ ok = 0/*false*/;
@@ -169,14 +166,10 @@ static int/*bool*/ s_LoadServices(SERV_ITER iter)
         if (!ok  ||  !iter->reverse_dns)
             return ok;
     }
-
-    if (!(c = getenv(DEF_CONN_REG_SECTION "_" CONN_LOCAL_SERVICES))  ||  !*c) {
-        CORE_REG_GET(DEF_CONN_REG_SECTION, CONN_LOCAL_SERVICES,
-                     services, sizeof(services) - 1, 0);
-        if (!*services)
-            return ok;
-    } else
-        strncpy0(services, c, sizeof(services) - 1);
+    if (!(c = ConnNetInfo_GetValue(0, REG_CONN_LOCAL_SERVICES,
+                                   services, sizeof(services), 0))  ||  !*c) {
+        return ok;
+    }
 
     s = services;
     ok = 0/*false*/;
@@ -244,6 +237,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     i = 0;
     data->i_cand = 0;
     while (i < data->n_cand) {
+        /* NB all servers have been loaded in accordance with iter->external */
         info = (SSERV_Info*) data->cand[i].info;
         if (info->rate > 0.0  ||  iter->promiscuous) {
             const char* c = SERV_NameOfInfo(info);
@@ -328,12 +322,12 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                         (data->n_cand - n) * sizeof(*data->cand));
             }
         }
-    } else if (iter->last  ||  iter->n_skip  ||  !dns_info_seen)
-        info = 0;
-    else if ((info = SERV_CreateDnsInfo(0)) != 0)
+    } else if (iter->last  ||  iter->n_skip  ||  !dns_info_seen) {
+        info = 0; /* NB: no need to check for iter->external */
+    } else if ((info = SERV_CreateDnsInfo(0)) != 0)
         info->time = NCBI_TIME_INFINITE;
 
-    if (host_info)
+    if (info  &&  host_info)
         *host_info = 0;
     return info;
 }
@@ -409,6 +403,9 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/04/20 13:59:30  lavr
+ * Use standardized registry key to lookup services and servers
+ *
  * Revision 1.3  2006/04/19 14:45:55  lavr
  * Unconditionally skip internal servers in external searches
  *
