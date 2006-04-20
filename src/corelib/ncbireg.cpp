@@ -457,7 +457,7 @@ void IRegistry::Unlock(void)
 }
 
 
-void IRegistry::x_CheckFlags(const string& /*func*/,
+void IRegistry::x_CheckFlags(const string& _DEBUG_ARG(func),
                              TFlags& flags, TFlags allowed)
 {
     if (flags & ~allowed)
@@ -1483,6 +1483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/04/20 19:08:02  ucko
+ * Correct previous revision to let debug builds work again.
+ *
  * Revision 1.57  2006/04/20 18:52:17  ivanov
  * Get rid of warnings on 64-bit Sun Workshop compiler
  *
