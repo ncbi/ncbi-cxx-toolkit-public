@@ -58,13 +58,17 @@ typedef enum {
    eBlastSevFatal
 } EBlastSeverity;
 
-/** Structure to hold the a message from the BLAST code. */
+extern const int kBlastMessageNoContext;  /**< No single context is known to cause the error 
+                                                 (probably a setup issue). */
+
+/** Structure to hold the a message from the core of the BLAST engine. */
 typedef struct Blast_Message {
-	EBlastSeverity severity; /**< severity code */
-	Int4 code;		/**< major code for error (currently unused) */
-	Int4 subcode;	/**< minor code for this error (currently unused). */
-	char* message;	/**< User message to be saved. */
-    SMessageOrigin* origin; /**< Optional: origin of the message */
+     struct Blast_Message *next; /**< next message in this list */
+     EBlastSeverity severity; /**< severity code */
+     char* message;	/**< User message to be saved. */
+     SMessageOrigin* origin; /**< Optional: origin of the message */
+     int context; /**< Context, allows us to print message for query number. 
+                      kBlastMessageNoContext used if no context applies */
 } Blast_Message;
 
 /** Deallocates message memory.
@@ -83,7 +87,7 @@ Blast_Message* Blast_MessageFree(Blast_Message* blast_msg);
 */
 
 Int2 Blast_MessageWrite(Blast_Message* *blast_msg, EBlastSeverity severity, 
-                        Int4 code, Int4 subcode, const char *message);
+                        int context, const char *message);
 
 
 /** Print a message with ErrPostEx
@@ -96,25 +100,31 @@ Int2 Blast_MessagePost(Blast_Message* blast_msg);
  * file, say blast_error.[hc]? */
 
 /** Analogous to perror
+ * @param msg object to be appended to or created [in|out]
  * @param error_code error code returned from BLAST function [in]
+ * @param context context number so that query or frame can be found [in]
  * @return Blast_Message structure containing error description
  */
-Blast_Message* Blast_Perror(Int2 error_code);
+void Blast_Perror(Blast_Message* *msg, Int2 error_code, int context);
 
 /** Convenient define to call the function Blast_PerrorEx. */
-#define Blast_PerrorWithLocation(error_code) \
-Blast_PerrorEx(error_code, __FILE__, __LINE__)
+#define Blast_PerrorWithLocation(msg, error_code, context) \
+Blast_PerrorEx(msg, error_code, __FILE__, __LINE__, context)
 
 /** Extended version of Blast_Perror which includes parameters for the file
  * name and line number where the error/warning occurred. This function should
  * be invoked via the Blast_PerrorWithLocation macro.
+ * @param msg object to be appended to or created [in|out]
  * @param error_code one of the error codes defined below [in]
  * @param file_name name of the file where the error ocurred [in]
  * @param lineno line number where the error ocurred in the file above [in]
+ * @param context context number so that query or frame can be found [in]
  */
-Blast_Message* Blast_PerrorEx(Int2 error_code, 
+void Blast_PerrorEx(Blast_Message* *msg,
+                              Int2 error_code, 
                               const char* file_name, 
-                              int lineno);
+                              int lineno,
+                              int context);
 
 /* BLAST error codes: these are meant to describe errors that can occur in the
  * core of BLAST only 
