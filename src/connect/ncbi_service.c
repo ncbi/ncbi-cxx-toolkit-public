@@ -39,37 +39,30 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define SERV_SERVICE_NAME "SERVICE_NAME"
+#define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_SERVICE_NAME"
 
 
 static char* s_ServiceName(const char* service, size_t depth)
 {
-    char *s, *p;
-    char key[128];
-    char srv[128];
+    char*  s;
+    char   key[128];
+    char   srv[128];
+    size_t len;
 
     if (++depth > 8 || !service || !*service ||
-        sizeof(DEF_CONN_REG_SECTION) + sizeof(SERV_SERVICE_NAME) +
-        strlen(service) >= sizeof(key))
+        (len = strlen(service)) + sizeof(CONN_SERVICE_NAME) >= sizeof(key))
         return 0/*failure*/;
-    s = key;
-    strcpy(s, DEF_CONN_REG_SECTION);
-    s += sizeof(DEF_CONN_REG_SECTION) - 1;
-    *s++ = '_';
-    strcpy(s, SERV_SERVICE_NAME);
-    s += sizeof(SERV_SERVICE_NAME) - 1;
-    *s++ = '_';
-    strcpy(s, service);
-    strupr(key);
-    /* Looking for "CONN_SERVICE_NAME_service" in environment */
-    if (!(p = getenv(key))) {
-        *--s = '\0';
+    strcpy(key, service);
+    key[len++] = '_';
+    strcpy(key + len, CONN_SERVICE_NAME);
+    /* Looking for "service_CONN_SERVICE_NAME" in environment */
+    if (!(s = getenv(strupr(key)))) {
         /* Looking for "CONN_SERVICE_NAME" in registry's section [service] */
-        CORE_REG_GET(service, key, srv, sizeof(srv), 0);
+        CORE_REG_GET(service, CONN_SERVICE_NAME, srv, sizeof(srv), 0);
         if (!*srv)
             return strdup(service);
     } else
-        strncpy0(srv, p, sizeof(srv) - 1);
+        strncpy0(srv, s, sizeof(srv) - 1);
     return s_ServiceName(srv, depth);
 }
 
@@ -113,6 +106,22 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER   iter,
     }
     iter->skip[iter->n_skip++] = info;
     return 1;
+}
+
+
+static int/*bool*/ s_IsMapperDisabled(const char* service, const char* key)
+{
+    char str[80];
+    ConnNetInfo_GetValue(service, key, str, sizeof(str), 0);
+    if (*str  &&  (strcmp(str, "1") == 0  ||
+                   strcasecmp(str, "true") == 0  ||
+                   strcasecmp(str, "yes" ) == 0  ||
+                   strcasecmp(str, "on"  ) == 0)) {
+        CORE_LOGF(eLOG_Trace,
+                  ("[SERV]  Mapper \"%.5s\" disabled for `%s'", key, service));
+        return 1/*true*/;
+    }
+    return 0/*false*/;
 }
 
 
@@ -191,21 +200,26 @@ static SERV_ITER s_Open(const char*          service,
     assert(n_skip == iter->n_skip);
 
     if (!net_info) {
-        if (!(op = SERV_LOCAL_Open(iter, info, host_info))  &&
-            !(op = SERV_LBSMD_Open(iter, info, host_info, 0))) {
+        if ((s_IsMapperDisabled(service, REG_CONN_LOCAL_DISABLE)
+             ||  !(op = SERV_LOCAL_Open(iter, info, host_info)))  &&
+            (s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE)
+             ||  !(op = SERV_LBSMD_Open(iter, info, host_info, 0)))) {
             /* LBSMD failed in non-DISPD mapping */
             SERV_Close(iter);
             return 0;
         }
     } else {
+        int no_dispd = s_IsMapperDisabled(service, REG_CONN_DISPD_DISABLE);
         if (net_info->firewall)
             iter->type |= fSERV_Firewall;
         if (net_info->stateless)
             iter->stateless = 1;
-        if (!(op = SERV_LOCAL_Open(iter, info, host_info))           &&
-            (net_info->lb_disable
-             ||  !(op = SERV_LBSMD_Open(iter, info, host_info, 1)))  &&
-            !(op = SERV_DISPD_Open(iter, net_info, info, host_info))) {
+        if ((s_IsMapperDisabled(service, REG_CONN_LOCAL_DISABLE)
+             ||  !(op = SERV_LOCAL_Open(iter, info, host_info)))             &&
+            (s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE)
+             ||  !(op = SERV_LBSMD_Open(iter, info, host_info, !no_dispd)))  &&
+            (no_dispd
+             ||  !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
             SERV_Close(iter);
             return 0;
         }
@@ -674,6 +688,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.78  2006/04/20 14:00:31  lavr
+ * Use new mappers' switching scheme; faster service name lookup
+ *
  * Revision 6.77  2006/03/28 18:28:29  lavr
  * Open now calls to see whether local (registry-conf) is available
  *
