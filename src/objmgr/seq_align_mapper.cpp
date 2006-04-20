@@ -891,7 +891,8 @@ CSeq_align_Mapper::x_ConvertSegment(TSegments::iterator& seg_it,
         }
 
         if (!mapping->CanMap(start, stop,
-            aln_row.m_IsSetStrand, aln_row.m_Strand)) {
+            aln_row.m_IsSetStrand  &&  mapper.m_CheckStrand,
+            aln_row.m_Strand)) {
             // Mapping does not apply to this segment/row
             continue;
         }
@@ -1266,6 +1267,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/04/20 19:11:10  grichenk
+* Fixed strand check for alignments
+*
 * Revision 1.16  2005/11/07 15:40:19  vasilche
 * Fixed warning in switch (enum).
 *
