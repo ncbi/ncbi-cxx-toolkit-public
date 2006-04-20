@@ -149,6 +149,7 @@ typedef struct {
     EDebugPrintout debug_printout;   /* printout some debug info             */
     int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
     int/*bool*/    firewall;         /* to use firewall/relay in connects    */
+    int/*bool*/    reserved;         /* kept for binary layout compatibility */
     const char*    http_user_header; /* user header to add to HTTP request   */
 
     /* the following field(s) are for the internal use only -- don't touch!  */
@@ -760,6 +761,9 @@ extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2006/04/20 14:12:01  lavr
+ * Maintain SConnNetInfo layout compatibility by using "reserved" field
+ *
  * Revision 6.53  2006/04/20 13:57:51  lavr
  * Registry keys for new switching scheme for service mappers;
  * Registry keys for LOCAL service mappers;
