@@ -503,10 +503,17 @@ bool CAsn2FlatApp::HandleSeqID( const string& seq_id )
     CConstRef<CSerialObject> reply_object;
     reply_object = bsh.GetTopLevelEntry().GetCompleteSeq_entry();
     
+    
     //
     //  ... and use that to generate the flat file:
     //
     CArgs args = GetArgs();
+    if (!args["nocleanup"]) {
+    
+        CCleanup Cleanup;
+        CConstRef<CBioseq> se = bsh.GetCompleteObject();
+        Cleanup.BasicCleanup( const_cast<CBioseq&>(se.GetObject()) );
+    }
     if ( args["from"]  ||  args["to"] ) {
         CSeq_loc loc;
         x_GetLocation( bsh.GetTopLevelEntry(), args, loc );
@@ -835,6 +842,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2006/04/20 11:39:43  ludwigf
+* FIXED: The utility would never call BasicCleanup when in "-id" mode.
+*
 * Revision 1.22  2006/03/14 18:44:07  ludwigf
 * CHANGED: Switched from object internal BasicCleanup() to the new CCleanup
 *  class.
