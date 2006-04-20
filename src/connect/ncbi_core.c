@@ -405,6 +405,7 @@ extern REG REG_Delete(REG rg)
     if ( rg->mt_lock )
         MT_LOCK_Delete(rg->mt_lock);
     free(rg);
+
     return 0;
 }
 
@@ -425,16 +426,15 @@ extern char* REG_Get
     else
         *value = '\0';
 
-    if ( !rg )
-        return value;
+    if ( rg ) {
+        REG_LOCK_READ;
+        REG_VALID;
 
-    REG_LOCK_READ;
-    REG_VALID;
+        if ( rg->get )
+            rg->get(rg->user_data, section, name, value, value_size);
 
-    if ( rg->get )
-        rg->get(rg->user_data, section, name, value, value_size);
-
-    REG_UNLOCK;
+        REG_UNLOCK;
+    }
     return value;
 }
 
@@ -446,22 +446,24 @@ extern void REG_Set
  const char*  value,
  EREG_Storage storage)
 {
-    if ( !rg )
-        return;
+    if ( rg ) {
+        REG_LOCK_READ;
+        REG_VALID;
 
-    REG_LOCK_READ;
-    REG_VALID;
+        if ( rg->set )
+            rg->set(rg->user_data, section, name, value, storage);
 
-    if ( rg->set )
-        rg->set(rg->user_data, section, name, value, storage);
-
-    REG_UNLOCK;
+        REG_UNLOCK;
+    }
 }
 
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2006/04/20 13:58:46  lavr
+ * Wrap registry retrievals
+ *
  * Revision 6.15  2005/04/20 18:13:39  lavr
  * +"ncbi_assert.h"
  *
