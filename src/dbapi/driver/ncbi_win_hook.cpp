@@ -344,7 +344,7 @@ namespace NWinHook
         DWORD GetProcessId(void) const;
         BOOL PopulateModules(void);
         size_t GetModuleCount(void) const;
-        CModuleInstance* GetModuleByIndex(DWORD dwIndex) const;
+        CModuleInstance* GetModuleByIndex(size_t dwIndex) const;
 
     private:
         DWORD        m_dwProcessId;
@@ -536,7 +536,7 @@ namespace NWinHook
         return (m_pInternalList.size());
     }
 
-    CModuleInstance* CExeModuleInstance::GetModuleByIndex(DWORD dwIndex) const
+    CModuleInstance* CExeModuleInstance::GetModuleByIndex(size_t dwIndex) const
     {
         if (m_pInternalList.size() <= dwIndex) {
             return (NULL);
@@ -1257,18 +1257,18 @@ namespace NWinHook
             }
 
             // Get the name of the DLL
-            PSTR pszDllName = reinterpret_cast<PSTR>( pExportDir->Name + (DWORD)hmodOriginal);
+            PSTR pszDllName = reinterpret_cast<PSTR>( pExportDir->Name + hmodOriginal);
             // Get the starting ordinal value. By default is 1, but
             // is not required to be so
             DWORD dwFuncNumber = pExportDir->Base;
             // The number of entries in the EAT
             size_t dwNumberOfExported = pExportDir->NumberOfFunctions;
             // Get the address of the ENT
-            PDWORD pdwFunctions = (PDWORD)( pExportDir->AddressOfFunctions + (DWORD)hmodOriginal);
+            PDWORD pdwFunctions = (PDWORD)( pExportDir->AddressOfFunctions + hmodOriginal);
             //  Get the export ordinal table
-            PWORD pwOrdinals = (PWORD)(pExportDir->AddressOfNameOrdinals + (DWORD)hmodOriginal);
+            PWORD pwOrdinals = (PWORD)(pExportDir->AddressOfNameOrdinals + hmodOriginal);
             // Get the address of the array with all names
-            DWORD *pszFuncNames =   (DWORD *)(pExportDir->AddressOfNames + (DWORD)hmodOriginal);
+            DWORD *pszFuncNames =   (DWORD *)(pExportDir->AddressOfNames + hmodOriginal);
 
             PSTR pszExpFunName;
 
@@ -1287,7 +1287,7 @@ namespace NWinHook
                 for (unsigned j=0; j < pExportDir->NumberOfNames; j++) {
                     // Note that pwOrdinals[x] return values starting form 0.. (not from 1)
                     if (pwOrdinals[j] == i) {
-                        pszExpFunName = (PSTR)(pszFuncNames[j] + (DWORD)hmodOriginal);
+                        pszExpFunName = (PSTR)(pszFuncNames[j] + hmodOriginal);
                         // Is this the same ordinal value ?
                         // Notice that we need to add 1 to pwOrdinals[j] to get actual
                         // number
@@ -1339,13 +1339,16 @@ namespace NWinHook
         // Prevent accessing invalid pointers and examine values
         // for APIs exported by ordinal
         if ((pszFuncName) &&
-            ((DWORD)pszFuncName > 0xFFFF) &&
+            (reinterpret_cast<LONGLONG>(pszFuncName) > 0xFFFF) &&
             strlen(pszFuncName)) {
             strcpy(szFuncName, pszFuncName);
         }
         else {
+			// It is safe to cast a pointer to DWORD here because it is not a 
+			// pointer, it is an ordinal number of a function.
             GetFunctionNameByOrdinal(pszCalleeModName, 
-                                     (DWORD)pszFuncName, 
+                                     static_cast<DWORD>(
+										reinterpret_cast<LONGLONG>(pszFuncName)), 
                                      szFuncName);
         }
 
@@ -1381,13 +1384,16 @@ namespace NWinHook
         // Prevent accessing invalid pointers and examine values
         // for APIs exported by ordinal
         if ((pszFuncName) &&
-            ((DWORD)pszFuncName > 0xFFFF) &&
+            (reinterpret_cast<LONGLONG>(pszFuncName) > 0xFFFF) &&
             strlen(pszFuncName)) {
             strcpy(szFuncName, pszFuncName);
         }
         else {
+			// It is safe to cast a pointer to DWORD here because it is not a 
+			// pointer, it is an ordinal number of a function.
             GetFunctionNameByOrdinal(hmodOriginal, 
-                                     (DWORD)pszFuncName, 
+                                     static_cast<DWORD>(
+										reinterpret_cast<LONGLONG>(pszFuncName)), 
                                      szFuncName);
         }
 
@@ -1946,6 +1952,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/04/20 22:20:32  ssikorsk
+ * Fixed conversion of types on Windows x64.
+ *
  * Revision 1.5  2006/04/17 13:04:23  ivanov
  * Added missed bool type specifier
  *
