@@ -473,7 +473,7 @@ s_ConvertMessagesToC(const TSearchMessages& msgs)
     }
 
     if ( !msg.empty() ) {
-        Blast_MessageWrite(&retval, sev, 0, 0, msg.c_str());
+        Blast_MessageWrite(&retval, sev, query_num, msg.c_str());  // Is query_num correct here?
     }
     return retval;
 }
@@ -789,6 +789,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.87  2006/04/20 19:29:56  madden
+ * Prototype change for Blast_MessageWrite
+ *
  * Revision 1.86  2006/01/24 15:42:46  camacho
  * Call new function Blast_HSPResultsFromHSPStream from CDbBlast::GetResults
  *

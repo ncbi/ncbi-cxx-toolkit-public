@@ -98,16 +98,16 @@ Blast_Message2TSearchMessages(const Blast_Message* blmsg,
     const BlastContextInfo* kCtxInfo = query_info->contexts;
 
     // First copy the errors...
-    for (int i = query_info->first_context; 
-         i <= query_info->last_context; i++) {
-
-        if ( !kCtxInfo[i].is_valid && blmsg->message ) {
-            string msg(blmsg->message);
-            CRef<CSearchMessage> sm(new CSearchMessage(blmsg->severity,
-                                                       kCtxInfo[i].query_index,
-                                                       msg));
-            messages[kCtxInfo[i].query_index].push_back(sm);
-        }
+    const Blast_Message* blmsg_var = blmsg;
+    while (blmsg_var)
+    {
+          int context = blmsg_var->context;
+          string msg(blmsg_var->message);
+          CRef<CSearchMessage> sm(new CSearchMessage(blmsg_var->severity,
+                                              kCtxInfo[context].query_index,
+                                              msg));
+          messages[kCtxInfo[context].query_index].push_back(sm);
+          blmsg_var = blmsg_var->next;
     }
 
     // ... then remove duplicate error messages
@@ -117,7 +117,8 @@ Blast_Message2TSearchMessages(const Blast_Message* blmsg,
 string
 BlastErrorCode2String(Int2 error_code)
 {
-    Blast_Message* blast_msg = Blast_PerrorEx(error_code, __FILE__, __LINE__);
+    Blast_Message* blast_msg = NULL;
+    Blast_PerrorEx(&blast_msg, error_code, __FILE__, __LINE__, -1);
     string retval(blast_msg->message);
     blast_msg = Blast_MessageFree(blast_msg);
     return retval;

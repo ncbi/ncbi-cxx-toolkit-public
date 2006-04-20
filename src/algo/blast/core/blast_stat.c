@@ -2369,31 +2369,11 @@ ErrExit:
    return 1;
 }
 
-/** Finds the first index of a context which is marked as not valid in the
- * BlastQueryInfo structure.
- * @param query_info BlastQueryInfo structure [in]
- * @return -1 if all contexts are valid, otherwise an integer between
- * BlastQueryInfo::first_context and BlastQueryInfo::last_context (inclusive)
- */
-static Int2
-s_FindFirstInvalidContext(const BlastQueryInfo* query_info)
-{
-    Int2 index;
-    ASSERT(query_info);
-
-    for (index = query_info->first_context; 
-         index <= query_info->last_context; index++) {
-        if ( !query_info->contexts[index].is_valid ) {
-            return index;
-        }
-    }
-    return -1;
-}
-
 Int2
 Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
                               BlastScoreBlk* sbp, Uint1* query, 
-                              const BlastQueryInfo* query_info)
+                              const BlastQueryInfo* query_info,
+                              Blast_Message* *blast_message)
 {
    Int2 status = 0;
    Int4 context; /* loop variable. */
@@ -2402,6 +2382,7 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
    Boolean check_ideal = 
       (program == eBlastTypeBlastx || program == eBlastTypeTblastx ||
        program == eBlastTypeRpsTblastn);
+   Boolean valid_context = FALSE;
 
    ASSERT(contexts);
 
@@ -2421,17 +2402,12 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
       Int4 query_length;
       Uint1 *buffer;              /* holds sequence */
       Blast_KarlinBlk* kbp;
+      Int2 loop_status; /* status flag for functions in this loop. */
       
-      /* If no strand/frame is requested, no ungapped kbp structures are
-       * allocated */
-      if ((query_length = contexts[context].query_length) <= 0) {
-          contexts[context].is_valid = FALSE;
-          continue;
-      }
-
       if ( !contexts[context].is_valid )
           continue;
 
+      query_length = contexts[context].query_length;
       context_offset = contexts[context].query_offset;
       buffer = &query[context_offset];
       
@@ -2439,11 +2415,17 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
       sbp->sfp[context] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
       BlastScoreFreqCalc(sbp, sbp->sfp[context], rfp, stdrfp);
       sbp->kbp_std[context] = kbp = Blast_KarlinBlkNew();
-      status = Blast_KarlinBlkUngappedCalc(kbp, sbp->sfp[context]);
-      if (status) {
+      loop_status = Blast_KarlinBlkUngappedCalc(kbp, sbp->sfp[context]);
+      if (loop_status) {
           contexts[context].is_valid = FALSE;
           sbp->sfp[context] = Blast_ScoreFreqFree(sbp->sfp[context]);
           sbp->kbp_std[context] = Blast_KarlinBlkFree(sbp->kbp_std[context]);
+          if (!Blast_QueryIsTranslated(program) ) {
+             Blast_MessageWrite(blast_message, eBlastSevWarning, context,
+                "Could not calculate ungapped Karlin-Altschul parameters due "
+                "to an invalid query sequence or its translation. Please verify the "
+                "query sequence(s) and/or filtering options");
+          }
           continue;
       }
       /* For searches with translated queries, check whether ideal values
@@ -2453,30 +2435,23 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
          Blast_KarlinBlkCopy(kbp, sbp->kbp_ideal);
 
       sbp->kbp_psi[context] = Blast_KarlinBlkNew();
-      status = Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[context], 
+      loop_status = Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[context], 
                                            sbp->sfp[context]);
-      if (status) {
+      if (loop_status) {
           contexts[context].is_valid = FALSE;
           sbp->sfp[context] = Blast_ScoreFreqFree(sbp->sfp[context]);
           sbp->kbp_std[context] = Blast_KarlinBlkFree(sbp->kbp_std[context]);
           sbp->kbp_psi[context] = Blast_KarlinBlkFree(sbp->kbp_psi[context]);
           continue;
       }
+      valid_context = TRUE;
    }
 
    rfp = Blast_ResFreqFree(rfp);
    stdrfp = Blast_ResFreqFree(stdrfp);
 
-   /* Report failures when calculating Karlin-Altschul parameters only for
-    * non-translated query searches, because for translated query searches,
-    * invalid frames can occur and this errors can go undetected safely. */
-   if ( !Blast_QueryIsTranslated(program) ) {
-       if (s_FindFirstInvalidContext(query_info) >= 0) {
-           status = 1;
-       } else {
-           ASSERT(status == 0);
-       }
-   }
+   if (valid_context == FALSE)
+     status = 1;  /* Not a single context was valid. */
 
    /* Set ungapped Blast_KarlinBlk* alias */
    sbp->kbp = (program == eBlastTypePsiBlast) ? sbp->kbp_psi : sbp->kbp_std;
@@ -3004,7 +2979,7 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
             char buffer[256];
             sprintf(buffer, "Substitution scores %d and %d are not supported", 
                 reward, penalty);
-            Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+            Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
         }
     }
     if (split)
@@ -3142,7 +3117,7 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
             sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
          else
             sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
-         Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+         Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
       }
    }
 
@@ -3176,13 +3151,13 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
          vnp = head = BlastLoadMatrixValues();
 
          sprintf(buffer, "%s is not a supported matrix", matrix_name);
-         Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+         Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
 
          while (vnp)
          {
             matrix_info = vnp->ptr;
             sprintf(buffer, "%s is a supported matrix", matrix_info->name);
-            Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+            Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
             vnp = vnp->next;
          }
 
@@ -3194,7 +3169,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
             sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
          else
             sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
-         Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+         Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
          BlastKarlinReportAllowedValues(matrix_name, error_return);
       }
    }
@@ -3447,7 +3422,7 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
                 len = strlen(buffer);
                 sprintf(buffer+len, "Any values more stringent than %ld and %ld are supported\n", 
                      (long) gap_open_max, (long) gap_extend_max);
-                Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+                Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
                 sfree(normal);
                 sfree(linear);
                 return 1;
@@ -4388,6 +4363,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.141  2006/04/20 19:28:30  madden
+ * Prototype change for Blast_MessageWrite
+ *
  * Revision 1.140  2006/04/07 13:45:04  madden
  * Improved the comment for NlmKarlinLambdaNR.  Reformatted the
  * function prototype to fit in 80 characters. (from Mike Gertz).

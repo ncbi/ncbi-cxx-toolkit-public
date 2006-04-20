@@ -300,7 +300,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
                                      segOptions = SSegOptionsFree(segOptions);
                                      sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                      if (blast_message)
-                                       Blast_MessageWrite(blast_message, eBlastSevError, 2, 1,
+                                       Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                                             error_buffer);
                                      sfree(buffer);
                                      return status;
@@ -323,7 +323,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
                                      dustOptions = SDustOptionsFree(dustOptions);
                                      sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                      if (blast_message)
-                                       Blast_MessageWrite(blast_message, eBlastSevError, 2, 1,
+                                       Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                                             error_buffer);
                                      sfree(buffer);
                                      return status;
@@ -346,7 +346,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
                                   repeatOptions = SRepeatFilterOptionsFree(repeatOptions);
                                   sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                   if (blast_message)
-                                     Blast_MessageWrite(blast_message, eBlastSevError, 2, 1,
+                                     Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                                             error_buffer);
                                    sfree(buffer);
                                    return status;
@@ -767,7 +767,7 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       Int4 left=0, right; /* Used for left/right extent of a region. */
       BlastSeqLoc* loc = NULL;
 
-      if (query_info->contexts[context].query_length <= 0) {
+      if (query_info->contexts[context].is_valid == FALSE) {
           continue;
       }
 
@@ -941,9 +941,11 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk,
     context_offset = query_info->contexts[context].query_offset;
     buffer = &query_blk->sequence[context_offset];
 
-    if ((query_length = query_info->contexts[context].query_length) <= 0) {
-       return 0;
+    if (query_info->contexts[context].is_valid == FALSE) {
+          return 0;
     }
+
+    query_length = query_info->contexts[context].query_length;
 
     status = BlastSetUp_Filter(program_number, 
                                buffer, 
@@ -1023,10 +1025,8 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk,
                                                       &filter_per_context, 
                                                       blast_message);
         if (status) {
-            if (*blast_message == NULL) {
-                Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
+            Blast_MessageWrite(blast_message, eBlastSevError, context,
                                    "Failure at filtering");
-            }
             return status;
         }
 
@@ -1088,9 +1088,11 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk,
         Int4 context_offset = 0;
         Uint1 *buffer = NULL;              /* holds sequence */
 
-        /* For each query, check if forward strand is present */
-        if ( (query_length = query_info->contexts[context].query_length) <= 0)
-            continue;
+        if (query_info->contexts[context].is_valid == FALSE) {
+          continue;
+        }
+
+        query_length = query_info->contexts[context].query_length;
 
         context_offset = query_info->contexts[context].query_offset;
         buffer = &query_blk->sequence[context_offset];

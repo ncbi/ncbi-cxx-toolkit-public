@@ -54,7 +54,7 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
     Int2 index = 0;
 
     if (sbp == NULL || scoring_options == NULL) {
-        *error_return = Blast_PerrorWithLocation(BLASTERR_INVALIDPARAM);
+        Blast_PerrorWithLocation(error_return, BLASTERR_INVALIDPARAM, -1);
         return 1;
     }
 
@@ -285,7 +285,7 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
        sprintf(buffer, "Matrix %s not allowed in PHI-BLAST\n", options->matrix);
    }
    if (status) 
-       Blast_MessageWrite(blast_message, eBlastSevWarning, 2, 1, buffer);
+       Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, buffer);
    else {
        /* Put a copy the Karlin block into the kbp_std array */
        sbp->kbp_std[0] = (Blast_KarlinBlk*) 
@@ -362,7 +362,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
        sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, query_info->last_context + 1);
 
     if (!sbp) {
-        *blast_message = Blast_PerrorWithLocation(BLASTERR_MEMORY);
+       Blast_PerrorWithLocation(blast_message, BLASTERR_MEMORY, -1);
        return 1;
     }
 
@@ -371,7 +371,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
 
     status = Blast_ScoreBlkMatrixInit(program_number, scoring_options, sbp);
     if (status) {
-        *blast_message = Blast_Perror(status);
+        Blast_Perror(blast_message, status, -1);
         return status;
     }
 
@@ -379,15 +379,8 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     if (Blast_ProgramIsPhiBlast(program_number)) {
        status = s_PHIScoreBlkFill(sbp, scoring_options, blast_message);
     } else {
-       if (Blast_ScoreBlkKbpUngappedCalc(program_number, sbp,
-                                         query_blk->sequence, query_info) != 0)
-       {
-          Blast_MessageWrite(blast_message, eBlastSevWarning, 2, 1, 
-             "Could not calculate ungapped Karlin-Altschul parameters for "
-             "some contexts/frames due to an invalid query sequence or "
-             "its translation. Please verify the query "
-             "sequence(s) and/or filtering options");
-       }
+       status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, query_blk->sequence, 
+               query_info, blast_message);
 
        if (scoring_options->gapped_calculation) {
           status = 
@@ -530,7 +523,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
 
     if ( (status = s_BlastSetup_Validate(query_info, *sbpp) != 0)) {
         if (*blast_message == NULL) {
-            *blast_message = Blast_Perror(BLASTERR_INVALIDQUERIES);
+            Blast_Perror(blast_message, BLASTERR_INVALIDQUERIES, -1);
         }
         return 1;
     }
