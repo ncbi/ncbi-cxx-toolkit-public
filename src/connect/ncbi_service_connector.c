@@ -43,7 +43,6 @@
 
 typedef struct SServiceConnectorTag {
     const char*     name;               /* Verbal connector type             */
-    const char*     service;            /* Translated service name, if stored*/
     TSERV_Type      types;              /* Server types, record keeping only */
     SConnNetInfo*   net_info;           /* Connection information            */
     const char*     user_header;        /* User header currently set         */
@@ -54,6 +53,8 @@ typedef struct SServiceConnectorTag {
     unsigned short  port;
     ticket_t        ticket;
     SSERVICE_Extra  params;
+    const char*     x_service;          /* Translated service name, if stored*/
+    char            service[1];         /* Untranslated service name         */
 } SServiceConnector;
 
 
@@ -81,8 +82,7 @@ extern "C" {
 
 static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 {
-    assert(!uuu->user_header);
-    if (!(uuu->iter = SERV_OpenEx(uuu->net_info->service, uuu->types,
+    if (!(uuu->iter = SERV_OpenEx(uuu->service, uuu->types,
                                   SERV_LOCALHOST, uuu->net_info, 0, 0))) {
         return 0/*false*/;
     }
@@ -92,10 +92,6 @@ static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 
 static void s_CloseDispatcher(SServiceConnector* uuu)
 {
-    if (uuu->user_header) {
-        free((void*) uuu->user_header);
-        uuu->user_header = 0;
-    }
     SERV_Close(uuu->iter);
     uuu->iter = 0;
 }
@@ -636,9 +632,13 @@ static EIO_Status s_Close(CONNECTOR       connector,
     }
 
     if (close_dispatcher) {
-        s_CloseDispatcher(uuu);
+        if (uuu->user_header) {
+            free((void*) uuu->user_header);
+            uuu->user_header = 0;
+        }
         if (uuu->params.reset)
             uuu->params.reset(uuu->params.data);
+        s_CloseDispatcher(uuu);
     }
 
     if (uuu->meta.list) {
@@ -770,14 +770,15 @@ static void s_Destroy(CONNECTOR connector)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
 
-    s_CloseDispatcher(uuu);
+    if (uuu->iter)
+        s_CloseDispatcher(uuu);
     if (uuu->params.cleanup)
         uuu->params.cleanup(uuu->params.data);
     ConnNetInfo_Destroy(uuu->net_info);
     if (uuu->name)
         free((void*) uuu->name);
-    if (uuu->service)
-        free((void*) uuu->service);
+    if (uuu->x_service)
+        free((void*) uuu->x_service);
     free(uuu);
     connector->handle = 0;
     free(connector);
@@ -800,7 +801,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     if (!service || !*service)
         return 0;
 
-    ccc = (SConnector*)        malloc(sizeof(SConnector));
+    ccc = (SConnector*)        malloc(sizeof(SConnector) + strlen(service));
     xxx = (SServiceConnector*) calloc(1, sizeof(*xxx));
 
     /* initialize connector structures */
@@ -815,8 +816,8 @@ extern CONNECTOR SERVICE_CreateConnectorEx
                      ? ConnNetInfo_Clone(net_info)
                      : ConnNetInfo_Create(service));
     if (net_info  &&  xxx->net_info) {
-        xxx->service = SERV_ServiceName(service);
-        xxx->net_info->service = xxx->service;
+        xxx->x_service = SERV_ServiceName(service);
+        xxx->net_info->service = xxx->x_service;/*SetupStandardArgs() expects*/
     }
     if (!ConnNetInfo_SetupStandardArgs(xxx->net_info)) {
         s_Destroy(ccc);
@@ -828,8 +829,8 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         xxx->net_info->stateless = 1/*true*/;
     if (types & fSERV_Firewall)
         xxx->net_info->firewall = 1/*true*/;
+    strcpy(xxx->service, service);
     if (!s_OpenDispatcher(xxx)) {
-        s_CloseDispatcher(xxx);
         s_Destroy(ccc);
         return 0;
     }
@@ -847,6 +848,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.71  2006/04/20 14:00:59  lavr
+ * Keep original service name and use it for service mappers
+ *
  * Revision 6.70  2006/01/27 17:10:24  lavr
  * Replace obsolete call names with current ones
  *
