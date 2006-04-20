@@ -55,7 +55,8 @@ int main(int argc, const char* argv[])
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
-    CORE_SetLOGFormatFlags(fLOG_Full | fLOG_DateTime);
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     net_info = ConnNetInfo_Create(service);
@@ -69,6 +70,7 @@ int main(int argc, const char* argv[])
     timeout = net_info->timeout;
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
+    ConnNetInfo_Destroy(net_info);
 
     if (!connector)
         CORE_LOG(eLOG_Fatal, "Failed to create service connector");
@@ -152,8 +154,6 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Error reading from service ID1");
     }
 
-    
-    ConnNetInfo_Destroy(net_info);
     CORE_LOGF(eLOG_Note, ("%d bytes read from service ID1", n));
     CONN_Close(conn);
 #endif
@@ -166,6 +166,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2006/04/20 14:01:58  lavr
+ * Cleanup to demonstrate no leaks; use short diag format
+ *
  * Revision 6.35  2006/01/12 18:13:36  lavr
  * Add arguments to show that they must be replaced by standard ones
  *
