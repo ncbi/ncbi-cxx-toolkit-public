@@ -75,10 +75,14 @@ s_QueryInfo_SetContext(BlastQueryInfo*   qinfo,
         
         qinfo->contexts[index].query_offset = prev_loc + shift;
         qinfo->contexts[index].query_length = length;
+        if (length == 0)
+           qinfo->contexts[index].is_valid = false;
     } else {
         // First context
         qinfo->contexts[0].query_offset = 0;
         qinfo->contexts[0].query_length = length;
+        if (length == 0)
+           qinfo->contexts[0].is_valid = false;
     }
 }
 
@@ -1564,6 +1568,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.114  2006/04/20 19:29:34  madden
+ * Set is_valid to false for zero length queries in s_QueryInfo_SetContext
+ *
  * Revision 1.113  2006/04/12 14:47:42  papadopo
  * replace U, O, or J protein letters with X
  *
