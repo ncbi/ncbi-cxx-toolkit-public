@@ -35,6 +35,7 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbiapp.hpp>
 
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
@@ -484,16 +485,99 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
     m_Reporter.SetExtraMsg( extra_msg );
         
     if(!m_UseDSN) {
+        const string conn_str_suffix(srv_name + 
+                                     ";UID=" + 
+                                     user_name + 
+                                     ";PWD=" + 
+                                     passwd);
 #ifdef NCBI_OS_MSWIN
-      string connect_str("DRIVER={SQL Server};SERVER=");
+        // Default connection string ...
+        string connect_str("DRIVER={SQL Server};SERVER=");
+        CNcbiApplication* app = CNcbiApplication::Instance();
+
+        if (app) {
+            enum EState {eStInitial, eStSingleQuote};
+            vector<string> driver_names;
+            const IRegistry& registry = app->GetConfig();
+            const string& odbc_driver_name = 
+                registry.GetString("ODBC", "DRIVER_NAME", "SQL Server");
+
+            NStr::Tokenize(odbc_driver_name, " ", driver_names);
+            EState state = eStInitial;
+            string driver_name;
+
+            ITERATE(vector<string>, it, driver_names) {
+                bool complete_deriver_name = false;
+                const string cur_str(*it);
+
+                // Check for quotes ...
+                if (state == eStInitial) {
+                    if (cur_str[0] == '\'') {
+                        if (cur_str[cur_str.size() - 1] == '\'') {
+                            // Skip quote ...
+                            driver_name = it->substr(1, cur_str.size() - 2);
+                            complete_deriver_name = true;
+                        } else {
+                            // Skip quote ...
+                            driver_name = it->substr(1);
+                            state = eStSingleQuote;
+                        }
+                    } else {
+                        driver_name = cur_str;
+                        complete_deriver_name = true;
+                    }
+                } else if (state == eStSingleQuote) {
+                    if (cur_str[cur_str.size() - 1] == '\'') {
+                        // Final quote ...
+                        driver_name += " " + cur_str.substr(0, cur_str.size() - 1);
+                        state = eStInitial;
+                        complete_deriver_name = true;
+                    } else {
+                        driver_name += " " + cur_str;
+                    }
+                }
+
+                if (complete_deriver_name) {
+                    string conn_str("DRIVER={" + driver_name + "};SERVER=");
+                    conn_str += conn_str_suffix;
+
+                    r = SQLDriverConnect(con, 
+                                        0, 
+                                        (SQLCHAR*) conn_str.c_str(), 
+                                        SQL_NTS,
+                                        0, 
+                                        0, 
+                                        0, 
+                                        SQL_DRIVER_NOPROMPT);
+
+                    switch(r) {
+                    case SQL_SUCCESS_WITH_INFO:
+                        xReportConError(con);
+                    case SQL_SUCCESS: 
+                        return con;
+                    case SQL_ERROR:
+                        xReportConError(con);
+                        break;
+                    default:
+                        m_Reporter.ReportErrors();
+                        break;
+                    }
+
+                    ERR_POST(Warning << "Cannot initialize ODBC driver '" <<
+                             driver_name << "'.");
+                }
+            }
+        }
+
+        // Connection strings for SQL Native Client 2005.
+        // string connect_str("DRIVER={SQL Native Client};MultipleActiveResultSets=true;SERVER=");
+        // string connect_str("DRIVER={SQL Native Client};SERVER=");
 #else
-      string connect_str("DSN=");
+        string connect_str("DSN=");
 #endif
-        connect_str+= srv_name;
-        connect_str+= ";UID=";
-        connect_str+= user_name;
-        connect_str+= ";PWD=";
-        connect_str+= passwd;
+        // Ignore non-complete driver name ...
+        // Use default driver name ...
+        connect_str += conn_str_suffix;
         
         r = SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
                              0, 0, 0, SQL_DRIVER_NOPROMPT);
@@ -507,8 +591,8 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
     switch(r) {
     case SQL_SUCCESS_WITH_INFO:
         xReportConError(con);
-    case SQL_SUCCESS: return con;
-
+    case SQL_SUCCESS: 
+        return con;
     case SQL_ERROR:
         xReportConError(con);
         SQLFreeHandle(SQL_HANDLE_DBC, con);
@@ -718,6 +802,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/04/20 16:29:45  ssikorsk
+ * Added handling of a registry's section "ODBC" and key "DRIVER_NAME" to the driver.
+ * Multiword driver names must be single-quoted. Multiple driver names are allowed.
+ *
  * Revision 1.47  2006/04/13 15:12:54  ssikorsk
  * Fixed erasing of an element from a std::vector.
  *
