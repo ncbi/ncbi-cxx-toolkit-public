@@ -225,6 +225,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                        strcasecmp(str, "yes" ) == 0  ||
                        strcasecmp(str, "on"  ) == 0));
 
+    /* MBZ */
+    info->reserved = 0;
+
     /* user header (with optional '\r\n' added automagically) */
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
     if (*str) {
@@ -1984,6 +1987,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.106  2006/04/20 14:12:21  lavr
+ * Maintain SConnNetInfo layout compatibility by using "reserved" field (MBZ)
+ *
  * Revision 6.105  2006/04/20 13:58:32  lavr
  * Registry keys for new switching scheme for service mappers;
  * Registry keys for LOCAL service mappers;
