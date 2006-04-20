@@ -44,8 +44,6 @@
 
 #include <serial/iterator.hpp>
 
-#include <objtools/format/context.hpp>
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -182,6 +180,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/04/20 19:00:59  ucko
+* Stop including <objtools/format/context.hpp> -- there's (thankfully!)
+* no need to do so, and it confuses SGI's MIPSpro compiler.
+*
 * Revision 1.3  2006/04/17 17:42:21  ucko
 * Drop extraneous and disconcerting inclusion of gui headers.
 *
