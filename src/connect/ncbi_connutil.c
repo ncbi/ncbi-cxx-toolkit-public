@@ -53,9 +53,9 @@
 #endif
 
 
-static const char* s_GetValue(const char* service, const char* param,
-                              char* value, size_t value_size,
-                              const char* def_value)
+extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
+                                        char* value, size_t value_size,
+                                        const char* def_value)
 {
     char        key[256];
     char*       sec;
@@ -114,7 +114,7 @@ static const char* s_GetValue(const char* service, const char* param,
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
 #define REG_VALUE(name, value, def_value) \
-    s_GetValue(service, name, value, sizeof(value), def_value)
+    ConnNetInfo_GetValue(service, name, value, sizeof(value), def_value)
 
     SConnNetInfo* info = (SConnNetInfo*) malloc(sizeof(*info) +
                                                 (service  &&  *service
@@ -199,6 +199,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         (strcmp(str, "1") == 0  ||
          strcasecmp(str, "true") == 0  ||
          strcasecmp(str, "yes" ) == 0  ||
+         strcasecmp(str, "on"  ) == 0  ||
          strcasecmp(str, "some") == 0)) {
         info->debug_printout = eDebugPrintout_Some;
     } else if (*str  &&
@@ -213,21 +214,16 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     info->stateless = (*str  &&
                        (strcmp(str, "1") == 0  ||
                         strcasecmp(str, "true") == 0  ||
-                        strcasecmp(str, "yes" ) == 0));
+                        strcasecmp(str, "yes" ) == 0  ||
+                        strcasecmp(str, "on"  ) == 0));
 
     /* firewall mode? */
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
     info->firewall = (*str  &&
                       (strcmp(str, "1") == 0  ||
                        strcasecmp(str, "true") == 0  ||
-                       strcasecmp(str, "yes" ) == 0));
-
-    /* prohibit the use of local load balancer? */
-    REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
-    info->lb_disable = (*str  &&
-                        (strcmp(str, "1") == 0  ||
-                         strcasecmp(str, "true") == 0  ||
-                         strcasecmp(str, "yes" ) == 0));
+                       strcasecmp(str, "yes" ) == 0  ||
+                       strcasecmp(str, "on"  ) == 0));
 
     /* user header (with optional '\r\n' added automagically) */
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
@@ -640,7 +636,7 @@ extern void ConnNetInfo_DeleteArg(SConnNetInfo* info,
         if (*a == '&')
             a++;
         arglen = strcspn(a, "&");
-        if (arglen < argnamelen || strncmp(a, arg, argnamelen) != 0 ||
+        if (arglen < argnamelen || strncasecmp(a, arg, argnamelen) != 0 ||
             (a[argnamelen] && a[argnamelen] != '=' && a[argnamelen] != '&'))
             continue;
         if (a[arglen]) {
@@ -661,8 +657,11 @@ extern void ConnNetInfo_DeleteAllArgs(SConnNetInfo* info,
 {
     char* temp;
     char* arg;
-    if (!args || !*args || !(temp = strdup(args)))
+    if (!args || !*args || !(temp = strdup(args))) {
+        if (args && *args)
+            *info->args = '\0';
         return;
+    }
     arg = temp;
     while (*arg) {
         char* end = strchr(arg, '&');
@@ -874,7 +873,6 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
                                                  ? "DATA" : "Unknown"))));
     s_SaveBool      (s, "stateless",       info->stateless);
     s_SaveBool      (s, "firewall",        info->firewall);
-    s_SaveBool      (s, "lb_disable",      info->lb_disable);
     s_SaveString    (s, "user_header",     info->http_user_header);
     s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
@@ -1986,6 +1984,13 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.105  2006/04/20 13:58:32  lavr
+ * Registry keys for new switching scheme for service mappers;
+ * Registry keys for LOCAL service mappers;
+ * Removed LB_DISABLE (both as a key and from SConnNetInfo) - from now on
+ * LBSMD_DISABLE should used instead;
+ * ConnNetInfo_GetValue() exported
+ *
  * Revision 6.104  2006/04/19 02:12:06  lavr
  * Call DeleteAllArgs when doing argument overrides
  *
