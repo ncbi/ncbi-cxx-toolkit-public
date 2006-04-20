@@ -113,15 +113,10 @@ static int/*bool*/ s_IsMapperDisabled(const char* service, const char* key)
 {
     char str[80];
     ConnNetInfo_GetValue(service, key, str, sizeof(str), 0);
-    if (*str  &&  (strcmp(str, "1") == 0  ||
-                   strcasecmp(str, "true") == 0  ||
-                   strcasecmp(str, "yes" ) == 0  ||
-                   strcasecmp(str, "on"  ) == 0)) {
-        CORE_LOGF(eLOG_Trace,
-                  ("[SERV]  Mapper \"%.5s\" disabled for `%s'", key, service));
-        return 1/*true*/;
-    }
-    return 0/*false*/;
+    return *str  &&  (strcmp(str, "1") == 0  ||
+                      strcasecmp(str, "true") == 0  ||
+                      strcasecmp(str, "yes" ) == 0  ||
+                      strcasecmp(str, "on"  ) == 0);
 }
 
 
@@ -143,6 +138,7 @@ static SERV_ITER s_Open(const char*          service,
     const TSERV_Type special_flags =
         fSERV_Promiscuous | fSERV_ReverseDns | fSERV_Stateless;
     const char* s = ismask ? strdup(service) : s_ServiceName(service, 0);
+    int/*bool*/ no_lbsmd, no_dispd;
     const SSERV_VTable* op;
     SERV_ITER iter;
     
@@ -199,30 +195,27 @@ static SERV_ITER s_Open(const char*          service,
     }
     assert(n_skip == iter->n_skip);
 
-    if (!net_info) {
-        if ((s_IsMapperDisabled(service, REG_CONN_LOCAL_DISABLE)
-             ||  !(op = SERV_LOCAL_Open(iter, info, host_info)))  &&
-            (s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE)
-             ||  !(op = SERV_LBSMD_Open(iter, info, host_info, 0)))) {
-            /* LBSMD failed in non-DISPD mapping */
-            SERV_Close(iter);
-            return 0;
-        }
-    } else {
-        int no_dispd = s_IsMapperDisabled(service, REG_CONN_DISPD_DISABLE);
+    if (net_info) {
+        no_dispd = s_IsMapperDisabled(service, REG_CONN_DISPD_DISABLE);
         if (net_info->firewall)
             iter->type |= fSERV_Firewall;
         if (net_info->stateless)
             iter->stateless = 1;
-        if ((s_IsMapperDisabled(service, REG_CONN_LOCAL_DISABLE)
-             ||  !(op = SERV_LOCAL_Open(iter, info, host_info)))             &&
-            (s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE)
-             ||  !(op = SERV_LBSMD_Open(iter, info, host_info, !no_dispd)))  &&
-            (no_dispd
-             ||  !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
-            SERV_Close(iter);
-            return 0;
+    } else
+        no_dispd = 1/*true*/;
+
+    if ((            s_IsMapperDisabled(service, REG_CONN_LOCAL_DISABLE)
+         ||  !(op = SERV_LOCAL_Open(iter, info, host_info)))              &&
+        ((no_lbsmd = s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE)) != 0
+         ||  !(op = SERV_LBSMD_Open(iter, info, host_info, !no_dispd)))   &&
+        ( no_dispd
+         ||  !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
+        if (no_lbsmd  &&  no_dispd) {
+            CORE_LOGF(eLOG_Warning,
+                      ("[SERV]  No service mappers found for `%s'", service));
         }
+        SERV_Close(iter);
+        return 0;
     }
 
     assert(op != 0);
@@ -688,6 +681,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.79  2006/04/20 19:22:49  lavr
+ * Warn when open fails because no major mapper is enabled for the service
+ *
  * Revision 6.78  2006/04/20 14:00:31  lavr
  * Use new mappers' switching scheme; faster service name lookup
  *
