@@ -256,7 +256,7 @@ unsigned int I_DriverContext::NofConnections(const string& srv_name,
     CFastMutexGuard mg(m_Mtx);
     
     if ( srv_name.empty() && pool_name.empty()) {
-        return m_InUse.size() + m_NotInUse.size();
+        return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
     }
 
     int n = 0;
@@ -552,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/20 22:17:02  ssikorsk
+ * Added explicit type cast for x64 sake.
+ *
  * Revision 1.21  2006/04/13 15:10:25  ssikorsk
  * Fixed erasing of an element from a std::list.in x_Recycle
  *

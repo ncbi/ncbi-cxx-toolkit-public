@@ -298,7 +298,7 @@ CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
             TSvrMap& service_preferences = m_PreferenceMap[service_name];
             
             // Set equal preferences for all servers.
-            double curr_preference = 100 / server_name.size();
+            double curr_preference = static_cast<double>(100 / server_name.size());
             bool non_default_preferences = false;
             
             ITERATE(vector<string>, sn_it, server_name) {
@@ -396,7 +396,9 @@ CDBUDRandomMapper::SetServerPreference(const string& service,
             SetPreference(service, 0);
         } else if (preference <= 0) {
             // Means *no preferences*
-            SetServerPreference(service, 100 / m_PreferenceMap.size(), server);
+            SetServerPreference(service, 
+								static_cast<double>(100 / m_PreferenceMap.size()), 
+								server);
         } else {
             // (100 - new) / (100 - old)
             ScalePreference(service, (100 - preference) / (100 - sr_it->second));
@@ -419,7 +421,8 @@ CDBUDRandomMapper::Exclude(const string& service, const TSvrRef& server)
         if (svr_map.size() > 1) {
             if (sr_it->second >= 100) {
                 // Divide preferences equally.
-                SetPreference(service, 100 / (m_PreferenceMap.size() - 1));
+                SetPreference(service, 
+					static_cast<double>(100 / (m_PreferenceMap.size() - 1)));
             } else {
                 // Rescale preferences.
                 ScalePreference(service, 100 / (100 - sr_it->second));
@@ -715,6 +718,9 @@ CDBServiceMapperTraits<CDBUniversalMapper>::GetName(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/04/20 22:15:35  ssikorsk
+ * Added explicit type cast for x64 sake.
+ *
  * Revision 1.6  2006/04/11 18:38:45  ssikorsk
  * Fixed erasing of an element from a multimap in CDBUDPriorityMapper::Exclude
  *

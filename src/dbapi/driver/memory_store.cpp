@@ -299,7 +299,7 @@ size_t CMemStore::Write(const void* buff, size_t size)
     }
 
     if (nof_bytes > 0) {
-        n += Append(b + n, nof_bytes);
+        n += static_cast<TSize>(Append(b + n, nof_bytes));
         x_SeekTAIL(0);
     }
     else {
@@ -518,7 +518,8 @@ CMemStore::CMemStore(C_SA_Storage& storage, size_t block_size)
     char* buff = new char[m_BlockSize];
     TSize n;
 
-    while ((n = storage.Read(buff, (size_t) m_BlockSize)) > 0) {
+    while ((n = static_cast<TSize>(storage.Read(buff, 
+								   (size_t) m_BlockSize))) > 0) {
         Append(buff, n);
         if (n < m_BlockSize)
             break;
@@ -548,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/04/20 22:17:22  ssikorsk
+ * Added explicit type cast for x64 sake.
+ *
  * Revision 1.11  2005/12/06 19:24:57  ssikorsk
  * Fixed deleting of character buffers
  *
