@@ -209,6 +209,7 @@ Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
  * @param sbp Scoring block to work with [in] [out]
  * @param query Buffer containing (concatenated) query sequence [in]
  * @param query_info Information about offsets of concatenated queries [in]
+ * @param blast_message returns queries that could not be processed [out]
  * @return 0 if ungapped Karlin-Altschul parameters could be calculated for 
  *        all of the query sequence's contexts; 1 if any of the contexts 
  *        failed (but all others will be populated).
@@ -217,7 +218,8 @@ NCBI_XBLAST_EXPORT
 Int2
 Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
                               BlastScoreBlk* sbp, Uint1* query, 
-                              const BlastQueryInfo* query_info);
+                              const BlastQueryInfo* query_info,
+                              Blast_Message* *blast_message);
 
 /** This function fills in the BlastScoreBlk structure.  
  * Tasks are:
