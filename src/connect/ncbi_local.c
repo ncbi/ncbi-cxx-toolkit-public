@@ -323,7 +323,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
             }
         }
     } else if (iter->last  ||  iter->n_skip  ||  !dns_info_seen) {
-        info = 0; /* NB: no need to check for iter->external */
+        info = 0;
     } else if ((info = SERV_CreateDnsInfo(0)) != 0)
         info->time = NCBI_TIME_INFINITE;
 
@@ -403,6 +403,9 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/04/20 19:23:24  lavr
+ * Remove a comment that referenced iter->external
+ *
  * Revision 1.4  2006/04/20 13:59:30  lavr
  * Use standardized registry key to lookup services and servers
  *
