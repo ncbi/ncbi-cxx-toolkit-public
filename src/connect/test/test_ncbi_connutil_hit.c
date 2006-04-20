@@ -162,6 +162,7 @@ int main(int argc, char** argv)
     /* Success:  close the socket, cleanup, and exit */
     SOCK_Close(sock);
     CORE_SetLOG(0);
+
     return 0;
 }
 
@@ -169,6 +170,9 @@ int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2006/04/20 14:01:43  lavr
+ * Cleanup to demonstrate no leaks
+ *
  * Revision 6.13  2005/07/22 16:09:43  lavr
  * Add severity and timestamp to log message format
  *

@@ -57,6 +57,11 @@ int main(int argc, char* argv[])
     int n = TEST_StreamPushback(ios,
                                 argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
                                 false/*no rewind*/);
+
+    CORE_SetREG(0);
+    CORE_SetLOG(0);
+    CORE_SetLOCK(0);
+
     return n;
 }
 
@@ -64,6 +69,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2006/04/20 14:01:27  lavr
+ * Cleanup to demonstrate no leaks
+ *
  * Revision 1.14  2004/11/23 14:49:46  lavr
  * Replace "yar" with "www"
  *

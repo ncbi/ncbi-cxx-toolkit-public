@@ -42,10 +42,10 @@
 #include "test_assert.h"
 
 
-BEGIN_NCBI_SCOPE
-
-
 static const size_t kBufferSize = 512*1024;
+
+
+BEGIN_NCBI_SCOPE
 
 
 static CNcbiRegistry* s_CreateRegistry(void)
@@ -72,6 +72,7 @@ END_NCBI_SCOPE
 int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
+    CNcbiRegistry* reg;
     unsigned long seed;
     TFCDC_Flags flag = 0;
     SConnNetInfo* net_info;
@@ -92,7 +93,9 @@ int main(int argc, const char* argv[])
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
-    CONNECT_Init(s_CreateRegistry());
+    GetDiagContext().SetAutoWrite(false);
+    reg = s_CreateRegistry();
+    CONNECT_Init(reg);
 
     LOG_POST(Info << "Checking error log setup"); // short explanatory mesg
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
@@ -303,11 +306,14 @@ int main(int argc, const char* argv[])
     else
         LOG_POST(Info << "Test 3 passed");
 
-    CORE_SetREG(0);
-    // Do not delete lock and log here 'cause destructors may need them
-
     delete[] buf1;
     delete[] buf2;
+
+    CORE_SetREG(0);
+    delete reg;
+
+    CORE_SetLOG(0);
+    CORE_SetLOCK(0);
 
     return 0/*okay*/;
 }
@@ -316,6 +322,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2006/04/20 14:01:37  lavr
+ * Cleanup to demonstrate no leaks
+ *
  * Revision 6.46  2006/02/14 20:41:57  lavr
  * Added: 1. Random seed management
  *        2. Test of CConn_MemoryStream::to-string-like extractions and
