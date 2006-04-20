@@ -777,7 +777,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
         }
         return eZeroBlock;
     }
-    int checksum = value;
+    int checksum = (int)value;
 
     // Compute both signed and unsigned checksums (for compatibility)
     int ssum = 0;
@@ -1672,6 +1672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/04/20 18:51:07  ivanov
+ * Get rid of warnings on 64-bit Sun Workshop compiler
+ *
  * Revision 1.40  2006/03/03 18:25:06  lavr
  * Simplify/change/speed up x_Append()
  *

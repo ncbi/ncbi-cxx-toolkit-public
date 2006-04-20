@@ -82,7 +82,7 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
                         }
                     }
                     for (size_t k = 0;  k < new_image->GetDepth();  ++k) {
-                        to[k] = (vals[k] / count) & 0xff;
+                        to[k] = (unsigned char)((vals[k] / count) & 0xff);
                     }
                 }}
                 break;
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/04/20 18:51:08  ivanov
+ * Get rid of warnings on 64-bit Sun Workshop compiler
+ *
  * Revision 1.5  2004/08/11 15:23:33  vakatov
  * Compilation warning fix (unused local vars)
  *

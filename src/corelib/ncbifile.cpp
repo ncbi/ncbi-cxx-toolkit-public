@@ -2477,8 +2477,9 @@ bool CDir::SetCwd(const string& dir)
     return chdir(dir.c_str()) == 0;
 #elif defined(NCBI_OS_MSWIN)
     return _chdir(dir.c_str()) == 0;
-#endif
+#else    
     return false;
+#endif
 }
 
 
@@ -3890,9 +3891,9 @@ void s_AppendZeros(int fd, Uint8 length)
     memset(buf, '\0', kDefaultBufferSize);
     string errmsg;
     do {
-        int x_written = write(fd, (void*) buf, 
+        int x_written = (int)write(fd, (void*) buf, 
             length > kDefaultBufferSize ? kDefaultBufferSize :
-                                            (size_t)length);
+                                          (size_t)length);
         if ( x_written < 0 ) {
             if (errno != EINTR) {
                 errmsg = strerror(errno);
@@ -4067,6 +4068,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.143  2006/04/20 18:52:17  ivanov
+ * Get rid of warnings on 64-bit Sun Workshop compiler
+ *
  * Revision 1.142  2006/04/10 12:37:13  ivanov
  * MSWin: CDirEntry::NormalizePath -- remove leading '\\?\' from path,
  * do not replace it with '\'.

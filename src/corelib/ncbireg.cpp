@@ -457,7 +457,8 @@ void IRegistry::Unlock(void)
 }
 
 
-void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
+void IRegistry::x_CheckFlags(const string& /*func*/,
+                             TFlags& flags, TFlags allowed)
 {
     if (flags & ~allowed)
         _TRACE(func << "(): extra flags passed: "
@@ -1482,6 +1483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/04/20 18:52:17  ivanov
+ * Get rid of warnings on 64-bit Sun Workshop compiler
+ *
  * Revision 1.56  2005/11/07 17:02:02  ucko
  * CNcbiRegistry::x_Set: also pass original flags to Get when checking
  * whether there was already a value, to avoid inadvertently shadowing
