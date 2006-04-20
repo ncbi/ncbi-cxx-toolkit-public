@@ -58,10 +58,10 @@ typedef void              (*FSERVICE_ResetData)  (void* data);
 
 typedef struct {
     void*                data;
-    FSERVICE_ResetData   reset;         /* called at each close           */
-    FSERVICE_CleanupData cleanup;       /* called at destruction          */
-    FSERVICE_GetNextInfo get_next_info; /* called to get conn point       */
-    THCC_Flags           flags;         /* only fHCC_Flushable is honored */
+    FSERVICE_ResetData   reset;         /* called at each close (before iter)*/
+    FSERVICE_CleanupData cleanup;       /* called at destruction             */
+    FSERVICE_GetNextInfo get_next_info; /* called to get conn point          */
+    THCC_Flags           flags;         /* only fHCC_Flushable is honored    */
 } SSERVICE_Extra;
 
 
@@ -87,6 +87,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2006/04/20 14:03:17  lavr
+ * Document that SExtraParams::reset is called before service iter is closed
+ *
  * Revision 6.11  2005/08/12 19:20:06  lavr
  * +SSERVICE_Extra::flags (for fHCC_Flushable)
  *
