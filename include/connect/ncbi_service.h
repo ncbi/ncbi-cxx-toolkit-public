@@ -61,14 +61,18 @@ typedef struct SSERV_IterTag* SERV_ITER;
 
 /* Create an iterator for sequential server lookup.
  * Connection information 'net_info' can be a NULL pointer, which means not to
- * make any network connections (only LBSMD will be consulted).  If 'net_info'
- * is not NULL, LBSMD is consulted first (unless 'net_info->lb_disable'
- * is non-zero, meaning to skip LBSMD), and then DISPD is consulted (using
- * the connection information provided) but only if mapping with LBSMD (if
- * any occurred) has failed.  This scheme permits to use any combination of
- * the service mappers (local/network-based).  Note that if 'net_info' is
- * not NULL then non-zero value of 'net_info->stateless' forces 'types' to
- * have the 'fSERV_StatelessOnly' bit set implicitly.
+ * make any network connections (only LOCAL/LBSMD mappers will be consulted).
+ * If 'net_info' is not NULL, LOCAL/LBSMD are consulted first, and then DISPD
+ * is consulted last (using the connection information provided) but only if
+ * mapping with LOCAL/LBSMD (if any occurred) has failed.  Registry
+ * section [CONN], keys LOCAL_DISABLE, LBSMD_DISABLE, and DISPD_DISABLE
+ * (which can be overridden from the environment variables CONN_LOCAL_DISABLE,
+ * CONN_LBSMD_DISABLE, and CONN_DISPD_DISABLE, respectively) can be used to
+ * skip respective service mappers.  This scheme permits to use any
+ * combination of the service mappers (local/lbsmd/network-based).
+ * Note that if 'net_info' is not NULL then non-zero value of
+ * 'net_info->stateless' forces 'types' to have the 'fSERV_StatelessOnly'
+ * bit set implicitly.
  * NB: 'nbo' in comments denotes parameters coming in network byte order;
  *     'hbo' stands for 'host byte order'.
  */
@@ -132,6 +136,8 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_Open
  * host information is allocated, and the pointer is stored at *host_info.
  * Using this information, various host parameters like load, host
  * environment, number of CPUs can be retrieved (see ncbi_host_info.h).
+ * Resulting DNS server info (only if coming out first) may contain 0
+ * in the host field to donote that the name is known but is currently down. 
  * NOTE:  Application program should NOT destroy the returned server info:
  *        it will be freed automatically upon iterator destruction.
  *        On the other hand, returned host information has to be
@@ -213,6 +219,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2006/04/20 19:27:18  lavr
+ * More comments for SERV_Open*() family of calls
+ *
  * Revision 6.46  2006/03/06 20:24:44  lavr
  * Comments
  *
