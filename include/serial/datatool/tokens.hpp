@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/04/20 14:00:56  gouriano
+* Added XML schema parsing
+*
 * Revision 1.12  2005/01/06 20:28:55  gouriano
 * Added identifier_end token
 *
@@ -154,6 +157,20 @@ static const TToken K_FIXED    = 219;
 static const TToken K_INCLUDE  = 220;
 static const TToken K_IGNORE   = 221;
 
+static const TToken K_CLOSING        = 300;
+static const TToken K_ENDOFTAG       = 301;
+static const TToken K_XML            = 302;
+static const TToken K_SCHEMA         = 303;
+static const TToken K_ATTPAIR        = K_ATTLIST;
+static const TToken K_XMLNS          = 304;
+static const TToken K_COMPLEXTYPE    = 305;
+static const TToken K_COMPLEXCONTENT = 306;
+static const TToken K_SIMPLECONTENT  = 307;
+static const TToken K_EXTENSION      = 308;
+static const TToken K_ATTRIBUTE      = 309;
+static const TToken K_SIMPLETYPE     = 310;
+static const TToken K_RESTRICTION    = 311;
+static const TToken K_ENUMERATION    = 312;
 
 END_NCBI_SCOPE
 

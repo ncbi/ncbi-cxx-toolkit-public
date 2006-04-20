@@ -45,8 +45,8 @@
 #include <serial/datatool/dtdlexer.hpp>
 #include <serial/datatool/parser.hpp>
 #include <serial/datatool/dtdparser.hpp>
-//#include <serial/datatool/xsdlexer.hpp>
-//#include <serial/datatool/xsdparser.hpp>
+#include <serial/datatool/xsdlexer.hpp>
+#include <serial/datatool/xsdparser.hpp>
 #include <serial/datatool/moduleset.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/type.hpp>
@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,3,1) );
+    SetVersion( CVersionInfo(1,4,0) );
 }
 
 void CDataTool::Init(void)
@@ -242,7 +242,7 @@ bool CDataTool::ProcessModules(void)
         LoadDefinitions(generator.GetMainModules(),
                         modulesPath, args["m"].GetStringList(), false);
     
-    if (srctype != SourceFile::eDTD) {
+    if (srctype == SourceFile::eASN) {
         LoadDefinitions(generator.GetImportModules(),
                         modulesPath, args["M"].GetStringList(), true, srctype);
     }
@@ -257,7 +257,7 @@ bool CDataTool::ProcessModules(void)
     }
 
     if ( const CArgValue& fx = args["fx"] ) {
-        if (srctype == SourceFile::eDTD) {
+        if (srctype == SourceFile::eDTD || srctype == SourceFile::eXSD) {
             CDataType::SetEnforcedStdXml(true);
         }
         if ( fx.AsString() == "m" ) {
@@ -273,7 +273,7 @@ bool CDataTool::ProcessModules(void)
     }
 
     if ( const CArgValue& ax = args["fxs"] ) {
-        if (srctype == SourceFile::eDTD) {
+        if (srctype == SourceFile::eDTD || srctype == SourceFile::eXSD) {
             CDataType::SetEnforcedStdXml(true);
         }
         if ( ax.AsString() == "m" ) {
@@ -621,7 +621,6 @@ SourceFile::EType CDataTool::LoadDefinitions(
                     fileSet.AddFile(parser.Modules(name));
                 }
                 break;
-/*
             case SourceFile::eXSD:
                 {
                     XSDLexer lexer(fName,name);
@@ -629,7 +628,6 @@ SourceFile::EType CDataTool::LoadDefinitions(
                     fileSet.AddFile(parser.Modules(name));
                 }
                 break;
-*/
             }
         }
     }
@@ -650,6 +648,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.91  2006/04/20 14:00:11  gouriano
+* Added XML schema parsing
+*
 * Revision 1.90  2006/04/14 17:34:02  gouriano
 * Corrected generation of DTD for SEQUENCE OF SEQUENCE type
 *

@@ -167,6 +167,7 @@ DTDElement::DTDElement(void)
 DTDElement::DTDElement(const DTDElement& other)
 {
     m_Name = other.m_Name;
+    m_TypeName = other.m_TypeName;
     m_Type = other.eUnknown;
     m_Occ  = other.m_Occ;
     m_Refd = other.m_Refd;
@@ -217,6 +218,15 @@ void DTDElement::SetTypeIfUnknown( EType type)
 DTDElement::EType DTDElement::GetType(void) const
 {
     return (EType)m_Type;
+}
+
+void DTDElement::SetTypeName( const string& name)
+{
+    m_TypeName = name;
+}
+const string& DTDElement::GetTypeName( void) const
+{
+    return m_TypeName;
 }
 
 
@@ -313,6 +323,22 @@ DTDEntityLexer::~DTDEntityLexer(void)
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// XSDEntityLexer
+
+XSDEntityLexer::XSDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete)
+    : XSDLexer(in,name)
+{
+    m_Str = &in;
+    m_AutoDelete = autoDelete;
+}
+XSDEntityLexer::~XSDEntityLexer(void)
+{
+    if (m_AutoDelete) {
+        delete m_Str;
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -320,6 +346,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2006/04/20 14:00:11  gouriano
+ * Added XML schema parsing
+ *
  * Revision 1.4  2005/06/03 17:05:33  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

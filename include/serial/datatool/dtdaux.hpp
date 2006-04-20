@@ -41,6 +41,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <serial/datatool/dtdlexer.hpp>
+#include <serial/datatool/xsdlexer.hpp>
 #include <list>
 #include <map>
 
@@ -150,8 +151,12 @@ public:
         eAny,      // ANY
         eEmpty,    // EMPTY
         eSequence, // (a,b,c)
-        eChoice    // (a|b|c)
-                   // mixed content is not implemented
+        eChoice,   // (a|b|c)
+
+        eDouble,
+        eInteger,
+        eBigInt,
+        eOctetString
     };
     enum EOccurrence {
         eOne,
@@ -166,6 +171,8 @@ public:
     void SetType( EType type);
     void SetTypeIfUnknown( EType type);
     EType GetType(void) const;
+    void SetTypeName( const string& name);
+    const string& GetTypeName( void) const;
 
     void SetOccurrence( const string& ref_name, EOccurrence occ);
     EOccurrence GetOccurrence(const string& ref_name) const;
@@ -192,6 +199,7 @@ public:
 
 private:
     string m_Name;
+    string m_TypeName;
     EType m_Type;
     EOccurrence m_Occ;
     list<string> m_Refs;
@@ -200,6 +208,7 @@ private:
     bool m_Refd;
     bool m_Embd;
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDEntityLexer
@@ -214,6 +223,18 @@ protected:
     bool m_AutoDelete;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// XSDEntityLexer
+
+class XSDEntityLexer : public XSDLexer
+{
+public:
+    XSDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete=true);
+    virtual ~XSDEntityLexer(void);
+protected:
+    CNcbiIstream* m_Str;
+    bool m_AutoDelete;
+};
 
 END_NCBI_SCOPE
 
@@ -223,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2006/04/20 14:00:56  gouriano
+ * Added XML schema parsing
+ *
  * Revision 1.3  2005/01/06 20:21:13  gouriano
  * Added name property to lexers - for better diagnostics
  *

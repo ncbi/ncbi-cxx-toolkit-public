@@ -56,7 +56,8 @@ public:
     enum EType {
         eUnknown,  // Unknown type
         eASN,      // ASN file
-        eDTD       // DTD file
+        eDTD,      // DTD file
+        eXSD       // XSD file
     };
     EType GetType(void) const;
 
@@ -159,6 +160,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/04/20 14:00:56  gouriano
+* Added XML schema parsing
+*
 * Revision 1.16  2005/01/24 17:05:48  vasilche
 * Safe boolean operators.
 *

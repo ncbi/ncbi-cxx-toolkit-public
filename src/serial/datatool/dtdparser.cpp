@@ -87,7 +87,16 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
 {
     AutoPtr<CDataTypeModule> module(new CDataTypeModule(name));
 
-    BuildDocumentTree();
+    try {
+        BuildDocumentTree();
+    }
+    catch (CException& e) {
+        NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
+    }
+    catch (exception& e) {
+        ERR_POST(e.what());
+        throw;
+    }
 
 #if defined(NCBI_DTDPARSER_TRACE)
     PrintDocumentTree();
@@ -102,61 +111,52 @@ void DTDParser::BuildDocumentTree(void)
     bool conditional_ignore = false;
     int conditional_level = 0;
     for (;;) {
-        try {
-            switch ( GetNextToken() ) {
-            case K_ELEMENT:
-                ConsumeToken();
-                BeginElementContent();
-                break;
-            case K_ATTLIST:
-                ConsumeToken();
-                BeginAttributesContent();
-                break;
-            case K_ENTITY:
-                ConsumeToken();
-                BeginEntityContent();
-                break;
-            case T_EOF:
-                return;
-            case K_INCLUDE:
-                ConsumeToken();
-                break;
-            case K_IGNORE:
-                ConsumeToken();
-                conditional_ignore = true;
-                break;
-            case T_CONDITIONAL_BEGIN:
-                ++conditional_level;
-                break;
-            case T_CONDITIONAL_END:
-                if (conditional_level == 0) {
-                    ParseError("Incorrect format: unexpected end of conditional section",
-                               "keyword");
-                }
-                --conditional_level;
-                break;
-            case T_SYMBOL:
-                if(NextToken().GetSymbol() != '[') {
-                    ParseError("Incorrect format","[");
-                }
-                ConsumeToken();
-                if (conditional_ignore) {
-                    SkipConditionalSection();
-                    --conditional_level;
-                    conditional_ignore = false;
-                }
-                break;
-            default:
-                ParseError("Invalid keyword", "keyword");
-                return;
+        switch ( GetNextToken() ) {
+        case K_ELEMENT:
+            ConsumeToken();
+            BeginElementContent();
+            break;
+        case K_ATTLIST:
+            ConsumeToken();
+            BeginAttributesContent();
+            break;
+        case K_ENTITY:
+            ConsumeToken();
+            BeginEntityContent();
+            break;
+        case T_EOF:
+            return;
+        case K_INCLUDE:
+            ConsumeToken();
+            break;
+        case K_IGNORE:
+            ConsumeToken();
+            conditional_ignore = true;
+            break;
+        case T_CONDITIONAL_BEGIN:
+            ++conditional_level;
+            break;
+        case T_CONDITIONAL_END:
+            if (conditional_level == 0) {
+                ParseError("Incorrect format: unexpected end of conditional section",
+                            "keyword");
             }
-        }
-        catch (CException& e) {
-            NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
-        }
-        catch (exception& e) {
-            ERR_POST(e.what());
-            throw;
+            --conditional_level;
+            break;
+        case T_SYMBOL:
+            if(NextToken().GetSymbol() != '[') {
+                ParseError("Incorrect format","[");
+            }
+            ConsumeToken();
+            if (conditional_ignore) {
+                SkipConditionalSection();
+                --conditional_level;
+                conditional_ignore = false;
+            }
+            break;
+        default:
+            ParseError("Invalid keyword", "keyword");
+            return;
         }
     }
 }
@@ -218,7 +218,7 @@ TToken DTDParser::GetNextToken(void)
             }
             break;
         case T_EOF:
-            if (PopEntityLexer()) {
+            if (PopEntityLexer() && Lexer().TokenStarted()) {
                 Consume();
                 break;
             } else {
@@ -543,7 +543,7 @@ void DTDParser::PushEntityLexer(const string& name)
         m_StackLexerName.push_back(name);
         lexer_name = name;
     }
-    DTDEntityLexer *lexer = new DTDEntityLexer(*in,lexer_name);
+    AbstractLexer *lexer = CreateEntityLexer(*in,lexer_name);
     m_StackLexer.push(lexer);
     SetLexer(lexer);
 }
@@ -559,6 +559,12 @@ bool DTDParser::PopEntityLexer(void)
         return true;
     }
     return false;
+}
+
+AbstractLexer* DTDParser::CreateEntityLexer(
+    CNcbiIstream& in, const string& name, bool autoDelete /*=true*/)
+{
+    return new DTDEntityLexer(in,name);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -795,6 +801,20 @@ CDataType* DTDParser::x_Type(
         case DTDElement::eEmpty:
             type = new CNullDataType();
             break;
+
+        case DTDElement::eDouble:
+            type = new CRealDataType();
+            break;
+        case DTDElement::eInteger:
+            type = new CIntDataType();
+            break;
+        case DTDElement::eBigInt:
+            type = new CBigIntDataType();
+            break;
+        case DTDElement::eOctetString:
+            type = new COctetStringDataType();
+            break;
+
         default:
             ParseError("Unknown element", "element");
             break;
@@ -986,9 +1006,23 @@ void DTDParser::PrintDocumentTree(void)
         DTDElement& node = i->second;
         DTDElement::EType type = node.GetType();
         if (((type != DTDElement::eSequence) &&
+            (type != DTDElement::eChoice) &&
+            !node.HasAttributes()) && node.IsReferenced()) {
+            if (!started) {
+                cout << " === REFERENCED simpletype elements ===" << endl;
+                started = true;
+            }
+            PrintDocumentNode(i->first,i->second);
+        }
+    }
+    started = false;
+    for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+        DTDElement& node = i->second;
+        DTDElement::EType type = node.GetType();
+        if (((type != DTDElement::eSequence) &&
             (type != DTDElement::eChoice)) && !node.IsReferenced()) {
             if (!started) {
-                cout << " === UNREFERENCED elements ===" << endl;
+                cout << " === UNREFERENCED simpletype elements ===" << endl;
                 started = true;
             }
             PrintDocumentNode(i->first,i->second);
@@ -1014,12 +1048,15 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     cout << name << ": ";
     switch (node.GetType()) {
     default:
-    case DTDElement::eUnknown:  cout << "unknown"; break;
+    case DTDElement::eUnknown:  cout << "UNKNOWN"; break;
     case DTDElement::eString:   cout << "string";  break;
     case DTDElement::eAny:      cout << "any";     break;
     case DTDElement::eEmpty:    cout << "empty";   break;
     case DTDElement::eSequence: cout << "sequence";break;
     case DTDElement::eChoice:   cout << "choice";  break;
+
+    case DTDElement::eDouble:   cout << "double";   break;
+    case DTDElement::eInteger:  cout << "integer";  break;
     }
     switch (node.GetOccurrence()) {
     default:
@@ -1108,6 +1145,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.25  2006/04/20 14:00:11  gouriano
+ * Added XML schema parsing
+ *
  * Revision 1.24  2005/02/09 14:37:39  gouriano
  * Implemented elements with mixed content
  *

@@ -1,5 +1,5 @@
-#ifndef DTDLEXER_HPP
-#define DTDLEXER_HPP
+#ifndef XSDLEXER_HPP
+#define XSDLEXER_HPP
 
 /*  $Id$
 * ===========================================================================
@@ -29,58 +29,41 @@
 * Author: Andrei Gourianov
 *
 * File Description:
-*   DTD lexer
+*   XML Schema lexer
 *
 * ===========================================================================
 */
 
-#include <serial/datatool/alexer.hpp>
+#include <serial/datatool/dtdlexer.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
 
-class DTDLexer : public AbstractLexer
+class XSDLexer : public DTDLexer
 {
 public:
-    DTDLexer(CNcbiIstream& in, const string& name);
-    virtual ~DTDLexer(void);
+    XSDLexer(CNcbiIstream& in, const string& name);
+    virtual ~XSDLexer(void);
 
 protected:
     virtual TToken LookupToken(void);
-    virtual void LookupComments(void);
 
-    bool   ProcessComment(void);
-    bool   IsIdentifierSymbol(char c);
-    TToken LookupIdentifier(void);
+    TToken LookupLexeme(void);
     TToken LookupKeyword(void);
-    TToken LookupEntity(void);
-    TToken LookupString(void);
-    bool   EndPrevToken(void);
-
-    size_t m_CharsToSkip;
-private:
-    bool m_IdentifierEnd;
+    TToken LookupEndOfTag(void);
+    void   AddElement(void);
 };
 
 END_NCBI_SCOPE
 
-#endif // DTDLEXER_HPP
+#endif // XSDLEXER_HPP
 
 
 /*
  * ==========================================================================
  * $Log$
- * Revision 1.4  2006/04/20 14:00:56  gouriano
+ * Revision 1.1  2006/04/20 14:00:56  gouriano
  * Added XML schema parsing
- *
- * Revision 1.3  2005/01/06 20:21:13  gouriano
- * Added name property to lexers - for better diagnostics
- *
- * Revision 1.2  2002/10/18 14:35:42  gouriano
- * added parsing of internal parsed entities
- *
- * Revision 1.1  2002/10/15 13:50:15  gouriano
- * DTD lexer and parser. first version
  *
  *
  * ==========================================================================

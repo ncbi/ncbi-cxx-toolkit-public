@@ -69,7 +69,7 @@ public:
 protected:
     AutoPtr<CDataTypeModule> Module(const string& name);
 
-    void BuildDocumentTree(void);
+    virtual void BuildDocumentTree(void);
     void SkipConditionalSection(void);
 
     virtual string GetLocation(void);
@@ -90,6 +90,8 @@ protected:
     void ParseEntityContent(const string& name);
     void PushEntityLexer(const string& name);
     bool PopEntityLexer(void);
+    virtual AbstractLexer* CreateEntityLexer(
+        CNcbiIstream& in, const string& name, bool autoDelete=true);
 
     void BeginAttributesContent(void);
     void ParseAttributesContent(const string& name);
@@ -137,6 +139,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2006/04/20 14:00:56  gouriano
+ * Added XML schema parsing
+ *
  * Revision 1.8  2005/01/06 20:29:34  gouriano
  * Process compound identifier names
  *

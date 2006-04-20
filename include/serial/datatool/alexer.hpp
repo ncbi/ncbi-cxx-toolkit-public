@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/04/20 14:00:56  gouriano
+* Added XML schema parsing
+*
 * Revision 1.12  2005/02/09 14:20:26  gouriano
 * Added GetName() method - for diagnostics
 *
@@ -176,6 +179,10 @@ public:
         {
             return m_Name;
         }
+    bool TokenStarted(void) const
+        {
+            return m_TokenStart != 0;
+        }
 
 protected:
     virtual TToken LookupToken(void) = 0;
@@ -241,11 +248,6 @@ protected:
         }
 
 protected:
-    bool TokenStarted(void) const
-        {
-            return m_TokenStart != 0;
-        }
-
     CComment& AddComment(void);
 
 private:

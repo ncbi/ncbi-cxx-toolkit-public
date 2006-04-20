@@ -86,6 +86,8 @@ SourceFile::EType SourceFile::GetType(void) const
         return eASN;
     } else if (NStr::CompareNocase(ext,".dtd") == 0) {
         return eDTD;
+    } else if (NStr::CompareNocase(ext,".xsd") == 0) {
+        return eXSD;
     }
     return eUnknown;
 }
@@ -568,6 +570,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/04/20 14:00:11  gouriano
+* Added XML schema parsing
+*
 * Revision 1.32  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *
