@@ -508,8 +508,8 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
                                   ETemplateIncludes includes, 
                                   const string& file_name /* = kEmptyStr */)
 {
-    string  buf("\n");
-    string* pstr      = &buf;
+    string  templbuf("\n");
+    string* pstr      = &templbuf;
     bool    caching   = false;
     bool    need_read = true;
     CNcbiIstream* is  = &istrm;
@@ -548,15 +548,14 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
             }
 
             // Reserve space
-            char buf[kBufferSize];
             if ( size ) {
                 pstr->reserve(size);
             }
             if (includes == eAllowIncludes) {
                 // Read line by line and parse it for #includes
                 string s;
-                static const char* kInclude = "#include ";
-                static const int   kIncludeLen = strlen(kInclude);
+                static const char*     kInclude = "#include ";
+                static const SIZE_TYPE kIncludeLen = strlen(kInclude);
 
                 for (int i = 1;  NcbiGetline(*is, s, "\r\n");  ++i) {
 
@@ -573,8 +572,8 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
                             if (pos_end == NPOS) {
                                 error = true;
                             } else {
-                                string file_name = s.substr(pos, pos_end-pos);
-                                LoadTemplateLibFile(file_name);
+                                string fname = s.substr(pos, pos_end-pos);
+                                LoadTemplateLibFile(fname);
                             }
                         } else {
                             error = true;
@@ -602,6 +601,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
                 }
             } else {
                 // Use faster block read
+                char buf[kBufferSize];
                 while (is) {
                     is->read(buf, sizeof(buf));
                     if (pstr->size() == pstr->capacity()  &&
@@ -721,6 +721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/04/20 18:42:48  ivanov
+ * Get rid of warnings on 64-bit Sun Workshop
+ *
  * Revision 1.52  2006/04/19 17:49:53  ucko
  * Fix invalid comparison (pointer vs. reference) in previous revision.
  *

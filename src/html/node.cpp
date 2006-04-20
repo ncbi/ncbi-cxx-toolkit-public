@@ -256,8 +256,8 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
     Initialize();
     TMode mode(&prev, this);
 
-    int n_count = GetRepeatCount();
-    for (int i = 0; i < n_count; i++ )
+    size_t n_count = GetRepeatCount();
+    for (size_t i = 0; i < n_count; i++ )
     {
         try {
             PrintBegin(out, mode);
@@ -369,6 +369,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/04/20 18:42:48  ivanov
+ * Get rid of warnings on 64-bit Sun Workshop
+ *
  * Revision 1.35  2005/06/10 13:47:49  ivanov
  * + CNCBINode::ReInitialize()
  *
