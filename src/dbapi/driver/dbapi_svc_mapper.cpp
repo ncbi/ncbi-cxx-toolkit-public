@@ -37,7 +37,7 @@
 USING_NCBI_SCOPE;
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 static
 TSvrRef 
 make_server(const string& specification, double& preference)
@@ -95,7 +95,8 @@ make_server(const string& specification, double& preference)
     }
     
     if (server.empty() && host.empty()) {
-        DATABASE_DRIVER_ERROR("Either server name or host name expected.", 110100 );
+        DATABASE_DRIVER_ERROR("Either server name or host name expected.", 
+                              110100 );
     }
     if (server.empty() && !host.empty()) {
         server = host;
@@ -106,7 +107,7 @@ make_server(const string& specification, double& preference)
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 CDBDefaultServiceMapper::CDBDefaultServiceMapper(void)
 {
 }
@@ -148,7 +149,7 @@ CDBDefaultServiceMapper::SetPreference(const string&,
     // Do nothing.
 }
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 CDBServiceMapperCoR::CDBServiceMapperCoR(void)
 {
 }
@@ -247,7 +248,7 @@ CDBServiceMapperCoR::Empty(void) const
     return m_Delegates.empty();
 }
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 CDBUDRandomMapper::CDBUDRandomMapper(const IRegistry* registry)
 {
     ConfigureFromRegistry(registry);
@@ -288,7 +289,9 @@ CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
         vector<string> server_name;
         string service_name = *cit;
         
-        NStr::Tokenize(registry->GetString(section_name, service_name, service_name),
+        NStr::Tokenize(registry->GetString(section_name, 
+                                           service_name, 
+                                           service_name),
                        " ,;",
                        server_name);
         
@@ -298,7 +301,8 @@ CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
             TSvrMap& service_preferences = m_PreferenceMap[service_name];
             
             // Set equal preferences for all servers.
-            double curr_preference = static_cast<double>(100 / server_name.size());
+            double curr_preference = 
+                static_cast<double>(100 / server_name.size());
             bool non_default_preferences = false;
             
             ITERATE(vector<string>, sn_it, server_name) {
@@ -319,7 +323,9 @@ CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
             if (non_default_preferences) {
                 ITERATE(TSvrMap, sl_it, server_list) {
                     if (sl_it->second > 0) {
-                        SetServerPreference(service_name, sl_it->second, sl_it->first);
+                        SetServerPreference(service_name, 
+                                            sl_it->second, 
+                                            sl_it->first);
                     }
                 }
             }
@@ -397,11 +403,13 @@ CDBUDRandomMapper::SetServerPreference(const string& service,
         } else if (preference <= 0) {
             // Means *no preferences*
             SetServerPreference(service, 
-								static_cast<double>(100 / m_PreferenceMap.size()), 
-								server);
+                                static_cast<double>(100 / 
+                                                    m_PreferenceMap.size()), 
+                                server);
         } else {
             // (100 - new) / (100 - old)
-            ScalePreference(service, (100 - preference) / (100 - sr_it->second));
+            ScalePreference(service, 
+                            (100 - preference) / (100 - sr_it->second));
         }
         
         // Set the server preference finally ...
@@ -422,7 +430,7 @@ CDBUDRandomMapper::Exclude(const string& service, const TSvrRef& server)
             if (sr_it->second >= 100) {
                 // Divide preferences equally.
                 SetPreference(service, 
-					static_cast<double>(100 / (m_PreferenceMap.size() - 1)));
+                    static_cast<double>(100 / (m_PreferenceMap.size() - 1)));
             } else {
                 // Rescale preferences.
                 ScalePreference(service, 100 / (100 - sr_it->second));
@@ -447,7 +455,7 @@ CDBUDRandomMapper::SetPreference(const string&  service,
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 CDBUDPriorityMapper::CDBUDPriorityMapper(const IRegistry* registry)
 {
     ConfigureFromRegistry(registry);
@@ -489,7 +497,9 @@ CDBUDPriorityMapper::ConfigureFromRegistry(const IRegistry* registry)
         vector<string> server_name;
         string service_name = *cit;
         
-        NStr::Tokenize(registry->GetString(section_name, service_name, service_name),
+        NStr::Tokenize(registry->GetString(section_name, 
+                                           service_name, 
+                                           service_name),
                        " ,;",
                        server_name);
         
@@ -606,7 +616,7 @@ CDBUDPriorityMapper::SetPreference(const string&  service,
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 CDBUniversalMapper::CDBUniversalMapper(const TMapperConf& ext_mapper, 
                                        const IRegistry* registry)
 {
@@ -661,7 +671,8 @@ CDBUniversalMapper::ConfigureFromRegistry(const IRegistry* registry)
 
         if (NStr::CompareNocase
             (mapper_name,
-             CDBServiceMapperTraits<CDBDefaultServiceMapper>::GetName()) == 0) {
+             CDBServiceMapperTraits<CDBDefaultServiceMapper>::GetName()) == 
+            0) {
             mapper = new CDBDefaultServiceMapper();
         } else if (NStr::CompareNocase
                    (mapper_name,
@@ -683,7 +694,7 @@ CDBUniversalMapper::ConfigureFromRegistry(const IRegistry* registry)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 string 
 CDBServiceMapperTraits<CDBDefaultServiceMapper>::GetName(void)
 {
@@ -718,6 +729,9 @@ CDBServiceMapperTraits<CDBUniversalMapper>::GetName(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/04/21 15:57:45  ssikorsk
+ * Removed TABs
+ *
  * Revision 1.7  2006/04/20 22:15:35  ssikorsk
  * Added explicit type cast for x64 sake.
  *
@@ -728,7 +742,8 @@ CDBServiceMapperTraits<CDBUniversalMapper>::GetName(void)
  * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
  *
  * Revision 1.4  2006/01/26 12:10:32  ssikorsk
- * Added implementation of CDBUDRandomMapper, CDBUDPriorityMapper and CDBUniversalMapper.
+ * Added implementation of CDBUDRandomMapper, CDBUDPriorityMapper and 
+ * CDBUniversalMapper.
  *
  * Revision 1.3  2006/01/04 15:01:13  ucko
  * ConfigureFromRegistry: switch to NON_CONST_ITERATE because SGI's STL
