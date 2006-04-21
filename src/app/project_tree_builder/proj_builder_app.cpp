@@ -227,7 +227,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,1,1) );
+    SetVersion( CVersionInfo(1,1,2) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -1179,6 +1179,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/04/21 17:28:09  gouriano
+ * Added possibility to redefine makefile macros
+ *
  * Revision 1.73  2006/02/21 19:13:55  gouriano
  * Added DATASPEC_ALL project
  *

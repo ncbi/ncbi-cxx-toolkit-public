@@ -192,6 +192,9 @@ public:
     CMsvcProjectMakefile(const string& file_path);
 
     string GetGUID(void) const;
+    bool Redefine(const string& value, list<string>& redef);
+    bool Redefine(const list<string>& value, list<string>& redef);
+
     // IMsvcProjectMakefile
     virtual bool IsExcludeProject        (bool default_val) const;
 
@@ -378,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/04/21 17:27:22  gouriano
+ * Added possibility to redefine makefile macros
+ *
  * Revision 1.13  2006/02/16 19:24:41  gouriano
  * Use predefined GUID for MSVC type projects
  *

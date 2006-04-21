@@ -129,6 +129,9 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
     set<string> defs_unresolved;
     map<string,string> defs_resolved;
     NON_CONST_ITERATE(CProjectTreeBuilder::TFiles, p, files) {
+
+        CMsvcProjectMakefile msvc_prj(p->first + ".msvc");
+
 	    NON_CONST_ITERATE(CSimpleMakeFileContents::TContents, 
                           n, 
                           p->second.m_Contents) {
@@ -137,8 +140,9 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
             list<string>& values = n->second;
 		    if (keys.find(key) != keys.end()) {
                 list<string> new_vals;
-                bool modified = false;
-                NON_CONST_ITERATE(list<string>, k, values) {
+                list<string>  redef_values;
+                bool modified = msvc_prj.Redefine(values,redef_values);
+                NON_CONST_ITERATE(list<string>, k, redef_values) {
                     //iterate all values and try to resolve 
                     const string& val = *k;
                     if( !CSymResolver::HasDefine(val) ) {
@@ -199,8 +203,10 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                         }
                     }
                 }
-                if (modified)
-                    values = new_vals; // by ref!
+                if (modified) {
+                    msvc_prj.Redefine(new_vals,redef_values);
+                    values = redef_values; // by ref!
+                }
 		    }
         }
     }
@@ -576,11 +582,9 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if (k != makefile.m_Contents.end())
         depends = k->second;
     //Adjust depends by information from msvc Makefile
-    CMsvcProjectMakefile project_makefile
-                       ((CDirEntry::ConcatPath
-                          (source_base_dir, 
-                           CreateMsvcProjectMakefileName(proj_name, 
-                                                         CProjKey::eApp))));
+    CMsvcProjectMakefile project_makefile( CDirEntry::ConcatPath(
+        source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eApp)));
+
     list<string> added_depends;
     project_makefile.GetAdditionalLIB(SConfigInfo(), &added_depends);
 
@@ -603,8 +607,9 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     //requires
     list<string> requires;
     k = makefile.m_Contents.find("REQUIRES");
-    if (k != makefile.m_Contents.end())
-        requires = k->second;
+    if (k != makefile.m_Contents.end()) {
+        project_makefile.Redefine(k->second,requires);        
+    }
 
     //project name
     k = makefile.m_Contents.find("APP");
@@ -730,8 +735,11 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     //requires
     list<string> requires;
     k = m->second.m_Contents.find("REQUIRES");
-    if (k != m->second.m_Contents.end())
-        requires = k->second;
+    if (k != m->second.m_Contents.end()) {
+        CMsvcProjectMakefile project_makefile( CDirEntry::ConcatPath(
+            source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eLib)));
+        project_makefile.Redefine(k->second,requires);        
+    }
 
     //project name
     k = m->second.m_Contents.find("LIB");
@@ -1094,8 +1102,11 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     //requires
     list<string> requires;
     k = m->second.m_Contents.find("REQUIRES");
-    if (k != m->second.m_Contents.end())
-        requires = k->second;
+    if (k != m->second.m_Contents.end()) {
+        CMsvcProjectMakefile project_makefile( CDirEntry::ConcatPath(
+            source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eMsvc)));
+        project_makefile.Redefine(k->second,requires);        
+    }
 
     //project id
     k = m->second.m_Contents.find("MSVC_PROJ");
@@ -1604,6 +1615,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/04/21 17:28:09  gouriano
+ * Added possibility to redefine makefile macros
+ *
  * Revision 1.34  2006/03/16 19:26:17  gouriano
  * Take into account lib to dll dependencies
  *

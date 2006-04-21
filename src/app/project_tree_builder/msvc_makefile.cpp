@@ -48,7 +48,7 @@ CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
         m_MakeFile.Read(ifs);
         //and remember dir from where it has been loaded
         CDirEntry::SplitPath(file_path, &m_MakeFileBaseDir);
-        LOG_POST(Info << "Using rules from " << file_path);
+//        LOG_POST(Info << "Using rules from " << file_path);
     }
 }
 
@@ -220,6 +220,56 @@ CMsvcProjectMakefile::CMsvcProjectMakefile(const string& file_path)
 string CMsvcProjectMakefile::GetGUID(void) const
 {
     return m_MakeFile.GetString("Common", "ProjectGUID", "");
+}
+
+bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
+{
+    redef.clear();
+    string::size_type start, end;
+    if ((start = value.find("$(")) != string::npos && 
+        (end   = value.find(")"))  != string::npos  && (end > start)) {
+        string raw_define = value.substr(start+2,end-start-2);
+        string new_val = m_MakeFile.GetString("Redefine", raw_define, "");
+        if (!new_val.empty()) {
+            redef.push_back("$(" + new_val + ")");
+            return true;
+        }
+    } else if (NStr::StartsWith(value, "@") && NStr::EndsWith(value, "@")) {
+        string raw_define = value.substr(1,value.length()-2);
+        string new_val = m_MakeFile.GetString("Redefine", raw_define, "");
+        if (!new_val.empty()) {
+            redef.push_back("@" + new_val + "@");
+            return true;
+        }
+    } else {
+        string new_val = m_MakeFile.GetString("Redefine", value, "");
+        if (!new_val.empty()) {
+            redef.clear();
+            NStr::Split(new_val, LIST_SEPARATOR, redef);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CMsvcProjectMakefile::Redefine(const list<string>& value, list<string>& redef)
+{
+    bool res=false;
+    redef.clear();
+    if (IsEmpty()) {
+        redef.insert(redef.end(),value.begin(), value.end());
+    } else {
+        list<string> newval;
+        ITERATE(list<string>, k, value) {
+            if (Redefine(*k,newval)) {
+                redef.insert(redef.end(),newval.begin(), newval.end());
+                res=true;
+            } else {
+                redef.push_back(*k);
+            }
+        }
+    }
+    return res;
 }
 
 bool CMsvcProjectMakefile::IsExcludeProject(bool default_val) const
@@ -618,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/21 17:28:09  gouriano
+ * Added possibility to redefine makefile macros
+ *
  * Revision 1.21  2006/02/16 19:24:16  gouriano
  * Use predefined GUID for MSVC type projects
  *
