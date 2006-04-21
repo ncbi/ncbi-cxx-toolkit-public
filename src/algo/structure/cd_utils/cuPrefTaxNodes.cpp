@@ -99,14 +99,12 @@ void CPriorityTaxNodes::Reset(TaxNodeInputType* inputType, bool forceClearAncest
     
 bool CPriorityTaxNodes::LoadFromFile(const string& prefTaxnodeFileName, bool doReset)
 {
-    bool result = false;
+    bool result = ReadPreferredTaxnodes(prefTaxnodeFileName, doReset);
 
-    if (ReadPreferredTaxnodes(prefTaxnodeFileName, doReset)) {
-		m_loaded = true;
-        result = true;
-    } else 
+    if (!result) 
 		m_err = "Failed to read preferred Taxonomy nodes from file '" + prefTaxnodeFileName + "'.\n";
 
+    m_loaded = result;
     return result;
 }
 
@@ -300,6 +298,9 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/04/21 15:29:49  lanczyck
+ * bug fix:  wasn't setting m_loaded to false when file failed to be read.
+ *
  * Revision 1.4  2005/07/13 19:46:32  lanczyck
  * minor mods to remove compiler warnings
  *
