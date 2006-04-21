@@ -57,50 +57,60 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         char* value, size_t value_size,
                                         const char* def_value)
 {
-    char        key[256];
-    char*       sec;
+    char        buf[256];
     const char* val;
+    char*       s;
 
-    if (!param  ||  !value  ||  value_size <= 0)
+    if (!value  ||  value_size <= 0)
         return 0;
     *value = '\0';
 
+    if (!param  ||  !*param)
+        return 0;
+
     if (service  &&  *service) {
         /* Service-specific inquiry */
-        if (strlen(service) + 1 + sizeof(DEF_CONN_REG_SECTION) +
-            strlen(param) + 1 > sizeof(key))
+        size_t slen = strlen(service);
+        size_t plen = strlen(param) + 1;
+        if (slen + 1 + sizeof(DEF_CONN_REG_SECTION) + plen > sizeof(buf))
             return 0;
+
         /* First, environment search for 'service_CONN_param' */
-        sprintf(key, "%s_" DEF_CONN_REG_SECTION "_%s", service, param);
-        strupr(key);
-        if ((val = getenv(key)) != 0)
+        s = (char*) memcpy(buf, service, slen) + slen;
+        *s++ = '_';
+        memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
+        s += sizeof(DEF_CONN_REG_SECTION) - 1;
+        *s++ = '_';
+        memcpy(s, param, plen);
+        if ((val = getenv(strupr(buf))) != 0)
             return strncpy0(value, val, value_size - 1);
+
         /* Next, search for 'CONN_param' in '[service]' registry section */
-        sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
-        sec = key + strlen(key) + 1;
-        strupr(key);
-        strcpy(sec, service);
-        strupr(sec);
-        CORE_REG_GET(sec, key, value, value_size, 0);
+        buf[slen++] = '\0';
+        s = buf + slen;
+        CORE_REG_GET(buf, s, value, value_size, 0);
         if (*value)
             return value;
     } else {
         /* Common case. Form 'CONN_param' */
-        if (sizeof(DEF_CONN_REG_SECTION) + strlen(param) + 1 > sizeof(key))
+        size_t plen = strlen(param) + 1;
+        if (sizeof(DEF_CONN_REG_SECTION) + plen > sizeof(buf))
             return 0;
-        sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
-        strupr(key);
+        s = buf;
+        memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
+        s += sizeof(DEF_CONN_REG_SECTION) - 1;
+        *s++ = '_';
+        memcpy(s, param, plen);
+        s = strupr(buf);
     }
 
     /* Environment search for 'CONN_param' */
-    if ((val = getenv(key)) != 0)
+    if ((val = getenv(s)) != 0)
         return strncpy0(value, val, value_size - 1);
 
     /* Last resort: Search for 'param' in default registry section */
-    strcpy(key, param);
-    strupr(key);
-    CORE_REG_GET(DEF_CONN_REG_SECTION, key, value, value_size, def_value);
-
+    s += sizeof(DEF_CONN_REG_SECTION);
+    CORE_REG_GET(DEF_CONN_REG_SECTION, s, value, value_size, def_value);
     return value;
 }
 
@@ -1993,6 +2003,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.108  2006/04/21 14:38:12  lavr
+ * ConnNetInfo_GetValue() simplified and sped up considerably
+ *
  * Revision 6.107  2006/04/21 01:37:17  lavr
  * SConnNetInfo::lb_disable reinstated along with LB_DISABLE reg/env key
  *
