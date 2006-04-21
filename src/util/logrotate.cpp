@@ -37,6 +37,24 @@
 
 BEGIN_NCBI_SCOPE
 
+class CRotatingLogStreamBuf : public CNcbiFilebuf {
+public:
+    CRotatingLogStreamBuf(CRotatingLogStream* stream, const string& filename,
+                          CNcbiStreamoff limit, IOS_BASE::openmode mode);
+    CNcbiStreamoff Rotate(void); // returns number of bytes in old log
+
+protected:
+    virtual CT_INT_TYPE overflow(CT_INT_TYPE c = CT_EOF);
+    virtual int sync(void);
+
+private:
+    CRotatingLogStream* m_Stream;
+    string              m_FileName;
+    CNcbiStreampos      m_Size;
+    CNcbiStreamoff      m_Limit; // in bytes
+    IOS_BASE::openmode  m_Mode;
+};
+
 
 CRotatingLogStreamBuf::CRotatingLogStreamBuf(CRotatingLogStream* stream,
                                              const string&       filename,
@@ -119,6 +137,21 @@ int CRotatingLogStreamBuf::sync(void)
 }
 
 
+
+CRotatingLogStream::CRotatingLogStream(const string& filename,
+                                       CNcbiStreamoff limit, openmode mode)
+    : CNcbiOstream(new CRotatingLogStreamBuf(this, filename, limit, mode))
+{
+}
+
+
+CNcbiStreamoff CRotatingLogStream::Rotate(void)
+{
+    flush();
+    return dynamic_cast<CRotatingLogStreamBuf*>(rdbuf())->Rotate();
+}
+
+
 string CRotatingLogStream::x_BackupName(string& name)
 {
 #if defined(NCBI_OS_UNIX) && !defined(NCBI_OS_CYGWIN)
@@ -138,6 +171,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/04/21 18:57:40  ucko
+* Move CRotatingLogStreamBuf's full declaration from logrotate.hpp to
+* logrotate.cpp, as there's no real need to expose it.
+*
 * Revision 1.9  2004/09/01 15:46:47  ucko
 * Use more appropriate typedefs (CNcbiStreamfoo, not CT_FOO_TYPE).
 * Rotate now indicates how much data it rotated.
