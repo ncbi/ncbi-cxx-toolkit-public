@@ -144,6 +144,11 @@ CRotatingLogStream::CRotatingLogStream(const string& filename,
 {
 }
 
+CRotatingLogStream::~CRotatingLogStream()
+{
+    delete rdbuf();
+}
+
 
 CNcbiStreamoff CRotatingLogStream::Rotate(void)
 {
@@ -171,6 +176,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/04/21 20:29:06  ucko
+* Move CRotatingLogStream's destructor out of line, to here.
+*
 * Revision 1.10  2006/04/21 18:57:40  ucko
 * Move CRotatingLogStreamBuf's full declaration from logrotate.hpp to
 * logrotate.cpp, as there's no real need to expose it.
