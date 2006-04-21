@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.418 2006/04/08 17:34:49 ucko Exp $
+#  $Id: configure.ac,v 1.419 2006/04/21 18:16:17 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2312,7 +2312,7 @@ AC_CHECK_SIZEOF(__int64)
 AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
-AC_CHECK_TYPES(intptr_t)
+AC_CHECK_TYPES([intptr_t, uintptr_t])
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,
