@@ -62,7 +62,7 @@ CMemStore::SMemBlock* CMemStore::x_AddBlock(void)
 
     m_Last = n_blk;
 
-    return n_blk;	
+    return n_blk;   
 }
 
 
@@ -322,8 +322,8 @@ size_t CMemStore::Truncate(size_t size)
             delete [] m_Last->body;
             delete m_Last;
         }
-    	m_First = m_Last = m_Current = 0;        
-    	m_BlockPos = m_Pos = m_Size = 0;
+        m_First = m_Last = m_Current = 0;        
+        m_BlockPos = m_Pos = m_Size = 0;
         return 0;
     }
 
@@ -405,7 +405,7 @@ size_t CMemStore::Insert(const void* buff, size_t size)
         memcpy(t_block->body, &m_Current->body[m_BlockPos], k);
         t_block->free_space = m_BlockSize - k;
         m_Current->free_space += k;
-	
+    
         k = (nof_bytes <= m_Current->free_space)
             ? nof_bytes : m_Current->free_space;
         memcpy(&m_Current->body[m_BlockPos], b + n, k);
@@ -475,14 +475,14 @@ size_t CMemStore::Delete(size_t size)
         m_Size                -= m_BlockPos;
         m_BlockPos = 0;
     }
-	
+    
     while (nof_bytes > 0) {
         SMemBlock* t_block = m_Current->prev;
         if ( !t_block ) {
             m_First = m_Current;
             break;
         }
-	
+    
         TSize n = m_BlockSize - t_block->free_space; // # of bytes in this block
         if (nof_bytes < n) {
             // all we have to delete is inside the block
@@ -519,7 +519,7 @@ CMemStore::CMemStore(C_SA_Storage& storage, size_t block_size)
     TSize n;
 
     while ((n = static_cast<TSize>(storage.Read(buff, 
-								   (size_t) m_BlockSize))) > 0) {
+                                   (size_t) m_BlockSize))) > 0) {
         Append(buff, n);
         if (n < m_BlockSize)
             break;
@@ -549,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/04/21 14:48:00  ssikorsk
+ * Removed TABs
+ *
  * Revision 1.12  2006/04/20 22:17:22  ssikorsk
  * Added explicit type cast for x64 sake.
  *
