@@ -209,6 +209,7 @@ typedef struct {
 #define DEF_CONN_HTTP_USER_HEADER 0
 
 /* Environment/registry keys that are not kept in SConnNetInfo */
+#define REG_CONN_SERVICE_NAME     "SERVICE_NAME"
 #define REG_CONN_LOCAL_DISABLE    "LOCAL_DISABLE"
 #define REG_CONN_LBSMD_DISABLE    "LBSMD_DISABLE"
 #define REG_CONN_DISPD_DISABLE    "DISPD_DISABLE"
@@ -765,6 +766,9 @@ extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2006/04/21 14:41:19  lavr
+ * REG_CONN_SERVICE_NAME added
+ *
  * Revision 6.55  2006/04/21 01:33:22  lavr
  * SConnNetInfo::lb_disable reinstated along with LB_DISABLE reg/env key
  *
