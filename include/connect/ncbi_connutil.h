@@ -149,7 +149,7 @@ typedef struct {
     EDebugPrintout debug_printout;   /* printout some debug info             */
     int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
     int/*bool*/    firewall;         /* to use firewall/relay in connects    */
-    int/*bool*/    reserved;         /* kept for binary layout compatibility */
+    int/*bool*/    lb_disable;       /* to disable local load-balancing      */
     const char*    http_user_header; /* user header to add to HTTP request   */
 
     /* the following field(s) are for the internal use only -- don't touch!  */
@@ -202,6 +202,9 @@ typedef struct {
 #define REG_CONN_FIREWALL         "FIREWALL"
 #define DEF_CONN_FIREWALL         ""
 
+#define REG_CONN_LB_DISABLE       "LB_DISABLE"
+#define DEF_CONN_LB_DISABLE       ""
+
 #define REG_CONN_HTTP_USER_HEADER "HTTP_USER_HEADER"
 #define DEF_CONN_HTTP_USER_HEADER 0
 
@@ -243,6 +246,7 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
  *  debug_printout    DEBUG_PRINTOUT
  *  stateless         STATELESS
  *  firewall          FIREWALL
+ *  lb_disable        LB_DISABLE
  *  http_user_header  HTTP_USER_HEADER  "\r\n" if missing is appended
  *
  * A value of the field NAME is first looked for in the environment variable
@@ -761,14 +765,12 @@ extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
- * Revision 6.54  2006/04/20 14:12:01  lavr
- * Maintain SConnNetInfo layout compatibility by using "reserved" field
+ * Revision 6.55  2006/04/21 01:33:22  lavr
+ * SConnNetInfo::lb_disable reinstated along with LB_DISABLE reg/env key
  *
  * Revision 6.53  2006/04/20 13:57:51  lavr
  * Registry keys for new switching scheme for service mappers;
- * Registry keys for LOCAL service mappers;
- * Removed LB_DISABLE (both as a key and from SConnNetInfo) - from now on
- * LBSMD_DISABLE should used instead.
+ * Registry keys for LOCAL service mappers
  *
  * Revision 6.52  2006/04/19 02:26:05  lavr
  * Document ConnNetInfo_{Pre|Post}OverrideArg in more details

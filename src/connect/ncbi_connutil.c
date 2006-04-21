@@ -225,8 +225,13 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                        strcasecmp(str, "yes" ) == 0  ||
                        strcasecmp(str, "on"  ) == 0));
 
-    /* MBZ */
-    info->reserved = 0;
+    /* prohibit the use of local load balancer? */
+    REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
+    info->lb_disable = (*str  &&
+                        (strcmp(str, "1") == 0  ||
+                         strcasecmp(str, "true") == 0  ||
+                         strcasecmp(str, "yes" ) == 0  ||
+                         strcasecmp(str, "on"  ) == 0));
 
     /* user header (with optional '\r\n' added automagically) */
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
@@ -876,6 +881,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
                                                  ? "DATA" : "Unknown"))));
     s_SaveBool      (s, "stateless",       info->stateless);
     s_SaveBool      (s, "firewall",        info->firewall);
+    s_SaveBool      (s, "lb_disable",      info->lb_disable);
     s_SaveString    (s, "user_header",     info->http_user_header);
     s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
@@ -1987,14 +1993,12 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
- * Revision 6.106  2006/04/20 14:12:21  lavr
- * Maintain SConnNetInfo layout compatibility by using "reserved" field (MBZ)
+ * Revision 6.107  2006/04/21 01:37:17  lavr
+ * SConnNetInfo::lb_disable reinstated along with LB_DISABLE reg/env key
  *
  * Revision 6.105  2006/04/20 13:58:32  lavr
  * Registry keys for new switching scheme for service mappers;
  * Registry keys for LOCAL service mappers;
- * Removed LB_DISABLE (both as a key and from SConnNetInfo) - from now on
- * LBSMD_DISABLE should used instead;
  * ConnNetInfo_GetValue() exported
  *
  * Revision 6.104  2006/04/19 02:12:06  lavr
