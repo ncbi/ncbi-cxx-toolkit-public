@@ -28,10 +28,11 @@
 *
 * Author:  Aaron Ucko, NCBI
 *
-* File Description:
-*   File streams supporting log rotation
-*
 */
+
+/// @file logrotate.hpp
+/// This module supplies a file stream variant that supports
+/// customizable log rotation.
 
 #include <corelib/ncbistd.hpp>
 
@@ -46,30 +47,58 @@ BEGIN_NCBI_SCOPE
 
 class CRotatingLogStreamBuf;
 
+/// A file stream variant that automatically rotates its output when
+/// it grows beyond a specified size.
+///
+/// Derived classes have full control over old and new filenames upon
+/// rotation.
 class NCBI_XUTIL_EXPORT CRotatingLogStream : public CNcbiOstream {
 public:
-    // limit is approximate; the actual length may exceed it by a buffer's
-    // worth of characters.
+    /// Constructor.
+    ///
+    /// Construct a rotating log stream with the given parameters:
+    /// @param filename
+    ///  The active log file's name (at least initially -- see
+    ///  x_BackupName).
+    /// @param limit
+    ///  The approximate size (in bytes) to which the log can grow
+    ///  before it is rotated.  (The actual length may exceed the
+    ///  limit by up to a bufferful.)
+    /// @param mode
+    ///  How to open each log file.  The default should generally be
+    ///  reasonable.
+    /// @sa x_BackupName
     CRotatingLogStream(const string& filename, CNcbiStreamoff limit,
                        openmode mode = app | ate | out);
-    virtual ~CRotatingLogStream(void)
-        { delete rdbuf(); }
 
-    // Users may call this explicitly to rotate on some basis other
-    // than size (such as time since last rotation or a signal from
-    // some external process).
-    CNcbiStreamoff Rotate(void); // returns number of bytes in old log
+    /// Destructor.
+    virtual ~CRotatingLogStream(void);
+
+    /// Actually rotate the log.
+    ///
+    /// This happens automatically whenever its size exceeds the
+    /// limit, but users may also call it explicitly under other
+    /// circumstances -- for instance, to implement time-based
+    /// rotation or in response to signals from external processes.
+    /// @return Size (in bytes) of old log.
+    CNcbiStreamoff Rotate(void); // returns
 
 protected:
-    // Specifies how to rename old logs.  Returning an empty string
-    // indicates that any appropriate renaming has already occurred,
-    // for instance because this method took care of it directly or
-    // because some other program rotated the logs for us and asked us
-    // to switch to a new file (traditionally, by sending SIGHUP).
-    // Changing "name" is also legitimate, and indicates that the NEW
-    // logs should have a different name.
-
-    // The default behavior is to append a timestamp to name.
+    /// Overridable implementation of naming policy.
+    ///
+    /// By default, the existing log file will be renamed to include a
+    /// timestamp, and new logs will go to a new file with the old
+    /// (un-timestamped) name.
+    /// @param name
+    ///  The name of the file to which logs have gone so far, and of
+    ///  the new file to which future logs will go.  (Implementations
+    ///  may modify this argument to control the latter.)
+    /// @return
+    ///  The filename to which the existing log should be renamed, or
+    ///  the empty string if any appropriate renaming has already
+    ///  occurred, typically either because the implementation took
+    ///  care of it directly or because some other program did so and then
+    ///  sent this process an appropriate signal (traditionally SIGHUP).
     virtual string x_BackupName(string& name);
 
     friend class CRotatingLogStreamBuf;
@@ -86,6 +115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/04/21 20:28:47  ucko
+* Fully DOXYGENize; move destructor out of line.
+*
 * Revision 1.8  2006/04/21 18:57:36  ucko
 * Move CRotatingLogStreamBuf's full declaration from logrotate.hpp to
 * logrotate.cpp, as there's no real need to expose it.
