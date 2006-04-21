@@ -436,9 +436,7 @@ namespace NWinHook
     {
         ReleaseModules();
 
-        if (NULL != m_pszName) {
-            delete [] m_pszName;
-        }
+        delete [] m_pszName;
     }
 
 
@@ -476,10 +474,9 @@ namespace NWinHook
 
     void CModuleInstance::SetName(char *pszName)
     {
-        if (NULL != m_pszName) {
-            delete [] m_pszName;
-        }
-        if ((NULL != pszName) && (strlen(pszName))) {
+        delete [] m_pszName;
+
+        if ((pszName != NULL) && (strlen(pszName))) {
             m_pszName = new char[strlen(pszName) + 1];
             strcpy(m_pszName, pszName);
         }
@@ -567,11 +564,11 @@ namespace NWinHook
         // Get to the 3 functions in PSAPI.DLL dynamically.  We can't
         // be sure that PSAPI.DLL has been installed
         //
-        if (NULL == m_hModPSAPI) {
+        if (m_hModPSAPI == NULL) {
             m_hModPSAPI = g_LoadLibraryA("PSAPI.DLL");
         }
 
-        if (NULL != m_hModPSAPI) {
+        if (m_hModPSAPI != NULL) {
             m_pfnEnumProcesses = 
             (FEnumProcesses)
             g_GetProcAddress(m_hModPSAPI,"EnumProcesses");
@@ -596,7 +593,7 @@ namespace NWinHook
 
     void CPsapiHandler::Finalize(void)
     {
-        if (NULL != m_hModPSAPI) {
+        if (m_hModPSAPI != NULL) {
             ::FreeLibrary(m_hModPSAPI);
         }
     }
@@ -691,7 +688,7 @@ namespace NWinHook
         BOOL   bResult = TRUE;
         CExeModuleInstance* pProcessInfo;
 
-        if (TRUE == Initialize()) {
+        if (Initialize() == TRUE) {
             HMODULE hModuleArray[1024];
             HANDLE  hProcess;
             DWORD   nModules;
@@ -723,7 +720,7 @@ namespace NWinHook
                                                   sizeof(szModuleName)
                                                   );
 
-                        if (0 == j) {   // First module is the EXE.  Just add it to the map
+                        if (j == 0) {   // First module is the EXE.  Just add it to the map
                             pProcessInfo = new CExeModuleInstance(this,
                                                                   szModuleName,
                                                                   hModule,
@@ -764,7 +761,7 @@ namespace NWinHook
         HINSTANCE      hInstLib;
 
         hInstLib = g_LoadLibraryA("Kernel32.DLL");
-        if (NULL != hInstLib) {
+        if (hInstLib != NULL) {
             // We must link to these functions of Kernel32.DLL explicitly. Otherwise
             // a module using this code would fail to load under Windows NT, which does not
             // have the Toolhelp32 functions in the Kernel32.
@@ -807,7 +804,7 @@ namespace NWinHook
         for (BOOL bOk = ModuleFirst(hSnapshot, &me); bOk; bOk = ModuleNext(hSnapshot, &me)) {
             // We don't need to add to the list the process itself.
             // The module list should keep references to DLLs only
-            if (0 != stricmp(pProcess->GetBaseName(), me.szModule)) {
+            if (stricmp(pProcess->GetBaseName(), me.szModule) != 0) {
                 pDllModuleInstance = new CModuleInstance(me.szExePath, me.hModule);
                 pProcess->AddModule(pDllModuleInstance);
             }
@@ -1039,7 +1036,7 @@ namespace NWinHook
     {
         BOOL bResult = FALSE;
 
-        if ((NULL != pfnCurrent) && (NULL != pfnNew)) {
+        if ((pfnCurrent != NULL) && (pfnNew != NULL)) {
             BOOL                bReplace  = FALSE;
             CExeModuleInstance  *pProcess = NULL;
             CTaskManager        taskManager;
@@ -1050,7 +1047,7 @@ namespace NWinHook
             // library or PSAPI
             taskManager.PopulateProcess(::GetCurrentProcessId(), TRUE);
             pProcess = taskManager.GetProcess();
-            if (NULL != pProcess) {
+            if (pProcess != NULL) {
                 // Enumerates all modules loaded by (pProcess) process
                 for (size_t i = 0; i < pProcess->GetModuleCount(); ++i) {
                     pModule = pProcess->GetModuleByIndex(i);
@@ -1141,12 +1138,12 @@ namespace NWinHook
                     ::VirtualQuery(ppfn, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
                     // In order to provide writable access to this part of the
                     // memory we need to change the memory protection
-                    if (FALSE == ::VirtualProtect(mbi.BaseAddress,
-                                                  mbi.RegionSize,
-                                                  // Use copy-on-write protection
-                                                  // PAGE_WRITECOPY, 
-                                                  PAGE_READWRITE,
-                                                  &mbi.Protect)
+                    if (::VirtualProtect(mbi.BaseAddress,
+                                         mbi.RegionSize,
+                                         // Use copy-on-write protection
+                                         // PAGE_WRITECOPY, 
+                                         PAGE_READWRITE,
+                                         &mbi.Protect) == FALSE
                        ) {
                         __leave;
                     }
@@ -1194,8 +1191,8 @@ namespace NWinHook
         API_FUNC_ID apiFuncId;
         for (int i = 0; i < NUMBER_OF_MANDATORY_API_FUNCS; ++i) {
             apiFuncId = MANDATORY_API_FUNCS[i];
-            if ((0 == stricmp(apiFuncId.szCalleeModName, m_szCalleeModName)) &&
-                (0 == stricmp(apiFuncId.szFuncName, m_szFuncName))) {
+            if ((stricmp(apiFuncId.szCalleeModName, m_szCalleeModName) == 0) &&
+                (stricmp(apiFuncId.szFuncName, m_szFuncName) == 0)) {
                 bResult = TRUE;
                 break;
             }
@@ -1218,7 +1215,7 @@ namespace NWinHook
     {
         BOOL  bResult = FALSE;
 
-        if (TRUE != ::IsBadReadPtr(pszFullFileName, MAX_PATH)) {
+        if (::IsBadReadPtr(pszFullFileName, MAX_PATH) != TRUE) {
             char  *pdest;
             int   ch = '\\';
 
@@ -1339,7 +1336,7 @@ namespace NWinHook
         // Prevent accessing invalid pointers and examine values
         // for APIs exported by ordinal
         if ((pszFuncName) &&
-            (reinterpret_cast<LONGLONG>(pszFuncName) > 0xFFFF) &&
+            (reinterpret_cast<uintptr_t>(pszFuncName) > 0xFFFF) &&
             strlen(pszFuncName)) {
             strcpy(szFuncName, pszFuncName);
         }
@@ -1348,7 +1345,7 @@ namespace NWinHook
 			// pointer, it is an ordinal number of a function.
             GetFunctionNameByOrdinal(pszCalleeModName, 
                                      static_cast<DWORD>(
-										reinterpret_cast<LONGLONG>(pszFuncName)), 
+										reinterpret_cast<uintptr_t>(pszFuncName)), 
                                      szFuncName);
         }
 
@@ -1384,7 +1381,7 @@ namespace NWinHook
         // Prevent accessing invalid pointers and examine values
         // for APIs exported by ordinal
         if ((pszFuncName) &&
-            (reinterpret_cast<LONGLONG>(pszFuncName) > 0xFFFF) &&
+            (reinterpret_cast<uintptr_t>(pszFuncName) > 0xFFFF) &&
             strlen(pszFuncName)) {
             strcpy(szFuncName, pszFuncName);
         }
@@ -1393,7 +1390,7 @@ namespace NWinHook
 			// pointer, it is an ordinal number of a function.
             GetFunctionNameByOrdinal(hmodOriginal, 
                                      static_cast<DWORD>(
-										reinterpret_cast<LONGLONG>(pszFuncName)), 
+										reinterpret_cast<uintptr_t>(pszFuncName)), 
                                      szFuncName);
         }
 
@@ -1422,7 +1419,7 @@ namespace NWinHook
     BOOL CHookedFunctions::AddHook(CHookedFunction* pHook)
     {
         BOOL bResult = FALSE;
-        if (NULL != pHook) {
+        if (pHook != NULL) {
             m_ModuleNameList[pHook->GetCalleeModName()][pHook->GetFuncName()] = 
                 pHook;
             m_ModuleList[pHook->GetCalleeMod()][pHook->GetFuncName()] = 
@@ -1437,7 +1434,7 @@ namespace NWinHook
     {
         BOOL bResult = FALSE;
         try {
-            if (NULL != pHook) {
+            if (pHook != NULL) {
                 // Remove from m_ModuleNameList ...
                 TModuleNameList::iterator mn_it = 
                     m_ModuleNameList.find(pHook->GetCalleeModName());
@@ -1678,7 +1675,7 @@ namespace NWinHook
         pHook = m_pHookedFunctions.GetHookedFunction(pszCalleeModName,
                                                      pszFuncName
                                                      );
-        if (NULL != pHook) {
+        if (pHook != NULL) {
             bResult = pHook->UnHookImport();
             if (bResult) {
                 bResult = m_pHookedFunctions.RemoveHook( pHook );
@@ -1952,6 +1949,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/04/21 15:57:10  ssikorsk
+ * Replaced LONGLONG type with uintptr_t.
+ *
  * Revision 1.6  2006/04/20 22:20:32  ssikorsk
  * Fixed conversion of types on Windows x64.
  *
