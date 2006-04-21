@@ -39,26 +39,28 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_SERVICE_NAME"
+#define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME
 
 
 static char* s_ServiceName(const char* service, size_t depth)
 {
     char*  s;
-    char   key[128];
+    char   buf[128];
     char   srv[128];
     size_t len;
 
     if (++depth > 8 || !service || !*service ||
-        (len = strlen(service)) + sizeof(CONN_SERVICE_NAME) >= sizeof(key))
+        (len = strlen(service)) + sizeof(CONN_SERVICE_NAME) >= sizeof(buf)) {
         return 0/*failure*/;
-    strcpy(key, service);
-    key[len++] = '_';
-    strcpy(key + len, CONN_SERVICE_NAME);
+    }
+    s = (char*) memcpy(buf, service, len) + len;
+    *s++ = '_';
+    memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
     /* Looking for "service_CONN_SERVICE_NAME" in environment */
-    if (!(s = getenv(strupr(key)))) {
+    if (!(s = getenv(strupr(buf)))) {
         /* Looking for "CONN_SERVICE_NAME" in registry's section [service] */
-        CORE_REG_GET(service, CONN_SERVICE_NAME, srv, sizeof(srv), 0);
+        buf[len++] = '\0';
+        CORE_REG_GET(buf, buf + len, srv, sizeof(srv), 0);
         if (!*srv)
             return strdup(service);
     } else
@@ -137,13 +139,19 @@ static SERV_ITER s_Open(const char*          service,
 {
     const TSERV_Type special_flags =
         fSERV_Promiscuous | fSERV_ReverseDns | fSERV_Stateless;
-    const char* s = ismask ? strdup(service) : s_ServiceName(service, 0);
     int/*bool*/ no_lbsmd, no_dispd;
     const SSERV_VTable* op;
     SERV_ITER iter;
+    const char* s;
     
-    if (!s || !*s || !(iter = (SERV_ITER) calloc(1, sizeof(*iter))))
+    if (!service || !*service)
         return 0;
+    if (!(s = ismask ? strdup(service) : s_ServiceName(service, 0)))
+        return 0;
+    if (!*s || !(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
+        free((void*) s);
+        return 0;
+    }
 
     iter->name            = s;
     iter->type            = types & ~special_flags;
@@ -201,14 +209,20 @@ static SERV_ITER s_Open(const char*          service,
             iter->type |= fSERV_Firewall;
         if (net_info->stateless)
             iter->stateless = 1;
-    } else
+        if (net_info->lb_disable)
+            no_lbsmd = 1/*true*/;
+        else
+            no_lbsmd = s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE);
+    } else {
         no_dispd = 1/*true*/;
+        no_lbsmd = s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE);
+    }
 
-    if ((            s_IsMapperDisabled(service, REG_CONN_LOCAL_DISABLE)
-         ||  !(op = SERV_LOCAL_Open(iter, info, host_info)))              &&
-        ((no_lbsmd = s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE)) != 0
-         ||  !(op = SERV_LBSMD_Open(iter, info, host_info, !no_dispd)))   &&
-        ( no_dispd
+    if ((s_IsMapperDisabled(service, REG_CONN_LOCAL_DISABLE)
+         ||  !(op = SERV_LOCAL_Open(iter, info, host_info)))             &&
+        (no_lbsmd
+         ||  !(op = SERV_LBSMD_Open(iter, info, host_info, !no_dispd)))  &&
+        (no_dispd
          ||  !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
         if (no_lbsmd  &&  no_dispd) {
             CORE_LOGF(eLOG_Warning,
@@ -681,6 +695,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.80  2006/04/21 14:40:07  lavr
+ * Use reinstated SConnNetInfo::lb_disable as before
+ *
  * Revision 6.79  2006/04/20 19:22:49  lavr
  * Warn when open fails because no major mapper is enabled for the service
  *
