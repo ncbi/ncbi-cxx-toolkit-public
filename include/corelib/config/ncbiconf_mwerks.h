@@ -372,6 +372,9 @@
 /* Define to 1 if you have the `timegm' function. */
 #define HAVE_TIMEGM 1
 
+/* Define to 1 if the system has the type `uintptr_t'. */
+#define HAVE_UINTPTR_T 1
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
