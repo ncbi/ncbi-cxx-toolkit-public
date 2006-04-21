@@ -194,6 +194,18 @@ typedef long long intptr_t;
 #  endif
 #endif
 
+#ifndef HAVE_UINTPTR_T
+#  if SIZEOF_INT == SIZEOF_VOIDP
+typedef unsigned int uintptr_t;
+#  elif SIZEOF_LONG == SIZEOF_VOIDP
+typedef unsigned long uintptr_t;
+#  elif SIZEOF_LONG_LONG == SIZEOF_VOIDP
+typedef unsigned long long uintptr_t;
+#  else
+#    error No integer type is the same size as a pointer!
+#  endif
+#endif
+
 
 /* Macros for constant values definition 
  */
@@ -230,6 +242,9 @@ typedef long long intptr_t;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/04/21 15:46:58  ssikorsk
+ * Added uintptr_t type similar to intptr_t.
+ *
  * Revision 1.20  2006/03/08 16:26:47  ucko
  * New keyword macros: NCBI_RESTRICT, NCBI_FORCEINLINE.
  *
