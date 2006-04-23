@@ -801,8 +801,8 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     if (!service || !*service)
         return 0;
 
-    ccc = (SConnector*)        malloc(sizeof(SConnector) + strlen(service));
-    xxx = (SServiceConnector*) calloc(1, sizeof(*xxx));
+    ccc = (SConnector*)        malloc(sizeof(SConnector));
+    xxx = (SServiceConnector*) calloc(1, sizeof(*xxx) + strlen(service));
 
     /* initialize connector structures */
     ccc->handle   = xxx;
@@ -848,6 +848,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.72  2006/04/23 18:27:54  lavr
+ * BUGFIX:  typo in SServiceConnector allocation caused memory corruption
+ *
  * Revision 6.71  2006/04/20 14:00:59  lavr
  * Keep original service name and use it for service mappers
  *
