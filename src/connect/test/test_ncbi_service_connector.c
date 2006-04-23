@@ -47,7 +47,6 @@ int main(int argc, const char* argv[])
     SConnNetInfo* net_info;
     CONNECTOR connector;
     EIO_Status status;
-    STimeout* timeout;
     char ibuf[1024];
     CONN conn;
     size_t n;
@@ -67,10 +66,8 @@ int main(int argc, const char* argv[])
         obuf[++n]              = 0;
     }
     strcpy(net_info->args, "testarg=val&service=none&platform=none&address=2");
-    timeout = net_info->timeout;
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
-    ConnNetInfo_Destroy(net_info);
 
     if (!connector)
         CORE_LOG(eLOG_Fatal, "Failed to create service connector");
@@ -106,7 +103,7 @@ int main(int argc, const char* argv[])
     }
 
     for (;;) {
-       if (CONN_Wait(conn, eIO_Read, timeout) != eIO_Success) {
+       if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_Success) {
             CONN_Close(conn);
             CORE_LOG(eLOG_Fatal, "Error waiting for reading");
         }
@@ -127,6 +124,8 @@ int main(int argc, const char* argv[])
             break;
         }
     }
+
+    ConnNetInfo_Destroy(net_info);
     CONN_Close(conn);
 
 #if 0
@@ -166,6 +165,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2006/04/23 18:28:44  lavr
+ * Do not destroy SConnNetInfo prematurely; timeout is still in use
+ *
  * Revision 6.36  2006/04/20 14:01:58  lavr
  * Cleanup to demonstrate no leaks; use short diag format
  *
