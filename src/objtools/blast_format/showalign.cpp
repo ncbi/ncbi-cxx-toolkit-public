@@ -155,7 +155,10 @@ static string k_GetTreeViewForm =  "<FORM  method=\"post\" \
 action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&dbname=%s&queryID=%s&distmode=on\" \
 name=\"tree%s%d\" target=\"trv%s\"> \
 <input type=button value=\"Tree View\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
-<input type=\"hidden\" name=\"sequenceSet\" value=\"\"></form>";
+<input type=\"hidden\" name=\"sequenceSet\" value=\"\"><input type=\"hidden\" name=\"screenWidth\" value=\"\"></form>";
+
+
+
 
 
 
@@ -3143,6 +3146,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.118  2006/04/24 19:16:10  zaretska
+*Added hidden field for Tree view display
+*
 *Revision 1.117  2006/04/17 15:56:04  jianye
 *reset history
 *
