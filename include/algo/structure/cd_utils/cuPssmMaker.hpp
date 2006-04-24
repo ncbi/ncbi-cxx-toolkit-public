@@ -149,6 +149,7 @@ private:
 	short m_pseudoCount;
 	CdPssmInput* m_pssmInput;
 	void modifyQuery(CRef< CSeq_entry > query);
+	CRef<CPssmWithParameters> makeDefaultPssm();
 };
 
 END_SCOPE(cd_utils)
@@ -160,6 +161,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/04/24 19:57:19  cliu
+ * make a defaul psssm
+ *
  * Revision 1.8  2006/03/14 19:17:35  cliu
  * PssmId usage
  *

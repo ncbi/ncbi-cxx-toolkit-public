@@ -33,10 +33,13 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistr.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/api/pssm_engine.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <algo/structure/cd_utils/cuPssmMaker.hpp>
+#include <algo/structure/cd_utils/cuScoringMatrix.hpp>
+#include <objects/scoremat/PssmFinalData.hpp>
 #include <objects/cdd/Cdd_id.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -355,7 +358,17 @@ CRef<CPssmWithParameters> PssmMaker::make()
 	if (m_identityFilterThreshold > 0)
 		pssmInput.SetOptions()->nsg_identity_threshold = m_identityFilterThreshold;
 		*/
-    CRef<CPssmWithParameters> pssmRef = pssmEngine.Run();
+	CRef<CPssmWithParameters> pssmRef;
+	try {
+		pssmRef = pssmEngine.Run();
+	}catch (...)
+	{
+		pssmRef.Reset();
+	};
+	if (pssmRef.Empty())
+	{
+		pssmRef = makeDefaultPssm();
+	}
 	if (m_addQuery)
 	{
 		CRef< CSeq_entry > query;
@@ -371,6 +384,46 @@ CRef<CPssmWithParameters> PssmMaker::make()
 		pssmRef->SetPssm().SetQuery(*query);
 	}
 	return pssmRef;
+}
+
+CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
+{
+	EScoreMatrixType emt;
+	bool found = false;
+	int i = 0;
+	for (i = eBlosum45; i <= ePam250 ; i++)
+	{
+		if (NStr::CompareNocase(m_config.matrixName, 
+			GetScoringMatrixName((EScoreMatrixType)i)) == 0)
+		{
+			found = true;
+			break;
+		}
+	}
+	if (found )
+		emt = (EScoreMatrixType)i;
+	else
+		emt = eBlosum62;
+	ScoreMatrix sm(emt);
+	const string& consensus = m_conMaker->getConsensus();
+	CRef<CPssmWithParameters> pssmPara(new CPssmWithParameters);
+	CPssm& pssm = pssmPara->SetPssm();
+	pssm.SetNumColumns(26);
+	pssm.SetNumRows(consensus.size());
+	list< int > & scores = pssm.SetFinalData().SetScores();
+	for (int col = 0; col < consensus.size(); col++)
+	{
+		char c1 = consensus.at(col);
+		for (char row = 0; row < 26; row++)
+		{
+			char c2 =  ColumnResidueProfile::getEaaCode(row);
+			scores.push_back(sm.GetScore(c1, c2));
+		}
+	}
+	pssm.SetFinalData().SetLambda(0.267);
+	pssm.SetFinalData().SetKappa(0.0447);
+	pssm.SetFinalData().SetH(0.140);
+	return pssmPara;
 }
 
 void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
@@ -483,6 +536,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/04/24 19:56:55  cliu
+ * make a defaul psssm
+ *
  * Revision 1.11  2006/03/14 19:18:37  cliu
  * PssmId usage
  *
