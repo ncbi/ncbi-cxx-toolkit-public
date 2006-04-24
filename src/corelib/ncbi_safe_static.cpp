@@ -118,7 +118,7 @@ int CSafeStaticPtr_Base::x_GetCreationOrder(void)
 CSafeStaticPtr_Base::~CSafeStaticPtr_Base(void)
 {
     bool mutex_locked = false;
-    if ( !Init_Lock(&mutex_locked) ) {
+    if ( x_IsStdStatic()  &&  !Init_Lock(&mutex_locked) ) {
         Cleanup();
     }
     Init_Unlock(mutex_locked);
@@ -202,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/04/24 15:40:41  grichenk
+ * Fixed cleanup of static objects.
+ *
  * Revision 1.10  2006/03/14 16:14:11  ucko
  * Change s_Mutex from fast to normal, as ~CSafeStaticGuard can use it
  * recursively.
