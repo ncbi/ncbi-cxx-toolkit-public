@@ -152,6 +152,7 @@ public:
 protected:
     CNcbiRegistry m_MakeFile;
     string        m_MakeFileBaseDir;
+    string        m_FilePath;
 
     struct SPchInfo
     {
@@ -194,6 +195,8 @@ public:
     string GetGUID(void) const;
     bool Redefine(const string& value, list<string>& redef);
     bool Redefine(const list<string>& value, list<string>& redef);
+    void Append( list<string>& values, const string& def);
+    void Append( list<string>& values, const list<string>& def);
 
     // IMsvcProjectMakefile
     virtual bool IsExcludeProject        (bool default_val) const;
@@ -381,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/04/24 16:43:52  gouriano
+ * Corrected redefinition of makefile macros
+ *
  * Revision 1.14  2006/04/21 17:27:22  gouriano
  * Added possibility to redefine makefile macros
  *

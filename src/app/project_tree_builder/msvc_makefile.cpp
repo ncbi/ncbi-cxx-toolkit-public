@@ -214,6 +214,7 @@ CMsvcProjectMakefile::CMsvcProjectMakefile(const string& file_path)
     :CMsvcMetaMakefile(file_path)
 {
     CDirEntry::SplitPath(file_path, &m_ProjectBaseDir);
+    m_FilePath = file_path;
 }
 
 
@@ -225,6 +226,9 @@ string CMsvcProjectMakefile::GetGUID(void) const
 bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
 {
     redef.clear();
+    if (IsEmpty()) {
+        return false;
+    }
     string::size_type start, end;
     if ((start = value.find("$(")) != string::npos && 
         (end   = value.find(")"))  != string::npos  && (end > start)) {
@@ -232,6 +236,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
         string new_val = m_MakeFile.GetString("Redefine", raw_define, "");
         if (!new_val.empty()) {
             redef.push_back("$(" + new_val + ")");
+            LOG_POST(Info << m_FilePath << " redefines:  " << raw_define << " = " << new_val);
             return true;
         }
     } else if (NStr::StartsWith(value, "@") && NStr::EndsWith(value, "@")) {
@@ -239,6 +244,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
         string new_val = m_MakeFile.GetString("Redefine", raw_define, "");
         if (!new_val.empty()) {
             redef.push_back("@" + new_val + "@");
+            LOG_POST(Info << m_FilePath << " redefines:  " << raw_define << " = " << new_val);
             return true;
         }
     } else {
@@ -246,6 +252,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
         if (!new_val.empty()) {
             redef.clear();
             NStr::Split(new_val, LIST_SEPARATOR, redef);
+            LOG_POST(Info << m_FilePath << " redefines:  " << value << " = " << new_val);
             return true;
         }
     }
@@ -270,6 +277,31 @@ bool CMsvcProjectMakefile::Redefine(const list<string>& value, list<string>& red
         }
     }
     return res;
+}
+
+void CMsvcProjectMakefile::Append( list<string>& values, const string& def)
+{
+    if (IsEmpty()) {
+        values.push_back(def);
+    } else {
+        list<string> redef;
+        if (Redefine(def,redef)) {
+            values.insert(values.end(), redef.begin(), redef.end());
+        } else {
+            values.push_back(def);
+        }
+    }
+}
+
+void CMsvcProjectMakefile::Append( list<string>& values, const list<string>& def)
+{
+    if (IsEmpty()) {
+        values.insert(values.end(), def.begin(), def.end());
+    } else {
+        ITERATE(list<string>, k, def) {
+            Append(values,*k);
+        }
+    }
 }
 
 bool CMsvcProjectMakefile::IsExcludeProject(bool default_val) const
@@ -668,6 +700,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/04/24 16:43:28  gouriano
+ * Corrected redefinition of makefile macros
+ *
  * Revision 1.22  2006/04/21 17:28:09  gouriano
  * Added possibility to redefine makefile macros
  *

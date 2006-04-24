@@ -131,6 +131,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
     NON_CONST_ITERATE(CProjectTreeBuilder::TFiles, p, files) {
 
         CMsvcProjectMakefile msvc_prj(p->first + ".msvc");
+        bool msvc_empty = msvc_prj.IsEmpty();
 
 	    NON_CONST_ITERATE(CSimpleMakeFileContents::TContents, 
                           n, 
@@ -139,14 +140,20 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
             const string& key    = n->first;
             list<string>& values = n->second;
 		    if (keys.find(key) != keys.end()) {
+                bool modified = false;
                 list<string> new_vals;
                 list<string>  redef_values;
-                bool modified = msvc_prj.Redefine(values,redef_values);
+                modified = msvc_prj.Redefine(values,redef_values);
                 NON_CONST_ITERATE(list<string>, k, redef_values) {
+//                NON_CONST_ITERATE(list<string>, k, values) {
                     //iterate all values and try to resolve 
                     const string& val = *k;
                     if( !CSymResolver::HasDefine(val) ) {
-                        new_vals.push_back(val);
+                        if (msvc_empty) {
+                            new_vals.push_back(val);
+                        } else {
+                            msvc_prj.Append(new_vals,val);
+                        }
                     } else {
                         list<string> resolved_def;
                         string val_define = FilterDefine(val);
@@ -174,9 +181,13 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                         NStr::Split(resolved_def_str, 
                                                     LIST_SEPARATOR, 
                                                     resolved_defs);
-                                        copy(resolved_defs.begin(),
-                                             resolved_defs.end(),
-                                             back_inserter(new_vals));
+                                        if (msvc_empty) {
+                                            copy(resolved_defs.begin(),
+                                                resolved_defs.end(),
+                                                back_inserter(new_vals));
+                                        } else {
+                                            msvc_prj.Append(new_vals,resolved_defs);
+                                        }
                                     } else {
 // configurable definitions could be described in terms of components
                                         list<string> components;
@@ -186,7 +197,11 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                         } else {
                                             defs_unresolved.insert(define);
                                         }
-                                        new_vals.push_back(define);
+                                        if (msvc_empty) {
+                                            new_vals.push_back(define);
+                                        } else {
+                                            msvc_prj.Append(new_vals,define);
+                                        }
                                     }
 
                                 } else if (HasConfigurableDefine(define)) {
@@ -194,9 +209,17 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                     string stripped = StripConfigurableDefine(raw);
                                     string resolved_def_str = 
                                         GetApp().GetSite().ResolveDefine(stripped);
-                                    new_vals.push_back( NStr::Replace(define, raw, resolved_def_str));
+                                    if (msvc_empty) {
+                                        new_vals.push_back( NStr::Replace(define, raw, resolved_def_str));
+                                    } else {
+                                        msvc_prj.Append(new_vals,NStr::Replace(define, raw, resolved_def_str));
+                                    }
                                 } else {
-                                    new_vals.push_back(define);
+                                    if (msvc_empty) {
+                                        new_vals.push_back(define);
+                                    } else {
+                                        msvc_prj.Append(new_vals,define);
+                                    }
                                 }
                             }
 		                    modified = true;
@@ -1615,6 +1638,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/04/24 16:43:28  gouriano
+ * Corrected redefinition of makefile macros
+ *
  * Revision 1.35  2006/04/21 17:28:09  gouriano
  * Added possibility to redefine makefile macros
  *
