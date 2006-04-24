@@ -2418,7 +2418,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_CheckIntervals:
         {
             if ( !multi_seq  &&
-                (rg1.GetFrom() > rg2.GetTo()  || rg1.GetTo() < rg2.GetTo()) ) {
+                (rg1.GetFrom() > rg2.GetTo()  || rg1.GetTo() < rg2.GetFrom()) ) {
                 return -1;
             }
             // Check intervals' boundaries
@@ -2617,6 +2617,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2006/04/24 13:21:51  vasilche
+* Fixed Seq_loc overlapping logic.
+*
 * Revision 1.19  2006/01/24 15:54:01  grichenk
 * Allow empty seq-locs in GetId()
 *
