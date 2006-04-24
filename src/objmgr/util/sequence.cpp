@@ -819,7 +819,11 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
     //
 
     if ( !mrna_feat  &&  !(opts & fBestFeat_StrictMatch) ) {
-        mrna_feat = feats.front().second;
+        if (opts & fBestFeat_FavorLonger) {
+            mrna_feat = feats.back().second;
+        } else {
+            mrna_feat = feats.front().second;
+        }
     }
 
     return mrna_feat;
@@ -981,7 +985,11 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     //
 
     if ( !cds_feat  &&  !(opts & fBestFeat_StrictMatch) ) {
-        cds_feat = feats.front().second;
+        if (opts & fBestFeat_FavorLonger) {
+            cds_feat = feats.back().second;
+        } else {
+            cds_feat = feats.front().second;
+        }
     }
 
     return cds_feat;
@@ -1064,7 +1072,11 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
     }
 
     if ( !gene_feat  &&  !(opts & fBestFeat_StrictMatch) ) {
-        gene_feat = feats.front().second;
+        if (opts & fBestFeat_FavorLonger) {
+            gene_feat = feats.back().second;
+        } else {
+            gene_feat = feats.front().second;
+        }
     }
 
     return gene_feat;
@@ -2781,6 +2793,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.138  2006/04/24 14:54:08  dicuccio
+* Honor fBestFeat_FavorLonger flag in GetBestMrnaForCds, GetBestGeneForMrna,
+* GetBestGeneForCds
+*
 * Revision 1.137  2006/04/04 13:21:42  dicuccio
 * Added option to favor the longest item among the best matching features.
 * Added options to all versions of GetBestOverlappingFeature().
