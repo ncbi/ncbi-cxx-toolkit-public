@@ -489,13 +489,13 @@ tds_add_row_column_size_result(TDSRESULTINFO* info, TDSCOLINFO* curcol)
 	 */
 	curcol->column_offset = info->row_size;
 	if (is_numeric_type(curcol->column_type)) {
-		info->row_size += sizeof(TDS_NUMERIC);
+		info->row_size += sizeof(TDS_NUMERIC) + 1;
 	} else if (is_blob_type(curcol->column_type)) {
 		info->row_size += sizeof(TDSBLOBINFO);
-	// } else if(curcol->column_type == SYBVARBINARY) {
-    //     info->row_size += sizeof(TDS_INT); /* to prevent memory corruption */
+	} else if(curcol->column_type == SYBVARBINARY) {
+         info->row_size += sizeof(TDS_INT); /* to prevent memory corruption */
     } else {
-		info->row_size += curcol->column_size;
+		info->row_size += curcol->column_size + 1;
 	}
 	info->row_size += (TDS_ALIGN_SIZE - 1);
 	info->row_size -= info->row_size % TDS_ALIGN_SIZE;
@@ -689,6 +689,7 @@ TDSCOMPUTEINFO *info;
 	return TDS_SUCCEED;
 }
 
+
 /*
 ** tds7_process_result() is the TDS 7.0 result set processing routine.  It 
 ** is responsible for populating the tds->res_info structure.
@@ -720,95 +721,98 @@ int remainder;
 
 		curcol = info->columns[col];
 
-		/*  User defined data type of the column */
-		curcol->column_usertype = tds_get_smallint(tds);  
+        /*  User defined data type of the column */
+        curcol->column_usertype = tds_get_smallint(tds);
 
         curcol->column_flags = tds_get_smallint(tds);     /*  Flags */
 
         curcol->column_nullable  =  curcol->column_flags & 0x01;
         curcol->column_writeable = (curcol->column_flags & 0x08) > 0;
-		curcol->column_identity  = (curcol->column_flags & 0x10) > 0;
+        curcol->column_identity  = (curcol->column_flags & 0x10) > 0;
 
-		curcol->column_type = tds_get_byte(tds); 
-		
+        curcol->column_type = tds_get_byte(tds);
+
         curcol->column_type_save = curcol->column_type;
-		collate_type = (curcol->column_flags & 0x2) || is_collate_type(curcol->column_type);
-		curcol->column_varint_size  = tds_get_varint_size(curcol->column_type);
+        collate_type = (curcol->column_flags & 0x2) || is_collate_type(curcol->column_type);
+        curcol->column_varint_size  = tds_get_varint_size(curcol->column_type);
 
-		switch(curcol->column_varint_size) {
-			case 4: 
-				curcol->column_size = tds_get_int(tds);
-				break;
-			case 2: 
-				curcol->column_size = tds_get_smallint(tds);
-				break;
-			case 1: 
-				curcol->column_size = tds_get_byte(tds);
-				break;
-			case 0: 
-				curcol->column_size = get_size_by_type(curcol->column_type);
-				break;
-		}
+        switch(curcol->column_varint_size) {
+            case 4:
+                curcol->column_size = tds_get_int(tds);
+                break;
+            case 2:
+                curcol->column_size = tds_get_smallint(tds);
+                break;
+            case 1:
+                curcol->column_size = tds_get_byte(tds);
+                break;
+            case 0:
+                curcol->column_size = get_size_by_type(curcol->column_type);
+                break;
+        }
 
-		curcol->column_unicodedata = 0;
+        curcol->column_unicodedata = 0;
 
-		if (is_unicode(curcol->column_type))
-			curcol->column_unicodedata = 1;
+        if (is_unicode(curcol->column_type))
+            curcol->column_unicodedata = 1;
 
-		curcol->column_type = tds_get_cardinal_type(curcol->column_type);
+        curcol->column_type = tds_get_cardinal_type(curcol->column_type);
 
-		/* numeric and decimal have extra info */
-		if (is_numeric_type(curcol->column_type)) {
-			curcol->column_prec = tds_get_byte(tds); /* precision */
-			curcol->column_scale = tds_get_byte(tds); /* scale */
-		}
+        /* numeric and decimal have extra info */
+        if (is_numeric_type(curcol->column_type)) {
+            curcol->column_prec = tds_get_byte(tds); /* precision */
+            curcol->column_scale = tds_get_byte(tds); /* scale */
+        }
 
-		if (IS_TDS80(tds)) {
-			if (collate_type) 
-				tds_get_n(tds, curcol->collation, 5);
-		}
+        if (IS_TDS80(tds)) {
+            if (collate_type)
+                tds_get_n(tds, curcol->collation, 5);
+        }
 
-		if (is_blob_type(curcol->column_type)) {
-			tabnamelen = tds_get_smallint(tds);
+        if (is_blob_type(curcol->column_type)) {
+            tabnamelen = tds_get_smallint(tds);
 #ifdef NCBI_FTDS
- 			tds_get_string(tds,curcol->full_column_name,tabnamelen);
- 			curcol->full_column_name[tabnamelen]='.';
+            tds_get_string(tds,curcol->full_column_name,tabnamelen);
+            curcol->full_column_name[tabnamelen]='.';
 #else
-			tds_get_string(tds, NULL, tabnamelen);
+            tds_get_string(tds, NULL, tabnamelen);
 #endif
-		}
+        }
 
-		/* under 7.0 lengths are number of characters not 
-		** number of bytes...tds_get_string handles this */
-		colnamelen = tds_get_byte(tds);
-		tds_get_string(tds,curcol->column_name, colnamelen);
+        /* under 7.0 lengths are number of characters not
+        ** number of bytes...tds_get_string handles this */
+        colnamelen = tds_get_byte(tds);
+        tds_get_string(tds,curcol->column_name, colnamelen);
 
-		/* the column_offset is the offset into the row buffer
-		** where this column begins, text types are no longer
-		** stored in the row buffer because the max size can
-		** be too large (2gig) to allocate */
-		curcol->column_offset = info->row_size;
-		if (!is_blob_type(curcol->column_type)) {
-			info->row_size += curcol->column_size + 1;
-		}
+        /* the column_offset is the offset into the row buffer
+        ** where this column begins, text types are no longer
+        ** stored in the row buffer because the max size can
+        ** be too large (2gig) to allocate */
+        curcol->column_offset = info->row_size;
+        if (!is_blob_type(curcol->column_type)) {
+            info->row_size += curcol->column_size + 1;
+        }
 #ifdef NCBI_FTDS
       else {
-          strcpy(curcol->full_column_name+tabnamelen+1,curcol->column_name);
+          strcpy(curcol->full_column_name + tabnamelen + 1,curcol->column_name);
       }
 #endif
-		if (is_numeric_type(curcol->column_type)) {
-                       info->row_size += sizeof(TDS_NUMERIC) + 1;
-		}
-#ifdef NCBI_FTDS
-		else if(curcol->column_type == SYBVARBINARY) {
-		  info->row_size+= sizeof(TDS_INT); /* to prevent memory corruption */
-		}
-#endif
-		
-		/* actually this 4 should be a machine dependent #define */
-		if(remainder = info->row_size & 0x3) {
-          info->row_size += (4 - remainder);
+        if (is_numeric_type(curcol->column_type)) {
+            info->row_size += sizeof(TDS_NUMERIC) + 1;
         }
+#ifdef NCBI_FTDS
+        else if(curcol->column_type == SYBVARBINARY) {
+            info->row_size += sizeof(TDS_INT); /* to prevent memory corruption */
+        }
+#endif
+
+//         /* actually this 4 should be a machine dependent #define */
+//         if(remainder = info->row_size & 0x3) {
+//           info->row_size += (4 - remainder);
+//         }
+        
+        info->row_size += (TDS_ALIGN_SIZE - 1);
+        info->row_size -= info->row_size % TDS_ALIGN_SIZE;
 
         // tds_add_row_column_size_result(info, curcol);
 	}
@@ -929,6 +933,114 @@ unsigned char *dest;
 	return TDS_SUCCEED;
 }
 
+#include "tdsiconv.h"
+#if HAVE_ICONV
+#include <iconv.h>
+#endif
+/**
+ * tds7_unicode2ascii()
+ * Note: The dest buf must be large enough to handle 'len' + 1 bytes.
+ * in_string have not to be terminated and len characters (2 byte) long
+ */
+static char *tds7_unicode2ascii_local(TDSSOCKET *tds, const char *in_string, char *out_string, int len)
+{
+TDSICONVINFO *iconv_info;
+int i, j;
+
+	if (!in_string || (len < 0)) return NULL;
+
+#if HAVE_ICONV
+	iconv_info = tds->iconv_info;
+	if (iconv_info->use_iconv)
+      {
+        const char *in_ptr;
+        char *out_ptr;
+        size_t out_bytes, in_bytes;
+        char quest_mark[] = "?\0"; /* best to live no-const */
+        const char *pquest_mark; 
+        size_t lquest_mark;
+
+        out_bytes = len * 3;
+        in_bytes = len * 2;
+        in_ptr = (char *)in_string;
+     	out_ptr = out_string;
+     	while (iconv(iconv_info->cdfrom, &in_ptr, &in_bytes, &out_ptr, &out_bytes) == (size_t)-1) {
+          /* iconv call can reset errno */
+          i = errno;
+          /* reset iconv state */
+          iconv(iconv_info->cdfrom, NULL, NULL, NULL, NULL);
+          if (i != EILSEQ) break;
+
+          /* skip one UCS-2 sequnce */
+          in_ptr += 2;
+          in_bytes -= 2;
+
+          /* replace invalid with '?' */
+          pquest_mark = quest_mark;
+          lquest_mark = 2;
+          iconv(iconv_info->cdfrom, &pquest_mark, &lquest_mark, &out_ptr, &out_bytes);
+          if (out_bytes == 0) break;
+        }
+        /* FIXME best method ?? there is no way to return 
+         * less or more than len characters */
+        /* something went wrong fill remaining with zeroes 
+         * avoiding returning garbage data */
+        if (out_bytes) memset(out_ptr,0,out_bytes);
+        *out_ptr='\0';
+     	return out_string;
+      }
+#endif
+
+	/* no iconv, strip high order byte if zero or replace with '?' 
+	 * this is the same of converting to ISO8859-1 charset using iconv */
+	/* FIXME update docs */
+#ifdef NCBI_FTDS
+#   ifdef NCBI_OS_MSWIN
+        i = WideCharToMultiByte(CP_UTF8, 0, in_string, len, out_string, len * 3, 0, 0);
+#   else
+	    for (i= j= 0; i != len; j+= 2) {
+    		out_string[i++]= in_string[j];
+	    }
+#   endif
+#else
+	for (i=j=0;i<len;j+= 2) {
+		out_string[i++] = 
+			in_string[j+1] ? '?' : in_string[j];
+	}
+#endif
+	out_string[i]='\0';
+	return out_string;
+}
+
+static char *tds_get_string_local(TDSSOCKET *tds, void *dest, int need)
+{
+char *temp;
+
+	/*
+	** FIX: 02-Jun-2000 by Scott C. Gray (SCG)
+	**
+	** Bug to malloc(0) on some platforms.
+	*/
+	if (need == 0) {
+		return dest;
+	}
+
+	if (IS_TDS70(tds) || IS_TDS80(tds)) {
+		if (dest==NULL) {
+			tds_get_n(tds,NULL,need*2);
+			return(NULL);
+		}
+		temp = (char *) malloc(need*2);
+		tds_get_n(tds,temp,need*2);
+		tds7_unicode2ascii_local(tds,temp,dest,need);
+		free(temp);
+		return(dest);
+		
+	} else {
+		return tds_get_n(tds,dest,need);	
+	}
+}
+
 /*
 ** tds_process_row() processes rows and places them in the row buffer.  There
 ** is also some special handling for some of the more obscure datatypes here.
@@ -1027,11 +1139,12 @@ int len;
 
 				tds_get_n(tds,varbin->array,colsize);
 			} else if (is_blob_type(cur_col_type)) {
-				if (curcol->column_unicodedata) colsize /= 2;
-				curcol->column_textvalue = realloc(curcol->column_textvalue,colsize+1); /* FIXME +1 needed by tds_get_string */
+				curcol->column_textvalue = realloc(curcol->column_textvalue,colsize/2*3+1); /* FIXME +1 needed by tds_get_string */
 				curcol->column_textsize = colsize;
 				if (curcol->column_unicodedata) {
-					tds_get_string(tds,curcol->column_textvalue,colsize);
+					tds_get_string_local(tds,curcol->column_textvalue,colsize/2);
+                                        curcol->column_textsize = colsize = strlen(curcol->column_textvalue);
+					/*fprintf(stderr,"XXXX: unicode string (%d) %s\n",colsize,curcol->column_textvalue);*/
 				} else {
 					tds_get_n(tds,curcol->column_textvalue,colsize);
 				}
