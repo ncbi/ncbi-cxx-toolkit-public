@@ -71,29 +71,37 @@ static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
 
 
 void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
-                                          objects::CScope& scope,
-                                          objects::CSeq_annot& annot,
+                                          CScope& scope,
+                                          CSeq_annot& annot,
+                                          CBioseq_set& translated_proteins,
                                           TGeneModelCreateFlags flags)
 {
     /// first, merge the alignment
     /// this is necessary as the input may be (will likely be)
     /// a discontinuous segment
-    CAlnMix mix(scope);
-    mix.Add(align);
-    mix.Merge(CAlnMix::fTryOtherMethodOnFail |
-              CAlnMix::fGapJoin);
+    CConstRef<CDense_seg> ds;
+    if (align.GetSegs().IsDenseg()) {
+        ds.Reset(&align.GetSegs().GetDenseg());
+    } else {
+        CAlnMix mix(scope);
+        mix.Add(align);
+        mix.Merge(CAlnMix::fTryOtherMethodOnFail |
+                CAlnMix::fGapJoin);
 
-    /// make sure we only have two rows
-    /// anything else represents a mixed-strand case or more than
-    /// two sequences
-    if (mix.GetDenseg().GetIds().size() != 2) {
-        NCBI_THROW(CException, eUnknown,
-            "CreateGeneModelFromAlign(): failed to create consistent alignment");
+        /// make sure we only have two rows
+        /// anything else represents a mixed-strand case or more than
+        /// two sequences
+        if (mix.GetDenseg().GetIds().size() != 2) {
+            NCBI_THROW(CException, eUnknown,
+                "CreateGeneModelFromAlign(): failed to create consistent alignment");
+        }
+
+        ds.Reset(&mix.GetDenseg());
     }
 
     /// we use CAlnMap, not CAlnVec, to avoid some overhead
-    /// in the object manager
-    CAlnMap alnmgr(mix.GetDenseg());
+    /// from the object manager
+    CAlnMap alnmgr(*ds);
 
     /// there should ideally be one genomic sequence; find it, and record
     /// both ID and row
@@ -167,49 +175,54 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             strand = eNa_strand_minus;
         }
 
-        ///
-        /// create our mRNA feature
-        ///
-        CRef<CSeq_feat> mrna_feat(new CSeq_feat());
-        const CMolInfo* info = s_GetMolInfo(handle);
-        CRNA_ref::TType type = CRNA_ref::eType_unknown;
-        if (info  &&  info->IsSetBiomol()) {
-            switch (info->GetBiomol()) {
-            case CMolInfo::eBiomol_mRNA:
-                type = CRNA_ref::eType_mRNA;
-                break;
-            case CMolInfo::eBiomol_rRNA:
-                type = CRNA_ref::eType_rRNA;
-                break;
-            case CMolInfo::eBiomol_tRNA:
-                type = CRNA_ref::eType_tRNA;
-                break;
-            case CMolInfo::eBiomol_snRNA:
-                type = CRNA_ref::eType_snRNA;
-                break;
-            case CMolInfo::eBiomol_snoRNA:
-                type = CRNA_ref::eType_snoRNA;
-                break;
-            case CMolInfo::eBiomol_scRNA:
-                type = CRNA_ref::eType_scRNA;
-                break;
-            case CMolInfo::eBiomol_pre_RNA:
-                type = CRNA_ref::eType_premsg;
-                break;
-            default:
-                type = CRNA_ref::eType_other;
-                break;
-            }
-        }
-        mrna_feat->SetData().SetRna().SetType(type);
-        mrna_feat->SetData().SetRna().SetExt()
-            .SetName(sequence::GetTitle(handle));
-
+        /// we always need the mRNA location as a reference
         CRef<CSeq_loc> loc(new CSeq_loc());
         loc->SetWhole().Assign(alnmgr.GetSeqId(row));
         loc = mapper.Map(*loc);
-        mrna_feat->SetLocation(*loc);
-        mrna_feat->SetProduct().SetWhole().Assign(alnmgr.GetSeqId(row));
+
+        ///
+        /// create our mRNA feature
+        ///
+        CRef<CSeq_feat> mrna_feat;
+        if (flags & fCreateMrna) {
+            mrna_feat.Reset(new CSeq_feat());
+            const CMolInfo* info = s_GetMolInfo(handle);
+            CRNA_ref::TType type = CRNA_ref::eType_unknown;
+            if (info  &&  info->IsSetBiomol()) {
+                switch (info->GetBiomol()) {
+                case CMolInfo::eBiomol_mRNA:
+                    type = CRNA_ref::eType_mRNA;
+                    break;
+                case CMolInfo::eBiomol_rRNA:
+                    type = CRNA_ref::eType_rRNA;
+                    break;
+                case CMolInfo::eBiomol_tRNA:
+                    type = CRNA_ref::eType_tRNA;
+                    break;
+                case CMolInfo::eBiomol_snRNA:
+                    type = CRNA_ref::eType_snRNA;
+                    break;
+                case CMolInfo::eBiomol_snoRNA:
+                    type = CRNA_ref::eType_snoRNA;
+                    break;
+                case CMolInfo::eBiomol_scRNA:
+                    type = CRNA_ref::eType_scRNA;
+                    break;
+                case CMolInfo::eBiomol_pre_RNA:
+                    type = CRNA_ref::eType_premsg;
+                    break;
+                default:
+                    type = CRNA_ref::eType_other;
+                    break;
+                }
+            }
+            mrna_feat->SetData().SetRna().SetType(type);
+            mrna_feat->SetData().SetRna().SetExt()
+                .SetName(sequence::GetTitle(handle));
+
+            mrna_feat->SetLocation(*loc);
+            mrna_feat->SetProduct().SetWhole().Assign(alnmgr.GetSeqId(row));
+        }
 
         ///
         /// create our gene feature
@@ -269,6 +282,33 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     mapper.Map(feat_iter->GetLocation());
                 cds_feat->SetLocation(*new_loc);
                 annot.SetData().SetFtable().push_back(cds_feat);
+
+                if (flags & fForceTranslateCds) {
+                    /// create a new bioseq for the CDS
+                    CRef<CSeq_entry> entry(new CSeq_entry);
+                    CBioseq& bioseq = entry->SetSeq();
+
+                    /// create a new seq-id for this
+                    static CAtomicCounter counter;
+                    string str("lcl|translated_cds_");
+                    str += NStr::IntToString(counter.Add(1));
+                    CRef<CSeq_id> id(new CSeq_id(str));
+                    bioseq.SetId().push_back(id);
+                    cds_feat->SetProduct().SetWhole().Assign(*id);
+
+                    /// set up the inst
+                    CSeq_inst& inst = bioseq.SetInst();
+                    inst.SetRepr(CSeq_inst::eRepr_raw);
+                    inst.SetMol(CSeq_inst::eMol_aa);
+
+                    /// this is created as a translation of the genomic
+                    /// location
+                    CSeqTranslator::Translate
+                        (*new_loc, handle, inst.SetSeq_data().SetIupacaa().Set());
+                    inst.SetLength(inst.GetSeq_data().GetIupacaa().Get().size());
+
+                    translated_proteins.SetSeq_set().push_back(entry);
+                }
             }
         }
 
@@ -301,6 +341,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/04/24 13:54:38  dicuccio
+ * Added new options to create mRNA feature optionally instead ofalways and to
+ * force translation of the CDS feature instead of using a supplied product
+ *
  * Revision 1.3  2005/05/19 15:19:18  dicuccio
  * Added better determination of genomic sequence
  *
