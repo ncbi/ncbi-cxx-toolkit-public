@@ -89,6 +89,8 @@ public:
         m_TemporarilyStopListening(false), m_Port(port)
     { x_Init(); }
 
+    virtual ~CThreadedServer() { }
+
     /// Enter the main loop.
     void Run(void);
 
@@ -140,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2006/04/24 15:20:13  ucko
+ * Give CThreadedServer a virtual destructor as a matter of principal.
+ *
  * Revision 6.15  2006/02/01 16:23:28  lavr
  * Introduce CThreadedServer::x_Init() to be able to init connect lib if needed
  *
