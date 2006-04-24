@@ -223,7 +223,7 @@ public:
     }
     bool OpenCds() const { return m_status & eOpen; }  // "optimal" CDS is not internal
     void SetOpenCds(bool op) { if(op) m_status |= eOpen; else m_status &= ~eOpen; }
-    bool PStop() const { return m_status & ePStop; }  // has premature stop(s)
+    bool PStop() const { return (m_status & ePStop) != 0; }  // has premature stop(s)
     void SetPStop(bool ps) { if(ps) m_status |= ePStop; else m_status &= ~ePStop; }
     
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const;
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/04/24 13:53:47  dicuccio
+ * FIx compiler warning on MSVC
+ *
  * Revision 1.16  2006/02/03 20:25:46  souvorov
  * Use flags for CAlignVec properties
  *
