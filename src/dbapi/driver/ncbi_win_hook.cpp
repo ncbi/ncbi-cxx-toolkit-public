@@ -1254,18 +1254,29 @@ namespace NWinHook
             }
 
             // Get the name of the DLL
-            PSTR pszDllName = reinterpret_cast<PSTR>( pExportDir->Name + hmodOriginal);
+            PSTR pszDllName = reinterpret_cast<PSTR>( 
+                static_cast<uintptr_t>(pExportDir->Name) + 
+                reinterpret_cast<uintptr_t>(hmodOriginal));
             // Get the starting ordinal value. By default is 1, but
             // is not required to be so
             DWORD dwFuncNumber = pExportDir->Base;
             // The number of entries in the EAT
             size_t dwNumberOfExported = pExportDir->NumberOfFunctions;
             // Get the address of the ENT
-            PDWORD pdwFunctions = (PDWORD)( pExportDir->AddressOfFunctions + hmodOriginal);
+            uintptr_t* pdwFunctions = 
+                reinterpret_cast<uintptr_t*>(
+                    static_cast<uintptr_t>(pExportDir->AddressOfFunctions) +
+                    reinterpret_cast<uintptr_t>(hmodOriginal));
             //  Get the export ordinal table
-            PWORD pwOrdinals = (PWORD)(pExportDir->AddressOfNameOrdinals + hmodOriginal);
+            uintptr_t* pwOrdinals = 
+                reinterpret_cast<uintptr_t*>(
+                    static_cast<uintptr_t>(pExportDir->AddressOfNameOrdinals) +
+                    reinterpret_cast<uintptr_t>(hmodOriginal));
             // Get the address of the array with all names
-            DWORD *pszFuncNames =   (DWORD *)(pExportDir->AddressOfNames + hmodOriginal);
+            uintptr_t* pszFuncNames = 
+                reinterpret_cast<uintptr_t*>(
+                    static_cast<uintptr_t>(pExportDir->AddressOfNames) +
+                    reinterpret_cast<uintptr_t>(hmodOriginal));
 
             PSTR pszExpFunName;
 
@@ -1281,10 +1292,11 @@ namespace NWinHook
                 }
                                             
                 // See if this function has an associated name exported for it.
-                for (unsigned j=0; j < pExportDir->NumberOfNames; j++) {
+                for (unsigned j = 0; j < pExportDir->NumberOfNames; ++j) {
                     // Note that pwOrdinals[x] return values starting form 0.. (not from 1)
                     if (pwOrdinals[j] == i) {
-                        pszExpFunName = (PSTR)(pszFuncNames[j] + hmodOriginal);
+                        pszExpFunName = reinterpret_cast<PSTR>(pszFuncNames[j] + 
+                            reinterpret_cast<uintptr_t>(hmodOriginal));
                         // Is this the same ordinal value ?
                         // Notice that we need to add 1 to pwOrdinals[j] to get actual
                         // number
@@ -1949,6 +1961,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/04/24 21:07:11  ssikorsk
+ * Fixed Export Address calculation.
+ *
  * Revision 1.7  2006/04/21 15:57:10  ssikorsk
  * Replaced LONGLONG type with uintptr_t.
  *
