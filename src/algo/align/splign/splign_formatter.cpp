@@ -404,6 +404,8 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(const CSplign::TResults*
 
     ITERATE(CSplign::TResults, ii, *results) {
     
+        if(ii->m_error) continue;
+
         vector<size_t> boxes;
         vector<string> transcripts;
         vector<CNWAligner::TScore> scores;
@@ -532,6 +534,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2006/04/24 18:29:34  kapustin
+ * Skip err-flagged compartments in AsSeqAlignSet()
+ *
  * Revision 1.22  2006/03/21 16:20:50  kapustin
  * Various changes, mainly adjust the code with  other libs
  *
