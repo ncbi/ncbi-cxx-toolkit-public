@@ -44,6 +44,8 @@
  */
 
 
+NCBI_USING_NAMESPACE_STD;
+
 BEGIN_NCBI_SCOPE
 
 
@@ -71,7 +73,7 @@ public:
     /// @param previous_paths
     ///  If non-NULL, store the prevously set search paths in this container
     void ResetDllSearchPath(vector<string>* previous_paths = NULL);
-    
+
     /// Specify which standard locations should be used for the DLL lookup
     /// (for all resolvers). If standard locations are not set explicitelly
     /// using this method CDllResolver::fDefaultDllPath will be used by default.
@@ -113,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/04/24 19:39:15  ssikorsk
+ * + NCBI_USING_NAMESPACE_STD
+ *
  * Revision 1.22  2006/04/06 22:26:00  ssikorsk
  * - #include <string>
  *
