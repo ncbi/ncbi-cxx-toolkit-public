@@ -1263,18 +1263,18 @@ namespace NWinHook
             // The number of entries in the EAT
             size_t dwNumberOfExported = pExportDir->NumberOfFunctions;
             // Get the address of the ENT
-            uintptr_t* pdwFunctions = 
-                reinterpret_cast<uintptr_t*>(
+            PDWORD pdwFunctions = 
+                reinterpret_cast<PDWORD>(
                     static_cast<uintptr_t>(pExportDir->AddressOfFunctions) +
                     reinterpret_cast<uintptr_t>(hmodOriginal));
             //  Get the export ordinal table
-            uintptr_t* pwOrdinals = 
-                reinterpret_cast<uintptr_t*>(
+            PWORD pwOrdinals = 
+                reinterpret_cast<PWORD>(
                     static_cast<uintptr_t>(pExportDir->AddressOfNameOrdinals) +
                     reinterpret_cast<uintptr_t>(hmodOriginal));
             // Get the address of the array with all names
-            uintptr_t* pszFuncNames = 
-                reinterpret_cast<uintptr_t*>(
+            PDWORD pszFuncNames = 
+                reinterpret_cast<PDWORD>(
                     static_cast<uintptr_t>(pExportDir->AddressOfNames) +
                     reinterpret_cast<uintptr_t>(hmodOriginal));
 
@@ -1295,7 +1295,8 @@ namespace NWinHook
                 for (unsigned j = 0; j < pExportDir->NumberOfNames; ++j) {
                     // Note that pwOrdinals[x] return values starting form 0.. (not from 1)
                     if (pwOrdinals[j] == i) {
-                        pszExpFunName = reinterpret_cast<PSTR>(pszFuncNames[j] + 
+                        pszExpFunName = reinterpret_cast<PSTR>(
+                            static_cast<uintptr_t>(pszFuncNames[j]) + 
                             reinterpret_cast<uintptr_t>(hmodOriginal));
                         // Is this the same ordinal value ?
                         // Notice that we need to add 1 to pwOrdinals[j] to get actual
@@ -1961,6 +1962,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/04/24 21:40:22  ssikorsk
+ * Restored previously changed types of pointers
+ *
  * Revision 1.8  2006/04/24 21:07:11  ssikorsk
  * Fixed Export Address calculation.
  *
