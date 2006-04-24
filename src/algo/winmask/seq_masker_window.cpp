@@ -69,8 +69,12 @@ CSeqMaskerWindow::CSeqMaskerWindow( const CSeqVector & arg_data,
         first_call = false;
     }
 
-    if( data.size() < window_size ); // TODO Throw an exception.
-    if( unit_size > window_size );   // TODO Throw an exception.
+    if( data.size() < window_size ) {
+        // TODO Throw an exception.
+    }
+    if( unit_size > window_size ) {
+        // TODO Throw an exception.
+    }
 
     units.resize( NumUnits(), 0 );
     unit_mask = (1 << (unit_size << 1)) - 1;
@@ -159,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2006/04/24 13:54:54  dicuccio
+ * Cosmetic changes
+ *
  * Revision 1.4  2005/08/30 14:35:20  morgulis
  * NMer counts optimization using bit arrays. Performance is improved
  * by about 20%.
