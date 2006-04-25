@@ -521,7 +521,9 @@ BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *o
       (*options)->gap_extend = BLAST_GAP_EXTN_NUCL;
    }
    (*options)->decline_align = INT2_MAX;
-   (*options)->gapped_calculation = TRUE;
+   if (program_number != eBlastTypeTblastx) {
+       (*options)->gapped_calculation = TRUE;
+   }
    (*options)->program_number = program_number;
    
    return 0;
@@ -1267,6 +1269,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.183  2006/04/25 16:06:53  camacho
+ * tblastx scoring options must be set to false
+ *
  * Revision 1.182  2006/04/20 19:28:30  madden
  * Prototype change for Blast_MessageWrite
  *
