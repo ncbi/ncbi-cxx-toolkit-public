@@ -287,7 +287,7 @@ CEntrez2Client::GetAffinity(const CEntrez2_request& request) const
     }
 
     if (db  &&  !db->Get().empty()) {
-        return "DBAF=" + db->Get();
+        return "DB=" + db->Get();
     } else {
         return kEmptyStr;
     }
@@ -303,6 +303,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/04/25 15:54:46  lavr
+* DBAF= -> DB= in affinity setting
+*
 * Revision 1.18  2006/04/19 17:28:55  ucko
 * Rework GetAffinity to consolidate common logic.
 *
