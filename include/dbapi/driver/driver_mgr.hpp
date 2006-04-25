@@ -43,9 +43,6 @@
  * @{
  */
 
-
-NCBI_USING_NAMESPACE_STD;
-
 BEGIN_NCBI_SCOPE
 
 
@@ -115,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/04/25 16:24:58  ssikorsk
+ * Removed NCBI_USING_NAMESPACE_STD
+ *
  * Revision 1.23  2006/04/24 19:39:15  ssikorsk
  * + NCBI_USING_NAMESPACE_STD
  *
