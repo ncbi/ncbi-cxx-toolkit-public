@@ -1333,6 +1333,8 @@ bool CAutoDefFeatureClause_Base::IsBioseqPrecursorRNA()
         return false;
     } else if (m_ClauseList[0]->IsBioseqPrecursorRNA()) {
         return true;
+    } else {
+        return false;
     }
 }
 
@@ -1401,12 +1403,6 @@ CAutoDefExonListClause::CAutoDefExonListClause(CBioseq_Handle bh, bool suppress_
 }
 
 
-CAutoDefExonListClause::~CAutoDefExonListClause()
-{
-    delete m_ClauseLocation;
-}
-
-
 CSeqFeatData::ESubtype CAutoDefExonListClause::GetMainFeatureSubtype() 
 { 
     return CSeqFeatData::eSubtype_exon; 
@@ -1454,6 +1450,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/04/25 14:18:05  ucko
+* Drop CAutoDefExonListClause's (broken and unneeded) destructor.
+* Make sure that CAutoDefFeatureClause_Base::IsBioseqPrecursorRNA always
+* returns a value.
+*
 * Revision 1.5  2006/04/25 13:36:45  bollin
 * added misc_feat processing and removal of unwanted features
 *
