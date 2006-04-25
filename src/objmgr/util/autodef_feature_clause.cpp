@@ -568,7 +568,7 @@ bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
     feature::GetLabel(m_MainFeat, &label, feature::eContent);
 
     if ((subtype == CSeqFeatData::eSubtype_exon && NStr::Equal(label, "exon"))
-        || (subtype == CSeqFeatData::eSubtype_intron && NStr::Equal(label, "intron"))
+        || (subtype == CSeqFeatData::eSubtype_intron && NStr::Equal(label, "[intron]"))
         || (subtype != CSeqFeatData::eSubtype_exon && subtype != CSeqFeatData::eSubtype_intron)) {
         description = "";
         return false;
@@ -725,9 +725,9 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         }
     
         // label any subclauses
-        if (num_non3UTRclauses > 0) {
+        if (m_ClauseList.size() > 0) {
             bool suppress_final_and = false;
-            if (subtype != CSeqFeatData::eSubtype_cdregion || m_ClauseInfoOnly || has_3UTR) {
+            if (subtype == CSeqFeatData::eSubtype_cdregion || m_ClauseInfoOnly) {
                 suppress_final_and = true;
             }
         
@@ -735,27 +735,16 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         
             // create subclause list for interval
             interval += ListClauses(false, suppress_final_and);
-        
-            if (subtype != CSeqFeatData::eSubtype_cdregion || num_non3UTRclauses > 1) {
-                interval += ",";
-            }
-            if (has_3UTR && subtype == CSeqFeatData::eSubtype_cdregion && ! m_ClauseInfoOnly) {
-                interval += " and 3' UTR ";
-            }
             
             if (subtype == CSeqFeatData::eSubtype_cdregion) {
-                interval += " and ";
-            }
-            if (NStr::EndsWith(interval, ",")) {
-                interval += " ";
-            }
-        } else if (has_3UTR) {
-            interval += " 3' UTR ";
-            if (subtype == CSeqFeatData::eSubtype_cdregion) {
-                interval += " and ";
+                if (m_ClauseList.size() == 1) {
+                    interval += " and ";
+                } else {
+                    interval += ", and ";
+                }
             } else {
-                interval += ", ";
-            }
+                return true;
+            }            
         }
     }
     
@@ -972,6 +961,10 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
             m_ProductNameChosen = true;
             m_ProductName = gene_clause->GetProductName();
         }
+    }
+    if (used_gene) {
+        m_DescriptionChosen = false;
+        Label();
     }
     
     return used_gene;
@@ -1480,6 +1473,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2006/04/25 19:12:51  bollin
+* fixed bugs in listing clauses for definition lines
+*
 * Revision 1.7  2006/04/25 14:52:38  bollin
 * added default to switch to remove compiler warnings
 *

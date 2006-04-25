@@ -299,7 +299,8 @@ void CAutoDefFeatureClause_Base::RemoveGenesMentionedElsewhere()
     unsigned int k, j;
     
     for (k = 0; k < m_ClauseList.size(); k++) {
-        if (m_ClauseList[k]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_gene) {
+        if (m_ClauseList[k]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_gene
+            || m_ClauseList[k]->GetNumSubclauses() > 0) {
             continue;
         }
         for (j = 0; j < m_ClauseList.size() && !m_ClauseList[k]->IsMarkedForDeletion(); j++) {
@@ -1287,11 +1288,26 @@ void CAutoDefFeatureClause_Base::RemoveNonLonelyFeaturesByType(unsigned int feat
     if (m_ClauseList.size() == 0) {
         return;
     }
-    unsigned int subtype = m_ClauseList[0]->GetMainFeatureSubtype();
-    if (m_ClauseList.size() > 1) {
+    unsigned int num_features = 0, k, subtype;
+    for (k=0; k < m_ClauseList.size(); k++) {
+        subtype = m_ClauseList[k]->GetMainFeatureSubtype();
+        if (subtype != CSeqFeatData::eSubtype_gene && subtype != CSeqFeatData::eSubtype_mRNA) {
+            num_features++;
+        }
+    }
+    
+    if (num_features > 1) {
         RemoveFeaturesByType(feature_type);
-    } else if (subtype == CSeqFeatData::eSubtype_gene || subtype == CSeqFeatData::eSubtype_mRNA) {
-        m_ClauseList[0]->RemoveNonLonelyFeaturesByType(feature_type);
+    } else {
+        for (k=0; k < m_ClauseList.size(); k++) {
+            subtype = m_ClauseList[k]->GetMainFeatureSubtype();
+            if (subtype == CSeqFeatData::eSubtype_gene || subtype == CSeqFeatData::eSubtype_mRNA) {
+                m_ClauseList[k]->RemoveNonLonelyFeaturesByType(feature_type);
+            } else if (subtype != feature_type) {
+                RemoveFeaturesByType(feature_type);
+                break;
+            }
+        }
     }   
 }
 
@@ -1450,6 +1466,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/04/25 19:12:51  bollin
+* fixed bugs in listing clauses for definition lines
+*
 * Revision 1.6  2006/04/25 14:18:05  ucko
 * Drop CAutoDefExonListClause's (broken and unneeded) destructor.
 * Make sure that CAutoDefFeatureClause_Base::IsBioseqPrecursorRNA always
