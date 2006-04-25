@@ -280,6 +280,8 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
                 return true;
             }
             break;
+        default:
+            break;
     }
     
     if (m_Biomol == CMolInfo::eBiomol_genomic) {
@@ -701,7 +703,9 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         || subtype == CSeqFeatData::eSubtype_promoter 
         || subtype == CSeqFeatData::eSubtype_operon
         || subtype == CSeqFeatData::eSubtype_exon
-        || subtype == CSeqFeatData::eSubtype_intron) {
+        || subtype == CSeqFeatData::eSubtype_intron
+        || subtype == CSeqFeatData::eSubtype_5UTR
+        || subtype == CSeqFeatData::eSubtype_3UTR) {
         return false;
     }
     
@@ -935,6 +939,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
     
     // only add gene to certain other types of clauses
     if (subtype != CSeqFeatData::eSubtype_cdregion
+        && subtype != CSeqFeatData::eSubtype_mRNA
         && subtype != CSeqFeatData::eSubtype_rRNA
         && subtype != CSeqFeatData::eSubtype_tRNA
         && subtype != CSeqFeatData::eSubtype_misc_RNA
@@ -1475,6 +1480,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/04/25 14:52:38  bollin
+* added default to switch to remove compiler warnings
+*
 * Revision 1.6  2006/04/25 13:36:44  bollin
 * added misc_feat processing and removal of unwanted features
 *
