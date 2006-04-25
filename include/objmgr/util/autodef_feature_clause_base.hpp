@@ -193,7 +193,6 @@ class NCBI_XOBJUTIL_EXPORT CAutoDefExonListClause : public CAutoDefFeatureClause
 {
 public:
     CAutoDefExonListClause(CBioseq_Handle bh, bool suppress_locus_tags);
-    ~CAutoDefExonListClause();
     
     virtual void AddSubclause (CAutoDefFeatureClause_Base *subclause);
     virtual void Label();
@@ -213,6 +212,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/04/25 14:19:07  ucko
+* Drop CAutoDefExonListClause's (broken and unneeded) destructor.
+*
 * Revision 1.4  2006/04/25 13:36:28  bollin
 * added misc_feat processing and removal of unwanted features
 *
