@@ -202,6 +202,8 @@ PSSMWrapper::PSSMWrapper(const BlockMultipleAlignment *bma) : multiple(bma)
 
     } catch (exception& e) {
         ERRORMSG("PSSMWrapper::PSSMWrapper() failed with exception: " << e.what());
+    } catch (...) {
+        ERRORMSG("PSSMWrapper::PSSMWrapper() failed with unknown exception");
     }
 }
 
@@ -339,6 +341,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/04/25 16:49:50  thiessen
+* adjust for blast scoring changes
+*
 * Revision 1.21  2006/02/21 17:15:07  thiessen
 * tweaks to blast/pssm for proper usage of PSI-BLAST sequence-vs-pssm
 *

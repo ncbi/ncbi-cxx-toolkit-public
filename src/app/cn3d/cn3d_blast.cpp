@@ -281,11 +281,15 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             pssmQuery.Reset(new CPssmWithParameters);
             pssmQuery->Assign(multiple->GetPSSM().GetPSSM());
             pssmOptions.Reset(new blast::CPSIBlastOptionsHandle);
-            pssmOptions->SetDbLength(1000000);      // between these two, sets effective search space
-            pssmOptions->SetDbSeqNum(1);            // assumes each subject sequence is scored independently
+
+            // NR stats at 3/21/2006
+            pssmOptions->SetDbLength(1196146007);
+            pssmOptions->SetDbSeqNum(3479934);
             pssmOptions->SetHitlistSize(subjectTSs.size());
             pssmOptions->SetMatrixName("BLOSUM62");
             pssmOptions->SetCompositionBasedStats(eCompositionBasedStats);
+            pssmOptions->SetSegFiltering(false);
+
             blastEngine.Reset(new
                 blast::CPsiBl2Seq(
                     pssmQuery,
@@ -543,6 +547,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2006/04/25 16:49:50  thiessen
+* adjust for blast scoring changes
+*
 * Revision 1.47  2006/02/21 17:15:07  thiessen
 * tweaks to blast/pssm for proper usage of PSI-BLAST sequence-vs-pssm
 *
