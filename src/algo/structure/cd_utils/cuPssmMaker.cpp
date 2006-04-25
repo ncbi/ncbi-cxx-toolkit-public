@@ -408,8 +408,8 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 	const string& consensus = m_conMaker->getConsensus();
 	CRef<CPssmWithParameters> pssmPara(new CPssmWithParameters);
 	CPssm& pssm = pssmPara->SetPssm();
-	pssm.SetNumColumns(26);
-	pssm.SetNumRows(consensus.size());
+	pssm.SetNumColumns(consensus.size());
+	pssm.SetNumRows(26);
 	list< int > & scores = pssm.SetFinalData().SetScores();
 	for (int col = 0; col < consensus.size(); col++)
 	{
@@ -536,6 +536,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/04/25 15:48:22  cliu
+ * right value for NumRows and NumCol
+ *
  * Revision 1.12  2006/04/24 19:56:55  cliu
  * make a defaul psssm
  *
