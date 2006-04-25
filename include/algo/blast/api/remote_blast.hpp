@@ -329,6 +329,15 @@ public:
     ///
     /// @return An object describing the searched database(s).
     CRef<objects::CBlast4_database> GetDatabases();
+
+    /// Retrieve detailed information for a given BLAST database
+    ///
+    /// @param blastdb object describing the database for which to get
+    /// detailed information
+    /// @return Detailed information for the requested BLAST database or an
+    /// empty object is the requested database wasn't found
+    CRef<objects::CBlast4_database_info>
+        GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb);
     
     /// Get the program used for this search.
     /// @return The value of the program parameter.
@@ -510,6 +519,17 @@ private:
     /// Converts the provided query masking locations (if any) to the network
     /// representation following the BLAST 4 ASN.1 spec
     void x_QueryMaskingLocationsToNetwork();
+
+    /// Retrieve the BLAST databases available for searching
+    void x_GetAvailableDatabases();
+
+    /// Look for a database matching this method's argument and returned
+    /// detailed information about it.
+    /// @param blastdb database description
+    /// @return detailed information about the database requested or an empty
+    /// CRef<> if the database was not found
+    CRef<objects::CBlast4_database_info>
+    x_FindDbInfoFromAvailableDatabases(CRef<objects::CBlast4_database> blastdb);
     
     /// Prohibit copy construction.
     CRemoteBlast(const CRemoteBlast &);
@@ -576,6 +596,9 @@ private:
 
     /// Masking locations for queries
     TSeqLocInfoVector m_QueryMaskingLocations;
+
+    /// BLAST databases available to search
+    objects::CBlast4_get_databases_reply::Tdata m_AvailableDatabases;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the
@@ -616,6 +639,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/04/25 20:37:39  camacho
+ * Add support to retrieve detailed BLAST database information
+ *
  * Revision 1.32  2006/03/30 19:17:34  jcherry
  * Added export specifiers
  *

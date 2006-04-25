@@ -1160,16 +1160,11 @@ x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
     return request;
 }
 
-void
-CRemoteBlast::x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
-                                 vector< CRef<objects::CBioseq> > & bioseqs,  // out
-                                 string                           & errors,   // out
-                                 string                           & warnings) // out
+static void
+s_ProcessErrorsFromReply(CRef<objects::CBlast4_reply> reply, 
+                         string& errors, 
+                         string& warnings)
 {
-    // Read the data from the reply into the output arguments.
-    
-    bioseqs.clear();
-    
     static const string no_msg("<no message>");
     
     if (reply->CanGetErrors() && (! reply->GetErrors().empty())) {
@@ -1195,6 +1190,19 @@ CRemoteBlast::x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
             dest += message;
         }
     }
+}
+
+void
+CRemoteBlast::x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
+                                 vector< CRef<objects::CBioseq> > & bioseqs,  // out
+                                 string                           & errors,   // out
+                                 string                           & warnings) // out
+{
+    // Read the data from the reply into the output arguments.
+    
+    bioseqs.clear();
+    
+    s_ProcessErrorsFromReply(reply, errors, warnings);
     
     if (reply->CanGetBody() && reply->GetBody().IsGet_sequences()) {
         list< CRef<CBioseq> > & bslist =
@@ -1330,6 +1338,56 @@ CRemoteBlast::GetDatabases()
     x_GetRequestInfo();
     
     return m_Dbs;
+}
+
+CRef<CBlast4_database_info>
+CRemoteBlast::x_FindDbInfoFromAvailableDatabases
+    (CRef<CBlast4_database> blastdb)
+{
+    _ASSERT(blastdb.NotEmpty());
+
+    CRef<CBlast4_database_info> retval;
+
+    ITERATE(CBlast4_get_databases_reply::Tdata, dbinfo, m_AvailableDatabases) {
+        if ((*dbinfo)->GetDatabase() == *blastdb) {
+            retval = *dbinfo;
+            break;
+        }
+    }
+
+    return retval;
+}
+
+void
+CRemoteBlast::x_GetAvailableDatabases()
+{
+    CBlast4Client client;
+    CRef<CBlast4_get_databases_reply> databases;
+    try { 
+        databases = client.AskGet_databases(); 
+        m_AvailableDatabases = databases->Set();
+    }
+    catch(const CEofException &e ) {
+        cerr << e.what() << endl;
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+                   "No response from server, cannot complete request.");
+    }
+}
+
+
+CRef<CBlast4_database_info>
+CRemoteBlast::GetDatabaseInfo(CRef<CBlast4_database> blastdb)
+{
+    if (blastdb.Empty()) {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   "NULL argument specified: blast database description");
+    }
+
+    if (m_AvailableDatabases.empty()) {
+        x_GetAvailableDatabases();
+    }
+
+    return x_FindDbInfoFromAvailableDatabases(blastdb);
 }
 
 string
@@ -1472,6 +1530,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2006/04/25 20:38:00  camacho
+* Add support to retrieve detailed BLAST database information
+*
 * Revision 1.43  2006/04/19 15:06:37  bealer
 * - Fix warning for 64 bit win compile.
 *
