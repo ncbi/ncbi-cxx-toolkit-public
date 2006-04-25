@@ -115,7 +115,7 @@ ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
     m_BlobOstr->write((const char*)buf, count);
     if (bytes_written) {
         if (pos != (CNcbiStreampos)-1) {
-            *bytes_written = m_BlobOstr->tellp();
+            *bytes_written = m_BlobOstr->tellp() - pos;
         } else {
             *bytes_written = count;
         }
@@ -207,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2006/04/25 20:09:59  didenko
+ * Fix written bytes calculation algorithm
+ *
  * Revision 6.6  2006/03/29 21:53:25  didenko
  * Fixed Flush method
  *
