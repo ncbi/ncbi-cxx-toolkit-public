@@ -49,10 +49,11 @@ public:
     virtual void Label();
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype();
     
-    bool IsRecognizedFeature();
+    virtual bool IsRecognizedFeature();
     
     virtual bool IsTransposon();
     virtual bool IsInsertionSequence();
+    virtual bool IsControlRegion();
     virtual bool IsEndogenousVirusSourceFeature();
     virtual bool IsGeneCluster();
     virtual bool IsNoncodingProductFeat();
@@ -61,7 +62,6 @@ public:
     
     // functions for comparing locations
     virtual sequence::ECompare CompareLocation(const CSeq_loc& loc);
-    virtual void AddToOtherLocation(CRef<CSeq_loc> loc);
     virtual void AddToLocation(CRef<CSeq_loc> loc);
     virtual bool SameStrand(const CSeq_loc& loc);
     virtual bool IsPartial();
@@ -74,6 +74,11 @@ public:
     virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause);
     virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand);
     virtual CAutoDefFeatureClause_Base *FindBestParentClause(CAutoDefFeatureClause_Base * subclause, bool gene_cluster_opp_strand);
+    virtual void ReverseCDSClauseLists();
+    
+    virtual bool ShouldRemoveExons();
+    
+    virtual bool IsBioseqPrecursorRNA();
 
 protected:
     CAutoDefFeatureClause();
@@ -82,10 +87,10 @@ protected:
    
     const CSeq_feat& m_MainFeat;
     CRef<CSeq_loc> m_ClauseLocation;
+    CMolInfo::TBiomol m_Biomol;
 
 private:
     CBioseq_Handle m_BH;
-    CMolInfo::TBiomol m_Biomol;
     
     bool x_GetFeatureTypeWord(string &typeword);
     bool x_ShowTypewordFirst(string typeword);
@@ -184,12 +189,26 @@ public:
 };
 
 
+class NCBI_XOBJUTIL_EXPORT CAutoDefMiscCommentClause : public CAutoDefFeatureClause
+{
+public:    
+    CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat);
+    ~CAutoDefMiscCommentClause();
+  
+    virtual void Label();
+    virtual bool IsRecognizedFeature() { return true; }
+};
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/04/25 13:36:28  bollin
+* added misc_feat processing and removal of unwanted features
+*
 * Revision 1.3  2006/04/18 16:54:22  bollin
 * added support for parsing misc_RNA features
 *

@@ -61,8 +61,8 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
     m_Interval = "";
     m_IsAltSpliced = false;
     m_Pluralizable = false;
-    m_ShowTypewordFirst = false;
     m_TypewordChosen = x_GetFeatureTypeWord(m_Typeword);
+    m_ShowTypewordFirst = x_ShowTypewordFirst(m_Typeword);
     m_Description = "";
     m_DescriptionChosen = false;
     m_ProductName = "";
@@ -86,6 +86,13 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
     
     if (subtype == CSeqFeatData::eSubtype_operon || IsGeneCluster()) {
         m_SuppressSubfeatures = true;
+    }
+    
+    if (m_MainFeat.CanGetComment() && NStr::Find(m_MainFeat.GetComment(), "alternatively spliced") != NCBI_NS_STD::string::npos
+        && (subtype == CSeqFeatData::eSubtype_cdregion
+            || subtype == CSeqFeatData::eSubtype_exon
+            || IsNoncodingProductFeat())) {
+        m_IsAltSpliced = true;
     }
 }
 
@@ -119,6 +126,18 @@ bool CAutoDefFeatureClause::IsInsertionSequence()
         return false;
     } else {
         return true;
+    }
+}
+
+
+bool CAutoDefFeatureClause::IsControlRegion()
+{
+    if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature
+        && m_MainFeat.CanGetComment()
+        && NStr::StartsWith(m_MainFeat.GetComment(), "control region")) {
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -164,8 +183,15 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_mRNA
         || subtype == CSeqFeatData::eSubtype_operon
         || subtype == CSeqFeatData::eSubtype_promoter
+        || subtype == CSeqFeatData::eSubtype_exon
+        || subtype == CSeqFeatData::eSubtype_intron
+        || subtype == CSeqFeatData::eSubtype_rRNA
+        || subtype == CSeqFeatData::eSubtype_tRNA
+        || subtype == CSeqFeatData::eSubtype_otherRNA
+        || subtype == CSeqFeatData::eSubtype_misc_RNA
         || IsTransposon()
         || IsInsertionSequence()
+        || IsControlRegion()
         || IsIntergenicSpacer()
         || IsEndogenousVirusSourceFeature()
         || IsSatelliteClause()
@@ -497,9 +523,10 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
             if (NStr::Equal(label, "tRNA-Xxx")) {
                 label = "tRNA-OTHER";
-            } else {
+            } else if (!NStr::StartsWith(label, "tRNA-")) {
                 label = "tRNA-" + label;
             }
+            product_name = label;
             return true;
         } else if ((subtype == CSeqFeatData::eSubtype_cdregion && !NStr::Equal(label, "CDS"))
                    || (subtype == CSeqFeatData::eSubtype_mRNA && !NStr::Equal(label, "mRNA"))
@@ -670,7 +697,11 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         return true;
     }
     
-    if (IsSatelliteClause() || subtype == CSeqFeatData::eSubtype_promoter || subtype == CSeqFeatData::eSubtype_operon) {
+    if (IsSatelliteClause() 
+        || subtype == CSeqFeatData::eSubtype_promoter 
+        || subtype == CSeqFeatData::eSubtype_operon
+        || subtype == CSeqFeatData::eSubtype_exon
+        || subtype == CSeqFeatData::eSubtype_intron) {
         return false;
     }
     
@@ -691,8 +722,8 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
     
         // label any subclauses
         if (num_non3UTRclauses > 0) {
-            bool suppress_final_and = true;
-            if ((subtype == CSeqFeatData::eSubtype_cdregion && ! m_ClauseInfoOnly) || has_3UTR) {
+            bool suppress_final_and = false;
+            if (subtype != CSeqFeatData::eSubtype_cdregion || m_ClauseInfoOnly || has_3UTR) {
                 suppress_final_and = true;
             }
         
@@ -701,9 +732,25 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
             // create subclause list for interval
             interval += ListClauses(false, suppress_final_and);
         
-            interval += ", ";
+            if (subtype != CSeqFeatData::eSubtype_cdregion || num_non3UTRclauses > 1) {
+                interval += ",";
+            }
             if (has_3UTR && subtype == CSeqFeatData::eSubtype_cdregion && ! m_ClauseInfoOnly) {
-                interval += "and 3' UTR";
+                interval += " and 3' UTR ";
+            }
+            
+            if (subtype == CSeqFeatData::eSubtype_cdregion) {
+                interval += " and ";
+            }
+            if (NStr::EndsWith(interval, ",")) {
+                interval += " ";
+            }
+        } else if (has_3UTR) {
+            interval += " 3' UTR ";
+            if (subtype == CSeqFeatData::eSubtype_cdregion) {
+                interval += " and ";
+            } else {
+                interval += ", ";
             }
         }
     }
@@ -793,15 +840,11 @@ CRef<CSeq_loc> CAutoDefFeatureClause::GetLocation()
 }
 
 
-void CAutoDefFeatureClause::AddToOtherLocation(CRef<CSeq_loc> loc)
-{
-    loc->Add(*m_ClauseLocation);
-}
-
-
 void CAutoDefFeatureClause::AddToLocation(CRef<CSeq_loc> loc)
 {
-    m_ClauseLocation->Add(*loc);
+    m_ClauseLocation = Seq_loc_Add(*m_ClauseLocation, *loc, 
+                                   CSeq_loc::fSort | CSeq_loc::fMerge_All, 
+                                   &(m_BH.GetScope()));
 }
 
 
@@ -830,7 +873,7 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
         && NStr::Equal(m_ProductName, mRNAClause->GetProductName())
         && (loc_compare == sequence::eContained || loc_compare == sequence::eSame)) {
         m_HasmRNA = true;
-        mRNAClause->AddToOtherLocation(m_ClauseLocation);
+        AddToLocation(mRNAClause->GetLocation());
         used_mRNA = true;
     } else if ((subtype == CSeqFeatData::eSubtype_cdregion || subtype == CSeqFeatData::eSubtype_gene)
                && !m_ProductNameChosen
@@ -838,7 +881,7 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
                    || loc_compare == sequence::eContains
                    || loc_compare == sequence::eSame)) {
         m_HasmRNA = true;
-        mRNAClause->AddToOtherLocation(m_ClauseLocation);
+        AddToLocation(mRNAClause->GetLocation());
         used_mRNA = true;
         m_ProductName = mRNAClause->GetProductName();
         m_ProductNameChosen = true;
@@ -1066,6 +1109,52 @@ CAutoDefFeatureClause_Base *CAutoDefFeatureClause::FindBestParentClause(CAutoDef
     return best_parent;
 }
 
+void CAutoDefFeatureClause::ReverseCDSClauseLists()
+{
+    ENa_strand this_strand = m_ClauseLocation->GetStrand();
+    if (this_strand == eNa_strand_minus 
+        && GetMainFeatureSubtype() == CSeqFeatData::eSubtype_cdregion) {
+        TClauseList tmp;
+        tmp.clear();
+        for (unsigned int k = m_ClauseList.size(); k > 0; k--) {
+            tmp.push_back(m_ClauseList[k - 1]);
+            m_ClauseList[k - 1] = NULL;
+        }
+        m_ClauseList.clear();
+        for (unsigned int k = 0; k < tmp.size(); k++) {
+            m_ClauseList.push_back(tmp[k]);
+            tmp[k] = NULL;
+        }
+        tmp.clear();
+    }
+    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
+        m_ClauseList[k]->ReverseCDSClauseLists();
+    }
+}
+
+
+bool CAutoDefFeatureClause::ShouldRemoveExons()
+{
+    unsigned int subtype = GetMainFeatureSubtype();
+    
+    if (subtype == CSeqFeatData::eSubtype_mRNA) {
+        return false;
+    } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
+        return ! IsPartial();
+    } else {
+        return true;
+    }
+}
+
+bool CAutoDefFeatureClause::IsBioseqPrecursorRNA()
+{
+    if (m_Biomol == CMolInfo::eBiomol_pre_RNA && GetMainFeatureSubtype() == CSeqFeatData::eSubtype_preRNA) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 static string transposon_keywords [] = {
   "retrotransposon",
@@ -1130,6 +1219,7 @@ CAutoDefTransposonClause::~CAutoDefTransposonClause()
 
 void CAutoDefTransposonClause::Label()
 {
+    m_DescriptionChosen = true;
     x_GetGenericInterval (m_Interval);
 }
 
@@ -1156,6 +1246,7 @@ CAutoDefSatelliteClause::~CAutoDefSatelliteClause()
 
 void CAutoDefSatelliteClause::Label()
 {
+    m_DescriptionChosen = true;
     x_GetGenericInterval(m_Interval);
 }
 
@@ -1178,6 +1269,7 @@ CAutoDefPromoterClause::~CAutoDefPromoterClause()
 
 void CAutoDefPromoterClause::Label()
 {
+    m_DescriptionChosen = true;
 }
 
 
@@ -1247,6 +1339,7 @@ CAutoDefIntergenicSpacerClause::~CAutoDefIntergenicSpacerClause()
 
 void CAutoDefIntergenicSpacerClause::Label()
 {
+    m_DescriptionChosen = true;
 }
 
 
@@ -1337,7 +1430,42 @@ CAutoDefGeneClusterClause::~CAutoDefGeneClusterClause()
 
 void CAutoDefGeneClusterClause::Label()
 {
-    x_GetGenericInterval(m_Interval);        
+    x_GetGenericInterval(m_Interval);
+    m_DescriptionChosen = true;        
+}
+
+
+CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat)
+                  : CAutoDefFeatureClause(bh, main_feat)
+{
+    if (m_MainFeat.CanGetComment()) {
+        m_Description = m_MainFeat.GetComment();
+        unsigned int pos = NStr::Find(m_Description, ";");
+        if (pos != NCBI_NS_STD::string::npos) {
+            m_Description = m_Description.substr(0, pos);
+        }
+        m_DescriptionChosen = true;
+    }
+    if (m_Biomol == CMolInfo::eBiomol_genomic) {
+        m_Typeword = "genomic sequence";
+    } else if (m_Biomol == CMolInfo::eBiomol_mRNA) {
+        m_Typeword = "mRNA sequence";
+    } else {
+        m_Typeword = "sequence";
+    }
+    m_TypewordChosen = true;
+    m_Interval = "";
+}
+
+
+CAutoDefMiscCommentClause::~CAutoDefMiscCommentClause()
+{
+}
+
+
+void CAutoDefMiscCommentClause::Label()
+{
+    m_DescriptionChosen = true;
 }
 
 
@@ -1347,6 +1475,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/04/25 13:36:44  bollin
+* added misc_feat processing and removal of unwanted features
+*
 * Revision 1.5  2006/04/18 20:13:58  bollin
 * added option to suppress transposon and insertion sequence subfeaures
 * corrected bug in CAutoDefFeatureClause::SameStrand

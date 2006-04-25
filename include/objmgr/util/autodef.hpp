@@ -62,6 +62,12 @@ public:
         eCompleteSequence,
         eCompleteGenome
     };
+    
+    enum EMiscFeatRule {
+        eDelete = 0,
+        eNoncodingProductFeat,
+        eCommentFeat
+    };
 
     CAutoDef();
     ~CAutoDef();
@@ -73,9 +79,19 @@ public:
     void DoAutoDef();
     
     void SetFeatureListType(unsigned int feature_list_type);
+    void SetMiscFeatRule(unsigned int misc_feat_rule);
     void SetProductFlag (unsigned int product_flag);
     void SetAltSpliceFlag (bool alt_splice_flag);
+    void SetSuppressLocusTags(bool suppress_locus_tags);
+    void SetGeneClusterOppStrand(bool gene_opp_strand);
+    void SetSuppressFeatureAltSplice (bool suppress_alt_splice);
     void SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress);
+    void SetKeepExons(bool keep);
+    void SetKeepIntrons(bool keep);
+    void SetKeepPromoters(bool keep);
+    void SetKeepLTRs(bool keep);
+    void SetKeep3UTRs(bool keep);
+    void SetKeep5UTRs(bool keep);
     
     string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
     
@@ -89,12 +105,22 @@ private:
     typedef vector<CSeq_entry_Handle> TSeqEntryHandleVector;
 
     TModifierComboVector  m_ComboList;
-    bool m_SuppressAltSplicePhrase;
     
     unsigned int m_FeatureListType;
+    unsigned int m_MiscFeatRule;
+    bool         m_SpecifyNuclearProduct;
     unsigned int m_ProductFlag;
     bool         m_AltSpliceFlag;
+    bool         m_SuppressAltSplicePhrase;
+    bool         m_SuppressLocusTags;
+    bool         m_GeneOppStrand;
     bool         m_RemoveTransposonAndInsertionSequenceSubfeatures;
+    bool         m_KeepExons;
+    bool         m_KeepIntrons;
+    bool         m_KeepPromoters;
+    bool         m_KeepLTRs;
+    bool         m_Keep3UTRs;
+    bool         m_Keep5UTRs;
     
     void x_SortModifierListByRank
         (TModifierIndexVector& index_list,
@@ -106,9 +132,7 @@ private:
     string x_GetSourceDescriptionString(CAutoDefModifierCombo* mod_combo,
                                         const CBioSource& bsrc);
     
-    string x_GetFeatureClauses(CBioseq_Handle bh,
-                               bool suppress_locus_tags,
-                               bool gene_cluster_opp_strand);
+    string x_GetFeatureClauses(CBioseq_Handle bh);
     string x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                            CBioseq_Handle bh);
     bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh,
@@ -123,6 +147,9 @@ private:
                               const CSeq_feat& cf,
                               CAutoDefFeatureClause_Base& main_clause,
                               bool suppress_locus_tags);
+                              
+    void x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause);
+                                  
     bool m_Cancelled;
 
 };  //  end of CAutoDef
@@ -136,8 +163,16 @@ void CAutoDef::SetFeatureListType(unsigned int feature_list_type)
 
 
 inline
+void CAutoDef::SetMiscFeatRule(unsigned int misc_feat_rule)
+{
+    m_MiscFeatRule = misc_feat_rule;
+}
+
+
+inline
 void CAutoDef::SetProductFlag(unsigned int product_flag)
 {
+    m_SpecifyNuclearProduct = true;
     m_ProductFlag = product_flag;
 }
 
@@ -150,9 +185,72 @@ void CAutoDef::SetAltSpliceFlag (bool alt_splice_flag)
 
 
 inline
+void CAutoDef::SetSuppressLocusTags (bool suppress_locus_tags)
+{
+    m_SuppressLocusTags = suppress_locus_tags;
+}
+
+
+inline
+void CAutoDef::SetGeneClusterOppStrand (bool gene_opp_strand)
+{
+    m_GeneOppStrand = gene_opp_strand;
+}
+
+
+inline
+void CAutoDef::SetSuppressFeatureAltSplice (bool suppress_alt_splice)
+{
+    m_SuppressAltSplicePhrase = suppress_alt_splice;
+}
+
+
+inline
 void CAutoDef::SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress)
 {
     m_RemoveTransposonAndInsertionSequenceSubfeatures = suppress;
+}
+
+
+inline
+void CAutoDef::SetKeepExons(bool keep)
+{
+    m_KeepExons = keep;
+}
+
+
+inline
+void CAutoDef::SetKeepIntrons(bool keep)
+{
+    m_KeepIntrons = keep;
+}
+
+
+inline
+void CAutoDef::SetKeepPromoters(bool keep)
+{
+    m_KeepPromoters = keep;
+}
+
+
+inline
+void CAutoDef::SetKeepLTRs(bool keep)
+{
+    m_KeepLTRs = keep;
+}
+
+
+inline
+void CAutoDef::SetKeep3UTRs(bool keep)
+{
+    m_Keep3UTRs = keep;
+}
+
+
+inline
+void CAutoDef::SetKeep5UTRs(bool keep)
+{
+    m_Keep5UTRs = keep;
 }
 
 
@@ -162,6 +260,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2006/04/25 13:36:28  bollin
+* added misc_feat processing and removal of unwanted features
+*
 * Revision 1.7  2006/04/19 13:43:50  dicuccio
 * Stylistic changes.  Made several accessors const.
 *

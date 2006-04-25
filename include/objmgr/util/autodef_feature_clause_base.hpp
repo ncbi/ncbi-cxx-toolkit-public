@@ -50,11 +50,12 @@ public:
     CAutoDefFeatureClause_Base(bool suppress_locus_tags);
     ~CAutoDefFeatureClause_Base();
     
-    void AddSubclause (CAutoDefFeatureClause_Base *subclause);
+    virtual void AddSubclause (CAutoDefFeatureClause_Base *subclause);
 
     string PrintClause(bool print_typeword, bool typeword_is_plural);
     
-    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() { return CSeqFeatData::eSubtype_bad; }
+    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype();
+    unsigned int GetNumSubclauses() { return m_ClauseList.size(); }
     virtual void Label();
     virtual bool AddmRNA (CAutoDefFeatureClause_Base *mRNAClause);
     virtual bool AddGene (CAutoDefFeatureClause_Base *gene_clause);
@@ -66,14 +67,17 @@ public:
     virtual bool IsPartial() { return false; }
     virtual bool IsTransposon() { return false; }
     virtual bool IsInsertionSequence() { return false; }
+    virtual bool IsControlRegion() { return false; }
     virtual bool IsEndogenousVirusSourceFeature() { return false; }
     virtual bool IsGeneCluster() { return false; }
     virtual bool IsNoncodingProductFeat() { return false; }
     virtual bool IsIntergenicSpacer() { return false; }
     virtual bool IsSatelliteClause() { return false; }    
+    virtual bool IsExonList() { return false; }
     virtual CAutoDefFeatureClause_Base *FindBestParentClause(CAutoDefFeatureClause_Base * subclause, bool gene_cluster_opp_strand);
     
     void GroupClauses(bool gene_cluster_opp_strand);
+    void GroupAltSplicedExons(CBioseq_Handle bh);
 
     virtual CRef<CSeq_loc> GetLocation();
     
@@ -89,6 +93,7 @@ public:
     string GetProductName() { return m_ProductName; }
     string GetGeneName() { return m_GeneName; }
     string GetAlleleName() { return m_AlleleName; }
+    virtual void SetProductName(string product_name);
     bool   GetGeneIsPseudo() { return m_GeneIsPseudo; }
     bool   NeedPlural() { return m_MakePlural; }
     bool   IsAltSpliced() { return m_IsAltSpliced; }
@@ -96,6 +101,7 @@ public:
     bool IsMarkedForDeletion() { return m_DeleteMe; }
     void MarkForDeletion() { m_DeleteMe = true; }
     void SetMakePlural() { m_MakePlural = true; }
+    bool HasmRNA() { return m_HasmRNA; }
     void SetSuppressLocusTag(bool do_suppress) { m_SuppressLocusTag = do_suppress; }
     void PluralizeInterval();
     void PluralizeDescription();
@@ -105,11 +111,16 @@ public:
    
     void GroupmRNAs();
     void GroupGenes();
+    void GroupConsecutiveExons(CBioseq_Handle bh);
+    void GroupSegmentedCDSs();
     void RemoveGenesMentionedElsewhere();
+    void RemoveTransSplicedLeaders();
     void ConsolidateRepeatedClauses();
     void FindAltSplices();
     void TransferSubclauses(TClauseList &other_clause_list);
     void CountUnknownGenes();
+    void ExpandExonLists();
+    virtual void ReverseCDSClauseLists();
    
     virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause) { return false; }
     virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) { return false; }
@@ -117,6 +128,20 @@ public:
     virtual void SuppressTransposonAndInsertionSequenceSubfeatures();
     
     void SuppressSubfeatures() { m_SuppressSubfeatures = true; }
+    
+    string FindGeneProductName(CAutoDefFeatureClause_Base *gene_clause);
+    void AssignGeneProductNames(CAutoDefFeatureClause_Base *main_clause);
+    
+    void RemoveFeaturesByType(unsigned int feature_type);
+    void RemoveNonLonelyFeaturesByType(unsigned int feature_type);
+    void RemoveFeaturesInmRNAsByType(unsigned int feature_type);
+    
+    virtual bool ShouldRemoveExons();
+    
+    void RemoveUnwantedExons();
+    
+    virtual bool IsBioseqPrecursorRNA();
+    void RemoveBioseqPrecursorRNAs();
    
 protected:
     CAutoDefFeatureClause_Base();
@@ -164,12 +189,33 @@ public:
 };
 
 
+class NCBI_XOBJUTIL_EXPORT CAutoDefExonListClause : public CAutoDefFeatureClause_Base
+{
+public:
+    CAutoDefExonListClause(CBioseq_Handle bh, bool suppress_locus_tags);
+    ~CAutoDefExonListClause();
+    
+    virtual void AddSubclause (CAutoDefFeatureClause_Base *subclause);
+    virtual void Label();
+    virtual bool IsRecognizedFeature() { return true; }
+    virtual bool IsExonList() { return true; }
+    virtual CSeqFeatData::ESubtype GetMainFeatureSubtype();
+    void SetSuppressFinalAnd(bool suppress) { m_SuppressFinalAnd = suppress; }
+private:
+    bool m_SuppressFinalAnd;
+    CRef<CSeq_loc> m_ClauseLocation;    
+    CBioseq_Handle m_BH;
+};
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/04/25 13:36:28  bollin
+* added misc_feat processing and removal of unwanted features
+*
 * Revision 1.3  2006/04/18 20:12:37  bollin
 * added option to suppress transposon and insertion sequence subfeatures
 *

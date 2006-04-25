@@ -52,9 +52,19 @@ BEGIN_SCOPE(objects)
 CAutoDef::CAutoDef()
     : m_SuppressAltSplicePhrase(false),
       m_FeatureListType(eListAllFeatures),
+      m_MiscFeatRule(eDelete),
       m_ProductFlag(CBioSource::eGenome_unknown),
       m_AltSpliceFlag(false),
+      m_SuppressLocusTags(false),
+      m_GeneOppStrand(false),
       m_RemoveTransposonAndInsertionSequenceSubfeatures(false),
+      m_SpecifyNuclearProduct(false),
+      m_KeepExons(false),
+      m_KeepIntrons(false),
+      m_KeepPromoters(false),
+      m_KeepLTRs(false),
+      m_Keep3UTRs(false),
+      m_Keep5UTRs(false),
       m_Cancelled(false)
 {
     m_ComboList.clear();
@@ -486,10 +496,63 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAut
     return !is_first;
 }
 
-
-string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags, bool gene_cluster_opp_strand)
+void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause)
 {
-    CAutoDefFeatureClause_Base main_clause(suppress_locus_tags);
+    // remove optional features that have not been requested
+    if (main_clause == NULL) {
+        return;
+    }
+    
+    // keep 5' UTRs only if lonely or requested
+    if (!m_Keep5UTRs) {
+        main_clause->RemoveNonLonelyFeaturesByType(CSeqFeatData::eSubtype_5UTR);
+    }
+    
+    // keep 3' UTRs only if lonely or requested
+    if (!m_Keep5UTRs) {
+        main_clause->RemoveNonLonelyFeaturesByType(CSeqFeatData::eSubtype_5UTR);
+    }
+    
+    // keep LTRs only if requested or lonely and not in parent
+    if (!m_KeepLTRs) {
+        if (main_clause->GetNumSubclauses() > 1 
+            || main_clause->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_LTR) {
+            main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_LTR);
+        }
+    }
+           
+    // keep promoters only if requested or lonely and not in mRNA
+    if (!m_KeepPromoters) {
+        main_clause->RemoveNonLonelyFeaturesByType(CSeqFeatData::eSubtype_promoter);
+        main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_promoter);
+    }
+    
+    // keep introns only if requested or lonely and not in mRNA
+    if (!m_KeepIntrons) {
+        main_clause->RemoveNonLonelyFeaturesByType(CSeqFeatData::eSubtype_intron);
+        main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_intron);
+    }
+    
+    // keep exons only if requested or lonely or in mRNA or in partial CDS
+    if (!m_KeepExons) {
+        if (main_clause->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_exon) {
+            main_clause->RemoveUnwantedExons();
+        }
+    }
+    
+    // only keep bioseq precursor RNAs if lonely
+    if (!main_clause->IsBioseqPrecursorRNA()) {
+        main_clause->RemoveBioseqPrecursorRNAs();
+    }
+    
+    // delete subclauses at end, so that loneliness calculations will be correct
+    main_clause->RemoveDeletedSubclauses();
+}
+
+
+string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
+{
+    CAutoDefFeatureClause_Base main_clause(m_SuppressLocusTags);
     CAutoDefFeatureClause *new_clause;
     
     CFeat_CI feat_ci(bh);
@@ -497,31 +560,47 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags
     {
         const CSeq_feat& cf = feat_ci->GetOriginalFeature();
         new_clause = new CAutoDefFeatureClause(bh, cf);
+        unsigned int subtype = new_clause->GetMainFeatureSubtype();
         if (new_clause->IsTransposon()) {
             delete new_clause;
             new_clause = new CAutoDefTransposonClause(bh, cf);
         } else if (new_clause->IsSatelliteClause()) {
             delete new_clause;
             new_clause = new CAutoDefSatelliteClause(bh, cf);
-        } else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_promoter) {
+        } else if (subtype == CSeqFeatData::eSubtype_promoter) {
             delete new_clause;
             new_clause = new CAutoDefPromoterClause(bh, cf);
         } else if (new_clause->IsIntergenicSpacer()) {
             delete new_clause;
-            x_AddIntergenicSpacerFeatures(bh, cf, main_clause, suppress_locus_tags);
+            x_AddIntergenicSpacerFeatures(bh, cf, main_clause, m_SuppressLocusTags);
             new_clause = NULL;
-        } else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_otherRNA) {
-            if (x_AddMiscRNAFeatures(bh, cf, main_clause, suppress_locus_tags)) {
+        } else if (subtype == CSeqFeatData::eSubtype_otherRNA
+                   || subtype == CSeqFeatData::eSubtype_misc_RNA
+                   || subtype == CSeqFeatData::eSubtype_rRNA) {
+            if (x_AddMiscRNAFeatures(bh, cf, main_clause, m_SuppressLocusTags)) {
                 delete new_clause;
                 new_clause = NULL;
             }
         } else if (new_clause->IsGeneCluster()) {
             delete new_clause;
             new_clause = new CAutoDefGeneClusterClause(bh, cf);
+        } else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_misc_feature
+                   && !NStr::Equal(new_clause->GetTypeword(), "control region")) {
+            if (m_MiscFeatRule == eDelete
+                || (m_MiscFeatRule == eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat())) {
+                delete new_clause;
+                new_clause = NULL;
+            } else if (m_MiscFeatRule == eCommentFeat) {
+                delete new_clause;
+                new_clause = NULL;
+                if (cf.CanGetComment() && ! NStr::IsBlank(cf.GetComment())) {
+                    new_clause = new CAutoDefMiscCommentClause(bh, cf);
+                }
+            }            
         }
         
         if (new_clause != NULL && new_clause->IsRecognizedFeature()) {
-            new_clause->SetSuppressLocusTag(suppress_locus_tags);
+            new_clause->SetSuppressLocusTag(m_SuppressLocusTags);
             main_clause.AddSubclause(new_clause);
         } else if (new_clause != NULL) {            
             delete new_clause;
@@ -539,15 +618,33 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags
     // Add genes to clauses that need them for descriptions/products
     main_clause.GroupGenes();
     
-    
-    
-    // Group all features
-    main_clause.GroupClauses(gene_cluster_opp_strand);
+    main_clause.GroupAltSplicedExons(bh);
+        
+    main_clause.GroupSegmentedCDSs();
     main_clause.RemoveDeletedSubclauses();
+        
+    // Group all features
+    main_clause.GroupClauses(m_GeneOppStrand);
+    main_clause.RemoveDeletedSubclauses();
+    
+    // now that features have been grouped, can expand lists of spliced exons
+    main_clause.ExpandExonLists();
+    
+    // assign product names for features associated with genes that have products
+    main_clause.AssignGeneProductNames(&main_clause);
+    
+    // reverse the order of clauses for minus-strand CDSfeatures
+    main_clause.ReverseCDSClauseLists();
     
     main_clause.Label();
     main_clause.CountUnknownGenes();
     main_clause.RemoveDeletedSubclauses();
+    
+    // remove miscRNA and otherRNA features that are trans-spliced leaders
+    main_clause.RemoveTransSplicedLeaders();
+    main_clause.RemoveDeletedSubclauses();
+    
+    x_RemoveOptionalFeatures(&main_clause);
     
     // if a gene is listed as part of another clause, they do not need
     // to be listed as there own clause
@@ -568,6 +665,10 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh, bool suppress_locus_tags
     main_clause.ConsolidateRepeatedClauses();
     main_clause.RemoveDeletedSubclauses();
     
+    main_clause.GroupConsecutiveExons(bh);
+    main_clause.RemoveDeletedSubclauses();
+    
+    main_clause.Label();
 
 #if 0
   if (feature_requests->feature_list_type == DEFLINE_USE_FEATURES
@@ -741,9 +842,12 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
     }
     
     string ending = OrganelleByGenome(genome_val);
+    if (NStr::Equal(ending, "mitochondrion")) {
+        ending = "mitochondrial";
+    }
     if (!NStr::IsBlank(ending)) {
         ending = "; " + ending;
-    } else {
+    } else if (m_SpecifyNuclearProduct) {
         ending = OrganelleByGenome(m_ProductFlag);
         if (NStr::IsBlank(ending)) {
             if (!NStr::IsBlank(genome_from_mods)) {
@@ -784,11 +888,16 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
     }
     string feature_clauses = "";
     if (m_FeatureListType == eListAllFeatures) {
-        feature_clauses = " " + x_GetFeatureClauses(bh, true, true);
-        feature_clauses += x_GetFeatureClauseProductEnding(feature_clauses, bh);
+        feature_clauses = " " + x_GetFeatureClauses(bh);
+        string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
         if (m_AltSpliceFlag) {
-            feature_clauses += ", alternatively spliced";
+            if (NStr::IsBlank(ending)) {
+                ending = "; alternatively spliced";
+            } else {
+                ending += ", alternatively spliced";
+            }
         }
+        feature_clauses += ending;
         feature_clauses += ".";
     } else if (m_FeatureListType == eCompleteSequence) {
         feature_clauses = ", complete sequence";
@@ -810,6 +919,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2006/04/25 13:36:44  bollin
+* added misc_feat processing and removal of unwanted features
+*
 * Revision 1.9  2006/04/20 19:00:59  ucko
 * Stop including <objtools/format/context.hpp> -- there's (thankfully!)
 * no need to do so, and it confuses SGI's MIPSpro compiler.
