@@ -209,6 +209,21 @@ BlastQueryInfoGetEffSearchSpace(const BlastQueryInfo* qinfo,
     return retval;
 }
 
+void
+BlastQueryInfoSetEffSearchSpace(BlastQueryInfo* qinfo,
+                                EBlastProgramType program,
+                                Int4 query_index,
+                                Int8 eff_searchsp)
+{
+    Int4 i = 0;
+    const Uint4 kNumContexts = BLAST_GetNumberOfContexts(program);
+    ASSERT(query_index < qinfo->num_queries);
+
+    for (i = query_index*kNumContexts; i < (query_index+1)*kNumContexts; i++) {
+        qinfo->contexts[i].eff_searchsp = eff_searchsp;
+    }
+}
+
 Int4 BSearchContextInfo(Int4 n, const BlastQueryInfo * A)
 {
     Int4 m=0, b=0, e=0, size=0;

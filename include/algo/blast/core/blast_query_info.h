@@ -104,6 +104,19 @@ BlastQueryInfoGetEffSearchSpace(const BlastQueryInfo* qinfo,
                                 EBlastProgramType program,
                                 Int4 query_index);
 
+/** Set a query sequence's search space
+ * @param qinfo BlastQueryInfo structure [in]
+ * @param program CORE program type [in]
+ * @param query_index number of the query 
+ * (query_index < BlastQueryInfo::num_queries) [in]
+ * @param eff_searchsp the effective search space to use [in]
+ */
+void
+BlastQueryInfoSetEffSearchSpace(BlastQueryInfo* qinfo,
+                                EBlastProgramType program,
+                                Int4 query_index,
+                                Int8 eff_searchsp);
+
 /** Obtains the sequence length for a given query in the query, without taking
  * into consideration any applicable translations 
  * @param qinfo BlastQueryInfo structure [in]
