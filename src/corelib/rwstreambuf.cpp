@@ -171,6 +171,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             n_written /= sizeof(CT_CHAR_TYPE);
             // update buffer content (get rid of the sent data)
             if (n_written != n_write) {
+                _ASSERT(n_written <= n_write);
                 memmove(m_WriteBuf, m_WriteBuf + n_written,
                         (n_write - n_written)*sizeof(CT_CHAR_TYPE));
             }
@@ -228,6 +229,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
         return CT_EOF;
 
     // update input buffer with the data we have just read
+    _ASSERT(n_read <= m_BufSize*sizeof(CT_CHAR_TYPE));
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
     return CT_TO_INT_TYPE(*m_ReadBuf);
 }
@@ -332,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2006/04/25 20:11:05  lavr
+ * Added _ASSERTs after Read/Write in underflow/overflow
+ *
  * Revision 1.17  2006/02/15 17:41:39  lavr
  * IReader/IWriter API moved (along with RWStream[buf]) to corelib
  *
