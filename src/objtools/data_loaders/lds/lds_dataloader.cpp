@@ -420,6 +420,8 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
             //   (this trick has been added by kuznets (Jan-12-2005) to read 
             //    molecules out of huge refseq files)
             {
+		        CFastMutexGuard mg(sx_LDS_Lock);
+			
                 CLDS_Query query(*m_LDS_db);
                 CLDS_Query::SObjectDescr obj_descr = 
                     query.GetObjectDescr(
@@ -439,6 +441,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
             TBlobId blob_id(new CBlobIdInt(object_id));
             CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
             if ( !load_lock.IsLoaded() ) {
+		        CFastMutexGuard mg(sx_LDS_Lock);	
                 CRef<CSeq_entry> seq_entry = 
                     LDS_LoadTSE(*m_LDS_db, object_id, false/*dont trace to top*/);
                 if ( !seq_entry ) {
@@ -589,6 +592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/04/25 20:12:33  kuznets
+ * Mutex-ed possible races on BDB database
+ *
  * Revision 1.39  2006/04/12 13:31:41  kuznets
  * Reopen if BDB throws recovery exception
  *
