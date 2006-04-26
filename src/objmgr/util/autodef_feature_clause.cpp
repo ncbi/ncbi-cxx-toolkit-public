@@ -144,7 +144,7 @@ bool CAutoDefFeatureClause::IsControlRegion()
 
 bool CAutoDefFeatureClause::IsEndogenousVirusSourceFeature ()
 {
-    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_source
+    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_biosrc
         || !m_MainFeat.GetData().GetBiosrc().CanGetSubtype()) {
         return false;
     }
@@ -189,6 +189,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_tRNA
         || subtype == CSeqFeatData::eSubtype_otherRNA
         || subtype == CSeqFeatData::eSubtype_misc_RNA
+        || IsNoncodingProductFeat()
         || IsTransposon()
         || IsInsertionSequence()
         || IsControlRegion()
@@ -274,7 +275,7 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
                 }
             }
             break;
-        case CSeqFeatData::eSubtype_source:
+        case CSeqFeatData::eSubtype_biosrc:
             if (IsEndogenousVirusSourceFeature()) {
                 typeword = "endogenous virus";
                 return true;
@@ -350,14 +351,14 @@ bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment
         return false;
     }
     unsigned int start_pos = 0;
-    unsigned int accession_pos;
     
     while (start_pos != NCBI_NS_STD::string::npos) {
         start_pos = NStr::Find(comment, keyword, start_pos);
         if (start_pos != NCBI_NS_STD::string::npos) {
-            accession_pos = NStr::Find(comment, "GenBank Accession Number", start_pos);
-            if (accession_pos == 0) {
-                product_name = comment.substr(start_pos + keyword.length());
+            string possible = comment.substr(start_pos + keyword.length());
+            NStr::TruncateSpacesInPlace(possible);
+            if (!NStr::StartsWith(possible, "GenBank Accession Number")) {
+                product_name = possible;
                 // truncate at first semicolon
                 unsigned int end = NStr::Find(product_name, ";");
                 if (end != NCBI_NS_STD::string::npos) {
@@ -605,7 +606,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
         } else {
             return true;
         }
-    } else if (subtype == CSeqFeatData::eSubtype_source
+    } else if (subtype == CSeqFeatData::eSubtype_biosrc
                && NStr::Equal(m_Typeword, "endogenous virus")) {
         if (m_MainFeat.GetData().GetBiosrc().CanGetSubtype()) {
             ITERATE (CBioSource::TSubtype, subSrcI, m_MainFeat.GetData().GetBiosrc().GetSubtype()) {
@@ -1473,6 +1474,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2006/04/26 12:53:04  bollin
+* fixed method for determining whether a feature type is lonely
+* fixed problem with noncoding product feature clauses
+*
 * Revision 1.8  2006/04/25 19:12:51  bollin
 * fixed bugs in listing clauses for definition lines
 *

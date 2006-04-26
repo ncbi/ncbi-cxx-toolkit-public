@@ -504,13 +504,13 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause)
     }
     
     // keep 5' UTRs only if lonely or requested
-    if (!m_Keep5UTRs) {
-        main_clause->RemoveNonLonelyFeaturesByType(CSeqFeatData::eSubtype_5UTR);
+    if (!m_Keep5UTRs && !main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_5UTR)) {
+        main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_5UTR);
     }
     
     // keep 3' UTRs only if lonely or requested
-    if (!m_Keep5UTRs) {
-        main_clause->RemoveNonLonelyFeaturesByType(CSeqFeatData::eSubtype_5UTR);
+    if (!m_Keep3UTRs && !main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_3UTR)) {
+        main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_3UTR);
     }
     
     // keep LTRs only if requested or lonely and not in parent
@@ -523,14 +523,20 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause)
            
     // keep promoters only if requested or lonely and not in mRNA
     if (!m_KeepPromoters) {
-        main_clause->RemoveNonLonelyFeaturesByType(CSeqFeatData::eSubtype_promoter);
-        main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_promoter);
+        if (main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_promoter)) {
+            main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_promoter);
+        } else {
+            main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_promoter);
+        }
     }
     
     // keep introns only if requested or lonely and not in mRNA
     if (!m_KeepIntrons) {
-        main_clause->RemoveNonLonelyFeaturesByType(CSeqFeatData::eSubtype_intron);
-        main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_intron);
+        if (main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_intron)) {
+            main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_intron);
+        } else {
+            main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_intron);
+        }
     }
     
     // keep exons only if requested or lonely or in mRNA or in partial CDS
@@ -919,6 +925,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2006/04/26 12:53:04  bollin
+* fixed method for determining whether a feature type is lonely
+* fixed problem with noncoding product feature clauses
+*
 * Revision 1.10  2006/04/25 13:36:44  bollin
 * added misc_feat processing and removal of unwanted features
 *

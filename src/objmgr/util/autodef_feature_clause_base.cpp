@@ -496,7 +496,7 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
             && NStr::Find(m_ClauseList[k]->GetInterval(), "complete") != 0
             && (NStr::Equal(this_typeword, "transposon")
                 || NStr::Equal(this_typeword, "insertion sequence")
-                || (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_source
+                || (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_biosrc
                     && NStr::Equal(this_typeword, "endogenous virus")))) {
             print_comma = false;
         }
@@ -1283,32 +1283,23 @@ void CAutoDefFeatureClause_Base::RemoveFeaturesByType(unsigned int feature_type)
 }
 
 
-void CAutoDefFeatureClause_Base::RemoveNonLonelyFeaturesByType(unsigned int feature_type)
+bool CAutoDefFeatureClause_Base::IsFeatureTypeLonely(unsigned int feature_type)
 {
-    if (m_ClauseList.size() == 0) {
-        return;
-    }
     unsigned int num_features = 0, k, subtype;
-    for (k=0; k < m_ClauseList.size(); k++) {
+    bool         is_lonely = true;
+    
+    for (k=0; k < m_ClauseList.size() && is_lonely; k++) {
         subtype = m_ClauseList[k]->GetMainFeatureSubtype();
-        if (subtype != CSeqFeatData::eSubtype_gene && subtype != CSeqFeatData::eSubtype_mRNA) {
-            num_features++;
+        if (subtype == feature_type) {
+            // do nothing
+        } else if (subtype == CSeqFeatData::eSubtype_gene 
+                   || subtype == CSeqFeatData::eSubtype_mRNA) {
+            is_lonely = m_ClauseList[k]->IsFeatureTypeLonely(feature_type);
+        } else {
+            is_lonely = false;
         }
     }
-    
-    if (num_features > 1) {
-        RemoveFeaturesByType(feature_type);
-    } else {
-        for (k=0; k < m_ClauseList.size(); k++) {
-            subtype = m_ClauseList[k]->GetMainFeatureSubtype();
-            if (subtype == CSeqFeatData::eSubtype_gene || subtype == CSeqFeatData::eSubtype_mRNA) {
-                m_ClauseList[k]->RemoveNonLonelyFeaturesByType(feature_type);
-            } else if (subtype != feature_type) {
-                RemoveFeaturesByType(feature_type);
-                break;
-            }
-        }
-    }   
+    return is_lonely;    
 }
 
 
@@ -1466,6 +1457,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2006/04/26 12:53:04  bollin
+* fixed method for determining whether a feature type is lonely
+* fixed problem with noncoding product feature clauses
+*
 * Revision 1.7  2006/04/25 19:12:51  bollin
 * fixed bugs in listing clauses for definition lines
 *
