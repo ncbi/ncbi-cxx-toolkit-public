@@ -50,9 +50,12 @@ BasicRuntimeChecks=0
 BrowseInformation=0
 EnableFunctionLevelLinking=TRUE
 
-[Compiler.800.release]
-PreprocessorDefinitions=_SECURE_SCL=0;
 
+[Compiler.800]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
+
+[Compiler.800.release]
+PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 
 
 [Linker]
