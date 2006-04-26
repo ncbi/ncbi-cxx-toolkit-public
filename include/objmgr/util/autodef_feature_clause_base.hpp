@@ -133,7 +133,7 @@ public:
     void AssignGeneProductNames(CAutoDefFeatureClause_Base *main_clause);
     
     void RemoveFeaturesByType(unsigned int feature_type);
-    void RemoveNonLonelyFeaturesByType(unsigned int feature_type);
+    bool IsFeatureTypeLonely(unsigned int feature_type);
     void RemoveFeaturesInmRNAsByType(unsigned int feature_type);
     
     virtual bool ShouldRemoveExons();
@@ -212,6 +212,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/04/26 12:52:21  bollin
+* fixed method for determining whether a feature type is lonely
+*
 * Revision 1.5  2006/04/25 14:19:07  ucko
 * Drop CAutoDefExonListClause's (broken and unneeded) destructor.
 *
