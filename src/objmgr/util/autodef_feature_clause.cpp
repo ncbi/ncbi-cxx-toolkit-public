@@ -836,9 +836,13 @@ CRef<CSeq_loc> CAutoDefFeatureClause::GetLocation()
 
 void CAutoDefFeatureClause::AddToLocation(CRef<CSeq_loc> loc)
 {
+    bool partial5 = m_ClauseLocation->IsPartialStart(eExtreme_Biological) | loc->IsPartialStart(eExtreme_Biological);
+    bool partial3 = m_ClauseLocation->IsPartialStop(eExtreme_Biological) | loc->IsPartialStop(eExtreme_Biological);
     m_ClauseLocation = Seq_loc_Add(*m_ClauseLocation, *loc, 
                                    CSeq_loc::fSort | CSeq_loc::fMerge_All, 
                                    &(m_BH.GetScope()));
+    m_ClauseLocation->SetPartialStart(partial5, eExtreme_Biological);
+    m_ClauseLocation->SetPartialStop(partial3, eExtreme_Biological);
 }
 
 
@@ -1474,6 +1478,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2006/04/26 14:02:24  bollin
+* when combining locations for clauses, need to main partial information
+*
 * Revision 1.9  2006/04/26 12:53:04  bollin
 * fixed method for determining whether a feature type is lonely
 * fixed problem with noncoding product feature clauses
