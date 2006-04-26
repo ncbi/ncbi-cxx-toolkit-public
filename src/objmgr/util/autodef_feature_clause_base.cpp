@@ -505,8 +505,11 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
             && (is_last || oneafter_has_interval_change)) {
             m_ClauseList[k]->PluralizeInterval();
         }
-          
-        if (m_ClauseList[k]->NeedPlural()) {
+        
+        // pluralize description or typeword as necessary  
+        if (m_ClauseList[k]->IsExonList()) {
+            typeword_is_plural = true;
+        } else if (m_ClauseList[k]->NeedPlural()) {
             if ((k > 0 && ! onebefore_has_detail_change)
                 || (!is_last && ! oneafter_has_detail_change)) {
                 m_ClauseList[k]->PluralizeDescription();
@@ -1457,6 +1460,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2006/04/26 14:02:44  bollin
+* an exon list clause always needs a plural typeword
+*
 * Revision 1.8  2006/04/26 12:53:04  bollin
 * fixed method for determining whether a feature type is lonely
 * fixed problem with noncoding product feature clauses
