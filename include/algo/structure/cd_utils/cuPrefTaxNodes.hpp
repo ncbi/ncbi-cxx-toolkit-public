@@ -63,7 +63,7 @@ public:
         eCddModelOrgs = 2,      //  take only the 'model-organisms' field of Cdd-pref-nodes
         eCddOptional  = 4,      //  take only the 'optional-nodes' field of Cdd-pref-nodes
         eCddPrefNodesAll = 7,   //  treat all entries in Cdd-pref-nodes ASN.1 data structure as one set
-        eRawTaxIds = 8,         //  simply a set of taxonomy ids
+        eRawTaxIds = 8          //  simply a set of taxonomy ids
     };
 
     //  All data read via the constructors are added to existing data
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/04/27 17:18:40  dicuccio
+ * Drop hanging comma in enum list
+ *
  * Revision 1.4  2005/07/13 19:47:03  lanczyck
  * minor mods to remove compiler warnings
  *

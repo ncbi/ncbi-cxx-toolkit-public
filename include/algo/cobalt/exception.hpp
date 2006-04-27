@@ -47,7 +47,7 @@ class CMultiAlignerException : public CException
 public:
     enum EErrCode {
         eInvalidScoreMatrix,
-        eInvalidInput,
+        eInvalidInput
     };
 
     NCBI_EXCEPTION_DEFAULT(CMultiAlignerException, CException);
@@ -59,6 +59,9 @@ END_NCBI_SCOPE
 
 /* ======================================================================
  *   $Log$
+ *   Revision 1.3  2006/04/27 17:19:05  dicuccio
+ *   Drop hanging comma in enum list
+ *
  *   Revision 1.2  2006/03/22 19:23:17  dicuccio
  *   Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  *   specifiers
