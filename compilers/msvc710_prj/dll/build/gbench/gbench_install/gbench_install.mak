@@ -134,6 +134,7 @@ PLUGINS = \
         $(GBENCH)\plugins\algo_init.dll         \
         $(GBENCH)\plugins\algo_linkout.dll      \
         $(GBENCH)\plugins\algo_phylo.dll        \
+        $(GBENCH)\plugins\algo_submit.dll       \
         $(GBENCH)\plugins\algo_validator.dll    \
         $(GBENCH)\plugins\algo_web_page.dll     \
         $(GBENCH)\plugins\dload_basic.dll       \
@@ -338,6 +339,9 @@ $(GBENCH)/plugins/plugin-cache : $(PLUGINS) $(GBENCH)\bin\gbench_plugin_scan.exe
 
 ###############################################################
 # $Log$
+# Revision 1.2  2006/04/27 12:26:43  dicuccio
+# MAGIC: install algo_submit
+#
 # Revision 1.1  2006/03/15 15:29:00  dicuccio
 # MAGIC: moved from source tree
 #
