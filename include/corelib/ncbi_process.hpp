@@ -68,11 +68,11 @@ BEGIN_NCBI_SCOPE
   typedef pid_t  TPid;
   typedef TPid   TProcessHandle;
 #elif defined(NCBI_OS_MSWIN)
-  typedef DWORD  TPid;
-  typedef HANDLE TProcessHandle;
+  typedef DWORD    TPid;
+  typedef intptr_t TProcessHandle;
 #else
-  typedef int    TPid;
-  typedef TPid   TProcessHandle;
+  typedef int      TPid;
+  typedef TPid     TProcessHandle;
 #endif
 
 
@@ -295,6 +295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/04/27 19:16:41  ivanov
+ * MS Windows: Replace type of TProcessHandle from HANDLE to intptr_t
+ *
  * Revision 1.16  2006/03/09 19:29:07  ivanov
  * CProcess: use CProcessHandle instead of 'long' to store process id,
  * to avoid warnings on 64-bit Windows.
