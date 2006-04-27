@@ -415,7 +415,7 @@ int CExec::RunSilent(EMode mode, const char *cmdname,
         }
         else if (mode == eNoWait) {
             // asynchronous spawn -- return PID
-            status = (int)(intptr_t)ProcessInfo.hProcess;
+            status = (int)ProcessInfo.hProcess;
         }
         CloseHandle(ProcessInfo.hThread);
     }
@@ -438,8 +438,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.31  2006/04/27 19:04:24  ivanov
- * Get rid of warnings on MSVC8/64-bit
+ * Revision 1.32  2006/04/27 22:53:38  vakatov
+ * Rollback odd commits
  *
  * Revision 1.30  2006/03/31 17:51:40  dicuccio
  * CExec::RunSilent(): Fixed bugs in handling of varargs: make sure to trap the
