@@ -349,7 +349,7 @@ typedef struct BlastRPSLookupTable {
   * @return 0 if successful, nonzero on failure
   */
   
-Int4 RPSLookupTableNew(const BlastRPSInfo *rps_info, 
+Int2 RPSLookupTableNew(const BlastRPSInfo *rps_info, 
                        BlastRPSLookupTable* * lut);
 
 /** Free the lookup table. 

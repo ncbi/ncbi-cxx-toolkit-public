@@ -118,7 +118,7 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt,
     database is split */
 #define RPS_BUCKET_SIZE 2048
 
-Int4 RPSLookupTableNew(const BlastRPSInfo *info,
+Int2 RPSLookupTableNew(const BlastRPSInfo *info,
 		      BlastRPSLookupTable* * lut)
 {
    Int4 i;
