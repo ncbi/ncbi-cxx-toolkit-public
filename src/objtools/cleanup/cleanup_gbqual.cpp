@@ -158,7 +158,6 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual&
 bool CCleanup_imp::BasicCleanup(CRNA_ref& rna, const CGb_qual& gb_qual)
 {
     const string& qual = gb_qual.GetQual();
-    const string& val  = gb_qual.GetVal();
 
     bool is_std_name = NStr::EqualNocase(qual, "standard_name");
     if (NStr::EqualNocase(qual, "product")  ||  (is_std_name  &&  ! (m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ) )) {
@@ -504,6 +503,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/04/27 18:24:34  rsmith
+ * get rid of unused variable in BasicCleanup(rna, gb_qual)
+ *
  * Revision 1.3  2006/04/18 14:32:36  rsmith
  * refactoring
  *
