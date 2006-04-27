@@ -48,7 +48,7 @@ public:
     typedef vector<CAutoDefFeatureClause_Base *> TClauseList;
 
     CAutoDefFeatureClause_Base(bool suppress_locus_tags);
-    ~CAutoDefFeatureClause_Base();
+    virtual ~CAutoDefFeatureClause_Base();
     
     virtual void AddSubclause (CAutoDefFeatureClause_Base *subclause);
 
@@ -212,6 +212,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/04/27 17:25:12  dicuccio
+* Make dtor virtual
+*
 * Revision 1.6  2006/04/26 12:52:21  bollin
 * fixed method for determining whether a feature type is lonely
 *
