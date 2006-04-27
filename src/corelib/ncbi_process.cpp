@@ -64,14 +64,14 @@ const unsigned long CProcess::kDefaultLingerTimeout = 1000;
 
 
 CProcess::CProcess(TPid process, EProcessType type)
-    : m_Process((TProcessHandle)(intptr_t)process), m_Type(type)
+    : m_Process(process), m_Type(type)
 {
     return;
 }
 
 #if defined(NCBI_OS_MSWIN)
 // The helper constructor for MS Windows to avoid cast from
-// TProcessHandle/HANDLE to TPid/DWORD
+// TProcessHandle to TPid
 CProcess::CProcess(TProcessHandle process, EProcessType type)
     : m_Process(process), m_Type(type)
 {
@@ -179,12 +179,12 @@ bool CProcess::IsAlive(void) const
     HANDLE hProcess = 0;
     if (m_Type == ePid) {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,
-                               FALSE, (TPid)(intptr_t)m_Process);
+                               FALSE, (TPid)m_Process);
         if (!hProcess) {
             return GetLastError() == ERROR_ACCESS_DENIED;
         }
     } else {
-        hProcess = m_Process;
+        hProcess = (HANDLE)m_Process;
     }
     DWORD status = 0;
     _ASSERT(STILL_ACTIVE != 0);
@@ -243,7 +243,7 @@ bool CProcess::Kill(unsigned long kill_timeout,
 
 #elif defined(NCBI_OS_MSWIN)
 
-    TPid pid = (TPid)(intptr_t)m_Process;
+    TPid pid = (TPid)m_Process;
     // Try to kill current process?
     if ( m_Type == ePid  &&  pid == GetCurrentPid() ) {
         ExitProcess(-1);
@@ -267,7 +267,7 @@ bool CProcess::Kill(unsigned long kill_timeout,
             }
         }
     } else {
-        hProcess = m_Process;
+        hProcess = (HANDLE)m_Process;
     }
     // Check process handle
     if ( !hProcess  ||  hProcess == INVALID_HANDLE_VALUE ) {
@@ -377,7 +377,7 @@ int CProcess::Wait(unsigned long timeout) const
     bool   enable_sync = true;
     // Get process handle
     if (m_Type == ePid) {
-        TPid pid = (TPid)(intptr_t)m_Process;
+        TPid pid = (TPid)m_Process;
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE,
                                FALSE, pid);
         if ( !hProcess ) {
@@ -388,7 +388,7 @@ int CProcess::Wait(unsigned long timeout) const
             }
         }
     } else {
-        hProcess = m_Process;
+        hProcess = (HANDLE)m_Process;
     }
     DWORD status = -1;
     try {
@@ -567,6 +567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/04/27 19:16:30  ivanov
+ * MSWin: Replace type of TProcessHandle from HANDLE to intptr_t
+ *
  * Revision 1.22  2006/04/27 19:04:24  ivanov
  * Get rid of warnings on MSVC8/64-bit
  *
