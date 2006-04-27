@@ -56,6 +56,7 @@ traceback_stage \
 uniform_search \
 local_search \
 remote_search \
+remote_services \
 query_data \
 objmgr_query_data \
 objmgrfree_query_data \
