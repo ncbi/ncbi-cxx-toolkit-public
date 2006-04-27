@@ -148,8 +148,7 @@ void CAutoDefSourceDescription::AddOrgMod(COrgMod::ESubtype st)
     if (m_BS.CanGetOrg() && m_BS.GetOrg().CanGetOrgname() && m_BS.GetOrg().GetOrgname().CanGetMod()) {
         ITERATE (COrgName::TMod, modI, m_BS.GetOrg().GetOrgname().GetMod()) {
             if ((*modI)->GetSubtype() == st) {
-                string value;
-                (*modI)->GetSubtypeValue(value);
+                string value = (*modI)->GetSubname();
                 m_DescriptionStringList.push_back (value);
                 found = true;
             }
@@ -200,6 +199,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/04/27 16:00:46  bollin
+* fixed bug in adding modifiers to descriptions for automatic definition lines
+*
 * Revision 1.4  2006/04/20 19:00:59  ucko
 * Stop including <objtools/format/context.hpp> -- there's (thankfully!)
 * no need to do so, and it confuses SGI's MIPSpro compiler.
