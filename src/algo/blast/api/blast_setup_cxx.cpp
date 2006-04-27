@@ -1464,6 +1464,7 @@ void CBlastQueryFilteredFrames::x_VerifyFrame(int frame)
     case eBlastTypeTblastn:
     case eBlastTypeRpsBlast:
     case eBlastTypePsiBlast:
+    case eBlastTypePhiBlastp:
         if (frame != 0) {
             okay = false;
         }
@@ -1568,6 +1569,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.115  2006/04/27 19:31:47  madden
+ * Add PHI-blast case to x_VerifyFrame
+ *
  * Revision 1.114  2006/04/20 19:29:34  madden
  * Set is_valid to false for zero length queries in s_QueryInfo_SetContext
  *
