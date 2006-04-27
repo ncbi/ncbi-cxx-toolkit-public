@@ -778,7 +778,6 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
     unsigned int match_left_len = 0, match_left_token = 0;
     unsigned int len1 = product1.length();
     unsigned int len2 = product2.length();
-    unsigned int match_len = 0;
 
     // find the length of match on the left
     while (match_left_len < len1 && match_left_len < len2
@@ -1288,7 +1287,7 @@ void CAutoDefFeatureClause_Base::RemoveFeaturesByType(unsigned int feature_type)
 
 bool CAutoDefFeatureClause_Base::IsFeatureTypeLonely(unsigned int feature_type)
 {
-    unsigned int num_features = 0, k, subtype;
+    unsigned int k, subtype;
     bool         is_lonely = true;
     
     for (k=0; k < m_ClauseList.size() && is_lonely; k++) {
@@ -1460,6 +1459,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2006/04/27 15:29:59  bollin
+* removed unused variables
+*
 * Revision 1.9  2006/04/26 14:02:44  bollin
 * an exon list clause always needs a plural typeword
 *
