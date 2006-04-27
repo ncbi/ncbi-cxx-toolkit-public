@@ -236,6 +236,7 @@ objtools/readers/gff_reader.hpp
 objtools/readers/phrap.hpp
 objtools/readers/reader_exception.hpp
 objtools/readers/readfeat.hpp
+objtools/readers/rm_reader.hpp
 objtools/readers/seqdb/seqdb.hpp
 objtools/readers/seqdb/seqdbcommon.hpp
 objtools/writers/agp_write.hpp
@@ -330,6 +331,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/04/27 22:13:51  jcherry
+ * Added objtools/readers/rm_reader.hpp (RepeatMasker output reader)
+ *
  * Revision 1.15  2006/02/09 19:43:26  jcherry
  * Reflect Object Manager prefetch changes
  *
