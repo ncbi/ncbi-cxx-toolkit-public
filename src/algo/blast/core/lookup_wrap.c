@@ -52,6 +52,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
         BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
         LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info)
 {
+   Int2 status = 0;
    Int4 num_table_entries;
    LookupTableWrap* lookup_wrap;
    const Int4 kNucEntriesCutoff = 8500;  /* probably machine dependent */
@@ -119,7 +120,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
        {
            Blast_Message* error_msg = NULL;
            const Boolean kIsDna = (lookup_options->lut_type == PHI_NA_LOOKUP);
-           SPHIPatternSearchBlkNew(lookup_options->phi_pattern, kIsDna, sbp,
+           status = SPHIPatternSearchBlkNew(lookup_options->phi_pattern, kIsDna, sbp,
                              (SPHIPatternSearchBlk* *) &(lookup_wrap->lut),
                              &error_msg);
            /** @todo FIXME: this error message must be passed further up!!! */
@@ -130,7 +131,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
            break;
        }
    case RPS_LOOKUP_TABLE:
-      RPSLookupTableNew(rps_info, (BlastRPSLookupTable* *)(&lookup_wrap->lut));
+      status = RPSLookupTableNew(rps_info, (BlastRPSLookupTable* *)(&lookup_wrap->lut));
       break;
       
    default:
@@ -139,7 +140,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       }
    } /* end switch */
 
-   return 0;
+   return status;
 }
 
 LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup)
