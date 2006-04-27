@@ -3503,7 +3503,7 @@ extern EIO_Status SOCK_Status(SOCK      sock,
 {
     if (direction != eIO_Read  &&  direction != eIO_Write) {
         if (direction == eIO_Open)
-            return sock->sock == SOCK_INVALID ? eIO_Closed  : eIO_Success;
+            return sock->sock == SOCK_INVALID ? eIO_Closed : eIO_Success;
         return eIO_InvalidArg;
     }
 
@@ -4558,6 +4558,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.188  2006/04/27 18:37:26  lavr
+ * Formatting by Anna Lavrentieva on Take Your Child To Work Day at NIH
+ *
  * Revision 6.187  2006/03/07 17:29:10  lavr
  * Register with atexit() on Windows only [no need on other platforms]
  *
