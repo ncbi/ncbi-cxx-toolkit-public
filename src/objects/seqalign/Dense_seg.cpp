@@ -323,19 +323,16 @@ void CDense_seg::TrimEndGaps()
 
         /// we can trim the first i segments
         if (IsSetStrands()) {
-            size_t size = GetStrands().size();
             _ASSERT(GetStrands().size() > r.GetTo() * GetDim());
             SetStrands().erase(SetStrands().begin() + r.GetFrom() * GetDim(),
                                SetStrands().begin() + r.GetTo()   * GetDim());
         }
         if (IsSetStarts()) {
-            size_t size = GetStarts().size();
             _ASSERT(GetStarts().size() > r.GetTo() * GetDim());
             SetStarts().erase(SetStarts().begin() + r.GetFrom() * GetDim(),
                               SetStarts().begin() + r.GetTo()   * GetDim());
         }
         if (IsSetLens()) {
-            size_t size = GetLens().size();
             _ASSERT(GetLens().size() > r.GetTo());
             SetLens().erase(SetLens().begin() + r.GetFrom(),
                             SetLens().begin() + r.GetTo());
@@ -1137,6 +1134,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2006/04/27 16:16:10  todorov
+* Removed unused variables (size).
+*
 * Revision 1.26  2006/04/05 14:00:43  dicuccio
 * Added additional _ASSERT()s, error checks
 *
