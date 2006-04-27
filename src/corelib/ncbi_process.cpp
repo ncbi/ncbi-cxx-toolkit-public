@@ -64,7 +64,7 @@ const unsigned long CProcess::kDefaultLingerTimeout = 1000;
 
 
 CProcess::CProcess(TPid process, EProcessType type)
-    : m_Process((TProcessHandle)process), m_Type(type)
+    : m_Process((TProcessHandle)(intptr_t)process), m_Type(type)
 {
     return;
 }
@@ -179,7 +179,7 @@ bool CProcess::IsAlive(void) const
     HANDLE hProcess = 0;
     if (m_Type == ePid) {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,
-                               FALSE, (TPid)m_Process);
+                               FALSE, (TPid)(intptr_t)m_Process);
         if (!hProcess) {
             return GetLastError() == ERROR_ACCESS_DENIED;
         }
@@ -243,8 +243,9 @@ bool CProcess::Kill(unsigned long kill_timeout,
 
 #elif defined(NCBI_OS_MSWIN)
 
+    TPid pid = (TPid)(intptr_t)m_Process;
     // Try to kill current process?
-    if ( m_Type == ePid  &&  (TPid)m_Process == GetCurrentPid() ) {
+    if ( m_Type == ePid  &&  pid == GetCurrentPid() ) {
         ExitProcess(-1);
         // should not reached
         return false;
@@ -257,10 +258,10 @@ bool CProcess::Kill(unsigned long kill_timeout,
     // Get process handle
     if (m_Type == ePid) {
         hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_TERMINATE |
-                               SYNCHRONIZE, FALSE, (TPid)m_Process);
+                               SYNCHRONIZE, FALSE, pid);
         if ( !hProcess ) {
             enable_sync = false;
-            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
+            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
             if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
                 return false;
             }
@@ -376,11 +377,12 @@ int CProcess::Wait(unsigned long timeout) const
     bool   enable_sync = true;
     // Get process handle
     if (m_Type == ePid) {
+        TPid pid = (TPid)(intptr_t)m_Process;
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE,
-                               FALSE, (TPid)m_Process);
+                               FALSE, pid);
         if ( !hProcess ) {
             enable_sync = false;
-            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
+            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
             if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
                 return false;
             }
@@ -565,6 +567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/04/27 19:04:24  ivanov
+ * Get rid of warnings on MSVC8/64-bit
+ *
  * Revision 1.21  2006/03/09 19:29:08  ivanov
  * CProcess: use CProcessHandle instead of 'long' to store process id,
  * to avoid warnings on 64-bit Windows.
