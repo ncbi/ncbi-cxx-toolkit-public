@@ -167,6 +167,7 @@ public:
     void Test_GetTotalColumns(void);
     void Test_LOB(void);
     void Test_BlobStream(void);
+    void Test_BulkInsertBlob(void);
     void Test_UNIQUE(void);
     void Test_DateTime(void);
     void Test_Insert(void);
@@ -227,6 +228,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2006/04/28 15:34:37  ssikorsk
+ * Added Test_BulkInsertBlob
+ *
  * Revision 1.35  2006/02/22 17:11:11  ssikorsk
  * Added Test_HasMoreResults to the test-suite.
  *
