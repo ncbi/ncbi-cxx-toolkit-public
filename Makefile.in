@@ -17,17 +17,17 @@ lbindir      = $(build_root)/bin
 llibdir      = $(build_root)/lib
 
 all: $(PROJECTS)
-	if test -s "$(PROJECTS)"; then
-	    cd $(builddir) && $(MAKE) $(MFLAGS) all_p
-	else
-	    cd $(builddir) && $(MAKE) $(MFLAGS) all_r
+	if test -s "$(PROJECTS)"; then \
+	    cd $(builddir) && $(MAKE) $(MFLAGS) all_p; \
+	else \
+	    cd $(builddir) && $(MAKE) $(MFLAGS) all_r; \
 	fi
 
 check: $(PROJECTS)
-	if test -s "$(PROJECTS)"; then
-	    cd $(builddir) && $(MAKE) $(MFLAGS) check_p RUN_CHECK=Y
-	else
-	    cd $(builddir) && $(MAKE) $(MFLAGS) check_r RUN_CHECK=Y
+	if test -s "$(PROJECTS)"; then \
+	    cd $(builddir) && $(MAKE) $(MFLAGS) check_p RUN_CHECK=Y; \
+	else \
+	    cd $(builddir) && $(MAKE) $(MFLAGS) check_r RUN_CHECK=Y; \
 	fi
 
 install-toolkit:
