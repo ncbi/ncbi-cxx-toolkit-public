@@ -99,7 +99,7 @@ struct NCBI_XHTML_EXPORT StaticTagMapperByDataAndName : public BaseTagMapper
         CNCBINode* (*function)(void* data, const string& name), void* data)
         : m_Function(function), m_Data(data)
         { return; }
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    virtual CNCBINode* MapTag(CNCBINode* /*_this*/, const string& name) const
         { return (*m_Function)(m_Data, name); }
 private:
     CNCBINode* (*m_Function)(void* data, const string& name);
@@ -170,7 +170,8 @@ struct NCBI_XHTML_EXPORT ReadyTagMapper : public BaseTagMapper
     ReadyTagMapper(CNCBINode* node)
         : m_Node(node)
         { return; }
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    virtual CNCBINode* MapTag(CNCBINode* /*_this*/,
+                              const string& /*name*/) const
         { return &*m_Node; }
 private:
     mutable CNodeRef m_Node;
@@ -333,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/04/28 13:37:50  ivanov
+ * Get rid about unused variable warnings
+ *
  * Revision 1.17  2005/08/22 13:29:40  ivanov
  * Added missed ';'
  *
