@@ -110,6 +110,7 @@ CDbapiSampleApp::GetServerType(void) const
     if ( GetServerName() == "STRAUSS" ||
          GetServerName() == "MOZART" ||
          GetServerName() == "SCHUMANN" ||
+         GetServerName() == "OBERON" ||
          NStr::StartsWith(GetServerName(), "BARTOK") ) {
         return eSybase;
     } else if (NStr::StartsWith(GetServerName(), "MS_DEV") ||
@@ -133,11 +134,11 @@ CDbapiSampleApp::Init()
 
     // Describe the expected command-line arguments
 #if defined(NCBI_OS_MSWIN)
-#define DEF_SERVER    "MS_DEV2"
+#define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
 #else
-#define DEF_SERVER    "STRAUSS"
+#define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
 #endif
@@ -538,6 +539,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/04/28 15:32:02  ssikorsk
+ * Added OBERON to a list of Sybase's servers
+ *
  * Revision 1.20  2006/02/16 15:52:47  ssikorsk
  * Added SCHUMANN to a list of Sybase servers.
  *
