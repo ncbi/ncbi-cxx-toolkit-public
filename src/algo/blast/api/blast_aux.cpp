@@ -96,7 +96,25 @@ CBlastQueryInfo::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
     if (!m_Ptr)
         return;
 
+    ddc.Log("first_context", m_Ptr->first_context);
+    ddc.Log("last_context", m_Ptr->last_context);
+    ddc.Log("num_queries", m_Ptr->num_queries);
+    ddc.Log("max_length", m_Ptr->max_length);
+
+    for (Int4 i = m_Ptr->first_context; i <= m_Ptr->last_context; i++) {
+        const string prefix = string("context[") + NStr::IntToString(i) + 
+            string("].");
+        ddc.Log(prefix+string("query_offset"), m_Ptr->contexts[i].query_offset);
+        ddc.Log(prefix+string("query_length"), m_Ptr->contexts[i].query_length);
+        ddc.Log(prefix+string("eff_searchsp"), m_Ptr->contexts[i].eff_searchsp);
+        ddc.Log(prefix+string("length_adjustment"), 
+                m_Ptr->contexts[i].length_adjustment);
+        ddc.Log(prefix+string("query_index"), m_Ptr->contexts[i].query_index);
+        ddc.Log(prefix+string("frame"), m_Ptr->contexts[i].frame);
+        ddc.Log(prefix+string("is_valid"), m_Ptr->contexts[i].is_valid);
+    }
 }
+
 void
 CLookupTableOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
@@ -806,6 +824,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.93  2006/04/28 19:02:12  camacho
+ * Implement CBlastQueryInfo::DebugDump
+ *
  * Revision 1.92  2006/03/27 13:47:21  camacho
  * Relocation of CFrameFinder
  *
