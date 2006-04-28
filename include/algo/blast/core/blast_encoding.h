@@ -88,9 +88,9 @@ extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 #define BLASTAA_SEQ_CODE 11 /**< == Seq_code_ncbistdaa */
 #define NCBI4NA_SEQ_CODE 4  /**< == Seq_code_ncbi4na */	
 
-/// Sentinel byte for protein sequences
+/** Sentinel byte for protein sequences */
 extern const Uint1 kProtSentinel;
-/// Sentinel nibble for nucleotide sequences
+/** Sentinel nibble for nucleotide sequences */
 extern const Uint1 kNuclSentinel;
 
 #ifdef __cplusplus
@@ -103,6 +103,9 @@ extern const Uint1 kNuclSentinel;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/04/28 20:43:41  camacho
+ * Remove C++-style comments
+ *
  * Revision 1.8  2006/03/31 17:31:49  camacho
  * Added constants for sentinel values
  *
