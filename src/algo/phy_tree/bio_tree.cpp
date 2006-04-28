@@ -211,9 +211,9 @@ void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
 
     string dist_string;
     if (tree.GetFeatureDict().HasFeature("dist")) {
-        label = node.GetValue().features
+        dist_string = node.GetValue().features
             .GetFeatureValue(tree.GetFeatureDict().GetId("dist"));
-    }
+    }    
     if (!dist_string.empty()) {
         os << ':' << dist_string;
     }
@@ -265,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/04/28 13:35:51  tereshko
+ * Corrected newick output to write distances
+ *
  * Revision 1.7  2004/08/18 12:16:21  kuznets
  * Type cast for CBioTree node compatibility
  *
