@@ -734,6 +734,49 @@ CDBAPIUnitTest::Test_LOB(void)
     }
 }
 
+
+void 
+CDBAPIUnitTest::Test_BulkInsertBlob(void)
+{
+    static char clob_value[] = "1234567890";
+    string sql;
+    enum { record_num = 100 };
+    
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    
+    // Prepare data ...
+    {
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+    }
+    
+    // Insert data ...
+    {
+        auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 4));
+        CVariant col1(eDB_Int);
+        CVariant col2(eDB_Int);
+        CVariant col3(eDB_VarChar);
+        CVariant col4(eDB_Text);
+        
+        bi->Bind(1, &col1);
+        bi->Bind(2, &col2);
+        bi->Bind(3, &col3);
+        bi->Bind(4, &col4);
+        
+        for( int i = 0; i < record_num; ++i ) {
+            string im = NStr::IntToString(i);
+            col1 = i;
+            col2 = i;
+            col3 = im;
+            col4.Truncate();
+            col4.Append(im.c_str(), im.size());
+            bi->AddRow();
+        }
+
+        bi->Complete();
+    }
+}
+
 void 
 CDBAPIUnitTest::Test_BlobStream(void)
 {
@@ -3485,6 +3528,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
+//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob, DBAPIInstance);
+//     tc->depends_on(tc_init);
+//     add(tc);
+
     {
         boost::unit_test::test_case* except_safety_tc =
             BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
@@ -3590,7 +3637,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
 #else
-#define DEF_SERVER    "STRAUSS"
+#define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
 #endif
@@ -3645,6 +3692,7 @@ CTestArguments::GetServerType(void) const
 {
     if ( GetServerName() == "STRAUSS" ||
          GetServerName() == "MOZART" ||
+         GetServerName() == "OBERON" ||
          GetServerName().compare(0, 6, "BARTOK") == 0 ) {
         return eSybase;
     } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0 ||
@@ -3709,6 +3757,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.71  2006/04/28 15:35:06  ssikorsk
+ * Added initial implementation of Test_BulkInsertBlob.
+ * Added OBERON to a list of Sybase's servers.
+ *
  * Revision 1.70  2006/04/03 14:37:08  ssikorsk
  * Improved Test_StatementParameters
  *
