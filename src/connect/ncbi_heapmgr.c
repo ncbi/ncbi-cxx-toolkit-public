@@ -115,6 +115,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(NCBI_OS_MSWIN)  &&  defined(_WIN64)
+/* Disable ptr->long conversion warning (even on explicit cast!) */
+#  pragma warning (disable : 4311)
+#endif /*NCBI_OS_MSWIN && _WIN64*/
+
 
 struct SHEAP_tag {
     void*          base;    /* Current base of heap extent:  !base == !size  */
@@ -657,6 +662,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2006/04/28 16:19:44  lavr
+ * Disable W4311 for MSVC/W64
+ *
  * Revision 6.30  2006/03/06 20:26:00  lavr
  * Added a paranoid assert() to check ref.-count overflow
  *
