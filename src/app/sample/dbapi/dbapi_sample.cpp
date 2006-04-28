@@ -80,7 +80,7 @@ void CDbapiTest::Init()
 
 	argList->AddDefaultKey("s", "string",
                            "Server name",
-                           CArgDescriptions::eString, "STRAUSS");
+                           CArgDescriptions::eString, "OBERON");
 
 	argList->AddDefaultKey("d", "string",
                            "Driver <ctlib|dblib|ftds>",
@@ -113,6 +113,7 @@ int CDbapiTest::Run()
         // objects in the library.
 
         if ( NStr::CompareNocase(server, "STRAUSS") == 0 ||
+             NStr::CompareNocase(server, "OBERON") == 0 ||
              NStr::CompareNocase(server, "MOZART") == 0 ) {
 
             map<string,string> attr;
@@ -395,6 +396,7 @@ end";
         stmt->ExecuteUpdate(sql);
 
 	if( NStr::CompareNocase(server, "STRAUSS") == 0 || 
+        NStr::CompareNocase(server, "OBERON") == 0 ||
         NStr::CompareNocase(server, "MOZART") == 0 )
         sql = "create procedure SampleProc \
 	@id int, \
@@ -835,6 +837,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/04/28 16:04:31  ssikorsk
+* Added OBERON to a list of Sybase servers.
+*
 * Revision 1.24  2006/02/15 16:01:47  kholodov
 * CVariant::Truncate() call is necessary to write a BLOB
 *
