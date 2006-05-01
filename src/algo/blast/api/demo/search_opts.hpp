@@ -46,6 +46,11 @@
 #include <corelib/ncbiargs.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <objects/blast/Blast4_cutoff.hpp>
+#include <algo/blast/api/blastx_options.hpp>
+#include <algo/blast/api/tblastn_options.hpp>
+#include <algo/blast/api/tblastx_options.hpp>
+#include <algo/blast/api/disc_nucl_options.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -761,6 +766,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/05/01 13:31:29  camacho
+ * Added missing includes
+ *
  * Revision 1.11  2005/08/29 20:32:17  bealer
  * - Avoid compiler warning.
  *
