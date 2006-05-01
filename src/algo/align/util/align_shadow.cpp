@@ -664,11 +664,14 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
             if(s == new_pos) need_trace = false;
         }
 
+        const bool point_is_start((point%2) ^ (GetStrand(point/2)? 1: 0));
         if(need_trace) {
+            
+            char c = 0;
             ITERATE(TTranscript, ii, xcript) {
 
                 ++n1;
-                switch(*ii) {
+                switch(c = *ii) {
                 case 'M': case 'R': q += dq; s += ds; break;
                 case 'D': q += dq; break;
                 case 'I': s += ds; break;
@@ -678,15 +681,32 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
                 }
                 }
 
-                if(point <= 1) {
-                    if(q == new_pos + dq) break;
+                if(point_is_start) {
+                    if(point <= 1) {
+                        if(q == new_pos) break;
+                    }
+                    else {
+                        if(s == new_pos) break;
+                    }
                 }
                 else {
-                    if(s == new_pos + ds) break;
+                    if(point <= 1) {
+                        if(q == new_pos + dq) break;
+                    }
+                    else {
+                        if(s == new_pos + ds) break;
+                    }
                 }
             }
-            q -= dq;
-            s -= ds;
+
+            if(!point_is_start && n1 > 0) {
+                switch(c) {
+                case 'M': case 'R': q -= dq; s -= ds; break;
+                case 'D': q -= dq; break;
+                case 'I': s -= ds; break;
+                }
+            }
+
         }
 
         switch(point) {
@@ -712,8 +732,8 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
         }
 
         if(n1 > 0) {
-            if( (point%2) ^ (GetStrand(point/2)? 1: 0) ) {
-                xcript = xcript.substr(n1 - 1, xcript.size() - n1);
+            if( point_is_start ) {
+                xcript = xcript.substr(n1, xcript.size() - n1);
             }
             else {
                 xcript.resize(n1);
@@ -859,6 +879,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.20  2006/05/01 15:23:23  kapustin
+ * Fix one-off problem when splitting at query deletion
+ *
  * Revision 1.19  2006/04/18 01:08:32  ucko
  * +<algorithm> for reverse()
  *
