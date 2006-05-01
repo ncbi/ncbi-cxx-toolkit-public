@@ -107,13 +107,25 @@ void CCdCore::SetAccession(string Accession, int Version) {
 //-------------------------------------------------------------------------
 // set accession name of CD
 //-------------------------------------------------------------------------
+    bool hasGid = false;
   CCdd_id_set::Tdata::iterator  i;
 
   for (i=SetId().Set().begin(); i!=SetId().Set().end(); i++) {
     if ((*i)->IsGid()) {
       (*i)->SetGid().SetAccession(Accession);
       (*i)->SetGid().SetVersion(Version);
+      hasGid = true;
     }
+  }
+
+  //  If there was no Gid (or SetId().Set() is empty), create and add one.
+  if (!hasGid) {
+        CRef< CCdd_id > cdId(new CCdd_id());
+        CRef< CGlobal_id > global(new CGlobal_id());
+        global->SetAccession(Accession);
+        global->SetVersion(Version);
+        cdId->SetGid(*global);
+        SetId().Set().push_back(cdId);
   }
 }
 
@@ -2325,6 +2337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/05/01 13:13:45  lanczyck
+ * allow SetAccession to work even if there was no existing 'gid' type
+ *
  * Revision 1.5  2006/01/10 16:54:51  lanczyck
  * eliminate unused variable warnings
  *
