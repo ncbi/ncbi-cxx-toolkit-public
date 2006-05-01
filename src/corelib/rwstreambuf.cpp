@@ -77,7 +77,8 @@ CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
     : m_Flags(f), m_Reader(rw), m_Writer(rw),
-      m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false)
+      m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false),
+      x_PPos((CT_OFF_TYPE)(0)), x_GPos((CT_OFF_TYPE)(0))
 {
     setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufferSize);
 }
@@ -89,7 +90,8 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
     : m_Flags(f), m_Reader(r), m_Writer(w),
-      m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false)
+      m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false),
+      x_PPos((CT_OFF_TYPE)(0)), x_GPos((CT_OFF_TYPE)(0))
 {
     setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufferSize);
 }
@@ -97,9 +99,12 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
 
 CRWStreambuf::~CRWStreambuf()
 {
-    if (m_WriteBuf  &&  pptr() > m_WriteBuf) {
+    // Flush only if data pending
+    if (pbase()  &&  pptr() > pbase()) {
         sync();
     }
+    setp(0, 0);
+    setg(0, 0, 0);
 
     IReaderWriter* rw = dynamic_cast<IReaderWriter*> (m_Reader);
     if (rw  &&  rw == dynamic_cast<IReaderWriter*> (m_Writer)) {
@@ -127,11 +132,15 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
         return this;
     }
 
+    if (gptr()  &&  gptr() != egptr()) {
+        ERR_POST(Error << "CRWStreambuf::setbuf(): Read data pending");
+    }
+    if (pptr()  &&  pptr() != pbase()) {
+        ERR_POST(Error << "CRWStreambuf::setbuf(): Write data pending");
+    }
+
     streamsize    x_size = n ? n : kDefaultBufferSize;
     CT_CHAR_TYPE* x_buf  = s ? s : (n == 1? &x_Buf : new CT_CHAR_TYPE[x_size]);
-    if ( !x_buf ) {
-        return 0;
-    }
 
     if ( m_OwnBuf ) {
         delete[] m_ReadBuf;
@@ -155,14 +164,14 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
     if ( !m_Writer )
         return CT_EOF;
 
-    if ( m_WriteBuf ) {
+    if ( pbase() ) {
         // send buffer
-        size_t n_write = pptr() - m_WriteBuf;
+        size_t n_write = pptr() - pbase();
         if ( n_write ) {
             size_t n_written;
             n_write *= sizeof(CT_CHAR_TYPE);
             try {
-                m_Writer->Write(m_WriteBuf, n_write, &n_written);
+                m_Writer->Write(pbase(), n_write, &n_written);
             }
             RWSTREAMBUF_CATCH_ALL("CRWStreambuf::overflow(): IWriter::Write()",
                                   n_written = 0);
@@ -172,10 +181,11 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             // update buffer content (get rid of the sent data)
             if (n_written != n_write) {
                 _ASSERT(n_written <= n_write);
-                memmove(m_WriteBuf, m_WriteBuf + n_written,
+                memmove(pbase(), pbase() + n_written,
                         (n_write - n_written)*sizeof(CT_CHAR_TYPE));
             }
-            setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
+            x_PPos += (CT_OFF_TYPE) n_written;
+            setp(pbase() + n_write - n_written, epptr());
         }
 
         // store char
@@ -186,6 +196,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         size_t n_written;
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         m_Writer->Write(&b, sizeof(b), &n_written);
+        x_PPos += (CT_OFF_TYPE) n_written;
         return n_written == sizeof(b) ? c : CT_EOF;
     }
 
@@ -225,12 +236,13 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     }
     RWSTREAMBUF_CATCH_ALL("CRWStreambuf::underflow(): IReader::Read()",
                           n_read = 0);
-    if ( !n_read )
+    if (!(n_read /= sizeof(CT_CHAR_TYPE))
         return CT_EOF;
 
-    // update input buffer with the data we have just read
-    _ASSERT(n_read <= m_BufSize*sizeof(CT_CHAR_TYPE));
-    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
+    // update input buffer with the data just read
+    x_GPos += (CT_OFF_TYPE) n_read;
+    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
+
     return CT_TO_INT_TYPE(*m_ReadBuf);
 }
 
@@ -257,10 +269,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     } else
         n_read = 0;
 
-    if (n == 0)
-        return (streamsize) n_read;
-
-    do {
+    while ( n ) {
         size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         ERW_Result   result = eRW_Success;
@@ -273,6 +282,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
                               x_read = 0);
         if (!(x_read /= sizeof(CT_CHAR_TYPE)))
             break;
+        x_GPos += (CT_OFF_TYPE) x_read;
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
@@ -291,7 +301,8 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             break;
         buf    += x_read;
         n      -= x_read;
-    } while ( n );
+    }
+
     return (streamsize) n_read;
 }
 
@@ -323,8 +334,25 @@ int CRWStreambuf::sync(void)
     do {
         if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
             return -1;
-    } while (m_WriteBuf  &&  pptr() > m_WriteBuf);
+    } while (pbase()  &&  pptr() > pbase());
     return 0;
+}
+
+
+CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
+                                  IOS_BASE::openmode which)
+{
+    if (off == 0  &&  whence == IOS_BASE::cur) {
+        switch (which) {
+        case IOS_BASE::out:
+            return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - pbase() : 0);
+        case IOS_BASE::in:
+            return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0);
+        default:
+            break;
+        }
+    }
+    return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
 }
 
 
@@ -334,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2006/05/01 19:25:35  lavr
+ * Implement stream position reporting
+ *
  * Revision 1.18  2006/04/25 20:11:05  lavr
  * Added _ASSERTs after Read/Write in underflow/overflow
  *

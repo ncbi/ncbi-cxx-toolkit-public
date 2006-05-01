@@ -92,6 +92,10 @@ protected:
     /// Note: setbuf(0, 0) has no effect
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
+    // only seekoff(0, IOS_BASE::cur, IOS_BASE::out) is permitted
+    virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
+                                IOS_BASE::openmode which =
+                                IOS_BASE::in | IOS_BASE::out);
 protected:
     TFlags         m_Flags;
 
@@ -104,6 +108,9 @@ protected:
 
     bool           m_OwnBuf;
     CT_CHAR_TYPE   x_Buf;
+
+    CT_POS_TYPE    x_PPos;      // put position [for ostream.tellp()]
+    CT_POS_TYPE    x_GPos;      // get position [for istream.tellg()]
 };
 
 
@@ -113,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/05/01 19:25:04  lavr
+ * Implement stream position reporting
+ *
  * Revision 1.11  2006/02/15 17:40:24  lavr
  * IReader/IWriter API moved (along with RWStream[buf]) to corelib
  *
