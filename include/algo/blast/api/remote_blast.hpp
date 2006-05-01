@@ -35,12 +35,6 @@
 
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
-#include <algo/blast/api/blastx_options.hpp>
-#include <algo/blast/api/tblastn_options.hpp>
-#include <algo/blast/api/tblastx_options.hpp>
-#include <algo/blast/api/disc_nucl_options.hpp>
-#include <algo/blast/api/psiblast_options.hpp>
-
 #include <objects/blast/blast__.hpp>
 
 /** @addtogroup AlgoBlast
@@ -330,15 +324,6 @@ public:
     /// @return An object describing the searched database(s).
     CRef<objects::CBlast4_database> GetDatabases();
 
-    /// Retrieve detailed information for a given BLAST database
-    ///
-    /// @param blastdb object describing the database for which to get
-    /// detailed information
-    /// @return Detailed information for the requested BLAST database or an
-    /// empty object is the requested database wasn't found
-    CRef<objects::CBlast4_database_info>
-        GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb);
-    
     /// Get the program used for this search.
     /// @return The value of the program parameter.
     string GetProgram();
@@ -520,17 +505,6 @@ private:
     /// representation following the BLAST 4 ASN.1 spec
     void x_QueryMaskingLocationsToNetwork();
 
-    /// Retrieve the BLAST databases available for searching
-    void x_GetAvailableDatabases();
-
-    /// Look for a database matching this method's argument and returned
-    /// detailed information about it.
-    /// @param blastdb database description
-    /// @return detailed information about the database requested or an empty
-    /// CRef<> if the database was not found
-    CRef<objects::CBlast4_database_info>
-    x_FindDbInfoFromAvailableDatabases(CRef<objects::CBlast4_database> blastdb);
-    
     /// Prohibit copy construction.
     CRemoteBlast(const CRemoteBlast &);
     
@@ -596,9 +570,6 @@ private:
 
     /// Masking locations for queries
     TSeqLocInfoVector m_QueryMaskingLocations;
-
-    /// BLAST databases available to search
-    objects::CBlast4_get_databases_reply::Tdata m_AvailableDatabases;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the
@@ -639,6 +610,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/05/01 13:30:35  camacho
+ * Moved CRemoteBlast::GetDatabaseInfo -> CRemoteServices::GetDatabaseInfo
+ *
  * Revision 1.33  2006/04/25 20:37:39  camacho
  * Add support to retrieve detailed BLAST database information
  *

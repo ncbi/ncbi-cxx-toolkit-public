@@ -1340,56 +1340,6 @@ CRemoteBlast::GetDatabases()
     return m_Dbs;
 }
 
-CRef<CBlast4_database_info>
-CRemoteBlast::x_FindDbInfoFromAvailableDatabases
-    (CRef<CBlast4_database> blastdb)
-{
-    _ASSERT(blastdb.NotEmpty());
-
-    CRef<CBlast4_database_info> retval;
-
-    ITERATE(CBlast4_get_databases_reply::Tdata, dbinfo, m_AvailableDatabases) {
-        if ((*dbinfo)->GetDatabase() == *blastdb) {
-            retval = *dbinfo;
-            break;
-        }
-    }
-
-    return retval;
-}
-
-void
-CRemoteBlast::x_GetAvailableDatabases()
-{
-    CBlast4Client client;
-    CRef<CBlast4_get_databases_reply> databases;
-    try { 
-        databases = client.AskGet_databases(); 
-        m_AvailableDatabases = databases->Set();
-    }
-    catch(const CEofException &e ) {
-        cerr << e.what() << endl;
-        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
-                   "No response from server, cannot complete request.");
-    }
-}
-
-
-CRef<CBlast4_database_info>
-CRemoteBlast::GetDatabaseInfo(CRef<CBlast4_database> blastdb)
-{
-    if (blastdb.Empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-                   "NULL argument specified: blast database description");
-    }
-
-    if (m_AvailableDatabases.empty()) {
-        x_GetAvailableDatabases();
-    }
-
-    return x_FindDbInfoFromAvailableDatabases(blastdb);
-}
-
 string
 CRemoteBlast::GetProgram()
 {
@@ -1530,6 +1480,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2006/05/01 13:30:40  camacho
+* Moved CRemoteBlast::GetDatabaseInfo -> CRemoteServices::GetDatabaseInfo
+*
 * Revision 1.44  2006/04/25 20:38:00  camacho
 * Add support to retrieve detailed BLAST database information
 *
