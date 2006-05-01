@@ -128,12 +128,17 @@ static void s_GetCdregionLabel
     // Look for CProt_ref object to create a label from
     if (feat.IsSetXref()) {
         ITERATE ( CSeq_feat::TXref, it, feat.GetXref()) {
-            switch ((**it).GetData().Which()) {
+            const CSeqFeatXref& xref = **it;
+            if ( !xref.IsSetData() ) {
+                continue;
+            }
+
+            switch (xref.GetData().Which()) {
             case CSeqFeatData::e_Prot:
-                pref = &(**it).GetData().GetProt();
+                pref = &xref.GetData().GetProt();
                 break;
             case CSeqFeatData::e_Gene:
-                gref = &(**it).GetData().GetGene();
+                gref = &xref.GetData().GetGene();
                 break;
             default:
                 break;
@@ -663,6 +668,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2006/05/01 13:32:39  dicuccio
+* Guard against access to unset SeqFeatXref.data
+*
 * Revision 1.17  2005/02/23 20:25:11  dicuccio
 * Added better handling of biosrc feature labels
 *
