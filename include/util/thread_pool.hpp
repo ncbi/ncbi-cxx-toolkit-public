@@ -808,12 +808,11 @@ void* CThreadInPool<TRequest>::Main(void)
 {
     m_Pool->Register(*this);
 
-    TItemHandle handle;
-
     try {
         Init();
 
         for (;;) {
+            TItemHandle handle;
             m_Pool->m_Delta.Add(-1);
             try {
                 handle.Reset(m_Pool->m_Queue.GetHandle());
@@ -1007,6 +1006,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2006/05/01 17:29:37  ucko
+* CThreadInPool<>::Main: narrow handle's scope to avoid keeping any
+* associated resources around longer than necessary.
+*
 * Revision 1.37  2006/04/04 14:08:24  ucko
 * CBlockingQueue<>::Put: tweak new timeout logic to ensure getting
 * nonnegative CTimeSpan components.
