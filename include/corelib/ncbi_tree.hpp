@@ -160,7 +160,7 @@ public:
     const TValue& operator*(void) const { return m_Value; }
     TValue& operator*(void) { return m_Value; }
     const TValue* operator->(void) const { return &m_Value; }
-    TValue& operator->(void) { return &m_Value; }
+    TValue* operator->(void) { return &m_Value; }
 
     const TKeyType& GetKey(void) const { return TKeyGetter::GetKey(m_Value); }
     TKeyType& GetKey(void) { return TKeyGetter::GetKeyNC(m_Value); }
@@ -870,6 +870,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/05/01 13:54:22  jcherry
+ * Corrected return type of CTree::operator->
+ *
  * Revision 1.43  2005/12/23 15:13:41  yazhuk
  * Added reverse iterators
  *
