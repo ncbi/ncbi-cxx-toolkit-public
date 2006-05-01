@@ -154,7 +154,7 @@ void CDiagParserApp::x_CheckMessage(TDiagPostFlags flags)
     }
 
     if ((flags & eDPF_Line) != 0) {
-        _ASSERT(msg.m_Line == info.GetLine() + 1);
+        _ASSERT(msg.m_Line == size_t(info.GetLine() + 1));
     }
     else {
         _ASSERT(!msg.m_Line);
@@ -197,7 +197,7 @@ void CDiagParserApp::x_CheckMessage(TDiagPostFlags flags)
 
     if ((flags & eDPF_PID) != 0) {
         if ((flags & eDPF_TID) != 0) {
-            _ASSERT(msg.m_TID == CThread::GetSelf());
+            _ASSERT(CThread::TID(msg.m_TID) == CThread::GetSelf());
         }
         else {
             _ASSERT(msg.m_TID == 0);
@@ -255,6 +255,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/01 18:45:28  grichenk
+ * Fixed warnings
+ *
  * Revision 1.1  2006/04/17 15:38:26  grichenk
  * Initial revision
  *
