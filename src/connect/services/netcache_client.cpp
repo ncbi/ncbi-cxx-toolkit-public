@@ -971,8 +971,6 @@ ERW_Result CNetCacheSock_RW::Read(void*   buf,
     }
     m_BlobBytesToRead -= nn_read;
     if (m_BlobBytesToRead == 0) {
-        static string ok_str = "OK:";
-        TParent::Write(ok_str.c_str(), ok_str.size(), 0);
         FinishTransmission();
     }
     return res;
@@ -985,8 +983,9 @@ ERW_Result CNetCacheSock_RW::Read(void*   buf,
 CNetCache_WriterErrCheck::CNetCache_WriterErrCheck
                                         (CNetCacheSock_RW* wrt, 
                                          EOwnership        own_writer,
-                                         CNetCacheClient*  parent)
-: CTransmissionWriter(wrt, own_writer),
+                                         CNetCacheClient*  parent,
+                                         CTransmissionWriter::ESendEofPacket send_eof)
+: CTransmissionWriter(wrt, own_writer, send_eof),
   m_RW(wrt),
   m_NC_Client(parent)
 {
@@ -1178,6 +1177,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/05/01 16:36:18  vasilche
+ * Fixed error in netcache communication protocol.
+ *
  * Revision 1.66  2006/04/18 20:38:04  kuznets
  * Fixed access to NULL address
  *

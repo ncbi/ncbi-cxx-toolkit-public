@@ -391,10 +391,6 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
 
 //        stat.comm_elapsed += sw.Elapsed();
 //        ++stat.io_blocks;
-
-        WaitForReadSocket(sock, 5);
-        ReadStr(sock, &(tdata.tmp));
-
         return;
 
     } // inline BLOB
@@ -440,10 +436,6 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
     if (!read_flag) {
         goto blob_not_found;
     }
-
-    WaitForReadSocket(sock, 5);
-    ReadStr(sock, &(tdata.tmp));
-
 }
 
 void CNetCacheServer::Process_IC_Remove(ICache&              ic,
@@ -494,6 +486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/05/01 16:36:17  vasilche
+ * Fixed error in netcache communication protocol.
+ *
  * Revision 1.11  2006/04/14 16:09:00  kuznets
  * Fixed bug when session management shutdowns the server even if we do not want to
  *

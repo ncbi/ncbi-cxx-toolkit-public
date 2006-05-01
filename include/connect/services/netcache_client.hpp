@@ -596,7 +596,9 @@ public:
 
     CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, 
                              EOwnership        own_writer,
-                             CNetCacheClient*  parent);
+                             CNetCacheClient*  parent,
+                             CTransmissionWriter::ESendEofPacket send_eof =
+                                 CTransmissionWriter::eDontSendEofPacket);
     virtual ~CNetCache_WriterErrCheck();
 
     virtual 
@@ -638,6 +640,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/05/01 16:36:18  vasilche
+ * Fixed error in netcache communication protocol.
+ *
  * Revision 1.56  2006/03/20 19:15:22  didenko
  * Modified the GET method in a way that the client side initiates
  * SOCKET connection closing.

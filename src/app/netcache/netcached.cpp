@@ -918,9 +918,6 @@ void CNetCacheServer::ProcessGet2(CSocket&               sock,
         bool lock_accuired = guard.Lock(req_id, 0);
         if (!lock_accuired) {  // BLOB is locked by someone else
             WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
-            WaitForReadSocket(sock, 5);
-            ReadStr(sock, &(tdata.tmp));
-            //SleepMilliSec(100); // giving the client a time to disconnect
             return;
         }
     } else {
@@ -940,17 +937,11 @@ blob_not_found:
             string msg = "BLOB not found. ";
             msg += req_id;
             WriteMsg(sock, "ERR:", msg);
-
-            WaitForReadSocket(sock, 5);
-            ReadStr(sock, &(tdata.tmp));
             return;
     }
 
     if (ba_descr.blob_size == 0) {
         WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
-
-        WaitForReadSocket(sock, 5);
-        ReadStr(sock, &(tdata.tmp));
         return;
     }
 
@@ -992,9 +983,6 @@ blob_not_found:
 
         stat.comm_elapsed += sw.Elapsed();
         ++stat.io_blocks;
-
-        WaitForReadSocket(sock, 5);
-        ReadStr(sock, &(tdata.tmp));
         return;
 
     } // inline BLOB
@@ -1040,9 +1028,6 @@ blob_not_found:
     if (!read_flag) {
         goto blob_not_found;
     }
-
-    WaitForReadSocket(sock, 5);
-    ReadStr(sock, &(tdata.tmp));
 }
 
 
@@ -2073,6 +2058,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2006/05/01 16:36:17  vasilche
+ * Fixed error in netcache communication protocol.
+ *
  * Revision 1.83  2006/04/14 16:09:00  kuznets
  * Fixed bug when session management shutdowns the server even if we do not want to
  *

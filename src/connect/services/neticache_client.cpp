@@ -116,7 +116,7 @@ bool CNetICacheClient::CheckConnect()
 		// stucks in an incorrect state (needs to be closed)
 		try {
 			WriteStr("A?", 3);
-			WaitForServer();
+            WaitForServer();
     		if (!ReadStr(*m_Sock, &m_Tmp)) {
 				delete m_Sock;m_Sock = 0;
 				return CheckConnect();
@@ -126,7 +126,7 @@ bool CNetICacheClient::CheckConnect()
 				return CheckConnect();
 			}
 		} 
-		catch (exception&) {
+		catch (exception& exc) {
 			delete m_Sock; m_Sock = 0;
 			return CheckConnect();
 		}
@@ -630,9 +630,9 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
     DetachSocket();
     writer->OwnSocket();
     sg.Release();
-
+    writer->SetSocketParent(this);
     CNetCache_WriterErrCheck* err_writer =
-            new CNetCache_WriterErrCheck(writer, eTakeOwnership, 0);
+        new CNetCache_WriterErrCheck(writer, eTakeOwnership, 0, CTransmissionWriter::eSendEofPacket);
     return err_writer;
 }
 
@@ -769,6 +769,7 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
     bool blob_found = CNetCacheClient::CheckErrTrim(answer);
 
     if (!blob_found) {
+        sg.Release();
         return NULL;
     }
     string::size_type pos = answer.find("SIZE=");
@@ -936,6 +937,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/05/01 16:36:18  vasilche
+ * Fixed error in netcache communication protocol.
+ *
  * Revision 1.23  2006/03/20 19:15:22  didenko
  * Modified the GET method in a way that the client side initiates
  * SOCKET connection closing.
