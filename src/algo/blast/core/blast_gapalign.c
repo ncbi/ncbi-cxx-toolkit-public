@@ -2023,81 +2023,103 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     return best_score;
 }
 
+/** Simple wrapper around binary search function for BlastQueryInfo structure
+ * to obtain the context in which this initial ungapped HSP is found
+ * @param query_info Query information structure [in]
+ * @param init_hsp Initial HSP [in]
+ */
+static NCBI_INLINE Int4
+s_GetUngappedHSPContext(const BlastQueryInfo* query_info, 
+                        const BlastInitHSP* init_hsp)
+{
+    return BSearchContextInfo(init_hsp->offsets.qs_offsets.q_off, query_info);
+}
+
+/** Adjust the HSP offsets in the initial ungapped HSP structure given the
+ * query start 
+ * @param init_hsp Initial HSP [in|out]
+ * @param query_start Starting offset of the query sequence in the query info
+ * structure [in]
+ */
+static NCBI_INLINE void
+s_AdjustInitialHSPOffsets(BlastInitHSP* init_hsp, Int4 query_start)
+{
+    init_hsp->offsets.qs_offsets.q_off -= query_start;
+    if (init_hsp->ungapped_data) {
+        init_hsp->ungapped_data->q_start -= query_start;
+    }
+}
+
+/** Set up a BLAST_SequenceBlk structure for a single query sequence
+ * @param concatenated_query Query sequence block for concatenated query [in]
+ * @param query_info Query information structure for concatenated query [in]
+ * @param context Context in which the HSP ocurred [in]
+ * @param single_query query Output sequence block which will contain adjusted
+ * sequence pointer and sequence length [out]
+ * @param query_start Starting offset of the single query sequence in the
+ * concatenated query [out]
+  */
+static void
+s_SetUpLocalBlastSequenceBlk(const BLAST_SequenceBlk* concatenated_query,
+                             const BlastQueryInfo* query_info, Int4 context,
+                             BLAST_SequenceBlk* single_query,
+                             Int4* query_start)
+{
+    Int4 query_length = 0;
+    if (concatenated_query->oof_sequence) {
+        /* Out-of-frame blastx case: all frames of the same parity are mixed
+           together in a special sequence. */
+        Int4 query_end_pt = 0;
+        Int4 mixed_frame_context = context - context % CODON_LENGTH;
+        
+        *query_start = query_info->contexts[mixed_frame_context].query_offset;
+        query_end_pt =
+            query_info->contexts[mixed_frame_context+CODON_LENGTH-1].query_offset +
+            query_info->contexts[mixed_frame_context+CODON_LENGTH-1].query_length;
+        query_length = query_end_pt - *query_start;
+        single_query->sequence = NULL;
+        single_query->oof_sequence = concatenated_query->oof_sequence + *query_start;
+    } else {
+        *query_start  = query_info->contexts[context].query_offset;
+        query_length = query_info->contexts[context].query_length;
+        single_query->sequence = concatenated_query->sequence + *query_start;
+        single_query->oof_sequence = NULL;
+    }
+    single_query->length = query_length;
+}
+
+
 /** Find the HSP offsets relative to the individual query sequence instead of
- * the concatenated sequence.
+ * the concatenated sequence and retrieve relevant portions of the query
+ * sequence data.
  * @param query Query sequence block [in]
  * @param query_info Query information structure, including context offsets 
  *                   array [in]
- * @param init_hsp Initial HSP [in] [out]
- * @param query_out Optional: query sequence block with modified sequence 
+ * @param init_hsp Initial HSP, this will be modified to hold the adjusted
+ *                 offsets [in] [out]
+ * @param query_out query sequence block with modified sequence 
  *                  pointer and sequence length [out]
- * @param init_hsp_out Optional: Pointer to initial HSP structure to hold
- *                     adjusted offsets; the input init_hsp will be modified if
- *                     this parameter is NULL [out]
- * @param context_out Which context this HSP belongs to? [out]
+ * @param context Which context this HSP belongs to? [out]
  */
 static void 
-s_GetRelativeCoordinates(const BLAST_SequenceBlk* query, 
-                       const BlastQueryInfo* query_info, 
-                       BlastInitHSP* init_hsp, BLAST_SequenceBlk* query_out,
-                       BlastInitHSP* init_hsp_out, Int4* context_out)
+s_AdjustHspOffsetsAndGetQueryData(const BLAST_SequenceBlk* query, 
+                                  const BlastQueryInfo* query_info, 
+                                  BlastInitHSP* init_hsp, 
+                                  BLAST_SequenceBlk* query_out, 
+                                  Int4* context)
 {
-   Int4 context = 0;
-   Int4 query_start = 0, query_length = 0;
+    Int4 query_start = 0;
 
-   context = BSearchContextInfo(init_hsp->offsets.qs_offsets.q_off, query_info);
+    ASSERT(query);
+    ASSERT(query_info);
+    ASSERT(query_out);
+    ASSERT(init_hsp);
+    ASSERT(context);
 
-   if (query && query->oof_sequence) {
-       /* Out-of-frame blastx case: all frames of the same parity are mixed
-          together in a special sequence. */
-       Int4 query_end_pt = 0;
-       Int4 mixed_frame_context = context - context % CODON_LENGTH;
-       
-       query_start = query_info->contexts[mixed_frame_context].query_offset;
-       query_end_pt =
-           query_info->contexts[mixed_frame_context+CODON_LENGTH-1].query_offset +
-           query_info->contexts[mixed_frame_context+CODON_LENGTH-1].query_length;
-       query_length =
-           query_end_pt - query_start;
-   } else {
-       query_start  = query_info->contexts[context].query_offset;
-       query_length = query_info->contexts[context].query_length;
-   }
-   
-   if (query && query_out) {
-      if (query->oof_sequence) {
-         query_out->sequence = NULL;
-         query_out->oof_sequence = query->oof_sequence + query_start;
-      } else {
-         query_out->sequence = query->sequence + query_start;
-         query_out->oof_sequence = NULL;
-      }
-      query_out->length = query_length;
-   }
-
-   if (init_hsp_out) {
-      init_hsp_out->offsets.qs_offsets.q_off = 
-          init_hsp->offsets.qs_offsets.q_off - query_start;
-      init_hsp_out->offsets.qs_offsets.s_off = 
-          init_hsp->offsets.qs_offsets.s_off;
-      if (init_hsp->ungapped_data) {
-         if (!init_hsp_out->ungapped_data) {
-            init_hsp_out->ungapped_data = (BlastUngappedData*) 
-               BlastMemDup(init_hsp->ungapped_data, sizeof(BlastUngappedData));
-         } else {
-            memcpy(init_hsp_out->ungapped_data, init_hsp->ungapped_data,
-                   sizeof(BlastUngappedData));
-         }
-         init_hsp_out->ungapped_data->q_start = 
-            init_hsp->ungapped_data->q_start - query_start;
-      }
-   } else {
-      init_hsp->offsets.qs_offsets.q_off -= query_start;
-      if (init_hsp->ungapped_data)
-         init_hsp->ungapped_data->q_start -= query_start;
-   }
-
-   *context_out = context;
+    *context = s_GetUngappedHSPContext(query_info, init_hsp);
+    s_SetUpLocalBlastSequenceBlk(query, query_info, *context,
+                                 query_out, &query_start);
+    s_AdjustInitialHSPOffsets(init_hsp, query_start);
 }
 
 
@@ -2652,7 +2674,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    Int4 q_start, s_start, q_end, s_end;
    Boolean is_prot;
    Boolean is_greedy;
-   Int4 max_offset;
    Int2 status = 0;
    BlastHSPList* hsp_list = NULL;
    const BlastHitSavingOptions* hit_options = hit_params->options;
@@ -2713,9 +2734,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       BlastHSP tmp_hsp;
       init_hsp = &init_hsp_array[index];
 
-      /* Now adjust the initial HSP's coordinates. */
-      s_GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
-                             NULL, &context);
+      s_AdjustHspOffsetsAndGetQueryData(query, query_info, init_hsp, 
+                                        &query_tmp, &context);
 
       if (rpsblast_pssms)
          gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms + 
@@ -2752,7 +2772,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
          }
  
          if(is_prot && !score_params->options->is_ooframe) {
-            max_offset = 
+            Int4 offset =
                BlastGetStartForGappedAlignment(query_tmp.sequence, 
                   subject->sequence, gap_align->sbp,
                   init_hsp->ungapped_data->q_start,
@@ -2760,8 +2780,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                   init_hsp->ungapped_data->s_start,
                   init_hsp->ungapped_data->length);
             init_hsp->offsets.qs_offsets.s_off += 
-                max_offset - init_hsp->offsets.qs_offsets.q_off;
-            init_hsp->offsets.qs_offsets.q_off = max_offset;
+                offset - init_hsp->offsets.qs_offsets.q_off;
+            init_hsp->offsets.qs_offsets.q_off = offset;
          }
 
          if (is_prot) {
@@ -2807,9 +2827,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                  query_frame = query_info->contexts[context].frame;
              }
 
-             Blast_HSPInit(gap_align->query_start, 
-                           gap_align->query_stop, gap_align->subject_start, 
-                           gap_align->subject_stop, 
+             Blast_HSPInit(gap_align->query_start, gap_align->query_stop, 
+                           gap_align->subject_start, gap_align->subject_stop,
                            init_hsp->offsets.qs_offsets.q_off, 
                            init_hsp->offsets.qs_offsets.s_off, context, 
                            query_frame, subject->frame, gap_align->score, 
@@ -3367,7 +3386,6 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
    BlastHSPList* hsp_list = NULL;
    Int4 index;
    BlastInitHSP* init_hsp;
-   Int4 context;
    const int kHspNumMax = BlastHspNumMax(FALSE, hit_options);
 
    /* The BlastHSPList structure can be allocated and passed from outside */
@@ -3385,18 +3403,20 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
    for (index = 0; index < init_hitlist->total; ++index) {
       BlastHSP* new_hsp;
       BlastUngappedData* ungapped_data=NULL;
+      Int4 context = 0;
       init_hsp = &init_hitlist->init_hsp_array[index];
       if (!init_hsp->ungapped_data) 
          continue;
 
-      /* Adjust the initial HSP's coordinates in case of concatenated 
-         multiple queries/strands/frames */
-      s_GetRelativeCoordinates(NULL, query_info, init_hsp, NULL, 
-                             NULL, &context);
       if (!hsp_list) {
          hsp_list = Blast_HSPListNew(kHspNumMax);
          *hsp_list_ptr = hsp_list;
       }
+      /* Adjust the initial HSP's coordinates in case of concatenated 
+         multiple queries/strands/frames */
+      context = s_GetUngappedHSPContext(query_info, init_hsp);
+      s_AdjustInitialHSPOffsets(init_hsp,
+                                query_info->contexts[context].query_offset);
       ungapped_data = init_hsp->ungapped_data;
       Blast_HSPInit(ungapped_data->q_start, 
                     ungapped_data->length+ungapped_data->q_start,
