@@ -236,7 +236,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     }
     RWSTREAMBUF_CATCH_ALL("CRWStreambuf::underflow(): IReader::Read()",
                           n_read = 0);
-    if (!(n_read /= sizeof(CT_CHAR_TYPE))
+    if (!(n_read /= sizeof(CT_CHAR_TYPE)))
         return CT_EOF;
 
     // update input buffer with the data just read
@@ -362,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2006/05/01 19:28:39  lavr
+ * Fix missing parenthesis
+ *
  * Revision 1.19  2006/05/01 19:25:35  lavr
  * Implement stream position reporting
  *
