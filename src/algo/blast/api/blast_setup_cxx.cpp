@@ -1353,16 +1353,19 @@ SafeSetupQueryInfo(const IBlastQuerySource& queries,
 
 bool CBlastQueryFilteredFrames::x_NeedsTrans()
 {
+    bool retval;
     switch(m_Program) {
     case eBlastTypeBlastx:
     case eBlastTypeTblastx:
     case eBlastTypeRpsTblastn:
-        return true;
+        retval = true;
         break;
             
     default:
-        return false;
+        retval = false;
+        break;
     }
+    return retval;
 }
 
 CBlastQueryFilteredFrames::
@@ -1569,6 +1572,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.116  2006/05/01 13:17:26  camacho
+ * fix compiler warning
+ *
  * Revision 1.115  2006/04/27 19:31:47  madden
  * Add PHI-blast case to x_VerifyFrame
  *
