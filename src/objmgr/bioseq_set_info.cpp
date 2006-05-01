@@ -360,15 +360,17 @@ void CBioseq_set_Info::x_ResetObjAnnot(void)
 
 
 CRef<CSeq_entry_Info> CBioseq_set_Info::AddEntry(CSeq_entry& entry,
-                                                 int index)
+                                                 int index, 
+                                                 bool set_uniqid)
 {
     CRef<CSeq_entry_Info> info(new CSeq_entry_Info(entry));
-    AddEntry(info, index);
+    AddEntry(info, index, set_uniqid);
     return info;
 }
 
 
-void CBioseq_set_Info::AddEntry(CRef<CSeq_entry_Info> info, int index)
+void CBioseq_set_Info::AddEntry(CRef<CSeq_entry_Info> info, int index, 
+                                bool set_uniqid)
 {
     _ASSERT(!info->HasParent_Info());
     CBioseq_set::TSeq_set& obj_seq_set = m_Object->SetSeq_set();
@@ -388,8 +390,10 @@ void CBioseq_set_Info::AddEntry(CRef<CSeq_entry_Info> info, int index)
         obj_seq_set.insert(obj_it, obj);
         m_Seq_set.insert(m_Seq_set.begin()+index, info);
     }
-
     x_AttachEntry(info);
+
+    if (set_uniqid)
+        info->SetBioObjectId(GetTSE_Info().x_RegisterBioObject(*info));
 }
 
 
@@ -471,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/05/01 16:56:45  didenko
+ * Attach SeqEntry edit command revamp
+ *
  * Revision 1.16  2006/01/25 18:59:04  didenko
  * Redisgned bio objects edit facility
  *

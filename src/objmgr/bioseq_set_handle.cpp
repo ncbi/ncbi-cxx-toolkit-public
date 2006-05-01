@@ -521,7 +521,10 @@ CSeq_entry_EditHandle CBioseq_set_EditHandle::AddNewEntry(int index) const
 CBioseq_EditHandle
 CBioseq_set_EditHandle::AttachBioseq(CBioseq& seq, int index) const
 {
-    return AddNewEntry(index).SelectSeq(seq);
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+    CBioseq_EditHandle ret = AddNewEntry(index).SelectSeq(seq);
+    tr->Commit();
+    return ret;
 }
 
 
@@ -529,7 +532,10 @@ CBioseq_EditHandle
 CBioseq_set_EditHandle::CopyBioseq(const CBioseq_Handle& seq,
                                    int index) const
 {
-    return AddNewEntry(index).CopySeq(seq);
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+    CBioseq_EditHandle ret = AddNewEntry(index).CopySeq(seq);
+    tr->Commit();
+    return ret;
 }
 
 
@@ -537,7 +543,10 @@ CBioseq_EditHandle
 CBioseq_set_EditHandle::TakeBioseq(const CBioseq_EditHandle& seq,
                                    int index) const
 {
-    return AddNewEntry(index).TakeSeq(seq);
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+    CBioseq_EditHandle ret = AddNewEntry(index).TakeSeq(seq);
+    tr->Commit();
+    return ret;
 }
 
 
@@ -739,6 +748,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/05/01 16:56:45  didenko
+* Attach SeqEntry edit command revamp
+*
 * Revision 1.23  2006/01/25 18:59:04  didenko
 * Redisgned bio objects edit facility
 *

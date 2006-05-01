@@ -140,6 +140,8 @@ void CTSE_Default_Assigner::AddSeq_data(CTSE_Info& tse,
 {
     CBioseq_Info* last_bioseq = 0, *bioseq;
     ITERATE ( TLocationSet, it, locations ) {
+        const CSeq_id_Handle& loc_id = it->first;
+        int gi = loc_id.GetGi();
         bioseq = &x_GetBioseq(tse, it->first);
         if (bioseq != last_bioseq) {
             // Do not add duplicate chunks to the same bioseq
@@ -165,7 +167,9 @@ void CTSE_Default_Assigner::AddAssemblyInfo(CTSE_Info& tse,
 void CTSE_Default_Assigner::UpdateAnnotIndex(CTSE_Info& tse, 
                                              CTSE_Chunk_Info& chunk)
 {
-    CDataSource::TAnnotLockWriteGuard guard1(tse.GetDataSource());
+    CDataSource::TAnnotLockWriteGuard guard1;
+    if( tse.HasDataSource() )
+        guard1.Guard(tse.GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());          
     chunk.x_UpdateAnnotIndex(tse);
 }
@@ -184,12 +188,15 @@ void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
 {
     CRef<CSeq_annot_Info> annot_info;
     {{
-        CDataSource::TMainLock::TWriteLockGuard guard
-            (tse.GetDataSource().GetMainLock());
+        CDataSource::TMainLock::TWriteLockGuard guard;
+        if( tse.HasDataSource() )
+            guard.Guard(tse.GetDataSource().GetMainLock());
         annot_info.Reset(x_GetBase(tse, place).AddAnnot(*annot));
     }}
     {{
-        CDataSource::TAnnotLockWriteGuard guard(tse.GetDataSource());
+        CDataSource::TAnnotLockWriteGuard guard;
+        if( tse.HasDataSource() )
+            guard.Guard(tse.GetDataSource());
         tse.UpdateAnnotIndex(*annot_info);
     }}
 }
@@ -251,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/05/01 16:56:45  didenko
+ * Attach SeqEntry edit command revamp
+ *
  * Revision 1.7  2006/01/25 18:59:04  didenko
  * Redisgned bio objects edit facility
  *

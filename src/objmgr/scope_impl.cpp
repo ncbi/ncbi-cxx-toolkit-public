@@ -333,7 +333,7 @@ CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
     _ASSERT(seqset);
     _ASSERT(entry);
 
-    seqset.x_GetInfo().AddEntry(entry, index);
+    seqset.x_GetInfo().AddEntry(entry, index, true);    
 
     x_ClearCacheOnNewData();
 

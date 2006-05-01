@@ -70,6 +70,7 @@ struct RemoveAction<CSeq_annot_EditHandle> {
                               const Handle& handle )
     { saver.Remove(entry, handle, IEditSaver::eDo); }
     static inline void UndoInDB(IEditSaver& saver,
+                                const CBioObjectId& ,
                                 const CSeq_entry_EditHandle& entry,
                                 const Handle& handle)
     { saver.Attach(entry, handle, IEditSaver::eUndo); }
@@ -272,6 +273,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/05/01 16:56:45  didenko
+* Attach SeqEntry edit command revamp
+*
 * Revision 1.3  2006/01/25 18:59:03  didenko
 * Redisgned bio objects edit facility
 *

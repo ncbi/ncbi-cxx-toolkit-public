@@ -134,9 +134,11 @@ public:
     virtual void ResetBioseqSetDate(const CBioseq_set_Handle&, ECallMode);
   
     //-----------------------------------------------------------------
-    virtual void Attach(const CSeq_entry_Handle& entry, 
+    virtual void Attach(const CBioObjectId& old_id,
+                        const CSeq_entry_Handle& entry, 
                         const CBioseq_Handle& what, ECallMode );
-    virtual void Attach(const CSeq_entry_Handle& entry, 
+    virtual void Attach(const CBioObjectId& old_id,
+                        const CSeq_entry_Handle& entry, 
                         const CBioseq_set_Handle& what, ECallMode );
     virtual void Detach(const CSeq_entry_Handle& entry, 
                         const CBioseq_Handle& what, ECallMode );
@@ -187,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/01 16:56:44  didenko
+ * Attach SeqEntry edit command revamp
+ *
  * Revision 1.2  2006/01/25 18:59:03  didenko
  * Redisgned bio objects edit facility
  *

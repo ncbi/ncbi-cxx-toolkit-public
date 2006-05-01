@@ -55,9 +55,15 @@ public:
 
     virtual bool HasBlob(const string& blobid) const = 0;
     virtual bool FindSeqId(const CSeq_id_Handle& id, string& blobid) const = 0;
-    virtual void NotifyIdsChanged(const TChangedIds&) = 0;
+    virtual void NotifyIdChanged(const CSeq_id_Handle& id, 
+                                 const string& newblobid) = 0;
 
     virtual void SaveCommand(const CSeqEdit_Cmd& cmd) = 0;
+
+    virtual void BeginTransaction() = 0;
+    virtual void CommitTransaction() = 0;
+    virtual void RollbackTransaction() = 0;
+
     virtual void GetCommands(const string& blobid, TCommands& cmds) const = 0;
 
 };
@@ -88,6 +94,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/05/01 16:56:44  didenko
+* Attach SeqEntry edit command revamp
+*
 * Revision 1.1  2006/01/25 18:59:03  didenko
 * Redisgned bio objects edit facility
 *

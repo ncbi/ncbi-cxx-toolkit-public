@@ -674,9 +674,13 @@ void x_ApplyCmd(CTSE_Info& tse, const CSeqEdit_Cmd_AttachSeqEntry& cmd)
 {
     CBioObjectId id = s_Convert(cmd.GetId());
     CBioseq_set_Info& info = GetBioseq_set(tse, id);
-    CSeq_entry& entry = const_cast<CSeq_entry&>(cmd.GetSeq_entry());
+    CRef<CSeq_entry> entry;
+    if (cmd.IsSetSeq_entry())
+        entry.Reset(const_cast<CSeq_entry*>(&cmd.GetSeq_entry()));
+    else 
+        entry.Reset(new CSeq_entry);
     int index = cmd.GetIndex();
-    info.AddEntry(entry, index);
+    info.AddEntry(*entry, index, true);
 }
 
 void x_ApplyCmd(CTSE_Info& tse, const CSeqEdit_Cmd_RemoveSeqEntry& cmd)
@@ -979,6 +983,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.8  2006/05/01 16:56:45  didenko
+ * Attach SeqEntry edit command revamp
+ *
  * Revision 1.7  2006/01/25 18:59:04  didenko
  * Redisgned bio objects edit facility
  *

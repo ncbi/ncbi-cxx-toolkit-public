@@ -76,7 +76,11 @@ public:
     virtual bool HasBlob(const string& blobid) const { return false; }
     virtual bool FindSeqId(const CSeq_id_Handle& id, string& blobid) const 
     { return false; }
-    virtual void NotifyIdsChanged(const TChangedIds&) {}
+    virtual void NotifyIdChanged(const CSeq_id_Handle&, const string&) {}
+
+    virtual void BeginTransaction() {}
+    virtual void CommitTransaction() {}
+    virtual void RollbackTransaction() {}
 
     virtual void SaveCommand(const CSeqEdit_Cmd& cmd) {}
     virtual void GetCommands(const string& blobid, TCommands& cmds) const {}
@@ -102,8 +106,10 @@ public:
     virtual void Replace(const CSeq_feat_Handle&, const CSeq_feat&, ECallMode);
     virtual void Remove(const CSeq_annot_Handle&, const CSeq_feat&, ECallMode);
 
-    virtual void Attach(const CSeq_entry_Handle&, const CBioseq_Handle&, ECallMode);
-    virtual void Attach(const CSeq_entry_Handle&, const CBioseq_set_Handle&, ECallMode);
+    virtual void Attach(const CBioObjectId&,
+                        const CSeq_entry_Handle&, const CBioseq_Handle&, ECallMode);
+    virtual void Attach(const CBioObjectId&,
+                        const CSeq_entry_Handle&, const CBioseq_set_Handle&, ECallMode);
     virtual void Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&,
                         int, ECallMode);
     virtual void Attach(const CBioseq_set_Handle&, const CSeq_entry_Handle&, 
@@ -255,12 +261,14 @@ void CTestEditSaver::Replace(const CSeq_feat_Handle&, const CSeq_feat&,
 {
     m_App.CallReplaceFeat();
 }
-void CTestEditSaver::Attach(const CSeq_entry_Handle&, const CBioseq_Handle&, 
+void CTestEditSaver::Attach(const CBioObjectId& old_id,
+                            const CSeq_entry_Handle&, const CBioseq_Handle&, 
                             IEditSaver::ECallMode mode)
 {
     m_App.CallAttachBioseq();
 }
-void CTestEditSaver::Attach(const CSeq_entry_Handle&, const CBioseq_set_Handle&, 
+void CTestEditSaver::Attach(const CBioObjectId& old_id,
+                            const CSeq_entry_Handle&, const CBioseq_set_Handle&, 
                             IEditSaver::ECallMode mode)
 {
     m_App.CallAttachBioseq_set();
@@ -566,6 +574,9 @@ int main(int argc, const char* argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/05/01 16:56:45  didenko
+* Attach SeqEntry edit command revamp
+*
 * Revision 1.3  2006/01/25 18:59:04  didenko
 * Redisgned bio objects edit facility
 *

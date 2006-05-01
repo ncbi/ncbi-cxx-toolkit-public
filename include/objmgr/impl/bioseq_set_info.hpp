@@ -130,8 +130,10 @@ public:
     const TSeq_set& GetSeq_set(void) const;
     TSeq_set& SetSeq_set(void);
 
-    CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1);
-    void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
+    CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1, 
+                                   bool set_uniqid = false);
+    void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1, 
+                  bool set_uniqid = false);
     void RemoveEntry(CRef<CSeq_entry_Info> entry);
     // returns -1 if entry is not found
     int GetEntryIndex(const CSeq_entry_Info& entry) const;
@@ -486,6 +488,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/05/01 16:56:45  didenko
+* Attach SeqEntry edit command revamp
+*
 * Revision 1.11  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *

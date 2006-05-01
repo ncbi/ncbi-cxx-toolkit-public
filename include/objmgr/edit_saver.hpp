@@ -39,6 +39,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
+#include <objmgr/bio_object_id.hpp>
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -95,8 +96,10 @@ public:
     // Bioseq operations
 
     /// Description operations
-    virtual void AddDescr  (const CBioseq_Handle&, const CSeq_descr&, ECallMode) = 0;
-    virtual void SetDescr  (const CBioseq_Handle&, const CSeq_descr&, ECallMode) = 0;
+    virtual void AddDescr  (const CBioseq_Handle&, 
+                            const CSeq_descr&, ECallMode) = 0;
+    virtual void SetDescr  (const CBioseq_Handle&, 
+                            const CSeq_descr&, ECallMode) = 0;
     virtual void ResetDescr(const CBioseq_Handle&, ECallMode) = 0;
     virtual void AddDesc   (const CBioseq_Handle&, const CSeqdesc&, ECallMode) = 0;
     virtual void RemoveDesc(const CBioseq_Handle&, const CSeqdesc&, ECallMode) = 0;
@@ -121,7 +124,8 @@ public:
     virtual void SetSeqInstHist    (const CBioseq_Handle& handle, 
                                     const CSeq_inst::THist& hist, ECallMode) = 0;
     virtual void SetSeqInstSeq_data(const CBioseq_Handle& handle, 
-                                    const CSeq_inst::TSeq_data& data, ECallMode) = 0;
+                                    const CSeq_inst::TSeq_data& data, 
+                                    ECallMode) = 0;
     
     virtual void ResetSeqInst        (const CBioseq_Handle&, ECallMode) = 0;
     virtual void ResetSeqInstRepr    (const CBioseq_Handle&, ECallMode) = 0;
@@ -135,18 +139,24 @@ public:
     virtual void ResetSeqInstSeq_data(const CBioseq_Handle&, ECallMode) = 0;
 
     /// ID operation
-    virtual void AddId   (const CBioseq_Handle&, const CSeq_id_Handle&, ECallMode) = 0;
-    virtual void RemoveId(const CBioseq_Handle&, const CSeq_id_Handle&, ECallMode) = 0;
+    virtual void AddId   (const CBioseq_Handle&, 
+                          const CSeq_id_Handle&, ECallMode) = 0;
+    virtual void RemoveId(const CBioseq_Handle&, 
+                          const CSeq_id_Handle&, ECallMode) = 0;
     typedef set<CSeq_id_Handle> TIds;
     virtual void ResetIds(const CBioseq_Handle&, const TIds&, ECallMode) = 0;
 
     //----------------------------------------------------------------
     // Bioseq_set operations
-    virtual void AddDescr  (const CBioseq_set_Handle&, const CSeq_descr&, ECallMode) = 0;
-    virtual void SetDescr  (const CBioseq_set_Handle&, const CSeq_descr&, ECallMode) = 0;
+    virtual void AddDescr  (const CBioseq_set_Handle&, 
+                            const CSeq_descr&, ECallMode) = 0;
+    virtual void SetDescr  (const CBioseq_set_Handle&, 
+                            const CSeq_descr&, ECallMode) = 0;
     virtual void ResetDescr(const CBioseq_set_Handle&, ECallMode) = 0;
-    virtual void AddDesc   (const CBioseq_set_Handle&, const CSeqdesc&, ECallMode) = 0;
-    virtual void RemoveDesc(const CBioseq_set_Handle&, const CSeqdesc&, ECallMode) = 0;
+    virtual void AddDesc   (const CBioseq_set_Handle&, 
+                            const CSeqdesc&, ECallMode) = 0;
+    virtual void RemoveDesc(const CBioseq_set_Handle&, 
+                            const CSeqdesc&, ECallMode) = 0;
 
     virtual void SetBioseqSetId     (const CBioseq_set_Handle&,
                                      const CBioseq_set::TId&, ECallMode) = 0;
@@ -170,9 +180,11 @@ public:
   
     //-----------------------------------------------------------------
     // Seq_entry operations
-    virtual void Attach(const CSeq_entry_Handle& entry, 
+    virtual void Attach(const CBioObjectId& old_id,
+                        const CSeq_entry_Handle& entry, 
                         const CBioseq_Handle& what, ECallMode ) = 0;
-    virtual void Attach(const CSeq_entry_Handle& entry, 
+    virtual void Attach(const CBioObjectId& old_id,
+                        const CSeq_entry_Handle& entry, 
                         const CBioseq_set_Handle& what, ECallMode ) = 0;
     virtual void Detach(const CSeq_entry_Handle& entry, 
                         const CBioseq_Handle& what, ECallMode ) = 0;
@@ -245,6 +257,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/01 16:56:44  didenko
+ * Attach SeqEntry edit command revamp
+ *
  * Revision 1.2  2006/01/25 18:59:03  didenko
  * Redisgned bio objects edit facility
  *

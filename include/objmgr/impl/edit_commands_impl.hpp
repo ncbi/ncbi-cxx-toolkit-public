@@ -487,6 +487,7 @@ struct RemoveAction {
                               const CSeq_entry_EditHandle& entry,
                               const TEditHandle& handle);
     static inline void UndoInDB(IEditSaver& saver,
+                                const CBioObjectId& old_id,
                                 const CSeq_entry_EditHandle& entry,
                                 const TEditHandle& handle);
 };
@@ -520,10 +521,11 @@ public:
     virtual void Undo() 
     {
         _ASSERT(m_Entry);
+        CBioObjectId old_id(m_Entry.GetBioObjectId());
         TAction::Undo(m_Scope, m_Entry, m_Handle);
         IEditSaver* saver = GetEditSaver(m_Handle);
         if (saver) {
-            TAction::UndoInDB(*saver, m_Entry, m_Handle);
+            TAction::UndoInDB(*saver,old_id, m_Entry, m_Handle);
         }
     }
 
@@ -545,6 +547,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/05/01 16:56:45  didenko
+* Attach SeqEntry edit command revamp
+*
 * Revision 1.2  2005/11/15 21:54:07  ucko
 * Portability fixes: make default CMDReturn yield a bool (false) rather
 * than void, which confuses some compilers (WorkShop and MIPSpro); also

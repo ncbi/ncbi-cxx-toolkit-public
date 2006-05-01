@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --********************************************************************
 --
 --  Sequence editing commands
@@ -161,9 +161,9 @@ SeqEdit-Cmd-ResetSeqEntry ::= SEQUENCE {
 --***************************************************************
 -- Attach a seq entry to bioseq-set
 SeqEdit-Cmd-AttachSeqEntry ::= SEQUENCE {
-    id           SeqEdit-Id,       -- Bioseq_set id
-    seq-entry    Seq-entry,        -- set entry
-    index        INTEGER           -- index
+    id           SeqEdit-Id,          -- Bioseq_set id
+    seq-entry    Seq-entry OPTIONAL,  -- set entry
+    index        INTEGER              -- index
 }
 
 -- Remove a seq entry from bioseq-set

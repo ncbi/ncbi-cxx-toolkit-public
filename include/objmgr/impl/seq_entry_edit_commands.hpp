@@ -96,6 +96,7 @@ public:
 
     virtual void Do(IScopeTransaction_Impl& tr) 
     {
+        CBioObjectId old_id(m_Handle.GetBioObjectId());
         m_RetHandle = Action::Do(m_Scope, m_Handle, m_Data);
         if (!m_RetHandle)
             return;
@@ -103,7 +104,7 @@ public:
         IEditSaver* saver = GetEditSaver(m_Handle);
         if (saver) {
             tr.AddEditSaver(saver);
-            saver->Attach(m_Handle, m_RetHandle, IEditSaver::eDo);
+            saver->Attach(old_id, m_Handle, m_RetHandle, IEditSaver::eDo);
         }
         
     }
@@ -329,6 +330,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/05/01 16:56:45  didenko
+* Attach SeqEntry edit command revamp
+*
 * Revision 1.2  2006/01/25 18:59:03  didenko
 * Redisgned bio objects edit facility
 *

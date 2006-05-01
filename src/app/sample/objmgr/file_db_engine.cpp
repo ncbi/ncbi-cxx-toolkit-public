@@ -90,14 +90,33 @@ CFileDBEngine::~CFileDBEngine()
 void CFileDBEngine::CreateBlob(const string& blobid)
 {
     CDir dir(m_DBPath + CDirEntry::GetPathSeparator() + blobid);
-    if (!dir.Exists())
+    if (!dir.Exists()) {
         dir.CreatePath();   
+        m_CmdCount[blobid] = 0;
+    }
 }
 
 bool CFileDBEngine::HasBlob(const string& blobid) const
 {
     CDir dir(m_DBPath + CDirEntry::GetPathSeparator() + blobid);
     return dir.Exists();
+}
+
+string CFileDBEngine::x_GetCmdFileName(const string& blobid, int cmdcount)
+{
+    string fname;
+    if (cmdcount < 10)
+        fname = "000" + NStr::IntToString(cmdcount);
+    else if (cmdcount < 100)
+        fname = "00" + NStr::IntToString(cmdcount);
+    else if (cmdcount < 1000)
+        fname = "0" + NStr::IntToString(cmdcount);
+    else 
+        fname = NStr::IntToString(cmdcount);
+
+    fname = m_DBPath + CDirEntry::GetPathSeparator() + blobid 
+        + CDirEntry::GetPathSeparator() + fname;
+    return fname;
 }
 
 void CFileDBEngine::SaveCommand( const CSeqEdit_Cmd& cmd )
@@ -110,22 +129,12 @@ void CFileDBEngine::SaveCommand( const CSeqEdit_Cmd& cmd )
     CreateBlob(blob_id);
     
     int& cmdcount = m_CmdCount[blob_id];
-    string fname;
-    if (cmdcount < 10)
-        fname = "000" + NStr::IntToString(cmdcount);
-    else if (cmdcount < 100)
-        fname = "00" + NStr::IntToString(cmdcount);
-    else if (cmdcount < 1000)
-        fname = "0" + NStr::IntToString(cmdcount);
-    else 
-        fname = NStr::IntToString(cmdcount);
-
-    ++cmdcount;
-    fname = m_DBPath + CDirEntry::GetPathSeparator() + blob_id 
-        + CDirEntry::GetPathSeparator() + fname;
+    string fname = x_GetCmdFileName(blob_id,cmdcount+1);
     
     auto_ptr<CObjectOStream> os( CObjectOStream::Open(m_DataFormat,fname) );
     *os << cmd;
+
+    ++cmdcount;
 }
 
 void CFileDBEngine::GetCommands(const string& blob_id, TCommands& cmds) const
@@ -134,7 +143,8 @@ void CFileDBEngine::GetCommands(const string& blob_id, TCommands& cmds) const
     list<string> fnames;
     if (dir.Exists()) {
         CDir::TEntries files = dir.GetEntries( "", CDir::fIgnoreRecursive);
-        for (CDir::TEntries::const_iterator i = files.begin(); i != files.end(); ++i) {
+        CDir::TEntries::const_iterator i = files.begin();
+        for (; i != files.end(); ++i) {
             if ( (*i)->IsFile() )
                 fnames.push_back((*i)->GetName());
         }
@@ -154,36 +164,92 @@ void CFileDBEngine::GetCommands(const string& blob_id, TCommands& cmds) const
     } 
 }
 
-void CFileDBEngine::CleanDB()
+void CFileDBEngine::DropDB()
 {
     CDir dir(m_DBPath);
     if (dir.Exists()) {
         dir.Remove();
         dir.CreatePath();
     }
-        
+    m_ChangedIds.clear();
+    m_CmdCount.clear();        
 }
 
 
 bool CFileDBEngine::FindSeqId(const CSeq_id_Handle& id, string& blobid) const
 {
-    TChangedIds::const_iterator it = m_ChangedIds.find(id);
+    TChangedIds::const_iterator it = m_TmpIds.find(id);
+    if (it != m_TmpIds.end()) {
+        blobid = it->second;
+        return true;
+    }
+    it = m_ChangedIds.find(id);
     if (it != m_ChangedIds.end()) {
         blobid = it->second;
         return true;
     }
     return false;
 }
-void CFileDBEngine::NotifyIdsChanged(const TChangedIds& ids)
+
+void CFileDBEngine::NotifyIdChanged(const CSeq_id_Handle& id, 
+                                    const string& newblobid)
 {
-    ITERATE(TChangedIds, it, ids) {
+    m_TmpIds[id] = newblobid;
+}
+
+void CFileDBEngine::BeginTransaction()
+{
+    m_TmpIds.clear();
+    m_TmpCount.clear();
+    ITERATE(TCmdCount, it, m_CmdCount) {
+        m_TmpCount[it->first] = it->second;
+    }
+}
+
+void CFileDBEngine::CommitTransaction()
+{
+    ITERATE(TChangedIds, it, m_TmpIds) {
         m_ChangedIds[it->first] = it->second;
     }
+    m_TmpIds.clear();
     if (m_ChangedIds.size() > 0) {
         string fname = m_DBPath + CDirEntry::GetPathSeparator() + "ChandedIds";
         CNcbiOfstream os(fname.c_str());
         WriteMap(os, m_ChangedIds);    
     }
+    m_TmpCount.clear();
+}
+
+void CFileDBEngine::RollbackTransaction()
+{
+    m_TmpIds.clear();
+
+    NON_CONST_ITERATE(TCmdCount, it, m_CmdCount) {
+        if( m_TmpCount.find(it->first) == m_TmpCount.end()) {
+            int cmdcount = it->second;
+            while (cmdcount > 0)  {
+                string fname = x_GetCmdFileName(it->first, cmdcount);
+                CFile file(fname);
+                if ( file.Exists() )
+                    file.Remove();
+                --cmdcount;
+            }
+            m_CmdCount[it->first] = 0;
+        }
+    }
+
+    ITERATE(TCmdCount, it, m_TmpCount) {
+        _ASSERT( m_CmdCount.find(it->first) != m_CmdCount.end());
+        int& cmdcount = m_CmdCount[it->first];
+        while (cmdcount > it->second) {
+            string fname = x_GetCmdFileName(it->first, cmdcount);
+            CFile file(fname);
+            if ( file.Exists() )
+                file.Remove();
+            --cmdcount;
+        }
+    }
+    m_TmpCount.clear();
 }
 
 
@@ -194,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/01 16:56:45  didenko
+ * Attach SeqEntry edit command revamp
+ *
  * Revision 1.1  2006/01/25 19:00:55  didenko
  * Redisigned bio objects edit facility
  *

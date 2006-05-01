@@ -386,21 +386,23 @@ void CUnsupportedEditSaver::ResetBioseqSetDate(const CBioseq_set_Handle&,
 }
   
     //-----------------------------------------------------------------
-void CUnsupportedEditSaver::Attach(const CSeq_entry_Handle&, 
+void CUnsupportedEditSaver::Attach(const CBioObjectId&,
+                                   const CSeq_entry_Handle&, 
                                    const CBioseq_Handle&, 
                                    ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
-               "Attach(const CSeq_entry_Handle&, const CBioseq_Handle&, ECallMode)");
+               "Attach(const CBioObjectId&, const CSeq_entry_Handle&, const CBioseq_Handle&, ECallMode)");
 }
-void CUnsupportedEditSaver::Attach(const CSeq_entry_Handle&, 
+void CUnsupportedEditSaver::Attach(const CBioObjectId&,
+                                   const CSeq_entry_Handle&, 
                                    const CBioseq_set_Handle&, 
                                    ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
-               "Attach(const CSeq_entry_Handle&, const CBioseq_set_Handle&, ECallMode)");
+               "Attach(const CBioObjectId& ,const CSeq_entry_Handle&, const CBioseq_set_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::Detach(const CSeq_entry_Handle&, 
                                    const CBioseq_Handle&, ECallMode )
@@ -543,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/01 16:56:45  didenko
+ * Attach SeqEntry edit command revamp
+ *
  * Revision 1.2  2006/01/25 18:59:04  didenko
  * Redisgned bio objects edit facility
  *

@@ -1404,7 +1404,7 @@ void CTSE_ScopeInfo::AddEntry(CBioseq_set_ScopeInfo& parent,
 {
     CMutexGuard guard(m_TSE_LockMutex);
     x_CheckAdded(parent, child);
-    parent.GetNCObjectInfo().AddEntry(Ref(&child.GetNCObjectInfo()), index);
+    parent.GetNCObjectInfo().AddEntry(Ref(&child.GetNCObjectInfo()), index, true);
     x_RestoreAdded(parent, child);
     _ASSERT(child.IsAttached());
 }
@@ -1751,6 +1751,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/05/01 16:56:45  didenko
+* Attach SeqEntry edit command revamp
+*
 * Revision 1.35  2006/01/25 18:59:04  didenko
 * Redisgned bio objects edit facility
 *

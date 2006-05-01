@@ -76,15 +76,16 @@ void CSeq_entry_SelectNone_EditCommand::Do(IScopeTransaction_Impl& tr)
 void CSeq_entry_SelectNone_EditCommand::Undo()
 {
     IEditSaver* saver = GetEditSaver(m_Handle);
+    CBioObjectId old_id(m_Handle.GetBioObjectId());
     if (m_BioseqHandle.IsRemoved()) {
         m_Scope.SelectSeq(m_Handle, m_BioseqHandle);
         if (saver)
-            saver->Attach(m_Handle, m_BioseqHandle, IEditSaver::eUndo);
+            saver->Attach(old_id, m_Handle, m_BioseqHandle, IEditSaver::eUndo);
     }
     else if (m_BioseqSetHandle.IsRemoved()) {
         m_Scope.SelectSet(m_Handle, m_BioseqSetHandle);
         if (saver)
-            saver->Attach(m_Handle, m_BioseqSetHandle, IEditSaver::eUndo);
+            saver->Attach(old_id,m_Handle, m_BioseqSetHandle, IEditSaver::eUndo);
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -154,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/01 16:56:45  didenko
+ * Attach SeqEntry edit command revamp
+ *
  * Revision 1.2  2006/01/25 18:59:04  didenko
  * Redisgned bio objects edit facility
  *
