@@ -264,6 +264,10 @@ void CBlastTabular::x_PartialDeserialize(const char* m8)
                       "Coordinates in m8 string are expected to be one-based: "
                        + string(m8));
         }
+
+        m_Transcript.resize(0);
+        if(iss.good())
+            iss >> m_Transcript;
     }
     else {
         
