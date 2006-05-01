@@ -89,11 +89,12 @@ void CConn_Streambuf::x_Cleanup(bool if_close)
         return;
 
     // Flush only if data pending
-    if (m_WriteBuf  &&  pptr() > m_WriteBuf) {
+    if (pbase()  &&  pptr() > pbase()) {
         sync();
     }
     setp(0, 0);
     setg(0, 0, 0);
+
     CONN c = m_Conn;
     m_Conn = 0;
     if (if_close) {
@@ -133,13 +134,13 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
     if ( !m_Conn )
         return CT_EOF;
 
-    if ( m_WriteBuf ) {
+    if ( pbase() ) {
         // send buffer
-        size_t n_write = pptr() - m_WriteBuf;
+        size_t n_write = pptr() - pbase();
         if ( n_write ) {
             size_t n_written;
             n_write *= sizeof(CT_CHAR_TYPE);
-            LOG_IF_ERROR(CONN_Write(m_Conn, m_WriteBuf, n_write,
+            LOG_IF_ERROR(CONN_Write(m_Conn, pbase(), n_write,
                                     &n_written, eIO_WritePlain),
                          "overflow(): CONN_Write() failed");
             if ( !n_written )
@@ -147,11 +148,11 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
             n_written /= sizeof(CT_CHAR_TYPE);
             // update buffer content (get rid of data just sent)
             if (n_written != n_write) {
-                memmove(m_WriteBuf, m_WriteBuf + n_written,
+                memmove(pbase(), pbase() + n_written,
                         (n_write - n_written)*sizeof(CT_CHAR_TYPE));
             }
             x_PPos += (CT_OFF_TYPE) n_written;
-            setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
+            setp(pbase() + n_write - n_written, epptr());
         }
 
         // store char
@@ -195,13 +196,13 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     EIO_Status status = CONN_Read(m_Conn, m_ReadBuf,
                                   m_BufSize*sizeof(CT_CHAR_TYPE),
                                   &n_read, eIO_ReadPlain);
-    if ( !(n_read /= sizeof(CT_CHAR_TYPE)) ) {
+    if (!(n_read /= sizeof(CT_CHAR_TYPE))) {
         if (status != eIO_Closed)
             LOG_IF_ERROR(status, "underflow(): CONN_Read() failed");
         return CT_EOF;
     }
 
-    // update input buffer with data just read
+    // update input buffer with the data just read
     x_GPos += (CT_OFF_TYPE) n_read;
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
 
@@ -264,6 +265,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         buf    += x_read;
         n      -= x_read;
     }
+
     return (streamsize) n_read;
 }
 
@@ -298,7 +300,7 @@ int CConn_Streambuf::sync(void)
     do {
         if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
             return -1;
-    } while (m_WriteBuf  &&  pptr() > m_WriteBuf);
+    } while (pbase()  &&  pptr() > pbase());
     return 0;
 }
 
@@ -318,7 +320,7 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
     if (m_Conn  &&  off == 0  &&  whence == IOS_BASE::cur) {
         switch (which) {
         case IOS_BASE::out:
-            return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - m_WriteBuf : 0);
+            return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - pbase() : 0);
         case IOS_BASE::in:
             return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0);
         default:
@@ -335,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2006/05/01 19:26:04  lavr
+ * Consistently use pbase() instead of m_WriteBuf where appropriate
+ *
  * Revision 6.59  2005/12/15 15:14:10  lavr
  * Rollback to R6.55
  *
