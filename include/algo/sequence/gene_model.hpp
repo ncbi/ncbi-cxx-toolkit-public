@@ -48,12 +48,13 @@ class NCBI_XALGOSEQ_EXPORT CGeneModel
 {
 public:
     enum EGeneModelCreateFlags {
-        fCreateGene         = 0x01,
-        fCreateMrna         = 0x02,
-        fCreateCdregion     = 0x04,
-        fPromoteAllFeatures = 0x08,
-        fPropagateOnly      = 0x10,
-        fForceTranslateCds  = 0x20,
+        fCreateGene          = 0x01,
+        fCreateMrna          = 0x02,
+        fCreateCdregion      = 0x04,
+        fPromoteAllFeatures  = 0x08,
+        fPropagateOnly       = 0x10,
+        fForceTranslateCds   = 0x20,
+        fForceTranscribeMrna = 0x40,
 
         fDefaults = fCreateGene | fCreateMrna | fCreateCdregion
     };
@@ -65,7 +66,7 @@ public:
     static void CreateGeneModelFromAlign(const objects::CSeq_align& align,
                                          objects::CScope& scope,
                                          objects::CSeq_annot& annot,
-                                         objects::CBioseq_set& translated_proteins,
+                                         objects::CBioseq_set& seqs,
                                          TGeneModelCreateFlags flags = fDefaults);
 };
 
@@ -76,6 +77,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/01 13:30:35  dicuccio
+ * Added option to instantiate transcript sequence from genome.  Changed
+ * specification of transcript and protein sequences to include date stamp
+ *
  * Revision 1.3  2006/04/24 13:54:38  dicuccio
  * Added new options to create mRNA feature optionally instead ofalways and to
  * force translation of the CDS feature instead of using a supplied product

@@ -41,6 +41,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
@@ -73,7 +74,7 @@ static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
 void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                                           CScope& scope,
                                           CSeq_annot& annot,
-                                          CBioseq_set& translated_proteins,
+                                          CBioseq_set& seqs,
                                           TGeneModelCreateFlags flags)
 {
     /// first, merge the alignment
@@ -180,6 +181,10 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         loc->SetWhole().Assign(alnmgr.GetSeqId(row));
         loc = mapper.Map(*loc);
 
+        static CAtomicCounter counter;
+        size_t model_num = counter.Add(1);
+        CTime time(CTime::eCurrent);
+
         ///
         /// create our mRNA feature
         ///
@@ -221,7 +226,38 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 .SetName(sequence::GetTitle(handle));
 
             mrna_feat->SetLocation(*loc);
-            mrna_feat->SetProduct().SetWhole().Assign(alnmgr.GetSeqId(row));
+
+            if (flags & fForceTranscribeMrna) {
+                /// create a new bioseq for this mRNA
+                CRef<CSeq_entry> entry(new CSeq_entry);
+                CBioseq& bioseq = entry->SetSeq();
+
+                /// create a new seq-id for this
+                string str("lcl|CDNA_");
+                str += time.AsString("YMD");
+                str += "_";
+                str += NStr::IntToString(model_num);
+                CRef<CSeq_id> id(new CSeq_id(str));
+                bioseq.SetId().push_back(id);
+                mrna_feat->SetProduct().SetWhole().Assign(*id);
+
+                /// set up the inst
+                CSeq_inst& inst = bioseq.SetInst();
+                inst.SetRepr(CSeq_inst::eRepr_raw);
+                inst.SetMol(CSeq_inst::eMol_na);
+
+                /// this is created as a translation of the genomic
+                /// location
+                CSeqVector vec(*loc, scope);
+                vec.GetSeqData(0, vec.size(),
+                               inst.SetSeq_data().SetIupacna().Set());
+                inst.SetLength(inst.GetSeq_data().GetIupacna().Get().size());
+                CSeqportUtil::Pack(&inst.SetSeq_data());
+
+                seqs.SetSeq_set().push_back(entry);
+            } else {
+                mrna_feat->SetProduct().SetWhole().Assign(alnmgr.GetSeqId(row));
+            }
         }
 
         ///
@@ -289,9 +325,10 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     CBioseq& bioseq = entry->SetSeq();
 
                     /// create a new seq-id for this
-                    static CAtomicCounter counter;
-                    string str("lcl|translated_cds_");
-                    str += NStr::IntToString(counter.Add(1));
+                    string str("lcl|PROT_");
+                    str += time.AsString("YMD");
+                    str += "_";
+                    str += NStr::IntToString(model_num);
                     CRef<CSeq_id> id(new CSeq_id(str));
                     bioseq.SetId().push_back(id);
                     cds_feat->SetProduct().SetWhole().Assign(*id);
@@ -307,7 +344,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                         (*new_loc, handle, inst.SetSeq_data().SetIupacaa().Set());
                     inst.SetLength(inst.GetSeq_data().GetIupacaa().Get().size());
 
-                    translated_proteins.SetSeq_set().push_back(entry);
+                    seqs.SetSeq_set().push_back(entry);
                 }
             }
         }
@@ -341,6 +378,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/05/01 13:30:35  dicuccio
+ * Added option to instantiate transcript sequence from genome.  Changed
+ * specification of transcript and protein sequences to include date stamp
+ *
  * Revision 1.4  2006/04/24 13:54:38  dicuccio
  * Added new options to create mRNA feature optionally instead ofalways and to
  * force translation of the CDS feature instead of using a supplied product
