@@ -35,6 +35,8 @@ $(THIRDPARTY_CFG_PATH)\fltk$(STAMP_SUFFIX).installed : $(FLTK_SRC)/fltkdll.dll
 	@if exist "$(FLTK_SRC)\fltkdll.pdb" (copy /Y "$(FLTK_SRC)\fltkdll.pdb" "$(INSTALL_BINPATH)" > NUL)
 	@if exist "$(FLTK_SRC)\fltkdll.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\fltk$(STAMP_SUFFIX).installed")
 
+$(FLTK_SRC)/fltkdll.dll :
+
 BERKELEYDB_SRC      = $(BERKELEYDB_BINPATH)\$(INTDIR)
 install_berkeleydb:
 	$(TEST_NOT_STAMP)\berkeleydb$(STAMP_SUFFIX).installed echo Copying BerkeleyDB DLLs...
