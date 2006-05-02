@@ -117,6 +117,7 @@ protected:
     int  m_pause;
     bool m_prefetch;
     bool m_verbose;
+    bool m_count_all;
     int  m_pass_count;
     int  m_idx;
     bool m_no_reset;
@@ -282,6 +283,8 @@ bool CTestOM::Thread_Run(int idx)
         sel.SetOverlapType(sel.eOverlap_Intervals);
     }
     
+    int seq_count = 0, all_ids_count = 0;
+    int all_feat_count = 0, all_desc_count = 0;
     bool ok = true;
     for ( int pass = 0; pass < m_pass_count; ++pass ) {
         CRef<CStdPrefetch> prefetch;
@@ -304,7 +307,7 @@ bool CTestOM::Thread_Run(int idx)
         }
 
         const int kMaxErrorCount = 30;
-        int error_count = 0;
+        int error_count = 0, null_handle_count = 0;
         TFeats feats;
         for ( int i = from, end = to+delta; i != end; i += delta ) {
             CSeq_id_Handle sih = m_Ids[i];
@@ -326,7 +329,9 @@ bool CTestOM::Thread_Run(int idx)
 
                 CBioseq_Handle handle;
                 if (m_prefetch) {
-                    //static int count = 0; if ( ++count == 100 ) return 0;
+                    if ( !m_no_reset ) {
+                        static int count = 0; if ( ++count == 100 ) return 0;
+                    }
                     handle = CStdPrefetch::GetBioseqHandle(pf_bh_tokens[i]);
                 }
                 else {
@@ -336,12 +341,15 @@ bool CTestOM::Thread_Run(int idx)
                     if ( preload_ids ) {
                         _ASSERT(ids1.empty());
                     }
+                    ++null_handle_count;
                     LOG_POST("T" << idx << ": id = " << sih.AsString() <<
                              ": INVALID HANDLE");
                     continue;
                 }
+                ++seq_count;
 
                 ids2 = handle.GetId();
+                all_ids_count += ids2.size();
                 sort(ids2.begin(), ids2.end());
                 _ASSERT(!ids2.empty());
                 ids3 = scope.GetIds(sih);
@@ -413,6 +421,7 @@ bool CTestOM::Thread_Run(int idx)
                     for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
                         desc_count++;
                     }
+                    all_desc_count += desc_count;
                     // verify result
                     SetValue(m_DescMap, sih, desc_count);
 
@@ -428,6 +437,7 @@ bool CTestOM::Thread_Run(int idx)
                         else {
                             it = CFeat_CI(handle, sel);
                         }
+                        all_feat_count += it.GetSize();
                         for ( ; it; ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
                             annots.insert(it.GetAnnot());
@@ -466,6 +476,7 @@ bool CTestOM::Thread_Run(int idx)
                         else {
                             it = CFeat_CI(scope, loc, sel);
                         }
+                        all_feat_count += it.GetSize();
                         for ( ; it;  ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
                             annots.insert(it.GetAnnot());
@@ -490,6 +501,7 @@ bool CTestOM::Thread_Run(int idx)
                     }
                     else {
                         CFeat_CI feat_it(handle.GetTopLevelEntry(), sel);
+                        all_feat_count += feat_it.GetSize();
                         for ( ; feat_it; ++feat_it ) {
                             feats.push_back(ConstRef(&feat_it->GetOriginalFeature()));
                             annots.insert(feat_it.GetAnnot());
@@ -539,9 +551,19 @@ bool CTestOM::Thread_Run(int idx)
                     break;
                 }
             }
-            if ( !m_no_reset ) {
+            if ( !m_prefetch && !m_no_reset ) {
                 scope.ResetHistory();
             }
+        }
+        if ( error_count || null_handle_count ) {
+            ERR_POST("Null: " << null_handle_count <<
+                     " Error: " << error_count);
+        }
+        if ( m_count_all ) {
+            NcbiCout << "Found " << seq_count << " sequences." << NcbiEndl;
+            NcbiCout << "Total " << all_ids_count << " ids." << NcbiEndl;
+            NcbiCout << "Total " << all_desc_count << " descr." << NcbiEndl;
+            NcbiCout << "Total " << all_feat_count << " feats." << NcbiEndl;
         }
     }
 
@@ -587,6 +609,8 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddDefaultKey("pass_count", "PassCount",
                        "Run test several times",
                        CArgDescriptions::eInteger, "1");
+    args.AddFlag("count_all",
+                 "Display count of all collected data");
     args.AddFlag("selective_reset",
                  "Check ResetHistory() with locked handles");
     args.AddFlag("no_reset",
@@ -666,6 +690,7 @@ bool CTestOM::TestApp_Init(void)
     m_prefetch = args["prefetch"];
     m_verbose = args["verbose"];
     m_pass_count = args["pass_count"].AsInteger();
+    m_count_all = args["count_all"];
     m_selective_reset = args["selective_reset"];
     m_no_reset = args["no_reset"];
     m_edit_handles = args["edit_handles"];
@@ -710,6 +735,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2006/05/02 17:02:27  vasilche
+* Optional counting of all found object for easier detection of discrepancies.
+*
 * Revision 1.23  2006/03/15 01:19:04  ucko
 * +<algorithm> (once indirectly included?) for sort(); move CVS log to end.
 *
