@@ -86,9 +86,8 @@ struct SStringNumericValues
                 return tmp == str + 1;
             } 
             return s == str + 1;
-        } else {
-            return s == NStr::TruncateSpaces(str, NStr::eTrunc_Both);
         }
+        return s == NStr::TruncateSpaces(str, NStr::eTrunc_Both);
     }
 };
 
@@ -1477,6 +1476,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.57  2006/05/02 20:32:55  ivanov
+ * SStringNumericValues::Same() - rearrange code to fix warning on GCC/Solaris
+ *
  * Revision 6.56  2006/02/06 15:47:40  ivanov
  * Replaced class-based NStr::TStringToNumFlags to int-based counterparts
  *
