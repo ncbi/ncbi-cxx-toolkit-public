@@ -633,28 +633,26 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
         ) {
         SVolume& volume = *(m_Volumes[vol]);
         lp = &(volume.db_vect[slice]);
-        InitDbMutex(lp);
-        return *lp;
-    }
+        if (lp->db.get() != 0) {
+            InitDbMutex(lp);
+            return *lp;
+        }
+    } else {  // lock protected open
+        TLockGuard lg(m_VolumesLock);
+        while (m_Volumes.size() < (vol+1)) {
+            m_Volumes.push_back(new SVolume);
+        }
 
-    // lock protected open
+        SVolume& volume = *(m_Volumes[vol]);
+        if (volume.db_vect.size() <= slice) {
+            volume.db_vect.resize(slice+1);
+        }
+        lp = &(volume.db_vect[slice]);
 
-    {{
-    TLockGuard lg(m_VolumesLock);
-    while (m_Volumes.size() < (vol+1)) {
-        m_Volumes.push_back(new SVolume);
+        if (lp->lock.get() == 0) {
+            lp->lock.reset(new TLock);
+        }
     }
-
-    SVolume& volume = *(m_Volumes[vol]);
-    if (volume.db_vect.size() <= slice) {
-        volume.db_vect.resize(slice+1);
-    }
-    lp = &(volume.db_vect[slice]);
-
-    if (lp->lock.get() == 0) {
-        lp->lock.reset(new TLock);
-    }
-    }}
 
     {{
     InitDbMutex(lp);
@@ -689,6 +687,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/02 19:46:15  kuznets
+ * Fixed bug in (un)opening split slice database
+ *
  * Revision 1.3  2006/04/03 13:16:01  kuznets
  * Fixed ReadRealloc()
  *
