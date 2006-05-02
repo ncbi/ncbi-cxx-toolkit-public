@@ -2,7 +2,7 @@
 
 APP = test_fstream_pushback
 SRC = test_fstream_pushback
-LIB = xpbacktest xutil xncbi
+LIB = xpbacktest xncbi
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
