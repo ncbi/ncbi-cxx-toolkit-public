@@ -73,7 +73,31 @@ BEGIN_SCOPE(objects)
 
 //#define GENBANK_ID1_RANDOM_FAILS 1
 #define GENBANK_ID1_RANDOM_FAILS_FREQUENCY 20
-#define GENBANK_ID1_RANDOM_FAILS_RECOVER 3 // new + write + read
+#define GENBANK_ID1_RANDOM_FAILS_RECOVER 0 // new + write + read
+
+namespace {
+    class CDebugPrinter : public CNcbiOstrstream
+    {
+    public:
+        CDebugPrinter(CId1Reader::TConn conn)
+            {
+                *this << "CId1Reader(" << conn << "): ";
+#ifdef NCBI_THREADS
+                *this << "T" << CThread::GetSelf() << ' ';
+#endif
+            }
+        ~CDebugPrinter()
+            {
+                LOG_POST(rdbuf());
+                /*
+                DEFINE_STATIC_FAST_MUTEX(sx_DebugPrinterMutex);
+                CFastMutexGuard guard(sx_DebugPrinterMutex);
+                (NcbiCout << rdbuf()).flush();
+                */
+            }
+    };
+}
+
 
 #ifdef GENBANK_ID1_RANDOM_FAILS
 static void SetRandomFail(CConn_ServiceStream& stream)
@@ -226,6 +250,7 @@ CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
 
 CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
 {
+    WaitBeforeNewConnection(conn);
     STimeout tmout;
     tmout.sec = m_Timeout;
     tmout.usec = 0;
@@ -242,10 +267,18 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
     }
     
     if ( GetDebugLevel() >= eTraceConn ) {
-        NcbiCout << "CId1Reader: New connection " << conn 
-                 << " to " << m_ServiceName << " opened." << NcbiEndl;
+        CDebugPrinter s(conn);
+        s << "New connection " << conn 
+          << " to " << m_ServiceName << " opened.";
+        // need to call CONN_Wait to force connection to open
+        CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
+        const char* descr = CONN_Description(stream->GetCONN());
+        if ( descr ) {
+            s << "  description: " << descr;
+        }
     }
 
+    RequestSucceeds(conn);
     return stream.release();
 }
 
@@ -697,21 +730,22 @@ void CId1Reader::x_SendRequest(TConn conn,
     SetRandomFail(*stream);
 #endif
     if ( GetDebugLevel() >= eTraceConn ) {
-        NcbiCout << "CId1Reader("<<conn<<"): Sending";
+        CDebugPrinter s(conn);
+        s << "Sending";
         if ( GetDebugLevel() >= eTraceASN ) {
-            NcbiCout << ": " << MSerial_AsnText << request;
+            s << ": " << MSerial_AsnText << request;
         }
         else {
-            NcbiCout << " ID1server-request";
+            s << " ID1server-request";
         }
-        NcbiCout << "..." << NcbiEndl;
+        s << "...";
     }
     CObjectOStreamAsnBinary out(*stream);
     out << request;
     out.Flush();
     if ( GetDebugLevel() >= eTraceConn ) {
-        NcbiCout << "CId1Reader("<<conn<<"): "
-            "Sent ID1server-request." << NcbiEndl;
+        CDebugPrinter s(conn);
+        s << "Sent ID1server-request.";
     }
 }
 
@@ -725,22 +759,22 @@ void CId1Reader::x_ReceiveReply(TConn conn,
     SetRandomFail(*stream);
 #endif
     if ( GetDebugLevel() >= eTraceConn ) {
-        NcbiCout << "CId1Reader("<<conn<<"): "
-            "Receiving ID1server-back..." << NcbiEndl;
+        CDebugPrinter s(conn);
+        s << "Receiving ID1server-back...";
     }
     {{
         CObjectIStreamAsnBinary in(*stream);
         in >> reply;
     }}
     if ( GetDebugLevel() >= eTraceConn   ) {
-        NcbiCout << "CId1Reader("<<conn<<"): Received";
+        CDebugPrinter s(conn);
+        s << "Received";
         if ( GetDebugLevel() >= eTraceASN ) {
-            NcbiCout << ": " << MSerial_AsnText << reply;
+            s << ": " << MSerial_AsnText << reply;
         }
         else {
-            NcbiCout << " ID1server-back.";
+            s << " ID1server-back.";
         }
-        NcbiCout << NcbiEndl;
     }
 }
 

@@ -201,7 +201,6 @@ private:
 
     typedef map< TConn, AutoPtr<CConn_IOStream> > TConnections;
     TConnections   m_Connections;
-    CTime          m_NextConnectTime;
 
     CAtomicCounter m_RequestSerialNumber;
 

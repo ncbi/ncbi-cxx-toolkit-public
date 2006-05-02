@@ -31,6 +31,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbitime.hpp>
 #include <util/cache/icache.hpp>
 #include <list>
 
@@ -183,6 +184,11 @@ public:
                                  const TPluginManagerParamTree* params);
     virtual void ResetCache(void);
 
+    virtual void WaitBeforeNewConnection(TConn conn);
+    virtual void RequestSucceeds(TConn conn);
+    virtual void RequestFailed(TConn conn);
+    virtual void SetNewConnectionDelayMicroSec(unsigned long micro_sec);
+
 protected:
     CReadDispatcher* m_Dispatcher;
 
@@ -215,6 +221,12 @@ private:
     TFreeConnections m_FreeConnections;
     CMutex           m_ConnectionsMutex;
     CSemaphore       m_NumFreeConnections;
+    int              m_MaximumRetryCount;
+    int              m_CurrentFailCount;
+    CTime            m_LastTimeFailed;
+    CTime            m_NextConnectTime;
+    double           m_InitialConnectWaitSeconds;
+    double           m_MaximumConnectWaitSeconds;
 };
 
 

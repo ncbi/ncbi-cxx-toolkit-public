@@ -234,14 +234,15 @@ CDB_Connection* CPubseqReader::x_GetConnection(TConn conn)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CDB_Connection>& stream = m_Connections[conn];
     if ( !stream.get() ) {
-        stream.reset(x_NewConnection());
+        stream.reset(x_NewConnection(conn));
     }
     return stream.get();
 }
 
 
-CDB_Connection* CPubseqReader::x_NewConnection(void)
+CDB_Connection* CPubseqReader::x_NewConnection(TConn conn_)
 {
+    WaitBeforeNewConnection(conn_);
     if ( !m_Context ) {
         C_DriverMgr drvMgr;
         //DBAPI_RegisterDriver_CTLIB(drvMgr);
@@ -288,7 +289,8 @@ CDB_Connection* CPubseqReader::x_NewConnection(void)
         }
     }
 #endif
-    
+
+    RequestSucceeds(conn_);
     return conn.release();
 }
 

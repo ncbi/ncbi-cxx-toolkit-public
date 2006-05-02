@@ -36,6 +36,8 @@
 
 #include <objmgr/objmgr_exception.hpp>
 #include <algorithm>
+#include <cmath>
+#include <corelib/ncbi_system.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -45,7 +47,11 @@ CReader::CReader(void)
       m_MaxConnections(0),
       m_PreopenConnection(true),
       m_NextNewConnection(0),
-      m_NumFreeConnections(0, 1000)
+      m_NumFreeConnections(0, 1000),
+      m_MaximumRetryCount(10),
+      m_CurrentFailCount(0),
+      m_InitialConnectWaitSeconds(1),
+      m_MaximumConnectWaitSeconds(60)
 {
 }
 
@@ -148,6 +154,55 @@ int CReader::GetMaximumConnectionsLimit(void) const
 }
 
 
+void CReader::WaitBeforeNewConnection(TConn conn)
+{
+    CMutexGuard guard(m_ConnectionsMutex);
+    if ( !m_NextConnectTime.IsEmpty() ) {
+        double wait_seconds =
+            m_NextConnectTime.DiffNanoSecond(CTime(CTime::eCurrent))*1e-9;
+        m_NextConnectTime.Clear();
+        if ( wait_seconds > 0 ) {
+            _TRACE("CReader: waiting "<<wait_seconds<<
+                   "s before new connection");
+            SleepMicroSec((unsigned long)(wait_seconds*1e6));
+            return;
+        }
+    }
+    else if ( m_CurrentFailCount > 1 ) {
+        double wait_seconds =
+            min(m_MaximumConnectWaitSeconds,
+                m_InitialConnectWaitSeconds*pow(2., m_CurrentFailCount-2.));
+        if ( wait_seconds > 0 ) {
+            _TRACE("CReader: waiting "<<wait_seconds<<
+                   "s before new connection");
+            SleepMicroSec((unsigned long)(wait_seconds*1e6));
+        }
+    }
+}
+
+
+void CReader::RequestSucceeds(TConn conn)
+{
+    m_CurrentFailCount = 0;
+}
+
+
+void CReader::RequestFailed(TConn conn)
+{
+    CMutexGuard guard(m_ConnectionsMutex);
+    ++m_CurrentFailCount;
+    m_LastTimeFailed = CTime(CTime::eCurrent);
+}
+
+
+void CReader::SetNewConnectionDelayMicroSec(unsigned long micro_sec)
+{
+    CMutexGuard guard(m_ConnectionsMutex);
+    m_NextConnectTime =
+        CTime(CTime::eCurrent).AddTimeSpan(CTimeSpan(micro_sec*1e-6));
+}
+
+
 void CReader::x_AddConnection(void)
 {
     CMutexGuard guard(m_ConnectionsMutex);
@@ -209,6 +264,7 @@ void CReader::x_ReleaseConnection(TConn conn, bool oldest)
 void CReader::x_AbortConnection(TConn conn)
 {
     CMutexGuard guard(m_ConnectionsMutex);
+    RequestFailed(conn);
     try {
         x_DisconnectAtSlot(conn);
         x_ReleaseConnection(conn, true);

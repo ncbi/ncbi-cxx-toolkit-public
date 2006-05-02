@@ -91,7 +91,7 @@ protected:
     void x_ConnectAtSlot(TConn conn);
 
     CDB_Connection* x_GetConnection(TConn conn);
-    CDB_Connection* x_NewConnection(void);
+    CDB_Connection* x_NewConnection(TConn conn);
 
     I_BaseCmd* x_SendRequest(const CBlob_id& blob_id,
                              CDB_Connection* db_conn,

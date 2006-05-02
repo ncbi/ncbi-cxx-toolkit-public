@@ -152,7 +152,7 @@ NCBI_PARAM_DECL(string, NCBI, SERVICE_NAME_ID2);
 
 NCBI_PARAM_DEF_EX(int, GENBANK, ID2_DEBUG, 0,
                   eParam_NoThread, GENBANK_ID2_DEBUG);
-NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 1,
+NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 0,
                   eParam_NoThread, GENBANK_ID2_MAX_CHUNKS_REQUEST_SIZE);
 NCBI_PARAM_DEF_EX(string, GENBANK, ID2_CGI_NAME, kEmptyStr,
                   eParam_NoThread, GENBANK_ID2_CGI_NAME);
@@ -334,17 +334,7 @@ CConn_IOStream* CId2Reader::x_GetConnection(TConn conn)
 
 CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
 {
-    if ( !m_NextConnectTime.IsEmpty() ) {
-        int wait_seconds = 
-            (m_NextConnectTime - CTime(CTime::eCurrent))
-            .GetCompleteSeconds();
-        if ( wait_seconds > 0 ) {
-            _TRACE("CId2Reader: "
-                   "waiting "<<wait_seconds<<" before new connection");
-            SleepSec(wait_seconds);
-        }
-    }
-    
+    WaitBeforeNewConnection(conn);
     if ( GetDebugLevel() >= eTraceConn ) {
         CDebugPrinter s(conn);
         s << "New connection to " << m_ServiceName << "...";
@@ -392,6 +382,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
                    "initialization of connection failed");
     }
 
+    RequestSucceeds(conn);
     return stream.release();
 }
 
@@ -1256,9 +1247,6 @@ CId2Reader::x_ProcessError(CReaderRequestResult& /*result*/,
 {
     CReaderRequestConn conn(result);
     if ( conn.GetConn() >= 0 ) {
-        CTime current(CTime::eCurrent);
-        current.AddSecond(retry_delay);
-        m_NextConnectTime = current;
         Reconnect(conn.GetConn());
     }
     }*/
