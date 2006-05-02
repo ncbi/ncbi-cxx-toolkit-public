@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "pbacktest.hpp"
 #include <corelib/ncbidbg.hpp>
-#include <util/stream_utils.hpp>
+#include <corelib/stream_utils.hpp>
 #include <stdlib.h>
 #include <time.h>
 
@@ -236,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/05/02 16:20:50  lavr
+ * Fix to use <corelib/stream_utils.hpp>
+ *
  * Revision 1.13  2004/05/17 21:09:26  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
