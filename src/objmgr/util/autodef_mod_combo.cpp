@@ -124,6 +124,28 @@ COrgMod::ESubtype CAutoDefModifierCombo::GetOrgMod(unsigned int index)
 }
 
 
+bool CAutoDefModifierCombo::HasSubSource(CSubSource::ESubtype st)
+{
+    for (unsigned int k = 0; k < m_SubSources.size(); k++) {
+        if (m_SubSources[k] == st) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CAutoDefModifierCombo::HasOrgMod(COrgMod::ESubtype st)
+{
+    for (unsigned int k = 0; k < m_OrgMods.size(); k++) {
+        if (m_OrgMods[k] == st) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CAutoDefModifierCombo::AddSource(const CBioSource& bs) 
 {
     CAutoDefSourceDescription *new_org;
@@ -310,6 +332,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/05/02 13:02:48  bollin
+* added labels for modifiers, implemented controls for organism description
+*
 * Revision 1.4  2006/04/20 19:00:59  ucko
 * Stop including <objtools/format/context.hpp> -- there's (thankfully!)
 * no need to do so, and it confuses SGI's MIPSpro compiler.

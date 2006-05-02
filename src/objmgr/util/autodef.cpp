@@ -65,6 +65,10 @@ CAutoDef::CAutoDef()
       m_KeepLTRs(false),
       m_Keep3UTRs(false),
       m_Keep5UTRs(false),
+      m_UseModifierLabels(false),
+      m_KeepCountryText(false),
+      m_ExcludeSpOrgs(false),
+      m_KeepParen(false),
       m_Cancelled(false)
 {
     m_ComboList.clear();
@@ -151,6 +155,42 @@ void CAutoDef::x_GetModifierIndexList(TModifierIndexVector &index_list, CAutoDef
 }
 
 
+bool CAutoDef::x_IsOrgModRequired(unsigned int mod_type)
+{
+    return false;
+}
+
+
+bool CAutoDef::x_IsSubSrcRequired(unsigned int mod_type)
+{
+    if (mod_type == CSubSource::eSubtype_endogenous_virus_name
+        || mod_type == CSubSource::eSubtype_plasmid_name
+        || mod_type == CSubSource::eSubtype_transgenic) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+unsigned int CAutoDef::GetNumAvailableModifiers()
+{
+    if (m_ComboList.size() == 0) {
+        return 0;
+    }
+    CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
+    modifier_list.clear();
+    m_ComboList[0]->GetAvailableModifiers (modifier_list);
+    unsigned int num_present = 0;
+    for (unsigned int k = 0; k < modifier_list.size(); k++) {
+        if (modifier_list[k].AnyPresent()) {
+            num_present++;
+        }
+    }
+    return num_present;    
+}
+
+
 CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
 {
     _ASSERT(m_ComboList.size() > 0);
@@ -160,12 +200,28 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
     // first, get the list of modifiers that are available
     modifier_list.clear();
     m_ComboList[0]->GetAvailableModifiers (modifier_list);
+    
     // later, need to find a way to specify required modifiers
     // these should be added first to the master combo
+    // add required modifiers
+    for (unsigned int k = 0; k < modifier_list.size(); k++) {
+        if (modifier_list[k].AnyPresent()) {
+            if (modifier_list[k].IsOrgMod()) {
+                COrgMod::ESubtype subtype = modifier_list[k].GetOrgModType();
+                if (x_IsOrgModRequired(subtype)) {
+                    m_ComboList[0]->AddOrgMod(subtype);
+                }
+            } else {
+                CSubSource::ESubtype subtype = modifier_list[k].GetSubSourceType();
+                if (x_IsSubSrcRequired(subtype)) {
+                    m_ComboList[0]->AddSubsource(subtype);
+                }
+            }
+        }
+    }
     
     if (m_ComboList[0]->AllUnique()) {
-        best = m_ComboList[0];
-        return best;
+        return m_ComboList[0];
     }
     
     // find the order in which we should try the modifiers
@@ -177,10 +233,32 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
     unsigned int start_index = 0;
     unsigned int num_to_expand = 1;
     unsigned int next_num_to_expand = 0;
-    while (best == NULL && num_to_expand + start_index < m_ComboList.size() && num_to_expand > 0) {
+    while (best == NULL && num_to_expand + start_index <= m_ComboList.size() && num_to_expand > 0) {
         next_num_to_expand = 0;
         for (unsigned int j = start_index; j < start_index + num_to_expand && best == NULL; j++) {
             for (unsigned int k = 0; k < index_list.size() && best == NULL; k++) {
+                // if the modifier isn't present anywhere, skip it
+                if (!modifier_list[index_list[k]].AnyPresent()) {
+                    continue;
+                }
+                // if the modifier is already in the combo, skip it
+                if (modifier_list[index_list[k]].IsOrgMod()) {
+                    if (m_ComboList[j]->HasOrgMod(modifier_list[index_list[k]].GetOrgModType())) {
+                        continue;
+                    }
+                } else if (m_ComboList[j]->HasSubSource(modifier_list[index_list[k]].GetSubSourceType())) {
+                    continue;
+                }
+                // if the modifier was already tried because it's required, skip it
+                bool required = false;
+                if (modifier_list[index_list[k]].IsOrgMod()) {
+                    required = x_IsOrgModRequired(modifier_list[index_list[k]].GetOrgModType());
+                } else {
+                    required = x_IsSubSrcRequired(modifier_list[index_list[k]].GetSubSourceType());
+                }
+                if (required) {
+                    continue;
+                }
                 CAutoDefModifierCombo *newm = new CAutoDefModifierCombo(m_ComboList[j]);
                 if (modifier_list[index_list[k]].IsOrgMod()) {
                     newm->AddOrgMod(modifier_list[index_list[k]].GetOrgModType());
@@ -200,37 +278,379 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
         start_index += num_to_expand;
         num_to_expand = next_num_to_expand;
     }
+    if (best == NULL) {
+        best = m_ComboList[0];
+        unsigned int best_uniq_desc = best->GetNumUniqueDescriptions();
+        unsigned int best_num_groups = best->GetNumGroups();
+        unsigned int best_num_mods = best->GetNumOrgMods() + best->GetNumSubSources();
+        
+        for (unsigned int j = 1; j < m_ComboList.size(); j++) {
+            unsigned int uniq_desc = m_ComboList[j]->GetNumUniqueDescriptions();
+            unsigned int num_groups = m_ComboList[j]->GetNumGroups();
+            unsigned int num_mods = m_ComboList[j]->GetNumOrgMods() + m_ComboList[j]->GetNumSubSources();
+            if (uniq_desc > best_uniq_desc
+                || (uniq_desc == best_uniq_desc && num_groups > best_num_groups)
+                || (uniq_desc == best_uniq_desc && num_groups == best_num_groups && num_mods < best_num_mods)) {
+                best = m_ComboList[j];
+                best_uniq_desc = uniq_desc;
+                best_num_groups = num_groups;
+                best_num_mods = num_mods;
+            }
+        }
+    }
     
     return best;
+}
+
+
+CAutoDefModifierCombo* CAutoDef::GetAllModifierCombo()
+{
+    _ASSERT(m_ComboList.size() > 0);
+
+    CAutoDefModifierCombo *newm = new CAutoDefModifierCombo(m_ComboList[0]);
+        
+    // set all modifiers in combo
+    CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
+    
+    // first, get the list of modifiers that are available
+    modifier_list.clear();
+    newm->GetAvailableModifiers (modifier_list);
+    
+    // add any modifier not already in the combo to the combo
+    for (unsigned int k = 0; k < modifier_list.size(); k++) {
+        if (modifier_list[k].AnyPresent()) {
+            if (modifier_list[k].IsOrgMod()) {
+                COrgMod::ESubtype subtype = modifier_list[k].GetOrgModType();
+                if (!newm->HasOrgMod(subtype)) {
+                    newm->AddOrgMod(subtype);
+                } 
+            } else {
+                CSubSource::ESubtype subtype = modifier_list[k].GetSubSourceType();
+                if (!newm->HasSubSource(subtype)) {
+                    newm->AddSubsource(subtype);
+                }
+            }
+        }
+    }
+    return newm;
 }   
+
+
+string CAutoDef::x_GetSubSourceLabel (CSubSource::ESubtype st)
+{
+    string label = "";
+    
+    if (st == CSubSource::eSubtype_endogenous_virus_name) {
+        label = "endogenous virus";
+    } else if (st == CSubSource::eSubtype_transgenic) {
+        label = "transgenic";
+    } else if (st == CSubSource::eSubtype_plasmid_name) {
+        label = "plasmid";
+    } else if (st == CSubSource::eSubtype_country) {
+        label = "from";
+        if (m_UseModifierLabels) {
+            label += " country";
+        }
+    } else if (m_UseModifierLabels) {
+        switch (st) {
+            case CSubSource::eSubtype_chromosome:
+                label = "chromosome";
+                break;
+            case CSubSource::eSubtype_clone:
+                label = "clone";
+                break;
+            case CSubSource::eSubtype_subclone:
+                label = "subclone";
+                break;
+            case CSubSource::eSubtype_haplotype:
+                label = "haplotype";
+                break;
+            case CSubSource::eSubtype_genotype:
+                label = "genotype";
+                break;
+            case CSubSource::eSubtype_sex:
+                label = "sex";
+                break;
+            case CSubSource::eSubtype_cell_line:
+                label = "cell line";
+                break;
+            case CSubSource::eSubtype_cell_type:
+                label = "cell type";
+                break;
+            case CSubSource::eSubtype_tissue_type:
+                label = "tissue type";
+                break;
+            case CSubSource::eSubtype_clone_lib:
+                label = "clone lib";
+                break;
+            case CSubSource::eSubtype_dev_stage:
+                label = "dev stage";
+                break;
+            case CSubSource::eSubtype_frequency:
+                label = "frequency";
+                break;
+            case CSubSource::eSubtype_germline:
+                label = "germline";
+                break;
+            case CSubSource::eSubtype_lab_host:
+                label = "lab host";
+                break;
+            case CSubSource::eSubtype_pop_variant:
+                label = "pop variant";
+                break;
+            case CSubSource::eSubtype_tissue_lib:
+                label = "tissue lib";
+                break;
+            case CSubSource::eSubtype_transposon_name:
+                label = "transposon";
+                break;
+            case CSubSource::eSubtype_insertion_seq_name:
+                label = "insertion sequence";
+                break;
+            case CSubSource::eSubtype_plastid_name:
+                label = "plastid";
+                break;
+            case CSubSource::eSubtype_segment:
+                label = "segment";
+                break;
+            case CSubSource::eSubtype_isolation_source:
+                label = "isolation source";
+                break;
+            case CSubSource::eSubtype_lat_lon:
+                label = "lat lon";
+                break;
+            case CSubSource::eSubtype_collection_date:
+                label = "collection date";
+                break;
+            case CSubSource::eSubtype_collected_by:
+                label = "collected by";
+                break;
+            case CSubSource::eSubtype_identified_by:
+                label = "identified by";
+                break;
+            case CSubSource::eSubtype_other:
+                label = "note";
+                break;
+            default:
+                label = "";
+                break;
+        }
+    }
+    if (!NStr::IsBlank(label)) {
+        label = " " + label;
+    }
+    return label;
+}
+
+
+string CAutoDef::x_GetOrgModLabel(COrgMod::ESubtype st)
+{
+    string label = "";
+    if (st == COrgMod::eSubtype_nat_host) {
+        label = "from";
+        if (m_UseModifierLabels) {
+            label += " natural host";
+        }
+    } else if (m_UseModifierLabels) {
+        switch (st) {
+            case COrgMod::eSubtype_strain:
+                label = "strain";
+                break;
+            case COrgMod::eSubtype_substrain:
+                label = "substrain";
+                break;
+            case COrgMod::eSubtype_type:
+                label = "type";
+                break;
+            case COrgMod::eSubtype_subtype:
+                label = "subtype";
+                break;
+            case COrgMod::eSubtype_variety:
+                label = "variety";
+                break;
+            case COrgMod::eSubtype_serotype:
+                label = "serotype";
+                break;
+            case COrgMod::eSubtype_serogroup:
+                label = "serogroup";
+                break;
+            case COrgMod::eSubtype_serovar:
+                label = "serovar";
+                break;
+            case COrgMod::eSubtype_cultivar:
+                label = "cultivar";
+                break;
+            case COrgMod::eSubtype_pathovar:
+                label = "pathovar";
+                break;
+            case COrgMod::eSubtype_chemovar:
+                label = "chemovar";
+                break;
+            case COrgMod::eSubtype_biovar:
+                label = "biovar";
+                break;
+            case COrgMod::eSubtype_biotype:
+                label = "biotype";
+                break;
+            case COrgMod::eSubtype_group:
+                label = "group";
+                break;
+            case COrgMod::eSubtype_subgroup:
+                label = "subgroup";
+                break;
+            case COrgMod::eSubtype_isolate:
+                label = "isolate";
+                break;
+            case COrgMod::eSubtype_common:
+                label = "common name";
+                break;
+            case COrgMod::eSubtype_acronym:
+                label = "v";
+                break;
+            case COrgMod::eSubtype_sub_species:
+                label = "subspecies";
+                break;
+            case COrgMod::eSubtype_specimen_voucher:
+                label = "voucher";
+                break;
+            case COrgMod::eSubtype_authority:
+                label = "authority";
+                break;
+            case COrgMod::eSubtype_forma:
+                label = "forma";
+                break;
+            case COrgMod::eSubtype_forma_specialis:
+                label = "forma specialis";
+                break;
+            case COrgMod::eSubtype_ecotype:
+                label = "ecotype";
+                break;
+            case COrgMod::eSubtype_synonym:
+                label = "synonym";
+                break;
+            case COrgMod::eSubtype_anamorph:
+                label = "anamorph";
+                break;
+            case COrgMod::eSubtype_teleomorph:
+                label = "teleomorph";
+                break;
+            case COrgMod::eSubtype_breed:
+                label = "breed";
+                break;
+            case COrgMod::eSubtype_gb_acronym:
+                label = "acronym";
+                break;
+            case COrgMod::eSubtype_gb_anamorph:
+                label = "anamorph";
+                break;
+            case COrgMod::eSubtype_gb_synonym:
+                label = "synonym";
+                break;
+            case COrgMod::eSubtype_other:
+                label = "note";
+                break;
+            default:
+                label = "";
+                break;
+        }
+    }
+    if (!NStr::IsBlank(label)) {
+        label = " " + label;
+    }
+    return label;
+}
+
+
+/* This function fixes HIV abbreviations, removes items in parentheses,
+ * and trims spaces around the taxonomy name.
+ */
+void CAutoDef::x_CleanUpTaxName (string &tax_name)
+{
+    if (NStr::Equal(tax_name, "Human immunodeficiency virus type 1", NStr::eNocase)
+        || NStr::Equal(tax_name, "Human immunodeficiency virus 1", NStr::eNocase)) {
+        tax_name = "HIV-1";
+    } else if (NStr::Equal(tax_name, "Human immunodeficiency virus type 2", NStr::eNocase)
+               || NStr::Equal(tax_name, "Human immunodeficiency virus 2", NStr::eNocase)) {
+        tax_name = "HIV-2";
+    } else if (!m_KeepParen) {
+        unsigned int pos = NStr::Find(tax_name, "(");
+        if (pos != NCBI_NS_STD::string::npos) {
+            tax_name = tax_name.substr(0, pos);
+            NStr::TruncateSpacesInPlace(tax_name);
+        }
+    }
+}
 
 
 string CAutoDef::x_GetSourceDescriptionString (CAutoDefModifierCombo *mod_combo, const CBioSource& bsrc) 
 {
     unsigned int k;
     string       source_description = "";
+    unsigned int mods_used = 0;
     
     /* start with tax name */
     source_description += bsrc.GetOrg().GetTaxname();
+    x_CleanUpTaxName(source_description);
+    
+    if (m_ExcludeSpOrgs) {
+        unsigned int pos = NStr::Find(source_description, " sp. ");
+        if (pos != NCBI_NS_STD::string::npos
+            && (pos < 2 || !NStr::StartsWith(source_description.substr(pos - 2), "f."))) {
+            return source_description;
+        }
+    }
+
+    if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
+        source_description = "Mutant " + source_description;
+    }
     
     if (mod_combo == NULL) {
         return source_description;
     }
 
     if (bsrc.CanGetSubtype()) {
-        for (k = 0; k < mod_combo->GetNumSubSources(); k++) {
+        for (k = 0; k < mod_combo->GetNumSubSources() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
             ITERATE (CBioSource::TSubtype, subSrcI, bsrc.GetSubtype()) {
                 if ((*subSrcI)->GetSubtype() == mod_combo->GetSubSource(k)) {
-                    source_description += (*subSrcI)->GetName();
+                    source_description += x_GetSubSourceLabel (mod_combo->GetSubSource(k));
+
+                    source_description += " ";
+                    string val = (*subSrcI)->GetName();
+                    // truncate value at first semicolon
+                    unsigned int pos = NStr::Find(val, ";");
+                    if (pos != NCBI_NS_STD::string::npos) {
+                        val = val.substr(0, pos);
+                    }
+                    
+                    // if country and not keeping text after colon, truncate after colon
+                    if (mod_combo->GetSubSource(k) == CSubSource::eSubtype_country
+                        && ! m_KeepCountryText) {
+                        pos = NStr::Find(val, ":");
+                        if (pos != NCBI_NS_STD::string::npos) {
+                            val = val.substr(0, pos);
+                        }
+                    }
+                    source_description += val;
+                    mods_used ++;
                 }
             }
         }
     }
     if (bsrc.CanGetOrg() && bsrc.GetOrg().CanGetOrgname() && bsrc.GetOrg().GetOrgname().CanGetMod()) {
-        for (k = 0; k < mod_combo->GetNumOrgMods(); k++) {
+        for (k = 0; k < mod_combo->GetNumOrgMods() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
             ITERATE (COrgName::TMod, modI, bsrc.GetOrg().GetOrgname().GetMod()) {
                 if ((*modI)->GetSubtype() == mod_combo->GetOrgMod(k)) {
-                    source_description += (*modI)->GetSubname();
+                    source_description += x_GetOrgModLabel(mod_combo->GetOrgMod(k));
+
+                    source_description += " ";
+                    string val = (*modI)->GetSubname();
+                    // truncate value at first semicolon
+                    unsigned int pos = NStr::Find(val, ";");
+                    if (pos != NCBI_NS_STD::string::npos) {
+                        val = val.substr(0, pos);
+                    }
+                    source_description += val;
+                    mods_used++;
                 }
             }
         }
@@ -925,6 +1345,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2006/05/02 13:02:48  bollin
+* added labels for modifiers, implemented controls for organism description
+*
 * Revision 1.11  2006/04/26 12:53:04  bollin
 * fixed method for determining whether a feature type is lonely
 * fixed problem with noncoding product feature clauses
