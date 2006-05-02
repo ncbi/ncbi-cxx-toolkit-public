@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="xutil.lib"
+	ProjectGUID="{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAA195}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -32,12 +33,12 @@
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
-				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="TRUE"
 				EnableFunctionLevelLinking="FALSE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				BrowseInformation="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
@@ -51,7 +52,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalOptions=""
-				OutputFile="$(OutDir)\xutil.lib"
+				OutputFile="$(OutDir)\$(ProjectName)"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames="FALSE"/>
@@ -100,12 +101,12 @@
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="TRUE"
 				EnableFunctionLevelLinking="FALSE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				BrowseInformation="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
@@ -119,7 +120,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalOptions=""
-				OutputFile="$(OutDir)\xutil.lib"
+				OutputFile="$(OutDir)\$(ProjectName)"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames="FALSE"/>
@@ -168,12 +169,12 @@
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="TRUE"
 				EnableFunctionLevelLinking="FALSE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				BrowseInformation="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
@@ -187,7 +188,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalOptions=""
-				OutputFile="$(OutDir)\xutil.lib"
+				OutputFile="$(OutDir)\$(ProjectName)"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames="FALSE"/>
@@ -224,10 +225,10 @@
 				AdditionalOptions=""
 				Optimization="2"
 				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="1"
+				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				OptimizeForProcessor="0"
+				OptimizeForProcessor="3"
 				AdditionalIncludeDirectories="..\..\..\..\..\include\"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;"
 				IgnoreStandardIncludePath="FALSE"
@@ -236,12 +237,12 @@
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="4"
-				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="TRUE"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				BrowseInformation="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
@@ -255,7 +256,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalOptions=""
-				OutputFile="$(OutDir)\xutil.lib"
+				OutputFile="$(OutDir)\$(ProjectName)"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames="FALSE"/>
@@ -292,10 +293,10 @@
 				AdditionalOptions=""
 				Optimization="2"
 				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="1"
+				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				OptimizeForProcessor="0"
+				OptimizeForProcessor="3"
 				AdditionalIncludeDirectories="..\..\..\..\..\include\"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;"
 				IgnoreStandardIncludePath="FALSE"
@@ -304,12 +305,12 @@
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
-				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="TRUE"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				BrowseInformation="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
@@ -323,7 +324,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalOptions=""
-				OutputFile="$(OutDir)\xutil.lib"
+				OutputFile="$(OutDir)\$(ProjectName)"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames="FALSE"/>
@@ -360,10 +361,10 @@
 				AdditionalOptions=""
 				Optimization="2"
 				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="1"
+				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				OptimizeForProcessor="0"
+				OptimizeForProcessor="3"
 				AdditionalIncludeDirectories="..\..\..\..\..\include\"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;"
 				IgnoreStandardIncludePath="FALSE"
@@ -372,12 +373,12 @@
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="0"
-				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="TRUE"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\xutil.pdb"
 				BrowseInformation="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
@@ -391,7 +392,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalOptions=""
-				OutputFile="$(OutDir)\xutil.lib"
+				OutputFile="$(OutDir)\$(ProjectName)"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames="FALSE"/>
@@ -431,7 +432,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -439,7 +440,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -447,7 +448,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -455,7 +456,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -463,7 +464,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -471,7 +472,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
+						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 			</File>
@@ -680,6 +681,57 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\src\util\dictionary_util.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\src\util\file_obsolete.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -833,6 +885,57 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\src\util\line_reader.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\src\util\logrotate.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -935,13 +1038,58 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\src\util\random_gen.cpp">
+				RelativePath="..\..\..\..\..\src\util\miscmath.c">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\util\mutex_pool.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
+						UsePrecompiledHeader="3"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -949,7 +1097,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
+						UsePrecompiledHeader="3"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -957,7 +1105,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
+						UsePrecompiledHeader="3"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -965,7 +1113,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
+						UsePrecompiledHeader="3"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -973,7 +1121,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
+						UsePrecompiledHeader="3"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -981,7 +1129,211 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="1"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\util\ncbi_cache.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\util\random_gen.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\util\request_control.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\util\sgml_entity.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 			</File>
@@ -1038,57 +1390,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\src\util\strbuffer.cpp">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseDLL|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseMT|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\..\..\src\util\stream_utils.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
@@ -1292,6 +1593,57 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\src\util\transmissionrw.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\src\util\unicode.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -1398,6 +1750,15 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inc;xsd">
 			<File
+				RelativePath="..\..\..\..\..\include\util\align_range.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\align_range_coll.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\arg_regexp.hpp">
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\include\util\ascii85.hpp">
 			</File>
 			<File
@@ -1413,16 +1774,34 @@
 				RelativePath="..\..\..\..\..\include\util\dictionary.hpp">
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\include\util\dictionary_util.hpp">
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\include\util\file_obsolete.hpp">
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\format_guess.hpp">
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\include\util\cache\icache.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\cache\icache_cf.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\cache\icache_clean_thread.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\id_mux.hpp">
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\include\util\itree.hpp">
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\lightstr.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\line_reader.hpp">
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\linkedset.hpp">
@@ -1432,6 +1811,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\md5.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\mutex_pool.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\ncbi_cache.hpp">
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\ncbi_table.hpp">
@@ -1455,6 +1840,9 @@
 				RelativePath="..\..\..\..\..\include\util\regexp.hpp">
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\include\util\request_control.hpp">
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\include\util\resize_iter.hpp">
 			</File>
 			<File
@@ -1462,6 +1850,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\rwstream.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\sgml_entity.hpp">
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\smalldns.hpp">
@@ -1486,6 +1877,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\thread_pool.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\util\transmissionrw.hpp">
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\unicode.hpp">
@@ -1514,6 +1908,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\strbuffer.inl">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\util\unicode_plans.inl">
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\weakmap.inl">
