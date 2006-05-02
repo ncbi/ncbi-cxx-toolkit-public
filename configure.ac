@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.419 2006/04/21 18:16:17 ucko Exp $
+#  $Id: configure.ac,v 1.420 2006/05/02 14:54:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3313,7 +3313,14 @@ if test "$with_python" != "no" ; then
    LIBS="$PYTHON_LIBS $orig_LIBS"
    AC_CACHE_CHECK([for PYTHON libraries in $PYTHON_PATH], ncbi_cv_lib_python,
       [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <Python.h>]],
+          [[
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#include <Python.h>]],
           [[Py_Initialize(); Py_Finalize();]])],
           [ncbi_cv_lib_python=yes], [ncbi_cv_lib_python=no])])
    if test "$ncbi_cv_lib_python" = "no"; then
