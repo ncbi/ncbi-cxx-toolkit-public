@@ -62,7 +62,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 
-class CRStream : public CNcbiIstream
+class NCBI_XNCBI_EXPORT CRStream : public CNcbiIstream
 {
 public:
     CRStream(IReader*             r,
@@ -89,7 +89,7 @@ private:
 /// Writer-based stream; @sa IWriter
 /// @sa IRStream
 
-class CWStream : public CNcbiOstream
+class NCBI_XNCBI_EXPORT CWStream : public CNcbiOstream
 {
 public:
     CWStream(IWriter*             w,
@@ -116,7 +116,7 @@ private:
 /// Reader-writer based stream; @sa IReaderWriter
 /// @sa IRStream
 
-class CRWStream : public CNcbiIostream
+class NCBI_XNCBI_EXPORT CRWStream : public CNcbiIostream
 {
 public:
     CRWStream(IReaderWriter*       rw,
@@ -146,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/05/02 16:09:40  lavr
+ * Use XNCBI export macro
+ *
  * Revision 1.12  2006/02/15 17:40:23  lavr
  * IReader/IWriter API moved (along with RWStream[buf]) to corelib
  *

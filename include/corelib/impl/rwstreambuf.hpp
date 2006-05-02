@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 
 /// Reader-writer based stream buffer
 
-class NCBI_XUTIL_EXPORT CRWStreambuf : public CRWStreambufBase
+class NCBI_XNCBI_EXPORT CRWStreambuf : public CRWStreambufBase
 {
 public:
     /// Which of the objects (passed in the constructor) should be
@@ -120,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/05/02 16:10:07  lavr
+ * Use XNCBI export macro
+ *
  * Revision 1.12  2006/05/01 19:25:04  lavr
  * Implement stream position reporting
  *

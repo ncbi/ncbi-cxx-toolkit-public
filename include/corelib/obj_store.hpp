@@ -135,7 +135,7 @@ protected:
 ///   that mutex is initialized just only once 
 ///   (in case of a template member this is not guaranteed)
 ///
-class NCBI_XUTIL_EXPORT CObjectStoreProtectedBase
+class NCBI_XNCBI_EXPORT CObjectStoreProtectedBase
 {
 protected:
     static SSystemFastMutex& GetMutex(void); 
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/05/02 16:09:33  lavr
+ * Use XNCBI export macro
+ *
  * Revision 1.7  2006/03/07 14:35:57  vasilche
  * Fixed static mutex use.
  *
