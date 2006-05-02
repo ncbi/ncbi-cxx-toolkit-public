@@ -38,7 +38,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objmgr/data_loader.hpp>
 
-#include <objmgr/impl/mutex_pool.hpp>
+#include <util/mutex_pool.hpp>
 
 #include <corelib/ncbimtx.hpp>
 

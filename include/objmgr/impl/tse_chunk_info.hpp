@@ -39,7 +39,7 @@
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
-#include <objmgr/impl/mutex_pool.hpp>
+#include <util/mutex_pool.hpp>
 #include <objmgr/blob_id.hpp>
 
 #include <vector>
@@ -309,6 +309,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/05/02 16:48:17  vasilche
+* Fixed path to moved header.
+*
 * Revision 1.26  2005/11/15 15:54:31  vasilche
 * Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
 *

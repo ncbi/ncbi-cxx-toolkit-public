@@ -37,7 +37,7 @@
 #include <corelib/ncbimtx.hpp>
 
 #include <objects/seq/seq_id_handle.hpp>
-#include <objmgr/impl/mutex_pool.hpp>
+#include <util/mutex_pool.hpp>
 #include <objmgr/impl/tse_lock.hpp>
 #include <objmgr/impl/tse_scope_lock.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -620,6 +620,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2006/05/02 16:48:07  vasilche
+* Fixed path to moved header.
+*
 * Revision 1.25  2005/10/26 14:36:39  vasilche
 * Updated for new CBlobId interface.
 *

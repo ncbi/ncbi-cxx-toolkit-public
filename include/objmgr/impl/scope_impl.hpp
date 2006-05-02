@@ -49,7 +49,7 @@
 #include <objects/seq/seq_id_handle.hpp>
 
 #include <objmgr/impl/scope_info.hpp>
-#include <objmgr/impl/mutex_pool.hpp>
+#include <util/mutex_pool.hpp>
 #include <objmgr/impl/data_source.hpp>
 
 
