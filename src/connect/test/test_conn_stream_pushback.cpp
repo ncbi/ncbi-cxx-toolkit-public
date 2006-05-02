@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "../../util/test/pbacktest.hpp"
+#include "../../corelib/test/pbacktest.hpp"
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_util.h>
 /* This header must go last */
@@ -69,6 +69,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2006/05/02 16:26:00  lavr
+ * Reflect new location of pbacktest.hpp (corelib/test now)
+ *
  * Revision 1.15  2006/04/20 14:01:27  lavr
  * Cleanup to demonstrate no leaks
  *
