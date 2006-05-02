@@ -178,6 +178,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
     if (subtype == CSeqFeatData::eSubtype_3UTR
         || subtype == CSeqFeatData::eSubtype_5UTR
+        || subtype == CSeqFeatData::eSubtype_LTR
         || subtype == CSeqFeatData::eSubtype_cdregion
         || subtype == CSeqFeatData::eSubtype_gene
         || subtype == CSeqFeatData::eSubtype_mRNA
@@ -632,6 +633,8 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
             string comment = m_MainFeat.GetComment();
             if (NStr::StartsWith(comment,"LTR ")) {
                 comment = comment.substr(4);
+            } else if (NStr::EndsWith(comment, " LTR")) {
+                comment = comment.substr(0, comment.length() - 4);
             }
             description = comment;
         }
@@ -1478,6 +1481,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2006/05/02 15:21:16  bollin
+* fixed bug in getting description for LTR, added LTR to list of recognized
+* features
+*
 * Revision 1.10  2006/04/26 14:02:24  bollin
 * when combining locations for clauses, need to main partial information
 *
