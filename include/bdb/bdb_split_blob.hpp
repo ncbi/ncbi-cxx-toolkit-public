@@ -168,7 +168,7 @@ protected:
 /// </pre>
 ///
 template<class TBV, class TObjDeMux=CBDB_BlobDeMux, class TL=CFastMutex>
-class CBDB_BlobSpitStore
+class CBDB_BlobSplitStore
 {
 public:
     typedef CIdDeMux<TBV>                TIdDeMux;
@@ -197,8 +197,8 @@ public:
     /// The main parameter here is object demultiplexer for splitting
     /// incoming LOBs into volumes and slices
     ///
-    CBDB_BlobSpitStore(TObjDeMux* de_mux);
-    ~CBDB_BlobSpitStore();
+    CBDB_BlobSplitStore(TObjDeMux* de_mux);
+    ~CBDB_BlobSplitStore();
 
     /// Open storage (reads storage dictionary into memory)
     void Open(const string&             storage_name, 
@@ -323,7 +323,7 @@ protected:
 
 
 template<class TBV, class TObjDeMux, class TL>
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::CBDB_BlobSpitStore(TObjDeMux* de_mux)
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CBDB_BlobSplitStore(TObjDeMux* de_mux)
  : m_PageSizes(7),
    m_VolumeCacheSize(0),
    m_Env(0),
@@ -339,13 +339,13 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::CBDB_BlobSpitStore(TObjDeMux* de_mux)
 }
 
 template<class TBV, class TObjDeMux, class TL>
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::~CBDB_BlobSpitStore()
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::~CBDB_BlobSplitStore()
 {
     CloseVolumes();
 }
 
 template<class TBV, class TObjDeMux, class TL>
-void CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::CloseVolumes()
+void CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CloseVolumes()
 {
 
 	for (size_t i = 0; i < m_Volumes.size(); ++i) {
@@ -356,7 +356,7 @@ void CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::CloseVolumes()
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Insert(unsigned int id, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Insert(unsigned int id, 
                                                const void*  data, 
                                                size_t       size)
 {
@@ -381,7 +381,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Insert(unsigned int id,
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int id, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int id, 
                                                      const void*  data, 
                                                      size_t       size)
 {
@@ -404,7 +404,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int id,
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Delete(unsigned     id, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned     id, 
                                                CBDB_RawFile::EIgnoreError on_error)
 {
     unsigned coord[2];
@@ -427,7 +427,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Delete(unsigned     id,
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Fetch(unsigned     id, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Fetch(unsigned     id, 
                                               void**       buf, 
                                               size_t       buf_size, 
                                CBDB_RawFile::EReallocMode allow_realloc)
@@ -451,7 +451,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Fetch(unsigned     id,
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::ReadRealloc(unsigned      id,
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(unsigned      id,
                                                     vector<char>& buffer, 
                                                     size_t*       buf_size)
 {
@@ -476,7 +476,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::ReadRealloc(unsigned      id,
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id, 
                                                  size_t*    blob_size)
 {
     unsigned coord[2];
@@ -504,7 +504,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id,
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Open(const string&  storage_name, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Open(const string&  storage_name, 
                                           CBDB_RawFile::EOpenMode   open_mode)
 {
     CloseVolumes();
@@ -517,7 +517,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Open(const string&  storage_name,
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::OpenDict()
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::OpenDict()
 {
     m_DictFile.reset(new TDeMuxStore);
     if (m_Env) {
@@ -533,7 +533,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::OpenDict()
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::LoadIdDeMux(TIdDeMux&      de_mux, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::LoadIdDeMux(TIdDeMux&      de_mux, 
                                                    TDeMuxStore&   dict_file)
 {
     CBDB_FileCursor cur(dict_file);
@@ -560,7 +560,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::LoadIdDeMux(TIdDeMux&      de_mux,
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Save()
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save()
 {
     this->SaveIdDeMux(*m_IdDeMux, *m_DictFile);
 }
@@ -568,7 +568,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::Save()
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(const TIdDeMux& de_mux, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(const TIdDeMux& de_mux, 
                                                    TDeMuxStore&    dict_file)
 {
     size_t N = de_mux.GetN();
@@ -592,7 +592,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(const TIdDeMux& de_mux,
 
 template<class TBV, class TObjDeMux, class TL>
 unsigned 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::GetPageSize(unsigned splice) const
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetPageSize(unsigned splice) const
 {
     if (splice < m_PageSizes.size()) 
         return m_PageSizes[splice];
@@ -601,7 +601,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::GetPageSize(unsigned splice) const
 
 template<class TBV, class TObjDeMux, class TL>
 string 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::MakeDbFileName(unsigned vol, 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::MakeDbFileName(unsigned vol, 
                                                       unsigned slice)
 {
     return m_StorageName + "_" + 
@@ -609,7 +609,7 @@ CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::MakeDbFileName(unsigned vol,
 }
 
 template<class TBV, class TObjDeMux, class TL>
-void CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::InitDbMutex(SLockedDb* ldb)
+void CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::InitDbMutex(SLockedDb* ldb)
 {
     if (ldb->lock.get() == 0) {
         TLockGuard lg(m_VolumesLock);
@@ -621,8 +621,8 @@ void CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::InitDbMutex(SLockedDb* ldb)
 
 
 template<class TBV, class TObjDeMux, class TL>
-typename CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::SLockedDb& 
-CBDB_BlobSpitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
+typename CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SLockedDb& 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
 {
     // speculative un-locked check if everything is open already
     // (we don't close or shrink the store in parallel, so it is safe)
@@ -687,6 +687,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/05/02 20:14:36  kuznets
+ * Fixed misprint
+ *
  * Revision 1.4  2006/05/02 19:46:15  kuznets
  * Fixed bug in (un)opening split slice database
  *

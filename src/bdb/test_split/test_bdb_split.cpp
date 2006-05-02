@@ -111,15 +111,15 @@ int CBDB_SplitTest::Run(void)
 
     try
     {
-        typedef CBDB_BlobSpitStore<bm::bvector<> > TBlobSplitStore;
+        typedef CBDB_BlobSplitStore<bm::bvector<> > TBlobSplitStore;
 
         {{
         TBlobSplitStore split_store(new CBDB_BlobDeMux(1024*1024));
 
         split_store.Open("split", CBDB_RawFile::eCreate);
 
-        split_store.Insert(1, buf_small, 256);
         split_store.Insert(2, buf_large, 1024 * 1024);
+        split_store.Insert(1, buf_small, 256);
 
         ::strcpy(buf_small, "test small 2");
         ::strcpy(buf_large, "test large 2");
@@ -190,6 +190,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/02 20:14:53  kuznets
+ * Fixed misprint
+ *
  * Revision 1.2  2006/04/03 13:15:27  kuznets
  * +test for ReadRealloc()
  *
