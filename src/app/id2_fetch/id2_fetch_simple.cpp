@@ -164,6 +164,12 @@ void CId2FetchApp::Init(void)
          "ID2 server name",
          CArgDescriptions::eString, "ID2");
 
+    // Number of requests
+    arg_desc->AddDefaultKey
+        ("count", "Count",
+         "Repeat request number of times",
+         CArgDescriptions::eInteger, "1");
+
     // Program description
     string prog_description =
         "Fetch SeqEntry from ID server by its GI id";
@@ -182,6 +188,13 @@ void CId2FetchApp::x_InitConnection(const string& server_name,
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;
     m_Server.reset(new CConn_ServiceStream
         (server_name, fSERV_Any, 0, 0, &tmout));
+    
+    CONN_Wait(m_Server->GetCONN(), eIO_Write, &tmout);
+    const char* descr = CONN_Description(m_Server->GetCONN());
+    if ( descr ) {
+        LOG_POST("  connection description: " << descr);
+    }
+    
     m_SerialNumber = 0;
 
     CID2_Request req;
@@ -221,6 +234,7 @@ void CId2FetchApp::x_ProcessRequest(CID2_Request& request, bool dump)
 
 void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet, bool dump)
 {
+    CStopWatch sw(CStopWatch::eStart);
     NON_CONST_ITERATE(CID2_Request_Packet::Tdata, it, packet.Set()) {
         CID2_Request& req = **it;
         if ( !req.IsSetSerial_number() ) {
@@ -273,6 +287,7 @@ void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet, bool dump)
             --remaining_count;
         }
     }
+    LOG_POST("Packet processed in " << sw.Elapsed());
 }
 
 
@@ -382,6 +397,8 @@ int CId2FetchApp::Run(void)
     }
     m_SkipData = args["skip_data"];
 
+    int count = args["count"].AsInteger();
+
     x_InitConnection(args["server"].AsString(), args["show_init"]);
 
     if ( args["gi"] ) {
@@ -390,7 +407,9 @@ int CId2FetchApp::Run(void)
         id2_request.SetRequest().SetGet_blob_info().SetBlob_id().SetResolve().
             SetRequest().SetSeq_id().SetSeq_id().SetSeq_id().SetGi(gi);
         id2_request.SetRequest().SetGet_blob_info().SetGet_data();
-        x_ProcessRequest(id2_request);
+        for ( int i = 0; i < count; ++i ) {
+            x_ProcessRequest(id2_request);
+        }
     }
     else if ( args["req"] ) {
         string text = args["req"].AsString();
@@ -400,7 +419,9 @@ int CId2FetchApp::Run(void)
         CNcbiIstrstream in(text.data(), text.size());
         CID2_Request id2_request;
         in >> MSerial_AsnText >> id2_request;
-        x_ProcessRequest(id2_request);
+        for ( int i = 0; i < count; ++i ) {
+            x_ProcessRequest(id2_request);
+        }
     }
     else if ( args["packet"] ) {
         string text = args["packet"].AsString();
@@ -410,7 +431,9 @@ int CId2FetchApp::Run(void)
         CID2_Request_Packet id2_packet;
         CNcbiIstrstream in(text.data(), text.size());
         in >> MSerial_AsnText >> id2_packet;
-        x_ProcessRequest(id2_packet);
+        for ( int i = 0; i < count; ++i ) {
+            x_ProcessRequest(id2_packet);
+        }
     }
     else if ( args["in"] ) {
         auto_ptr<CObjectIStream> req_input
@@ -429,14 +452,18 @@ int CId2FetchApp::Run(void)
                 req_input->Read(&id2_request,
                                 id2_request.GetThisTypeInfo(),
                                 CObjectIStream::eNoFileHeader);
-                x_ProcessRequest(id2_request);
+                for ( int i = 0; i < count; ++i ) {
+                    x_ProcessRequest(id2_request);
+                }
             }
             else if (type == "ID2-Request-Packet") {
                 CID2_Request_Packet id2_packet;
                 req_input->Read(&id2_packet,
                                 id2_packet.GetThisTypeInfo(),
                                 CObjectIStream::eNoFileHeader);
-                x_ProcessRequest(id2_packet);
+                for ( int i = 0; i < count; ++i ) {
+                    x_ProcessRequest(id2_packet);
+                }
             }
             else {
                 ERR_POST(Fatal <<
@@ -475,6 +502,9 @@ int main(int argc, const char* argv[])
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/05/02 16:33:49  vasilche
+ * Added option -count to issue repeated queries.
+ *
  * Revision 1.3  2005/08/12 14:11:55  grichenk
  * Use unique serial numbers for requests
  *
