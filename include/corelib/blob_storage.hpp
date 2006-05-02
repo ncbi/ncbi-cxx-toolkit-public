@@ -219,7 +219,7 @@ class CBlobStorage_Null : public IBlobStorage
 public:
     virtual ~CBlobStorage_Null() {}
 
-    virtual string        GetBlobAsString( const string& blob_key)
+    virtual string        GetBlobAsString( const string& /*blob_key*/)
     {
         return "";
     }
@@ -233,7 +233,7 @@ public:
                    eReader, "Empty Storage reader.");
     }
     virtual CNcbiOstream& CreateOStream(string&, 
-                                        ELockMode lock_mode = eLockNoWait)
+                                        ELockMode /*lock_mode = eLockNoWait*/)
     {
         NCBI_THROW(CBlobStorageException,
                    eWriter, "Empty Storage writer.");
@@ -241,9 +241,10 @@ public:
 
     virtual bool IsKeyValid(const string&) { return false; }
     virtual string CreateEmptyBlob() { return kEmptyStr; };
-    virtual void DeleteBlob(const string& data_id) {}
+    virtual void DeleteBlob(const string&) {}
     virtual void Reset() {};
 };
+
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -268,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/05/02 18:00:24  ivanov
+ * Get rid of unused variables warnings
+ *
  * Revision 1.5  2006/04/04 20:14:04  didenko
  * Disabled copy constractors and assignment operators
  *
