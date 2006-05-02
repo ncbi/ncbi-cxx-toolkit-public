@@ -3,15 +3,15 @@
 
 # Meta-makefile
 
-LIB_PROJ = test_dll
+LIB_PROJ = test_dll pbacktest
+
 APP_PROJ = test_ncbitime_mt test_ncbitime test_ncbithr coretest \
            test_ncbiargs test_ncbiargs_sample test_ncbi_limits test_ncbistr \
            test_ncbidiag_mt test_ncbireg_mt test_ncbi_system test_ncbiutil \
            test_ncbifile test_ncbidll test_semaphore_mt test_ncbiexec \
            test_ncbiexpt test_ncbi_process test_ncbi_os_unix test_ncbi_tree \
            test_plugins test_ncbidiag_p test_ncbidiag_f_mt test_objstore \
-           test_hash test_param_mt test_diag_parser
-
+           test_hash test_param_mt test_diag_parser test_fstream_pushback
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
