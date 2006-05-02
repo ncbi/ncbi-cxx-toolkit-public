@@ -273,7 +273,7 @@ TSeqPos CSeqVector_CI::x_CachePos(void) const
 inline
 TSeqPos CSeqVector_CI::x_CacheSize(void) const
 {
-    return m_CacheEnd - m_CacheData;
+    return TSeqPos(m_CacheEnd - m_CacheData);
 }
 
 
@@ -294,7 +294,7 @@ TSeqPos CSeqVector_CI::x_BackupPos(void) const
 inline
 TSeqPos CSeqVector_CI::x_BackupSize(void) const
 {
-    return m_BackupEnd - m_BackupData;
+    return TSeqPos(m_BackupEnd - m_BackupData);
 }
 
 
@@ -308,7 +308,7 @@ TSeqPos CSeqVector_CI::x_BackupEndPos(void) const
 inline
 TSeqPos CSeqVector_CI::x_CacheOffset(void) const
 {
-    return m_Cache - m_CacheData;
+    return TSeqPos(m_Cache - m_CacheData);
 }
 
 
@@ -348,7 +348,7 @@ CSeqVector_CI& CSeqVector_CI::SetPos(TSeqPos pos)
 {
     TCache_I cache = m_CacheData;
     TSeqPos offset = pos - m_CachePos;
-    TSeqPos size = m_CacheEnd - cache;
+    TSeqPos size = TSeqPos(m_CacheEnd - cache);
     if ( offset >= size ) {
         x_SetPos(pos);
     }
@@ -570,6 +570,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/05/02 16:47:19  vasilche
+* Fixed warning on 64-bit architecture.
+*
 * Revision 1.33  2005/05/31 18:19:46  grichenk
 * Added comments
 *
