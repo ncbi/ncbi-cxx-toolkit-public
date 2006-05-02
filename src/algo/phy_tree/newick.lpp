@@ -1,4 +1,4 @@
-/*  $Id: newick.lpp,v 1.5 2004/07/16 14:36:20 jcherry Exp $
+/*  $Id: newick.lpp,v 1.6 2006/05/02 19:04:03 lavr Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -43,7 +43,7 @@
 %{
 #include <ncbi_pch.hpp>
 #include <string.h>
-#include <util/stream_utils.hpp>
+#include <corelib/stream_utils.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 
 USING_SCOPE(ncbi);
@@ -124,6 +124,9 @@ void newick_flex_reset(void)
 /*
  * ===========================================================================
  * $Log: newick.lpp,v $
+ * Revision 1.6  2006/05/02 19:04:03  lavr
+ * Use stream_utils.hpp from corelib location
+ *
  * Revision 1.5  2004/07/16 14:36:20  jcherry
  * Treat '\r' as whitespace to minimize problems with DOSified files
  *

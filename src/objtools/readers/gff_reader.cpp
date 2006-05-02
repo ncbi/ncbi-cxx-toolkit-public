@@ -37,7 +37,7 @@
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <util/stream_utils.hpp>
+#include <corelib/stream_utils.hpp>
 #include <serial/iterator.hpp>
 
 #include <objects/general/Date.hpp>
@@ -1146,6 +1146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2006/05/02 19:04:29  lavr
+* Use stream_utils.hpp from corelib location
+*
 * Revision 1.21  2006/02/06 17:03:49  ucko
 * Use 0 instead of NStr::fStringToNumDefault
 *

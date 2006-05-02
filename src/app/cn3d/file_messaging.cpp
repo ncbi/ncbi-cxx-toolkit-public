@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <util/stream_utils.hpp>
+#include <corelib/stream_utils.hpp>
 
 #include <memory>
 
@@ -478,6 +478,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/05/02 19:04:07  lavr
+* Use stream_utils.hpp from corelib location
+*
 * Revision 1.13  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

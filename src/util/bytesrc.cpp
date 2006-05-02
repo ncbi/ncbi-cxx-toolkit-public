@@ -33,9 +33,9 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/stream_utils.hpp>
 #include <util/bytesrc.hpp>
 #include <util/util_exception.hpp>
-#include <util/stream_utils.hpp>
 #include <algorithm>
 
 
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/05/02 19:04:38  lavr
+ * Use stream_utils.hpp from corelib location
+ *
  * Revision 1.43  2006/03/16 04:40:27  lavr
  * Minor ERR_POST change in push back
  *
