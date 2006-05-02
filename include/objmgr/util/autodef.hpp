@@ -75,9 +75,17 @@ public:
     void AddSources(CSeq_entry_Handle se);
     void AddSources(CBioseq_Handle bh);
     CAutoDefModifierCombo* FindBestModifierCombo();
+    CAutoDefModifierCombo* GetAllModifierCombo();
+    unsigned int GetNumAvailableModifiers();
     string GetOneSourceDescription(CBioseq_Handle bh);
     void DoAutoDef();
     
+    void SetUseModifierLabels(bool use);
+    void SetMaxModifiers(unsigned int max_mods);
+    void SetKeepCountryText(bool keep);
+    void SetExcludeSpOrgs(bool exclude);
+    void SetKeepParen(bool keep);
+
     void SetFeatureListType(unsigned int feature_list_type);
     void SetMiscFeatRule(unsigned int misc_feat_rule);
     void SetProductFlag (unsigned int product_flag);
@@ -105,7 +113,14 @@ private:
     typedef vector<CSeq_entry_Handle> TSeqEntryHandleVector;
 
     TModifierComboVector  m_ComboList;
+    // organism description specifications
+    bool         m_UseModifierLabels;
+    unsigned int m_MaxModifiers;
+    bool         m_KeepCountryText;
+    bool         m_ExcludeSpOrgs;
+    bool         m_KeepParen;
     
+    // feature clause specifications
     unsigned int m_FeatureListType;
     unsigned int m_MiscFeatRule;
     bool         m_SpecifyNuclearProduct;
@@ -121,6 +136,7 @@ private:
     bool         m_KeepLTRs;
     bool         m_Keep3UTRs;
     bool         m_Keep5UTRs;
+    bool         m_Cancelled;
     
     void x_SortModifierListByRank
         (TModifierIndexVector& index_list,
@@ -129,6 +145,7 @@ private:
         (TModifierIndexVector& index_list,
          CAutoDefSourceDescription::TAvailableModifierVector& modifier_list);
 
+    void x_CleanUpTaxName (string &tax_name);
     string x_GetSourceDescriptionString(CAutoDefModifierCombo* mod_combo,
                                         const CBioSource& bsrc);
     
@@ -150,9 +167,48 @@ private:
                               
     void x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause);
                                   
-    bool m_Cancelled;
+    
+    bool x_IsOrgModRequired(unsigned int mod_type);
+    bool x_IsSubSrcRequired(unsigned int mod_type);
+    string x_GetSubSourceLabel (CSubSource::ESubtype st);
+    string x_GetOrgModLabel(COrgMod::ESubtype st);
 
 };  //  end of CAutoDef
+
+
+inline
+void CAutoDef::SetUseModifierLabels(bool use)
+{
+    m_UseModifierLabels = use;
+}
+
+
+inline
+void CAutoDef::SetMaxModifiers(unsigned int max_mods)
+{
+    m_MaxModifiers = max_mods;
+}
+
+
+inline
+void CAutoDef::SetKeepCountryText(bool keep)
+{
+    m_KeepCountryText = keep;
+}
+
+
+inline
+void CAutoDef::SetExcludeSpOrgs(bool exclude)
+{
+    m_ExcludeSpOrgs = exclude;
+}
+
+
+inline
+void CAutoDef::SetKeepParen(bool keep)
+{
+    m_KeepParen = keep;
+}
 
 
 inline
@@ -260,6 +316,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2006/05/02 13:03:27  bollin
+* added labels for modifiers, implemented organism description dialog options
+*
 * Revision 1.8  2006/04/25 13:36:28  bollin
 * added misc_feat processing and removal of unwanted features
 *

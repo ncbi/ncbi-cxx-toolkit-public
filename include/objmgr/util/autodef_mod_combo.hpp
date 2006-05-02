@@ -52,7 +52,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     
-class NCBI_XOBJUTIL_EXPORT CAutoDefModifierCombo
+class NCBI_XOBJUTIL_EXPORT CAutoDefModifierCombo : public CObject
 {
 public:
     CAutoDefModifierCombo();
@@ -66,6 +66,9 @@ public:
     CSubSource::ESubtype GetSubSource(unsigned int index);
     unsigned int GetNumOrgMods();
     COrgMod::ESubtype GetOrgMod(unsigned int index);
+    
+    bool HasSubSource(CSubSource::ESubtype st);
+    bool HasOrgMod(COrgMod::ESubtype st);
     
     void AddSource(const CBioSource& bs);
     
@@ -93,6 +96,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/05/02 13:03:27  bollin
+* added labels for modifiers, implemented organism description dialog options
+*
 * Revision 1.2  2006/04/17 17:39:36  ucko
 * Fix capitalization of header filenames.
 *
