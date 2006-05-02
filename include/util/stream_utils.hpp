@@ -26,12 +26,10 @@
  *
  * ===========================================================================
  *
- * Authors:  Anton Lavrentiev, Denis Vakatov
+ * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Stream utilities:
- *   1. Push an arbitrary block of data back to C++ input stream.
- *   2. Non-blocking read from a stream.
+ *   Forwarding header now;  obsolescent;  do not use it!
  *
  */
 
