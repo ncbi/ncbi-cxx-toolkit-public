@@ -1,4 +1,0 @@
-# $Id$
-
-SRC = pbacktest
-LIB = xpbacktest
