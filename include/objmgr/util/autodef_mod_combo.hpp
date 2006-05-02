@@ -78,6 +78,14 @@ public:
     bool AllUnique();
     void GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
     
+    void SetUseModifierLabels(bool use);
+    void SetMaxModifiers(unsigned int max_mods);
+    void SetKeepCountryText(bool keep);
+    void SetExcludeSpOrgs(bool exclude);
+    void SetKeepParen(bool keep);
+
+    string GetSourceDescriptionString(const CBioSource& bsrc);
+
     typedef vector<CAutoDefSourceGroup *> TSourceGroupVector;
     typedef vector<CSubSource::ESubtype> TSubSourceTypeVector;
     typedef vector<COrgMod::ESubtype> TOrgModTypeVector;
@@ -87,7 +95,53 @@ private:
     TSubSourceTypeVector m_SubSources;
     TOrgModTypeVector    m_OrgMods;
     
+    bool         m_UseModifierLabels;
+    unsigned int m_MaxModifiers;
+    bool         m_KeepCountryText;
+    bool         m_ExcludeSpOrgs;
+    bool         m_KeepParen;
+    
+    
+    string x_GetSubSourceLabel (CSubSource::ESubtype st);
+    string x_GetOrgModLabel(COrgMod::ESubtype st);
+    void x_CleanUpTaxName (string &tax_name);
+
 };
+
+
+inline
+void CAutoDefModifierCombo::SetUseModifierLabels(bool use)
+{
+    m_UseModifierLabels = use;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetMaxModifiers(unsigned int max_mods)
+{
+    m_MaxModifiers = max_mods;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetKeepCountryText(bool keep)
+{
+    m_KeepCountryText = keep;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetExcludeSpOrgs(bool exclude)
+{
+    m_ExcludeSpOrgs = exclude;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetKeepParen(bool keep)
+{
+    m_KeepParen = keep;
+}
 
 
 END_SCOPE(objects)
@@ -96,6 +150,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/05/02 14:12:18  bollin
+* moved organism description code out of CAutoDef into CAutoDefModCombo
+*
 * Revision 1.3  2006/05/02 13:03:27  bollin
 * added labels for modifiers, implemented organism description dialog options
 *

@@ -65,10 +65,6 @@ CAutoDef::CAutoDef()
       m_KeepLTRs(false),
       m_Keep3UTRs(false),
       m_Keep5UTRs(false),
-      m_UseModifierLabels(false),
-      m_KeepCountryText(false),
-      m_ExcludeSpOrgs(false),
-      m_KeepParen(false),
       m_Cancelled(false)
 {
     m_ComboList.clear();
@@ -333,330 +329,6 @@ CAutoDefModifierCombo* CAutoDef::GetAllModifierCombo()
         }
     }
     return newm;
-}   
-
-
-string CAutoDef::x_GetSubSourceLabel (CSubSource::ESubtype st)
-{
-    string label = "";
-    
-    if (st == CSubSource::eSubtype_endogenous_virus_name) {
-        label = "endogenous virus";
-    } else if (st == CSubSource::eSubtype_transgenic) {
-        label = "transgenic";
-    } else if (st == CSubSource::eSubtype_plasmid_name) {
-        label = "plasmid";
-    } else if (st == CSubSource::eSubtype_country) {
-        label = "from";
-        if (m_UseModifierLabels) {
-            label += " country";
-        }
-    } else if (m_UseModifierLabels) {
-        switch (st) {
-            case CSubSource::eSubtype_chromosome:
-                label = "chromosome";
-                break;
-            case CSubSource::eSubtype_clone:
-                label = "clone";
-                break;
-            case CSubSource::eSubtype_subclone:
-                label = "subclone";
-                break;
-            case CSubSource::eSubtype_haplotype:
-                label = "haplotype";
-                break;
-            case CSubSource::eSubtype_genotype:
-                label = "genotype";
-                break;
-            case CSubSource::eSubtype_sex:
-                label = "sex";
-                break;
-            case CSubSource::eSubtype_cell_line:
-                label = "cell line";
-                break;
-            case CSubSource::eSubtype_cell_type:
-                label = "cell type";
-                break;
-            case CSubSource::eSubtype_tissue_type:
-                label = "tissue type";
-                break;
-            case CSubSource::eSubtype_clone_lib:
-                label = "clone lib";
-                break;
-            case CSubSource::eSubtype_dev_stage:
-                label = "dev stage";
-                break;
-            case CSubSource::eSubtype_frequency:
-                label = "frequency";
-                break;
-            case CSubSource::eSubtype_germline:
-                label = "germline";
-                break;
-            case CSubSource::eSubtype_lab_host:
-                label = "lab host";
-                break;
-            case CSubSource::eSubtype_pop_variant:
-                label = "pop variant";
-                break;
-            case CSubSource::eSubtype_tissue_lib:
-                label = "tissue lib";
-                break;
-            case CSubSource::eSubtype_transposon_name:
-                label = "transposon";
-                break;
-            case CSubSource::eSubtype_insertion_seq_name:
-                label = "insertion sequence";
-                break;
-            case CSubSource::eSubtype_plastid_name:
-                label = "plastid";
-                break;
-            case CSubSource::eSubtype_segment:
-                label = "segment";
-                break;
-            case CSubSource::eSubtype_isolation_source:
-                label = "isolation source";
-                break;
-            case CSubSource::eSubtype_lat_lon:
-                label = "lat lon";
-                break;
-            case CSubSource::eSubtype_collection_date:
-                label = "collection date";
-                break;
-            case CSubSource::eSubtype_collected_by:
-                label = "collected by";
-                break;
-            case CSubSource::eSubtype_identified_by:
-                label = "identified by";
-                break;
-            case CSubSource::eSubtype_other:
-                label = "note";
-                break;
-            default:
-                label = "";
-                break;
-        }
-    }
-    if (!NStr::IsBlank(label)) {
-        label = " " + label;
-    }
-    return label;
-}
-
-
-string CAutoDef::x_GetOrgModLabel(COrgMod::ESubtype st)
-{
-    string label = "";
-    if (st == COrgMod::eSubtype_nat_host) {
-        label = "from";
-        if (m_UseModifierLabels) {
-            label += " natural host";
-        }
-    } else if (m_UseModifierLabels) {
-        switch (st) {
-            case COrgMod::eSubtype_strain:
-                label = "strain";
-                break;
-            case COrgMod::eSubtype_substrain:
-                label = "substrain";
-                break;
-            case COrgMod::eSubtype_type:
-                label = "type";
-                break;
-            case COrgMod::eSubtype_subtype:
-                label = "subtype";
-                break;
-            case COrgMod::eSubtype_variety:
-                label = "variety";
-                break;
-            case COrgMod::eSubtype_serotype:
-                label = "serotype";
-                break;
-            case COrgMod::eSubtype_serogroup:
-                label = "serogroup";
-                break;
-            case COrgMod::eSubtype_serovar:
-                label = "serovar";
-                break;
-            case COrgMod::eSubtype_cultivar:
-                label = "cultivar";
-                break;
-            case COrgMod::eSubtype_pathovar:
-                label = "pathovar";
-                break;
-            case COrgMod::eSubtype_chemovar:
-                label = "chemovar";
-                break;
-            case COrgMod::eSubtype_biovar:
-                label = "biovar";
-                break;
-            case COrgMod::eSubtype_biotype:
-                label = "biotype";
-                break;
-            case COrgMod::eSubtype_group:
-                label = "group";
-                break;
-            case COrgMod::eSubtype_subgroup:
-                label = "subgroup";
-                break;
-            case COrgMod::eSubtype_isolate:
-                label = "isolate";
-                break;
-            case COrgMod::eSubtype_common:
-                label = "common name";
-                break;
-            case COrgMod::eSubtype_acronym:
-                label = "v";
-                break;
-            case COrgMod::eSubtype_sub_species:
-                label = "subspecies";
-                break;
-            case COrgMod::eSubtype_specimen_voucher:
-                label = "voucher";
-                break;
-            case COrgMod::eSubtype_authority:
-                label = "authority";
-                break;
-            case COrgMod::eSubtype_forma:
-                label = "forma";
-                break;
-            case COrgMod::eSubtype_forma_specialis:
-                label = "forma specialis";
-                break;
-            case COrgMod::eSubtype_ecotype:
-                label = "ecotype";
-                break;
-            case COrgMod::eSubtype_synonym:
-                label = "synonym";
-                break;
-            case COrgMod::eSubtype_anamorph:
-                label = "anamorph";
-                break;
-            case COrgMod::eSubtype_teleomorph:
-                label = "teleomorph";
-                break;
-            case COrgMod::eSubtype_breed:
-                label = "breed";
-                break;
-            case COrgMod::eSubtype_gb_acronym:
-                label = "acronym";
-                break;
-            case COrgMod::eSubtype_gb_anamorph:
-                label = "anamorph";
-                break;
-            case COrgMod::eSubtype_gb_synonym:
-                label = "synonym";
-                break;
-            case COrgMod::eSubtype_other:
-                label = "note";
-                break;
-            default:
-                label = "";
-                break;
-        }
-    }
-    if (!NStr::IsBlank(label)) {
-        label = " " + label;
-    }
-    return label;
-}
-
-
-/* This function fixes HIV abbreviations, removes items in parentheses,
- * and trims spaces around the taxonomy name.
- */
-void CAutoDef::x_CleanUpTaxName (string &tax_name)
-{
-    if (NStr::Equal(tax_name, "Human immunodeficiency virus type 1", NStr::eNocase)
-        || NStr::Equal(tax_name, "Human immunodeficiency virus 1", NStr::eNocase)) {
-        tax_name = "HIV-1";
-    } else if (NStr::Equal(tax_name, "Human immunodeficiency virus type 2", NStr::eNocase)
-               || NStr::Equal(tax_name, "Human immunodeficiency virus 2", NStr::eNocase)) {
-        tax_name = "HIV-2";
-    } else if (!m_KeepParen) {
-        unsigned int pos = NStr::Find(tax_name, "(");
-        if (pos != NCBI_NS_STD::string::npos) {
-            tax_name = tax_name.substr(0, pos);
-            NStr::TruncateSpacesInPlace(tax_name);
-        }
-    }
-}
-
-
-string CAutoDef::x_GetSourceDescriptionString (CAutoDefModifierCombo *mod_combo, const CBioSource& bsrc) 
-{
-    unsigned int k;
-    string       source_description = "";
-    unsigned int mods_used = 0;
-    
-    /* start with tax name */
-    source_description += bsrc.GetOrg().GetTaxname();
-    x_CleanUpTaxName(source_description);
-    
-    if (m_ExcludeSpOrgs) {
-        unsigned int pos = NStr::Find(source_description, " sp. ");
-        if (pos != NCBI_NS_STD::string::npos
-            && (pos < 2 || !NStr::StartsWith(source_description.substr(pos - 2), "f."))) {
-            return source_description;
-        }
-    }
-
-    if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
-        source_description = "Mutant " + source_description;
-    }
-    
-    if (mod_combo == NULL) {
-        return source_description;
-    }
-
-    if (bsrc.CanGetSubtype()) {
-        for (k = 0; k < mod_combo->GetNumSubSources() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
-            ITERATE (CBioSource::TSubtype, subSrcI, bsrc.GetSubtype()) {
-                if ((*subSrcI)->GetSubtype() == mod_combo->GetSubSource(k)) {
-                    source_description += x_GetSubSourceLabel (mod_combo->GetSubSource(k));
-
-                    source_description += " ";
-                    string val = (*subSrcI)->GetName();
-                    // truncate value at first semicolon
-                    unsigned int pos = NStr::Find(val, ";");
-                    if (pos != NCBI_NS_STD::string::npos) {
-                        val = val.substr(0, pos);
-                    }
-                    
-                    // if country and not keeping text after colon, truncate after colon
-                    if (mod_combo->GetSubSource(k) == CSubSource::eSubtype_country
-                        && ! m_KeepCountryText) {
-                        pos = NStr::Find(val, ":");
-                        if (pos != NCBI_NS_STD::string::npos) {
-                            val = val.substr(0, pos);
-                        }
-                    }
-                    source_description += val;
-                    mods_used ++;
-                }
-            }
-        }
-    }
-    if (bsrc.CanGetOrg() && bsrc.GetOrg().CanGetOrgname() && bsrc.GetOrg().GetOrgname().CanGetMod()) {
-        for (k = 0; k < mod_combo->GetNumOrgMods() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
-            ITERATE (COrgName::TMod, modI, bsrc.GetOrg().GetOrgname().GetMod()) {
-                if ((*modI)->GetSubtype() == mod_combo->GetOrgMod(k)) {
-                    source_description += x_GetOrgModLabel(mod_combo->GetOrgMod(k));
-
-                    source_description += " ";
-                    string val = (*modI)->GetSubname();
-                    // truncate value at first semicolon
-                    unsigned int pos = NStr::Find(val, ";");
-                    if (pos != NCBI_NS_STD::string::npos) {
-                        val = val.substr(0, pos);
-                    }
-                    source_description += val;
-                    mods_used++;
-                }
-            }
-        }
-    }
-    
-    return source_description;
 }
 
 
@@ -669,7 +341,7 @@ string CAutoDef::GetOneSourceDescription(CBioseq_Handle bh)
     
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
         const CBioSource& bsrc = dit->GetSource();
-        return x_GetSourceDescriptionString(best, bsrc);
+        return best->GetSourceDescriptionString(bsrc);
     }
     return "";
 }
@@ -1306,7 +978,7 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
     
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
         const CBioSource& bsrc = dit->GetSource();
-        org_desc = x_GetSourceDescriptionString(mod_combo, bsrc);
+        org_desc = mod_combo->GetSourceDescriptionString(bsrc);
         if (bsrc.CanGetGenome()) {
             genome_val = bsrc.GetGenome();
         }
@@ -1345,6 +1017,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2006/05/02 14:12:40  bollin
+* moved organism description code out of CAutoDef into CAutoDefModCombo
+*
 * Revision 1.12  2006/05/02 13:02:48  bollin
 * added labels for modifiers, implemented controls for organism description
 *
