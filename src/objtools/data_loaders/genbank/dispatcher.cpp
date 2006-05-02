@@ -710,9 +710,17 @@ namespace {
             }
         string GetErrMsg(void) const
             {
-                return "LoadChunks("+m_Key.ToString()+", "+
-                    NStr::IntToString(m_ChunkIds.size())+"): "
-                    "data not found";
+                CNcbiOstrstream str;
+                str << "LoadChunks(" << m_Key.ToString() << ", {";
+                int cnt = 0;
+                ITERATE(TChunkInfos, it, m_ChunkInfos) {
+                    if ( !(*it)->IsLoaded() ) {
+                        if ( cnt++ ) str << ',';
+                        str << ' ' << (*it)->GetChunkId();
+                    }
+                }
+                str << " }): data not found";
+                return CNcbiOstrstreamToString(str);
             }
         
 #ifdef GB_COLLECT_STATS
