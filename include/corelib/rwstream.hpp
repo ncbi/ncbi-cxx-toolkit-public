@@ -44,6 +44,12 @@
 BEGIN_NCBI_SCOPE
 
 
+/** @addtogroup Stream
+ *
+ * @{
+ */
+
+
 /// Reader-based stream; @sa IReader
 ///
 /// @param buf_size
@@ -140,12 +146,18 @@ private:
 };
 
 
+/* @} */
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/05/02 16:55:19  lavr
+ * Move to proper Doxygen group
+ *
  * Revision 1.13  2006/05/02 16:09:40  lavr
  * Use XNCBI export macro
  *

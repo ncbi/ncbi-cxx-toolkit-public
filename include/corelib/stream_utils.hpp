@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-/** @addtogroup StreamSupport
+/** @addtogroup Stream
  *
  * @{
  */
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2006/05/02 16:55:19  lavr
+ * Move to proper Doxygen group
+ *
  * Revision 1.21  2006/05/02 16:09:53  lavr
  * Moved from util to here
  *

@@ -46,6 +46,12 @@
 BEGIN_NCBI_SCOPE
 
 
+/** @addtogroup Stream
+ *
+ * @{
+ */
+
+
 /// Result codes for I/O operations
 /// @sa IReader, IWriter, IReaderWriter
 enum ERW_Result {
@@ -118,12 +124,18 @@ public:
 };
 
 
+/* @} */
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/05/02 16:55:19  lavr
+ * Move to proper Doxygen group
+ *
  * Revision 1.15  2006/02/15 17:40:23  lavr
  * IReader/IWriter API moved (along with RWStream[buf]) to corelib
  *
