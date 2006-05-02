@@ -34,8 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <util/util_exception.hpp>
-#include <util/stream_utils.hpp>
+#include <corelib/stream_utils.hpp>
 #include <string.h>
 
 #ifdef NCBI_COMPILER_MIPSPRO
@@ -261,7 +260,7 @@ int CPushback_Streambuf::sync(void)
 streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                        streamsize    /*buf_size*/)
 {
-    NCBI_THROW(CUtilException, eWrongCommand,
+    NCBI_THROW(CCoreException, eCore,
                "CPushback_Streambuf::setbuf: not allowed");
     /*NOTREACHED*/
     return this;
@@ -493,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.46  2006/05/02 16:11:26  lavr
+ * Moved from util to here
+ *
  * Revision 1.45  2006/03/16 20:13:02  vasilche
  * Do not drop pushback buffer in tellg().
  *

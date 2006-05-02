@@ -1,5 +1,5 @@
-#ifndef UTIL___STREAM_UTILS__HPP
-#define UTIL___STREAM_UTILS__HPP
+#ifndef CORELIB___STREAM_UTILS__HPP
+#define CORELIB___STREAM_UTILS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
  */
 
 
-struct NCBI_XUTIL_EXPORT CStreamUtils {
+struct NCBI_XNCBI_EXPORT CStreamUtils {
 
 // Push the block of data [buf, buf+buf_size) back to the input stream "is".
 // If "del_ptr" is not NULL, then `delete[] (CT_CHAR_TYPE*) del_ptr' is called
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.21  2006/05/02 16:09:53  lavr
+ * Moved from util to here
+ *
  * Revision 1.20  2006/02/15 17:39:22  lavr
  * Readsome-tolerant MIPSPro-specific streambuf moved to <corelib/ncbistre.hpp>
  *
@@ -162,4 +165,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* UTIL___STREAM_UTILS__HPP */
+#endif  /* CORELIB___STREAM_UTILS__HPP */
