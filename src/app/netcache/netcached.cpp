@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.5  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.6  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -2058,6 +2058,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2006/05/03 14:56:13  didenko
+ * Changed server version
+ *
  * Revision 1.84  2006/05/01 16:36:17  vasilche
  * Fixed error in netcache communication protocol.
  *
