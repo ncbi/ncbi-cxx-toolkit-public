@@ -217,6 +217,52 @@ int CTestICClient::Run(void)
     }
     }}
 
+    NcbiCout << "check reader/writer" << NcbiEndl;
+    {{
+        int version = 0;
+        string key1 = "key_1", subkey1 = "subkey_1";
+        string key2 = "key_2", subkey2 = "subkey_2";
+        {
+        auto_ptr<IWriter> writer1(cl.GetWriteStream(key1,version,subkey1));
+        //        CWStream ostr1(writer1.get());
+        //auto_ptr<IWriter> writer2(cl.GetWriteStream(key2,version,subkey2));
+        //CWStream ostr2(writer2.get());
+
+        //ostr1 << 1234 << " ";
+        //ostr2 << 4321 << " ";
+
+        //        ostr1 << "qwerty";
+        //ostr2 << "ytrewq";
+        string str = "qwerty";
+               writer1->Write(str.c_str(), str.size());
+               //                cl.Store(key1, version, subkey1, str.c_str(), str.size());
+        }
+               int size = cl.GetSize(key1,version, subkey1);
+               vector<unsigned char> test_buf(1000);
+               cl.Read(key1, version, subkey1, &test_buf[0], test_buf.size());
+               cout << size << endl << string(test_buf.begin(), test_buf.end()) << endl;
+        {
+            //        auto_ptr<IReader> reader1(cl.GetReadStream(key1,version,subkey1));
+            //        CRStream istr1(reader1.get());
+        //auto_ptr<IReader> reader2(cl.GetReadStream(key2,version,subkey2));
+        //CRStream istr2(reader2.get());
+        
+        int res = 0;
+        //istr1 >> res;
+        //cout << "From istr1 : " << res << endl;
+        //assert(res == 1234);
+        //istr2 >> res;
+        //cout << "From istr2 : " << res << endl;
+        //assert(res == 4321);
+        string str;
+        //        istr1 >> str;
+        //        cout << "From istr1 : " << str << endl;
+        //istr2 >> str;
+        //cout << "From istr2 : " << str << endl;
+        }
+
+    }}
+
     NcbiCout << "Session management test" << endl;
     cl.RegisterSession(10);
     cl.UnRegisterSession(10);
@@ -234,6 +280,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2006/05/03 14:58:26  didenko
+ * Added test for IReader/IWriter
+ *
  * Revision 6.5  2006/01/27 15:06:16  kuznets
  * Code cleanup
  *
