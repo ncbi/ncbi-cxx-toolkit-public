@@ -339,10 +339,10 @@ int CTestSerial::Run(void)
         CTestSerialObject write;
         CTestSerialObject2 write1;
 
-        _TRACE("CTestSerialObject(object1): " << long(&write));
-        _TRACE("CTestSerialObject2(object2): " << long(&write1));
+        _TRACE("CTestSerialObject(object1): " << intptr_t(&write));
+        _TRACE("CTestSerialObject2(object2): " << intptr_t(&write1));
         _TRACE("CTestSerialObject(object2): " <<
-               long(static_cast<CTestSerialObject*>(&write1)));
+               intptr_t(static_cast<CTestSerialObject*>(&write1)));
 
         write.m_Name = "name";
         write.m_HaveName = false;
@@ -772,6 +772,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/05/03 12:55:23  gouriano
+ * Removed conversion of pointer to lonf
+ *
  * Revision 1.65  2005/04/27 16:07:16  gouriano
  * Generated required sources automatically
  *
