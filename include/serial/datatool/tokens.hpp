@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/05/03 14:37:38  gouriano
+* Added parsing attribute definition and include
+*
 * Revision 1.13  2006/04/20 14:00:56  gouriano
 * Added XML schema parsing
 *
@@ -165,11 +168,11 @@ static const TToken K_ATTPAIR        = K_ATTLIST;
 static const TToken K_XMLNS          = 304;
 static const TToken K_COMPLEXTYPE    = 305;
 static const TToken K_COMPLEXCONTENT = 306;
-static const TToken K_SIMPLECONTENT  = 307;
-static const TToken K_EXTENSION      = 308;
-static const TToken K_ATTRIBUTE      = 309;
-static const TToken K_SIMPLETYPE     = 310;
-static const TToken K_RESTRICTION    = 311;
+static const TToken K_SIMPLETYPE     = 307;
+static const TToken K_SIMPLECONTENT  = 308;
+static const TToken K_EXTENSION      = 309;
+static const TToken K_RESTRICTION    = 310;
+static const TToken K_ATTRIBUTE      = 311;
 static const TToken K_ENUMERATION    = 312;
 
 END_NCBI_SCOPE

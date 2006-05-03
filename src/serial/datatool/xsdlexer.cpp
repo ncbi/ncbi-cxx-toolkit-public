@@ -125,6 +125,7 @@ TToken XSDLexer::LookupKeyword(void)
         CHECK("schema", K_SCHEMA, 6);
         break;
     case 7:
+        CHECK("include", K_INCLUDE, 7);
         CHECK("element", K_ELEMENT, 7);
         break;
     case 8:
@@ -212,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2006/05/03 14:38:08  gouriano
+ * Added parsing attribute definition and include
+ *
  * Revision 1.1  2006/04/20 14:00:11  gouriano
  * Added XML schema parsing
  *

@@ -88,8 +88,8 @@ protected:
 
     void BeginEntityContent(void);
     void ParseEntityContent(const string& name);
-    void PushEntityLexer(const string& name);
-    bool PopEntityLexer(void);
+    virtual void PushEntityLexer(const string& name);
+    virtual bool PopEntityLexer(void);
     virtual AbstractLexer* CreateEntityLexer(
         CNcbiIstream& in, const string& name, bool autoDelete=true);
 
@@ -118,10 +118,11 @@ protected:
                                CEnumDataType* enumType);
 
 #if defined(NCBI_DTDPARSER_TRACE)
-    void PrintDocumentTree(void);
+    virtual void PrintDocumentTree(void);
     void PrintEntities(void);
     void PrintDocumentNode(const string& name, const DTDElement& node);
     void PrintNodeAttributes(const DTDElement& node);
+    void PrintAttribute(const DTDAttribute& attrib, bool indent=true);
 #endif
     map<string,DTDElement> m_MapElement;
     map<string,DTDEntity>  m_MapEntity;
@@ -139,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2006/05/03 14:37:38  gouriano
+ * Added parsing attribute definition and include
+ *
  * Revision 1.9  2006/04/20 14:00:56  gouriano
  * Added XML schema parsing
  *

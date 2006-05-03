@@ -60,15 +60,23 @@ void XSDParser::BuildDocumentTree(void)
     for (;;) {
         tok = GetNextToken();
         switch ( tok ) {
+        case K_INCLUDE:
+            ParseInclude();
+            break;
         case K_ELEMENT:
             ParseElementContent(0);
             break;
+        case K_ATTRIBUTE:
+            ParseAttributeContent();
+            break;
         case K_COMPLEXTYPE:
+        case K_SIMPLETYPE:
             CreateTypeDefinition();
             break;
         case K_ATTPAIR:
             break;
         case K_ENDOFTAG:
+            break;
         case T_EOF:
             ProcessNamedTypes();
             return;
@@ -196,6 +204,30 @@ bool XSDParser::DefineElementType(DTDElement& node)
     return true;
 }
 
+bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
+{
+    if (IsValue("string")) {
+        attrib.SetType(DTDAttribute::eString);
+    } else if (IsValue("ID")) {
+        attrib.SetType(DTDAttribute::eId);
+    } else if (IsValue("IDREF")) {
+        attrib.SetType(DTDAttribute::eIdRef);
+    } else if (IsValue("IDREFS")) {
+        attrib.SetType(DTDAttribute::eIdRefs);
+    } else if (IsValue("NMTOKEN")) {
+        attrib.SetType(DTDAttribute::eNmtoken);
+    } else if (IsValue("NMTOKENS")) {
+        attrib.SetType(DTDAttribute::eNmtokens);
+    } else if (IsValue("ENTITY")) {
+        attrib.SetType(DTDAttribute::eEntity);
+    } else if (IsValue("ENTITIES")) {
+        attrib.SetType(DTDAttribute::eEntities);
+    } else {
+        return false;
+    }
+    return true;
+}
+
 void XSDParser::ParseHeader()
 {
 // xml header
@@ -222,6 +254,26 @@ void XSDParser::ParseHeader()
     if (tok != K_CLOSING) {
         ParseError("Unexpected token");
     }
+}
+
+void XSDParser::ParseInclude(void)
+{
+    TToken tok;
+    string name;
+    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
+        if (IsAttribute("schemaLocation")) {
+            name = m_Value;
+        }
+    }
+    if (tok != K_ENDOFTAG) {
+        ParseError("Unexpected token");
+    }
+    DTDEntity& node = m_MapEntity[name];
+    node.SetName(name);
+    node.SetData(name);
+    node.SetExternal();
+    PushEntityLexer(name);
+    ParseHeader();
 }
 
 string XSDParser::ParseElementContent(DTDElement* owner)
@@ -353,8 +405,8 @@ void XSDParser::ParseContent(DTDElement& node)
             break;
         case K_ELEMENT:
             {
-	        string name = ParseElementContent(&node);
-	        AddElementContent(node,name);
+	            string name = ParseElementContent(&node);
+	            AddElementContent(node,name);
             }
             break;
         default:
@@ -407,10 +459,9 @@ void XSDParser::ParseContainer(DTDElement& node)
             }
         }
     }
-    if (tok != K_CLOSING) {
-        ParseError("Unexpected token");
+    if (tok == K_CLOSING) {
+        ParseContent(node);
     }
-    ParseContent(node);
 }
 
 void XSDParser::ParseComplexType(DTDElement& node)
@@ -418,10 +469,9 @@ void XSDParser::ParseComplexType(DTDElement& node)
     TToken tok;
     for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
         ;
-    if (tok != K_CLOSING) {
-        ParseError("Unexpected token");
+    if (tok == K_CLOSING) {
+        ParseContent(node);
     }
-    ParseContent(node);
 }
 
 void XSDParser::ParseSimpleContent(DTDElement& node)
@@ -430,30 +480,23 @@ void XSDParser::ParseSimpleContent(DTDElement& node)
     for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
         ;
     if (tok != K_CLOSING) {
-        ParseError("Unexpected token");
+        ParseContent(node);
     }
-    ParseContent(node);
 }
 
 void XSDParser::ParseExtension(DTDElement& node)
 {
     TToken tok;
-    string name;
     for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
         if (IsAttribute("base")) {
             if (!DefineElementType(node)) {
-                name = m_Value;
+                node.SetTypeName(m_Value);
             }
         }
     }
-    if (tok != K_CLOSING) {
-        ParseError("Unexpected token");
-    }
-    if (!name.empty() && (m_MapEntity.find(name) != m_MapEntity.end())) {
-        PushEntityLexer(name);
+    if (tok == K_CLOSING) {
         ParseContent(node);
     }
-    ParseContent(node);
 }
 
 void XSDParser::ParseRestriction(DTDElement& node)
@@ -461,13 +504,14 @@ void XSDParser::ParseRestriction(DTDElement& node)
     TToken tok;
     for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
         if (IsAttribute("base")) {
-            DefineElementType(node);
+            if (!DefineElementType(node)) {
+                node.SetTypeName(m_Value);
+            }
         }
     }
-    if (tok != K_CLOSING) {
-        ParseError("Unexpected token");
+    if (tok == K_CLOSING) {
+        ParseContent(node);
     }
-    ParseContent(node);
 }
 
 void XSDParser::ParseAttribute(DTDElement& node)
@@ -475,11 +519,13 @@ void XSDParser::ParseAttribute(DTDElement& node)
     TToken tok;
     DTDAttribute att;
     for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("name")) {
+        if (IsAttribute("ref")) {
+            att.SetName(m_Value);
+        } else if (IsAttribute("name")) {
             att.SetName(m_Value);
         } else if (IsAttribute("type")) {
-            if (IsValue("string")) {
-                att.SetType(DTDAttribute::eString);
+            if (!DefineAttributeType(att)) {
+                att.SetTypeName(m_Value);
             }
         } else if (IsAttribute("use")) {
             if (IsValue("required")) {
@@ -497,16 +543,45 @@ void XSDParser::ParseAttribute(DTDElement& node)
     node.AddAttribute(att);
 }
 
+string XSDParser::ParseAttributeContent()
+{
+    TToken tok;
+    string name;
+    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
+        if (IsAttribute("ref")) {
+            name = m_Value;
+
+        } else if (IsAttribute("name")) {
+            name = m_Value;
+            m_MapAttribute[name].SetName(name);
+
+        } else if (IsAttribute("type")) {
+            if (!DefineAttributeType(m_MapAttribute[name])) {
+                m_MapAttribute[name].SetTypeName(m_Value);
+            }
+
+        }
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(m_MapAttribute[name]);
+    }
+    return name;
+}
+
 void XSDParser::ParseContent(DTDAttribute& att)
 {
     TToken tok;
     for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
         switch (tok) {
+        case T_EOF:
+            return;
         case K_ENUMERATION:
             ParseEnumeration(att);
             break;
-        case K_SIMPLETYPE:
         case K_RESTRICTION:
+            ParseRestriction(att);
+            break;
+        case K_SIMPLETYPE:
         default:
             for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
                 ;
@@ -515,6 +590,21 @@ void XSDParser::ParseContent(DTDAttribute& att)
             }
             break;
         }
+    }
+}
+
+void XSDParser::ParseRestriction(DTDAttribute& att)
+{
+    TToken tok;
+    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
+        if (IsAttribute("base")) {
+            if (!DefineAttributeType(att)) {
+                att.SetTypeName(m_Value);
+            }
+        }
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(att);
     }
 }
 
@@ -543,10 +633,9 @@ void XSDParser::CreateTypeDefinition(void)
     }
     data += m_Raw;
     m_MapEntity[name].SetData(data);
-    if (tok != K_CLOSING) {
-        ParseError("Unexpected token");
+    if (tok == K_CLOSING) {
+        ParseTypeDefinition(m_MapEntity[name]);
     }
-    ParseTypeDefinition(m_MapEntity[name]);
 }
 
 void XSDParser::ParseTypeDefinition(DTDEntity& ent)
@@ -578,7 +667,8 @@ void XSDParser::ProcessNamedTypes(void)
         for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
 
             DTDElement& node = i->second;
-            if (node.GetType() == DTDElement::eUnknown && !node.GetTypeName().empty()) {
+            if ( node.GetType() == DTDElement::eUnknown &&
+                !node.GetTypeName().empty()) {
                 found = true;
                 PushEntityLexer(node.GetTypeName());
                 ParseContent(node);
@@ -586,6 +676,75 @@ void XSDParser::ProcessNamedTypes(void)
             }
         }
     } while (found);
+
+    do {
+        found = false;
+        map<string,DTDElement>::iterator i;
+        for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+
+            DTDElement& node = i->second;
+            if (node.HasAttributes()) {
+                list<DTDAttribute>& atts = node.GetNonconstAttributes();
+                list<DTDAttribute>::iterator a;
+                for (a = atts.begin(); a != atts.end(); ++a) {
+                    if (a->GetType() == DTDAttribute::eUnknown &&
+                        m_MapAttribute.find(a->GetName()) != m_MapAttribute.end()) {
+                        found = true;
+                        a->Merge(m_MapAttribute[a->GetName()]);
+                    }
+                }
+            }
+        }
+    } while (found);
+
+    do {
+        found = false;
+        map<string,DTDElement>::iterator i;
+        for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+
+            DTDElement& node = i->second;
+            if (node.HasAttributes()) {
+                list<DTDAttribute>& atts = node.GetNonconstAttributes();
+                list<DTDAttribute>::iterator a;
+                for (a = atts.begin(); a != atts.end(); ++a) {
+                    if ( a->GetType() == DTDAttribute::eUnknown &&
+                        !a->GetTypeName().empty()) {
+                        found = true;
+                        PushEntityLexer(a->GetTypeName());
+                        ParseContent(*a);
+                    }
+                }
+            }
+        }
+    } while (found);
+}
+
+void XSDParser::PushEntityLexer(const string& name)
+{
+    DTDParser::PushEntityLexer(name);
+
+    m_StackPrefixToNamespace.push(m_PrefixToNamespace);
+    m_StackNamespaceToPrefix.push(m_NamespaceToPrefix);
+    m_StackTargetNamespace.push(m_TargetNamespace);
+    m_StackElementFormDefault.push(m_ElementFormDefault);
+    Reset();
+}
+
+bool XSDParser::PopEntityLexer(void)
+{
+    if (DTDParser::PopEntityLexer()) {
+        m_PrefixToNamespace = m_StackPrefixToNamespace.top();
+        m_NamespaceToPrefix = m_StackNamespaceToPrefix.top();
+        m_TargetNamespace = m_StackTargetNamespace.top();
+        m_ElementFormDefault = m_StackElementFormDefault.top();
+
+        m_StackPrefixToNamespace.pop();
+        m_StackNamespaceToPrefix.pop();
+        m_StackTargetNamespace.pop();
+        m_StackElementFormDefault.pop();
+        return true;
+    }
+    return false;
 }
 
 AbstractLexer* XSDParser::CreateEntityLexer(
@@ -594,12 +753,43 @@ AbstractLexer* XSDParser::CreateEntityLexer(
     return new XSDEntityLexer(in,name);
 }
 
+#if defined(NCBI_DTDPARSER_TRACE)
+void XSDParser::PrintDocumentTree(void)
+{
+    cout << " === Namespaces ===" << endl;
+    map<string,string>::const_iterator i;
+    for (i = m_PrefixToNamespace.begin(); i != m_PrefixToNamespace.end(); ++i) {
+        cout << i->first << ":  " << i->second << endl;
+    }
+    
+    cout << " === Target namespace ===" << endl;
+    cout << m_TargetNamespace << endl;
+    
+    cout << " === Element form default ===" << endl;
+    cout << (m_ElementFormDefault ? "qualified" : "unqualified") << endl;
+    cout << endl;
+
+    DTDParser::PrintDocumentTree();
+
+    if (!m_MapAttribute.empty()) {
+        cout << " === Standalone Attribute definitions ===" << endl;
+        map<string,DTDAttribute>::const_iterator a;
+        for (a= m_MapAttribute.begin(); a != m_MapAttribute.end(); ++ a) {
+            PrintAttribute( a->second, false);
+        }
+    }
+}
+#endif
+
 END_NCBI_SCOPE
 
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2006/05/03 14:38:08  gouriano
+ * Added parsing attribute definition and include
+ *
  * Revision 1.1  2006/04/20 14:00:11  gouriano
  * Added XML schema parsing
  *

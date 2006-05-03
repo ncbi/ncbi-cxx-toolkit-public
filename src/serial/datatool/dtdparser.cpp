@@ -218,8 +218,10 @@ TToken DTDParser::GetNextToken(void)
             }
             break;
         case T_EOF:
-            if (PopEntityLexer() && Lexer().TokenStarted()) {
-                Consume();
+            if (PopEntityLexer()) {
+                if (Lexer().TokenStarted()) {
+                    Consume();
+                }
                 break;
             } else {
                 if (!m_IdentifierText.empty()) {
@@ -519,7 +521,9 @@ void DTDParser::PushEntityLexer(const string& name)
 {
     map<string,DTDEntity>::iterator i = m_MapEntity.find(name);
     if (i == m_MapEntity.end()) {
-        ParseError("Undefined entity","entity");
+        string msg("Undefined entity: ");
+        msg += name;
+        ParseError(msg.c_str(),"entity definition");
     }
     CNcbiIstream* in;
     string lexer_name;
@@ -1037,9 +1041,8 @@ void DTDParser::PrintEntities(void)
         cout << " === Entities ===" << endl;
         map<string,DTDEntity>::iterator i;
         for (i = m_MapEntity.begin(); i != m_MapEntity.end(); ++i) {
-            cout << i->second.GetName() << " = \"" << i->second.GetData() << "\"" << endl;
+            cout << i->second.GetName() << " = \"" << i->second.GetData() << "\"" << endl << endl;
         }
-        cout << endl;
     }
 }
 
@@ -1055,8 +1058,10 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eSequence: cout << "sequence";break;
     case DTDElement::eChoice:   cout << "choice";  break;
 
-    case DTDElement::eDouble:   cout << "double";   break;
-    case DTDElement::eInteger:  cout << "integer";  break;
+    case DTDElement::eDouble:      cout << "double";   break;
+    case DTDElement::eInteger:     cout << "integer";  break;
+    case DTDElement::eBigInt:      cout << "BigInt";  break;
+    case DTDElement::eOctetString: cout << "OctetString";  break;
     }
     switch (node.GetOccurrence()) {
     default:
@@ -1094,47 +1099,54 @@ void DTDParser::PrintNodeAttributes(const DTDElement& node)
     cout << "        === Attributes ===" << endl;
     for (list<DTDAttribute>::const_iterator i= att.begin();
         i != att.end(); ++i) {
-        cout << "        ";
-        cout << i->GetName();
-        cout << ": ";
-        switch (i->GetType()) {
-        case DTDAttribute::eUnknown:  cout << "eUnknown"; break;
-        case DTDAttribute::eString:   cout << "eString"; break;
-        case DTDAttribute::eEnum:     cout << "eEnum"; break;
-        case DTDAttribute::eId:       cout << "eId"; break;
-        case DTDAttribute::eIdRef:    cout << "eIdRef"; break;
-        case DTDAttribute::eIdRefs:   cout << "eIdRefs"; break;
-        case DTDAttribute::eNmtoken:  cout << "eNmtoken"; break;
-        case DTDAttribute::eNmtokens: cout << "eNmtokens"; break;
-        case DTDAttribute::eEntity:   cout << "eEntity"; break;
-        case DTDAttribute::eEntities: cout << "eEntities"; break;
-        case DTDAttribute::eNotation: cout << "eNotation"; break;
-        }
-        {
-            const list<string>& enumV = i->GetEnumValues();
-            if (!enumV.empty()) {
-                cout << " (";
-                for (list<string>::const_iterator ie= enumV.begin();
-                    ie != enumV.end(); ++ie) {
-                    if (ie != enumV.begin()) {
-                        cout << ",";
-                    }
-                    cout << *ie;
-                }
-                cout << ")";
-            }
-        }
-        cout << ", ";
-        switch (i->GetValueType()) {
-        case DTDAttribute::eDefault:  cout << "eDefault"; break;
-        case DTDAttribute::eRequired: cout << "eRequired"; break;
-        case DTDAttribute::eImplied:  cout << "eImplied"; break;
-        case DTDAttribute::eFixed:    cout << "eFixed"; break;
-        }
-        cout << ", ";
-        cout << "\"" << i->GetValue() << "\"";
-        cout << endl;
+        PrintAttribute( *i);
     }
+}
+
+void DTDParser::PrintAttribute(const DTDAttribute& attrib, bool indent/*=true*/)
+{
+    if (indent) {
+        cout << "        ";
+    }
+    cout << attrib.GetName();
+    cout << ": ";
+    switch (attrib.GetType()) {
+    case DTDAttribute::eUnknown:  cout << "eUnknown"; break;
+    case DTDAttribute::eString:   cout << "eString"; break;
+    case DTDAttribute::eEnum:     cout << "eEnum"; break;
+    case DTDAttribute::eId:       cout << "eId"; break;
+    case DTDAttribute::eIdRef:    cout << "eIdRef"; break;
+    case DTDAttribute::eIdRefs:   cout << "eIdRefs"; break;
+    case DTDAttribute::eNmtoken:  cout << "eNmtoken"; break;
+    case DTDAttribute::eNmtokens: cout << "eNmtokens"; break;
+    case DTDAttribute::eEntity:   cout << "eEntity"; break;
+    case DTDAttribute::eEntities: cout << "eEntities"; break;
+    case DTDAttribute::eNotation: cout << "eNotation"; break;
+    }
+    {
+        const list<string>& enumV = attrib.GetEnumValues();
+        if (!enumV.empty()) {
+            cout << " (";
+            for (list<string>::const_iterator ie= enumV.begin();
+                ie != enumV.end(); ++ie) {
+                if (ie != enumV.begin()) {
+                    cout << ",";
+                }
+                cout << *ie;
+            }
+            cout << ")";
+        }
+    }
+    cout << ", ";
+    switch (attrib.GetValueType()) {
+    case DTDAttribute::eDefault:  cout << "eDefault"; break;
+    case DTDAttribute::eRequired: cout << "eRequired"; break;
+    case DTDAttribute::eImplied:  cout << "eImplied"; break;
+    case DTDAttribute::eFixed:    cout << "eFixed"; break;
+    }
+    cout << ", ";
+    cout << "\"" << attrib.GetValue() << "\"";
+    cout << endl;
 }
 
 #endif
@@ -1145,6 +1157,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.26  2006/05/03 14:38:08  gouriano
+ * Added parsing attribute definition and include
+ *
  * Revision 1.25  2006/04/20 14:00:11  gouriano
  * Added XML schema parsing
  *

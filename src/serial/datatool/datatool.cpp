@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,4,0) );
+    SetVersion( CVersionInfo(1,4,1) );
 }
 
 void CDataTool::Init(void)
@@ -648,6 +648,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.92  2006/05/03 14:38:08  gouriano
+* Added parsing attribute definition and include
+*
 * Revision 1.91  2006/04/20 14:00:11  gouriano
 * Added XML schema parsing
 *

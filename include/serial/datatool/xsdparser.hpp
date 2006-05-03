@@ -58,8 +58,10 @@ protected:
     bool IsAttribute(const char* att) const;
     bool IsValue(const char* value) const;
     bool DefineElementType(DTDElement& node);
+    bool DefineAttributeType(DTDAttribute& att);
 
     void ParseHeader();
+    void ParseInclude(void);
     string ParseElementContent(DTDElement* owner);
     void ParseContent(DTDElement& node);
     void ParseContainer(DTDElement& node);
@@ -70,17 +72,25 @@ protected:
     void ParseRestriction(DTDElement& node);
     void ParseAttribute(DTDElement& node);
 
+    string ParseAttributeContent(void);
     void ParseContent(DTDAttribute& att);
+    void ParseRestriction(DTDAttribute& att);
     void ParseEnumeration(DTDAttribute& att);
 
     void CreateTypeDefinition(void);
     void ParseTypeDefinition(DTDEntity& ent);
     void ProcessNamedTypes(void);
 
+    virtual void PushEntityLexer(const string& name);
+    virtual bool PopEntityLexer(void);
     virtual AbstractLexer* CreateEntityLexer(
         CNcbiIstream& in, const string& name, bool autoDelete=true);
 
-private:
+#if defined(NCBI_DTDPARSER_TRACE)
+    virtual void PrintDocumentTree(void);
+#endif
+
+protected:
     string m_Raw;
     string m_Element;
     string m_ElementPrefix;
@@ -88,10 +98,18 @@ private:
     string m_AttributePrefix;
     string m_Value;
     string m_ValuePrefix;
+
     map<string,string> m_PrefixToNamespace;
     map<string,string> m_NamespaceToPrefix;
+    map<string,DTDAttribute> m_MapAttribute;
     string m_TargetNamespace;
     bool m_ElementFormDefault;
+
+private:
+    stack< map<string,string> > m_StackPrefixToNamespace;
+    stack< map<string,string> > m_StackNamespaceToPrefix;
+    stack<string> m_StackTargetNamespace;
+    stack<bool> m_StackElementFormDefault;
 };
 
 END_NCBI_SCOPE
@@ -102,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2006/05/03 14:37:38  gouriano
+ * Added parsing attribute definition and include
+ *
  * Revision 1.1  2006/04/20 14:00:56  gouriano
  * Added XML schema parsing
  *

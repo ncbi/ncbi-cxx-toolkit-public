@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/05/03 14:37:38  gouriano
+* Added parsing attribute definition and include
+*
 * Revision 1.3  2000/11/20 17:26:10  vasilche
 * Fixed warnings on 64 bit platforms.
 *
@@ -73,12 +76,12 @@ public:
 
     string GetText(void) const
         {
-            return string(start, length);
+            return start ? string(start, length) : kEmptyStr;
         }
 
     char GetSymbol(void) const
         {
-            return *start;
+            return start ? *start : 0;
         }
 
     int GetLine(void) const

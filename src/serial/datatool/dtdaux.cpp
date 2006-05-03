@@ -95,17 +95,38 @@ DTDAttribute::DTDAttribute(void)
 }
 DTDAttribute::DTDAttribute(const DTDAttribute& other)
 {
-    m_Name = other.m_Name;
-    m_Type = other.m_Type;
+    m_Name      = other.m_Name;
+    m_TypeName  = other.m_TypeName;
+    m_Type      = other.m_Type;
     m_ValueType = other.m_ValueType;
-    m_Value = other.m_Value;
-    for (list<string>::const_iterator i = other.m_ListEnum.begin();
-        i != other.m_ListEnum.end(); ++i) {
-        m_ListEnum.push_back( *i);
-    }
+    m_Value     = other.m_Value;
+    m_ListEnum  = other.m_ListEnum;
 }
 DTDAttribute::~DTDAttribute(void)
 {
+}
+
+DTDAttribute& DTDAttribute::operator= (const DTDAttribute& other)
+{
+    m_Name      = other.m_Name;
+    m_TypeName  = other.m_TypeName;
+    m_Type      = other.m_Type;
+    m_ValueType = other.m_ValueType;
+    m_Value     = other.m_Value;
+    m_ListEnum  = other.m_ListEnum;
+    return *this;
+}
+
+void DTDAttribute::Merge(const DTDAttribute& other)
+{
+    m_Name      = other.m_Name;
+    m_TypeName  = other.m_TypeName;
+    m_Type      = other.m_Type;
+    if (m_ValueType == eDefault) {
+        m_ValueType = other.m_ValueType;
+    }
+    m_Value     = other.m_Value;
+    m_ListEnum  = other.m_ListEnum;
 }
 
 void DTDAttribute::SetName(const string& name)
@@ -124,6 +145,16 @@ void DTDAttribute::SetType(EType type)
 DTDAttribute::EType DTDAttribute::GetType(void) const
 {
     return m_Type;
+}
+
+void DTDAttribute::SetTypeName( const string& name)
+{
+    m_TypeName = name;
+}
+
+const string& DTDAttribute::GetTypeName( void) const
+{
+    return m_TypeName;
 }
 
 void DTDAttribute::SetValueType(EValueType valueType)
@@ -166,25 +197,15 @@ DTDElement::DTDElement(void)
 
 DTDElement::DTDElement(const DTDElement& other)
 {
-    m_Name = other.m_Name;
+    m_Name     = other.m_Name;
     m_TypeName = other.m_TypeName;
-    m_Type = other.eUnknown;
-    m_Occ  = other.m_Occ;
-    m_Refd = other.m_Refd;
-    m_Embd = other.m_Embd;
-    for (list<string>::const_iterator i = other.m_Refs.begin();
-        i != other.m_Refs.end(); ++i) {
-        m_Refs.push_back( *i);
-    }
-    for (map<string,EOccurrence>::const_iterator i = other.m_RefOcc.begin();
-        i != other.m_RefOcc.end(); ++i) {
-        m_RefOcc[i->first] = i->second;
-    }
-     ;
-    for (list<DTDAttribute>::const_iterator i = other.m_Attrib.begin();
-        i != other.m_Attrib.end(); ++i) {
-        m_Attrib.push_back(*i);
-    }
+    m_Type     = other.eUnknown;
+    m_Occ      = other.m_Occ;
+    m_Refd     = other.m_Refd;
+    m_Embd     = other.m_Embd;
+    m_Refs     = other.m_Refs;
+    m_RefOcc   = other.m_RefOcc;
+    m_Attrib   = other.m_Attrib;
 }
 
 DTDElement::~DTDElement(void)
@@ -305,6 +326,10 @@ const list<DTDAttribute>& DTDElement::GetAttributes(void) const
 {
     return m_Attrib;
 }
+list<DTDAttribute>& DTDElement::GetNonconstAttributes(void)
+{
+    return m_Attrib;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -346,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2006/05/03 14:38:08  gouriano
+ * Added parsing attribute definition and include
+ *
  * Revision 1.5  2006/04/20 14:00:11  gouriano
  * Added XML schema parsing
  *

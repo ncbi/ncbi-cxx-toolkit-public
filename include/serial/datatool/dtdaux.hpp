@@ -111,12 +111,17 @@ public:
         eImplied,
         eFixed
     };
+    
+    DTDAttribute& operator= (const DTDAttribute& other);
+    void Merge(const DTDAttribute& other);
 
     void SetName(const string& name);
     const string& GetName(void) const;
 
     void SetType(EType type);
     EType GetType(void) const;
+    void SetTypeName( const string& name);
+    const string& GetTypeName( void) const;
 
     void SetValueType(EValueType valueType);
     EValueType GetValueType(void) const;
@@ -129,6 +134,7 @@ public:
 
 private:
     string m_Name;
+    string m_TypeName;
     EType m_Type;
     EValueType m_ValueType;
     string m_Value;
@@ -196,6 +202,7 @@ public:
     void AddAttribute(DTDAttribute& attrib);
     bool HasAttributes(void) const;
     const list<DTDAttribute>& GetAttributes(void) const;
+    list<DTDAttribute>& GetNonconstAttributes(void);
 
 private:
     string m_Name;
@@ -244,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2006/05/03 14:37:38  gouriano
+ * Added parsing attribute definition and include
+ *
  * Revision 1.4  2006/04/20 14:00:56  gouriano
  * Added XML schema parsing
  *
