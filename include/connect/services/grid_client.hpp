@@ -77,7 +77,7 @@ public:
     /// Submit a job to the queue
     ///
     /// @return a job key
-    string Submit();
+    string Submit(const string& affinity = "");
 
 private:
     /// Only CGridClient can create an instnce of this class
@@ -260,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/03 14:50:08  didenko
+ * Added affinity support
+ *
  * Revision 1.9  2006/04/12 19:03:48  didenko
  * Renamed parameter "use_embedded_input" to "use_embedded_storage"
  *

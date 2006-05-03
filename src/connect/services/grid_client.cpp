@@ -108,7 +108,7 @@ CNcbiOstream& CGridJobSubmiter::GetOStream()
     //    return m_GridClient.GetStorage().CreateOStream(m_Input);
 }
 
-string CGridJobSubmiter::Submit()
+string CGridJobSubmiter::Submit(const string& affinity)
 {
     m_WStream.reset();
 
@@ -116,7 +116,8 @@ string CGridJobSubmiter::Submit()
     if (m_UseProgress)
         progress_msg_key = m_GridClient.GetStorage().CreateEmptyBlob();
     string job_key = m_GridClient.GetNSClient().SubmitJob(m_Input,
-                                                          progress_msg_key);
+                                                          progress_msg_key,
+                                                          affinity);
     m_Input.erase();
 
     if (m_UseProgress)
@@ -193,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/05/03 14:50:08  didenko
+ * Added affinity support
+ *
  * Revision 1.8  2006/04/12 19:03:49  didenko
  * Renamed parameter "use_embedded_input" to "use_embedded_storage"
  *
