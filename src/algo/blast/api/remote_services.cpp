@@ -49,9 +49,9 @@ BEGIN_SCOPE(blast)
 CRemoteServices::CRemoteServices()
 {}
 
-CRef<CBlast4_database_info>
+CRef<objects::CBlast4_database_info>
 CRemoteServices::x_FindDbInfoFromAvailableDatabases
-    (CRef<CBlast4_database> blastdb)
+    (CRef<objects::CBlast4_database> blastdb)
 {
     _ASSERT(blastdb.NotEmpty());
 
@@ -86,8 +86,8 @@ CRemoteServices::x_GetAvailableDatabases()
 }
 
 
-CRef<CBlast4_database_info>
-CRemoteServices::GetDatabaseInfo(CRef<CBlast4_database> blastdb)
+CRef<objects::CBlast4_database_info>
+CRemoteServices::GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb)
 {
     if (blastdb.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument,
