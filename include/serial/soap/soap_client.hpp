@@ -50,7 +50,8 @@ public:
     const string& GetDefaultNamespaceName(void) const;
 
     void RegisterObjectType(TTypeInfoGetter type_getter);
-    void Invoke(CSoapMessage& response, const CSoapMessage& request);
+    void Invoke(CSoapMessage& response, const CSoapMessage& request,
+                const string& soap_action = kEmptyStr);
 
 private:
     string m_ServerUrl;
@@ -64,6 +65,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/05/03 14:36:23  gouriano
+* Added optional soap action
+*
 * Revision 1.1  2004/06/28 19:23:23  gouriano
 * Initial revision
 *

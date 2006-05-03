@@ -77,7 +77,8 @@ void CSoapHttpClient::RegisterObjectType(TTypeInfoGetter type_getter)
 }
 
 void CSoapHttpClient::Invoke(CSoapMessage& response,
-                             const CSoapMessage& request)
+                             const CSoapMessage& request,
+                             const string& soap_action /*= kEmptyStr*/)
 {
     response.Reset();
     vector< TTypeInfoGetter >::iterator types_in;
@@ -90,6 +91,12 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     net_info->debug_printout = eDebugPrintout_Data;
     ConnNetInfo_ParseURL(net_info, m_ServerUrl.c_str());
+    if (!soap_action.empty()) {
+        string s("SOAPAction: \"");
+        s += soap_action;
+        s += "\"\r\n";
+        ConnNetInfo_SetUserHeader(net_info,s.c_str());
+    }
 
     CConn_HttpStream http(net_info,
         MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml, eENCOD_None,
@@ -106,6 +113,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/05/03 14:36:03  gouriano
+* Added optional soap action
+*
 * Revision 1.1  2004/06/28 19:23:49  gouriano
 * Initial revision
 *
