@@ -42,16 +42,14 @@ BEGIN_NCBI_SCOPE
 //
 
 CTL_RPCCmd::CTL_RPCCmd(CTL_Connection* conn, CS_COMMAND* cmd,
-                       const string& proc_name, unsigned int nof_params)
-    : m_Connect(conn),
-      m_Cmd(cmd),
-      m_Query(proc_name),
-      m_Params(nof_params)
+                       const string& proc_name, unsigned int nof_params) : 
+CTL_Cmd(conn, cmd),
+m_Query(proc_name),
+m_Params(nof_params)
 {
     m_WasSent     = false;
     m_HasFailed   = false;
     m_Recompile   = false;
-    m_Res         = 0;
     m_RowCount    = -1;
 }
 
@@ -80,9 +78,9 @@ bool CTL_RPCCmd::Send()
 
     m_HasFailed = false;
 
-    switch ( ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
+    switch ( Check(ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
                         const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
-                        m_Recompile ? CS_RECOMPILE : CS_UNUSED) ) {
+                        m_Recompile ? CS_RECOMPILE : CS_UNUSED)) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
@@ -95,12 +93,12 @@ bool CTL_RPCCmd::Send()
     m_HasFailed = !x_AssignParams();
     CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 121003 );
 
-    switch ( ct_send(x_GetSybaseCmd()) ) {
+    switch ( Check(ct_send(x_GetSybaseCmd())) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        if (ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) != CS_SUCCEED) {
+        if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
             // we need to close this connection
             DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_send. "
                                "Connection must be closed", 121004 );
@@ -129,28 +127,7 @@ bool CTL_RPCCmd::WasSent() const
 
 bool CTL_RPCCmd::Cancel()
 {
-    if ( !m_WasSent ) {
-        return true;
-    }
-
-    if ( m_Res ) {
-        // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
-        ((CTL_RowResult*)m_Res)->m_EOR= true; 
-        delete m_Res;
-        m_Res = 0;
-    }
-
-    switch ( ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) ) {
-    case CS_SUCCEED:
-        m_WasSent = false;
-        return true;
-    case CS_FAIL:
-        DATABASE_DRIVER_ERROR( "ct_cancel failed", 121008 );
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "connection has another request pending", 121009 );
-    default:
-        return false;
-    }
+    return CTL_Cmd::Cancel();
 }
 
 
@@ -162,164 +139,21 @@ bool CTL_RPCCmd::WasCanceled() const
 
 CDB_Result* CTL_RPCCmd::Result()
 {
-    if ( m_Res ) {
-        delete m_Res;
-        m_Res = 0;
-    }
-
-    CHECK_DRIVER_ERROR( 
-        !m_WasSent, 
-        "you need to send a command first", 
-        121010 );
-
-    for (;;) {
-        CS_INT res_type;
-
-        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
-        case CS_SUCCEED:
-            break;
-        case CS_END_RESULTS:
-            m_WasSent = false;
-            return 0;
-        case CS_FAIL:
-            m_HasFailed = true;
-            if (ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) != CS_SUCCEED) {
-                // we need to close this connection
-                DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed", 121012 );
-            }
-            m_WasSent = false;
-            DATABASE_DRIVER_ERROR( "ct_result failed", 121013 );
-        case CS_CANCELED:
-            m_WasSent = false;
-            DATABASE_DRIVER_ERROR( "your command has been canceled", 121011 );
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 121014 );
-        default:
-            DATABASE_DRIVER_ERROR( "your request is pending", 121015 );
-        }
-
-        switch ( res_type ) {
-        case CS_CMD_SUCCEED:
-        case CS_CMD_DONE: // done with this command
-            // check the number of affected rows
-            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
-            continue;
-        case CS_CMD_FAIL: // the command has failed
-            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
-            m_HasFailed = true;
-            DATABASE_DRIVER_WARNING( "The server encountered an error while "
-                               "executing a command", 121016 );
-        case CS_ROW_RESULT:
-            m_Res = new CTL_RowResult(x_GetSybaseCmd());
-            break;
-        case CS_PARAM_RESULT:
-            m_Res = new CTL_ParamResult(x_GetSybaseCmd());
-            break;
-        case CS_COMPUTE_RESULT:
-            m_Res = new CTL_ComputeResult(x_GetSybaseCmd());
-            break;
-        case CS_STATUS_RESULT:
-            m_Res = new CTL_StatusResult(x_GetSybaseCmd());
-            break;
-        case CS_COMPUTEFMT_RESULT:
-            DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 121017 );
-        case CS_ROWFMT_RESULT:
-            DATABASE_DRIVER_INFO( "CS_ROWFMT_RESULT has arrived", 121018 );
-        case CS_MSG_RESULT:
-            DATABASE_DRIVER_INFO( "CS_MSG_RESULT has arrived", 121019 );
-        default:
-            DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 121020 );
-        }
-
-        return Create_Result(*m_Res);
-    }
+    return MakeResult();
 }
 
 void CTL_RPCCmd::DumpResults()
 {
-    if ( m_Res ) {
-        delete m_Res;
-        m_Res = 0;
-    }
-
-    CHECK_DRIVER_ERROR( 
-        !m_WasSent, 
-        "you need to send a command first", 
-        121010 );
-
-    for (;;) {
-        CS_INT res_type;
-
-        switch ( ct_results(x_GetSybaseCmd(), &res_type) ) {
-        case CS_SUCCEED:
-            break;
-        case CS_END_RESULTS:
-            m_WasSent = false;
-            return;
-        case CS_FAIL:
-            m_HasFailed = true;
-            if (ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL) != CS_SUCCEED) {
-                // we need to close this connection
-                DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed", 121012 );
-            }
-            m_WasSent = false;
-            DATABASE_DRIVER_ERROR( "ct_result failed", 121013 );
-        case CS_CANCELED:
-            m_WasSent = false;
-            DATABASE_DRIVER_ERROR( "your command has been canceled", 121011 );
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 121014 );
-        default:
-            DATABASE_DRIVER_ERROR( "your request is pending", 121015 );
+    auto_ptr<CDB_Result> res(Result());
+    
+    while (res.get()) {
+        if (!ProcessResultInternal(*res)) {
+            while(res->Fetch());
         }
 
-        switch ( res_type ) {
-        case CS_CMD_SUCCEED:
-        case CS_CMD_DONE: // done with this command
-            // check the number of affected rows
-            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
-            continue;
-        case CS_CMD_FAIL: // the command has failed
-            g_CTLIB_GetRowCount(x_GetSybaseCmd(), &m_RowCount);
-            m_HasFailed = true;
-            DATABASE_DRIVER_WARNING( "The server encountered an error while "
-                               "executing a command", 121016 );
-        case CS_ROW_RESULT:
-            m_Res = new CTL_RowResult(x_GetSybaseCmd());
-            break;
-        case CS_PARAM_RESULT:
-            m_Res = new CTL_ParamResult(x_GetSybaseCmd());
-            break;
-        case CS_COMPUTE_RESULT:
-            m_Res = new CTL_ComputeResult(x_GetSybaseCmd());
-            break;
-        case CS_STATUS_RESULT:
-            m_Res = new CTL_StatusResult(x_GetSybaseCmd());
-            break;
-        case CS_COMPUTEFMT_RESULT:
-            DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 121017 );
-        case CS_ROWFMT_RESULT:
-            DATABASE_DRIVER_INFO( "CS_ROWFMT_RESULT has arrived", 121018 );
-        case CS_MSG_RESULT:
-            DATABASE_DRIVER_INFO( "CS_MSG_RESULT has arrived", 121019 );
-        default:
-            DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 121020 );
-        }
-
-        if(m_Res) {
-            if(m_Connect->m_ResProc) {
-                CDB_Result* r= Create_Result(*m_Res);
-                m_Connect->m_ResProc->ProcessResult(*r);
-                delete r;
-            }
-            else {
-                while(m_Res->Fetch());
-            }
-            delete m_Res;
-            m_Res= 0;
-        }
+        DeleteResult();        
+        
+        res.reset(Result());
     }
 }
 
@@ -350,16 +184,17 @@ void CTL_RPCCmd::SetRecompile(bool recompile)
 void CTL_RPCCmd::Release()
 {
     m_BR = 0;
-    if ( m_WasSent) {
-        try {
-            Cancel();
-        } catch ( const CDB_Exception& ) {
-        }
-        m_WasSent = false;
-    }
-
-    m_Connect->DropCmd(*this);
+    
+    CancelCmd(*this);
+    
     delete this;
+}
+
+
+CDB_Result* 
+CTL_RPCCmd::CreateResult(I_Result& result)
+{
+    return Create_Result(result);
 }
 
 
@@ -387,8 +222,7 @@ CTL_RPCCmd::Close(void)
             }
         }
 
-        ct_cmd_drop(x_GetSybaseCmd());
-        m_Cmd = NULL;
+        DropSybaseCmd();
     }
 }
 
@@ -410,8 +244,11 @@ bool CTL_RPCCmd::x_AssignParams()
             ((m_Params.GetParamStatus(i) & CDB_Params::fOutput) == 0)
             ? CS_INPUTVALUE : CS_RETURN;
 
-        if ( !g_CTLIB_AssignCmdParam(x_GetSybaseCmd(), param, param_name, param_fmt,
-                                     indicator, false/*!declare_only*/) ) {
+        if ( !AssignCmdParam(param, 
+                             param_name, 
+                             param_fmt,
+                             indicator, 
+                             false/*!declare_only*/) ) {
             return false;
         }
     }
@@ -427,7 +264,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/05/03 15:10:36  ssikorsk
+ * Implemented classs CTL_Cmd and CCTLExceptions;
+ * Surrounded each native ctlib call with Check;
+ *
  * Revision 1.15  2006/03/06 19:51:38  ssikorsk
+ *
  * Added method Close/CloseForever to all context/command-aware classes.
  * Use getters to access Sybase's context and command handles.
  *

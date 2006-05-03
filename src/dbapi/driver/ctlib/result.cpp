@@ -44,22 +44,31 @@ BEGIN_NCBI_SCOPE
 //
 
 
-CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd)
-    : m_Cmd(cmd),
-      m_CurrItem(-1),
-      m_EOR(false)
+CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) : 
+m_Connect(&conn),
+m_Cmd(cmd),
+m_CurrItem(-1),
+m_EOR(false)
 {
     CS_INT outlen;
 
     CS_INT nof_cols;
-    bool rc = (ct_res_info(x_GetSybaseCmd(), CS_NUMDATA, &nof_cols, CS_UNUSED, &outlen)
+    bool rc = (Check(ct_res_info(x_GetSybaseCmd(), 
+                                 CS_NUMDATA, 
+                                 &nof_cols, 
+                                 CS_UNUSED, 
+                                 &outlen))
                != CS_SUCCEED);
     CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_NUMDATA) failed", 130001 );
 
     m_NofCols = nof_cols;
 
     CS_INT cmd_num;
-    rc = (ct_res_info(x_GetSybaseCmd(), CS_CMD_NUMBER, &cmd_num, CS_UNUSED, &outlen)
+    rc = (Check(ct_res_info(x_GetSybaseCmd(), 
+                            CS_CMD_NUMBER, 
+                            &cmd_num, 
+                            CS_UNUSED, 
+                            &outlen))
         != CS_SUCCEED);
     CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_CMD_NUMBER) failed", 130001 );
     m_CmdNum = cmd_num;
@@ -69,7 +78,9 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd)
 
     m_ColFmt = new CS_DATAFMT[m_NofCols];
     for (unsigned int nof_items = 0;  nof_items < m_NofCols;  nof_items++) {
-        rc = (ct_describe(x_GetSybaseCmd(), (CS_INT) nof_items + 1, &m_ColFmt[nof_items])
+        rc = (Check(ct_describe(x_GetSybaseCmd(), 
+                                (CS_INT) nof_items + 1, 
+                                &m_ColFmt[nof_items]))
             != CS_SUCCEED);
         CHECK_DRIVER_ERROR( rc, "ct_describe failed", 130002 );
         bind_len+= m_ColFmt[nof_items].maxlength;
@@ -81,7 +92,12 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd)
         m_Indicator= new CS_SMALLINT[m_BindedCols];
         for(int i= 0; i < m_BindedCols; i++) {
           m_BindItem[i]= i? ((unsigned char*)(m_BindItem[i-1])) + m_ColFmt[i-1].maxlength : m_BindBuff;
-          rc = (ct_bind(x_GetSybaseCmd(), i+1, &m_ColFmt[i], m_BindItem[i], &m_Copied[i], &m_Indicator[i]) 
+          rc = (Check(ct_bind(x_GetSybaseCmd(), 
+                              i+1, 
+                              &m_ColFmt[i], 
+                              m_BindItem[i], 
+                              &m_Copied[i], 
+                              &m_Indicator[i]) )
              != CS_SUCCEED);
           CHECK_DRIVER_ERROR( rc, "ct_bind failed", 130042 );
         }
@@ -152,7 +168,7 @@ bool CTL_RowResult::Fetch()
         return false;
     }
 
-    switch ( ct_fetch(x_GetSybaseCmd(), CS_UNUSED, CS_UNUSED, CS_UNUSED, 0) ) {
+    switch ( Check(ct_fetch(x_GetSybaseCmd(), CS_UNUSED, CS_UNUSED, CS_UNUSED, 0)) ) {
     case CS_SUCCEED:
         m_CurrItem = 0;
         return true;
@@ -187,7 +203,7 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
                                          CS_INT buflen, CS_INT *outlen)
 {
   if(item > m_BindedCols)
-    return ct_get_data(cmd, item, buffer, buflen, outlen);
+    return Check(ct_get_data(cmd, item, buffer, buflen, outlen));
 
   --item;
 
@@ -910,7 +926,10 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 
     auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
 
-    bool rc = (ct_data_info(x_GetSybaseCmd(), CS_GET, m_CurrItem+1, &desc->m_Desc)
+    bool rc = (Check(ct_data_info(x_GetSybaseCmd(), 
+                                  CS_GET, 
+                                  m_CurrItem+1, 
+                                  &desc->m_Desc))
         != CS_SUCCEED);
     CHECK_DRIVER_ERROR( rc, "ct_data_info failed", 130010 );
 
@@ -955,14 +974,14 @@ CTL_RowResult::Close(void)
             return;
         }
 
-        switch (ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT)) {
+        switch (Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT))) {
         case CS_SUCCEED:
         case CS_CANCELED:
             break;
         default:
             CS_INT err_code = 130007;
-            ct_cmd_props(x_GetSybaseCmd(), CS_SET, CS_USERDATA,
-                         &err_code, (CS_INT) sizeof(err_code), 0);
+            Check(ct_cmd_props(x_GetSybaseCmd(), CS_SET, CS_USERDATA,
+                         &err_code, (CS_INT) sizeof(err_code), 0));
         }
         
         m_Cmd = NULL;
@@ -1029,7 +1048,7 @@ CTL_CursorResult::~CTL_CursorResult()
     try {
         if (m_EOR) { // this is not a bug
             CS_INT res_type;
-            while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
+            while (Check(ct_results(x_GetSybaseCmd(), &res_type)) == CS_SUCCEED) {
                 continue;
             }
         }
@@ -1069,7 +1088,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/05/03 15:10:36  ssikorsk
+ * Implemented classs CTL_Cmd and CCTLExceptions;
+ * Surrounded each native ctlib call with Check;
+ *
  * Revision 1.24  2006/03/06 19:51:38  ssikorsk
+ *
  * Added method Close/CloseForever to all context/command-aware classes.
  * Use getters to access Sybase's context and command handles.
  *

@@ -44,11 +44,14 @@ BEGIN_NCBI_SCOPE
 //  CTL_BCPInCmd::
 //
 
-CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* con, CS_BLKDESC* cmd,
-                           const string& table_name, unsigned int nof_columns)
-    : m_Query(table_name), m_Params(nof_columns)
+CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn, 
+                           CS_BLKDESC* cmd,
+                           const string& table_name, 
+                           unsigned int nof_columns) : 
+    CTL_Cmd(conn, NULL),
+m_Query(table_name), 
+m_Params(nof_columns)
 {
-    m_Connect    = con;
     m_Cmd        = cmd;
     m_WasSent    = false;
     m_HasFailed  = false;
@@ -86,10 +89,10 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype = CS_INT_TYPE;
             CS_INT value = (CS_INT) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_INT));
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer,
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) m_Bind[i].buffer,
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_SmallInt: {
@@ -97,10 +100,10 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype = CS_SMALLINT_TYPE;
             CS_SMALLINT value = (CS_SMALLINT) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_SMALLINT));
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer,
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) m_Bind[i].buffer,
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_TinyInt: {
@@ -108,10 +111,10 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype = CS_TINYINT_TYPE;
             CS_TINYINT value = (CS_TINYINT) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_TINYINT));
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer,
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) m_Bind[i].buffer,
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_BigInt: {
@@ -126,10 +129,10 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.scale     = 0;
             param_fmt.precision = 18;
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_NUMERIC));
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer,
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) m_Bind[i].buffer,
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_Char: {
@@ -138,10 +141,11 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   =
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : (CS_VOID*) par.Value(), 
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : 
+                                        (CS_VOID*) par.Value(), 
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_VarChar: {
@@ -149,10 +153,11 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype  = CS_CHAR_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   = (CS_INT) par.Size();
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : (CS_VOID*) par.Value(), 
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : 
+                                        (CS_VOID*) par.Value(), 
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_Binary: {
@@ -161,10 +166,11 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   =
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : (CS_VOID*) par.Value(), 
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : 
+                                        (CS_VOID*) par.Value(), 
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_VarBinary: {
@@ -172,10 +178,11 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype  = CS_BINARY_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   = (CS_INT) par.Size();
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : (CS_VOID*) par.Value(), 
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : 
+                                        (CS_VOID*) par.Value(), 
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_Float: {
@@ -183,10 +190,10 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype = CS_REAL_TYPE;
             CS_REAL value = (CS_REAL) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_REAL));
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer,
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) m_Bind[i].buffer,
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_Double: {
@@ -194,10 +201,10 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype = CS_FLOAT_TYPE;
             CS_FLOAT value = (CS_FLOAT) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_FLOAT));
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer,
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) m_Bind[i].buffer,
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_SmallDateTime: {
@@ -207,10 +214,10 @@ bool CTL_BCPInCmd::x_AssignParams()
             dt.days    = par.GetDays();
             dt.minutes = par.GetMinutes();
             memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME4));
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer,
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) m_Bind[i].buffer,
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_DateTime: {
@@ -220,10 +227,10 @@ bool CTL_BCPInCmd::x_AssignParams()
             dt.dtdays = par.GetDays();
             dt.dttime = par.Get300Secs();
             memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME));
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer,
-                                &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) m_Bind[i].buffer,
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_Text: {
@@ -231,9 +238,9 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype  = CS_TEXT_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size();
             m_Bind[i].datalen   = (CS_INT) par.Size();
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                0, &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      0, &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
         case eDB_Image: {
@@ -241,14 +248,13 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype  = CS_IMAGE_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size();
             m_Bind[i].datalen   = (CS_INT) par.Size();
-            ret_code = blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                0, &m_Bind[i].datalen,
-                                &m_Bind[i].indicator);
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      0, &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
             break;
         }
-        default: {
+        default: 
             return false;
-        }
         }
 
         if (ret_code != CS_SUCCEED) {
@@ -268,7 +274,7 @@ bool CTL_BCPInCmd::SendRow()
 
     if ( !m_WasSent ) {
         // we need to init the bcp
-        if (blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) m_Query.c_str(), CS_NULLTERM)
+        if (Check(blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) m_Query.c_str(), CS_NULLTERM))
             != CS_SUCCEED) {
             m_HasFailed = true;
             DATABASE_DRIVER_ERROR( "blk_init failed", 123001 );
@@ -281,14 +287,14 @@ bool CTL_BCPInCmd::SendRow()
             if (m_Params.GetParamStatus(i) != 0)
                 continue;
 
-            m_HasFailed = (blk_describe(x_GetSybaseCmd(), i + 1, &fmt) != CS_SUCCEED);
+            m_HasFailed = (Check(blk_describe(x_GetSybaseCmd(), i + 1, &fmt)) != CS_SUCCEED);
             CHECK_DRIVER_ERROR( 
                 m_HasFailed,
                 "blk_describe failed (check the number of "
                 "columns in a table)", 
                 123002 );
 
-            m_HasFailed = (blk_bind(x_GetSybaseCmd(), i + 1, &fmt, (void*) &m_Params,&datalen, &indicator) != CS_SUCCEED);
+            m_HasFailed = (Check(blk_bind(x_GetSybaseCmd(), i + 1, &fmt, (void*) &m_Params,&datalen, &indicator)) != CS_SUCCEED);
             CHECK_DRIVER_ERROR( 
                 m_HasFailed,
                 "blk_bind failed for default value", 
@@ -300,7 +306,7 @@ bool CTL_BCPInCmd::SendRow()
     m_HasFailed = !x_AssignParams();
     CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 123004 );
 
-    switch ( blk_rowxfer(x_GetSybaseCmd()) ) {
+    switch ( Check(blk_rowxfer(x_GetSybaseCmd())) ) {
     case CS_BLK_HAS_TEXT:  {
         char buff[2048];
         size_t n;
@@ -319,7 +325,7 @@ bool CTL_BCPInCmd::SendRow()
                 for (datalen = (CS_INT) par.Size();  datalen > 0;
                      datalen -= (CS_INT) n) {
                     n = par.Read(buff, 2048);
-                    m_HasFailed = (blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) n, 0) == CS_FAIL);
+                    m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) n, 0)) == CS_FAIL);
                     CHECK_DRIVER_ERROR( 
                         m_HasFailed, 
                         "blk_textxfer failed for the text/image field", 123005 
@@ -341,16 +347,20 @@ bool CTL_BCPInCmd::SendRow()
 
 bool CTL_BCPInCmd::Cancel()
 {
-    if(!m_WasSent) return false;
+    if(!m_WasSent) {
+        return false;
+    }
 
     CS_INT outrow = 0;
 
-    switch( blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow) ) {
+    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow)) ) {
     case CS_SUCCEED: m_WasSent= false; return true;
     case CS_FAIL:
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
-    default: m_WasSent = false; return false;
+    default: 
+        m_WasSent = false; 
+        return false;
     }
 }
 
@@ -361,7 +371,7 @@ bool CTL_BCPInCmd::CompleteBatch()
 
     CS_INT outrow = 0;
 
-    switch( blk_done(x_GetSybaseCmd(), CS_BLK_BATCH, &outrow) ) {
+    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_BATCH, &outrow)) ) {
     case CS_SUCCEED: return (outrow > 0);
     case CS_FAIL:
         m_HasFailed = true;
@@ -377,7 +387,7 @@ bool CTL_BCPInCmd::CompleteBCP()
 
     CS_INT outrow = 0;
 
-    switch( blk_done(x_GetSybaseCmd(), CS_BLK_ALL, &outrow) ) {
+    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_ALL, &outrow)) ) {
     case CS_SUCCEED: m_WasSent= false; return (outrow > 0);
     case CS_FAIL:
         m_HasFailed = true;
@@ -390,6 +400,8 @@ bool CTL_BCPInCmd::CompleteBCP()
 void CTL_BCPInCmd::Release()
 {
     m_BR = 0;
+    
+    // Cannot use CancelCmd(*this); because of Cancel()
     if (m_WasSent) {
         try {
             Cancel();
@@ -397,8 +409,17 @@ void CTL_BCPInCmd::Release()
         }
         m_WasSent = false;
     }
-    m_Connect->DropCmd(*this);
+    
+    DropCmd(*this);
+    
     delete this;
+}
+
+
+CDB_Result* 
+CTL_BCPInCmd::CreateResult(I_Result& result)
+{
+    return Create_Result(result);
 }
 
 
@@ -422,12 +443,13 @@ CTL_BCPInCmd::Close(void)
             try {
                 Cancel();
             } catch (const CDB_Exception& ) {
+                _ASSERT(false);
             }
         }
 
         delete[] m_Bind;
 
-        blk_drop(x_GetSybaseCmd());
+        Check(blk_drop(x_GetSybaseCmd()));
         
         m_Cmd = NULL;
     }
@@ -441,7 +463,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/05/03 15:10:36  ssikorsk
+ * Implemented classs CTL_Cmd and CCTLExceptions;
+ * Surrounded each native ctlib call with Check;
+ *
  * Revision 1.16  2006/03/06 19:51:37  ssikorsk
+ *
  * Added method Close/CloseForever to all context/command-aware classes.
  * Use getters to access Sybase's context and command handles.
  *

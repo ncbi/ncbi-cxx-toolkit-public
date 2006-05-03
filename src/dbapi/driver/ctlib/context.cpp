@@ -33,13 +33,12 @@
 
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
-#include <dbapi/driver/util/numeric_convert.hpp>
+// #include <dbapi/driver/util/numeric_convert.hpp>
 
 #include <algorithm>
 
@@ -56,6 +55,37 @@ BEGIN_NCBI_SCOPE
 
 static const CDiagCompileInfo kBlankCompileInfo;
 
+
+CCTLExceptions::CCTLExceptions(void)
+{
+}
+    
+CCTLExceptions& CCTLExceptions::GetInstance(void)
+{
+    static CSafeStaticPtr<CCTLExceptions> instance;
+    
+    return instance.Get(); 
+}
+
+void CCTLExceptions::Accept(CDB_Exception const& e)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    m_Exceptions.push_back(e);
+}
+
+void CCTLExceptions::Handle(CDBHandlerStack& handler)
+{
+    if (!m_Exceptions.empty()) {
+        CFastMutexGuard mg(m_Mutex);
+        
+        NON_CONST_ITERATE(deque<CDB_Exception>, it, m_Exceptions) {
+            handler.PostMsg(&*it);
+        }
+        
+        m_Exceptions.clear();
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -206,8 +236,8 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 
     SetApplicationName("CTLibDriver");
 
-    CS_RETCODE r = reuse_context ? cs_ctx_global(version, &m_Context) :
-        cs_ctx_alloc(version, &m_Context);
+    CS_RETCODE r = reuse_context ? Check(cs_ctx_global(version, &m_Context)) :
+        Check(cs_ctx_alloc(version, &m_Context));
     if (r != CS_SUCCEED) {
         m_Context = 0;
         DATABASE_DRIVER_ERROR( "Cannot allocate a context", 100001 );
@@ -218,7 +248,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     CPointerPot* p_pot = 0;
 
     // check if cs message callback is already installed
-    r = cs_config(CTLIB_GetContext(), CS_GET, CS_MESSAGE_CB, &cb, CS_UNUSED, &outlen);
+    r = Check(cs_config(CTLIB_GetContext(), CS_GET, CS_MESSAGE_CB, &cb, CS_UNUSED, &outlen));
     if (r != CS_SUCCEED) {
         m_Context = 0;
         DATABASE_DRIVER_ERROR( "cs_config failed", 100006 );
@@ -226,8 +256,8 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 
     if (cb == (CS_VOID*)  s_CTLIB_cserr_callback) {
         // we did use this context already
-        r = cs_config(CTLIB_GetContext(), CS_GET, CS_USERDATA,
-                      (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), &outlen);
+        r = Check(cs_config(CTLIB_GetContext(), CS_GET, CS_USERDATA,
+                      (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), &outlen));
         if (r != CS_SUCCEED) {
             m_Context = 0;
             DATABASE_DRIVER_ERROR( "cs_config failed", 100006 );
@@ -235,47 +265,47 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     }
     else {
         // this is a brand new context
-        r = cs_config(CTLIB_GetContext(), CS_SET, CS_MESSAGE_CB,
-                      (CS_VOID*) s_CTLIB_cserr_callback, CS_UNUSED, NULL);
+        r = Check(cs_config(CTLIB_GetContext(), CS_SET, CS_MESSAGE_CB,
+                      (CS_VOID*) s_CTLIB_cserr_callback, CS_UNUSED, NULL));
         if (r != CS_SUCCEED) {
-            cs_ctx_drop(CTLIB_GetContext());
+            Check(cs_ctx_drop(CTLIB_GetContext()));
             m_Context = 0;
             DATABASE_DRIVER_ERROR( "Cannot install the cslib message callback", 100005 );
         }
 
         p_pot = new CPointerPot;
-        r = cs_config(CTLIB_GetContext(), CS_SET, CS_USERDATA,
-                      (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), NULL);
+        r = Check(cs_config(CTLIB_GetContext(), CS_SET, CS_USERDATA,
+                      (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), NULL));
         if (r != CS_SUCCEED) {
-            cs_ctx_drop(CTLIB_GetContext());
+            Check(cs_ctx_drop(CTLIB_GetContext()));
             m_Context = 0;
             delete p_pot;
             DATABASE_DRIVER_ERROR( "Cannot install the user data", 100007 );
         }
 
-        r = ct_init(CTLIB_GetContext(), version);
+        r = Check(ct_init(CTLIB_GetContext(), version));
         if (r != CS_SUCCEED) {
-            cs_ctx_drop(CTLIB_GetContext());
+            Check(cs_ctx_drop(CTLIB_GetContext()));
             m_Context = 0;
             delete p_pot;
             DATABASE_DRIVER_ERROR( "ct_init failed", 100002 );
         }
 
-        r = ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_CLIENTMSG_CB,
-                        (CS_VOID*) s_CTLIB_cterr_callback);
+        r = Check(ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_CLIENTMSG_CB,
+                        (CS_VOID*) s_CTLIB_cterr_callback));
         if (r != CS_SUCCEED) {
-            ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
-            cs_ctx_drop(CTLIB_GetContext());
+            Check(ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT));
+            Check(cs_ctx_drop(CTLIB_GetContext()));
             m_Context = 0;
             delete p_pot;
             DATABASE_DRIVER_ERROR( "Cannot install the client message callback", 100003 );
         }
 
-        r = ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_SERVERMSG_CB,
-                        (CS_VOID*) s_CTLIB_srverr_callback);
+        r = Check(ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_SERVERMSG_CB,
+                        (CS_VOID*) s_CTLIB_srverr_callback));
         if (r != CS_SUCCEED) {
-            ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
-            cs_ctx_drop(CTLIB_GetContext());
+            Check(ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT));
+            Check(cs_ctx_drop(CTLIB_GetContext()));
             m_Context = 0;
             delete p_pot;
             DATABASE_DRIVER_ERROR( "Cannot install the server message callback", 100004 );
@@ -290,6 +320,16 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     m_Registry = &CTLibContextRegistry::Instance();
     x_AddToRegistry();
 }
+
+
+CS_RETCODE 
+CTLibContext::Check(CS_RETCODE rc)
+{
+    CCTLExceptions::GetInstance().Handle(m_CntxHandlers);
+    
+    return rc;
+}
+
 
 void 
 CTLibContext::x_AddToRegistry(void)
@@ -318,24 +358,36 @@ CTLibContext::x_SetRegistry(CTLibContextRegistry* registry)
 bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
     CS_INT t_out = (CS_INT) nof_secs;
-    return ct_config(CTLIB_GetContext(), CS_SET,
-                     CS_LOGIN_TIMEOUT, &t_out, CS_UNUSED, NULL) == CS_SUCCEED;
+    return Check(ct_config(CTLIB_GetContext(), 
+                           CS_SET,
+                           CS_LOGIN_TIMEOUT, 
+                           &t_out, 
+                           CS_UNUSED, 
+                           NULL)) == CS_SUCCEED;
 }
 
 
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
     CS_INT t_out = (CS_INT) nof_secs;
-    return ct_config(CTLIB_GetContext(), CS_SET,
-                     CS_TIMEOUT, &t_out, CS_UNUSED, NULL) == CS_SUCCEED;
+    return Check(ct_config(CTLIB_GetContext(), 
+                           CS_SET,
+                           CS_TIMEOUT, 
+                           &t_out, 
+                           CS_UNUSED, 
+                           NULL)) == CS_SUCCEED;
 }
 
 
 bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     CS_INT ti_size = (CS_INT) nof_bytes;
-    return ct_config(CTLIB_GetContext(), CS_SET,
-                     CS_TEXTLIMIT, &ti_size, CS_UNUSED, NULL) == CS_SUCCEED;
+    return Check(ct_config(CTLIB_GetContext(), 
+                           CS_SET,
+                           CS_TEXTLIMIT, 
+                           &ti_size, 
+                           CS_UNUSED, 
+                           NULL)) == CS_SUCCEED;
 }
 
 
@@ -406,12 +458,12 @@ CTLibContext::x_Close(bool delete_conn)
             CS_INT       outlen;
             CPointerPot* p_pot = 0;
 
-            if (cs_config(CTLIB_GetContext(), 
+            if (Check(cs_config(CTLIB_GetContext(), 
                           CS_GET, 
                           CS_USERDATA,
                           (void*) &p_pot, 
                           (CS_INT) sizeof(p_pot), 
-                          &outlen) == CS_SUCCEED
+                          &outlen)) == CS_SUCCEED
                 &&  p_pot != 0) {
                 p_pot->Remove(this);
                 if (p_pot->NofItems() == 0) { 
@@ -419,10 +471,12 @@ CTLibContext::x_Close(bool delete_conn)
                     delete p_pot;
 
                     if (x_SafeToFinalize()) {
-                        if (ct_exit(CTLIB_GetContext(), CS_UNUSED) != CS_SUCCEED) {
-                            ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT);
+                        if (Check(ct_exit(CTLIB_GetContext(), 
+                                          CS_UNUSED)) != CS_SUCCEED) {
+                            Check(ct_exit(CTLIB_GetContext(), 
+                                          CS_FORCE_EXIT));
                         }
-                        cs_ctx_drop(CTLIB_GetContext());
+                        Check(cs_ctx_drop(CTLIB_GetContext()));
                     }
                 }
             }
@@ -480,37 +534,22 @@ CS_CONTEXT* CTLibContext::CTLIB_GetContext() const
 
 bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
 {
-    CS_INT       outlen;
-    CPointerPot* p_pot = 0;
-    CS_RETCODE   r;
+    EDiagSev sev = eDiag_Error;
 
-    r = cs_config(context, CS_GET, CS_USERDATA,
-                  (void*) &p_pot, (CS_INT) sizeof(p_pot), &outlen);
-
-    if (r == CS_SUCCEED  &&  p_pot != 0  &&  p_pot->NofItems() > 0) {
-        CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-        EDiagSev sev = eDiag_Error;
-        
-        if (msg->severity == CS_SV_INFORM) {
-            sev = eDiag_Info;
-        }
-        else if (msg->severity == CS_SV_FATAL) {
-            sev = eDiag_Critical;
-        }
-
-        CDB_ClientEx ex( kBlankCompileInfo, 0, msg->msgstring, sev, msg->msgnumber);
-        drv->m_CntxHandlers.PostMsg(&ex);
+    if (msg->severity == CS_SV_INFORM) {
+        sev = eDiag_Info;
     }
-    else if (msg->severity != CS_SV_INFORM) {
-        ostrstream err_str;
-        
-        // nobody can be informed, so put it to stderr
-        err_str << "CSLIB error handler detects the following error" << endl
-                << msg->msgstring << endl;
-
-        ERR_POST(string(err_str.str(), err_str.pcount()));
+    else if (msg->severity == CS_SV_FATAL) {
+        sev = eDiag_Critical;
     }
 
+    CCTLExceptions::GetInstance().Accept(CDB_ClientEx(
+        kBlankCompileInfo, 
+        0, msg->msgstring, 
+        sev, 
+        msg->msgnumber
+        ));
+    
     return true;
 }
 
@@ -521,7 +560,6 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
     CS_INT           outlen;
     CPointerPot*     p_pot = 0;
     CTL_Connection*  link = 0;
-    CDBHandlerStack* hs;
     string           message;
     
     if ( msg->msgstring ) {
@@ -530,18 +568,22 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
     
     // Retrieve CDBHandlerStack ...
     if (con != 0  &&
-        ct_con_props(con, CS_GET, CS_USERDATA,
-                     (void*) &link, (CS_INT) sizeof(link),
-                     &outlen) == CS_SUCCEED  &&  link != 0) {
-        hs = &link->m_MsgHandlers;
+        ct_con_props(con, 
+                     CS_GET, 
+                     CS_USERDATA,
+                     (void*) &link, 
+                     (CS_INT) sizeof(link),
+                     &outlen ) == CS_SUCCEED  &&  link != 0) {
         message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
     }
-    else if (cs_config(context, CS_GET, CS_USERDATA,
-                       (void*) &p_pot, (CS_INT) sizeof(p_pot),
-                       &outlen) == CS_SUCCEED  &&
+    else if (cs_config(context, 
+                       CS_GET, 
+                       CS_USERDATA,
+                       (void*) &p_pot, 
+                       (CS_INT) sizeof(p_pot),
+                       &outlen ) == CS_SUCCEED  &&
              p_pot != 0  &&  p_pot->NofItems() > 0) {
         CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-        hs = &drv->m_CntxHandlers;
     }
     else {
         if (msg->severity != CS_SV_INFORM) {
@@ -578,7 +620,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                            eDiag_Info, 
                            msg->msgnumber);
         
-        hs->PostMsg(&info);
+        CCTLExceptions::GetInstance().Accept(info);
         
         break;
     }
@@ -589,7 +631,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
             message, 
             msg->msgnumber);
         
-        hs->PostMsg(&to);
+        CCTLExceptions::GetInstance().Accept(to);
         
         if( con ) {
             CS_INT status;
@@ -622,7 +664,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                           eDiag_Error, 
                           msg->msgnumber);
         
-        hs->PostMsg(&err);
+        CCTLExceptions::GetInstance().Accept(err);
         
         break;
     }
@@ -634,7 +676,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
             eDiag_Critical, 
             msg->msgnumber);
         
-        hs->PostMsg(&ftl);
+        CCTLExceptions::GetInstance().Accept(ftl);
         
         break;
     }
@@ -659,7 +701,6 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     CS_INT           outlen;
     CPointerPot*     p_pot = 0;
     CTL_Connection*  link = 0;
-    CDBHandlerStack* hs;
     string           message;
     string           ext_info;
     
@@ -668,7 +709,6 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                    &outlen) == CS_SUCCEED  &&
         link != 0) {
         
-        hs = &link->m_MsgHandlers;
         ext_info = " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
     }
     else if (cs_config(context, CS_GET, 
@@ -679,7 +719,6 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
              p_pot != 0  &&  p_pot->NofItems() > 0) {
         
         CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-        hs = &drv->m_CntxHandlers;
         
         // Get server name from the message ...
         ext_info += " SERVER: '";
@@ -724,7 +763,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         CDB_DeadlockEx dl(kBlankCompileInfo,
                           0, 
                           message);
-        hs->PostMsg(&dl);
+        CCTLExceptions::GetInstance().Accept(dl);
     }
     else {
         EDiagSev sev =
@@ -741,7 +780,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                           msg->proc,
                           (int) msg->line);
             
-            hs->PostMsg(&rpc);
+            CCTLExceptions::GetInstance().Accept(rpc);
         }
         else if (msg->sqlstatelen > 1  &&
                  (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
@@ -753,7 +792,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                           (const char*) msg->sqlstate,
                           (int) msg->line);
             
-            hs->PostMsg(&sql);
+            CCTLExceptions::GetInstance().Accept(sql);
         }
         else {
             CDB_DSEx m(kBlankCompileInfo,
@@ -762,7 +801,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                        sev,
                        (int) msg->msgnumber);
             
-            hs->PostMsg(&m);
+            CCTLExceptions::GetInstance().Accept(m);
         }
     }
 
@@ -777,14 +816,14 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
                                                TConnectionMode mode)
 {
     CS_CONNECTION* con;
-    if (ct_con_alloc(CTLIB_GetContext(), &con) != CS_SUCCEED)
+    if (Check(ct_con_alloc(CTLIB_GetContext(), &con)) != CS_SUCCEED)
         return 0;
 
-    ct_callback(NULL, con, CS_SET, CS_CLIENTMSG_CB,
-                (CS_VOID*) s_CTLIB_cterr_callback);
+    Check(ct_callback(NULL, con, CS_SET, CS_CLIENTMSG_CB,
+                (CS_VOID*) s_CTLIB_cterr_callback));
 
-    ct_callback(NULL, con, CS_SET, CS_SERVERMSG_CB,
-                (CS_VOID*) s_CTLIB_srverr_callback);
+    Check(ct_callback(NULL, con, CS_SET, CS_SERVERMSG_CB,
+                (CS_VOID*) s_CTLIB_srverr_callback));
 
     char hostname[256];
     if(gethostname(hostname, 256)) {
@@ -793,268 +832,53 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
     else hostname[255]= '\0';
 
 
-    if (ct_con_props(con, CS_SET, CS_USERNAME, (void*) user_name.c_str(),
-                     CS_NULLTERM, NULL) != CS_SUCCEED  ||
-        ct_con_props(con, CS_SET, CS_PASSWORD, (void*) passwd.c_str(),
-                     CS_NULLTERM, NULL) != CS_SUCCEED  ||
-        ct_con_props(con, CS_SET, CS_APPNAME, (void*) GetApplicationName().c_str(),
-                     CS_NULLTERM, NULL) != CS_SUCCEED ||
-        ct_con_props(con, CS_SET, CS_HOSTNAME, (void*) hostname,
-                     CS_NULLTERM, NULL) != CS_SUCCEED) {
-        ct_con_drop(con);
+    if (Check(ct_con_props(con, CS_SET, CS_USERNAME, (void*) user_name.c_str(),
+                     CS_NULLTERM, NULL)) != CS_SUCCEED  ||
+        Check(ct_con_props(con, CS_SET, CS_PASSWORD, (void*) passwd.c_str(),
+                     CS_NULLTERM, NULL)) != CS_SUCCEED  ||
+        Check(ct_con_props(con, CS_SET, CS_APPNAME, (void*) GetApplicationName().c_str(),
+                     CS_NULLTERM, NULL)) != CS_SUCCEED ||
+        Check(ct_con_props(con, CS_SET, CS_HOSTNAME, (void*) hostname,
+                     CS_NULLTERM, NULL)) != CS_SUCCEED) {
+        Check(ct_con_drop(con));
         return 0;
     }
 
     if ( !GetHostName().empty() ) {
-        ct_con_props(con, CS_SET, CS_HOSTNAME,
-                     (void*) GetHostName().c_str(), CS_NULLTERM, NULL);
+        Check(ct_con_props(con, CS_SET, CS_HOSTNAME,
+                     (void*) GetHostName().c_str(), CS_NULLTERM, NULL));
     }
 
     if (m_PacketSize > 0) {
-        ct_con_props(con, CS_SET, CS_PACKETSIZE,
-                     (void*) &m_PacketSize, CS_UNUSED, NULL);
+        Check(ct_con_props(con, CS_SET, CS_PACKETSIZE,
+                     (void*) &m_PacketSize, CS_UNUSED, NULL));
     }
 
     if (m_LoginRetryCount > 0) {
-        ct_con_props(con, CS_SET, CS_RETRY_COUNT,
-                     (void*) &m_LoginRetryCount, CS_UNUSED, NULL);
+        Check(ct_con_props(con, CS_SET, CS_RETRY_COUNT,
+                     (void*) &m_LoginRetryCount, CS_UNUSED, NULL));
     }
 
     if (m_LoginLoopDelay > 0) {
-        ct_con_props(con, CS_SET, CS_LOOP_DELAY,
-                     (void*) &m_LoginLoopDelay, CS_UNUSED, NULL);
+        Check(ct_con_props(con, CS_SET, CS_LOOP_DELAY,
+                     (void*) &m_LoginLoopDelay, CS_UNUSED, NULL));
     }
 
     CS_BOOL flag = CS_TRUE;
     if ((mode & fBcpIn) != 0) {
-        ct_con_props(con, CS_SET, CS_BULK_LOGIN, &flag, CS_UNUSED, NULL);
+        Check(ct_con_props(con, CS_SET, CS_BULK_LOGIN, &flag, CS_UNUSED, NULL));
     }
     if ((mode & fPasswordEncrypted) != 0) {
-        ct_con_props(con, CS_SET, CS_SEC_ENCRYPTION, &flag, CS_UNUSED, NULL);
+        Check(ct_con_props(con, CS_SET, CS_SEC_ENCRYPTION, &flag, CS_UNUSED, NULL));
     }
 
-    if (ct_connect(con, const_cast<char*> (srv_name.c_str()), CS_NULLTERM)
+    if (Check(ct_connect(con, const_cast<char*> (srv_name.c_str()), CS_NULLTERM))
         != CS_SUCCEED) {
-        ct_con_drop(con);
+        Check(ct_con_drop(con));
         return 0;
     }
 
     return con;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  Miscellaneous
-//
-
-void g_CTLIB_GetRowCount(CS_COMMAND* cmd, int* cnt)
-{
-    CS_INT n;
-    CS_INT outlen;
-    if (cnt  &&
-        ct_res_info(cmd, CS_ROW_COUNT, &n, CS_UNUSED, &outlen) == CS_SUCCEED
-        && n >= 0  &&  n != CS_NO_COUNT) {
-        *cnt = (int) n;
-    }
-}
-
-
-bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
-                            CDB_Object&   param,
-                            const string& param_name,
-                            CS_DATAFMT&   param_fmt,
-                            CS_SMALLINT   indicator,
-                            bool          declare_only)
-{
-    {{
-        size_t l = param_name.copy(param_fmt.name, CS_MAX_NAME-1);
-        param_fmt.name[l] = '\0';
-    }}
-
-
-    CS_RETCODE ret_code;
-
-    switch ( param.GetType() ) {
-    case eDB_Int: {
-        CDB_Int& par = dynamic_cast<CDB_Int&> (param);
-        param_fmt.datatype = CS_INT_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_INT value = (CS_INT) par.Value();
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator);
-        break;
-    }
-    case eDB_SmallInt: {
-        CDB_SmallInt& par = dynamic_cast<CDB_SmallInt&> (param);
-        param_fmt.datatype = CS_SMALLINT_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_SMALLINT value = (CS_SMALLINT) par.Value();
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator);
-        break;
-    }
-    case eDB_TinyInt: {
-        CDB_TinyInt& par = dynamic_cast<CDB_TinyInt&> (param);
-        param_fmt.datatype = CS_TINYINT_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_TINYINT value = (CS_TINYINT) par.Value();
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator);
-        break;
-    }
-    case eDB_Bit: {
-        CDB_Bit& par = dynamic_cast<CDB_Bit&> (param);
-        param_fmt.datatype = CS_BIT_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_BIT value = (CS_BIT) par.Value();
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator);
-        break;
-    }
-    case eDB_BigInt: {
-        CDB_BigInt& par = dynamic_cast<CDB_BigInt&> (param);
-        param_fmt.datatype = CS_NUMERIC_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_NUMERIC value;
-        Int8 v8 = par.Value();
-        memset(&value, 0, sizeof(value));
-        value.precision= 18;
-        if (longlong_to_numeric(v8, 18, value.array) == 0)
-            return false;
-
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator);
-        break;
-    }
-    case eDB_Char: {
-        CDB_Char& par = dynamic_cast<CDB_Char&> (param);
-        param_fmt.datatype = CS_CHAR_TYPE;
-        if ( declare_only )
-            break;
-
-        ret_code = ct_param(cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator);
-        break;
-    }
-    case eDB_LongChar: {
-        CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
-        param_fmt.datatype = CS_LONGCHAR_TYPE;
-        if ( declare_only )
-            break;
-
-        ret_code = ct_param(cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator);
-        break;
-    }
-    case eDB_VarChar: {
-        CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
-        param_fmt.datatype = CS_CHAR_TYPE;
-        if ( declare_only )
-            break;
-
-        ret_code = ct_param(cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator);
-        break;
-    }
-    case eDB_Binary: {
-        CDB_Binary& par = dynamic_cast<CDB_Binary&> (param);
-        param_fmt.datatype = CS_BINARY_TYPE;
-        if ( declare_only )
-            break;
-
-        ret_code = ct_param(cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator);
-        break;
-    }
-    case eDB_LongBinary: {
-        CDB_LongBinary& par = dynamic_cast<CDB_LongBinary&> (param);
-        param_fmt.datatype = CS_LONGBINARY_TYPE;
-        if ( declare_only )
-            break;
-
-        ret_code = ct_param(cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator);
-        break;
-    }
-    case eDB_VarBinary: {
-        CDB_VarBinary& par = dynamic_cast<CDB_VarBinary&> (param);
-        param_fmt.datatype = CS_BINARY_TYPE;
-        if ( declare_only )
-            break;
-
-        ret_code = ct_param(cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator);
-        break;
-    }
-    case eDB_Float: {
-        CDB_Float& par = dynamic_cast<CDB_Float&> (param);
-        param_fmt.datatype = CS_REAL_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_REAL value = (CS_REAL) par.Value();
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator);
-        break;
-    }
-    case eDB_Double: {
-        CDB_Double& par = dynamic_cast<CDB_Double&> (param);
-        param_fmt.datatype = CS_FLOAT_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_FLOAT value = (CS_FLOAT) par.Value();
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator);
-        break;
-    }
-    case eDB_SmallDateTime: {
-        CDB_SmallDateTime& par = dynamic_cast<CDB_SmallDateTime&> (param);
-        param_fmt.datatype = CS_DATETIME4_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_DATETIME4 dt;
-        dt.days    = par.GetDays();
-        dt.minutes = par.GetMinutes();
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &dt, CS_UNUSED, indicator);
-        break;
-    }
-    case eDB_DateTime: {
-        CDB_DateTime& par = dynamic_cast<CDB_DateTime&> (param);
-        param_fmt.datatype = CS_DATETIME_TYPE;
-        if ( declare_only )
-            break;
-
-        CS_DATETIME dt;
-        dt.dtdays = par.GetDays();
-        dt.dttime = par.Get300Secs();
-        ret_code = ct_param(cmd, &param_fmt,
-                            (CS_VOID*) &dt, CS_UNUSED, indicator);
-        break;
-    }
-    default: {
-        return false;
-    }
-    }
-
-    if ( declare_only ) {
-        ret_code = ct_param(cmd, &param_fmt, 0, CS_UNUSED, 0);
-    }
-
-    return (ret_code == CS_SUCCEED);
 }
 
 
@@ -1282,6 +1106,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/05/03 15:10:36  ssikorsk
+ * Implemented classs CTL_Cmd and CCTLExceptions;
+ * Surrounded each native ctlib call with Check;
+ *
  * Revision 1.68  2006/04/13 15:11:56  ssikorsk
  * Fixed erasing of an element from a std::vector.
  *
