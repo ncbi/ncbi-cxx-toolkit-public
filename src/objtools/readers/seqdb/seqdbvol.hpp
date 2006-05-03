@@ -504,11 +504,10 @@ public:
     /// @param end    Specifies the end of the data to get.   [in]
     /// @param locked The lock holder object for this thread. [in|out]
     /// @return The sequence data as a Seq-data object.
-    CRef<CSeq_data>
-    CSeqDBVol::GetSeqData(int              oid,
-                          TSeqPos          begin,
-                          TSeqPos          end,
-                          CSeqDBLockHold & locked) const;
+    CRef<CSeq_data> GetSeqData(int              oid,
+                               TSeqPos          begin,
+                               TSeqPos          end,
+                               CSeqDBLockHold & locked) const;
     
 private:
     /// A set of GI lists.
