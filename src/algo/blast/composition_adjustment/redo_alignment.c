@@ -64,7 +64,7 @@ static char const rcsid[] =
 #define COMPO_INTENSE_DEBUG 0
 #endif
 
-/** by what factor might initially reported E-value exceed true Evalue */
+/** by what factor might initially reported E-value exceed true E-value */
 #define EVALUE_STRETCH 5
 
 /** -1/0/1 if a is less than/greater than/equal to b */
@@ -830,7 +830,7 @@ s_GetSubjectComposition(Blast_AminoAcidComposition * subject_composition,
 
 
 /**
- * Compute an evalue from a score and a set of statistical parameters
+ * Compute an e-value from a score and a set of statistical parameters
  */
 static double
 s_EvalueFromScore(int score, double Lambda, double logK, double searchsp)
@@ -951,7 +951,10 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                    BlastCompo_MatchingSequence * matchingSeq,
                    int ccat_query_length, BlastCompo_QueryInfo query_info[],
                    int numQueries, int ** matrix,
-                   Blast_CompositionWorkspace * NRrecord)
+                   Blast_CompositionWorkspace * NRrecord,
+                   double *pvalueForThisPair,
+                   int compositionTestIndex,
+                   double *LambdaRatio)
 {
     int status = 0;                  /* return status */
     s_WindowInfo **windows;      /* array of windows */
@@ -1027,7 +1030,10 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                                            scaledMatrixInfo, compo_adjust_mode,
                                            RE_pseudocounts, NRrecord,
                                            &matrix_adjust_rule,
-                                           callbacks->calc_lambda);
+                                           callbacks->calc_lambda,
+                                           pvalueForThisPair,
+                                           compositionTestIndex,
+                                           LambdaRatio);
                     if (adjust_search_failed < 0) { /* fatal error */
                         status = adjust_search_failed;
                         goto window_index_loop_cleanup;
@@ -1088,7 +1094,10 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                 int ** matrix,
                                 Blast_CompositionWorkspace * NRrecord,
                                 Blast_ForbiddenRanges * forbidden,
-                                BlastCompo_Heap * significantMatches)
+                                BlastCompo_Heap * significantMatches,
+                                double *pvalueForThisPair,
+                                int compositionTestIndex,
+                                double *LambdaRatio)
 {
     int status = 0;                     /* status return value */
     s_WindowInfo **windows = NULL;  /* array of windows */
@@ -1159,10 +1168,13 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
             adjust_search_failed =
                 Blast_AdjustScores(matrix,
                                    query_composition, query->length,
-                                   &subject_composition, subject.length, 
+                                   &subject_composition, subject.length,
                                    scaledMatrixInfo, compo_adjust_mode,
                                    RE_pseudocounts, NRrecord,
-                                   &matrix_adjust_rule, callbacks->calc_lambda);
+                                   &matrix_adjust_rule, callbacks->calc_lambda,
+                                   pvalueForThisPair,
+                                   compositionTestIndex,
+                                   LambdaRatio);
             if (adjust_search_failed < 0) { /* fatal error */
                 status = adjust_search_failed;
                 goto window_index_loop_cleanup;

@@ -21,7 +21,7 @@
  *
  *  Please cite the author in any work or product based on this material.
  *
- * ===========================================================================*/
+ * ==========================================================================*/
 /**
  * @file redo_alignment.h
  * Definitions used to redo a set of alignments, using either
@@ -304,7 +304,7 @@ typedef struct Blast_RedoAlignParams {
                                           matrix used */
     BlastCompo_GappingParams *
         gapping_params;              /**< parameters for performing a
-                                          gapped aligment */
+                                          gapped alignment */
     ECompoAdjustModes compo_adjust_mode;   /**< composition adjustment mode */
     int positionBased;      /**< true if the search is position-based */
     int RE_pseudocounts;    /**< number of pseudocounts to use in
@@ -316,9 +316,9 @@ typedef struct Blast_RedoAlignParams {
                                 concatenated */
     int cutoff_s;           /**< cutoff score for saving alignments when
                                  HSP linking is used */
-    double cutoff_e;        /**< cutoff evalue for saving alignments */
+    double cutoff_e;        /**< cutoff e-value for saving alignments */
     int do_link_hsps;       /**< if true, then HSP linking and sum
-                               statistics are used to computed evalues */
+                               statistics are used to computed e-values */
     const Blast_RedoAlignCallbacks *
         callbacks;                     /**< callback functions used by
                                             the Blast_RedoAlign* functions */
@@ -374,6 +374,11 @@ void Blast_RedoAlignParamsFree(Blast_RedoAlignParams ** pparams);
  *                             Smith-Waterman algorithm early if it is
  *                             clear that the current match is not
  *                             significant enough to be saved.
+ * @param pvalueThisPair   the compositional p-value for this pair of sequences
+ * @param compositionTestIndex   index of the test function used to decide
+ *                               whether to use a compositional p-value
+ * @param LambdaRatio      the ratio of the actual value of Lambda to the
+ *                         ideal value.
  *
  * @return 0 on success, -1 on out-of-memory
  */
@@ -389,7 +394,10 @@ int Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                     int ** matrix,
                                     Blast_CompositionWorkspace * NRrecord,
                                     Blast_ForbiddenRanges * forbidden,
-                                    BlastCompo_Heap * significantMatches);
+                                    BlastCompo_Heap * significantMatches,
+                                    double *pvalueThisPair,
+                                    int compositionTestIndex,
+                                    double *LambdaRatio);
 
 
 /**
@@ -410,6 +418,11 @@ int Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
  * @param numQueries       the number of queries
  * @param matrix           the scoring matrix
  * @param NRrecord         a workspace used to adjust the composition.
+ * @param pvalueThisPair   the compositional p-value for this pair of sequences
+ * @param compositionTestIndex   index of the test function used to decide
+ *                               whether to use a compositional p-value
+ * @param LambdaRatio      the ratio of the actual value of Lambda to the
+ *                         ideal value.
  *
  * @return 0 on success, -1 on out-of-memory
  */
@@ -424,11 +437,14 @@ int Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                        BlastCompo_QueryInfo query_info[],
                        int numQueries,
                        int ** matrix,
-                       Blast_CompositionWorkspace * NRrecord);
+                       Blast_CompositionWorkspace * NRrecord,
+                       double *pvalueThisPair,
+                       int compositionTestIndex,
+                       double *LambdaRatio);
 
 
 /** Return true if a heuristic determines that it is unlikely to be
- * worthwhile to redo a query-subject pair with the given evalue; used
+ * worthwhile to redo a query-subject pair with the given e-value; used
  * to terminate the main loop for redoing all alignments early. */
 NCBI_XBLAST_EXPORT
 int BlastCompo_EarlyTermination(double evalue,
