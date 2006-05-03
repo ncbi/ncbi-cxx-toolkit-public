@@ -434,7 +434,7 @@ char *yytext;
 #line 44 "newick.lpp"
 #include <ncbi_pch.hpp>
 #include <string.h>
-#include <util/stream_utils.hpp>
+#include <corelib/stream_utils.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 
 USING_SCOPE(ncbi);
@@ -1656,8 +1656,8 @@ void newick_flex_reset(void)
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.6  2004/07/16 14:36:20  jcherry
- * Treat '\r' as whitespace to minimize problems with DOSified files
+ * Revision 1.7  2006/05/03 17:43:19  jcherry
+ * Reflect move of stream_utils.hpp to corelib
  *
  * Revision 1.4  2004/05/25 14:42:45  jcherry
  * #include <ncbi_pch.hpp>
