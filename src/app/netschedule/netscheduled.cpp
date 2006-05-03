@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.8  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.9  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2733,6 +2733,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/05/03 15:18:32  kuznets
+ * Fixed deletion of done jobs
+ *
  * Revision 1.75  2006/04/17 15:46:54  kuznets
  * Added option to remove job when it is done (similar to LSF)
  *

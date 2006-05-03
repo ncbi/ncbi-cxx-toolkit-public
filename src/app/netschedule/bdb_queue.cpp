@@ -2520,6 +2520,10 @@ CQueueDataBase::CQueue::PutDone_FindPendingJob(const string&  client_name,
                                                         need_db_update, 
                                                         &ai->cand_jobs,
                                                         &job_id);
+                    if (m_LQueue.delete_done) {
+                        m_LQueue.status_tracker.SetStatus(done_job_id, 
+                                         CNetScheduleClient::eJobNotFound);
+                    }
                     done_job_id = 0;
                     if (job_id)
                         return job_id;
@@ -2573,6 +2577,10 @@ CQueueDataBase::CQueue::PutDone_FindPendingJob(const string&  client_name,
                                                 need_db_update, 
                                                 assigned_candidate_jobs,
                                                 &job_id);
+            if (m_LQueue.delete_done) {
+                m_LQueue.status_tracker.SetStatus(done_job_id, 
+                                    CNetScheduleClient::eJobNotFound);
+            }
             done_job_id = 0;
             if (job_id)
                 return job_id;
@@ -3614,6 +3622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/05/03 15:18:32  kuznets
+ * Fixed deletion of done jobs
+ *
  * Revision 1.73  2006/04/17 15:46:54  kuznets
  * Added option to remove job when it is done (similar to LSF)
  *
