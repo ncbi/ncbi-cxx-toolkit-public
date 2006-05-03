@@ -41,6 +41,8 @@ static char const rcsid[] =
 #include <algo/blast/composition_adjustment/matrix_frequency_data.h>
 #include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
 #include <algo/blast/composition_adjustment/optimize_target_freq.h>
+#include <algo/blast/composition_adjustment/unified_pvalues.h>
+
 
 /**positions of true characters in protein alphabet*/
 static int trueCharPositions[COMPO_NUM_TRUE_AA] =
@@ -62,18 +64,14 @@ static int alphaConvert[COMPO_PROTEIN_ALPHABET] =
  * not be attained. */
 static const int kCompositionMargin = 20;
 
-#define SCORE_BOUND            0.0000000001 /**< average scores below
-                                                 -SCORE_BOUND are considered
-                                                 effectively nonnegative, and
-                                                 Newton's method will
-                                                 will terminate */
-#define LAMBDA_ITERATION_LIMIT 100          /**< iteration limit for Newton's
-                                                 method. */
-#define LAMBDA_ERROR_TOLERANCE 0.0000001    /**< bound on error for estimating
-                                                 lambda */
-#define LAMBDA_FUNCTION_TOLERANCE 0000001   /**< bound on the difference 
-                                                 between the expected value
-                                                 of exp(lambda x S) and 1 */
+/** iteration limit for Newton's method for computing Lambda */
+static const double kLambdaIterationLimit = 100;
+/** bound on error for estimating lambda */
+static const double kLambdaErrorTolerance = 0.0000001;
+/** bound on the difference between the expected value of
+ *  exp(lambda x S) and 1 */
+static const double kLambdaFunctionTolerance = 0.00001;
+
 
 /** bound on error for Newton's method */
 static const double kCompoAdjustErrTolerance = 0.00000001;
@@ -82,6 +80,28 @@ static const int kCompoAdjustIterationLimit = 2000;
 /** relative entropy of BLOSUM62 */
 static const double kFixedReBlosum62 = 0.44;
 
+/** The BLOSUM62 matrix for the ARND... alphabet, using standard scale */
+static double BLOS62[COMPO_NUM_TRUE_AA][COMPO_NUM_TRUE_AA]=
+{{4, -1, -2, -2, 0, -1, -1, 0, -2, -1, -1, -1, -1, -2, -1, 1, 0, -3, -2, 0},
+ {-1, 5, 0, -2, -3, 1, 0, -2, 0, -3, -2, 2, -1, -3, -2, -1, -1, -3, -2, -3},
+ {-2, 0, 6, 1, -3, 0, 0, 0, 1, -3, -3, 0, -2, -3, -2, 1, 0, -4, -2, -3},
+ {-2, -2, 1, 6, -3, 0, 2, -1, -1, -3, -4, -1, -3, -3, -1, 0, -1, -4, -3, -3},
+ {0,-3,-3,-3, 9, -3, -4, -3, -3, -1, -1, -3, -1, -2, -3, -1, -1, -2, -2, -1},
+ {-1, 1, 0, 0, -3, 5, 2, -2, 0, -3, -2, 1, 0, -3, -1, 0, -1, -2, -1, -2},
+ {-1, 0, 0, 2, -4, 2, 5, -2, 0, -3, -3, 1, -2, -3, -1, 0, -1, -3, -2, -2},
+ {0, -2, 0, -1, -3, -2, -2, 6, -2, -4, -4, -2, -3, -3, -2, 0, -2, -2, -3, -3},
+ {-2, 0, 1, -1, -3, 0, 0, -2, 8, -3, -3, -1, -2, -1, -2, -1, -2, -2, 2, -3},
+ {-1, -3, -3, -3, -1, -3, -3, -4, -3, 4, 2, -3, 1, 0, -3, -2, -1, -3, -1, 3},
+ {-1, -2, -3, -4, -1, -2, -3, -4, -3, 2, 4, -2, 2, 0, -3, -2, -1, -2, -1, 1},
+ {-1, 2, 0, -1, -3, 1, 1, -2, -1, -3, -2, 5, -1, -3, -1, 0, -1, -3, -2, -2},
+ {-1, -1, -2, -3, -1, 0, -2, -3, -2, 1, 2, -1, 5, 0, -2, -1, -1, -1, -1, 1},
+ {-2, -3, -3, -3, -2, -3, -3, -3, -1, 0, 0, -3, 0, 6, -4, -2, -2, 1, 3, -1},
+ {-1,-2,-2,-1, -3, -1, -1, -2, -2, -3, -3, -1, -2, -4, 7, -1, -1, -4, -3, -2},
+ {1, -1, 1, 0, -1, 0, 0, 0, -1, -2, -2, 0, -1, -2, -1, 4, 1, -3, -2, -2},
+ {0, -1, 0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1, 1, 5, -2, -2, 0},
+ {-3,-3,-4,-4, -2, -2, -3, -2, -2, -3, -2, -3, -1, 1, -4, -3, -2, 11, 2, -3},
+ {-2, -2, -2, -3, -2, -1, -2, -3, 2, -1, -1, -2, -1, 3, -3, -2, -2, 2, 7, -1},
+ {0, -3, -3, -3, -1, -2, -2, -3, -3, 3, 1, -2, 1, -1, -2, -2, 0, -3, -1, 4}};
 
 /* Documented in composition_adjustment.h. */
 void
@@ -199,7 +219,7 @@ Blast_GetRelativeEntropy(const double A[], const double B[])
  */
 void
 Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
-                              double ** score, int alphsize,
+                              double **score, int alphsize,
                               const double row_prob[],
                               const double col_prob[],
                               double lambda_tolerance,
@@ -310,7 +330,7 @@ Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
             }
         }
     }  /* End for all iterations k */
-    *plambda = -log(x);
+    *plambda = (k < max_iterations) ? -log(x) : -1.0;
     *piterations = k;
 }
 
@@ -468,9 +488,9 @@ Blast_EntropyOldFreqNewContext(double * entropy,
     int i, j;
     /* Status flag; will be set to zero on success */
     int status = 1;
-    /* A matrix of scores in the context constistent with the target 
+    /* A matrix of scores in the context consistent with the target 
      * frequencies */
-    double ** scores;
+    double  **scores;
     /* Row and column probabilities consistent with the target
      * frequencies; the old context */
     double old_col_prob[COMPO_NUM_TRUE_AA] = {0.0,};
@@ -500,10 +520,10 @@ Blast_EntropyOldFreqNewContext(double * entropy,
 
     Blast_CalcLambdaFullPrecision(Lambda, iter_count, scores,
                                   COMPO_NUM_TRUE_AA, row_prob,
-                                  col_prob, LAMBDA_ERROR_TOLERANCE,
-                                  LAMBDA_FUNCTION_TOLERANCE,
-                                  LAMBDA_ITERATION_LIMIT);
-    if (*iter_count <  LAMBDA_ITERATION_LIMIT) {
+                                  col_prob, kLambdaErrorTolerance,
+                                  kLambdaFunctionTolerance,
+                                  kLambdaIterationLimit);
+    if (*iter_count <  kLambdaIterationLimit) {
         *entropy = Blast_MatrixEntropy(scores, COMPO_NUM_TRUE_AA,
                                        row_prob, col_prob, *Lambda);
         status = 0;
@@ -881,29 +901,17 @@ s_GetPssmScoreProbs(double ** scoreProb, int * obs_min, int * obs_max,
 
 /* Documented in composition_adjustment.h. */
 void
-Blast_Int4MatrixFromFreq(Int4 **matrix, int alphsize,
-                         double ** freq, double Lambda)
+Blast_Int4MatrixFromFreq(Int4 **matrix, double ** freq, double Lambda)
 {
-    /* TODO: Eliminate this routine, or change its API.  The void return
-     * value means that the routine cannot fail (and so cannot allocate
-     * memory) but alphsize suggests that it can use an arbitrarily large
-     * alphabet, while in truth the largest alphabet it can handle is
-     * COMPO_PROTEIN_ALPHABET.
-     *
-     * The routine exists in its current form because API changes
-     * to this library are very disruptive.  It should be changed the next
-     * time an API change is inevitable */
-
+    /* A row of the matrix in double precision */
     double dMatrixStore[COMPO_PROTEIN_ALPHABET];
     double * dMatrix[1];
     int i;
-    
+
     dMatrix[0] = dMatrixStore;
 
-    assert(alphsize <= COMPO_PROTEIN_ALPHABET);
-
-    for (i = 0;  i < alphsize;  i++) {
-        memcpy(dMatrix[0], freq[i], alphsize * sizeof(double));
+    for (i = 0;  i < COMPO_PROTEIN_ALPHABET;  i++) {
+        memcpy(dMatrix[0], freq[i], COMPO_PROTEIN_ALPHABET * sizeof(double));
         Blast_FreqRatioToScore(dMatrix, 1, COMPO_PROTEIN_ALPHABET, Lambda);
         s_RoundScoreMatrix(&matrix[i], 1, dMatrix);
     }
@@ -1048,7 +1056,8 @@ int
 Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
                             const Blast_MatrixInfo * ss,
                             const double queryProb[], const double resProb[],
-                            double (*calc_lambda)(double*,int,int,double))
+                            double (*calc_lambda)(double*,int,int,double),
+                            int pValueAdjustment)
 {
     double correctUngappedLambda; /* new value of ungapped lambda */
     int obs_min, obs_max;         /* smallest and largest score in the
@@ -1077,7 +1086,8 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
      * MAX statement and allow LambdaRatio to take on the error value
      * -1 */
     *LambdaRatio = correctUngappedLambda / ss->ungappedLambda;
-    *LambdaRatio = MIN(1, *LambdaRatio);
+    if (0 == pValueAdjustment)
+      *LambdaRatio = MIN(1, *LambdaRatio);
     *LambdaRatio = MAX(*LambdaRatio, LambdaRatioLowerBound);
 
     if (*LambdaRatio > 0) {
@@ -1386,32 +1396,74 @@ Blast_AdjustScores(Int4 ** matrix,
                    int RE_pseudocounts,
                    Blast_CompositionWorkspace *NRrecord,
                    EMatrixAdjustRule *matrix_adjust_rule,
-                   double calc_lambda(double *,int,int,double))
+                   double calc_lambda(double *,int,int,double),
+                   double *pvalueForThisPair,
+                   int compositionTestIndex,
+                   double *ratioToPassBack)
 {
-    double LambdaRatio;      /* the ratio of the corrected
-                                lambda to the original lambda */
+    double lambdaForPair;     /*lambda for this pair of compositions*/
+    int iter_count; /*used as argument to Blast_CalcLambdaFullPrecision*/
+
+    /* The next two arrays are letter probabilities of query and
+     * match in 20 letter ARND... alphabet. */
+    double permutedQueryProbs[COMPO_NUM_TRUE_AA];
+    double permutedMatchProbs[COMPO_NUM_TRUE_AA];
+
     if (query_composition->numTrueAminoAcids == 0 ||
         subject_composition->numTrueAminoAcids == 0) {
-        /* Either the query or subject contains only amibiguity
+        /* Either the query or subject contains only ambiguity
            characters, most likely because the entire subject has been
            SEGed.  Compositional adjustment is meaningless. */
         return 1;
     }
+
+    if ((compositionTestIndex > 0) ||
+        ((!(matrixInfo->positionBased)) &&
+         (composition_adjust_mode != eCompositionBasedStats))) {
+        s_GatherLetterProbs(permutedQueryProbs, query_composition->prob);
+        s_GatherLetterProbs(permutedMatchProbs, subject_composition->prob);
+    }
+
+    if (compositionTestIndex > 0) {
+        int i,j; /*loop indices*/
+        /* a score matrix to pass*/
+        double **scores = Nlm_DenseMatrixNew(COMPO_PROTEIN_ALPHABET,
+                                             COMPO_PROTEIN_ALPHABET);
+        if (scores == NULL) {
+            return -1;
+        }
+        for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++)
+            for (j = 0;  j < COMPO_NUM_TRUE_AA; j++)
+                scores[i][j] = BLOS62[i][j];
+        Blast_CalcLambdaFullPrecision(&lambdaForPair, &iter_count,
+                                      scores,
+                                      COMPO_NUM_TRUE_AA,
+                                      &(permutedQueryProbs[0]),
+                                      &(permutedMatchProbs[0]),
+                                      kLambdaErrorTolerance,
+                                      kLambdaFunctionTolerance,
+                                      kLambdaIterationLimit);
+        if (iter_count >= kLambdaIterationLimit) {
+            /* The algorithm for lambda didn't converge, likely
+             * because the matrix has positive expected score; 
+             * set lambda to the smallest value in the table. */
+            lambdaForPair = COMPO_MIN_LAMBDA;
+        }
+        /*use lengths of query and subject not counting X's */
+        *pvalueForThisPair =
+            Blast_CompositionPvalue(query_composition->numTrueAminoAcids,
+                                    subject_composition->numTrueAminoAcids,
+                                    lambdaForPair,
+                                    compositionTestIndex - 1);
+        Nlm_DenseMatrixFree(&scores);
+    }
+
     if (matrixInfo->positionBased ||
         composition_adjust_mode == eCompositionBasedStats) {
         /* Use old-style composition-based statistics unconditionally. */
         *matrix_adjust_rule =  eCompoScaleOldMatrix;
     } else {
         /* else call Yi-Kuo's code to choose mode for matrix adjustment. */
-
-        /* The next two arrays are letter probabilities of query and
-         * match in 20 letter ARND... alphabet. */
-        double permutedQueryProbs[COMPO_NUM_TRUE_AA];
-        double permutedMatchProbs[COMPO_NUM_TRUE_AA];
-
-        s_GatherLetterProbs(permutedQueryProbs, query_composition->prob);
-        s_GatherLetterProbs(permutedMatchProbs, subject_composition->prob);
-
         *matrix_adjust_rule =
             Blast_ChooseMatrixAdjustRule(queryLength, subjectLength,
                                          permutedQueryProbs,
@@ -1421,11 +1473,13 @@ Blast_AdjustScores(Int4 ** matrix,
     }  /* end else call Yi-Kuo's code to choose mode for matrix adjustment. */
 
     if (eCompoScaleOldMatrix == *matrix_adjust_rule) {
-        return Blast_CompositionBasedStats(matrix, &LambdaRatio, matrixInfo,
+        return Blast_CompositionBasedStats(matrix, ratioToPassBack, matrixInfo,
                                            query_composition->prob,
                                            subject_composition->prob,
-                                           calc_lambda);
+                                           calc_lambda,
+                                           (compositionTestIndex > 0));
     } else {
+        *ratioToPassBack = 1.0;    /* meaningless for this mode */
         return
             Blast_CompositionMatrixAdj(matrix,
                                        *matrix_adjust_rule,
