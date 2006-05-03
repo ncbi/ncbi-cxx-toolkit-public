@@ -50,7 +50,8 @@ BEGIN_SCOPE(objects)
 CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
                                                  m_KeepCountryText(false),
                                                  m_ExcludeSpOrgs(false),
-                                                 m_KeepParen(false)
+                                                 m_KeepParen(false),
+                                                 m_HIVCloneIsolateRule(ePreferClone)
 
 {
     m_GroupList.clear();
@@ -78,6 +79,12 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
     for (k = 0; k < orig->GetNumOrgMods(); k++) {
         m_OrgMods.push_back(orig->GetOrgMod(k));
     }
+    
+    m_UseModifierLabels = orig->GetUseModifierLabels();
+    m_KeepCountryText = orig->GetKeepCountryText();
+    m_ExcludeSpOrgs = orig->GetExcludeSpOrgs();
+    m_KeepParen = orig->GetKeepParen();
+    m_HIVCloneIsolateRule = orig->GetHIVCloneIsolateRule();
 }
 
 
@@ -340,9 +347,6 @@ string CAutoDefModifierCombo::x_GetSubSourceLabel (CSubSource::ESubtype st)
         label = "plasmid";
     } else if (st == CSubSource::eSubtype_country) {
         label = "from";
-        if (m_UseModifierLabels) {
-            label += " country";
-        }
     } else if (m_UseModifierLabels) {
         switch (st) {
             case CSubSource::eSubtype_chromosome:
@@ -574,6 +578,109 @@ void CAutoDefModifierCombo::x_CleanUpTaxName (string &tax_name)
 }
 
 
+bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st)
+{
+    bool         used = false;
+    string       val;
+
+    ITERATE (CBioSource::TSubtype, subSrcI, bsrc.GetSubtype()) {
+        if ((*subSrcI)->GetSubtype() == st) {
+            source_description += x_GetSubSourceLabel (st);
+
+            source_description += " ";
+            string val = (*subSrcI)->GetName();
+            // truncate value at first semicolon
+            unsigned int pos = NStr::Find(val, ";");
+            if (pos != NCBI_NS_STD::string::npos) {
+                val = val.substr(0, pos);
+            }
+                    
+            // if country and not keeping text after colon, truncate after colon
+            if (st == CSubSource::eSubtype_country
+                && ! m_KeepCountryText) {
+                pos = NStr::Find(val, ":");
+                if (pos != NCBI_NS_STD::string::npos) {
+                    val = val.substr(0, pos);
+                }
+            }
+            source_description += val;
+            used = true;
+        }
+    }
+    return used;
+}
+
+
+bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const CBioSource& bsrc, COrgMod::ESubtype st)
+{
+    bool         used = false;
+    string       val;
+
+    ITERATE (COrgName::TMod, modI, bsrc.GetOrg().GetOrgname().GetMod()) {
+        if ((*modI)->GetSubtype() == st) {
+            source_description += x_GetOrgModLabel(st);
+
+            source_description += " ";
+            string val = (*modI)->GetSubname();
+            // truncate value at first semicolon
+            unsigned int pos = NStr::Find(val, ";");
+            if (pos != NCBI_NS_STD::string::npos) {
+                val = val.substr(0, pos);
+            }
+            source_description += val;
+            used = true;
+        }
+    }
+    return used;
+}
+
+
+unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_description, const CBioSource& bsrc)
+{
+    unsigned int mods_used = 0;
+    string   clone_text = "";
+    string   isolate_text = "";
+    bool     src_has_clone = false;
+    bool     src_has_isolate = false;
+    
+    if (!NStr::Equal (source_description, "HIV-1")
+        &&  !NStr::Equal (source_description, "HIV-2")) {
+        return mods_used;
+    }
+    
+    if (!HasSubSource (CSubSource::eSubtype_country)) {
+        if (x_AddSubsourceString (source_description, bsrc, CSubSource::eSubtype_country)) {
+            mods_used++;
+        }
+    }
+    
+    src_has_clone = x_AddSubsourceString(clone_text, bsrc, CSubSource::eSubtype_clone);
+    src_has_isolate = x_AddOrgModString (isolate_text, bsrc, COrgMod::eSubtype_isolate);
+    
+    if ((HasSubSource (CSubSource::eSubtype_clone) && src_has_clone)
+        || (HasOrgMod (COrgMod::eSubtype_isolate) && src_has_isolate)) {
+        // no additional changes - isolate and clone rule taken care of
+    } else {
+        if ( ! HasOrgMod (COrgMod::eSubtype_isolate) && src_has_isolate
+            && (m_HIVCloneIsolateRule == ePreferIsolate
+                || m_HIVCloneIsolateRule == eWantBoth
+                || !src_has_clone)) {
+            x_AddOrgModString (source_description, bsrc, COrgMod::eSubtype_isolate);
+            mods_used++;
+        }
+        if (! HasSubSource(CSubSource::eSubtype_clone) && src_has_clone
+            && (m_HIVCloneIsolateRule == ePreferClone
+                || m_HIVCloneIsolateRule == eWantBoth
+                || !src_has_isolate)) {
+            x_AddSubsourceString (source_description, bsrc, CSubSource::eSubtype_clone);
+            mods_used++;
+        }
+    }    
+    
+    return mods_used;
+}
+
+
 string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc) 
 {
     unsigned int k;
@@ -591,6 +698,8 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
             return source_description;
         }
     }
+    
+    mods_used += x_AddHIVModifiers (source_description, bsrc);
 
     if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
         source_description = "Mutant " + source_description;
@@ -598,48 +707,16 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
     
     if (bsrc.CanGetSubtype()) {
         for (k = 0; k < GetNumSubSources() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
-            ITERATE (CBioSource::TSubtype, subSrcI, bsrc.GetSubtype()) {
-                if ((*subSrcI)->GetSubtype() == GetSubSource(k)) {
-                    source_description += x_GetSubSourceLabel (GetSubSource(k));
-
-                    source_description += " ";
-                    string val = (*subSrcI)->GetName();
-                    // truncate value at first semicolon
-                    unsigned int pos = NStr::Find(val, ";");
-                    if (pos != NCBI_NS_STD::string::npos) {
-                        val = val.substr(0, pos);
-                    }
-                    
-                    // if country and not keeping text after colon, truncate after colon
-                    if (GetSubSource(k) == CSubSource::eSubtype_country
-                        && ! m_KeepCountryText) {
-                        pos = NStr::Find(val, ":");
-                        if (pos != NCBI_NS_STD::string::npos) {
-                            val = val.substr(0, pos);
-                        }
-                    }
-                    source_description += val;
-                    mods_used ++;
-                }
+            if (x_AddSubsourceString (source_description, bsrc, GetSubSource(k))) {
+                mods_used++;
             }
         }
     }
+
     if (bsrc.CanGetOrg() && bsrc.GetOrg().CanGetOrgname() && bsrc.GetOrg().GetOrgname().CanGetMod()) {
         for (k = 0; k < GetNumOrgMods() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
-            ITERATE (COrgName::TMod, modI, bsrc.GetOrg().GetOrgname().GetMod()) {
-                if ((*modI)->GetSubtype() == GetOrgMod(k)) {
-                    source_description += x_GetOrgModLabel(GetOrgMod(k));
-
-                    source_description += " ";
-                    string val = (*modI)->GetSubname();
-                    // truncate value at first semicolon
-                    unsigned int pos = NStr::Find(val, ";");
-                    if (pos != NCBI_NS_STD::string::npos) {
-                        val = val.substr(0, pos);
-                    }
-                    source_description += val;
-                    mods_used++;
-                }
+            if (x_AddOrgModString (source_description, bsrc, GetOrgMod(k))) {
+                mods_used++;
             }
         }
     }
@@ -654,6 +731,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/05/03 15:45:55  bollin
+* added functions for handling country, clone, and isolate for HIV organism descriptions
+*
 * Revision 1.6  2006/05/02 14:12:40  bollin
 * moved organism description code out of CAutoDef into CAutoDefModCombo
 *

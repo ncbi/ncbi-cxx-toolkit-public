@@ -55,6 +55,12 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJUTIL_EXPORT CAutoDefModifierCombo : public CObject
 {
 public:
+    enum EHIVCloneIsolateRule {
+        ePreferClone = 0,
+        ePreferIsolate,
+        eWantBoth
+    };
+
     CAutoDefModifierCombo();
     CAutoDefModifierCombo(CAutoDefModifierCombo *orig);
     ~CAutoDefModifierCombo();
@@ -79,10 +85,17 @@ public:
     void GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
     
     void SetUseModifierLabels(bool use);
+    bool GetUseModifierLabels();
     void SetMaxModifiers(unsigned int max_mods);
+    unsigned int GetMaxModifiers();
     void SetKeepCountryText(bool keep);
+    bool GetKeepCountryText();
     void SetExcludeSpOrgs(bool exclude);
+    bool GetExcludeSpOrgs ();
     void SetKeepParen(bool keep);
+    bool GetKeepParen();
+    void SetHIVCloneIsolateRule(unsigned int rule_num);
+    unsigned int GetHIVCloneIsolateRule();
 
     string GetSourceDescriptionString(const CBioSource& bsrc);
 
@@ -100,11 +113,15 @@ private:
     bool         m_KeepCountryText;
     bool         m_ExcludeSpOrgs;
     bool         m_KeepParen;
-    
+    unsigned int m_HIVCloneIsolateRule;
     
     string x_GetSubSourceLabel (CSubSource::ESubtype st);
     string x_GetOrgModLabel(COrgMod::ESubtype st);
     void x_CleanUpTaxName (string &tax_name);
+    bool x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st);
+    bool x_AddOrgModString (string &source_description, const CBioSource& bsrc, COrgMod::ESubtype st);
+    unsigned int x_AddHIVModifiers (string &source_description, const CBioSource& bsrc);
+
 
 };
 
@@ -117,9 +134,23 @@ void CAutoDefModifierCombo::SetUseModifierLabels(bool use)
 
 
 inline
+bool CAutoDefModifierCombo::GetUseModifierLabels()
+{
+    return m_UseModifierLabels;
+}
+
+
+inline
 void CAutoDefModifierCombo::SetMaxModifiers(unsigned int max_mods)
 {
     m_MaxModifiers = max_mods;
+}
+
+
+inline
+unsigned int CAutoDefModifierCombo::GetMaxModifiers()
+{
+    return m_MaxModifiers;
 }
 
 
@@ -131,9 +162,23 @@ void CAutoDefModifierCombo::SetKeepCountryText(bool keep)
 
 
 inline
+bool CAutoDefModifierCombo::GetKeepCountryText()
+{
+    return m_KeepCountryText;
+}
+
+
+inline
 void CAutoDefModifierCombo::SetExcludeSpOrgs(bool exclude)
 {
     m_ExcludeSpOrgs = exclude;
+}
+
+
+inline
+bool CAutoDefModifierCombo::GetExcludeSpOrgs()
+{
+    return m_ExcludeSpOrgs;
 }
 
 
@@ -144,12 +189,36 @@ void CAutoDefModifierCombo::SetKeepParen(bool keep)
 }
 
 
+inline
+bool CAutoDefModifierCombo::GetKeepParen()
+{
+    return m_KeepParen;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetHIVCloneIsolateRule(unsigned int rule_num)
+{
+    m_HIVCloneIsolateRule = rule_num;
+}
+
+
+inline
+unsigned int CAutoDefModifierCombo::GetHIVCloneIsolateRule()
+{
+    return m_HIVCloneIsolateRule;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/05/03 15:45:37  bollin
+* added functions for handling country, clone, and isolate for HIV organism descriptions
+*
 * Revision 1.4  2006/05/02 14:12:18  bollin
 * moved organism description code out of CAutoDef into CAutoDefModCombo
 *
