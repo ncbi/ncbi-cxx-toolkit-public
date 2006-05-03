@@ -21,7 +21,7 @@
  *
  *  Please cite the author in any work or product based on this material.
  *
- * ===========================================================================*/
+ * ==========================================================================*/
 /**
  * @file composition_adjustment.h
  * Definitions used in compositional score matrix adjustment
@@ -179,6 +179,7 @@ void Blast_GetCompositionRange(int * pleft, int * pright,
  * @param calc_lambda     a function that can calculate the
  *                        statistical parameter Lambda from a set of
  *                        score frequencies.
+ * @param pValueAdjustment are unified p values being applied
  * @return 0 on success, -1 on out of memory
  */
 NCBI_XBLAST_EXPORT
@@ -186,7 +187,8 @@ int
 Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
                             const Blast_MatrixInfo * ss,
                             const double queryProb[], const double resProb[],
-                            double (*calc_lambda)(double*,int,int,double));
+                            double (*calc_lambda)(double*,int,int,double),
+                            int pValueAdjustment);
 
 
 /**
@@ -256,6 +258,9 @@ int Blast_CompositionMatrixAdj(int ** matrix,
  * @param calc_lambda   a function that can calculate the statistical
  *                      parameter Lambda from a set of score
  *                      frequencies.
+ * @param *pvalueForThisPair  used to get a composition p-value back
+ * @param compositionTestIndex rule to decide on applying unified p-values
+ * @param *ratioToPassBack lambda ratio to pass back for debugging
  * @return              0 for success, 1 for failure to converge,
  *                      -1 for out of memory
  */
@@ -271,7 +276,10 @@ Blast_AdjustScores(Int4 ** matrix,
                    int RE_pseudocounts,
                    Blast_CompositionWorkspace *NRrecord,
                    EMatrixAdjustRule *matrix_adjust_rule,
-                   double calc_lambda(double *,int,int,double));
+                   double calc_lambda(double *,int,int,double),
+                   double *pvalueForThisPair,
+                   int compositionTestIndex,
+                   double *ratioToPassBack);
 
 
 /**
@@ -279,13 +287,11 @@ Blast_AdjustScores(Int4 ** matrix,
  * score frequencies.
  *
  * @param matrix       the preallocated matrix
- * @param alphsize     the size of the alphabet for this matrix
  * @param freq         a set of score frequencies
  * @param Lambda       the desired scale of the matrix
  */
 NCBI_XBLAST_EXPORT
-void Blast_Int4MatrixFromFreq(Int4 **matrix, int alphsize,
-                              double ** freq, double Lambda);
+void Blast_Int4MatrixFromFreq(Int4 **matrix, double ** freq, double Lambda);
 
 
 /**
@@ -424,7 +430,7 @@ void Blast_ApplyPseudocounts(double * probs,
  */
 NCBI_XBLAST_EXPORT
 void Blast_CalcLambdaFullPrecision(double * plambda, int *piterations,
-                                   double ** score, int alphsize,
+                                   double **score, int alphsize,
                                    const double row_prob[],
                                    const double col_prob[],
                                    double lambda_tolerance,
