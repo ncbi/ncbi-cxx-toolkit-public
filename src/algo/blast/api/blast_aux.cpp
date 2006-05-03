@@ -489,24 +489,6 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp)
     return retval.Release();
 }
 
-BlastSeqLoc*
-MaskedQueryRegionsToBlastSeqLoc(const TMaskedQueryRegions & mqr)
-{
-    if (mqr.empty()) {
-        return NULL;
-    }
-    
-    CBlastSeqLoc retval;
-    
-    ITERATE(TMaskedQueryRegions, itr, mqr) {
-        const CSeq_interval & intv = (**itr).GetInterval();
-        
-        BlastSeqLocNew(&retval, intv.GetFrom(), intv.GetTo());
-    }
-    
-    return retval.Release();
-}
-
 TAutoUint1ArrayPtr
 FindGeneticCode(int genetic_code)
 {
@@ -824,6 +806,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.94  2006/05/03 13:46:40  camacho
+ * Remove unused MaskedQueryRegionsToBlastSeqLoc function
+ *
  * Revision 1.93  2006/04/28 19:02:12  camacho
  * Implement CBlastQueryInfo::DebugDump
  *
