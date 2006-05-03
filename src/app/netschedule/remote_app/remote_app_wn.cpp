@@ -38,8 +38,7 @@
 #include <corelib/blob_storage.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbiexec.hpp>
-
-#include <util/stream_utils.hpp>
+#include <corelib/stream_utils.hpp>
 
 #include <connect/ncbi_pipe.hpp>
 #include <connect/services/grid_worker_app.hpp>
@@ -259,6 +258,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/05/03 14:54:02  didenko
+ * <util/stream_util.hpp> is replaced with <corelib/stream_util.hpp>
+ *
  * Revision 1.8  2006/03/30 16:13:18  didenko
  * + optional jobs logging
  *
