@@ -79,6 +79,9 @@ static const double kCompoAdjustErrTolerance = 0.00000001;
 static const int kCompoAdjustIterationLimit = 2000;
 /** relative entropy of BLOSUM62 */
 static const double kFixedReBlosum62 = 0.44;
+/** largest permitted value of score(i,X), when scores are computed using
+    composition adjustment */
+static const double kMaximumXscore = -1.0;
 
 /** The BLOSUM62 matrix for the ARND... alphabet, using standard scale */
 static double BLOS62[COMPO_NUM_TRUE_AA][COMPO_NUM_TRUE_AA]=
@@ -599,6 +602,30 @@ s_TrueAaToStdTargetFreqs(double ** StdFreq, double ** freq)
 
 
 /**
+ * Calculate the average score of a row or column of a matrix.
+ *
+ * @param M            a vector of scores
+ * @param incM         stride between elements of M; used to pass a column
+ *                     of a score matrix to this routine by setting incM
+ *                     to the number of elements in a column.
+ * @param probs        background probabilities for a sequence.
+ */
+static double
+s_CalcAvgScore(double * M, int incM, const double probs[])
+{
+    int j;                   /* iteration index */
+    double score_iX = 0.0;   /* score of character i substituted by X */
+
+    for (j = 0;  j < COMPO_PROTEIN_ALPHABET;  j++) {
+        if (alphaConvert[j] >= 0) {
+            /* If the column corresponds to a true amino acid */
+            score_iX += M[j * incM] * probs[j];
+        }
+    }
+    return score_iX;
+}
+
+/**
  * Calculate values for the X ambiguity score, give an vector of scores and
  * a set of character probabilities.
  * @param M            a vector of scores
@@ -610,16 +637,7 @@ s_TrueAaToStdTargetFreqs(double ** StdFreq, double ** freq)
 static double
 s_CalcXScore(double * M, int incM, const double probs[])
 {
-    int j;                   /* iteration index */
-    double score_iX = 0.0;   /* score of character i substituted by X */
-
-    for (j = 0;  j < COMPO_PROTEIN_ALPHABET;  j++) {
-        if (alphaConvert[j] >= 0) {
-            /* If the column corresponds to a true amino acid */
-            score_iX += M[j * incM] * probs[j];
-        }
-    }
-    return score_iX <= -1.0 ? score_iX : -1.0;
+    return MIN( s_CalcAvgScore(M, incM, probs), kMaximumXscore);
 }
 
 
@@ -644,13 +662,14 @@ s_SetXUScores(double ** M, const double row_probs[], const double col_probs[])
 
     for (i = 0;  i < alphsize;  i++) {
         if (alphaConvert[i] >= 0) {
-            M[i][eXchar] = s_CalcXScore(M[i], 1, col_probs);
-            score_XX += M[i][eXchar] * row_probs[i];
+            double avg_iX = s_CalcAvgScore(M[i], 1, col_probs);
+            M[i][eXchar] = MIN(avg_iX, kMaximumXscore);
+            score_XX += avg_iX * row_probs[i];
 
             M[eXchar][i] = s_CalcXScore(&M[0][i], alphsize, row_probs);
         }
     }
-    M[eXchar][eXchar] = score_XX;
+    M[eXchar][eXchar] = MIN(score_XX, kMaximumXscore);
 
     /* Set X scores for pairwise ambiguity characters */
     M[eBchar][eXchar] = s_CalcXScore(M[eBchar], 1, col_probs);
