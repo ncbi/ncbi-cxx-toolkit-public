@@ -291,6 +291,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
     bool connected = CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
+    //cerr << "Input: " << input << endl;
     MakeCommandPacket(&m_Tmp, "SUBMIT \"", connected);
     m_Tmp.append(NStr::PrintableString(input));
     m_Tmp.append("\"");
@@ -306,6 +307,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
         m_Tmp.append(affinity_token);
         m_Tmp.append("\"");
     }
+    //cerr << "m_Tmp" << m_Tmp << endl;
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -1003,6 +1005,8 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
     input->erase();
     job_key->erase();
 
+    //cerr << "Response: " << response <<endl;
+
     const char* str = response.c_str();
     while (*str && isspace((unsigned char)(*str)))
         ++str;
@@ -1014,11 +1018,23 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
     while (*str && isspace((unsigned char)(*str)))
         ++str;
 
+    /*
     if (*str == '"')
         ++str;
+
     for (;*str && *str != '"'; ++str) {
         input->push_back(*str);
     }
+    */
+    if (*str && *str == '"') {
+        ++str;
+        for( ;*str && *str; ++str) {
+            if (*str == '"' && *(str-1) != '\\') break;
+            input->push_back(*str);
+        }
+    }
+
+    //cerr << "UnParsed input: " << *input <<endl;
     *input = NStr::ParseEscapes(*input);
 }
 
@@ -1666,6 +1682,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/05/03 14:51:27  didenko
+ * Fixed bug in the job's input parsing
+ *
  * Revision 1.50  2006/03/27 15:27:18  didenko
  * Fixed request's output parsing
  *
