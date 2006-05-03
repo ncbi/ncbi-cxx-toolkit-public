@@ -45,7 +45,14 @@ CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage& storage,
 
 CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter() 
 {
-    m_Storage.Reset();
+    try {
+        m_Storage.Reset();
+    } catch(exception& ex) {
+        ERR_POST( "An exception caught in ~CStringOrBlobStorageWriter() :" << 
+                  ex.what());
+    } catch(...) {
+        ERR_POST( "An unknown exception caught in ~CStringOrBlobStorageWriter() :");
+    }
 }
 
 namespace {
@@ -114,8 +121,9 @@ ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
     CNcbiStreampos pos = m_BlobOstr->tellp();
     m_BlobOstr->write((const char*)buf, count);
     if (bytes_written) {
-        if (pos != (CNcbiStreampos)-1) {
-            *bytes_written = m_BlobOstr->tellp() - pos;
+        CNcbiStreampos npos = m_BlobOstr->tellp();        
+        if (pos != (CNcbiStreampos)-1 && npos != (CNcbiStreampos)-1) {
+            *bytes_written = npos - pos;
         } else {
             *bytes_written = count;
         }
@@ -153,7 +161,14 @@ CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
 
 CStringOrBlobStorageReader::~CStringOrBlobStorageReader()
 {
-    m_Storage.Reset();
+    try {
+        m_Storage.Reset();
+    } catch(exception& ex) {
+        ERR_POST( "An exception caught in ~CStringOrBlobStorageReader() :" << 
+                  ex.what());
+    } catch(...) {
+        ERR_POST( "An unknown exception caught in ~CStringOrBlobStorageReader() :");
+    }
 }
    
 ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
@@ -207,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2006/05/03 20:03:52  didenko
+ * Improved exceptions handling
+ *
  * Revision 6.7  2006/04/25 20:09:59  didenko
  * Fix written bytes calculation algorithm
  *

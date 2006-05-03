@@ -67,7 +67,12 @@ CBlobStorage_NetCache::~CBlobStorage_NetCache()
 {
     try {
         Reset();
-    } catch (...) {}
+    } catch(exception& ex) {
+        ERR_POST( "An exception caught in ~CBlobStorage_NetCache() :" << 
+                  ex.what());
+    } catch(...) {
+        ERR_POST( "An unknown exception caught in ~CBlobStorage_NetCache() :");
+    }
 }
 
 void CBlobStorage_NetCache::x_Check()
@@ -397,6 +402,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2006/05/03 20:03:52  didenko
+ * Improved exceptions handling
+ *
  * Revision 6.5  2006/03/27 15:29:06  didenko
  * Fixes handling of empty blobs
  *

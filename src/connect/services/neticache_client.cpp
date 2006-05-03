@@ -85,8 +85,10 @@ void CNetICacheClient::ReturnSocket(CSocket* sock)
     {{
         STimeout to = {0, 0};
         EIO_Status io_st = sock->Wait(eIO_Read, &to);
+        string line;
         if (io_st == eIO_Success) {
-            ERR_POST("ReturnSocket detected unread input.");
+            sock->ReadLine(line);
+            ERR_POST("ReturnSocket detected unread input.: " << line);
             delete sock;
             return;
         }
@@ -937,6 +939,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/05/03 20:03:52  didenko
+ * Improved exceptions handling
+ *
  * Revision 1.24  2006/05/01 16:36:18  vasilche
  * Fixed error in netcache communication protocol.
  *

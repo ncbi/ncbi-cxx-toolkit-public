@@ -76,11 +76,13 @@ public:
     {
         if (!m_OStream.get()) {
             _ASSERT(!m_IStream.get());
-            IWriter* writer = 
+            auto_ptr<IWriter> writer( 
                 new CStringOrBlobStorageWriter(kMaxBlobInlineSize,
                                                m_Storage,
-                                               m_Data);
-            m_OStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter));
+                                               m_Data)
+                );
+            m_OStream.reset(new CWStream(writer.release(), 
+                                         0, 0, CRWStreambuf::fOwnWriter));
         }
         return *m_OStream; 
     }
@@ -89,11 +91,14 @@ public:
     {
         if (!m_IStream.get()) {
             _ASSERT(!m_OStream.get());
-            IReader* reader = new CStringOrBlobStorageReader(m_Data,
-                                                             m_Storage,
-                                                             IBlobStorage::eLockWait,
-                                                             m_DataSize);
-            m_IStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader));
+            auto_ptr<IReader> reader(
+                     new CStringOrBlobStorageReader(m_Data,
+                                                    m_Storage,
+                                                    IBlobStorage::eLockWait,
+                                                    m_DataSize)
+                     );
+            m_IStream.reset(new CRStream(reader.release(),
+                                         0,0,CRWStreambuf::fOwnReader));
         }
         return *m_IStream; 
     }
@@ -485,6 +490,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2006/05/03 20:03:52  didenko
+ * Improved exceptions handling
+ *
  * Revision 6.3  2006/03/16 15:13:59  didenko
  * Remaned CRemoteJob... to CRemoteApp...
  * + Comments
