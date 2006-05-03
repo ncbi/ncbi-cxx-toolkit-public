@@ -491,7 +491,7 @@ SPHIQueryInfo* SPHIQueryInfoNew()
         return NULL;
     pattern_info->allocated_size = kMinPhiLookupSize;
     if ((pattern_info->occurrences = 
-         (SPHIPatternInfo*) malloc(kMinPhiLookupSize*sizeof(SPHIPatternInfo)))
+         (SPHIPatternInfo*) calloc(kMinPhiLookupSize, sizeof(SPHIPatternInfo)))
         == NULL)
         return NULL;
     return pattern_info;
