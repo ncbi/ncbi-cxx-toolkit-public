@@ -66,9 +66,10 @@ public:
     void AddOrgMod(COrgMod::ESubtype st);
     bool SourceDescBelongsHere(CAutoDefSourceDescription *source_desc);
     
-    CAutoDefSourceGroup *CAutoDefSourceGroup::RemoveNonMatchingDescriptions ();
+    CAutoDefSourceGroup *RemoveNonMatchingDescriptions ();
     
-    void GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
+    void GetAvailableModifiers
+        (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
 
     typedef vector<CAutoDefSourceDescription *> TSourceDescriptionVector;
 
@@ -85,6 +86,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/05/03 14:06:17  ucko
+* Discard redundant class name from RemoveNonMatchingDescriptions's
+* declaration (as required by GCC 4.1, and also CodeWarrior IIRC), and
+* reformat GetAvailableModifiers' to fit in 80 columns.
+*
 * Revision 1.2  2006/04/17 17:39:37  ucko
 * Fix capitalization of header filenames.
 *
