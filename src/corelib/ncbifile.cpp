@@ -3884,7 +3884,7 @@ void CMemoryFileMap::x_Close()
     }
 }
 
-// Write 'length' zero bytes into file and close file descriptor.
+// Write 'length' zero bytes into the file and close file descriptor.
 void s_AppendZeros(int fd, Uint8 length)
 {
     char* buf  = new char[kDefaultBufferSize];
@@ -3893,7 +3893,7 @@ void s_AppendZeros(int fd, Uint8 length)
     do {
         int x_written = (int)write(fd, (void*) buf, 
             length > kDefaultBufferSize ? kDefaultBufferSize :
-                                          (size_t)length);
+                                          (unsigned int)length);
         if ( x_written < 0 ) {
             if (errno != EINTR) {
                 errmsg = strerror(errno);
@@ -4042,7 +4042,7 @@ void* CMemoryFile::Extend(size_t length)
     }
 
     // Changing file size is necessary
-    if (offset + length > file_size) {
+    if (Int8(offset + length) > file_size) {
         x_Close();
         x_Extend(offset + length - file_size);
         x_Open();
@@ -4068,6 +4068,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.144  2006/05/03 20:05:25  ivanov
+ * Get rid of warnings on MSVC 8 64-bit
+ *
  * Revision 1.143  2006/04/20 18:52:17  ivanov
  * Get rid of warnings on 64-bit Sun Workshop compiler
  *
