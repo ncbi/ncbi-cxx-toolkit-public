@@ -270,10 +270,13 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
  * @param queryInfo        information about the queries
  * @param sbp              the score block for this search
  * @param hitParams        parameters used to assign evalues and
- *                         decide whether to save hits. 
- *                         
+ *                         decide whether to save hits.
+ * @param pvalueForThisPair  composition p-value
+ * @param LambdaRatio        lambda ratio, if available
+ * @param subject_id         index of subject
+ *
  * @return 0 on success; -1 on failure (can fail because some methods
- *         of generating evalues use auxiliary structures) 
+ *         of generating evalues use auxiliary structures)
  */
 static int
 s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
@@ -282,7 +285,10 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                           EBlastProgramType program_number,
                           BlastQueryInfo* queryInfo,
                           BlastScoreBlk* sbp,
-                          const BlastHitSavingParameters* hitParams)
+                          const BlastHitSavingParameters* hitParams,
+                          double pvalueForThisPair,
+                          double LambdaRatio,
+                          int subject_id)
 {
     int status = 0;
     *pbestEvalue = DBL_MAX;
@@ -1492,8 +1498,7 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
         self->ungappedLambda = sbp->kbp_ideal->Lambda / scale_factor;
         status = s_GetStartFreqRatios(self->startFreqRatios, matrixName);
         if (status == 0) {
-            Blast_Int4MatrixFromFreq(self->startMatrix, BLASTAA_SIZE,
-                                     self->startFreqRatios,
+            Blast_Int4MatrixFromFreq(self->startMatrix, self->startFreqRatios,
                                      self->ungappedLambda);
         }
     }
@@ -1761,6 +1766,13 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     Int4      **matrix;                   /* score matrix */
     BlastKappa_GappingParamsContext gapping_params_context;
 
+    double pvalueForThisPair = (-1); /* p-value for this match
+                                        for composition; -1 == no adjustment*/
+    double LambdaRatio; /*lambda ratio*/
+    /* which test function do we use to see if a composition-adjusted
+       p-value is desired; value needs to be passed in eventually*/
+    int compositionTestIndex = 0;
+
     if (positionBased) {
         matrix = sbp->psi_matrix->pssm->data;
     } else {
@@ -1919,14 +1931,20 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                                 &matchingSeq, query_info,
                                                 numQueries, matrix,
                                                 NRrecord, &forbidden,
-                                                redoneMatches);
+                                                redoneMatches,
+                                                &pvalueForThisPair,
+                                                compositionTestIndex,
+                                                &LambdaRatio);
         } else {
             status_code =
                 Blast_RedoOneMatch(alignments, redo_align_params,
                                    incoming_aligns, thisMatch->hspcnt,
                                    kbp->Lambda, &matchingSeq,
                                    queryInfo->max_length, query_info,
-                                   numQueries, matrix, NRrecord);
+                                   numQueries, matrix, NRrecord,
+                                   &pvalueForThisPair,
+                                   compositionTestIndex,
+                                   &LambdaRatio);
         }
         if (status_code != 0) {
             goto match_loop_cleanup;
@@ -1959,7 +1977,9 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                               matchingSeq.length,
                                               program_number,
                                               queryInfo, sbp,
-                                              hitParams);
+                                              hitParams,
+                                              pvalueForThisPair, LambdaRatio,
+                                              0);
                 if (status_code != 0) {
                     goto query_loop_cleanup;
                 }
