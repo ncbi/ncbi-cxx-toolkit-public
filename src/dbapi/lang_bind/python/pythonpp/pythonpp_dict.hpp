@@ -153,8 +153,7 @@ public:
     void clear (void)
     {
         CList k = Keys();
-        for(CList::iterator i = k.begin(); i != k.end(); ++i)
-        {
+        for (CList::iterator i = k.begin(); i.neq(k.end()); ++i) {
             DelItem(*i);
         }
     }
@@ -429,6 +428,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/05/03 14:03:27  ucko
+* Tweak CDictHelper<>::clear() for compatibility with GCC 4.1.
+*
 * Revision 1.3  2005/02/10 17:43:56  ssikorsk
 * Changed: more 'precise' exception types
 *
