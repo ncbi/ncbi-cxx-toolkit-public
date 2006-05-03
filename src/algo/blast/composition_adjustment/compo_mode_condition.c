@@ -44,11 +44,13 @@ static char const rcsid[] =
 #define HALF_CIRCLE_DEGREES 180
 /** some digits of PI */
 #define PI 3.1415926543
-/** thresholds used to determine which composition mode to use */
+/** @{ thresholds used to determine which composition mode to use */
 #define QUERY_MATCH_DISTANCE_THRESHOLD 0.16
 #define LENGTH_RATIO_THRESHOLD 3.0
 #define ANGLE_DEGREE_THRESHOLD 70.0
-
+#define HIGH_PAIR_THRESHOLD 0.4
+#define LENGTH_LOWER_THRESHOLD 50
+/** @} */
 
 /** type of function used to choose a mode for composition-based
  * statistics. The variables are Queryseq_length, Matchseq_length,
@@ -56,6 +58,47 @@ static char const rcsid[] =
 typedef EMatrixAdjustRule
 (*Condition) (int, int, const double *, const double *,
               const char *);
+
+
+/** Return true if length > 50 and the two most frequent letters
+ * occur a total of more that 40% of the time. */
+static int
+s_HighPairFrequencies(const double * letterProbs, int length)
+{
+    int i; /*index*/
+    double max, second; /*two highest letter probabilities*/
+
+    if (length <= LENGTH_LOWER_THRESHOLD) {
+        return FALSE;
+    }
+    max = 0;
+    second = 0;
+    for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
+        if (letterProbs[i] > second) {
+            second = letterProbs[i];
+            if (letterProbs[i] > max) {
+                second = max;
+                max = letterProbs[i];
+            }
+        }
+    }
+    return (max + second) > HIGH_PAIR_THRESHOLD;
+}
+
+/**
+ * Return true if either the query or the matching sequences
+ * passes the test in s_HighPairFrequencies. */
+static int
+s_HighPairEitherSeq(const double * P_query, int length1,
+                    const double * P_match, int length2)
+{
+    int result1, result2;
+
+    result1 = s_HighPairFrequencies(P_query, length1);
+    result2 = s_HighPairFrequencies(P_match, length2);
+
+    return result1 || result2;
+}
 
 
 /** Return eDontAdjustMatrix unconditionally */
@@ -175,12 +218,16 @@ s_TestToApplyREAdjustmentConditional(int Len_query,
         len_large = len_m;
         len_small = len_q;
     }
-    if ((D_m_q > QUERY_MATCH_DISTANCE_THRESHOLD) &&
+    if (s_HighPairEitherSeq(P_query, Len_query, P_match, Len_match)) {
+        which_rule = eUserSpecifiedRelEntropy;
+    } else {
+      if ((D_m_q > QUERY_MATCH_DISTANCE_THRESHOLD) &&
         (len_large / len_small > LENGTH_RATIO_THRESHOLD) &&
         (angle > ANGLE_DEGREE_THRESHOLD)) {
         which_rule = eCompoScaleOldMatrix;
-    } else {
+      } else {
         which_rule = eUserSpecifiedRelEntropy;
+      }
     }
     return which_rule;
 }
