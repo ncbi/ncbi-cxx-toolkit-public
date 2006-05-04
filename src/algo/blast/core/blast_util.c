@@ -43,7 +43,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_stat.h>
 
 Int2
-BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
+BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length,
    BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated)
 {
    /* Check if BLAST_SequenceBlk itself needs to be allocated here or not */
@@ -62,7 +62,6 @@ BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
    }
    
    (*seq_blk)->length = length;
-   (*seq_blk)->context = context;
    
    return 0;
 }

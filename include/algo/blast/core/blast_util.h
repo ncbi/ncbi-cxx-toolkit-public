@@ -87,7 +87,6 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program);
 /** Allocates memory for *sequence_blk and then populates it.
  * @param buffer start of sequence [in]
  * @param length query sequence length [in]
- * @param context context number [in]
  * @param seq_blk SequenceBlk to be allocated and filled in [out]
  * @param buffer_allocated Is the buffer allocated? If yes, 'sequence_start' is
  *        the start of the sequence, otherwise it is 'sequence'. [in]
@@ -95,7 +94,7 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program);
 */
 NCBI_XBLAST_EXPORT
 Int2
-BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
+BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length,
     BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated);
 
 /** Allocates a new sequence block structure. 

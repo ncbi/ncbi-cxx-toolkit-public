@@ -145,7 +145,7 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
     if (len <= 0)
         return BLAST_SEQSRC_ERROR;
 
-    BlastSetUp_SeqBlkNew((Uint1*)buf, len, 0, &seqdb_args->seq, 
+    BlastSetUp_SeqBlkNew((Uint1*)buf, len, &seqdb_args->seq, 
                          buffer_allocated);
     
     /* If there is no sentinel byte, and buffer is allocated, i.e. this is
@@ -490,6 +490,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2006/05/04 15:53:01  camacho
+ * Removed unused BLAST_SequenceBlk::context field
+ *
  * Revision 1.37  2005/05/10 21:24:00  camacho
  * Fix to prior commit
  *
