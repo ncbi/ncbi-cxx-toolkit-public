@@ -49,18 +49,11 @@ BEGIN_SCOPE(objects)
 
 CAutoDefSourceDescription::CAutoDefSourceDescription(const CBioSource& bs) : m_BS(bs)
 {
-    m_DescriptionStringList.clear();
-    m_DescriptionStringList.push_back(m_BS.GetOrg().GetTaxname());
 }
 
 
 CAutoDefSourceDescription::CAutoDefSourceDescription(CAutoDefSourceDescription * value) : m_BS(value->GetBioSource())
 {
-    unsigned int index;
-    m_DescriptionStringList.clear();
-    for (index = 0; index < value->GetNumDescriptionStrings(); index++) {
-        m_DescriptionStringList.push_back(value->GetDescriptionString(index));
-    }
 }
 
 
@@ -74,88 +67,13 @@ const CBioSource& CAutoDefSourceDescription::GetBioSource()
 }
 
 
-string CAutoDefSourceDescription::GetDescriptionString(unsigned int index)
+string CAutoDefSourceDescription::GetComboDescription(IAutoDefCombo *mod_combo)
 {
-    if (index >= m_DescriptionStringList.size()) {
-        return "";
+    string desc = "";
+    if (mod_combo) {
+        return mod_combo->GetSourceDescriptionString(m_BS);
     } else {
-        return m_DescriptionStringList[index];
-    }
-}
-
-unsigned int CAutoDefSourceDescription::GetNumDescriptionStrings()
-{
-    return m_DescriptionStringList.size();
-}
-
-
-bool CAutoDefSourceDescription::RemainingStringsEmpty(unsigned int index) 
-{
-    while (index < m_DescriptionStringList.size()) {
-        if(!NStr::Equal("", m_DescriptionStringList[index])) {
-            return false;
-        }
-        index++;
-    }
-    return true;
-}
-
-
-int CAutoDefSourceDescription::CompareDescription (CAutoDefSourceDescription *other_desc)
-{
-    unsigned int index;
-    int          retval;
-    
-    if (other_desc == NULL) {
-        return 1;
-    }
-    
-    for (index = 0; index < m_DescriptionStringList.size(); index++) {
-        retval = NStr::CompareNocase(m_DescriptionStringList[index], other_desc->GetDescriptionString(index));
-        if (retval != 0) {
-            return retval;
-        }
-    }
-    if (!other_desc->RemainingStringsEmpty(index)) {
-        return -1;
-    } else {
-        return 0;
-    }
-}
-
-
-void CAutoDefSourceDescription::AddSubsource(CSubSource::ESubtype st)
-{
-    bool found = false;
-    
-    if (m_BS.CanGetSubtype()) {
-        ITERATE (CBioSource::TSubtype, subSrcI, m_BS.GetSubtype()) {
-            if ((*subSrcI)->GetSubtype() == st) {
-                m_DescriptionStringList.push_back ((*subSrcI)->GetName());
-                found = true;
-            }
-        }
-    }
-    if (!found) {
-        m_DescriptionStringList.push_back("");
-    }
-}
-
-
-void CAutoDefSourceDescription::AddOrgMod(COrgMod::ESubtype st)
-{
-    bool found = false;
-    if (m_BS.CanGetOrg() && m_BS.GetOrg().CanGetOrgname() && m_BS.GetOrg().GetOrgname().CanGetMod()) {
-        ITERATE (COrgName::TMod, modI, m_BS.GetOrg().GetOrgname().GetMod()) {
-            if ((*modI)->GetSubtype() == st) {
-                string value = (*modI)->GetSubname();
-                m_DescriptionStringList.push_back (value);
-                found = true;
-            }
-        }
-    }
-    if (!found) {
-        m_DescriptionStringList.push_back("");
+        return m_BS.GetOrg().GetTaxname();
     }
 }
 
@@ -192,6 +110,38 @@ void CAutoDefSourceDescription::GetAvailableModifiers (TAvailableModifierVector 
     }    
 }
 
+// tricky HIV records have an isolate and a clone
+bool CAutoDefSourceDescription::IsTrickyHIV()
+{
+    string tax_name = m_BS.GetOrg().GetTaxname();
+    if (!NStr::Equal(tax_name, "HIV-1") && !NStr::Equal(tax_name, "HIV-2")) {
+        return false;
+    }
+    
+    bool found = false;
+    
+    if (m_BS.CanGetSubtype()) {
+        ITERATE (CBioSource::TSubtype, subSrcI, m_BS.GetSubtype()) {
+            if ((*subSrcI)->GetSubtype() == CSubSource::eSubtype_clone) {
+                found = true;
+            }
+        }
+    }
+    if (!found) {
+        return false;
+    }   
+    
+    found = false;
+    if (m_BS.CanGetOrg() && m_BS.GetOrg().CanGetOrgname() && m_BS.GetOrg().GetOrgname().CanGetMod()) {
+        ITERATE (COrgName::TMod, modI, m_BS.GetOrg().GetOrgname().GetMod()) {
+            if ((*modI)->GetSubtype() == COrgMod::eSubtype_isolate) {
+                found = true;
+            }
+        }
+    }
+    return found;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -199,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/05/04 11:44:52  bollin
+* improvements to method for finding unique organism description
+*
 * Revision 1.5  2006/04/27 16:00:46  bollin
 * fixed bug in adding modifiers to descriptions for automatic definition lines
 *

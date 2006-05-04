@@ -660,7 +660,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
         } else {
             return true;
         }
-   }
+    }
 }
 
 
@@ -1481,6 +1481,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2006/05/04 11:44:52  bollin
+* improvements to method for finding unique organism description
+*
 * Revision 1.11  2006/05/02 15:21:16  bollin
 * fixed bug in getting description for LTR, added LTR to list of recognized
 * features

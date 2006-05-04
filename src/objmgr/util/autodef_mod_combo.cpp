@@ -164,14 +164,8 @@ void CAutoDefModifierCombo::AddSource(const CBioSource& bs)
     bool         found = false;
     
     new_org = new CAutoDefSourceDescription(bs);
-    for (k = 0; k < m_SubSources.size(); k++) {
-        new_org->AddSubsource (m_SubSources[k]);
-    }
-    for (k = 0; k < m_OrgMods.size(); k++) {
-        new_org->AddOrgMod (m_OrgMods[k]);
-    }
     for (k = 0; k < m_GroupList.size() && ! found; k++) {
-        if (m_GroupList[k]->SourceDescBelongsHere(new_org)) {
+        if (m_GroupList[k]->SourceDescBelongsHere(new_org, this)) {
             m_GroupList[k]->AddSourceDescription(new_org);
             found = true;
         }
@@ -190,17 +184,16 @@ void CAutoDefModifierCombo::AddSubsource(CSubSource::ESubtype st)
     CAutoDefSourceGroup *new_grp;
     
     orig_group_num = m_GroupList.size();
+    m_SubSources.push_back(st);
     
     for (k = 0; k < orig_group_num; k++) {
-        m_GroupList[k]->AddSubsource (st);
         
-        new_grp = m_GroupList[k]->RemoveNonMatchingDescriptions ();
+        new_grp = m_GroupList[k]->RemoveNonMatchingDescriptions (this);
         while (new_grp != NULL) {
             m_GroupList.push_back(new_grp);
-            new_grp = new_grp->RemoveNonMatchingDescriptions();
+            new_grp = new_grp->RemoveNonMatchingDescriptions(this);
         }
     }
-    m_SubSources.push_back(st);
 }
 
 
@@ -210,17 +203,16 @@ void CAutoDefModifierCombo::AddOrgMod(COrgMod::ESubtype st)
     CAutoDefSourceGroup *new_grp;
     
     orig_group_num = m_GroupList.size();
-    
+    m_OrgMods.push_back(st);
+   
     for (k = 0; k < orig_group_num; k++) {
-        m_GroupList[k]->AddOrgMod (st);
         
-        new_grp = m_GroupList[k]->RemoveNonMatchingDescriptions ();
+        new_grp = m_GroupList[k]->RemoveNonMatchingDescriptions (this);
         while (new_grp != NULL) {
             m_GroupList.push_back(new_grp);
-            new_grp = new_grp->RemoveNonMatchingDescriptions();
+            new_grp = new_grp->RemoveNonMatchingDescriptions(this);
         }
     }
-    m_OrgMods.push_back(st);
 }
 
 
@@ -635,6 +627,17 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
 }
 
 
+bool CAutoDefModifierCombo::HasTrickyHIV()
+{
+    bool has_tricky = false;
+    
+    for (unsigned int k = 0; k < m_GroupList.size() && !has_tricky; k++) {
+        has_tricky = m_GroupList[k]->HasTrickyHIV();
+    }
+    return has_tricky;
+}
+
+
 unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_description, const CBioSource& bsrc)
 {
     unsigned int mods_used = 0;
@@ -731,6 +734,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2006/05/04 11:44:52  bollin
+* improvements to method for finding unique organism description
+*
 * Revision 1.7  2006/05/03 15:45:55  bollin
 * added functions for handling country, clone, and isolate for HIV organism descriptions
 *

@@ -52,7 +52,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     
-class NCBI_XOBJUTIL_EXPORT CAutoDefModifierCombo : public CObject
+class NCBI_XOBJUTIL_EXPORT CAutoDefModifierCombo : public CObject, 
+                                                   public IAutoDefCombo
 {
 public:
     enum EHIVCloneIsolateRule {
@@ -83,6 +84,7 @@ public:
     unsigned int GetNumUniqueDescriptions();
     bool AllUnique();
     void GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
+    bool HasTrickyHIV();
     
     void SetUseModifierLabels(bool use);
     bool GetUseModifierLabels();
@@ -216,6 +218,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/05/04 11:44:40  bollin
+* improvements to method for finding unique organism description
+*
 * Revision 1.5  2006/05/03 15:45:37  bollin
 * added functions for handling country, clone, and isolate for HIV organism descriptions
 *

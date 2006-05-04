@@ -46,7 +46,6 @@
 #include <objmgr/seq_entry_handle.hpp>
 
 #include <objmgr/util/autodef_available_modifier.hpp>
-#include <objmgr/util/autodef_source_desc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -62,21 +61,20 @@ public:
     CAutoDefSourceDescription *GetSourceDescription(unsigned int index);
     void AddSourceDescription(CAutoDefSourceDescription *tmp);
 
-    void AddSubsource(CSubSource::ESubtype st);
-    void AddOrgMod(COrgMod::ESubtype st);
-    bool SourceDescBelongsHere(CAutoDefSourceDescription *source_desc);
+    bool SourceDescBelongsHere(CAutoDefSourceDescription *source_desc, IAutoDefCombo *mod_combo);
     
-    CAutoDefSourceGroup *RemoveNonMatchingDescriptions ();
+    CAutoDefSourceGroup *RemoveNonMatchingDescriptions (IAutoDefCombo *mod_combo);
     
     void GetAvailableModifiers
         (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
 
     typedef vector<CAutoDefSourceDescription *> TSourceDescriptionVector;
+    bool HasTrickyHIV();
 
 private:
     TSourceDescriptionVector m_SourceList;
     
-    void x_SortDescriptions();
+    void x_SortDescriptions(IAutoDefCombo *mod_combo);
 
 };
     
@@ -86,6 +84,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/05/04 11:44:40  bollin
+* improvements to method for finding unique organism description
+*
 * Revision 1.3  2006/05/03 14:06:17  ucko
 * Discard redundant class name from RemoveNonMatchingDescriptions's
 * declaration (as required by GCC 4.1, and also CodeWarrior IIRC), and

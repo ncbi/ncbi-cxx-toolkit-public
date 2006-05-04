@@ -95,14 +95,16 @@ void CAutoDefSourceGroup::AddSourceDescription(CAutoDefSourceDescription *tmp)
 }
 
 
-void CAutoDefSourceGroup::x_SortDescriptions() 
+void CAutoDefSourceGroup::x_SortDescriptions(IAutoDefCombo *mod_combo) 
 {
     CAutoDefSourceDescription *tmp;
     // insertion sort
     for (unsigned int k = 1; k < m_SourceList.size(); k ++) {
         unsigned int j = k;
         tmp = m_SourceList[k];
-        while (j > 0 && m_SourceList[j - 1]->CompareDescription(tmp) > 0) {
+        string tmp_desc = m_SourceList[k]->GetComboDescription(mod_combo);
+        
+        while (j > 0 && NStr::strcasecmp(m_SourceList[j - 1]->GetComboDescription(mod_combo).c_str(), tmp_desc.c_str()) > 0) {
             m_SourceList[j] = m_SourceList[j - 1];
             j--;
         }
@@ -111,17 +113,24 @@ void CAutoDefSourceGroup::x_SortDescriptions()
 }
 
 
-CAutoDefSourceGroup *CAutoDefSourceGroup::RemoveNonMatchingDescriptions ()
+CAutoDefSourceGroup *CAutoDefSourceGroup::RemoveNonMatchingDescriptions (IAutoDefCombo *mod_combo)
 {
-    x_SortDescriptions();
+    x_SortDescriptions(mod_combo);
 
-    if (m_SourceList.size() < 2 || m_SourceList[m_SourceList.size() - 1]->CompareDescription(m_SourceList[0]) == 0) {
+    if (m_SourceList.size() < 2) { 
+        return NULL;
+    }
+    
+    string first_desc = m_SourceList[0]->GetComboDescription(mod_combo);
+    string last_desc = m_SourceList[m_SourceList.size() - 1]->GetComboDescription(mod_combo);
+    if (NStr::Equal(first_desc, last_desc)) {
         return NULL;
     }
     
     CAutoDefSourceGroup *new_grp = new CAutoDefSourceGroup();
     unsigned int start_index = 1;
-    while (start_index < m_SourceList.size() && m_SourceList[start_index]->CompareDescription(m_SourceList[0]) == 0) {
+    while (start_index < m_SourceList.size() 
+           && NStr::Equal(first_desc, m_SourceList[start_index]->GetComboDescription(mod_combo))) {
         start_index++;
     }
     for (unsigned int k = start_index; k < m_SourceList.size(); k++) {
@@ -135,31 +144,16 @@ CAutoDefSourceGroup *CAutoDefSourceGroup::RemoveNonMatchingDescriptions ()
 }
 
 
-void CAutoDefSourceGroup::AddSubsource(CSubSource::ESubtype st)
+bool CAutoDefSourceGroup::SourceDescBelongsHere(CAutoDefSourceDescription *source_desc, IAutoDefCombo *mod_combo)
 {
-    for (unsigned int k = 0; k < m_SourceList.size(); k++) {
-        m_SourceList[k]->AddSubsource(st);
-    }
-}
-
-
-void CAutoDefSourceGroup::AddOrgMod(COrgMod::ESubtype st)
-{
-    for (unsigned int k = 0; k < m_SourceList.size(); k++) {
-        m_SourceList[k]->AddOrgMod(st);
-    }
-}
-
-
-bool CAutoDefSourceGroup::SourceDescBelongsHere(CAutoDefSourceDescription *source_desc)
-{
+    string this_desc, other_desc;
     if (source_desc == NULL) {
         return false;
-    } else if (source_desc->CompareDescription(m_SourceList[0]) == 0) {
-        return true;
-    } else {
-        return false;
     }
+    
+    this_desc = m_SourceList[0]->GetComboDescription(mod_combo);
+    other_desc = source_desc->GetComboDescription(mod_combo);
+    return NStr::Equal(this_desc, other_desc);
 }
 
 
@@ -173,6 +167,17 @@ void CAutoDefSourceGroup::GetAvailableModifiers (CAutoDefSourceDescription::TAva
 }
 
 
+bool CAutoDefSourceGroup::HasTrickyHIV ()
+{
+    bool has_tricky = false;
+    
+    for (unsigned int k = 0; k < m_SourceList.size() && ! has_tricky; k++) {
+        has_tricky = m_SourceList[k]->IsTrickyHIV();
+    }
+    return has_tricky;
+}
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -180,6 +185,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/05/04 11:44:52  bollin
+* improvements to method for finding unique organism description
+*
 * Revision 1.4  2006/04/20 19:00:59  ucko
 * Stop including <objtools/format/context.hpp> -- there's (thankfully!)
 * no need to do so, and it confuses SGI's MIPSpro compiler.

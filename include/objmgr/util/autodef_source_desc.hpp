@@ -50,6 +50,14 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class IAutoDefCombo
+{
+public:
+    virtual ~IAutoDefCombo() { }
+    virtual string GetSourceDescriptionString(const CBioSource& biosrc) = 0;
+};
+
+
 class NCBI_XOBJUTIL_EXPORT CAutoDefSourceDescription 
 {
 public:
@@ -59,22 +67,17 @@ public:
     
     typedef vector<string> TStringVector;
     typedef vector<CAutoDefAvailableModifier> TAvailableModifierVector;
-    
-    string GetDescriptionString(unsigned int index);
-    unsigned int GetNumDescriptionStrings();
-    bool RemainingStringsEmpty(unsigned int index);
-    
-    int CompareDescription (CAutoDefSourceDescription *other_desc);
+        
     const CBioSource& GetBioSource();
-    
-    void AddSubsource(CSubSource::ESubtype st);
-    void AddOrgMod(COrgMod::ESubtype st);
     
     void GetAvailableModifiers (TAvailableModifierVector &modifier_list);
     
+    bool IsTrickyHIV();
+    
+    string CAutoDefSourceDescription::GetComboDescription(IAutoDefCombo *mod_combo);
+    
 private:
     const CBioSource& m_BS;
-    TStringVector m_DescriptionStringList;
 
 };
 
@@ -85,6 +88,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/05/04 11:44:40  bollin
+* improvements to method for finding unique organism description
+*
 * Revision 1.2  2006/04/17 17:39:37  ucko
 * Fix capitalization of header filenames.
 *
