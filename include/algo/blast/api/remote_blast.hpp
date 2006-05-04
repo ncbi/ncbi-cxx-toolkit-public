@@ -348,7 +348,20 @@ public:
     /// @return The queries used for this search.
     CRef<objects::CBlast4_queries> GetQueries();
     
+    /// Get the search options used for this search.
+    ///
+    /// This returns the CBlastOptionsHandle for this search.  If this
+    /// object was constructed with an RID, a CBlastOptionsHandle will
+    /// be constructed from the search options stored on the remote
+    /// server.  In this case the returned CBlastOptionsHandle will
+    /// have a concrete type that corresponds to the program+service,
+    /// and a locality of "eLocal".
+    CRef<CBlastOptionsHandle> GetSearchOptions();
+    
 private:
+    /// Value list.
+    typedef list< CRef<objects::CBlast4_parameter> > TValueList;
+    
     /// An alias for the most commonly used part of the Blast4 search results.
     typedef objects::CBlast4_get_search_results_reply TGSRR;
 
@@ -504,7 +517,23 @@ private:
     /// Converts the provided query masking locations (if any) to the network
     /// representation following the BLAST 4 ASN.1 spec
     void x_QueryMaskingLocationsToNetwork();
-
+    
+    /// Add an algorithm or program option to the provided handle.
+    void x_ProcessOneOption(CBlastOptionsHandle          & opts,
+                            const string                 & nm,
+                            const objects::CBlast4_value & v,
+                            struct SInteractingOptions   & io);
+    
+    /// Add algorithm and program options to the provided handle.
+    void x_ProcessOptions(CBlastOptionsHandle          & opts,
+                          const TValueList             & L,
+                          struct SInteractingOptions   & io);
+    
+    EProgram CRemoteBlast::x_AdjustProgram(const TValueList & L,
+                                           const string     & pstr,
+                                           EProgram           program);
+    
+    
     /// Prohibit copy construction.
     CRemoteBlast(const CRemoteBlast &);
     
@@ -568,8 +597,20 @@ private:
     /// Options relevant to the search application.
     CRef<objects::CBlast4_parameters> m_ProgramOpts;
 
-    /// Masking locations for queries
+    /// Masking locations for queries.
     TSeqLocInfoVector m_QueryMaskingLocations;
+    
+    /// Entrez Query, if any.
+    string m_EntrezQuery;
+    
+    /// First database sequence.
+    string m_FirstDbSequence;
+    
+    /// Final database sequence.
+    string m_FinalDbSequence;
+    
+    /// GI list.
+    list<Int4> m_GiList;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the
@@ -610,6 +651,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/05/04 19:26:43  bealer
+ * - Added CRemoteBlast::GetSearchOptions() to build CBlastOptionHandle.
+ *
  * Revision 1.34  2006/05/01 13:30:35  camacho
  * Moved CRemoteBlast::GetDatabaseInfo -> CRemoteServices::GetDatabaseInfo
  *

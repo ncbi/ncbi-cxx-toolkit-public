@@ -1018,7 +1018,7 @@ CRemoteBlast::CRemoteBlast(const string & RID)
 {
     x_Init(RID);
 }
-    
+
 CRemoteBlast::CRemoteBlast(CBlastOptionsHandle * algo_opts)
 {
     x_Init(algo_opts);
@@ -1035,6 +1035,8 @@ void CRemoteBlast::SetGIList(list<Int4> & gi_list)
                    "Empty gi_list specified.");
     }
     x_SetOneParam("GiList", & gi_list);
+    
+    m_GiList = gi_list;
 }
 
 void CRemoteBlast::SetDatabase(const string & x)
@@ -1074,6 +1076,7 @@ void CRemoteBlast::SetEntrezQuery(const char * x)
     
     if (*x) { // Ignore empty strings.
         x_SetOneParam("EntrezQuery", &x);
+        m_EntrezQuery.assign(x);
     }
 }
 
@@ -1471,6 +1474,393 @@ NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame,
     return CSeqLocInfo::eFrameNotSet;
 }
 
+static
+EProgram s_ComputeProgramFromStrings(const string & program,
+                                     const string & service)
+{
+    string p = program;
+    const string & s = service;
+    
+    // a. is there a program for phiblast?
+    // b. others, like vecscreen, disco?
+    
+    bool found = false;
+    
+    if (p == "blastp") {
+        if (s == "rpsblast") {
+            p = "rpsblast";
+            found = true;
+        } else if (s == "psi") {
+            p = "psiblast";
+            found = true;
+        } else if (s == "phi") {
+            // phi is just treated as a blastp here
+            found = true;
+        }
+    } else if (p == "blastn") {
+        if (s == "megablast") {
+            p = "megablast";
+            found = true;
+        }
+    } else if (p == "tblastn") {
+        if (s == "rpsblast") {
+            p = "rpstblastn";
+            found = true;
+        } else if (s == "psi") {
+            p = "psitblastn";
+            found = true;
+        }
+    }
+    
+    if (s != "plain" && (! found)) {
+        string msg = "Unsupported combination of program (";
+        msg += program;
+        msg += ") and service (";
+        msg += service;
+        msg += ").";
+        
+        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+    }
+    
+    return ProgramNameToEnum(p);
+};
+
+struct SInteractingOptions {
+    SInteractingOptions()
+        : m_PerformCulling(false),
+          m_HspRangeMax   (0)
+    {
+    }
+    
+    void SetPerformCulling(bool pc)
+    {
+        m_PerformCulling = pc;
+    }
+    
+    void SetHspRangeMax(int hrm)
+    {
+        m_HspRangeMax = hrm;
+    }
+    
+    void SetOptions(CBlastOptionsHandle & boh)
+    {
+        CBlastOptions & bo = boh.SetOptions();
+        
+        if (m_PerformCulling) {
+            bo.SetCullingLimit(m_HspRangeMax);
+        }
+    }
+    
+private:
+    bool m_PerformCulling;
+    int  m_HspRangeMax;
+};
+
+void CRemoteBlast::x_ProcessOneOption(CBlastOptionsHandle & opts,
+                                      const string        & nm,
+                                      const CBlast4_value & v,
+                                      SInteractingOptions & io)
+{
+    // Note that this code does not attempt to detect or repair
+    // inconsistencies; since this request has already been processed
+    // by SplitD, the results are assumed to be correct, for now.
+    // This will remain so unless options validation code becomes
+    // available, in which case it could be used by this code.  This
+    // could be considered as a potential "to-do" item.
+    
+    if (nm.empty()) {
+        NCBI_THROW(CBlastException,
+                   eInvalidArgument,
+                   "Option has no name.");
+    }
+    
+    bool found = true;
+    
+    // This switch is not really necessary.  I wanted to break things
+    // up for human consumption.  But as long as I'm doing that, I may
+    // as well use a performance-friendly paragraph marker.
+    
+    CBlastOptions & bo = opts.SetOptions();
+    
+    switch(nm[0]) {
+    case 'C':
+        if (nm == "CompositionBasedStats") {
+            ECompoAdjustModes adjmode = (ECompoAdjustModes) v.GetInteger();
+            bo.SetCompositionBasedStats(adjmode);
+        } else if (nm == "Culling") {
+            io.SetPerformCulling(v.GetBoolean());
+        } else if (nm == "CutoffScore") {
+            opts.SetCutoffScore(v.GetInteger());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'D':
+        if (nm == "DbGeneticCode") {
+            bo.SetDbGeneticCode(v.GetInteger());
+        } else if (nm == "DbLength") {
+            opts.SetDbLength(v.GetInteger());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'E':
+        if (nm == "EffectiveSearchSpace") {
+            opts.SetEffectiveSearchSpace(v.GetBig_integer());
+        } else if (nm == "EntrezQuery") {
+            m_EntrezQuery = v.GetString();
+        } else if (nm == "EvalueThreshold") {
+            opts.SetEvalueThreshold(v.GetReal());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'F':
+        if (nm == "FilterString") {
+            opts.SetFilterString(v.GetString().c_str());
+        } else if (nm == "FinalDbSeq") {
+            m_FinalDbSequence = v.GetInteger();
+        } else if (nm == "FirstDbSeq") {
+            m_FirstDbSequence = v.GetInteger();
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'G':
+        if (nm == "GapExtensionCost") {
+            bo.SetGapExtensionCost(v.GetInteger());
+        } else if (nm == "GapOpeningCost") {
+            bo.SetGapOpeningCost(v.GetInteger());
+        } else if (nm == "GiList") {
+            m_GiList = v.GetInteger_list();
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'H':
+        if (nm == "HitlistSize") {
+            opts.SetHitlistSize(v.GetInteger());
+        } else if (nm == "HspRangeMax") {
+            io.SetHspRangeMax(v.GetInteger());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'L':
+        if (nm == "LCaseMask") {
+            // This field was removed from the options class and will
+            // probably be removed from blast4.  The server provides
+            // the filter string as well, so this boolean is redundant
+            // and can be ignored safely.
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'M':
+        if (nm == "MBTemplateLength") {
+            bo.SetMBTemplateLength(v.GetInteger());
+        } else if (nm == "MBTemplateType") {
+            bo.SetMBTemplateType(v.GetInteger());
+        } else if (nm == "MatchReward") {
+            bo.SetMatchReward(v.GetInteger());
+        } else if (nm == "MatrixName") {
+            bo.SetMatrixName(v.GetString().c_str());
+        } else if (nm == "MatrixTable") {
+            // This is no longer used.
+        } else if (nm == "MismatchPenalty") {
+            bo.SetMismatchPenalty(v.GetInteger());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'O':
+        if (nm == "OutOfFrameMode") {
+            bo.SetOutOfFrameMode(v.GetBoolean());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'P':
+        if (nm == "PHIPattern") {
+            if (v.GetString() != "") {
+                bool is_na = Blast_QueryIsNucleotide(bo.GetProgramType());
+                bo.SetPHIPattern(v.GetString().c_str(), is_na);
+            }
+        } else if (nm == "PercentIdentity") {
+            opts.SetPercentIdentity(v.GetInteger());
+        } else if (nm == "PseudoCountWeight") {
+            bo.SetPseudoCount(v.GetInteger());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'Q':
+        if (nm == "QueryGeneticCode") {
+            bo.SetQueryGeneticCode(v.GetInteger());
+        } else {
+            found = false;
+        }
+        break;
+        
+        // No 'R': required start/end have been removed.
+        
+    case 'S':
+        if (nm == "StrandOption") {
+            // These encodings use the same values.
+            ENa_strand strand = (ENa_strand) v.GetStrand_type();
+            bo.SetStrandOption(strand);
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'U':
+        if (nm == "UngappedMode") {
+            // Notes: (1) this is the inverse of the corresponding
+            // blast4 concept (2) blast4 always returns this option
+            // regardless of whether the value matches the default.
+            
+            opts.SetGappedMode(! v.GetBoolean());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'W':
+        if (nm == "WindowSize") {
+            opts.SetWindowSize(v.GetInteger());
+        } else if (nm == "WordSize") {
+            bo.SetWordSize(v.GetInteger());
+        } else if (nm == "WordThreshold") {
+            bo.SetWordThreshold(v.GetInteger());
+        } else {
+            found = false;
+        }
+        break;
+        
+    default:
+        found = false;
+    }
+    
+    if (! found) {
+        string msg = "Internal: Error processing option [";
+        msg += nm;
+        msg += "] type [";
+        msg += NStr::IntToString((int) v.Which());
+        msg += "].";
+        
+        NCBI_THROW(CRemoteBlastException,
+                   eServiceNotAvailable,
+                   msg);
+    }
+}
+
+void CRemoteBlast::x_ProcessOptions(CBlastOptionsHandle & opts,
+                                    const TValueList    & L,
+                                    SInteractingOptions & io)
+{
+    ITERATE(TValueList, iter, L) {
+        string name = (**iter).GetName();
+        const CBlast4_value & v = (**iter).GetValue();
+        
+        x_ProcessOneOption(opts, name, v, io);
+    }
+}
+
+EProgram CRemoteBlast::x_AdjustProgram(const TValueList    & L,
+                                       const string        & pstr,
+                                       EProgram              program)
+{
+    bool problem = false;
+    string name;
+    
+    ITERATE(TValueList, iter, L) {
+        name = (**iter).GetName();
+        const CBlast4_value & v = (**iter).GetValue();
+        
+        if (name == "MBTemplateLength") {
+            if (v.GetInteger() != 0) {
+                return eDiscMegablast;
+            }
+        } else if (name == "PHIPattern") {
+            switch(program) {
+            case ePHIBlastn:
+            case eBlastn:
+                return ePHIBlastn;
+                
+            case ePHIBlastp:
+            case eBlastp:
+                return ePHIBlastp;
+                
+            default:
+                problem = true;
+                break;
+            }
+        }
+        
+        if (problem) {
+            string msg = "Incorrect combination of option (";
+            msg += name;
+            msg += ") and program (";
+            msg += pstr;
+            msg += ")";
+            
+            NCBI_THROW(CRemoteBlastException,
+                       eServiceNotAvailable,
+                       msg);
+        }
+    }
+    
+    return program;
+}
+
+CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
+{
+    if (m_CBOH.Empty()) {
+        SInteractingOptions io;
+        
+        string program_s = GetProgram();
+        string service_s = GetService();
+        
+        EProgram program = s_ComputeProgramFromStrings(program_s, service_s);
+        
+        program = x_AdjustProgram(m_AlgoOpts->Get(), program_s, program);
+        
+        // Using eLocal allows more of the options to be returned to the user.
+        
+        CRef<CBlastOptionsHandle>
+            cboh(CBlastOptionsFactory::Create(program, CBlastOptions::eLocal));
+        
+        x_ProcessOptions(*cboh, m_AlgoOpts->Get(), io);
+        x_ProcessOptions(*cboh, m_ProgramOpts->Get(), io);
+        
+        io.SetOptions(*cboh);
+        
+        m_CBOH = cboh;
+    }
+    
+    return m_CBOH;
+}
+
+// const string & CRemoteBlast::GetEntrezQuery()
+// {
+//     if (m_EntrezQuery.empty()) {
+//         GetSearchOptions();
+//     }
+//     
+//     return m_EntrezQuery;
+// }
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -1480,6 +1870,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2006/05/04 19:26:43  bealer
+* - Added CRemoteBlast::GetSearchOptions() to build CBlastOptionHandle.
+*
 * Revision 1.45  2006/05/01 13:30:40  camacho
 * Moved CRemoteBlast::GetDatabaseInfo -> CRemoteServices::GetDatabaseInfo
 *
