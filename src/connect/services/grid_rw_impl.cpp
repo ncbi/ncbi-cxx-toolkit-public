@@ -118,19 +118,12 @@ ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
                                                        size_t*     bytes_written)
 {
     _ASSERT(m_BlobOstr);
-    CNcbiStreampos pos = m_BlobOstr->tellp();
     m_BlobOstr->write((const char*)buf, count);
-    if (bytes_written) {
-        CNcbiStreampos npos = m_BlobOstr->tellp();        
-        if (pos != (CNcbiStreampos)-1 && npos != (CNcbiStreampos)-1) {
-            *bytes_written = npos - pos;
-        } else {
-            *bytes_written = count;
-        }
-    }
     if (m_BlobOstr->good()) {
+        if (bytes_written) *bytes_written = count;
         return eRW_Success;
     }
+    if (bytes_written) *bytes_written = 0;
     return eRW_Error;
 }
 
@@ -222,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2006/05/04 14:42:16  didenko
+ * Simplified bytes_written calculation algorithm
+ *
  * Revision 6.8  2006/05/03 20:03:52  didenko
  * Improved exceptions handling
  *
