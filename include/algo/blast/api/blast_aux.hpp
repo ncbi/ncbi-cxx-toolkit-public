@@ -96,6 +96,13 @@ TYPEDEF_AUTOPTR_CDELETER(Char);
 TYPEDEF_AUTOPTR_ARRAYDELETER(Uint1);
 #endif
 
+/// Convert EProgram to EBlastProgramType.
+/// @param p Program expressed as an api layer EProgram.
+/// @return Same program using the core enumeration.
+NCBI_XBLAST_EXPORT
+EBlastProgramType
+EProgramToEBlastProgramType(EProgram p);
+
 /// Map a string into an element of the ncbi::blast::EProgram enumeration 
 /// (except eBlastProgramMax).
 /// @param program_name [in]
@@ -329,6 +336,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2006/05/04 19:16:18  bealer
+* - Prototype for EBlastProgramType to EProgram converter.
+*
 * Revision 1.75  2006/04/11 15:47:31  camacho
 * Reorganization of BlastQueryInfo structure
 *
