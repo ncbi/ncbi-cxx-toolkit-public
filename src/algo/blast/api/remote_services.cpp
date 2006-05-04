@@ -58,7 +58,6 @@ CRemoteServices::x_FindDbInfoFromAvailableDatabases
     CRef<CBlast4_database_info> retval;
 
     ITERATE(CBlast4_get_databases_reply::Tdata, dbinfo, m_AvailableDatabases) {
-            f << MSerial_AsnText << **dbinfo << endl;
         if ((*dbinfo)->GetDatabase() == *blastdb) {
             retval = *dbinfo;
             break;
