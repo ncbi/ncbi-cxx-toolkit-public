@@ -635,6 +635,7 @@ class CCTLExceptions
     friend class CSafeStaticPtr<CCTLExceptions>;
     
     CCTLExceptions(void);
+    ~CCTLExceptions(void);
     
 public:
     static CCTLExceptions& GetInstance(void);
@@ -644,7 +645,7 @@ public:
     
 private:
     CFastMutex              m_Mutex;
-    deque<CDB_Exception>    m_Exceptions;
+    deque<CDB_Exception*>   m_Exceptions;
 };
 
 
@@ -806,6 +807,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/05/04 15:23:26  ucko
+ * Modify CCTLExceptions to store pointers, as our exception classes
+ * don't support assignment.
+ *
  * Revision 1.26  2006/05/03 15:09:54  ssikorsk
  * Added method Check to CTLibContext, CTL_Connection and CTL_RowResult classes;
  * Replaced type of  CTL_Connection::m_CMDs from CPointerPot to deque<CDB_BaseEnt*>;
