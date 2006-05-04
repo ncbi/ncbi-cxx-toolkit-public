@@ -2598,6 +2598,11 @@ CQueueDataBase::CQueue::PutDone_FindPendingJob(const string&  client_name,
     job_id = 
         m_LQueue.status_tracker.PutDone_GetPending(done_job_id, 
                                                    need_db_update);
+    if (m_LQueue.delete_done) {
+        m_LQueue.status_tracker.SetStatus(done_job_id, 
+                                          CNetScheduleClient::eJobNotFound);
+    }
+
     done_job_id = 0; // paranoiya assignment
 
     return job_id;
@@ -3622,6 +3627,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/05/04 15:36:03  kuznets
+ * Fixed bug in deleting done jobs
+ *
  * Revision 1.74  2006/05/03 15:18:32  kuznets
  * Fixed deletion of done jobs
  *
