@@ -37,14 +37,18 @@
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 
+#include <corelib/ncbi_safe_static.hpp>
+
 #ifdef MS_DBLIB_IN_USE
 #    define CDBLibContext           CMSDBLibContext
 #    define CDBL_Connection         CMSDBL_Connection
+#    define CDBL_Cmd                CMSDBL_Cmd
 #    define CDBL_LangCmd            CMSDBL_LangCmd
 #    define CDBL_RPCCmd             CMSDBL_RPCCmd
 #    define CDBL_CursorCmd          CMSDBL_CursorCmd
 #    define CDBL_BCPInCmd           CMSDBL_BCPInCmd
 #    define CDBL_SendDataCmd        CMSDBL_SendDataCmd
+#    define CDBL_Result             CMSDBL_Result
 #    define CDBL_RowResult          CMSDBL_RowResult
 #    define CDBL_ParamResult        CMSDBL_ParamResult
 #    define CDBL_ComputeResult      CMSDBL_ComputeResult
@@ -54,6 +58,7 @@
 #    define CDBL_ITDescriptor       CMSDBL_ITDescriptor
 #    define SDBL_ColDescr           CMSDBL_ColDescr
 #    define CDblibContextRegistry   CMSDBLContextRegistry
+#    define CDBLExceptions          CMSDBLExceptions
 #endif // MS_DBLIB_IN_USE
 
 #ifdef FTDS_IN_USE
@@ -62,11 +67,13 @@
 
 #    define CDBLibContext           CTDSContext
 #    define CDBL_Connection         CTDS_Connection
+#    define CDBL_Cmd                CTDS_Cmd
 #    define CDBL_LangCmd            CTDS_LangCmd
 #    define CDBL_RPCCmd             CTDS_RPCCmd
 #    define CDBL_CursorCmd          CTDS_CursorCmd
 #    define CDBL_BCPInCmd           CTDS_BCPInCmd
 #    define CDBL_SendDataCmd        CTDS_SendDataCmd
+#    define CDBL_Result             CTDS_Result
 #    define CDBL_RowResult          CTDS_RowResult
 #    define CDBL_ParamResult        CTDS_ParamResult
 #    define CDBL_ComputeResult      CTDS_ComputeResult
@@ -76,6 +83,7 @@
 #    define CDBL_ITDescriptor       CTDS_ITDescriptor
 #    define SDBL_ColDescr           STDS_ColDescr
 #    define CDblibContextRegistry   CTDSContextRegistry
+#    define CDBLExceptions          CTDSExceptions
 
 #    define DBLIB_dberr_handler     TDS_dberr_handler
 #    define DBLIB_dbmsg_handler     TDS_dbmsg_handler
@@ -236,6 +244,15 @@ private:
     void x_Close(bool delete_conn = true);
     bool x_SafeToFinalize(void) const;
 
+    template <typename T>
+    T Check(T rc)
+    {
+        CheckFunctCall();
+        return rc;
+    }
+    
+    void CheckFunctCall(void);
+
     friend class CDblibContextRegistry;
 };
 
@@ -243,13 +260,15 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-///  CTL_Connection::
+///  CDBL_Connection::
 ///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_Connection : public I_Connection
 {
     friend class CDBLibContext;
     friend class CDB_Connection;
+    friend class CDBL_Cmd;
+    friend class CDBL_Result;
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
     friend class CDBL_CursorCmd;
@@ -314,6 +333,15 @@ private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
     RETCODE x_Results(DBPROCESS* pLink);
+    
+    template <typename T>
+    T Check(T rc)
+    {
+        CheckFunctCall();
+        return rc;
+    }
+    
+    void CheckFunctCall(void);
 
 #ifdef FTDS_IN_USE
     /// Function name keept same as with ftds.
@@ -338,10 +366,54 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///  CDBL_Cmd::
+///
+
+class CDBL_Cmd
+{
+public:
+    CDBL_Cmd(CDBL_Connection* conn,
+             DBPROCESS*       cmd
+             ) :
+    m_Connect(conn),
+    m_Cmd(cmd)
+    {
+    }
+    ~CDBL_Cmd(void)
+    {
+    }
+    
+    CDBL_Connection& GetConnection(void)
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+    DBPROCESS* GetCmd(void) const
+    {
+        _ASSERT(m_Cmd);
+        return m_Cmd;
+    }
+    
+    RETCODE Check(RETCODE rc)
+    {
+        return GetConnection().Check(rc);
+    }
+    void CheckFunctCall(void)
+    {
+        GetConnection().CheckFunctCall();
+    }
+    
+private:
+    CDBL_Connection* m_Connect;
+    DBPROCESS*       m_Cmd;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///  CDBL_LangCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : CDBL_Cmd, public I_LangCmd
 {
     friend class CDBL_Connection;
     
@@ -373,8 +445,6 @@ private:
 private:
     bool x_AssignParams(void);
 
-    CDBL_Connection* m_Connect;
-    DBPROCESS*       m_Cmd;
     string           m_Query;
     CDB_Params       m_Params;
     bool             m_WasSent;
@@ -391,7 +461,7 @@ private:
 ///  CTL_RPCCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : public I_RPCCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : CDBL_Cmd, public I_RPCCmd
 {
     friend class CDBL_Connection;
     
@@ -431,8 +501,6 @@ private:
     bool x_AssignParams(void);
 #endif
 
-    CDBL_Connection* m_Connect;
-    DBPROCESS*       m_Cmd;
     string           m_Query;
     CDB_Params       m_Params;
     bool             m_WasSent;
@@ -450,7 +518,7 @@ private:
 ///  CDBL_CursorCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd : public I_CursorCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd : CDBL_Cmd, public I_CursorCmd
 {
     friend class CDBL_Connection;
     
@@ -482,8 +550,6 @@ private:
     bool x_AssignParams(void);
     I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
 
-    CDBL_Connection*   m_Connect;
-    DBPROCESS*         m_Cmd;
     string             m_Name;
     CDB_LangCmd*       m_LCmd;
     string             m_Query;
@@ -502,7 +568,7 @@ private:
 ///  CDBL_BCPInCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : public I_BCPInCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : CDBL_Cmd, public I_BCPInCmd
 {
     friend class CDBL_Connection;
     
@@ -522,8 +588,6 @@ protected:
 private:
     bool x_AssignParams(void* pb);
 
-    CDBL_Connection* m_Connect;
-    DBPROCESS*       m_Cmd;
     CDB_Params       m_Params;
     bool             m_WasSent;
     bool             m_HasFailed;
@@ -538,7 +602,7 @@ private:
 ///  CDBL_SendDataCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd : public I_SendDataCmd 
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd : CDBL_Cmd, public I_SendDataCmd 
 {
     friend class CDBL_Connection;
     
@@ -551,8 +615,6 @@ protected:
     virtual void   Release(void);
 
 private:
-    CDBL_Connection* m_Connect;
-    DBPROCESS*       m_Cmd;
     size_t           m_Bytes2go;
 };
 
@@ -574,17 +636,85 @@ struct SDBL_ColDescr
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///  CDBL_Result
+///
+
+class CDBL_Result
+{
+public:
+    CDBL_Result(CDBL_Connection& conn,
+                DBPROCESS*       cmd
+                ) :
+    m_Connect(&conn),
+    m_Cmd(cmd)
+    {
+    }
+    ~CDBL_Result(void)
+    {
+    }
+    
+protected:    
+    CDBL_Connection& GetConnection(void)
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+    CDBL_Connection const& GetConnection(void) const
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+    DBPROCESS* GetCmd(void) const
+    {
+        _ASSERT(m_Cmd);
+        return m_Cmd;
+    }
+    
+    template <typename T>
+    T Check(T rc)
+    {
+        return GetConnection().Check(rc);
+    }
+    void CheckFunctCall(void)
+    {
+        GetConnection().CheckFunctCall();
+    }
+    EDB_Type GetDataType(int n);
+    CDB_Object* GetItemInternal(int item_no,
+                                SDBL_ColDescr* fmt, 
+                                CDB_Object* item_buff);
+    EDB_Type RetGetDataType(int n);
+    CDB_Object* RetGetItem(int item_no,
+                           SDBL_ColDescr* fmt, 
+                           CDB_Object* item_buff);
+    EDB_Type AltGetDataType(int id, int n);
+    CDB_Object* AltGetItem(int id, 
+                           int item_no,
+                           SDBL_ColDescr* fmt, 
+                           CDB_Object* item_buff);
+    
+private:
+    CDBL_Connection* m_Connect;
+    DBPROCESS*       m_Cmd;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///  CDBL_RowResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult : 
+public CDBL_Result, 
+public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
     friend class CDBL_Connection;
     
 protected:
-    CDBL_RowResult(DBPROCESS* cmd, unsigned int* res_status,
+    CDBL_RowResult(CDBL_Connection& conn, 
+                   DBPROCESS* cmd, 
+                   unsigned int* res_status,
                    bool need_init = true);
     virtual ~CDBL_RowResult(void);
 
@@ -604,7 +734,6 @@ protected:
     virtual bool            SkipItem(void);
 
     // data
-    DBPROCESS*     m_Cmd;
     int            m_CurrItem;
     bool           m_EOR;
     unsigned int   m_NofCols;
@@ -621,14 +750,14 @@ protected:
 ///  CDBL_BlobResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BlobResult : public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BlobResult : CDBL_Result, public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
     friend class CDBL_Connection;
     
 protected:
-    CDBL_BlobResult(DBPROCESS* cmd);
+    CDBL_BlobResult(CDBL_Connection& conn, DBPROCESS* cmd);
     virtual ~CDBL_BlobResult(void);
 
 protected:
@@ -647,7 +776,6 @@ protected:
     virtual bool            SkipItem(void);
 
     // data
-    DBPROCESS*    m_Cmd;
     int           m_CurrItem;
     bool          m_EOR;
     int           m_CmdNum;
@@ -671,7 +799,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ParamResult : public CDBL_RowResult
     friend class CDBL_Connection;
     
 protected:
-    CDBL_ParamResult(DBPROCESS* cmd, int nof_params);
+    CDBL_ParamResult(CDBL_Connection& conn, DBPROCESS* cmd, int nof_params);
     virtual ~CDBL_ParamResult(void);
     
 protected:
@@ -699,7 +827,9 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ComputeResult : public CDBL_RowResult
     friend class CDBL_Connection;
     
 protected:
-    CDBL_ComputeResult(DBPROCESS* cmd, unsigned int* res_stat);
+    CDBL_ComputeResult(CDBL_Connection& conn, 
+                       DBPROCESS* cmd, 
+                       unsigned int* res_stat);
     virtual ~CDBL_ComputeResult(void);
     
 protected:
@@ -722,14 +852,14 @@ protected:
 ///  CDBL_StatusResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_StatusResult : public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_StatusResult : CDBL_Result, public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
     friend class CDBL_Connection;
     
 protected:
-    CDBL_StatusResult(DBPROCESS* cmd);
+    CDBL_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd);
     virtual ~CDBL_StatusResult(void);
     
 protected:
@@ -759,12 +889,12 @@ protected:
 ///  CDBL_CursorResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorResult : public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorResult : CDBL_Result, public I_Result
 {
     friend class CDBL_CursorCmd;
     
 protected:
-    CDBL_CursorResult(CDB_LangCmd* cmd);
+    CDBL_CursorResult(CDBL_Connection& conn, CDB_LangCmd* cmd);
     virtual ~CDBL_CursorResult(void);
     
 protected:
@@ -789,6 +919,17 @@ private:
     void DumpResultSet(void);
     void FetchAllResultSet(void);
     
+    CDB_LangCmd& GetCmd(void)
+    {
+        _ASSERT(m_Cmd);
+        return *m_Cmd;
+    }
+    CDB_LangCmd const& GetCmd(void) const
+    {
+        _ASSERT(m_Cmd);
+        return *m_Cmd;
+    }
+    
 private:
     // data
     CDB_LangCmd* m_Cmd;
@@ -812,7 +953,9 @@ private:
 #    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
 #endif
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ITDescriptor : public I_ITDescriptor
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ITDescriptor : 
+    CDBL_Result, 
+    public I_ITDescriptor
 {
     friend class CDBL_RowResult;
     friend class CDBL_BlobResult;
@@ -820,8 +963,12 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ITDescriptor : public I_ITDescriptor
     friend class CDBL_CursorCmd;
     
 protected:
-    CDBL_ITDescriptor(DBPROCESS* m_link, int col_num);
-    CDBL_ITDescriptor(DBPROCESS* m_link, const CDB_ITDescriptor& inp_d);
+    CDBL_ITDescriptor(CDBL_Connection& conn, 
+                      DBPROCESS* m_link, 
+                      int col_num);
+    CDBL_ITDescriptor(CDBL_Connection& conn, 
+                      DBPROCESS* m_link, 
+                      const CDB_ITDescriptor& inp_d);
 
 public:
     virtual ~CDBL_ITDescriptor(void);
@@ -836,11 +983,31 @@ private:
 
 protected:
     // data
-    string   m_ObjName;
-    DBBINARY m_TxtPtr[DBTXPLEN];
-    DBBINARY m_TimeStamp[DBTXTSLEN];
-    bool     m_TxtPtr_is_NULL;
-    bool     m_TimeStamp_is_NULL;
+    string              m_ObjName;
+    DBBINARY            m_TxtPtr[DBTXPLEN];
+    DBBINARY            m_TimeStamp[DBTXTSLEN];
+    bool                m_TxtPtr_is_NULL;
+    bool                m_TimeStamp_is_NULL;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+class CDBLExceptions
+{
+    friend class CSafeStaticPtr<CDBLExceptions>;
+    
+    CDBLExceptions(void);
+    ~CDBLExceptions(void);
+    
+public:
+    static CDBLExceptions& GetInstance(void);
+    
+    void Accept(CDB_Exception const& e);
+    void Handle(CDBHandlerStack& handler);
+    
+private:
+    CFastMutex              m_Mutex;
+    deque<CDB_Exception*>   m_Exceptions;
 };
 
 
@@ -1019,6 +1186,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/05/04 20:10:26  ssikorsk
+ * Added method Check to CDBLContext, CDBL_Connection classes;
+ * Added new class CDBL_Cmd, which is a base class for all "command" classes now;
+ * Added new class CDBL_Result, which is a base class for all "resulr" classes now;
+ * Added new class CDBLExceptions to collect database messages;
+ *
  * Revision 1.35  2006/04/18 16:23:58  ssikorsk
  * Define another name for CDblibContextRegistry in case of
  * msdblib and ftds drivers.
