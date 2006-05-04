@@ -1123,7 +1123,7 @@ class NCBI_XHTML_EXPORT CHTML_submit : public CHTML_input
     typedef CHTML_input CParent;
     static const char sm_InputType[];
 public:
-    CHTML_submit(const string& name);
+    CHTML_submit(const string& label);
     CHTML_submit(const string& name, const string& label);
     ~CHTML_submit(void);
 };
@@ -1135,7 +1135,7 @@ class NCBI_XHTML_EXPORT CHTML_input_button : public CHTML_input
     typedef CHTML_input CParent;
     static const char sm_InputType[];
 public:
-    CHTML_input_button(const string& name);
+    CHTML_input_button(const string& label);
     CHTML_input_button(const string& name, const string& label);
     ~CHTML_input_button(void);
 };
@@ -1617,6 +1617,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2006/05/04 19:15:49  ivanov
+ * CHTML_submit, CHTML_input_button -- changed constructor parameter name
+ *
  * Revision 1.88  2005/11/02 16:07:31  ivanov
  * CHTML_Table::GetCurrent[Row|Col] return 0 instead of -1 if current
  * row/column in the table is not defined
