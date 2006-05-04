@@ -606,6 +606,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
             }
             
             ERR_POST(string(err_str.str(), err_str.pcount()));
+            err_str.freeze(false);
         }
         
         return true;
@@ -749,6 +750,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         err_str << msg->text << endl;
         
         ERR_POST(string(err_str.str(), err_str.pcount()));
+        err_str.freeze(false);
         
         return true;
     }
@@ -1106,6 +1108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/05/04 14:34:56  ssikorsk
+ * Call freeze(false) for ostrstream after getting a string value.
+ *
  * Revision 1.69  2006/05/03 15:10:36  ssikorsk
  * Implemented classs CTL_Cmd and CCTLExceptions;
  * Surrounded each native ctlib call with Check;
