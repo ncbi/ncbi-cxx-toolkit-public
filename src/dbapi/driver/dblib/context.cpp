@@ -475,8 +475,10 @@ CDBLibContext::x_Close(bool delete_conn)
                 }
 
 #ifdef MS_DBLIB_IN_USE
-                Check(dbfreelogin(m_Login));
-                Check(dbwinexit());
+                dbfreelogin(m_Login);
+                CheckFunctCall();
+                dbwinexit();
+                CheckFunctCall();
 #else
                 dbloginfree(m_Login);
                 CheckFunctCall();
@@ -1307,6 +1309,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/05/04 20:24:32  ssikorsk
+ * Fixed compilation issues in case of MSDBLIB.
+ *
  * Revision 1.74  2006/05/04 20:12:17  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;
