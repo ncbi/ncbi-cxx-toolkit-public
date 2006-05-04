@@ -177,7 +177,9 @@ on clicked theObject
 			
 			set msg to my ValidatePaths() -- Validate paths and set globals
 			if msg is "" then
-				tell progress indicator "progBar" to start
+				tell progress indicator "progressBar" to start
+				set maximum value of progress indicator "progressBar" to (my x_GetTargetCount()) + 1
+				
 				try
 					tell ProjBuilderLib to Initialize()
 					my CreateProject() -- do the job
@@ -185,7 +187,8 @@ on clicked theObject
 					log errMsg
 					display dialog "Generation failed with the following message: " & return & return & errMsg buttons {"OK"} default button 1
 				end try
-				tell progress indicator "progBar" to stop
+				
+				tell progress indicator "progressBar" to stop
 			else
 				my x_ShowAlert(msg)
 			end if
@@ -306,6 +309,28 @@ on number of rows theObject
 end number of rows
 
 
+(** calculate the total number of targets **)
+on x_GetTargetCount()
+	set total to 0
+	repeat with library in AllLibraries
+		if req of library is true then set total to total + 1
+		--repeat with lib in libs of library
+		--set total to total + 1
+		--end repeat
+	end repeat
+	
+	repeat with tool in AllConsoleTools
+		if req of tool is true then set total to total + 1
+	end repeat
+	
+	repeat with theApp in AllApplications
+		if req of theApp is true then set total to total + 1
+	end repeat
+	
+	return total
+end x_GetTargetCount
+
+
 (* Launch shell script to install third party libraries *)
 on x_Install3rdPartyLibs()
 	set libScriptTmpDir to contents of text field "tmp_dir" of window "install_libs"
@@ -393,12 +418,16 @@ on CreateProject()
 	repeat with library in AllLibraries -- ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, tables, sequtil, creaders, xutil, xregexp, xconnect, xser}}
 		if req of library is true then -- selected to be build
 			set src_files to {}
+			set hdr_files to {}
 			repeat with lib in libs of library
 				set src_files to src_files & my GetSourceFiles(lib)
+				set hdr_files to hdr_files & my GetHeaderFiles(lib)
 				x_AddtoLog("Processing: " & name of lib)
 			end repeat
+			
+			x_IncrementProgressBar()
 			--if name of library = "ncbi_core" then --then --or name of lib = "xser" or name of lib = "xutil" or name of lib = "access" then
-			tell ProjBuilderLib to MakeNewLibraryTarget(library, src_files)
+			tell ProjBuilderLib to MakeNewLibraryTarget(library, src_files, hdr_files)
 			--end if
 		end if -- req is true
 	end repeat
@@ -407,8 +436,10 @@ on CreateProject()
 	repeat with tool in AllConsoleTools --toolBundle
 		if req of tool is true then -- selected to be build
 			set src_files to my GetSourceFiles(tool)
+			set hdr_files to hdr_files & my GetHeaderFiles(lib)
 			x_AddtoLog("Processing: " & name of tool)
-			tell ProjBuilderLib to MakeNewToolTarget(tool, src_files)
+			x_IncrementProgressBar()
+			tell ProjBuilderLib to MakeNewToolTarget(tool, src_files, hdr_files)
 		end if
 	end repeat
 	--end repeat
@@ -417,8 +448,10 @@ on CreateProject()
 	repeat with theApp in AllApplications --appBundle
 		if req of theApp is true then -- selected to be build
 			set src_files to my GetSourceFiles(theApp)
+			set hdr_files to my GetHeaderFiles(lib)
 			x_AddtoLog("Processing: " & name of theApp)
-			tell ProjBuilderLib to MakeNewAppTarget(theApp, src_files)
+			x_IncrementProgressBar()
+			tell ProjBuilderLib to MakeNewAppTarget(theApp, src_files, hdr_files)
 		end if
 	end repeat
 	--end repeat
@@ -426,6 +459,7 @@ on CreateProject()
 	x_AddtoLog("Saving project file")
 	tell ProjBuilderLib to SaveProjectFile()
 	
+	x_IncrementProgressBar()
 	x_AddtoLog("Opening generated project: " & TheOUTPath & "/" & projFile)
 	do shell script "open " & TheOUTPath & "/" & projFile -- Open Project
 	x_AddtoLog("Done")
@@ -449,6 +483,14 @@ on CreateProject()
 	end if
 	
 end CreateProject
+
+
+on x_IncrementProgressBar()
+	tell window "Main"
+		tell progress indicator "progressBar" to increment by 1
+	end tell
+end x_IncrementProgressBar
+
 
 
 (* Retriece a list of source files based on library info *)
@@ -483,12 +525,45 @@ on GetSourceFiles(lib)
 end GetSourceFiles
 
 
+(* Retriece a list of header files based on library info *)
+on GetHeaderFiles(lib)
+	set fullHeaderPath1 to TheNCBIPath & "/include/"
+	set fullHeaderPath2 to TheNCBIPath & "/src/"
+	set endsList to {".h", ".hpp"}
+	set hdr_files to {}
+	
+	try -- Try to get main path
+		set fullHeaderPath1 to fullHeaderPath1 & x_Replace((path of lib), ":", "/") & "/"
+		set fullHeaderPath2 to fullHeaderPath2 & x_Replace((path of lib), ":", "/") & "/"
+	end try
+	
+	try -- get headers from the include folder
+		set fileList to list folder (fullHeaderPath1 as POSIX file) without invisibles
+		set fileList to EndsWith(fileList, endsList, "_.hpp")
+		repeat with F in fileList
+			copy fullHeaderPath1 & F to the end of hdr_files
+		end repeat
+	end try
+	
+	try -- get headers from the src folder
+		set fileList to list folder (fullHeaderPath2 as POSIX file) without invisibles
+		set fileList to EndsWith(fileList, endsList, "_.hpp")
+		repeat with F in fileList
+			copy fullHeaderPath2 & F to the end of hdr_files
+		end repeat
+	end try
+	
+	return hdr_files
+end GetHeaderFiles
+
 
 (* Returns a content of a foder, with *.c *.c.in and *.cpp files, excluding "excfileList"  and full path *)
 on x_GetFolderContent(folderName, excfileList)
 	set fileList to list folder (folderName as POSIX file) without invisibles
 	set fileList to my ExcludeFiles(fileList, excfileList)
-	set fileList to EndsWith(fileList, ".c") & EndsWith(fileList, ".cpp") & EndsWith(fileList, ".c.in")
+	set endsList to {".c", ".cpp", ".c.in"}
+	
+	set fileList to EndsWith(fileList, endsList, "_.cpp")
 	
 	set filesWithPath to {}
 	repeat with F in fileList
@@ -523,12 +598,14 @@ end x_Replace
 
 
 (* Return a subset of "aList" with items ending with "suffix" *)
-on EndsWith(aList, suffix)
+on EndsWith(aList, suffixList, exclude)
 	set newList to {}
 	repeat with F in aList
-		if (F ends with suffix) and (F does not end with "_.cpp") then
-			copy (F as string) to end of newList
-		end if
+		repeat with S in suffixList
+			if (F ends with S) and (F does not end with exclude) then
+				copy (F as string) to end of newList
+			end if
+		end repeat
 	end repeat
 	return newList
 end EndsWith
@@ -659,6 +736,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/05/04 18:00:38  lebedev
+ * Add hpp files to the resulting project, so the Xcode CodeSense will work
+ *
  * Revision 1.19  2006/04/03 12:03:56  lebedev
  * Directly support Xcode 2.0 format (no need to upgrade project file every time)
  *

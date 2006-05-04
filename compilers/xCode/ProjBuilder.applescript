@@ -48,7 +48,7 @@ global objValues
 global objKeys
 
 (* file count: file indexes and references will use this number*)
-global srcFileCount
+global refFileCount
 
 (* all targets go here, as a dependencie for master target: Build All *)
 global allDepList, libDepList, appDepList
@@ -75,6 +75,7 @@ property mainGroup : {isa:"PBXGroup", children:{"HEADERS", "SOURCES", "FRAMEWORK
 property emptyProject : {|rootObject|:"ROOT_OBJECT", |archiveVersion|:"1", |objectVersion|:"39", objects:{}}
 
 (* Convinience Groups *)
+property headers : {isa:"PBXGroup", children:{}, |name|:"Headers", |refType|:"4"}
 property sources : {isa:"PBXGroup", children:{}, |name|:"Sources", |refType|:"4"}
 property fworks : {isa:"PBXGroup", children:{}, |name|:"External Frameworks", |refType|:"4"}
 
@@ -160,7 +161,7 @@ script ProjBuilder
 		set objValues to {}
 		set objKeys to {}
 		
-		set srcFileCount to 1
+		set refFileCount to 1
 		set allDepList to {}
 		set libDepList to {}
 		set appDepList to {}
@@ -180,7 +181,7 @@ script ProjBuilder
 	end Initialize
 	
 	
-	on MakeNewTarget(target_info, src_files, aTarget, aProduct, aType)
+	on MakeNewTarget(target_info, src_files, hdr_files, aTarget, aProduct, aType)
 		set tgName to name of target_info
 		set fullTargetName to tgName
 		if aType is equal to 0 then set fullTargetName to "lib" & tgName -- Library
@@ -189,6 +190,7 @@ script ProjBuilder
 		set buildPhaseName to "BUILDPHASE__" & tgName
 		set prodRefName to "PRODUCT__" & tgName
 		set depName to "DEPENDENCE__" & tgName
+		set tgNameH to tgName & "H"
 		
 		set targetDepList to {} -- dependencies for this target
 		try -- set dependencies (if any)
@@ -208,15 +210,17 @@ script ProjBuilder
 		-- Add to proper lists
 		copy targetName to the end of |targets| of rootObject
 		copy tgName to the end of children of sources
+		copy tgNameH to the end of children of headers
 		
 		set libDepend to {isa:"PBXTargetDependency", |target|:targetName} --, |targetProxy|:targetProxy}
 		--set aProxy to {isa:"PBXContainerItemProxy", |proxyType|:"1", |containerPortal|:"ROOT_OBJECT", |remoteInfo|:fullTargetName} --|remoteGlobalIDString|:targetName}
 		
 		set buildFileRefs to {}
 		set libFileRefs to {}
+		-- Add Source Files
 		repeat with F in src_files
-			set nameRef to "FILE" & srcFileCount
-			set nameBuild to "REF_FILE" & srcFileCount
+			set nameRef to "FILE" & refFileCount
+			set nameBuild to "REF_FILE" & refFileCount
 			
 			set filePath to F --"/" & x_Replace(f, ":", "/") -- f will contain something like "users:vlad:c++:src:corelib:ncbicore.cpp"
 			set fileName to x_FileNameFromPath(F)
@@ -234,13 +238,33 @@ script ProjBuilder
 			copy nameBuild to the end of buildFileRefs
 			copy nameRef to the end of libFileRefs
 			
-			set srcFileCount to srcFileCount + 1
-			--if srcFileCount = 3 then exit repeat
+			set refFileCount to refFileCount + 1
+			--if refFileCount = 3 then exit repeat
 			--log f
 		end repeat
 		
 		
+		-- Add Header Files
+		set hdrFileRefs to {}
+		repeat with F in hdr_files
+			set nameRef to "FILE" & refFileCount
+			set filePath to F
+			set fileName to x_FileNameFromPath(F)
+			if fileName ends with ".hpp" then
+				set fileType to "sourcecode.hpp.hpp"
+			else
+				set fileType to "sourcecode.h.h"
+			end if
+			
+			set fileRef to {isa:"PBXFileReference", |lastKnownFileType|:fileType, |name|:fileName, |path|:filePath, |sourceTree|:"<absolute>"}
+			addPair(fileRef, nameRef)
+			copy nameRef to the end of hdrFileRefs
+			set refFileCount to refFileCount + 1
+		end repeat
+		
 		set libGroup to {isa:"PBXGroup", |name|:tgName, children:libFileRefs, |refType|:"4"}
+		set hdrGroup to {isa:"PBXGroup", |name|:tgName, children:hdrFileRefs, |refType|:"4"}
+		
 		set aBuildPhase to {isa:"PBXSourcesBuildPhase", |files|:buildFileRefs}
 		
 		set |productReference| of aTarget to prodRefName
@@ -314,10 +338,11 @@ script ProjBuilder
 		addPair(aBuildPhase, buildPhaseName)
 		
 		addPair(libGroup, tgName)
+		addPair(hdrGroup, tgNameH)
 	end MakeNewTarget
 	
 	
-	on MakeNewLibraryTarget(lib_info, src_files)
+	on MakeNewLibraryTarget(lib_info, src_files, hdr_files)
 		set libName to name of lib_info
 		set targetName to "TARGET__" & libName
 		set buildPhaseName to "BUILDPHASE__" & libName
@@ -352,11 +377,11 @@ script ProjBuilder
 		set buildSettings to {|LIB_COMPATIBILITY_VERSION|:"1", |DYLIB_CURRENT_VERSION|:"1", |INSTALL_PATH|:installPath, |LIBRARY_STYLE|:libraryStyle, |PRODUCT_NAME|:fullLibName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot, |TARGET_BUILD_DIR|:symRoot}
 		set libTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:fullLibName, |productReference|:"", |productType|:libProdType, dependencies:{}}
 		
-		my MakeNewTarget(lib_info, src_files, libTarget, libProduct, 0) -- 0 is library
+		my MakeNewTarget(lib_info, src_files, hdr_files, libTarget, libProduct, 0) -- 0 is library
 	end MakeNewLibraryTarget
 	
 	
-	on MakeNewToolTarget(tool_info, src_files)
+	on MakeNewToolTarget(tool_info, src_files, hdr_files)
 		set toolName to name of tool_info
 		set targetName to "TARGET__" & toolName
 		set buildPhaseName to "BUILDPHASE__" & toolName
@@ -373,12 +398,12 @@ script ProjBuilder
 		end if
 		set toolTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:fullToolName, |productReference|:"", |productType|:"com.apple.product-type.tool", dependencies:{}}
 		
-		my MakeNewTarget(tool_info, src_files, toolTarget, toolProduct, 2) -- is a tool
+		my MakeNewTarget(tool_info, src_files, hdr_files, toolTarget, toolProduct, 2) -- is a tool
 	end MakeNewToolTarget
 	
 	
 	
-	on MakeNewAppTarget(app_info, src_files)
+	on MakeNewAppTarget(app_info, src_files, hdr_files)
 		set appName to name of app_info
 		set targetName to "TARGET__" & appName
 		set buildPhaseName to "BUILDPHASE__" & appName
@@ -390,7 +415,7 @@ script ProjBuilder
 		set buildSettings to {|PRODUCT_NAME|:appName, |OTHER_LDFLAGS|:linkerFlags, |REZ_EXECUTABLE|:"YES", |INFOPLIST_FILE|:"", |SYMROOT|:symRoot, |KEEP_PRIVATE_EXTERNS|:"YES", |GENERATE_MASTER_OBJECT_FILE|:"YES"}
 		set appTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:appName, |productReference|:"", |productType|:"com.apple.product-type.application", dependencies:{}}
 		
-		my MakeNewTarget(app_info, src_files, appTarget, appProduct, 1) -- 1 is application
+		my MakeNewTarget(app_info, src_files, hdr_files, appTarget, appProduct, 1) -- 1 is application
 	end MakeNewAppTarget
 	
 	
@@ -433,6 +458,7 @@ script ProjBuilder
 		
 		(* Add ROOT objects and groups *)
 		addPair(rootObject, "ROOT_OBJECT")
+		addPair(headers, "HEADERS")
 		addPair(sources, "SOURCES")
 		addPair(fworks, "FRAMEWORKS")
 		
@@ -637,6 +663,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/05/04 18:00:38  lebedev
+ * Add hpp files to the resulting project, so the Xcode CodeSense will work
+ *
  * Revision 1.43  2006/04/03 12:23:57  lebedev
  * Some meaningful toolpits added
  *
