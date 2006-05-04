@@ -515,6 +515,47 @@ FindGeneticCode(int genetic_code)
     return retval;
 }
 
+EBlastProgramType
+EProgramToEBlastProgramType(EProgram p)
+{
+    switch (p) {
+    case eBlastn:
+    case eMegablast:
+    case eDiscMegablast:
+        return eBlastTypeBlastn;
+        
+    case eBlastp:
+        return eBlastTypeBlastp;
+        
+    case eBlastx:
+        return eBlastTypeBlastx;
+        
+    case eTblastn:
+        return eBlastTypeTblastn;
+        
+    case eTblastx:
+        return eBlastTypeTblastx;
+        
+    case eRPSBlast:
+        return eBlastTypeRpsBlast;
+        
+    case eRPSTblastn:
+        return eBlastTypeRpsTblastn;
+        
+    case ePSIBlast:
+        return eBlastTypePsiBlast;
+        
+    case ePHIBlastp:
+        return eBlastTypePhiBlastp;
+        
+    case ePHIBlastn:
+        return eBlastTypePhiBlastn;
+        
+    default:
+        return eBlastTypeUndefined;
+    }
+}
+
 EProgram ProgramNameToEnum(const std::string& program_name)
 {
     ASSERT( !program_name.empty() );
@@ -806,6 +847,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.95  2006/05/04 19:17:16  bealer
+ * - EBlastProgramType to EProgram converter.
+ *
  * Revision 1.94  2006/05/03 13:46:40  camacho
  * Remove unused MaskedQueryRegionsToBlastSeqLoc function
  *
