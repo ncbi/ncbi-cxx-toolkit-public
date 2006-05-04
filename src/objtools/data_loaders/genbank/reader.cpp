@@ -36,7 +36,7 @@
 
 #include <objmgr/objmgr_exception.hpp>
 #include <algorithm>
-#include <cmath>
+#include <math.h>
 #include <corelib/ncbi_system.hpp>
 
 BEGIN_NCBI_SCOPE
