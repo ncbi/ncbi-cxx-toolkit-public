@@ -298,12 +298,17 @@ private:
     void x_PreserveDestinationLocs(void);
 
     // Check molecule type, return character width (3=na, 1=aa, 0=unknown).
-    int x_CheckSeqWidth(const CSeq_id& id, int width);
+    int x_CheckSeqWidth(const CSeq_id& id,
+                        int            width,
+                        TSeqPos*       length = 0);
     int x_CheckSeqWidth(const CSeq_loc& loc,
                         TSeqPos* total_length);
     // Get sequence length, try to get the real length for
     // reverse strand, do not use "whole".
     TSeqPos x_GetRangeLength(const CSeq_loc_CI& it);
+    // Get sequence length for the given seq-id
+    TSeqPos x_GetSequenceLength(const CSeq_id& id);
+
     void x_AddConversion(const CSeq_id& src_id,
                          TSeqPos        src_start,
                          ENa_strand     src_strand,
@@ -321,7 +326,8 @@ private:
                             TSeqPos&        dst_len,
                             ENa_strand      dst_strand,
                             const CInt_fuzz* fuzz_from = 0,
-                            const CInt_fuzz* fuzz_to = 0);
+                            const CInt_fuzz* fuzz_to = 0,
+                            int             src_width = 1);
 
     // Optional frame is used for cd-region only
     void x_Initialize(const CSeq_loc& source,
@@ -573,6 +579,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2006/05/04 21:07:24  grichenk
+* Fixed mapping of std-segs.
+*
 * Revision 1.31  2006/03/21 16:38:19  grichenk
 * Added flag to check strands before mapping
 *

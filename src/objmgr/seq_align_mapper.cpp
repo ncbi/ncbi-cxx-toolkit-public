@@ -283,60 +283,70 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
         }
         int seg_len = 0;
         bool multi_width = false;
+        unsigned int row_idx = 0;
         ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
+            if (row_idx > dim) {
+                ERR_POST(Warning << "Invalid number of rows in std-seg");
+                dim = row_idx;
+                seg.m_Rows.resize(dim);
+            }
             const CSeq_loc& loc = **it_loc;
-            const CSeq_id* id = 0;
-            int start = -1;
-            int len = 0;
+            const CSeq_id* id = loc.GetId();
+            int start = loc.GetTotalRange().GetFrom();
+            int len = loc.GetTotalRange().GetLength();
             ENa_strand strand = eNa_strand_unknown;
             bool have_strand = false;
-            unsigned int row_idx = 0;
-            for (CSeq_loc_CI rg(loc); rg; ++rg, ++row_idx) {
-                if (row_idx > dim) {
-                    ERR_POST(Warning << "Invalid number of rows in std-seg");
-                    dim = row_idx;
-                    seg.m_Rows.resize(dim);
+            switch ( loc.Which() ) {
+            case CSeq_loc::e_Empty:
+                start = kInvalidSeqPos;
+                break;
+            case CSeq_loc::e_Whole:
+                start = 0;
+                len = 0;
+                break;
+            case CSeq_loc::e_Int:
+                have_strand = loc.GetInt().IsSetStrand();
+                break;
+            case CSeq_loc::e_Pnt:
+                have_strand = loc.GetPnt().IsSetStrand();
+                break;
+            default:
+                NCBI_THROW(CAnnotException, eBadLocation,
+                        "Unsupported seq-loc type in std-seg alignment");
+            }
+            if ( have_strand ) {
+                m_HaveStrands = true;
+                strand = loc.GetStrand();
+            }
+            if (len > 0) {
+                if (seg_len == 0) {
+                    seg_len = len;
                 }
-                id = &rg.GetSeq_id();
-                if ( rg.IsEmpty() ) {
-                    start = kInvalidSeqPos;
-                }
-                else {
-                    start = rg.GetRange().GetFrom();
-                    len = rg.GetRange().GetLength();
-                    strand = rg.GetStrand();
-                    if (strand != eNa_strand_unknown) {
-                        m_HaveStrands = have_strand = true;
-                    }
-                }
-                if (len > 0) {
-                    if (seg_len == 0) {
+                else if (len != seg_len) {
+                    multi_width = true;
+                    if (len/3 == seg_len) {
                         seg_len = len;
                     }
-                    else if (len != seg_len) {
-                        multi_width = true;
-                        if (len/3 == seg_len) {
-                            seg_len = len;
-                        }
-                        else if (len*3 != seg_len) {
-                            NCBI_THROW(CAnnotException, eBadLocation,
-                                    "Rows have different lengths in std-seg");
-                        }
+                    else if (len*3 != seg_len) {
+                        NCBI_THROW(CAnnotException, eBadLocation,
+                                "Rows have different lengths in std-seg");
                     }
                 }
-                seglens[seg.AddRow(row_idx,
-                    *id,
-                    start,
-                    have_strand,
-                    strand,
-                    0).m_Id] = len;
             }
-            if (dim != m_Dim) {
-                if ( m_Dim ) {
-                    m_AlignFlags = eAlign_MultiDim;
-                }
-                m_Dim = max(dim, m_Dim);
+            seglens[seg.AddRow(row_idx,
+                *id,
+                start,
+                have_strand,
+                strand,
+                0).m_Id] = len;
+
+            row_idx++;
+        }
+        if (dim != m_Dim) {
+            if ( m_Dim ) {
+                m_AlignFlags = eAlign_MultiDim;
             }
+            m_Dim = max(dim, m_Dim);
         }
         seg.m_Len = seg_len;
         if ( multi_width ) {
@@ -812,6 +822,8 @@ void CSeq_align_Mapper::x_ConvertRow(CSeq_loc_Mapper& mapper,
             if (dst_id != seg_id  &&  m_AlignFlags == eAlign_Normal) {
                 m_AlignFlags = eAlign_MultiId;
             }
+        }
+        else {
             dst_id = seg_id;
         }
     }
@@ -1267,6 +1279,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/05/04 21:07:24  grichenk
+* Fixed mapping of std-segs.
+*
 * Revision 1.17  2006/04/20 19:11:10  grichenk
 * Fixed strand check for alignments
 *

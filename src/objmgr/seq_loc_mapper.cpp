@@ -614,7 +614,9 @@ void CSeq_loc_Mapper::x_PushRangesToDstMix(void)
 }
 
 
-int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_id& id, int width)
+int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_id& id,
+                                     int            width,
+                                     TSeqPos*       length)
 {
     if ( m_Scope.IsNull() ) {
         return width;
@@ -627,6 +629,9 @@ int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_id& id, int width)
     }
     if ( !handle ) {
         return width;
+    }
+    if ( length ) {
+        *length = handle.GetBioseqLength();
     }
     switch ( handle.GetBioseqMolType() ) {
     case CSeq_inst::eMol_dna:
@@ -683,13 +688,35 @@ int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_loc& loc,
     int width = 0;
     *total_length = 0;
     for (CSeq_loc_CI it(loc); it; ++it) {
-        *total_length += it.GetRange().GetLength();
+        if (*total_length != kInvalidSeqPos) {
+            if ( it.GetRange().IsWhole() ) {
+                *total_length = kInvalidSeqPos;
+            }
+            else {
+                *total_length += it.GetRange().GetLength();
+            }
+        }
         if ( m_Scope.IsNull() ) {
             continue; // don't check sequence type;
         }
-        width = x_CheckSeqWidth(it.GetSeq_id(), width);
+        width = x_CheckSeqWidth(it.GetSeq_id(), width, total_length);
     }
     return width;
+}
+
+
+TSeqPos CSeq_loc_Mapper::x_GetSequenceLength(const CSeq_id& id)
+{
+    CBioseq_Handle h;
+    if ( m_Scope.IsSet() ) {
+        h = m_Scope.GetScope().GetBioseqHandle(id);
+    }
+    if ( !h ) {
+        NCBI_THROW(CLocMapperException, eUnknownLength,
+                    "Can not map from minus strand -- "
+                    "unknown sequence length");
+    }
+    return h.GetBioseqLength();
 }
 
 
@@ -697,16 +724,7 @@ TSeqPos CSeq_loc_Mapper::x_GetRangeLength(const CSeq_loc_CI& it)
 {
     if (it.IsWhole()  &&  IsReverse(it.GetStrand())) {
         // For reverse strand we need real interval length, not just "whole"
-        CBioseq_Handle h;
-        if ( m_Scope.IsSet() ) {
-            h = m_Scope.GetScope().GetBioseqHandle(it.GetSeq_id());
-        }
-        if ( !h ) {
-            NCBI_THROW(CLocMapperException, eUnknownLength,
-                       "Can not map from minus strand -- "
-                       "unknown sequence length");
-        }
-        return h.GetBioseqLength();
+        return x_GetSequenceLength(it.GetSeq_id());
     }
     else {
         return it.GetRange().GetLength();
@@ -768,13 +786,21 @@ void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
                                          TSeqPos&       dst_len,
                                          ENa_strand     dst_strand,
                                          const CInt_fuzz* fuzz_from,
-                                         const CInt_fuzz* fuzz_to)
+                                         const CInt_fuzz* fuzz_to,
+                                         int            src_width)
 {
     TSeqPos cvt_src_start = src_start;
     TSeqPos cvt_dst_start = dst_start;
     TSeqPos cvt_length;
 
     if (src_len == dst_len) {
+        if (src_len == kInvalidSeqPos) {
+            // Mapping whole to whole - need to know real length.
+            // Do not check strand - if it's reversed, the real length
+            // must be already known.
+            src_len = x_GetSequenceLength(src_id)*m_Dst_width - src_start;
+            dst_len = x_GetSequenceLength(dst_id)*src_width - dst_start;
+        }
         cvt_length = src_len;
         src_len = 0;
         dst_len = 0;
@@ -788,7 +814,9 @@ void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
             src_start += dst_len;
         }
         cvt_length = dst_len;
-        src_len -= cvt_length;
+        if (src_len != kInvalidSeqPos) {
+            src_len -= cvt_length;
+        }
         dst_len = 0;
     }
     else { // if (src_len < dst_len)
@@ -800,7 +828,9 @@ void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
             dst_start += src_len;
         }
         cvt_length = src_len;
-        dst_len -= cvt_length;
+        if (dst_len != kInvalidSeqPos) {
+            dst_len -= cvt_length;
+        }
         src_len = 0;
     }
     // Special case: prepare to extend mapped "to" if:
@@ -893,7 +923,8 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
         x_NextMappingRange(
             src_it.GetSeq_id(), src_start, src_len, src_it.GetStrand(),
             dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand(),
-            dst_it.GetFuzzFrom(), dst_it.GetFuzzTo());
+            dst_it.GetFuzzFrom(), dst_it.GetFuzzTo(),
+            src_width);
         if (src_len == 0  &&  ++src_it) {
             src_start = src_it.GetRange().GetFrom()*m_Dst_width;
             src_len = x_GetRangeLength(src_it)*m_Dst_width;
@@ -1102,7 +1133,8 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, size_t to_row)
             diag.GetStrands()[row] : eNa_strand_unknown;
         x_NextMappingRange(
             src_id, src_start, src_len, src_strand,
-            dst_id, dst_start, dst_len, dst_strand);
+            dst_id, dst_start, dst_len, dst_strand,
+            0, 0, src_width_rel);
         _ASSERT(!src_len  &&  !dst_len);
     }
 }
@@ -1181,7 +1213,8 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, size_t to_row)
             TSeqPos dst_start = (TSeqPos)(i_dst_start)*src_width_rel;
             x_NextMappingRange(
                 src_id, src_start, src_len, src_strand,
-                dst_id, dst_start, dst_len, dst_strand);
+                dst_id, dst_start, dst_len, dst_strand,
+                0, 0, src_width_rel);
             _ASSERT(!src_len  &&  !dst_len);
         }
     }
@@ -1274,7 +1307,8 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
             TSeqPos dst_start = pseg.GetStarts()[seg*dim + to_row]*src_width_rel;
             x_NextMappingRange(
                 src_id, src_start, src_len, src_strand,
-                dst_id, dst_start, dst_len, dst_strand);
+                dst_id, dst_start, dst_len, dst_strand,
+                0, 0, src_width_rel);
             _ASSERT(!src_len  &&  !dst_len);
         }
     }
@@ -2118,6 +2152,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2006/05/04 21:07:24  grichenk
+* Fixed mapping of std-segs.
+*
 * Revision 1.46  2006/03/21 16:38:19  grichenk
 * Added flag to check strands before mapping
 *
