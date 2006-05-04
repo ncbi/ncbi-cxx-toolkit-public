@@ -53,6 +53,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext* cntx, DBPROCESS* con,
     m_BCPAble(false), m_SecureLogin(false), m_ResProc(0)
 {
     dbsetuserdata(m_Link, (BYTE*) this);
+    CheckFunctCall();
 }
 
 
@@ -127,14 +128,14 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) : 
     dynamic_cast<CDBL_ITDescriptor&> (descr_in);
 
-    if (dbwritetext(m_Link,
+    if (Check(dbwritetext(m_Link,
                     (char*) desc.m_ObjName.c_str(),
                     desc.m_TxtPtr_is_NULL ? 0 : desc.m_TxtPtr,
                     DBTXPLEN,
                     desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                     log_it ? TRUE : FALSE,
-                    (DBINT) data_size, 0) != SUCCEED ||
-        dbsqlok(m_Link) != SUCCEED ||
+                    (DBINT) data_size, 0)) != SUCCEED ||
+        Check(dbsqlok(m_Link)) != SUCCEED ||
         //        dbresults(m_Link) == FAIL) {
         x_Results(m_Link) == FAIL) {
         DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210093 );
@@ -168,7 +169,7 @@ bool CDBL_Connection::Refresh()
     }
 
     // cancel all pending commands
-    if (dbcancel(m_Link) != CS_SUCCEED)
+    if (Check(dbcancel(m_Link)) != CS_SUCCEED)
         return false;
 
     // check the connection status
@@ -289,6 +290,7 @@ bool CDBL_Connection::Close(void)
         try {
             Refresh();
             dbclose(m_Link);
+            CheckFunctCall();
             m_Link = NULL;
             return true;
         }
@@ -329,11 +331,11 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
 
     if (size <= sizeof(buff)) { // we could write a blob in one chunk
         size_t s = stream.Read(buff, sizeof(buff));
-        if (dbwritetext(m_Link, (char*) desc.m_ObjName.c_str(),
+        if (Check(dbwritetext(m_Link, (char*) desc.m_ObjName.c_str(),
                         desc.m_TxtPtr_is_NULL ? 0 : desc.m_TxtPtr,
                         DBTXPLEN,
                         desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
-                        log_it ? TRUE : FALSE, (DBINT) s, (BYTE*) buff)
+                        log_it ? TRUE : FALSE, (DBINT) s, (BYTE*) buff))
             != SUCCEED) {
             DATABASE_DRIVER_ERROR( "dbwritetext failed", 210030 );
         }
@@ -341,12 +343,12 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     }
 
     // write it in chunks
-    if (dbwritetext(m_Link, (char*) desc.m_ObjName.c_str(),
+    if (Check(dbwritetext(m_Link, (char*) desc.m_ObjName.c_str(),
                     desc.m_TxtPtr_is_NULL ? 0 : desc.m_TxtPtr,
                     DBTXPLEN,
                     desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
-                    log_it ? TRUE : FALSE, (DBINT) size, 0) != SUCCEED ||
-        dbsqlok(m_Link) != SUCCEED ||
+                    log_it ? TRUE : FALSE, (DBINT) size, 0)) != SUCCEED ||
+        Check(dbsqlok(m_Link)) != SUCCEED ||
         //        dbresults(m_Link) == FAIL) {
         x_Results(m_Link) == FAIL) {
         DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210031 );
@@ -355,18 +357,18 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     while (size > 0) {
         size_t s = stream.Read(buff, sizeof(buff));
         if (s < 1) {
-            dbcancel(m_Link);
+            Check(dbcancel(m_Link));
             DATABASE_DRIVER_ERROR( "Text/Image data corrupted", 210032 );
         }
-        if (dbmoretext(m_Link, (DBINT) s, (BYTE*) buff) != SUCCEED) {
-            dbcancel(m_Link);
+        if (Check(dbmoretext(m_Link, (DBINT) s, (BYTE*) buff)) != SUCCEED) {
+            Check(dbcancel(m_Link));
             DATABASE_DRIVER_ERROR( "dbmoretext failed", 210033 );
         }
         size -= s;
     }
 
     //    if (dbsqlok(m_Link) != SUCCEED || dbresults(m_Link) == FAIL) {
-    if (dbsqlok(m_Link) != SUCCEED || x_Results(m_Link) == FAIL) {
+    if (Check(dbsqlok(m_Link)) != SUCCEED || x_Results(m_Link) == FAIL) {
         DATABASE_DRIVER_ERROR( "dbsqlok/dbresults failed", 210034 );
     }
 
@@ -406,7 +408,7 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
                 while(res->Fetch()) {
                     res->ReadItem(&i, 1);
                 
-                    descr= new CDBL_ITDescriptor(m_Link, descr_in);
+                    descr= new CDBL_ITDescriptor(*this, m_Link, descr_in);
                     // descr= res->GetImageOrTextDescriptor();
                     if(descr) {
                         break;
@@ -431,8 +433,8 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
         if ((x_Status & 0x20) != 0) { // check for return parameters from exec
             x_Status ^= 0x20;
             int n;
-            if (m_ResProc && (n = dbnumrets(pLink)) > 0) {
-                res = new CDBL_ParamResult(pLink, n);
+            if (m_ResProc && (n = Check(dbnumrets(pLink))) > 0) {
+                res = new CDBL_ParamResult(*this, pLink, n);
                 dbres= Create_Result(*res);
                 m_ResProc->ProcessResult(*dbres);
                 delete dbres;
@@ -443,8 +445,8 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
 
         if ((x_Status & 0x40) != 0) { // check for ret status
             x_Status ^= 0x40;
-            if (m_ResProc && dbhasretstat(pLink)) {
-                res = new CDBL_StatusResult(pLink);
+            if (m_ResProc && Check(dbhasretstat(pLink))) {
+                res = new CDBL_StatusResult(*this, pLink);
                 dbres= Create_Result(*res);
                 m_ResProc->ProcessResult(*dbres);
                 delete dbres;
@@ -453,7 +455,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             continue;
         }
         if ((x_Status & 0x10) != 0) { // we do have a compute result
-            res = new CDBL_ComputeResult(pLink, &x_Status);
+            res = new CDBL_ComputeResult(*this, pLink, &x_Status);
             dbres= Create_Result(*res);
             if(m_ResProc) {
                 m_ResProc->ProcessResult(*dbres);
@@ -466,7 +468,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             delete res;
         }
 #endif
-        switch (dbresults(pLink)) {
+        switch (Check(dbresults(pLink))) {
         case SUCCEED:
 #if !defined(FTDS_LOGIC)
             x_Status |= 0x60;
@@ -474,7 +476,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             if (DBCMDROW(pLink) == SUCCEED) { // we could get rows in result
                 if(!m_ResProc) {
                     while(1) {
-                        switch(dbnextrow(pLink)) {
+                        switch(Check(dbnextrow(pLink))) {
                         case NO_MORE_ROWS:
                         case FAIL:
                         case BUF_FULL: break;
@@ -486,7 +488,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                 }
 
 #if defined(FTDS_LOGIC)
-                res = new CTDS_RowResult(pLink, &x_Status);
+                res = new CTDS_RowResult(*this, pLink, &x_Status);
                 if(res) {
                     dbres= Create_Result(*res);
                     m_ResProc->ProcessResult(*dbres);
@@ -494,7 +496,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                     delete res;
                 }
                 if ((x_Status & 0x10) != 0) { // we do have a compute result
-                    res = new CTDS_ComputeResult(pLink, &x_Status);
+                    res = new CTDS_ComputeResult(*this, pLink, &x_Status);
                     if(res) {
                         dbres= Create_Result(*res);
                         m_ResProc->ProcessResult(*dbres);
@@ -507,15 +509,15 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
 #else
 // This optimization is currently unavailable for MS dblib...
 #ifndef MS_DBLIB_IN_USE /*Text,Image*/
-                if (dbnumcols(pLink) == 1) {
-                    int ct = dbcoltype(pLink, 1);
+                if (Check(dbnumcols(pLink)) == 1) {
+                    int ct = Check(dbcoltype(pLink, 1));
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
-                        res = new CDBL_BlobResult(pLink);
+                        res = new CDBL_BlobResult(*this, pLink);
                     }
                 }
 #endif // MS_DBLIB_IN_USE
                 if (!res)
-                    res = new CDBL_RowResult(pLink, &x_Status);
+                    res = new CDBL_RowResult(*this, pLink, &x_Status);
                 dbres= Create_Result(*res);
                 m_ResProc->ProcessResult(*dbres);
                 delete dbres;
@@ -538,7 +540,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
     // let's look at return parameters and ret status
     if (m_ResProc && x_Status == 2) {
         x_Status = 4;
-        int n = dbnumrets(pLink);
+        int n = Check(dbnumrets(pLink));
         if (n > 0) {
             res = new CTDS_ParamResult(pLink, n);
             if(res) {
@@ -551,7 +553,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
     }
     
     if (m_ResProc && x_Status == 4) {
-        if (dbhasretstat(pLink)) {
+        if (Check(dbhasretstat(pLink))) {
             res = new CTDS_StatusResult(pLink);
             if(res) {
                 dbres= Create_Result(*res);
@@ -574,17 +576,21 @@ void CTDS_Connection::TDS_SetTimeout(void)
 }
 #endif
 
+void CDBL_Connection::CheckFunctCall(void)
+{
+    CDBLExceptions::GetInstance().Handle(m_MsgHandlers);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CDBL_SendDataCmd::
 //
 
 
-CDBL_SendDataCmd::CDBL_SendDataCmd(CDBL_Connection* con, DBPROCESS* cmd,
+CDBL_SendDataCmd::CDBL_SendDataCmd(CDBL_Connection* conn, DBPROCESS* cmd,
                                    size_t nof_bytes)
+: CDBL_Cmd( conn, cmd )
 {
-    m_Connect  = con;
-    m_Cmd      = cmd;
     m_Bytes2go = nof_bytes;
 }
 
@@ -602,8 +608,8 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (nof_bytes > m_Bytes2go)
         nof_bytes = m_Bytes2go;
 
-    if (dbmoretext(m_Cmd, (DBINT) nof_bytes, (BYTE*) pChunk) != SUCCEED) {
-        dbcancel(m_Cmd);
+    if (Check(dbmoretext(GetCmd(), (DBINT) nof_bytes, (BYTE*) pChunk)) != SUCCEED) {
+        Check(dbcancel(GetCmd()));
         DATABASE_DRIVER_ERROR( "dbmoretext failed", 290001 );
     }
 
@@ -611,7 +617,7 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
     if (m_Bytes2go <= 0) {
         //        if (dbsqlok(m_Cmd) != SUCCEED || dbresults(m_Cmd) == FAIL) {
-        if (dbsqlok(m_Cmd) != SUCCEED || m_Connect->x_Results(m_Cmd) == FAIL) {
+        if (Check(dbsqlok(GetCmd())) != SUCCEED || GetConnection().x_Results(GetCmd()) == FAIL) {
             DATABASE_DRIVER_ERROR( "dbsqlok/results failed", 290002 );
         }
     }
@@ -624,10 +630,10 @@ void CDBL_SendDataCmd::Release()
 {
     m_BR = 0;
     if (m_Bytes2go > 0) {
-        dbcancel(m_Cmd);
+        Check(dbcancel(GetCmd()));
         m_Bytes2go = 0;
     }
-    m_Connect->DropCmd(*this);
+    GetConnection().DropCmd(*this);
     delete this;
 }
 
@@ -636,7 +642,7 @@ CDBL_SendDataCmd::~CDBL_SendDataCmd()
 {
     try {
         if (m_Bytes2go > 0)
-            dbcancel(m_Cmd);
+            Check(dbcancel(GetCmd()));
         if (m_BR)
             *m_BR = 0;
     }
@@ -651,6 +657,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/05/04 20:12:17  ssikorsk
+ * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
+ * Surrounded each native dblib call with Check;
+ *
  * Revision 1.23  2006/04/05 14:30:50  ssikorsk
  * Implemented CDBL_Connection::Close
  *

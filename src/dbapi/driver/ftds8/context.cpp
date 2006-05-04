@@ -58,6 +58,46 @@ BEGIN_NCBI_SCOPE
 static const CDiagCompileInfo kBlankCompileInfo;
 
 /////////////////////////////////////////////////////////////////////////////
+CTDSExceptions::CTDSExceptions(void)
+{
+}
+
+CTDSExceptions::~CTDSExceptions(void)
+{
+    NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
+        delete *it;
+    }    
+}
+    
+CTDSExceptions& CTDSExceptions::GetInstance(void)
+{
+    static CSafeStaticPtr<CTDSExceptions> instance;
+    
+    return instance.Get(); 
+}
+
+void CTDSExceptions::Accept(CDB_Exception const& e)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    m_Exceptions.push_back(e.Clone());
+}
+
+void CTDSExceptions::Handle(CDBHandlerStack& handler)
+{
+    if (!m_Exceptions.empty()) {
+        CFastMutexGuard mg(m_Mutex);
+        
+        NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
+            handler.PostMsg(*it);
+            delete *it;
+        }
+        
+        m_Exceptions.clear();
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //
 //  CDblibContextRegistry (Singleton)
 //
@@ -213,17 +253,17 @@ CTDSContext::CTDSContext(DBINT version) :
 #endif
 
     CHECK_DRIVER_ERROR( 
-        dbinit() != SUCCEED,
+        Check(dbinit()) != SUCCEED,
         "dbinit failed", 
         200001 );
 
     m_Timeout= m_LoginTimeout= 0;
 
-    dberrhandle(s_TDS_err_callback);
-    dbmsghandle(s_TDS_msg_callback);
+    Check(dberrhandle(s_TDS_err_callback));
+    Check(dbmsghandle(s_TDS_msg_callback));
 
     g_pTDSContext = this;
-    m_Login = dblogin();
+    m_Login = Check(dblogin());
 }
 
 void 
@@ -285,7 +325,7 @@ bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
     char s[64];
     sprintf(s, "%lu", (unsigned long) nof_bytes);
 
-    return dbsetopt(0, DBTEXTLIMIT, s, -1) == SUCCEED
+    return Check(dbsetopt(0, DBTEXTLIMIT, s, -1)) == SUCCEED
         /* && dbsetopt(0, DBTEXTSIZE, s, -1) == SUCCEED */;
 }
 
@@ -369,7 +409,9 @@ CTDSContext::x_Close(bool delete_conn)
                 }
 
                 dbloginfree(m_Login);
+                CheckFunctCall();
                 dbexit();
+                CheckFunctCall();
 
                 g_pTDSContext = NULL;
                 x_RemoveFromRegistry();
@@ -408,7 +450,7 @@ void CTDSContext::TDS_SetPacketSize(int p_size)
 
 bool CTDSContext::TDS_SetMaxNofConns(int n)
 {
-    return dbsetmaxprocs(n) == SUCCEED;
+    return Check(dbsetmaxprocs(n)) == SUCCEED;
 }
 
 
@@ -421,8 +463,6 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*> (dbgetuserdata(dblink)) : 0;
-    CDBHandlerStack* hs   = link ?
-        &link->m_MsgHandlers : &g_pTDSContext->m_CntxHandlers;
 
     if ( link ) {
         message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
@@ -437,7 +477,8 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                              0,
                              message,
                              dberr);
-            hs->PostMsg(&to);
+            
+            CTDSExceptions::GetInstance().Accept(to);
         }
         return INT_TIMEOUT;
     default:
@@ -445,7 +486,9 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
             CDB_DeadlockEx dl(kBlankCompileInfo,
                               0,
                               message);
-            hs->PostMsg(&dl);
+            
+            CTDSExceptions::GetInstance().Accept(dl);
+            
             return INT_CANCEL;
         }
 
@@ -462,7 +505,8 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                               message,
                               eDiag_Info,
                               dberr);
-            hs->PostMsg(&info);
+            
+            CTDSExceptions::GetInstance().Accept(info);
         }
         break;
     case EXNONFATAL:
@@ -475,7 +519,8 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                              message,
                              eDiag_Error,
                              dberr);
-            hs->PostMsg(&err);
+            
+            CTDSExceptions::GetInstance().Accept(err);
         }
         break;
     case EXTIME:
@@ -484,7 +529,8 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                              0,
                              message,
                              dberr);
-            hs->PostMsg(&to);
+            
+            CTDSExceptions::GetInstance().Accept(to);
         }
         return INT_TIMEOUT;
     default:
@@ -494,7 +540,8 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                              message,
                              eDiag_Critical,
                              dberr);
-            hs->PostMsg(&ftl);
+            
+            CTDSExceptions::GetInstance().Accept(ftl);
         }
         break;
     }
@@ -517,8 +564,6 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*>(dbgetuserdata(dblink)) : 0;
-    CDBHandlerStack* hs   = link ?
-        &link->m_MsgHandlers : &g_pTDSContext->m_CntxHandlers;
 
     if ( link ) {
         message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
@@ -530,7 +575,8 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
         CDB_DeadlockEx dl(kBlankCompileInfo,
                           0,
                           message);
-        hs->PostMsg(&dl);
+        
+        CTDSExceptions::GetInstance().Accept(dl);
     } else {
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
@@ -545,14 +591,16 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
                           msgno,
                           procname,
                           line);
-            hs->PostMsg(&rpc);
+            
+            CTDSExceptions::GetInstance().Accept(rpc);
         } else {
             CDB_DSEx m(kBlankCompileInfo,
                        0,
                        message,
                        sev,
                        msgno);
-            hs->PostMsg(&m);
+            
+            CTDSExceptions::GetInstance().Accept(m);
         }
     }
 }
@@ -586,9 +634,14 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
     tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)m_LoginTimeout,
                      (int)m_Timeout, 0 /*(int)m_Timeout*/);
     tds_setTDS_version((tds_login*)(m_Login->tds_login), m_TDSVersion);
-    return dbopen(m_Login, (char*) srv_name.c_str());
+    return Check(dbopen(m_Login, (char*) srv_name.c_str()));
 }
 
+
+void CTDSContext::CheckFunctCall(void)
+{
+    CTDSExceptions::GetInstance().Handle(m_CntxHandlers);
+}
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -822,6 +875,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/05/04 20:12:47  ssikorsk
+ * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
+ * Surrounded each native dblib call with Check;
+ *
  * Revision 1.67  2006/04/18 19:07:13  ssikorsk
  * Added "client_charset" to DriverContext's attributes.
  *

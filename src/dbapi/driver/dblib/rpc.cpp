@@ -44,10 +44,9 @@ BEGIN_NCBI_SCOPE
 //  CDBL_RPCCmd::
 //
 
-CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* con, DBPROCESS* cmd,
+CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* conn, DBPROCESS* cmd,
                          const string& proc_name, unsigned int nof_params) 
-: m_Connect(con)
-, m_Cmd(cmd)
+: CDBL_Cmd( conn, cmd )
 , m_Query(proc_name)
 , m_Params(nof_params)
 , m_WasSent(false)
@@ -92,8 +91,8 @@ bool CDBL_RPCCmd::Send()
 
     m_HasFailed = false;
 
-    if (dbrpcinit(m_Cmd, (char*) m_Query.c_str(),
-                  m_Recompile ? DBRPCRECOMPILE : 0) != SUCCEED) {
+    if (Check(dbrpcinit(GetCmd(), (char*) m_Query.c_str(),
+                  m_Recompile ? DBRPCRECOMPILE : 0)) != SUCCEED) {
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "dbrpcinit failed", 221001 );
     }
@@ -103,7 +102,7 @@ bool CDBL_RPCCmd::Send()
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "Cannot assign the params", 221003 );
     }
-    if (dbrpcsend(m_Cmd) != SUCCEED) {
+    if (Check(dbrpcsend(GetCmd())) != SUCCEED) {
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "dbrpcsend failed", 221005 );
     }
@@ -132,7 +131,7 @@ bool CDBL_RPCCmd::Cancel()
             ClearResultSet();
         }
         m_WasSent = false;
-        return dbcancel(m_Cmd) == SUCCEED;
+        return Check(dbcancel(GetCmd())) == SUCCEED;
     }
     // m_Query.erase();
     return true;
@@ -149,7 +148,7 @@ CDB_Result* CDBL_RPCCmd::Result()
 {
     if ( GetResultSet() ) {
         if(m_RowCount < 0) {
-            m_RowCount = DBCOUNT(m_Cmd);
+            m_RowCount = DBCOUNT(GetCmd());
         }
 
 #if 1 && defined(FTDS_IN_USE)
@@ -166,7 +165,7 @@ CDB_Result* CDBL_RPCCmd::Result()
 
     if (m_Status == 0) {
         m_Status = 0x1;
-        if (dbsqlok(m_Cmd) != SUCCEED) {
+        if (Check(dbsqlok(GetCmd())) != SUCCEED) {
             m_WasSent = false;
             m_HasFailed = true;
             DATABASE_DRIVER_ERROR( "dbsqlok failed", 221011 );
@@ -174,30 +173,30 @@ CDB_Result* CDBL_RPCCmd::Result()
     }
 
     if ((m_Status & 0x10) != 0) { // we do have a compute result
-        SetResultSet( new CDBL_ComputeResult(m_Cmd, &m_Status) );
+        SetResultSet( new CDBL_ComputeResult(GetConnection(), GetCmd(), &m_Status) );
         m_RowCount= 1;
         return Create_Result(*GetResultSet());
     }
 
     while ((m_Status & 0x1) != 0) {
-        switch (dbresults(m_Cmd)) {
+        switch (Check(dbresults(GetCmd()))) {
         case SUCCEED:
-            if (DBCMDROW(m_Cmd) == SUCCEED) { // we may get rows in this result
+            if (DBCMDROW(GetCmd()) == SUCCEED) { // we may get rows in this result
 // This optimization is currently unavailable for MS dblib...
 #ifndef MS_DBLIB_IN_USE /*Text,Image*/
-                if (dbnumcols(m_Cmd) == 1) {
-                    int ct = dbcoltype(m_Cmd, 1);
+                if (Check(dbnumcols(GetCmd())) == 1) {
+                    int ct = Check(dbcoltype(GetCmd(), 1));
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
-                        SetResultSet( new CDBL_BlobResult(m_Cmd) );
+                        SetResultSet( new CDBL_BlobResult(GetConnection(), GetCmd()) );
                     }
                 }
 #endif
                 if (!GetResultSet())
-                    SetResultSet( new CDBL_RowResult(m_Cmd, &m_Status) );
+                    SetResultSet( new CDBL_RowResult(GetConnection(), GetCmd(), &m_Status) );
                 m_RowCount= -1;
                 return Create_Result(*GetResultSet());
             } else {
-                m_RowCount = DBCOUNT(m_Cmd);
+                m_RowCount = DBCOUNT(GetCmd());
                 continue;
             }
         case NO_MORE_RESULTS:
@@ -214,9 +213,9 @@ CDB_Result* CDBL_RPCCmd::Result()
     // let's look at return parameters and ret status
     if (m_Status == 2) {
         m_Status = 4;
-        int n = dbnumrets(m_Cmd);
+        int n = Check(dbnumrets(GetCmd()));
         if (n > 0) {
-            SetResultSet( new CDBL_ParamResult(m_Cmd, n) );
+            SetResultSet( new CDBL_ParamResult(GetConnection(), GetCmd(), n) );
             m_RowCount= 1;
             return Create_Result(*GetResultSet());
         }
@@ -224,8 +223,8 @@ CDB_Result* CDBL_RPCCmd::Result()
 
     if (m_Status == 4) {
         m_Status = 6;
-        if (dbhasretstat(m_Cmd)) {
-            SetResultSet( new CDBL_StatusResult(m_Cmd) );
+        if (Check(dbhasretstat(GetCmd()))) {
+            SetResultSet( new CDBL_StatusResult(GetConnection(), GetCmd()) );
             m_RowCount= 1;
             return Create_Result(*GetResultSet());
         }
@@ -246,8 +245,8 @@ void CDBL_RPCCmd::DumpResults()
     while(m_WasSent) {
         auto_ptr<CDB_Result> dbres( Result() );
         if( dbres.get() ) {
-            if(m_Connect->m_ResProc) {
-                m_Connect->m_ResProc->ProcessResult(*dbres);
+            if(GetConnection().m_ResProc) {
+                GetConnection().m_ResProc->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch())
@@ -265,7 +264,7 @@ bool CDBL_RPCCmd::HasFailed() const
 
 int CDBL_RPCCmd::RowCount() const
 {
-    return (m_RowCount < 0)? DBCOUNT(m_Cmd) : m_RowCount;
+    return (m_RowCount < 0)? DBCOUNT(GetCmd()) : m_RowCount;
 }
 
 
@@ -282,7 +281,7 @@ void CDBL_RPCCmd::Release()
         Cancel();
         m_WasSent = false;
     }
-    m_Connect->DropCmd(*this);
+    GetConnection().DropCmd(*this);
     delete this;
 }
 
@@ -314,30 +313,30 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         switch (param.GetType()) {
         case eDB_Int: {
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBINT4, -1,
-                           is_null ? 0 : -1, (BYTE*) val.BindVal());
+                           is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_SmallInt: {
             CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBINT2, -1,
-                           is_null ? 0 : -1, (BYTE*) val.BindVal());
+                           is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_TinyInt: {
             CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBINT1, -1,
-                           is_null ? 0 : -1, (BYTE*) val.BindVal());
+                           is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_Bit: {
             CDB_Bit& val = dynamic_cast<CDB_Bit&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBBIT, -1,
-                           is_null ? 0 : -1, (BYTE*) val.BindVal());
+                           is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_BigInt: {
@@ -346,56 +345,56 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             Int8 v8 = val.Value();
             if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                 return false;
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBNUMERIC, -1,
-                           is_null ? 0 : -1, (BYTE*) v);
+                           is_null ? 0 : -1, (BYTE*) v));
             param_buff = (char*) (v + 1);
             break;
         }
         case eDB_Char: {
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
-                           (BYTE*) val.Value());
+                           (BYTE*) val.Value()));
             break;
         }
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
-                           (BYTE*) val.Value());
+                           (BYTE*) val.Value()));
         }
         break;
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBBINARY, -1,
                            is_null ? 0 : (DBINT) val.Size(),
-                           (BYTE*) val.Value());
+                           (BYTE*) val.Value()));
             break;
         }
         case eDB_VarBinary: {
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBBINARY, -1,
                            is_null ? 0 : (DBINT) val.Size(),
-                           (BYTE*) val.Value());
+                           (BYTE*) val.Value()));
         }
         break;
         case eDB_Float: {
             CDB_Float& val = dynamic_cast<CDB_Float&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBREAL, -1,
-                           is_null ? 0 : -1, (BYTE*) val.BindVal());
+                           is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_Double: {
             CDB_Double& val = dynamic_cast<CDB_Double&> (param);
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBFLT8, -1,
-                           is_null ? 0 : -1, (BYTE*) val.BindVal());
+                           is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_SmallDateTime: {
@@ -403,9 +402,9 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             DBDATETIME4* dt        = (DBDATETIME4*) param_buff;
             DBDATETIME4_days(dt)   = val.GetDays();
             DBDATETIME4_mins(dt)   = val.GetMinutes();
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBDATETIME4, -1,
-                           is_null ? 0 : -1, (BYTE*) dt);
+                           is_null ? 0 : -1, (BYTE*) dt));
             param_buff = (char*) (dt + 1);
             break;
         }
@@ -414,9 +413,9 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             DBDATETIME* dt = (DBDATETIME*) param_buff;
             dt->dtdays     = val.GetDays();
             dt->dttime     = val.Get300Secs();
-            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBDATETIME, -1,
-                           is_null ? 0 : -1, (BYTE*) dt);
+                           is_null ? 0 : -1, (BYTE*) dt));
             param_buff = (char*) (dt + 1);
             break;
         }
@@ -455,6 +454,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/05/04 20:12:17  ssikorsk
+ * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
+ * Surrounded each native dblib call with Check;
+ *
  * Revision 1.22  2005/12/06 19:31:42  ssikorsk
  * Revamp code to use GetResultSet/SetResultSet/ClearResultSet
  * methods instead of raw data access.

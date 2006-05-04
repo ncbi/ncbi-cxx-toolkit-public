@@ -59,6 +59,46 @@ BEGIN_NCBI_SCOPE
 static const CDiagCompileInfo kBlankCompileInfo;
 
 /////////////////////////////////////////////////////////////////////////////
+CDBLExceptions::CDBLExceptions(void)
+{
+}
+
+CDBLExceptions::~CDBLExceptions(void)
+{
+    NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
+        delete *it;
+    }    
+}
+    
+CDBLExceptions& CDBLExceptions::GetInstance(void)
+{
+    static CSafeStaticPtr<CDBLExceptions> instance;
+    
+    return instance.Get(); 
+}
+
+void CDBLExceptions::Accept(CDB_Exception const& e)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    m_Exceptions.push_back(e.Clone());
+}
+
+void CDBLExceptions::Handle(CDBHandlerStack& handler)
+{
+    if (!m_Exceptions.empty()) {
+        CFastMutexGuard mg(m_Mutex);
+        
+        NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
+            handler.PostMsg(*it);
+            delete *it;
+        }
+        
+        m_Exceptions.clear();
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //
 //  CDblibContextRegistry (Singleton)
 //
@@ -260,20 +300,20 @@ CDBLibContext::CDBLibContext(DBINT version)
 #endif
 
 #ifdef MS_DBLIB_IN_USE
-    if (dbinit() == NULL || version == 31415)
+    if (Check(dbinit()) == NULL || version == 31415)
 #else
-    if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
+    if (Check(dbinit()) != SUCCEED || Check(dbsetversion(version)) != SUCCEED)
 #endif
     {
         DATABASE_DRIVER_ERROR( "dbinit failed", 200001 );
     }
 
-    dberrhandle(s_DBLIB_err_callback);
-    dbmsghandle(s_DBLIB_msg_callback);
+    Check(dberrhandle(s_DBLIB_err_callback));
+    Check(dbmsghandle(s_DBLIB_msg_callback));
 
     g_pContext = this;
     m_Login = NULL;
-    m_Login = dblogin();
+    m_Login = Check(dblogin());
     _ASSERT(m_Login);
     
     m_Registry = &CDblibContextRegistry::Instance();
@@ -324,13 +364,13 @@ int CDBLibContext::GetTDSVersion(void) const
 
 bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    return dbsetlogintime(nof_secs) == SUCCEED;
+    return Check(dbsetlogintime(nof_secs)) == SUCCEED;
 }
 
 
 bool CDBLibContext::SetTimeout(unsigned int nof_secs)
 {
-    return dbsettime(nof_secs) == SUCCEED;
+    return Check(dbsettime(nof_secs)) == SUCCEED;
 }
 
 
@@ -341,9 +381,9 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
     CFastMutexGuard mg(m_Mtx);
 
 #ifdef MS_DBLIB_IN_USE
-    return dbsetopt(0, DBTEXTLIMIT, s) == SUCCEED;
+    return Check(dbsetopt(0, DBTEXTLIMIT, s)) == SUCCEED;
 #else
-    return dbsetopt(0, DBTEXTLIMIT, s, -1) == SUCCEED;
+    return Check(dbsetopt(0, DBTEXTLIMIT, s, -1)) == SUCCEED;
 #endif
 }
 
@@ -377,8 +417,8 @@ CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
     
 
 #ifdef MS_DBLIB_IN_USE
-    dbsetopt(dbcon, DBTEXTLIMIT, "0" ); // No limit
-    dbsetopt(dbcon, DBTEXTSIZE , "2147483647" ); // 0x7FFFFFFF
+    Check(dbsetopt(dbcon, DBTEXTLIMIT, "0" )); // No limit
+    Check(dbsetopt(dbcon, DBTEXTSIZE , "2147483647" )); // 0x7FFFFFFF
 #endif
 
     CDBL_Connection* t_con = NULL;
@@ -435,14 +475,16 @@ CDBLibContext::x_Close(bool delete_conn)
                 }
 
 #ifdef MS_DBLIB_IN_USE
-                dbfreelogin(m_Login);
-                dbwinexit();
+                Check(dbfreelogin(m_Login));
+                Check(dbwinexit());
 #else
                 dbloginfree(m_Login);
+                CheckFunctCall();
                 try {
                     // This function can fail if we try to connect to MS SQL server
                     // using Sybase client.
                     dbexit();
+                    CheckFunctCall();
                 }
                 NCBI_CATCH_ALL( "dbexit() call failed. This usually happens when "
                     "Sybase client has been used to connect to a MS SQL Server." )
@@ -488,7 +530,7 @@ void CDBLibContext::DBLIB_SetPacketSize(int p_size)
 
 bool CDBLibContext::DBLIB_SetMaxNofConns(int n)
 {
-    return dbsetmaxprocs(n) == SUCCEED;
+    return Check(dbsetmaxprocs(n)) == SUCCEED;
 }
 
 
@@ -503,8 +545,6 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
-    CDBHandlerStack* hs   = link ?
-        &link->m_MsgHandlers : &g_pContext->m_CntxHandlers;
 
     if ( link ) {
         message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
@@ -519,7 +559,8 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                              0,
                              message,
                              dberr);
-            hs->PostMsg(&to);
+            
+            CDBLExceptions::GetInstance().Accept(to);
         }
         return INT_TIMEOUT;
     default:
@@ -527,7 +568,9 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
             CDB_DeadlockEx dl( kBlankCompileInfo,
                               0,
                               message);
-            hs->PostMsg(&dl);
+            
+            CDBLExceptions::GetInstance().Accept(dl);
+            
             return INT_CANCEL;
         }
 
@@ -544,7 +587,8 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                          message,
                          eDiag_Info,
                          dberr);
-            hs->PostMsg(&info);
+            
+            CDBLExceptions::GetInstance().Accept(info);
         }
         break;
     case EXNONFATAL:
@@ -557,7 +601,8 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                              message,
                              eDiag_Error,
                              dberr);
-            hs->PostMsg(&err);
+            
+            CDBLExceptions::GetInstance().Accept(err);
         }
         break;
     case EXTIME:
@@ -566,7 +611,8 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                              0,
                              message,
                              dberr);
-            hs->PostMsg(&to);
+            
+            CDBLExceptions::GetInstance().Accept(to);
         }
         return INT_TIMEOUT;
     default:
@@ -576,7 +622,8 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                          message,
                          eDiag_Critical,
                          dberr);
-            hs->PostMsg(&ftl);
+            
+            CDBLExceptions::GetInstance().Accept(ftl);
         }
         break;
     }
@@ -600,8 +647,6 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*>(dbgetuserdata(dblink)) : 0;
-    CDBHandlerStack* hs   = link ?
-        &link->m_MsgHandlers : &g_pContext->m_CntxHandlers;
 
     if ( link ) {
         message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
@@ -613,7 +658,8 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         CDB_DeadlockEx dl( kBlankCompileInfo,
                           0,
                           message);
-        hs->PostMsg(&dl);
+        
+        CDBLExceptions::GetInstance().Accept(dl);
     } else {
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
@@ -628,14 +674,16 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                       msgno,
                       procname,
                       line);
-            hs->PostMsg(&rpc);
+            
+            CDBLExceptions::GetInstance().Accept(rpc);
         } else {
             CDB_DSEx m( kBlankCompileInfo,
                      0,
                      message,
                      sev,
                      msgno);
-            hs->PostMsg(&m);
+            
+            CDBLExceptions::GetInstance().Accept(m);
         }
     }
 }
@@ -666,10 +714,14 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
 
-    return dbopen(m_Login, (char*) srv_name.c_str());
+    return Check(dbopen(m_Login, (char*) srv_name.c_str()));
 }
 
 
+void CDBLibContext::CheckFunctCall(void)
+{
+    CDBLExceptions::GetInstance().Handle(m_CntxHandlers);
+}
 
 ///////////////////////////////////////////////////////////////////////
 // Driver manager related functions
@@ -1255,6 +1307,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/05/04 20:12:17  ssikorsk
+ * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
+ * Surrounded each native dblib call with Check;
+ *
  * Revision 1.73  2006/04/13 15:12:16  ssikorsk
  * Fixed erasing of an element from a std::vector.
  *

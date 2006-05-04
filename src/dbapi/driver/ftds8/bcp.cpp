@@ -43,15 +43,18 @@ BEGIN_NCBI_SCOPE
 //  CTDS_BCPInCmd::
 //
 
-CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* con,
+CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* conn,
                              DBPROCESS*       cmd,
                              const string&    table_name,
                              unsigned int     nof_columns) :
-    m_Connect(con), m_Cmd(cmd), m_Params(nof_columns),
-    m_WasSent(false), m_HasFailed(false),
-    m_HasTextImage(false), m_WasBound(false)
+    CDBL_Cmd( conn, cmd ),
+    m_Params(nof_columns),
+    m_WasSent(false),
+    m_HasFailed(false),
+    m_HasTextImage(false), 
+    m_WasBound(false)
 {
-    if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
+    if (Check(bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN)) != SUCCEED) {
         DATABASE_DRIVER_ERROR( "bcp_init failed", 223001 );
     }
 }
@@ -79,84 +82,84 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
                 // DBINT v = (DBINT) val.Value();
-                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT4, i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT4, i + 1));
             }
             break;
             case eDB_SmallInt: {
                 CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
                 // DBSMALLINT v = (DBSMALLINT) val.Value();
-                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT2, i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT2, i + 1));
             }
             break;
             case eDB_TinyInt: {
                 CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
                 // DBTINYINT v = (DBTINYINT) val.Value();
-                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT1, i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT1, i + 1));
             }
             break;
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT8, i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT8, i + 1));
             }
             break;
             case eDB_Char: {
                 CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : -1,
-                             (BYTE*) "", 1, SYBCHAR, i + 1);
+                             (BYTE*) "", 1, SYBCHAR, i + 1));
             }
             break;
             case eDB_VarChar: {
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : -1,
-                             (BYTE*) "", 1, SYBVARCHAR, i + 1);
+                             (BYTE*) "", 1, SYBVARCHAR, i + 1));
             }
             break;
             case eDB_LongChar: {
                 CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : -1,
-                             (BYTE*) "", 1, SYBCHAR, i + 1);
+                             (BYTE*) "", 1, SYBCHAR, i + 1));
             }
             break;
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : static_cast<int>(val.Size()),
-                             0, 0, SYBBINARY, i + 1);
+                             0, 0, SYBBINARY, i + 1));
             }
             break;
             case eDB_VarBinary: {
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : static_cast<int>(val.Size()),
-                             0, 0, SYBVARBINARY, i + 1);
+                             0, 0, SYBVARBINARY, i + 1));
             }
             break;
             case eDB_LongBinary: {
                 CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-                r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
                              val.IsNULL() ? 0 : static_cast<int>(val.DataSize()),
-                             0, 0, SYBBINARY, i + 1);
+                             0, 0, SYBBINARY, i + 1));
             }
             break;
             case eDB_Float: {
                 CDB_Float& val = dynamic_cast<CDB_Float&> (param);
                 // DBREAL v = (DBREAL) val.Value();
-                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBREAL, i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBREAL, i + 1));
             }
             break;
             case eDB_Double: {
                 CDB_Double& val = dynamic_cast<CDB_Double&> (param);
                 // DBFLT8 v = (DBFLT8) val.Value();
-                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBFLT8, i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBFLT8, i + 1));
             }
             break;
             case eDB_SmallDateTime: {
@@ -165,8 +168,8 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 DBDATETIME4* dt = (DBDATETIME4*) pb;
                 dt->days        = val.GetDays();
                 dt->minutes     = val.GetMinutes();
-                r = bcp_bind(m_Cmd, (BYTE*) dt, 0, val.IsNULL() ? 0 : -1,
-                             0, 0, SYBDATETIME4,  i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) dt, 0, val.IsNULL() ? 0 : -1,
+                             0, 0, SYBDATETIME4,  i + 1));
                 pb = (void*) (dt + 1);
             }
             break;
@@ -175,22 +178,22 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 DBDATETIME* dt = (DBDATETIME*) pb;
                 dt->dtdays     = val.GetDays();
                 dt->dttime     = val.Get300Secs();
-                r = bcp_bind(m_Cmd, (BYTE*) dt, 0, val.IsNULL() ? 0 : -1,
-                             0, 0, SYBDATETIME, i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) dt, 0, val.IsNULL() ? 0 : -1,
+                             0, 0, SYBDATETIME, i + 1));
                 pb = (void*) (dt + 1);
             }
             break;
             case eDB_Text: {
                 CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-                r = bcp_bind(m_Cmd, 0, 0, val.IsNULL() ? 0 : static_cast<int>(val.Size()),
-                             0, 0, SYBTEXT, i + 1);
+                r = Check(bcp_bind(GetCmd(), 0, 0, val.IsNULL() ? 0 : static_cast<int>(val.Size()),
+                             0, 0, SYBTEXT, i + 1));
                 m_HasTextImage = true;
             }
             break;
             case eDB_Image: {
                 CDB_Image& val = dynamic_cast<CDB_Image&> (param);
-                r = bcp_bind(m_Cmd, 0, 0, val.IsNULL() ? 0 : static_cast<int>(val.Size()),
-                             0, 0, SYBIMAGE, i + 1);
+                r = Check(bcp_bind(GetCmd(), 0, 0, val.IsNULL() ? 0 : static_cast<int>(val.Size()),
+                             0, 0, SYBIMAGE, i + 1));
                 m_HasTextImage = true;
             }
             break;
@@ -212,102 +215,102 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
                 // DBINT v = (DBINT) val.Value();
-                r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.BindVal(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd,  val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(),  val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_SmallInt: {
                 CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
                 // DBSMALLINT v = (DBSMALLINT) val.Value();
-                r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.BindVal(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd,  val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(),  val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_TinyInt: {
                 CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
                 // DBTINYINT v = (DBTINYINT) val.Value();
-                r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.BindVal(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-                r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.BindVal(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd,  val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(),  val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_Char: {
                 CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_VarChar: {
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_LongChar: {
                 CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : 
-                               static_cast<int>(val.Size()), i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : 
+                               static_cast<int>(val.Size()), i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_VarBinary: {
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : 
-                               static_cast<int>(val.Size()), i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : 
+                               static_cast<int>(val.Size()), i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_LongBinary: {
                 CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-                r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : val.DataSize(), i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : val.DataSize(), i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_Float: {
                 CDB_Float& val = dynamic_cast<CDB_Float&> (param);
                 //DBREAL v = (DBREAL) val.Value();
-                r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.BindVal(), i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd,  val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(),  val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
             case eDB_Double: {
                 CDB_Double& val = dynamic_cast<CDB_Double&> (param);
                 //DBFLT8 v = (DBFLT8) val.Value();
-                r = bcp_bind(m_Cmd, (BYTE*) val.BindVal(), 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBFLT8, i + 1);
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
+                             val.IsNULL() ? 0 : -1, 0, 0, SYBFLT8, i + 1));
             }
             break;
             case eDB_SmallDateTime: {
@@ -316,9 +319,9 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 DBDATETIME4* dt = (DBDATETIME4*) pb;
                 dt->days        = val.GetDays();
                 dt->minutes     = val.GetMinutes();
-                r = bcp_colptr(m_Cmd, (BYTE*) dt, i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) dt, i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
                 pb = (void*) (dt + 1);
             }
@@ -328,21 +331,21 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 DBDATETIME* dt = (DBDATETIME*) pb;
                 dt->dtdays     = val.GetDays();
                 dt->dttime     = val.Get300Secs();
-                r = bcp_colptr(m_Cmd, (BYTE*) dt, i + 1)
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) dt, i + 1))
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
                 pb = (void*) (dt + 1);
             }
             break;
             case eDB_Text: {
                 CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-                r = bcp_collen(m_Cmd, static_cast<int>(val.Size()), i + 1);
+                r = Check(bcp_collen(GetCmd(), static_cast<int>(val.Size()), i + 1));
             }
             break;
             case eDB_Image: {
                 CDB_Image& val = dynamic_cast<CDB_Image&> (param);
-                r = bcp_collen(m_Cmd, static_cast<int>(val.Size()), i + 1);
+                r = Check(bcp_collen(GetCmd(), static_cast<int>(val.Size()), i + 1));
             }
             break;
             default:
@@ -365,7 +368,7 @@ bool CTDS_BCPInCmd::SendRow()
         DATABASE_DRIVER_ERROR( "cannot assign params", 223004 );
     }
 
-    if (bcp_sendrow(m_Cmd) != SUCCEED) {
+    if (Check(bcp_sendrow(GetCmd())) != SUCCEED) {
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 223005 );
     }
@@ -390,7 +393,7 @@ bool CTDS_BCPInCmd::SendRow()
                 size_t l = val.Read(buff, sizeof(buff));
                 if (l > s)
                     l = s;
-                if (bcp_moretext(m_Cmd, static_cast<int>(l), (BYTE*) buff) 
+                if (Check(bcp_moretext(GetCmd(), static_cast<int>(l), (BYTE*) buff)) 
                     != SUCCEED) {
                     m_HasFailed = true;
                     string error;
@@ -416,7 +419,7 @@ bool CTDS_BCPInCmd::SendRow()
 bool CTDS_BCPInCmd::Cancel()
 {
     if(m_WasSent) {
-        DBINT outrow = bcp_done(m_Cmd);
+        DBINT outrow = Check(bcp_done(GetCmd()));
         m_WasSent= false;
         return outrow == 0;
     }
@@ -427,7 +430,7 @@ bool CTDS_BCPInCmd::Cancel()
 bool CTDS_BCPInCmd::CompleteBatch()
 {
     if(m_WasSent) {
-        DBINT outrow = bcp_batch(m_Cmd);
+        DBINT outrow = Check(bcp_batch(GetCmd()));
         if(outrow < 0) {
             m_HasFailed= true;
             DATABASE_DRIVER_ERROR( "bcp_batch failed", 223020 );
@@ -441,7 +444,7 @@ bool CTDS_BCPInCmd::CompleteBatch()
 bool CTDS_BCPInCmd::CompleteBCP()
 {
     if(m_WasSent) {
-        DBINT outrow = bcp_done(m_Cmd);
+        DBINT outrow = Check(bcp_done(GetCmd()));
         if(outrow < 0) {
             m_HasFailed = true;
             DATABASE_DRIVER_ERROR( "bcp_done failed", 223020 );
@@ -460,7 +463,7 @@ void CTDS_BCPInCmd::Release()
         Cancel();
         m_WasSent = false;
     }
-    m_Connect->DropCmd(*this);
+    GetConnection().DropCmd(*this);
     delete this;
 }
 
@@ -484,6 +487,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/05/04 20:12:47  ssikorsk
+ * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
+ * Surrounded each native dblib call with Check;
+ *
  * Revision 1.13  2006/02/22 15:15:51  ssikorsk
  * *** empty log message ***
  *

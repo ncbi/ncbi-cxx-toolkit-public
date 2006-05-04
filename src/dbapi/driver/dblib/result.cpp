@@ -340,72 +340,32 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
-{
-    switch (dbcoltype(cmd, n)) {
-    case SYBBINARY:    return (dbcollen(cmd, n) > 255) ? eDB_LongBinary : 
-                                                         eDB_VarBinary;
-#if 0
-    case SYBBITN:
-#endif
-    case SYBBIT:       return eDB_Bit;
-    case SYBCHAR:      return (dbcollen(cmd, n) > 255) ? eDB_LongChar :
-                                                         eDB_VarChar;
-    case SYBDATETIME:  return eDB_DateTime;
-    case SYBDATETIME4: return eDB_SmallDateTime;
-    case SYBINT1:      return eDB_TinyInt;
-    case SYBINT2:      return eDB_SmallInt;
-    case SYBINT4:      return eDB_Int;
-#ifdef FTDS_IN_USE
-    case SYBINT8:      return eDB_BigInt;
-#endif
-    case SYBDECIMAL:
-    case SYBNUMERIC:   break;
-    case SYBFLT8:      return eDB_Double;
-    case SYBREAL:      return eDB_Float;
-    case SYBTEXT:      return eDB_Text;
-    case SYBIMAGE:     return eDB_Image;
-#ifdef FTDS_IN_USE
-    case SYBUNIQUE:    return eDB_VarBinary;
-#endif
-    default:           return eDB_UnsupportedType;
-    }
-
-#ifdef MS_DBLIB_IN_USE
-    DBCOL dbcol; dbcol.SizeOfStruct = sizeof(DBCOL);
-    RETCODE res = dbcolinfo(cmd, CI_REGULAR, n, 0, &dbcol );
-    return dbcol.Scale == 0 && dbcol.Precision < 20 ? eDB_BigInt : eDB_Numeric;
-#else
-    DBTYPEINFO* t = dbcoltypeinfo(cmd, n);
-    return t->scale == 0 && t->precision < 20 ? eDB_BigInt : eDB_Numeric;
-#endif
-
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 //
 //  CDBL_RowResult::
 //
 
 
-CDBL_RowResult::CDBL_RowResult(DBPROCESS* cmd,
-                               unsigned int* res_status, bool need_init) :
-    m_Cmd(cmd), m_CurrItem(-1), m_EOR(false),
-    m_ResStatus(res_status), m_Offset(0)
+CDBL_RowResult::CDBL_RowResult(CDBL_Connection& conn, 
+                               DBPROCESS* cmd,
+                               unsigned int* res_status, 
+                               bool need_init) :
+    CDBL_Result(conn, cmd), 
+    m_CurrItem(-1), 
+    m_EOR(false),
+    m_ResStatus(res_status), 
+    m_Offset(0)
 {
     if (!need_init)
         return;
 
-    m_NofCols = dbnumcols(cmd);
+    m_NofCols = Check(dbnumcols(cmd));
     m_CmdNum = DBCURCMD(cmd);
 
     m_ColFmt = new SDBL_ColDescr[m_NofCols];
     for (unsigned int n = 0; n < m_NofCols; n++) {
-        m_ColFmt[n].max_length = dbcollen(m_Cmd, n + 1);
-        m_ColFmt[n].data_type = s_GetDataType(m_Cmd, n + 1);
-        const char* s = dbcolname(m_Cmd, n + 1);
+        m_ColFmt[n].max_length = Check(dbcollen(GetCmd(), n + 1));
+        m_ColFmt[n].data_type = GetDataType(n + 1);
+        const char* s = Check(dbcolname(GetCmd(), n + 1));
         m_ColFmt[n].col_name = s ? s : "";
     }
 }
@@ -446,7 +406,7 @@ bool CDBL_RowResult::Fetch()
 {
     m_CurrItem = -1;
     if (!m_EOR) {
-        switch (dbnextrow(m_Cmd)) {
+        switch (Check(dbnextrow(GetCmd()))) {
         case REG_ROW:
             m_CurrItem = 0;
             m_Offset = 0;
@@ -480,120 +440,14 @@ int CDBL_RowResult::GetColumnNum(void) const
 }
 
 
-// Aux. for CDBL_RowResult::GetItem()
-static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
-                             SDBL_ColDescr* fmt, CDB_Object* item_buff)
-{
-    EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
-    const BYTE* d_ptr = dbdata  (cmd, item_no);
-    DBINT d_len = dbdatlen(cmd, item_no);
-
-    CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
-                                       b_type, d_ptr, d_len);
-    if (val)
-        return val;
-
-    switch (fmt->data_type) {
-    case eDB_BigInt: {
-#ifdef FTDS_IN_USE
-        if(dbcoltype(cmd, item_no) == SYBINT8) {
-          Int8* v= (Int8*) d_ptr;
-          if(item_buff) {
-            if(v) {
-              if(b_type == eDB_BigInt) {
-                *((CDB_BigInt*) item_buff)= *v;
-              }
-              else {
-                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
-              }
-            }
-            else
-                item_buff->AssignNULL();
-            return item_buff;
-          }
-
-          return v ?
-            new CDB_BigInt(*v) : new CDB_BigInt;
-        }
-#endif
-        DBNUMERIC* v = (DBNUMERIC*) d_ptr;
-        if (item_buff) {
-            if (v) {
-                if (b_type == eDB_Numeric) {
-                    ((CDB_Numeric*) item_buff)->Assign
-                        ((unsigned int)   v->precision,
-                         (unsigned int)   v->scale,
-                         (unsigned char*) DBNUMERIC_val(v));
-                } else if (b_type == eDB_BigInt) {
-                    *((CDB_BigInt*) item_buff) = numeric_to_longlong
-                        ((unsigned int) v->precision, DBNUMERIC_val(v));
-                } else {
-                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
-                }
-            } else
-                item_buff->AssignNULL();
-            return item_buff;
-        }
-
-        return v ?
-            new CDB_BigInt(numeric_to_longlong((unsigned int) v->precision,
-                                               DBNUMERIC_val(v))) : new CDB_BigInt;
-    }
-
-    case eDB_Numeric: {
-        DBNUMERIC* v = (DBNUMERIC*) d_ptr;
-        if (item_buff) {
-                if (v) {
-                    if (b_type == eDB_Numeric) {
-                        ((CDB_Numeric*) item_buff)->Assign
-                            ((unsigned int)   v->precision,
-                             (unsigned int)   v->scale,
-                             (unsigned char*) DBNUMERIC_val(v));
-                    } else {
-                        DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
-                    }
-                } else
-                    item_buff->AssignNULL();
-                return item_buff;
-        }
-
-        return v ?
-            new CDB_Numeric((unsigned int)   v->precision,
-                            (unsigned int)   v->scale,
-                            (unsigned char*) DBNUMERIC_val(v)) : new CDB_Numeric;
-    }
-
-    case eDB_Text: {
-        if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 130020 );
-        }
-        CDB_Text* v = item_buff ? (CDB_Text*) item_buff : new CDB_Text;
-        v->Append((char*) d_ptr, (int) d_len);
-        return v;
-    }
-
-    case eDB_Image: {
-        if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 130020 );
-        }
-        CDB_Image* v = item_buff ? (CDB_Image*) item_buff : new CDB_Image;
-        v->Append((void*) d_ptr, (int) d_len);
-        return v;
-    }
-
-    default:
-        DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
-    }
-}
-
-
 CDB_Object* CDBL_RowResult::GetItem(CDB_Object* item_buff)
 {
     if ((unsigned int) m_CurrItem >= m_NofCols) {
         return 0;
     }
-    CDB_Object* r = s_GetItem(m_Cmd, m_CurrItem + 1,
-                              &m_ColFmt[m_CurrItem], item_buff);
+    CDB_Object* r = GetItemInternal(m_CurrItem + 1,
+                                    &m_ColFmt[m_CurrItem], 
+                                    item_buff);
     ++m_CurrItem;
     m_Offset = 0;
     return r;
@@ -608,8 +462,8 @@ size_t CDBL_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
         return 0;
     }
 
-    const BYTE* d_ptr = dbdata  (m_Cmd, m_CurrItem + 1);
-    DBINT d_len = dbdatlen(m_Cmd, m_CurrItem + 1);
+    const BYTE* d_ptr = Check(dbdata (GetCmd(), m_CurrItem + 1));
+    DBINT d_len = Check(dbdatlen(GetCmd(), m_CurrItem + 1));
 
     if (d_ptr == 0 || d_len < 1) { // NULL value
         ++m_CurrItem;
@@ -641,7 +495,7 @@ I_ITDescriptor* CDBL_RowResult::GetImageOrTextDescriptor()
 {
     if ((unsigned int) m_CurrItem >= m_NofCols)
         return 0;
-    return new CDBL_ITDescriptor(m_Cmd, m_CurrItem+1);
+    return new CDBL_ITDescriptor(GetConnection(), GetCmd(), m_CurrItem+1);
 }
 
 
@@ -664,7 +518,7 @@ CDBL_RowResult::~CDBL_RowResult()
             m_ColFmt = 0;
         }
         if (!m_EOR)
-            dbcanquery(m_Cmd);
+            Check(dbcanquery(GetCmd()));
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -676,14 +530,16 @@ CDBL_RowResult::~CDBL_RowResult()
 //  CDBL_BlobResult::
 
 
-CDBL_BlobResult::CDBL_BlobResult(DBPROCESS* cmd) :
-    m_Cmd(cmd), m_CurrItem(-1), m_EOR(false)
+CDBL_BlobResult::CDBL_BlobResult(CDBL_Connection& conn, DBPROCESS* cmd) :
+    CDBL_Result(conn, cmd), 
+    m_CurrItem(-1), 
+    m_EOR(false)
 {
     m_CmdNum = DBCURCMD(cmd);
 
-    m_ColFmt.max_length = dbcollen(m_Cmd, 1);
-    m_ColFmt.data_type = s_GetDataType(m_Cmd, 1);
-    const char* s = dbcolname(m_Cmd, 1);
+    m_ColFmt.max_length = Check(dbcollen(GetCmd(), 1));
+    m_ColFmt.data_type = GetDataType(1);
+    const char* s = Check(dbcolname(GetCmd(), 1));
     m_ColFmt.col_name = s ? s : "";
 }
 
@@ -724,7 +580,7 @@ bool CDBL_BlobResult::Fetch()
 
     STATUS s;
     if (m_CurrItem == 0) {
-        while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
+        while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0)
             ;
         switch (s) {
         case 0:
@@ -739,7 +595,7 @@ bool CDBL_BlobResult::Fetch()
     else {
         m_CurrItem = 0;
     }
-    s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff));
+    s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)));
     if (s == NO_MORE_ROWS)
         return false;
     if (s < 0) {
@@ -793,7 +649,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
         
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
+    while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0)
         val->Append(m_Buff, (size_t(s) < sizeof(m_Buff))? size_t(s) : sizeof(m_Buff));
 
     switch (s) {
@@ -836,7 +692,7 @@ size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         memcpy(buffer, m_Buff + m_ReadedBytes, l);
     }
         
-    STATUS s = dbreadtext(m_Cmd, (void*)((char*)buffer + l), (DBINT)(buffer_size-l));
+    STATUS s = Check(dbreadtext(GetCmd(), (void*)((char*)buffer + l), (DBINT)(buffer_size-l)));
     switch (s) {
     case NO_MORE_ROWS:
         m_EOR = true;
@@ -860,7 +716,7 @@ I_ITDescriptor* CDBL_BlobResult::GetImageOrTextDescriptor()
 {
     if (m_CurrItem != 0)
         return 0;
-    return new CDBL_ITDescriptor(m_Cmd, 1);
+    return new CDBL_ITDescriptor(GetConnection(), GetCmd(), 1);
 }
 
 
@@ -870,7 +726,7 @@ bool CDBL_BlobResult::SkipItem()
         return false;
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, sizeof(m_Buff))) > 0)
+    while ((s = Check(dbreadtext(GetCmd(), m_Buff, sizeof(m_Buff)))) > 0)
         continue;
 
     switch (s) {
@@ -890,50 +746,9 @@ CDBL_BlobResult::~CDBL_BlobResult()
 {
     try {
         if (!m_EOR)
-            dbcanquery(m_Cmd);
+            Check(dbcanquery(GetCmd()));
     }
     NCBI_CATCH_ALL( kEmptyStr )
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-static EDB_Type s_RetGetDataType(DBPROCESS* cmd, int n)
-{
-    switch (dbrettype(cmd, n)) {
-    case SYBBINARY:    return (dbretlen(cmd, n) > 255)? eDB_LongBinary : 
-                                                        eDB_VarBinary;
-    case SYBBIT:       return eDB_Bit;
-    case SYBCHAR:      return (dbretlen(cmd, n) > 255)? eDB_LongChar : 
-                                                        eDB_VarChar;
-    case SYBDATETIME:  return eDB_DateTime;
-    case SYBDATETIME4: return eDB_SmallDateTime;
-    case SYBINT1:      return eDB_TinyInt;
-    case SYBINT2:      return eDB_SmallInt;
-    case SYBINT4:      return eDB_Int;
-    case SYBFLT8:      return eDB_Double;
-    case SYBREAL:      return eDB_Float;
-#ifdef FTDS_IN_USE
-    case SYBUNIQUE:    return eDB_VarBinary;
-#endif
-    default:           return eDB_UnsupportedType;
-    }
-}
-
-
-// Aux. for CDBL_ParamResult::GetItem()
-static CDB_Object* s_RetGetItem(DBPROCESS* cmd, int item_no,
-                                SDBL_ColDescr* fmt, CDB_Object* item_buff)
-{
-    EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
-    const BYTE* d_ptr = dbretdata(cmd, item_no);
-    DBINT d_len = dbretlen (cmd, item_no);
-    CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
-                                       b_type, d_ptr, d_len);
-    if (!val) {
-        DATABASE_DRIVER_ERROR( "unexpected result type", 230004 );
-    }
-    return val;
 }
 
 
@@ -942,8 +757,10 @@ static CDB_Object* s_RetGetItem(DBPROCESS* cmd, int item_no,
 //  CDBL_ParamResult::
 //
 
-CDBL_ParamResult::CDBL_ParamResult(DBPROCESS* cmd, int nof_params) :
-    CDBL_RowResult(cmd, 0, false)
+CDBL_ParamResult::CDBL_ParamResult(CDBL_Connection& conn, 
+                                   DBPROCESS* cmd, 
+                                   int nof_params) :
+    CDBL_RowResult(conn, cmd, 0, false)
 {
 
     m_NofCols = nof_params;
@@ -952,8 +769,8 @@ CDBL_ParamResult::CDBL_ParamResult(DBPROCESS* cmd, int nof_params) :
     m_ColFmt = new SDBL_ColDescr[m_NofCols];
     for (unsigned int n = 0; n < m_NofCols; n++) {
         m_ColFmt[n].max_length = 255;
-        m_ColFmt[n].data_type = s_RetGetDataType(m_Cmd, n + 1);
-        const char* s = dbretname(m_Cmd, n + 1);
+        m_ColFmt[n].data_type = RetGetDataType(n + 1);
+        const char* s = Check(dbretname(GetCmd(), n + 1));
         m_ColFmt[n].col_name = s ? s : "";
     }
     m_1stFetch = true;
@@ -984,8 +801,9 @@ CDB_Object* CDBL_ParamResult::GetItem(CDB_Object* item_buff)
         return 0;
     }
 
-    CDB_Object* r = s_RetGetItem(m_Cmd, m_CurrItem + 1,
-                                 &m_ColFmt[m_CurrItem], item_buff);
+    CDB_Object* r = RetGetItem(m_CurrItem + 1,
+                               &m_ColFmt[m_CurrItem], 
+                               item_buff);
     ++m_CurrItem;
     m_Offset = 0;
     return r;
@@ -1001,8 +819,8 @@ size_t CDBL_ParamResult::ReadItem(void* buffer, size_t buffer_size,
         return 0;
     }
 
-    const BYTE* d_ptr = dbretdata(m_Cmd, m_CurrItem + 1);
-    DBINT d_len = dbretlen (m_Cmd, m_CurrItem + 1);
+    const BYTE* d_ptr = Check(dbretdata(GetCmd(), m_CurrItem + 1));
+    DBINT d_len = Check(dbretlen (GetCmd(), m_CurrItem + 1));
 
     if (d_ptr == 0 || d_len < 1) { // NULL value
         ++m_CurrItem;
@@ -1047,71 +865,30 @@ CDBL_ParamResult::~CDBL_ParamResult()
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-static EDB_Type s_AltGetDataType(DBPROCESS* cmd, int id, int n)
-{
-    switch (dbalttype(cmd, id, n)) {
-    case SYBBINARY:    return (dbaltlen(cmd, id, n) > 255)? eDB_LongBinary : 
-                                                        eDB_VarBinary;
-    case SYBBIT:       return eDB_Bit;
-    case SYBCHAR:      return (dbaltlen(cmd, id, n) > 255)? eDB_LongChar : 
-                                                        eDB_VarChar;
-    case SYBDATETIME:  return eDB_DateTime;
-    case SYBDATETIME4: return eDB_SmallDateTime;
-    case SYBINT1:      return eDB_TinyInt;
-    case SYBINT2:      return eDB_SmallInt;
-    case SYBINT4:      return eDB_Int;
-    case SYBFLT8:      return eDB_Double;
-    case SYBREAL:      return eDB_Float;
-#ifdef FTDS_IN_USE
-    case SYBUNIQUE:    return eDB_VarBinary;
-#endif
-    default:           return eDB_UnsupportedType;
-    }
-}
-
-
-// Aux. for CDBL_ComputeResult::GetItem()
-static CDB_Object* s_AltGetItem(DBPROCESS* cmd, int id, int item_no,
-                                SDBL_ColDescr* fmt, CDB_Object* item_buff)
-{
-    EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
-    const BYTE* d_ptr = dbadata(cmd, id, item_no);
-    DBINT d_len = dbadlen(cmd, id, item_no);
-    CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
-                                       b_type, d_ptr, d_len);
-    if (!val) {
-        DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
-    }
-    return val;
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////
 //
 //  CTL_ComputeResult::
 //
 
-CDBL_ComputeResult::CDBL_ComputeResult(DBPROCESS* cmd,
+CDBL_ComputeResult::CDBL_ComputeResult(CDBL_Connection& conn, 
+                                       DBPROCESS* cmd,
                                        unsigned int* res_stat) :
-    CDBL_RowResult(cmd, res_stat, false)
+    CDBL_RowResult(conn, cmd, res_stat, false)
 {
     m_ComputeId = DBROWTYPE(cmd);
     if (m_ComputeId == REG_ROW || m_ComputeId == NO_MORE_ROWS) {
         DATABASE_DRIVER_ERROR( "no compute row found", 270000 );
     }
-    m_NofCols = dbnumalts(cmd, m_ComputeId);
+    m_NofCols = Check(dbnumalts(cmd, m_ComputeId));
     if (m_NofCols < 1) {
         DATABASE_DRIVER_ERROR( "compute id is invalid", 270001 );
     }
     m_CmdNum = DBCURCMD(cmd);
     m_ColFmt = new SDBL_ColDescr[m_NofCols];
     for (unsigned int n = 0; n < m_NofCols; n++) {
-        m_ColFmt[n].max_length = dbaltlen(m_Cmd, m_ComputeId, n+1);
-        m_ColFmt[n].data_type = s_AltGetDataType(m_Cmd, m_ComputeId, n + 1);
-        int op = dbaltop(m_Cmd, m_ComputeId, n + 1);
-        const char* s = op != -1 ? dbprtype(op) : "Unknown";
+        m_ColFmt[n].max_length = Check(dbaltlen(GetCmd(), m_ComputeId, n+1));
+        m_ColFmt[n].data_type = AltGetDataType(m_ComputeId, n + 1);
+        int op = Check(dbaltop(GetCmd(), m_ComputeId, n + 1));
+        const char* s = op != -1 ? Check(dbprtype(op)) : "Unknown";
         m_ColFmt[n].col_name = s ? s : "";
     }
     m_1stFetch = true;
@@ -1132,7 +909,7 @@ bool CDBL_ComputeResult::Fetch()
         return true;
     }
 
-    STATUS s = dbnextrow(m_Cmd);
+    STATUS s = Check(dbnextrow(GetCmd()));
     switch (s) {
     case REG_ROW:
     case NO_MORE_ROWS:
@@ -1162,8 +939,10 @@ CDB_Object* CDBL_ComputeResult::GetItem(CDB_Object* item_buff)
     if ((unsigned int) m_CurrItem >= m_NofCols) {
         return 0;
     }
-    CDB_Object* r = s_AltGetItem(m_Cmd, m_ComputeId, m_CurrItem + 1,
-                                 &m_ColFmt[m_CurrItem], item_buff);
+    CDB_Object* r = AltGetItem(m_ComputeId, 
+                               m_CurrItem + 1,
+                               &m_ColFmt[m_CurrItem], 
+                               item_buff);
     ++m_CurrItem;
     m_Offset = 0;
     return r;
@@ -1179,8 +958,8 @@ size_t CDBL_ComputeResult::ReadItem(void* buffer, size_t buffer_size,
         return 0;
     }
 
-    const BYTE* d_ptr = dbadata(m_Cmd, m_ComputeId, m_CurrItem + 1);
-    DBINT d_len = dbadlen(m_Cmd, m_ComputeId, m_CurrItem + 1);
+    const BYTE* d_ptr = Check(dbadata(GetCmd(), m_ComputeId, m_CurrItem + 1));
+    DBINT d_len = Check(dbadlen(GetCmd(), m_ComputeId, m_CurrItem + 1));
 
     if (d_ptr == 0 || d_len < 1) { // NULL value
         ++m_CurrItem;
@@ -1232,10 +1011,12 @@ CDBL_ComputeResult::~CDBL_ComputeResult()
 //
 
 
-CDBL_StatusResult::CDBL_StatusResult(DBPROCESS* cmd) :
-    m_Offset(0), m_1stFetch(true)
+CDBL_StatusResult::CDBL_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd) :
+    CDBL_Result(conn, cmd), 
+    m_Offset(0), 
+    m_1stFetch(true)
 {
-    m_Val = dbretstatus(cmd);
+    m_Val = Check(dbretstatus(cmd));
 }
 
 
@@ -1350,14 +1131,15 @@ CDBL_StatusResult::~CDBL_StatusResult()
 //  CTL_CursorResult::
 //
 
-CDBL_CursorResult::CDBL_CursorResult(CDB_LangCmd* cmd) 
-: m_Cmd(cmd)
-, m_Res(0)
+CDBL_CursorResult::CDBL_CursorResult(CDBL_Connection& conn, CDB_LangCmd* cmd) : 
+    CDBL_Result(conn, NULL),
+    m_Cmd(cmd),
+    m_Res(0)
 {
     try {
-        m_Cmd->Send();
-        while (m_Cmd->HasMoreResults()) {
-            SetResultSet( m_Cmd->Result() );
+        GetCmd().Send();
+        while (GetCmd().HasMoreResults()) {
+            SetResultSet( GetCmd().Result() );
             if (GetResultSet() && GetResultSet()->ResultType() == eDB_RowResult) {
                 return;
             }
@@ -1505,14 +1287,17 @@ CDBL_CursorResult::~CDBL_CursorResult()
 //  CDBL_ITDescriptor::
 //
 
-CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
+CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn, 
+                                     DBPROCESS* dblink, 
+                                     int col_num) :
+CDBL_Result(conn, dblink)
 {
 #if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE)
 
     DBCOL dbcol;
 
     memset(&dbcol, 0, sizeof(DBCOL));
-    RETCODE res = dbcolinfo(dblink, CI_REGULAR, col_num, 0, &dbcol );
+    RETCODE res = Check(dbcolinfo(GetCmd(), CI_REGULAR, col_num, 0, &dbcol ));
 
     CHECK_DRIVER_ERROR(
         res == FAIL,
@@ -1531,7 +1316,7 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 
     // !!! This is a hack !!!
     // dbcolname returns char*
-    DBCOLINFO* col_info = (DBCOLINFO*) dbcolname(dblink, col_num);
+    DBCOLINFO* col_info = (DBCOLINFO*) Check(dbcolname(GetCmd(), col_num));
 
     CHECK_DRIVER_ERROR( 
         col_info == 0, 
@@ -1544,14 +1329,14 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
     
 #endif
 
-    DBBINARY* p = dbtxptr(dblink, col_num);
+    DBBINARY* p = Check(dbtxptr(GetCmd(), col_num));
     if (p) {
         memcpy(m_TxtPtr, p, DBTXPLEN);
         m_TxtPtr_is_NULL = false;
     } else
         m_TxtPtr_is_NULL = true;
 
-    p = dbtxtimestamp(dblink, col_num);
+    p = Check(dbtxtimestamp(GetCmd(), col_num));
     if (p) {
         memcpy(m_TimeStamp, p, DBTXTSLEN);
         m_TimeStamp_is_NULL = false;
@@ -1559,21 +1344,24 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
         m_TimeStamp_is_NULL = true;
 }
 
-CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, const CDB_ITDescriptor& inp_d)
+CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn, 
+                                     DBPROCESS* dblink, 
+                                     const CDB_ITDescriptor& inp_d) :
+CDBL_Result(conn, dblink)
 {
     m_ObjName= inp_d.TableName();
     m_ObjName+= ".";
     m_ObjName+= inp_d.ColumnName();
     
 
-    DBBINARY* p = dbtxptr(dblink, 1);
+    DBBINARY* p = Check(dbtxptr(GetCmd(), 1));
     if (p) {
         memcpy(m_TxtPtr, p, DBTXPLEN);
         m_TxtPtr_is_NULL = false;
     } else
         m_TxtPtr_is_NULL = true;
 
-    p = dbtxtimestamp(dblink, 1);
+    p = Check(dbtxtimestamp(GetCmd(), 1));
     if (p) {
         memcpy(m_TimeStamp, p, DBTXTSLEN);
         m_TimeStamp_is_NULL = false;
@@ -1614,6 +1402,241 @@ bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
 #endif
 
 
+/////////////////////////////////////////////////////////////////////////////
+
+EDB_Type CDBL_Result::GetDataType(int n)
+{
+    switch (Check(dbcoltype(GetCmd(), n))) {
+    case SYBBINARY:    return (Check(dbcollen(GetCmd(), n)) > 255) ? eDB_LongBinary : 
+                                                         eDB_VarBinary;
+#if 0
+    case SYBBITN:
+#endif
+    case SYBBIT:       return eDB_Bit;
+    case SYBCHAR:      return (Check(dbcollen(GetCmd(), n)) > 255) ? eDB_LongChar :
+                                                         eDB_VarChar;
+    case SYBDATETIME:  return eDB_DateTime;
+    case SYBDATETIME4: return eDB_SmallDateTime;
+    case SYBINT1:      return eDB_TinyInt;
+    case SYBINT2:      return eDB_SmallInt;
+    case SYBINT4:      return eDB_Int;
+#ifdef FTDS_IN_USE
+    case SYBINT8:      return eDB_BigInt;
+#endif
+    case SYBDECIMAL:
+    case SYBNUMERIC:   break;
+    case SYBFLT8:      return eDB_Double;
+    case SYBREAL:      return eDB_Float;
+    case SYBTEXT:      return eDB_Text;
+    case SYBIMAGE:     return eDB_Image;
+#ifdef FTDS_IN_USE
+    case SYBUNIQUE:    return eDB_VarBinary;
+#endif
+    default:           return eDB_UnsupportedType;
+    }
+
+#ifdef MS_DBLIB_IN_USE
+    DBCOL dbcol; dbcol.SizeOfStruct = sizeof(DBCOL);
+    RETCODE res = Check(dbcolinfo(GetCmd(), CI_REGULAR, n, 0, &dbcol ));
+    return dbcol.Scale == 0 && dbcol.Precision < 20 ? eDB_BigInt : eDB_Numeric;
+#else
+    DBTYPEINFO* t = Check(dbcoltypeinfo(GetCmd(), n));
+    return t->scale == 0 && t->precision < 20 ? eDB_BigInt : eDB_Numeric;
+#endif
+
+}
+
+// Aux. for CDBL_RowResult::GetItem()
+CDB_Object* 
+CDBL_Result::GetItemInternal(int item_no,
+                             SDBL_ColDescr* fmt, 
+                             CDB_Object* item_buff)
+{
+    EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
+    const BYTE* d_ptr = Check(dbdata (GetCmd(), item_no));
+    DBINT d_len = Check(dbdatlen(GetCmd(), item_no));
+
+    CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
+                                       b_type, d_ptr, d_len);
+    if (val)
+        return val;
+
+    switch (fmt->data_type) {
+    case eDB_BigInt: {
+#ifdef FTDS_IN_USE
+        if(Check(dbcoltype(GetCmd(), item_no)) == SYBINT8) {
+          Int8* v= (Int8*) d_ptr;
+          if(item_buff) {
+            if(v) {
+              if(b_type == eDB_BigInt) {
+                *((CDB_BigInt*) item_buff)= *v;
+              }
+              else {
+                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
+              }
+            }
+            else
+                item_buff->AssignNULL();
+            return item_buff;
+          }
+
+          return v ?
+            new CDB_BigInt(*v) : new CDB_BigInt;
+        }
+#endif
+        DBNUMERIC* v = (DBNUMERIC*) d_ptr;
+        if (item_buff) {
+            if (v) {
+                if (b_type == eDB_Numeric) {
+                    ((CDB_Numeric*) item_buff)->Assign
+                        ((unsigned int)   v->precision,
+                         (unsigned int)   v->scale,
+                         (unsigned char*) DBNUMERIC_val(v));
+                } else if (b_type == eDB_BigInt) {
+                    *((CDB_BigInt*) item_buff) = numeric_to_longlong
+                        ((unsigned int) v->precision, DBNUMERIC_val(v));
+                } else {
+                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
+                }
+            } else
+                item_buff->AssignNULL();
+            return item_buff;
+        }
+
+        return v ?
+            new CDB_BigInt(numeric_to_longlong((unsigned int) v->precision,
+                                               DBNUMERIC_val(v))) : new CDB_BigInt;
+    }
+
+    case eDB_Numeric: {
+        DBNUMERIC* v = (DBNUMERIC*) d_ptr;
+        if (item_buff) {
+                if (v) {
+                    if (b_type == eDB_Numeric) {
+                        ((CDB_Numeric*) item_buff)->Assign
+                            ((unsigned int)   v->precision,
+                             (unsigned int)   v->scale,
+                             (unsigned char*) DBNUMERIC_val(v));
+                    } else {
+                        DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
+                    }
+                } else
+                    item_buff->AssignNULL();
+                return item_buff;
+        }
+
+        return v ?
+            new CDB_Numeric((unsigned int)   v->precision,
+                            (unsigned int)   v->scale,
+                            (unsigned char*) DBNUMERIC_val(v)) : new CDB_Numeric;
+    }
+
+    case eDB_Text: {
+        if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 130020 );
+        }
+        CDB_Text* v = item_buff ? (CDB_Text*) item_buff : new CDB_Text;
+        v->Append((char*) d_ptr, (int) d_len);
+        return v;
+    }
+
+    case eDB_Image: {
+        if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 130020 );
+        }
+        CDB_Image* v = item_buff ? (CDB_Image*) item_buff : new CDB_Image;
+        v->Append((void*) d_ptr, (int) d_len);
+        return v;
+    }
+
+    default:
+        DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
+    }
+}
+
+
+EDB_Type CDBL_Result::RetGetDataType(int n)
+{
+    switch (Check(dbrettype(GetCmd(), n))) {
+    case SYBBINARY:    return (Check(dbretlen(GetCmd(), n)) > 255)? eDB_LongBinary : 
+                                                        eDB_VarBinary;
+    case SYBBIT:       return eDB_Bit;
+    case SYBCHAR:      return (Check(dbretlen(GetCmd(), n)) > 255)? eDB_LongChar : 
+                                                        eDB_VarChar;
+    case SYBDATETIME:  return eDB_DateTime;
+    case SYBDATETIME4: return eDB_SmallDateTime;
+    case SYBINT1:      return eDB_TinyInt;
+    case SYBINT2:      return eDB_SmallInt;
+    case SYBINT4:      return eDB_Int;
+    case SYBFLT8:      return eDB_Double;
+    case SYBREAL:      return eDB_Float;
+#ifdef FTDS_IN_USE
+    case SYBUNIQUE:    return eDB_VarBinary;
+#endif
+    default:           return eDB_UnsupportedType;
+    }
+}
+
+
+// Aux. for CDBL_ParamResult::GetItem()
+CDB_Object* CDBL_Result::RetGetItem(int item_no,
+                                    SDBL_ColDescr* fmt, 
+                                    CDB_Object* item_buff)
+{
+    EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
+    const BYTE* d_ptr = Check(dbretdata(GetCmd(), item_no));
+    DBINT d_len = Check(dbretlen (GetCmd(), item_no));
+    CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
+                                       b_type, d_ptr, d_len);
+    if (!val) {
+        DATABASE_DRIVER_ERROR( "unexpected result type", 230004 );
+    }
+    return val;
+}
+
+
+EDB_Type CDBL_Result::AltGetDataType(int id, int n)
+{
+    switch (Check(dbalttype(GetCmd(), id, n))) {
+    case SYBBINARY:    return (Check(dbaltlen(GetCmd(), id, n)) > 255)? eDB_LongBinary : 
+                                                        eDB_VarBinary;
+    case SYBBIT:       return eDB_Bit;
+    case SYBCHAR:      return (Check(dbaltlen(GetCmd(), id, n)) > 255)? eDB_LongChar : 
+                                                        eDB_VarChar;
+    case SYBDATETIME:  return eDB_DateTime;
+    case SYBDATETIME4: return eDB_SmallDateTime;
+    case SYBINT1:      return eDB_TinyInt;
+    case SYBINT2:      return eDB_SmallInt;
+    case SYBINT4:      return eDB_Int;
+    case SYBFLT8:      return eDB_Double;
+    case SYBREAL:      return eDB_Float;
+#ifdef FTDS_IN_USE
+    case SYBUNIQUE:    return eDB_VarBinary;
+#endif
+    default:           return eDB_UnsupportedType;
+    }
+}
+
+
+// Aux. for CDBL_ComputeResult::GetItem()
+CDB_Object* CDBL_Result::AltGetItem(int id, 
+                                    int item_no,
+                                    SDBL_ColDescr* fmt, 
+                                    CDB_Object* item_buff)
+{
+    EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
+    const BYTE* d_ptr = Check(dbadata(GetCmd(), id, item_no));
+    DBINT d_len = Check(dbadlen(GetCmd(), id, item_no));
+    CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
+                                       b_type, d_ptr, d_len);
+    if (!val) {
+        DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
+    }
+    return val;
+}
+
+
+
 END_NCBI_SCOPE
 
 
@@ -1621,6 +1644,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/05/04 20:12:17  ssikorsk
+ * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
+ * Surrounded each native dblib call with Check;
+ *
  * Revision 1.35  2006/02/24 19:33:29  ssikorsk
  * Added implementation comment
  *

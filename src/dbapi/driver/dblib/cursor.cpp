@@ -43,12 +43,19 @@ BEGIN_NCBI_SCOPE
 //  CDBL_CursorCmd::
 //
 
-CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection* con, DBPROCESS* cmd,
+CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection* conn, DBPROCESS* cmd,
                                const string& cursor_name, const string& query,
                                unsigned int nof_params) :
-    m_Connect(con), m_Cmd(cmd), m_Name(cursor_name), m_LCmd(0), m_Query(query),
-    m_Params(nof_params), m_IsOpen(false), m_HasFailed(false),
-    m_IsDeclared(false), m_Res(0), m_RowCount(-1)
+    CDBL_Cmd( conn, cmd ),
+    m_Name(cursor_name), 
+    m_LCmd(0), 
+    m_Query(query),
+    m_Params(nof_params), 
+    m_IsOpen(false), 
+    m_HasFailed(false),
+    m_IsDeclared(false), 
+    m_Res(0), 
+    m_RowCount(-1)
 {
 }
 
@@ -75,10 +82,9 @@ static bool for_update_of(const string& q)
 
 CDB_Result* CDBL_CursorCmd::Open()
 {
-    _ASSERT(m_Connect);
-    _ASSERT(m_Connect->m_Context);
+    _ASSERT(GetConnection().m_Context);
     
-    const bool connected_to_MSSQLServer = m_Connect->m_Context->ConnectedToMSSQLServer();
+    const bool connected_to_MSSQLServer = GetConnection().m_Context->ConnectedToMSSQLServer();
     
     if (m_IsOpen) { // need to close it first
         Close();
@@ -114,7 +120,7 @@ CDB_Result* CDBL_CursorCmd::Open()
     }
 
     try {
-        auto_ptr<CDB_LangCmd> cmd( m_Connect->LangCmd(buff) );
+        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         
         cmd->Send();
         cmd->DumpResults();
@@ -129,7 +135,7 @@ CDB_Result* CDBL_CursorCmd::Open()
     buff = "open " + m_Name;
 
     try {
-        auto_ptr<CDB_LangCmd> cmd( m_Connect->LangCmd(buff) );
+        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         
         cmd->Send();
         cmd->DumpResults();
@@ -142,8 +148,8 @@ CDB_Result* CDBL_CursorCmd::Open()
     m_LCmd = 0;
     buff = "fetch " + m_Name;
 
-    m_LCmd = m_Connect->LangCmd(buff);
-    SetResultSet( new CDBL_CursorResult(m_LCmd) );
+    m_LCmd = GetConnection().LangCmd(buff);
+    SetResultSet( new CDBL_CursorResult(GetConnection(), m_LCmd) );
     return Create_Result( *GetResultSet() );
 }
 
@@ -164,7 +170,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
         }
 
         string buff = upd_query + " where current of " + m_Name;
-        const auto_ptr<CDB_LangCmd> cmd(m_Connect->LangCmd(buff));
+        const auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
 #if 0
@@ -192,7 +198,7 @@ I_ITDescriptor* CDBL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
         if(!GetResultSet()->SkipItem()) return 0;
     }
     
-    I_ITDescriptor* desc= new CDBL_ITDescriptor(m_Cmd, item_num+1);
+    I_ITDescriptor* desc= new CDBL_ITDescriptor(GetConnection(), GetCmd(), item_num+1);
     return desc;
 }
 
@@ -214,7 +220,7 @@ bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 //             }
         }
 #endif        
-        return m_Connect->x_SendData(*desc, data, log_it);
+        return GetConnection().x_SendData(*desc, data, log_it);
     }
     return false;
 }
@@ -234,7 +240,7 @@ CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
         }
 #endif
         
-        return m_Connect->SendDataCmd(*desc, size, log_it);
+        return GetConnection().SendDataCmd(*desc, size, log_it);
     }
     return 0;
 }                       
@@ -258,7 +264,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
         }
 
         string buff = "delete " + table_name + " where current of " + m_Name;
-        cmd = m_Connect->LangCmd(buff);
+        cmd = GetConnection().LangCmd(buff);
         cmd->Send();
         cmd->DumpResults();
 #if 0
@@ -301,7 +307,7 @@ bool CDBL_CursorCmd::Close()
         string buff = "close " + m_Name;
         m_LCmd = 0;
         try {
-            m_LCmd = m_Connect->LangCmd(buff);
+            m_LCmd = GetConnection().LangCmd(buff);
             m_LCmd->Send();
             m_LCmd->DumpResults();
 #if 0
@@ -327,7 +333,7 @@ bool CDBL_CursorCmd::Close()
 
     if (m_IsDeclared) {
         string buff;
-        const bool connected_to_MSSQLServer = m_Connect->m_Context->ConnectedToMSSQLServer();
+        const bool connected_to_MSSQLServer = GetConnection().m_Context->ConnectedToMSSQLServer();
 
         if ( connected_to_MSSQLServer ) {
             buff = "deallocate " + m_Name;
@@ -337,7 +343,7 @@ bool CDBL_CursorCmd::Close()
 
         m_LCmd = 0;
         try {
-            m_LCmd = m_Connect->LangCmd(buff);
+            m_LCmd = GetConnection().LangCmd(buff);
             m_LCmd->Send();
             m_LCmd->DumpResults();
 #if 0
@@ -372,7 +378,7 @@ void CDBL_CursorCmd::Release()
         Close();
         m_IsOpen = false;
     }
-    m_Connect->DropCmd(*this);
+    GetConnection().DropCmd(*this);
     delete this;
 }
 
@@ -552,6 +558,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/05/04 20:12:17  ssikorsk
+ * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
+ * Surrounded each native dblib call with Check;
+ *
  * Revision 1.22  2005/12/06 19:29:21  ssikorsk
  * Revamp code to use GetResultSet/SetResultSet methods
  * instead of raw data access.

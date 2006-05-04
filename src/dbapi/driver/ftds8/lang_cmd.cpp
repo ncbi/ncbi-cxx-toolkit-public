@@ -44,7 +44,9 @@ BEGIN_NCBI_SCOPE
 CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection* conn, DBPROCESS* cmd,
                            const string& lang_query,
                            unsigned int nof_params) :
-    m_Connect(conn), m_Cmd(cmd), m_Query(lang_query), m_Params(nof_params)
+    CDBL_Cmd( conn, cmd ),
+    m_Query(lang_query), 
+    m_Params(nof_params)
 {
 
     m_WasSent   =  false;
@@ -84,21 +86,23 @@ bool CTDS_LangCmd::Send()
     m_HasFailed = false;
 
     if (!x_AssignParams()) {
-        dbfreebuf(m_Cmd);
+        dbfreebuf(GetCmd());
+        CheckFunctCall();
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "cannot assign params", 220003 );
     }
 
-    if (dbcmd(m_Cmd, (char*)(m_Query.c_str())) != SUCCEED) {
-        dbfreebuf(m_Cmd);
+    if (Check(dbcmd(GetCmd(), (char*)(m_Query.c_str()))) != SUCCEED) {
+        dbfreebuf(GetCmd());
+        CheckFunctCall();
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "dbcmd failed", 220001 );
     }
 
     
-    m_Connect->TDS_SetTimeout();
+    GetConnection().TDS_SetTimeout();
 
-    m_HasFailed = dbsqlsend(m_Cmd) != SUCCEED;
+    m_HasFailed = Check(dbsqlsend(GetCmd())) != SUCCEED;
     CHECK_DRIVER_ERROR( 
         m_HasFailed,
         "dbsqlsend failed", 
@@ -124,10 +128,11 @@ bool CTDS_LangCmd::Cancel()
             m_Res = 0;
         }
         m_WasSent = false;
-        return (dbcancel(m_Cmd) == SUCCEED);
+        return (Check(dbcancel(GetCmd())) == SUCCEED);
     }
 
-    dbfreebuf(m_Cmd);
+    dbfreebuf(GetCmd());
+    CheckFunctCall();
     m_Query.erase();
     return true;
 }
@@ -143,7 +148,7 @@ CDB_Result* CTDS_LangCmd::Result()
 {
     if (m_Res) {
         if(m_RowCount < 0) {
-            m_RowCount= DBCOUNT(m_Cmd);
+            m_RowCount= DBCOUNT(GetCmd());
         }
         delete m_Res;
         m_Res = 0;
@@ -156,7 +161,7 @@ CDB_Result* CTDS_LangCmd::Result()
 
     if (m_Status == 0) {
         m_Status = 0x1;
-        if (dbsqlok(m_Cmd) != SUCCEED) {
+        if (Check(dbsqlok(GetCmd())) != SUCCEED) {
             m_WasSent = false;
             m_HasFailed = true;
             DATABASE_DRIVER_ERROR( "dbsqlok failed", 220011 );
@@ -164,20 +169,20 @@ CDB_Result* CTDS_LangCmd::Result()
     }
 
     if ((m_Status & 0x10) != 0) { // we do have a compute result
-        m_Res = new CTDS_ComputeResult(m_Cmd, &m_Status);
+        m_Res = new CTDS_ComputeResult(GetConnection(), GetCmd(), &m_Status);
         m_RowCount= 1;
         return Create_Result(*m_Res);
     }
 
     while ((m_Status & 0x1) != 0) {
-        switch (dbresults(m_Cmd)) {
+        switch (Check(dbresults(GetCmd()))) {
         case SUCCEED:
-            if (DBCMDROW(m_Cmd) == SUCCEED) { // we may get rows in this result
-                m_Res = new CTDS_RowResult(m_Cmd, &m_Status);
+            if (DBCMDROW(GetCmd()) == SUCCEED) { // we may get rows in this result
+                m_Res = new CTDS_RowResult(GetConnection(), GetCmd(), &m_Status);
                 m_RowCount = -1;
                 return Create_Result(*m_Res);
             } else {
-                m_RowCount = DBCOUNT(m_Cmd);
+                m_RowCount = DBCOUNT(GetCmd());
                 continue;
             }
         case NO_MORE_RESULTS:
@@ -194,9 +199,9 @@ CDB_Result* CTDS_LangCmd::Result()
     // let's look at return parameters and ret status
     if (m_Status == 2) {
         m_Status = 4;
-        int n = dbnumrets(m_Cmd);
+        int n = Check(dbnumrets(GetCmd()));
         if (n > 0) {
-            m_Res = new CTDS_ParamResult(m_Cmd, n);
+            m_Res = new CTDS_ParamResult(GetConnection(), GetCmd(), n);
             m_RowCount = 1;
             return Create_Result(*m_Res);
         }
@@ -204,8 +209,8 @@ CDB_Result* CTDS_LangCmd::Result()
 
     if (m_Status == 4) {
         m_Status = 6;
-        if (dbhasretstat(m_Cmd)) {
-            m_Res = new CTDS_StatusResult(m_Cmd);
+        if (Check(dbhasretstat(GetCmd()))) {
+            m_Res = new CTDS_StatusResult(GetConnection(), GetCmd());
             m_RowCount = 1;
             return Create_Result(*m_Res);
         }
@@ -226,8 +231,8 @@ void CTDS_LangCmd::DumpResults()
     while(m_WasSent) {
         dbres= Result();
         if(dbres) {
-            if(m_Connect->m_ResProc) {
-                m_Connect->m_ResProc->ProcessResult(*dbres);
+            if(GetConnection().m_ResProc) {
+                GetConnection().m_ResProc->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch());
@@ -245,7 +250,7 @@ bool CTDS_LangCmd::HasFailed() const
 
 int CTDS_LangCmd::RowCount() const
 {
-    return (m_RowCount < 0)? DBCOUNT(m_Cmd) : m_RowCount;
+    return (m_RowCount < 0)? DBCOUNT(GetCmd()) : m_RowCount;
 }
 
 
@@ -256,7 +261,7 @@ void CTDS_LangCmd::Release()
         Cancel();
         m_WasSent = false;
     }
-    m_Connect->DropCmd(*this);
+    GetConnection().DropCmd(*this);
     delete this;
 }
 
@@ -479,7 +484,7 @@ bool CTDS_LangCmd::x_AssignParams()
             cmd += val_buffer;
         } else
             cmd += "NULL\n";
-        if (dbcmd(m_Cmd, (char*) cmd.c_str()) != SUCCEED)
+        if (Check(dbcmd(GetCmd(), (char*) cmd.c_str())) != SUCCEED)
             return false;
     }
     return true;
@@ -493,6 +498,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/05/04 20:12:47  ssikorsk
+ * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
+ * Surrounded each native dblib call with Check;
+ *
  * Revision 1.18  2006/02/22 15:15:51  ssikorsk
  * *** empty log message ***
  *
