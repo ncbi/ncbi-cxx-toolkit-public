@@ -1669,10 +1669,10 @@ CHTML_password::~CHTML_password(void)
 
 const char CHTML_submit::sm_InputType[] = "submit";
 
-CHTML_submit::CHTML_submit(const string& name)
+CHTML_submit::CHTML_submit(const string& label)
     : CParent(sm_InputType, NcbiEmptyString)
 {
-    SetOptionalAttribute("value", name);
+    SetOptionalAttribute("value", label);
 }
 
 CHTML_submit::CHTML_submit(const string& name, const string& label)
@@ -2319,6 +2319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.126  2006/05/04 19:16:13  ivanov
+ * CHTML_submit -- changed constructor parameter name
+ *
  * Revision 1.125  2006/01/25 17:48:16  ivanov
  * CHTMLText::PrintBegin() -- use constant for length of tag delimiter
  *
