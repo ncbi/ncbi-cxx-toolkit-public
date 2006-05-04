@@ -59,6 +59,13 @@ static const CDiagCompileInfo kBlankCompileInfo;
 CCTLExceptions::CCTLExceptions(void)
 {
 }
+
+CCTLExceptions::~CCTLExceptions(void)
+{
+    NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
+        delete *it;
+    }    
+}
     
 CCTLExceptions& CCTLExceptions::GetInstance(void)
 {
@@ -71,7 +78,7 @@ void CCTLExceptions::Accept(CDB_Exception const& e)
 {
     CFastMutexGuard mg(m_Mutex);
     
-    m_Exceptions.push_back(e);
+    m_Exceptions.push_back(e.Clone());
 }
 
 void CCTLExceptions::Handle(CDBHandlerStack& handler)
@@ -79,8 +86,9 @@ void CCTLExceptions::Handle(CDBHandlerStack& handler)
     if (!m_Exceptions.empty()) {
         CFastMutexGuard mg(m_Mutex);
         
-        NON_CONST_ITERATE(deque<CDB_Exception>, it, m_Exceptions) {
-            handler.PostMsg(&*it);
+        NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
+            handler.PostMsg(*it);
+            delete *it;
         }
         
         m_Exceptions.clear();
@@ -605,8 +613,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                 err_str << "SQL: " << msg->sqlstate << endl;
             }
             
-            ERR_POST(string(err_str.str(), err_str.pcount()));
-            err_str.freeze(false);
+            ERR_POST((string)CNcbiOstrstreamToString(err_str));
         }
         
         return true;
@@ -749,8 +756,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         
         err_str << msg->text << endl;
         
-        ERR_POST(string(err_str.str(), err_str.pcount()));
-        err_str.freeze(false);
+        ERR_POST((string)CNcbiOstrstreamToString(err_str));
         
         return true;
     }
@@ -1108,6 +1114,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/05/04 15:24:03  ucko
+ * Modify CCTLExceptions to store pointers, as our exception classes don't
+ * support assignment.
+ * Take advantage of CNcbiOstrstreamToString rather than duplicating its logic.
+ *
  * Revision 1.70  2006/05/04 14:34:56  ssikorsk
  * Call freeze(false) for ostrstream after getting a string value.
  *
