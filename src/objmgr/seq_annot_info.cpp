@@ -557,8 +557,15 @@ void CSeq_annot_Info::x_InitFeatKeys(void)
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             bool multi_id = hrmit->GetMap().size() > 1;
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
-                key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
+                key.m_Range = hr.GetOverlappingRange();
+                if ( key.m_Range.Empty() ) {
+                    CNcbiOstrstream s;
+                    s << MSerial_AsnText << *info.GetFeatFast();
+                    ERR_POST("Empty region in "<<s.rdbuf());
+                    continue;
+                }
+                key.m_Handle = hrit->first;
                 index.m_Flags = hr.GetStrandsFlag();
                 if ( multi_id ) {
                     index.SetMultiIdFlag();
@@ -573,12 +580,10 @@ void CSeq_annot_Info::x_InitFeatKeys(void)
                         m_ObjectIndex.AddMap(key, index);
                     }
                     else {
-                        key.m_Range = hr.GetOverlappingRange();
                         m_ObjectIndex.AddMap(key, index);
                     }
                 }
                 else {
-                    key.m_Range = hr.GetOverlappingRange();
                     index.m_HandleRange.Reset();
                     m_ObjectIndex.AddMap(key, index);
                 }
@@ -618,9 +623,15 @@ void CSeq_annot_Info::x_InitGraphKeys(void)
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
-                key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
                 key.m_Range = hr.GetOverlappingRange();
+                if ( key.m_Range.Empty() ) {
+                    CNcbiOstrstream s;
+                    s << MSerial_AsnText << *info.GetGraphFast();
+                    ERR_POST("Empty region in "<<s.rdbuf());
+                    continue;
+                }
+                key.m_Handle = hrit->first;
                 if ( hr.HasGaps() ) {
                     index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
                     index.m_HandleRange->GetData() = hr;
@@ -666,13 +677,15 @@ void CSeq_annot_Info::x_InitAlignKeys(void)
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
-                key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
                 key.m_Range = hr.GetOverlappingRange();
                 if ( key.m_Range.Empty() ) {
-                    ERR_POST(Error << "Zero length alignment");
+                    CNcbiOstrstream s;
+                    s << MSerial_AsnText << info.GetAlign();
+                    ERR_POST("Empty region in "<<s.rdbuf());
                     continue;
                 }
+                key.m_Handle = hrit->first;
                 if ( hr.HasGaps() ) {
                     index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
                     index.m_HandleRange->GetData() = hr;
@@ -719,9 +732,15 @@ void CSeq_annot_Info::x_InitLocsKeys(void)
 
     ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
         ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
-            key.m_Handle = hrit->first;
             const CHandleRange& hr = hrit->second;
             key.m_Range = hr.GetOverlappingRange();
+            if ( key.m_Range.Empty() ) {
+                CNcbiOstrstream s;
+                s << MSerial_AsnText << info.GetLocs();
+                ERR_POST("Empty region in "<<s.rdbuf());
+                continue;
+            }
+            key.m_Handle = hrit->first;
             if ( hr.HasGaps() ) {
                 index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
                 index.m_HandleRange->GetData() = hr;
@@ -1093,6 +1112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/05/05 14:41:58  vasilche
+ * Skip empty locations in indexing of all annotations.
+ *
  * Revision 1.38  2006/02/07 00:15:12  katargir
  * Fixed typo in x_InitLocsKeys which caused exception from ASSERT statement
  *
