@@ -240,7 +240,7 @@ int CTestICClient::Run(void)
                int size = cl.GetSize(key1,version, subkey1);
                vector<unsigned char> test_buf(1000);
                cl.Read(key1, version, subkey1, &test_buf[0], test_buf.size());
-               cout << size << endl << string(test_buf.begin(), test_buf.end()) << endl;
+               cout << size << endl << string((char*)&test_buf[0], test_buf.size()) << endl;
         {
             //        auto_ptr<IReader> reader1(cl.GetReadStream(key1,version,subkey1));
             //        CRStream istr1(reader1.get());
@@ -280,6 +280,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2006/05/05 00:41:31  ucko
+ * Tweak vector<unsigned char> -> string conversion to compile under
+ * WorkShop 5.3.
+ *
  * Revision 6.6  2006/05/03 14:58:26  didenko
  * Added test for IReader/IWriter
  *
