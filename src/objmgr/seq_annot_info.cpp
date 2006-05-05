@@ -778,8 +778,22 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
     ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
         bool multi_id = hrmit->GetMap().size() > 1;
         ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
-            key.m_Handle = hrit->first;
             const CHandleRange& hr = hrit->second;
+            key.m_Range = hr.GetOverlappingRange();
+            if ( key.m_Range.Empty() ) {
+                CNcbiOstrstream s;
+                const CSerialObject* obj = 0;
+                obj = dynamic_cast<const CSerialObject*>(info.GetObjectPointer());
+                if ( obj ) {
+                    s << MSerial_AsnText << *obj;
+                }
+                else {
+                    s << "unknown annotation";
+                }
+                ERR_POST("Empty region in "<<s.rdbuf());
+                continue;
+            }
+            key.m_Handle = hrit->first;
             index.m_Flags = hr.GetStrandsFlag();
             if ( multi_id ) {
                 index.SetMultiIdFlag();
@@ -792,12 +806,8 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
                     m_ObjectIndex.AddMap(key, index);
                     key.m_Range = hr.GetCircularRangeEnd();
                 }
-                else {
-                    key.m_Range = hr.GetOverlappingRange();
-                }
             }
             else {
-                key.m_Range = hr.GetOverlappingRange();
                 index.m_HandleRange.Reset();
             }
             tse.x_MapAnnotObject(GetName(), key, index);
@@ -826,9 +836,12 @@ void CSeq_annot_Info::x_UnmapAnnotObject(CAnnotObject_Info& info)
     info.GetMaps(hrmaps);
     ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
         ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
-            key.m_Handle = hrit->first;
             const CHandleRange& hr = hrit->second;
             key.m_Range = hr.GetOverlappingRange();
+            if ( key.m_Range.Empty() ) {
+                continue;
+            }
+            key.m_Handle = hrit->first;
             tse.x_UnmapAnnotObject(GetName(), key);
         }
     }
@@ -1112,6 +1125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/05/05 15:06:38  vasilche
+ * Skip empty locations for edited annotations too.
+ *
  * Revision 1.39  2006/05/05 14:41:58  vasilche
  * Skip empty locations in indexing of all annotations.
  *
