@@ -158,8 +158,9 @@ void CheckString(const string& str,
                 getline(in, ref);
             }
             if ( ref != *err ) {
-                ERR_POST(Fatal << "Test '" << title
-                    << "' failed - invalid error message(s)");
+                ERR_POST(Fatal << "Test '" << title << "' failed - "
+                         "invalid error message(s).\nExpected:\n"<<ref<<
+                         "\nReal:\n"<<*err);
             }
         }
     }
@@ -463,6 +464,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2006/05/05 14:59:24  vasilche
+* Added printing difference in error messages.
+*
 * Revision 1.5  2006/02/24 19:28:21  ivanov
 * All test must include <test/test_assert.h>
 *
