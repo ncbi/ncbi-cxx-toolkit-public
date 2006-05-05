@@ -315,6 +315,29 @@ void CAnnotObject_Info::Reset(void)
 }
 
 
+CConstRef<CObject> CAnnotObject_Info::GetObject(void) const
+{
+    return ConstRef(GetObjectPointer());
+}
+
+
+const CObject* CAnnotObject_Info::GetObjectPointer(void) const
+{
+    switch ( Which() ) {
+    case C_Data::e_Ftable:
+        return GetFeatFast();
+    case C_Data::e_Graph:
+        return GetGraphFast();
+    case C_Data::e_Align:
+        return &GetAlign();
+    case C_Data::e_Locs:
+        return &GetLocs();
+    default:
+        return 0;
+    }
+}
+
+
 void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
 {
     _ASSERT(IsRegular());
@@ -684,6 +707,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2006/05/05 15:05:19  vasilche
+* Implemented forgotten methods GetObject*().
+*
 * Revision 1.47  2006/03/17 18:11:28  vasilche
 * Renamed NCBI_NON_POD_STL_ITERATORS -> NCBI_NON_POD_TYPE_STL_ITERATORS.
 *
