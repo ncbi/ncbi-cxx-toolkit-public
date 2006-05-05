@@ -55,6 +55,8 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+struct SInteractingOptions;
+
 /// Exception class for the CRemoteBlast class
 class CRemoteBlastException : public CBlastException
 {
@@ -651,6 +653,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/05/05 20:14:15  ucko
+ * Add a forward declaration of SInteractingOptions, if only for the sake
+ * of WorkShop 5.3.
+ *
  * Revision 1.35  2006/05/04 19:26:43  bealer
  * - Added CRemoteBlast::GetSearchOptions() to build CBlastOptionHandle.
  *
