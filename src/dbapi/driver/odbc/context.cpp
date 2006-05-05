@@ -499,8 +499,8 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
             enum EState {eStInitial, eStSingleQuote};
             vector<string> driver_names;
             const IRegistry& registry = app->GetConfig();
-            const string& odbc_driver_name = 
-                registry.GetString("ODBC", "DRIVER_NAME", "SQL Server");
+            const string odbc_driver_name = 
+                registry.GetString("ODBC", "DRIVER_NAME", "'SQL Server'");
 
             NStr::Tokenize(odbc_driver_name, " ", driver_names);
             EState state = eStInitial;
@@ -802,6 +802,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/05/05 16:11:04  ssikorsk
+ * Added workaround for IRegistry.GetString
+ *
  * Revision 1.48  2006/04/20 16:29:45  ssikorsk
  * Added handling of a registry's section "ODBC" and key "DRIVER_NAME" to the driver.
  * Multiword driver names must be single-quoted. Multiple driver names are allowed.
