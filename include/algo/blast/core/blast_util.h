@@ -219,8 +219,8 @@ Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length,
  *                   concatenated sequence. [in]
  */
 NCBI_XBLAST_EXPORT
-Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk, 
-                            const BlastQueryInfo* query_info);
+Int2 BLAST_CreateMixedFrameDNATranslation(BLAST_SequenceBlk* query_blk, 
+                                          const BlastQueryInfo* query_info);
 
 /** Translate nucleotide into 6 frames. All frames are put into a 
  * translation buffer, with sentinel NULLB bytes in between.

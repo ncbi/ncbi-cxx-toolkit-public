@@ -737,8 +737,8 @@ Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, EBlastEncoding encoding,
    return 0;
 }
 
-Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk, 
-                            const BlastQueryInfo* query_info)
+Int2 BLAST_CreateMixedFrameDNATranslation(BLAST_SequenceBlk* query_blk, 
+                                          const BlastQueryInfo* query_info)
 {
    Uint1* buffer,* seq = NULL;
    Int4 index;

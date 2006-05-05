@@ -489,7 +489,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     }
 
     if (program_number == eBlastTypeBlastx && scoring_options->is_ooframe) {
-        BLAST_InitDNAPSequence(query_blk, query_info);
+        BLAST_CreateMixedFrameDNATranslation(query_blk, query_info);
     }
 
     /* Find complement of the mask locations, for which lookup table will be
