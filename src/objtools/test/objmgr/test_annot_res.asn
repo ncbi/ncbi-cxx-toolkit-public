@@ -1527,5 +1527,41 @@ Seq-feat ::= {
     id gi 2
   }
 }
-Error: Zero length alignment
-Error: Zero length alignment
+Error: Empty region in Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 178601,
+      gi 178602
+    },
+    starts {
+      1,
+      1
+    },
+    lens {
+      0
+    }
+  }
+}
+Error: Empty region in Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 178601,
+      gi 178602
+    },
+    starts {
+      1,
+      1
+    },
+    lens {
+      0
+    }
+  }
+}
