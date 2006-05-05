@@ -147,7 +147,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry )
         //
         //  Parse the RMO record:
         //
-        istrstream MaskData( lineBuffer.c_str(), (streamsize)lineBuffer.length() );
+        CNcbiIstrstream MaskData( lineBuffer.data(), (streamsize)lineBuffer.length() );
     
         const unsigned long STRINGBUFFERSIZE = 32;
         
@@ -212,8 +212,18 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry )
         //  location
         CRef<CSeq_loc> location (new CSeq_loc);
         CSeq_interval& interval = location->SetInt();
+
+        /**
         interval.SetFrom( outerPosBegin + innerPosBegin );
         interval.SetTo( outerPosBegin + innerPosEnd );
+        **/
+
+        interval.SetFrom( outerPosBegin - 1 );
+        interval.SetTo( outerPosEnd - 1 );
+
+        if (interval.GetFrom() > interval.GetTo()) {
+            std::swap(interval.SetFrom(), interval.SetTo());
+        }
         interval.SetStrand( (0 == strcmp( strand, "C" )) ? eNa_strand_minus : eNa_strand_plus );
         CSeq_id seqId( querySequence );
         interval.SetId().Assign( seqId );
@@ -305,6 +315,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/05 20:06:38  dicuccio
+ * Tweaks to repeat mask reading: use CNcbiIstrstream instead of naked istrstream;
+ * corrected coordinates (use proper interval ranges, adjust for 1-based
+ * coordinates, insure that from <= to)
+ *
  * Revision 1.2  2006/04/18 16:05:19  ucko
  * Use NStr::{Int,Double}ToString rather than printf, which might not
  * have been declared.
