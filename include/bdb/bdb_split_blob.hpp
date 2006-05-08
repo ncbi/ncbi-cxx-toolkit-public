@@ -85,7 +85,7 @@ public:
     typedef vector<unsigned>  TVolumeRecs;
 
 public:
-    CBDB_BlobDeMux(double    vol_max = 1.5 * (1024*1024*1024), 
+    CBDB_BlobDeMux(double    vol_max = 1.5 * (1024.00*1024.00*1024.00), 
                   unsigned  rec_max = 3 * 1000000) 
         : m_VolMax(vol_max), m_RecMax(rec_max)
     {
@@ -108,9 +108,10 @@ public:
         TVolumeSize::iterator it = m_VolS.end(); --it;
         double new_size = *it + blob_size;
         *it = new_size;
+
         ++(m_RecS[coord[0]]);  // inc. number of LOBs in the volume 
         
-        if (new_size > m_VolMax) {
+        if (new_size > m_VolMax || m_RecS[coord[0]] > m_RecMax) {
             NewVolume();
         }
     }
@@ -687,6 +688,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/05/08 14:59:59  kuznets
+ * Fixed bug with splitting based on number of records
+ *
  * Revision 1.5  2006/05/02 20:14:36  kuznets
  * Fixed misprint
  *
