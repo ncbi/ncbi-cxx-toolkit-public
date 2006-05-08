@@ -128,63 +128,60 @@ int CTest::Run(void)
     
     // Spawn with eWait
 
-    int code;
+    TExitCode code;
 
-    code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", NULL); 
+    code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait",
+                           NULL).GetExitCode(); 
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
-    code = CExec::SpawnLP (CExec::eWait, app_p, app_pp, NULL);
+    code = CExec::SpawnLP (CExec::eWait, app_p, app_pp,
+                           NULL).GetExitCode();
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_P );
 
     code = CExec::SpawnLE (CExec::eWait, app_c, "SpawnLE_eWait",
-                          NULL, my_env); 
+                           NULL, my_env).GetExitCode(); 
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
     code = CExec::SpawnLPE(CExec::eWait, app_c, "SpawnLPE_eWait",
-                          NULL, my_env);
+                           NULL, my_env).GetExitCode();
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
-    code = CExec::SpawnV  (CExec::eWait, app_c, args_c);
+    code = CExec::SpawnV  (CExec::eWait, app_c, args_c).GetExitCode();
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
-    code = CExec::SpawnVP (CExec::eWait, app_p, args_p);
+    code = CExec::SpawnVP (CExec::eWait, app_p, args_p).GetExitCode();
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_P );
 
-    code = CExec::SpawnVE (CExec::eWait, app_c, args_c, my_env);
+    code = CExec::SpawnVE (CExec::eWait, app_c, args_c, my_env).GetExitCode();
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
-    code = CExec::SpawnVPE(CExec::eWait, app_c, args_c, my_env);
+    code = CExec::SpawnVPE(CExec::eWait, app_c, args_c, my_env).GetExitCode();
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
     // Spawn with eNoWait, waiting self
 
-    int pid;
+    TProcessHandle handle;
 
-    pid = CExec::SpawnL(CExec::eNoWait, app_c, "SpawnL_eNoWait",NULL);
-    assert( pid != -1 );
-    assert( CExec::Wait(pid) == TEST_RESULT_C );
-
-    pid = CExec::SpawnLP(CExec::eNoWait, app_p, app_pp, NULL);
-    assert( pid != -1 );
-    assert( CExec::Wait(pid) == TEST_RESULT_P );
-
-    pid = CExec::SpawnLE(CExec::eNoWait, app_c, "SpawnLE_eNoWait",
-                         NULL, my_env);
-    assert( pid != -1 );
-    assert( CExec::Wait(pid) == TEST_RESULT_C );
-
-    pid = CExec::SpawnLPE(CExec::eNoWait, app_c, "SpawnLPE_eNoWait",
-                          NULL, my_env);
-    assert( pid != -1 );
-    assert( CExec::Wait(pid) == TEST_RESULT_C );
+    handle = CExec::SpawnL  (CExec::eNoWait, app_c, "SpawnL_eNoWait",
+                             NULL).GetProcessHandle();
+    assert(CExec::Wait(handle) == TEST_RESULT_C );
+    handle = CExec::SpawnLP (CExec::eNoWait, app_p, app_pp,
+                             NULL).GetProcessHandle();
+    assert(CExec::Wait(handle) == TEST_RESULT_P);
+    handle = CExec::SpawnLE (CExec::eNoWait, app_c, "SpawnLE_eNoWait",
+                             NULL, my_env).GetProcessHandle();
+    assert(CExec::Wait(handle) == TEST_RESULT_C);
+    handle = CExec::SpawnLPE(CExec::eNoWait, app_c, "SpawnLPE_eNoWait",
+                             NULL, my_env).GetProcessHandle();
+    assert(CExec::Wait(handle) == TEST_RESULT_C);
 
     // Spawn with eDetach
 
@@ -199,8 +196,9 @@ int CTest::Run(void)
 
     // Spawn with eOverlay
 
-    assert( CExec::SpawnL(CExec::eOverlay, app_c, "SpawnL_eOverlay",NULL)
-            == TEST_RESULT_C );
+    code = CExec::SpawnL(CExec::eOverlay, app_c, "SpawnL_eOverlay",
+                         NULL).GetExitCode();
+    assert( code == TEST_RESULT_C );
 
     // At success code below never been executed
     cout << endl << "TEST execution fails!" << endl << endl;
@@ -248,6 +246,10 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.22  2006/05/08 13:58:56  ivanov
+ * Changed accordingly to last changes in CExec class.
+ * Use GetExitCode() and GetProcessHandle() function for all Spawn* calls.
+ *
  * Revision 6.21  2006/03/16 12:45:37  ivanov
  * Fixed to work on GCC/Cygwin
  *
