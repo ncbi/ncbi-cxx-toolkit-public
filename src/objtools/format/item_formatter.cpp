@@ -400,7 +400,8 @@ static string s_DoSup(const string& issue, const string& part_sup, const string&
 
 static bool s_ParsePagesPart(const string& pages, SIZE_TYPE& dig, string& let)
 {
-    static const string kDigits  = "0123456789";
+    static const char* kDigits  = "0123456789";
+    static const char* kPosDigits  = kDigits+1;
 
     bool first_digits = true;
 
@@ -408,17 +409,26 @@ static bool s_ParsePagesPart(const string& pages, SIZE_TYPE& dig, string& let)
         return false;
     }
 
-    // numbers come first
-    if (isdigit((unsigned char) pages[0])) {
+    // positive numbers come first
+    if (0 == pages.find_first_of(kPosDigits) ) {
         first_digits = true;
         dig = NStr::StringToUInt(pages, NStr::fAllowTrailingSymbols);
         SIZE_TYPE i = pages.find_first_not_of(kDigits);
         if (i != NPOS) {
             let = pages.substr(i);
         }
-    } else if (isalpha((unsigned char) pages[0])) {  // letters come first
+//    } else if (isalpha((unsigned char) pages[0])) {  // letters come first
+//        first_digits = false;
+//        SIZE_TYPE i = pages.find_first_of(kDigits);
+//        if (i == NPOS) {
+//            let = pages;
+//        } else {
+//            let = pages.substr(0, i);
+//            dig = NStr::StringToUInt(pages.substr(i), NStr::fAllowTrailingSymbols);
+//        }
+    } else {  // page numbers with leading zeros or letters
         first_digits = false;
-        SIZE_TYPE i = pages.find_first_of(kDigits);
+        SIZE_TYPE i = pages.find_first_of( kPosDigits );
         if (i == NPOS) {
             let = pages;
         } else {
@@ -1297,6 +1307,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2006/05/08 15:00:04  ludwigf
+* FIXED: Page range sspecifications for references that don't use plain old
+*  integers to number their pages.
+*
 * Revision 1.32  2006/01/26 19:47:56  ludwigf
 * ADDED: Special handling of patent information for pre grant publications.
 *
