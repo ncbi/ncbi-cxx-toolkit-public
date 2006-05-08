@@ -368,6 +368,7 @@ void CTL_Connection::Release()
             _ASSERT(false);
         }
     }
+    m_CMDs.clear();
 }
 
 
@@ -758,6 +759,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/05/08 17:46:33  ssikorsk
+ * Clear list of commands in CTL_Connection::Release()
+ *
  * Revision 1.27  2006/05/03 15:10:36  ssikorsk
  * Implemented classs CTL_Cmd and CCTLExceptions;
  * Surrounded each native ctlib call with Check;
