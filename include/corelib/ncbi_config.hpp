@@ -117,10 +117,17 @@ public:
     ///    Error action
     /// @param default_value
     ///    Default value for missing parameters
+    string GetString(const string&  driver_name,
+                     const string&  param_name, 
+                     EErrAction     on_error,
+                     const string&  default_value);
+
+    /// This version always defaults to the empty string so that it
+    /// can safely return a reference.  (default_value may be
+    /// temporary in some cases.)
     const string& GetString(const string&  driver_name,
                             const string&  param_name, 
-                            EErrAction     on_error,
-                            const string&  default_value);
+                            EErrAction     on_error);
     
     /// Utility function to get an integer element of parameter tree
     /// Throws an exception when mandatory parameter is missing
@@ -211,6 +218,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/05/08 15:54:35  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.10  2005/10/27 16:48:48  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.

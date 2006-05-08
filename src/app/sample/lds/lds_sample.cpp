@@ -194,8 +194,10 @@ void CSampleLdsApplication::x_InitLDS()
 
     const CNcbiRegistry& reg = GetConfig();
 
-    const string& lds_path = reg.GetString(lds_section_name,  "Path", "", IRegistry::fTruncate);
-    const string& lds_alias = reg.GetString(lds_section_name, "Alias", "", IRegistry::fTruncate);
+    const string& lds_path = reg.Get(lds_section_name,  "Path",
+                                     IRegistry::fTruncate);
+    const string& lds_alias = reg.Get(lds_section_name, "Alias",
+                                      IRegistry::fTruncate);
 
     bool recurse_sub_dir = reg.GetBool(lds_section_name, "SubDir", true);
 
@@ -270,6 +272,11 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.3  2005/09/19 14:41:43  kuznets
  * Reflecting changes in lds lib
  *

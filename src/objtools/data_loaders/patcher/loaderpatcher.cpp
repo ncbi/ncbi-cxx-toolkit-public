@@ -909,10 +909,10 @@ CDataLoader* CDLPatcher_DataLoaderCF::CreateAndRegister(
     //Parse params, select constructor
     const string& data_loader =
         GetParam(GetDriverName(), params,
-                 kCFParam_DLP_DataLoader, false, kEmptyStr);
+                 kCFParam_DLP_DataLoader, false);
     const string& db_engine =
         GetParam(GetDriverName(), params,
-                 kCFParam_DLP_EditsDBEngine, false, kEmptyStr);
+                 kCFParam_DLP_EditsDBEngine, false);
 
     if ( !data_loader.empty() && !db_engine.empty() ) {
         const TPluginManagerParamTree* dl_tree = 
@@ -933,7 +933,7 @@ CDataLoader* CDLPatcher_DataLoaderCF::CreateAndRegister(
                                                           db_tree));
         const string& edit_saver =
             GetParam(GetDriverName(), params,
-                     kCFParam_DLP_EditSaver, false, kEmptyStr);
+                     kCFParam_DLP_EditSaver, false);
 
         CRef<IEditSaver> es;
         if ( !edit_saver.empty() ) {
@@ -983,6 +983,11 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.9  2006/05/08 15:54:37  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.8  2006/05/01 16:56:45  didenko
  * Attach SeqEntry edit command revamp
  *

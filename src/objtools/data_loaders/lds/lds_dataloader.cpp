@@ -514,12 +514,12 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
 /*    
     const string& database_str =
         GetParam(GetDriverName(), params,
-                 kCFParam_LDS_Database, false, kEmptyStr);
+                 kCFParam_LDS_Database, false);
 */
     const string& db_path =
         GetParam(GetDriverName(), params,
-                 kCFParam_LDS_DbPath, false, kEmptyStr);
-    const string& recurse_str =
+                 kCFParam_LDS_DbPath, false);
+    string recurse_str =
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_RecurseSubDir, false, "true");
     bool recurse = NStr::StringToBool(recurse_str);
@@ -527,7 +527,7 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
         recurse ? 
             CLDS_Management::eRecurseSubDirs : CLDS_Management::eDontRecurse;
 
-    const string& control_sum_str =
+    string control_sum_str =
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_ControlSum, false, "true");
     bool csum = NStr::StringToBool(control_sum_str);
@@ -592,6 +592,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/05/08 15:54:37  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.40  2006/04/25 20:12:33  kuznets
  * Mutex-ed possible races on BDB database
  *

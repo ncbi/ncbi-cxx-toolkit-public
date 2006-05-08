@@ -227,7 +227,7 @@ void CCgiTunnel2Grid::x_Init(const string& project)
         GetConfig().GetString("tunnel2grid", "elapsed_time_format", "S" );
 
     m_RenderType = eUrlRedirect;
-    const string& renderType = 
+    string renderType = 
         GetConfig().GetString("tunnel2grid", "render_type", "url_redirect" );
 
     if (NStr::CompareNocase(renderType, "url_redirect")==0) {
@@ -498,6 +498,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/05/08 15:54:35  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.23  2005/08/10 15:58:08  didenko
  * Added posibility to send an id of a blob which a worker node will use as an input stream
  *

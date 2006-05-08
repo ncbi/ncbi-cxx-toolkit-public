@@ -243,11 +243,19 @@ protected:
     /// Throws an exception when mandatory parameter is missing
     /// (or returns the deafult value)
 
+    string GetParam(const string&                  driver_name,
+                    const TPluginManagerParamTree* params,
+                    const string&                  param_name,
+                    bool                           mandatory,
+                    const string&                  default_value) const;
+
+    /// This version always defaults to the empty string so that it
+    /// can safely return a reference.  (default_value may be
+    /// temporary in some cases.)
     const string& GetParam(const string&                  driver_name,
                            const TPluginManagerParamTree* params,
                            const string&                  param_name,
-                           bool                           mandatory,
-                           const string&                  default_value) const;
+                           bool                           mandatory) const;
 };
 
 
@@ -1200,7 +1208,7 @@ CPluginManager<TClass>::~CPluginManager()
 
 
 template <class TClass>
-const string&
+string
 IClassFactory<TClass>::GetParam(
                         const string&                  driver_name,
                         const TPluginManagerParamTree* params,
@@ -1216,6 +1224,21 @@ IClassFactory<TClass>::GetParam(
                           default_value);
 }
 
+template <class TClass>
+const string&
+IClassFactory<TClass>::GetParam(
+                        const string&                  driver_name,
+                        const TPluginManagerParamTree* params,
+                        const string&                  param_name,
+                        bool                           mandatory) const
+{
+    CConfig conf(params);
+    return conf.GetString(driver_name,
+                          param_name,
+                          mandatory ?
+                            CConfig::eErr_Throw : CConfig::eErr_NoThrow);
+}
+
 
 END_NCBI_SCOPE
 
@@ -1224,6 +1247,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/05/08 15:54:35  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.55  2006/03/09 15:06:49  ssikorsk
  * Added methods ResetDllSearchPath, SetDllStdSearchPath, GetDllStdSearchPath
  * to CPluginManager.

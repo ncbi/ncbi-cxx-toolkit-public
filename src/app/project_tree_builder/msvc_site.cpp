@@ -45,8 +45,7 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
     :m_Registry(registry)
 {
     // Provided requests
-    string str = 
-        m_Registry.GetString("Configure", "ProvidedRequests", "");
+    string str = m_Registry.Get("Configure", "ProvidedRequests");
     list<string> provided;
     NStr::Split(str, LIST_SEPARATOR, provided);
     m_ProvidedThing.insert(provided.begin(),provided.end());
@@ -54,13 +53,13 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
     m_ProvidedThing.insert(provided.begin(),provided.end());
 
     // Not provided requests
-    str = m_Registry.GetString("Configure", "NotProvidedRequests", "");
+    str = m_Registry.Get("Configure", "NotProvidedRequests");
     list<string> not_provided;
     NStr::Split(str, LIST_SEPARATOR, not_provided);
     m_NotProvidedThing.insert(not_provided.begin(),not_provided.end());
 
     // Lib choices
-    str = m_Registry.GetString("Configure", "LibChoices", "");
+    str = m_Registry.Get("Configure", "LibChoices");
     list<string> lib_choices_list;
     NStr::Split(str, LIST_SEPARATOR, lib_choices_list);
     ITERATE(list<string>, p, lib_choices_list) {
@@ -130,8 +129,7 @@ void CMsvcSite::GetComponents(const string& entry,
                               list<string>* components) const
 {
     components->clear();
-    string comp_str = m_Registry.GetString(entry, "Component", "");
-    NStr::Split(comp_str, " ,\t", *components);
+    NStr::Split(m_Registry.Get(entry, "Component"), " ,\t", *components);
 }
 
 string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
@@ -147,9 +145,9 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
         raw_macro = data.substr(start,end-start+1);
         if (CSymResolver::IsDefine(raw_macro)) {
             macro = CSymResolver::StripDefine(raw_macro);
-            definition = m_Registry.GetString("Configure", macro, "");
+            definition = m_Registry.Get("Configure", macro);
             if (definition.empty()) {
-                definition = m_Registry.GetString(CMsvc7RegSettings::GetMsvcSection(), macro, "");
+                definition = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(), macro);
             }
             if (definition.empty() && preserve_unresolved) {
                 // preserve unresolved macros
@@ -192,7 +190,7 @@ void CMsvcSite::GetLibInfo(const string& lib,
 bool CMsvcSite::IsLibEnabledInConfig(const string&      lib, 
                                      const SConfigInfo& config) const
 {
-    string enabled_configs_str = m_Registry.GetString(lib, "CONFS", "");
+    string enabled_configs_str = m_Registry.Get(lib, "CONFS");
     list<string> enabled_configs;
     NStr::Split(enabled_configs_str, 
                 LIST_SEPARATOR, enabled_configs);
@@ -205,21 +203,21 @@ bool CMsvcSite::IsLibEnabledInConfig(const string&      lib,
 
 string CMsvcSite::ResolveDefine(const string& define) const
 {
-    return ProcessMacros(m_Registry.GetString("Defines", define, ""));
+    return ProcessMacros(m_Registry.Get("Defines", define));
 }
 
 
 string CMsvcSite::GetConfigureDefinesPath(void) const
 {
-    return m_Registry.GetString("Configure", "DefinesPath", "");
+    return m_Registry.Get("Configure", "DefinesPath");
 }
 
 
 void CMsvcSite::GetConfigureDefines(list<string>* defines) const
 {
     defines->clear();
-    string defines_str = m_Registry.GetString("Configure", "Defines", "");
-    NStr::Split(defines_str, LIST_SEPARATOR, *defines);
+    NStr::Split(m_Registry.Get("Configure", "Defines"), LIST_SEPARATOR,
+                *defines);
 }
 
 
@@ -309,8 +307,8 @@ void CMsvcSite::GetLibChoiceIncludes(
 {
     abs_includes->clear();
 
-    string include_str = m_Registry.GetString("LibChoicesIncludes", 
-                                              cpp_flags_define, "");
+    const string& include_str = m_Registry.Get("LibChoicesIncludes", 
+                                               cpp_flags_define);
     if (!include_str.empty()) {
         abs_includes->push_back("$(" + cpp_flags_define + ")");
     }
@@ -321,8 +319,8 @@ void CMsvcSite::GetLibChoiceIncludes(
     list<string>* abs_includes) const
 {
     abs_includes->clear();
-    string include_str = m_Registry.GetString("LibChoicesIncludes", 
-                                              cpp_flags_define, "");
+    const string& include_str = m_Registry.Get("LibChoicesIncludes", 
+                                               cpp_flags_define);
     //split on parts
     list<string> parts;
     NStr::Split(include_str, LIST_SEPARATOR, parts);
@@ -408,7 +406,7 @@ CMsvcSite::SLibChoice CMsvcSite::GetLibChoiceFor3PartyLib(const string& lib3part
 
 string CMsvcSite::GetAppDefaultResource(void) const
 {
-    return m_Registry.GetString("DefaultResource", "app", "");
+    return m_Registry.Get("DefaultResource", "app");
 }
 
 
@@ -416,30 +414,26 @@ void CMsvcSite::GetThirdPartyLibsToInstall(list<string>* libs) const
 {
     libs->clear();
 
-    string libs_str = m_Registry.GetString("Configure", 
-                                           "ThirdPartyLibsToInstall", "");
+    string libs_str = m_Registry.Get("Configure", "ThirdPartyLibsToInstall");
     NStr::Split(libs_str, LIST_SEPARATOR, *libs);
 }
 
 
 string CMsvcSite::GetThirdPartyLibsBinPathSuffix(void) const
 {
-    return m_Registry.GetString("Configure", 
-                                "ThirdPartyLibsBinPathSuffix", "");
+    return m_Registry.Get("Configure", "ThirdPartyLibsBinPathSuffix");
 }
 
 string CMsvcSite::GetThirdPartyLibsBinSubDir(void) const
 {
-    return m_Registry.GetString("Configure", 
-                                "ThirdPartyLibsBinSubDir", "");
+    return m_Registry.Get("Configure", "ThirdPartyLibsBinSubDir");
 }
 
 void CMsvcSite::GetStandardFeatures(list<string>& features) const
 {
     features.clear();
-    string features_str = m_Registry.GetString("Configure", 
-                                           "StandardFeatures", "");
-    NStr::Split(features_str, LIST_SEPARATOR, features);
+    NStr::Split(m_Registry.Get("Configure", "StandardFeatures"),
+                LIST_SEPARATOR, features);
 }
 
 //-----------------------------------------------------------------------------
@@ -497,9 +491,8 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 
 void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
 {
-    string macros_str = m_Registry.GetString("Configure", "Macros", "");
     list<string> macros;
-    NStr::Split(macros_str, LIST_SEPARATOR, macros);
+    NStr::Split(m_Registry.Get("Configure", "Macros"), LIST_SEPARATOR, macros);
 
     ITERATE(list<string>, m, macros) {
         const string& macro = *m;
@@ -530,11 +523,9 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
             }
         }
         if (res) {
-            string value =  m_Registry.GetString(macro, "Value", "");
-            m_Macros.AddDefinition(macro,value);
+            m_Macros.AddDefinition(macro, m_Registry.Get(macro, "Value"));
         } else {
-            string value =  m_Registry.GetString(macro, "DefValue", "");
-            m_Macros.AddDefinition(macro,value);
+            m_Macros.AddDefinition(macro, m_Registry.Get(macro, "DefValue"));
         }
     }
 }
@@ -544,6 +535,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.37  2006/03/23 18:52:19  gouriano
  * Enhanced checking requirements
  *

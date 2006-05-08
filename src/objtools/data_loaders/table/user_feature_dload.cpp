@@ -410,25 +410,25 @@ CDataLoader* CUsrFeat_DataLoaderCF::CreateAndRegister(
     // Parse params
     const string& input_file =
         GetParam(GetDriverName(), params,
-        kCFParam_UsrFeat_InputFile, true, kEmptyStr);
+        kCFParam_UsrFeat_InputFile, true);
     const string& temp_file =
         GetParam(GetDriverName(), params,
-        kCFParam_UsrFeat_TempFile, true, kEmptyStr);
+        kCFParam_UsrFeat_TempFile, true);
     const string& delete_file_str =
         GetParam(GetDriverName(), params,
-        kCFParam_UsrFeat_TempFile, true, kEmptyStr);
+        kCFParam_UsrFeat_TempFile, true);
     bool delete_file = (delete_file_str == "1");
     const string& offset_str =
         GetParam(GetDriverName(), params,
-        kCFParam_UsrFeat_Offset, true, kEmptyStr);
+        kCFParam_UsrFeat_Offset, true);
     CUsrFeatDataLoader::EOffset offset =
         CUsrFeatDataLoader::EOffset(NStr::StringToInt(offset_str));
     const string& type =
         GetParam(GetDriverName(), params,
-        kCFParam_UsrFeat_Type, false, kEmptyStr);
+        kCFParam_UsrFeat_Type, false);
     const string& id_str =
         GetParam(GetDriverName(), params,
-        kCFParam_UsrFeat_GivenId, false, kEmptyStr);
+        kCFParam_UsrFeat_GivenId, false);
     CRef<CSeq_id> id;
     if ( !id_str.empty() ) {
         id.Reset(new CSeq_id(id_str));
@@ -469,6 +469,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/05/08 15:54:37  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.13  2005/10/26 14:36:45  vasilche
  * Updated for new CBlobId interface. Fixed load lock logic.
  *

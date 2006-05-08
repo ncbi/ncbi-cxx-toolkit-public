@@ -808,8 +808,8 @@ void CProjBulderApp::DumpFiles(const TFiles& files,
 void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 {
     files->clear();
-    string files_str = GetConfig().GetString("ProjectTree", "MetaData", "");
-    NStr::Split(files_str, LIST_SEPARATOR, *files);
+    NStr::Split(GetConfig().Get("ProjectTree", "MetaData"), LIST_SEPARATOR,
+                *files);
 }
 
 
@@ -820,8 +820,8 @@ void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs)
         GetDllsInfo().GetBuildConfigs(configs);
         return;
     }
-    string config_str = GetConfig().GetString(
-        CMsvc7RegSettings::GetMsvcSection(), "Configurations", "");
+    const string& config_str
+      = GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "Configurations");
     list<string> configs_list;
     NStr::Split(config_str, LIST_SEPARATOR, configs_list);
     LoadConfigInfoByNames(GetConfig(), configs_list, configs);
@@ -840,16 +840,16 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
             GetConfig().GetString(MSVC_REG_SECTION, "Projects", "build");
 
         m_MsvcRegSettings->m_MetaMakefile = 
-            GetConfig().GetString(MSVC_REG_SECTION, "MetaMakefile", "");
+            GetConfig().Get(MSVC_REG_SECTION, "MetaMakefile");
 
         m_MsvcRegSettings->m_DllInfo = 
-            GetConfig().GetString(MSVC_REG_SECTION, "DllInfo", "");
+            GetConfig().Get(MSVC_REG_SECTION, "DllInfo");
     
         m_MsvcRegSettings->m_Version = 
-            GetConfig().GetString(CMsvc7RegSettings::GetMsvcSection(), "Version", "");
+            GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "Version");
 
         m_MsvcRegSettings->m_CompilersSubdir  = 
-            GetConfig().GetString(CMsvc7RegSettings::GetMsvcSection(), "msvc_prj", "");
+            GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "msvc_prj");
 
         GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
     }
@@ -896,14 +896,14 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     LOG_POST(Info << "Project tree root: " << m_Root);
 
     // all possible project tags
-    string  tagsfile = GetConfig().GetString("ProjectTree", "ProjectTags", "");
+    const string& tagsfile = GetConfig().Get("ProjectTree", "ProjectTags");
     if (!tagsfile.empty()) {
         LoadProjectTags(
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, tagsfile));
     }
     
     /// <include> branch of tree
-    string include = GetConfig().GetString("ProjectTree", "include", "");
+    const string& include = GetConfig().Get("ProjectTree", "include");
     m_ProjectTreeInfo->m_Include = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
                                   include);
@@ -912,7 +912,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     
 
     /// <src> branch of tree
-    string src = GetConfig().GetString("ProjectTree", "src", "");
+    const string& src = GetConfig().Get("ProjectTree", "src");
     m_ProjectTreeInfo->m_Src = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
                                   src);
@@ -939,8 +939,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     }
 
     /// <compilers> branch of tree
-    string compilers = 
-        GetConfig().GetString("ProjectTree", "compilers", "");
+    const string& compilers = GetConfig().Get("ProjectTree", "compilers");
     m_ProjectTreeInfo->m_Compilers = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
                                   compilers);
@@ -949,8 +948,8 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
                    (m_ProjectTreeInfo->m_Compilers);
 
     /// ImplicitExcludedBranches - all subdirs will be excluded by default
-    string implicit_exclude_str 
-        = GetConfig().GetString("ProjectTree", "ImplicitExclude", "");
+    const string& implicit_exclude_str 
+        = GetConfig().Get("ProjectTree", "ImplicitExclude");
     list<string> implicit_exclude_list;
     NStr::Split(implicit_exclude_str, 
                 LIST_SEPARATOR, 
@@ -964,8 +963,8 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     }
 
     /// <projects> branch of tree (scripts\projects)
-    string projects = 
-        GetConfig().GetString("ProjectTree", "projects", "");
+    const string& projects = 
+        GetConfig().Get("ProjectTree", "projects");
     m_ProjectTreeInfo->m_Projects = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
                                   projects);
@@ -975,11 +974,11 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
 
     /// impl part if include project node
     m_ProjectTreeInfo->m_Impl = 
-        GetConfig().GetString("ProjectTree", "impl", "");
+        GetConfig().Get("ProjectTree", "impl");
 
     /// Makefile in tree node
     m_ProjectTreeInfo->m_TreeNode = 
-        GetConfig().GetString("ProjectTree", "TreeNode", "");
+        GetConfig().Get("ProjectTree", "TreeNode");
 
     return *m_ProjectTreeInfo;
 }
@@ -1063,7 +1062,7 @@ string CProjBulderApp::GetDatatoolPathForLib(void) const
 
 string CProjBulderApp::GetDatatoolCommandLine(void) const
 {
-    return GetConfig().GetString("Datatool", "CommandLine", "");
+    return GetConfig().Get("Datatool", "CommandLine");
 }
 
 string CProjBulderApp::GetProjectTreeRoot(void) const
@@ -1179,6 +1178,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.74  2006/04/21 17:28:09  gouriano
  * Added possibility to redefine makefile macros
  *

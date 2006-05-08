@@ -3165,13 +3165,13 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     // cache configuration
 
     const string& path =
-        GetParam(params, kCFParam_path, true, kEmptyStr);
-    const string& name =
+        GetParam(params, kCFParam_path, true);
+    string name =
         GetParam(params, kCFParam_name, false, "lcache");
-    const string& locking =
+    string locking =
         GetParam(params, kCFParam_lock, false, kCFParam_lock_default);
     const string& page_size =
-        GetParam(params, kCFParam_page_size, false, kEmptyStr);
+        GetParam(params, kCFParam_page_size, false);
 
     CBDB_Cache::ELockMode lock = CBDB_Cache::eNoLock;
     if (NStr::CompareNocase(locking, kCFParam_lock_pid_lock) == 0) {
@@ -3321,6 +3321,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.133  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.132  2006/01/11 15:07:23  vasilche
  * Cleaned SBlobCacheDescr structure.
  *

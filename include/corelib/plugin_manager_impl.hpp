@@ -110,14 +110,25 @@ protected:
     /// Utility function to get an element of parameter tree
     /// Throws an exception when mandatory parameter is missing
     /// (or returns the deafult value)
-    const string& GetParam(const TPluginManagerParamTree* params,
-                           const string&                  param_name,
-                           bool                           mandatory,
-                           const string&                  default_value) const
+    string GetParam(const TPluginManagerParamTree* params,
+                    const string&                  param_name,
+                    bool                           mandatory,
+                    const string&                  default_value) const
     {
         return
             TParent::GetParam(m_DriverName,
                               params, param_name, mandatory, default_value);
+    }
+
+    /// This version always defaults to the empty string so that it
+    /// can safely return a reference.  (default_value may be
+    /// temporary in some cases.)
+    const string& GetParam(const TPluginManagerParamTree* params,
+                           const string&                  param_name,
+                           bool                           mandatory) const
+    {
+        return
+            TParent::GetParam(m_DriverName, params, param_name, mandatory);
     }
 
     /// Utility function to get an integer of parameter tree
@@ -269,6 +280,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/05/08 15:54:35  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.19  2005/07/29 10:55:01  ssikorsk
  * Use a default driver version instead of an interface version in
  * CSimpleClassFactoryImpl constructor.

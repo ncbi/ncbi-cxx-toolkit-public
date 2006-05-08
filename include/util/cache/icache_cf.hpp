@@ -68,7 +68,7 @@ public:
         static const string kCFParam_timestamp = "timestamp";
         
         const string& ts_flags_str = 
-            this->GetParam(params, kCFParam_timestamp, false, "");
+            this->GetParam(params, kCFParam_timestamp, false);
 
         if (!ts_flags_str.empty()) {
             ConfigureTimeStamp(icache, params, ts_flags_str);
@@ -80,7 +80,7 @@ public:
         static const string kCFParam_keep_versions = "keep_versions";
 
         const string& keep_versions_str = 
-            this->GetParam(params, kCFParam_keep_versions, false, "");
+            this->GetParam(params, kCFParam_keep_versions, false);
         if (!keep_versions_str.empty()) {
             static const string kCFParam_keep_versions_all = "all";
             static const string kCFParam_keep_versions_drop_old = "drop_old";
@@ -188,6 +188,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/08 15:54:35  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.6  2006/01/05 17:04:21  kuznets
  * Use template arg instead of CBDB_Cache
  *

@@ -2635,8 +2635,7 @@ int CNetScheduleDApp::Run(void)
         
         CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
         const string& db_path = 
-            bdb_conf.GetString("netschedule", "path", 
-                                CConfig::eErr_Throw, kEmptyStr);
+            bdb_conf.GetString("netschedule", "path", CConfig::eErr_Throw);
         bool reg_reinit =
             reg.GetBool("server", "reinit", false, 0, IRegistry::eReturn);
 
@@ -2783,6 +2782,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2006/05/08 15:54:35  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.78  2006/05/08 11:24:52  kuznets
  * Implemented file redirection cout/cerr for worker nodes
  *

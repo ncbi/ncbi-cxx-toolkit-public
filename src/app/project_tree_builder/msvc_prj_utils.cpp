@@ -373,11 +373,11 @@ string GetOpt(const CNcbiRegistry& registry,
               const string& config)
 {
     string section_spec = section + '.' + config;
-    string val_spec = registry.GetString(section_spec, opt, "");
+    string val_spec = registry.Get(section_spec, opt);
     if ( !val_spec.empty() )
         return val_spec;
 
-    return registry.GetString(section, opt, "");
+    return registry.Get(section, opt);
 }
 
 
@@ -393,31 +393,31 @@ string GetOpt(const CNcbiRegistry& registry,
     string value, s;
 
     s.assign(section).append(1,'.').append(build).append(1,'.').append(spec).append(1,'.').append(config.m_Name);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section).append(1,'.').append(spec).append(1,'.').append(config.m_Name);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section).append(1,'.').append(build).append(1,'.').append(spec);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section).append(1,'.').append(version).append(1,'.').append(spec);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section).append(1,'.').append(spec);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section).append(1,'.').append(build);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section).append(1,'.').append(platform);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section).append(1,'.').append(version);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
 
     s.assign(section);
-    value = registry.GetString(s, opt, kEmptyStr); if (!value.empty()) { return value;}
+    value = registry.Get(s, opt); if (!value.empty()) { return value;}
     return value;
 }
 
@@ -1136,6 +1136,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.50  2006/03/21 18:01:46  gouriano
  * Optimized GetOpt
  *

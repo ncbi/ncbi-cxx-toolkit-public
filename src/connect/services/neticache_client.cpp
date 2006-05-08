@@ -896,28 +896,28 @@ ICache* CNetICacheCF::CreateInstance(
     string host;
     try {
         host =
-            GetParam(params, kCFParam_server, true, kEmptyStr);
+            GetParam(params, kCFParam_server, true);
     } 
     catch (exception&)
     {
         host =
-            GetParam(params, kCFParam_host, true, kEmptyStr);
+            GetParam(params, kCFParam_host, true);
     }
     int port =
         GetParamInt(params,kCFParam_port, true, 9000);
     string cache_name; 
     try {
         cache_name =
-            GetParam(params, kCFParam_cache_name, true, kEmptyStr);
+            GetParam(params, kCFParam_cache_name, true);
     } 
     catch (exception&)
     {
         cache_name =
-            GetParam(params, kCFParam_cache_name2, true, kEmptyStr);
+            GetParam(params, kCFParam_cache_name2, true);
     }
 
     const string& client_name =
-        GetParam(params, kCFParam_client, true, kEmptyStr);
+        GetParam(params, kCFParam_client, true);
 
     drv->SetConnectionParams(host, port, cache_name, client_name);
 
@@ -939,6 +939,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.25  2006/05/03 20:03:52  didenko
  * Improved exceptions handling
  *

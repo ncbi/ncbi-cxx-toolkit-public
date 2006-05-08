@@ -484,10 +484,10 @@ CDataLoader* CBlastDb_DataLoaderCF::CreateAndRegister(
     // Parse params, select constructor
     const string& dbname =
         GetParam(GetDriverName(), params,
-        kCFParam_BlastDb_DbName, false, kEmptyStr);
+        kCFParam_BlastDb_DbName, false);
     const string& dbtype_str =
         GetParam(GetDriverName(), params,
-        kCFParam_BlastDb_DbType, false, kEmptyStr);
+        kCFParam_BlastDb_DbType, false);
     if ( !dbname.empty() ) {
         // Use database name
         CBlastDbDataLoader::EDbType dbtype = CBlastDbDataLoader::eUnknown;
@@ -534,6 +534,11 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.40  2006/05/08 15:54:37  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.39  2006/03/08 17:45:26  camacho
  * Remove compiler warning
  *

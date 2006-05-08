@@ -129,12 +129,12 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
     // cache configuration
 
     const string& conn_str =
-        GetParam(params, kCFParam_connection, false, kEmptyStr);
+        GetParam(params, kCFParam_connection, false);
 
     const string& temp_dir =
-        GetParam(params, kCFParam_temp_dir, false, kEmptyStr);
+        GetParam(params, kCFParam_temp_dir, false);
     const string& temp_prefix =
-        GetParam(params, kCFParam_temp_prefix, false, kEmptyStr);
+        GetParam(params, kCFParam_temp_prefix, false);
 
     if (!conn_str.empty()) {
         const void* ptr = NStr::StringToPtr(conn_str);
@@ -142,15 +142,15 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
         drv->Open(conn, temp_dir, temp_prefix);
     } else {
         const string& drv_str =
-            GetParam(params, kCFParam_driver, true, kEmptyStr);
+            GetParam(params, kCFParam_driver, true);
         const string& server =
-            GetParam(params, kCFParam_server, true, kEmptyStr);
+            GetParam(params, kCFParam_server, true);
         const string& database =
-            GetParam(params, kCFParam_database, true, kEmptyStr);
+            GetParam(params, kCFParam_database, true);
 
-        const string& login =
+        string login =
             GetParam(params, kCFParam_login, false, kCFParam_login_default);
-        const string& password =
+        string password =
             GetParam(params,
                      kCFParam_password, false, kCFParam_password_default);
 
@@ -202,6 +202,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.9  2005/11/15 17:05:21  ssikorsk
  * Load ncbi_xcache_dbapi dynamically
  *

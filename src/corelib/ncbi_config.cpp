@@ -409,16 +409,31 @@ CConfig::~CConfig()
 }
 
 
+string CConfig::GetString(const string&  driver_name,
+                          const string&  param_name, 
+                          EErrAction     on_error,
+                          const string&  default_value)
+{
+    try {
+        return GetString(driver_name, param_name, eErr_Throw);
+    } catch (CConfigException) {
+        if (on_error == eErr_NoThrow) {
+            return default_value;
+        } else {
+            throw;
+        }
+    }
+}
+
 const string& CConfig::GetString(const string&  driver_name,
                                  const string&  param_name, 
-                                 EErrAction     on_error,
-                                 const string&  default_value)
+                                 EErrAction     on_error)
 {
     const TParamTree* tn = m_ParamTree->FindSubNode(param_name);
 
     if (tn == 0 || tn->GetValue().value.empty()) {
         if (on_error == eErr_NoThrow) {
-            return default_value;
+            return kEmptyStr;
         }
         string msg = "Cannot init plugin " + driver_name +
                      ", missing parameter:" + param_name;
@@ -433,8 +448,7 @@ int CConfig::GetInt(const string&  driver_name,
                     EErrAction     on_error,
                     int            default_value)
 {
-    const string& param = GetString(driver_name, param_name, on_error,
-                                    kEmptyStr);
+    const string& param = GetString(driver_name, param_name, on_error);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
@@ -467,8 +481,7 @@ Uint8 CConfig::GetDataSize(const string&  driver_name,
                            EErrAction     on_error,
                            unsigned int   default_value)
 {
-    const string& param = GetString(driver_name, param_name, on_error,
-                                    kEmptyStr);
+    const string& param = GetString(driver_name, param_name, on_error);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
@@ -502,8 +515,7 @@ bool CConfig::GetBool(const string&  driver_name,
                       EErrAction     on_error,
                       bool           default_value)
 {
-    const string& param = GetString(driver_name, param_name, on_error,
-                                    kEmptyStr);
+    const string& param = GetString(driver_name, param_name, on_error);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
@@ -538,6 +550,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.16  2006/01/17 19:18:32  vasilche
  * Use only direct sub node when parsing .SubSection.
  *

@@ -282,9 +282,8 @@ bool IRegistry::HasEntry(const string& section, const string& name,
 }
 
 
-const string& IRegistry::GetString(const string& section, const string& name,
-                                   const string& default_value, TFlags flags)
-    const
+string IRegistry::GetString(const string& section, const string& name,
+                            const string& default_value, TFlags flags) const
 {
     const string& value = Get(section, name, flags);
     return value.empty() ? default_value : value;
@@ -1483,6 +1482,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/05/08 15:54:36  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.58  2006/04/20 19:08:02  ucko
  * Correct previous revision to let debug builds work again.
  *

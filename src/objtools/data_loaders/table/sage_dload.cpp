@@ -365,11 +365,11 @@ CDataLoader* CSage_DataLoaderCF::CreateAndRegister(
     // Parse params
     const string& input_file =
         GetParam(GetDriverName(), params,
-        kCFParam_Sage_InputFile, true, kEmptyStr);
+        kCFParam_Sage_InputFile, true);
     const string& temp_file =
         GetParam(GetDriverName(), params,
-        kCFParam_Sage_TempFile, true, kEmptyStr);
-    const string& delete_file_str =
+        kCFParam_Sage_TempFile, true);
+    string delete_file_str =
         GetParam(GetDriverName(), params,
         kCFParam_Sage_TempFile, false, "1");
     bool delete_file = (delete_file_str == "1");
@@ -406,6 +406,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/05/08 15:54:37  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.17  2005/12/12 15:22:09  vasilche
  * Call CTSE_LoadLock.SetLoaded() before taking CTSE_Lock.
  *

@@ -161,10 +161,10 @@ public:
     /// found, then return 'default_value' rather than empty string.
     /// @sa
     ///   Get()
-    const string& GetString(const string& section,
-                            const string& name,
-                            const string& default_value,
-                            TFlags        flags = 0) const;
+    string GetString(const string& section,
+                     const string& name,
+                     const string& default_value,
+                     TFlags        flags = 0) const;
 
     /// What to do if parameter value is present but cannot be converted into
     /// the requested type.
@@ -793,6 +793,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/05/08 15:54:35  ucko
+ * Tweak settings-retrieval APIs to account for the fact that the
+ * supplied default string value may be a reference to a temporary, and
+ * therefore unsafe to return by reference.
+ *
  * Revision 1.39  2005/05/12 15:15:32  ucko
  * Fix some (meta)registry buglets and add support for reloading.
  *

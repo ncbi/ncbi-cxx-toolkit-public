@@ -78,7 +78,7 @@ CDataLoader* CDataLoaderFactory::CreateInstance(
 CObjectManager* CDataLoaderFactory::x_GetObjectManager(
     const TPluginManagerParamTree* params) const
 {
-    const string& om_str = params ?
+    string om_str = params ?
         GetParam(m_DriverName, params, kCFParam_ObjectManagerPtr, false, "0") :
         kEmptyStr;
     CObjectManager* om = static_cast<CObjectManager*>(
@@ -90,7 +90,7 @@ CObjectManager* CDataLoaderFactory::x_GetObjectManager(
 CObjectManager::EIsDefault CDataLoaderFactory::GetIsDefault(
     const TPluginManagerParamTree* params) const
 {
-    const string& def_str =
+    string def_str =
         GetParam(m_DriverName, params, kCFParam_DataLoader_IsDefault, false,
         "NonDefault");
     return (NStr::CompareNocase(def_str, "Default") == 0) ?
@@ -101,7 +101,7 @@ CObjectManager::EIsDefault CDataLoaderFactory::GetIsDefault(
 CObjectManager::TPriority CDataLoaderFactory::GetPriority(
     const TPluginManagerParamTree* params) const
 {
-    const string& priority_str =
+    string priority_str =
         GetParam(m_DriverName, params, kCFParam_DataLoader_Priority, false,
         NStr::IntToString(CObjectManager::kPriority_NotSet));
     return NStr::StringToInt(priority_str);
@@ -124,6 +124,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/05/08 15:54:37  ucko
+* Tweak settings-retrieval APIs to account for the fact that the
+* supplied default string value may be a reference to a temporary, and
+* therefore unsafe to return by reference.
+*
 * Revision 1.3  2004/12/22 19:34:19  grichenk
 * Do not check node id of params
 *
