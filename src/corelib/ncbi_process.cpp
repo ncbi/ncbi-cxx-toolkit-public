@@ -71,7 +71,7 @@ CProcess::CProcess(TPid process, EProcessType type)
 
 #if defined(NCBI_OS_MSWIN)
 // The helper constructor for MS Windows to avoid cast from
-// TProcessHandle/HANDLE to TPid/DWORD
+// TProcessHandle to TPid
 CProcess::CProcess(TProcessHandle process, EProcessType type)
     : m_Process(process), m_Type(type)
 {
@@ -565,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/05/08 13:51:35  ivanov
+ * Minor comment changes
+ *
  * Revision 1.24  2006/04/27 22:53:38  vakatov
  * Rollback odd commits
  *
