@@ -256,6 +256,9 @@ protected:
     /// Data type this class controls access to
     CRef<CBlastOptions> m_Opts;
     
+    /// Set to true when 'remote' options should ignore setters.
+    bool m_DefaultsMode;
+    
     // These methods make up the template method
     /// Sets LookupTableDefaults
     virtual void SetLookupTableDefaults() = 0;
@@ -285,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/05/08 16:48:22  bealer
+ * - Defaults mode / eBoth changes.
+ *
  * Revision 1.24  2006/01/23 16:37:45  papadopo
  * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
  *

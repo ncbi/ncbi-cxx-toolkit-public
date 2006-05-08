@@ -126,7 +126,7 @@ class NCBI_XBLAST_EXPORT CBlastOptionsRemote : public CObject
 {
 public:
     CBlastOptionsRemote(void)
-        : m_DoneDefaults(false)
+        : m_DefaultsMode(false)
     {
         //m_Req.Reset(new objects::CBlast4_queue_search_request);
         m_ReqOpts.Reset(new objects::CBlast4_parameters);
@@ -186,16 +186,16 @@ public:
     void SetValue(EBlastOptIdx opt, const objects::ENa_strand & x)
     { int x2 = x; SetValue(opt, x2); }
     
-    void DoneDefaults()
+    void SetDefaultsMode(bool dmode)
     {
-        m_DoneDefaults = true;
+        m_DefaultsMode = dmode;
     }
     
 private:
     //CRef<objects::CBlast4_queue_search_request> m_Req;
     CRef<objects::CBlast4_parameters> m_ReqOpts;
     
-    bool m_DoneDefaults;
+    bool m_DefaultsMode;
     
 //     void x_SetProgram(const char * program)
 //     {
@@ -306,8 +306,12 @@ private:
 
 CBlastOptions::CBlastOptions(EAPILocality locality)
     : m_Local (0),
-      m_Remote(0)
+      m_Remote(0),
+      m_DefaultsMode(false)
 {
+    if (locality == eRemote)
+        locality = eBoth;
+    
     if (locality != eRemote) {
         m_Local = new CBlastOptionsLocal();
     }
@@ -343,6 +347,10 @@ CBlastOptions::GetLocality(void) const
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const EProgram & v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     switch(opt) {
     case eBlastOpt_Program:
         return;
@@ -361,6 +369,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const EProgram & v)
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     switch(opt) {
     case eBlastOpt_WordSize:
         x_SetParam("WordSize", v);
@@ -457,6 +469,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     switch(opt) {
     case eBlastOpt_EvalueThreshold:
         {
@@ -486,6 +502,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     switch(opt) {
     case eBlastOpt_FilterString:
         x_SetParam("FilterString", v);
@@ -509,6 +529,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const TSeqLocVector & v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     char errbuf[1024];
     
     sprintf(errbuf, "tried to set option (%d) and TSeqLocVector (size %zd), line (%d).",
@@ -519,6 +543,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const TSeqLocVector & v)
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const ESeedContainerType & v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     char errbuf[1024];
     
     sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
@@ -529,6 +557,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const ESeedContainerType & 
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const ESeedExtensionMethod & v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     char errbuf[1024];
     
     sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
@@ -539,6 +571,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const ESeedExtensionMethod 
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     switch(opt) {
     case eBlastOpt_GappedMode:
         {
@@ -572,6 +608,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
 {
+    if (m_DefaultsMode) {
+        return;
+    }
+    
     switch(opt) {
     case eBlastOpt_EffectiveSearchSpace:
         x_SetParam("EffectiveSearchSpace", v);
@@ -1780,7 +1820,7 @@ void
 CBlastOptions::DoneDefaults() const
 {
     if (m_Remote) {
-        m_Remote->DoneDefaults();
+        m_Remote->SetDefaultsMode(false);
     }
 }
 
@@ -1869,6 +1909,13 @@ CBlastOptions::x_Throwx(const string& msg) const
     NCBI_THROW(CBlastException, eInvalidOptions, msg);
 }
 
+void CBlastOptions::SetDefaultsMode(bool dmode)
+{
+    if (m_Remote) {
+        m_Remote->SetDefaultsMode(dmode);
+    }
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 END_SCOPE(blast)
@@ -1880,6 +1927,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2006/05/08 16:48:02  bealer
+* - Defaults mode / eBoth changes.
+*
 * Revision 1.78  2006/03/21 22:36:36  camacho
 * Add support for specifying database length in CBlastOptionsRemote
 *

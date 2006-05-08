@@ -56,6 +56,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CBlastOptionsHandle::CBlastOptionsHandle(EAPILocality locality)
+    : m_DefaultsMode(false)
 {
     m_Opts.Reset(new CBlastOptions(locality));
 }
@@ -64,6 +65,7 @@ void
 CBlastOptionsHandle::SetDefaults()
 {
     if (m_Opts->GetLocality() != CBlastOptions::eRemote) {
+        m_Opts->SetDefaultsMode(true);
         SetLookupTableDefaults();
         SetQueryOptionDefaults();
         SetInitialWordOptionsDefaults();
@@ -72,6 +74,7 @@ CBlastOptionsHandle::SetDefaults()
         SetHitSavingOptionsDefaults();
         SetEffectiveLengthsOptionsDefaults();
         SetSubjectSequenceOptionsDefaults();
+        m_Opts->SetDefaultsMode(false);
     }
     SetRemoteProgramAndService_Blast3();
 }
@@ -163,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/05/08 16:48:02  bealer
+ * - Defaults mode / eBoth changes.
+ *
  * Revision 1.15  2005/09/28 18:23:07  camacho
  * Rearrangement of headers/functions to segregate object manager dependencies.
  *

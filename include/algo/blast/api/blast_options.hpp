@@ -349,6 +349,9 @@ public:
     /// data structures (BLAST C++ APIs only)
     const CBlastOptionsMemento* CreateSnapshot() const;
     
+    /// If this is true, remote options will ignore "Set" calls.
+    void SetDefaultsMode(bool dmode);
+    
 private:
     /// Prohibit copy c-tor 
     CBlastOptions(const CBlastOptions& bo);
@@ -365,6 +368,9 @@ private:
     
     /// Service Name for Blast3
     string m_ServiceName;
+    
+    /// Defaults mode (remote options will ignore Set ops).
+    bool m_DefaultsMode;
     
     /// Auxiliary to throw CBlastExceptions
     /// @param msg message to pass in the exception [in]
@@ -585,6 +591,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.116  2006/05/08 16:48:22  bealer
+* - Defaults mode / eBoth changes.
+*
 * Revision 1.115  2006/01/23 19:57:28  camacho
 * Allow new varieties of composition based statistics
 *

@@ -55,13 +55,16 @@ CBlastNucleotideOptionsHandle::CBlastNucleotideOptionsHandle(EAPILocality locali
 void
 CBlastNucleotideOptionsHandle::SetDefaults()
 {
+    m_Opts->SetDefaultsMode(true);
     SetTraditionalMegablastDefaults();
     m_Opts->SetProgram(eBlastn);
+    m_Opts->SetDefaultsMode(false);
 }
 
 void
 CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 {
+    m_Opts->SetDefaultsMode(true);
     m_Opts->SetRemoteProgramAndService_Blast3("blastn", "plain");
     m_FactorySetting = eBlastn;
     
@@ -78,11 +81,13 @@ CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
     SetScoringOptionsDefaults();
     SetHitSavingOptionsDefaults();
     SetEffectiveLengthsOptionsDefaults();
+    m_Opts->SetDefaultsMode(false);
 }
 
 void
 CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
 {
+    m_Opts->SetDefaultsMode(true);
     m_Opts->SetRemoteProgramAndService_Blast3("blastn", "megablast");
     m_FactorySetting = eMegablast;
     
@@ -98,6 +103,7 @@ CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
     SetMBScoringOptionsDefaults();
     SetMBHitSavingOptionsDefaults();
     SetEffectiveLengthsOptionsDefaults();
+    m_Opts->SetDefaultsMode(false);
 }
 
 void 
@@ -245,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/05/08 16:48:02  bealer
+ * - Defaults mode / eBoth changes.
+ *
  * Revision 1.26  2006/01/23 16:37:11  papadopo
  * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
  *
