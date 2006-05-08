@@ -631,6 +631,37 @@ CSeq_align::CreateTranslatedDensegFromNADenseg() const
 }
 
 
+void CSeq_align::RemapToLoc(TDim row,
+                            const CSeq_loc& dst_loc,
+                            bool ignore_strand)
+{
+    // Limit to certain types of locs:
+    switch (dst_loc.Which()) {
+    case CSeq_loc::e_Whole:
+        return;
+    case CSeq_loc::e_Int:
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::RemapToLoc only supports int target seq-locs");
+    }
+
+    switch (SetSegs().Which()) {
+    case TSegs::e_Denseg:
+        SetSegs().SetDenseg().RemapToLoc(row, dst_loc, ignore_strand);
+        break;
+    case TSegs::e_Std:
+        NON_CONST_ITERATE(TSegs::TStd, std_it, SetSegs().SetStd()) {
+            (*std_it)->RemapToLoc(row, dst_loc, ignore_strand);
+        }
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::RemapToLoc only supports Dense-seg and Std-seg alignments.");
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -640,6 +671,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2006/05/08 21:42:09  todorov
+* Added a RemapToLoc method.
+*
 * Revision 1.19  2005/08/15 18:22:42  todorov
 * CreateDensegFromStdseg now copies the Seq-align's scores too.
 *

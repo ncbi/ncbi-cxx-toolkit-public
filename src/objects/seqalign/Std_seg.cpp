@@ -39,6 +39,9 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Std_seg.hpp>
+
+#include <objects/seqloc/Seq_point.hpp>
 
 // generated classes
 
@@ -146,6 +149,83 @@ CRange<TSignedSeqPos> CStd_seg::GetSeqRange(TDim row) const
 }
 
 
+void CStd_seg::RemapToLoc(TDim row,
+                          const CSeq_loc& dst_loc,
+                          bool ignore_strand)
+{
+    // Limit to certain types of locs:
+    switch (dst_loc.Which()) {
+    case CSeq_loc::e_Whole:
+        return;
+    case CSeq_loc::e_Int:
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CStd_seg::RemapToLoc only supports int target seq-locs");
+    }
+
+    if (row < 0  ||  row >= GetDim()) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CStd_seg::RemapToLoc():"
+                   " Invalid row number");
+    }
+
+#if _DEBUG
+    // Check ids equality
+    const CSeq_id* single_id = 0;
+    dst_loc.CheckId(single_id);
+    _ASSERT(single_id);
+    if ( !single_id->Equals(*GetIds()[row] )) {
+        NCBI_THROW(CSeqalignException, eInvalidInputData,
+                   "CStd_seg::RemapToLoc target seq-loc id does not equal row's id.");
+    }
+#endif
+
+    const CSeq_interval& dst_int = dst_loc.GetInt();
+    TSeqPos              dst_len = dst_int.GetTo() - dst_int.GetFrom() + 1;
+
+    CSeq_loc&            src_loc  = *SetLoc()[row];
+    TSeqPos              src_stop = src_loc.GetStop(eExtreme_Positional);
+
+    // Check the range
+    if (dst_len <= src_stop  &&  src_stop != kInvalidSeqPos) {
+        string errstr("CStd_seg::RemapToLoc():"
+                      " Target Seq-loc is not long enough to"
+                      " cover the Std-seg's seq-loc!"
+                      " Maximum row seq pos is ");
+        errstr += NStr::IntToString(src_stop);
+        errstr += ". The total seq-loc len is only ";
+        errstr += NStr::IntToString(dst_len);
+        errstr += ", it should be at least ";
+        errstr += NStr::IntToString(src_stop + 1);
+        errstr += " (= max seq pos + 1).";
+        NCBI_THROW(CSeqalignException, eOutOfRange, errstr);
+    }
+
+    // Actual remapping
+    switch (src_loc.Which()) {
+    case CSeq_loc::e_Int:
+        src_loc.SetInt().SetFrom() += dst_int.GetFrom();
+        src_loc.SetInt().SetTo() += dst_int.GetFrom();
+        if ( !ignore_strand ) {
+            src_loc.SetInt().SetStrand(dst_loc.GetInt().GetStrand());
+        }
+        break;
+    case CSeq_loc::e_Pnt:
+        src_loc.SetPnt().SetPoint() += dst_int.GetFrom();
+        if ( !ignore_strand ) {
+            src_loc.SetPnt().SetStrand(dst_loc.GetInt().GetStrand());
+        }
+        break;
+    case CSeq_loc::e_Empty:
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CStd_seg::RemapToLoc only supports pnt and int source seq-locs");
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -155,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/05/08 21:42:51  todorov
+* Added a RemapToLoc method.
+*
 * Revision 1.3  2005/02/02 19:49:54  grichenk
 * Fixed more warnings
 *

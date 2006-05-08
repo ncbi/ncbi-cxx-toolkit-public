@@ -113,6 +113,12 @@ public:
     //                 the code will not check for this
     CRef<CSeq_align> CreateTranslatedDensegFromNADenseg(void) const;
 
+    /// Remap row coords according to a given seq-loc
+    /// Optionally, ignore the strand of the loc
+    void RemapToLoc(TDim row,
+                    const CSeq_loc& dst_loc,
+                    bool ignore_strand = false);
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_align(const CSeq_align& value);
@@ -143,6 +149,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/05/08 21:42:24  todorov
+* Added a RemapToLoc method.
+*
 * Revision 1.15  2004/06/15 01:55:32  ucko
 * Actually include Na_strand.hpp due to use of ENa_strand.
 *

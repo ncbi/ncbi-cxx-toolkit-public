@@ -67,6 +67,13 @@ public:
     CRange<TSignedSeqPos> GetSeqRange(TDim row) const;
     
 
+    /// Remap row coords according to a given seq-loc
+    /// Optionally, ignore the strand of the loc
+    void RemapToLoc(TDim row,
+                    const CSeq_loc& dst_loc,
+                    bool ignore_strand = false);
+
+
 private:
     // Prohibit copy constructor and assignment operator
     CStd_seg(const CStd_seg& value);
@@ -97,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/05/08 21:43:11  todorov
+* Added a RemapToLoc method.
+*
 * Revision 1.2  2004/08/19 13:04:37  dicuccio
 * Added missing include for CRange
 *
