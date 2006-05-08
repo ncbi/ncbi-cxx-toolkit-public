@@ -148,7 +148,8 @@ CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
     if (NStr::CompareCase(m_Data, 0, s_FlagsLen, s_Flags[1]) == 0) {
         //    if (m_Storage.IsKeyValid(data)) {
         //        try {
-        m_BlobIstr = &m_Storage.GetIStream(&m_Data[s_FlagsLen], data_size, lock_mode);
+        m_BlobIstr = &m_Storage.GetIStream(m_Data.data() + s_FlagsLen,
+                                           data_size, lock_mode);
         //        } catch (CBlobStorageException& ex) {
         //            if (ex.GetErrCode() != CBlobStorageException::eBlobNotFound)
         //                throw;
@@ -231,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2006/05/08 20:29:21  ucko
+ * Tweak to fix compilation with GCC 2.95.
+ *
  * Revision 6.10  2006/05/08 15:16:42  didenko
  * Added support for an optional saving of a remote application's stdout
  * and stderr into files on a local file system
