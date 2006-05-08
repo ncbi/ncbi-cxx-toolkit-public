@@ -35,7 +35,6 @@
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
-#include <dbapi/driver/util/pointer_pot.hpp>
 
 #include <corelib/ncbi_safe_static.hpp>
 
@@ -113,6 +112,7 @@
     #include <syberror.h>
 #endif // MS_DBLIB_IN_USE
 
+#include <deque>
 
 
 BEGIN_NCBI_SCOPE
@@ -348,18 +348,18 @@ private:
     void TDS_SetTimeout(void);
 #endif    
 
-    DBPROCESS*      m_Link;
-    CDBLibContext*  m_Context;
-    CPointerPot     m_CMDs;
-    CDBHandlerStack m_MsgHandlers;
-    string          m_Server;
-    string          m_User;
-    string          m_Passwd;
-    string          m_Pool;
-    bool            m_Reusable;
-    bool            m_BCPAble;
-    bool            m_SecureLogin;
-    CDB_ResultProcessor* m_ResProc;
+    DBPROCESS*              m_Link;
+    CDBLibContext*          m_Context;
+    deque<CDB_BaseEnt*>     m_CMDs;
+    CDBHandlerStack         m_MsgHandlers;
+    string                  m_Server;
+    string                  m_User;
+    string                  m_Passwd;
+    string                  m_Pool;
+    bool                    m_Reusable;
+    bool                    m_BCPAble;
+    bool                    m_SecureLogin;
+    CDB_ResultProcessor*    m_ResProc;
 };
 
 
@@ -1186,6 +1186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/05/08 17:47:56  ssikorsk
+ * Replaced type of  CDBL_Connection::m_CMDs from CPointerPot to deque<CDB_BaseEnt*>
+ *
  * Revision 1.36  2006/05/04 20:10:26  ssikorsk
  * Added method Check to CDBLContext, CDBL_Connection classes;
  * Added new class CDBL_Cmd, which is a base class for all "command" classes now;

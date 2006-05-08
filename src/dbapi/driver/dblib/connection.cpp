@@ -67,7 +67,7 @@ CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
                                       unsigned int nof_parms)
 {
     CDBL_LangCmd* lcmd = new CDBL_LangCmd(this, m_Link, lang_query, nof_parms);
-    m_CMDs.Add(lcmd);
+    m_CMDs.push_back(lcmd);
     return Create_LangCmd(*lcmd);
 }
 
@@ -75,7 +75,7 @@ CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
 CDB_RPCCmd* CDBL_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 {
     CDBL_RPCCmd* rcmd = new CDBL_RPCCmd(this, m_Link, rpc_name, nof_args);
-    m_CMDs.Add(rcmd);
+    m_CMDs.push_back(rcmd);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -85,7 +85,7 @@ CDB_BCPInCmd* CDBL_Connection::BCPIn(const string& tab_name,
 {
     CHECK_DRIVER_ERROR( !m_BCPAble, "No bcp on this connection", 210003 );
     CDBL_BCPInCmd* bcmd = new CDBL_BCPInCmd(this, m_Link, tab_name, nof_cols);
-    m_CMDs.Add(bcmd);
+    m_CMDs.push_back(bcmd);
     return Create_BCPInCmd(*bcmd);
 }
 
@@ -97,7 +97,7 @@ CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
 {
     CDBL_CursorCmd* ccmd = new CDBL_CursorCmd(this, m_Link, cursor_name,
                                               query, nof_params);
-    m_CMDs.Add(ccmd);
+    m_CMDs.push_back(ccmd);
     return Create_CursorCmd(*ccmd);
 }
 
@@ -142,7 +142,7 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     }
 
     CDBL_SendDataCmd* sd_cmd = new CDBL_SendDataCmd(this, m_Link, data_size);
-    m_CMDs.Add(sd_cmd);
+    m_CMDs.push_back(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
 }
 
@@ -162,11 +162,14 @@ bool CDBL_Connection::SendData(I_ITDescriptor& desc,
 bool CDBL_Connection::Refresh()
 {
     // close all commands first
-    while (m_CMDs.NofItems()) {
-        CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
-        delete pCmd;
-        m_CMDs.Remove((int) 0);
+    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
+        try {
+            delete *it;
+        } catch (CDB_Exception& ) {
+            _ASSERT(false);
+        }
     }
+    m_CMDs.clear();
 
     // cancel all pending commands
     if (Check(dbcancel(m_Link)) != CS_SUCCEED)
@@ -247,11 +250,14 @@ void CDBL_Connection::Release()
 {
     m_BR = 0;
     // close all commands first
-    while(m_CMDs.NofItems() > 0) {
-        CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
-        delete pCmd;
-        m_CMDs.Remove((int) 0);
+    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
+        try {
+            delete *it;
+        } catch (CDB_Exception& ) {
+            _ASSERT(false);
+        }
     }
+    m_CMDs.clear();
 }
 
 
@@ -268,7 +274,11 @@ CDBL_Connection::~CDBL_Connection()
 
 void CDBL_Connection::DropCmd(CDB_BaseEnt& cmd)
 {
-    m_CMDs.Remove(static_cast<TPotItem> (&cmd));
+    deque<CDB_BaseEnt*>::iterator it = find(m_CMDs.begin(), m_CMDs.end(), &cmd);
+
+    if (it != m_CMDs.end()) {
+        m_CMDs.erase(it);
+    }
 }
 
 bool CDBL_Connection::Abort()
@@ -657,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/05/08 17:49:11  ssikorsk
+ * Replaced type of  CDBL_Connection::m_CMDs from CPointerPot to deque<CDB_BaseEnt*>
+ *
  * Revision 1.24  2006/05/04 20:12:17  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;
