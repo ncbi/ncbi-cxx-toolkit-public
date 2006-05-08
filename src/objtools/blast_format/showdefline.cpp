@@ -211,6 +211,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
             dbtmp = dbname;
         }
         actual_db = dbtmp ? dbtmp : "nr";
+        actual_db = NStr::TruncateSpaces(actual_db);
         url_link += "<a href=\"";
         if (user_url.find("?") == string::npos){
             url_link += user_url + "?" + "db=" + actual_db + "&na=" + 
@@ -951,6 +952,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.26  2006/05/08 15:31:15  jianye
+* delete the space in front of database name in url
+*
 *Revision 1.25  2006/04/05 17:40:06  jianye
 *adjust to new defs
 *

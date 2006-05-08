@@ -2649,7 +2649,10 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
         int i, j;
         dbtmp = new char[sizeof(char)*length + 2]; /* aditional space and NULL */
         memset(dbtmp, '\0', sizeof(char)*length + 2);
-        for(i = 0; i < length; i++) {            
+        for(i = 0; i < length; i++) { 
+            if(i > 0) {
+                strcat(dbtmp, " ");  //space between db
+            }      
             if(isspace((unsigned char) dbname[i]) || dbname[i] == ',') {/* Rolling spaces */
                 continue;
             }
@@ -2667,7 +2670,7 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
             } else {
                 strcat(dbtmp, tmpbuff);
             }
-            strcat(dbtmp, " ");            
+               
         }
     } else {
         dbtmp = dbname;
@@ -3146,6 +3149,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.119  2006/05/08 15:31:14  jianye
+* delete the space in front of database name in url
+*
 *Revision 1.118  2006/04/24 19:16:10  zaretska
 *Added hidden field for Tree view display
 *
