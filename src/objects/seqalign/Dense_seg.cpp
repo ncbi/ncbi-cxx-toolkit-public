@@ -642,7 +642,7 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
                       " cover the alignment!"
                       " Maximum row seq pos is ");
         errstr += NStr::IntToString(row_stop);
-        errstr += " The total seq-loc len is only ";
+        errstr += ". The total seq-loc len is only ";
         errstr += NStr::IntToString(ttl_loc_len);
         errstr += ", it should be at least ";
         errstr += NStr::IntToString(row_stop+1);
@@ -1134,6 +1134,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/05/08 21:41:43  todorov
+* Fixed the syntax of an error message.
+*
 * Revision 1.27  2006/04/27 16:16:10  todorov
 * Removed unused variables (size).
 *
