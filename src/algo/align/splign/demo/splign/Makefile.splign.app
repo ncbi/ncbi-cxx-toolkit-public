@@ -3,7 +3,7 @@
 #################################
 
 APP = splign
-SRC = splign_app mermatchindex
+SRC = splign_app
 
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
       ncbi_xloader_blastdb ncbi_xloader_lds lds bdb \

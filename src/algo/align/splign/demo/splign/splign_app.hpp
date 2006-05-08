@@ -33,8 +33,6 @@
 * ===========================================================================
 */
 
-#include "mermatchindex.hpp"
-
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -112,7 +110,6 @@ protected:
 
     void x_DoIncremental(void);
     void x_DoBatch2(void);
-    void x_DoBatch2_mer(void);
 
     void x_ProcessSnaps(TSnaps& snaps, CSeqDB& seqdb, CRef<CSeq_id> seqid_subj, 
                         TSeqPos right_bound);
@@ -128,50 +125,15 @@ protected:
     auto_ptr<objects::CLDS_Database>    m_LDS_db;
 };
 
-
-
-
-struct CSnap {
-public:
-
-    CSnap(void) {};
-
-    void Init(Int4 subj_coord, const CMerMatcherIndex::TMatch* pmatch) {
-
-        m_SubjCoord = subj_coord;
-        m_MatchPtr = pmatch;
-    }
-
-    Uint4 GetSubjCoord(void) const {
-        return (Uint4)(m_SubjCoord >= 0? m_SubjCoord: -m_SubjCoord);
-    }
-
-    bool IsMasked(void) const {
-        return m_SubjCoord < 0;
-    }
-
-    // for debugging purpose
-    friend ostream& operator<< (ostream& ostr, const CSnap& snap)
-    {
-        if(snap.m_MatchPtr) {
-            ostr << *snap.m_MatchPtr;
-        }
-
-        ostr << '\t' << snap.m_SubjCoord;
-        return ostr;
-    }
-
-    Int4                            m_SubjCoord; // '-' indicate masked region
-    const CMerMatcherIndex::TMatch* m_MatchPtr;
-};
-
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/05/08 15:19:02  kapustin
+ * Code and file cleanup
+ *
  * Revision 1.19  2006/03/21 16:20:50  kapustin
  * Various changes, mainly adjust the code with  other libs
  *
