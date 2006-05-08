@@ -616,7 +616,7 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause)
            
     // keep promoters only if requested or lonely and not in mRNA
     if (!m_KeepPromoters) {
-        if (main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_promoter)) {
+        if (!main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_promoter)) {
             main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_promoter);
         } else {
             main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_promoter);
@@ -625,7 +625,7 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause)
     
     // keep introns only if requested or lonely and not in mRNA
     if (!m_KeepIntrons) {
-        if (main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_intron)) {
+        if (!main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_intron)) {
             main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_intron);
         } else {
             main_clause->RemoveFeaturesInmRNAsByType(CSeqFeatData::eSubtype_intron);
@@ -1048,6 +1048,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2006/05/08 19:15:16  bollin
+* corrected bug for determining when to show or not show introns in definition lines
+*
 * Revision 1.14  2006/05/08 18:15:15  bollin
 * added code for suppressing individual feature types in definition lines
 *
