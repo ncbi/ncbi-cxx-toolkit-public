@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.7.10  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.9.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -121,6 +121,8 @@ struct SJS_Request
     char               input[kNetScheduleMaxDataSize];
     char               output[kNetScheduleMaxDataSize];
     char               progress_msg[kNetScheduleMaxDataSize];
+    char               cout[kNetScheduleMaxDataSize];
+    char               cerr[kNetScheduleMaxDataSize];
     char               err[kNetScheduleMaxErrSize];
     char               affinity_token[kNetScheduleMaxDataSize];
     string             job_key_str;
@@ -134,7 +136,8 @@ struct SJS_Request
 
     void Init()
     {
-        input[0] = output[0] = progress_msg[0] = affinity_token[0] = 0;
+        input[0] = output[0] = progress_msg[0] = affinity_token[0] 
+                                               = cout[0] = cerr[0] = 0;
         job_key_str.erase(); err_msg.erase();
         jcount = job_id = job_return_code = port = timeout = 0;
     }
@@ -390,7 +393,9 @@ private:
     void x_SetSocketParams(CSocket* sock);
 
     void x_MakeGetAnswer(const char* key_buf, 
-                         SThreadData& tdata);
+                         SThreadData& tdata,
+                         const char*  jout,
+                         const char*  jerr);
 
     void x_CreateLog();
 
@@ -951,16 +956,14 @@ void CNetScheduleServer::ProcessSubmit(CSocket&                sock,
                                        CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
-/*
-    unsigned client_address = 0;
-    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-*/
     unsigned job_id =
         queue.Submit(req.input, 
                      tdata.peer_addr, 
                      req.port, req.timeout, 
                      req.progress_msg,
-                     req.affinity_token);
+                     req.affinity_token,
+                     req.cout,
+                     req.cerr);
 
     char buf[1024];
     sprintf(buf, NETSCHEDULE_JOBMASK, 
@@ -1220,6 +1223,7 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
                              tdata.req.input,
                              tdata.req.output,
                              0, 0,
+                             0, 0, 
                              status);
 
         if (b) {
@@ -1240,6 +1244,7 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
                              0,
                              tdata.req.err,
                              0,
+                             0, 0, 
                              status);
 
         if (b) {
@@ -1268,7 +1273,7 @@ void CNetScheduleServer::ProcessMGet(CSocket&                sock,
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     int ret_code;
     bool b = queue.GetJobDescr(job_id, &ret_code, 
-                               0, 0, 0, tdata.req.progress_msg);
+                               0, 0, 0, tdata.req.progress_msg, 0, 0);
 
     if (b) {
         WriteMsg(sock, "OK:", tdata.req.progress_msg);
@@ -1293,11 +1298,22 @@ void CNetScheduleServer::ProcessMPut(CSocket&                sock,
 
 
 void CNetScheduleServer::x_MakeGetAnswer(const char*   key_buf,
-                                         SThreadData&  tdata)
+                                         SThreadData&  tdata,
+                                         const char*   jout,
+                                         const char*   jerr)
 {
+    _ASSERT(jout);
+    _ASSERT(jerr);
+
     tdata.answer = key_buf;
     tdata.answer.append(" \"");
     tdata.answer.append(tdata.req.input);
+    tdata.answer.append("\"");
+    tdata.answer.append(" \"");
+    tdata.answer.append(jout);
+    tdata.answer.append("\"");
+    tdata.answer.append(" \"");
+    tdata.answer.append(jerr);
     tdata.answer.append("\"");
 }
 
@@ -1308,17 +1324,14 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
 {
     SJS_Request& req = tdata.req;
     unsigned job_id;
-/*
-    unsigned client_address;
-    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-*/
     char key_buf[1024];
     queue.GetJob(key_buf,
-                 tdata.peer_addr, &job_id, req.input, m_Host, GetPort(),
+                 tdata.peer_addr, &job_id, req.input, req.cout, req.cerr, 
+                 m_Host, GetPort(),
                  tdata.auth);
 
     if (job_id) {
-        x_MakeGetAnswer(key_buf, tdata);
+        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
     } else {
         WriteMsg(sock, "OK:", "");
@@ -1338,7 +1351,6 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
     }
 
     if (req.port) {  // unregister notification
-//        sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
         queue.RegisterNotificationListener(
             tdata.peer_addr, req.port, 0, tdata.auth);
    }
@@ -1351,10 +1363,6 @@ CNetScheduleServer::ProcessJobExchange(CSocket&                sock,
 {
     SJS_Request& req = tdata.req;
     unsigned job_id;
-/*
-    unsigned client_address;
-    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-*/
     char key_buf[1024];
 
     unsigned done_job_id;
@@ -1365,12 +1373,13 @@ CNetScheduleServer::ProcessJobExchange(CSocket&                sock,
     }
     queue.PutResultGetJob(done_job_id, req.job_return_code, req.output,
                           key_buf, tdata.peer_addr, &job_id,
-                          req.input, m_Host, GetPort(),
+                          req.input, req.cout, req.cerr,
+                          m_Host, GetPort(),
                           false /*don't change the timeline*/,
                           tdata.auth);
 
     if (job_id) {
-        x_MakeGetAnswer(key_buf, tdata);
+        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
     } else {
         WriteMsg(sock, "OK:", "");
@@ -1401,10 +1410,12 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
     unsigned job_id;
     char key_buf[1024];
     queue.GetJob(key_buf,
-                 tdata.peer_addr, &job_id, req.input, m_Host, GetPort(),
+                 tdata.peer_addr, &job_id, 
+                 req.input, req.cout, req.cerr,
+                 m_Host, GetPort(),
                  tdata.auth);
     if (job_id) {
-        x_MakeGetAnswer(key_buf, tdata);
+        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
         return;
     }
@@ -1886,7 +1897,8 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // Request formats and types:
     //
     // 1. SUBMIT "NCID_01_1..." ["Progress msg"] [udp_port notif_wait] 
-    //           [aff="Affinity token"]
+    //           [aff="Affinity token"] 
+    //           [out="out_file_name"] [err="err_file_name"]
     // 2. CANCEL JSID_01_1
     // 3. STATUS JSID_01_1
     // 4. GET udp_port
@@ -2011,7 +2023,45 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                                  kNetScheduleMaxDataSize);
                     *ptr++ = *s;
                 }
+                *ptr = 0;
+                ++s;
+                NS_SKIPSPACE(s)
             }
+
+            // optional job output parameter
+            if (strncmp(s, "out=", 4) == 0) {
+                s += 4;
+                if (*s != '"') {
+                    NS_RETURN_ERROR("Misformed SUBMIT request")
+                }
+                char *ptr = req->cout;
+                for (++s; *s != '"'; ++s) {
+                    NS_CHECKEND(s, "Misformed SUBMIT request")
+                    NS_CHECKSIZE(ptr-req->cout, 
+                                 kNetScheduleMaxDataSize);
+                    *ptr++ = *s;
+                }
+                *ptr = 0;
+                ++s;
+                NS_SKIPSPACE(s)
+            }
+
+            // optional job cerr parameter
+            if (strncmp(s, "err=", 4) == 0) {
+                s += 4;
+                if (*s != '"') {
+                    NS_RETURN_ERROR("Misformed SUBMIT request")
+                }
+                char *ptr = req->cerr;
+                for (++s; *s != '"'; ++s) {
+                    NS_CHECKEND(s, "Misformed SUBMIT request")
+                    NS_CHECKSIZE(ptr-req->cerr, 
+                                 kNetScheduleMaxDataSize);
+                    *ptr++ = *s;
+                }
+                *ptr = 0;
+            }
+
             return;
         }
 
@@ -2733,6 +2783,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2006/05/08 11:24:52  kuznets
+ * Implemented file redirection cout/cerr for worker nodes
+ *
  * Revision 1.77  2006/05/04 15:36:35  kuznets
  * patch number inc
  *

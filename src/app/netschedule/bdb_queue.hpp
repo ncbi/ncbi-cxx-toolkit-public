@@ -153,7 +153,9 @@ public:
                             unsigned      port = 0,
                             unsigned      wait_timeout = 0,
                             const char*   progress_msg = 0,
-                            const char*   affinity_token = 0);
+                            const char*   affinity_token = 0,
+                            const char*   jout = 0,
+                            const char*   jerr = 0);
 
         /// Submit job batch
         /// @return 
@@ -181,6 +183,8 @@ public:
                              unsigned int   worker_node,
                              unsigned int*  job_id, 
                              char*          input,
+                             char*          jout,
+                             char*          jerr,
                              const string&  host,
                              unsigned       port,
                              bool           update_tl,
@@ -196,11 +200,16 @@ public:
         /// Get job with load balancing
         void GetJobLB(unsigned int   worker_node,
                       unsigned int*  job_id, 
-                      char*          input);
+                      char*          input,
+                      char*          jout,
+                      char*          jerr
+                      );
 
         void GetJob(unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input,
+                    char*          jout,
+                    char*          jerr,
                     const string&  client_name);
 
         // Get job and generate key
@@ -208,6 +217,8 @@ public:
                     unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input,
+                    char*          jout,
+                    char*          jerr,
                     const string&  host,
                     unsigned       port,
                     const string&  client_name);
@@ -224,6 +235,8 @@ public:
                          char*        output,
                          char*        err_msg,
                          char*        progress_msg,
+                         char*        jout,
+                         char*        jerr,
                          CNetScheduleClient::EJobStatus expected_status 
                                          = CNetScheduleClient::eJobNotFound);
 
@@ -405,7 +418,9 @@ public:
                                unsigned      port,
                                unsigned      wait_timeout,
                                const char*   progress_msg,
-                               unsigned      aff_id);
+                               unsigned      aff_id,
+                               const char*   jout,
+                               const char*   jerr);
 
         /// Info on how to notify job submitter
         struct SSubmitNotifInfo
@@ -442,6 +457,8 @@ public:
                                     unsigned int         worker_node,
                                     unsigned             job_id,
                                     char*                input,
+                                    char*                jout,
+                                    char*                jerr,
                                     unsigned*            aff_id);
 
         SQueueDB*        x_GetLocalDb();
@@ -530,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/05/08 11:24:52  kuznets
+ * Implemented file redirection cout/cerr for worker nodes
+ *
  * Revision 1.45  2006/04/17 15:46:54  kuznets
  * Added option to remove job when it is done (similar to LSF)
  *

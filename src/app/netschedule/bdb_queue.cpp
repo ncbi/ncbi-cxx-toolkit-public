@@ -1087,10 +1087,12 @@ void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB&      db,
     out << NS_PFNAME("run_counter: ") << (unsigned) db.run_counter << fsp;
     out << NS_PFNAME("ret_code: ") << (unsigned) db.ret_code << fsp;
 
-    out << NS_PFNAME("input: ")        << "'" << (string) db.input       << "'" << fsp;
+    out << NS_PFNAME("input: ")        << "'" <<(string) db.input       << "'" << fsp;
     out << NS_PFNAME("output: ")       << "'" <<(string) db.output       << "'" << fsp;
     out << NS_PFNAME("err_msg: ")      << "'" <<(string) db.err_msg      << "'" << fsp;
     out << NS_PFNAME("progress_msg: ") << "'" <<(string) db.progress_msg << "'" << fsp;
+    out << NS_PFNAME("cout: ")         << "'" <<(string) db.cout         << "'" << fsp;
+    out << NS_PFNAME("cerr: ")         << "'" <<(string) db.cerr         << "'" << fsp;
     out << "\n";
 }
 
@@ -1257,7 +1259,9 @@ CQueueDataBase::CQueue::Submit(const char*   input,
                                unsigned      port,
                                unsigned      wait_timeout,
                                const char*   progress_msg,
-                               const char*   affinity_token)
+                               const char*   affinity_token,
+                               const char*   jout,
+                               const char*   jerr)
 {
     unsigned int job_id = m_Db.GetNextId();
 
@@ -1279,7 +1283,7 @@ CQueueDataBase::CQueue::Submit(const char*   input,
 	db.SetTransaction(&trans);
 
     x_AssignSubmitRec(
-        job_id, input, host_addr, port, wait_timeout, progress_msg, aff_id);
+        job_id, input, host_addr, port, wait_timeout, progress_msg, aff_id, jout, jerr);
 
     db.Insert();
 
@@ -1355,7 +1359,10 @@ CQueueDataBase::CQueue::SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
         x_AssignSubmitRec(
             job_id_cnt, 
             it->input, host_addr, port, wait_timeout, 0/*progress_msg*/, 
-            it->affinity_id);
+            it->affinity_id,
+            0, // cout
+            0  // cerr
+            );
         ++job_id_cnt;
         db.Insert();
     } // ITERATE
@@ -1389,7 +1396,9 @@ CQueueDataBase::CQueue::x_AssignSubmitRec(unsigned      job_id,
                                           unsigned      port,
                                           unsigned      wait_timeout,
                                           const char*   progress_msg,
-                                          unsigned      aff_id)
+                                          unsigned      aff_id,
+                                          const char*   jout,
+                                          const char*   jerr)
 {
     SQueueDB& db = m_LQueue.db;
 
@@ -1424,13 +1433,12 @@ CQueueDataBase::CQueue::x_AssignSubmitRec(unsigned      job_id,
 
     db.err_msg = "";
 
-    db.cout = "";
-    db.cerr = "";
+    db.cout = jout? jout : "";
+    db.cerr = jerr? jerr : "";
 
     if (progress_msg) {
         db.progress_msg = progress_msg;
     }
-
 }
 
 
@@ -1768,6 +1776,8 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
                                         unsigned int   worker_node,
                                         unsigned int*  job_id,
                                         char*          input,
+                                        char*          jout,
+                                        char*          jerr,
                                         const string&  host,
                                         unsigned       port,
                                         bool           update_tl,
@@ -1840,7 +1850,8 @@ repeat_transaction:
                 upd_status =
                     x_UpdateDB_GetJobNoLock(*pqdb, curr, cur, trans,
                                          worker_node, pending_job_id, input,
-                                          &job_aff_id);
+                                         jout, jerr,
+                                         &job_aff_id);
                 switch (upd_status) {
                 case eGetJobUpdate_JobFailed:
                     m_LQueue.status_tracker.ChangeStatus(*job_id, 
@@ -2192,7 +2203,9 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
 
 void CQueueDataBase::CQueue::GetJobLB(unsigned int   worker_node,
                                       unsigned int*  job_id, 
-                                      char*          input)
+                                      char*          input,
+                                      char*          jout,
+                                      char*          jerr)
 {
     _ASSERT(worker_node && input);
     unsigned get_attempts = 0;
@@ -2316,6 +2329,15 @@ fetch_db:
 
         const char* fld_str = db.input;
         ::strcpy(input, fld_str);
+        if (jout) {
+            fld_str = db.cout;
+            ::strcpy(jout, fld_str);
+        }
+        if (jerr) {
+            fld_str = db.cerr;
+            ::strcpy(jerr, fld_str);
+        }
+
         unsigned run_counter = db.run_counter;
 
         unsigned time_submit = db.time_submit;
@@ -2612,10 +2634,12 @@ CQueueDataBase::CQueue::PutDone_FindPendingJob(const string&  client_name,
 void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
                                     unsigned int*  job_id, 
                                     char*          input,
+                                    char*          jout,
+                                    char*          jerr,
                                     const string&  client_name)
 {
     if (m_LQueue.lb_flag) {
-        GetJobLB(worker_node, job_id, input);
+        GetJobLB(worker_node, job_id, input, jout, jerr);
         return;
     }
 
@@ -2663,7 +2687,7 @@ get_job_id:
 
         upd_status = 
             x_UpdateDB_GetJobNoLock(db, curr, cur, trans, 
-                                    worker_node, *job_id, input,
+                                    worker_node, *job_id, input, jout, jerr, 
                                     &job_aff_id);
         }}
         trans.Commit();
@@ -2739,6 +2763,8 @@ CQueueDataBase::CQueue::x_UpdateDB_GetJobNoLock(
                                             unsigned int         worker_node,
                                             unsigned             job_id,
                                             char*                input,
+                                            char*                jout,
+                                            char*                jerr,
                                             unsigned*            aff_id)
 {
     const unsigned kMaxGetAttempts = 100;
@@ -2777,6 +2803,13 @@ CQueueDataBase::CQueue::x_UpdateDB_GetJobNoLock(
 
         const char* fld_str = db.input;
         ::strcpy(input, fld_str);
+        if (jout) {
+            strcpy(jout, (const char*) db.cout);
+        }
+        if (jerr) {
+            strcpy(jerr, (const char*) db.cerr);
+        }
+
         unsigned run_counter = db.run_counter;
 
         db.status = (int) CNetScheduleClient::eRunning;
@@ -2869,11 +2902,13 @@ void CQueueDataBase::CQueue::GetJob(char*          key_buf,
                                     unsigned int   worker_node,
                                     unsigned int*  job_id,
                                     char*          input,
+                                    char*          jout,
+                                    char*          jerr,
                                     const string&  host,
                                     unsigned       port,
                                     const string&  client_name)
 {
-    GetJob(worker_node, job_id, input, client_name);
+    GetJob(worker_node, job_id, input, jout, jerr, client_name);
     if (*job_id) {
         sprintf(key_buf, NETSCHEDULE_JOBMASK, *job_id, host.c_str(), port);
     }
@@ -2886,6 +2921,8 @@ CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
                                     char*        output,
                                     char*        err_msg,
                                     char*        progress_msg,
+                                    char*        jout,
+                                    char*        jerr,
                             CNetScheduleClient::EJobStatus expected_status)
 {
     SQueueDB& db = m_LQueue.db;
@@ -2918,6 +2955,12 @@ CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
             }
             if (progress_msg) {
                 ::strcpy(progress_msg, (const char* )db.progress_msg);
+            }
+            if (jout) {
+                ::strcpy(jout, (const char*) db.cout);
+            }
+            if (jerr) {
+                ::strcpy(jerr, (const char*) db.cerr);
             }
 
             return true;
@@ -3627,6 +3670,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/05/08 11:24:52  kuznets
+ * Implemented file redirection cout/cerr for worker nodes
+ *
  * Revision 1.75  2006/05/04 15:36:03  kuznets
  * Fixed bug in deleting done jobs
  *
