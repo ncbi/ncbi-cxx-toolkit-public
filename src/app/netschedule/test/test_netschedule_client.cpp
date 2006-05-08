@@ -152,7 +152,7 @@ int CTestNetScheduleClient::Run(void)
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
     for (unsigned i = 0; i < jcount; ++i) {
-        job_key = cl.SubmitJob(input);
+        job_key = cl.SubmitJob(input, kEmptyStr, kEmptyStr, "out.txt", "err.txt");
         jobs.push_back(job_key);
         if (i % 1000 == 0) {
             NcbiCout << "." << flush;
@@ -249,6 +249,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/05/08 11:25:30  kuznets
+ * Test for file redirection
+ *
  * Revision 1.10  2006/01/09 12:52:55  kuznets
  * Reflected changes in CStopWatch
  *

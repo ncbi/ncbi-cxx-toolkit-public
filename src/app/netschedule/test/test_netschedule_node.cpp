@@ -168,10 +168,13 @@ int CTestNetScheduleNode::Run(void)
     // specified UDP port on the machine.
 
     while (1) {
+        string jout, jerr;
         if (keep_conn) {
-            job_exists = cl.GetJob(&job_key, &input);
+            job_exists = cl.GetJob(&job_key, &input, 0, &jout, &jerr);
         } else {
-            job_exists = cl.WaitJob(&job_key, &input, 180, udp_port);
+            job_exists = cl.WaitJob(&job_key, &input, 180, udp_port, 
+                                    CNetScheduleClient::eWaitNotification,
+                                    &jout, &jerr);
         }
         if (job_exists) {
             if (first_try) {
@@ -186,6 +189,13 @@ int CTestNetScheduleNode::Run(void)
             string expected_input = "Hello " + queue_name;
             if (expected_input != input) {
                 ERR_POST("Unexpected input: " + input);
+            }
+
+            if (jout != "out.txt") {
+                LOG_POST(Warning << "Unexpected out: " + jout);
+            }
+            if (jerr != "err.txt") {
+                LOG_POST(Warning << "Unexpected err: " + jerr);
             }
 
             if (jobs_processed.find(job_key) != jobs_processed.end()) {
@@ -240,6 +250,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/05/08 11:25:30  kuznets
+ * Test for file redirection
+ *
  * Revision 1.10  2005/08/17 14:32:36  kuznets
  * Uncommented sleep
  *
