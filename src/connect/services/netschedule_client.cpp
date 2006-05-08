@@ -278,7 +278,9 @@ void CNetScheduleClient::ActivateRequestRateControl(bool on_off)
 
 string CNetScheduleClient::SubmitJob(const string& input,
                                      const string& progress_msg,
-                                     const string& affinity_token)
+                                     const string& affinity_token,
+                                     const string& out,
+                                     const string& err)
 {
     if (input.length() > kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
@@ -307,7 +309,19 @@ string CNetScheduleClient::SubmitJob(const string& input,
         m_Tmp.append(affinity_token);
         m_Tmp.append("\"");
     }
-    //cerr << "m_Tmp" << m_Tmp << endl;
+
+    if (!out.empty()) {
+        m_Tmp.append(" out=\"");
+        m_Tmp.append(out);
+        m_Tmp.append("\"");
+    }
+
+    if (!err.empty()) {
+        m_Tmp.append(" err=\"");
+        m_Tmp.append(err);
+        m_Tmp.append("\"");
+    }
+
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -795,7 +809,9 @@ CNetScheduleClient::GetStatus(const string& job_key,
 
 bool CNetScheduleClient::GetJob(string*        job_key, 
                                 string*        input,
-                                unsigned short udp_port)
+                                unsigned short udp_port,
+                                string*        jout,
+                                string*        jerr)
 {
     _ASSERT(job_key);
     _ASSERT(input);
@@ -828,8 +844,13 @@ bool CNetScheduleClient::GetJob(string*        job_key,
         return false;
     }
 
-
-    ParseGetJobResponse(job_key, input, m_Tmp);
+    if (jout != 0 && jerr != 0) {
+        ParseGetJobResponse(job_key, input, jout, jerr, m_Tmp);
+    } else {
+        string tmp;
+        ParseGetJobResponse(job_key, input, 
+                            jout ? jout : &tmp, jerr ? jerr : &tmp, m_Tmp);
+    }
 
     _ASSERT(!job_key->empty());
     _ASSERT(!input->empty());
@@ -841,7 +862,9 @@ bool CNetScheduleClient::GetJob(string*        job_key,
 bool CNetScheduleClient::GetJobWaitNotify(string*    job_key, 
                                           string*    input, 
                                           unsigned   wait_time,
-                                          unsigned short udp_port)
+                                          unsigned short udp_port,
+                                          string*    jout,
+                                          string*    jerr)
 {
     _ASSERT(job_key);
     _ASSERT(input);
@@ -871,7 +894,13 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
 
     TrimPrefix(&m_Tmp);
     if (!m_Tmp.empty()) {
-        ParseGetJobResponse(job_key, input, m_Tmp);
+        if (jout != 0 && jerr != 0) {
+            ParseGetJobResponse(job_key, input, jout, jerr, m_Tmp);
+        } else {
+            string tmp;
+            ParseGetJobResponse(job_key, input, 
+                                jout ? jout : &tmp, jerr ? jerr : &tmp, m_Tmp);
+        }
 
         _ASSERT(!job_key->empty());
         _ASSERT(!input->empty());
@@ -886,10 +915,12 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
                                  string*    input, 
                                  unsigned   wait_time,
                                  unsigned short udp_port,
-                                 EWaitMode      wait_mode)
+                                 EWaitMode      wait_mode,
+                                 string*        jout,
+                                 string*        jerr)
 {
     bool job_received = 
-        GetJobWaitNotify(job_key, input, wait_time, udp_port);
+        GetJobWaitNotify(job_key, input, wait_time, udp_port, jout, jerr);
     if (job_received) {
         return job_received;
     }
@@ -903,7 +934,7 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
     // using reliable comm.level and notify server that
     // we no longer on the UDP socket
 
-    return GetJob(job_key, input, udp_port);
+    return GetJob(job_key, input, udp_port, jout, jerr);
 
 }
 
@@ -997,45 +1028,94 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
 
 
 void CNetScheduleClient::ParseGetJobResponse(string*        job_key, 
-                                             string*        input, 
+                                             string*        input,
+                                             string*        jout,
+                                             string*        jerr,
                                              const string&  response)
 {
+    // Server message format:
+    //    JOB_KEY "input" "out" "err"
+
     _ASSERT(!response.empty());
+    _ASSERT(input);
+    _ASSERT(jout);
+    _ASSERT(jerr);
 
     input->erase();
     job_key->erase();
-
-    //cerr << "Response: " << response <<endl;
+    jout->erase();
+    jerr->erase();
 
     const char* str = response.c_str();
     while (*str && isspace((unsigned char)(*str)))
         ++str;
+    if (*str == 0) {
+    throw_err:
+        NCBI_THROW(CNetScheduleException, eProtocolSyntaxError, 
+                   "Internal error. Cannot parse server output.");
+    }
 
     for(;*str && !isspace((unsigned char)(*str)); ++str) {
         job_key->push_back(*str);
+    }
+    if (*str == 0) {
+        goto throw_err;
     }
 
     while (*str && isspace((unsigned char)(*str)))
         ++str;
 
-    /*
-    if (*str == '"')
-        ++str;
-
-    for (;*str && *str != '"'; ++str) {
-        input->push_back(*str);
-    }
-    */
     if (*str && *str == '"') {
         ++str;
         for( ;*str && *str; ++str) {
             if (*str == '"' && *(str-1) != '\\') break;
             input->push_back(*str);
         }
+    } else {
+        goto throw_err;
     }
 
-    //cerr << "UnParsed input: " << *input <<endl;
     *input = NStr::ParseEscapes(*input);
+
+    // parse "out"
+    while (*str && isspace((unsigned char)(*str)))
+        ++str;
+
+    if (*str == '"') {
+        ++str;
+    } else {
+        goto throw_err;
+    }
+
+    for (;*str && *str != '"'; ++str) {
+        jout->push_back(*str);
+    }
+    if (*str == 0) {
+        goto throw_err;
+    }
+    if (*str == '"') {
+        ++str;
+    }
+    
+    // parse "err"
+    while (*str && isspace((unsigned char)(*str)))
+        ++str;
+
+    if (*str == '"') {
+        ++str;
+    } else {
+        goto throw_err;
+    }
+
+    for (;*str && *str != '"'; ++str) {
+        jerr->push_back(*str);
+    }
+    if (*str == 0) {
+        goto throw_err;
+    }
+    if (*str == '"') {
+        ++str;
+    }
 }
 
 
@@ -1076,7 +1156,9 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
                                          int           done_ret_code, 
                                          const string& done_output,
                                          string*       new_job_key, 
-                                         string*       new_input)
+                                         string*       new_input,
+                                         string*       jout,
+                                         string*       jerr)
 {
     if (done_job_key.empty()) {
         return GetJob(new_job_key, new_input);
@@ -1099,9 +1181,6 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
     m_Tmp.append(" \"");
     m_Tmp.append(NStr::PrintableString(done_output));
     m_Tmp.append("\"");
-    //cerr << done_output << endl << "==================" << endl;;
-    //cerr << m_Tmp << endl;
-
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
@@ -1116,7 +1195,13 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
         return false;
     }
 
-    ParseGetJobResponse(new_job_key, new_input, m_Tmp);
+    if (jout != 0 && jerr != 0) {
+        ParseGetJobResponse(new_job_key, new_input, jout, jerr, m_Tmp);
+    } else {
+        string tmp;
+        ParseGetJobResponse(new_job_key, new_input, 
+                            jout ? jout : &tmp, jerr ? jerr : &tmp, m_Tmp);
+    }
 
     _ASSERT(!new_job_key->empty());
 
@@ -1682,6 +1767,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/05/08 11:37:36  kuznets
+ * Added out/err redirection parameters
+ *
  * Revision 1.51  2006/05/03 14:51:27  didenko
  * Fixed bug in the job's input parsing
  *

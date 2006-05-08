@@ -186,12 +186,17 @@ public:
     /// @param progress_msg
     ///    Initial progress message (in most cases a NetCache key for 
     ///    message exchange)
-    ///
+    /// @param out
+    ///    Output (cout) (in most cases file name)
+    /// @param err
+    ///    Error (cerr) (file name)
     /// @return job key
     virtual
     string SubmitJob(const string& input, 
                      const string& progress_msg   = kEmptyStr,
-                     const string& affinity_token = kEmptyStr);
+                     const string& affinity_token = kEmptyStr,
+                     const string& out            = kEmptyStr,
+                     const string& err            = kEmptyStr);
 
 
     /// Job description for batch submission
@@ -296,6 +301,10 @@ public:
     /// @param udp_port
     ///     Used to instruct server that specified client does NOT
     ///     listen to notifications (opposed to WaitJob)
+    /// @param jout
+    ///     Job output (file name in most cases)
+    /// @param jerr
+    ///     Job error (file name in most cases)
     /// @return
     ///     TRUE if job has been returned from the queue.
     ///     FALSE means queue is empty or for some reason scheduler
@@ -308,7 +317,9 @@ public:
     virtual
     bool GetJob(string* job_key, 
                 string* input, 
-                unsigned short udp_port = 0);
+                unsigned short udp_port = 0,
+                string* jout = 0,
+                string* jerr = 0);
 
     /// Notification wait mode
     enum EWaitMode {
@@ -346,6 +357,10 @@ public:
     ///    this call, or returns control (eNoWaitNotification).
     ///    In the second case caller should call WaitNotification to listen
     ///    for server signals.
+    /// @param jout
+    ///     Job output (file name in most cases)
+    /// @param jerr
+    ///     Job error (file name in most cases)
     ///
     /// @sa GetJob, WaitNotification
     ///
@@ -354,7 +369,9 @@ public:
                  string*        input, 
                  unsigned       wait_time,
                  unsigned short udp_port,
-                 EWaitMode      wait_mode = eWaitNotification);
+                 EWaitMode      wait_mode = eWaitNotification,
+                 string*        jout = 0,
+                 string*        jerr = 0);
 
 
     /// Wait for queue notification message 
@@ -395,7 +412,9 @@ public:
                          int           done_ret_code, 
                          const string& done_output,
                          string*       new_job_key, 
-                         string*       new_input);
+                         string*       new_input,
+                         string*       jout = 0,
+                         string*       jerr = 0);
 
     /// Put job interim (progress) message
     /// 
@@ -614,6 +633,8 @@ protected:
 
     void ParseGetJobResponse(string*        job_key, 
                              string*        input, 
+                             string*        jout,
+                             string*        jerr,
                              const string&  response);
 
     void WaitQueueNotification(unsigned       wait_time,
@@ -627,7 +648,9 @@ protected:
     bool GetJobWaitNotify(string*    job_key, 
                           string*    input, 
                           unsigned   wait_time,
-                          unsigned short udp_port);
+                          unsigned short udp_port,
+                          string*    jout = 0,
+                          string*    jerr = 0);
 
     /// Try to read ENDF from the socket to check if connection is still alive
     ///
@@ -720,7 +743,10 @@ public:
 
     virtual
     string SubmitJob(const string& input, 
-                     const string& progress_msg = kEmptyStr);
+                     const string& progress_msg = kEmptyStr,
+                     const string& affinity_token = kEmptyStr,
+                     const string& out            = kEmptyStr,
+                     const string& err            = kEmptyStr);
 
     virtual
     void SubmitJobBatch(SJobBatch& subm);
@@ -728,13 +754,17 @@ public:
     virtual
     bool GetJob(string*        job_key, 
                 string*        input, 
-                unsigned short udp_port = 0);
+                unsigned short udp_port = 0,
+                string*        jout = 0,
+                string*        jerr = 0);
 
     bool WaitJob(string*        job_key, 
                  string*        input, 
                  unsigned       wait_time,
                  unsigned short udp_port,
-                 EWaitMode      wait_mode = eWaitNotification);
+                 EWaitMode      wait_mode = eWaitNotification,
+                 string*        jout = 0,
+                 string*        jerr = 0);
 
     virtual
     void RegisterClient(unsigned short udp_port);
@@ -781,12 +811,16 @@ private:
     bool x_TryGetJob(SServiceAddress& sa,
                      string* job_key, 
                      string* input, 
-                     unsigned short udp_port);
+                     unsigned short udp_port,
+                     string*  jout,
+                     string*  jerr);
     bool x_GetJobWaitNotify(SServiceAddress& sa,
                             string*    job_key, 
                             string*    input, 
                             unsigned   wait_time,
-                            unsigned short udp_port);
+                            unsigned short udp_port,
+                            string*    jout,
+                            string*    jerr);
 private:
     CNetScheduleClient_LB(const CNetScheduleClient_LB&);
     CNetScheduleClient_LB& operator=(const CNetScheduleClient_LB&);
@@ -820,6 +854,7 @@ class CNetScheduleException : public CNetServiceException
 {
 public:
     enum EErrCode {
+        eProtocolSyntaxError,
         eAuthenticationError,
         eKeyFormatError,
         eInvalidJobStatus,
@@ -834,6 +869,7 @@ public:
     {
         switch (GetErrCode())
         {
+        case eProtocolSyntaxError:    return "eProtocolSyntaxError";
         case eAuthenticationError:    return "eAuthenticationError";
         case eKeyFormatError:         return "eKeyFormatError";
         case eInvalidJobStatus:       return "eInvalidJobStatus";
@@ -905,6 +941,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/05/08 11:37:07  kuznets
+ * Added out/err redirection parameters
+ *
  * Revision 1.51  2006/03/28 22:03:30  vakatov
  * Heed the warning, kill a comma
  *

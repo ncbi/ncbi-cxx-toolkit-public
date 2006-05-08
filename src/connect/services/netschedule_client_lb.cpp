@@ -258,14 +258,18 @@ void CNetScheduleClient_LB::AddServiceAddress(const string&  hostname,
 
 
 string CNetScheduleClient_LB::SubmitJob(const string& input,
-                                        const string& progress_msg)
+                                        const string& progress_msg,
+                                        const string& affinity_token,
+                                        const string& out,
+                                        const string& err)
 {
     ++m_Requests;
     // try to submit this job even if server does not take it
     unsigned max_retry = m_MaxRetry ? m_MaxRetry : 1;
     for (unsigned retry = 0; retry < max_retry; ++retry) {
         try {
-            return TParent::SubmitJob(input, progress_msg);
+            return TParent::SubmitJob(
+                input, progress_msg, affinity_token, out, err);
         } 
         catch (CNetScheduleException& ex) {
             CNetScheduleException::TErrCode ec = ex.GetErrCode();
@@ -297,7 +301,9 @@ void CNetScheduleClient_LB::SubmitJobBatch(SJobBatch& subm)
 
 bool CNetScheduleClient_LB::GetJob(string* job_key, 
                                    string* input, 
-                                   unsigned short udp_port)
+                                   unsigned short udp_port,
+                                   string*        jout,
+                                   string*        jerr)
 {
     time_t curr = time(0);
     if (NeedRebalance(curr)) {
@@ -338,7 +344,7 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                 }
                 try {
                     bool job_received = 
-                        x_TryGetJob(sa, job_key, input, udp_port);
+                        x_TryGetJob(sa, job_key, input, udp_port, jout, jerr);
                     if (job_received) {
                         return job_received;
                     }
@@ -365,7 +371,7 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                 }
                 try {
                     bool job_received = 
-                        x_TryGetJob(sa, job_key, input, udp_port);
+                        x_TryGetJob(sa, job_key, input, udp_port, jout, jerr);
                     if (job_received) {
                         return job_received;
                     }
@@ -390,9 +396,11 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
 
 
 bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
-                                        string* job_key, 
-                                        string* input, 
-                                        unsigned short udp_port)
+                                        string*          job_key, 
+                                        string*          input, 
+                                        unsigned short   udp_port,
+                                        string*          jout,
+                                        string*          jerr)
 {
     EIO_Status st = Connect(sa.host, sa.port);
     if (st != eIO_Success) {
@@ -403,7 +411,8 @@ bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
     }
 
     CJS_BoolGuard bg(&m_StickToHost);
-    bool job_received = TParent::GetJob(job_key, input, udp_port);
+    bool job_received = 
+        TParent::GetJob(job_key, input, udp_port, jout, jerr);
     return job_received;
 }
 
@@ -413,7 +422,9 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                                     string*        input, 
                                     unsigned       wait_time,
                                     unsigned short udp_port,
-                                    EWaitMode      wait_mode)
+                                    EWaitMode      wait_mode,
+                                    string*        jout,
+                                    string*        jerr)
 {
     time_t curr = time(0);
     if (NeedRebalance(curr)) {
@@ -451,7 +462,8 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                 try {
                     bool job_received = 
                         x_GetJobWaitNotify(sa, 
-                            job_key, input, notification_time, udp_port);
+                            job_key, input, notification_time, udp_port, 
+                            jout, jerr);
                     if (job_received) {
                         return job_received;
                     }
@@ -479,7 +491,8 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                 try {
                     bool job_received = 
                         x_GetJobWaitNotify(sa, 
-                            job_key, input, notification_time, udp_port);
+                            job_key, input, notification_time, udp_port,
+                            jout, jerr);
                     if (job_received) {
                         return job_received;
                     }
@@ -506,7 +519,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
 
     WaitQueueNotification(wait_time, udp_port);
 
-    return GetJob(job_key, input, udp_port);
+    return GetJob(job_key, input, udp_port, jout, jerr);
 }
 
 
@@ -551,7 +564,9 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
                                                string*    job_key, 
                                                string*    input, 
                                                unsigned   wait_time,
-                                               unsigned short udp_port)
+                                               unsigned short udp_port,
+                                               string* jout,
+                                               string* jerr)
 {
     EIO_Status st = Connect(sa.host, sa.port);
     if (st != eIO_Success) {
@@ -563,7 +578,8 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
 
     CJS_BoolGuard bg(&m_StickToHost);
     bool job_received = 
-        TParent::GetJobWaitNotify(job_key, input, wait_time, udp_port);
+        TParent::GetJobWaitNotify(job_key, input, wait_time, udp_port, 
+                                  jout, jerr);
     return job_received;
 }
 
@@ -714,6 +730,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/05/08 11:37:36  kuznets
+ * Added out/err redirection parameters
+ *
  * Revision 1.23  2006/02/24 14:41:37  kuznets
  * Job notification wait made optional
  *
