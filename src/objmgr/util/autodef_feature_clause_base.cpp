@@ -1364,7 +1364,7 @@ void CAutoDefFeatureClause_Base::RemoveTransSplicedLeaders()
         unsigned int subtype = m_ClauseList[k]->GetMainFeatureSubtype();
         if ((subtype == CSeqFeatData::eSubtype_otherRNA
              || subtype == CSeqFeatData::eSubtype_misc_RNA)
-            && NStr::Find(m_ClauseList[k]->GetDescription(), "trans-spliced leader")) {
+            && NStr::Find(m_ClauseList[k]->GetDescription(), "trans-spliced leader") != NCBI_NS_STD::string::npos) {
             m_ClauseList[k]->MarkForDeletion();
         } else {
             m_ClauseList[k]->RemoveTransSplicedLeaders();
@@ -1459,6 +1459,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2006/05/08 13:31:58  bollin
+* fixed bug in removing trans-spliced leader clauses
+*
 * Revision 1.10  2006/04/27 15:29:59  bollin
 * removed unused variables
 *
