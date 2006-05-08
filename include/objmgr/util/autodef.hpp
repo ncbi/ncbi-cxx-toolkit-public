@@ -69,6 +69,8 @@ public:
         eCommentFeat
     };
 
+    typedef set<objects::CFeatListItem>  TFeatTypeItemSet;
+
     CAutoDef();
     ~CAutoDef();
  
@@ -95,6 +97,8 @@ public:
     void SetKeep3UTRs(bool keep);
     void SetKeep5UTRs(bool keep);
     
+    void SuppressFeature(objects::CFeatListItem feat);
+    
     string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
     
     typedef vector<CAutoDefModifierCombo *> TModifierComboVector;
@@ -107,6 +111,8 @@ private:
     typedef vector<CSeq_entry_Handle> TSeqEntryHandleVector;
 
     TModifierComboVector  m_ComboList;
+    
+    TFeatTypeItemSet m_SuppressedFeatures;
     
     // feature clause specifications
     unsigned int m_FeatureListType;
@@ -154,6 +160,8 @@ private:
     
     bool x_IsOrgModRequired(unsigned int mod_type);
     bool x_IsSubSrcRequired(unsigned int mod_type);
+    
+    bool x_IsFeatureSuppressed(CSeqFeatData::ESubtype subtype);
 
 };  //  end of CAutoDef
 
@@ -263,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2006/05/08 18:14:53  bollin
+* added code for suppressing individual feature types in definition lines
+*
 * Revision 1.10  2006/05/02 14:12:18  bollin
 * moved organism description code out of CAutoDef into CAutoDefModCombo
 *

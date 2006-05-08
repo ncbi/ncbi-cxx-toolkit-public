@@ -68,6 +68,7 @@ CAutoDef::CAutoDef()
       m_Cancelled(false)
 {
     m_ComboList.clear();
+    m_SuppressedFeatures.clear();
 }
 
 
@@ -648,6 +649,34 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause)
 }
 
 
+bool CAutoDef::x_IsFeatureSuppressed(CSeqFeatData::ESubtype subtype)
+{
+    unsigned int feat_type = CSeqFeatData::GetTypeFromSubtype(subtype); 
+    ITERATE(TFeatTypeItemSet, it, m_SuppressedFeatures)  {
+        unsigned i_feat_type = it->GetType();
+        if (i_feat_type == CSeqFeatData::e_not_set) {
+            return true;
+        } else if (feat_type != i_feat_type) {
+            continue;
+        }
+        unsigned int i_subtype = it->GetSubtype();
+        if (i_subtype == CSeqFeatData::eSubtype_any
+            || i_subtype == subtype ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    return false;
+}
+
+
+void CAutoDef::SuppressFeature(objects::CFeatListItem feat)
+{
+    m_SuppressedFeatures.insert(feat);
+}
+
+
 string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 {
     CAutoDefFeatureClause_Base main_clause(m_SuppressLocusTags);
@@ -657,51 +686,53 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     while (feat_ci)
     {
         const CSeq_feat& cf = feat_ci->GetOriginalFeature();
-        new_clause = new CAutoDefFeatureClause(bh, cf);
-        unsigned int subtype = new_clause->GetMainFeatureSubtype();
-        if (new_clause->IsTransposon()) {
-            delete new_clause;
-            new_clause = new CAutoDefTransposonClause(bh, cf);
-        } else if (new_clause->IsSatelliteClause()) {
-            delete new_clause;
-            new_clause = new CAutoDefSatelliteClause(bh, cf);
-        } else if (subtype == CSeqFeatData::eSubtype_promoter) {
-            delete new_clause;
-            new_clause = new CAutoDefPromoterClause(bh, cf);
-        } else if (new_clause->IsIntergenicSpacer()) {
-            delete new_clause;
-            x_AddIntergenicSpacerFeatures(bh, cf, main_clause, m_SuppressLocusTags);
-            new_clause = NULL;
-        } else if (subtype == CSeqFeatData::eSubtype_otherRNA
-                   || subtype == CSeqFeatData::eSubtype_misc_RNA
-                   || subtype == CSeqFeatData::eSubtype_rRNA) {
-            if (x_AddMiscRNAFeatures(bh, cf, main_clause, m_SuppressLocusTags)) {
+        if (!x_IsFeatureSuppressed(cf.GetData().GetSubtype())) {
+            new_clause = new CAutoDefFeatureClause(bh, cf);
+            unsigned int subtype = new_clause->GetMainFeatureSubtype();
+            if (new_clause->IsTransposon()) {
                 delete new_clause;
-                new_clause = NULL;
-            }
-        } else if (new_clause->IsGeneCluster()) {
-            delete new_clause;
-            new_clause = new CAutoDefGeneClusterClause(bh, cf);
-        } else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_misc_feature
-                   && !NStr::Equal(new_clause->GetTypeword(), "control region")) {
-            if (m_MiscFeatRule == eDelete
-                || (m_MiscFeatRule == eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat())) {
+                new_clause = new CAutoDefTransposonClause(bh, cf);
+            } else if (new_clause->IsSatelliteClause()) {
                 delete new_clause;
-                new_clause = NULL;
-            } else if (m_MiscFeatRule == eCommentFeat) {
+                new_clause = new CAutoDefSatelliteClause(bh, cf);
+            } else if (subtype == CSeqFeatData::eSubtype_promoter) {
                 delete new_clause;
+                new_clause = new CAutoDefPromoterClause(bh, cf);
+            } else if (new_clause->IsIntergenicSpacer()) {
+                delete new_clause;
+                x_AddIntergenicSpacerFeatures(bh, cf, main_clause, m_SuppressLocusTags);
                 new_clause = NULL;
-                if (cf.CanGetComment() && ! NStr::IsBlank(cf.GetComment())) {
-                    new_clause = new CAutoDefMiscCommentClause(bh, cf);
+            } else if (subtype == CSeqFeatData::eSubtype_otherRNA
+                       || subtype == CSeqFeatData::eSubtype_misc_RNA
+                       || subtype == CSeqFeatData::eSubtype_rRNA) {
+                if (x_AddMiscRNAFeatures(bh, cf, main_clause, m_SuppressLocusTags)) {
+                    delete new_clause;
+                    new_clause = NULL;
                 }
-            }            
-        }
+            } else if (new_clause->IsGeneCluster()) {
+                delete new_clause;
+                new_clause = new CAutoDefGeneClusterClause(bh, cf);
+            } else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_misc_feature
+                       && !NStr::Equal(new_clause->GetTypeword(), "control region")) {
+                if (m_MiscFeatRule == eDelete
+                    || (m_MiscFeatRule == eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat())) {
+                    delete new_clause;
+                    new_clause = NULL;
+                } else if (m_MiscFeatRule == eCommentFeat) {
+                    delete new_clause;
+                    new_clause = NULL;
+                    if (cf.CanGetComment() && ! NStr::IsBlank(cf.GetComment())) {
+                        new_clause = new CAutoDefMiscCommentClause(bh, cf);
+                    }
+                }            
+            }
         
-        if (new_clause != NULL && new_clause->IsRecognizedFeature()) {
-            new_clause->SetSuppressLocusTag(m_SuppressLocusTags);
-            main_clause.AddSubclause(new_clause);
-        } else if (new_clause != NULL) {            
-            delete new_clause;
+            if (new_clause != NULL && new_clause->IsRecognizedFeature()) {
+                new_clause->SetSuppressLocusTag(m_SuppressLocusTags);
+                main_clause.AddSubclause(new_clause);
+            } else if (new_clause != NULL) {            
+                delete new_clause;
+            }
         }
         ++feat_ci;
     }
@@ -1017,6 +1048,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2006/05/08 18:15:15  bollin
+* added code for suppressing individual feature types in definition lines
+*
 * Revision 1.13  2006/05/02 14:12:40  bollin
 * moved organism description code out of CAutoDef into CAutoDefModCombo
 *
