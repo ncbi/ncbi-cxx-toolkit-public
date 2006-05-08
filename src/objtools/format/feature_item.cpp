@@ -469,7 +469,8 @@ static void s_QualVectorToNote(
 static void s_NoteFinalize(
    bool addPeriod,
    string& noteStr,
-   CFlatFeature& flatFeature ) {
+   CFlatFeature& flatFeature,
+   ETildeStyle style = eTilde_newline ) {
    
     if (!noteStr.empty()) {
         if (addPeriod  &&  !NStr::EndsWith(noteStr, ".")) {
@@ -477,7 +478,7 @@ static void s_NoteFinalize(
             AddPeriod(noteStr);
         }
         // Policy change: expand tilde on both descriptors and features
-//        ExpandTildes(noteStr, eTilde_newline);
+        ExpandTildes(noteStr, style);
 
         CRef<CFormatQual> note(new CFormatQual("note", noteStr));
         flatFeature.SetQuals().push_back(note);
@@ -545,7 +546,7 @@ static bool s_LocIsFuzz(const CSeq_feat& feat, const CSeq_loc& loc)
             }
         }
     } else {    // any regular feature test location for fuzz
-        for ( CSeq_loc_CI it(loc); it; ++it ) {
+        for ( CSeq_loc_CI it(loc, CSeq_loc_CI::eEmpty_Allow); it; ++it ) {
             const CSeq_loc& l = it.GetSeq_loc();
             switch ( l.Which() ) {
             case CSeq_loc::e_Pnt:
@@ -579,6 +580,19 @@ static bool s_LocIsFuzz(const CSeq_feat& feat, const CSeq_loc& loc)
                     return true;
                 }
                 break;
+            }}
+            case CSeq_loc::e_Packed_int:
+            {{  
+                bool fuzz = false;
+                if ( l.GetPacked_int().IsPartialStart(eExtreme_Biological) 
+                  || l.GetPacked_int().IsPartialStop(eExtreme_Biological) ) {
+                    return true;
+                }
+                break;
+            }}
+            case CSeq_loc::e_Null:
+            {{
+                return true;
             }}
             default:
                 break;
@@ -751,18 +765,21 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
     // add various common qualifiers...
 
     // partial
+    // note: /partial has been depricated since DEC-2001. Current policy is to suppress
+    //  /partial in entrez and release modes and let it stand in gbench and dump modes
+    //
     if ( !(IsMappedFromCDNA()  &&  ctx.IsProt())  &&
          !ctx.Config().HideUnclassPartial() ) {
         if ( m_Feat->CanGetPartial()  &&  m_Feat->GetPartial() ) {
             if ( !s_LocIsFuzz(*m_Feat, loc) ) {
-                int partial = SeqLocPartialCheck(m_Feat->GetLocation(), &scope);
-                if ( partial == eSeqlocPartial_Complete ) {
+//                int partial = SeqLocPartialCheck(m_Feat->GetLocation(), &scope);
+//                if ( partial == eSeqlocPartial_Complete ) {
                     x_AddQual(eFQ_partial, new CFlatBoolQVal(true));
-                }
+//                }
             }
         }
     }
-    
+   
     // dbxref
     if (m_Feat->IsSetDbxref()) {
         x_AddQual(eFQ_db_xref, new CFlatXrefQVal(m_Feat->GetDbxref(), &m_Quals));
@@ -771,7 +788,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
     if ( m_Feat->IsSetExt() ) {
         x_AddExtQuals(m_Feat->GetExt());
     }
- 
+  
     // experiment and inference
     if (m_Feat->IsSetExp_ev()) {
         if ( m_Feat->GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
@@ -2285,7 +2302,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     CFlatFeature::TQuals& qvec = ff.SetQuals();
 
 #define DO_QUAL(x) x_FormatQual(eFQ_##x, #x, qvec)
-    //DO_QUAL(partial);
+    DO_QUAL(partial);
     DO_QUAL(gene);
 
     DO_QUAL(locus_tag);
@@ -3733,7 +3750,7 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     }
 
     s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
-    s_NoteFinalize(add_period, notestr, ff);
+    s_NoteFinalize(add_period, notestr, ff, eTilde_space);
 }
 
 
@@ -3802,6 +3819,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2006/05/08 14:55:36  ludwigf
+* FIXED: Tilde expansion in the /note qualifier of source features.
+*
+* CHANGED: Suppress /partial qualifier if partiality is already implied by
+*  the fuzziness of the feature's location.
+*
 * Revision 1.74  2006/03/23 16:23:22  ludwigf
 * CHANGED: Supress /gene qualifier for primer_bind feature.
 *
