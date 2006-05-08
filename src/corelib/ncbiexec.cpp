@@ -32,7 +32,6 @@
 #include <stdarg.h>
 #include <corelib/ncbiexec.hpp>
 #include <corelib/ncbifile.hpp>
-#include <corelib/ncbi_process.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <process.h>
@@ -47,6 +46,26 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+
+TExitCode CExec::CResult::GetExitCode(void)
+{
+    if ( m_IsHandle ) {
+        NCBI_THROW(CExecException, eResult,
+                   "CExec:: CResult contains process handle, not exit code");
+    }
+    return m_Result.exitcode;
+}
+
+TProcessHandle CExec::CResult::GetProcessHandle(void)
+{
+    if ( !m_IsHandle ) {
+        NCBI_THROW(CExecException, eResult,
+                   "CExec:: CResult contains process exit code, not handle");
+    }
+    return m_Result.handle;
+}
 
 
 #if defined(NCBI_OS_MSWIN)
@@ -70,9 +89,10 @@ static int s_GetRealMode(CExec::EMode mode)
 // Type function to call
 enum ESpawnFunc {eV, eVE, eVP, eVPE};
 
-static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode, 
-                       const char *cmdname, const char *const *argv, 
-                       const char *const *envp = (const char *const*)0)
+static int 
+s_SpawnUnix(ESpawnFunc func, CExec::EMode mode, 
+            const char *cmdname, const char *const *argv, 
+            const char *const *envp = (const char *const*)0)
 {
     // Empty environment for Spawn*E
     const char* empty_env[] = { 0 };
@@ -169,7 +189,8 @@ static void s_CheckExecArg(const char* arg)
     const char **args = new const char*[xcnt+1]; \
     typedef ArrayDeleter<const char*> TArgsDeleter; \
     AutoPtr<const char*, TArgsDeleter> p_args(args); \
-    if ( !args ) return -1; \
+    if ( !args ) \
+        NCBI_THROW(CCoreException, eNullPtr, kEmptyStr); \
     args[0] = cmdname; \
     args[1] = argv; \
     va_start(vargs, argv); \
@@ -182,7 +203,23 @@ static void s_CheckExecArg(const char* arg)
     args[xi] = (const char*)0
 
 
-int CExec::System(const char *cmdline)
+// Return result from Spawn method
+#define RETURN_RESULT(func) \
+    if (status == -1) { \
+        NCBI_THROW(CExecException, eSpawn, "CExec::func()"); \
+    } \
+    CResult result; \
+    if (mode == eWait) { \
+        result.m_IsHandle = false; \
+        result.m_Result.exitcode = (TExitCode)status; \
+    } else { \
+        result.m_IsHandle = true; \
+        result.m_Result.handle = (TProcessHandle)status; \
+    } \
+    return result
+
+
+TExitCode CExec::System(const char *cmdline)
 { 
     int status;
 #if defined(NCBI_OS_MSWIN)
@@ -192,7 +229,7 @@ int CExec::System(const char *cmdline)
     status = system(cmdline);
 #endif
     if (status == -1) {
-        NCBI_THROW(CExecException,eSystem,
+        NCBI_THROW(CExecException, eSystem,
                    "CExec::System: call to system failed");
     }
 #if defined(NCBI_OS_UNIX)
@@ -203,160 +240,145 @@ int CExec::System(const char *cmdline)
 }
 
 
-int CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
+CExec::CResult
+CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
 {
-    int status;
+    intptr_t status;
     GET_EXEC_ARGS;
+
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int) spawnv(s_GetRealMode(mode), cmdname, args);
+    status = spawnv(s_GetRealMode(mode), cmdname, args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, args);
 #endif
-    if (status == -1) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnL()");
-    }
-    return status;
+    RETURN_RESULT(SpawnL);
 }
 
 
-int CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
+CExec::CResult
+CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
 {
-    int status;
+    intptr_t status;
     GET_EXEC_ARGS;
     char** envp = va_arg(vargs, char**);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int) spawnve(s_GetRealMode(mode), cmdname, args, envp);
+    status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
 #endif
-    if (status == -1) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnLE()");
-    }
-    return status;
+    RETURN_RESULT(SpawnLE);
 }
 
 
-int CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
+CExec::CResult
+CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
 {
-    int status;
+    intptr_t status;
     GET_EXEC_ARGS;
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int) spawnvp(s_GetRealMode(mode), cmdname, args);
+    status = spawnvp(s_GetRealMode(mode), cmdname, args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, args);
 #endif
-    if (status == -1) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnLP()");
-    }
-    return status;
+    RETURN_RESULT(SpawnLP);
 }
 
 
-int CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
+CExec::CResult
+CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
 {
-    int status;
+    intptr_t status;
     GET_EXEC_ARGS;
     char** envp = va_arg(vargs, char**);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int) spawnve(s_GetRealMode(mode), cmdname, args, envp);
+    status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, args, envp);
 #endif
-    if (status == -1 ) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnLPE()");
-    }
-    return status;
+    RETURN_RESULT(SpawnLPE);
 }
 
 
-int CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
+CExec::CResult
+CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
 {
-    int status;
+    intptr_t status;
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int) spawnv(s_GetRealMode(mode), cmdname, argv);
+    status = spawnv(s_GetRealMode(mode), cmdname, argv);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, argv);
 #endif
-    if (status == -1 ) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnV()");
-    }
-    return status;
+    RETURN_RESULT(SpawnV);
 }
 
 
-int CExec::SpawnVE(EMode mode, const char *cmdname, 
-                   const char *const *argv, const char * const *envp)
+CExec::CResult
+CExec::SpawnVE(EMode mode, const char *cmdname, 
+               const char *const *argv, const char * const *envp)
 {
-    int status;
+    intptr_t status;
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int) spawnve(s_GetRealMode(mode), cmdname, argv, envp);
+    status = spawnve(s_GetRealMode(mode), cmdname, argv, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, argv, envp);
 #endif
-    if (status == -1 ) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnVE()");
-    }
-    return status;
+    RETURN_RESULT(SpawnVE);
 }
 
 
-int CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
+CExec::CResult
+CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
 {
-    int status;
+    intptr_t status;
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int) spawnvp(s_GetRealMode(mode), cmdname, argv);
+    status = spawnvp(s_GetRealMode(mode), cmdname, argv);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, argv);
 #endif
-    if (status == -1 ) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnVP()");
-    }
-    return status;
+    RETURN_RESULT(SpawnVP);
 }
 
 
-int CExec::SpawnVPE(EMode mode, const char *cmdname,
-                    const char *const *argv, const char * const *envp)
+CExec::CResult
+CExec::SpawnVPE(EMode mode, const char *cmdname,
+                const char *const *argv, const char * const *envp)
 {
-    int status;
+    intptr_t status;
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = (int) spawnvpe(s_GetRealMode(mode), cmdname, argv, envp);
+    status = spawnvpe(s_GetRealMode(mode), cmdname, argv, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, argv, envp);
 #endif
-    if (status == -1 ) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnVPE()");
-    }
-    return status;
+    RETURN_RESULT(SpawnVPE);
 }
 
 
-int CExec::Wait(int handle, unsigned long timeout)
+int CExec::Wait(TProcessHandle handle, unsigned long timeout)
 {
     return CProcess(handle, CProcess::eHandle).Wait(timeout);
 }
 
 
-int CExec::RunSilent(EMode mode, const char *cmdname,
-                     const char *argv, ... /*, NULL */)
+CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
+                                const char *argv, ... /*, NULL */)
 {
-    int status = -1;
+    intptr_t status = -1;
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
@@ -404,7 +426,7 @@ int CExec::RunSilent(EMode mode, const char *cmdname,
             WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
             DWORD exitcode = -1;
             GetExitCodeProcess(ProcessInfo.hProcess, &exitcode);
-            status = (int)exitcode;
+            status = exitcode;
             CloseHandle(ProcessInfo.hProcess);
         }
         else if (mode == eDetach) {
@@ -415,7 +437,7 @@ int CExec::RunSilent(EMode mode, const char *cmdname,
         }
         else if (mode == eNoWait) {
             // asynchronous spawn -- return PID
-            status = (int)ProcessInfo.hProcess;
+            status = (intptr_t)ProcessInfo.hProcess;
         }
         CloseHandle(ProcessInfo.hThread);
     }
@@ -425,10 +447,7 @@ int CExec::RunSilent(EMode mode, const char *cmdname,
     status = s_SpawnUnix(eV, mode, cmdname, args);
 
 #endif
-    if (status == -1) {
-        NCBI_THROW(CExecException, eSpawn, "CExec::RunSilent()");
-    }
-    return status;
+    RETURN_RESULT(RunSilent);
 }
 
 
@@ -438,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/05/08 13:57:19  ivanov
+ * Changed return type of all Spawn* function from int to CResult
+ *
  * Revision 1.32  2006/04/27 22:53:38  vakatov
  * Rollback odd commits
  *
