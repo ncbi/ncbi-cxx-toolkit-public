@@ -87,30 +87,7 @@ CBlastOptionsLocal::SetDbGeneticCode(int gc)
 EBlastProgramType 
 CBlastOptionsLocal::GetProgramType() const
 {
-    switch (m_Program) {
-    case eBlastn: case eMegablast: case eDiscMegablast:
-        return eBlastTypeBlastn;
-    case eBlastp:
-        return eBlastTypeBlastp;
-    case eBlastx:
-        return eBlastTypeBlastx;
-    case eTblastn:
-        return eBlastTypeTblastn;
-    case eTblastx:
-        return eBlastTypeTblastx;
-    case eRPSBlast:
-        return eBlastTypeRpsBlast;
-    case eRPSTblastn:
-        return eBlastTypeRpsTblastn;
-    case ePSIBlast:
-        return eBlastTypePsiBlast;
-    case ePHIBlastp:
-        return eBlastTypePhiBlastp;
-    case ePHIBlastn:
-        return eBlastTypePhiBlastn;
-    default:
-        return eBlastTypeUndefined;
-    }
+    return EProgramToEBlastProgramType(m_Program);
 }
 
 static void 
