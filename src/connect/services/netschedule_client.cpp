@@ -1034,7 +1034,7 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
                                              const string&  response)
 {
     // Server message format:
-    //    JOB_KEY "input" "out" "err"
+    //    JOB_KEY "input" ["out" ["err"]]
 
     _ASSERT(!response.empty());
     _ASSERT(input);
@@ -1068,7 +1068,7 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
     if (*str && *str == '"') {
         ++str;
         for( ;*str && *str; ++str) {
-            if (*str == '"' && *(str-1) != '\\') break;
+            if (*str == '"' && *(str-1) != '\\') { ++str; break; }
             input->push_back(*str);
         }
     } else {
@@ -1081,41 +1081,36 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
     while (*str && isspace((unsigned char)(*str)))
         ++str;
 
+    if (*str == 0)
+        return;
+
     if (*str == '"') {
         ++str;
+        for( ;*str && *str; ++str) {
+            if (*str == '"' && *(str-1) != '\\') { ++str; break; }
+            jout->push_back(*str);
+        }
     } else {
         goto throw_err;
     }
+    *jout = NStr::ParseEscapes(*jout);
 
-    for (;*str && *str != '"'; ++str) {
-        jout->push_back(*str);
-    }
-    if (*str == 0) {
-        goto throw_err;
-    }
-    if (*str == '"') {
-        ++str;
-    }
-    
-    // parse "err"
     while (*str && isspace((unsigned char)(*str)))
         ++str;
 
+    if (*str == 0) {
+        return;
+    }
     if (*str == '"') {
         ++str;
+        for( ;*str && *str; ++str) {
+            if (*str == '"' && *(str-1) != '\\') { ++str; break; }
+            jerr->push_back(*str);
+        }
     } else {
         goto throw_err;
     }
-
-    for (;*str && *str != '"'; ++str) {
-        jerr->push_back(*str);
-    }
-    if (*str == 0) {
-        goto throw_err;
-    }
-    if (*str == '"') {
-        ++str;
-    }
+    *jerr = NStr::ParseEscapes(*jerr);
 }
 
 
@@ -1767,6 +1762,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/05/08 11:56:58  kuznets
+ * Fixed bug in server outout parser
+ *
  * Revision 1.52  2006/05/08 11:37:36  kuznets
  * Added out/err redirection parameters
  *
