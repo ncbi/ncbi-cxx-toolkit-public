@@ -34,19 +34,27 @@
 
 BEGIN_NCBI_SCOPE
 
+static const int s_FlagsLen = 2;
+static const char *s_Flags[s_FlagsLen] = { 
+    "D ",
+    "K " };
+
 CStringOrBlobStorageWriter::
 CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage& storage,
                            string& data)
     : m_MaxBuffSize(max_string_size), m_Storage(storage), m_BlobOstr(NULL),
       m_Data(data)
 {
-    m_Data.erase();
+    m_Data = s_Flags[0];
 }
 
 CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter() 
 {
     try {
         m_Storage.Reset();
+        if (m_BlobOstr) {
+            m_Data = s_Flags[1] + m_Data;
+        }
     } catch(exception& ex) {
         ERR_POST( "An exception caught in ~CStringOrBlobStorageWriter() :" << 
                   ex.what());
@@ -85,7 +93,7 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
 
     if (m_Data.size()+count > m_MaxBuffSize) {
         _ASSERT(!m_BlobOstr);
-        string tmp = m_Data;
+        string tmp(m_Data.begin() + s_FlagsLen, m_Data.end());
         m_Data = "";
         m_BlobOstr = &m_Storage.CreateOStream(m_Data);
         ERW_Result ret = eRW_Success;
@@ -93,7 +101,7 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
             ret = x_WriteToStream(&*tmp.begin(), tmp.size());
             if( ret != eRW_Success ) {
                 m_Storage.Reset();
-                m_Data = tmp;
+                m_Data = s_Flags[0] + tmp;
                 m_BlobOstr = NULL;
                 return ret;
             }
@@ -133,23 +141,31 @@ ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
 
 CStringOrBlobStorageReader::
 CStringOrBlobStorageReader(const string& data, IBlobStorage& storage, 
-                           IBlobStorage::ELockMode lock_mode,
-                           size_t& data_size)
+                           size_t* data_size,
+                           IBlobStorage::ELockMode lock_mode)
     : m_Data(data), m_Storage(storage), m_BlobIstr(NULL)
 {
-    if (m_Storage.IsKeyValid(data)) {
+    if (NStr::CompareCase(m_Data, 0, s_FlagsLen, s_Flags[1]) == 0) {
+        //    if (m_Storage.IsKeyValid(data)) {
         //        try {
-        m_BlobIstr = &m_Storage.GetIStream(m_Data, &data_size, lock_mode);
+        m_BlobIstr = &m_Storage.GetIStream(&m_Data[s_FlagsLen], data_size, lock_mode);
         //        } catch (CBlobStorageException& ex) {
         //            if (ex.GetErrCode() != CBlobStorageException::eBlobNotFound)
         //                throw;
         //        }
+    } else if (NStr::CompareCase(m_Data, 0, s_FlagsLen, s_Flags[0]) == 0) {
+        m_CurPos = m_Data.begin() + s_FlagsLen;
+        if (data_size) *data_size = m_Data.size();
+    } else {
+        if (!m_Data.empty())
+            NCBI_THROW(CStringOrBlobStorageRWException, eInvalidFlag,
+                       "Unknown data type " + 
+                       string(m_Data.begin(),m_Data.begin()+s_FlagsLen));
+        else {
+            m_CurPos = m_Data.begin();
+            if (data_size) *data_size = m_Data.size();
+        }
     }
-    if (!m_BlobIstr) {
-        m_CurPos = m_Data.begin();
-        data_size = m_Data.size();
-    }
-
 }
 
 CStringOrBlobStorageReader::~CStringOrBlobStorageReader()
@@ -215,6 +231,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2006/05/08 15:16:42  didenko
+ * Added support for an optional saving of a remote application's stdout
+ * and stderr into files on a local file system
+ *
  * Revision 6.9  2006/05/04 14:42:16  didenko
  * Simplified bytes_written calculation algorithm
  *

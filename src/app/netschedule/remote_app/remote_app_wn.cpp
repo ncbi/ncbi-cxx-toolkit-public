@@ -175,7 +175,10 @@ public:
         m_Request.Receive(context.GetIStream());
         vector<string> args;
         NStr::Tokenize(m_Request.GetCmdLine(), " ", args);
-
+        
+        m_Result.SetStdOutErrFileNames(m_Request.GetStdOutFileName(),
+                                       m_Request.GetStdErrFileName(),
+                                       m_Request.GetStdOutErrStorageType());
         int ret = 0;
         bool canceled = s_Exec(m_AppPath, args, 
                                m_Request.GetStdIn(), 
@@ -258,6 +261,10 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/08 15:16:42  didenko
+ * Added support for an optional saving of a remote application's stdout
+ * and stderr into files on a local file system
+ *
  * Revision 1.9  2006/05/03 14:54:02  didenko
  * <util/stream_util.hpp> is replaced with <corelib/stream_util.hpp>
  *

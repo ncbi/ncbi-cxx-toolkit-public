@@ -42,6 +42,11 @@ BEGIN_NCBI_SCOPE
 class IBlobStorageFactory;
 class CRemoteAppRequest_Impl;
 
+enum EStdOutErrStorageType {
+    eLocalFile = 0,
+    eBlobStorage
+};
+
 /// Remote Application Request (client side)
 ///
 /// It is used by a client application which wants to run a remote application
@@ -67,6 +72,10 @@ public:
     /// the the executer side it gets stored to a temprary directory and then its
     /// original name in the command line will be replaced with the new temprary name.
     void AddFileForTransfer(const string& fname);
+
+    void SetStdOutErrFileNames(const string& stdout_fname,
+                               const string& stderr_fname,
+                               EStdOutErrStorageType storage_type = eLocalFile);
 
     /// Serialize a request to a given stream. After call to this method the instance
     /// cleans itself an it can be reused.
@@ -97,6 +106,10 @@ public:
 
     /// Deserialize a request from a given stream.
     void Receive(CNcbiIstream& is);
+
+    const string& GetStdOutFileName() const;
+    const string& GetStdErrFileName() const;
+    EStdOutErrStorageType GetStdOutErrStorageType() const;
 
     /// Remove all temprary files and directory which were used during a
     /// files transfer.
@@ -132,6 +145,10 @@ public:
     /// Get a remote application return code
     int           GetRetCode() const;
 
+    const string& GetStdOutFileName() const;
+    const string& GetStdErrFileName() const;
+    EStdOutErrStorageType GetStdOutErrStorageType() const;
+
     /// Deserialize a result from a given stream.
     void Receive(CNcbiIstream& is);
 
@@ -161,6 +178,11 @@ public:
     /// Set a remote application's return code
     void SetRetCode(int ret_code);
 
+    void SetStdOutErrFileNames(const string& stdout_fname,
+                               const string& stderr_fname,
+                               EStdOutErrStorageType type);
+
+
     /// Serialize a result to a given stream. After call to this method the instance
     /// cleans itself an it can be reused.
     void Send(CNcbiOstream& os);
@@ -178,6 +200,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/08 15:16:42  didenko
+ * Added support for an optional saving of a remote application's stdout
+ * and stderr into files on a local file system
+ *
  * Revision 1.3  2006/03/16 15:13:59  didenko
  * Remaned CRemoteJob... to CRemoteApp...
  * + Comments

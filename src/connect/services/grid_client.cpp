@@ -160,7 +160,7 @@ CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
 {
     IReader* reader = new CStringOrBlobStorageReader(m_Output,
                                                      m_GridClient.GetStorage(),
-                                                     mode, m_BlobSize);
+                                                     &m_BlobSize, mode);
     m_RStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader));
     return *m_RStream;
     //    return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize, mode);
@@ -194,6 +194,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/08 15:16:42  didenko
+ * Added support for an optional saving of a remote application's stdout
+ * and stderr into files on a local file system
+ *
  * Revision 1.9  2006/05/03 14:50:08  didenko
  * Added affinity support
  *

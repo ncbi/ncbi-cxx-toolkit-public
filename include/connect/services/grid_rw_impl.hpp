@@ -91,8 +91,10 @@ class NCBI_XCONNECT_EXPORT CStringOrBlobStorageReader : public IReader
 public:
     CStringOrBlobStorageReader(const string& data_or_key, 
                                IBlobStorage& storage,
-                               IBlobStorage::ELockMode lock_mode,
-                               size_t& data_size);
+                               size_t* data_size = NULL,
+                               IBlobStorage::ELockMode lock_mode 
+                                         = IBlobStorage::eLockWait);
+
     virtual ~CStringOrBlobStorageReader();
    
     virtual ERW_Result Read(void*   buf,
@@ -113,11 +115,35 @@ private:
     CStringOrBlobStorageReader& operator=(const CStringOrBlobStorageReader&);
 };
 
+
+class CStringOrBlobStorageRWException : public CException
+{
+public:
+    enum EErrCode {
+        eInvalidFlag
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eInvalidFlag: return "eInvalidFlag";
+        default:           return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CStringOrBlobStorageRWException, CException);
+};
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/08 15:16:42  didenko
+ * Added support for an optional saving of a remote application's stdout
+ * and stderr into files on a local file system
+ *
  * Revision 1.3  2006/04/04 20:14:04  didenko
  * Disabled copy constractors and assignment operators
  *

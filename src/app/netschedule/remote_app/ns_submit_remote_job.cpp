@@ -112,6 +112,16 @@ void CNSSubmitRemoveJobApp::Init(void)
                              "Files for transfer to the remote applicaion side",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("jout", 
+                             "file_names",
+                             "A file the remote applicaion stdout",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("jerr", 
+                             "file_names",
+                             "A file the remote applicaion stderr",
+                             CArgDescriptions::eString);
+
     arg_desc->AddOptionalKey("of", 
                              "file_names",
                              "Ouput files with job ids",
@@ -212,6 +222,16 @@ int CNSSubmitRemoveJobApp::Run(void)
                 request.AddFileForTransfer(*s);
             }
         }
+        string jout, jerr;
+        if (args["jout"]) 
+            jout = args["jout"].AsString();
+
+        if (args["jerr"]) 
+            jerr = args["jerr"].AsString();
+        
+        if (!jout.empty() && !jerr.empty())
+            request.SetStdOutErrFileNames(jout, jerr);
+
 
         CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
         request.Send(job_submiter.GetOStream());
@@ -244,6 +264,12 @@ int CNSSubmitRemoveJobApp::Run(void)
                     }
                 }
             }
+            string jout = s_FindParam(line, "jout=\"");
+            string jerr = s_FindParam(line, "jerr=\"");
+
+            if (!jout.empty() && !jerr.empty())
+                request.SetStdOutErrFileNames(jout, jerr);
+            
             CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
             request.Send(job_submiter.GetOStream());
             string job_key = job_submiter.Submit(affinity);
@@ -266,6 +292,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/08 15:16:42  didenko
+ * Added support for an optional saving of a remote application's stdout
+ * and stderr into files on a local file system
+ *
  * Revision 1.1  2006/05/03 14:55:21  didenko
  * Added ns_submit_remote_job utility.
  *

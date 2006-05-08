@@ -101,8 +101,9 @@ CNcbiIstream& CGridThreadContext::GetIStream(IBlobStorage::ELockMode mode)
     if (m_Reader.get()) {
         IReader* reader =
                new CStringOrBlobStorageReader(m_JobContext->GetJobInput(),
-                                              *m_Reader, mode,
-                                              m_JobContext->SetJobInputBlobSize());
+                                              *m_Reader,
+                                              &m_JobContext->SetJobInputBlobSize(),
+                                              mode);
         m_RStream.reset(new CRStream(reader, 0,0, 
                                      CRWStreambuf::fOwnReader));
         return *m_RStream;
@@ -348,6 +349,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2006/05/08 15:16:42  didenko
+ * Added support for an optional saving of a remote application's stdout
+ * and stderr into files on a local file system
+ *
  * Revision 6.18  2006/04/12 19:03:49  didenko
  * Renamed parameter "use_embedded_input" to "use_embedded_storage"
  *
