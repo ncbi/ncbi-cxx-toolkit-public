@@ -35,6 +35,8 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 
 #if defined(NCBI_OS_MSWIN)
 #include <io.h>
@@ -667,6 +669,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/05/09 20:40:10  ucko
+ * #include <algorithm> for find()
+ *
  * Revision 1.25  2006/05/08 17:49:11  ssikorsk
  * Replaced type of  CDBL_Connection::m_CMDs from CPointerPot to deque<CDB_BaseEnt*>
  *
