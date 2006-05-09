@@ -15,11 +15,14 @@ $CHECK_EXEC test_serial > test_serial.out 2> test_serial.err  ||  exit 1
 status=0
 
 for f in webenv.ent webenv.bin test_serial.asn test_serial.asb ; do
-    diff -w ${f} ${f}o
+    tr -d "\r\n " < ${f}  > ${f}.$$.tmp
+    tr -d "\r\n " < ${f}o > ${f}o.$$.tmp
+    cmp -s ${f}.$$.tmp ${f}o.$$.tmp
     if test $? -ne 0 ; then
         echo "Error in file ${f}o"
         status=1
     fi
+    rm ${f}.$$.tmp ${f}o.$$.tmp
 done
 
 test $status -eq 0  ||  exit 2
