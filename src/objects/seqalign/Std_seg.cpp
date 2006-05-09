@@ -178,15 +178,19 @@ void CStd_seg::RemapToLoc(TDim row,
 
 #if _DEBUG
     // Check ids equality
-    const CSeq_id* single_id = 0;
-    dst_loc.CheckId(single_id);
-    _ASSERT(single_id);
-    if (IsSetIds()  &&  !single_id->Equals(*GetIds()[row] )) {
+    const CSeq_id* single_src_id = 0;
+    src_loc.CheckId(single_src_id);
+    _ASSERT(single_src_id);
+
+    const CSeq_id* single_dst_id = 0;
+    dst_loc.CheckId(single_dst_id);
+    _ASSERT(single_dst_id);
+
+    if ( !single_src_id->Equals(*single_dst_id)  ||
+         IsSetIds()  &&  !single_dst_id->Equals(*GetIds()[row] )) {
         NCBI_THROW(CSeqalignException, eInvalidInputData,
                    "CStd_seg::RemapToLoc target seq-loc id does not equal row's id.");
     }
-    src_loc.CheckId(single_id);
-    _ASSERT(single_id);
 #endif
 
     // Check the range
@@ -237,6 +241,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/05/09 15:58:09  todorov
+* Added another debug-mode ids consistency check.
+*
 * Revision 1.5  2006/05/09 15:46:41  todorov
 * Improved the check for ids equality in RemapToLoc.
 *
