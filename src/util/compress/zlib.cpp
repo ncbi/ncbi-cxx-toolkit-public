@@ -246,7 +246,7 @@ static size_t s_WriteGZipHeader(void* src_buf, size_t buf_size,
     buf[3] = flags;
     /* 4-7 mtime */
     if ( info  &&  info->mtime ) {
-        s_StoreUI4((unsigned char*)buf+4, info->mtime);
+        s_StoreUI4((unsigned char*)buf+4, (unsigned long)info->mtime);
     }
     /* 8 - xflags == 0*/
     buf[9] = OS_CODE;
@@ -1078,6 +1078,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/05/09 13:56:37  ivanov
+ * Get rid of warning on MSVC8
+ *
  * Revision 1.26  2005/11/02 18:02:31  ivanov
  * Restored functionality of CZipCompression::CompressFile() to write
  * gzip files by default
