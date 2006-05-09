@@ -189,7 +189,7 @@ ENa_strand CDense_seg::GetSeqStrand(TDim row) const
     }
 
 
-    if (!CanGetStrands()  ||  (int)GetStrands().size() < row) {
+    if (!CanGetStrands()  ||  (int)GetStrands().size() <= row) {
         NCBI_THROW(CSeqalignException, eInvalidInputData,
                    "CDense_seg::GetSeqStrand():"
                    " Strand doesn't exist for this row.");
@@ -1134,6 +1134,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/05/09 16:18:47  jcherry
+* Fixed detection of unset strands in CDense_seg::GetSeqStrand
+*
 * Revision 1.28  2006/05/08 21:41:43  todorov
 * Fixed the syntax of an error message.
 *
