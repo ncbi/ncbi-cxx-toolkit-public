@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.420 2006/05/02 14:54:48 ucko Exp $
+#  $Id: configure.ac,v 1.421 2006/05/09 18:00:35 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -4300,6 +4300,7 @@ if test "$with_libxml" != "no"; then
       *        ) LIBXML_PATH=$with_libxml ;;
    esac
    if test -d "$LIBXML_PATH"; then
+      LIBXML_PATH=`cd $LIBXML_PATH  &&  $smart_pwd`
       in_path=" in $LIBXML_PATH"
       if test -n "$LIBXML_INCLUDE"; then
          :

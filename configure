@@ -23298,6 +23298,7 @@ if test "$with_libxml" != "no"; then
       *        ) LIBXML_PATH=$with_libxml ;;
    esac
    if test -d "$LIBXML_PATH"; then
+      LIBXML_PATH=`cd $LIBXML_PATH  &&  $smart_pwd`
       in_path=" in $LIBXML_PATH"
       if test -n "$LIBXML_INCLUDE"; then
          :
