@@ -38,6 +38,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbistr.hpp>
 
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_bv_store.hpp>
@@ -143,6 +145,46 @@ protected:
     
     double       m_VolMax; ///< Volume max size
     unsigned     m_RecMax; ///< Maximum number of records
+};
+
+/// Split demux which can save and load state into a file 
+/// Stateful (persistent) class.
+///
+class CBDB_BlobDeMuxPersistent : public CBDB_BlobDeMux
+{
+public:
+    typedef CBDB_BlobDeMux  TParent;
+public:
+    CBDB_BlobDeMuxPersistent(
+        double    vol_max = 1.5 * (1024.00*1024.00*1024.00),
+        unsigned  rec_max = 3 * 1000000) 
+        : CBDB_BlobDeMux(vol_max, rec_max)
+    {}
+
+    void Save(CNcbiOstream& os)
+    {
+        for (size_t i = 0; i < m_VolS.size(); ++i) {
+            string str1 = NStr::DoubleToString(m_VolS[i], 2);
+            os << str1 << ";" << m_RecS[i] << NcbiEndl;
+        }
+    }
+
+    void Load(CNcbiIstream& is)
+    {
+        m_VolS.resize(0); m_RecS.resize(0);
+        string ln, s1, s2;
+        while (is) {
+            getline(is, ln);
+            if (ln.empty()) {
+                continue;
+            }
+            NStr::SplitInTwo(ln, ";", s1, s2);
+            double d = NStr::StringToDouble(s1);
+            unsigned cnt = NStr::StringToUInt(s2);
+            m_VolS.push_back(d);
+            m_RecS.push_back(cnt);
+        } // while
+    }
 };
 
 
@@ -688,6 +730,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/09 18:19:52  kuznets
+ * Added persistent demux
+ *
  * Revision 1.6  2006/05/08 14:59:59  kuznets
  * Fixed bug with splitting based on number of records
  *
