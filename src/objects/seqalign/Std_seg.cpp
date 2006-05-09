@@ -170,22 +170,24 @@ void CStd_seg::RemapToLoc(TDim row,
                    " Invalid row number");
     }
 
-#if _DEBUG
-    // Check ids equality
-    const CSeq_id* single_id = 0;
-    dst_loc.CheckId(single_id);
-    _ASSERT(single_id);
-    if ( !single_id->Equals(*GetIds()[row] )) {
-        NCBI_THROW(CSeqalignException, eInvalidInputData,
-                   "CStd_seg::RemapToLoc target seq-loc id does not equal row's id.");
-    }
-#endif
-
     const CSeq_interval& dst_int = dst_loc.GetInt();
     TSeqPos              dst_len = dst_int.GetTo() - dst_int.GetFrom() + 1;
 
     CSeq_loc&            src_loc  = *SetLoc()[row];
     TSeqPos              src_stop = src_loc.GetStop(eExtreme_Positional);
+
+#if _DEBUG
+    // Check ids equality
+    const CSeq_id* single_id = 0;
+    dst_loc.CheckId(single_id);
+    _ASSERT(single_id);
+    if (IsSetIds()  &&  !single_id->Equals(*GetIds()[row] )) {
+        NCBI_THROW(CSeqalignException, eInvalidInputData,
+                   "CStd_seg::RemapToLoc target seq-loc id does not equal row's id.");
+    }
+    src_loc.CheckId(single_id);
+    _ASSERT(single_id);
+#endif
 
     // Check the range
     if (dst_len <= src_stop  &&  src_stop != kInvalidSeqPos) {
@@ -235,6 +237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/05/09 15:46:41  todorov
+* Improved the check for ids equality in RemapToLoc.
+*
 * Revision 1.4  2006/05/08 21:42:51  todorov
 * Added a RemapToLoc method.
 *
