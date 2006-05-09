@@ -114,7 +114,7 @@ TSeqPos CDense_seg::GetSeqStart(TDim row) const
 
     if (row < 0  ||  row >= dim) {
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
-                   "CDense_seg::GetSeqStop():"
+                   "CDense_seg::GetSeqStart():"
                    " Invalid row number");
     }
 
@@ -1134,6 +1134,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2006/05/09 16:29:50  todorov
+* Exception text change.
+*
 * Revision 1.29  2006/05/09 16:18:47  jcherry
 * Fixed detection of unset strands in CDense_seg::GetSeqStrand
 *
