@@ -184,6 +184,9 @@ public:
             m_VolS.push_back(d);
             m_RecS.push_back(cnt);
         } // while
+        if (m_VolS.size() == 0 || m_RecS.size() == 0) {
+            NewVolume();
+        }
     }
 };
 
@@ -730,6 +733,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/05/09 20:18:33  kuznets
+ * fixed bug in loading persistent demux state
+ *
  * Revision 1.7  2006/05/09 18:19:52  kuznets
  * Added persistent demux
  *
