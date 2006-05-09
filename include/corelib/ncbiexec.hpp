@@ -87,7 +87,7 @@ public:
     /// In the eWait spawn functions returns an exit code of a process.
     /// Throws an exceptions if you try to get exit code instead of 
     /// stored process handle, and otherwise.
-    class CResult
+    class NCBI_XNCBI_EXPORT CResult
     {
     public:
         /// Get exit code
@@ -514,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/05/09 14:05:03  ivanov
+ * Added export specifier for CExec::CResult
+ *
  * Revision 1.17  2006/05/08 13:57:10  ivanov
  * Changed return type of all Spawn* function from int to CResult
  *
