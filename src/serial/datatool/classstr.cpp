@@ -47,10 +47,12 @@ BEGIN_NCBI_SCOPE
 #define DELAY_PREFIX "m_delay_"
 
 CClassTypeStrings::CClassTypeStrings(const string& externalName,
-                                     const string& className)
+                                     const string& className,
+                                     const string& namespaceName)
     : m_IsObject(true), m_HaveUserClass(true), m_HaveTypeInfo(true),
       m_ExternalName(externalName), m_ClassName(className)
 {
+    SetNamespaceName(namespaceName);
 }
 
 CClassTypeStrings::~CClassTypeStrings(void)
@@ -1114,6 +1116,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "    SET_CLASS_MODULE(\""<<GetModuleName()<<"\");\n";
     }
+    if ( !GetNamespaceName().empty() ) {
+        methods <<
+            "    SET_NAMESPACE(\""<<GetNamespaceName()<<"\");\n";
+    }
     if ( !m_ParentClassName.empty() ) {
         code.SetParentClass(m_ParentClassName, m_ParentClassNamespace);
         methods <<
@@ -1510,6 +1516,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.73  2006/01/19 18:21:23  gouriano
 * Added possibility to save bit string data in compressed format
 *

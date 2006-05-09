@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.44  2005/12/06 21:05:42  gouriano
 * Corrected XML schema definition of bit string
 *
@@ -788,7 +791,7 @@ AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
     string charType = GetVar("_char");
     if ( charType.empty() )
         charType = "char";
-    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType));
+    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType, GetNamespaceName()));
 }
 
 bool COctetStringDataType::x_AsBitString(void) const

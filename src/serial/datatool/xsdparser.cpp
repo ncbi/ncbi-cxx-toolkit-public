@@ -342,11 +342,11 @@ string XSDParser::ParseElementContent(DTDElement* owner)
     }
     if (tok == K_CLOSING) {
         ParseContent(m_MapElement[name]);
-        FixEmbeddedNames(m_MapElement[name]);
     }
     if (!ref && !named_type) {
         m_MapElement[name].SetTypeIfUnknown(DTDElement::eEmpty);
     }
+    m_MapElement[name].SetNamespaceName(m_TargetNamespace);
     return name;
 }
 
@@ -418,6 +418,7 @@ void XSDParser::ParseContent(DTDElement& node)
             break;
         }
     }
+    FixEmbeddedNames(node);
 }
 
 void XSDParser::ParseContainer(DTDElement& node)
@@ -672,7 +673,6 @@ void XSDParser::ProcessNamedTypes(void)
                 found = true;
                 PushEntityLexer(node.GetTypeName());
                 ParseContent(node);
-                FixEmbeddedNames(node);
             }
         }
     } while (found);
@@ -787,6 +787,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2006/05/09 15:16:43  gouriano
+ * Added XML namespace definition possibility
+ *
  * Revision 1.2  2006/05/03 14:38:08  gouriano
  * Added parsing attribute definition and include
  *

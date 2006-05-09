@@ -76,7 +76,8 @@ public:
     };
     typedef list<SMemberInfo> TMembers;
 
-    CClassTypeStrings(const string& externalName, const string& className);
+    CClassTypeStrings(const string& externalName, const string& className,
+                      const string& namespaceName);
     ~CClassTypeStrings(void);
 
     void SetClassNamespace(const CNamespace& ns);
@@ -198,6 +199,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2006/05/09 15:16:14  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.25  2005/07/07 18:20:32  gouriano
 * Corrected generation of AnyContent object code
 *

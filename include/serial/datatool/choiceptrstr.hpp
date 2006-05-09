@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/05/09 15:16:14  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.1  2000/09/26 17:38:17  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -60,7 +63,8 @@ public:
     typedef list<SVariantInfo> TVariants;
 
     CChoicePtrTypeStrings(const string& globalName,
-                          const string& className);
+                          const string& className,
+                          const string& namespaceName);
 
     void AddVariant(const string& name, AutoPtr<CTypeStrings> type);
 

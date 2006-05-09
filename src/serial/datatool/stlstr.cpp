@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.16  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -133,15 +136,19 @@
 BEGIN_NCBI_SCOPE
 
 CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
-                                             CTypeStrings* arg1Type)
+                                             CTypeStrings* arg1Type,
+                                             const string& namespaceName)
     : m_TemplateName(templateName), m_Arg1Type(arg1Type)
 {
+    SetNamespaceName(namespaceName);
 }
 
 CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
-                                             AutoPtr<CTypeStrings> arg1Type)
+                                             AutoPtr<CTypeStrings> arg1Type,
+                                             const string& namespaceName)
     : m_TemplateName(templateName), m_Arg1Type(arg1Type)
 {
+    SetNamespaceName(namespaceName);
 }
 
 CTemplate1TypeStrings::~CTemplate1TypeStrings(void)
@@ -209,8 +216,9 @@ void CTemplate1TypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
 CTemplate2TypeStrings::CTemplate2TypeStrings(const string& templateName,
                                              AutoPtr<CTypeStrings> arg1Type,
-                                             AutoPtr<CTypeStrings> arg2Type)
-    : CParent(templateName, arg1Type), m_Arg2Type(arg2Type)
+                                             AutoPtr<CTypeStrings> arg2Type,
+                                             const string& namespaceName)
+    : CParent(templateName, arg1Type, namespaceName), m_Arg2Type(arg2Type)
 {
 }
 
@@ -243,8 +251,9 @@ void CTemplate2TypeStrings::GenerateTypeCode(CClassContext& ctx) const
 }
 
 CSetTypeStrings::CSetTypeStrings(const string& templateName,
-                                 AutoPtr<CTypeStrings> type)
-    : CParent(templateName, type)
+                                 AutoPtr<CTypeStrings> type,
+                                 const string& namespaceName)
+    : CParent(templateName, type, namespaceName)
 {
 }
 
@@ -288,8 +297,9 @@ string CSetTypeStrings::GetResetCode(const string& var) const
 
 CListTypeStrings::CListTypeStrings(const string& templateName,
                                    AutoPtr<CTypeStrings> type,
+                                   const string& namespaceName,
                                    bool externalSet)
-    : CParent(templateName, type), m_ExternalSet(externalSet)
+    : CParent(templateName, type, namespaceName), m_ExternalSet(externalSet)
 {
 }
 
@@ -341,8 +351,9 @@ string CListTypeStrings::GetResetCode(const string& var) const
 
 CMapTypeStrings::CMapTypeStrings(const string& templateName,
                                  AutoPtr<CTypeStrings> keyType,
-                                 AutoPtr<CTypeStrings> valueType)
-    : CParent(templateName, keyType, valueType)
+                                 AutoPtr<CTypeStrings> valueType,
+                                 const string& namespaceName)
+    : CParent(templateName, keyType, valueType, namespaceName)
 {
 }
 
@@ -386,9 +397,11 @@ string CMapTypeStrings::GetResetCode(const string& var) const
     return var+".clear();\n";
 }
 
-CVectorTypeStrings::CVectorTypeStrings(const string& charType)
+CVectorTypeStrings::CVectorTypeStrings(const string& charType,
+                                       const string& namespaceName)
     : m_CharType(charType)
 {
+    SetNamespaceName(namespaceName);
 }
 
 CVectorTypeStrings::~CVectorTypeStrings(void)

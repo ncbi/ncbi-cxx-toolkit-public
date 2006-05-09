@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.55  2006/02/21 19:15:22  gouriano
 * In DoSelect define pool var only when needed
 *
@@ -288,8 +291,9 @@ BEGIN_NCBI_SCOPE
 #define DELAY_TYPE_FULL "NCBI_NS_NCBI::CDelayBuffer"
 
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
-                                       const string& className)
-    : CParent(externalName, className),
+                                       const string& className,
+                                       const string& namespaceName)
+    : CParent(externalName, className, namespaceName),
       m_HaveAssignment(false)
 {
 }
@@ -1441,6 +1445,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     if ( !GetModuleName().empty() ) {
         methods <<
             "    SET_CHOICE_MODULE(\""<<GetModuleName()<<"\");\n";
+    }
+    if ( !GetNamespaceName().empty() ) {
+        methods <<
+            "    SET_NAMESPACE(\""<<GetNamespaceName()<<"\");\n";
     }
     if ( delayed ) {
         methods <<

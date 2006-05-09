@@ -203,10 +203,14 @@ public:
     bool HasAttributes(void) const;
     const list<DTDAttribute>& GetAttributes(void) const;
     list<DTDAttribute>& GetNonconstAttributes(void);
+    
+    void SetNamespaceName(const string& name);
+    const string& GetNamespaceName(void) const;
 
 private:
     string m_Name;
     string m_TypeName;
+    string m_NamespaceName;
     EType m_Type;
     EOccurrence m_Occ;
     list<string> m_Refs;
@@ -251,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2006/05/09 15:16:14  gouriano
+ * Added XML namespace definition possibility
+ *
  * Revision 1.5  2006/05/03 14:37:38  gouriano
  * Added parsing attribute definition and include
  *

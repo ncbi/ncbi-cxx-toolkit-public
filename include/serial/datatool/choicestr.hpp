@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/05/09 15:16:14  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.16  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -151,7 +154,8 @@ public:
     };
     typedef list<SVariantInfo> TVariants;
 
-    CChoiceTypeStrings(const string& externalName, const string& className);
+    CChoiceTypeStrings(const string& externalName, const string& className,
+                       const string& namespaceName);
     ~CChoiceTypeStrings(void);
 
     bool HaveAssignment(void) const

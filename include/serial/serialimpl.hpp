@@ -428,6 +428,9 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define SET_CLASS_MODULE(ModuleName) \
     NCBI_NS_NCBI::SetModuleName(info, ModuleName)
 
+#define SET_NAMESPACE(name) \
+    info->SetNamespaceName(name)
+
 #define END_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_NAMED_ABSTRACT_CLASS_INFO(ClassAlias,ClassName) \

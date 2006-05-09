@@ -449,7 +449,7 @@ void DTDParser::FixEmbeddedNames(DTDElement& node)
     list<string> fixed;
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         DTDElement& refNode = m_MapElement[*i];
-        if (refNode.IsEmbedded()) {
+        if (refNode.IsEmbedded() && refNode.GetName() == *i) {
             for ( int depth=1; depth<100; ++depth) {
                 string testName = refNode.CreateEmbeddedName(depth);
                 if (find(refs.begin(),refs.end(),testName) == refs.end()) {
@@ -761,6 +761,7 @@ CDataType* DTDParser::x_Type(
                     DTDElement& emb = const_cast<DTDElement&>(node);
                     emb.SetName(refNode.GetName());
                 }
+                type->SetNamespaceName( node.GetNamespaceName());
                 return type;
             }
         }
@@ -830,6 +831,7 @@ CDataType* DTDParser::x_Type(
         uniType->SetNoPrefix(true);
         type = uniType;
     }
+    type->SetNamespaceName( node.GetNamespaceName());
     return type;
 }
 
@@ -1071,6 +1073,9 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
     }
     cout << endl;
+    if (!node.GetNamespaceName().empty()) {
+        cout << "Namespace: " << node.GetNamespaceName() << endl;
+    }
     if (node.HasAttributes()) {
         PrintNodeAttributes(node);
     }
@@ -1157,6 +1162,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.27  2006/05/09 15:16:43  gouriano
+ * Added XML namespace definition possibility
+ *
  * Revision 1.26  2006/05/03 14:38:08  gouriano
  * Added parsing attribute definition and include
  *

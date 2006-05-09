@@ -170,7 +170,7 @@ CClientPseudoDataType::GenerateCode(void) const
 
 CClientPseudoTypeStrings::CClientPseudoTypeStrings
 (const CClientPseudoDataType& source)
-    : CClassTypeStrings(kEmptyStr, source.m_ClassName), m_Source(source)
+    : CClassTypeStrings(kEmptyStr, source.m_ClassName, kEmptyStr), m_Source(source)
 {
     // SetClassNamespace(generator.GetNamespace()); // not defined(!)
     SetParentClass("CRPCClient<" + source.m_RequestDataType->ClassName()
@@ -522,6 +522,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.16  2006/04/14 16:08:41  ucko
 * Store m_DefaultRequest by (smart) pointer rather than value, in case
 * users keep their own pointers to it around longer than one might expect.

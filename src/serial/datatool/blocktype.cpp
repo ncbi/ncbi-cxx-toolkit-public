@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.62  2005/11/17 20:24:42  vasilche
 * Use bool consistently to prevent indexing.
 *
@@ -808,8 +811,8 @@ AutoPtr<CTypeStrings> CDataContainerType::GenerateCode(void) const
 AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 {
     bool isRootClass = GetParentType() == 0;
-    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
-                                                          ClassName()));
+    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(
+        GlobalName(), ClassName(), GetNamespaceName()));
     bool haveUserClass = isRootClass;
 /*
     bool isObject;

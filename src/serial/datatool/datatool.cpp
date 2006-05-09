@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,4,1) );
+    SetVersion( CVersionInfo(1,4,2) );
 }
 
 void CDataTool::Init(void)
@@ -648,6 +648,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.93  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.92  2006/05/03 14:38:08  gouriano
 * Added parsing attribute definition and include
 *

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/05/09 15:16:14  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.10  2003/04/29 18:29:34  gouriano
 * object data member initialization verification
 *
@@ -106,9 +109,11 @@ class CTemplate1TypeStrings : public CTypeStrings
     typedef CTypeStrings CParent;
 public:
     CTemplate1TypeStrings(const string& templateName,
-                          CTypeStrings* type);
+                          CTypeStrings* type,
+                          const string& namespaceName);
     CTemplate1TypeStrings(const string& templateName,
-                          AutoPtr<CTypeStrings> type);
+                          AutoPtr<CTypeStrings> type,
+                          const string& namespaceName);
     ~CTemplate1TypeStrings(void);
 
     EKind GetKind(void) const;
@@ -147,7 +152,8 @@ class CSetTypeStrings : public CTemplate1TypeStrings
     typedef CTemplate1TypeStrings CParent;
 public:
     CSetTypeStrings(const string& templateName,
-                    AutoPtr<CTypeStrings> type);
+                    AutoPtr<CTypeStrings> type,
+                    const string& namespaceName);
     ~CSetTypeStrings(void);
 
     string GetDestructionCode(const string& expr) const;
@@ -160,6 +166,7 @@ class CListTypeStrings : public CTemplate1TypeStrings
 public:
     CListTypeStrings(const string& templateName,
                      AutoPtr<CTypeStrings> type,
+                     const string& namespaceName,
                      bool externalSet = false);
     ~CListTypeStrings(void);
 
@@ -179,7 +186,8 @@ class CTemplate2TypeStrings : public CTemplate1TypeStrings
 public:
     CTemplate2TypeStrings(const string& templateName,
                           AutoPtr<CTypeStrings> type1,
-                          AutoPtr<CTypeStrings> type2);
+                          AutoPtr<CTypeStrings> type2,
+                          const string& namespaceName);
     ~CTemplate2TypeStrings(void);
 
     const CTypeStrings* GetArg2Type(void) const
@@ -204,7 +212,8 @@ class CMapTypeStrings : public CTemplate2TypeStrings
 public:
     CMapTypeStrings(const string& templateName,
                     AutoPtr<CTypeStrings> keyType,
-                    AutoPtr<CTypeStrings> valueType);
+                    AutoPtr<CTypeStrings> valueType,
+                    const string& namespaceName);
     ~CMapTypeStrings(void);
 
     string GetDestructionCode(const string& expr) const;
@@ -215,7 +224,8 @@ class CVectorTypeStrings : public CTypeStrings
 {
     typedef CTypeStrings CParent;
 public:
-    CVectorTypeStrings(const string& charType);
+    CVectorTypeStrings(const string& charType,
+                       const string& namespaceName);
     ~CVectorTypeStrings(void);
 
     EKind GetKind(void) const;

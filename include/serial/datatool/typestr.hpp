@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/05/09 15:16:14  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.14  2005/08/25 16:00:06  gouriano
 * Corrected doxygen-related code generation
 *
@@ -130,6 +133,14 @@ public:
             return NStr::Replace(m_ModuleName,"-","_");
         }
     void SetModuleName(const string& name);
+    void SetNamespaceName(const string& name)
+    {
+        m_NamespaceName = name;
+    }
+    const string& GetNamespaceName(void) const
+    {
+        return m_NamespaceName;
+    }
 
     // kind of C++ representation
     enum EKind {
@@ -181,6 +192,7 @@ public:
 
 private:
     string m_ModuleName;
+    string m_NamespaceName;
 };
 
 END_NCBI_SCOPE

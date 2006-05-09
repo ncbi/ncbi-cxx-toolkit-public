@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.7  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -73,8 +76,9 @@ BEGIN_NCBI_SCOPE
 #define REFCHOICE_TYPE_METHOD "GetRefChoiceTypeInfo"
 
 CChoicePtrTypeStrings::CChoicePtrTypeStrings(const string& externalName,
-                                             const string& className)
-    : CParent(externalName, className)
+                                             const string& className,
+                                             const string& namespaceName)
+    : CParent(externalName, className, namespaceName)
 {
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2006/05/09 15:16:14  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.28  2006/04/14 17:33:02  gouriano
 * Corrected generation of DTD for SEQUENCE OF SEQUENCE type
 *
@@ -386,6 +389,15 @@ public:
         return m_MemberName;
     }
 
+    void SetNamespaceName(const string& name)
+    {
+        m_Namespace = name;
+    }
+    const string& GetNamespaceName(void) const
+    {
+        return m_Namespace;
+    }
+
 protected:
     static bool x_IsSavedName(const string& name);
     static void x_AddSavedName(const string& name);
@@ -415,6 +427,7 @@ private:
     int m_Tag;
     bool m_IsAlias;
     multimap<string,string> m_ForbidVar;
+    string m_Namespace;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

@@ -199,6 +199,7 @@ DTDElement::DTDElement(const DTDElement& other)
 {
     m_Name     = other.m_Name;
     m_TypeName = other.m_TypeName;
+    m_NamespaceName = other.m_NamespaceName;
     m_Type     = other.eUnknown;
     m_Occ      = other.m_Occ;
     m_Refd     = other.m_Refd;
@@ -331,6 +332,16 @@ list<DTDAttribute>& DTDElement::GetNonconstAttributes(void)
     return m_Attrib;
 }
 
+void DTDElement::SetNamespaceName(const string& name)
+{
+    m_NamespaceName = name;
+}
+
+const string& DTDElement::GetNamespaceName(void) const
+{
+    return m_NamespaceName;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDEntityLexer
@@ -371,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2006/05/09 15:16:43  gouriano
+ * Added XML namespace definition possibility
+ *
  * Revision 1.6  2006/05/03 14:38:08  gouriano
  * Added parsing attribute definition and include
  *

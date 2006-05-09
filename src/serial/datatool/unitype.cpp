@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.38  2006/04/14 17:34:02  gouriano
 * Corrected generation of DTD for SEQUENCE OF SEQUENCE type
 *
@@ -424,7 +427,7 @@ AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
     string templ = GetAndVerifyVar("_type");
     if ( templ.empty() )
         templ = "list";
-    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData));
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData, GetNamespaceName()));
 }
 
 CUniSetDataType::CUniSetDataType(const AutoPtr<CDataType>& elementType)
@@ -465,7 +468,8 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
                     templ = "multimap";
                 return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
                                                                  tKey,
-                                                                 tValue));
+                                                                 tValue,
+                                                                 GetNamespaceName()));
             }
         }
     }
@@ -476,10 +480,12 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
             templ = "list";
         }
         else {
-            return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData, true));
+            return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData,
+                GetNamespaceName(), true));
         }
     }
-    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData, true));
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData,
+        GetNamespaceName(), true));
 }
 
 END_NCBI_SCOPE

@@ -557,7 +557,8 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
 {
     if ( !IsAlias() ) {
         AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
-                                                              ClassName()));
+                                                              ClassName(),
+                                                              GetNamespaceName()));
         AutoPtr<CTypeStrings> dType = GetFullCType();
         bool nonempty = false, noprefix = false;
         const CUniSequenceDataType* uniseq =
@@ -568,6 +569,7 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
         }
         code->AddMember(dType, GetTag(), nonempty, noprefix);
         SetParentClassTo(*code);
+        code->SetNamespaceName( GetNamespaceName());
         return AutoPtr<CTypeStrings>(code.release());
     }
     else {
@@ -575,6 +577,7 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
         AutoPtr<CAliasTypeStrings> code(new CAliasTypeStrings(GlobalName(),
                                                               ClassName(),
                                                               *dType.release()));
+        code->SetNamespaceName( GetNamespaceName());
         return AutoPtr<CTypeStrings>(code.release());
     }
 }
@@ -717,6 +720,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.85  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.84  2006/04/14 17:34:02  gouriano
 * Corrected generation of DTD for SEQUENCE OF SEQUENCE type
 *

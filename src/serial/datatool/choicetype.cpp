@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.32  2005/08/05 15:11:40  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -316,8 +319,8 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
 {
     if ( GetBoolVar("_virtual_choice") ) {
         AutoPtr<CChoicePtrTypeStrings>
-            code(new CChoicePtrTypeStrings(GlobalName(),
-                                           ClassName()));
+            code(new CChoicePtrTypeStrings(
+                GlobalName(), ClassName(), GetNamespaceName()));
         ITERATE ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
             code->AddVariant((*i)->GetName(), varType);
@@ -327,8 +330,8 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
     }
     else {
         bool rootClass = GetParentType() == 0;
-        AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(GlobalName(),
-                                                                ClassName()));
+        AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(
+            GlobalName(), ClassName(), GetNamespaceName()));
         bool haveUserClass = rootClass;
         code->SetHaveUserClass(haveUserClass);
         code->SetObject(true);

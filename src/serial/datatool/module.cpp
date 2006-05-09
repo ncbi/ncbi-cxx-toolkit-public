@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
 * Revision 1.42  2006/04/13 12:58:54  gouriano
 * Added optional file name suffix to modular DTD or schema
 *
@@ -312,7 +315,6 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
 //        out <<
 //            "<!-- Definition of "<<i->first<<" -->\n\n";
         i->second->PrintDTD(out);
-        out << "\n";
     }
 
     m_LastComments.PrintDTD(out, CComments::eMultiline);
