@@ -655,6 +655,11 @@ void CSeq_align::RemapToLoc(TDim row,
             (*std_it)->RemapToLoc(row, dst_loc, ignore_strand);
         }
         break;
+    case TSegs::e_Disc:
+        NON_CONST_ITERATE(CSeq_align_set::Tdata, seq_align_it, SetSegs().SetDisc().Set()) {
+            (*seq_align_it)->RemapToLoc(row, dst_loc, ignore_strand);
+        }
+        break;
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::RemapToLoc only supports Dense-seg and Std-seg alignments.");
@@ -671,6 +676,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2006/05/09 15:44:37  todorov
+* Added support of disc alignments to RemapToLoc.
+*
 * Revision 1.20  2006/05/08 21:42:09  todorov
 * Added a RemapToLoc method.
 *
