@@ -98,16 +98,29 @@ Blast_Message2TSearchMessages(const Blast_Message* blmsg,
     const BlastContextInfo* kCtxInfo = query_info->contexts;
 
     // First copy the errors...
-    const Blast_Message* blmsg_var = blmsg;
-    while (blmsg_var)
+    for (; blmsg; blmsg = blmsg->next)
     {
-          int context = blmsg_var->context;
-          string msg(blmsg_var->message);
-          CRef<CSearchMessage> sm(new CSearchMessage(blmsg_var->severity,
-                                              kCtxInfo[context].query_index,
-                                              msg));
-          messages[kCtxInfo[context].query_index].push_back(sm);
-          blmsg_var = blmsg_var->next;
+        const int kContext = blmsg->context;
+        _ASSERT(blmsg->message);
+        string msg(blmsg->message);
+
+        if (kContext != kBlastMessageNoContext) {
+            // applies only to a single query
+            const int kQueryIndex = kCtxInfo[kContext].query_index;
+            CRef<CSearchMessage> sm(new CSearchMessage(blmsg->severity,
+                                                       kQueryIndex, msg));
+            messages[kCtxInfo[kContext].query_index].push_back(sm);
+        } else {
+            // applies to all queries
+            CRef<CSearchMessage> sm(new CSearchMessage(blmsg->severity,
+                                                       kBlastMessageNoContext, 
+                                                       msg));
+            NON_CONST_ITERATE(TSearchMessages, query_messages, messages) {
+                query_messages->push_back(sm);
+            }
+        }
+
+
     }
 
     // ... then remove duplicate error messages
