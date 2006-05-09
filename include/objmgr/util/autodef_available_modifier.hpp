@@ -54,6 +54,7 @@ class NCBI_XOBJUTIL_EXPORT CAutoDefAvailableModifier
 public:
     CAutoDefAvailableModifier();
     CAutoDefAvailableModifier(unsigned int type, bool is_orgmod);
+    CAutoDefAvailableModifier (const CAutoDefAvailableModifier& copy);
     ~CAutoDefAvailableModifier();
     
     void SetOrgModType(COrgMod::ESubtype orgmod_type);
@@ -65,11 +66,23 @@ public:
     bool AllPresent() const { return m_AllPresent; }
     bool IsUnique() const { return m_IsUnique; }
     bool IsOrgMod() const { return m_IsOrgMod; }
+    bool IsRequested() const { return m_IsRequested; }
+    void SetRequested(bool is_requested) { m_IsRequested = is_requested; }
+
     CSubSource::ESubtype GetSubSourceType() const { return m_SubSrcType; }
     COrgMod::ESubtype GetOrgModType() const { return m_OrgModType; }
+    void FirstValue(string &first_val);
 
     unsigned int GetRank() const;
     typedef vector<string> TValueVector;
+    
+    bool operator<(const CAutoDefAvailableModifier& rhs) const;
+    bool operator==(const CAutoDefAvailableModifier& rhs) const;
+    
+    static string GetSubSourceLabel (CSubSource::ESubtype st);
+    static string GetOrgModLabel(COrgMod::ESubtype st);
+
+    string Label() const;
     
 private:
     bool m_IsOrgMod;
@@ -78,6 +91,7 @@ private:
     bool m_AllUnique;
     bool m_AllPresent;
     bool m_IsUnique;
+    bool m_IsRequested;
     TValueVector m_ValueList;
 };
 
@@ -88,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/05/09 16:27:54  bollin
+* added functions to allow modifiers to be selected in dialog
+*
 * Revision 1.3  2006/04/19 13:43:50  dicuccio
 * Stylistic changes.  Made several accessors const.
 *

@@ -70,6 +70,7 @@ public:
     };
 
     typedef set<objects::CFeatListItem>  TFeatTypeItemSet;
+    typedef set<CAutoDefAvailableModifier> TAvailableModifierSet;
 
     CAutoDef();
     ~CAutoDef();
@@ -102,6 +103,8 @@ public:
     string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
     
     typedef vector<CAutoDefModifierCombo *> TModifierComboVector;
+    
+    void GetAvailableModifiers(TAvailableModifierSet &mod_set);
     
     void Cancel() { m_Cancelled = true; }
     bool Cancelled() { return m_Cancelled; }
@@ -271,6 +274,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2006/05/09 16:27:54  bollin
+* added functions to allow modifiers to be selected in dialog
+*
 * Revision 1.11  2006/05/08 18:14:53  bollin
 * added code for suppressing individual feature types in definition lines
 *

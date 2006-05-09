@@ -64,6 +64,7 @@ CAutoDefAvailableModifier::CAutoDefAvailableModifier(unsigned int type, bool is_
                       m_AllPresent (true), 
                       m_IsUnique(true), 
                       m_IsOrgMod(is_orgmod), 
+                      m_IsRequested (false),
                       m_SubSrcType(CSubSource::eSubtype_other),
                       m_OrgModType(COrgMod::eSubtype_other)
 {
@@ -75,9 +76,71 @@ CAutoDefAvailableModifier::CAutoDefAvailableModifier(unsigned int type, bool is_
     }
 }
     
+CAutoDefAvailableModifier::CAutoDefAvailableModifier (const CAutoDefAvailableModifier& copy)
+{
+    m_IsOrgMod = copy.IsOrgMod();
+    if (m_IsOrgMod) {
+        m_OrgModType = copy.GetOrgModType();
+    } else {
+        m_SubSrcType = copy.GetSubSourceType();
+    }
+    m_AllUnique = copy.AllUnique();
+    m_AllPresent = copy.AllPresent();
+    m_IsUnique = copy.IsUnique();
+    m_IsRequested = copy.IsRequested();
+    m_ValueList.clear();
+    if (copy.m_ValueList.size() > 0) {
+        ValueFound(copy.m_ValueList[0]);
+    }
+}
+
 
 CAutoDefAvailableModifier::~CAutoDefAvailableModifier()
 {
+}
+
+
+/**
+    CAutoDefAvailableModifier comparator
+    to sort the set properly.
+    subsources first, then orgmods
+*/
+bool CAutoDefAvailableModifier::operator<(const CAutoDefAvailableModifier& rhs) const
+{
+    unsigned int this_rank = GetRank();
+    unsigned int rhs_rank = rhs.GetRank();
+    
+    if (this_rank != rhs_rank) {
+        return this_rank < rhs_rank;
+    } else if (rhs.IsOrgMod()) {
+        if (m_IsOrgMod) {
+            return m_OrgModType < rhs.GetOrgModType();
+        } else {
+            return true;
+        }
+    } else {
+        if (m_IsOrgMod) {
+            return false;
+        } else {
+            return m_SubSrcType < rhs.GetSubSourceType();
+        }
+    }
+}
+
+
+bool CAutoDefAvailableModifier::operator==(const CAutoDefAvailableModifier& rhs) const
+{
+    if (m_IsOrgMod) {
+        if (rhs.IsOrgMod()) {
+            return m_OrgModType == rhs.GetOrgModType();
+        } else {
+            return false;
+        }
+    } else if (rhs.IsOrgMod()) {
+        return false;
+    } else {
+        return m_SubSrcType == rhs.GetSubSourceType();
+    }
 }
 
    
@@ -114,6 +177,16 @@ void CAutoDefAvailableModifier::ValueFound(string val_found)
         if (!found) {
             m_ValueList.push_back(val_found);
         }
+    }
+}
+
+
+void CAutoDefAvailableModifier::FirstValue(string& first_val)
+{
+    if (m_ValueList.size() > 0) {
+        first_val = m_ValueList[0];
+    } else {
+        first_val = "";
     }
 }
 
@@ -167,6 +240,229 @@ unsigned int CAutoDefAvailableModifier::GetRank() const
 }
 
 
+string CAutoDefAvailableModifier::GetSubSourceLabel (CSubSource::ESubtype st)
+{
+    string label = "";
+    
+    switch (st) {
+        case CSubSource::eSubtype_endogenous_virus_name:
+            label = "endogenous virus";
+            break;
+        case CSubSource::eSubtype_transgenic:
+            label = "transgenic";
+            break;
+        case CSubSource::eSubtype_plasmid_name:
+            label = "plasmid";
+            break;
+        case CSubSource::eSubtype_country:
+            label = "country";
+            break;
+        case CSubSource::eSubtype_chromosome:
+            label = "chromosome";
+            break;
+        case CSubSource::eSubtype_clone:
+            label = "clone";
+            break;
+        case CSubSource::eSubtype_subclone:
+            label = "subclone";
+            break;
+        case CSubSource::eSubtype_haplotype:
+            label = "haplotype";
+            break;
+        case CSubSource::eSubtype_genotype:
+            label = "genotype";
+            break;
+        case CSubSource::eSubtype_sex:
+            label = "sex";
+            break;
+        case CSubSource::eSubtype_cell_line:
+            label = "cell line";
+            break;
+        case CSubSource::eSubtype_cell_type:
+            label = "cell type";
+            break;
+        case CSubSource::eSubtype_tissue_type:
+            label = "tissue type";
+            break;
+        case CSubSource::eSubtype_clone_lib:
+            label = "clone lib";
+            break;
+        case CSubSource::eSubtype_dev_stage:
+            label = "dev stage";
+            break;
+        case CSubSource::eSubtype_frequency:
+            label = "frequency";
+            break;
+        case CSubSource::eSubtype_germline:
+            label = "germline";
+            break;
+        case CSubSource::eSubtype_lab_host:
+            label = "lab host";
+            break;
+        case CSubSource::eSubtype_pop_variant:
+            label = "pop variant";
+            break;
+        case CSubSource::eSubtype_tissue_lib:
+            label = "tissue lib";
+            break;
+        case CSubSource::eSubtype_transposon_name:
+            label = "transposon";
+            break;
+        case CSubSource::eSubtype_insertion_seq_name:
+            label = "insertion sequence";
+            break;
+        case CSubSource::eSubtype_plastid_name:
+            label = "plastid";
+            break;
+        case CSubSource::eSubtype_segment:
+            label = "segment";
+            break;
+        case CSubSource::eSubtype_isolation_source:
+            label = "isolation source";
+            break;
+        case CSubSource::eSubtype_lat_lon:
+            label = "lat lon";
+            break;
+        case CSubSource::eSubtype_collection_date:
+            label = "collection date";
+            break;
+        case CSubSource::eSubtype_collected_by:
+            label = "collected by";
+            break;
+        case CSubSource::eSubtype_identified_by:
+            label = "identified by";
+            break;
+        case CSubSource::eSubtype_other:
+            label = "subsource note";
+            break;
+        default:
+            label = "";
+            break;
+    }
+    return label;
+}
+
+
+string CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::ESubtype st)
+{
+    string label = "";
+    switch (st) {
+        case COrgMod::eSubtype_nat_host:
+            label = "natural host";
+            break;
+        case COrgMod::eSubtype_strain:
+            label = "strain";
+            break;
+        case COrgMod::eSubtype_substrain:
+            label = "substrain";
+            break;
+        case COrgMod::eSubtype_type:
+            label = "type";
+            break;
+        case COrgMod::eSubtype_subtype:
+            label = "subtype";
+            break;
+        case COrgMod::eSubtype_variety:
+            label = "variety";
+            break;
+        case COrgMod::eSubtype_serotype:
+            label = "serotype";
+            break;
+        case COrgMod::eSubtype_serogroup:
+            label = "serogroup";
+            break;
+        case COrgMod::eSubtype_serovar:
+            label = "serovar";
+            break;
+        case COrgMod::eSubtype_cultivar:
+            label = "cultivar";
+            break;
+        case COrgMod::eSubtype_pathovar:
+            label = "pathovar";
+            break;
+        case COrgMod::eSubtype_chemovar:
+            label = "chemovar";
+            break;
+        case COrgMod::eSubtype_biovar:
+            label = "biovar";
+            break;
+        case COrgMod::eSubtype_biotype:
+            label = "biotype";
+            break;
+        case COrgMod::eSubtype_group:
+            label = "group";
+            break;
+        case COrgMod::eSubtype_subgroup:
+            label = "subgroup";
+            break;
+        case COrgMod::eSubtype_isolate:
+            label = "isolate";
+            break;
+        case COrgMod::eSubtype_common:
+            label = "common name";
+            break;
+        case COrgMod::eSubtype_acronym:
+            label = "acronym";
+            break;
+        case COrgMod::eSubtype_sub_species:
+            label = "subspecies";
+            break;
+        case COrgMod::eSubtype_specimen_voucher:
+            label = "voucher";
+            break;
+        case COrgMod::eSubtype_authority:
+            label = "authority";
+            break;
+        case COrgMod::eSubtype_forma:
+            label = "forma";
+            break;
+        case COrgMod::eSubtype_forma_specialis:
+            label = "forma specialis";
+            break;
+        case COrgMod::eSubtype_ecotype:
+            label = "ecotype";
+            break;
+        case COrgMod::eSubtype_synonym:
+            label = "synonym";
+            break;
+        case COrgMod::eSubtype_anamorph:
+            label = "anamorph";
+            break;
+        case COrgMod::eSubtype_teleomorph:
+            label = "teleomorph";
+            break;
+        case COrgMod::eSubtype_breed:
+            label = "breed";
+            break;
+        case COrgMod::eSubtype_gb_acronym:
+            label = "acronym";
+            break;
+        case COrgMod::eSubtype_gb_anamorph:
+            label = "anamorph";
+            break;
+        case COrgMod::eSubtype_gb_synonym:
+            label = "synonym";
+            break;
+        case COrgMod::eSubtype_other:
+            label = "organism note";
+            break;
+        default:
+            label = "";
+            break;
+    }
+    return label;
+}
+
+
+string CAutoDefAvailableModifier::Label() const
+{
+    if (m_IsOrgMod) {
+        return GetOrgModLabel(m_OrgModType);
+    } else {
+        return GetSubSourceLabel(m_SubSrcType);
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -174,6 +470,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/05/09 16:28:12  bollin
+* added functions to allow modifiers to be selected in dialog
+*
 * Revision 1.5  2006/04/20 19:00:59  ucko
 * Stop including <objtools/format/context.hpp> -- there's (thankfully!)
 * no need to do so, and it confuses SGI's MIPSpro compiler.

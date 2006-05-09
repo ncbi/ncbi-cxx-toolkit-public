@@ -1042,12 +1042,30 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
 }
 
 
+void CAutoDef::GetAvailableModifiers(CAutoDef::TAvailableModifierSet &mod_set)
+{    
+    mod_set.clear();
+    if (m_ComboList.size() > 0) {
+        CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
+        modifier_list.clear();
+        m_ComboList[0]->GetAvailableModifiers (modifier_list);
+        unsigned int num_present = 0;
+        for (unsigned int k = 0; k < modifier_list.size(); k++) {
+            mod_set.insert(CAutoDefAvailableModifier(modifier_list[k]));
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2006/05/09 16:28:12  bollin
+* added functions to allow modifiers to be selected in dialog
+*
 * Revision 1.15  2006/05/08 19:15:16  bollin
 * corrected bug for determining when to show or not show introns in definition lines
 *
