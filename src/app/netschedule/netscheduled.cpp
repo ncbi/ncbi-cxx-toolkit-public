@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.9.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.10.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -94,6 +94,7 @@ typedef enum {
     ePutJobFailure,
     eReturnJob,
     eJobRunTimeout,
+    eJobDelayExpiration,
     eDropQueue,
     eDropJob,
     eGetProgressMsg,
@@ -308,6 +309,10 @@ public:
     void ProcessJobRunTimeout(CSocket&                sock,
                               SThreadData&            tdata,
                               CQueueDataBase::CQueue& queue);
+
+    void ProcessJobDelayExpiration(CSocket&                sock,
+                                   SThreadData&            tdata,
+                                   CQueueDataBase::CQueue& queue);
 
     void ProcessDropJob(CSocket&                sock,
                         SThreadData&            tdata,
@@ -728,6 +733,9 @@ end_version_control:
                 break;
             case eJobRunTimeout:
                 ProcessJobRunTimeout(socket, *tdata, queue);
+                break;
+            case eJobDelayExpiration:
+                ProcessJobDelayExpiration(socket, *tdata, queue);
                 break;
             case eDropJob:
                 if (!queue.IsSubmitAllowed()) {
@@ -1204,6 +1212,18 @@ void CNetScheduleServer::ProcessJobRunTimeout(CSocket&                sock,
     queue.SetJobRunTimeout(job_id, req.timeout);
     WriteMsg(sock, "OK:", "");
 }
+
+void CNetScheduleServer::ProcessJobDelayExpiration(CSocket&                sock, 
+                                                   SThreadData&            tdata,
+                                                   CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    queue.JobDelayExpiration(job_id, req.timeout);
+    WriteMsg(sock, "OK:", "");
+}
+
 
 void CNetScheduleServer::ProcessStatus(CSocket&                sock, 
                                        SThreadData&            tdata,
@@ -1847,6 +1867,7 @@ struct SNS_Commands
     unsigned  REGC;
     unsigned  URGC;
     unsigned  FRES;
+    unsigned  JDEX;
 
 
     SNS_Commands()
@@ -1877,6 +1898,7 @@ struct SNS_Commands
         ::memcpy(&REGC, "REGC", 4);
         ::memcpy(&URGC, "URGC", 4);
         ::memcpy(&FRES, "FRES", 4);
+        ::memcpy(&JDEX, "JDEX", 4);
     }
 
     /// 4 byte command comparison (make sure str is aligned)
@@ -1926,6 +1948,8 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 26.URGC udp_port
     // 27.QPRT Status
     // 28.FRES JSID_01_1
+    // 29.JDEX JSID_01_1 timeout
+
 
     const char* s = reqstr;
 
@@ -2166,6 +2190,28 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             req->timeout = timeout;
             return;
         }
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.JDEX, s)) {
+            req->req_type = eJobDelayExpiration;
+            s += 4;
+            NS_SKIPSPACE(s)
+            NS_CHECKEND(s, "Misformed job delay expiration request")
+            NS_GETSTRING(s, req->job_key_str)
+            
+            if (req->job_key_str.empty()) {
+                NS_RETURN_ERROR("Misformed job delay expiration request")
+            }
+            NS_SKIPSPACE(s)
+            NS_CHECKEND(s, "Misformed job delay expiration request")
+
+            int timeout = atoi(s);
+            if (timeout < 0) {
+                NS_RETURN_ERROR(
+                    "Invalid job run timeout request: incorrect timeout value")
+            }
+            req->timeout = timeout;
+            return;
+        }
+
         break;
 
     case 'P':
@@ -2782,6 +2828,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2006/05/10 15:59:06  kuznets
+ * Implemented NS call to delay job expiration
+ *
  * Revision 1.79  2006/05/08 15:54:35  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and

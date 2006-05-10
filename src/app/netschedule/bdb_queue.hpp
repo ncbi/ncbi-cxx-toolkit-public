@@ -249,6 +249,11 @@ public:
         ///    Time worker node needs to execute the job (in seconds)
         void SetJobRunTimeout(unsigned job_id, unsigned tm);
 
+        /// Prolong job expiration timeout
+        /// @param tm
+        ///    Time worker node needs to execute the job (in seconds)
+        void JobDelayExpiration(unsigned job_id, unsigned tm);
+
         /// Delete if job is done and timeout expired
         ///
         /// @return TRUE if job has been deleted
@@ -547,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/05/10 15:59:06  kuznets
+ * Implemented NS call to delay job expiration
+ *
  * Revision 1.46  2006/05/08 11:24:52  kuznets
  * Implemented file redirection cout/cerr for worker nodes
  *
