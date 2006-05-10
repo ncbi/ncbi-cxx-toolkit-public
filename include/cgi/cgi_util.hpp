@@ -572,7 +572,7 @@ protected:
 
 inline
 void CUrl::x_SetScheme(const string& scheme,
-                       const IUrlEncoder& encoder)
+                       const IUrlEncoder& /*encoder*/)
 {
     m_Scheme = scheme;
 }
@@ -593,14 +593,14 @@ void CUrl::x_SetPassword(const string& password,
 
 inline
 void CUrl::x_SetHost(const string& host,
-                     const IUrlEncoder& encoder)
+                     const IUrlEncoder& /*encoder*/)
 {
     m_Host = host;
 }
 
 inline
 void CUrl::x_SetPort(const string& port,
-                     const IUrlEncoder& encoder)
+                     const IUrlEncoder& /*encoder*/)
 {
     NStr::StringToInt(port);
     m_Port = port;
@@ -665,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/05/10 14:43:26  ivanov
+ * Get rid of warnings about unused variables
+ *
  * Revision 1.10  2005/12/15 21:53:38  grichenk
  * Check if ArgsList is initialized (initialize in non-const GetArgs())
  *
@@ -688,6 +691,9 @@ END_NCBI_SCOPE
  * Added ampersand encoding flag
  *
  * $Log$
+ * Revision 1.11  2006/05/10 14:43:26  ivanov
+ * Get rid of warnings about unused variables
+ *
  * Revision 1.10  2005/12/15 21:53:38  grichenk
  * Check if ArgsList is initialized (initialize in non-const GetArgs())
  *
