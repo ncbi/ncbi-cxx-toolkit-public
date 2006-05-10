@@ -87,6 +87,30 @@ public:
                            bool                   bAmbig    = false,
                            CRandom::TValue        seed      = 17734276);
 
+    // Alphabet conversion function with ambiguities in BLAST form, for DNA only.
+    // Target encoding is ncbi2na. Ambiguities are returned in a separate vector.
+    // This function can be called in a loop, in which the returned data length
+    // and ambiguity vector are accumulated.
+    // @param in_seq Input sequence [in]
+    // @param out_seq Output sequence [out]
+    // @param uBeginIdx Starting offset in input sequence [in]
+    // @param uLength Ending offset in input sequence [in]
+    // @param total_length Total length of sequences to be converted. The BLAST
+    //        ambiguity encoding depends on whether total length is >= 1<<24.
+    // @param out_seq_length Number of bytes in the output sequence data.
+    //        Incremented if != 0 on input. [in|out]
+    // @param blast_ambig Ambiguities encoded in BLAST form. The vector is
+    //        appended, so this function can be called in a loop. [in|out]
+    // @return Number of converted codes. 
+    static TSeqPos
+    ConvertWithBlastAmbig(const CSeq_data& in_seq,
+                          CSeq_data*       out_seq,
+                          TSeqPos          uBeginIdx,
+                          TSeqPos          uLength,
+                          TSeqPos          total_length,
+                          TSeqPos*         out_seq_length,
+                          vector<Uint4>*   blast_ambig);
+    
     // Function to provide maximum in-place packing of na
     // sequences without loss of information. Iupacna
     // can always be packed to ncbi4na without loss. Iupacna
@@ -338,6 +362,10 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2006/05/10 18:03:16  dondosha
+ * Added function ConvertWithBlastAmbig to convert Seq-data to ncbi2na, plus a
+ * vector of ambiguities in BLAST database format.
+ *
  * Revision 1.10  2003/11/21 14:44:59  grichenk
  * Replaced runtime_error with CException
  *

@@ -112,7 +112,10 @@ public:
      TSeqPos               uBeginIdx,
      TSeqPos               uLength,
      bool                  bAmbig,
-     CRandom::TValue       seed)
+     CRandom::TValue       seed,
+     TSeqPos               total_length = 0,
+     TSeqPos*              out_seq_length = 0,
+     vector<Uint4>*        blast_ambig = 0)
         const;
 
     TSeqPos Pack
@@ -377,7 +380,10 @@ private:
      CSeq_data::E_Choice   to_code,
      TSeqPos               uBeginIdx,
      TSeqPos               uLength,
-     CRandom::TValue       seed)
+     CRandom::TValue       seed,
+     TSeqPos               total_length = 0,
+     TSeqPos*              out_seq_length = 0,
+     vector<Uint4>*        blast_ambig = 0)
         const;
 
     // Helper function to initialize map tables
@@ -492,7 +498,10 @@ private:
                                 TSeqPos          uBeginIdx,
                                 TSeqPos          uLength,
                                 bool             bAmbig,
-                                CRandom::TValue  seed)
+                                CRandom::TValue  seed,
+                                TSeqPos          total_length,
+                                TSeqPos*         out_seq_length, 
+                                vector<Uint4>*   blast_ambig)
         const;
     /*
 
@@ -505,11 +514,14 @@ private:
     */
     // Function to convert ncbi4na (2 bytes) to ncbi2na (1 byte)
     TSeqPos MapNcbi4naToNcbi2na(const CSeq_data& in_seq,
-                                CSeq_data*       out_seq,
-                                TSeqPos          uBeginIdx,
-                                TSeqPos          uLength,
-                                bool             bAmbig,
-                                CRandom::TValue  seed)
+                                CSeq_data*      out_seq,
+                                TSeqPos         uBeginIdx,
+                                TSeqPos         uLength,
+                                bool            bAmbig,
+                                CRandom::TValue seed,
+                                TSeqPos         total_length,
+                                TSeqPos*        out_seq_length,
+                                vector<Uint4>*  blast_ambig)
         const;
     /*
 
@@ -916,9 +928,23 @@ TSeqPos CSeqportUtil::Convert
  CRandom::TValue      seed)
 {
     return x_GetImplementation().Convert
-        (in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig, seed);
+        (in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig, seed, 
+         0, 0, 0);
 }
 
+TSeqPos CSeqportUtil::ConvertWithBlastAmbig
+(const CSeq_data&     in_seq,
+ CSeq_data*           out_seq,
+ TSeqPos              uBeginIdx,
+ TSeqPos              uLength,
+ TSeqPos              total_length,
+ TSeqPos*             out_seq_length,
+ vector<Uint4>*       blast_ambig)
+{
+    return x_GetImplementation().Convert
+        (in_seq, out_seq, CSeq_data::e_Ncbi2na, uBeginIdx, uLength, true,
+         17734276, total_length, out_seq_length, blast_ambig);
+}
 
 TSeqPos CSeqportUtil::Pack
 (CSeq_data*   in_seq,
@@ -1952,7 +1978,10 @@ TSeqPos CSeqportUtil_implementation::x_ConvertAmbig
  CSeq_data::E_Choice   to_code,
  TSeqPos               uBeginIdx,
  TSeqPos               uLength,
- CRandom::TValue       seed)
+ CRandom::TValue       seed,
+ TSeqPos               total_length,
+ TSeqPos*              out_seq_length,
+ vector<Uint4>*        blast_ambig)
     const
 {
     CSeq_data::E_Choice from_code = in_seq.Which();
@@ -1966,11 +1995,13 @@ TSeqPos CSeqportUtil_implementation::x_ConvertAmbig
 
     switch (from_code) {
     case CSeq_data::e_Iupacna:
-        return MapIupacnaToNcbi2na(in_seq, out_seq,
-            uBeginIdx, uLength, true, seed);
+        return MapIupacnaToNcbi2na(in_seq, out_seq, uBeginIdx, uLength, true,
+                                   seed, total_length, out_seq_length, 
+                                   blast_ambig);
     case CSeq_data::e_Ncbi4na:
-        return MapNcbi4naToNcbi2na(in_seq, out_seq,
-            uBeginIdx, uLength, true, seed);
+        return MapNcbi4naToNcbi2na(in_seq, out_seq, uBeginIdx, uLength, true, 
+                                   seed, total_length, out_seq_length, 
+                                   blast_ambig);
     default:
         throw runtime_error("Requested conversion not implemented");
     }
@@ -1989,7 +2020,10 @@ TSeqPos CSeqportUtil_implementation::Convert
  TSeqPos               uBeginIdx,
  TSeqPos               uLength,
  bool                  bAmbig,
- CRandom::TValue       seed)
+ CRandom::TValue       seed,
+ TSeqPos               total_length,
+ TSeqPos*              out_seq_length,
+ vector<Uint4>*        blast_ambig)
     const
 {
     CSeq_data::E_Choice from_code = in_seq.Which();
@@ -2010,7 +2044,8 @@ TSeqPos CSeqportUtil_implementation::Convert
     // Note: for now use old code to convert to ncbi2na with random
     // conversion of ambiguous characters.
     if ( (to_code == CSeq_data::e_Ncbi2na)  &&  (bAmbig == true) ) {
-        return x_ConvertAmbig(in_seq, out_seq, to_code, uBeginIdx, uLength, seed);
+        return x_ConvertAmbig(in_seq, out_seq, to_code, uBeginIdx, uLength, 
+                              seed, total_length, out_seq_length, blast_ambig);
     }
 
     const string* in_str = 0;
@@ -2729,6 +2764,109 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToIupacna
 }
 */
 
+// Table for quick check of whether an ncbi4na residue represents an ambiguity.
+// The 0 value is not considered an ambiguity, as it represents the end of
+// buffer.
+static const char kAmbig4na[16] = 
+    { 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1 };
+
+class CAmbiguityContext {
+public:    
+    CAmbiguityContext(vector<Uint4>& amb_buff, int seq_length);
+    // Make sure the vector is not freed in the destructor
+    ~CAmbiguityContext() {}
+    void UpdateBuffer();
+    void AddAmbiguity(char in_byte, TSeqPos& seq_pos);
+    void Finish();
+private:
+    vector<Uint4>& m_vAmbBuf; ///< Ambiguity buffer to fill
+    char m_LastAmbChar; ///< Last previous ambiguity character
+    TSeqPos m_AmbCount;
+    TSeqPos m_AmbStart;
+    int m_BuffPos;
+    bool m_bLongFormat;
+    TSeqPos m_MaxAmbCount;
+};
+
+CAmbiguityContext::CAmbiguityContext(vector<Uint4>& amb_buff, int seq_length)
+    : m_vAmbBuf(amb_buff)
+{
+    m_AmbCount = 0;
+    m_AmbStart = 0;
+    m_BuffPos = 0;
+    m_LastAmbChar = 0;
+    m_bLongFormat = (seq_length >= 0x00ffffff);
+    m_MaxAmbCount = (m_bLongFormat ? 0x00000fff : 0x0000000f);
+    // If "long format", set the top bit in the length element of the 
+    // ambiguity vector, but only if the input vector is empty. Otherwise,
+    // assume that this initialization has already been done in the previous 
+    // invocation.
+    if (m_vAmbBuf.size() == 0) {
+        Uint4 amb_len = (m_bLongFormat ? 0x80000000 : 0);
+        m_vAmbBuf.push_back(amb_len);
+    }
+}
+
+
+void CAmbiguityContext::UpdateBuffer()
+{
+    // If there are no more unprocessed ambiguities, return.
+    if (!m_LastAmbChar)
+        return;
+
+    Uint4 amb_element = m_LastAmbChar << 28;
+    // In long format length occupies bits 16-27, and sequence position is stored
+    // in the next integer element. In short format length occupies bits 24-27,
+    // and sequence position is stored in the same integer element. 
+    if (m_bLongFormat) {
+        amb_element |= (m_AmbCount << 16);
+        m_vAmbBuf.push_back(amb_element);
+        m_vAmbBuf.push_back(m_AmbStart);
+    } else {
+        amb_element |= (m_AmbCount << 24);
+        amb_element |= m_AmbStart;
+        m_vAmbBuf.push_back(amb_element);
+    }
+}
+
+void CAmbiguityContext::AddAmbiguity(char in_byte, TSeqPos& seq_pos)
+{
+    char res[2];
+
+    res[0] = (in_byte >> 4) & 0x0f;
+    res[1] = in_byte & 0x0f;
+
+    for (int i = 0; i < 2; ++i, ++seq_pos) {
+        if (kAmbig4na[(int)res[i]]) {
+            if ((res[i] != m_LastAmbChar) || (m_AmbCount >= m_MaxAmbCount)) {
+                // Finish the previous ambiguity element, start new; 
+                UpdateBuffer();
+                m_LastAmbChar = res[i];
+                m_AmbCount = 0;
+                m_AmbStart = seq_pos;
+            } else { 
+                // Just increment the count for the last ambiguity
+                ++m_AmbCount;
+            }
+        } else {
+            // No ambiguity: finish the previous ambiguity element, if any, 
+            // reset the m_LastAmbChar and count.
+            UpdateBuffer();
+            m_LastAmbChar = 0;
+            m_AmbCount = 0;
+        }
+    }
+}
+
+void CAmbiguityContext::Finish()
+{
+    UpdateBuffer();
+    // In the first element of the vector, preserve the top bit, and reset the
+    // remainder to the number of ambiguity entries.
+    m_vAmbBuf[0] = 
+        (m_vAmbBuf[0] & 0x80000000) | ((m_vAmbBuf.size() - 1) & 0x7fffffff);
+}
+
 // Function to convert iupacna (4 bytes) to ncbi2na (1 byte)
 TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
 (const CSeq_data& in_seq,
@@ -2736,7 +2874,10 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
  TSeqPos          uBeginIdx,
  TSeqPos          uLength,
  bool             bAmbig,
- CRandom::TValue  seed)
+ CRandom::TValue  seed,
+ TSeqPos          total_length,
+ TSeqPos*         out_seq_length, 
+ vector<Uint4>*   blast_ambig)
     const
 {
     // Get string holding the in_seq
@@ -2760,18 +2901,39 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
     TSeqPos uOverhang =
         Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 4);
 
+    // Check if the output sequence data has already been filled 
+    // with some previous data, e.g. previous segment of a delta 
+    // sequence.
+    TSeqPos out_seq_pos = 0;
+    if (out_seq_length) {
+        out_seq_pos = *out_seq_length;
+        *out_seq_length += uLength;
+    }
+    TSeqPos rbit = 2*(out_seq_pos % 4);
+    TSeqPos lbit = 8 - rbit;
+
     // Allocate vector memory for result of conversion
     // Note memory for overhang is added below.
-    vector<char>::size_type nBytes = uLength/4;
+    vector<char>::size_type nBytes = (out_seq_pos + uLenSav + 3) / 4;
     out_seq_data.resize(nBytes);
+
+    // Instantiate an ambiguity context object, if BLAST-style 
+    // ambiguity output is requested.
+    auto_ptr<CAmbiguityContext> amb_context(NULL);
+    if (blast_ambig) {
+        amb_context.reset(new CAmbiguityContext(*blast_ambig, total_length));
+    }
 
     // Declare iterator for out_seq_data and determine begin and end
     vector<char>::iterator i_out;
-    vector<char>::iterator i_out_begin = out_seq_data.begin();
+    vector<char>::iterator i_out_begin = out_seq_data.begin() + out_seq_pos/4;
     vector<char>::iterator i_out_end = i_out_begin + uLength/4;
 
     // Determine begin of in_seq_data
     string::const_iterator i_in = in_seq_data.begin() + uBeginIdx;
+
+    char new_byte;
+    const int kOneByteMask = 0xff;
 
     if(bAmbig)
         {
@@ -2790,7 +2952,7 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
 	    // Loop through the out_seq_data converting 4 Iupacna bytes to
 	    // one Ncbi2na byte. in_seq_data.size() % 4 bytes at end of
 	    // input handled separately below.
-            for(i_out = i_out_begin; i_out != i_out_end; ++i_out)
+            for(i_out = i_out_begin; i_out != i_out_end; )
                 {
                     // Determine first Ncbi4na byte from 1st two Iupacna bytes
                     c1 =
@@ -2806,6 +2968,11 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
                         m_FastIupacnaNcbi4na->m_Table
                         [1][static_cast<unsigned char>(*(i_in+3))];
 
+                    if (blast_ambig) {
+                        amb_context->AddAmbiguity(c1, out_seq_pos);
+                        amb_context->AddAmbiguity(c2, out_seq_pos);
+                    }
+
 		    // Randomly pick disambiguated Ncbi4na bytes
                     rv = rg.GetRand() % 16;
                     c1 &= m_Masks->m_Table[c1].cMask[rv];
@@ -2813,8 +2980,18 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
                     c2 &= m_Masks->m_Table[c2].cMask[rv];
 
 		    // Convert from Ncbi4na to Ncbi2na
-                    (*i_out) = m_FastNcbi4naNcbi2na->m_Table[0][c1] |
+                    // Calculate the new byte. Assign parts of it to the 
+                    // remainder of the current output byte, and the 
+                    // front part of the next output byte, advancing the 
+                    // output iterator in the process.
+                    new_byte = m_FastNcbi4naNcbi2na->m_Table[0][c1] |
                         m_FastNcbi4naNcbi2na->m_Table[1][c2];
+                    (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
+                    ++i_out;
+                    // Fill part of next byte only if it is necessary, i.e. when
+                    // rbit is not 0.
+                    if (rbit)
+                        (*i_out) = ((new_byte & kOneByteMask) << lbit);
 
 		    // Increment input sequence iterator.
                     i_in+=4;
@@ -2826,9 +3003,11 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
                 c1 =
                     m_FastIupacnaNcbi4na->m_Table
                     [0][static_cast<unsigned char>(*i_in)];
+                if (blast_ambig)
+                    amb_context->AddAmbiguity(c1, out_seq_pos);
                 rv = rg.GetRand() % 16;
                 c1 &= m_Masks->m_Table[c1].cMask[rv];
-                out_seq_data.push_back(m_FastNcbi4naNcbi2na->m_Table[0][c1]);
+                new_byte = m_FastNcbi4naNcbi2na->m_Table[0][c1] & 0xC0;
                 break;
             case 2:
                 c1 =
@@ -2836,9 +3015,11 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
                     [0][static_cast<unsigned char>(*i_in)] |
                     m_FastIupacnaNcbi4na->m_Table
                     [1][static_cast<unsigned char>(*(i_in+1))];
+                if (blast_ambig)
+                    amb_context->AddAmbiguity(c1, out_seq_pos);
                 rv = rg.GetRand() % 16;
                 c1 &= m_Masks->m_Table[c1].cMask[rv];
-                out_seq_data.push_back(m_FastNcbi4naNcbi2na->m_Table[0][c1]);
+                new_byte = m_FastNcbi4naNcbi2na->m_Table[0][c1] & 0xF0;
                 break;
             case 3:
                 c1 =
@@ -2849,20 +3030,42 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
                 c2 =
                     m_FastIupacnaNcbi4na->m_Table
                     [0][static_cast<unsigned char>(*(i_in+2))];
+                if (blast_ambig) {
+                    amb_context->AddAmbiguity(c1, out_seq_pos);
+                    amb_context->AddAmbiguity(c2, out_seq_pos);
+                }
                 rv = rg.GetRand() % 16;
                 c2 &= m_Masks->m_Table[c1].cMask[rv];
                 rv = rg.GetRand() % 16;
                 c2 &= m_Masks->m_Table[c2].cMask[rv];
-                out_seq_data.push_back(m_FastNcbi4naNcbi2na->m_Table[0][c1] |
-                                       m_FastNcbi4naNcbi2na->m_Table[1][c2]);
+                new_byte = m_FastNcbi4naNcbi2na->m_Table[0][c1] |
+                    (m_FastNcbi4naNcbi2na->m_Table[1][c2] & 0xFC);
+                break;
+            default: 
+                break;
             }
+
+            // Assign respective parts of the new byte to the remaining parts
+            // of the output sequence. Output iterator only needs to be 
+            // incremented if the overhang is greater than the unfilled remainder 
+            // of the last output byte.
+            if (uOverhang > 0) {
+                (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
+                if (2*uOverhang > lbit) {
+                    ++i_out;
+                    (*i_out) = ((new_byte & kOneByteMask) << lbit);
+                }
+            }
+
+            if (blast_ambig)
+                amb_context->Finish();
         }
     else
         {
             // Pack uLength input characters into out_seq_data
-            for(i_out = i_out_begin; i_out != i_out_end; ++i_out)
+            for(i_out = i_out_begin; i_out != i_out_end; )
                 {
-                    (*i_out) =
+                    new_byte =
                         m_FastIupacnaNcbi2na->m_Table
                         [0][static_cast<unsigned char>(*(i_in))] |
                         m_FastIupacnaNcbi2na->m_Table
@@ -2871,19 +3074,30 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
                         [2][static_cast<unsigned char>(*(i_in+2))] |
                         m_FastIupacnaNcbi2na->m_Table
                         [3][static_cast<unsigned char>(*(i_in+3))];
+                    (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
+                    ++i_out;
+                    // Fill part of next byte only if it is necessary, i.e. when
+                    // rbit is not 0.
+                    if (rbit)
+                        (*i_out) = ((new_byte & kOneByteMask) << lbit); 
                     i_in+=4;
                 }
 
             // Handle overhang
-            char ch = '\x00';
-            for(TSeqPos i = 0; i < uOverhang; i++)
-                ch |=
-                    m_FastIupacnaNcbi2na->m_Table
-                    [i][static_cast<unsigned char>(*(i_in+i))];
-            if(uOverhang > 0)
-                out_seq_data.push_back(ch);
+            if(uOverhang > 0) {
+                new_byte = '\x00';
+                for(TSeqPos i = 0; i < uOverhang; i++) {
+                    new_byte |=
+                        m_FastIupacnaNcbi2na->m_Table
+                        [i][static_cast<unsigned char>(*(i_in+i))];
+                }
+                (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
+                if (2*uOverhang > lbit) {
+                    ++i_out;
+                    (*i_out) = ((new_byte & kOneByteMask) << lbit); 
+                }
+            }
         }
-
     return uLenSav;
 }
 /*
@@ -2952,14 +3166,14 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi4na
 }
 */
 
+
 // Function to convert ncbi4na (2 bytes) to ncbi2na (1 byte)
-TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na
-(const CSeq_data&  in_seq,
- CSeq_data*        out_seq,
- TSeqPos           uBeginIdx,
- TSeqPos           uLength,
- bool              bAmbig,
- CRandom::TValue   seed)
+TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na(
+             const CSeq_data&  in_seq, CSeq_data* out_seq,
+             TSeqPos uBeginIdx, TSeqPos uLength, 
+             bool bAmbig, CRandom::TValue seed,
+             TSeqPos total_length,
+             TSeqPos* out_seq_length, vector<Uint4>* blast_ambig)
     const
 {
     // Get vector holding the in_seq
@@ -2986,100 +3200,154 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na
     TSeqPos uOverhang =
         Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 2, 4);
 
+    // Check if the output sequence data has already been filled 
+    // with some previous data, e.g. previous segment of a delta 
+    // sequence.
+    TSeqPos out_seq_pos = 0;
+    if (out_seq_length) {
+        out_seq_pos = *out_seq_length;
+        *out_seq_length += uLenSav;
+    }
+    TSeqPos rbit = 2*(out_seq_pos % 4);
+    TSeqPos lbit = 8 - rbit;
+
     // Allocate vector memory for result of conversion
     // Note memory for overhang is added below.
-    vector<char>::size_type nBytes = uLength/4;
+    vector<char>::size_type nBytes = (out_seq_pos + uLenSav + 3) / 4;
     out_seq_data.resize(nBytes);
+
+    // Instantiate an ambiguity context object, if BLAST-style 
+    // ambiguity output is requested.
+    auto_ptr<CAmbiguityContext> amb_context(NULL);
+    if (blast_ambig) {
+        amb_context.reset(new CAmbiguityContext(*blast_ambig, total_length));
+    }
 
     // Declare iterator for out_seq_data and determine begin and end
     vector<char>::iterator i_out;
-    vector<char>::iterator i_out_begin = out_seq_data.begin();
+    vector<char>::iterator i_out_begin = out_seq_data.begin() + out_seq_pos/4;
     vector<char>::iterator i_out_end = i_out_begin + uLength/4;
+
+    // Make sure that the first byte of out_seq_data does not contain garbage
+    // in the bits that are not yet supposed to be filled.
+    *i_out_begin &= (0xff << lbit);
 
     // Determine begin of in_seq_data
     vector<char>::const_iterator i_in = in_seq_data.begin() + uBeginIdx/2;
 
-    // Do random disambiguation
-    if(bAmbig)
-        {
-            // Declare a random number generator and set seed
-            CRandom rg;
-            rg.SetSeed(seed);
+    char new_byte;
+    const int kOneByteMask = 0xff;
 
-            // Pack uLength input bytes into out_seq_data
-            for(i_out = i_out_begin; i_out != i_out_end; ++i_out)
-                {
-                    // Disambiguate
-                    unsigned char c1 = static_cast<unsigned char>(*i_in);
-                    unsigned char c2 = static_cast<unsigned char>(*(i_in+1));
-                    CRandom::TValue rv = rg.GetRand() % 16;
-                    c1 &= m_Masks->m_Table[c1].cMask[rv];
-                    rv = rg.GetRand() % 16;
-                    c2 &= m_Masks->m_Table[c2].cMask[rv];
+    if(bAmbig) {         // Do random disambiguation
+        // Declare a random number generator and set seed
+        CRandom rg;
+        rg.SetSeed(seed);
+        
+        // Pack uLength input bytes into out_seq_data
+        for(i_out = i_out_begin; i_out != i_out_end; ) {
+            // Disambiguate
+            unsigned char c1 = static_cast<unsigned char>(*i_in);
+            unsigned char c2 = static_cast<unsigned char>(*(i_in+1));
 
-                    // Convert
-                    (*i_out) =
-                        m_FastNcbi4naNcbi2na->m_Table[0][c1] |
-                        m_FastNcbi4naNcbi2na->m_Table[1][c2];
-                    i_in+=2;
-                }
-
-            // Handle overhang
-            char ch = '\x00';
-            if(uOverhang > 0)
-                {
-                    // Disambiguate
-                    unsigned char c1 = static_cast<unsigned char>(*i_in);
-                    CRandom::TValue rv = rg.GetRand() % 16;
-                    c1 &= m_Masks->m_Table[c1].cMask[rv];
-
-            // Convert
-                    ch |= m_FastNcbi4naNcbi2na->m_Table[0][c1];
-                }
-
-            if(uOverhang == 3)
-                {
-                    // Disambiguate
-                    unsigned char c1 = static_cast<unsigned char>(*(++i_in));
-                    CRandom::TValue rv = rg.GetRand() % 16;
-                    c1 &= m_Masks->m_Table[c1].cMask[rv];
-
-            // Convert
-                    ch |= m_FastNcbi4naNcbi2na->m_Table[1][c1];
-                }
-
-            if(uOverhang > 0)
-                {
-                    out_seq_data.push_back(ch);
-                }
-        }
-    // Do not do random disambiguation
-    else
-        {
-            // Pack uLength input bytes into out_seq_data
-            for(i_out = i_out_begin; i_out != i_out_end; ++i_out) {
-                (*i_out) =
-                    m_FastNcbi4naNcbi2na->m_Table
-                    [0][static_cast<unsigned char>(*i_in)] |
-                    m_FastNcbi4naNcbi2na->m_Table
-                    [1][static_cast<unsigned char>(*(i_in+1))];
-                i_in+=2;
+            if (blast_ambig) {
+                amb_context->AddAmbiguity(c1, out_seq_pos);
+                amb_context->AddAmbiguity(c2, out_seq_pos);
             }
-
-            // Handle overhang
-            char ch = '\x00';
-            if(uOverhang > 0)
-                ch |= m_FastNcbi4naNcbi2na->m_Table
-                    [0][static_cast<unsigned char>(*i_in)];
-
-            if(uOverhang == 3)
-                ch |= m_FastNcbi4naNcbi2na->m_Table
-                    [1][static_cast<unsigned char>(*(++i_in))];
-
-            if(uOverhang > 0)
-                out_seq_data.push_back(ch);
-
+            CRandom::TValue rv = rg.GetRand() % 16;
+            c1 &= m_Masks->m_Table[c1].cMask[rv];
+            rv = rg.GetRand() % 16;
+            c2 &= m_Masks->m_Table[c2].cMask[rv];
+            
+            // Convert
+            new_byte = m_FastNcbi4naNcbi2na->m_Table[0][c1] |
+                m_FastNcbi4naNcbi2na->m_Table[1][c2];
+            (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
+            ++i_out;
+            // Fill part of next byte only if it is necessary, i.e. when
+            // rbit is not 0.
+            if (rbit)
+                (*i_out) = ((new_byte & kOneByteMask) << lbit);
+            i_in+=2;
         }
+        
+        // Handle overhang
+        new_byte = '\x00';
+
+        if(uOverhang > 0) {
+            // Disambiguate
+            unsigned char c1 = static_cast<unsigned char>(*i_in);
+            // If only one residue, make sure that the second half of the byte
+            // is 0.
+            if (uOverhang == 1)
+                c1 &= 0xf0;
+            if (blast_ambig)
+                amb_context->AddAmbiguity(c1, out_seq_pos);
+            CRandom::TValue rv = rg.GetRand() % 16;
+            c1 &= m_Masks->m_Table[c1].cMask[rv];
+            
+            // Convert
+            new_byte |= m_FastNcbi4naNcbi2na->m_Table[0][c1];
+        }
+        
+        if(uOverhang == 3) {
+            // Disambiguate; make sure that the second half of the byte
+            // is 0.
+            unsigned char c1 = static_cast<unsigned char>(*(++i_in)) & 0xf0;
+            if (blast_ambig)
+                amb_context->AddAmbiguity(c1, out_seq_pos);
+            CRandom::TValue rv = rg.GetRand() % 16;
+            c1 &= m_Masks->m_Table[c1].cMask[rv];
+            
+            // Convert
+            new_byte |= m_FastNcbi4naNcbi2na->m_Table[1][c1];
+        }
+        
+        if(uOverhang > 0) {
+            (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
+            if (2*uOverhang > lbit) {
+                ++i_out;
+                (*i_out) = ((new_byte & kOneByteMask) << lbit); 
+            }
+        }
+        
+        if (blast_ambig)
+            amb_context->Finish();
+    } else { // Do not do random disambiguation
+        
+        // Pack uLength input bytes into out_seq_data
+        for(i_out = i_out_begin; i_out != i_out_end; ) {
+            new_byte = 
+                m_FastNcbi4naNcbi2na->m_Table
+                [0][static_cast<unsigned char>(*i_in)] |
+                m_FastNcbi4naNcbi2na->m_Table
+                [1][static_cast<unsigned char>(*(i_in+1))];
+            (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
+            ++i_out;
+            // Fill part of next byte only if it is necessary, i.e. when
+            // rbit is not 0.
+            if (rbit)
+                (*i_out) = ((new_byte & kOneByteMask) << lbit);
+            i_in+=2;
+        }
+        
+        // Handle overhang
+        if(uOverhang > 0) {
+            new_byte = '\x00';
+            new_byte |= m_FastNcbi4naNcbi2na->m_Table
+                [0][static_cast<unsigned char>(*i_in)];
+        
+            if(uOverhang == 3)
+                new_byte |= m_FastNcbi4naNcbi2na->m_Table
+                    [1][static_cast<unsigned char>(*(++i_in))];
+        
+            (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
+            if (2*uOverhang > lbit) {
+                ++i_out;
+                (*i_out) = ((new_byte & kOneByteMask) << lbit); 
+            }
+        }
+    }
+
     TSeqPos keepidx = uBeginSav - uBeginIdx;
     KeepNcbi2na(out_seq, keepidx, uLenSav);
 
@@ -6495,6 +6763,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2006/05/10 18:03:48  dondosha
+ * Added function ConvertWithBlastAmbig to convert Seq-data to ncbi2na, plus a
+ * vector of ambiguities in BLAST database format.
+ *
  * Revision 6.26  2006/04/03 19:59:29  ucko
  * Fix previous commit to eliminate a stray comma that the C Toolkit
  * presumably ignored.
