@@ -635,7 +635,7 @@ class CCTLExceptions
     friend class CSafeStaticPtr<CCTLExceptions>;
     
     CCTLExceptions(void);
-    ~CCTLExceptions(void);
+    ~CCTLExceptions(void) throw();
     
 public:
     static CCTLExceptions& GetInstance(void);
@@ -644,8 +644,18 @@ public:
     void Handle(CDBHandlerStack& handler);
     
 private:
-    CFastMutex              m_Mutex;
-    deque<CDB_Exception*>   m_Exceptions;
+    class CGuard
+    {
+    public:
+        CGuard(CDB_UserHandler::TExceptions& exceptions);
+        ~CGuard(void) throw();
+        
+    private:
+        CDB_UserHandler::TExceptions* m_Exceptions;
+    };
+    
+    CFastMutex                      m_Mutex;
+    CDB_UserHandler::TExceptions    m_Exceptions;
 };
 
 
@@ -807,6 +817,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/05/10 14:38:13  ssikorsk
+ * 		Added class CGuard to CCTLExceptions.
+ *
  * Revision 1.27  2006/05/04 15:23:26  ucko
  * Modify CCTLExceptions to store pointers, as our exception classes
  * don't support assignment.
