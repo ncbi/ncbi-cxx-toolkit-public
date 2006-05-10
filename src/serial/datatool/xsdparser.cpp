@@ -187,6 +187,8 @@ bool XSDParser::DefineElementType(DTDElement& node)
         node.SetType(DTDElement::eString);
     } else if (IsValue("double") || IsValue("float") || IsValue("decimal")) {
         node.SetType(DTDElement::eDouble);
+    } else if (IsValue("boolean")) {
+        node.SetType(DTDElement::eBoolean);
     } else if (IsValue("integer") || IsValue("int")
              || IsValue("short") || IsValue("byte") 
              || IsValue("negativeInteger") || IsValue("nonNegativeInteger")
@@ -222,6 +224,13 @@ bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
         attrib.SetType(DTDAttribute::eEntity);
     } else if (IsValue("ENTITIES")) {
         attrib.SetType(DTDAttribute::eEntities);
+
+    } else if (IsValue("boolean")) {
+        attrib.SetType(DTDAttribute::eBoolean);
+    } else if (IsValue("int") || IsValue("integer")) {
+        attrib.SetType(DTDAttribute::eInteger);
+    } else if (IsValue("float") || IsValue("double")) {
+        attrib.SetType(DTDAttribute::eDouble);
     } else {
         return false;
     }
@@ -409,6 +418,9 @@ void XSDParser::ParseContent(DTDElement& node)
 	            AddElementContent(node,name);
             }
             break;
+        case K_DOCUMENTATION:
+            ParseDocumentation();
+            break;
         default:
             for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
                 ;
@@ -419,6 +431,22 @@ void XSDParser::ParseContent(DTDElement& node)
         }
     }
     FixEmbeddedNames(node);
+}
+
+void XSDParser::ParseDocumentation(void)
+{
+    TToken tok;
+    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
+        ;
+    if (tok == K_CLOSING) {
+        XSDLexer& l = dynamic_cast<XSDLexer&>(Lexer());
+        while (l.ProcessDocumentation())
+            ;
+    }
+    tok = GetNextToken();
+    if (tok != K_ENDOFTAG) {
+        ParseError("Unexpected tag", "endoftag");
+    }
 }
 
 void XSDParser::ParseContainer(DTDElement& node)
@@ -582,7 +610,9 @@ void XSDParser::ParseContent(DTDAttribute& att)
         case K_RESTRICTION:
             ParseRestriction(att);
             break;
-        case K_SIMPLETYPE:
+        case K_DOCUMENTATION:
+            ParseDocumentation();
+            break;
         default:
             for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
                 ;
@@ -617,6 +647,9 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
         if (IsAttribute("value")) {
             att.AddEnumValue(m_Value);
         }
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(att);
     }
 }
 
@@ -787,6 +820,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2006/05/10 18:54:23  gouriano
+ * Added documentation parsing
+ *
  * Revision 1.3  2006/05/09 15:16:43  gouriano
  * Added XML namespace definition possibility
  *

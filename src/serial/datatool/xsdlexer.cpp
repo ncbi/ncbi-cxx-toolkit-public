@@ -48,6 +48,34 @@ XSDLexer::~XSDLexer(void)
 {
 }
 
+bool XSDLexer::ProcessDocumentation(void)
+{
+    CComment& comment = AddComment();
+    for (;;) {
+        char c = Char();
+        switch ( c ) {
+        case '\r':
+            SkipChar();
+            break;
+        case '\n':
+            SkipChar();
+            NextLine();
+            return true; // comment not ended - there is more
+        case 0:
+            if ( Eof() )
+                return false;
+            break;
+        case '<':
+            return false;
+        default:
+            comment.AddChar(c);
+            SkipChar();
+            break;
+        }
+    }
+    return false;
+}
+
 TToken XSDLexer::LookupToken(void)
 {
     TToken tok = LookupEndOfTag();
@@ -137,6 +165,7 @@ TToken XSDLexer::LookupKeyword(void)
         break;
     case 10:
         CHECK("simpleType", K_SIMPLETYPE, 10);
+        CHECK("annotation", K_ANNOTATION, 10);
         break;
     case 11:
         CHECK("complexType", K_COMPLEXTYPE, 11);
@@ -145,10 +174,12 @@ TToken XSDLexer::LookupKeyword(void)
         break;
     case 13:
         CHECK("simpleContent", K_SIMPLECONTENT, 13);
+        CHECK("documentation", K_DOCUMENTATION, 13);
         break;
     case 14:
         CHECK("complexContent", K_COMPLEXCONTENT, 14);
         break;
+
     }
     return T_IDENTIFIER;
 }
@@ -213,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2006/05/10 18:54:01  gouriano
+ * Added documentation parsing
+ *
  * Revision 1.2  2006/05/03 14:38:08  gouriano
  * Added parsing attribute definition and include
  *
