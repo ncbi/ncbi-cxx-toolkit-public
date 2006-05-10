@@ -157,6 +157,13 @@ void CNSCWrapperShared::SetRunTimeout(const string& job_key,
     m_NSClient.SetRunTimeout(job_key, time_to_run);
 }
 
+void CNSCWrapperShared::JobDelayExpiration(const string& job_key, 
+                                           unsigned time_to_run)
+{
+    CFastMutexGuard gurad(m_Mutex);
+    m_NSClient.JobDelayExpiration(job_key, time_to_run);
+}
+
 void CNSCWrapperShared::RegisterClient(unsigned short udp_port)
 {
     CFastMutexGuard gurad(m_Mutex);
@@ -265,6 +272,12 @@ void CNSCWrapperExclusive::SetRunTimeout(const string& job_key,
     m_NSClient->SetRunTimeout(job_key, time_to_run);
 }
 
+void CNSCWrapperExclusive::JobDelayExpiration(const string& job_key, 
+                                              unsigned time_to_run)
+{
+    m_NSClient->JobDelayExpiration(job_key, time_to_run);
+}
+
 void CNSCWrapperExclusive::RegisterClient(unsigned short udp_port)
 {
     m_NSClient->RegisterClient(udp_port);
@@ -279,6 +292,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 6.2  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

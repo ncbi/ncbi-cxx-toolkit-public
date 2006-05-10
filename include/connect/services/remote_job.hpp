@@ -65,6 +65,8 @@ public:
     /// Set a remote application command line. 
     /// Cmdline should not contain a remote program name, just its arguments
     void SetCmdLine(const string& cmd);
+
+    void SetAppRunTimeout(unsigned int sec);
     
     /// Transfer a file to an application executer side.
     /// It only makes sense to transfer a file if its name also mentioned in
@@ -103,6 +105,8 @@ public:
 
     /// Get a commnad line for a remote application
     const string& GetCmdLine() const;
+
+    unsigned int GetAppRunTimeout() const;
 
     /// Deserialize a request from a given stream.
     void Receive(CNcbiIstream& is);
@@ -200,6 +204,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 1.4  2006/05/08 15:16:42  didenko
  * Added support for an optional saving of a remote application's stdout
  * and stderr into files on a local file system

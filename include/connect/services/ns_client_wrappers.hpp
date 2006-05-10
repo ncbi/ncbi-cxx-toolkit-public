@@ -87,6 +87,9 @@ public:
     virtual void SetRunTimeout(const string& job_key, 
                                unsigned time_to_run) = 0;
 
+    virtual void JobDelayExpiration(const string& job_key,
+                                    unsigned runtime_inc) = 0;
+
     virtual void RegisterClient(unsigned short udp_port) = 0;
     virtual  void UnRegisterClient(unsigned short udp_port) = 0;
 
@@ -149,6 +152,10 @@ public:
 
     virtual void SetRunTimeout(const string& job_key, 
                                unsigned time_to_run);
+
+    virtual void JobDelayExpiration(const string& job_key,
+                                    unsigned runtime_inc);
+
 
     virtual void RegisterClient(unsigned short udp_port);
     virtual  void UnRegisterClient(unsigned short udp_port);
@@ -218,6 +225,9 @@ public:
 
     virtual void SetRunTimeout(const string& job_key, 
                                unsigned time_to_run);
+    virtual void JobDelayExpiration(const string& job_key,
+                                    unsigned runtime_inc);
+
 
     virtual void RegisterClient(unsigned short udp_port);
     virtual  void UnRegisterClient(unsigned short udp_port);
@@ -234,6 +244,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 1.2  2006/02/27 14:50:20  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

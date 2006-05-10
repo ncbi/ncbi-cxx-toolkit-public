@@ -63,6 +63,7 @@ public:
     void PutProgressMessage(const string& msg, bool send_immediately);
 
     void SetJobRunTimeout(unsigned time_to_run);
+    void JobDelayExpiration(unsigned runtime_inc);
 
     bool IsJobCommitted() const;
     bool PutResult(int ret_code, string& new_job_key, string& new_job_input);
@@ -94,6 +95,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 6.9  2006/03/15 17:30:12  didenko
  * Added ability to use embedded NetSchedule job's storage as a job's input/output data instead of using it as a NetCache blob key. This reduces network traffic and increases job submittion speed.
  *

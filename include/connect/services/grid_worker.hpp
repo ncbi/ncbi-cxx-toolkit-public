@@ -228,14 +228,30 @@ public:
     ///
     void SetJobRunTimeout(unsigned time_to_run);
 
+    /// Increment job execution timeout
+    ///
+    /// When node picks up the job for execution it may peridically
+    /// communicate to the server that job is still alive and
+    /// prolong job execution timeout, so job server does not try to 
+    /// reschedule.
+    ///
+    ///
+    /// @param runtime_inc
+    ///    Estimated time in seconds(from the current moment) to 
+    ///    finish the job.
+    ///
+    /// @sa SetRunTimeout
+    void JobDelayExpiration(unsigned runtime_inc);
+
     /// Check if logging was requested in config file
     ///
     bool IsLogRequested(void) const { return m_LogRequested; }
 
+    const string& GetJobOutput() const { return m_JobOutput; }
+
 private:    
     friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
-    const string& GetJobOutput() const { return m_JobOutput; }
     string& SetJobOutput()             { return m_JobOutput; }
     string& SetJobProgressMsgKey()     { return m_ProgressMsgKey; }
     size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
@@ -589,6 +605,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 1.42  2006/04/12 19:03:48  didenko
  * Renamed parameter "use_embedded_input" to "use_embedded_storage"
  *

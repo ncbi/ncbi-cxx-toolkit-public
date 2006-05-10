@@ -147,7 +147,7 @@ class CRemoteAppRequest_Impl
 public:
     explicit CRemoteAppRequest_Impl(IBlobStorageFactory& factory)
         : m_InBlob(factory.CreateInstance()), m_StdInDataSize(0),
-          m_StorageType(eBlobStorage)
+          m_StorageType(eBlobStorage), m_AppRunTimeout(0)
     {
         m_StdIn.reset(new CBlobStreamHelper(*m_InBlob, 
                                             m_InBlobIdOrData,
@@ -169,6 +169,9 @@ public:
 
     void SetCmdLine(const string& cmdline) { m_CmdLine = cmdline; }
     const string& GetCmdLine() const { return m_CmdLine; }
+
+    void SetAppRunTimeout(unsigned int sec) { m_AppRunTimeout = sec; }
+    unsigned int GetAppRunTimeout() const { return m_AppRunTimeout; }
 
     void AddFileForTransfer(const string& fname) 
     { 
@@ -211,7 +214,8 @@ private:
     TFiles m_Files;
     string m_StdErrFileName;
     string m_StdOutFileName;
-    EStdOutErrStorageType m_StorageType;    
+    EStdOutErrStorageType m_StorageType;
+    unsigned int m_AppRunTimeout;
 };
 
 CAtomicCounter CRemoteAppRequest_Impl::sm_DirCounter;
@@ -250,7 +254,8 @@ void CRemoteAppRequest_Impl::Serialize(CNcbiOstream& os)
     }
     s_Write(os, m_StdOutFileName);
     s_Write(os, m_StdErrFileName);
-    os << (int)m_StorageType;
+    os << (int)m_StorageType << " ";
+    os << m_AppRunTimeout;
     Reset();
 }
 void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
@@ -308,6 +313,8 @@ void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
     int tmp;
     is >> tmp;
     m_StorageType = (EStdOutErrStorageType)tmp;
+    is >> m_AppRunTimeout;
+
 }
 
 void CRemoteAppRequest_Impl::CleanUp()
@@ -325,6 +332,7 @@ void CRemoteAppRequest_Impl::Reset()
     m_StdInDataSize = 0;
     m_CmdLine = "";
     m_Files.clear();
+    m_AppRunTimeout = 0;
 }
 CRemoteAppRequest::
 CRemoteAppRequest(IBlobStorageFactory& factory)
@@ -355,6 +363,11 @@ void CRemoteAppRequest::SetCmdLine(const string& cmdline)
 {
     m_Impl->SetCmdLine(cmdline);
 }
+void CRemoteAppRequest::SetAppRunTimeout(unsigned int sec)
+{
+    m_Impl->SetAppRunTimeout(sec);
+}
+
 void CRemoteAppRequest::SetStdOutErrFileNames(const string& stdout_fname,
                                               const string& stderr_fname,
                                               EStdOutErrStorageType storage_type)
@@ -379,6 +392,11 @@ const string& CRemoteAppRequest_Executer::GetCmdLine() const
 {
     return m_Impl->GetCmdLine();
 }
+unsigned int CRemoteAppRequest_Executer::GetAppRunTimeout() const 
+{
+    return m_Impl->GetAppRunTimeout();
+}
+
 
 const string& CRemoteAppRequest_Executer::GetStdOutFileName() const 
 { 
@@ -600,6 +618,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 6.5  2006/05/08 15:16:42  didenko
  * Added support for an optional saving of a remote application's stdout
  * and stderr into files on a local file system

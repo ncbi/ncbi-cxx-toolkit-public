@@ -181,6 +181,24 @@ void CGridThreadContext::SetJobRunTimeout(unsigned time_to_run)
     }
 }
 
+void CGridThreadContext::JobDelayExpiration(unsigned time_to_run)
+{
+    _ASSERT(m_JobContext);
+    if (m_Reporter.get()) {
+        try {
+            m_Reporter->JobDelayExpiration(m_JobContext->GetJobKey(), time_to_run);
+        }
+        catch(exception& ex) {
+            ERR_POST("CWorkerNodeJobContext::JobDelayExpiration : " 
+                     << ex.what());
+        } 
+    }
+    else {
+        NCBI_THROW(CBlobStorageException,
+                   eWriter, "Reporter is not set.");
+    }
+}
+
 /// @internal
 bool CGridThreadContext::PutResult(int ret_code, 
                                    string& new_job_key,
@@ -349,6 +367,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 6.19  2006/05/08 15:16:42  didenko
  * Added support for an optional saving of a remote application's stdout
  * and stderr into files on a local file system

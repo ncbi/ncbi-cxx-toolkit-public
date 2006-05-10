@@ -66,7 +66,10 @@ static bool s_CanExecute(const CFile& file)
 static bool s_Exec(const string& cmd, const vector<string>& args,
                    CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
                    int& exit_value,
-                   CWorkerNodeJobContext& context)
+                   CWorkerNodeJobContext& context,
+                   int max_app_running_time,
+                   int app_running_time,
+                   int keep_alive_period)
 {
     CPipe pipe;
 
@@ -75,9 +78,18 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
                    "Could not execute " + cmd + " file.");
 
     
+    auto_ptr<CStopWatch> keep_alive;
+    if (keep_alive_period > 0)
+        keep_alive.reset(new CStopWatch(CStopWatch::eStart));
+
+    auto_ptr<CStopWatch> running_time;
+    if (max_app_running_time > 0 || app_running_time >> 0)
+        running_time.reset(new CStopWatch(CStopWatch::eStart));
+
     bool canceled = false;
     bool out_done = false;
     bool err_done = false;
+    bool in_done = false;
     
     const size_t buf_size = 4096;
     char buf[buf_size];
@@ -93,8 +105,8 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
         size_t bytes_read;
 
         CPipe::TChildPollMask rmask = pipe.Poll(mask, &wait_time);
-        if (rmask & CPipe::fStdIn) {
-            if (in.good() && !in.eof() && bytes_in_inbuf == 0) {
+        if (rmask & CPipe::fStdIn && !in_done) {
+            if ( in.good() && bytes_in_inbuf == 0) {
                 bytes_in_inbuf = CStreamUtils::Readsome(in, inbuf, buf_size);
                 total_bytes_written = 0;
             }
@@ -104,14 +116,14 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
                 rstatus = pipe.Write(inbuf + total_bytes_written, bytes_in_inbuf,
                                      &bytes_written);
                 if (rstatus != eIO_Success) {
-                    NCBI_THROW(CException, eInvalid, 
-                               "Not all data is written to stdin of a child process.");
+                    ERR_POST("Not all the data is written to stdin of a child process.");
+                    in_done = true;
                 }
                 total_bytes_written += bytes_written;
                 bytes_in_inbuf -= bytes_written;
             }
 
-            if ((!in.good() || in.eof()) && bytes_in_inbuf == 0) {
+            if ((!in.good() && bytes_in_inbuf == 0) || in_done) {
                 pipe.CloseHandle(CPipe::eStdIn);
                 mask &= ~CPipe::fStdIn;
             }
@@ -140,11 +152,35 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
         }
         if (!CProcess(pipe.GetProcessHandle()).IsAlive())
             break;
+
         if (context.GetShutdownLevel() == 
             CNetScheduleClient::eShutdownImmidiate) {
             CProcess(pipe.GetProcessHandle()).Kill();
             canceled = true;
             break;
+        }
+        if (running_time.get()) {
+            double elapsed = running_time->Elapsed();
+            if (app_running_time > 0 &&  elapsed > (double)app_running_time) {
+                CProcess(pipe.GetProcessHandle()).Kill();
+                NCBI_THROW(CException, eUnknown, 
+                      "The application's runtime has exceeded a time(" +
+                       NStr::UIntToString(app_running_time) +
+                      " sec) set by the client");
+            }
+            if ( max_app_running_time > 0 && elapsed > (double)max_app_running_time) {
+                CProcess(pipe.GetProcessHandle()).Kill();
+                NCBI_THROW(CException, eUnknown, 
+                      "The application's runtime has exceeded a time(" +
+                      NStr::UIntToString(max_app_running_time) +
+                      " sec) set in the config file");
+            }
+        }
+
+        if (keep_alive.get() 
+            && keep_alive->Elapsed() > (double) keep_alive_period ) {
+            context.JobDelayExpiration(keep_alive_period + 10);
+            keep_alive->Restart();
         }
 
     }
@@ -179,13 +215,20 @@ public:
         m_Result.SetStdOutErrFileNames(m_Request.GetStdOutFileName(),
                                        m_Request.GetStdErrFileName(),
                                        m_Request.GetStdOutErrStorageType());
+        unsigned int app_running_time = m_Request.GetAppRunTimeout();
+        if (app_running_time > 0)
+            context.SetJobRunTimeout(app_running_time);
+
         int ret = 0;
         bool canceled = s_Exec(m_AppPath, args, 
                                m_Request.GetStdIn(), 
                                m_Result.GetStdOut(), 
                                m_Result.GetStdErr(),
                                ret,
-                               context);
+                               context,
+                               m_MaxAppRunningTime,
+                               app_running_time,
+                               m_KeepAlivePeriod);
 
         m_Request.CleanUp();
         m_Result.SetRetCode(ret); 
@@ -198,7 +241,8 @@ public:
         }
         if (context.IsLogRequested()) {
             LOG_POST( CTime(CTime::eCurrent).AsString() 
-                      << ": Job " << context.GetJobKey() << stat);
+                      << ": Job " << context.GetJobKey() + " " + context.GetJobOutput()
+                      << stat);
         }
         return 0;
     }
@@ -209,12 +253,21 @@ private:
     CBlobStorageFactory m_Factory;
     CRemoteAppRequest_Executer m_Request;
     CRemoteAppResult_Executer  m_Result;
+    int m_MaxAppRunningTime;
+    int m_KeepAlivePeriod;
 };
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
     : m_Factory(context.GetConfig()), m_Request(m_Factory), m_Result(m_Factory)
 {
     const IRegistry& reg = context.GetConfig();
+
+    m_MaxAppRunningTime = 
+        reg.GetInt("remote_app","max_app_run_time",0,0,IRegistry::eReturn);
+    
+    m_KeepAlivePeriod = 
+        reg.GetInt("remote_app","keep_alive_period",0,0,IRegistry::eReturn);
+
     m_AppPath = reg.GetString("remote_app", "app_path", "" );
     CFile file(m_AppPath);
     if (!file.Exists())
@@ -261,6 +314,11 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 1.10  2006/05/08 15:16:42  didenko
  * Added support for an optional saving of a remote application's stdout
  * and stderr into files on a local file system

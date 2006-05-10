@@ -81,14 +81,14 @@ void CNSSubmitRemoveJobApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Remote application jobs submitter");
 
-    arg_desc->AddKey("q", "queue_name", "NetSchedule queue name", 
+    arg_desc->AddOptionalKey("q", "queue_name", "NetSchedule queue name", 
                      CArgDescriptions::eString);
 
-    arg_desc->AddKey("ns", "service", 
+    arg_desc->AddOptionalKey("ns", "service", 
                      "NetSchedule service addrress (service_name or host:port)", 
                      CArgDescriptions::eString);
 
-    arg_desc->AddKey("nc", "service", 
+    arg_desc->AddOptionalKey("nc", "service", 
                      "NetCache service addrress (service_name or host:port)", 
                      CArgDescriptions::eString);
 
@@ -110,6 +110,11 @@ void CNSSubmitRemoveJobApp::Init(void)
     arg_desc->AddOptionalKey("tfiles", 
                              "file_names",
                              "Files for transfer to the remote applicaion side",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("runtime", 
+                             "time",
+                             "job run timeout",
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("jout", 
@@ -157,31 +162,38 @@ int CNSSubmitRemoveJobApp::Run(void)
     IRWRegistry& reg = GetConfig();
 
     const CArgs& args = GetArgs();
-    string queue = args["q"].AsString();
-    
     reg.Set(kNetScheduleDriverName, "client_name", "ns_submit_remote_job");
-    reg.Set(kNetScheduleDriverName, "queue_name", queue);
-    string service = args["ns"].AsString();
-    string host, sport;
-    if (NStr::SplitInTwo(service, ":", host, sport)) {
-        unsigned int port = NStr::StringToUInt(sport);
-        reg.Set(kNetScheduleDriverName, "host", host);
-        reg.Set(kNetScheduleDriverName, "port", sport);
-        m_UsePermanentConnection = true;
-    } else {
-        reg.Set(kNetScheduleDriverName, "service", service);
-        m_UsePermanentConnection = false;
+
+    if (args["q"]) {
+        string queue = args["q"].AsString();   
+        reg.Set(kNetScheduleDriverName, "queue_name", queue);
     }
-    reg.Set(kNetScheduleDriverName, "use_embedded_storage", "true");
+    string service, host, sport;
+    if ( args["ns"]) {
+        service = args["ns"].AsString();
+        if (NStr::SplitInTwo(service, ":", host, sport)) {
+            unsigned int port = NStr::StringToUInt(sport);
+            reg.Set(kNetScheduleDriverName, "host", host);
+            reg.Set(kNetScheduleDriverName, "port", sport);
+            m_UsePermanentConnection = true;
+        } else {
+            reg.Set(kNetScheduleDriverName, "service", service);
+            m_UsePermanentConnection = false;
+        }
+        reg.Set(kNetScheduleDriverName, "use_embedded_storage", "true");
+    }
 
     reg.Set(kNetCacheDriverName, "client_name", "ns_submit_remote_job");
-    service = args["nc"].AsString();
-    if (NStr::SplitInTwo(service, ":", host, sport)) {
-        unsigned int port = NStr::StringToUInt(sport);
-        reg.Set(kNetCacheDriverName, "host", host);
-        reg.Set(kNetCacheDriverName, "port", sport);
-    } else {
-        reg.Set(kNetCacheDriverName, "service", service);
+
+    if ( args["nc"]) {
+        service = args["nc"].AsString();
+        if (NStr::SplitInTwo(service, ":", host, sport)) {
+            unsigned int port = NStr::StringToUInt(sport);
+            reg.Set(kNetCacheDriverName, "host", host);
+            reg.Set(kNetCacheDriverName, "port", sport);
+        } else {
+            reg.Set(kNetCacheDriverName, "service", service);
+        }
     }
 
     // Don't forget to call it
@@ -232,6 +244,11 @@ int CNSSubmitRemoveJobApp::Run(void)
         if (!jout.empty() && !jerr.empty())
             request.SetStdOutErrFileNames(jout, jerr);
 
+        if (args["runtime"]) {
+            unsigned int rt = NStr::StringToUInt(args["runtime"].AsString());
+            request.SetAppRunTimeout(rt);
+        }
+
 
         CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
         request.Send(job_submiter.GetOStream());
@@ -269,6 +286,12 @@ int CNSSubmitRemoveJobApp::Run(void)
 
             if (!jout.empty() && !jerr.empty())
                 request.SetStdOutErrFileNames(jout, jerr);
+
+            string srt = s_FindParam(line, "runtime=\"");
+            if (!srt.empty()) {
+                unsigned int rt = NStr::StringToUInt(srt);
+                request.SetAppRunTimeout(rt);
+            }
             
             CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
             request.Send(job_submiter.GetOStream());
@@ -292,6 +315,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/10 19:54:21  didenko
+ * Added JobDelayExpiration method to CWorkerNodeContext class
+ * Added keep_alive_period and max_job_run_time parmerter to the config
+ * file of remote_app
+ *
  * Revision 1.2  2006/05/08 15:16:42  didenko
  * Added support for an optional saving of a remote application's stdout
  * and stderr into files on a local file system
