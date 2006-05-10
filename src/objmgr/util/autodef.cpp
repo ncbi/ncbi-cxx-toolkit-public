@@ -663,8 +663,6 @@ bool CAutoDef::x_IsFeatureSuppressed(CSeqFeatData::ESubtype subtype)
         if (i_subtype == CSeqFeatData::eSubtype_any
             || i_subtype == subtype ) {
             return true;
-        } else {
-            return false;
         }
     }
     return false;
@@ -1063,6 +1061,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2006/05/10 13:30:43  bollin
+* fixed bug in feature suppression
+*
 * Revision 1.16  2006/05/09 16:28:12  bollin
 * added functions to allow modifiers to be selected in dialog
 *
