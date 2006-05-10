@@ -53,6 +53,8 @@ public:
     void Pop (CDB_UserHandler* h, bool last = true);
 
     void PostMsg(CDB_Exception* ex);
+    // Return TRUE if exceptions have been successfully processed.
+    bool HandleExceptions(CDB_UserHandler::TExceptions& exeptions);
 
     
 private:
@@ -69,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/10 14:42:34  ssikorsk
+ * Added method HandleExceptions to CDBHandlerStack.
+ *
  * Revision 1.6  2005/10/31 17:18:27  ssikorsk
  * Revamp CDBHandlerStack to use std::deque
  *
