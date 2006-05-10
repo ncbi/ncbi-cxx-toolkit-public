@@ -361,7 +361,23 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler
 {
 public:
-    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+    /// Exception container type
+    /// @sa HandleAll()
+    typedef deque<CDB_Exception*> TExceptions;
+    
+    /// Handle all of the exceptions resulting from a native API call.
+    /// @param exceptions
+    ///   List of exceptions
+    /// @return
+    ///   TRUE if the exceptions are handled -- in this case, HandleIt() methods
+    ///   will *NOT* be called.
+    /// @sa HandleIt() 
+    virtual bool HandleAll(const TExceptions& exceptions);
+    
+    /// Handle the exceptions resulting from a native API call, one-by-one.
+    /// @return
+    ///   TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+    /// @sa HandleAll() 
     virtual bool HandleIt(CDB_Exception* ex) = 0;
 
     // Get current global "last-resort" error handler.
@@ -476,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/05/10 14:40:56  ssikorsk
+ * Added method HandleAll to CDB_UserHandler.
+ *
  * Revision 1.24  2006/01/18 19:45:22  ssikorsk
  * Added an extra argument to CException::x_Init
  *
