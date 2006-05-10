@@ -103,7 +103,11 @@ public:
         eNmtokens,
         eEntity,
         eEntities,
-        eNotation
+        eNotation,
+
+        eBoolean,
+        eInteger,
+        eDouble
     };
     enum EValueType {
         eDefault,
@@ -159,9 +163,10 @@ public:
         eSequence, // (a,b,c)
         eChoice,   // (a|b|c)
 
-        eDouble,
+        eBoolean,
         eInteger,
         eBigInt,
+        eDouble,
         eOctetString
     };
     enum EOccurrence {
@@ -255,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2006/05/10 18:49:07  gouriano
+ * Added more types
+ *
  * Revision 1.6  2006/05/09 15:16:14  gouriano
  * Added XML namespace definition possibility
  *
