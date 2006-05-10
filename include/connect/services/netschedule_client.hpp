@@ -504,6 +504,22 @@ public:
     virtual
     void SetRunTimeout(const string& job_key, unsigned time_to_run);
 
+    /// Increment job execution timeout
+    ///
+    /// When node picks up the job for execution it may peridically
+    /// communicate to the server that job is still alive and
+    /// prolong job execution timeout, so job server does not try to 
+    /// reschedule.
+    ///
+    ///
+    /// @param runtime_inc
+    ///    Estimated time in seconds(from the current moment) to 
+    ///    finish the job.
+    ///
+    /// @sa SetRunTimeout
+    virtual
+    void JobDelayExpiration(const string& job_key, unsigned runtime_inc);
+
 
     /// Register client-listener
     virtual
@@ -941,6 +957,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/05/10 15:56:05  kuznets
+ * +JobDelayExpiration()
+ *
  * Revision 1.52  2006/05/08 11:37:07  kuznets
  * Added out/err redirection parameters
  *

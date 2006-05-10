@@ -676,6 +676,32 @@ void CNetScheduleClient::SetRunTimeout(const string& job_key,
 }
 
 
+void CNetScheduleClient::JobDelayExpiration(const string& job_key, 
+                                            unsigned      runtime_inc)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+    bool connected = CheckConnect(job_key);
+    CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "JDEX ", connected);
+
+    m_Tmp.append(job_key);
+    m_Tmp.append(" ");
+    m_Tmp.append(NStr::IntToString(runtime_inc));
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+
+    CheckOK(&m_Tmp);
+}
+
+
 CNetScheduleClient::EJobStatus 
 CNetScheduleClient::GetStatus(const string& job_key,
                               int*          ret_code,
@@ -1762,6 +1788,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/05/10 15:56:44  kuznets
+ * +JobDelayExpiration()
+ *
  * Revision 1.53  2006/05/08 11:56:58  kuznets
  * Fixed bug in server outout parser
  *
