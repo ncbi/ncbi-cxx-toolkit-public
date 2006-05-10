@@ -33,8 +33,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiargs.hpp>
 
-// #include <boost/test/unit_test_result.hpp>
-
 #include <ncbi_source_ver.h>
 #include <dbapi/dbapi.hpp>
 
@@ -48,13 +46,13 @@ enum { max_text_size = 8000 };
 #define CONN_OWNERSHIP  eTakeOwnership
 static const char* msg_record_expected = "Record expected";
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 // Patterns to test:
 //      I) Statement:
 //          1) New/dedicated statement for each test
 //          2) Reusable statement for all tests
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 CTestTransaction::CTestTransaction(
     IConnection& conn,
     ETransBehavior tb
@@ -84,7 +82,7 @@ CTestTransaction::~CTestTransaction(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 class CIConnectionIFPolicy
 {
 protected:
@@ -98,12 +96,13 @@ protected:
     }
 };
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
-    : m_args(args)
-    , m_DM( CDriverManager::GetInstance() )
-    , m_DS( NULL )
-    , m_TableName( "#dbapi_unit_table" )
+: m_args(args)
+, m_ErrHandler(new CErrHandler)
+, m_DM( CDriverManager::GetInstance() )
+, m_DS( NULL )
+, m_TableName( "#dbapi_unit_table" )
 {
     SetDiagFilter(eDiagFilter_All, "!/dbapi/driver/ctlib");
 }
@@ -113,7 +112,20 @@ CDBAPIUnitTest::~CDBAPIUnitTest(void)
     // m_Conn.release();
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
+bool CErrHandler::HandleIt(CDB_Exception* ex)
+{
+    // Ignore errors with ErrorCode set to 0 (this is related mostly to the 
+    // ftds driver)
+    if (ex->GetDBErrCode()) {
+        throw *ex;
+    }
+    
+    return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::TestInit(void)
 {
@@ -127,6 +139,10 @@ CDBAPIUnitTest::TestInit(void)
 
         m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
+        I_DriverContext* drv_context = m_DS->GetDriverContext();
+        drv_context->PushCntxMsgHandler( m_ErrHandler.get() );
+        drv_context->PushDefConnMsgHandler( m_ErrHandler.get() );
+        
         m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         BOOST_CHECK( m_Conn.get() != NULL );
 
@@ -298,7 +314,7 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 }
 
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::Test_HasMoreResults(void)
 {
@@ -322,7 +338,7 @@ CDBAPIUnitTest::Test_HasMoreResults(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::Test_Insert(void)
 {
@@ -374,7 +390,7 @@ CDBAPIUnitTest::Test_Insert(void)
     }
 };
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::Test_DateTime(void)
 {
@@ -594,7 +610,7 @@ CDBAPIUnitTest::Test_DateTime(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::Test_UNIQUE(void)
 {
@@ -663,7 +679,7 @@ CDBAPIUnitTest::Test_UNIQUE(void)
     
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::Test_LOB(void)
 {
@@ -866,7 +882,7 @@ CDBAPIUnitTest::Test_BlobStream(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::Test_GetTotalColumns(void)
 { 
@@ -945,7 +961,7 @@ CDBAPIUnitTest::Test_GetTotalColumns(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void 
 BulkAddRow(const auto_ptr<IBulkInsert>& bi, const CVariant& col)
 {
@@ -1000,7 +1016,8 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
         try
         {
             bi->AddRow();
-        } catch(const CDB_ClientEx&)
+            
+        } catch(const CDB_Exception&)
         {
             exception_catched = true;
         }
@@ -1008,7 +1025,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
         try
         {
             bi->Complete();
-        } catch(const CDB_ClientEx&)
+        } catch(const CDB_Exception&)
         {
             if ( exception_catched ) {
                 throw;
@@ -1374,7 +1391,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
     } 
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Variant2(void)
 {
@@ -1432,7 +1449,7 @@ CDBAPIUnitTest::Test_Variant2(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 int 
 CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
                                 const string& table_name)
@@ -1448,7 +1465,7 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
     return cur_rec_num;
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::Test_Cursor(void)
 {
@@ -1540,7 +1557,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 //     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_SelectStmt(void)
 {
@@ -1621,7 +1638,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 //     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_SelectStmtXML(void)
 {
@@ -1644,7 +1661,7 @@ CDBAPIUnitTest::Test_SelectStmtXML(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_UserErrorHandler(void)
 {
@@ -1885,7 +1902,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Procedure(void)
 {
@@ -2068,7 +2085,7 @@ CDBAPIUnitTest::Test_Procedure(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Exception_Safety(void)
 {
@@ -2077,7 +2094,7 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
     BOOST_CHECK_THROW( Test_ES_01(*m_Conn), CDB_Exception );
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+///////////////////////////////////////////////////////////////////////////////
 // Throw CDB_Exception ...
 void 
 CDBAPIUnitTest::Test_ES_01(IConnection& conn)
@@ -2096,7 +2113,7 @@ CDBAPIUnitTest::Test_ES_01(IConnection& conn)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 void 
 CDBAPIUnitTest::Test_StatementParameters(void)
 {
@@ -2180,7 +2197,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::TestGetRowCount()
 {
@@ -2220,7 +2237,7 @@ CDBAPIUnitTest::TestGetRowCount()
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::CheckGetRowCount(
     int row_count, 
@@ -2346,7 +2363,7 @@ CDBAPIUnitTest::CheckGetRowCount(
 
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::CheckGetRowCount2(
     int row_count, 
@@ -2524,7 +2541,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
 
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Variant(void)
 {
@@ -3409,7 +3426,7 @@ CDBAPIUnitTest::Test_Variant(void)
     }
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
 {
@@ -3471,7 +3488,7 @@ CDBAPIUnitTest::Transactional_Behavior(void)
 }
 
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
@@ -3621,7 +3638,7 @@ CDBAPITestSuite::~CDBAPITestSuite(void)
 }
 
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 CTestArguments::CTestArguments(int argc, char * argv[])
 {
     CNcbiArguments arguments(argc, argv);
@@ -3738,7 +3755,7 @@ CTestArguments::SetDatabaseParameters(void)
 END_NCBI_SCOPE
 
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+////////////////////////////////////////////////////////////////////////////////
 test_suite*
 init_unit_test_suite( int argc, char * argv[] )
 {
@@ -3757,6 +3774,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.72  2006/05/10 16:22:03  ssikorsk
+ * Implemented CErrHandler::HandleIt to throw exceptions;
+ * Made CErrHandler a default handler for all connections;
+ *
  * Revision 1.71  2006/04/28 15:35:06  ssikorsk
  * Added initial implementation of Test_BulkInsertBlob.
  * Added OBERON to a list of Sybase's servers.
