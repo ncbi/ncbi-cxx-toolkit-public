@@ -2011,22 +2011,41 @@ void CSeq_loc_Mapper::x_OptimizeSeq_loc(CRef<CSeq_loc>& loc)
     case CSeq_loc::e_Packed_pnt:  // pack ?
         return;
     case CSeq_loc::e_Mix:
-    {
-        switch ( loc->GetMix().Get().size() ) {
-        case 0:
-            loc->SetNull();
-            break;
-        case 1:
         {
-            CRef<CSeq_loc> single = *loc->SetMix().Set().begin();
-            loc = single;
+            switch ( loc->GetMix().Get().size() ) {
+            case 0:
+                loc->SetNull();
+                break;
+            case 1:
+                {
+                    CRef<CSeq_loc> single = *loc->SetMix().Set().begin();
+                    loc = single;
+                    break;
+                }
+            default:
+                {
+                    // Try to convert to packed-int
+                    CRef<CSeq_loc> packed;
+                    NON_CONST_ITERATE(CSeq_loc_mix::Tdata, it,
+                        loc->SetMix().Set()) {
+                        if ( !(*it)->IsInt() ) {
+                            packed.Reset();
+                            break;
+                        }
+                        if ( !packed ) {
+                            packed.Reset(new CSeq_loc);
+                        }
+                        packed->SetPacked_int().Set().
+                            push_back(Ref(&(*it)->SetInt()));
+                    }
+                    if ( packed ) {
+                        loc = packed;
+                    }
+                    break;
+                }
+            }
             break;
         }
-        default:
-            break;
-        }
-        break;
-    }
     default:
         NCBI_THROW(CAnnotException, eBadLocation,
                    "Unsupported location type");
@@ -2152,6 +2171,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2006/05/10 15:11:44  grichenk
+* Convert the resulting mix into packed int if possible.
+*
 * Revision 1.47  2006/05/04 21:07:24  grichenk
 * Fixed mapping of std-segs.
 *
