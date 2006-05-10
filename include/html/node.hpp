@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 
 class CNCBINode;
 typedef CRef<CNCBINode> CNodeRef;
-
+//#define NCBI_LIGHTWEIGHT_LIST 1
 
 // Base class for a graph node.
 class NCBI_XHTML_EXPORT CNCBINode : public CObject
@@ -161,6 +161,13 @@ public:
     // Returns 'this' for chained AppendChild().
     CNCBINode* AppendChild(CNCBINode* child);
     CNCBINode* AppendChild(CNodeRef& ref);
+
+    // Remove all occurencies of the child from this node's subtree
+    // (along with its subtree).
+    // Throw exception if the child is not found.
+    // Return smart pointer to the removed child node.
+    CNodeRef RemoveChild(CNCBINode* child);
+    CNodeRef RemoveChild(CNodeRef&  child);
     void RemoveAllChildren(void);
 
     // All child operations (except AppendChild) are valid only if
@@ -289,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/05/10 14:54:01  ivanov
+ * + CNCBINode::RemoveChild
+ *
  * Revision 1.28  2005/08/22 12:13:16  ivanov
  * Removed extra empty lines
  *

@@ -33,6 +33,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <html/node.hpp>
 #include <html/html_exception.hpp>
+//#include <functional>
 
 
 BEGIN_NCBI_SCOPE
@@ -113,6 +114,41 @@ void CNCBINode::DoAppendChild(CNCBINode* child)
         }
     }
     GetChildren().push_back(CRef<ncbi::CNCBINode>(child));
+}
+
+
+CNodeRef CNCBINode::RemoveChild(CNCBINode* child)
+{
+    if ( child  &&  HaveChildren() ) {
+        SIZE_TYPE prev_size = Children().size();
+        // Remove all child nodes from the list.
+        TChildren& children = Children();
+        // It is better to use Children().remove_if(...) here,
+        // but WorkShop's version works only with plain functions :(
+        typedef TChildren::iterator TChildrenIt;
+        for (TChildrenIt it = children.begin(); it != children.end(); ) {
+            if ( it->GetPointer() == child ) {
+                TChildrenIt cur = it;
+                ++it;
+                children.erase(cur);
+            } else {
+                ++it;
+            }
+        }
+        if ( children.size() != prev_size ) {
+            return CNodeRef(child);
+        }
+    }
+    NCBI_THROW(CHTMLException, eNotFound,
+               "Specified node is not a child of the current node");
+    // not reached
+    return CNodeRef(0);
+}
+
+
+CNodeRef CNCBINode::RemoveChild(CNodeRef& child)
+{
+    return RemoveChild(child.GetPointer());
 }
 
 
@@ -369,6 +405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/05/10 14:54:18  ivanov
+ * + CNCBINode::RemoveChild
+ *
  * Revision 1.36  2006/04/20 18:42:48  ivanov
  * Get rid of warnings on 64-bit Sun Workshop
  *
