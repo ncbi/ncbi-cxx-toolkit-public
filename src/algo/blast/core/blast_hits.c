@@ -1985,7 +1985,8 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
                   gen_code_string, &translation_buffer, &subject_start,
                   &subject_length, &start_shift);
             } else {
-               Int4 subject_context = FrameToContext(hsp->subject.frame);
+               Int4 subject_context = BLAST_FrameToContext(hsp->subject.frame,
+                                                     program);
                subject_start = 
                   translation_buffer + frame_offsets[subject_context] + 1;
             }

@@ -253,7 +253,7 @@ s_BlastHSPListRPSUpdate(EBlastProgramType program, BlastHSPList *hsplist)
          to pick correct Karlin block for calculating bit scores. There are 
          6 contexts corresponding to each nucleotide query sequence. */
       if (program == eBlastTypeRpsTblastn) {
-          hsp[i]->context = FrameToContext(hsp[i]->query.frame);
+          hsp[i]->context = BLAST_FrameToContext(hsp[i]->query.frame, program);
       }
    }
    Blast_HSPListSortByScore(hsplist);
@@ -447,7 +447,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
 
          if (kTranslateSubject) {
             if (!kIsOutOfFrame && !partial_translation) {
-               Int4 context = FrameToContext(hsp->subject.frame);
+               const Int4 context = BLAST_FrameToContext(hsp->subject.frame, 
+                                                   program_number);
                subject = translation_buffer + frame_offsets[context] + 1;
                subject_length = 
                   frame_offsets[context+1] - frame_offsets[context] - 1;

@@ -1570,7 +1570,7 @@ s_LinkedHSPSetArrayCleanUp(BlastLinkedHSPSet** link_hsp_array, Int4 hspcnt,
             lhsp->hsp->subject = seg;
             /* Also restore the correct context number. */
             lhsp->hsp->context = lhsp->hsp->context * NUM_FRAMES +
-                FrameToContext(lhsp->hsp->query.frame);
+                BLAST_FrameToContext(lhsp->hsp->query.frame, program);
         }
         sfree(lhsp);
     }

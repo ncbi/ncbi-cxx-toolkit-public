@@ -263,11 +263,16 @@ int Blast_GetPartialTranslation(const Uint1* nucl_seq,
         Uint1** mixed_seq_ptr);
 
 
-/** Convert translation frame into a context for the concatenated translation
- * buffer.
+/** Convert translation frame or strand into a context number suitable for 
+ * indexing into the BlastQueryInfo::contexts array
+ * @param frame Frame (allowed values: 1,2,3,-1,-2,-3, 0) [in]
+ * @param program Type of BLAST program [in]
+ * @return context number: 0 or 1 for nucleotide query/subjects, 
+ * a value between 0 and 5 (inclusive) for translated query/subjects, and 0 for 
+ * protein query/subjects.
  */
 NCBI_XBLAST_EXPORT
-Int4 FrameToContext(Int2 frame);
+Int4 BLAST_FrameToContext(Int2 frame, EBlastProgramType program);
 
 
 /** The following binary search routine assumes that array A is filled. */

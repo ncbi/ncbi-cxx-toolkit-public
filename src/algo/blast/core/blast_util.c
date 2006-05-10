@@ -1006,12 +1006,24 @@ int Blast_GetPartialTranslation(const Uint1* nucl_seq,
 }
 
 
-Int4 FrameToContext(Int2 frame) 
+Int4 BLAST_FrameToContext(Int2 frame, EBlastProgramType program) 
 {
-   if (frame > 0)
-      return frame - 1;
-   else
-      return 2 - frame;
+    if (Blast_QueryIsTranslated(program) || 
+        Blast_SubjectIsTranslated(program)) {
+        ASSERT(frame >= -3 && frame <= 3 && frame != 0);
+        if (frame > 0) { 
+            return frame - 1;
+        } else { 
+            return 2 - frame;
+        }
+    } else if (Blast_QueryIsNucleotide(program) ||
+               Blast_SubjectIsNucleotide(program)) {
+        ASSERT(frame == 1 || frame == -1);
+        return frame == 1 ? 0 : 1;
+    } else {
+        ASSERT(frame == 0);
+        return 0;
+    }
 }
 
 Int4 BSearchInt4(Int4 n, Int4* A, Int4 size)
