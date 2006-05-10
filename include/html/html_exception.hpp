@@ -70,6 +70,7 @@ public:
         eTemplateAccess,
         eTemplateTooBig,
         eEndlessRecursion,
+        eNotFound,
         eUnknown
     };
 
@@ -85,6 +86,7 @@ public:
         case eTemplateTooBig:   return "eTemplateTooBig";
         case eEndlessRecursion: return "eEndlessRecursion";
         case eUnknown:          return "eUnknown";
+        case eNotFound:         return "eNotFound";
         default:                return CException::GetErrCodeString();
         }
     }
@@ -122,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/05/10 14:49:32  ivanov
+ * + eNotFound
+ *
  * Revision 1.8  2006/01/18 19:45:22  ssikorsk
  * Added an extra argument to CException::x_Init
  *
