@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/05/10 18:48:52  gouriano
+* Added documentation parsing
+*
 * Revision 1.14  2006/05/03 14:37:38  gouriano
 * Added parsing attribute definition and include
 *
@@ -174,6 +177,8 @@ static const TToken K_EXTENSION      = 309;
 static const TToken K_RESTRICTION    = 310;
 static const TToken K_ATTRIBUTE      = 311;
 static const TToken K_ENUMERATION    = 312;
+static const TToken K_ANNOTATION     = 313;
+static const TToken K_DOCUMENTATION  = 314;
 
 END_NCBI_SCOPE
 

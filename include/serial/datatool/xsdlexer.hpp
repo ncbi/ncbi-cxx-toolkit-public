@@ -45,6 +45,8 @@ public:
     XSDLexer(CNcbiIstream& in, const string& name);
     virtual ~XSDLexer(void);
 
+    bool ProcessDocumentation(void);
+
 protected:
     virtual TToken LookupToken(void);
 
@@ -62,6 +64,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2006/05/10 18:48:52  gouriano
+ * Added documentation parsing
+ *
  * Revision 1.1  2006/04/20 14:00:56  gouriano
  * Added XML schema parsing
  *

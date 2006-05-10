@@ -64,6 +64,7 @@ protected:
     void ParseInclude(void);
     string ParseElementContent(DTDElement* owner);
     void ParseContent(DTDElement& node);
+    void ParseDocumentation(void);
     void ParseContainer(DTDElement& node);
 
     void ParseComplexType(DTDElement& node);
@@ -120,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2006/05/10 18:48:52  gouriano
+ * Added documentation parsing
+ *
  * Revision 1.2  2006/05/03 14:37:38  gouriano
  * Added parsing attribute definition and include
  *
