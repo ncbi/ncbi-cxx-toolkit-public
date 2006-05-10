@@ -56,45 +56,6 @@ BEGIN_NCBI_SCOPE
 static const CDiagCompileInfo kBlankCompileInfo;
 
 
-CCTLExceptions::CCTLExceptions(void)
-{
-}
-
-CCTLExceptions::~CCTLExceptions(void)
-{
-    NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
-        delete *it;
-    }    
-}
-    
-CCTLExceptions& CCTLExceptions::GetInstance(void)
-{
-    static CSafeStaticPtr<CCTLExceptions> instance;
-    
-    return instance.Get(); 
-}
-
-void CCTLExceptions::Accept(CDB_Exception const& e)
-{
-    CFastMutexGuard mg(m_Mutex);
-    
-    m_Exceptions.push_back(e.Clone());
-}
-
-void CCTLExceptions::Handle(CDBHandlerStack& handler)
-{
-    if (!m_Exceptions.empty()) {
-        CFastMutexGuard mg(m_Mutex);
-        
-        NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
-            handler.PostMsg(*it);
-            delete *it;
-        }
-        
-        m_Exceptions.clear();
-    }
-}
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTLibContextRegistry (Singleton)
@@ -117,7 +78,7 @@ public:
 
 private:
     CTLibContextRegistry(void);
-    ~CTLibContextRegistry(void);
+    ~CTLibContextRegistry(void) throw();
     
     mutable CMutex          m_Mutex;
     vector<CTLibContext*>   m_Registry;
@@ -144,9 +105,12 @@ m_ExitProcessPatched(false)
 #endif
 }
 
-CTLibContextRegistry::~CTLibContextRegistry(void)
+CTLibContextRegistry::~CTLibContextRegistry(void) throw()
 {
-    ClearAll();
+    try {
+        ClearAll();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 CTLibContextRegistry&
@@ -203,6 +167,66 @@ void
 CTLibContextRegistry::StaticClearAll(void)
 {
     CTLibContextRegistry::Instance().ClearAll();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+CCTLExceptions::CCTLExceptions(void)
+{
+}
+
+CCTLExceptions::~CCTLExceptions(void) throw()
+{
+    try {
+        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
+            delete *it;
+        }    
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
+}
+    
+CCTLExceptions& CCTLExceptions::GetInstance(void)
+{
+    static CSafeStaticPtr<CCTLExceptions> instance;
+    
+    return instance.Get(); 
+}
+
+void CCTLExceptions::Accept(CDB_Exception const& e)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    m_Exceptions.push_back(e.Clone());
+}
+
+void CCTLExceptions::Handle(CDBHandlerStack& handler)
+{
+    if (!m_Exceptions.empty()) {
+        CFastMutexGuard mg(m_Mutex);
+        CGuard guard(m_Exceptions);
+        
+        if (!handler.HandleExceptions(m_Exceptions)) {
+            NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
+                handler.PostMsg(*it);
+            }
+        }
+    }
+}
+
+CCTLExceptions::CGuard::CGuard(CDB_UserHandler::TExceptions& exceptions) :
+    m_Exceptions(&exceptions)
+{
+}
+
+CCTLExceptions::CGuard::~CGuard(void) throw()
+{
+    try {
+        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, *m_Exceptions) {
+            delete *it;
+        }
+
+        m_Exceptions->clear();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1114,6 +1138,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/05/10 14:46:38  ssikorsk
+ * Implemented CCTLExceptions::CGuard;
+ * Improved CCTLExceptions::Handle;
+ *
  * Revision 1.71  2006/05/04 15:24:03  ucko
  * Modify CCTLExceptions to store pointers, as our exception classes don't
  * support assignment.
