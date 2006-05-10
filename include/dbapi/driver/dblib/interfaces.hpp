@@ -997,7 +997,7 @@ class CDBLExceptions
     friend class CSafeStaticPtr<CDBLExceptions>;
     
     CDBLExceptions(void);
-    ~CDBLExceptions(void);
+    ~CDBLExceptions(void) throw();
     
 public:
     static CDBLExceptions& GetInstance(void);
@@ -1006,8 +1006,18 @@ public:
     void Handle(CDBHandlerStack& handler);
     
 private:
-    CFastMutex              m_Mutex;
-    deque<CDB_Exception*>   m_Exceptions;
+    class CGuard
+    {
+    public:
+        CGuard(CDB_UserHandler::TExceptions& exceptions);
+        ~CGuard(void) throw();
+        
+    private:
+        CDB_UserHandler::TExceptions* m_Exceptions;
+    };
+    
+    CFastMutex                      m_Mutex;
+    CDB_UserHandler::TExceptions    m_Exceptions;
 };
 
 
@@ -1186,6 +1196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/05/10 14:38:50  ssikorsk
+ * Added class CGuard to CDBLExceptions.
+ *
  * Revision 1.37  2006/05/08 17:47:56  ssikorsk
  * Replaced type of  CDBL_Connection::m_CMDs from CPointerPot to deque<CDB_BaseEnt*>
  *
