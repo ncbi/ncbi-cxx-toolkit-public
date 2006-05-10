@@ -33,6 +33,7 @@
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <string.h>
 
+#include <algorithm>
 
 #if defined(NCBI_OS_MSWIN)
 #include <io.h>
@@ -589,6 +590,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/05/10 13:56:27  ucko
+ * +<algorithm> for find()
+ *
  * Revision 1.18  2006/05/08 17:49:28  ssikorsk
  * Replaced type of  CDBL_Connection::m_CMDs from CPointerPot to deque<CDB_BaseEnt*>
  *
