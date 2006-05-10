@@ -61,7 +61,8 @@ struct NCBI_XHTML_EXPORT StaticTagMapper : public BaseTagMapper
     StaticTagMapper(CNCBINode* (*function)(void))
         : m_Function(function)
         { return; }
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    virtual
+    CNCBINode* MapTag(CNCBINode* /*_this*/, const string& /*name*/) const
         { return (*m_Function)(); }
 private:
     CNCBINode* (*m_Function)(void);
@@ -73,7 +74,7 @@ struct NCBI_XHTML_EXPORT StaticTagMapperByName : public BaseTagMapper
     StaticTagMapperByName(CNCBINode* (*function)(const string& name))
         : m_Function(function)
         { return; };
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    virtual CNCBINode* MapTag(CNCBINode* /*_this*/, const string& name) const
         { return (*m_Function)(name); }
 private:
     CNCBINode* (*m_Function)(const string& name);
@@ -85,7 +86,8 @@ struct NCBI_XHTML_EXPORT StaticTagMapperByData : public BaseTagMapper
     StaticTagMapperByData(CNCBINode* (*function)(void* data), void* data)
         : m_Function(function), m_Data(data)
         { return; }
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    virtual
+    CNCBINode* MapTag(CNCBINode* /*_this*/, const string& /*name*/) const
         { return (*m_Function)(m_Data); }
 private:
     CNCBINode* (*m_Function)(void* data);
@@ -142,7 +144,7 @@ struct StaticTagMapperByNodeAndData : public BaseTagMapper
         CNCBINode* (*function)(C* node, T data), T data)
         : m_Function(function), m_Data(data)
         { return; }
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& /*name*/) const
         { return m_Function(dynamic_cast<C*>(_this), m_Data); }
 private:
     CNCBINode* (*m_Function)(C* node, T data);
@@ -210,7 +212,7 @@ struct TagMapperByData : public BaseTagMapper
     TagMapperByData(CNCBINode* (C::*method)(T data), T data)
         : m_Method(method), m_Data(data)
         { return; }
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& /*name*/) const
         { return (dynamic_cast<C*>(_this)->*m_Method)(m_Data); }
 private:
     CNCBINode* (C::*m_Method)(T data);
@@ -334,6 +336,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/05/10 14:48:45  ivanov
+ * Get rid of warnings about unused variables
+ *
  * Revision 1.18  2006/04/28 13:37:50  ivanov
  * Get rid about unused variable warnings
  *
