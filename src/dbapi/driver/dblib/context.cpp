@@ -59,46 +59,6 @@ BEGIN_NCBI_SCOPE
 static const CDiagCompileInfo kBlankCompileInfo;
 
 /////////////////////////////////////////////////////////////////////////////
-CDBLExceptions::CDBLExceptions(void)
-{
-}
-
-CDBLExceptions::~CDBLExceptions(void)
-{
-    NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
-        delete *it;
-    }    
-}
-    
-CDBLExceptions& CDBLExceptions::GetInstance(void)
-{
-    static CSafeStaticPtr<CDBLExceptions> instance;
-    
-    return instance.Get(); 
-}
-
-void CDBLExceptions::Accept(CDB_Exception const& e)
-{
-    CFastMutexGuard mg(m_Mutex);
-    
-    m_Exceptions.push_back(e.Clone());
-}
-
-void CDBLExceptions::Handle(CDBHandlerStack& handler)
-{
-    if (!m_Exceptions.empty()) {
-        CFastMutexGuard mg(m_Mutex);
-        
-        NON_CONST_ITERATE(deque<CDB_Exception*>, it, m_Exceptions) {
-            handler.PostMsg(*it);
-            delete *it;
-        }
-        
-        m_Exceptions.clear();
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
 //
 //  CDblibContextRegistry (Singleton)
 //
@@ -120,7 +80,7 @@ public:
 
 private:
     CDblibContextRegistry(void);
-    ~CDblibContextRegistry(void);
+    ~CDblibContextRegistry(void) throw();
     
     mutable CMutex          m_Mutex;
     vector<CDBLibContext*>  m_Registry;
@@ -147,9 +107,12 @@ m_ExitProcessPatched(false)
 #endif
 }
 
-CDblibContextRegistry::~CDblibContextRegistry(void)
+CDblibContextRegistry::~CDblibContextRegistry(void) throw()
 {
-    ClearAll();
+    try {
+        ClearAll();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 CDblibContextRegistry&
@@ -206,6 +169,66 @@ void
 CDblibContextRegistry::StaticClearAll(void)
 {
     CDblibContextRegistry::Instance().ClearAll();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+CDBLExceptions::CDBLExceptions(void)
+{
+}
+
+CDBLExceptions::~CDBLExceptions(void) throw()
+{
+    try {
+        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
+            delete *it;
+        }    
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
+}
+    
+CDBLExceptions& CDBLExceptions::GetInstance(void)
+{
+    static CSafeStaticPtr<CDBLExceptions> instance;
+    
+    return instance.Get(); 
+}
+
+void CDBLExceptions::Accept(CDB_Exception const& e)
+{
+    CFastMutexGuard mg(m_Mutex);
+    
+    m_Exceptions.push_back(e.Clone());
+}
+
+void CDBLExceptions::Handle(CDBHandlerStack& handler)
+{
+    if (!m_Exceptions.empty()) {
+        CFastMutexGuard mg(m_Mutex);
+        CGuard guard(m_Exceptions);
+        
+        if (!handler.HandleExceptions(m_Exceptions)) {
+            NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
+                handler.PostMsg(*it);
+            }
+        }
+    }
+}
+
+CDBLExceptions::CGuard::CGuard(CDB_UserHandler::TExceptions& exceptions) :
+    m_Exceptions(&exceptions)
+{
+}
+
+CDBLExceptions::CGuard::~CGuard(void) throw()
+{
+    try {
+        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, *m_Exceptions) {
+            delete *it;
+        }
+
+        m_Exceptions->clear();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1309,6 +1332,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/05/10 14:47:00  ssikorsk
+ * Implemented CDBLExceptions::CGuard;
+ * Improved CDBLExceptions::Handle;
+ *
  * Revision 1.75  2006/05/04 20:24:32  ssikorsk
  * Fixed compilation issues in case of MSDBLIB.
  *
