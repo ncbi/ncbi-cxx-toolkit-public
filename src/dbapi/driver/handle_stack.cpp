@@ -105,6 +105,18 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex)
 }
 
 
+bool CDBHandlerStack::HandleExceptions(CDB_UserHandler::TExceptions& exeptions)
+{
+    const deque<CDB_UserHandler*>& s = m_Stack;
+    REVERSE_ITERATE(deque<CDB_UserHandler*>, cit, s) {
+        if ( *cit && (*cit)->HandleAll(exeptions) ) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 END_NCBI_SCOPE
 
 
@@ -112,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/10 14:45:48  ssikorsk
+ * Implemented HandleExceptions
+ *
  * Revision 1.9  2006/02/14 17:48:23  ssikorsk
  * Fixed algorithm of deleting a handler from a stack in CDBHandlerStack::Pop.
  *
