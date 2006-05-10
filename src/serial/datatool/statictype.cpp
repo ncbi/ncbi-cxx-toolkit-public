@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2006/05/10 18:55:34  gouriano
+* Corrected schema for boolean attributes
+*
 * Revision 1.45  2006/05/09 15:16:43  gouriano
 * Added XML namespace definition possibility
 *
@@ -384,6 +387,13 @@ const char* CBoolDataType::GetXMLContents(void) const
 
 void CBoolDataType::GetXMLSchemaContents(string& type, string& contents) const
 {
+    if (GetParentType() && 
+        GetParentType()->GetDataMember() &&
+        GetParentType()->GetDataMember()->Attlist()) {
+        type = "xs:boolean";
+        contents.erase();
+        return;
+    }
     type.erase();
     const CBoolDataValue *val = GetDataMember() ?
         dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault()) : 0;
