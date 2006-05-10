@@ -33,7 +33,6 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <html/node.hpp>
 #include <html/html_exception.hpp>
-//#include <functional>
 
 
 BEGIN_NCBI_SCOPE
@@ -405,6 +404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/05/10 14:55:14  ivanov
+ * Removed redundant comment in last revision
+ *
  * Revision 1.37  2006/05/10 14:54:18  ivanov
  * + CNCBINode::RemoveChild
  *
