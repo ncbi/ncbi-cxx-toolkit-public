@@ -126,6 +126,16 @@ private:
 };
 
 
+
+///////////////////////////////////////////////////////////////////////////
+class CErrHandler : public CDB_UserHandler
+{
+public:
+    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+    virtual bool HandleIt(CDB_Exception* ex);
+};
+
+
 ///////////////////////////////////////////////////////////////////////////
 class CDBAPIUnitTest
 {
@@ -205,13 +215,14 @@ protected:
                                const string& table_name);
     
 private:
-    const CTestArguments m_args;
-    CDriverManager& m_DM;
-    IDataSource* m_DS;
-    auto_ptr<IConnection> m_Conn;
+    const CTestArguments    m_args;
+    auto_ptr<CErrHandler>   m_ErrHandler;
+    CDriverManager&         m_DM;
+    IDataSource*            m_DS;
+    auto_ptr<IConnection>   m_Conn;
 
-    const string m_TableName;
-    unsigned int m_max_varchar_size;
+    const string            m_TableName;
+    unsigned int            m_max_varchar_size;
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -228,6 +239,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2006/05/10 16:20:05  ssikorsk
+ * Added class CErrHandler
+ *
  * Revision 1.36  2006/04/28 15:34:37  ssikorsk
  * Added Test_BulkInsertBlob
  *
