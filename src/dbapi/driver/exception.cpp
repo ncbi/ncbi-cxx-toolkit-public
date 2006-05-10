@@ -417,6 +417,10 @@ CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
 }
 
 
+bool CDB_UserHandler::HandleAll(const TExceptions& exceptions)
+{ 
+    return false; 
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_UserHandler_Diag::
@@ -519,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/05/10 14:41:54  ssikorsk
+ * Added default implementation of CDB_UserHandler::HandleAll.
+ *
  * Revision 1.22  2006/04/20 22:16:31  ssikorsk
  * Replaced NStr::UIntToString with NStr::UInt8ToString for x64 sake.
  *
