@@ -807,14 +807,17 @@ CDataType* DTDParser::x_Type(
             type = new CNullDataType();
             break;
 
-        case DTDElement::eDouble:
-            type = new CRealDataType();
+        case DTDElement::eBoolean:
+            type = new CBoolDataType();
             break;
         case DTDElement::eInteger:
             type = new CIntDataType();
             break;
         case DTDElement::eBigInt:
             type = new CBigIntDataType();
+            break;
+        case DTDElement::eDouble:
+            type = new CRealDataType();
             break;
         case DTDElement::eOctetString:
             type = new COctetStringDataType();
@@ -960,6 +963,16 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
     case DTDAttribute::eEnum:
         type = EnumeratedBlock(att, new CEnumDataType());
         break;
+
+    case DTDAttribute::eBoolean:
+        type = new CBoolDataType();
+        break;
+    case DTDAttribute::eInteger:
+        type = new CIntDataType();
+        break;
+    case DTDAttribute::eDouble:
+        type = new CRealDataType();
+        break;
     }
     return type;
 }
@@ -1060,9 +1073,10 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eSequence: cout << "sequence";break;
     case DTDElement::eChoice:   cout << "choice";  break;
 
-    case DTDElement::eDouble:      cout << "double";   break;
-    case DTDElement::eInteger:     cout << "integer";  break;
-    case DTDElement::eBigInt:      cout << "BigInt";  break;
+    case DTDElement::eBoolean:     cout << "boolean";   break;
+    case DTDElement::eInteger:     cout << "integer";   break;
+    case DTDElement::eBigInt:      cout << "BigInt";    break;
+    case DTDElement::eDouble:      cout << "double";    break;
     case DTDElement::eOctetString: cout << "OctetString";  break;
     }
     switch (node.GetOccurrence()) {
@@ -1127,6 +1141,10 @@ void DTDParser::PrintAttribute(const DTDAttribute& attrib, bool indent/*=true*/)
     case DTDAttribute::eEntity:   cout << "eEntity"; break;
     case DTDAttribute::eEntities: cout << "eEntities"; break;
     case DTDAttribute::eNotation: cout << "eNotation"; break;
+
+    case DTDAttribute::eBoolean:     cout << "boolean";   break;
+    case DTDAttribute::eInteger:     cout << "integer";  break;
+    case DTDAttribute::eDouble:      cout << "double";   break;
     }
     {
         const list<string>& enumV = attrib.GetEnumValues();
@@ -1162,6 +1180,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.28  2006/05/10 18:54:53  gouriano
+ * Added more types
+ *
  * Revision 1.27  2006/05/09 15:16:43  gouriano
  * Added XML namespace definition possibility
  *
