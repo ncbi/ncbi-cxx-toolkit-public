@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "dbapi_driver_ctlib_utils.hpp"
+#include "ctlib_utils.hpp"
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
 
@@ -762,6 +762,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/05/11 18:13:43  ssikorsk
+ * Fixed compilation issues
+ *
  * Revision 1.29  2006/05/11 18:07:58  ssikorsk
  * Utilized new exception storage
  *

@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "dbapi_driver_ftds8_utils.hpp"
+#include "ftds8_utils.hpp"
 
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <string.h>
@@ -593,6 +593,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/05/11 18:14:12  ssikorsk
+ * Fixed compilation issues
+ *
  * Revision 1.20  2006/05/11 18:07:19  ssikorsk
  * Utilized new exception storage
  *

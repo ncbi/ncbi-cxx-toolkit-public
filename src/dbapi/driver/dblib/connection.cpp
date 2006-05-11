@@ -30,7 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include "dbapi_driver_dblib_utils.hpp"
+#include "dblib_utils.hpp"
 
 #include <dbapi/driver/dblib/interfaces.hpp>
 #include <dbapi/driver/dblib/interfaces_p.hpp>
@@ -671,6 +671,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/05/11 18:14:01  ssikorsk
+ * Fixed compilation issues
+ *
  * Revision 1.27  2006/05/11 18:07:34  ssikorsk
  * Utilized new exception storage
  *

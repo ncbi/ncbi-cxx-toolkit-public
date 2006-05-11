@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "dbapi_driver_ctlib_utils.hpp"
+#include "ctlib_utils.hpp"
 
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
@@ -1082,6 +1082,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/05/11 18:13:43  ssikorsk
+ * Fixed compilation issues
+ *
  * Revision 1.73  2006/05/11 18:07:58  ssikorsk
  * Utilized new exception storage
  *
