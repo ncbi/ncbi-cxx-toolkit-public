@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = bcp connection context cursor lang_cmd rpc result
+SRC = bcp connection context cursor lang_cmd rpc result ctlib_utils
 
 LIB    = ncbi_xdbapi_ctlib
 
