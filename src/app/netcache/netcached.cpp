@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.6  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.7  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -1837,7 +1837,7 @@ private:
 
 void CNetCacheDApp::Init(void)
 {
-    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_DateTime);
 
     // Setup command line arguments and parameters
@@ -2058,6 +2058,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2006/05/11 21:09:30  kuznets
+ * Reduced diagnostics level from Info to Warning
+ *
  * Revision 1.85  2006/05/03 14:56:13  didenko
  * Changed server version
  *
