@@ -822,8 +822,6 @@ void CSeq_align_Mapper::x_ConvertRow(CSeq_loc_Mapper& mapper,
             if (dst_id != seg_id  &&  m_AlignFlags == eAlign_Normal) {
                 m_AlignFlags = eAlign_MultiId;
             }
-        }
-        else {
             dst_id = seg_id;
         }
     }
@@ -1279,6 +1277,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/05/11 19:03:12  grichenk
+* Fixed mapping of gaps in alignments
+*
 * Revision 1.18  2006/05/04 21:07:24  grichenk
 * Fixed mapping of std-segs.
 *
