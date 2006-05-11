@@ -1192,7 +1192,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
     {
         if(uselims)
         {
-            for(int i = lim_start; i <= lim_stop-3; i += 3)
+            for(int i = lim_start; i <= lim_stop-2; i += 3)
             {
                 if(equal(taa,taa+3,&cds[i]) || equal(tag,tag+3,&cds[i]) || equal(tga,tga+3,&cds[i]))
                 {
@@ -1520,6 +1520,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2006/05/11 19:23:07  souvorov
+ * Bug in detection of internal stops
+ *
  * Revision 1.9  2006/02/03 20:31:20  souvorov
  * Typo
  *
