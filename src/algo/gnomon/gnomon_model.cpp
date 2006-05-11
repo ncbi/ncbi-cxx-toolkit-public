@@ -257,8 +257,7 @@ int CAlignVec::isCompatible(const CAlignVec& a) const
     int commonspl = 0;
     int ashift = 0;
     int bshift = 0;
-    bool acount = false;
-    bool bcount = false;
+    bool count = false;
     while(left <= intersect.GetTo())
     {
         TSignedSeqPos aright = aexon ? a[anum].GetTo() : a[anum+1].GetFrom()-1;
@@ -280,11 +279,10 @@ int CAlignVec::isCompatible(const CAlignVec& a) const
         
         if(aexon && bexon) 
         {
-            bcount = true;
-            acount = true;
+            count = true;
         }
-        if(aexon && acount) ashift += a.FShiftedLen(left, right);
-        if(bexon && bcount) bshift += b.FShiftedLen(left, right);
+        if(aexon && count) ashift += a.FShiftedLen(left, right);
+        if(bexon && count) bshift += b.FShiftedLen(left, right);
         if(aexon && bexon && ashift%3 != bshift%3) return 0;      // extension makes a frameshift 
         
         if(aexon && aright == right && a[anum].m_ssplice &&
@@ -307,7 +305,8 @@ int CAlignVec::isCompatible(const CAlignVec& a) const
         }
     }
     
-    return commonspl+1;
+    if(count) return commonspl+1;
+    else return 0;                  // theoretical case when there are no common points (mutually exclusive holes)
 }
 
 void CAlignVec::Insert(const CAlignExon& p)
@@ -751,6 +750,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/11 19:24:57  souvorov
+ * Cosmetical edit
+ *
  * Revision 1.9  2006/02/03 20:24:32  souvorov
  * Use methods for open_cds and pstop
  *
