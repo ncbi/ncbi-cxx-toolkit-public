@@ -144,7 +144,8 @@ public:
         eSkipped = 4,
         eLeftTrimmed = 8,
         eRightTrimmed = 16,
-        eRejectedChain = 32
+        eRejectedChain = 32,
+        eConfirmedStart = 64
     };
 
     CAlignVec(EStrand s = ePlus, int i = 0, int t = eEST, TSignedSeqRange cdl = TSignedSeqRange::GetEmpty()) :
@@ -227,6 +228,16 @@ public:
     void SetOpenCds(bool op) { if(op) m_status |= eOpen; else m_status &= ~eOpen; }
     bool PStop() const { return (m_status & ePStop) != 0; }  // has premature stop(s)
     void SetPStop(bool ps) { if(ps) m_status |= ePStop; else m_status &= ~ePStop; }
+    
+    bool ConfirmedStart() const { return (m_status & eConfirmedStart) != 0; }  // start is confirmed by protein alignment
+    void SetConfirmedStart(bool cs) { 
+        if(cs) {
+            m_status |= eConfirmedStart;
+            SetOpenCds(false); 
+        } else {
+            m_status &= ~eConfirmedStart; 
+        }
+    }
 
     bool isNMD() const {
         if(CdsLimits().Empty() || size() <= 1) return false;
@@ -392,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/05/11 19:25:44  souvorov
+ * ConfirmedStart added
+ *
  * Revision 1.18  2006/05/11 17:40:07  souvorov
  * NMD test and GeneID for CAlignVec
  *
