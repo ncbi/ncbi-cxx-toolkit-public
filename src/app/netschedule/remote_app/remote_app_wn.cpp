@@ -216,8 +216,6 @@ public:
                                        m_Request.GetStdErrFileName(),
                                        m_Request.GetStdOutErrStorageType());
         unsigned int app_running_time = m_Request.GetAppRunTimeout();
-        if (app_running_time > 0)
-            context.SetJobRunTimeout(app_running_time);
 
         int ret = 0;
         bool canceled = s_Exec(m_AppPath, args, 
@@ -314,6 +312,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/05/11 14:32:43  didenko
+ * Cosmetics
+ *
  * Revision 1.11  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config
