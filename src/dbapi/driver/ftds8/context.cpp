@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "dbapi_driver_ftds8_utils.hpp"
+
 #include <corelib/ncbimtx.hpp>
 
 #include <corelib/plugin_manager_impl.hpp>
@@ -152,65 +154,6 @@ CDblibContextRegistry::StaticClearAll(void)
     CDblibContextRegistry::Instance().ClearAll();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-CTDSExceptions::CTDSExceptions(void)
-{
-}
-
-CTDSExceptions::~CTDSExceptions(void) throw()
-{
-    try {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-            delete *it;
-        }    
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
-}
-    
-CTDSExceptions& CTDSExceptions::GetInstance(void)
-{
-    static CSafeStaticPtr<CTDSExceptions> instance;
-    
-    return instance.Get(); 
-}
-
-void CTDSExceptions::Accept(CDB_Exception const& e)
-{
-    CFastMutexGuard mg(m_Mutex);
-    
-    m_Exceptions.push_back(e.Clone());
-}
-
-void CTDSExceptions::Handle(CDBHandlerStack& handler)
-{
-    if (!m_Exceptions.empty()) {
-        CFastMutexGuard mg(m_Mutex);
-        CGuard guard(m_Exceptions);
-        
-        if (!handler.HandleExceptions(m_Exceptions)) {
-            NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-                handler.PostMsg(*it);
-            }
-        }
-    }
-}
-
-CTDSExceptions::CGuard::CGuard(CDB_UserHandler::TExceptions& exceptions) :
-    m_Exceptions(&exceptions)
-{
-}
-
-CTDSExceptions::CGuard::~CGuard(void) throw()
-{
-    try {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, *m_Exceptions) {
-            delete *it;
-        }
-
-        m_Exceptions->clear();
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -501,7 +444,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                              message,
                              dberr);
             
-            CTDSExceptions::GetInstance().Accept(to);
+            GetFTDS8ExceptionStorage().Accept(to);
         }
         return INT_TIMEOUT;
     default:
@@ -510,7 +453,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                               0,
                               message);
             
-            CTDSExceptions::GetInstance().Accept(dl);
+            GetFTDS8ExceptionStorage().Accept(dl);
             
             return INT_CANCEL;
         }
@@ -529,7 +472,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                               eDiag_Info,
                               dberr);
             
-            CTDSExceptions::GetInstance().Accept(info);
+            GetFTDS8ExceptionStorage().Accept(info);
         }
         break;
     case EXNONFATAL:
@@ -543,7 +486,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                              eDiag_Error,
                              dberr);
             
-            CTDSExceptions::GetInstance().Accept(err);
+            GetFTDS8ExceptionStorage().Accept(err);
         }
         break;
     case EXTIME:
@@ -553,7 +496,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                              message,
                              dberr);
             
-            CTDSExceptions::GetInstance().Accept(to);
+            GetFTDS8ExceptionStorage().Accept(to);
         }
         return INT_TIMEOUT;
     default:
@@ -564,7 +507,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                              eDiag_Critical,
                              dberr);
             
-            CTDSExceptions::GetInstance().Accept(ftl);
+            GetFTDS8ExceptionStorage().Accept(ftl);
         }
         break;
     }
@@ -599,7 +542,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
                           0,
                           message);
         
-        CTDSExceptions::GetInstance().Accept(dl);
+        GetFTDS8ExceptionStorage().Accept(dl);
     } else {
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
@@ -615,7 +558,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
                           procname,
                           line);
             
-            CTDSExceptions::GetInstance().Accept(rpc);
+            GetFTDS8ExceptionStorage().Accept(rpc);
         } else {
             CDB_DSEx m(kBlankCompileInfo,
                        0,
@@ -623,7 +566,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
                        sev,
                        msgno);
             
-            CTDSExceptions::GetInstance().Accept(m);
+            GetFTDS8ExceptionStorage().Accept(m);
         }
     }
 }
@@ -663,7 +606,7 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
 
 void CTDSContext::CheckFunctCall(void)
 {
-    CTDSExceptions::GetInstance().Handle(m_CntxHandlers);
+    GetFTDS8ExceptionStorage().Handle(m_CntxHandlers);
 }
 
 
@@ -898,6 +841,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/05/11 18:07:19  ssikorsk
+ * Utilized new exception storage
+ *
  * Revision 1.69  2006/05/10 14:47:46  ssikorsk
  * Implemented CTDSExceptions::CGuard;
  * Improved CTDSExceptions::Handle;

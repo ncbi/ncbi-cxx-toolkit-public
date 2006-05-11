@@ -30,6 +30,8 @@
  */
 #include <ncbi_pch.hpp>
 
+#include "dbapi_driver_dblib_utils.hpp"
+
 #include <dbapi/driver/dblib/interfaces.hpp>
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 
@@ -590,7 +592,7 @@ void CTDS_Connection::TDS_SetTimeout(void)
 
 void CDBL_Connection::CheckFunctCall(void)
 {
-    CDBLExceptions::GetInstance().Handle(m_MsgHandlers);
+    GetDBLExceptionStorage().Handle(m_MsgHandlers);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -669,6 +671,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/05/11 18:07:34  ssikorsk
+ * Utilized new exception storage
+ *
  * Revision 1.26  2006/05/09 20:40:10  ucko
  * #include <algorithm> for find()
  *

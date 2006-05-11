@@ -30,6 +30,9 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include "dbapi_driver_ctlib_utils.hpp"
+
 #include <dbapi/driver/ctlib/interfaces.hpp>
 
 #include <string.h>
@@ -103,7 +106,7 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
 CS_RETCODE 
 CTL_Connection::Check(CS_RETCODE rc)
 {
-    CCTLExceptions::GetInstance().Handle(m_MsgHandlers);
+    GetCTLExceptionStorage().Handle(m_MsgHandlers);
     
     return rc;
 }
@@ -759,6 +762,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/05/11 18:07:58  ssikorsk
+ * Utilized new exception storage
+ *
  * Revision 1.28  2006/05/08 17:46:33  ssikorsk
  * Clear list of commands in CTL_Connection::Release()
  *

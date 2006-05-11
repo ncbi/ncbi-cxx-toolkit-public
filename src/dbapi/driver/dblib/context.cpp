@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "dbapi_driver_dblib_utils.hpp"
+
 #include <corelib/ncbimtx.hpp>
 
 #include <corelib/plugin_manager_impl.hpp>
@@ -169,66 +171,6 @@ void
 CDblibContextRegistry::StaticClearAll(void)
 {
     CDblibContextRegistry::Instance().ClearAll();
-}
-
-/////////////////////////////////////////////////////////////////////////////
-CDBLExceptions::CDBLExceptions(void)
-{
-}
-
-CDBLExceptions::~CDBLExceptions(void) throw()
-{
-    try {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-            delete *it;
-        }    
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
-}
-    
-CDBLExceptions& CDBLExceptions::GetInstance(void)
-{
-    static CSafeStaticPtr<CDBLExceptions> instance;
-    
-    return instance.Get(); 
-}
-
-void CDBLExceptions::Accept(CDB_Exception const& e)
-{
-    CFastMutexGuard mg(m_Mutex);
-    
-    m_Exceptions.push_back(e.Clone());
-}
-
-void CDBLExceptions::Handle(CDBHandlerStack& handler)
-{
-    if (!m_Exceptions.empty()) {
-        CFastMutexGuard mg(m_Mutex);
-        CGuard guard(m_Exceptions);
-        
-        if (!handler.HandleExceptions(m_Exceptions)) {
-            NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-                handler.PostMsg(*it);
-            }
-        }
-    }
-}
-
-CDBLExceptions::CGuard::CGuard(CDB_UserHandler::TExceptions& exceptions) :
-    m_Exceptions(&exceptions)
-{
-}
-
-CDBLExceptions::CGuard::~CGuard(void) throw()
-{
-    try {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, *m_Exceptions) {
-            delete *it;
-        }
-
-        m_Exceptions->clear();
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -585,7 +527,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                              message,
                              dberr);
             
-            CDBLExceptions::GetInstance().Accept(to);
+            GetDBLExceptionStorage().Accept(to);
         }
         return INT_TIMEOUT;
     default:
@@ -594,7 +536,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                               0,
                               message);
             
-            CDBLExceptions::GetInstance().Accept(dl);
+            GetDBLExceptionStorage().Accept(dl);
             
             return INT_CANCEL;
         }
@@ -613,7 +555,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                          eDiag_Info,
                          dberr);
             
-            CDBLExceptions::GetInstance().Accept(info);
+            GetDBLExceptionStorage().Accept(info);
         }
         break;
     case EXNONFATAL:
@@ -627,7 +569,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                              eDiag_Error,
                              dberr);
             
-            CDBLExceptions::GetInstance().Accept(err);
+            GetDBLExceptionStorage().Accept(err);
         }
         break;
     case EXTIME:
@@ -637,7 +579,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                              message,
                              dberr);
             
-            CDBLExceptions::GetInstance().Accept(to);
+            GetDBLExceptionStorage().Accept(to);
         }
         return INT_TIMEOUT;
     default:
@@ -648,7 +590,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                          eDiag_Critical,
                          dberr);
             
-            CDBLExceptions::GetInstance().Accept(ftl);
+            GetDBLExceptionStorage().Accept(ftl);
         }
         break;
     }
@@ -684,7 +626,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                           0,
                           message);
         
-        CDBLExceptions::GetInstance().Accept(dl);
+        GetDBLExceptionStorage().Accept(dl);
     } else {
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
@@ -700,7 +642,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                       procname,
                       line);
             
-            CDBLExceptions::GetInstance().Accept(rpc);
+            GetDBLExceptionStorage().Accept(rpc);
         } else {
             CDB_DSEx m( kBlankCompileInfo,
                      0,
@@ -708,7 +650,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                      sev,
                      msgno);
             
-            CDBLExceptions::GetInstance().Accept(m);
+            GetDBLExceptionStorage().Accept(m);
         }
     }
 }
@@ -745,7 +687,7 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
 
 void CDBLibContext::CheckFunctCall(void)
 {
-    CDBLExceptions::GetInstance().Handle(m_CntxHandlers);
+    GetDBLExceptionStorage().Handle(m_CntxHandlers);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1332,6 +1274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2006/05/11 18:07:34  ssikorsk
+ * Utilized new exception storage
+ *
  * Revision 1.76  2006/05/10 14:47:00  ssikorsk
  * Implemented CDBLExceptions::CGuard;
  * Improved CDBLExceptions::Handle;

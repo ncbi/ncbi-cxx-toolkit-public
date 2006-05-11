@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "dbapi_driver_ctlib_utils.hpp"
+
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
@@ -38,7 +40,6 @@
 #include <dbapi/driver/driver_mgr.hpp>
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
-// #include <dbapi/driver/util/numeric_convert.hpp>
 
 #include <algorithm>
 
@@ -170,86 +171,29 @@ CTLibContextRegistry::StaticClearAll(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-CCTLExceptions::CCTLExceptions(void)
-{
-}
-
-CCTLExceptions::~CCTLExceptions(void) throw()
-{
-    try {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-            delete *it;
-        }    
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
-}
-    
-CCTLExceptions& CCTLExceptions::GetInstance(void)
-{
-    static CSafeStaticPtr<CCTLExceptions> instance;
-    
-    return instance.Get(); 
-}
-
-void CCTLExceptions::Accept(CDB_Exception const& e)
-{
-    CFastMutexGuard mg(m_Mutex);
-    
-    m_Exceptions.push_back(e.Clone());
-}
-
-void CCTLExceptions::Handle(CDBHandlerStack& handler)
-{
-    if (!m_Exceptions.empty()) {
-        CFastMutexGuard mg(m_Mutex);
-        CGuard guard(m_Exceptions);
-        
-        if (!handler.HandleExceptions(m_Exceptions)) {
-            NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-                handler.PostMsg(*it);
-            }
-        }
-    }
-}
-
-CCTLExceptions::CGuard::CGuard(CDB_UserHandler::TExceptions& exceptions) :
-    m_Exceptions(&exceptions)
-{
-}
-
-CCTLExceptions::CGuard::~CGuard(void) throw()
-{
-    try {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, *m_Exceptions) {
-            delete *it;
-        }
-
-        m_Exceptions->clear();
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
-}
-
-/////////////////////////////////////////////////////////////////////////////
 //
 //  CTLibContext::
 //
 
 CS_START_EXTERN_C
-    CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context, CS_CLIENTMSG* msg)
+    CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context, 
+                                                CS_CLIENTMSG* msg)
     {
         return CTLibContext::CTLIB_cserr_handler(context, msg)
             ? CS_SUCCEED : CS_FAIL;
     }
 
-    CS_RETCODE CS_PUBLIC s_CTLIB_cterr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
-                                      CS_CLIENTMSG* msg)
+    CS_RETCODE CS_PUBLIC s_CTLIB_cterr_callback(CS_CONTEXT* context, 
+                                                CS_CONNECTION* con,
+                                                CS_CLIENTMSG* msg)
     {
         return CTLibContext::CTLIB_cterr_handler(context, con, msg)
             ? CS_SUCCEED : CS_FAIL;
     }
 
-    CS_RETCODE CS_PUBLIC s_CTLIB_srverr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
-                                       CS_SERVERMSG* msg)
+    CS_RETCODE CS_PUBLIC s_CTLIB_srverr_callback(CS_CONTEXT* context, 
+                                                 CS_CONNECTION* con,
+                                                 CS_SERVERMSG* msg)
     {
         return CTLibContext::CTLIB_srverr_handler(context, con, msg)
             ? CS_SUCCEED : CS_FAIL;
@@ -357,7 +301,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 CS_RETCODE 
 CTLibContext::Check(CS_RETCODE rc)
 {
-    CCTLExceptions::GetInstance().Handle(m_CntxHandlers);
+    GetCTLExceptionStorage().Handle(m_CntxHandlers);
     
     return rc;
 }
@@ -575,7 +519,7 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
         sev = eDiag_Critical;
     }
 
-    CCTLExceptions::GetInstance().Accept(CDB_ClientEx(
+    GetCTLExceptionStorage().Accept(CDB_ClientEx(
         kBlankCompileInfo, 
         0, msg->msgstring, 
         sev, 
@@ -652,7 +596,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                            eDiag_Info, 
                            msg->msgnumber);
         
-        CCTLExceptions::GetInstance().Accept(info);
+        GetCTLExceptionStorage().Accept(info);
         
         break;
     }
@@ -663,7 +607,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
             message, 
             msg->msgnumber);
         
-        CCTLExceptions::GetInstance().Accept(to);
+        GetCTLExceptionStorage().Accept(to);
         
         if( con ) {
             CS_INT status;
@@ -696,7 +640,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                           eDiag_Error, 
                           msg->msgnumber);
         
-        CCTLExceptions::GetInstance().Accept(err);
+        GetCTLExceptionStorage().Accept(err);
         
         break;
     }
@@ -708,7 +652,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
             eDiag_Critical, 
             msg->msgnumber);
         
-        CCTLExceptions::GetInstance().Accept(ftl);
+        GetCTLExceptionStorage().Accept(ftl);
         
         break;
     }
@@ -795,7 +739,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         CDB_DeadlockEx dl(kBlankCompileInfo,
                           0, 
                           message);
-        CCTLExceptions::GetInstance().Accept(dl);
+        GetCTLExceptionStorage().Accept(dl);
     }
     else {
         EDiagSev sev =
@@ -812,7 +756,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                           msg->proc,
                           (int) msg->line);
             
-            CCTLExceptions::GetInstance().Accept(rpc);
+            GetCTLExceptionStorage().Accept(rpc);
         }
         else if (msg->sqlstatelen > 1  &&
                  (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
@@ -824,7 +768,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                           (const char*) msg->sqlstate,
                           (int) msg->line);
             
-            CCTLExceptions::GetInstance().Accept(sql);
+            GetCTLExceptionStorage().Accept(sql);
         }
         else {
             CDB_DSEx m(kBlankCompileInfo,
@@ -833,7 +777,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                        sev,
                        (int) msg->msgnumber);
             
-            CCTLExceptions::GetInstance().Accept(m);
+            GetCTLExceptionStorage().Accept(m);
         }
     }
 
@@ -1138,6 +1082,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/05/11 18:07:58  ssikorsk
+ * Utilized new exception storage
+ *
  * Revision 1.72  2006/05/10 14:46:38  ssikorsk
  * Implemented CCTLExceptions::CGuard;
  * Improved CCTLExceptions::Handle;

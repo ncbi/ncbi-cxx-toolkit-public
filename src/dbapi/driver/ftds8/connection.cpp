@@ -30,6 +30,9 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include "dbapi_driver_ftds8_utils.hpp"
+
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <string.h>
 
@@ -511,7 +514,7 @@ void CTDS_Connection::TDS_SetTimeout(void)
 
 void CTDS_Connection::CheckFunctCall(void)
 {
-    CDBLExceptions::GetInstance().Handle(m_MsgHandlers);
+    GetFTDS8ExceptionStorage().Handle(m_MsgHandlers);
 }
 
 
@@ -590,6 +593,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/05/11 18:07:19  ssikorsk
+ * Utilized new exception storage
+ *
  * Revision 1.19  2006/05/10 13:56:27  ucko
  * +<algorithm> for find()
  *
