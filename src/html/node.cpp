@@ -387,14 +387,15 @@ void CNCBINode::CreateSubNodes(void)
 
 void CNCBINode::SetExceptionFlags(TExceptionFlags flags)
 {
-    s_TlsExceptionFlags->SetValue(reinterpret_cast<TExceptionFlags*> (flags));
+    s_TlsExceptionFlags->SetValue(
+        reinterpret_cast<TExceptionFlags*> ((intptr_t)flags));
 }
 
 
 CNCBINode::TExceptionFlags CNCBINode::GetExceptionFlags()
 {
     // Some 64 bit compilers refuse to cast from int* to EExceptionFlags
-    return EExceptionFlags(long(s_TlsExceptionFlags->GetValue()));
+    return EExceptionFlags((long)(intptr_t)(s_TlsExceptionFlags->GetValue()));
 }
 
 
@@ -404,6 +405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/05/11 13:27:46  ivanov
+ * [Set|Get]ExceptionFlags -- fixed compilation warnings on MSVC8/64
+ *
  * Revision 1.38  2006/05/10 14:55:14  ivanov
  * Removed redundant comment in last revision
  *
