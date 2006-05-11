@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = bcp connection context cursor lang_cmd result rpc
+SRC = bcp connection context cursor lang_cmd result rpc ftds63_utils
 
 LIB = ncbi_xdbapi_$(ftds63)
 
