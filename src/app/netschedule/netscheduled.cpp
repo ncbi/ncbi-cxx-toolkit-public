@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.10.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.10.1  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2828,6 +2828,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2006/05/11 14:31:51  kuznets
+ * Fixed bug in job prolongation
+ *
  * Revision 1.80  2006/05/10 15:59:06  kuznets
  * Implemented NS call to delay job expiration
  *

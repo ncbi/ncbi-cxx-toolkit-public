@@ -136,6 +136,9 @@ unsigned CJobTimeLine::TimeLineSlot(time_t tm) const
 {
     _ASSERT(tm >= m_TimeLineHead);
 
+    if (tm <= m_TimeLineHead)
+        return 0;
+
     unsigned interval_head = (tm / m_DiscrFactor) * m_DiscrFactor;
     unsigned diff = interval_head - m_TimeLineHead;
     return diff / m_DiscrFactor;
@@ -179,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/11 14:31:51  kuznets
+ * Fixed bug in job prolongation
+ *
  * Revision 1.3  2005/08/25 18:08:27  kuznets
  * Minor performance optimization
  *

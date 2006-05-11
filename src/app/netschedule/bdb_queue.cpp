@@ -2171,11 +2171,23 @@ void CQueueDataBase::CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
     unsigned time_run = db.time_run;
     unsigned run_timeout = db.run_timeout;
 
+    // check if current timeout is enought and job requires no prolongation
+    if (time_run + run_timeout > curr) {
+        unsigned delta = curr - (time_run + run_timeout);
+        if (tm < delta / 5)
+            return;
+    }
+
     exp_time = x_ComputeExpirationTime(time_run, run_timeout);
 
     run_timeout += tm;
-    if (run_timeout <= curr) {
-        run_timeout = curr + tm;
+    if (time_run == 0) {
+        time_run = curr;
+        db.time_run = curr;
+    }
+    
+    while (time_run + run_timeout <= curr) {
+        run_timeout += tm;
     }
     db.run_timeout = run_timeout;
 
@@ -3729,6 +3741,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2006/05/11 14:31:51  kuznets
+ * Fixed bug in job prolongation
+ *
  * Revision 1.77  2006/05/10 15:59:06  kuznets
  * Implemented NS call to delay job expiration
  *
