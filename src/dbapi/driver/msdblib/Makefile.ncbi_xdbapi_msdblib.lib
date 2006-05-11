@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = ../dblib/bcp ../dblib/connection ../dblib/context ../dblib/cursor ../dblib/lang_cmd ../dblib/result ../dblib/rpc
+SRC = ../dblib/bcp ../dblib/connection ../dblib/context ../dblib/cursor ../dblib/lang_cmd ../dblib/result ../dblib/rpc ../dblib/dblib_utils
 
 LIB = ncbi_xdbapi_msdblib
 
