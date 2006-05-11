@@ -148,7 +148,7 @@ public:
     };
 
     CAlignVec(EStrand s = ePlus, int i = 0, int t = eEST, TSignedSeqRange cdl = TSignedSeqRange::GetEmpty()) :
-        m_cds_limits(cdl), m_type(t), m_strand(s), m_id(i), m_status(eOk), m_score(BadScore()) {}
+        m_cds_limits(cdl), m_type(t), m_strand(s), m_geneid(0), m_id(i), m_status(eOk), m_score(BadScore()) {}
 
 
     void Insert(const CAlignExon& p);
@@ -179,6 +179,8 @@ public:
     EStrand Strand() const { return m_strand; }
     void SetType(int t) { m_type = t; }
     int Type() const { return m_type; }
+    int GeneID() const { return m_geneid; }
+    void SetGeneID(int id) { m_geneid = id; }
     void SetID(int i) { m_id = i; }
     int ID() const { return m_id; }
     void SetName(const string& name) { m_name = name; }
@@ -225,6 +227,15 @@ public:
     void SetOpenCds(bool op) { if(op) m_status |= eOpen; else m_status &= ~eOpen; }
     bool PStop() const { return (m_status & ePStop) != 0; }  // has premature stop(s)
     void SetPStop(bool ps) { if(ps) m_status |= ePStop; else m_status &= ~ePStop; }
+
+    bool isNMD() const {
+        if(CdsLimits().Empty() || size() <= 1) return false;
+        if(Strand() == ePlus) {
+            return RealCdsLimits().GetTo() < back().GetFrom();
+        } else {
+            return RealCdsLimits().GetFrom() > front().GetTo();
+        }
+    }
     
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const;
     
@@ -256,6 +267,7 @@ private:
     int m_type;
     EStrand m_strand;
     TSignedSeqRange m_limits;
+    int m_geneid;
     int m_id;
     string m_name;
     unsigned int m_status;
@@ -380,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/05/11 17:40:07  souvorov
+ * NMD test and GeneID for CAlignVec
+ *
  * Revision 1.17  2006/04/24 13:53:47  dicuccio
  * FIx compiler warning on MSVC
  *
