@@ -40,6 +40,7 @@
 #include <algo/structure/cd_utils/cuPssmMaker.hpp>
 #include <algo/structure/cd_utils/cuScoringMatrix.hpp>
 #include <objects/scoremat/PssmFinalData.hpp>
+#include <objects/scoremat/PssmIntermediateData.hpp>
 #include <objects/cdd/Cdd_id.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -410,6 +411,11 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 	CPssm& pssm = pssmPara->SetPssm();
 	pssm.SetNumColumns(consensus.size());
 	pssm.SetNumRows(26);
+	list< double >* freqs = 0;
+	if (m_config.requestFrequencyRatios)
+	{
+		freqs = &(pssm.SetIntermediateData().SetFreqRatios());
+	}
 	list< int > & scores = pssm.SetFinalData().SetScores();
 	for (int col = 0; col < consensus.size(); col++)
 	{
@@ -418,6 +424,8 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 		{
 			char c2 =  ColumnResidueProfile::getEaaCode(row);
 			scores.push_back(sm.GetScore(c1, c2));
+			if (freqs)
+				freqs->push_back(0.0);
 		}
 	}
 	pssm.SetFinalData().SetLambda(0.267);
@@ -536,6 +544,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/05/11 19:40:56  cliu
+ * add freqRatios in deafult Pssm if requested.
+ *
  * Revision 1.13  2006/04/25 15:48:22  cliu
  * right value for NumRows and NumCol
  *
