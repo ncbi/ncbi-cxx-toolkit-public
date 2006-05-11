@@ -609,7 +609,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 {
     string message = msgtxt;
     
-    if (msgno == 5701  ||  msgno == 5703)
+    if (msgno == 5701 || msgno == 5703 || msgno == 5704)
         return;
 
     CDBL_Connection* link = dblink ?
@@ -1274,6 +1274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2006/05/11 19:10:27  ssikorsk
+ * Ignore messages having msgno == 5704
+ *
  * Revision 1.78  2006/05/11 18:14:01  ssikorsk
  * Fixed compilation issues
  *
