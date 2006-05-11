@@ -992,36 +992,6 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
-class CDBLExceptions
-{
-    friend class CSafeStaticPtr<CDBLExceptions>;
-    
-    CDBLExceptions(void);
-    ~CDBLExceptions(void) throw();
-    
-public:
-    static CDBLExceptions& GetInstance(void);
-    
-    void Accept(CDB_Exception const& e);
-    void Handle(CDBHandlerStack& handler);
-    
-private:
-    class CGuard
-    {
-    public:
-        CGuard(CDB_UserHandler::TExceptions& exceptions);
-        ~CGuard(void) throw();
-        
-    private:
-        CDB_UserHandler::TExceptions* m_Exceptions;
-    };
-    
-    CFastMutex                      m_Mutex;
-    CDB_UserHandler::TExceptions    m_Exceptions;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
 #if defined(MS_DBLIB_IN_USE)
 
 extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_MSDBLIB_DriverName;
@@ -1196,6 +1166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/05/11 17:53:25  ssikorsk
+ * Added CDBExceptionStorage class
+ *
  * Revision 1.38  2006/05/10 14:38:50  ssikorsk
  * Added class CGuard to CDBLExceptions.
  *

@@ -630,36 +630,6 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
-class CCTLExceptions
-{
-    friend class CSafeStaticPtr<CCTLExceptions>;
-    
-    CCTLExceptions(void);
-    ~CCTLExceptions(void) throw();
-    
-public:
-    static CCTLExceptions& GetInstance(void);
-    
-    void Accept(CDB_Exception const& e);
-    void Handle(CDBHandlerStack& handler);
-    
-private:
-    class CGuard
-    {
-    public:
-        CGuard(CDB_UserHandler::TExceptions& exceptions);
-        ~CGuard(void) throw();
-        
-    private:
-        CDB_UserHandler::TExceptions* m_Exceptions;
-    };
-    
-    CFastMutex                      m_Mutex;
-    CDB_UserHandler::TExceptions    m_Exceptions;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
 inline
 CTL_Connection& CTL_Cmd::GetConnection(void)
 {
@@ -817,6 +787,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/05/11 17:53:25  ssikorsk
+ * Added CDBExceptionStorage class
+ *
  * Revision 1.28  2006/05/10 14:38:13  ssikorsk
  * 		Added class CGuard to CCTLExceptions.
  *
