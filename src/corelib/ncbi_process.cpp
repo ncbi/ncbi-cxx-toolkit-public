@@ -64,7 +64,7 @@ const unsigned long CProcess::kDefaultLingerTimeout = 1000;
 
 
 CProcess::CProcess(TPid process, EProcessType type)
-    : m_Process((TProcessHandle)process), m_Type(type)
+    : m_Process(process), m_Type(type)
 {
     return;
 }
@@ -73,7 +73,7 @@ CProcess::CProcess(TPid process, EProcessType type)
 // The helper constructor for MS Windows to avoid cast from
 // TProcessHandle to TPid
 CProcess::CProcess(TProcessHandle process, EProcessType type)
-    : m_Process(process), m_Type(type)
+    : m_Process((intptr_t)process), m_Type(type)
 {
     return;
 }
@@ -184,7 +184,7 @@ bool CProcess::IsAlive(void) const
             return GetLastError() == ERROR_ACCESS_DENIED;
         }
     } else {
-        hProcess = m_Process;
+        hProcess = (TProcessHandle)m_Process;
     }
     DWORD status = 0;
     _ASSERT(STILL_ACTIVE != 0);
@@ -266,7 +266,7 @@ bool CProcess::Kill(unsigned long kill_timeout,
             }
         }
     } else {
-        hProcess = m_Process;
+        hProcess = (TProcessHandle)m_Process;
     }
     // Check process handle
     if ( !hProcess  ||  hProcess == INVALID_HANDLE_VALUE ) {
@@ -386,7 +386,7 @@ int CProcess::Wait(unsigned long timeout) const
             }
         }
     } else {
-        hProcess = m_Process;
+        hProcess = (TProcessHandle)m_Process;
     }
     DWORD status = -1;
     try {
@@ -565,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/05/11 13:14:09  ivanov
+ * Fixed compilation warnings on MSVC8/64
+ *
  * Revision 1.25  2006/05/08 13:51:35  ivanov
  * Minor comment changes
  *

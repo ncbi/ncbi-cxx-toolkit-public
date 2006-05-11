@@ -107,7 +107,7 @@ public:
     /// Constructor.
     CProcess(TPid process, EProcessType type = eHandle);
 #if defined(NCBI_OS_MSWIN)
-    // On MS windows process identifiers and process handles
+    // On MS Windows process identifiers and process handles
     // are different.
     CProcess(TProcessHandle process, EProcessType type = eHandle);
 #endif
@@ -179,9 +179,9 @@ private:
     friend class CThread;
 #endif
 
-    // TProcessHandle type can store both: pid and process handle.
-    TProcessHandle  m_Process;  ///< Process identifier.
-    EProcessType    m_Type;     ///< Type of process identifier.
+    // itptr_t type can store both: pid and process handle.
+    intptr_t     m_Process;  ///< Process identifier.
+    EProcessType m_Type;     ///< Type of process identifier.
 };
 
 
@@ -295,6 +295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/05/11 13:14:18  ivanov
+ * Fixed compilation warnings on MSVC8/64
+ *
  * Revision 1.18  2006/04/27 22:53:25  vakatov
  * Rollback odd commits
  *
