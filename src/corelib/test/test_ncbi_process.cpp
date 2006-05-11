@@ -52,23 +52,23 @@ static void Test_Process(void)
     LOG_POST("\nProcess tests:\n");
 
     string app = CNcbiApplication::Instance()->GetArguments().GetProgramName();
-    TPid pid;
+    TProcessHandle handle;
     {{
         LOG_POST("CMD = " << app << " -sleep 3");
-        pid = CExec::SpawnL(CExec::eNoWait, app.c_str(),
-	                    "-sleep", "3", NULL);
-        LOG_POST("PID = " << pid);
-        CProcess process(pid, CProcess::eHandle);
+        handle = CExec::SpawnL(CExec::eNoWait, app.c_str(),
+                               "-sleep", "3", NULL).GetProcessHandle();
+        LOG_POST("PID/HANDLE = " << (intptr_t)handle);
+        CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
         assert(process.Wait() == 88);
         assert(!process.IsAlive());
     }}
     {{
         LOG_POST("CMD = " << app << " -sleep 10");
-        pid = CExec::SpawnL(CExec::eNoWait, app.c_str(),
-	                    "-sleep", "10", NULL);
-        LOG_POST("PID = " << pid);
-        CProcess process(pid, CProcess::eHandle);
+        handle = CExec::SpawnL(CExec::eNoWait, app.c_str(),
+                               "-sleep", "10", NULL).GetProcessHandle();
+        LOG_POST("PID/HANDLE = " << (intptr_t)handle);
+        CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
         assert( process.Wait(2000) == -1);
         assert(process.Kill());
@@ -91,9 +91,10 @@ static void Test_PIDGuardChild(int ppid, string lockfile)
     string s_app =
     CNcbiApplication::Instance()->GetArguments().GetProgramName();
     string s_pid = NStr::IntToString(ppid);
-    int ret_code = CExec::SpawnL(CExec::eWait, s_app.c_str(),
-                                 "-parent", s_pid.c_str() ,
-                                 "-lockfile", lockfile.c_str(), NULL); 
+    TExitCode ret_code =
+        CExec::SpawnL(CExec::eWait, s_app.c_str(),
+                      "-parent", s_pid.c_str() ,
+                      "-lockfile", lockfile.c_str(), NULL).GetExitCode(); 
     assert( !ret_code );
 }
 
@@ -252,6 +253,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/05/11 14:00:41  ivanov
+ * Fixed accordingly to last changes in CExec
+ *
  * Revision 1.4  2004/08/18 16:00:50  ivanov
  * Use NULL instead 0 where necessary to avoid problems with 64bit platforms
  *
