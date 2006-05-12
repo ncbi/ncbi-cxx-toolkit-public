@@ -322,7 +322,7 @@ s_AddMask(EBlastProgramType           prog,
     unsigned num_contexts = GetNumberOfContexts(prog);
     
     if (Blast_QueryIsTranslated(prog)) {
-        assert(seqloc_frames.QueryIsMulti());
+        assert(seqloc_frames.QueryHasMultipleFrames());
         
         int starting_context(0), ending_context(0);
         
@@ -452,7 +452,7 @@ s_GetRestrictedBlastSeqLocs(IBlastQuerySource & queries,
         (new CBlastQueryFilteredFrames(program, mqr));
     
     if (! frame_to_bsl->Empty()) {
-        if (frame_to_bsl->QueryIsMulti()) {
+        if (frame_to_bsl->QueryHasMultipleFrames()) {
             s_RestrictSeqLocs_Multiframe(*frame_to_bsl,
                                          queries,
                                          query_index,
@@ -1507,7 +1507,7 @@ void CBlastQueryFilteredFrames::x_VerifyFrame(int frame)
     }
 }
 
-bool CBlastQueryFilteredFrames::QueryIsMulti() const
+bool CBlastQueryFilteredFrames::QueryHasMultipleFrames() const
 {
     switch(m_Program) {
     case eBlastTypeBlastp:
@@ -1572,6 +1572,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.117  2006/05/12 18:00:08  camacho
+ * Minor
+ *
  * Revision 1.116  2006/05/01 13:17:26  camacho
  * fix compiler warning
  *

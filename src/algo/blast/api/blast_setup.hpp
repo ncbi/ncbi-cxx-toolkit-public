@@ -426,7 +426,7 @@ public:
     void Release(int frame);
     
     /// Check whether the query is multiframe for this type of search.
-    bool QueryIsMulti() const;
+    bool QueryHasMultipleFrames() const;
     
     /// Returns the list of frame values for which this object
     /// contains masking information.
@@ -483,6 +483,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2006/05/12 18:00:08  camacho
+* Minor
+*
 * Revision 1.60  2006/02/27 15:43:47  camacho
 * Fixed bug in CBlastQuerySourceOM::GetMaskedRegions.
 * Made IBlastQuerySource::GetMaskedRegions a non-const method.
