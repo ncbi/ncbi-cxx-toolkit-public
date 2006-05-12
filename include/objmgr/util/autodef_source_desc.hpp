@@ -74,7 +74,7 @@ public:
     
     bool IsTrickyHIV();
     
-    string CAutoDefSourceDescription::GetComboDescription(IAutoDefCombo *mod_combo);
+    string GetComboDescription(IAutoDefCombo *mod_combo);
     
 private:
     const CBioSource& m_BS;
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/05/12 01:03:13  ucko
+* Drop redundant extra qualification from GetComboDescription per GCC 4.1.
+*
 * Revision 1.3  2006/05/04 11:44:40  bollin
 * improvements to method for finding unique organism description
 *
