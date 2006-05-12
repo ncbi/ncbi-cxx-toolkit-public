@@ -112,91 +112,6 @@ private:
     CNcbiOstream* m_Os;
 };
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//     CWorkerNodeStatictics
-/// @internal
-CWorkerNodeStatistics::CWorkerNodeStatistics(unsigned int max_jobs_allowed, 
-                                             unsigned int max_failures_allowed)
-    : m_JobsStarted(0), m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
-      m_JobsCanceled(0), m_JobsLost(0), m_StartTime(CTime::eCurrent),
-      m_MaxJobsAllowed(max_jobs_allowed), m_MaxFailuresAllowed(max_failures_allowed)
-{
-}
-CWorkerNodeStatistics::~CWorkerNodeStatistics() 
-{
-}
-
-void CWorkerNodeStatistics::Notify(const CWorkerNodeJobContext& job, 
-                                  EEvent event)
-{
-    switch(event) {
-    case eJobStarted :
-        {
-            CMutexGuard guard(m_ActiveJobsMutex);
-            m_ActiveJobs[&job] = CTime(CTime::eCurrent);
-            ++m_JobsStarted;
-            if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
-                LOG_POST("The maximum number of allowed jobs (" 
-                         << m_MaxJobsAllowed << ") has been reached.\n" 
-                         << "Sending the shutdown request." );
-                CGridGlobals::GetInstance().
-                    RequestShutdown(CNetScheduleClient::eNormalShutdown);
-            }
-        }
-        break;       
-    case eJobStopped :
-        {
-            CMutexGuard guard(m_ActiveJobsMutex);
-            m_ActiveJobs.erase(&job);
-        }
-        break;
-    case eJobFailed :
-        ++m_JobsFailed;
-        if (m_MaxFailuresAllowed > 0 && m_JobsFailed > m_MaxFailuresAllowed - 1) {
-                LOG_POST("The maximum number of failed jobs (" 
-                         << m_MaxFailuresAllowed << ") has been reached.\n" 
-                         << "Sending the shutdown request." );
-                CGridGlobals::GetInstance().
-                    RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
-            }
-        break;
-    case eJobSucceed :
-        ++m_JobsSucceed;
-        break;
-    case eJobReturned :
-        ++m_JobsReturned;
-        break;
-    case eJobCanceled :
-        ++m_JobsCanceled;
-        break;
-    case eJobLost:
-        ++m_JobsLost;
-        break;
-    }
-}
-
-void CWorkerNodeStatistics::Print(CNcbiOstream& os) const
-{
-    os << "Started: " << m_StartTime.AsString() << endl;
-    os << "Jobs Succeed: " << m_JobsSucceed << endl
-       << "Jobs Failed: "  << m_JobsFailed  << endl
-       << "Jobs Returned: "<< m_JobsReturned << endl
-       << "Jobs Canceled: "<< m_JobsCanceled << endl
-       << "Jobs Lost: "    << m_JobsLost << endl;
-    
-    CMutexGuard guard(m_ActiveJobsMutex);
-    os << "Jobs Running: " << m_ActiveJobs.size() << endl;
-    CTime now(CTime::eCurrent);
-    ITERATE(TActiveJobs, it, m_ActiveJobs) {
-        CTimeSpan ts = now - it->second.GetLocalTime();
-        os << it->first->GetJobKey() << " " << it->first->GetJobInput()
-           << " -- running for " << ts.AsString("S") 
-           << " seconds." << endl;
-    }
-}
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //     CGridWorkerNodeThread
@@ -482,6 +397,9 @@ int CGridWorkerApp_Impl::Run()
     unsigned int idle_run_delay = 
         reg.GetInt("server","idle_run_delay",30,0,IRegistry::eReturn);
     if (idle_run_delay < 1) idle_run_delay = 1;
+
+    unsigned int infinit_loop_time = 
+        reg.GetInt("server","infinit_loop_time",0,0,IRegistry::eReturn);
                              
     bool idle_exclusive =
         reg.GetBool("server", "idle_exclusive", true, 0, 
@@ -572,8 +490,6 @@ int CGridWorkerApp_Impl::Run()
     // from this moment on the server is silent...
     SetDiagStream(m_ErrLog.get());
     AttachJobWatcher(*(new CLogWatcher(m_ErrLog.get())), eTakeOwnership);
-    m_Statistics.reset(new CWorkerNodeStatistics(max_total_jobs, max_failed_jobs));
-    AttachJobWatcher(*m_Statistics);
 
 
     m_WorkerNode.reset(new CGridWorkerNode(GetJobFactory(), 
@@ -589,11 +505,17 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetNSTimeout(ns_timeout);
     m_WorkerNode->SetUseEmbeddedStorage(use_embedded_input);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
-    CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
     m_WorkerNode->SetMasterWorkerNodes(masters);
     m_WorkerNode->SetAdminHosts(admin_hosts);
     m_WorkerNode->ActivateServerLog(server_log);
     m_WorkerNode->AcivatePermanentConnection(permanent_conntction);
+
+    CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
+    CGridGlobals::GetInstance().GetJobsWatcher().SetMaxJobsAllowed(max_total_jobs);
+    CGridGlobals::GetInstance().GetJobsWatcher().SetMaxFailuresAllowed(max_failed_jobs);
+    CGridGlobals::GetInstance().GetJobsWatcher().SetInfinitLoopTime(infinit_loop_time);
+    AttachJobWatcher(CGridGlobals::GetInstance().GetJobsWatcher());
+    CGridGlobals::GetInstance().SetWorker(*m_WorkerNode);
 
     IWorkerNodeIdleTask* task = GetJobFactory().GetIdleTask();
     if (task) {
@@ -605,8 +527,8 @@ int CGridWorkerApp_Impl::Run()
     }
 
     {{
-    CWorkerNodeControlThread control_server(control_port, *m_WorkerNode,
-                                            *m_Statistics);
+    CWorkerNodeControlThread control_server(control_port, *m_WorkerNode);
+
     CRef<CGridWorkerNodeThread> worker_thread(
                                 new CGridWorkerNodeThread(control_server));
     worker_thread->Run();
@@ -615,7 +537,7 @@ int CGridWorkerApp_Impl::Run()
     if (CGridGlobals::GetInstance().
         GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
         LOG_POST("\n=================== NEW RUN : " 
-                 << m_Statistics->GetStartTime().AsString()
+                 << CGridGlobals::GetInstance().GetStartTime().AsString()
                  << " ===================\n"
                  << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
                  << "Waiting for control commands on TCP port " << control_port << "\n"
@@ -683,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2006/05/12 15:13:37  didenko
+ * Added infinit loop detection mechanism in job executions
+ *
  * Revision 6.19  2006/04/12 19:03:49  didenko
  * Renamed parameter "use_embedded_input" to "use_embedded_storage"
  *

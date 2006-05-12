@@ -503,6 +503,17 @@ void CGridWorkerNode::x_ReturnJob(const string& job_key)
     }
 }
 
+void CGridWorkerNode::x_FailJob(const string& job_key, const string& reason)
+{
+    if(m_NSReadClient.get()) {
+        CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+        if (!debug_context || 
+            debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
+            m_NSReadClient->PutFailure(job_key,reason);
+        }
+    }
+}
+
 bool CGridWorkerNode::x_CreateNSReadClient()
 {
     if (m_NSReadClient.get())
@@ -671,6 +682,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/05/12 15:13:37  didenko
+ * Added infinit loop detection mechanism in job executions
+ *
  * Revision 1.47  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config

@@ -443,6 +443,7 @@ public:
 
 };
 
+class CWNJobsWatcher;
 
 /// Grid Worker Node
 /// 
@@ -584,8 +585,10 @@ private:
 
     bool x_GetNextJob(string& job_key, string& input);
 
+    friend class CWNJobsWatcher;
     friend class CWorkerNodeRequest;
     void x_ReturnJob(const string& job_key);
+    void x_FailJob(const string& job_key, const string& reason);
     bool x_CreateNSReadClient();
     bool x_AreMastersBusy() const;
 
@@ -605,6 +608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/05/12 15:13:37  didenko
+ * Added infinit loop detection mechanism in job executions
+ *
  * Revision 1.43  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config

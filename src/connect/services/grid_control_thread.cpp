@@ -90,8 +90,7 @@ public:
         if (request.find("SUICIDE") != NPOS) {
             LOG_POST("DIE request has been received from host: " << m_Host);
             LOG_POST("SERVER IS COMMITTING SUICIDE!!");
-            TPid cpid = CProcess::GetCurrentPid();
-            CProcess(cpid).Kill(0,0);
+            CGridGlobals::GetInstance().KillNode();
         } else {
             os << "OK:";
             CGridGlobals::GetInstance().
@@ -106,9 +105,7 @@ private:
 class CGetStatisticsProcessor : public CWorkerNodeControlThread::IRequestProcessor 
 {
 public:
-    CGetStatisticsProcessor(const CWorkerNodeStatistics& stat) 
-        : m_Statistics(stat)
-    {}
+    CGetStatisticsProcessor() {}
     virtual ~CGetStatisticsProcessor() {}
 
     virtual void Process(const string& request,
@@ -128,22 +125,18 @@ public:
             GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
                 os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
         }
-        m_Statistics.Print(os);
+        CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
         if (node.IsOnHold()) {
                 os << "THE NODE IDLE TASK IS RUNNING..." << endl;
         }
 
     }
-private:
-    const CWorkerNodeStatistics& m_Statistics;
 };
 
 class CGetLoadProcessor : public CWorkerNodeControlThread::IRequestProcessor 
 {
 public:
-   CGetLoadProcessor(const CWorkerNodeStatistics& stat)
-        : m_Statistics(stat)
-    {}
+    CGetLoadProcessor()  {}
     virtual ~CGetLoadProcessor() {}
    
     virtual bool Authenticate(const string& host,
@@ -176,12 +169,10 @@ public:
     {
         int load = 0;
         if (!node.IsOnHold())
-            load = node.GetMaxThreads() - m_Statistics.GetJobsRunningNumber();
+            load = node.GetMaxThreads() 
+                - CGridGlobals::GetInstance().GetJobsWatcher().GetJobsRunningNumber();
         os << "OK:" << load;
     }
-
-private:
-    const CWorkerNodeStatistics& m_Statistics;
 };
 
 class CUnknownProcessor : public CWorkerNodeControlThread::IRequestProcessor 
@@ -206,8 +197,7 @@ const string GETLOAD_CMD = "GETLOAD";
 // 
 ///@internal
 CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port, 
-                                                   CGridWorkerNode& worker_node,
-                                                   const CWorkerNodeStatistics& stat)
+                                                   CGridWorkerNode& worker_node)
     : CThreadedServer(port), m_WorkerNode(worker_node), 
       m_ShutdownRequested(false)
 {
@@ -219,8 +209,8 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port,
 
     m_Processors[VERSION_CMD] = new CGetVersionProcessor;
     m_Processors[SHUTDOWN_CMD] = new CShutdownProcessor;
-    m_Processors[STAT_CMD] = new CGetStatisticsProcessor(stat);
-    m_Processors[GETLOAD_CMD] = new CGetLoadProcessor(stat);
+    m_Processors[STAT_CMD] = new CGetStatisticsProcessor;
+    m_Processors[GETLOAD_CMD] = new CGetLoadProcessor;
 }
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
@@ -291,11 +281,19 @@ void CWorkerNodeControlThread::Process(SOCK sock)
     }
 }
 
+void CWorkerNodeControlThread::ProcessTimeout(void)
+{
+    CGridGlobals::GetInstance().GetJobsWatcher().CheckInfinitLoop();
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.22  2006/05/12 15:13:37  didenko
+ * Added infinit loop detection mechanism in job executions
+ *
  * Revision 6.21  2006/03/09 14:08:11  didenko
  * Got rid of a compilation warning
  *

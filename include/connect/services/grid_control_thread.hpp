@@ -65,8 +65,7 @@ public:
                              CGridWorkerNode& node) = 0;
     };
     CWorkerNodeControlThread(unsigned int port, 
-                             CGridWorkerNode& worker_node,
-                             const CWorkerNodeStatistics& stat);
+                             CGridWorkerNode& worker_node);
 
     CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
 
@@ -80,6 +79,9 @@ public:
     }
 
     void RequestShutdown() { m_ShutdownRequested = true; }
+
+protected:
+    virtual void ProcessTimeout(void);
 
 private:
     CGridWorkerNode& m_WorkerNode;
@@ -98,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/05/12 15:13:37  didenko
+ * Added infinit loop detection mechanism in job executions
+ *
  * Revision 1.4  2006/04/04 20:14:04  didenko
  * Disabled copy constractors and assignment operators
  *

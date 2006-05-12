@@ -33,6 +33,7 @@
 #include <corelib/ncbimisc.hpp>
 
 #include <connect/services/netschedule_client.hpp>
+#include <connect/services/grid_worker.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -42,6 +43,54 @@ BEGIN_NCBI_SCOPE
 ///
 /// @sa CNetScheduleClient
 ///
+
+
+/// @internal
+class CGridGlobals;
+class NCBI_XCONNECT_EXPORT CWNJobsWatcher : public IWorkerNodeJobWatcher
+{
+public:
+    CWNJobsWatcher();
+    virtual ~CWNJobsWatcher();
+
+    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event);
+
+    void Print(CNcbiOstream& os) const;
+    unsigned int GetJobsRunningNumber() const { return m_ActiveJobs.size(); }
+
+    void SetMaxJobsAllowed(unsigned int max_jobs_allowed)
+    { m_MaxJobsAllowed = max_jobs_allowed; }
+    void SetMaxFailuresAllowed(unsigned int max_failures_allowed)
+    { m_MaxFailuresAllowed = max_failures_allowed; }
+    void SetInfinitLoopTime(unsigned int inifinit_loop_time)
+    { m_InfinitLoopTime = inifinit_loop_time; }
+
+
+    void CheckInfinitLoop();
+
+private:        
+    unsigned int m_JobsStarted;
+    unsigned int m_JobsSucceed;
+    unsigned int m_JobsFailed;
+    unsigned int m_JobsReturned;
+    unsigned int m_JobsCanceled;
+    unsigned int m_JobsLost;
+    unsigned int m_MaxJobsAllowed;
+    unsigned int m_MaxFailuresAllowed;
+    unsigned int m_InfinitLoopTime;
+
+    typedef map<const CWorkerNodeJobContext*, pair<CStopWatch, bool> > TActiveJobs;
+    TActiveJobs    m_ActiveJobs;
+    mutable CMutex m_ActiveJobsMutex;
+
+    friend class CGridGlobals;
+    void x_KillNode(CGridWorkerNode&);
+
+private:
+    CWNJobsWatcher(const CWNJobsWatcher&);
+    CWNJobsWatcher& operator=(const CWNJobsWatcher&);
+};
+
 
 /// @internal
 class NCBI_XCONNECT_EXPORT CGridGlobals
@@ -54,7 +103,9 @@ public:
     unsigned int GetNewJobNumber();
 
     bool ReuseJobObject() const { return m_ReuseJobObject; }
-    void  SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
+    void SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
+    void SetWorker(CGridWorkerNode& worker) { m_Worker = &worker; }
+
 
     /// Request node shutdown
     void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
@@ -66,15 +117,23 @@ public:
     CNetScheduleClient::EShutdownLevel GetShutdownLevel(void) 
                       { return m_ShutdownLevel; }
 
+    CWNJobsWatcher& GetJobsWatcher();
+
+    const CTime& GetStartTime() const { return m_StartTime; }
+    
+    void KillNode();
 private:
 
     CGridGlobals();
-    static auto_ptr<CGridGlobals> sm_Instance;       
+    static auto_ptr<CGridGlobals> sm_Instance;  
 
     CAtomicCounter m_JobsStarted;
     bool m_ReuseJobObject;
 
     volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
+    auto_ptr<CWNJobsWatcher> m_JobsWatcher;
+    const CTime  m_StartTime;
+    CGridWorkerNode* m_Worker;
 
     CGridGlobals(const CGridGlobals&);
     CGridGlobals& operator=(const CGridGlobals&);
@@ -88,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/05/12 15:13:37  didenko
+ * Added infinit loop detection mechanism in job executions
+ *
  * Revision 1.4  2006/04/04 19:15:01  didenko
  * Added max_failed_jobs parameter to a worker node configuration.
  *

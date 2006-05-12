@@ -36,11 +36,144 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//     CWorkerNodeStatictics
+/// @internal
+CWNJobsWatcher::CWNJobsWatcher()
+    : m_JobsStarted(0), m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
+      m_JobsCanceled(0), m_JobsLost(0),
+      m_MaxJobsAllowed(0), m_MaxFailuresAllowed(0),
+      m_InfinitLoopTime(0)
+{
+}
+CWNJobsWatcher::~CWNJobsWatcher() 
+{
+}
+
+void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job, 
+                            EEvent event)
+{
+    switch(event) {
+    case eJobStarted :
+        {
+            CMutexGuard guard(m_ActiveJobsMutex);
+            m_ActiveJobs[&job] = make_pair(CStopWatch(CStopWatch::eStart), false);
+            ++m_JobsStarted;
+            if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
+                LOG_POST("The maximum number of allowed jobs (" 
+                         << m_MaxJobsAllowed << ") has been reached.\n" 
+                         << "Sending the shutdown request." );
+                CGridGlobals::GetInstance().
+                    RequestShutdown(CNetScheduleClient::eNormalShutdown);
+            }
+        }
+        break;
+    case eJobStopped :
+        {
+            CMutexGuard guard(m_ActiveJobsMutex);
+            m_ActiveJobs.erase(&job);
+        }
+        break;
+    case eJobFailed :
+        ++m_JobsFailed;
+        if (m_MaxFailuresAllowed > 0 && m_JobsFailed > m_MaxFailuresAllowed - 1) {
+                LOG_POST("The maximum number of failed jobs (" 
+                         << m_MaxFailuresAllowed << ") has been reached.\n" 
+                         << "Sending the shutdown request." );
+                CGridGlobals::GetInstance().
+                    RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            }
+        break;
+    case eJobSucceed :
+        ++m_JobsSucceed;
+        break;
+    case eJobReturned :
+        ++m_JobsReturned;
+        break;
+    case eJobCanceled :
+        ++m_JobsCanceled;
+        break;
+    case eJobLost:
+        ++m_JobsLost;
+        break;
+    }
+}
+
+void CWNJobsWatcher::Print(CNcbiOstream& os) const
+{
+    os << "Started: " << CGridGlobals::GetInstance()
+                              .GetStartTime().AsString() << endl;
+    os << "Jobs Succeed: " << m_JobsSucceed << endl
+       << "Jobs Failed: "  << m_JobsFailed  << endl
+       << "Jobs Returned: "<< m_JobsReturned << endl
+       << "Jobs Canceled: "<< m_JobsCanceled << endl
+       << "Jobs Lost: "    << m_JobsLost << endl;
+    
+    CMutexGuard guard(m_ActiveJobsMutex);
+    os << "Jobs Running: " << m_ActiveJobs.size() << endl;
+    ITERATE(TActiveJobs, it, m_ActiveJobs) {
+        os << it->first->GetJobKey() << " " << it->first->GetJobInput()
+           << " -- running for " << (int)it->second.first.Elapsed()
+           << " seconds.";
+        if (it->second.second)
+            os << "!!! INFINIT LOOP !!!";
+        os << endl;
+    }
+}
+
+void CWNJobsWatcher::CheckInfinitLoop()
+{
+    if (m_InfinitLoopTime > 0) {
+        size_t count = 0;
+        CMutexGuard guard(m_ActiveJobsMutex);
+        NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
+            if (!it->second.second) {
+                if ( it->second.first.Elapsed() > m_InfinitLoopTime) {
+                    ERR_POST( "An infinit loop is detected in job " 
+                              << it->first->GetJobKey());
+                    it->second.second = true;      
+                    CGridGlobals::GetInstance().
+                        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+                }
+            } else
+                ++count;
+        }
+        if( count > 0 && count == m_ActiveJobs.size()) {
+            ERR_POST("All jobs are in the infinit loops." 
+                     << " SERVER IS COMMITTING SUICIDE!!");
+            CGridGlobals::GetInstance().KillNode();
+        }
+    }
+}
+
+void CWNJobsWatcher::x_KillNode(CGridWorkerNode& worker)
+{
+    CMutexGuard guard(m_ActiveJobsMutex);
+    NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
+        if (!it->second.second) {
+            worker.x_ReturnJob(it->first->GetJobKey());
+        } else {
+            worker.x_FailJob(it->first->GetJobKey(),
+                             "An infinit loop has been detected after "
+                             + NStr::IntToString((int)it->second.first.Elapsed())
+                             + " seconds of execution.");
+        }
+    }
+    TPid cpid = CProcess::GetCurrentPid();
+    CProcess(cpid).Kill();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
 
 CGridGlobals::CGridGlobals()
     : m_ReuseJobObject(false),
-      m_ShutdownLevel(CNetScheduleClient::eNoShutdown)
+      m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
+      m_StartTime(CTime(CTime::eCurrent)),
+      m_Worker(NULL)
 {
 }
 
@@ -62,11 +195,28 @@ unsigned int CGridGlobals::GetNewJobNumber()
     return (unsigned int)m_JobsStarted.Add(1);
 }
 
+CWNJobsWatcher& CGridGlobals::GetJobsWatcher()
+{
+    if (!m_JobsWatcher.get())
+        m_JobsWatcher.reset(new CWNJobsWatcher);
+    return *m_JobsWatcher;
+}
+
+void CGridGlobals::KillNode()
+{
+    _ASSERT(m_Worker);
+    if( m_Worker )
+        GetJobsWatcher().x_KillNode(*m_Worker);    
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2006/05/12 15:13:37  didenko
+ * Added infinit loop detection mechanism in job executions
+ *
  * Revision 6.3  2006/04/04 19:15:02  didenko
  * Added max_failed_jobs parameter to a worker node configuration.
  *
