@@ -531,9 +531,9 @@ private:
                           const TValueList             & L,
                           struct SInteractingOptions   & io);
     
-    EProgram CRemoteBlast::x_AdjustProgram(const TValueList & L,
-                                           const string     & pstr,
-                                           EProgram           program);
+    EProgram x_AdjustProgram(const TValueList & L,
+                             const string     & pstr,
+                             EProgram           program);
     
     
     /// Prohibit copy construction.
@@ -653,6 +653,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/05/12 13:57:33  ucko
+ * Drop redundant class qualifier from x_AdjustProgram's declaration per
+ * GCC 4.1.
+ *
  * Revision 1.36  2006/05/05 20:14:15  ucko
  * Add a forward declaration of SInteractingOptions, if only for the sake
  * of WorkShop 5.3.
