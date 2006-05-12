@@ -69,6 +69,8 @@
 #include <objtools/blast_format/blastfmtutil.hpp>
 
 #include <stdio.h>
+#include <html/htmlhelper.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -852,7 +854,11 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
             actual_line_component = line_component.substr(0, m_LineLen - 
                                                           line_length);
         }
-        out << actual_line_component; 
+        if (m_Option & eHtml) {
+            out << CHTMLHelper::HTMLEncode(actual_line_component);
+        } else {
+            out << actual_line_component; 
+        }
         line_length += actual_line_component.size();
         //pad the short lines
         CBlastFormatUtil::AddSpace(out, m_LineLen - line_length);
@@ -952,6 +958,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.27  2006/05/12 17:33:15  jianye
+*encode html string
+*
 *Revision 1.26  2006/05/08 15:31:15  jianye
 * delete the space in front of database name in url
 *

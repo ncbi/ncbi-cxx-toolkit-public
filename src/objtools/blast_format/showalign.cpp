@@ -91,7 +91,7 @@
 #include <util/tables/raw_scoremat.h>
 #include <objtools/readers/getfeature.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
-
+#include <html/htmlhelper.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -1919,7 +1919,10 @@ HSP\"></a>";
                 
                     out <<" ";
                     if((*iter)->IsSetTitle()){
-                        s_WrapOutputLine(out, (*iter)->GetTitle());     
+                        s_WrapOutputLine(out, (m_AlignOption&eHtml) ? 
+                                         CHTMLHelper::
+                                         HTMLEncode((*iter)->GetTitle()) :
+                                         (*iter)->GetTitle());     
                     }
                     out<<endl;
                     isFirst = false;
@@ -3149,6 +3152,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.120  2006/05/12 17:33:15  jianye
+*encode html string
+*
 *Revision 1.119  2006/05/08 15:31:14  jianye
 * delete the space in front of database name in url
 *
