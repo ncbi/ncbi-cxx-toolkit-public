@@ -155,6 +155,8 @@ namespace std {
         unsigned int size(void);
         void push_back(const T& item);
         //T pop_back(void);
+        T& front(void);
+        T& back(void);
 
         %extend {
             bool __nonzero__(void) {
@@ -345,6 +347,8 @@ namespace std {
         unsigned int size(void);
         void push_back(const T& item);
         //T pop_back(void);
+        T front(void);
+        T back(void);
 
         %extend {
             bool __nonzero__(void) {
@@ -434,8 +438,10 @@ namespace std {
     };  // class
     %enddef
 
-    // vector<>::data doesn't work with special vector<bool>
+    // some methods don't work with special vector<bool>
     %ignore vector<bool>::data;
+    %ignore vector<bool>::front;
+    %ignore vector<bool>::back;
 
     // Specializations
     specialize_std_vector(int,
@@ -449,6 +455,9 @@ namespace std {
     specialize_std_vector(long,
                           PyLong_Check, PyLong_AsLong, PyLong_FromLong);
     specialize_std_vector(unsigned long,
+                          PyLong_Check,
+                          PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
+    specialize_std_vector(size_t,
                           PyLong_Check,
                           PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
 
@@ -479,6 +488,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/12 14:39:16  jcherry
+ * Added specialization for size_t.  Added front() and back().
+ *
  * Revision 1.2  2005/08/01 17:24:05  jcherry
  * Fixed handling of pass by const & and const *
  *

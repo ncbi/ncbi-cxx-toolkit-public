@@ -152,6 +152,8 @@ namespace std {
         unsigned int size(void);
         void push_back(const T& item);
         //T pop_back(void);
+        T& front(void);
+        T& back(void);
 
         %extend {
             bool __nonzero__(void) {
@@ -293,6 +295,8 @@ namespace std {
         unsigned int size(void);
         void push_back(const T& item);
         //T pop_back(void);
+        T front(void);
+        T back(void);
 
         %extend {
             bool __nonzero__(void) {
@@ -341,6 +345,9 @@ namespace std {
     specialize_std_list(unsigned long,
                         PyLong_Check,
                         PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
+    specialize_std_list(size_t,
+                        PyLong_Check,
+                        PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
 
     specialize_std_list(char,
                         PyInt_Check, PyInt_AsLong, PyInt_FromLong);
@@ -369,6 +376,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/12 14:39:16  jcherry
+ * Added specialization for size_t.  Added front() and back().
+ *
  * Revision 1.3  2006/04/03 13:58:21  jcherry
  * Fixed memory leak in "out" typemaps
  *
