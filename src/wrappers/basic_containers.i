@@ -3,6 +3,7 @@
 %template(vector_long) std::vector<long>;
 %template(vector_unsigned_int) std::vector<unsigned int>;
 %template(vector_unsigned_long) std::vector<unsigned long>;
+%template(vector_size_t) std::vector<size_t>;
 %template(vector_double) std::vector<double>;
 %template(vector_char) std::vector<char>;
 %template(vector_unsigned_char) std::vector<unsigned char>;
@@ -12,6 +13,7 @@
 %template(list_long) std::list<long>;
 %template(list_unsigned_int) std::list<unsigned int>;
 %template(list_unsigned_long) std::list<unsigned long>;
+%template(list_size_t) std::list<size_t>;
 %template(list_double) std::list<double>;
 %template(list_char) std::list<char>;
 %template(list_unsigned_char) std::list<unsigned char>;
