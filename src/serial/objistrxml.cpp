@@ -1971,6 +1971,7 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
                     m_Input.UngetChar('>');
                     m_TagState = eTagInsideOpening;
                 }
+                TopFrame().SetNotag();
                 return first;
             }
 // if spec defines no attributes, but there are some - skip them
@@ -2310,6 +2311,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2006/05/12 12:52:18  gouriano
+* Corrected reading XML attributes of choice
+*
 * Revision 1.88  2006/01/19 18:21:57  gouriano
 * Added possibility to save bit string data in compressed format
 *

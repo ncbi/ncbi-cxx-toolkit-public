@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2006/05/12 12:52:18  gouriano
+* Corrected reading XML attributes of choice
+*
 * Revision 1.39  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method
@@ -452,6 +455,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
             dynamic_cast<const CMemberInfo*>(
                 choiceType->GetVariants().GetItemInfo(index));
         memberInfo->ReadMember(in,objectPtr);
+        in.EndChoiceVariant();
         index = in.BeginChoiceVariant(choiceType);
         if ( index == kInvalidMember )
             in.ThrowError(in.fFormatError, "choice variant id expected");
@@ -525,6 +529,7 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
             dynamic_cast<const CMemberInfo*>(
                 choiceType->GetVariants().GetItemInfo(index));
         memberInfo->SkipMember(in);
+        in.EndChoiceVariant();
         index = in.BeginChoiceVariant(choiceType);
         if ( index == kInvalidMember )
             in.ThrowError(in.fFormatError,"choice variant id expected");
