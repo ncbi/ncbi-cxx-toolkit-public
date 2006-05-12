@@ -50,7 +50,7 @@ const string kJSMenuDefaultURL_Kurdin
 
 // Sergey Kurdin's popup menu with configurations
 const string kJSMenuDefaultURL_KurdinConf
- = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_5loader.js";
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_6loader.js";
 
 // Sergey Kurdin's side menu
 const string kJSMenuDefaultURL_KurdinSide
@@ -624,6 +624,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/05/12 16:35:13  yasmax
+ * fixed loader for recolving conflicts with new discovery report in pubmed db
+ *
  * Revision 1.35  2005/08/29 15:11:11  ivanov
  * eKurdinConf -- define menu variable always, even it doesn't have items
  *
