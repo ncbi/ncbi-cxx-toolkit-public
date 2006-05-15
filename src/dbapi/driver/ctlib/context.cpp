@@ -466,7 +466,9 @@ CTLibContext::x_Close(bool delete_conn)
 bool CTLibContext::x_SafeToFinalize(void) const
 {
     if (m_Registry) {
+#if defined(NCBI_OS_MSWIN)
         return m_Registry->ExitProcessIsPatched();
+#endif
     }
 
     return true;
@@ -1082,6 +1084,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/05/15 19:41:00  ssikorsk
+ * Fixed CTLibContext::x_SafeToFinalize in case of Unix.
+ *
  * Revision 1.74  2006/05/11 18:13:43  ssikorsk
  * Fixed compilation issues
  *

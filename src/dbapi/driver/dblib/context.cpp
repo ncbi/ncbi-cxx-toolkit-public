@@ -471,7 +471,9 @@ CDBLibContext::x_Close(bool delete_conn)
 bool CDBLibContext::x_SafeToFinalize(void) const
 {
     if (m_Registry) {
+#if defined(NCBI_OS_MSWIN)
         return m_Registry->ExitProcessIsPatched();
+#endif
     }
 
     return true;
@@ -1274,6 +1276,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2006/05/15 19:41:28  ssikorsk
+ * Fixed CTLibContext::x_SafeToFinalize in case of Unix.
+ *
  * Revision 1.79  2006/05/11 19:10:27  ssikorsk
  * Ignore messages having msgno == 5704
  *
