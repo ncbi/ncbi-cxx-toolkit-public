@@ -394,7 +394,10 @@ bool CDB_UserHandler_Wrapper::HandleIt(CDB_Exception* ex)
 
 CDB_UserHandler::~CDB_UserHandler()
 {
-    return;
+    // Cheat on CObject ...
+    while (Referenced()) {
+        ReleaseReference();
+    }
 }
 
 
@@ -523,6 +526,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/05/15 19:26:30  ssikorsk
+ * Fixed CDB_UserHandler::~CDB_UserHandler to work correctly with CRef in case
+ * of manual adjusting of reference number.
+ *
  * Revision 1.23  2006/05/10 14:41:54  ssikorsk
  * Added default implementation of CDB_UserHandler::HandleAll.
  *
