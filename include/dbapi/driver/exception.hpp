@@ -358,7 +358,7 @@ private:
 //
 
 
-class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler
+class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler : public CObject
 {
 public:
     /// Exception container type
@@ -492,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/05/15 19:19:19  ssikorsk
+ * Inherited CDB_UserHandler from CObject
+ *
  * Revision 1.25  2006/05/10 14:40:56  ssikorsk
  * Added method HandleAll to CDB_UserHandler.
  *
