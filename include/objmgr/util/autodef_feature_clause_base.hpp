@@ -62,7 +62,7 @@ public:
     
     virtual sequence::ECompare CompareLocation(const CSeq_loc& loc);
     virtual void AddToOtherLocation(CRef<CSeq_loc> loc);
-    virtual void AddToLocation(CRef<CSeq_loc> loc);
+    virtual void AddToLocation(CRef<CSeq_loc> loc, bool also_set_partials = true);
     virtual bool SameStrand(const CSeq_loc& loc);
     virtual bool IsPartial() { return false; }
     virtual bool IsTransposon() { return false; }
@@ -198,9 +198,13 @@ public:
     virtual void Label();
     virtual bool IsRecognizedFeature() { return true; }
     virtual bool IsExonList() { return true; }
+    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand);    
+    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause);
     virtual CSeqFeatData::ESubtype GetMainFeatureSubtype();
     void SetSuppressFinalAnd(bool suppress) { m_SuppressFinalAnd = suppress; }
 private:
+    CRef<CSeq_loc> SeqLocIntersect (CRef<CSeq_loc> loc1, CRef<CSeq_loc> loc2);
+
     bool m_SuppressFinalAnd;
     CRef<CSeq_loc> m_ClauseLocation;    
     CBioseq_Handle m_BH;
@@ -212,6 +216,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2006/05/15 12:03:23  bollin
+* changes to handle segmented sets
+*
 * Revision 1.7  2006/04/27 17:25:12  dicuccio
 * Make dtor virtual
 *

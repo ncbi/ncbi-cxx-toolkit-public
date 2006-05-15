@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJUTIL_EXPORT CAutoDefFeatureClause : public CAutoDefFeatureClause_Base
 {
 public:    
-    CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat &main_feat);
+    CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefFeatureClause();
     
     virtual void Label();
@@ -62,7 +62,7 @@ public:
     
     // functions for comparing locations
     virtual sequence::ECompare CompareLocation(const CSeq_loc& loc);
-    virtual void AddToLocation(CRef<CSeq_loc> loc);
+    virtual void AddToLocation(CRef<CSeq_loc> loc, bool also_set_partials = true);
     virtual bool SameStrand(const CSeq_loc& loc);
     virtual bool IsPartial();
     virtual CRef<CSeq_loc> GetLocation();
@@ -109,7 +109,7 @@ private:
 class NCBI_XOBJUTIL_EXPORT CAutoDefTransposonClause : public CAutoDefFeatureClause
 {
 public:    
-    CAutoDefTransposonClause(CBioseq_Handle bh, const CSeq_feat &main_feat);
+    CAutoDefTransposonClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefTransposonClause();
   
     virtual void Label();  
@@ -120,7 +120,7 @@ public:
 class NCBI_XOBJUTIL_EXPORT CAutoDefSatelliteClause : public CAutoDefFeatureClause
 {
 public:    
-    CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat &main_feat);
+    CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefSatelliteClause();
   
     virtual void Label();  
@@ -131,7 +131,7 @@ public:
 class NCBI_XOBJUTIL_EXPORT CAutoDefPromoterClause : public CAutoDefFeatureClause
 {
 public:    
-    CAutoDefPromoterClause(CBioseq_Handle bh, const CSeq_feat &main_feat);
+    CAutoDefPromoterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefPromoterClause();
   
     virtual void Label();  
@@ -141,7 +141,7 @@ public:
 class NCBI_XOBJUTIL_EXPORT CAutoDefIntergenicSpacerClause : public CAutoDefFeatureClause
 {
 public:    
-    CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat);
+    CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefIntergenicSpacerClause();
   
     virtual void Label();
@@ -151,7 +151,7 @@ public:
 class NCBI_XOBJUTIL_EXPORT CAutoDefParsedClause : public CAutoDefFeatureClause
 {
 public:
-    CAutoDefParsedClause(CBioseq_Handle bh, const CSeq_feat &main_feat, bool is_first, bool is_last);
+    CAutoDefParsedClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool is_first, bool is_last);
     ~CAutoDefParsedClause();
     void SetTypeword(string typeword) { m_Typeword = typeword; m_TypewordChosen = true; }
     void SetDescription(string description) { m_Description = description; m_DescriptionChosen = true; }
@@ -164,7 +164,7 @@ protected:
 class NCBI_XOBJUTIL_EXPORT CAutoDefParsedtRNAClause : public CAutoDefParsedClause
 {
 public:
-    CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, string gene_name, string product_name, bool is_first, bool is_last);
+    CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string gene_name, string product_name, bool is_first, bool is_last);
     ~CAutoDefParsedtRNAClause();
 
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() { return CSeqFeatData::eSubtype_tRNA; }
@@ -173,7 +173,7 @@ public:
 class NCBI_XOBJUTIL_EXPORT CAutoDefParsedIntergenicSpacerClause : public CAutoDefIntergenicSpacerClause
 {
 public:
-    CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, string description, bool is_first, bool is_last);
+    CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string description, bool is_first, bool is_last);
     ~CAutoDefParsedIntergenicSpacerClause();
 };
 
@@ -181,7 +181,7 @@ public:
 class NCBI_XOBJUTIL_EXPORT CAutoDefGeneClusterClause : public CAutoDefFeatureClause
 {
 public:    
-    CAutoDefGeneClusterClause(CBioseq_Handle bh, const CSeq_feat &main_feat);
+    CAutoDefGeneClusterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefGeneClusterClause();
   
     virtual void Label();
@@ -192,7 +192,7 @@ public:
 class NCBI_XOBJUTIL_EXPORT CAutoDefMiscCommentClause : public CAutoDefFeatureClause
 {
 public:    
-    CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat);
+    CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefMiscCommentClause();
   
     virtual void Label();
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/05/15 12:03:23  bollin
+* changes to handle segmented sets
+*
 * Revision 1.4  2006/04/25 13:36:28  bollin
 * added misc_feat processing and removal of unwanted features
 *

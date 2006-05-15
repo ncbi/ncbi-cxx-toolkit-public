@@ -147,24 +147,31 @@ private:
                                            CBioseq_Handle bh);
     bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh,
                                        const CSeq_feat& cf,
+                                       const CSeq_loc& mapped_loc,
                                        CAutoDefFeatureClause_Base& main_clause,
                                        bool suppress_locus_tags);
     CAutoDefParsedtRNAClause* x_tRNAClauseFromNote(CBioseq_Handle bh,
                                                    const CSeq_feat& cf,
+                                                   const CSeq_loc& mapped_loc,
                                                    string &comment,
                                                    bool is_first);
     bool x_AddMiscRNAFeatures(CBioseq_Handle bh,
                               const CSeq_feat& cf,
+                              const CSeq_loc& mapped_loc,
                               CAutoDefFeatureClause_Base& main_clause,
                               bool suppress_locus_tags);
                               
-    void x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause);
+    void x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, CBioseq_Handle bh);
                                   
     
     bool x_IsOrgModRequired(unsigned int mod_type);
     bool x_IsSubSrcRequired(unsigned int mod_type);
     
     bool x_IsFeatureSuppressed(CSeqFeatData::ESubtype subtype);
+    
+    void GetMasterLocation(CBioseq_Handle &bh, CRange<TSeqPos>& range);
+    bool IsSegment(CBioseq_Handle bh);
+
 
 };  //  end of CAutoDef
 
@@ -274,6 +281,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2006/05/15 12:03:23  bollin
+* changes to handle segmented sets
+*
 * Revision 1.12  2006/05/09 16:27:54  bollin
 * added functions to allow modifiers to be selected in dialog
 *

@@ -349,7 +349,7 @@ string CAutoDef::GetOneSourceDescription(CBioseq_Handle bh)
 
 
 
-CAutoDefParsedtRNAClause *CAutoDef::x_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, string &comment, bool is_first) 
+CAutoDefParsedtRNAClause *CAutoDef::x_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string &comment, bool is_first) 
 {
     string product_name = "";
     string gene_name = "";
@@ -385,12 +385,12 @@ CAutoDefParsedtRNAClause *CAutoDef::x_tRNAClauseFromNote(CBioseq_Handle bh, cons
     // if the comment ends or the next item is a semicolon, this is the last feature
     bool is_last = NStr::IsBlank(comment) || NStr::StartsWith(comment, ";");
      
-    return new CAutoDefParsedtRNAClause(bh, cf, gene_name, product_name, is_first, is_last);
+    return new CAutoDefParsedtRNAClause(bh, cf, mapped_loc, gene_name, product_name, is_first, is_last);
 
 }        
 
 
-bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
 {
     CSeqFeatData::ESubtype subtype = cf.GetData().GetSubtype();
     if ((subtype != CSeqFeatData::eSubtype_misc_feature && subtype != CSeqFeatData::eSubtype_otherRNA)
@@ -411,7 +411,7 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
     // get rid of any leading or trailing spaces
     NStr::TruncateSpacesInPlace(comment);
     
-    CAutoDefParsedtRNAClause *before = x_tRNAClauseFromNote(bh, cf, comment, true);
+    CAutoDefParsedtRNAClause *before = x_tRNAClauseFromNote(bh, cf, mapped_loc, comment, true);
     CAutoDefParsedtRNAClause *after = NULL;
     CAutoDefFeatureClause *spacer = NULL;
 
@@ -434,15 +434,15 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
     if (start_after != NCBI_NS_STD::string::npos) {    
         comment = comment.substr(start_after);
         NStr::TruncateSpacesInPlace(comment);
-        after = x_tRNAClauseFromNote(bh, cf, comment, false);
+        after = x_tRNAClauseFromNote(bh, cf, mapped_loc, comment, false);
     }
     
     string description = "";
     if (before != NULL && after != NULL) {
         description = before->GetGeneName() + "-" + after->GetGeneName();
-        spacer = new CAutoDefParsedIntergenicSpacerClause(bh, cf, description, before == NULL, after == NULL);
+        spacer = new CAutoDefParsedIntergenicSpacerClause(bh, cf, mapped_loc, description, before == NULL, after == NULL);
     } else {
-        spacer = new CAutoDefIntergenicSpacerClause(bh, cf);
+        spacer = new CAutoDefIntergenicSpacerClause(bh, cf, mapped_loc);
     }
     
     if (before != NULL) {
@@ -491,7 +491,7 @@ static string separators [] = {
 #define num_separators 3
 
 
-bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
 {
 //    string label = "";
     string comment = "";
@@ -559,7 +559,7 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAut
         }
 
         // create a clause of the appropriate type
-        CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, is_first, is_last);        
+        CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc, is_first, is_last);        
         string description = "";
         if (word_id == MISC_RNA_WORD_INTERNAL_SPACER
             || word_id == MISC_RNA_WORD_EXTERNAL_SPACER
@@ -589,7 +589,7 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, CAut
     return !is_first;
 }
 
-void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause)
+void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, CBioseq_Handle bh)
 {
     // remove optional features that have not been requested
     if (main_clause == NULL) {
@@ -632,8 +632,8 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause)
         }
     }
     
-    // keep exons only if requested or lonely or in mRNA or in partial CDS
-    if (!m_KeepExons) {
+    // keep exons only if requested or lonely or in mRNA or in partial CDS or on segment
+    if (!m_KeepExons && !IsSegment(bh)) {
         if (main_clause->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_exon) {
             main_clause->RemoveUnwantedExons();
         }
@@ -675,41 +675,108 @@ void CAutoDef::SuppressFeature(objects::CFeatListItem feat)
 }
 
 
+bool CAutoDef::IsSegment(CBioseq_Handle bh)
+{
+    CSeq_entry_Handle seh = bh.GetParentEntry();
+    
+    seh = seh.GetParentEntry();
+    
+    if (seh.IsSet()) {
+        CBioseq_set_Handle bsh = seh.GetSet();
+        if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_parts) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CAutoDef::GetMasterLocation(CBioseq_Handle &bh, CRange<TSeqPos>& range)
+{
+    CSeq_entry_Handle seh = bh.GetParentEntry();
+    CBioseq_Handle    master = bh;
+    unsigned int      start = 0, stop = bh.GetBioseqLength() - 1;
+    unsigned int      offset = 0;
+    
+    seh = seh.GetParentEntry();
+    
+    if (seh.IsSet()) {
+        CBioseq_set_Handle bsh = seh.GetSet();
+        if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_parts) {
+            seh = seh.GetParentEntry();
+            if (seh.IsSet()) {
+                bsh = seh.GetSet();
+                if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_segset) {
+                    CBioseq_CI seq_iter(seh);
+                    for ( ; seq_iter; ++seq_iter ) {
+                        if (seq_iter->CanGetInst_Repr()) {
+                            if (seq_iter->GetInst_Repr() == CSeq_inst::eRepr_seg) {
+                                master = *seq_iter;
+                            } else if (seq_iter->GetInst_Repr() == CSeq_inst::eRepr_raw) {
+                                if (*seq_iter == bh) {
+                                    start = offset;
+                                    stop = offset + bh.GetBioseqLength() - 1;
+                                } else {
+                                    offset += seq_iter->GetBioseqLength();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    bh = master;
+    range.SetFrom(start);
+    range.SetTo(stop);
+}
+
+
 string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 {
     CAutoDefFeatureClause_Base main_clause(m_SuppressLocusTags);
     CAutoDefFeatureClause *new_clause;
+    CRange<TSeqPos> range;
+    CBioseq_Handle master_bh = bh;
     
-    CFeat_CI feat_ci(bh);
+    GetMasterLocation(master_bh, range);
+
+    CFeat_CI feat_ci(master_bh);
     while (feat_ci)
-    {
+    { 
         const CSeq_feat& cf = feat_ci->GetOriginalFeature();
-        if (!x_IsFeatureSuppressed(cf.GetData().GetSubtype())) {
-            new_clause = new CAutoDefFeatureClause(bh, cf);
-            unsigned int subtype = new_clause->GetMainFeatureSubtype();
+        const CSeq_loc& mapped_loc = feat_ci->GetMappedFeature().GetLocation();
+        unsigned int subtype = cf.GetData().GetSubtype();
+        unsigned int stop = mapped_loc.GetStop(eExtreme_Positional);
+        // unless it's a gene, don't use it unless it ends in the sequence we're looking at
+        if ((subtype == CSeqFeatData::eSubtype_gene 
+             || (stop >= range.GetFrom() && stop <= range.GetTo()))
+            && !x_IsFeatureSuppressed(cf.GetData().GetSubtype())) {
+            new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
+            subtype = new_clause->GetMainFeatureSubtype();
             if (new_clause->IsTransposon()) {
                 delete new_clause;
-                new_clause = new CAutoDefTransposonClause(bh, cf);
+                new_clause = new CAutoDefTransposonClause(bh, cf, mapped_loc);
             } else if (new_clause->IsSatelliteClause()) {
                 delete new_clause;
-                new_clause = new CAutoDefSatelliteClause(bh, cf);
+                new_clause = new CAutoDefSatelliteClause(bh, cf, mapped_loc);
             } else if (subtype == CSeqFeatData::eSubtype_promoter) {
                 delete new_clause;
-                new_clause = new CAutoDefPromoterClause(bh, cf);
+                new_clause = new CAutoDefPromoterClause(bh, cf, mapped_loc);
             } else if (new_clause->IsIntergenicSpacer()) {
                 delete new_clause;
-                x_AddIntergenicSpacerFeatures(bh, cf, main_clause, m_SuppressLocusTags);
+                x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags);
                 new_clause = NULL;
             } else if (subtype == CSeqFeatData::eSubtype_otherRNA
                        || subtype == CSeqFeatData::eSubtype_misc_RNA
                        || subtype == CSeqFeatData::eSubtype_rRNA) {
-                if (x_AddMiscRNAFeatures(bh, cf, main_clause, m_SuppressLocusTags)) {
+                if (x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags)) {
                     delete new_clause;
                     new_clause = NULL;
                 }
             } else if (new_clause->IsGeneCluster()) {
                 delete new_clause;
-                new_clause = new CAutoDefGeneClusterClause(bh, cf);
+                new_clause = new CAutoDefGeneClusterClause(bh, cf, mapped_loc);
             } else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_misc_feature
                        && !NStr::Equal(new_clause->GetTypeword(), "control region")) {
                 if (m_MiscFeatRule == eDelete
@@ -720,13 +787,16 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
                     delete new_clause;
                     new_clause = NULL;
                     if (cf.CanGetComment() && ! NStr::IsBlank(cf.GetComment())) {
-                        new_clause = new CAutoDefMiscCommentClause(bh, cf);
+                        new_clause = new CAutoDefMiscCommentClause(bh, cf, mapped_loc);
                     }
                 }            
             }
         
             if (new_clause != NULL && new_clause->IsRecognizedFeature()) {
                 new_clause->SetSuppressLocusTag(m_SuppressLocusTags);
+                if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_exon) {
+                    new_clause->Label();
+                }
                 main_clause.AddSubclause(new_clause);
             } else if (new_clause != NULL) {            
                 delete new_clause;
@@ -735,8 +805,9 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
         ++feat_ci;
     }
     
-    // First, need to remove suppressed features
-    // TODO
+    // Group alt-spliced exons first, so that they will be associated with the correct genes and mRNAs
+    main_clause.GroupAltSplicedExons(bh);
+    main_clause.RemoveDeletedSubclauses();
     
     // Add mRNAs to other clauses
     main_clause.GroupmRNAs();
@@ -744,8 +815,6 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
    
     // Add genes to clauses that need them for descriptions/products
     main_clause.GroupGenes();
-    
-    main_clause.GroupAltSplicedExons(bh);
         
     main_clause.GroupSegmentedCDSs();
     main_clause.RemoveDeletedSubclauses();
@@ -771,7 +840,7 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     main_clause.RemoveTransSplicedLeaders();
     main_clause.RemoveDeletedSubclauses();
     
-    x_RemoveOptionalFeatures(&main_clause);
+    x_RemoveOptionalFeatures(&main_clause, bh);
     
     // if a gene is listed as part of another clause, they do not need
     // to be listed as there own clause
@@ -1061,6 +1130,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2006/05/15 12:03:34  bollin
+* changes to handle segmented sets
+*
 * Revision 1.17  2006/05/10 13:30:43  bollin
 * fixed bug in feature suppression
 *

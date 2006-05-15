@@ -50,7 +50,7 @@ BEGIN_SCOPE(objects)
 
 using namespace sequence;
 
-CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat& main_feat) 
+CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc) 
                               : m_BH (bh),
                               m_MainFeat(main_feat)
 {
@@ -82,7 +82,7 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
     }
     
     m_ClauseLocation = new CSeq_loc();
-    m_ClauseLocation->Add(m_MainFeat.GetLocation());
+    m_ClauseLocation->Add(mapped_loc);
     
     if (subtype == CSeqFeatData::eSubtype_operon || IsGeneCluster()) {
         m_SuppressSubfeatures = true;
@@ -837,13 +837,22 @@ CRef<CSeq_loc> CAutoDefFeatureClause::GetLocation()
 }
 
 
-void CAutoDefFeatureClause::AddToLocation(CRef<CSeq_loc> loc)
+void CAutoDefFeatureClause::AddToLocation(CRef<CSeq_loc> loc, bool also_set_partials)
 {
-    bool partial5 = m_ClauseLocation->IsPartialStart(eExtreme_Biological) | loc->IsPartialStart(eExtreme_Biological);
-    bool partial3 = m_ClauseLocation->IsPartialStop(eExtreme_Biological) | loc->IsPartialStop(eExtreme_Biological);
+    bool partial5 = m_ClauseLocation->IsPartialStart(eExtreme_Biological);
+    bool partial3 = m_ClauseLocation->IsPartialStop(eExtreme_Biological);
+    
+    if (also_set_partials) {
+        partial5 |= loc->IsPartialStart(eExtreme_Biological);
+    }
+    if (also_set_partials) {
+        partial3 |= loc->IsPartialStop(eExtreme_Biological);
+    }
     m_ClauseLocation = Seq_loc_Add(*m_ClauseLocation, *loc, 
                                    CSeq_loc::fSort | CSeq_loc::fMerge_All, 
                                    &(m_BH.GetScope()));
+
+                                      
     m_ClauseLocation->SetPartialStart(partial5, eExtreme_Biological);
     m_ClauseLocation->SetPartialStop(partial3, eExtreme_Biological);
 }
@@ -861,6 +870,7 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
 {
     bool used_mRNA = false;
     string clause_product, mRNA_product;
+    bool adjust_partials = true;
     
     if (mRNAClause == NULL || ! mRNAClause->SameStrand(*m_ClauseLocation)) {
         return false;
@@ -868,13 +878,17 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
     
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
     sequence::ECompare loc_compare = mRNAClause->CompareLocation(*m_ClauseLocation);
+    if (subtype == CSeqFeatData::eSubtype_cdregion) {
+        adjust_partials = false;
+    }
     
     if (subtype == CSeqFeatData::eSubtype_cdregion
         && m_ProductNameChosen
         && NStr::Equal(m_ProductName, mRNAClause->GetProductName())
         && (loc_compare == sequence::eContained || loc_compare == sequence::eSame)) {
         m_HasmRNA = true;
-        AddToLocation(mRNAClause->GetLocation());
+        // when expanding "location" to include mRNA, leave partials for CDS as they were
+        AddToLocation(mRNAClause->GetLocation(), adjust_partials);
         used_mRNA = true;
     } else if ((subtype == CSeqFeatData::eSubtype_cdregion || subtype == CSeqFeatData::eSubtype_gene)
                && !m_ProductNameChosen
@@ -882,7 +896,7 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
                    || loc_compare == sequence::eContains
                    || loc_compare == sequence::eSame)) {
         m_HasmRNA = true;
-        AddToLocation(mRNAClause->GetLocation());
+        AddToLocation(mRNAClause->GetLocation(), adjust_partials);        
         used_mRNA = true;
         m_ProductName = mRNAClause->GetProductName();
         m_ProductNameChosen = true;
@@ -1172,8 +1186,8 @@ static string transposon_keywords [] = {
 };
   
 
-CAutoDefTransposonClause::CAutoDefTransposonClause(CBioseq_Handle bh, const CSeq_feat& main_feat)
-                  : CAutoDefFeatureClause(bh, main_feat)
+CAutoDefTransposonClause::CAutoDefTransposonClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
     string transposon_name = m_MainFeat.GetNamedQual("transposon");
     bool   found_keyword = false;
@@ -1230,8 +1244,8 @@ void CAutoDefTransposonClause::Label()
 }
 
 
-CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat& main_feat)
-                  : CAutoDefFeatureClause(bh, main_feat)
+CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
     string comment = m_MainFeat.GetComment();
     unsigned int pos = NStr::Find(comment, ";");
@@ -1257,8 +1271,8 @@ void CAutoDefSatelliteClause::Label()
 }
 
 
-CAutoDefPromoterClause::CAutoDefPromoterClause(CBioseq_Handle bh, const CSeq_feat& main_feat)
-                  : CAutoDefFeatureClause(bh, main_feat)
+CAutoDefPromoterClause::CAutoDefPromoterClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
     m_Description = "";
     m_DescriptionChosen = true;
@@ -1289,8 +1303,8 @@ void CAutoDefPromoterClause::Label()
  * "intergenic spacer", this text will appear in the definition line before the words
  * "intergenic spacer".
  */
-CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat)
-                  : CAutoDefFeatureClause(bh, main_feat)
+CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
     m_Typeword = "intergenic spacer";
     m_TypewordChosen = true;
@@ -1349,9 +1363,9 @@ void CAutoDefIntergenicSpacerClause::Label()
 }
 
 
-CAutoDefParsedIntergenicSpacerClause::CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, 
+CAutoDefParsedIntergenicSpacerClause::CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, 
                                                                            string description, bool is_first, bool is_last)
-                                                                           : CAutoDefIntergenicSpacerClause(bh, main_feat)
+                                                                           : CAutoDefIntergenicSpacerClause(bh, main_feat, mapped_loc)
 {
     if (!NStr::IsBlank(description)) {
         m_Description = description;
@@ -1374,8 +1388,8 @@ CAutoDefParsedtRNAClause::~CAutoDefParsedtRNAClause()
 }
 
 
-CAutoDefParsedClause::CAutoDefParsedClause(CBioseq_Handle bh, const CSeq_feat &main_feat, bool is_first, bool is_last)
-                                       : CAutoDefFeatureClause (bh, main_feat)
+CAutoDefParsedClause::CAutoDefParsedClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool is_first, bool is_last)
+                                       : CAutoDefFeatureClause (bh, main_feat, mapped_loc)
 {
     // adjust partialness of location
     bool partial5 = m_ClauseLocation->IsPartialStart(eExtreme_Biological) && is_first;
@@ -1389,10 +1403,10 @@ CAutoDefParsedClause::~CAutoDefParsedClause()
 }
 
 
-CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, 
+CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, 
                                                    string gene_name, string product_name, 
                                                    bool is_first, bool is_last)
-                                                   : CAutoDefParsedClause (bh, main_feat, is_first, is_last)
+                                                   : CAutoDefParsedClause (bh, main_feat, mapped_loc, is_first, is_last)
 {
     m_Typeword = "gene";
     m_TypewordChosen = true;
@@ -1402,8 +1416,8 @@ CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq
 }
 
 
-CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CSeq_feat& main_feat)
-                  : CAutoDefFeatureClause(bh, main_feat)
+CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
     m_Pluralizable = false;
     m_ShowTypewordFirst = false;
@@ -1441,8 +1455,8 @@ void CAutoDefGeneClusterClause::Label()
 }
 
 
-CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat)
-                  : CAutoDefFeatureClause(bh, main_feat)
+CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
     if (m_MainFeat.CanGetComment()) {
         m_Description = m_MainFeat.GetComment();
@@ -1481,6 +1495,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2006/05/15 12:03:34  bollin
+* changes to handle segmented sets
+*
 * Revision 1.12  2006/05/04 11:44:52  bollin
 * improvements to method for finding unique organism description
 *

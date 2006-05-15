@@ -360,6 +360,9 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
         {
             if (!NStr::Equal(m_ClauseList[k-1]->GetInterval(), m_ClauseList[k]->GetInterval())) {
                 onebefore_has_interval_change = true;
+            } else if ((m_ClauseList[k-1]->IsAltSpliced() && ! m_ClauseList[k]->IsAltSpliced())
+                       || (!m_ClauseList[k-1]->IsAltSpliced() && m_ClauseList[k]->IsAltSpliced())) {
+                onebefore_has_interval_change = true;
             }
             if (!NStr::Equal(m_ClauseList[k-1]->GetTypeword(), m_ClauseList[k]->GetTypeword())){
                 onebefore_has_typeword_change = true;
@@ -371,6 +374,9 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
         }
         if (!is_last) {
             if (!NStr::Equal(m_ClauseList[k]->GetInterval(), m_ClauseList[k + 1]->GetInterval())) {
+                oneafter_has_interval_change = true;
+            } else if ((m_ClauseList[k+1]->IsAltSpliced() && ! m_ClauseList[k]->IsAltSpliced())
+                       || (!m_ClauseList[k+1]->IsAltSpliced() && m_ClauseList[k]->IsAltSpliced())) {
                 oneafter_has_interval_change = true;
             }
             if (!NStr::Equal(m_ClauseList[k]->GetTypeword(), m_ClauseList[k + 1]->GetTypeword())) {
@@ -559,11 +565,15 @@ unsigned int CAutoDefFeatureClause_Base::x_LastIntervalChangeBeforeEnd ()
     string last_interval = m_ClauseList[m_ClauseList.size() - 1]->GetInterval();
     
     for (unsigned int k = m_ClauseList.size() - 2; k > 0; k--) {
-        if (!NStr::Equal(m_ClauseList[k]->GetInterval(), last_interval)) {
+        if (!NStr::Equal(m_ClauseList[k]->GetInterval(), last_interval)
+            || (m_ClauseList[k]->IsAltSpliced() && ! m_ClauseList[k + 1]->IsAltSpliced())
+            || (!m_ClauseList[k]->IsAltSpliced() && m_ClauseList[k + 1]->IsAltSpliced())) {
             return k + 1;
         }
     }
-    if (NStr::Equal(m_ClauseList[0]->GetInterval(), last_interval)) {
+    if (NStr::Equal(m_ClauseList[0]->GetInterval(), last_interval)
+        && ((m_ClauseList[0]->IsAltSpliced() && m_ClauseList[1]->IsAltSpliced())
+            || (!m_ClauseList[0]->IsAltSpliced() && !m_ClauseList[1]->IsAltSpliced()))) {
         return m_ClauseList.size();
     } else {
         return 0;
@@ -596,7 +606,7 @@ void CAutoDefFeatureClause_Base::AddToOtherLocation(CRef<CSeq_loc> loc)
 }
 
 
-void CAutoDefFeatureClause_Base::AddToLocation(CRef<CSeq_loc> loc)
+void CAutoDefFeatureClause_Base::AddToLocation(CRef<CSeq_loc> loc, bool also_set_partials)
 {
 }
 
@@ -931,7 +941,7 @@ CAutoDefFeatureClause_Base *CAutoDefFeatureClause_Base::FindBestParentClause(CAu
 void CAutoDefFeatureClause_Base::GroupClauses(bool gene_cluster_opp_strand)
 {
     CAutoDefFeatureClause_Base *best_parent;
-    
+        
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
         best_parent = FindBestParentClause(m_ClauseList[k], gene_cluster_opp_strand);
         if (best_parent != NULL && best_parent != this) {
@@ -1057,7 +1067,7 @@ void CAutoDefFeatureClause_Base::GroupAltSplicedExons(CBioseq_Handle bh)
             if (m_ClauseList[j] != NULL && !m_ClauseList[j]->IsMarkedForDeletion()
                 && m_ClauseList[j]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_exon
                 && m_ClauseList[j]->IsAltSpliced()
-                && m_ClauseList[j]->CompareLocation(*(m_ClauseList[k]->GetLocation())) == sequence::eOverlap) {
+                && m_ClauseList[j]->CompareLocation(*(m_ClauseList[k]->GetLocation())) != sequence::eNoOverlap ) {
                 found_any = true;
             } else {
                 j++;
@@ -1104,11 +1114,19 @@ void CAutoDefFeatureClause_Base::ExpandExonLists()
             m_ClauseList[k]->TransferSubclauses(subclauses);
             delete m_ClauseList[k];
             for (unsigned int j = 0; j < subclauses.size(); j++) {
-                m_ClauseList[k + j] = subclauses[j];
+                if (k + j < m_ClauseList.size()) {
+                    m_ClauseList[k + j] = subclauses[j];
+                } else {
+                    m_ClauseList.push_back(subclauses[j]);
+                }
                 subclauses[j] = NULL;
             }
             for (unsigned int j = 0; j < remaining.size(); j++) {
-                m_ClauseList[k + subclauses.size() + j] = remaining[j];
+                if (k + subclauses.size() + j < m_ClauseList.size()) {
+                    m_ClauseList[k + subclauses.size() + j] = remaining[j];
+                } else {
+                    m_ClauseList.push_back(remaining[j]);
+                }
                 remaining[j] = NULL;
             }
             k += subclauses.size();
@@ -1159,8 +1177,10 @@ void CAutoDefFeatureClause_Base::GroupConsecutiveExons(CBioseq_Handle bh)
                         try {
                             next_num = NStr::StringToUInt (sequence);
                         } catch ( ... ) {
-                            // next is exon but not in consecutive list, suppress final and
-                            if (new_clause != NULL) {
+                            // next is exon but not in consecutive list and splice info matches, suppress final and
+                            if (new_clause != NULL 
+                                && ((m_ClauseList[j]->IsAltSpliced() && m_ClauseList[k]->IsAltSpliced())
+                                    || (!m_ClauseList[j]->IsAltSpliced() && !m_ClauseList[k]->IsAltSpliced()))) {
                                 new_clause->SetSuppressFinalAnd(true);
                             }
                             break;
@@ -1176,8 +1196,10 @@ void CAutoDefFeatureClause_Base::GroupConsecutiveExons(CBioseq_Handle bh)
                             m_ClauseList[j] = NULL;
                             seq_num = next_num;
                         } else {
-                            // next is exon but not in consecutive list, suppress final and
-                            if (new_clause != NULL) {
+                            // next is exon but not in consecutive list and splice info matches, suppress final and
+                            if (new_clause != NULL 
+                                && ((m_ClauseList[j]->IsAltSpliced() && m_ClauseList[k]->IsAltSpliced())
+                                    || (!m_ClauseList[j]->IsAltSpliced() && !m_ClauseList[k]->IsAltSpliced()))) {
                                 new_clause->SetSuppressFinalAnd(true);
                             }
                             break;
@@ -1418,12 +1440,51 @@ CSeqFeatData::ESubtype CAutoDefExonListClause::GetMainFeatureSubtype()
 }
 
 
+// Note - because we are grouping alt-spliced exons, we already know that the locations overlap
+CRef<CSeq_loc> CAutoDefExonListClause::SeqLocIntersect (CRef<CSeq_loc> loc1, CRef<CSeq_loc> loc2)
+{
+    CRef<CSeq_loc> intersect_loc;
+    bool           first = true;
+    
+    intersect_loc = new CSeq_loc();
+    
+    for (CSeq_loc_CI loc_iter1(*loc1); loc_iter1;  ++loc_iter1) {
+        ENa_strand strand1 = loc_iter1.GetStrand();
+        CSeq_loc_CI::TRange range1 = loc_iter1.GetRange();
+        
+        for (CSeq_loc_CI loc_iter2(*loc2); loc_iter2;  ++loc_iter2) {
+            ENa_strand strand2 = loc_iter2.GetStrand();
+            CSeq_loc_CI::TRange range2 = loc_iter2.GetRange();
+            
+            unsigned int intersect_start = max(range1.GetFrom(), range2.GetFrom());
+            unsigned int intersect_stop = min(range1.GetTo(), range2.GetTo());
+            if (intersect_start < intersect_stop) {
+                CRef<CSeq_id> this_id(new CSeq_id());
+                this_id->Assign(*loc1->GetId());
+                if (first) {
+                    intersect_loc = new CSeq_loc(*this_id, intersect_start, intersect_stop, strand1);
+                    first = false;
+                } else {
+                    CSeq_loc add(*this_id, intersect_start, intersect_stop, strand1);
+                    intersect_loc = Seq_loc_Add (*intersect_loc, add, CSeq_loc::fSort | CSeq_loc::fMerge_All, &(m_BH.GetScope()));
+                }
+            }
+        }
+    }
+    return intersect_loc;         
+}
+
+
 void CAutoDefExonListClause::AddSubclause (CAutoDefFeatureClause_Base *subclause)
 {
     CAutoDefFeatureClause_Base::AddSubclause(subclause);
-    m_ClauseLocation = Seq_loc_Add(*m_ClauseLocation, *subclause->GetLocation(), 
-                                   CSeq_loc::fSort | CSeq_loc::fMerge_All, 
-                                   &(m_BH.GetScope()));
+    if (m_ClauseList.size() == 1) {
+        m_ClauseLocation = Seq_loc_Add(*m_ClauseLocation, *subclause->GetLocation(), 
+                                       CSeq_loc::fSort | CSeq_loc::fMerge_All, 
+                                       &(m_BH.GetScope()));
+    } else {
+        m_ClauseLocation = SeqLocIntersect(m_ClauseLocation, subclause->GetLocation());
+    }
     if (NStr::IsBlank(m_GeneName)) {
         m_GeneName = subclause->GetGeneName();
     }
@@ -1453,12 +1514,58 @@ void CAutoDefExonListClause::Label()
 }
 
 
+// All other feature matches must be that the feature to
+// go into the clause must fit inside the location of the
+// other clause.
+bool CAutoDefExonListClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand)
+{
+    if (parent_clause == NULL) {
+        return false;
+    }
+    
+    sequence::ECompare loc_compare = parent_clause->CompareLocation(*m_ClauseLocation);
+    
+    if (loc_compare == sequence::eContained || loc_compare == sequence::eSame) {
+        if (parent_clause->SameStrand(*m_ClauseLocation)) {
+            return true;
+        } 
+    }
+    return false;
+}
+
+
+bool CAutoDefExonListClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause)
+{
+    bool ok_to_group = false;
+    
+    if (parent_clause == NULL) {
+        return false;
+    }
+    CSeqFeatData::ESubtype parent_subtype = parent_clause->GetMainFeatureSubtype();
+    
+    if (parent_subtype == CSeqFeatData::eSubtype_cdregion
+        || parent_subtype == CSeqFeatData::eSubtype_D_loop
+        || parent_subtype == CSeqFeatData::eSubtype_mRNA
+        || parent_subtype == CSeqFeatData::eSubtype_gene
+        || parent_subtype == CSeqFeatData::eSubtype_operon
+        || parent_clause->IsNoncodingProductFeat()
+        || parent_clause->IsEndogenousVirusSourceFeature()
+        || parent_clause->IsGeneCluster()) {
+        ok_to_group = true;
+    }
+    return ok_to_group;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2006/05/15 12:03:34  bollin
+* changes to handle segmented sets
+*
 * Revision 1.11  2006/05/08 13:31:58  bollin
 * fixed bug in removing trans-spliced leader clauses
 *
