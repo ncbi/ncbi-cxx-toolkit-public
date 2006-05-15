@@ -46,9 +46,16 @@ CDBHandlerStack::~CDBHandlerStack()
 {
 }
 
-void CDBHandlerStack::Push(CDB_UserHandler* h)
+void CDBHandlerStack::Push(CDB_UserHandler* h, EOwnership ownership)
 {
-    m_Stack.push_back( h );
+    CRef<CDB_UserHandler> obj(h);
+    
+    if (ownership == eNoOwnership) {
+        // Cheat on CRef ...
+        h->AddReference();
+    }
+    
+    m_Stack.push_back(TContainer::value_type(obj));
 }
 
 
@@ -64,18 +71,19 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
             }
         }
     } else {
-        deque<CDB_UserHandler*>::iterator cit;
+        TContainer::iterator cit;
         
         cit = find(m_Stack.begin(), m_Stack.end(), h);
+        
         if ( cit != m_Stack.end() ) {
-            m_Stack.erase( cit, m_Stack.end() );
+            m_Stack.erase(cit, m_Stack.end());
         }
     }
 }
 
 
-CDBHandlerStack::CDBHandlerStack(const CDBHandlerStack& s)
-: m_Stack( s.m_Stack )
+CDBHandlerStack::CDBHandlerStack(const CDBHandlerStack& s) : 
+m_Stack( s.m_Stack )
 {
     return;
 }
@@ -96,9 +104,9 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex)
     // tries to call the non-const version of rbegin(), and the
     // resulting reverse_iterator can't automatically be converted to
     // a const_reverse_iterator.  (Sigh.)
-    const deque<CDB_UserHandler*>& s = m_Stack;
-    REVERSE_ITERATE(deque<CDB_UserHandler*>, cit, s) {
-        if ( *cit && (*cit)->HandleIt(ex) ) {
+    TContainer& s = m_Stack;
+    NON_CONST_REVERSE_ITERATE(TContainer, cit, s) {
+        if ( cit->NotNull() && (*cit)->HandleIt(ex) ) {
             break;
         }
     }
@@ -107,9 +115,9 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex)
 
 bool CDBHandlerStack::HandleExceptions(CDB_UserHandler::TExceptions& exeptions)
 {
-    const deque<CDB_UserHandler*>& s = m_Stack;
-    REVERSE_ITERATE(deque<CDB_UserHandler*>, cit, s) {
-        if ( *cit && (*cit)->HandleAll(exeptions) ) {
+    TContainer& s = m_Stack;
+    NON_CONST_REVERSE_ITERATE(TContainer, cit, s) {
+        if ( cit->NotNull() && (*cit)->HandleAll(exeptions) ) {
             return true;
         }
     }
@@ -124,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/05/15 19:28:43  ssikorsk
+ * Added EOwnership argument to the method Push.
+ *
  * Revision 1.10  2006/05/10 14:45:48  ssikorsk
  * Implemented HandleExceptions
  *

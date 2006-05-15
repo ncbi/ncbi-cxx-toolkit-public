@@ -49,7 +49,9 @@ public:
     CDBHandlerStack& operator= (const CDBHandlerStack& s);
 
 public:
-    void Push(CDB_UserHandler* h);
+    typedef deque<CRef<CDB_UserHandler> > TContainer;
+    
+    void Push(CDB_UserHandler* h, EOwnership ownership = eNoOwnership);
     void Pop (CDB_UserHandler* h, bool last = true);
 
     void PostMsg(CDB_Exception* ex);
@@ -58,7 +60,7 @@ public:
 
     
 private:
-    deque<CDB_UserHandler*> m_Stack;
+    TContainer m_Stack;
 };
 
 
@@ -71,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/05/15 19:28:11  ssikorsk
+ * Added EOwnership argument to the method Push.
+ *
  * Revision 1.7  2006/05/10 14:42:34  ssikorsk
  * Added method HandleExceptions to CDBHandlerStack.
  *
