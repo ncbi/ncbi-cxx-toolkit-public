@@ -43,9 +43,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds)
+SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly)
 	: m_ma(), m_seqTree(0), m_useMembership(true),
-	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false)
+	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false),
+	m_loadOnly(loadExistingTreeOnly)
 {
 	vector<CDFamily> families;
 	CDFamily::createFamilies(cds, families);
@@ -109,18 +110,22 @@ bool SeqTreeAPI::makeOrLoadTree()
 	{
 		delete m_seqTree;
 		m_seqTree = 0;
-		if(!m_ma.isBlockAligned())
+		if (!m_loadOnly)
 		{
-			ERR_POST("Sequence tree is not made for " <<m_ma.getFirstCD()->GetAccession()
-				<<" because it does not have a consistent block alognment.");
-			return false;;
+			if(!m_ma.isBlockAligned())
+			{
+				ERR_POST("Sequence tree is not made for " <<m_ma.getFirstCD()->GetAccession()
+					<<" because it does not have a consistent block alognment.");
+			}
+			else
+			{
+				if ((m_treeOptions.distMethod == eScoreBlastFoot) || (m_treeOptions.distMethod == eScoreBlastFull))
+					m_treeOptions.distMethod = eScoreAligned;
+				m_seqTree = TreeFactory::makeTree(&m_ma, m_treeOptions);
+			}
+			if (m_seqTree)
+				m_seqTree->fixRowName(m_ma, SeqTree::eGI);
 		}
-		if ((m_treeOptions.distMethod == eScoreBlastFoot) || (m_treeOptions.distMethod == eScoreBlastFull))
-			m_treeOptions.distMethod = eScoreAligned;
-		m_seqTree = TreeFactory::makeTree(&m_ma, m_treeOptions);
-		if(m_seqTree == 0)
-			return false;
-		m_seqTree->fixRowName(m_ma, SeqTree::eGI);
 	}
 	m_triedTreeMaking = true;
 	return m_seqTree != 0;
@@ -261,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2006/05/15 18:51:22  cliu
+ * do not create new tree if m_loadOnly=true
+ *
  * Revision 1.8  2006/01/10 16:54:51  lanczyck
  * eliminate unused variable warnings
  *

@@ -57,7 +57,7 @@ typedef pair<SeqTreeNode, SeqTreeNode> SeqTreeEdge;
 class SeqTreeAPI
 {
 public:
-	SeqTreeAPI(vector<CCdCore*>& cds);
+	SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly=true);
 	~SeqTreeAPI();
 
 	void annotateTreeByMembership();
@@ -87,6 +87,7 @@ private:
 	TaxonomyLevel m_taxLevel;
 	TreeOptions m_treeOptions;
 	bool m_triedTreeMaking;
+	bool m_loadOnly;
 
 	bool makeOrLoadTree();
 	string layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges);
@@ -105,6 +106,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/05/15 18:52:49  cliu
+ * do not create new tree if m_loadOnly=true
+ *
  * Revision 1.5  2005/08/04 21:33:23  cliu
  * annotate with Tax work
  *
