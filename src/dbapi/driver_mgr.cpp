@@ -49,7 +49,8 @@ BEGIN_NCBI_SCOPE
 
 CDriverManager& CDriverManager::GetInstance()
 {
-    static CSafeStaticPtr<CDriverManager> instance;
+    static CSafeStaticPtr<CDriverManager> instance
+        (NULL, CSafeStaticLifeSpan::eLifeSpan_Long);
 
     return instance.Get();
 }
@@ -173,6 +174,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.23  2006/05/15 16:53:17  ssikorsk
+* Increased lifetime of the CDriverManager singleton.
+*
 * Revision 1.22  2006/04/06 19:07:04  ssikorsk
 * Do not delete IDataSource from CDriverManager::~CDriverManager
 * if this datasource still has open connections
