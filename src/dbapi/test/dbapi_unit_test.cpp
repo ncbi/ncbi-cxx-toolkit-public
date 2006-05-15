@@ -109,10 +109,13 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
 
 CDBAPIUnitTest::~CDBAPIUnitTest(void)
 {
-    I_DriverContext* drv_context = m_DS->GetDriverContext();
-
-    drv_context->PopDefConnMsgHandler( m_ErrHandler.get() );
-    drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
+//     I_DriverContext* drv_context = m_DS->GetDriverContext();
+//
+//     drv_context->PopDefConnMsgHandler( m_ErrHandler.get() );
+//     drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
+    
+    // m_Conn.release();
+    m_DM.DestroyDs(m_args.GetDriverName());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -143,8 +146,8 @@ CDBAPIUnitTest::TestInit(void)
         m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
-        drv_context->PushCntxMsgHandler( m_ErrHandler.get() );
-        drv_context->PushDefConnMsgHandler( m_ErrHandler.get() );
+        drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
+        drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
         
         m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         BOOST_CHECK( m_Conn.get() != NULL );
@@ -3812,6 +3815,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.74  2006/05/15 19:50:15  ssikorsk
+ * Let I_DriverContext to manage lifetime of error handlers.
+ *
  * Revision 1.73  2006/05/11 20:13:57  ssikorsk
  * Remove previously installed error handlers from a handler stack.
  *
