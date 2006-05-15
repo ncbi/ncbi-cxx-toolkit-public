@@ -74,6 +74,26 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
                           nucl_handle->GetDustFilteringLinker());
 }
 
+/// Auxiliary function to create CSeq_loc_Mapper from a copy of the target
+/// Seq-loc.
+static CRef<CSeq_loc_Mapper>
+s_CreateSeqLocMapper(CSeq_id& query_id, 
+                     const CSeq_loc* target_seqloc, 
+                     CScope* scope)
+{
+    _ASSERT(target_seqloc);
+    _ASSERT(scope);
+
+    // Create a Seq-loc for the entire query sequence
+    CRef<CSeq_loc> entire_slp(new CSeq_loc);
+    entire_slp->SetWhole().Assign(query_id);
+
+    return CRef<CSeq_loc_Mapper>
+        (new CSeq_loc_Mapper(*entire_slp, 
+                             const_cast<CSeq_loc&>(*target_seqloc), 
+                             scope));
+}
+
 void
 Blast_FindDustFilterLoc(TSeqLocVector& queries, 
                         Uint4 level, Uint4 window, Uint4 linker)
@@ -90,46 +110,34 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
         CRef<CPacked_seqint> masked_locations =
             duster.GetMaskedInts(query_id, data);
         CPacked_seqint::Tdata locs = masked_locations->Get();
-
-        if (locs.size() > 0)
-        {
-           CRef<CSeq_loc> entire_slp(new CSeq_loc);
-           entire_slp->SetWhole().Assign(query_id);
-           CSeq_loc_Mapper mapper(*entire_slp, *query->seqloc, query->scope);
-           CRef<CSeq_loc> tmp;
-           tmp = NULL;
-         
-           const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All;
-           ITERATE(CPacked_seqint::Tdata, masked_loc, locs)
-           {
-               CRef<CSeq_loc> seq_interval
-                   (new CSeq_loc(query_id,
-                                 (*masked_loc)->GetFrom(), 
-                                 (*masked_loc)->GetTo()));
-               CRef<CSeq_loc> tmp1 = mapper.Map(*seq_interval);
-
-               if (!tmp)
-               {
-                   if (query->mask)
-                      tmp = query->mask->Add(*tmp1, kTopFlags, NULL);
-                   else
-                      tmp = tmp1;
-               }
-               else
-               {
-                  tmp = tmp->Add(*tmp1, kTopFlags, NULL);
-               }
-           }
-
-           CSeq_loc* tmp2 = new CSeq_loc();
-           for(CSeq_loc_CI loc_it(*tmp); loc_it; ++loc_it)
-           {
-                 tmp2->SetPacked_int().AddInterval(query_id,
-                                                   loc_it.GetRange().GetFrom(), 
-                                                   loc_it.GetRange().GetTo());
-           }
-           query->mask.Reset(tmp2);
+        if (locs.empty()) {
+            continue;
         }
+
+        CRef<CSeq_loc> query_masks(new CSeq_loc);
+        ITERATE(CPacked_seqint::Tdata, masked_loc, locs) {
+            CRef<CSeq_loc> seq_interval(new CSeq_loc(query_id, 
+                                                     (*masked_loc)->GetFrom(), 
+                                                     (*masked_loc)->GetTo()));
+            query_masks->Add(*seq_interval);
+        }
+
+        const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All;
+        if (query->mask.NotEmpty()) {
+            CRef<CSeq_loc> tmp(const_cast<CSeq_loc*>(&*query->mask));
+            tmp->Add(*query_masks, kTopFlags, 0);
+            tmp->Merge(kTopFlags, 0);
+        } else {
+            query_masks->Merge(kTopFlags, 0);
+            query->mask.Reset(query_masks);
+        }
+        const_cast<CSeq_loc*>(&*query->mask)->ChangeToPackedInt();
+        CRef<CSeq_loc_Mapper> mapper = s_CreateSeqLocMapper(query_id,
+                                                            query->seqloc,
+                                                            query->scope);
+        query->mask.Reset(mapper->Map(*query->mask));
+        const_cast<CSeq_loc*>(&*query->mask)->ChangeToPackedInt();
+        _ASSERT(query->mask->IsPacked_int());
     }
 
 }
@@ -155,6 +163,9 @@ Blast_FindDustFilterLoc(CBlastQueryVector& queries,
            CRef<CSeq_loc> entire_slp(new CSeq_loc);
            entire_slp->SetWhole().Assign(query_id);
            
+           // FIXME: this code might have quadratic asymptotic performance...
+           // fix to use approach in overloaded function which takes a
+           // TSeqLocVector
            CSeq_loc_Mapper mapper(*entire_slp, *queries.GetQuerySeqLoc(i), &*queries.GetScope(i));
            CRef<CSeq_loc> tmp;
            tmp = NULL;
@@ -194,6 +205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.7  2006/05/15 15:37:22  camacho
+ *  Fix usage of CSeq_loc_Mapper to avoid quadratic performance when processing dust results
+ *
  *  Revision 1.6  2006/02/22 18:34:17  bealer
  *  - Blastx filtering support, CBlastQueryVector class.
  *
