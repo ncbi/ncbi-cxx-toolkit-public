@@ -173,7 +173,8 @@ CGridGlobals::CGridGlobals()
     : m_ReuseJobObject(false),
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
       m_StartTime(CTime(CTime::eCurrent)),
-      m_Worker(NULL)
+      m_Worker(NULL),
+      m_ExclusiveMode(false)
 {
 }
 
@@ -214,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 6.4  2006/05/12 15:13:37  didenko
  * Added infinit loop detection mechanism in job executions
  *

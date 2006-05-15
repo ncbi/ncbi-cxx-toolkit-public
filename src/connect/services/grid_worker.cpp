@@ -78,7 +78,8 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              bool             log_requested)
     : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
       m_JobCommitted(false), m_LogRequested(log_requested), 
-      m_JobNumber(job_number), m_ThreadContext(NULL)
+      m_JobNumber(job_number), m_ThreadContext(NULL), 
+      m_ExclusiveJob(false)
 {
 }
 
@@ -150,7 +151,15 @@ void CWorkerNodeJobContext::Reset(const string& job_key,
     m_ProgressMsgKey = "";
     m_JobCommitted = false;
     m_InputBlobSize = 0;
+    m_ExclusiveJob = false;
+}
 
+void CWorkerNodeJobContext::RequestExclusiveMode()
+{
+    if (CGridGlobals::GetInstance().IsExclusiveMode())
+        NCBI_THROW(CGridWorkerNodeException, eExclusiveModeIsAlreadySet, "");
+    CGridGlobals::GetInstance().SetExclusiveMode(true);
+    m_ExclusiveJob = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -215,8 +224,22 @@ static void s_RunJob(CGridThreadContext& thr_context)
         more_jobs = false;
         string new_job_key, new_job_input;
     try {
-        CRef<IWorkerNodeJob> job(thr_context.GetJob());
-        int ret_code = job->Do(thr_context.GetJobContext());
+        CRef<IWorkerNodeJob> job(thr_context.GetJob());         
+        int ret_code;
+        try {
+            ret_code = job->Do(thr_context.GetJobContext());
+        }
+        catch (CGridWorkerNodeException& ex) {
+            if (ex.GetErrCode() != 
+                CGridWorkerNodeException::eExclusiveModeIsAlreadySet) 
+                throw;            
+            if(thr_context.GetJobContext().IsLogRequested()) {
+                LOG_POST("Job " << thr_context.GetJobContext().GetJobKey() 
+                         << " has been returned back to the queue because it " 
+                         << "requested an Exclusive Mode but another job is "
+                         << "already have the exclusive status.");
+            }
+        }
         thr_context.CloseStreams();
         int try_count = 0;
         while(1) {
@@ -437,7 +460,7 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
                 RequestShutdown(CNetScheduleClient::eNormalShutdown);
         }         
     } else {
-        if(m_NSReadClient.get()) {
+        if(m_NSReadClient.get() && !CGridGlobals::GetInstance().IsExclusiveMode()) {
             int try_count = 0;
             try {
                 if (IsOnHold()) {
@@ -682,6 +705,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 1.48  2006/05/12 15:13:37  didenko
  * Added infinit loop detection mechanism in job executions
  *

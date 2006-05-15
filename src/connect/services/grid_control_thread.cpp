@@ -125,6 +125,9 @@ public:
             GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
                 os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
         }
+        if (CGridGlobals::GetInstance().IsExclusiveMode())
+            os << "THE NODE IS IN AN EXCLUSIVE MODE!!!" << endl;
+
         CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
         if (node.IsOnHold()) {
                 os << "THE NODE IDLE TASK IS RUNNING..." << endl;
@@ -291,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.23  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 6.22  2006/05/12 15:13:37  didenko
  * Added infinit loop detection mechanism in job executions
  *

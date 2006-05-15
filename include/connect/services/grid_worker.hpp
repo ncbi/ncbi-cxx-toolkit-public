@@ -247,6 +247,12 @@ public:
     ///
     bool IsLogRequested(void) const { return m_LogRequested; }
 
+    /// Instruct the system that this job requires all system's resoures
+    /// If this method is call, the node will not accept any other jobs
+    /// until this one is done. In the event if the mode has already been
+    /// requested by another job this job will be returnd back to the queue.
+    void RequestExclusiveMode();
+
     const string& GetJobOutput() const { return m_JobOutput; }
 
 private:    
@@ -255,6 +261,7 @@ private:
     string& SetJobOutput()             { return m_JobOutput; }
     string& SetJobProgressMsgKey()     { return m_ProgressMsgKey; }
     size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
+    bool IsJobExclusive() const        { return m_ExclusiveJob; }
     
     friend class CWorkerNodeRequest;
     CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
@@ -283,6 +290,7 @@ private:
     bool                 m_LogRequested;
     unsigned int         m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
+    bool                 m_ExclusiveJob;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -597,6 +605,25 @@ private:
 
 };
 
+class CGridWorkerNodeException : public CException
+{
+public:
+    enum EErrCode {
+        eExclusiveModeIsAlreadySet
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eExclusiveModeIsAlreadySet:    return "eExclusiveModeIsAlreadySet";
+        default:                      return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CGridWorkerNodeException, CException);
+};
+
 /* @} */
 
 
@@ -608,6 +635,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 1.44  2006/05/12 15:13:37  didenko
  * Added infinit loop detection mechanism in job executions
  *

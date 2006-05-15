@@ -105,6 +105,8 @@ public:
     bool ReuseJobObject() const { return m_ReuseJobObject; }
     void SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
     void SetWorker(CGridWorkerNode& worker) { m_Worker = &worker; }
+    void SetExclusiveMode(bool on_off) { m_ExclusiveMode = on_off; }
+    bool IsExclusiveMode() const { return m_ExclusiveMode; }
 
 
     /// Request node shutdown
@@ -134,6 +136,7 @@ private:
     auto_ptr<CWNJobsWatcher> m_JobsWatcher;
     const CTime  m_StartTime;
     CGridWorkerNode* m_Worker;
+    volatile bool m_ExclusiveMode;
 
     CGridGlobals(const CGridGlobals&);
     CGridGlobals& operator=(const CGridGlobals&);
@@ -147,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 1.5  2006/05/12 15:13:37  didenko
  * Added infinit loop detection mechanism in job executions
  *

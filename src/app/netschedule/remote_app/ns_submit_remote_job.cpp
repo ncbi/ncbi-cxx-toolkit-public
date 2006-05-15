@@ -117,6 +117,10 @@ void CNSSubmitRemoveJobApp::Init(void)
                              "job run timeout",
                              CArgDescriptions::eString);
 
+    arg_desc->AddFlag("exclusive",
+                      "Run job in the exclusive mode",
+                      false);
+
     arg_desc->AddOptionalKey("jout", 
                              "file_names",
                              "A file the remote applicaion stdout",
@@ -248,6 +252,9 @@ int CNSSubmitRemoveJobApp::Run(void)
             unsigned int rt = NStr::StringToUInt(args["runtime"].AsString());
             request.SetAppRunTimeout(rt);
         }
+        if (args["exclusive"]) {
+            request.RequestExclusiveMode();
+        }
 
 
         CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
@@ -292,6 +299,10 @@ int CNSSubmitRemoveJobApp::Run(void)
                 unsigned int rt = NStr::StringToUInt(srt);
                 request.SetAppRunTimeout(rt);
             }
+            srt = s_FindParam(line, "exclusive=");
+            if (!srt.empty()) {
+                request.RequestExclusiveMode();
+            }
             
             CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
             request.Send(job_submiter.GetOStream());
@@ -315,6 +326,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 1.3  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config

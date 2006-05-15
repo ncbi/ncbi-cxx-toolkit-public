@@ -67,6 +67,7 @@ public:
     void SetCmdLine(const string& cmd);
 
     void SetAppRunTimeout(unsigned int sec);
+    void RequestExclusiveMode();
     
     /// Transfer a file to an application executer side.
     /// It only makes sense to transfer a file if its name also mentioned in
@@ -107,6 +108,8 @@ public:
     const string& GetCmdLine() const;
 
     unsigned int GetAppRunTimeout() const;
+    bool IsExclusiveModeRequested() const;
+    const string& GetWorkingDir() const;
 
     /// Deserialize a request from a given stream.
     void Receive(CNcbiIstream& is);
@@ -115,9 +118,7 @@ public:
     const string& GetStdErrFileName() const;
     EStdOutErrStorageType GetStdOutErrStorageType() const;
 
-    /// Remove all temprary files and directory which were used during a
-    /// files transfer.
-    void CleanUp();
+    void Reset();
 
 private:
     CRemoteAppRequest_Executer(const CRemoteAppRequest_Executer &);
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 1.5  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config

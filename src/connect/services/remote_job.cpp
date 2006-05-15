@@ -147,7 +147,8 @@ class CRemoteAppRequest_Impl
 public:
     explicit CRemoteAppRequest_Impl(IBlobStorageFactory& factory)
         : m_InBlob(factory.CreateInstance()), m_StdInDataSize(0),
-          m_StorageType(eBlobStorage), m_AppRunTimeout(0)
+          m_StorageType(eBlobStorage), m_AppRunTimeout(0),
+          m_ExlusiveMode(false)
     {
         m_StdIn.reset(new CBlobStreamHelper(*m_InBlob, 
                                             m_InBlobIdOrData,
@@ -172,11 +173,15 @@ public:
 
     void SetAppRunTimeout(unsigned int sec) { m_AppRunTimeout = sec; }
     unsigned int GetAppRunTimeout() const { return m_AppRunTimeout; }
+    
+    void SetExclusiveMode(bool on_off) { m_ExlusiveMode = on_off; }
+    bool IsExclusiveMode() const { return m_ExlusiveMode; }
 
     void AddFileForTransfer(const string& fname) 
     { 
         m_Files.insert(fname); 
     }
+    const string& GetWorkingDir() const { return m_TmpDirName; }
 
     void SetStdOutErrFileNames(const string& stdout_fname,
                                const string& stderr_fname,
@@ -195,12 +200,14 @@ public:
     void Serialize(CNcbiOstream& os);
     void Deserialize(CNcbiIstream& is);
 
-    void CleanUp();
     void Reset();
 
 private:
     static CAtomicCounter sm_DirCounter;
     static string sm_TmpDirPath;
+
+    void x_CreateWDir();
+    void x_RemoveWDir();
     
     auto_ptr<IBlobStorage>   m_InBlob;
     size_t                   m_StdInDataSize;
@@ -216,6 +223,7 @@ private:
     string m_StdOutFileName;
     EStdOutErrStorageType m_StorageType;
     unsigned int m_AppRunTimeout;
+    bool m_ExlusiveMode;
 };
 
 CAtomicCounter CRemoteAppRequest_Impl::sm_DirCounter;
@@ -255,9 +263,33 @@ void CRemoteAppRequest_Impl::Serialize(CNcbiOstream& os)
     s_Write(os, m_StdOutFileName);
     s_Write(os, m_StdErrFileName);
     os << (int)m_StorageType << " ";
-    os << m_AppRunTimeout;
+    os << m_AppRunTimeout << " ";
+    os << (int)m_ExlusiveMode;
     Reset();
 }
+
+void CRemoteAppRequest_Impl::x_CreateWDir()
+{
+    if( !m_TmpDirName.empty() )
+        return;
+    m_TmpDirName = sm_TmpDirPath + CDirEntry::GetPathSeparator() +
+        NStr::UIntToString(sm_DirCounter.Add(1));
+    CDir wdir(m_TmpDirName);
+    if (wdir.Exists())
+        wdir.Remove();
+    CDir(m_TmpDirName).CreatePath();
+}
+
+void CRemoteAppRequest_Impl::x_RemoveWDir()
+{
+    if (m_TmpDirName.empty())
+        return;
+    CDir dir(m_TmpDirName);
+    if (dir.Exists())
+        dir.Remove();
+    m_TmpDirName = "";
+}
+
 void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
 {
     Reset();
@@ -270,12 +302,12 @@ void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
     is >> fcount;
     if ( fcount > 0 )
         NStr::Tokenize(m_CmdLine, " ", args);
+
+
     for( int i = 0; i < fcount; ++i) {
-        if (i == 0) {
-            m_TmpDirName = sm_TmpDirPath + CDirEntry::GetPathSeparator() +
-                NStr::UIntToString(sm_DirCounter.Add(1));
-            CDir(m_TmpDirName).CreatePath();           
-        }
+        if ( i == 0 )
+            x_CreateWDir();
+
         string blobid, fname;
         s_Read(is, blobid);
         s_Read(is, fname);
@@ -314,15 +346,9 @@ void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
     is >> tmp;
     m_StorageType = (EStdOutErrStorageType)tmp;
     is >> m_AppRunTimeout;
+    is >> tmp;
+    m_ExlusiveMode = (bool)tmp;
 
-}
-
-void CRemoteAppRequest_Impl::CleanUp()
-{
-    if (!m_TmpDirName.empty()) {
-        CDir(m_TmpDirName).Remove();
-        m_TmpDirName = "";
-    }
 }
 
 void CRemoteAppRequest_Impl::Reset()
@@ -333,7 +359,11 @@ void CRemoteAppRequest_Impl::Reset()
     m_CmdLine = "";
     m_Files.clear();
     m_AppRunTimeout = 0;
+    m_ExlusiveMode = false;
+    
+    x_RemoveWDir();
 }
+
 CRemoteAppRequest::
 CRemoteAppRequest(IBlobStorageFactory& factory)
     : m_Impl(new CRemoteAppRequest_Impl(factory))
@@ -354,6 +384,10 @@ void CRemoteAppRequest::Send(CNcbiOstream& os)
     m_Impl->Serialize(os);    
 }
 
+void CRemoteAppRequest::RequestExclusiveMode() 
+{
+    m_Impl->SetExclusiveMode(true);
+}
 
 CNcbiOstream& CRemoteAppRequest::GetStdIn()
 {
@@ -397,6 +431,10 @@ unsigned int CRemoteAppRequest_Executer::GetAppRunTimeout() const
     return m_Impl->GetAppRunTimeout();
 }
 
+const string& CRemoteAppRequest_Executer::GetWorkingDir() const 
+{ 
+    return m_Impl->GetWorkingDir(); 
+}
 
 const string& CRemoteAppRequest_Executer::GetStdOutFileName() const 
 { 
@@ -406,6 +444,11 @@ const string& CRemoteAppRequest_Executer::GetStdErrFileName() const
 { 
     return m_Impl->GetStdErrFileName();
 }
+bool CRemoteAppRequest_Executer::IsExclusiveModeRequested() const
+{
+    return m_Impl->IsExclusiveMode();
+}
+
 EStdOutErrStorageType CRemoteAppRequest_Executer::GetStdOutErrStorageType() const
 { 
     return m_Impl->GetStdOutErrStorageType(); 
@@ -416,9 +459,9 @@ void CRemoteAppRequest_Executer::Receive(CNcbiIstream& is)
     m_Impl->Deserialize(is);
 }
 
-void CRemoteAppRequest_Executer::CleanUp()
+void CRemoteAppRequest_Executer::Reset()
 {
-    m_Impl->CleanUp();
+    m_Impl->Reset();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -618,6 +661,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 6.6  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config

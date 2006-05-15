@@ -84,6 +84,9 @@ void CGridThreadContext::Reset()
     m_JobContext->GetWorkerNode()
         .x_NotifyJobWatcher(*m_JobContext,
                             IWorkerNodeJobWatcher::eJobStopped);
+    if (m_JobContext->IsJobExclusive()) {
+        CGridGlobals::GetInstance().SetExclusiveMode(false);
+    }
     m_JobContext->SetThreadContext(NULL);
     m_JobContext = NULL;
 }
@@ -212,7 +215,8 @@ bool CGridThreadContext::PutResult(int ret_code,
 
         if (m_Reporter.get()) {
             if (CGridGlobals::GetInstance().
-                GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
+                GetShutdownLevel() != CNetScheduleClient::eNoShutdown ||
+                CGridGlobals::GetInstance().IsExclusiveMode() ) {
                 m_Reporter->PutResult(m_JobContext->GetJobKey(),
                                       ret_code,
                                       m_JobContext->GetJobOutput());
@@ -367,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 6.20  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config

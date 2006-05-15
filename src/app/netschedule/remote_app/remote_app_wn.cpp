@@ -63,7 +63,8 @@ static bool s_CanExecute(const CFile& file)
     return false;
 }
 
-static bool s_Exec(const string& cmd, const vector<string>& args,
+static bool s_Exec(const string& cmd, 
+                   const vector<string>& args,
                    CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
                    int& exit_value,
                    CWorkerNodeJobContext& context,
@@ -72,8 +73,8 @@ static bool s_Exec(const string& cmd, const vector<string>& args,
                    int keep_alive_period)
 {
     CPipe pipe;
-
-    if (pipe.Open(cmd.c_str(), args, CPipe::fStdErr_Open) != eIO_Success)
+    EIO_Status st = pipe.Open(cmd.c_str(), args, CPipe::fStdErr_Open);
+    if (st != eIO_Success)
         NCBI_THROW(CException, eInvalid, 
                    "Could not execute " + cmd + " file.");
 
@@ -209,6 +210,9 @@ public:
         }
 
         m_Request.Receive(context.GetIStream());
+        if (m_Request.IsExclusiveModeRequested())
+            context.RequestExclusiveMode();
+
         vector<string> args;
         NStr::Tokenize(m_Request.GetCmdLine(), " ", args);
         
@@ -218,7 +222,8 @@ public:
         unsigned int app_running_time = m_Request.GetAppRunTimeout();
 
         int ret = 0;
-        bool canceled = s_Exec(m_AppPath, args, 
+        bool canceled = s_Exec(m_AppPath, 
+                               args, 
                                m_Request.GetStdIn(), 
                                m_Result.GetStdOut(), 
                                m_Result.GetStdErr(),
@@ -228,9 +233,9 @@ public:
                                app_running_time,
                                m_KeepAlivePeriod);
 
-        m_Request.CleanUp();
         m_Result.SetRetCode(ret); 
         m_Result.Send(context.GetOStream());
+        m_Request.Reset();
 
         string stat = " is canceled.";
         if (!canceled) {
@@ -312,6 +317,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 1.12  2006/05/11 14:32:43  didenko
  * Cosmetics
  *

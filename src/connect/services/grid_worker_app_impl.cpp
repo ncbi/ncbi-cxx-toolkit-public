@@ -341,6 +341,7 @@ CGridWorkerApp_Impl::CGridWorkerApp_Impl(
 
 CGridWorkerApp_Impl::~CGridWorkerApp_Impl()
 {
+    SetDiagStream(&NcbiCerr);
 }
 
 void CGridWorkerApp_Impl::Init()
@@ -605,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2006/05/15 15:26:53  didenko
+ * Added support for running exclusive jobs
+ *
  * Revision 6.20  2006/05/12 15:13:37  didenko
  * Added infinit loop detection mechanism in job executions
  *
