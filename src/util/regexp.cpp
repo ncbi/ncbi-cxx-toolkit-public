@@ -43,31 +43,12 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//  CRegexpException
-//
-
-class CRegexpException : public CException
-{
-public:
-    enum EErrCode {
-        eCompile,
-        eBadFlags
-    };
-    virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
-        case eCompile:    return "eCompile";
-        case eBadFlags:   return "eBadFlags";
-        default:          return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CRegexpException,CException);
-};
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
 //  CRegexp
 //
+
+// Regular expression meta characters
+static char s_Special[] = ".?*+$^[](){}/\\|-";
+
 
 // Macro to check bits
 #define F_ISSET(flags, mask) ((flags & (mask)) == (mask))
@@ -200,11 +181,9 @@ bool CRegexp::IsMatch(const string& str, TMatch flags)
 
 string CRegexp::Escape(const string& str)
 {
-    static char special[] = ".?*+$^[](){}/\\|-";
-
     // Find first special character
     SIZE_TYPE prev = 0;
-    SIZE_TYPE pos = str.find_first_of(special, prev);
+    SIZE_TYPE pos = str.find_first_of(s_Special, prev);
     if ( pos == NPOS ) {
         // All characters are good - return original string
         return str;
@@ -218,7 +197,7 @@ string CRegexp::Escape(const string& str)
         out.put(str[pos]);
         // Find next
         prev = pos + 1;
-        pos = str.find_first_of(special, prev);
+        pos = str.find_first_of(s_Special, prev);
     } while (pos != NPOS);
 
     // Write remaining part of the string
@@ -227,6 +206,41 @@ string CRegexp::Escape(const string& str)
 	return CNcbiOstrstreamToString(out);
 }
 
+
+string CRegexp::WildcardToRegexp(const string& mask)
+{
+    // Find first special character
+    SIZE_TYPE prev = 0;
+    SIZE_TYPE pos = mask.find_first_of(s_Special, prev);
+    if ( pos == NPOS ) {
+        // All characters are good - return original string
+        return mask;
+    }
+    CNcbiOstrstream out;
+    do {
+        // Write first good characters in one chunk
+        out.write(mask.data() + prev, pos - prev);
+        // Convert or escape found character
+        if (mask[pos] == '*') {
+            out.put('.');
+            out.put(mask[pos]);
+        } else if (mask[pos] == '?') {
+            out.put('.');
+        } else {
+            // Escape character
+            out.put('\\');
+            out.put(mask[pos]);
+        }
+        // Find next
+        prev = pos + 1;
+        pos = mask.find_first_of(s_Special, prev);
+    } while (pos != NPOS);
+
+    // Write remaining part of the string
+    out.write(mask.data() + prev, mask.length() - prev);
+    // Return encoded string
+	return CNcbiOstrstreamToString(out);
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -455,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/05/15 16:03:00  ivanov
+ * + CRegexp::WildcardToRegexp()
+ *
  * Revision 1.16  2006/04/14 16:21:49  ivanov
  * Fixed CRegexpUtil::Replace() to correct replace repeating search
  * patterns to empty string.
