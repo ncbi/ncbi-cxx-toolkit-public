@@ -190,10 +190,11 @@ I_DriverContext::~I_DriverContext(void)
     return;
 }
 
-void I_DriverContext::PushCntxMsgHandler(CDB_UserHandler* h)
+void I_DriverContext::PushCntxMsgHandler(CDB_UserHandler* h,
+                                         EOwnership ownership)
 {
     CFastMutexGuard mg(m_Mtx);
-    m_CntxHandlers.Push(h);
+    m_CntxHandlers.Push(h, ownership);
 }
 
 void I_DriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
@@ -202,10 +203,11 @@ void I_DriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
     m_CntxHandlers.Pop(h);
 }
 
-void I_DriverContext::PushDefConnMsgHandler(CDB_UserHandler* h)
+void I_DriverContext::PushDefConnMsgHandler(CDB_UserHandler* h, 
+                                            EOwnership ownership)
 {
     CFastMutexGuard mg(m_Mtx);
-    m_ConnHandlers.Push(h);
+    m_ConnHandlers.Push(h, ownership);
 }
 
 void I_DriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
@@ -552,6 +554,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/05/15 19:32:43  ssikorsk
+ * Added EOwnership argument to methods PushCtxMsgHandler and PushDefConnMsgHandler
+ * of class I_DriverContext.
+ *
  * Revision 1.22  2006/04/20 22:17:02  ssikorsk
  * Added explicit type cast for x64 sake.
  *

@@ -521,17 +521,19 @@ public:
 
     /// Add message handler "h" to process 'context-wide' (not bound
     /// to any particular connection) error messages.
-    virtual void PushCntxMsgHandler(CDB_UserHandler* h);
+    void PushCntxMsgHandler(CDB_UserHandler* h,
+                            EOwnership ownership = eNoOwnership);
 
     /// Remove message handler "h" and all handlers above it in the stack
-    virtual void PopCntxMsgHandler(CDB_UserHandler* h);
+    void PopCntxMsgHandler(CDB_UserHandler* h);
 
     /// Add `per-connection' err.message handler "h" to the stack of default
     /// handlers which are inherited by all newly created connections.
-    virtual void PushDefConnMsgHandler(CDB_UserHandler* h);
+    void PushDefConnMsgHandler(CDB_UserHandler* h, 
+                               EOwnership ownership = eNoOwnership);
 
     /// Remove `per-connection' mess. handler "h" and all above it in the stack.
-    virtual void PopDefConnMsgHandler(CDB_UserHandler* h);
+    void PopDefConnMsgHandler(CDB_UserHandler* h);
 
     /// Report if the driver supports this functionality
     enum ECapability {
@@ -660,7 +662,8 @@ protected:
     virtual I_DriverContext* Context(void) const = 0;
 
     /// Put the message handler into message handler stack
-    virtual void PushMsgHandler(CDB_UserHandler* h) = 0;
+    virtual void PushMsgHandler(CDB_UserHandler* h,
+                                EOwnership ownership = eNoOwnership) = 0;
 
     /// Remove the message handler (and all above it) from the stack
     virtual void PopMsgHandler(CDB_UserHandler* h) = 0;
@@ -715,6 +718,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/05/15 19:32:16  ssikorsk
+ * Added EOwnership argument to methods PushCtxMsgHandler and PushDefConnMsgHandler
+ * of class I_DriverContext.
+ *
  * Revision 1.43  2006/04/05 14:20:23  ssikorsk
  * Added I_Connection::Close
  *
