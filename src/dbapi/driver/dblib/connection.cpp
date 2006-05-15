@@ -232,9 +232,10 @@ I_DriverContext* CDBL_Connection::Context() const
 }
 
 
-void CDBL_Connection::PushMsgHandler(CDB_UserHandler* h)
+void CDBL_Connection::PushMsgHandler(CDB_UserHandler* h,
+                                     EOwnership ownership)
 {
-    m_MsgHandlers.Push(h);
+    m_MsgHandlers.Push(h, ownership);
 }
 
 
@@ -671,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/05/15 19:37:54  ssikorsk
+ * Added EOwnership argument to method PushMsgHandler.
+ *
  * Revision 1.28  2006/05/11 18:14:01  ssikorsk
  * Fixed compilation issues
  *

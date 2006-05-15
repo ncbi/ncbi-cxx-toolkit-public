@@ -212,7 +212,8 @@ protected:
 
   virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp) { return NULL; }
 
-  virtual void PushMsgHandler(CDB_UserHandler* /*h*/);
+  virtual void PushMsgHandler(CDB_UserHandler* /*h*/,
+                              EOwnership ownership = eNoOwnership);
   virtual void PopMsgHandler (CDB_UserHandler* /*h*/);
   // virtual void Release() {}
   CDBHandlerStack m_MsgHandlers;
@@ -662,6 +663,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/15 19:37:33  ssikorsk
+ * Added EOwnership argument to method PushMsgHandler.
+ *
  * Revision 1.9  2005/10/20 12:56:49  ssikorsk
  * Code reformatting
  *

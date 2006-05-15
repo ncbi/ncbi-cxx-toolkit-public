@@ -182,7 +182,8 @@ protected:
     virtual bool IsReusable(void) const;
     virtual const string& PoolName(void) const;
     virtual I_DriverContext* Context(void) const;
-    virtual void PushMsgHandler(CDB_UserHandler* h);
+    virtual void PushMsgHandler(CDB_UserHandler* h,
+                                EOwnership ownership = eNoOwnership);
     virtual void PopMsgHandler (CDB_UserHandler* h);
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release(void);
@@ -787,6 +788,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/05/15 19:35:17  ssikorsk
+ * Added EOwnership argument to method PushMsgHandler.
+ *
  * Revision 1.29  2006/05/11 17:53:25  ssikorsk
  * Added CDBExceptionStorage class
  *

@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 4, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 5, 0, 0);
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
@@ -106,7 +106,8 @@ public:
     virtual I_DriverContext* Context() const;
 
     // Put the message handler into message handler stack
-    virtual void PushMsgHandler(CDB_UserHandler* h);
+    virtual void PushMsgHandler(CDB_UserHandler* h,
+                                EOwnership ownership = eNoOwnership);
 
     // Remove the message handler (and all above it) from the stack
     virtual void PopMsgHandler(CDB_UserHandler* h);
@@ -512,6 +513,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/05/15 19:34:11  ssikorsk
+ * Added EOwnership argument to method PushMsgHandler.
+ *
  * Revision 1.20  2006/04/05 14:20:57  ssikorsk
  * Added CDB_Connection::Close
  *

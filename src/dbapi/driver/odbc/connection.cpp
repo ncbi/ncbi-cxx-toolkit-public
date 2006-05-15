@@ -253,9 +253,10 @@ I_DriverContext* CODBC_Connection::Context() const
 }
 
 
-void CODBC_Connection::PushMsgHandler(CDB_UserHandler* h)
+void CODBC_Connection::PushMsgHandler(CDB_UserHandler* h,
+                                      EOwnership ownership)
 {
-    m_MsgHandlers.Push(h);
+    m_MsgHandlers.Push(h, ownership);
 }
 
 
@@ -663,6 +664,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/05/15 19:39:30  ssikorsk
+ * Added EOwnership argument to method PushMsgHandler.
+ *
  * Revision 1.21  2006/04/05 14:32:51  ssikorsk
  * Implemented CODBC_Connection::Close
  *

@@ -156,10 +156,11 @@ I_DriverContext* CDB_Connection::Context() const
     return m_Connect->Context();
 }
 
-void CDB_Connection::PushMsgHandler(CDB_UserHandler* h)
+void CDB_Connection::PushMsgHandler(CDB_UserHandler* h,
+                                    EOwnership ownership)
 {
     CHECK_CONNECTION(m_Connect);
-    m_Connect->PushMsgHandler(h);
+    m_Connect->PushMsgHandler(h, ownership);
 }
 
 void CDB_Connection::PopMsgHandler(CDB_UserHandler* h)
@@ -727,6 +728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/05/15 19:34:42  ssikorsk
+ * Added EOwnership argument to method PushMsgHandler.
+ *
  * Revision 1.22  2006/04/05 14:26:53  ssikorsk
  * Implemented CDB_Connection::Close
  *

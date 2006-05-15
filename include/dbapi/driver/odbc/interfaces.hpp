@@ -221,7 +221,8 @@ protected:
     virtual bool IsReusable(void) const;
     virtual const string& PoolName(void) const;
     virtual I_DriverContext* Context(void) const;
-    virtual void PushMsgHandler(CDB_UserHandler* h);
+    virtual void PushMsgHandler(CDB_UserHandler* h,
+                                EOwnership ownership = eNoOwnership);
     virtual void PopMsgHandler (CDB_UserHandler* h);
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release(void);
@@ -736,6 +737,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/05/15 19:39:20  ssikorsk
+ * Added EOwnership argument to method PushMsgHandler.
+ *
  * Revision 1.25  2006/04/05 14:22:56  ssikorsk
  * Added CODBC_Connection::Close
  *

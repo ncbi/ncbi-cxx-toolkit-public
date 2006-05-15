@@ -481,9 +481,10 @@ void C_GWLib_MsgCallback::exec(IGate* pGate)
   pGate->send_done();
 }
 
-void CGW_Connection::PushMsgHandler(CDB_UserHandler* h)
+void CGW_Connection::PushMsgHandler(CDB_UserHandler* h,
+                                    EOwnership ownership)
 {
-  m_MsgHandlers.Push(h);
+  m_MsgHandlers.Push(h, ownership);
 
   // Make sure there is a server-side handler listening to messages
   int i=(int)this;

@@ -152,7 +152,8 @@ I_DriverContext* CMySQL_Connection::Context() const
     return m_Context;
 }
 
-void CMySQL_Connection::PushMsgHandler(CDB_UserHandler* /*h*/)
+void CMySQL_Connection::PushMsgHandler(CDB_UserHandler* /*h*/,
+                                       EOwnership /*ownership*/)
 {
 }
 
@@ -224,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/15 19:39:05  ssikorsk
+ * Added EOwnership argument to method PushMsgHandler.
+ *
  * Revision 1.9  2006/04/05 14:32:25  ssikorsk
  * Implemented CMySQL_Connection::Close
  *
