@@ -532,6 +532,31 @@ CDbapiSampleApp::GetConnection(void)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+CDbapiSampleErrHandler::CDbapiSampleErrHandler(void)
+{
+}
+
+CDbapiSampleErrHandler::~CDbapiSampleErrHandler(void)
+{
+}
+
+// Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+bool 
+CDbapiSampleErrHandler::HandleIt(CDB_Exception* ex)
+{
+    if ( !ex )
+        return false;
+
+    // Ignore errors with ErrorCode set to 0
+    // (this is related mostly to the FreeTDS driver)
+    if (ex->GetDBErrCode() == 0)
+        return true;
+
+    // On other errors, throw an exception (was not allowed before!)
+    throw *ex;
+}
+
 END_NCBI_SCOPE
 
 
@@ -539,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/05/15 19:48:38  ssikorsk
+ * Added class CDbapiSampleErrHandler.
+ *
  * Revision 1.21  2006/04/28 15:32:02  ssikorsk
  * Added OBERON to a list of Sybase's servers
  *

@@ -194,6 +194,20 @@ private:
 };
 
 
+class CDbapiSampleErrHandler : public CDB_UserHandler
+{
+public:
+    // c-tor
+    CDbapiSampleErrHandler(void);
+    // d-tor
+    virtual ~CDbapiSampleErrHandler(void);
+
+public:
+    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+    virtual bool HandleIt(CDB_Exception* ex);
+};
+
+
 END_NCBI_SCOPE
 
 
@@ -201,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/15 19:48:30  ssikorsk
+ * Added class CDbapiSampleErrHandler.
+ *
  * Revision 1.6  2006/01/23 13:45:02  ssikorsk
  * Added default argument of type IConnValidator* to
  * CDbapiSampleApp::CreateConnection;
