@@ -349,10 +349,6 @@ s_AddMask(EBlastProgramType           prog,
         int posframe = CSeqLocInfo::eFramePlus1;
         int negframe = CSeqLocInfo::eFrameMinus1;
         
-        if (*seqloc_frames[posframe]) {
-            assert(*seqloc_frames[negframe]);
-        }
-        
         switch (strand) {
         case eNa_strand_plus:
             mask->seqloc_array[query_index*num_contexts] =
@@ -1572,6 +1568,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.118  2006/05/15 15:36:27  camacho
+ * Remove unneeded assertion for the case of plus strand only
+ *
  * Revision 1.117  2006/05/12 18:00:08  camacho
  * Minor
  *
