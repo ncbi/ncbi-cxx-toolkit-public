@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --*********************************************************************
 --
 --  biotree.asn
@@ -47,6 +47,12 @@ FeatureDescr ::= SEQUENCE {
    name  VisibleString         -- feature name
 }
 
+
+DistanceMatrix ::= SEQUENCE {
+   labels     SEQUENCE OF VisibleString,  -- n labels
+   distances  SEQUENCE OF REAL            -- n(n-1)/2 pairwise distances
+                                          -- (0, 1)...(0, n), (1, 2)...(1, n)...
+}
 
 
 END
