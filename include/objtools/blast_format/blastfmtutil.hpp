@@ -219,6 +219,12 @@ public:
     static CRef<CBlast_def_line_set> 
     GetBlastDefline (const CBioseq_Handle& handle);
 
+	///Get linkout membership
+	///@param bdl: blast defline to get linkout membership from
+	///@return the value representing the membership bits set
+	///
+	static int GetLinkout(const CBlast_def_line& bdl);
+	
     ///Extract score info from blast alingment
     ///@param aln: alignment to extract score info from
     ///@param score: place to extract the raw score to
@@ -320,7 +326,7 @@ public:
     ///@param id: the seqid
     ///@return: the frame
     ///
-    static int GetFrame (int start, ENa_strand strand, const CBioseq_Handle& handle); 
+    static int GetFrame (int start, ENa_strand strand, const CBioseq_Handle& handle); 	
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.
@@ -342,6 +348,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.22  2006/05/15 16:19:39  zaretska
+Moved s_GetLinkout() function from shodefline.cpp to blastfmtutil.cpp
+
 Revision 1.21  2006/04/05 17:41:02  jianye
 change url for mouseover info
 

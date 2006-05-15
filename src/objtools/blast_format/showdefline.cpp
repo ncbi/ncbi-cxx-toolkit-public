@@ -273,36 +273,6 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
     return url_link;
 }
 
-
-///Get linkout membership
-///@param bdl: blast defline to get linkout membership from
-///@return the value representing the membership bits set
-///
-static int s_GetLinkout(const CBlast_def_line& bdl)
-{
-    int linkout = 0;
-    
-    if (bdl.IsSetLinks()){
-        for (list< int >::const_iterator iter = bdl.GetLinks().begin();
-             iter != bdl.GetLinks().end(); iter ++){
-            if ((*iter) & eUnigene) {
-                linkout += eUnigene;
-            }
-            if ((*iter) & eStructure){
-                linkout += eStructure;
-            } 
-            if ((*iter) & eGeo){
-                linkout += eGeo;
-            } 
-            if ((*iter) & eGene){
-                linkout += eGene;
-            }
-        }
-    }
-    return linkout;
-}
-
-
 ///Get the url for linkout
 ///@param linkout: the membership value
 ///@param gi: the actual gi or 0
@@ -546,7 +516,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             int cur_gi =  FindGi(cur_id);            
             if(use_this_gi.empty()){
                 if(sdl->gi == cur_gi){                 
-                    sdl->linkout = s_GetLinkout((**iter));
+					sdl->linkout = CBlastFormatUtil::GetLinkout((**iter));
                     sdl->linkout_list =
                         s_GetLinkoutString(sdl->linkout,
                                            sdl->gi, m_Rid, 
@@ -558,7 +528,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             } else {
                 ITERATE(list<int>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){                     
-                        sdl->linkout = s_GetLinkout((**iter));
+                        sdl->linkout = CBlastFormatUtil::GetLinkout((**iter));
                         sdl->linkout_list = 
                             s_GetLinkoutString(sdl->linkout, 
                                                cur_gi, m_Rid,
@@ -958,6 +928,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.28  2006/05/15 16:19:05  zaretska
+*Moved s_GetLinkout() function from shodefline.cpp to blastfmtutil.cpp
+*
 *Revision 1.27  2006/05/12 17:33:15  jianye
 *encode html string
 *

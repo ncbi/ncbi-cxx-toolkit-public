@@ -433,6 +433,33 @@ CBlastFormatUtil::GetBlastDefline (const CBioseq_Handle& handle)
     return bdls;
 }
 
+///Get linkout membership
+///@param bdl: blast defline to get linkout membership from
+///@return the value representing the membership bits set
+///
+int CBlastFormatUtil::GetLinkout(const CBlast_def_line& bdl)
+{
+    int linkout = 0;
+    
+    if (bdl.IsSetLinks()){
+        for (list< int >::const_iterator iter = bdl.GetLinks().begin();
+             iter != bdl.GetLinks().end(); iter ++){
+            if ((*iter) & eUnigene) {
+                linkout += eUnigene;
+            }
+            if ((*iter) & eStructure){
+                linkout += eStructure;
+            } 
+            if ((*iter) & eGeo){
+                linkout += eGeo;
+            } 
+            if ((*iter) & eGene){
+                linkout += eGene;
+            }
+        }
+    }
+    return linkout;
+}
 
 void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& score, 
