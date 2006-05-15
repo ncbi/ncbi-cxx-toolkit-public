@@ -167,6 +167,12 @@ int CRegexApplication::Run(void)
     pattern.Set(CRegexp::Escape(".?*+$^[](){}/\\|-"));
     assert(pattern.IsMatch(".?*+$^[](){}/\\|-"));
 
+    pattern.Set(CRegexp::WildcardToRegexp("c*t c?t"));
+    assert(pattern.IsMatch("...ct cat..."));
+    assert(pattern.IsMatch("...cat city..."));
+    assert(pattern.IsMatch("...colt c.t..."));
+    assert(!pattern.IsMatch("...cat ct..."));
+
     return 0;
 }
 
@@ -183,10 +189,12 @@ int main(int argc, const char* argv[])
 }
 
 
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/15 16:03:31  ivanov
+ * Added tests for CRegexp::WildcardToRegexp()
+ *
  * Revision 1.9  2006/03/27 19:48:05  ivanov
  * Added tests for Escape(), IsMatch()
  *
