@@ -1810,7 +1810,9 @@ void CFastaOstream::Write(const CBioseq& seq, const CSeq_loc* location)
 template <class Container>
 void x_Translate(const Container& seq,
                  string& prot,
-                 const CGenetic_code* code)
+                 const CGenetic_code* code,
+                 bool include_stop,
+                 bool remove_trailing_X)
 {
     // reserve our space
     const size_t mod = seq.size() % 3;
@@ -1855,24 +1857,40 @@ void x_Translate(const Container& seq,
         // save translated amino acid
         prot.append(1, tbl.GetCodonResidue(state));
     }
+
+    if ( !include_stop ) {
+        string::size_type pos = prot.find_first_of("*");
+        if (pos != string::npos) {
+            prot.erase(pos);
+        }
+    }
+
+    if (remove_trailing_X) {
+        string::size_type pos = prot.find_last_not_of("X");
+        if (pos != string::npos) {
+            ++pos;
+            prot.erase(pos);
+        }
+
+    }
 }
 
 
 void CSeqTranslator::Translate(const string& seq, string& prot,
                                const CGenetic_code* code,
-                               bool /* include_stop */,
-                               bool /* remove_trailing_X */)
+                               bool include_stop,
+                               bool remove_trailing_X)
 {
-    x_Translate(seq, prot, code);
+    x_Translate(seq, prot, code, include_stop, remove_trailing_X);
 }
 
 
 void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
                                const CGenetic_code* code,
-                               bool /* include_stop */,
-                               bool /* remove_trailing_X */)
+                               bool include_stop,
+                               bool remove_trailing_X)
 {
-    x_Translate(seq, prot, code);
+    x_Translate(seq, prot, code, include_stop, remove_trailing_X);
 }
 
 
@@ -1880,11 +1898,11 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
                                const CBioseq_Handle& handle,
                                string& prot,
                                const CGenetic_code* code,
-                               bool /* include_stop */,
-                               bool /* remove_trailing_X */)
+                               bool include_stop,
+                               bool remove_trailing_X)
 {
     CSeqVector seq(loc, handle.GetScope(), CBioseq_Handle::eCoding_Iupac);
-    x_Translate(seq, prot, code);
+    x_Translate(seq, prot, code, include_stop, remove_trailing_X);
 }
 
 
@@ -2793,6 +2811,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.139  2006/05/16 15:32:26  dicuccio
+* Implement translation options for non-CDS-based translation
+*
 * Revision 1.138  2006/04/24 14:54:08  dicuccio
 * Honor fBestFeat_FavorLonger flag in GetBestMrnaForCds, GetBestGeneForMrna,
 * GetBestGeneForCds
