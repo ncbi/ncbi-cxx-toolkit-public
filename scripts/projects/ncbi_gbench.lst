@@ -35,6 +35,7 @@ gui
 html$
 internal/align_model$
 internal/gbench/plugins
+internal/align_model
 objects
 objmgr$
 objmgr/util$
