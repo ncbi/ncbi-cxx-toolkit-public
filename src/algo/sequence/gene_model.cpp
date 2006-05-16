@@ -341,7 +341,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     /// this is created as a translation of the genomic
                     /// location
                     CSeqTranslator::Translate
-                        (*new_loc, handle, inst.SetSeq_data().SetIupacaa().Set());
+                        (*new_loc, handle, inst.SetSeq_data().SetIupacaa().Set(),
+                         false /* trim at first stop codon */);
                     inst.SetLength(inst.GetSeq_data().GetIupacaa().Get().size());
 
                     seqs.SetSeq_set().push_back(entry);
@@ -378,6 +379,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/05/16 15:30:18  dicuccio
+ * Make sure to stop translating at the first stop codon
+ *
  * Revision 1.5  2006/05/01 13:30:35  dicuccio
  * Added option to instantiate transcript sequence from genome.  Changed
  * specification of transcript and protein sequences to include date stamp
