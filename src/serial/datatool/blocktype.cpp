@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2006/05/16 14:30:13  gouriano
+* Corrected generation of ASN spec - to make sure it is valid
+*
 * Revision 1.63  2006/05/09 15:16:43  gouriano
 * Added XML namespace definition possibility
 *
@@ -1001,7 +1004,7 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
     bool oneLineComment = m_Comments.OneLine();
     if ( !oneLineComment )
         m_Comments.PrintASN(out, indent);
-    out << GetName() << ' ';
+    out << CDataTypeModule::ToAsnId(GetName()) << ' ';
     GetType()->PrintASN(out, indent);
     if ( GetDefault() ) {
         GetDefault()->PrintASN(out << " DEFAULT ", indent + 1);

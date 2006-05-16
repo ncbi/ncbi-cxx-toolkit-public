@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/05/16 14:30:13  gouriano
+* Corrected generation of ASN spec - to make sure it is valid
+*
 * Revision 1.33  2005/08/05 15:11:40  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -212,7 +215,7 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
         bool oneLineComment = i->GetComments().OneLine();
         if ( !oneLineComment )
             i->GetComments().PrintASN(out, indent);
-        out << i->GetName() << " (" << i->GetValue() << ")";
+        out << CDataTypeModule::ToAsnId(i->GetName()) << " (" << i->GetValue() << ")";
         if ( !last )
             out << ',';
         if ( oneLineComment )

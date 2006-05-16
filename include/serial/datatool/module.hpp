@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/05/16 14:30:29  gouriano
+* Corrected generation of ASN spec - to make sure it is valid
+*
 * Revision 1.13  2006/04/13 12:59:08  gouriano
 * Added optional file name suffix to modular DTD or schema
 *
@@ -193,6 +196,8 @@ public:
     {
         return s_ModuleFileSuffix;
     }
+    static string ToAsnName(const string& name);
+    static string ToAsnId(const string& name);
 
 private:
     bool m_Errors;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/05/16 14:30:13  gouriano
+* Corrected generation of ASN spec - to make sure it is valid
+*
 * Revision 1.32  2005/02/02 19:08:36  gouriano
 * Corrected DTD generation
 *
@@ -166,7 +169,7 @@ CReferenceDataType::CReferenceDataType(const string& n)
 
 void CReferenceDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
 {
-    out << m_UserTypeName;
+    out << CDataTypeModule::ToAsnName(m_UserTypeName);
 }
 
 void CReferenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const

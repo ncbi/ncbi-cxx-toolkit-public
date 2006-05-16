@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2006/05/16 14:30:13  gouriano
+* Corrected generation of ASN spec - to make sure it is valid
+*
 * Revision 1.43  2006/05/09 15:16:43  gouriano
 * Added XML namespace definition possibility
 *
@@ -213,7 +216,7 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
     m_Comments.PrintASN(out, 0, CComments::eMultiline);
 
     out <<
-        GetName() << " DEFINITIONS ::=\n"
+        ToAsnName(GetName()) << " DEFINITIONS ::=\n"
         "BEGIN\n"
         "\n";
 
@@ -252,7 +255,7 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 
     ITERATE ( TDefinitions, i, m_Definitions ) {
         i->second->PrintASNTypeComments(out, 0);
-        out << i->first << " ::= ";
+        out << ToAsnName(i->first) << " ::= ";
         i->second->PrintASN(out, 0);
         out <<
             "\n"
@@ -593,5 +596,39 @@ bool CDataTypeModule::AddImportRef(const string& imp)
     }
     return false;
 }
+
+string CDataTypeModule::ToAsnName(const string& name)
+{
+    string asn;
+    asn.reserve(name.size());
+    bool first = true, hyphen = false;
+    for (string::const_iterator i = name.begin(); i != name.end(); ++i) {
+        unsigned char u = (unsigned char)(*i);
+        if (first) {
+            if (isalpha(u)) {
+                asn.append( 1, toupper(u));
+                first = false;
+            }
+        } else if (isalpha(u) || isdigit(u)) {
+            hyphen = false;
+            asn.append( 1,u);
+        } else if (!hyphen) {
+            hyphen = true;
+            asn.append( 1,'-');
+        }
+    }
+    if (hyphen) {
+        asn.resize( asn.size()-1 );
+    }
+    return asn;
+}
+
+string CDataTypeModule::ToAsnId(const string& name)
+{
+    string asn(name);
+    asn[0] = tolower((unsigned char)asn[0]);
+    return asn;
+}
+
 
 END_NCBI_SCOPE
