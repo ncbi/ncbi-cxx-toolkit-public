@@ -72,6 +72,9 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+
 #include <objtools/readers/readfeat.hpp>
 
 #include <algorithm>
@@ -1896,6 +1899,44 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
     return ReadSequinFeatureTable (ifs, seqid, annotname, flags);
 
+}
+
+void CFeature_table_reader::ReadSequinFeatureTables(CNcbiIstream& ifs,
+                                                    CSeq_entry& entry,
+                                                    const TFlags flags)
+{
+    while ( !ifs.eof() ) {
+        CRef<CSeq_annot> annot = ReadSequinFeatureTable(ifs, flags);
+        if (entry.IsSeq()) { // only one place to go
+            entry.SetSeq().SetAnnot().push_back(annot);
+            continue;
+        }
+        _ASSERT(annot->GetData().IsFtable());
+        if (annot->GetData().GetFtable().empty()) {
+            continue;
+        }
+        // otherwise, take the first feature, which should be representative
+        const CSeq_feat& feat    = *annot->GetData().GetFtable().front();
+        const CSeq_id*   feat_id = feat.GetLocation().GetId();
+        CBioseq*         seq     = NULL;
+        _ASSERT(feat_id); // we expect a uniform sequence ID
+        for (CTypeIterator<CBioseq> seqit(entry);  seqit  &&  !seq;  ++seqit) {
+            ITERATE (CBioseq::TId, seq_id, seqit->GetId()) {
+                if (feat_id->Match(**seq_id)) {
+                    seq = &*seqit;
+                    break;
+                }
+            }
+        }
+        if (seq) { // found a match
+            seq->SetAnnot().push_back(annot);
+        } else { // just package on the set
+            ERR_POST(Warning
+                     << "ReadSequinFeatureTables: unable to find match for "
+                     << feat_id->AsFastaString());
+            entry.SetSet().SetAnnot().push_back(annot);
+        }
+    }
 }
 
 CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (

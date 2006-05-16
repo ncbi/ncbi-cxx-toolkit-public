@@ -65,6 +65,11 @@ public:
                                                     const string& seqid,
                                                     const string& annotname,
                                                     const TFlags flags = 0);
+    // read all feature tables available from the input, attaching each
+    // at an appropriate position within the Seq-entry object
+    static void ReadSequinFeatureTables(CNcbiIstream& ifs,
+                                        CSeq_entry& entry,
+                                        const TFlags flags = 0);
 
     // create single feature from key
     static CRef<CSeq_feat> CreateSeqFeat (const string& feat,
