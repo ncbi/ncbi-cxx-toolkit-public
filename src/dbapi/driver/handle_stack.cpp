@@ -48,9 +48,10 @@ CDBHandlerStack::~CDBHandlerStack()
 
 void CDBHandlerStack::Push(CDB_UserHandler* h, EOwnership ownership)
 {
+    const bool referenced = h->Referenced();
     CRef<CDB_UserHandler> obj(h);
     
-    if (ownership == eNoOwnership) {
+    if (ownership == eNoOwnership && !referenced) {
         // Cheat on CRef ...
         h->AddReference();
     }
@@ -132,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/05/16 21:17:21  ssikorsk
+ * Improved method Push.
+ *
  * Revision 1.11  2006/05/15 19:28:43  ssikorsk
  * Added EOwnership argument to the method Push.
  *
