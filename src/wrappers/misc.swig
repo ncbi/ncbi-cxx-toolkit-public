@@ -291,6 +291,8 @@ objects/proj/NCBI_Project_module.hpp
 
 objects/biotree/BioTreeContainer.hpp
 objects/biotree/BioTreeContainer_.hpp
+objects/biotree/DistanceMatrix.hpp
+objects/biotree/DistanceMatrix_.hpp
 objects/biotree/FeatureDescr.hpp
 objects/biotree/FeatureDescr_.hpp
 objects/biotree/FeatureDictSet.hpp
@@ -340,6 +342,9 @@ objects/valerr/NCBI_ValErrors_module.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/05/16 16:53:31  jcherry
+ * Added DistanceMatrix headers
+ *
  * Revision 1.7  2006/02/17 17:56:01  jcherry
  * Added objects/valerr and other headers
  *
