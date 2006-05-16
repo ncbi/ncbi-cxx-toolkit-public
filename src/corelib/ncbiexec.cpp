@@ -179,7 +179,23 @@ static void s_CheckExecArg(const char* arg)
 #  define s_CheckExecArg(x) 
 #endif
 
-// Get exec arguments
+// Macros to get exec arguments
+
+#if defined(NCBI_OS_MSWIN)
+#  define GET_ARGS_0 \
+    AutoPtr<string> p_cmdname; \
+    if ( strstr(cmdname, " ") ) { \
+        string* tmp = new string(string("\"") + cmdname + "\""); \
+        p_cmdname.reset(tmp); \
+        args[0] = tmp->c_str(); \
+    } else { \
+        args[0] = cmdname; \
+    }
+#else
+#  define GET_ARGS_0 \
+    args[0] = cmdname
+#endif
+
 #define GET_EXEC_ARGS \
     int xcnt = 2; \
     va_list vargs; \
@@ -191,7 +207,7 @@ static void s_CheckExecArg(const char* arg)
     AutoPtr<const char*, TArgsDeleter> p_args(args); \
     if ( !args ) \
         NCBI_THROW(CCoreException, eNullPtr, kEmptyStr); \
-    args[0] = cmdname; \
+    GET_ARGS_0; \
     args[1] = argv; \
     va_start(vargs, argv); \
     int xi = 1; \
@@ -457,6 +473,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/05/16 16:14:11  ivanov
+ * MS Windows: GET_EXEC_ARGS: quote argv[0] in the list of parameters
+ * for executed process if it contains spaces. The module name itself
+ * should not be quoted.
+ *
  * Revision 1.34  2006/05/16 15:30:41  dicuccio
  * FIxed macro cut-and-paste of parameters-to-strings
  *
