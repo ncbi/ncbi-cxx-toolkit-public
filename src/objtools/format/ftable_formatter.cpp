@@ -89,11 +89,11 @@ void CFtableFormatter::FormatFeature
  IFlatTextOStream& text_os)
 {
     list<string> l;
-    const CFlatFeature& feat = *f.Format();
+    CConstRef<CFlatFeature> feat = f.Format();
     CBioseqContext& bctx = *f.GetContext();
 
-    x_FormatLocation(f.GetLoc(), feat.GetKey(), bctx, l);
-    x_FormatQuals(feat.GetQuals(), bctx, l);
+    x_FormatLocation(f.GetLoc(), feat->GetKey(), bctx, l);
+    x_FormatQuals(feat->GetQuals(), bctx, l);
     text_os.AddParagraph(l);
 }
 
