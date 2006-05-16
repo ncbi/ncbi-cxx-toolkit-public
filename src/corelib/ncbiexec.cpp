@@ -206,7 +206,7 @@ static void s_CheckExecArg(const char* arg)
 // Return result from Spawn method
 #define RETURN_RESULT(func) \
     if (status == -1) { \
-        NCBI_THROW(CExecException, eSpawn, "CExec::func()"); \
+        NCBI_THROW(CExecException, eSpawn, "CExec::" #func "() failed"); \
     } \
     CResult result; \
     if (mode == eWait) { \
@@ -457,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/05/16 15:30:41  dicuccio
+ * FIxed macro cut-and-paste of parameters-to-strings
+ *
  * Revision 1.33  2006/05/08 13:57:19  ivanov
  * Changed return type of all Spawn* function from int to CResult
  *
