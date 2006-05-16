@@ -348,7 +348,7 @@ string CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::ESubtype st)
     string label = "";
     switch (st) {
         case COrgMod::eSubtype_nat_host:
-            label = "natural host";
+            label = "specific host";
             break;
         case COrgMod::eSubtype_strain:
             label = "strain";
@@ -470,6 +470,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/05/16 18:15:42  bollin
+* improvements to modifier labels in organism descriptions for automatically
+* generated definition lines
+*
 * Revision 1.6  2006/05/09 16:28:12  bollin
 * added functions to allow modifiers to be selected in dialog
 *

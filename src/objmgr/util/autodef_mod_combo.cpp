@@ -340,89 +340,7 @@ string CAutoDefModifierCombo::x_GetSubSourceLabel (CSubSource::ESubtype st)
     } else if (st == CSubSource::eSubtype_country) {
         label = "from";
     } else if (m_UseModifierLabels) {
-        switch (st) {
-            case CSubSource::eSubtype_chromosome:
-                label = "chromosome";
-                break;
-            case CSubSource::eSubtype_clone:
-                label = "clone";
-                break;
-            case CSubSource::eSubtype_subclone:
-                label = "subclone";
-                break;
-            case CSubSource::eSubtype_haplotype:
-                label = "haplotype";
-                break;
-            case CSubSource::eSubtype_genotype:
-                label = "genotype";
-                break;
-            case CSubSource::eSubtype_sex:
-                label = "sex";
-                break;
-            case CSubSource::eSubtype_cell_line:
-                label = "cell line";
-                break;
-            case CSubSource::eSubtype_cell_type:
-                label = "cell type";
-                break;
-            case CSubSource::eSubtype_tissue_type:
-                label = "tissue type";
-                break;
-            case CSubSource::eSubtype_clone_lib:
-                label = "clone lib";
-                break;
-            case CSubSource::eSubtype_dev_stage:
-                label = "dev stage";
-                break;
-            case CSubSource::eSubtype_frequency:
-                label = "frequency";
-                break;
-            case CSubSource::eSubtype_germline:
-                label = "germline";
-                break;
-            case CSubSource::eSubtype_lab_host:
-                label = "lab host";
-                break;
-            case CSubSource::eSubtype_pop_variant:
-                label = "pop variant";
-                break;
-            case CSubSource::eSubtype_tissue_lib:
-                label = "tissue lib";
-                break;
-            case CSubSource::eSubtype_transposon_name:
-                label = "transposon";
-                break;
-            case CSubSource::eSubtype_insertion_seq_name:
-                label = "insertion sequence";
-                break;
-            case CSubSource::eSubtype_plastid_name:
-                label = "plastid";
-                break;
-            case CSubSource::eSubtype_segment:
-                label = "segment";
-                break;
-            case CSubSource::eSubtype_isolation_source:
-                label = "isolation source";
-                break;
-            case CSubSource::eSubtype_lat_lon:
-                label = "lat lon";
-                break;
-            case CSubSource::eSubtype_collection_date:
-                label = "collection date";
-                break;
-            case CSubSource::eSubtype_collected_by:
-                label = "collected by";
-                break;
-            case CSubSource::eSubtype_identified_by:
-                label = "identified by";
-                break;
-            case CSubSource::eSubtype_other:
-                label = "note";
-                break;
-            default:
-                label = "";
-                break;
-        }
+        label = CAutoDefAvailableModifier::GetSubSourceLabel (st);
     }
     if (!NStr::IsBlank(label)) {
         label = " " + label;
@@ -436,111 +354,8 @@ string CAutoDefModifierCombo::x_GetOrgModLabel(COrgMod::ESubtype st)
     string label = "";
     if (st == COrgMod::eSubtype_nat_host) {
         label = "from";
-        if (m_UseModifierLabels) {
-            label += " natural host";
-        }
     } else if (m_UseModifierLabels) {
-        switch (st) {
-            case COrgMod::eSubtype_strain:
-                label = "strain";
-                break;
-            case COrgMod::eSubtype_substrain:
-                label = "substrain";
-                break;
-            case COrgMod::eSubtype_type:
-                label = "type";
-                break;
-            case COrgMod::eSubtype_subtype:
-                label = "subtype";
-                break;
-            case COrgMod::eSubtype_variety:
-                label = "variety";
-                break;
-            case COrgMod::eSubtype_serotype:
-                label = "serotype";
-                break;
-            case COrgMod::eSubtype_serogroup:
-                label = "serogroup";
-                break;
-            case COrgMod::eSubtype_serovar:
-                label = "serovar";
-                break;
-            case COrgMod::eSubtype_cultivar:
-                label = "cultivar";
-                break;
-            case COrgMod::eSubtype_pathovar:
-                label = "pathovar";
-                break;
-            case COrgMod::eSubtype_chemovar:
-                label = "chemovar";
-                break;
-            case COrgMod::eSubtype_biovar:
-                label = "biovar";
-                break;
-            case COrgMod::eSubtype_biotype:
-                label = "biotype";
-                break;
-            case COrgMod::eSubtype_group:
-                label = "group";
-                break;
-            case COrgMod::eSubtype_subgroup:
-                label = "subgroup";
-                break;
-            case COrgMod::eSubtype_isolate:
-                label = "isolate";
-                break;
-            case COrgMod::eSubtype_common:
-                label = "common name";
-                break;
-            case COrgMod::eSubtype_acronym:
-                label = "v";
-                break;
-            case COrgMod::eSubtype_sub_species:
-                label = "subspecies";
-                break;
-            case COrgMod::eSubtype_specimen_voucher:
-                label = "voucher";
-                break;
-            case COrgMod::eSubtype_authority:
-                label = "authority";
-                break;
-            case COrgMod::eSubtype_forma:
-                label = "forma";
-                break;
-            case COrgMod::eSubtype_forma_specialis:
-                label = "forma specialis";
-                break;
-            case COrgMod::eSubtype_ecotype:
-                label = "ecotype";
-                break;
-            case COrgMod::eSubtype_synonym:
-                label = "synonym";
-                break;
-            case COrgMod::eSubtype_anamorph:
-                label = "anamorph";
-                break;
-            case COrgMod::eSubtype_teleomorph:
-                label = "teleomorph";
-                break;
-            case COrgMod::eSubtype_breed:
-                label = "breed";
-                break;
-            case COrgMod::eSubtype_gb_acronym:
-                label = "acronym";
-                break;
-            case COrgMod::eSubtype_gb_anamorph:
-                label = "anamorph";
-                break;
-            case COrgMod::eSubtype_gb_synonym:
-                label = "synonym";
-                break;
-            case COrgMod::eSubtype_other:
-                label = "note";
-                break;
-            default:
-                label = "";
-                break;
-        }
+        label = CAutoDefAvailableModifier::GetOrgModLabel(st);
     }
     if (!NStr::IsBlank(label)) {
         label = " " + label;
@@ -734,6 +549,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2006/05/16 18:15:42  bollin
+* improvements to modifier labels in organism descriptions for automatically
+* generated definition lines
+*
 * Revision 1.8  2006/05/04 11:44:52  bollin
 * improvements to method for finding unique organism description
 *
