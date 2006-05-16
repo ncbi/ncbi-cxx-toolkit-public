@@ -394,7 +394,7 @@ bool CAutoDefFeatureClause::x_GetNoncodingProductFeatProduct (string &product_na
     if (start_pos != NCBI_NS_STD::string::npos) {
         unsigned int sep_pos = NStr::Find (comment, " due to ", start_pos);
         if (sep_pos != NCBI_NS_STD::string::npos) {
-            product_name = comment.substr(start_pos + 14, sep_pos - start_pos - 14);
+            product_name = comment.substr(start_pos, sep_pos - start_pos);
             return true;
         }
     }
@@ -1497,6 +1497,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2006/05/16 19:38:58  bollin
+* fixed bug in nonfunctional product naming for automatic definition line generator
+*
 * Revision 1.14  2006/05/16 18:57:56  bollin
 * remove unwanted text from rRNA product names
 *
