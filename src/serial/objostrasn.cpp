@@ -371,8 +371,7 @@ void CObjectOStreamAsn::WriteId(const string& str)
         m_Output.PutChar('[');
         m_Output.PutString(str);
         m_Output.PutChar(']');
-    }
-    else {
+    } else {
         m_Output.PutString(str);
     }
 }
@@ -516,8 +515,14 @@ void CObjectOStreamAsn::CopyContainer(const CContainerTypeInfo* cType,
 
 void CObjectOStreamAsn::WriteMemberId(const CMemberId& id)
 {
-    if ( !id.GetName().empty() ) {
-        m_Output.PutString(id.GetName());
+    const string& name = id.GetName();
+    if ( !name.empty() ) {
+        if (isupper((unsigned char)name[0])) {
+            m_Output.PutChar(tolower((unsigned char)name[0]));
+            m_Output.PutString(name.data()+1, name.size()-1);
+        } else {
+            m_Output.PutString(name);
+        }
         m_Output.PutChar(' ');
     }
     else if ( id.HaveExplicitTag() ) {
@@ -685,9 +690,22 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
 }
 #endif
 
+void CObjectOStreamAsn::BeginChoice(const CChoiceTypeInfo* /*choiceType*/)
+{
+    m_BlockStart = true;
+}
+void CObjectOStreamAsn::EndChoice(void)
+{
+    m_BlockStart = false;
+}
+
 void CObjectOStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* ,
                                            const CMemberId& id)
 {
+    if ( m_BlockStart )
+        m_BlockStart = false;
+    else
+        NextElement();
     WriteMemberId(id);
 }
 
