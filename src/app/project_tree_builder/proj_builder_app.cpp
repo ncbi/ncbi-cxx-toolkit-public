@@ -683,7 +683,6 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
         if (GetBuildType().GetType() == CBuildType::eDll) {
             ofs << "DLL" << endl;
         }
-        ofs << "mswin" << endl;
         const set<string>& epackages =
             CMsvcPrjProjectContext::GetEnabledPackages(c->m_Name);
         ITERATE(set<string>, e, epackages) {
@@ -1178,6 +1177,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/05/16 19:44:25  gouriano
+ * Removed bogus 'mswin' feature
+ *
  * Revision 1.75  2006/05/08 15:54:36  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and
