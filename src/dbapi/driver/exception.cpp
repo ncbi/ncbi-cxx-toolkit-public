@@ -351,8 +351,6 @@ private:
 };
 
 
-static CSafeStaticPtr<CDB_UserHandler_Wrapper> s_CDB_DefUserHandler;  // (singleton)
-
 CDB_UserHandler_Wrapper::CDB_UserHandler_Wrapper(void) :
 m_Handler(new CDB_UserHandler_Default)
 {
@@ -406,17 +404,22 @@ CDB_UserHandler::~CDB_UserHandler()
 //             to rebuild all DLLs which have this code statically linked in!
 //
 
+static CDB_UserHandler_Wrapper& GetDefaultCDBErrorHandler(void)
+{
+    static CSafeStaticRef<CDB_UserHandler_Wrapper> s_CDB_DefUserHandler;
+    
+    return s_CDB_DefUserHandler.Get();
+}
+
 CDB_UserHandler& CDB_UserHandler::GetDefault(void)
 {
-    static CSafeStaticPtr<CDB_UserHandler_Wrapper> instance;
-
-    return s_CDB_DefUserHandler.Get();
+    return GetDefaultCDBErrorHandler();
 }
 
 
 CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
 {
-    return s_CDB_DefUserHandler->Set(h);
+    return GetDefaultCDBErrorHandler().Set(h);
 }
 
 
@@ -526,6 +529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/05/16 21:18:38  ssikorsk
+ * Improved methods CDB_UserHandler::GetDefault and CDB_UserHandler::SetDefault.
+ *
  * Revision 1.24  2006/05/15 19:26:30  ssikorsk
  * Fixed CDB_UserHandler::~CDB_UserHandler to work correctly with CRef in case
  * of manual adjusting of reference number.
