@@ -921,7 +921,7 @@ void DTDParser::AddAttributes(
 
 CDataType* DTDParser::AttribBlock(const DTDElement& node)
 {
-    AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
+    AutoPtr<CDataMemberContainerType> container(new CDataSetType());
     const list<DTDAttribute>& att = node.GetAttributes();
     for (list<DTDAttribute>::const_iterator i= att.begin();
         i != att.end(); ++i) {
@@ -1180,6 +1180,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.29  2006/05/16 18:26:30  gouriano
+ * Use CDataSetType for attribute block
+ *
  * Revision 1.28  2006/05/10 18:54:53  gouriano
  * Added more types
  *
