@@ -542,8 +542,10 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         // remove unwanted "mRNA-" tacked onto label for mRNA features
         if (subtype == CSeqFeatData::eSubtype_mRNA && NStr::StartsWith(label, "mRNA-")) {
             label = label.substr(5);
+        } else if (subtype == CSeqFeatData::eSubtype_rRNA && NStr::StartsWith(label, "rRNA-")) {
+            label = label.substr(5);
         }
-        
+       
         if (!NStr::IsBlank(label)) {
             unsigned int pos = NStr::Find(label, ";");
             if (pos != NCBI_NS_STD::string::npos) {
@@ -1495,6 +1497,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2006/05/16 18:57:56  bollin
+* remove unwanted text from rRNA product names
+*
 * Revision 1.13  2006/05/15 12:03:34  bollin
 * changes to handle segmented sets
 *
