@@ -681,7 +681,7 @@ bool CAutoDef::IsSegment(CBioseq_Handle bh)
     
     seh = seh.GetParentEntry();
     
-    if (seh.IsSet()) {
+    if (seh && seh.IsSet()) {
         CBioseq_set_Handle bsh = seh.GetSet();
         if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_parts) {
             return true;
@@ -700,7 +700,7 @@ void CAutoDef::GetMasterLocation(CBioseq_Handle &bh, CRange<TSeqPos>& range)
     
     seh = seh.GetParentEntry();
     
-    if (seh.IsSet()) {
+    if (seh && seh.IsSet()) {
         CBioseq_set_Handle bsh = seh.GetSet();
         if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_parts) {
             seh = seh.GetParentEntry();
@@ -1130,6 +1130,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2006/05/16 15:11:13  bollin
+* fixed bug related to checks for segmented sets
+*
 * Revision 1.18  2006/05/15 12:03:34  bollin
 * changes to handle segmented sets
 *
