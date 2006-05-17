@@ -407,6 +407,18 @@ CPsiBlastValidate::Pssm(const objects::CPssmWithParameters& pssm,
                "PSSM data must contain scores (did you run the PSSM engine?)");
     }
 
+    // Only unscaled PSSMs are supported
+    if (!missing_scores && 
+        pssm.GetPssm().GetFinalData().CanGetScalingFactor() &&
+        pssm.GetPssm().GetFinalData().GetScalingFactor() != 1) {
+        string msg("PSSM has a scaling factor of ");
+        msg += NStr::IntToString(pssm.GetPssm()
+                                 .GetFinalData()
+                                 .GetScalingFactor());
+        msg += ". PSI-BLAST does not accept scaled PSSMs";
+        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+    }
+
     if ( !pssm.GetPssm().CanGetQuery() ) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Missing query sequence in PSSM");
