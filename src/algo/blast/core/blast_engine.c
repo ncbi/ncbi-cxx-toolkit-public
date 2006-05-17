@@ -250,6 +250,7 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
       const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
                                 program_number == eBlastTypePhiBlastn);
       const int kHspNumMax = BlastHspNumMax(score_options->gapped_calculation, hit_params->options);
+      const int kScanSubjectOffsetArraySize = GetOffsetArraySize(lookup);
      
       if (diagnostics) {
          ungapped_stats = diagnostics->ungapped_stat;
@@ -285,7 +286,7 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
          
          aux_struct->WordFinder(subject, query, lookup, matrix, word_params, 
                                 aux_struct->ewp, aux_struct->offset_pairs, 
-                                GetOffsetArraySize(lookup), 
+                                kScanSubjectOffsetArraySize,
                                 init_hitlist, ungapped_stats);
             
          if (init_hitlist->total == 0)
