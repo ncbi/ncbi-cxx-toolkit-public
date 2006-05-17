@@ -394,7 +394,7 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
                                    character positions that overlap*/
     Int4 wildcardProduct;       /* Maximal product of wildcard lengths. */
     /* Which positions can a character occur in for short patterns*/
-    Int4 whichPositionsByCharacter[PHI_ASCII_SIZE]; 
+    Int4* whichPositionsByCharacter=NULL;
     SPHIPatternSearchBlk* pattern_blk;
     SShortPatternItems* one_word_items;
     SLongPatternItems* multiword_items;
@@ -618,6 +618,9 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
     } 
     /*make a bit mask out of local pattern of length posIndex*/
     one_word_items->match_mask = s_PackPattern(localPattern, posIndex);
+
+    whichPositionsByCharacter = malloc(PHI_ASCII_SIZE*sizeof(Int4));
+
     /*store for each character a bit mask of which positions
       that character can occur in*/
     for (charIndex = 0; charIndex < BLASTAA_SIZE; charIndex++) {
@@ -654,6 +657,7 @@ SPHIPatternSearchBlk* SPHIPatternSearchBlkFree(SPHIPatternSearchBlk* lut)
     }
     if (lut->one_word_items) {
         sfree(lut->one_word_items->dna_items);
+        sfree(lut->one_word_items->whichPositionPtr);
         sfree(lut->one_word_items);
     }
 
