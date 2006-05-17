@@ -37,6 +37,7 @@
 #include <corelib/mswin_export.h>
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialbase.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -60,6 +61,8 @@ public:
     CCleanup();
     ~CCleanup();
 
+    void SetScope(CRef<CScope> scope);
+    
     /// Cleanup a Seq-entry. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
     /// Cleanup a Seq-submit. 
@@ -79,6 +82,7 @@ private:
     CCleanup(const CCleanup&);
     CCleanup& operator= (const CCleanup&);
 
+    CRef<CScope>            m_Scope;
 };
 
 
@@ -223,6 +227,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/05/17 17:39:05  bollin
+* added CScope member
+*
 * Revision 1.8  2006/03/23 18:30:18  rsmith
 * cosmetic changes.
 *
