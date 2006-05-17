@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2006/05/17 20:40:01  ucko
+* Fix compilation errors with older versions of GCC.
+*
 * Revision 1.44  2006/05/16 14:30:13  gouriano
 * Corrected generation of ASN spec - to make sure it is valid
 *
@@ -606,15 +609,15 @@ string CDataTypeModule::ToAsnName(const string& name)
         unsigned char u = (unsigned char)(*i);
         if (first) {
             if (isalpha(u)) {
-                asn.append( 1, toupper(u));
+                asn += toupper(u);
                 first = false;
             }
         } else if (isalpha(u) || isdigit(u)) {
             hyphen = false;
-            asn.append( 1,u);
+            asn += u;
         } else if (!hyphen) {
             hyphen = true;
-            asn.append( 1,'-');
+            asn += '-';
         }
     }
     if (hyphen) {
