@@ -87,7 +87,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         CAlnMix mix(scope);
         mix.Add(align);
         mix.Merge(CAlnMix::fTryOtherMethodOnFail |
-                CAlnMix::fGapJoin);
+                  CAlnMix::fGapJoin);
 
         /// make sure we only have two rows
         /// anything else represents a mixed-strand case or more than
@@ -159,13 +159,18 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
     alnmgr.SetAnchor(target_row);
     TSignedSeqRange range(alnmgr.GetAlnStart(), alnmgr.GetAlnStop());
 
+    CSeq_loc_Mapper::TMapOptions opts = 0;
+    if (flags & fDensegAsIntron) {
+        opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
+    }
+
     /// now, for each row, create a feature
     for (int row = 0;  row < alnmgr.GetNumRows();  ++row) {
         if (row == target_row) {
             continue;
         }
         CBioseq_Handle handle = scope.GetBioseqHandle(alnmgr.GetSeqId(row));
-        CSeq_loc_Mapper mapper(align, *target_id, &scope);
+        CSeq_loc_Mapper mapper(align, *target_id, &scope, opts);
 
         /// use the strand as reported by the alignment manager
         /// if a sequence has mixed-strand alignments, each will
@@ -379,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/17 20:10:51  dicuccio
+ * Added option to consider each dense-seg in a source alignment as a single exon and map accordingly.
+ *
  * Revision 1.6  2006/05/16 15:30:18  dicuccio
  * Make sure to stop translating at the first stop codon
  *
