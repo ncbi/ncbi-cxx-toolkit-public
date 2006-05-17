@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/prefetch_manager.hpp>
 #include <objmgr/impl/prefetch_manager_impl.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -62,21 +63,34 @@ CPrefetchToken::~CPrefetchToken(void)
 
 
 CPrefetchToken::CPrefetchToken(const CPrefetchToken& token)
-    : m_Impl(token.m_Impl)
+    : m_Handle(token.m_Handle), m_Manager(token.m_Manager)
 {
 }
 
 
 CPrefetchToken& CPrefetchToken::operator=(const CPrefetchToken& token)
 {
-    m_Impl = token.m_Impl;
+    m_Handle = token.m_Handle;
+    m_Manager = token.m_Manager;
     return *this;
 }
 
 
-CPrefetchToken::CPrefetchToken(CPrefetchToken_Impl* impl)
-    : m_Impl(impl)
+CPrefetchToken::CPrefetchToken(CPrefetchRequest* impl)
+    : m_Handle(impl->m_QueueItem), m_Manager(impl->GetManager())
 {
+}
+
+
+CPrefetchToken::CPrefetchToken(CPrefetchManager_Impl::TItemHandle handle)
+    : m_Handle(handle), m_Manager(handle->GetRequest().GetManager())
+{
+}
+
+
+CPrefetchRequest& CPrefetchToken::x_GetImpl(void) const
+{
+    return m_Handle.GetNCObject().SetRequest();
 }
 
 
@@ -89,6 +103,12 @@ IPrefetchAction* CPrefetchToken::GetAction(void) const
 IPrefetchListener* CPrefetchToken::GetListener(void) const
 {
     return x_GetImpl().GetListener();
+}
+
+
+void CPrefetchToken::SetListener(IPrefetchListener* listener)
+{
+    x_GetImpl().SetListener(m_Manager.GetNCObject(), listener);
 }
 
 
@@ -112,19 +132,13 @@ CPrefetchToken::TProgress CPrefetchToken::GetProgress(void) const
 
 CPrefetchToken::TProgress CPrefetchToken::SetProgress(TProgress progress)
 {
-    return x_GetImpl().SetProgress(progress);
-}
-
-
-void CPrefetchToken::Wait(void) const
-{
-    x_GetImpl().Wait();
+    return x_GetImpl().SetProgress(m_Manager.GetNCObject(), progress);
 }
 
 
 void CPrefetchToken::Cancel(void) const
 {
-    x_GetImpl().Cancel();
+    x_GetImpl().Cancel(m_Manager.GetNCObject());
 }
 
 
@@ -141,14 +155,13 @@ CPrefetchManager::~CPrefetchManager(void)
 
 CPrefetchToken CPrefetchManager::AddAction(TPriority priority,
                                            IPrefetchAction* action,
-                                           IPrefetchListener* listener,
-                                           TFlags flags)
+                                           IPrefetchListener* listener)
 {
     if ( !action ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CPrefetchManager::AddAction: action is null");
     }
-    return m_Impl->AddAction(priority, action, listener, flags);
+    return m_Impl->AddAction(priority, action, listener);
 }
 
 

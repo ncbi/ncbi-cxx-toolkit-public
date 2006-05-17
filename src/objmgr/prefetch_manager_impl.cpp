@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/prefetch_manager_impl.hpp>
+#include <objmgr/prefetch_manager.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -46,13 +47,13 @@ class CPrefetchManager_Impl;
 
 
 class CPrefetchThread :
-    public CThreadInPool<CPrefetchToken>,
+    public CThreadInPool<CPrefetchRequest>,
     public SPrefetchTypes
 {
-    typedef CThreadInPool<CPrefetchToken> TParent;
+    typedef CThreadInPool<CPrefetchRequest> TParent;
 public:
     CPrefetchThread(TPool* pool, ERunMode mode = eNormal) 
-        : CThreadInPool<CPrefetchToken>(pool, mode), m_CanceledAll(false)
+        : CThreadInPool<CPrefetchRequest>(pool, mode), m_CanceledAll(false)
         {
         }
 
@@ -76,7 +77,8 @@ public:
             SetCurrentToken(CPrefetchToken());
         }
 
-    virtual void ProcessRequest(const CPrefetchToken& token);
+    virtual void ProcessRequest(TItemHandle handle);
+    virtual void ProcessRequest(const CPrefetchRequest& req);
 
     void CancelAll(void);
 
@@ -88,40 +90,33 @@ private:
 
 
 
-CPrefetchToken_Impl::CPrefetchToken_Impl(CPrefetchManager_Impl* manager,
-                                         TPriority priority,
-                                         IPrefetchAction* action,
-                                         IPrefetchListener* listener,
-                                         TFlags flags)
+CPrefetchRequest::CPrefetchRequest(CPrefetchManager_Impl* manager,
+                                   IPrefetchAction* action,
+                                   IPrefetchListener* listener)
     : m_Manager(manager),
-      m_Priority(priority),
-      m_Action(0),
-      m_Listener(0),
-      m_DoneSem(0, 1),
+      m_QueueItem(0),
+      m_Action(action),
+      m_Listener(listener),
       m_State(eQueued),
       m_Progress(0)
 {
-    if ( action ) {
-        m_Action.reset(action);
-        if ( !(flags&fOwnAction) ) {
-            m_Action.release();
-        }
-    }
-    if ( listener ) {
-        m_Listener.reset(listener);
-        if ( !(flags&fOwnListener) ) {
-            m_Listener.release();
-        }
-    }
 }
 
 
-CPrefetchToken_Impl::~CPrefetchToken_Impl(void)
+CPrefetchRequest::~CPrefetchRequest(void)
 {
 }
 
 
-bool CPrefetchToken_Impl::x_SetState(EState state)
+void CPrefetchRequest::SetListener(CPrefetchManager_Impl& manager,
+                                      IPrefetchListener* listener)
+{
+    CMutexGuard guard(manager.GetMutex());
+    m_Listener = listener;
+}
+
+
+bool CPrefetchRequest::x_SetState(EState state)
 {
     if ( state != m_State ) {
         if ( IsDone() ) {
@@ -131,22 +126,14 @@ bool CPrefetchToken_Impl::x_SetState(EState state)
         if ( m_Listener ) {
             m_Listener->PrefetchNotify(this, state);
         }
-        if ( IsDone() ) {
-            m_Manager = 0;
-            m_DoneSem.Post();
-        }
     }
     return true;
 }
 
 
-CMutex& CPrefetchToken_Impl::GetMutex(void) const
-{
-    return GetManager()->GetMutex();
-}
-
-
-CPrefetchToken::EState CPrefetchToken_Impl::SetState(EState state)
+CPrefetchToken::EState
+CPrefetchRequest::SetState(CPrefetchManager_Impl& manager,
+                              EState state)
 {
     if ( IsDone() ) {
         if ( m_State == state ) {
@@ -155,7 +142,7 @@ CPrefetchToken::EState CPrefetchToken_Impl::SetState(EState state)
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CPrefetchToken::SetState: already done");
     }
-    CMutexGuard guard(GetMutex());
+    CMutexGuard guard(manager.GetMutex());
     EState old_state = m_State;
     if ( !x_SetState(state) ) {
         NCBI_THROW(CObjMgrException, eOtherError,
@@ -165,19 +152,22 @@ CPrefetchToken::EState CPrefetchToken_Impl::SetState(EState state)
 }
 
 
-bool CPrefetchToken_Impl::TrySetState(EState state)
+bool CPrefetchRequest::TrySetState(CPrefetchManager_Impl& manager,
+                                      EState state)
 {
     if ( IsDone() ) {
         return m_State == state;
     }
-    CMutexGuard guard(GetMutex());
+    CMutexGuard guard(manager.GetMutex());
     return x_SetState(state);
 }
 
 
-CPrefetchToken::TProgress CPrefetchToken_Impl::SetProgress(TProgress progress)
+CPrefetchToken::TProgress
+CPrefetchRequest::SetProgress(CPrefetchManager_Impl& manager,
+                                 TProgress progress)
 {
-    CMutexGuard guard(GetMutex());
+    CMutexGuard guard(manager.GetMutex());
     if ( m_State != eStarted ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CPrefetchToken::SetProgress: not processing");
@@ -193,62 +183,39 @@ CPrefetchToken::TProgress CPrefetchToken_Impl::SetProgress(TProgress progress)
 }
 
 
-void CPrefetchToken_Impl::Cancel(void)
+void CPrefetchRequest::Cancel(CPrefetchManager_Impl& manager)
 {
-    TrySetState(eCanceled);
-}
-
-
-void CPrefetchToken_Impl::Wait(void)
-{
-    if ( !IsDone() ) {
-        m_DoneSem.Wait();
-        m_DoneSem.Post();
-        _ASSERT(IsDone());
-    }
-}
-
-
-bool CPrefetchToken_Impl::TryWait(unsigned int timeout_sec,
-                                  unsigned int timeout_nsec)
-{
-    if ( !IsDone() ) {
-        if ( !m_DoneSem.TryWait(timeout_sec, timeout_nsec) ) {
-            return false;
-        }
-        m_DoneSem.Post();
-        _ASSERT(IsDone());
-    }
-    return true;
+    TrySetState(manager, eCanceled);
 }
 
 
 CPrefetchManager_Impl::CPrefetchManager_Impl(void)
-    : CPoolOfThreads<CPrefetchToken>(3, kMax_Int), m_CanceledAll(false)
+    : CPoolOfThreads<CPrefetchRequest>(3, kMax_Int),
+      m_CanceledAll(false)
 {
 }
 
 
 CPrefetchManager_Impl::~CPrefetchManager_Impl(void)
 {
+    CRef<CPrefetchManager_Impl> ref(this); // to avoid double destruction
     try {
         KillAllThreads();
     }
     catch(...) {
         // Just to be sure that we will not throw from the destructor.
     }
+    ref.Release();
 }
 
 
 CPrefetchToken CPrefetchManager_Impl::AddAction(TPriority priority,
                                                 IPrefetchAction* action,
-                                                IPrefetchListener* listener,
-                                                TFlags flags)
+                                                IPrefetchListener* listener)
 {
-    CRef<CPrefetchToken_Impl> impl
-        (new CPrefetchToken_Impl(this, priority, action, listener, flags));
-    CPrefetchToken token(impl);
-    AcceptRequest(token, priority);
+    CPrefetchToken token =
+        AcceptRequest(CPrefetchRequest(this, action, listener), priority);
+    token.x_GetImpl().m_QueueItem = token.m_Handle.GetNCPointer();
     return token;
 }
 
@@ -264,7 +231,7 @@ void CPrefetchManager_Impl::CancelQueue(void)
     for ( ;; ) {
         CPrefetchToken token;
         try {
-            token = m_Queue.Get(0);
+            token = m_Queue.GetHandle(0);
         }
         catch ( CBlockingQueueException& ) {
             break;
@@ -294,16 +261,12 @@ void CPrefetchManager_Impl::KillAllThreads(void)
     vector<CPrefetchToken> kill_tokens;
     while ( n ) {
         try {
-            kill_tokens.push_back(AddAction(0, 0, 0, 0));
+            kill_tokens.push_back(AddAction(0, 0, 0));
             --n;
         }
         catch (CBlockingQueueException&) { // guard against races
         }
     }
-    ITERATE ( vector<CPrefetchToken>, it, kill_tokens ) {
-        it->x_GetImpl().Wait();
-    }
-    
     ITERATE(TThreads, it, m_Threads) {
         it->GetNCObject().Join();
     }
@@ -346,7 +309,7 @@ private:
 };
 
 
-CPrefetchToken CPrefetchToken_Impl::GetCurrentToken(void)
+CPrefetchToken CPrefetchRequest::GetCurrentToken(void)
 {
     CPrefetchThread* thread = CPrefetchThread::GetCurrentThread();
     return thread? thread->GetCurrentToken(): CPrefetchToken();
@@ -362,10 +325,12 @@ void CPrefetchThread::CancelAll(void)
 }
 
 
-void CPrefetchThread::ProcessRequest(const CPrefetchToken& token)
+void CPrefetchThread::ProcessRequest(TItemHandle handle)
 {
+    CPrefetchToken token(handle);
+    CPrefetchRequest& impl(token.x_GetImpl());
+    CRef<CPrefetchManager_Impl> manager(impl.GetManager());
     try {
-        CPrefetchToken_Impl& impl = token.x_GetImpl();
         IPrefetchAction* action = impl.GetAction();
         if ( !action ) {
             token.Cancel();
@@ -374,18 +339,23 @@ void CPrefetchThread::ProcessRequest(const CPrefetchToken& token)
         if ( m_CanceledAll ) {
             token.Cancel();
         }
-        if ( impl.TrySetState(eStarted) ) {
+        if ( impl.TrySetState(*manager, eStarted) ) {
             CSaveCurrentToken save(token);
             bool ok = action && action->Execute(token);
-            impl.TrySetState(ok? eCompleted: eFailed);
+            impl.TrySetState(*manager, ok? eCompleted: eFailed);
         }
     }
     catch ( CPrefetchCanceled& /* ignored */ ) {
         token.Cancel();
     }
     catch ( CException& exc ) {
-        token.x_GetImpl().TrySetState(eFailed);
+        impl.TrySetState(*manager, eFailed);
     }
+}
+
+
+void CPrefetchThread::ProcessRequest(const CPrefetchRequest& )
+{
 }
 
 

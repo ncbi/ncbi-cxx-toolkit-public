@@ -51,7 +51,7 @@ class CScope;
 
 
 class NCBI_XOBJMGR_EXPORT CPrefetchAction_GetBioseqHandle
-    : public IPrefetchAction
+    : public CObject, public IPrefetchAction
 {
 public:
     typedef CBioseq_Handle TResult;
@@ -73,7 +73,7 @@ private:
 
 
 class NCBI_XOBJMGR_EXPORT CPrefetchAction_Feat_CI
-    : public IPrefetchAction
+    : public CObject, public IPrefetchAction
 {
 public:
     typedef CFeat_CI TResult;
@@ -116,7 +116,8 @@ private:
 
 
 template<class Handle>
-class CPrefetchAction_GetComplete : public IPrefetchAction
+class CPrefetchAction_GetComplete
+    : public CObject, public IPrefetchAction
 {
 public:
     typedef Handle THandle;
@@ -145,9 +146,38 @@ private:
 };
 
 
+class CWaitingListener
+    : public CObject, public IPrefetchListener
+{
+public:
+    CWaitingListener(void)
+        : m_Sema(0, kMax_Int)
+        {
+        }
+
+    virtual void PrefetchNotify(CPrefetchToken token, EEvent /*event*/)
+        {
+            if ( token.IsDone() ) {
+                m_Sema.Post();
+            }
+        }
+
+    void Wait(void)
+        {
+            m_Sema.Wait();
+            m_Sema.Post();
+        }
+    
+private:
+    CSemaphore m_Sema;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CStdPrefetch : public CPrefetchManager
 {
 public:
+    static void Wait(CPrefetchToken token);
+
     // GetBioseqHandle
     static CPrefetchToken GetBioseqHandle(CPrefetchManager& manager,
                                           CScope& scope,

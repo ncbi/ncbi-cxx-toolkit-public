@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objmgr/impl/prefetch_manager_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,34 +49,10 @@ class CScope;
 
 
 class CPrefetchToken;
-class CPrefetchToken_Impl;
+class CPrefetchRequest;
 class CPrefetchManager;
 class CPrefetchManager_Impl;
 class CPrefetchThread;
-
-struct SPrefetchTypes
-{
-    enum EFlags {
-        fOwnNone        = 0,
-        fOwnAction      = 1<<0,
-        fOwnListener    = 1<<1,
-        fOwnAll         = fOwnAction | fOwnListener
-    };
-    typedef int TFlags;
-
-    enum EState {
-        eQueued,    // placed in queue
-        eStarted,   // moved from queue to processing
-        eAdvanced,  // got new data while processing
-        eCompleted, // finished processing successfully
-        eCanceled,  // canceled by user request
-        eFailed     // finished processing unsuccessfully
-    };
-    typedef EState EEvent;
-    
-    typedef int TPriority;
-    typedef int TProgress;
-};
 
 class NCBI_XOBJMGR_EXPORT IPrefetchAction : public SPrefetchTypes
 {
@@ -103,15 +80,15 @@ public:
     CPrefetchToken(const CPrefetchToken& token);
     CPrefetchToken& operator=(const CPrefetchToken& token);
 
-    DECLARE_OPERATOR_BOOL_REF(m_Impl);
+    DECLARE_OPERATOR_BOOL(m_Handle);
 
     IPrefetchAction* GetAction(void) const;
     IPrefetchListener* GetListener(void) const;
+    void SetListener(IPrefetchListener* listener);
     
     TPriority GetPriority(void) const;
     TPriority SetPriority(TPriority priority);
 
-    void Wait(void) const;
     void Cancel(void) const;
 
     EState GetState(void) const;
@@ -123,19 +100,18 @@ public:
     TProgress SetProgress(TProgress progress);
 
 protected:
-    friend class CPrefetchToken_Impl;
+    friend class CPrefetchRequest;
     friend class CPrefetchManager_Impl;
     friend class CPrefetchThread;
 
-    CPrefetchToken(CPrefetchToken_Impl* impl);
+    CPrefetchToken(CPrefetchRequest* impl);
+    CPrefetchToken(CPrefetchManager_Impl::TItemHandle handle);
 
-    CPrefetchToken_Impl& x_GetImpl(void) const
-        {
-            return m_Impl.GetNCObject();
-        }
+    CPrefetchRequest& x_GetImpl(void) const;
 
 private:
-    CRef<CPrefetchToken_Impl>   m_Impl;
+    CPrefetchManager_Impl::TItemHandle  m_Handle;
+    CRef<CPrefetchManager_Impl>         m_Manager;
 };
 
 
@@ -152,16 +128,15 @@ public:
 
     CPrefetchToken AddAction(TPriority priority,
                              IPrefetchAction* action,
-                             IPrefetchListener* listener = 0,
-                             TFlags flags = fOwnNone);
+                             IPrefetchListener* listener = 0);
     CPrefetchToken AddAction(IPrefetchAction* action,
-                             IPrefetchListener* listener = 0,
-                             TFlags flags = fOwnNone)
+                             IPrefetchListener* listener = 0)
         {
-            return AddAction(0, action, listener, flags);
+            return AddAction(0, action, listener);
         }
 
 protected:
+    friend class CPrefetchToken;
     friend class CPrefetchThread;
 
 private:

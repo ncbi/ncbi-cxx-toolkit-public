@@ -133,8 +133,8 @@ CPrefetchToken CStdPrefetch::GetBioseqHandle(CPrefetchManager& manager,
                                              CScope& scope,
                                              const CSeq_id_Handle& id)
 {
-    return manager.AddAction(new CPrefetchAction_GetBioseqHandle(scope, id),
-                             0, fOwnAction);
+    return manager.AddAction
+        (new CPrefetchAction_GetBioseqHandle(scope, id));
 }
 
 
@@ -146,7 +146,7 @@ CBioseq_Handle CStdPrefetch::GetBioseqHandle(CPrefetchToken token)
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CStdPrefetch::GetBioseqHandle: wrong token");
     }
-    token.Wait();
+    Wait(token);
     return action->GetResult();
 }
 
@@ -157,8 +157,8 @@ CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
                                         CConstRef<CSeq_loc> loc,
                                         const SAnnotSelector& sel)
 {
-    return manager.AddAction(new CPrefetchAction_Feat_CI(scope, loc, sel),
-                             0, fOwnAction);
+    return manager.AddAction
+        (new CPrefetchAction_Feat_CI(scope, loc, sel));
 }
 
 
@@ -168,11 +168,8 @@ CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
                                         ENa_strand strand,
                                         const SAnnotSelector& sel)
 {
-    return manager.AddAction(new CPrefetchAction_Feat_CI(bioseq,
-                                                         range,
-                                                         strand,
-                                                         sel),
-                             0, fOwnAction);
+    return manager.AddAction
+        (new CPrefetchAction_Feat_CI(bioseq, range, strand, sel));
 }
 
 
@@ -183,12 +180,8 @@ CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
                                         ENa_strand strand,
                                         const SAnnotSelector& sel)
 {
-    return manager.AddAction(new CPrefetchAction_Feat_CI(scope,
-                                                         seq_id,
-                                                         range,
-                                                         strand,
-                                                         sel),
-                             0, fOwnAction);
+    return manager.AddAction
+        (new CPrefetchAction_Feat_CI(scope, seq_id, range, strand, sel));
 }
 
 
@@ -200,8 +193,25 @@ CFeat_CI CStdPrefetch::GetFeat_CI(CPrefetchToken token)
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CStdPrefetch::GetFeat_CI: wrong token");
     }
-    token.Wait();
+    Wait(token);
     return action->GetResult();
+}
+
+
+
+void CStdPrefetch::Wait(CPrefetchToken token)
+{
+    if ( !token.IsDone() ) {
+        CWaitingListener* listener =
+            dynamic_cast<CWaitingListener*>(token.GetListener());
+        if ( !listener ) {
+            listener = new CWaitingListener();
+            token.SetListener(listener);
+        }
+        if ( !token.IsDone() ) {
+            listener->Wait();
+        }
+    }
 }
 
 
