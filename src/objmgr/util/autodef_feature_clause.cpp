@@ -724,13 +724,12 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
     
     if (IsSatelliteClause() 
         || subtype == CSeqFeatData::eSubtype_promoter 
-        || subtype == CSeqFeatData::eSubtype_operon
         || subtype == CSeqFeatData::eSubtype_exon
         || subtype == CSeqFeatData::eSubtype_intron
         || subtype == CSeqFeatData::eSubtype_5UTR
         || subtype == CSeqFeatData::eSubtype_3UTR) {
         return false;
-    }
+    } 
     
     bool has_3UTR = false;
     unsigned int num_non3UTRclauses = 0;
@@ -1514,6 +1513,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2006/05/17 18:33:55  bollin
+* operon gets interval of partial/complete sequence in automatically generated
+* definition line
+*
 * Revision 1.16  2006/05/17 12:00:33  bollin
 * changed method for determining whether feature clause is pseudo
 *
