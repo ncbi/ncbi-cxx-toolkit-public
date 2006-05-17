@@ -135,6 +135,14 @@ public:
         eSeqMap_Down   ///< map from a segmented bioseq to segments
     };
 
+    /// options for interpretations of locations
+    enum EMapOptions {
+        //< ignore internal dense-seg structure - map each
+        //< dense-seg according to the total ranges involved
+        fAlign_Dense_seg_TotalRange = 0x01
+    };
+    typedef int TMapOptions;
+
     /// Mapping through a feature, both location and product must be set.
     /// If scope is set, synonyms are resolved for each source ID.
     CSeq_loc_Mapper(const CSeq_feat&  map_feat,
@@ -154,10 +162,12 @@ public:
     /// are considered source.
     CSeq_loc_Mapper(const CSeq_align& map_align,
                     const CSeq_id&    to_id,
-                    CScope*           scope = 0);
+                    CScope*           scope = 0,
+                    TMapOptions       opts = 0);
     CSeq_loc_Mapper(const CSeq_align& map_align,
                     size_t            to_row,
-                    CScope*           scope = 0);
+                    CScope*           scope = 0,
+                    TMapOptions       opts = 0);
 
     /// Mapping between segments and the top level sequence.
     /// @param top_level_seq
@@ -334,9 +344,11 @@ private:
                       const CSeq_loc& target,
                       int             frame = 0);
     void x_Initialize(const CSeq_align& map_align,
-                      const CSeq_id&    to_id);
+                      const CSeq_id&    to_id,
+                      TMapOptions       opts);
     void x_Initialize(const CSeq_align& map_align,
-                      size_t            to_row);
+                      size_t            to_row,
+                      TMapOptions       opts);
     void x_Initialize(const CSeqMap&   seq_map,
                       const CSeq_id*   top_id,
                       ESeqMapDirection direction);
@@ -356,7 +368,8 @@ private:
                       ESeqMapDirection direction);
 
     void x_InitAlign(const CDense_diag& diag, size_t to_row);
-    void x_InitAlign(const CDense_seg& denseg, size_t to_row);
+    void x_InitAlign(const CDense_seg& denseg, size_t to_row,
+                     TMapOptions opts);
     void x_InitAlign(const CStd_seg& sseg, size_t to_row);
     void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
 
@@ -579,6 +592,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/05/17 20:06:57  dicuccio
+* Added optional flags to CSeq_loc_Mapper for interpretation of alignments:
+* optionally consider each block of a dense-seg alignment by its total ranges
+* instead of by the internal indel structure
+*
 * Revision 1.32  2006/05/04 21:07:24  grichenk
 * Fixed mapping of std-segs.
 *

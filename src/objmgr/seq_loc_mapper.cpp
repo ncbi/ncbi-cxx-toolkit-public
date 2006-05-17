@@ -260,7 +260,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
                                  const CSeq_id&    to_id,
-                                 CScope*           scope)
+                                 CScope*           scope,
+                                 TMapOptions       opts)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
@@ -270,13 +271,14 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
 {
-    x_Initialize(map_align, to_id);
+    x_Initialize(map_align, to_id, opts);
 }
 
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
                                  size_t            to_row,
-                                 CScope*           scope)
+                                 CScope*           scope,
+                                 TMapOptions       opts)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
@@ -286,7 +288,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_Dst_width(0),
       m_ReverseRangeOrder(false)
 {
-    x_Initialize(map_align, to_row);
+    x_Initialize(map_align, to_row, opts);
 }
 
 
@@ -941,7 +943,8 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
 
 
 void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
-                                   const CSeq_id&    to_id)
+                                   const CSeq_id&    to_id,
+                                   TMapOptions       opts)
 {
     switch ( map_align.GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
@@ -979,7 +982,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
                 NCBI_THROW(CLocMapperException, eBadAlignment,
                            "Target ID not found in the alignment");
             }
-            x_InitAlign(dseg, to_row);
+            x_InitAlign(dseg, to_row, opts);
             break;
         }
     case CSeq_align::C_Segs::e_Std:
@@ -1022,7 +1025,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
         {
             const CSeq_align_set& aln_set = map_align.GetSegs().GetDisc();
             ITERATE(CSeq_align_set::Tdata, aln, aln_set.Get()) {
-                x_Initialize(**aln, to_id);
+                x_Initialize(**aln, to_id, opts);
             }
             break;
         }
@@ -1034,7 +1037,8 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
 
 
 void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
-                                   size_t            to_row)
+                                   size_t            to_row,
+                                   TMapOptions       opts)
 {
     switch ( map_align.GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
@@ -1048,7 +1052,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
     case CSeq_align::C_Segs::e_Denseg:
         {
             const CDense_seg& dseg = map_align.GetSegs().GetDenseg();
-            x_InitAlign(dseg, to_row);
+            x_InitAlign(dseg, to_row, opts);
             break;
         }
     case CSeq_align::C_Segs::e_Std:
@@ -1070,7 +1074,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
             // The same row in each sub-alignment?
             const CSeq_align_set& aln_set = map_align.GetSegs().GetDisc();
             ITERATE(CSeq_align_set::Tdata, aln, aln_set.Get()) {
-                x_Initialize(**aln, to_row);
+                x_Initialize(**aln, to_row, opts);
             }
             break;
         }
@@ -1140,7 +1144,8 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, size_t to_row)
 }
 
 
-void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, size_t to_row)
+void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, size_t to_row,
+                                  TMapOptions opts)
 {
     size_t dim = denseg.GetDim();
     _ASSERT(to_row < dim);
@@ -1192,30 +1197,55 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, size_t to_row)
         int dst_width_rel = (m_UseWidth) ? m_Dst_width : 1;
         int src_width_rel = (m_UseWidth) ? src_width : 1;
 
-        for (size_t seg = 0; seg < numseg; ++seg) {
-            int i_src_start = denseg.GetStarts()[seg*dim + row];
-            int i_dst_start = denseg.GetStarts()[seg*dim + to_row];
-            if (i_src_start < 0  ||  i_dst_start < 0) {
-                continue;
-            }
+        if (opts & fAlign_Dense_seg_TotalRange) {
+            TSeqRange r_src = denseg.GetSeqRange(row);
+            TSeqRange r_dst = denseg.GetSeqRange(to_row);
 
+            _ASSERT(r_src.GetLength() != 0  &&  r_dst.GetLength() != 0);
             ENa_strand dst_strand = have_strands ?
-                denseg.GetStrands()[seg*dim + to_row] : eNa_strand_unknown;
+                denseg.GetStrands()[to_row] : eNa_strand_unknown;
             ENa_strand src_strand = have_strands ?
-                denseg.GetStrands()[seg*dim + row] : eNa_strand_unknown;
+                denseg.GetStrands()[row] : eNa_strand_unknown;
 
-            // In alignments with multiple sequence types segment length
-            // should be multiplied by character width.
-            TSeqPos src_len =
-                denseg.GetLens()[seg]*src_width_rel*dst_width_rel;
-            TSeqPos dst_len = src_len;
-            TSeqPos src_start = (TSeqPos)(i_src_start)*dst_width_rel;
-            TSeqPos dst_start = (TSeqPos)(i_dst_start)*src_width_rel;
+            TSeqPos src_len = r_src.GetLength();
+            TSeqPos dst_len = r_dst.GetLength();
+            TSeqPos src_start = r_src.GetFrom();
+            TSeqPos dst_start = r_dst.GetFrom();
+
+            if (src_len != dst_len) {
+                _TRACE("");
+            }
             x_NextMappingRange(
                 src_id, src_start, src_len, src_strand,
                 dst_id, dst_start, dst_len, dst_strand,
                 0, 0, src_width_rel);
-            _ASSERT(!src_len  &&  !dst_len);
+
+        } else {
+            for (size_t seg = 0; seg < numseg; ++seg) {
+                int i_src_start = denseg.GetStarts()[seg*dim + row];
+                int i_dst_start = denseg.GetStarts()[seg*dim + to_row];
+                if (i_src_start < 0  ||  i_dst_start < 0) {
+                    continue;
+                }
+
+                ENa_strand dst_strand = have_strands ?
+                    denseg.GetStrands()[seg*dim + to_row] : eNa_strand_unknown;
+                ENa_strand src_strand = have_strands ?
+                    denseg.GetStrands()[seg*dim + row] : eNa_strand_unknown;
+
+                // In alignments with multiple sequence types segment length
+                // should be multiplied by character width.
+                TSeqPos src_len =
+                    denseg.GetLens()[seg]*src_width_rel*dst_width_rel;
+                TSeqPos dst_len = src_len;
+                TSeqPos src_start = (TSeqPos)(i_src_start)*dst_width_rel;
+                TSeqPos dst_start = (TSeqPos)(i_dst_start)*src_width_rel;
+                x_NextMappingRange(
+                    src_id, src_start, src_len, src_strand,
+                    dst_id, dst_start, dst_len, dst_strand,
+                    0, 0, src_width_rel);
+                _ASSERT(!src_len  &&  !dst_len);
+            }
         }
     }
 }
@@ -2171,6 +2201,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2006/05/17 20:06:58  dicuccio
+* Added optional flags to CSeq_loc_Mapper for interpretation of alignments:
+* optionally consider each block of a dense-seg alignment by its total ranges
+* instead of by the internal indel structure
+*
 * Revision 1.48  2006/05/10 15:11:44  grichenk
 * Convert the resulting mix into packed int if possible.
 *
