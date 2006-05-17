@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -96,9 +97,9 @@ enum ECleanupMode
 class CCleanup_imp
 {
 public:
-    CCleanup_imp(CRef<CCleanupChange> changes, Uint4 options = 0);
+    CCleanup_imp(CRef<CCleanupChange> changes, CRef<CScope> scope, Uint4 options = 0);
     virtual ~CCleanup_imp();
-    
+        
     /// Cleanup a Seq-entry. 
     void BasicCleanup(CSeq_entry& se);
     /// Cleanup a Seq-submit.
@@ -154,7 +155,7 @@ private:
     void BasicCleanup(CSeq_feat& feat, CSeqFeatData& data);
     bool BasicCleanup(CSeq_feat& feat, CGb_qual& qual);
     bool BasicCleanup(CGene_ref& gene, const CGb_qual& gb_qual);
-    bool BasicCleanup(CRNA_ref& rna, const CGb_qual& gb_qual);
+    bool BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& gb_qual);
     bool BasicCleanup(CProt_ref& rna, const CGb_qual& gb_qual);
     bool BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual);
 
@@ -188,6 +189,8 @@ private:
     // cleanup strings in User objects and fields
     void x_CleanupUserString(string& str);
 
+    bool x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str);
+
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
     CCleanup_imp& operator= (const CCleanup_imp&);
@@ -195,6 +198,7 @@ private:
     CRef<CCleanupChange>    m_Changes;
     Uint4                   m_Options;
     ECleanupMode            m_Mode;
+    CRef<CScope>            m_Scope;
 };
 
 
@@ -206,6 +210,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/05/17 17:39:36  bollin
+ * added parsing and cleanup of anticodon qualifiers on tRNA features and
+ * transl_except qualifiers on coding region features
+ *
  * Revision 1.8  2006/04/18 14:32:36  rsmith
  * refactoring
  *

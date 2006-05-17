@@ -40,6 +40,8 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <util/static_map.hpp>
 
 #include <objects/seqfeat/RNA_ref.hpp>
@@ -48,6 +50,8 @@
 #include <objects/general/User_field.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <vector>
+
+#include <objmgr/util/seq_loc_util.hpp>
 
 #include "cleanupp.hpp"
 
@@ -97,6 +101,74 @@ bool CCleanup_imp::BasicCleanup(CGene_ref& gene, const CGb_qual& gb_qual)
 }
 
 
+bool CCleanup_imp::x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str)
+{
+    unsigned int aa_pos = NStr::Find(str, "aa:");
+    unsigned int len = 0;
+    unsigned int loc_pos, end_pos;
+    char protein_letter = 'X';
+    CRef<CSeq_loc> break_loc;
+    
+    if (aa_pos == string::npos) {
+        aa_pos = NStr::Find (str, ",");
+        if (aa_pos != string::npos) {
+            aa_pos = NStr::Find (str, ":", aa_pos);
+        }
+        if (aa_pos != string::npos) {
+            aa_pos ++;
+        }
+    } else {
+        aa_pos += 3;
+    }
+
+    if (aa_pos != string::npos) {    
+        while (aa_pos < str.length() && isspace (str.c_str()[aa_pos])) {
+            aa_pos++;
+        }
+        while (aa_pos + len < str.length() && isalpha (str.c_str()[aa_pos + len])) {
+            len++;
+        }
+        if (len != 0) {    
+            protein_letter = ValidAminoAcid(str.substr(aa_pos, len));
+        }
+    }
+    
+    loc_pos = NStr::Find (str, "(pos:");
+    if (loc_pos == string::npos) {
+        return false;
+    }
+    loc_pos += 5;
+    while (loc_pos < str.length() && isspace (str.c_str()[loc_pos])) {
+        loc_pos++;
+    }
+    end_pos = NStr::Find (str, ",", loc_pos);
+    if (end_pos == string::npos) {
+        break_loc = ReadLocFromText (str.substr(loc_pos), feat.GetLocation().GetId(), m_Scope);
+    } else {
+        break_loc = ReadLocFromText (str.substr(loc_pos, end_pos - loc_pos), feat.GetLocation().GetId(), m_Scope);
+    }
+    
+    if (break_loc == NULL 
+        || sequence::Compare (*break_loc, feat.GetLocation(), m_Scope) != sequence::eContained
+        || (break_loc->IsInt() && sequence::GetLength(*break_loc, m_Scope) != 3)) {
+        return false;
+    }
+    
+    // need to build code break object and add it to coding region
+    CRef<CCode_break> m_NewCodeBreak(new CCode_break());
+    CCode_break::TAa& aa = m_NewCodeBreak->SetAa();
+    aa.SetNcbieaa(protein_letter);
+    m_NewCodeBreak->SetLoc (*break_loc);
+
+    CCdregion::TCode_break& orig_list = cds.SetCode_break();
+    orig_list.push_back(m_NewCodeBreak);
+    
+    
+    return true;
+    
+}
+
+
 bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual)
 {
     const string& qual = gb_qual.GetQual();
@@ -104,7 +176,8 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual&
     
     // transl_except qual -> Cdregion.code_break
     if (NStr::EqualNocase(qual, "transl_except")) {
-        return false ; // s_ParseCodeBreak(feat, val);
+        
+        return x_ParseCodeBreak(feat, cds, val);
     }
 
     // codon_start qual -> Cdregion.frame
@@ -155,7 +228,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual&
 }
 
 
-bool CCleanup_imp::BasicCleanup(CRNA_ref& rna, const CGb_qual& gb_qual)
+bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& gb_qual)
 {
     const string& qual = gb_qual.GetQual();
 
@@ -178,6 +251,27 @@ bool CCleanup_imp::BasicCleanup(CRNA_ref& rna, const CGb_qual& gb_qual)
 
         if (type == CRNA_ref::eType_tRNA  &&  rna.IsSetExt()  &&  rna.GetExt().IsName()) {
             //!!! const string& name = rna.GetExt().GetName();
+        }
+    }
+    if (NStr::EqualNocase(qual, "anticodon")) {
+        if (!rna.IsSetType()) {
+            rna.SetType(CRNA_ref::eType_tRNA);
+        }
+        _ASSERT(rna.IsSetType());
+        CRNA_ref::TType type = rna.GetType();
+        if (type == CRNA_ref::eType_unknown) {
+            rna.SetType(CRNA_ref::eType_tRNA);
+        } else if (type != CRNA_ref::eType_tRNA) {
+            return false;
+        }
+        if ( rna.CanGetExt()  &&
+             rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
+            
+            CRef<CSeq_loc> anticodon = ReadLocFromText (gb_qual.GetVal(), feat.GetLocation().GetId(), m_Scope);
+            if (anticodon != NULL) {
+                rna.SetExt().SetTRNA().SetAnticodon(*anticodon);
+                return true;
+            }
         }
     }
     return false;
@@ -371,7 +465,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
         return true;  // mark qual for deletion
     } else if (data.IsCdregion()  &&  BasicCleanup(feat, data.SetCdregion(), gb_qual) ) {
         return true;  // mark qual for deletion
-    } else if (data.IsRna()  &&  BasicCleanup(data.SetRna(), gb_qual)) {
+    } else if (data.IsRna()  &&  BasicCleanup(feat, data.SetRna(), gb_qual)) {
         return true;  // mark qual for deletion
     } else if (data.IsProt()  &&  BasicCleanup(data.SetProt(), gb_qual)) {
         return true;  // mark qual for deletion
@@ -503,6 +597,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/05/17 17:39:36  bollin
+ * added parsing and cleanup of anticodon qualifiers on tRNA features and
+ * transl_except qualifiers on coding region features
+ *
  * Revision 1.4  2006/04/27 18:24:34  rsmith
  * get rid of unused variable in BasicCleanup(rna, gb_qual)
  *

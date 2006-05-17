@@ -56,7 +56,7 @@ enum EChangeType {
 // *********************** CCleanup implementation **********************
 
 
-CCleanup::CCleanup() 
+CCleanup::CCleanup() : m_Scope(NULL)
 {
 }
 
@@ -66,10 +66,16 @@ CCleanup::~CCleanup(void)
 }
 
 
+void CCleanup::SetScope(CRef<CScope> scope)
+{
+    m_Scope = scope;
+}
+
+
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&se));
-    CCleanup_imp clean_i(errors, options);
+    CCleanup_imp clean_i(errors, m_Scope, options);
     clean_i.BasicCleanup(se);
     return errors;
 }
@@ -78,7 +84,7 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_submit& ss, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&ss));
-    CCleanup_imp clean_i(errors, options);
+    CCleanup_imp clean_i(errors, m_Scope, options);
     clean_i.BasicCleanup(ss);
     return errors;
 }
@@ -88,7 +94,7 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_submit& ss, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&bs));
-    CCleanup_imp clean_i(errors, options);
+    CCleanup_imp clean_i(errors, m_Scope, options);
     clean_i.BasicCleanup(bs);
     return errors;
 }
@@ -97,7 +103,7 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&bss));
-    CCleanup_imp clean_i(errors, options);
+    CCleanup_imp clean_i(errors, m_Scope, options);
     clean_i.BasicCleanup(bss);
     return errors;
 }
@@ -106,7 +112,7 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot& sa, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&sa));
-    CCleanup_imp clean_i(errors, options);
+    CCleanup_imp clean_i(errors, m_Scope, options);
     clean_i.BasicCleanup(sa);
     return errors;
 }
@@ -115,7 +121,7 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot& sa, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&sf));
-    CCleanup_imp clean_i(errors, options);
+    CCleanup_imp clean_i(errors, m_Scope, options);
     clean_i.BasicCleanup(sf);
     return errors;
 }
@@ -347,6 +353,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/05/17 17:39:36  bollin
+* added parsing and cleanup of anticodon qualifiers on tRNA features and
+* transl_except qualifiers on coding region features
+*
 * Revision 1.7  2006/03/20 14:22:15  rsmith
 * add cleanup for CSeq_submit
 *

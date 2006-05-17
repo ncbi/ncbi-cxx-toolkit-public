@@ -518,13 +518,14 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         
         CSeq_feat::TQual::iterator it = f.SetQual().begin();
         CSeq_feat::TQual::iterator it_end = f.SetQual().end();
-        while (it != it_end) {
+        while (it != NULL && it != it_end) {
             CGb_qual& gb_qual = **it;
             // clean up this qual.
             BasicCleanup(gb_qual);
             // cleanup the feature given this qual.
             if (BasicCleanup(f, gb_qual)) {
                 it = f.SetQual().erase(it);
+                it_end = f.SetQual().end();
             } else {
                 ++it;
             }
@@ -680,6 +681,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/05/17 17:39:36  bollin
+ * added parsing and cleanup of anticodon qualifiers on tRNA features and
+ * transl_except qualifiers on coding region features
+ *
  * Revision 1.8  2006/04/19 19:59:59  ludwigf
  * FIXED: Comparision routines for GB qualifiers.
  *

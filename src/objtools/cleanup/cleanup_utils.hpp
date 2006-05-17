@@ -36,6 +36,8 @@
 #include <corelib/ncbistd.hpp>
 #include <algorithm>
 
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -123,6 +125,79 @@ if ((o).IsSet##x()) { \
         } \
     }
 
+class CLexToken 
+{
+public:
+    CLexToken(unsigned int token_type) { m_TokenType = token_type; m_HasError = false; }
+    ~CLexToken() {}
+    unsigned int GetTokenType() { return m_TokenType; }
+    bool HasError () { return m_HasError; }
+    
+    virtual unsigned int GetInt() { return 0; }
+    virtual string GetString() { return ""; }
+    
+    virtual CRef<CSeq_loc> GetLocation(CSeq_id *id, CScope* scope) { return CRef<CSeq_loc>(NULL); }
+    enum E_TokenType {
+        e_Int = 0,
+        e_String,
+        e_ParenPair,
+        e_Join,
+        e_Order,
+        e_Complement,
+        e_DotDot,
+        e_LeftPartial,
+        e_RightPartial,
+        e_Comma
+    };
+    
+protected:
+    unsigned int m_TokenType;
+    bool m_HasError;
+};
+
+typedef vector<CLexToken *>  TLexTokenArray;
+
+class CLexTokenString : public CLexToken
+{
+public:
+    CLexTokenString (string token_data);
+    ~CLexTokenString();
+    virtual string GetString() { return m_TokenData; };
+private:
+    string m_TokenData;
+};
+
+class CLexTokenInt : public CLexToken
+{
+public:
+    CLexTokenInt (unsigned int token_data);
+    ~CLexTokenInt ();
+    virtual unsigned int GetInt() { return m_TokenData; };
+private:
+    unsigned int m_TokenData;
+};
+
+class CLexTokenParenPair : public CLexToken
+{
+public:
+    CLexTokenParenPair (unsigned int token_type, string between_text);
+    ~CLexTokenParenPair();
+    
+    virtual CRef<CSeq_loc> GetLocation(CSeq_id *id, CScope* scope);
+    
+    static CRef<CSeq_loc> ReadLocFromTokenList (TLexTokenArray token_list, CSeq_id *id, CScope* scope);
+    
+private:
+    TLexTokenArray m_TokenList;
+};
+
+
+// for converting strings to locations
+CRef<CSeq_loc> ReadLocFromText(string text, const CSeq_id *id, CScope *scope);
+
+// for finding the correct amino acid letter given an abbreviation
+char ValidAminoAcid (string abbrev);
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -132,6 +207,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/05/17 17:39:36  bollin
+* added parsing and cleanup of anticodon qualifiers on tRNA features and
+* transl_except qualifiers on coding region features
+*
 * Revision 1.2  2006/03/15 14:09:54  dicuccio
 * Fix compilation errors: hide assignment operator, drop import specifier for
 * private functions

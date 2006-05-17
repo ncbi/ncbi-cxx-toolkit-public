@@ -54,8 +54,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CCleanup_imp::CCleanup_imp(CRef<CCleanupChange> changes, Uint4 options)
-: m_Changes(changes), m_Options(options), m_Mode(eCleanup_GenBank)
+CCleanup_imp::CCleanup_imp(CRef<CCleanupChange> changes, CRef<CScope> scope, Uint4 options)
+: m_Changes(changes), m_Options(options), m_Mode(eCleanup_GenBank), m_Scope (scope)
 {
 }
 
@@ -106,6 +106,7 @@ void CCleanup_imp::Finish(CSeq_entry& se)
 {
     // cleanup for Cleanup.
 }
+
 
 void CCleanup_imp::BasicCleanup(CSeq_entry& se)
 {
@@ -310,6 +311,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/05/17 17:39:36  bollin
+ * added parsing and cleanup of anticodon qualifiers on tRNA features and
+ * transl_except qualifiers on coding region features
+ *
  * Revision 1.5  2006/04/18 14:32:36  rsmith
  * refactoring
  *
