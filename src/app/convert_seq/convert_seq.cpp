@@ -73,8 +73,8 @@ private:
     static int               GetFlatFormat  (const string& name);
     static ESerialDataFormat GetSerialFormat(const string& name);
 
-    CConstRef<CSeq_entry> Read (const CArgs& args);
-    void                  Write(const CSeq_entry& entry, const CArgs& args);
+    CRef<CSeq_entry> Read (const CArgs& args);
+    void             Write(const CSeq_entry& entry, const CArgs& args);
 
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
@@ -100,6 +100,10 @@ void CConversionApp::Init(void)
     arg_desc->SetConstraint
         ("infmt", &(*new CArgAllow_Strings,
                     "ID", "asn", "asnb", "xml", "fasta", "gff", "tbl", "agp"));
+    arg_desc->AddOptionalKey
+        ("infeat", "InputFile",
+         "File from which to read an additional Sequin feature table",
+         CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey("out", "OutputFile", "File to write the object to",
                             CArgDescriptions::eOutputFile, "-");
@@ -124,7 +128,11 @@ int CConversionApp::Run(void)
     m_Scope.Reset(new CScope(*m_ObjMgr));
     m_Scope->AddDefaults();
 
-    CConstRef<CSeq_entry> entry = Read(args);
+    CRef<CSeq_entry> entry = Read(args);
+    if (args["infeat"]) {
+        CFeature_table_reader::ReadSequinFeatureTables
+            (args["infeat"].AsInputFile(), *entry);
+    }
     if (args["infmt"].AsString() != "ID") {
         try {
             m_Scope->AddTopLevelSeqEntry(const_cast<CSeq_entry&>(*entry));
@@ -174,7 +182,7 @@ int CConversionApp::GetFlatFormat(const string& name)
 }
 
 
-CConstRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
+CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
 {
     const string& infmt = args["infmt"].AsString();
     const string& type  = args["type" ].AsString();
@@ -182,9 +190,21 @@ CConstRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
     if (infmt == "ID") {
         CSeq_id        id(args["in"].AsString());
         CBioseq_Handle h = m_Scope->GetBioseqHandle(id);
-        return h.GetTopLevelEntry().GetCompleteSeq_entry();
+        return CRef<CSeq_entry>
+            (const_cast<CSeq_entry*>
+             (h.GetTopLevelEntry().GetCompleteSeq_entry().GetPointer()));
     } else if (infmt == "fasta") {
-        return ReadFasta(args["in"].AsInputFile());
+        // return ReadFasta(args["in"].AsInputFile());
+        CRef<ILineReader> line_reader;
+        try {
+            line_reader.Reset(new CMemoryLineReader
+                              (new CMemoryFile(args["in"].AsString()),
+                               eTakeOwnership));
+        } catch (...) { // fall back to streams, which are somewhat slower
+            line_reader.Reset(new CStreamLineReader(args["in"].AsInputFile()));
+        }
+        CFastaReader fasta_reader(*line_reader);
+        return fasta_reader.ReadSet();
     } else if (infmt == "gff") {
         return CGFFReader().Read(args["in"].AsInputFile(),
                                  CGFFReader::fGBQuals);
@@ -254,6 +274,7 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
     } else if (outfmt == "fasta") {
         CFastaOstream out(args["out"].AsOutputFile());
         out.SetFlag(CFastaOstream::eAssembleParts);
+        out.SetFlag(CFastaOstream::eInstantiateGaps);
         for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
             out.Write(m_Scope->GetBioseqHandle(*it));
         }
@@ -298,6 +319,11 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/05/17 14:50:34  ucko
+* Support merging in external Sequin-style feature tables.
+* Switch over to the new FASTA reader.
+* Turn on the FASTA formatter's instantiate-gaps flag.
+*
 * Revision 1.10  2005/08/17 18:47:26  ucko
 * When producing FASTA output, set the AssembleParts flag to avoid
 * discriminating against delta-seqs.
