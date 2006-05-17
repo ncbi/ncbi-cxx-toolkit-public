@@ -277,6 +277,11 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     tree_inc = CDirEntry::AddTrailingPathSeparator(tree_inc);
     add_include_dirs_list.push_back( tree_inc );
     
+    string internal_inc = CDirEntry::ConcatPath(tree_inc,"internal");
+    if (CDirEntry(CDirEntry::ConcatPath(m_ProjectDir,internal_inc)).IsDir()) {
+        add_include_dirs_list.push_back( CDirEntry::AddTrailingPathSeparator(internal_inc) );
+    }
+    
     //take into account project include dirs
     ITERATE(list<string>, p, m_ProjectIncludeDirs) {
         const string& dir_abs = *p;
@@ -1077,6 +1082,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/05/17 14:28:12  gouriano
+ * Added include/internal
+ *
  * Revision 1.58  2006/03/22 20:26:10  gouriano
  * Added PDB file name option to compiler
  *
