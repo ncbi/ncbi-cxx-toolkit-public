@@ -80,7 +80,7 @@ public:
     CPrefetchToken(const CPrefetchToken& token);
     CPrefetchToken& operator=(const CPrefetchToken& token);
 
-    DECLARE_OPERATOR_BOOL(m_Handle);
+    DECLARE_OPERATOR_BOOL_REF(m_Handle);
 
     IPrefetchAction* GetAction(void) const;
     IPrefetchListener* GetListener(void) const;

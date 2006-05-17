@@ -348,7 +348,7 @@ void CPrefetchThread::ProcessRequest(TItemHandle handle)
     catch ( CPrefetchCanceled& /* ignored */ ) {
         token.Cancel();
     }
-    catch ( CException& exc ) {
+    catch ( CException& /* exc */ ) {
         impl.TrySetState(*manager, eFailed);
     }
 }
