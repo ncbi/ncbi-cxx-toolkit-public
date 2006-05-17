@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.10.1  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.10.2  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1234,11 +1234,13 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
 
     CNetScheduleClient::EJobStatus status = queue.GetStatus(job_id);
-    char szBuf[kNetScheduleMaxDataSize * 2];
+    char szBuf[kNetScheduleMaxDataSize * 3];
     int st = (int) status;
+    int ret_code = 0;
 
-    if (status == CNetScheduleClient::eDone) {
-        int ret_code;
+    switch (status) {
+    case CNetScheduleClient::eDone:
+        {
         bool b = queue.GetJobDescr(job_id, &ret_code, 
                              tdata.req.input,
                              tdata.req.output,
@@ -1247,6 +1249,7 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
                              status);
 
         if (b) {
+        send_reply:
             sprintf(szBuf, 
                     "%i %i \"%s\" \"\" \"%s\"", 
                     st, ret_code, 
@@ -1257,8 +1260,32 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
         } else {
             st = (int)CNetScheduleClient::eJobNotFound;
         }
-    } 
-    else if (status == CNetScheduleClient::eFailed) {
+        }
+    break;
+
+    case CNetScheduleClient::eRunning:
+    case CNetScheduleClient::eReturned:
+    case CNetScheduleClient::ePending:
+        {
+        bool b = queue.GetJobDescr(job_id, 0, 
+                             tdata.req.input,
+                             0,
+                             0, 0,
+                             0, 0, 
+                             status);
+
+        if (b) {
+            tdata.req.output[0] = 0;
+            goto send_reply;
+            return;
+        } else {
+            st = (int)CNetScheduleClient::eJobNotFound;
+        }
+        }
+        break;
+
+    case CNetScheduleClient::eFailed:
+        {
         bool b = queue.GetJobDescr(job_id, 0, 
                              tdata.req.input,
                              0,
@@ -1278,7 +1305,11 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
         } else {
             st = (int)CNetScheduleClient::eJobNotFound;
         }
-    }
+        }
+        break;
+
+    } // switch
+
 
     sprintf(szBuf, "%i", st);
     WriteMsg(sock, "OK:", szBuf);
@@ -2828,6 +2859,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2006/05/17 16:09:02  kuznets
+ * Fixed retrieval of job input for Pending, Running, Returned jobs
+ *
  * Revision 1.81  2006/05/11 14:31:51  kuznets
  * Fixed bug in job prolongation
  *
