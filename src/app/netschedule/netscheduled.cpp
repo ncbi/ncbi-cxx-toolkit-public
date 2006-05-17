@@ -1241,14 +1241,12 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
     switch (status) {
     case CNetScheduleClient::eDone:
         {
-        bool b = queue.GetJobDescr(job_id, &ret_code, 
-                             tdata.req.input,
-                             tdata.req.output,
-                             0, 0,
-                             0, 0, 
-                             status);
-
-        if (b) {
+        if (queue.GetJobDescr(job_id, &ret_code, 
+                              tdata.req.input,
+                              tdata.req.output,
+                              0, 0,
+                              0, 0, 
+                              status)) {
         send_reply:
             sprintf(szBuf, 
                     "%i %i \"%s\" \"\" \"%s\"", 
@@ -2859,6 +2857,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2006/05/17 17:04:55  ucko
+ * Tweak ProcessStatus to fix compilation with GCC, which does not permit
+ * goto statements to skip over variable initializations.
+ *
  * Revision 1.82  2006/05/17 16:09:02  kuznets
  * Fixed retrieval of job input for Pending, Running, Returned jobs
  *
