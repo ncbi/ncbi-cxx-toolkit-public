@@ -129,7 +129,7 @@ class CLexToken
 {
 public:
     CLexToken(unsigned int token_type) { m_TokenType = token_type; m_HasError = false; }
-    ~CLexToken() {}
+    virtual ~CLexToken() {}
     unsigned int GetTokenType() { return m_TokenType; }
     bool HasError () { return m_HasError; }
     
@@ -161,7 +161,7 @@ class CLexTokenString : public CLexToken
 {
 public:
     CLexTokenString (string token_data);
-    ~CLexTokenString();
+    virtual ~CLexTokenString();
     virtual string GetString() { return m_TokenData; };
 private:
     string m_TokenData;
@@ -171,7 +171,7 @@ class CLexTokenInt : public CLexToken
 {
 public:
     CLexTokenInt (unsigned int token_data);
-    ~CLexTokenInt ();
+    virtual ~CLexTokenInt ();
     virtual unsigned int GetInt() { return m_TokenData; };
 private:
     unsigned int m_TokenData;
@@ -181,7 +181,7 @@ class CLexTokenParenPair : public CLexToken
 {
 public:
     CLexTokenParenPair (unsigned int token_type, string between_text);
-    ~CLexTokenParenPair();
+    virtual ~CLexTokenParenPair();
     
     virtual CRef<CSeq_loc> GetLocation(CSeq_id *id, CScope* scope);
     
@@ -207,6 +207,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/05/17 18:58:02  bollin
+* made destructors virtual, to remove compiler warnings
+*
 * Revision 1.3  2006/05/17 17:39:36  bollin
 * added parsing and cleanup of anticodon qualifiers on tRNA features and
 * transl_except qualifiers on coding region features
