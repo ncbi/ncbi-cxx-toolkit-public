@@ -217,6 +217,23 @@ void CAutoDefFeatureClause::x_SetBiomol()
 }
 
 
+bool CAutoDefFeatureClause::x_IsPseudo()
+{
+    if (m_MainFeat.CanGetPseudo() && m_MainFeat.IsSetPseudo()) {
+        return true;
+    } else {
+        CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+        if (subtype == CSeqFeatData::eSubtype_gene) {
+            const CGene_ref& gene =  m_MainFeat.GetData().GetGene();
+            if (gene.CanGetPseudo() && gene.IsSetPseudo()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
 {
     string qual, comment;
@@ -287,7 +304,7 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
     }
     
     if (m_Biomol == CMolInfo::eBiomol_genomic) {
-        if (m_MainFeat.CanGetPseudo() && m_MainFeat.IsSetPseudo()) {
+        if (x_IsPseudo()) {
             typeword = "pseudogene";
             return true;
         } else {
@@ -302,14 +319,14 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
         typeword = "precursor RNA";
         return true;
     } else if (m_Biomol == CMolInfo::eBiomol_mRNA) {
-        if (m_MainFeat.CanGetPseudo() && m_MainFeat.IsSetPseudo()) {
+        if (x_IsPseudo()) {
             typeword = "pseudogene mRNA";
         } else {
             typeword = "mRNA";
         }
         return true;
     } else if (m_Biomol == CMolInfo::eBiomol_pre_RNA) {
-        if (m_MainFeat.CanGetPseudo() && m_MainFeat.IsSetPseudo()) {
+        if (x_IsPseudo()) {
             typeword = "pseudogene precursor mRNA";
         } else {
             typeword = "precursor mRNA";
@@ -1497,6 +1514,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2006/05/17 12:00:33  bollin
+* changed method for determining whether feature clause is pseudo
+*
 * Revision 1.15  2006/05/16 19:38:58  bollin
 * fixed bug in nonfunctional product naming for automatic definition line generator
 *

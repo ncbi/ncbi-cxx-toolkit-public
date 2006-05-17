@@ -84,6 +84,7 @@ protected:
     CAutoDefFeatureClause();
 
     bool x_GetGenericInterval (string &interval);
+    bool x_IsPseudo();
    
     const CSeq_feat& m_MainFeat;
     CRef<CSeq_loc> m_ClauseLocation;
@@ -206,6 +207,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/05/17 12:00:12  bollin
+* changed method for determining whether feature clause is pseudo
+*
 * Revision 1.5  2006/05/15 12:03:23  bollin
 * changes to handle segmented sets
 *
