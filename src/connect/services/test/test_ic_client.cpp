@@ -200,9 +200,8 @@ int CTestICClient::Run(void)
     sz = cl.GetSize(key, version, subkey);
     assert(sz == test_size);
 
-
-
     }}
+
 
     NcbiCout << "stress write" << NcbiEndl;
 
@@ -222,6 +221,7 @@ int CTestICClient::Run(void)
         int version = 0;
         string key1 = "key_1", subkey1 = "subkey_1";
         string key2 = "key_2", subkey2 = "subkey_2";
+
         {
         auto_ptr<IWriter> writer1(cl.GetWriteStream(key1,version,subkey1));
         //        CWStream ostr1(writer1.get());
@@ -246,15 +246,15 @@ int CTestICClient::Run(void)
             //        CRStream istr1(reader1.get());
         //auto_ptr<IReader> reader2(cl.GetReadStream(key2,version,subkey2));
         //CRStream istr2(reader2.get());
-        
-        int res = 0;
+
+        //int res = 0;
         //istr1 >> res;
         //cout << "From istr1 : " << res << endl;
         //assert(res == 1234);
         //istr2 >> res;
         //cout << "From istr2 : " << res << endl;
         //assert(res == 4321);
-        string str;
+        //string str;
         //        istr1 >> str;
         //        cout << "From istr1 : " << str << endl;
         //istr2 >> str;
@@ -282,6 +282,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2006/05/18 16:26:01  vakatov
+ * Remember to comment out a couple of unused vars
+ *
  * Revision 6.8  2006/05/18 13:28:57  kuznets
  * +test for Purge()
  *
