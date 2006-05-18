@@ -54,6 +54,7 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 #else  /* HAVE_LIBFASTCGI */
 
 # include "fcgibuf.hpp"
+# include <corelib/ncbi_process.hpp>
 # include <corelib/ncbienv.hpp>
 # include <corelib/ncbifile.hpp>
 # include <corelib/ncbireg.hpp>
@@ -175,24 +176,38 @@ extern "C" {
 // has changed since the last iteration)
 const int kSR_Executable = 111;
 const int kSR_WatchFile  = 112;
-static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
+static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
 {
+    static CTime restart_time(CTime::eEmpty, CTime::eGmt);
+    static int   restart_reason;
+
     // Check if this CGI executable has been changed
     CTime mtimeNew = s_GetModTime
         (CCgiApplication::Instance()->GetArguments().GetProgramName());
     if (mtimeNew != mtime) {
         _TRACE("CCgiApplication::x_RunFastCGI: "
                "the program modification date has changed");
-        return kSR_Executable;
-    }
-    
-    // Check if the file we're watching (if any) has changed
-    // (based on contents, not timestamp!)
-    if (watcher  &&  watcher->HasChanged()) {
+        restart_reason = kSR_Executable;
+    } else if (watcher  &&  watcher->HasChanged()) {
+        // Check if the file we're watching (if any) has changed
+        // (based on contents, not timestamp!)
         ERR_POST(Warning <<
-                 "Forced restart of Fast-CGI, as its watch file has changed");
-        return kSR_WatchFile;
+                 "Scheduling restart of Fast-CGI, as its watch file has changed");
+        restart_reason = kSR_WatchFile;
     }
+
+    if (restart_reason) {
+        if (restart_time.IsEmpty()) {
+            restart_time.SetCurrent();
+            restart_time.AddSecond(delay);
+            _TRACE("Will restart Fast-CGI in " << delay << " seconds, at "
+                   << restart_time.GetLocalTime().AsString("h:m:s"));
+        }
+        if (CurrentTime(CTime::eGmt) >= restart_time) {
+            return restart_reason;
+        }
+    }
+
     return 0;
 }
 
@@ -305,6 +320,18 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     }
 # endif
 
+    int restart_delay = reg.GetInt("FastCGI", "WatchFile.RestartDelay",
+                                   0, 0, CNcbiRegistry::eErrPost);
+    if (restart_delay > 0) {
+        // CRandom is higher-quality, but would introduce an extra
+        // dependency on libxutil; rand() should be good enough here.
+        srand(CProcess::GetCurrentPid());
+        double r = rand() / (RAND_MAX + 1.0);
+        restart_delay = 1 + (int)(restart_delay * r);
+    } else {
+        restart_delay = 0;
+    }
+
     // Diag.prefix related preparations
     const string prefix_pid(NStr::IntToString(getpid()) + "-");
 
@@ -368,7 +395,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 _ASSERT(accept_errcode != 0);
                 s_AcceptTimedOut = false;
                 {{ // If to restart the application
-                    int restart_code = s_ShouldRestart(mtime, watcher.get());
+                    int restart_code = s_ShouldRestart(mtime, watcher.get(),
+                                                       restart_delay);
                     if (restart_code != 0) {
                         OnEvent(restart_code == kSR_Executable ?
                                 eExecutable : eWatchFile, restart_code);
@@ -552,7 +580,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         // If to restart the application
         {{
-            int restart_code = s_ShouldRestart(mtime, watcher.get());
+            int restart_code = s_ShouldRestart(mtime, watcher.get(),
+                                               restart_delay);
             if (restart_code != 0) {
                 OnEvent(restart_code == kSR_Executable ?
                         eExecutable : eWatchFile, restart_code);
@@ -580,6 +609,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.59  2006/05/18 15:03:34  ucko
+ * If [FastCGI]WatchFile.RestartDelay is set, stagger restarts over the
+ * corresponding number of seconds, continuing to serve requests as is in
+ * the meantime.
+ *
  * Revision 1.58  2006/01/05 16:23:39  grichenk
  * Added VerifyCgiContext() to prohibit HTTP_X_MOZ prefetch.
  *
