@@ -60,7 +60,10 @@ CBlastOptionsLocal::CBlastOptionsLocal()
     m_ExtnOpts.Reset((BlastExtensionOptions*)calloc(1, sizeof(BlastExtensionOptions)));
     m_HitSaveOpts.Reset((BlastHitSavingOptions*)calloc(1, sizeof(BlastHitSavingOptions)));
     m_ScoringOpts.Reset((BlastScoringOptions*)calloc(1, sizeof(BlastScoringOptions)));
-    m_EffLenOpts.Reset((BlastEffectiveLengthsOptions*)calloc(1, sizeof(BlastEffectiveLengthsOptions)));
+
+    BlastEffectiveLengthsOptions* eff_len_opts = NULL;
+    BlastEffectiveLengthsOptionsNew(&eff_len_opts);
+    m_EffLenOpts.Reset(eff_len_opts);
     m_DbOpts.Reset((BlastDatabaseOptions*)calloc(1, sizeof(BlastDatabaseOptions)));
     m_PSIBlastOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
 }
@@ -219,6 +222,21 @@ x_BlastScoringOptions_cmp(const BlastScoringOptions* a,
 }
 
 bool
+x_BlastEffectiveLengthsOptions_cmp(const BlastEffectiveLengthsOptions* a,
+                                   const BlastEffectiveLengthsOptions* b)
+{
+    if (a->db_length != b->db_length) return false;
+    if (a->dbseq_num != b->dbseq_num) return false;
+    if (a->num_searchspaces != b->num_searchspaces) return false;
+    if (x_safe_memcmp((void*)a->searchsp_eff, 
+                      (void*)b->searchsp_eff, 
+                      min(a->num_searchspaces, b->num_searchspaces)) != 0) {
+        return false;
+    }
+    return true;
+}
+
+bool
 CBlastOptionsLocal::operator==(const CBlastOptionsLocal& rhs) const
 {
     if (this == &rhs)
@@ -261,10 +279,8 @@ CBlastOptionsLocal::operator==(const CBlastOptionsLocal& rhs) const
     if ( !x_BlastScoringOptions_cmp(m_ScoringOpts, rhs.m_ScoringOpts) )
         return false;
     
-    a = static_cast<void*>( (BlastEffectiveLengthsOptions*) m_EffLenOpts);
-    b = static_cast<void*>( (BlastEffectiveLengthsOptions*) rhs.m_EffLenOpts);
-    if ( x_safe_memcmp(a, b, sizeof(BlastEffectiveLengthsOptions)) != 0 )
-         return false;
+    if ( !x_BlastEffectiveLengthsOptions_cmp(m_EffLenOpts, rhs.m_EffLenOpts) )
+        return false;
     
     return true;
 }
