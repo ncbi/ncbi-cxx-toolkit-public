@@ -239,6 +239,7 @@ public:
 
     Int8 GetEffectiveSearchSpace() const;
     void SetEffectiveSearchSpace(Int8 eff);
+    void SetEffectiveSearchSpace(const vector<Int8>& eff);
 
     int GetDbGeneticCode() const;
 
@@ -1147,13 +1148,36 @@ CBlastOptionsLocal::SetDbSeqNum(unsigned int n)
 inline Int8 
 CBlastOptionsLocal::GetEffectiveSearchSpace() const
 {
-    return m_EffLenOpts->searchsp_eff;
+    if (m_EffLenOpts->num_searchspaces == 0)
+        return 0;
+
+    return m_EffLenOpts->searchsp_eff[0];
 }
  
 inline void 
 CBlastOptionsLocal::SetEffectiveSearchSpace(Int8 eff)
 {
-    m_EffLenOpts->searchsp_eff = eff;
+    if (m_EffLenOpts->num_searchspaces < 1) {
+        m_EffLenOpts->num_searchspaces = 1;
+        if (m_EffLenOpts->searchsp_eff) sfree(m_EffLenOpts->searchsp_eff);
+        m_EffLenOpts->searchsp_eff = (Int8 *)malloc(sizeof(Int8));
+    }
+
+    fill(m_EffLenOpts->searchsp_eff,
+         m_EffLenOpts->searchsp_eff+m_EffLenOpts->num_searchspaces,
+         eff);
+}
+
+inline void 
+CBlastOptionsLocal::SetEffectiveSearchSpace(const vector<Int8>& eff)
+{
+    if (m_EffLenOpts->num_searchspaces < (Int4)eff.size()) {
+        m_EffLenOpts->num_searchspaces = eff.size();
+        if (m_EffLenOpts->searchsp_eff) sfree(m_EffLenOpts->searchsp_eff);
+        m_EffLenOpts->searchsp_eff = (Int8 *)malloc(eff.size() * sizeof(Int8));
+    }
+
+    copy(eff.begin(), eff.end(), m_EffLenOpts->searchsp_eff);
 }
 
 inline int 
