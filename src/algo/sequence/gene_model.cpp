@@ -160,7 +160,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
     TSignedSeqRange range(alnmgr.GetAlnStart(), alnmgr.GetAlnStop());
 
     CSeq_loc_Mapper::TMapOptions opts = 0;
-    if (flags & fDensegAsIntron) {
+    if (flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
     }
 
@@ -384,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/05/18 13:21:37  dicuccio
+ * Updated enum name - should be fDensegAsExon
+ *
  * Revision 1.7  2006/05/17 20:10:51  dicuccio
  * Added option to consider each dense-seg in a source alignment as a single exon and map accordingly.
  *

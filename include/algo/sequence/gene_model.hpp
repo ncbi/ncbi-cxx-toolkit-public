@@ -55,7 +55,7 @@ public:
         fPropagateOnly       = 0x10,
         fForceTranslateCds   = 0x20,
         fForceTranscribeMrna = 0x40,
-        fDensegAsIntron      = 0x80,
+        fDensegAsExon        = 0x80,
 
         fDefaults = fCreateGene | fCreateMrna | fCreateCdregion
     };
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/05/18 13:21:37  dicuccio
+ * Updated enum name - should be fDensegAsExon
+ *
  * Revision 1.5  2006/05/17 20:10:50  dicuccio
  * Added option to consider each dense-seg in a source alignment as a single exon and map accordingly.
  *
