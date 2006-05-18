@@ -447,6 +447,9 @@ public:
     /// Return FALSE on error.
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0) = 0;
     virtual bool SetTimeout      (unsigned int nof_secs = 0) = 0;
+    
+    unsigned int GetLoginTimeout (void) const { return m_LoginTimeout; }
+    unsigned int GetTimeout      (void) const { return m_Timeout;        }
 
     /// Set maximal size for Text and Image objects. Text and Image objects
     /// exceeding this size will be truncated.
@@ -577,14 +580,17 @@ protected:
 
     mutable CFastMutex m_Mtx;
 
+    unsigned int    m_LoginTimeout;
+    unsigned int    m_Timeout;
+
 private:
     /// Return unused connection "conn" to the driver context for future
     /// reuse (if "conn_reusable" is TRUE) or utilization
     void x_Recycle(I_Connection* conn, bool conn_reusable);
     
-    string  m_AppName;
-    string  m_HostName;
-
+    string          m_AppName;
+    string          m_HostName;
+    
     friend class CDB_Connection;
     friend class IDBConnectionFactory;
 };
@@ -718,6 +724,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/05/18 16:52:22  ssikorsk
+ * 	 Added GetLoginTimeout and GetTimeout methods to the I_DriverContext class.
+ *
  * Revision 1.44  2006/05/15 19:32:16  ssikorsk
  * Added EOwnership argument to methods PushCtxMsgHandler and PushDefConnMsgHandler
  * of class I_DriverContext.
