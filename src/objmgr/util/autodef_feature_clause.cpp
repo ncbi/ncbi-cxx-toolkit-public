@@ -731,18 +731,20 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         return false;
     } 
     
-    bool has_3UTR = false;
-    unsigned int num_non3UTRclauses = 0;
+    CAutoDefFeatureClause_Base *utr3 = NULL;
     
     if (!m_SuppressSubfeatures) {
         // label subclauses
         // check to see if 3'UTR is present, and whether there are any other features
         for (k = 0; k < m_ClauseList.size(); k++) {
             m_ClauseList[k]->Label();
-            if (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_3UTR) {
-                has_3UTR = true;
-            } else {
-                num_non3UTRclauses++;
+            if (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_3UTR && subtype == CSeqFeatData::eSubtype_cdregion) {
+                utr3 = m_ClauseList[k];
+                for (unsigned int j = k + 1; j < m_ClauseList.size(); j++) {
+                    m_ClauseList[j-1] = m_ClauseList[j];
+                }
+                m_ClauseList[m_ClauseList.size() - 1] = NULL;
+                m_ClauseList.pop_back();
             }
         }
     
@@ -759,7 +761,9 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
             interval += ListClauses(false, suppress_final_and);
             
             if (subtype == CSeqFeatData::eSubtype_cdregion) {
-                if (m_ClauseList.size() == 1) {
+                if (utr3 != NULL) {
+                    interval += ", ";
+                } else if (m_ClauseList.size() == 1) {
                     interval += " and ";
                 } else {
                     interval += ", and ";
@@ -790,9 +794,14 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         }
     }
 
-    if (has_3UTR && (subtype != CSeqFeatData::eSubtype_cdregion || num_non3UTRclauses == 0)) {
+    if (utr3 != NULL) {
         /* tack UTR3 on at end of clause */
-        interval += ", and 3' UTR";
+        if (m_ClauseList.size() == 0) {
+            interval += " and 3' UTR";
+        } else {
+            interval += ", and 3' UTR";
+        }
+        m_ClauseList.push_back(utr3);
     } 
   
     return true;
@@ -1165,6 +1174,7 @@ void CAutoDefFeatureClause::ReverseCDSClauseLists()
         }
         tmp.clear();
     }
+    
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
         m_ClauseList[k]->ReverseCDSClauseLists();
     }
@@ -1513,6 +1523,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2006/05/18 11:44:52  bollin
+* when listing subclauses for a coding region in the automatically generated
+* definition lines, list the 3' UTR after partial/complete cds.
+*
 * Revision 1.17  2006/05/17 18:33:55  bollin
 * operon gets interval of partial/complete sequence in automatically generated
 * definition line
