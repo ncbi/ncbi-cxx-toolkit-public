@@ -66,7 +66,7 @@ static const Uint1 kPower = 3;
 // (2) - post-processing
 // exons shorter than kMinTermExonSize with identity lower than
 // kMinTermExonIdty will be converted to gaps
-static const size_t kMinTermExonSize = 40;
+static const size_t kMinTermExonSize = 28;
 static const double kMinTermExonIdty = 0.90;
 
 CSplign::CSplign( void )
@@ -1824,8 +1824,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.54  2006/05/18 17:02:20  kapustin
- * Adjust term-exon length cutoff
+ * Revision 1.55  2006/05/18 21:05:41  kapustin
+ * Adjust the term exon length cutoff
  *
  * Revision 1.53  2006/04/19 14:47:10  kapustin
  * Eliminate hits shorter than the cut-off when pre-checking for max intron length
