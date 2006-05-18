@@ -683,9 +683,12 @@ BlastEffectiveLengthsOptions*
 BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptions* options)
 
 {
-	sfree(options);
+   if (options == NULL)
+      return NULL;
 
-	return NULL;
+   sfree(options->searchsp_eff);
+   sfree(options);
+   return NULL;
 }
 
 
@@ -693,28 +696,55 @@ Int2
 BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptions* *options)
 
 {
-   *options = (BlastEffectiveLengthsOptions*)
-      calloc(1, sizeof(BlastEffectiveLengthsOptions));
+    if (options == NULL) {
+        return BLASTERR_INVALIDPARAM;
+    }
 
-   if (*options == NULL)
-      return 1;
-   
-   return 0;
+    *options = (BlastEffectiveLengthsOptions*)
+       calloc(1, sizeof(BlastEffectiveLengthsOptions));
+ 
+    if (*options == NULL)
+       return BLASTERR_MEMORY;
+    
+    return 0;
+}
+
+Boolean
+BlastEffectiveLengthsOptions_IsSearchSpaceSet(const
+                                              BlastEffectiveLengthsOptions*
+                                              options)
+{
+    int i;
+    if ( !options || options->searchsp_eff == NULL) {
+        return FALSE;
+    }
+
+    for (i = 0; i < options->num_searchspaces; i++) {
+        if (options->searchsp_eff[i] != 0) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 Int2 
 BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options, 
-   Int4 dbseq_num, Int8 db_length, Int8 searchsp_eff)
+   Int4 dbseq_num, Int8 db_length, Int8* searchsp_eff, Int4 num_searchsp)
 {
+   Int4 index;
    if (!options)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
-   if (searchsp_eff) {	
-      /* dbnum_seq and dblen are used to calculate effective search space, so 
-         if it is already set don't bother with those. */
-      options->searchsp_eff = searchsp_eff;
-      return 0;
+   if (num_searchsp > options->num_searchspaces) {
+       options->num_searchspaces = num_searchsp;
+       options->searchsp_eff = (Int8 *)realloc(options->searchsp_eff,
+                                               num_searchsp * sizeof(Int8));
+       if (options->searchsp_eff == NULL)
+           return BLASTERR_MEMORY;
    }
+
+   for (index = 0; index < options->num_searchspaces; index++)
+      options->searchsp_eff[index] = searchsp_eff[index];
 
    options->dbseq_num = dbseq_num;
    options->db_length = db_length;
@@ -1269,6 +1299,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.184  2006/05/18 16:17:00  papadopo
+ * allow multiple search spaces to be set in BlastEffectiveLengthsOptions
+ *
  * Revision 1.183  2006/04/25 16:06:53  camacho
  * tblastx scoring options must be set to false
  *

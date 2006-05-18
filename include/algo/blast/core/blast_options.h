@@ -367,8 +367,10 @@ typedef struct BlastEffectiveLengthsOptions {
                          calculations */
    Int4 dbseq_num;    /**< Number of database sequences to be used for
                            statistical calculations */
-   Int8 searchsp_eff; /**< Search space to be used for statistical
-                           calculations */
+   Int4 num_searchspaces; /**< Number of elements in searchsp_eff, this must be
+                            equal to the number of contexts in the search */
+   Int8 *searchsp_eff; /**< Search space to be used for statistical
+                           calculations (one such per query context) */
 } BlastEffectiveLengthsOptions;
 
 /** Options used in protein BLAST only (PSI, PHI, RPS and translated BLAST)
@@ -706,16 +708,32 @@ BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptions* options);
 NCBI_XBLAST_EXPORT
 Int2 BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptions* *options);
 
+/** Return true if the search spaces is set for any of the queries in the
+ * search
+ * @param options The options to examine [in]
+ */
+NCBI_XBLAST_EXPORT
+Boolean
+BlastEffectiveLengthsOptions_IsSearchSpaceSet(const
+                                              BlastEffectiveLengthsOptions*
+                                              options);
+
 /** Fill the non-default values in the BlastEffectiveLengthsOptions structure.
  * @param options The options [in] [out]
  * @param dbseq_num Number of sequences in the database (if zero real value will be used) [in]
  * @param db_length Total length of the database (if zero real value will be used) [in]
- * @param searchsp_eff Effective search space (if zero real value will be used) [in]
+ * @param *searchsp_eff Array of effective search spaces (the real value 
+ *                   will be used for elements that are 0). If array 
+ *                   contains one element, all contexts use this value. 
+ *                   If array has multiple elements, the number must match
+ *                   the number of contexts in the search [in]
+ * @param num_searchsp The number of elements in searchsp_eff [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options, 
-   Int4 dbseq_num, Int8 db_length, Int8 searchsp_eff);
+                                  Int4 dbseq_num, Int8 db_length, 
+                                  Int8 *searchsp_eff, Int4 num_searchsp);
 
 
 /** Allocate memory for lookup table options and fill with default values.
