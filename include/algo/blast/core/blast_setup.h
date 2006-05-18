@@ -96,12 +96,14 @@ Int2 Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
  * @param sbp Karlin-Altschul parameters [out]
  * @param query_info The query information block, which stores the effective
  *                   search spaces for all queries [in] [out]
+ * @param blast_message Error message [out]
 */
 NCBI_XBLAST_EXPORT
 Int2 BLAST_CalcEffLengths (EBlastProgramType program_number, 
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsParameters* eff_len_params, 
-   const BlastScoreBlk* sbp, BlastQueryInfo* query_info);
+   const BlastScoreBlk* sbp, BlastQueryInfo* query_info,
+   Blast_Message **blast_message);
 
 /** Set up the auxiliary structures for gapped alignment / traceback only 
  * @param program_number blastn, blastp, blastx, etc. [in]
@@ -240,6 +242,9 @@ PHIPatternSpaceCalc(BlastQueryInfo* query_info,
 /*
  *
 * $Log$
+* Revision 1.56  2006/05/18 16:21:50  papadopo
+* add message to BLAST_CalcEffLengths
+*
 * Revision 1.55  2005/08/29 14:32:36  dondosha
 * From Ilya Dondoshansky:
 * Removed BlastMaskInformation wrapper structure, because mask_at_hash can
