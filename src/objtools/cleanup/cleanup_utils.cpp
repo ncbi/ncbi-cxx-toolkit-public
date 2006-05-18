@@ -56,7 +56,7 @@ void CleanString(string& str)
             if (amp != NPOS) {
                 remove = false;
                 for (size_t i = amp + 1; i < semicolon; ++i) {
-                    if (isspace((unsigned char) str.data()[i])) {
+                    if (isspace((unsigned char) str[i])) {
                         remove = true;
                         break;
                     }
@@ -98,10 +98,8 @@ void RemoveWhiteSpace(string& str)
     string copy;
     unsigned int pos;
     
-    copy.clear();
-    
     for (pos = 0; pos < str.length(); pos++) {
-        if (!isspace((unsigned char) str.data()[pos]) && (str.data()[pos] != '~')) {
+        if (!isspace((unsigned char) str[pos]) && (str[pos] != '~')) {
             copy += str.substr(pos, 1);
         }
     }
@@ -554,6 +552,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/05/18 13:49:33  ucko
+* RemoveWhiteSpace: don't bother clear()ing a brand new string,
+* particularly given that GCC 2.95 would require erase() instead.
+* Also, generally simplify str.data()[...] to str[...].
+*
 * Revision 1.2  2006/05/17 17:39:36  bollin
 * added parsing and cleanup of anticodon qualifiers on tRNA features and
 * transl_except qualifiers on coding region features
