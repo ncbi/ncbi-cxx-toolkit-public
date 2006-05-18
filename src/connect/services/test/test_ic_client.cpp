@@ -263,6 +263,8 @@ int CTestICClient::Run(void)
 
     }}
 
+    cl.Purge(0, ICache::eDropAll);
+
     NcbiCout << "Session management test" << endl;
     cl.RegisterSession(10);
     cl.UnRegisterSession(10);
@@ -280,6 +282,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2006/05/18 13:28:57  kuznets
+ * +test for Purge()
+ *
  * Revision 6.7  2006/05/05 00:41:31  ucko
  * Tweak vector<unsigned char> -> string conversion to compile under
  * WorkShop 5.3.
