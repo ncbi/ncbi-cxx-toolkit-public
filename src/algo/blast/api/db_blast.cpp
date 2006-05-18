@@ -611,7 +611,7 @@ void CDbBlast::SetupSearch()
         status = 
             BLAST_CalcEffLengths(x_eProgram, kOptions.GetScoringOpts(), 
                                  eff_len_params, m_ipScoreBlock, 
-                                 m_iclsQueryInfo);
+                                 m_iclsQueryInfo, NULL);
         if (status) {
             NCBI_THROW(CBlastException, eCoreBlastError, 
                        "BLAST_CalcEffLengths failed");
@@ -789,6 +789,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.88  2006/05/18 16:26:25  papadopo
+ * change signature of BLAST_CalcEffLengths
+ *
  * Revision 1.87  2006/04/20 19:29:56  madden
  * Prototype change for Blast_MessageWrite
  *

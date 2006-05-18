@@ -116,7 +116,7 @@ CEffectiveSearchSpaceCalculator::CEffectiveSearchSpaceCalculator
 
     Int2 status = 
         BLAST_CalcEffLengths(m_Program, scoring_opts,
-                             eff_len_params, score_blk, m_QueryInfo);
+                             eff_len_params, score_blk, m_QueryInfo, NULL);
     if (status) {
         NCBI_THROW(CBlastException, eCoreBlastError, 
                    "BLAST_CalcEffLengths failed");
