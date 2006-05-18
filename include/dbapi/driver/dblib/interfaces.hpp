@@ -229,11 +229,7 @@ private:
     int                    m_TDSVersion;
     CDblibContextRegistry* m_Registry;
 
-#ifdef FTDS_IN_USE
-    unsigned int          m_LoginTimeout; // inherited from ftds
-    unsigned int          m_Timeout; // inherited from ftds
-#endif    
-
+    
     DBPROCESS* x_ConnectToServer(const string&   srv_name,
                                  const string&   user_name,
                                  const string&   passwd,
@@ -1167,6 +1163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/05/18 16:56:35  ssikorsk
+ * Removed m_LoginTimeout and m_Timeout from CDBLibContext.
+ *
  * Revision 1.40  2006/05/15 19:37:02  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *
