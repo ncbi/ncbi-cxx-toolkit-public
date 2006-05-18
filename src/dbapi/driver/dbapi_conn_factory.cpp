@@ -44,8 +44,8 @@ CDBConnectionFactory::CDBConnectionFactory(IDBServiceMapper* svc_mapper,
 m_MaxNumOfConnAttempts( 1 ),
 m_MaxNumOfServerAlternatives( 32 ),
 m_MaxNumOfDispatches( 0 ),
-m_ConnectionTimeout( 1 ),
-m_LoginTimeout( 1 )
+m_ConnectionTimeout( 0 ),
+m_LoginTimeout( 0 )
 {
     CHECK_DRIVER_ERROR(!svc_mapper && def_mapping != eUseDefaultMapper, 
                        "Database service name to server name mapper was not "
@@ -89,9 +89,9 @@ CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
     m_MaxNumOfDispatches = 
         registry->GetInt(section_name, "MAX_DISPATCHES", 0);
     m_ConnectionTimeout = 
-        registry->GetInt(section_name, "CONNECTION_TIMEOUT", 2);
+        registry->GetInt(section_name, "CONNECTION_TIMEOUT", 0);
     m_LoginTimeout = 
-        registry->GetInt(section_name, "LOGIN_TIMEOUT", 2);
+        registry->GetInt(section_name, "LOGIN_TIMEOUT", 0);
 }
 
 void 
@@ -142,6 +142,28 @@ CDBConnectionFactory::SetLoginTimeout(unsigned int timeout)
     m_LoginTimeout = timeout;
 }
 
+unsigned int 
+CDBConnectionFactory::CalculateConnectionTimeout(I_DriverContext& ctx) const
+{
+    return (GetConnectionTimeout() ? 
+            GetConnectionTimeout() : 
+            ctx.GetTimeout());
+}
+
+unsigned int 
+CDBConnectionFactory::CalculateLoginTimeout(I_DriverContext& ctx) const
+{
+    unsigned int timeout = 3;
+    
+    if (GetLoginTimeout()) {
+        timeout = GetLoginTimeout();
+    } else if (ctx.GetLoginTimeout()) {
+        timeout = ctx.GetLoginTimeout();
+    }
+    
+    return timeout;
+}
+
 CDB_Connection* 
 CDBConnectionFactory::MakeDBConnection(
     I_DriverContext& ctx,
@@ -154,8 +176,8 @@ CDBConnectionFactory::MakeDBConnection(
     TSvrRef dsp_srv = GetDispatchedServer(conn_attr.srv_name);
     
     // Set timeouts ...
-    ctx.SetTimeout(m_ConnectionTimeout);
-    ctx.SetLoginTimeout(m_LoginTimeout);
+    ctx.SetTimeout(CalculateConnectionTimeout(ctx));
+    ctx.SetLoginTimeout(CalculateLoginTimeout(ctx));
     
     if ( dsp_srv.Empty() ) {
         // We are here either because server name was never dispatched or 
@@ -424,6 +446,9 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/18 17:02:50  ssikorsk
+ * Implemented and utilized CalculateConnectionTimeout and CalculateLoginTimeout methods.
+ *
  * Revision 1.6  2006/02/28 16:02:31  ssikorsk
  * Redispatch connection if previously successfully validated connection
  * parameters are not valid with currently created connection.
