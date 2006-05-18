@@ -172,7 +172,7 @@ CBioTreeFeatureDictionary::GetId(const string& feature_name) const
 {
     TFeatureNameIdx::const_iterator it = m_Name2Id.find(feature_name);
     if (it == m_Name2Id.end()) {
-        return 0;
+        return (TBioTreeFeatureId)-1;
     }
     return it->second;
 }
@@ -265,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/05/18 15:46:25  tereshko
+ * Return -1 instead of 0 when feature not found
+ *
  * Revision 1.8  2006/04/28 13:35:51  tereshko
  * Corrected newick output to write distances
  *
