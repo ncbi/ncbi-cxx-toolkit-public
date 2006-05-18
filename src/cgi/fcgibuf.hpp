@@ -51,8 +51,11 @@ public:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual int         sync(void);
 
+    unsigned int GetCount(void) const { return m_cnt; }
+
 private:
     FCGX_Stream* m_out;
+    unsigned int m_cnt;
 };
 
 
@@ -63,8 +66,13 @@ public:
 
     virtual CT_INT_TYPE underflow(void);
 
+    unsigned int GetCount(void) const { return m_cnt; }
+
 private:
+    void x_Setg(void);
+
     FCGX_Stream* m_in;
+    unsigned int m_cnt;
 };
 
 
@@ -74,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2006/05/18 19:05:26  grichenk
+ * Added byte counter
+ *
  * Revision 1.10  2003/10/16 15:18:55  lavr
  * Multiple flush bug fixed from R1.13
  *

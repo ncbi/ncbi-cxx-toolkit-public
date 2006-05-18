@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 
 CCgiObuffer::CCgiObuffer(FCGX_Stream* out)
-    : m_out(out)
+    : m_out(out), m_cnt(0)
 {
     if (!m_out  ||  m_out->isReader) {
         THROW1_TRACE(runtime_error, "CCgiObuffer: out is not writer");
@@ -59,6 +59,8 @@ CCgiObuffer::~CCgiObuffer(void)
 
 CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
 {
+    m_cnt += ((unsigned char*) pptr()) - m_out->wrNext;
+
     _ASSERT(m_out->stop == (unsigned char*) epptr());
     m_out->wrNext = (unsigned char*) pptr();
 
@@ -96,12 +98,19 @@ int CCgiObuffer::sync(void)
 
 
 CCgiIbuffer::CCgiIbuffer(FCGX_Stream* in)
-    : m_in(in)
+    : m_in(in), m_cnt(0)
 {
     if (!m_in  ||  !m_in->isReader) {
         THROW1_TRACE(runtime_error, "CCgiObuffer: in is not reader");
     }
 
+    x_Setg();
+}
+
+
+void CCgiIbuffer::x_Setg(void)
+{
+    m_cnt += m_in->stop - m_in->rdNext;
     setg((CT_CHAR_TYPE*) m_in->stopUnget,
          (CT_CHAR_TYPE*) m_in->rdNext, (CT_CHAR_TYPE*) m_in->stop);
 }
@@ -127,8 +136,7 @@ CT_INT_TYPE CCgiIbuffer::underflow(void)
         }
 
         m_in->stopUnget = m_in->rdNext;
-        setg((CT_CHAR_TYPE*) m_in->stopUnget,
-             (CT_CHAR_TYPE*) m_in->rdNext, (CT_CHAR_TYPE*) m_in->stop);
+        x_Setg();
     }
 
     return sgetc();
@@ -141,6 +149,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2006/05/18 19:05:26  grichenk
+ * Added byte counter
+ *
  * Revision 1.16  2004/05/17 20:56:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
