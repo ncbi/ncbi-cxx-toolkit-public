@@ -777,31 +777,6 @@ int CSplignApp::Run()
         return 0;
     }
 
-#ifdef GENOME_PIPELINE
-    if(is_mkidx) {
-
-        // create mer index and exit
-        const Uint4 max_vol_mem = args["M"].AsInteger()*1024*1024;
-        const string filename_base (args["mkidx"].AsString());
-        CSeqDB seqdb (args["subjdb"].AsString(), CSeqDB::eNucleotide);
-
-        size_t q = 0;
-        for(CSeqDBIter db_iter (seqdb.Begin()); db_iter; ++q) 
-        {
-            cout << "Indexing vol " << q << " ... " << flush;
-            CMerMatcherIndex mmidx;
-            size_t rv = mmidx.Create(db_iter, max_vol_mem, 16);
-            cout << "Done (" << rv << ") entries" << endl << flush;
-            const string filename = args["mkidx"].AsString() + ".v" +
-                NStr::IntToString(q) + ".idx";
-            CNcbiOfstream ofstr (filename.c_str(), IOS_BASE::binary);
-            mmidx.Dump(ofstr);
-        }
-
-        return 0;
-    }
-#endif
-
     // determine mode and verify arguments
     ERunMode run_mode (eNotSet);
     
@@ -1198,6 +1173,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/05/18 17:01:18  kapustin
+ * More code cleanup
+ *
  * Revision 1.66  2006/05/08 15:19:02  kapustin
  * Code and file cleanup
  *
