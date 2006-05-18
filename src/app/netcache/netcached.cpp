@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.7  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.8  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -555,6 +555,9 @@ void CNetCacheServer::ProcessIC(CSocket&              socket,
         break;
     case eIC_HasBlobs:
         Process_IC_HasBlobs(*ic, socket, req, tdata);
+        break;
+    case eIC_Purge1:
+        Process_IC_Purge1(*ic, socket, req, tdata);
         break;
 
     case eIC_Error:
@@ -2058,6 +2061,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2006/05/18 13:27:51  kuznets
+ * Implemented cache cleaning function
+ *
  * Revision 1.86  2006/05/11 21:09:30  kuznets
  * Reduced diagnostics level from Info to Warning
  *

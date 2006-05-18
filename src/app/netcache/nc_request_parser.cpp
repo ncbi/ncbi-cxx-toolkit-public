@@ -88,6 +88,7 @@ void CNetCacheServer::ParseRequestIC(const string& reqstr, SIC_Request* req)
     //   REMO "key" version "subkey"
     //   GACT "key" version "subkey"
     //   HASB "key" 0 "subkey"
+    //   PRG1 "key" keep_version
 
 
     const char* s = reqstr.c_str();
@@ -239,6 +240,20 @@ void CNetCacheServer::ParseRequestIC(const string& reqstr, SIC_Request* req)
         req->req_type = eIC_GetVersionRetention;
         return;
     }
+
+    if (CmpCmd4(s, "PRG1")) { // Purge1
+        req->req_type = eIC_Purge1;
+        s += 4;
+        NC_SKIPSPACE(s)
+        NC_CHECK_END(s)
+        req->i0 = (unsigned)atoi(s);
+        NC_SKIPNUM(s)
+        NC_SKIPSPACE(s)
+        NC_CHECK_END(s)
+        req->i1 = (unsigned)atoi(s);
+        return;
+    }
+
 
 }
 
@@ -448,6 +463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/18 13:27:51  kuznets
+ * Implemented cache cleaning function
+ *
  * Revision 1.6  2006/03/09 21:06:37  kuznets
  * Added Get2 command (with client driven disconnect)
  *

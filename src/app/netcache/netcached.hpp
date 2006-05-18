@@ -89,7 +89,8 @@ typedef enum {
     eIC_Remove,
     eIC_RemoveKey,
     eIC_GetAccessTime,
-    eIC_HasBlobs
+    eIC_HasBlobs,
+    eIC_Purge1
 } EIC_RequestType;
 
 
@@ -356,6 +357,10 @@ private:
                              SIC_Request&         req,
                              SNC_ThreadData&      tdata);
 
+    void Process_IC_Purge1(ICache&              ic,
+                            CSocket&             sock, 
+                            SIC_Request&         req,
+                            SNC_ThreadData&      tdata);
     // NC requests
 
 
@@ -537,6 +542,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/05/18 13:27:51  kuznets
+ * Implemented cache cleaning function
+ *
  * Revision 1.8  2006/04/14 16:09:00  kuznets
  * Fixed bug when session management shutdowns the server even if we do not want to
  *

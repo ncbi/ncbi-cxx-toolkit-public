@@ -139,16 +139,11 @@ void CNetCacheServer::Process_IC_Store(ICache&              ic,
 
     CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
     CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
-/*
-ERR_POST("   STORE:" << req.key << " " << req.version << " " << req.subkey
-         );
-*/
 
     do {
         size_t nn_read;
 
         buf = tdata.buffer.get();
-        CStopWatch  sw(CStopWatch::eStart);
 
         not_eof = ReadBuffer(sock, &transm_reader, buf, buf_size, &nn_read);
         _ASSERT(nn_read <= buf_size);
@@ -159,18 +154,10 @@ ERR_POST("   STORE:" << req.key << " " << req.version << " " << req.subkey
             break;
         }
 
-        //stat.comm_elapsed += sw.Elapsed();
-        //stat.blob_size += nn_read;
-
         if (nn_read) {
             if (iwrt.get() == 0) { // first read
 
                 if (not_eof == false) { // complete read
-/*
-ERR_POST("   COMPLETE READ STORE:" 
-         << req.key << " " << nn_read
-         );
-*/
                     ic.Store(req.key, req.version, req.subkey, 
                                    buf, nn_read, req.i0, tdata.auth);
                     return;
@@ -217,9 +204,6 @@ void CNetCacheServer::Process_IC_StoreBlob(ICache&              ic,
     CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
 
     size_t blob_size = req.i1;
-/*
-ERR_POST("   STORE SIZE:" << req.key << " sz=" << blob_size);
-*/
     if (blob_size == 0) {
         ic.Store(req.key, req.version, req.subkey, buf,
                  0, req.i0, tdata.auth);
@@ -255,10 +239,6 @@ ERR_POST("   STORE SIZE:" << req.key << " sz=" << blob_size);
             to_read -= nn_read;
             buf += nn_read;
         } // while
-/*
-ERR_POST("   BUFFER STORE:" 
-         << req.key << " " << blob_size);
-*/
         ic.Store(req.key, req.version, req.subkey, 
                  tdata.buffer.get(), blob_size, req.i0, tdata.auth);
         return;
@@ -358,11 +338,6 @@ blob_not_found:
             WriteMsg(sock, "ERR:", msg);
             return;
     }
-/*
-ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey << 
-         " size = " << ba_descr.blob_size
-         );
-*/
     if (ba_descr.blob_size == 0) {
         WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
         return;
@@ -384,13 +359,8 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
             ++ba_descr.blob_size;
         }
 
-        // translate BLOB fragment to the network
-        CStopWatch  sw(CStopWatch::eStart);
-
         x_WriteBuf(sock, buf, ba_descr.blob_size);
 
-//        stat.comm_elapsed += sw.Elapsed();
-//        ++stat.io_blocks;
         return;
 
     } // inline BLOB
@@ -421,13 +391,7 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
                 WriteMsg(sock, "OK:", msg);
             }
 
-            // translate BLOB fragment to the network
-            CStopWatch  sw(CStopWatch::eStart);
-
             x_WriteBuf(sock, buf, bytes_read);
-
-//            stat.comm_elapsed += sw.Elapsed();
-//            ++stat.io_blocks;
 
         } else {
             break;
@@ -481,11 +445,25 @@ void CNetCacheServer::Process_IC_HasBlobs(ICache&              ic,
 }
 
 
+void CNetCacheServer::Process_IC_Purge1(ICache&              ic,
+                                        CSocket&             sock, 
+                                        SIC_Request&         req,
+                                        SNC_ThreadData&      tdata)
+{
+    ICache::EKeepVersions keep_versions = (ICache::EKeepVersions) req.i1;
+    ic.Purge(req.i0, keep_versions);
+    WriteMsg(sock, "OK:", "");
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/05/18 13:27:51  kuznets
+ * Implemented cache cleaning function
+ *
  * Revision 1.12  2006/05/01 16:36:17  vasilche
  * Fixed error in netcache communication protocol.
  *
