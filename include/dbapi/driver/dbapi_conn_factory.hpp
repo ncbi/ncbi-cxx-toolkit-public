@@ -110,6 +110,9 @@ private:
         const I_DriverContext::SConnAttr& conn_attr,
         IConnValidator* validator) const;
     
+    unsigned int CalculateConnectionTimeout(I_DriverContext& ctx) const;
+    unsigned int CalculateLoginTimeout(I_DriverContext& ctx) const;
+    
     // Data types
     typedef map<string, TSvrRef>      TDispatchedSet;
     typedef map<string, unsigned int> TDispatchNumMap;
@@ -274,6 +277,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/05/18 17:01:08  ssikorsk
+ * Added methods CalculateConnectionTimeout and CalculateLoginTimeout
+ * to the CDBConnectionFactory class.
+ *
  * Revision 1.5  2006/04/06 22:25:27  ssikorsk
  * - #include <string>
  *
