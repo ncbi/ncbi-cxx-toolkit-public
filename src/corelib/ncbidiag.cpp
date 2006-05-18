@@ -54,6 +54,9 @@
 #  include <corelib/ncbi_os_mac.hpp>
 #endif
 
+#if defined(NCBI_OS_UNIX)
+#  include <sys/utsname.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -259,7 +262,8 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 
 
 CDiagContext::CDiagContext(void)
-    : m_UID(0)
+    : m_UID(0),
+    m_StopWatch(new CStopWatch(CStopWatch::eStart))
 {
 }
 
@@ -275,9 +279,6 @@ CDiagContext::TUID CDiagContext::GetUID(void) const
         CMutexGuard LOCK(s_DiagMutex);
         if ( !m_UID ) {
             x_CreateUID();
-            if ( TAutoWrite_Context::GetDefault() ) {
-                x_PrintMessage("start");
-            }
         }
     }
     return m_UID;
@@ -292,7 +293,7 @@ string CDiagContext::GetStringUID(TUID uid) const
     }
     int time = int(uid >> 16);
     int pid = int(uid & 0xFFFF);
-    sprintf(buf, "@%08X%04X", time, pid);
+    sprintf(buf, "%08X%04X", time, pid);
     return string(buf);
 }
 
@@ -319,7 +320,7 @@ void CDiagContext::SetProperty(const string& name, const string& value)
         m_Properties[name] = value;
     }}
     if ( TAutoWrite_Context::GetDefault() ) {
-        x_PrintMessage(name + "=" + value);
+        x_PrintMessage(eEvent_Extra, name + "=" + value);
     }
 }
 
@@ -336,41 +337,183 @@ void CDiagContext::PrintProperties(void) const
 {
     CMutexGuard LOCK(s_DiagMutex);
     ITERATE(TProperties, prop, m_Properties) {
-        x_PrintMessage(prop->first + "=" + prop->second);
+        x_PrintMessage(eEvent_Extra, prop->first + "=" + prop->second);
     }
 }
 
 
-void CDiagContext::PrintExit(void) const
+void CDiagContext::PrintStart(const string& message) const
 {
-    // Write "exit" if the context has been initialized
-    if ( m_UID  &&  TAutoWrite_Context::GetDefault() ) {
-        x_PrintMessage("exit");
-    }
+    // Write "start" if the context has been initialized
+    x_PrintMessage(eEvent_Start, message);
 }
 
 
-void CDiagContext::x_PrintMessage(const string& message) const
+void CDiagContext::PrintStop(void) const
 {
-    string data = GetStringUID() + "#" +
-        NStr::IntToString(CDiagBuffer::GetProcessPostNumber(false)) +
-        "::" + message;
+    // Write "start" if the context has been initialized
+    x_PrintMessage(eEvent_Stop, kEmptyStr);
+}
+
+
+void CDiagContext::PrintExtra(const string& message) const
+{
+    // Write "start" if the context has been initialized
+    x_PrintMessage(eEvent_Extra, message);
+}
+
+
+void CDiagContext::PrintRequestStart(const string& message) const
+{
+    // Write "start" if the context has been initialized
+    x_PrintMessage(eEvent_RequestStart, message);
+}
+
+
+void CDiagContext::PrintRequestStop(void) const
+{
+    // Write "start" if the context has been initialized
+    x_PrintMessage(eEvent_RequestStop, kEmptyStr);
+}
+
+
+const char* kProperty_HostName    = "host";
+const char* kProperty_HostIP      = "host_ip_addr";
+const char* kProperty_ClientIP    = "client_ip";
+const char* kProperty_SessionID   = "session_id";
+const char* kProperty_AppName     = "app_name";
+const char* kProperty_ExitSig     = "exit_signal";
+const char* kProperty_ExitCode    = "exit_code";
+const char* kProperty_ReqStatus   = "request_status";
+const char* kProperty_ReqTime     = "request_time";
+const char* kProperty_BytesRd     = "bytes_rd";
+const char* kProperty_BytesWr     = "bytes_wr";
+
+
+static string s_GetHost(void)
+{
+    // Check context properties
+    string ret = GetDiagContext().GetProperty(kProperty_HostName);
+    if ( !ret.empty() )
+        return ret;
+
+    ret = GetDiagContext().GetProperty(kProperty_HostIP);
+    if ( !ret.empty() )
+        return ret;
+
+#if defined(NCBI_OS_UNIX)
+    // UNIX - use uname()
+    {{
+        struct utsname buf;
+        if (uname(&buf) == 0)
+            return string(buf.nodename);
+    }}
+#endif
+
+#if defined(NCBI_OS_MSWIN)
+    // MSWIN - use COMPUTERNAME
+    const char* compname = ::getenv("COMPUTERNAME");
+    if ( compname  &&  *compname )
+        return compname;
+#endif
+
+    // Server env. - use SERVER_ADDR
+    const char* servaddr = ::getenv("SERVER_ADDR");
+    if ( servaddr  &&  *servaddr )
+        return servaddr;
+
+    // Can not get hostname
+    return "UNK_HOST";
+}
+
+
+void CDiagContext::x_PrintMessage(EEventType event,
+                                  const string& message) const
+{
+    CDiagBuffer& buf = GetDiagBuffer();
+    CTime now(CTime::eCurrent);
+    CNcbiOstrstream ostr;
+    // Print common fields
+    ostr << setfill('0') << setw(5) << buf.m_PID << "/"
+        << setw(3) << buf.m_TID << "/"
+        << setw(3) << GetFastCGIIteration() << " "
+        << setfill(' ')
+        << GetStringUID() << " "
+        << now.AsString("M/D/Y:h:m:s") << " ";
+    ostr << s_GetHost() << " ";
+
+    string prop = GetProperty(kProperty_ClientIP);
+    ostr << setw(15) << setiosflags(ios_base::left)
+        << (prop.empty() ? "UNK_CLIENT" : prop)
+        << resetiosflags(ios_base::left) << " ";
+
+    prop = GetProperty(kProperty_SessionID);
+    ostr << (prop.empty() ? "UNK_SESSION" : prop) << " ";
+
+    prop = GetProperty(kProperty_AppName);
+    ostr << (prop.empty() ? "UNK_APP" : prop) << " ";
+    switch ( event ) {
+    case eEvent_Start:
+        ostr << "start";
+        break;
+    case eEvent_Stop:
+        ostr << "stop";
+        prop = GetProperty(kProperty_ExitSig);
+        if ( !prop.empty() ) {
+            ostr << " " << prop;
+        }
+        prop = GetProperty(kProperty_ExitCode);
+        if ( !prop.empty() ) {
+            ostr << " " << prop;
+        }
+        ostr << " " << m_StopWatch->AsString();
+        break;
+    case eEvent_Extra:
+        ostr << "extra";
+        break;
+    case eEvent_RequestStart:
+        ostr << "request-start";
+        break;
+    case eEvent_RequestStop:
+        ostr << "request-stop";
+        prop = GetProperty(kProperty_ReqStatus);
+        if ( !prop.empty() ) {
+            ostr << " " << prop;
+        }
+        prop = GetProperty(kProperty_ReqTime);
+        if ( !prop.empty() ) {
+            ostr << " " << prop;
+        }
+        prop = GetProperty(kProperty_BytesRd);
+        if ( !prop.empty() ) {
+            ostr << " " << prop;
+        }
+        prop = GetProperty(kProperty_BytesWr);
+        if ( !prop.empty() ) {
+            ostr << " " << prop;
+        }
+        break;
+    }
+    if ( !message.empty() ) {
+        ostr << " " << message;
+    }
     SDiagMessage mess(eDiag_Info,
-                      data.c_str(), data.size(),
+                      ostr.str(), ostr.pcount(),
                       0, 0, // file, line
-                      eDPF_OmitInfoSev | eDPF_OmitSeparator);
+                      eDPF_OmitInfoSev | eDPF_OmitSeparator | eDPF_AppLog);
     if ( CDiagBuffer::sm_Handler ) {
         CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_Handler ) {
             CDiagBuffer::sm_Handler->Post(mess);
         }
     }
+    ostr.rdbuf()->freeze(false);
 }
 
 
 bool CDiagContext::IsSetOldPostFormat(void)
 {
-    return TOldPostFormatParam::GetDefault();
+     return TOldPostFormatParam::GetDefault();
 }
 
 
@@ -475,10 +618,6 @@ CDiagBuffer::~CDiagBuffer(void)
     if (m_Diag  ||  dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount())
         Abort();
 #endif
-    if (m_TID == 0) {
-        // Main thread
-        GetDiagContext().PrintExit();
-    }
     delete m_Stream;
     m_Stream = 0;
 }
@@ -1219,7 +1358,7 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     // UID
     bool print_uid = IsSetDiagPostFlag(eDPF_UID, m_Flags);
     if ( print_uid ) {
-        os << GetDiagContext().GetStringUID(GetUID()) << " ";
+        os << "@" << GetDiagContext().GetStringUID(GetUID()) << " ";
     }
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
@@ -1616,6 +1755,9 @@ static bool s_TlsDestroyed; /* = false */
 
 static void s_TlsObjectCleanup(void* /* ptr */)
 {
+    if (!CDiagContext::IsSetOldPostFormat()  &&  CThread::GetSelf() == 0) {
+        GetDiagContext().PrintStop();
+    }
     s_TlsDestroyed = true;
 }
 
@@ -1651,6 +1793,231 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
         if (m_QuickFlush) {
             (*m_Stream) << NcbiFlush;
         }
+    }
+}
+
+
+/// CFileDiagHandler
+
+static bool s_SplitLogFile = false;
+
+extern void SetSplitLogFile(bool value)
+{
+    s_SplitLogFile = value;
+}
+
+
+extern bool GetSplitLogFile(void)
+{
+    return s_SplitLogFile;
+}
+
+
+static void LogFileCleanup(void* data)
+{
+    CNcbiOfstream* str = static_cast<CNcbiOfstream*>(data);
+    delete str;
+}
+
+
+extern bool SetLogFile(const string& file_name,
+                       EDiagFileType file_type,
+                       bool quick_flush,
+                       ios::openmode mode)
+{
+    bool no_split = !s_SplitLogFile || file_name.empty() || file_name == "-";
+    if ( no_split ) {
+        if (file_type != eDiagFile_All) {
+            return false;
+        }
+        // Check special filenames
+        if ( file_name.empty() ) {
+            // no output
+            SetDiagStream(0, quick_flush);
+        }
+        else if (file_name == "-") {
+            // output to stderr
+            SetDiagStream(&NcbiCerr, quick_flush);
+        }
+        else {
+            // output to file
+            CNcbiOfstream* str = new CNcbiOfstream(file_name.c_str(),
+                mode);
+            if ( !str->is_open() ) {
+                SetLogFile("-", eDiagFile_All, quick_flush);
+                ERR_POST(Warning << "Failed to initialize log: " << file_name);
+                return false;
+            }
+            else {
+                SetDiagStream(str, quick_flush, LogFileCleanup, str);
+            }
+        }
+    }
+    else {
+        CFileDiagHandler* handler =
+            dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
+        if ( !handler ) {
+            // Install new handler
+            handler = new CFileDiagHandler();
+            SetDiagHandler(handler);
+        }
+        // Update the existing handler
+        return handler->SetLogFile(file_name, file_type, quick_flush, mode);
+    }
+    return true;
+}
+
+
+extern string GetLogFile(EDiagFileType file_type)
+{
+    CFileDiagHandler* handler =
+        dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
+    return handler ? handler->GetLogFile(file_type) : kEmptyStr;
+}
+
+
+bool s_IsSpecialLogName(const string& name)
+{
+    return name.empty()
+        ||  name == "-"
+        ||  name == "/dev/null";
+}
+
+
+CFileDiagHandler::CFileDiagHandler(void)
+    : m_Err("-"),
+      m_Log("-"),
+      m_Trace("-"),
+      m_LastReopen(new CTime)
+{
+    SetLogFile("-", eDiagFile_All, true, ios::app);
+}
+
+
+CFileDiagHandler::~CFileDiagHandler(void)
+{
+    delete m_LastReopen;
+}
+
+
+bool CFileDiagHandler::SetLogFile(const string& file_name,
+                                  EDiagFileType file_type,
+                                  bool          quick_flush,
+                                  ios::openmode mode)
+{
+    bool special = s_IsSpecialLogName(file_name);
+    switch ( file_type ) {
+    case eDiagFile_All:
+        m_Err.m_FileName = special ? file_name : file_name + ".err";
+        m_Err.m_Mode = mode;
+        m_Err.m_QuickFlush = quick_flush;
+        m_Log.m_FileName = special ? file_name : file_name + ".log";
+        m_Log.m_Mode = mode;
+        m_Log.m_QuickFlush = quick_flush;
+        m_Trace.m_FileName = special ? file_name : file_name + ".trace";
+        m_Trace.m_Mode = mode;
+        m_Trace.m_QuickFlush = quick_flush;
+        break;
+    case eDiagFile_Err:
+        m_Err.m_FileName = file_name;
+        m_Err.m_Mode = mode;
+        m_Err.m_QuickFlush = quick_flush;
+        break;
+    case eDiagFile_Log:
+        m_Log.m_FileName = file_name;
+        m_Log.m_Mode = mode;
+        m_Log.m_QuickFlush = quick_flush;
+        break;
+    case eDiagFile_Trace:
+        m_Trace.m_FileName = file_name;
+        m_Trace.m_Mode = mode;
+        m_Trace.m_QuickFlush = quick_flush;
+        break;
+    }
+    return x_ReopenFiles();
+}
+
+
+string CFileDiagHandler::GetLogFile(EDiagFileType file_type) const
+{
+    switch ( file_type ) {
+    case eDiagFile_Err:
+        return m_Err.m_FileName;
+    case eDiagFile_Log:
+        return m_Log.m_FileName;
+    case eDiagFile_Trace:
+        return m_Trace.m_FileName;
+    }
+    return kEmptyStr;
+}
+
+
+bool CFileDiagHandler::x_ReopenLog(SLogFileInfo& info)
+{
+    // Remember and reset stream mode
+    ios::openmode mode = info.m_Mode;
+    info.m_Mode = ios::app;
+    if ( info.m_FileName.empty() ) {
+        info.SetStream(0, false, info.m_QuickFlush);
+        return true;
+    }
+    if (info.m_FileName == "-") {
+        info.SetStream(&NcbiCerr, false, info.m_QuickFlush);
+        return true;
+    }
+    CNcbiOfstream* str = new CNcbiOfstream(info.m_FileName.c_str(), mode);
+    if ( !str->is_open() ) {
+        info.SetStream(&NcbiCerr, false, info.m_QuickFlush);
+        ERR_POST(Warning << "Failed to open log file: " << info.m_FileName);
+        info.m_FileName = "-";
+        return false;
+    }
+    info.SetStream(str, true, info.m_QuickFlush);
+    return true;
+}
+
+
+bool CFileDiagHandler::x_ReopenFiles(void)
+{
+    bool res = true;
+    res &= x_ReopenLog(m_Err);
+    res &= x_ReopenLog(m_Log);
+    res &= x_ReopenLog(m_Trace);
+    m_LastReopen->SetCurrent();
+    return res;
+}
+
+
+const int kLogReopenDelay = 60; // Reopen log every 60 seconds
+
+void CFileDiagHandler::Post(const SDiagMessage& mess)
+{
+    // Check time and re-open the streams
+    if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay) {
+        x_ReopenFiles();
+    }
+
+    // Output the message
+    SLogFileInfo* info = 0;
+    if ( IsSetDiagPostFlag(eDPF_AppLog, mess.m_Flags) ) {
+        info = &m_Log;
+    }
+    else {
+        switch ( mess.m_Severity ) {
+        case eDiag_Info:
+        case eDiag_Trace:
+            info = &m_Trace;
+            break;
+        default:
+            info = &m_Err;
+        }
+    }
+    if ( !info->m_Stream ) {
+        return;
+    }
+    (*info->m_Stream) << mess;
+    if (info->m_QuickFlush) {
+        (*info->m_Stream) << NcbiFlush;
     }
 }
 
@@ -2061,7 +2428,7 @@ extern void Abort(void)
     // If don't defined handler or application doesn't still terminated
 
     // Check environment variable for silent exit
-    const char* value = getenv("DIAG_SILENT_ABORT");
+    const char* value = ::getenv("DIAG_SILENT_ABORT");
     if (value  &&  (*value == 'Y'  ||  *value == 'y'  ||  *value == '1')) {
         ::exit(255);
     }
@@ -2258,6 +2625,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.114  2006/05/18 19:07:27  grichenk
+ * Added output to log file(s), application access log, new cgi log formatting.
+ *
  * Revision 1.113  2006/04/17 15:37:43  grichenk
  * Added code to parse a string back into SDiagMessage
  *

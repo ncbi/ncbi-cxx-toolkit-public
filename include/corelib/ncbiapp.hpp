@@ -446,10 +446,32 @@ protected:
                                      string* real_path = 0);
 
     /// Get the application's log file name
-    ///
     /// @return
-    ///   File name
+    ///   Log file
     const string& GetLogFileName(void) const;
+
+    /// Get the application's log file name. Must be overloaded to
+    /// provide log file names.
+    /// @param file_type
+    ///   Type of log file: err, log or trace.
+    /// @return
+    ///   Log file name for the given type.
+    virtual string GetLogFileName(EDiagFileType file_type) const;
+    /// Get the default path for the log files. By default returns
+    /// the executable's directory.
+    virtual string GetDefaultLogPath(void) const;
+
+    /// Method to be called before application start.
+    /// Can be used to set DiagContext properties to be printed
+    /// in the application start message (e.g. host|host_ip_addr,
+    /// client_ip and session_id for CGI applications).
+    virtual void AppStart(void);
+
+    /// Method to be called before application exit.
+    /// Can be used to set DiagContext properties to be printed
+    /// in the application stop message (exit_status, exit_signal,
+    /// exit_code).
+    virtual void AppStop(int exit_code);
 
 private:
     /// Read standard NCBI application configuration settings.
@@ -469,6 +491,11 @@ private:
     /// @return
     ///   Result of the operation
     bool x_SetupLogFile(const string& name, ios::openmode mode = ios::out);
+
+    /// Setup log files (err, log and trace).
+    /// @return
+    ///   true on success
+    bool x_SetupLogFiles(void);
 
     /// Setup C++ standard I/O streams' behaviour.
     ///
@@ -495,7 +522,7 @@ private:
     string                     m_ProgramDisplayName;  ///< Display name of app
     string                     m_ExePath;    ///< Program executable path
     string                     m_RealExePath; ///< Symlink-free executable path
-    string                     m_LogFileName; ///< Log file name
+    mutable string             m_LogFileName; ///< Log file name
     string                     m_ConfigPath;  ///< Path to .ini file used
 };
 
@@ -563,6 +590,7 @@ inline const CArgDescriptions* CNcbiApplication::GetArgDescriptions(void) const
     return m_ArgDesc.get();
 }
 
+
 inline const string& CNcbiApplication::GetLogFileName(void) const
 {
     return m_LogFileName;
@@ -576,6 +604,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/05/18 19:07:26  grichenk
+ * Added output to log file(s), application access log, new cgi log formatting.
+ *
  * Revision 1.57  2005/08/24 14:32:50  kuznets
  * Comment cleanup
  *

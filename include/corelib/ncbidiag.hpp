@@ -224,6 +224,7 @@ enum EDiagSev {
     eDiag_Fatal,    ///< Fatal error -- guarantees exit(or abort)
     //
     eDiag_Trace,    ///< Trace message
+
     // Limits
     eDiagSevMin = eDiag_Info,  ///< Verbosity level for min. severity
     eDiagSevMax = eDiag_Trace  ///< Verbosity level for max. severity
@@ -292,6 +293,8 @@ enum EDiagPostFlag {
     eDPF_MergeLines         = 0x200000, ///< Ask diag.handlers to remove EOLs
     eDPF_OmitInfoSev        = 0x400000, ///< No sev. indication if eDiag_Info 
     eDPF_OmitSeparator      = 0x800000, ///< No '---' separator before message
+
+    eDPF_AppLog             = 0x1000000, ///< Post message to application log
 
     /// Use global default flags (merge with).
     /// @sa SetDiagPostFlag(), UnsetDiagPostFlag(), IsSetDiagPostFlag()
@@ -388,6 +391,8 @@ private:
 ///
 /// NCBI diagnostic context. Storage for application-wide properties.
 
+class CStopWatch;
+
 class NCBI_XNCBI_EXPORT CDiagContext
 {
 public:
@@ -398,13 +403,12 @@ public:
     typedef Int8 TUID;
 
     /// Return (create if not created yet) unique diagnostic ID.
-    /// Prints start message if AutoWrite flag is set.
     TUID GetUID(void) const;
     /// Return string representation of UID
     string GetStringUID(TUID uid = 0) const;
 
     /// Set AutoWrite flag. If set, each property is posted to the current
-    /// diag stream when a new value is set.
+    /// app-log stream when a new value is set.
     void SetAutoWrite(bool value);
 
     /// Set application context property by name.
@@ -415,11 +419,24 @@ public:
     /// property is not set.
     string GetProperty(const string& name) const;
 
-    /// Forced dump of all set properties regardless of the AutoPrint flag.
+    /// Forced dump of all set properties.
     void PrintProperties(void) const;
 
-    // Print exit message if AutoPrint flag is set.
-    void PrintExit(void) const;
+    /// Print start message. If the following values are set as properties,
+    /// they will be dumped before the message:
+    ///   host | host_ip_addr
+    ///   client_ip
+    ///   session_id
+    ///   app_name
+    void PrintStart(const string& message) const;
+    /// Print exit message.
+    void PrintStop(void) const;
+    /// Print extra message.
+    void PrintExtra(const string& message) const;
+    /// Print request start message (for request-driven applications)
+    void PrintRequestStart(const string& message) const;
+    /// Print request stop message (for request-driven applications)
+    void PrintRequestStop(void) const;
 
     /// Check old/new format flag (for compatibility only)
     static bool IsSetOldPostFormat(void);
@@ -434,15 +451,25 @@ public:
     void SetHostname(const string& hostname);
 
 private:
+    // Type of event to report
+    enum EEventType {
+        eEvent_Start,        // Application start
+        eEvent_Stop,         // Application exit
+        eEvent_Extra,        // Other application events
+        eEvent_RequestStart, // Start processing request
+        eEvent_RequestStop   // Finish processing request
+    };
+
     // Initialize UID
     void x_CreateUID(void) const;
     // Write message to the log using current handler
-    void x_PrintMessage(const string& message) const;
+    void x_PrintMessage(EEventType event, const string& message) const;
 
     typedef map<string, string> TProperties;
 
-    mutable TUID m_UID;
-    TProperties  m_Properties;
+    mutable TUID         m_UID;
+    TProperties          m_Properties;
+    auto_ptr<CStopWatch> m_StopWatch;
 };
 
 
@@ -800,7 +827,7 @@ public:
 /// string value from CDiagBuffer::sm_SeverityName[].
 #define DIAG_POST_LEVEL "DIAG_POST_LEVEL"
 
-/// Set the threshold severity for posting the messages. 
+/// Set the threshold severity for posting the messages.
 ///
 /// This function has effect only if:
 ///   - Environment variable $DIAG_POST_LEVEL is not set, and
@@ -1103,6 +1130,106 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CFileDiagHandler --
+///
+/// Specialization of "CDiagHandler" for the file-based diagnostics.
+/// Splits output into three files: .err (severity higher than the
+/// threshold), .trace (severity below the threshold) and .log
+/// (application access log). Re-opens the files periodically
+/// to allow safe log rotation.
+
+/// Type of file for the output
+enum EDiagFileType
+{
+    eDiagFile_Err,    ///< Error log file
+    eDiagFile_Log,    ///< Access log file
+    eDiagFile_Trace,  ///< Trace log file
+    eDiagFile_All     ///< All log files
+};
+
+class NCBI_XNCBI_EXPORT CFileDiagHandler : public CDiagHandler
+{
+public:
+    /// Constructor. initializes log file(s) with the arguments.
+    /// @sa SetLogFile
+    CFileDiagHandler(void);
+    ~CFileDiagHandler(void);
+
+    /// Post message to the handler. Info and Trace messages are sent
+    /// to file_name.trace file, all others go to file_name.err file.
+    /// Application access messages go to file_name.log file.
+    virtual void Post(const SDiagMessage& mess);
+
+    /// Set new log file.
+    ///
+    /// @param file_name
+    ///   File name. If file_type is eDiagFile_All, the output will be written
+    ///   to file_name.(err|log|trace). Otherwise the filename is used as-is.
+    ///   Special filenames are:
+    ///     ""          - disable diag messages;
+    ///     "-"         - print to stderr
+    ///     "/dev/null" - never add .(err|log|trace) to the name.
+    /// @param file_type
+    ///   Type of log file to set - error, trace or application log.
+    /// @param quick_flush
+    ///   Do stream flush after every message.
+    bool SetLogFile(const string& file_name,
+                    EDiagFileType file_type,
+                    bool          quick_flush,
+                    ios::openmode mode);
+
+    /// Get current log file name. If file_type is eDiagFile_All, always
+    /// returns empty string.
+    string GetLogFile(EDiagFileType file_type) const;
+
+private:
+    bool x_ReopenFiles(void);
+
+    struct SLogFileInfo
+    {
+        SLogFileInfo(string file_name)
+            : m_FileName(file_name),
+              m_OwnStream(false),
+              m_Stream(0),
+              m_QuickFlush(true),
+              m_Mode(ios::app)
+        {}
+
+        ~SLogFileInfo(void)
+        {
+            SetStream(0, false, false);
+        }
+
+        void SetStream(CNcbiOstream* stream, bool own, bool quick_flush)
+        {
+            if (m_Stream  &&  m_OwnStream) {
+                delete m_Stream;
+            }
+            m_Stream = stream;
+            m_OwnStream = own;
+            m_QuickFlush = quick_flush;
+        }
+
+        string        m_FileName;
+        bool          m_OwnStream;
+        CNcbiOstream* m_Stream;
+        bool          m_QuickFlush;
+        ios::openmode m_Mode;
+    private:
+        SLogFileInfo(const SLogFileInfo&);
+        SLogFileInfo& operator=(const SLogFileInfo&);
+    };
+
+    bool x_ReopenLog(SLogFileInfo& info);
+
+    SLogFileInfo  m_Err;
+    SLogFileInfo  m_Log;
+    SLogFileInfo  m_Trace;
+    CTime*        m_LastReopen;
+};
+
 
 /// Set diagnostic stream.
 ///
@@ -1121,6 +1248,30 @@ NCBI_XNCBI_EXPORT
 extern bool IsDiagStream(const CNcbiOstream* os);
 
 
+/// Split log files flag. If set, the output is sent to different
+/// log files depending on the severity level.
+NCBI_XNCBI_EXPORT extern void SetSplitLogFile(bool value = true);
+/// Get split log files flag.
+NCBI_XNCBI_EXPORT extern bool GetSplitLogFile(void);
+
+/// Set log files.
+/// Send output to file_name or to file_name.(err|log|trace) depending
+/// on the split log file flag and file_type. If a single file type
+/// is selected, other types remain the same or are switched to
+/// stderr if their files have not been assigned yet.
+/// If split log flag is off, any file type except eDiagFile_All
+/// will be ignored.
+/// Return true on success, false if the file could not be open.
+NCBI_XNCBI_EXPORT
+extern bool SetLogFile(const string& file_name,
+                       EDiagFileType file_type = eDiagFile_All,
+                       bool          quick_flush = true,
+                       ios::openmode mode = ios::app);
+
+/// Get log file name for the given log type. Return empty string for
+/// eDiagFile_All or if the log file handler is not installed.
+NCBI_XNCBI_EXPORT
+extern string GetLogFile(EDiagFileType file_type);
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -1335,6 +1486,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.104  2006/05/18 19:07:26  grichenk
+ * Added output to log file(s), application access log, new cgi log formatting.
+ *
  * Revision 1.103  2006/04/17 15:37:43  grichenk
  * Added code to parse a string back into SDiagMessage
  *

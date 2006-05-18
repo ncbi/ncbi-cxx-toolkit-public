@@ -398,7 +398,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     int restart_code = s_ShouldRestart(mtime, watcher.get(),
                                                        restart_delay);
                     if (restart_code != 0) {
-                        OnEvent(restart_code == kSR_Executable ?
+                        x_OnEvent(restart_code == kSR_Executable ?
                                 eExecutable : eWatchFile, restart_code);
                         *result = (restart_code == kSR_WatchFile) ? 0
                             : restart_code;
@@ -406,7 +406,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     }
                 }}
                 m_Iteration--;
-                OnEvent(eWaiting, 115);
+                x_OnEvent(eWaiting, 115);
                 continue;
             }
         }
@@ -452,7 +452,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                             CNcbiRegistry::eErrPost)
                 && m_Context->GetRequest().GetEntries().find("exitfastcgi")
                 != m_Context->GetRequest().GetEntries().end()) {
-                OnEvent(eExitRequest, 114);
+                x_OnEvent(eExitRequest, 114);
                 ostr <<
                     "Content-Type: text/html" HTTP_EOL
                     HTTP_EOL
@@ -463,7 +463,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 # else
                 FCGX_Finish();
 # endif
-                OnEvent(eEndRequest, 122);
+                x_OnEvent(eEndRequest, 122);
                 break;
             }
 
@@ -484,16 +484,36 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             m_ArgContextSync = false;
 
             // Call ProcessRequest()
+            x_OnEvent(eStartRequest, 0);
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
             VerifyCgiContext(*m_Context);
-            int x_result = ProcessRequest(*m_Context);
+            int x_result = 0;
+            try {
+                x_result = ProcessRequest(*m_Context);
+            }
+            catch (CCgiException& e) {
+                if ( e.GetStatusCode() < CCgiException::e200_Ok  ||
+                    e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
+                    throw;
+                }
+                // If for some reason exception with status 2xx was thrown,
+                // set the result to 0, update HTTP status and continue.
+                m_Context->GetResponse().SetStatus(e.GetStatusCode(),
+                    e.GetStatusMessage());
+                SetHTTPStatus(e.GetStatusCode());
+                x_result = 0;
+            }
             _TRACE("CCgiApplication::Run: flushing");
             m_Context->GetResponse().Flush();
             _TRACE("CCgiApplication::Run: done, status: " << x_result);
             if (x_result != 0)
                 (*result)++;
             FCGX_SetExitStatus(x_result, pfout);
-            OnEvent(x_result == 0 ? eSuccess : eError, x_result);
+            GetDiagContext().SetProperty("bytes_rd",
+                                         NStr::IntToString(ibuf.GetCount()));
+            GetDiagContext().SetProperty("bytes_wr",
+                                         NStr::IntToString(obuf.GetCount()));
+            x_OnEvent(x_result == 0 ? eSuccess : eError, x_result);
         }
         catch (exception& e) {
             // Increment error counter
@@ -504,7 +524,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 CCgiObuffer  obuf(pfout);
                 CNcbiOstream ostr(&obuf);
                 int exit_code = OnException(e, ostr);
-                OnEvent(eException, exit_code);
+                x_OnEvent(eException, exit_code);
                 FCGX_SetExitStatus(exit_code, pfout);
             }}
             
@@ -543,14 +563,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                      CNcbiRegistry::eErrPost);
                 if ( is_stop_onfail ) {     // configured to stop on error
                     // close current request
-                    OnEvent(eExitOnFail, 113);
+                    x_OnEvent(eExitOnFail, 113);
                     _TRACE("CCgiApplication::x_RunFastCGI: FINISHING(forced)");
 # ifdef HAVE_FCGX_ACCEPT_R
                     FCGX_Finish_r(&request);
 # else
                     FCGX_Finish();
 # endif
-                    OnEvent(eEndRequest, 123);
+                    x_OnEvent(eEndRequest, 123);
                     break;
                 }
             }}
@@ -576,14 +596,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }
 
         // 
-        OnEvent(eEndRequest, 121);
+        x_OnEvent(eEndRequest, 121);
 
         // If to restart the application
         {{
             int restart_code = s_ShouldRestart(mtime, watcher.get(),
                                                restart_delay);
             if (restart_code != 0) {
-                OnEvent(restart_code == kSR_Executable ?
+                x_OnEvent(restart_code == kSR_Executable ?
                         eExecutable : eWatchFile, restart_code);
                 *result = (restart_code == kSR_WatchFile) ? 0 : restart_code;
                 break;
@@ -592,7 +612,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     } // Main Fast-CGI loop
 
     //
-    OnEvent(eExit, *result);
+    x_OnEvent(eExit, *result);
 
     // done
     _TRACE("CCgiApplication::x_RunFastCGI:  return (FastCGI loop finished)");
@@ -609,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.60  2006/05/18 19:07:26  grichenk
+ * Added output to log file(s), application access log, new cgi log formatting.
+ *
  * Revision 1.59  2006/05/18 15:03:34  ucko
  * If [FastCGI]WatchFile.RestartDelay is set, stagger restarts over the
  * corresponding number of seconds, continuing to serve requests as is in

@@ -165,6 +165,7 @@ protected:
 
     /// @sa OnEvent, ProcessRequest
     enum EEvent {
+        eStartRequest,
         eSuccess,    ///< The HTTP request was processed, with zero exit code
         eError,      ///< The HTTP request was processed, non-zero exit code
         eWaiting,    ///< Periodic awakening while waiting for the next request
@@ -230,6 +231,19 @@ protected:
     /// HTTP status set if something is wrong.
     void VerifyCgiContext(CCgiContext& context);
 
+    /// Get log file name.
+    virtual string GetLogFileName(EDiagFileType file_type) const;
+    /// Get default path for the log files.
+    virtual string GetDefaultLogPath(void) const;
+
+    /// Prepare properties and print the application start message
+    virtual void AppStart(void);
+    /// Prepare properties for application stop message
+    virtual void AppStop(int exit_code);
+
+    /// Set HTTP status code
+    void SetHTTPStatus(unsigned int status) { m_HTTPStatus = status; }
+
 protected:
 
     /// Bit flags for CCgiRequest
@@ -244,6 +258,9 @@ private:
     // In the "result", return # of requests whose processing has failed
     // (exception was thrown or ProcessRequest() returned non-zero value)
     bool x_RunFastCGI(int* result, unsigned int def_iter = 10);
+
+    // Write message to the application log, call OnEvent()
+    void x_OnEvent(EEvent event, int status);
 
     // Logging
     enum ELogPostFlags {
@@ -285,6 +302,16 @@ private:
 
     /// Parsed cmd.-line args (cmdline + CGI)
     mutable auto_ptr<CArgs>   m_CgiArgs;
+
+    /// HTTP status
+    unsigned int              m_HTTPStatus;
+
+    /// Request processing time - not MT-safe
+    CStopWatch                m_RequestTimer;
+
+    /// Wrappers for cin and cout
+    auto_ptr<CNcbiIstream>    m_InputStream;
+    auto_ptr<CNcbiOstream>    m_OutputStream;
 
     // forbidden
     CCgiApplication(const CCgiApplication&);
@@ -349,6 +376,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2006/05/18 19:07:26  grichenk
+* Added output to log file(s), application access log, new cgi log formatting.
+*
 * Revision 1.51  2006/01/05 16:23:27  grichenk
 * Added VerifyCgiContext() to prohibit HTTP_X_MOZ prefetch.
 *

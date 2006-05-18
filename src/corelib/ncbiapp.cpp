@@ -92,6 +92,9 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 
 CNcbiApplication::CNcbiApplication(void)
 {
+    // Initialize UID and start timer
+    GetDiagContext().GetUID();
+
     m_DisableArgDesc = false;
     m_HideArgs = 0;
     m_StdioFlags = 0;
@@ -412,7 +415,7 @@ int CNcbiApplication::AppMain
             // IsSetOldPostFormat() uses the registry and should not be
             // called before LoadConfig().
             if ( !CDiagContext::IsSetOldPostFormat() ) {
-                GetDiagContext().SetProperty("AppName", appname);
+                GetDiagContext().SetProperty("app_name", appname);
             }
 
             // Setup the standard features from the config file.
@@ -420,6 +423,9 @@ int CNcbiApplication::AppMain
             // NOTE: this will override environment variables, 
             // except DIAG_POST_LEVEL which is Set*Fixed*.
             x_HonorStandardSettings();
+
+            // Application start
+            AppStart();
 
             // Do init
             Init();
@@ -532,6 +538,9 @@ int CNcbiApplication::AppMain
         throw;
     }
 
+    // Application stop
+    AppStop(exit_code);
+
     // Exit
     return exit_code;
 }
@@ -581,11 +590,12 @@ bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
     }
     case eDS_ToStdlog: {
         // open log.file
-        string log = m_Arguments->GetProgramName() + ".log";
-        if (!x_SetupLogFile(log)) {
-            return false;
+        if ( CDiagContext::IsSetOldPostFormat() ) {
+            return x_SetupLogFile(m_Arguments->GetProgramName() + ".log");
         }
-        break;
+        else {
+            return x_SetupLogFiles();
+        }
     }
     case eDS_ToMemory: {
         // direct global diagnostics to the memory-resident output stream
@@ -905,12 +915,11 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
     }
 
     // LOG settings
-    if (m_LogFileName.empty() ||
-        (!m_LogFileName.empty() && reg->GetBool("LOG","IgnoreEnvArg",false))) {
-        string logname = reg->GetString("LOG","File",kEmptyStr);
+    if (m_LogFileName.empty() || reg->GetBool("LOG","IgnoreEnvArg",false)) {
+        string logname = reg->GetString("LOG", "File", kEmptyStr);
         if (!logname.empty()) {
-            bool truncate_log = reg->GetBool("LOG","Truncate",false);
-            bool nocreate_log = reg->GetBool("LOG","NoCreate",false);
+            bool truncate_log = reg->GetBool("LOG", "Truncate", false);
+            bool nocreate_log = reg->GetBool("LOG", "NoCreate", false);
             CFile file_log(logname);
             if (!nocreate_log || file_log.Exists()) {
                 string prevlog = GetLogFileName();
@@ -1011,18 +1020,144 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 
 bool CNcbiApplication::x_SetupLogFile(const string& name, ios::openmode mode)
 {
-    auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(name.c_str(), mode));
-    if ( os->good() ) {
-        _TRACE("CNcbiApplication() -- opened log file: " << name);
-        // (re)direct the global diagnostics to the log.file
-        CNcbiOfstream* os_log = os.release();
-        SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup, (void*) os_log);
+    if ( SetLogFile(name, eDiagFile_All, true, mode) ) {
         m_LogFileName = name;
-    } else {
-        _TRACE("CNcbiApplication() -- cannot open log file: " << name);
-        return false;
+        return true;
     }
-    return true;
+    return false;
+}
+
+
+bool s_SetupLogFile(string logname,
+                    EDiagFileType type,
+                    string& path,
+                    bool& base_only,
+                    bool& try_all)
+{
+    if ( CFile::IsAbsolutePath(logname) ) {
+        // Try absolute path as-is
+        if ( SetLogFile(logname, type) ) {
+            return true;
+        }
+        // Failed - try base name only
+        logname = CFile(logname).GetBase();
+    }
+    if ( !try_all ) {
+        // Do not try to find the correct path/name combination
+        if ( base_only ) {
+            logname = CFile(logname).GetBase();
+        }
+        return SetLogFile(CFile::ConcatPath(path, logname), type);
+    }
+    // Try /default/rel/logname
+    if ( SetLogFile(CFile::ConcatPath(path, logname), type) ) {
+        try_all = false;
+        return true;
+    }
+    string norm = CFile::NormalizePath(logname);
+    if (norm != logname) {
+        // Try to use base name only: /default/logname
+        if ( SetLogFile(CFile::ConcatPath(path, CFile(logname).GetBase()),
+            type) ) {
+            base_only = true;
+            try_all = false;
+            return true;
+        }
+    }
+    // Try to start from CWD: ./rel/logname
+    string cwd = ".";
+    if ( SetLogFile(CFile::ConcatPath(cwd, logname), type) ) {
+        try_all = false;
+        path = cwd;
+        return true;
+    }
+    if (norm != logname) {
+        // Try to use base name with CWD: ./logname
+        if ( SetLogFile(CFile::ConcatPath(cwd, CFile(logname).GetBase()),
+            type) ) {
+            base_only = true;
+            path = cwd;
+            try_all = false;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CNcbiApplication::x_SetupLogFiles(void)
+{
+    string path = GetDefaultLogPath();
+    bool base_only = false;       // true if must use base name only
+    bool try_all = true;
+    false;
+
+    if ( !GetSplitLogFile() ) {
+        return s_SetupLogFile(GetLogFileName(eDiagFile_All),
+            eDiagFile_All, path, base_only, try_all);
+    }
+    bool success = s_SetupLogFile(GetLogFileName(eDiagFile_Err),
+        eDiagFile_Err, path, base_only, try_all);
+    success &= s_SetupLogFile(GetLogFileName(eDiagFile_Log),
+        eDiagFile_Log, path, base_only, try_all);
+    success &= s_SetupLogFile(GetLogFileName(eDiagFile_Trace),
+        eDiagFile_Trace, path, base_only, try_all);
+    return success;
+}
+
+
+string CNcbiApplication::GetLogFileName(EDiagFileType file_type) const
+{
+    if ( m_LogFileName.empty() ) {
+        m_LogFileName = m_Arguments->GetProgramBasename();
+    }
+    string logname = GetLogFile(file_type);
+    if (logname == "-") {
+        logname = kEmptyStr;
+    }
+    switch ( file_type ) {
+    case eDiagFile_All:
+        return GetSplitLogFile() ? m_LogFileName : m_LogFileName + ".log";
+    case eDiagFile_Err:
+        return logname.empty() ? m_LogFileName + ".err" : logname;
+    case eDiagFile_Log:
+        return logname.empty() ? m_LogFileName + ".log" : logname;
+    case eDiagFile_Trace:
+        return logname.empty() ? m_LogFileName + ".trace" : logname;
+    }
+    return m_LogFileName;
+}
+
+
+string CNcbiApplication::GetDefaultLogPath(void) const
+{
+    return CFile(m_Arguments->GetProgramName()).GetDir();
+}
+
+
+void CNcbiApplication::AppStart(void)
+{
+    string args;
+    if ( m_Arguments.get() ) {
+        for (SIZE_TYPE arg = 0; arg < m_Arguments->Size(); ++arg) {
+            if (arg > 0) {
+                args += " ";
+            }
+            args += (*m_Arguments)[arg];
+        }
+    }
+
+    // Print application start message
+    if ( !CDiagContext::IsSetOldPostFormat() ) {
+        GetDiagContext().PrintStart(NStr::PrintableString(args));
+    }
+}
+
+
+void CNcbiApplication::AppStop(int exit_code)
+{
+    GetDiagContext().SetProperty("exit_code",
+        NStr::IntToString(exit_code));
 }
 
 
@@ -1032,6 +1167,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.121  2006/05/18 19:07:27  grichenk
+ * Added output to log file(s), application access log, new cgi log formatting.
+ *
  * Revision 1.120  2006/02/27 15:14:59  ucko
  * Drop explicit inclusion of <math.h> on Darwin, which should be
  * unnecessary now that __NOEXTENSIONS__ is defined only for CodeWarrior.

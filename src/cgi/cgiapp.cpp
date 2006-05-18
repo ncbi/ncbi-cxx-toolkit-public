@@ -33,6 +33,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/rwstream.hpp>
+#include <corelib/ncbi_param.hpp>
+#include <util/stream_utils.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
@@ -43,6 +46,84 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+///////////////////////////////////////////////////////
+// IO streams with byte counting for CGI applications
+//
+
+
+class CCGIStreamReader : public IReader
+{
+public:
+    CCGIStreamReader(istream& is) : m_IStr(is) { }
+
+    virtual ERW_Result Read(void*   buf,
+                            size_t  count,
+                            size_t* bytes_read = 0);
+    virtual ERW_Result PendingCount(size_t* count)
+    { return eRW_NotImplemented; }
+
+protected:
+    istream& m_IStr;
+};
+
+
+ERW_Result CCGIStreamReader::Read(void*   buf,
+                                  size_t  count,
+                                  size_t* bytes_read)
+{
+    streamsize x_read = CStreamUtils::Readsome(m_IStr, (char*)buf, count);
+    ERW_Result result;
+    if (x_read < 0) {
+        result = eRW_Error;
+    }
+    else if (x_read > 0) {
+        result = eRW_Success;
+    }
+    else {
+        result = eRW_Eof;
+    }
+    if (bytes_read) {
+        *bytes_read = x_read < 0 ? 0 : x_read;
+    }
+    return result;
+}
+
+
+class CCGIStreamWriter : public IWriter
+{
+public:
+    CCGIStreamWriter(ostream& os) : m_OStr(os) { }
+
+    virtual ERW_Result Write(const void* buf,
+                             size_t      count,
+                             size_t*     bytes_written = 0);
+
+    virtual ERW_Result Flush(void)
+    { return m_OStr.flush() ? eRW_Success : eRW_Error; }
+
+protected:
+    ostream& m_OStr;
+};
+
+
+ERW_Result CCGIStreamWriter::Write(const void* buf,
+                                   size_t      count,
+                                   size_t*     bytes_written)
+{
+    ERW_Result result;
+    if (!m_OStr.write((char*)buf, count)) {
+        result = eRW_Error;
+    }
+    else {
+        result = eRW_Success;
+    }
+    if (bytes_written) {
+        *bytes_written = result == eRW_Success ? count : 0;
+    }
+    return result;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -98,30 +179,37 @@ int CCgiApplication::Run(void)
         ConfigureDiagnostics(*m_Context);
         x_AddLBCookie();
         try {
+            // Print request start message
+            x_OnEvent(eStartRequest, 0);
+
             VerifyCgiContext(*m_Context);
             result = ProcessRequest(*m_Context);
+            if (result != 0) {
+                SetHTTPStatus(500);
+            }
         }
         catch (CCgiException& e) {
             if ( e.GetStatusCode() < CCgiException::e200_Ok  ||
-                 e.GetStatusCode() >= CCgiException::e300_MultipleChoices ) {
+                 e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
                 throw;
             }
             // If for some reason exception with status 2xx was thrown,
             // set the result to 0, update HTTP status and continue.
             m_Context->GetResponse().SetStatus(e.GetStatusCode(),
                                                e.GetStatusMessage());
+            SetHTTPStatus(e.GetStatusCode());
             result = 0;
         }
         _TRACE("CCgiApplication::Run: flushing");
         m_Context->GetResponse().Flush();
         _TRACE("CCgiApplication::Run: return " << result);
-        OnEvent(result == 0 ? eSuccess : eError, result);
-        OnEvent(eExit, result);
+        x_OnEvent(result == 0 ? eSuccess : eError, result);
+        x_OnEvent(eExit, result);
     }
     catch (exception& e) {
         // Call the exception handler and set the CGI exit code
         result = OnException(e, NcbiCout);
-        OnEvent(eException, result);
+        x_OnEvent(eException, result);
 
         // Logging
         {{
@@ -161,8 +249,8 @@ int CCgiApplication::Run(void)
         stat->Submit(msg);
     }
 
-    OnEvent(eEndRequest, 120);
-    OnEvent(eExit, result);
+    x_OnEvent(eEndRequest, 120);
+    x_OnEvent(eExit, result);
 
     return result;
 }
@@ -228,6 +316,12 @@ CCgiServerContext* CCgiApplication::LoadServerContext(CCgiContext& /*context*/)
 }
 
 
+NCBI_PARAM_DECL(bool, CGI, Count_Transfered);
+NCBI_PARAM_DEF_EX(bool, CGI, Count_Transfered, false, eParam_NoThread,
+                  CGI_COUNT_TRANSFERED);
+typedef NCBI_PARAM_TYPE(CGI, Count_Transfered) TCGI_Count_Transfered;
+
+
 CCgiContext* CCgiApplication::CreateContext
 (CNcbiArguments*   args,
  CNcbiEnvironment* env,
@@ -240,10 +334,32 @@ CCgiContext* CCgiApplication::CreateContext
         GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 0,
                            CNcbiRegistry::eReturn);
 
-    return 
-      new CCgiContext(*this, args, env, inp, out, ifd, ofd,
-                     (errbuf_size >= 0) ? (size_t) errbuf_size : 256,
-                     m_RequestFlags);
+    if ( TCGI_Count_Transfered::GetDefault() ) {
+        if ( !inp ) {
+            if ( !m_InputStream.get() ) {
+                m_InputStream.reset(
+                    new CRStream(new CCGIStreamReader(std::cin),
+                                CRWStreambuf::fOwnReader));
+            }
+            inp = m_InputStream.get();
+        }
+        if ( !out ) {
+            if ( !m_OutputStream.get() ) {
+                m_OutputStream.reset(
+                    new CWStream(new CCGIStreamWriter(std::cout),
+                                CRWStreambuf::fOwnWriter));
+            }
+            out = m_OutputStream.get();
+            if ( m_InputStream.get() ) {
+                // If both streams are created by the application, tie them.
+                inp->tie(out);
+            }
+        }
+    }
+    return
+        new CCgiContext(*this, args, env, inp, out, ifd, ofd,
+                        (errbuf_size >= 0) ? (size_t) errbuf_size : 256,
+                        m_RequestFlags);
 }
 
 
@@ -288,7 +404,9 @@ CCgiApplication::CCgiApplication(void)
  : m_RequestFlags(0),
    m_HostIP(0), 
    m_Iteration(0),
-   m_ArgContextSync(false)
+   m_ArgContextSync(false),
+   m_HTTPStatus(200),
+   m_RequestTimer(CStopWatch::eStop)
 {
     SetStdioFlags(fBinaryCin | fBinaryCout);
     DisableArgDescriptions();
@@ -311,16 +429,18 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 {
     // Discriminate between different types of error
     string status_str = "500 Server Error";
+    SetHTTPStatus(500);
     if ( dynamic_cast<CCgiException*> (&e) ) {
         CCgiException& cgi_e = dynamic_cast<CCgiException&>(e);
         if ( cgi_e.GetStatusCode() != CCgiException::eStatusNotSet ) {
-            status_str = NStr::IntToString(
-                (unsigned int)cgi_e.GetStatusCode()) +
+            SetHTTPStatus((unsigned int)cgi_e.GetStatusCode());
+            status_str = NStr::IntToString(m_HTTPStatus) +
                 " " + cgi_e.GetStatusMessage();
         }
         else {
             // Convert CgiRequestException to error 400
             if ( dynamic_cast<CCgiRequestException*> (&e) ) {
+                SetHTTPStatus(400);
                 status_str = "400 Malformed HTTP Request";
             }
         }
@@ -379,6 +499,73 @@ const CArgs& CCgiApplication::GetArgs(void) const
     return *m_CgiArgs;
 }
 
+
+void CCgiApplication::x_OnEvent(EEvent event, int status)
+{
+    switch ( event ) {
+    case eStartRequest:
+        {
+            // Reset HTTP status code
+            SetHTTPStatus(200);
+
+            // Set context properties
+            const CCgiRequest& req = m_Context->GetRequest();
+            GetDiagContext().SetProperty("server_name",
+                req.GetProperty(eCgi_ServerName));
+            GetDiagContext().SetProperty("client_ip",
+                req.GetProperty(eCgi_RemoteAddr));
+
+            // Print request start message
+            string args = req.GetProperty(eCgi_QueryString);
+            if ( !CDiagContext::IsSetOldPostFormat() ) {
+                GetDiagContext().PrintRequestStart(args);
+            }
+
+            // Start timer
+            m_RequestTimer.Restart();
+            break;
+        }
+    case eSuccess:
+    case eError:
+    case eException:
+        {
+            GetDiagContext().SetProperty("request_status",
+                NStr::IntToString(m_HTTPStatus));
+            if ( m_InputStream.get() ) {
+                if ( m_InputStream->eof() ) {
+                    m_InputStream->clear();
+                }
+                GetDiagContext().SetProperty("bytes_rd",
+                    NStr::IntToString(m_InputStream->tellg()));
+            }
+            if ( m_OutputStream.get() ) {
+                GetDiagContext().SetProperty("bytes_wr",
+                    NStr::IntToString(m_OutputStream->tellp()));
+            }
+            break;
+        }
+    case eEndRequest:
+        {
+            GetDiagContext().SetProperty("request_time",
+                m_RequestTimer.AsString());
+            if ( !CDiagContext::IsSetOldPostFormat() ) {
+                GetDiagContext().PrintRequestStop();
+            }
+            break;
+        }
+    case eExit:
+    case eExecutable:
+    case eWatchFile:
+    case eExitOnFail:
+    case eExitRequest:
+    case eWaiting:
+        {
+            break;
+        }
+    }
+
+    OnEvent(event, status);
+}
 
 
 void CCgiApplication::OnEvent(EEvent /*event*/,
@@ -681,6 +868,47 @@ void CCgiApplication::VerifyCgiContext(CCgiContext& context)
 }
 
 
+void CCgiApplication::AppStart(void)
+{
+    // Print application start message
+    if ( !CDiagContext::IsSetOldPostFormat() ) {
+        GetDiagContext().PrintStart(kEmptyStr);
+    }
+}
+
+
+void CCgiApplication::AppStop(int exit_code)
+{
+    GetDiagContext().SetProperty("exit_code",
+        NStr::IntToString(exit_code));
+}
+
+
+string CCgiApplication::GetLogFileName(EDiagFileType file_type) const
+{
+    string logname = GetArguments().GetProgramBasename();
+    switch ( file_type ) {
+    case eDiagFile_All:
+        return GetSplitLogFile() ? logname : logname + ".log";
+    case eDiagFile_Err:
+        return logname + ".err";
+    case eDiagFile_Log:
+        return logname + ".log";
+    case eDiagFile_Trace:
+        return logname + ".trace";
+    }
+    return logname;
+}
+
+
+string CCgiApplication::GetDefaultLogPath(void) const
+{
+    string log_path = "/log/www/";
+    const char* port = ::getenv("SERVER_PORT");
+    return port ? log_path + string(port) : log_path;
+}
+
+
 ///////////////////////////////////////////////////////
 // CCgiStatistics
 //
@@ -856,6 +1084,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.71  2006/05/18 19:07:26  grichenk
+* Added output to log file(s), application access log, new cgi log formatting.
+*
 * Revision 1.70  2006/03/02 17:53:00  vakatov
 * CCgiApplication::Run() -- avoid double reporting of an exception
 *
