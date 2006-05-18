@@ -196,7 +196,7 @@ public:
 	void Register(TBioTreeFeatureId id, const string& feature_name);
 
     /// If feature is already registered returns its id by name.
-    /// If feature does not exist returns 0.
+    /// If feature does not exist returns -1.
     TBioTreeFeatureId GetId(const string& feature_name) const;
 
     /// Clear the dictionary
@@ -309,12 +309,13 @@ public:
             const TBioTree* btr = GetParentTree();
             _ASSERT(btr);
             const CBioTreeFeatureDictionary& dict = btr->GetFeatureDict();
+            
             TBioTreeFeatureId fid = dict.GetId(feature_name);
 
-            if (fid == 0) 
+            if (fid == (TBioTreeFeatureId)-1) 
                 return kEmptyStr;
 
-            const TBioNode& value = TParent::GetValue();
+            const TBioNode& value = TParent::GetValue();            
             return value.features[fid];
         }
 
@@ -551,7 +552,7 @@ void CBioTree<TBioNode>::AddFeature(TBioTreeNode*      node,
     // Check if this id is in the dictionary
     TBioTreeFeatureId feature_id 
         = m_FeatureDict.GetId(feature_name);
-    if (!feature_id) {
+    if (feature_id == (TBioTreeFeatureId)-1) {
         // Register the new feature type
         feature_id = m_FeatureDict.Register(feature_name);
     }
@@ -603,6 +604,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/05/18 15:50:26  tereshko
+ * Added appropriate reaction on -1 return code
+ *
  * Revision 1.21  2005/04/11 15:26:29  kuznets
  * Added comments
  *
