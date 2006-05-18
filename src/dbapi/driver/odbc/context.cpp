@@ -67,7 +67,7 @@ public:
     
 private:
     CODBCContextRegistry(void);
-    ~CODBCContextRegistry(void);
+    ~CODBCContextRegistry(void) throw();
     
     mutable CMutex          m_Mutex;
     vector<CODBCContext*>   m_Registry;
@@ -80,9 +80,12 @@ CODBCContextRegistry::CODBCContextRegistry(void)
 {
 }
 
-CODBCContextRegistry::~CODBCContextRegistry(void)
+CODBCContextRegistry::~CODBCContextRegistry(void) throw()
 {
-    ClearAll();
+    try {
+        ClearAll();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 CODBCContextRegistry& 
@@ -253,8 +256,6 @@ void CODBC_Reporter::ReportErrors(void) const
 
 CODBCContext::CODBCContext(SQLLEN version, bool use_dsn)
 : m_PacketSize(0)
-, m_LoginTimeout(0)
-, m_Timeout(0)
 , m_TextImageSize(0)
 , m_Reporter(0, SQL_HANDLE_ENV, 0)
 , m_UseDSN(use_dsn)
@@ -301,7 +302,7 @@ CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 
 bool CODBCContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    m_LoginTimeout = (SQLULEN)nof_secs;
+    m_LoginTimeout = nof_secs;
     return true;
 }
 
@@ -310,14 +311,14 @@ bool CODBCContext::SetTimeout(unsigned int nof_secs)
 {
     CFastMutexGuard mg(m_Mtx);
     
-    m_Timeout = (SQLULEN)nof_secs;
+    m_Timeout = nof_secs;
 
     ITERATE(TConnPool, it, m_NotInUse) {
         CODBC_Connection* t_con
             = dynamic_cast<CODBC_Connection*>(*it);
         if (!t_con) continue;
 
-        t_con->ODBC_SetTimeout(m_Timeout);
+        t_con->ODBC_SetTimeout(GetTimeout());
     }
 
     ITERATE(TConnPool, it, m_InUse) {
@@ -325,7 +326,7 @@ bool CODBCContext::SetTimeout(unsigned int nof_secs)
             = dynamic_cast<CODBC_Connection*>(*it);
         if (!t_con) continue;
 
-        t_con->ODBC_SetTimeout(m_Timeout);
+        t_con->ODBC_SetTimeout(GetTimeout());
     }
 
     return true;
@@ -462,12 +463,12 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
     if((r != SQL_SUCCESS) && (r != SQL_SUCCESS_WITH_INFO))
         return 0;
 
-    if(m_Timeout) {
-        SQLSetConnectAttr(con, SQL_ATTR_CONNECTION_TIMEOUT, (SQLPOINTER)m_Timeout, 0);
+    if(GetTimeout()) {
+        SQLSetConnectAttr(con, SQL_ATTR_CONNECTION_TIMEOUT, (SQLPOINTER)GetTimeout(), 0);
     }
 
-    if(m_LoginTimeout) {
-        SQLSetConnectAttr(con, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER)m_LoginTimeout, 0);
+    if(GetLoginTimeout()) {
+        SQLSetConnectAttr(con, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER)GetLoginTimeout(), 0);
     }
 
     if(m_PacketSize) {
@@ -802,6 +803,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/05/18 17:11:11  ssikorsk
+ * Assign values to m_LoginTimeout and m_Timeout
+ *
  * Revision 1.49  2006/05/05 16:11:04  ssikorsk
  * Added workaround for IRegistry.GetString
  *
