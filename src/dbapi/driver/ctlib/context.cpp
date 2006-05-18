@@ -333,7 +333,8 @@ CTLibContext::x_SetRegistry(CTLibContextRegistry* registry)
 
 bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    CS_INT t_out = (CS_INT) nof_secs;
+    m_LoginTimeout = nof_secs;
+    CS_INT t_out = (CS_INT) GetLoginTimeout();
     return Check(ct_config(CTLIB_GetContext(), 
                            CS_SET,
                            CS_LOGIN_TIMEOUT, 
@@ -345,7 +346,8 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
-    CS_INT t_out = (CS_INT) nof_secs;
+    m_Timeout = nof_secs;
+    CS_INT t_out = (CS_INT) GetTimeout();
     return Check(ct_config(CTLIB_GetContext(), 
                            CS_SET,
                            CS_TIMEOUT, 
@@ -1084,6 +1086,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/05/18 16:57:41  ssikorsk
+ * Assign values to m_LoginTimeout and m_Timeout.
+ *
  * Revision 1.75  2006/05/15 19:41:00  ssikorsk
  * Fixed CTLibContext::x_SafeToFinalize in case of Unix.
  *

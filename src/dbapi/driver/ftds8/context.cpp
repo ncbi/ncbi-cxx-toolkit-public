@@ -223,8 +223,6 @@ CTDSContext::CTDSContext(DBINT version) :
         "dbinit failed", 
         200001 );
 
-    m_Timeout= m_LoginTimeout= 0;
-
     Check(dberrhandle(s_TDS_err_callback));
     Check(dbmsghandle(s_TDS_msg_callback));
 
@@ -597,8 +595,8 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
 #endif
 
 
-    tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)m_LoginTimeout,
-                     (int)m_Timeout, 0 /*(int)m_Timeout*/);
+    tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)GetLoginTimeout(),
+                     (int)GetTimeout(), 0 /*(int)m_Timeout*/);
     tds_setTDS_version((tds_login*)(m_Login->tds_login), m_TDSVersion);
     return Check(dbopen(m_Login, (char*) srv_name.c_str()));
 }
@@ -841,6 +839,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/05/18 16:59:49  ssikorsk
+ * Assign values to m_LoginTimeout and m_Timeout.
+ *
  * Revision 1.71  2006/05/11 18:14:12  ssikorsk
  * Fixed compilation issues
  *

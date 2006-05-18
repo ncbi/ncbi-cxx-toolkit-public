@@ -329,13 +329,15 @@ int CDBLibContext::GetTDSVersion(void) const
 
 bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    return Check(dbsetlogintime(nof_secs)) == SUCCEED;
+    m_LoginTimeout = nof_secs;
+    return Check(dbsetlogintime(GetLoginTimeout())) == SUCCEED;
 }
 
 
 bool CDBLibContext::SetTimeout(unsigned int nof_secs)
 {
-    return Check(dbsettime(nof_secs)) == SUCCEED;
+    m_Timeout = nof_secs;
+    return Check(dbsettime(GetTimeout())) == SUCCEED;
 }
 
 
@@ -1276,6 +1278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2006/05/18 16:58:03  ssikorsk
+ * Assign values to m_LoginTimeout and m_Timeout.
+ *
  * Revision 1.80  2006/05/15 19:41:28  ssikorsk
  * Fixed CTLibContext::x_SafeToFinalize in case of Unix.
  *
