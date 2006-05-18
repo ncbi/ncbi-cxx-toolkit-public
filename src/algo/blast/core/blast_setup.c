@@ -531,11 +531,31 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     return status;
 }
 
+static Int8 s_GetEffectiveSearchSpaceForContext(
+                        const BlastEffectiveLengthsOptions* eff_len_options,
+                        int context_index, Blast_Message **blast_message)
+{
+    if (eff_len_options->num_searchspaces == 0) {
+        return 0;
+    } else if (eff_len_options->num_searchspaces == 1) {
+        if (context_index != 0) {
+            Blast_MessageWrite(blast_message, eBlastSevWarning, context_index, 
+                    "One search space is being used for multiple sequences");
+        }
+        return eff_len_options->searchsp_eff[0];
+    } else if (eff_len_options->num_searchspaces > 1) {
+        ASSERT(context_index < eff_len_options->num_searchspaces);
+        return eff_len_options->searchsp_eff[context_index];
+    } else {
+        abort();    /* should never happen */
+    }
+}
 
 Int2 BLAST_CalcEffLengths (EBlastProgramType program_number, 
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsParameters* eff_len_params, 
-   const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
+   const BlastScoreBlk* sbp, BlastQueryInfo* query_info,
+   Blast_Message * *blast_message)
 {
    double alpha=0, beta=0; /*alpha and beta for new scoring system */
    Int4 index;		/* loop index. */
@@ -563,10 +583,12 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
     * overriding value of effective search space is not provided by user,
     * do nothing.
     * This situation can occur in the initial set up for a non-database search,
-    * where each subject is treated as an individual sequence. 
+    * where each subject is treated as an individual database. 
     */
-   if (db_length == 0 && eff_len_options->searchsp_eff == 0)
+   if (db_length == 0 &&
+       !BlastEffectiveLengthsOptions_IsSearchSpaceSet(eff_len_options)) {
       return 0;
+   }
 
    if (program_number == eBlastTypeTblastn || 
        program_number == eBlastTypeTblastx)
@@ -584,12 +606,15 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    for (index = query_info->first_context;
         index <= query_info->last_context;
         index++) {
-      Blast_KarlinBlk * kbp; /* statistical parameters for the current context */
+      Blast_KarlinBlk *kbp; /* statistical parameters for the current context */
       Int4 length_adjustment = 0; /* length adjustment for current iteration. */
-      Int8 effective_search_space = 0; /* Effective search space for a given 
-                                          sequence/strand/frame */
       Int4 query_length;   /* length of an individual query sequence */
       
+      /* Effective search space for a given sequence/strand/frame */
+      Int8 effective_search_space =
+          s_GetEffectiveSearchSpaceForContext(eff_len_options, index,
+                                              blast_message);
+
       kbp = kbp_ptr[index];
       
       if (query_info->contexts[index].is_valid &&
@@ -619,12 +644,11 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
                                        query_length, db_length,
                                        db_num_seqs, &length_adjustment);
 
-         if (eff_len_options->searchsp_eff)
-            effective_search_space = eff_len_options->searchsp_eff;
-         else
-            effective_search_space =
-               (query_length - length_adjustment) * 
-               (db_length - db_num_seqs*length_adjustment);
+         if (effective_search_space == 0) {
+             effective_search_space =
+                        (query_length - length_adjustment) * 
+                        (db_length - db_num_seqs*length_adjustment);
+         }
       }
       query_info->contexts[index].eff_searchsp = effective_search_space;
       query_info->contexts[index].length_adjustment = length_adjustment;
@@ -671,7 +695,7 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
                                       eff_len_params);
    /* Effective lengths are calculated for all programs except PHI BLAST. */
    if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
-                     *eff_len_params, sbp, query_info)) != 0)
+                     *eff_len_params, sbp, query_info, NULL)) != 0)
       return status;
 
    BlastScoringParametersNew(scoring_options, sbp, score_params);
@@ -706,7 +730,7 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
    Int2 status = 0;
    eff_len_params->real_db_length = subject_length;
    if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
-                                      eff_len_params, sbp, query_info)) != 0)
+                                eff_len_params, sbp, query_info, NULL)) != 0)
       return status;
    /* Update cutoff scores in hit saving parameters */
    BlastHitSavingParametersUpdate(program_number, sbp, query_info, subject_length, 
