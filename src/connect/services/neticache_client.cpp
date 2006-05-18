@@ -713,7 +713,6 @@ bool CNetICacheClient::HasBlobs(const string&  key,
 
     bool reconnected = CheckConnect();
     string& cmd = m_Tmp;
-//    string cmd;
     MakeCommandPacket(&cmd, "HASB ", reconnected);
     AddKVS(&cmd, key, 0, subkey);
 
@@ -721,7 +720,6 @@ bool CNetICacheClient::HasBlobs(const string&  key,
     WaitForServer();
 
     string& answer = m_Tmp;
-//    string answer;
     if (!ReadStr(*m_Sock, &answer)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
@@ -735,7 +733,21 @@ bool CNetICacheClient::HasBlobs(const string&  key,
 void CNetICacheClient::Purge(time_t           access_timeout,
                              EKeepVersions    keep_last_version)
 {
-    // do nothing, this a server-side responsibility
+    CFastMutexGuard guard(m_Lock);
+
+    bool reconnected = CheckConnect();
+    string& cmd = m_Tmp;
+    MakeCommandPacket(&cmd, "PRG1 ", reconnected);
+    cmd.append(NStr::IntToString(access_timeout));
+    cmd.append(" ");
+    cmd.append(NStr::IntToString((int)keep_last_version));
+    WriteStr(cmd.c_str(), cmd.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
 }
 
 
@@ -939,6 +951,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/05/18 13:28:28  kuznets
+ * Implemented cache cleaning function (Purge)
+ *
  * Revision 1.26  2006/05/08 15:54:36  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and
