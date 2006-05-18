@@ -143,7 +143,8 @@ CDBConnectionFactory::SetLoginTimeout(unsigned int timeout)
 }
 
 unsigned int 
-CDBConnectionFactory::CalculateConnectionTimeout(I_DriverContext& ctx) const
+CDBConnectionFactory::CalculateConnectionTimeout
+(const I_DriverContext& ctx) const
 {
     return (GetConnectionTimeout() ? 
             GetConnectionTimeout() : 
@@ -151,7 +152,7 @@ CDBConnectionFactory::CalculateConnectionTimeout(I_DriverContext& ctx) const
 }
 
 unsigned int 
-CDBConnectionFactory::CalculateLoginTimeout(I_DriverContext& ctx) const
+CDBConnectionFactory::CalculateLoginTimeout(const I_DriverContext& ctx) const
 {
     unsigned int timeout = 3;
     
@@ -446,6 +447,9 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/05/18 18:45:58  ssikorsk
+ * Added const to parameters of CalculateConnectionTimeout and CalculateLoginTimeout.
+ *
  * Revision 1.7  2006/05/18 17:02:50  ssikorsk
  * Implemented and utilized CalculateConnectionTimeout and CalculateLoginTimeout methods.
  *
