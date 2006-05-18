@@ -3,6 +3,7 @@
 #include <algo/structure/cd_utils/cuDistmat.hpp>
 #include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -183,11 +184,12 @@ void SeqTreeAsnizer::fillSeqItem(const CSeqTree_node& node, SeqItem& seqItem)
 		//use rowID for now
 		if (node.GetChildren().GetFootprint().IsSetRowId())
 			seqItem.rowID = node.GetChildren().GetFootprint().GetRowId();
-		/* can't use what's stored because the child accession may be something like "loc-1"
+		/* can't use what's stored because the child accession may be something like "loc-1"*/
 		if (node.CanGetAnnotation())
 		{
 			seqItem.membership = node.GetAnnotation().GetPresentInChildCD();
-		}*/
+		}
+		seqItem.seqId = &(node.GetChildren().GetFootprint().GetSeqRange().GetId());
 	}
 }
 

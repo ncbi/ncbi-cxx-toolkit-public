@@ -58,6 +58,7 @@ class SeqTreeAPI
 {
 public:
 	SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly=true);
+	SeqTreeAPI(CCdCore* cd);
 	~SeqTreeAPI();
 
 	void annotateTreeByMembership();
@@ -65,7 +66,7 @@ public:
 	enum TaxonomyLevel
 	{
 		BySuperkingdom,
-		ByKingdom/*,
+		/*ByKingdom,
 		ByBlink*/
 	};
 	void annotateTreeByTaxonomy(TaxonomyLevel tax);
@@ -76,13 +77,17 @@ public:
 	string layoutSeqTree(int maxX, int maxY, vector<SeqTreeEdge>& edgs);
 	//lay out the tree with a fixed spacing between sequences
 	string layoutSeqTree(int maxX, vector<SeqTreeEdge>& edgs, int yInt = 3);
-	CCdCore* getRootCD(){return m_ma.getFirstCD();}
+	CCdCore* getRootCD(){return m_cd ? m_cd : m_ma.getFirstCD();}
 	
 	static bool loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions* treeOptions=0, SeqTree* seqTree=0);
 private:
-	MultipleAlignment m_ma;
+	//diffferent source of cd data
+	MultipleAlignment m_ma; //slow but validates the tree
+	CCdCore* m_cd; //fast, trust the tree without validating
+
 	SeqTree* m_seqTree;
 	TaxTreeData* m_taxTree;
+	TaxClient* m_taxClient;
 	bool m_useMembership;
 	TaxonomyLevel m_taxLevel;
 	TreeOptions m_treeOptions;
@@ -94,6 +99,7 @@ private:
 	int getAllEdges(vector<SeqTreeEdge>& edges);
 	void getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges);
 	void annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node);
+	bool loadExistingTree(CCdCore* cd, TreeOptions* treeOptions, SeqTree* seqTree);
 };
 
 END_SCOPE(cd_utils)
@@ -106,6 +112,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/05/18 20:01:14  cliu
+ * To enable read-only SeqTreeAPI
+ *
  * Revision 1.6  2006/05/15 18:52:49  cliu
  * do not create new tree if m_loadOnly=true
  *

@@ -73,7 +73,7 @@ SeqItem::SeqItem(int rowid, double dist) : selections(), name()
 SeqItem::SeqItem(const SeqItem& rhs): name(rhs.name), id(rhs.id), distance(rhs.distance), 
 	distanceToRoot(rhs.distanceToRoot),x(rhs.x), y(rhs.y), rowID(rhs.rowID),	
 	selected(rhs.selected), membership(rhs.membership), 
-	collapsed(rhs.collapsed),interesting(rhs.interesting), selections(rhs.selections) {}
+	collapsed(rhs.collapsed),interesting(rhs.interesting), selections(rhs.selections), seqId(rhs.seqId) {}
 
 //The format of nameDist is "rowID_gi:distance"
 SeqItem::SeqItem(const std::string nameDist) : selections(), name()
@@ -707,6 +707,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/05/18 20:00:59  cliu
+ * To enable read-only SeqTreeAPI
+ *
  * Revision 1.3  2005/06/21 13:09:43  cliu
  * add tree layout.
  *

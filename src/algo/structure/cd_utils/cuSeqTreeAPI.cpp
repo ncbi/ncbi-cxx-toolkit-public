@@ -46,7 +46,7 @@ BEGIN_SCOPE(cd_utils)
 SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly)
 	: m_ma(), m_seqTree(0), m_useMembership(true),
 	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false),
-	m_loadOnly(loadExistingTreeOnly)
+	m_loadOnly(loadExistingTreeOnly), m_cd(0)
 {
 	vector<CDFamily> families;
 	CDFamily::createFamilies(cds, families);
@@ -55,10 +55,18 @@ SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly)
 	m_ma.setAlignment(families[0]);
 }
 
+SeqTreeAPI::SeqTreeAPI(CCdCore* cd)
+	: m_ma(), m_seqTree(0), m_useMembership(true),
+	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false),
+	m_loadOnly(true), m_cd(cd), m_taxClient(0)
+{
+}
+
 SeqTreeAPI::~SeqTreeAPI()
 {
-	if (!m_seqTree) delete m_seqTree;
-	if (!m_taxTree) delete m_taxTree;
+	if (m_seqTree) delete m_seqTree;
+	if (m_taxTree) delete m_taxTree;
+	if (m_taxClient) delete m_taxClient;
 }
 
 void SeqTreeAPI::annotateTreeByMembership()
@@ -106,7 +114,12 @@ bool SeqTreeAPI::makeOrLoadTree()
 	if (m_triedTreeMaking) //if already tried, don't try again
 		return m_seqTree != 0;
 	m_seqTree = new SeqTree();
-	if (!loadAndValidateExistingTree(m_ma, &m_treeOptions, m_seqTree))
+	bool loaded = false;
+	if (m_cd)
+		loaded = loadExistingTree(m_cd, &m_treeOptions, m_seqTree);
+	else
+		loaded = loadAndValidateExistingTree(m_ma, &m_treeOptions, m_seqTree);
+	if (!loaded)
 	{
 		delete m_seqTree;
 		m_seqTree = 0;
@@ -198,27 +211,47 @@ void SeqTreeAPI::annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node)
 {
 	if (m_useMembership)
 	{
-		if (nodeData.membership.empty())
+		if (!nodeData.membership.empty())
+		{
+			node.annotation = nodeData.membership;
+		}
+		else if ((m_ma.GetNumRows() > 0))
 		{
 			CCdCore* cd = m_ma.GetScopedLeafCD(nodeData.rowID);
 			if (cd)
 			{
-				//nodeData.membership = cd->GetAccession();
 				node.annotation = cd->GetAccession();
 			}
 		}
-		else
-			node.annotation = nodeData.membership;
+		else if (m_cd)
+			node.annotation = m_cd->GetAccession();
 	}
 	else
 	{
-		if (!m_taxTree)
-			m_taxTree = new TaxTreeData(m_ma);
-		string rankName = "superkingdom";
-		if(m_taxLevel == ByKingdom)
-			rankName = "kingdom";
-		TaxTreeIterator taxNode = m_taxTree->getParentAtRank(nodeData.rowID, rankName);
-		node.annotation = taxNode->orgName;
+		if (m_cd)
+		{
+			if (m_taxClient == 0)
+			{
+				m_taxClient = new TaxClient();
+				m_taxClient->init();
+			}
+			int taxid = m_taxClient->GetTaxIDForSeqId(nodeData.seqId);
+			if (taxid >= 0)
+			{
+				if (m_taxLevel == BySuperkingdom)
+					node.annotation = m_taxClient->GetSuperKingdom(taxid);
+			}
+		}
+		else
+		{
+			if (!m_taxTree)
+				m_taxTree = new TaxTreeData(m_ma);
+			string rankName = "superkingdom";
+			/*if(m_taxLevel == ByKingdom)
+				rankName = "kingdom";*/
+			TaxTreeIterator taxNode = m_taxTree->getParentAtRank(nodeData.rowID, rankName);
+			node.annotation = taxNode->orgName;
+		}
 	}
 }
 
@@ -259,6 +292,34 @@ bool SeqTreeAPI::loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions*
 	}
 }
 
+bool SeqTreeAPI::loadExistingTree(CCdCore* cd, TreeOptions* treeOptions, SeqTree* seqTree)
+{
+	if (!cd->IsSetSeqtree())
+		return false;
+
+	//bool loaded = false;
+	SeqTree* tmpTree = 0;
+	TreeOptions* tmpOptions = 0;
+	SeqTree tmpTreeObj;
+	TreeOptions tmpOptionsObj;
+
+	if (seqTree)
+		tmpTree = seqTree;
+	else
+		tmpTree = &tmpTreeObj;
+	if (treeOptions)
+		tmpOptions = treeOptions;
+	else
+		tmpOptions = &tmpOptionsObj;
+
+	SeqLocToSeqItemMap liMap;
+	if (!SeqTreeAsnizer::convertToSeqTree(cd->GetSeqtree(), *tmpTree, liMap))
+		return false;
+	CRef< CAlgorithm_type > algType(const_cast<CAlgorithm_type*> (&(cd->GetSeqtree().GetAlgorithm())));
+	SeqTreeAsnizer::convertToTreeOption(algType, *treeOptions);
+	return true;
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -266,6 +327,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2006/05/18 20:00:59  cliu
+ * To enable read-only SeqTreeAPI
+ *
  * Revision 1.9  2006/05/15 18:51:22  cliu
  * do not create new tree if m_loadOnly=true
  *

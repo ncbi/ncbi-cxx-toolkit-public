@@ -78,6 +78,7 @@ public:
 	bool interesting;
 	long taxid;
 	string membership; //child cd accession to color the tree
+	CConstRef< CSeq_id > seqId;
 private:
 	void init();
 };
@@ -169,6 +170,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  * 
  * $Log$
+ * Revision 1.3  2006/05/18 20:01:14  cliu
+ * To enable read-only SeqTreeAPI
+ *
  * Revision 1.2  2005/06/21 13:10:20  cliu
  * add tree layout.
  *

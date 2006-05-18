@@ -39,6 +39,7 @@
 
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/taxon1/Taxon2_data.hpp>
+#include <objects/id1/id1_client.hpp>
 #include <math.h>
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -59,7 +60,7 @@ public:
     virtual bool IsAlive();
 
     //  return 0 if Get*TaxID*(...) fails
-    virtual int GetTaxIDForSeqId(const CRef< CSeq_id >& sid);  // was GetTaxIDForSequence
+    virtual int GetTaxIDForSeqId(CConstRef< CSeq_id > sid);  // was GetTaxIDForSequence
     virtual int GetTaxIDForGI(int gi);
 
     virtual bool GetOrgRef(int taxId, CRef< COrg_ref >& orgRef);
@@ -81,7 +82,7 @@ public:
 private:
 
     CTaxon1 * m_taxonomyClient;
-
+	CID1Client* m_id1;
 };
 
 END_SCOPE(cd_utils)
@@ -93,6 +94,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/05/18 20:01:14  cliu
+ * To enable read-only SeqTreeAPI
+ *
  * Revision 1.4  2005/10/18 17:06:51  lanczyck
  * make TaxClient a virtual base class;
  * add methods CanBeApplied and GetCriteriaError in base criteria

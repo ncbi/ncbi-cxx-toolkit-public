@@ -50,13 +50,14 @@
 #include <math.h>
 
 #include <algo/structure/cd_utils/cuTaxClient.hpp>
+#include <objects/id1/id1_client.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 const bool   TaxClient::REFRESH_DEFAULT               = false;
 
-TaxClient::TaxClient(bool refresh) : m_taxonomyClient(0)
+TaxClient::TaxClient(bool refresh) : m_taxonomyClient(0), m_id1(0)
 {
 }
 
@@ -66,7 +67,9 @@ TaxClient::~TaxClient() {
 		m_taxonomyClient->Fini();
 		delete m_taxonomyClient;
 		m_taxonomyClient = 0;
-	}	
+	}
+	if (m_id1)
+		delete m_id1;
 }
 
 bool TaxClient::init()
@@ -93,18 +96,20 @@ bool TaxClient::IsAlive() {
 }
 
 // try to get "official" tax info from seq_id's gi
-int TaxClient::GetTaxIDForSeqId(const CRef< CSeq_id >& sid)
+int TaxClient::GetTaxIDForSeqId(CConstRef< CSeq_id > sid)
 {
-
 	int gi = 0;
-    int taxid = 0;
-    std::string err = "no gi or source info";
-
-	//  Check if have a valid, live tax server
-    if (sid->IsGi()) {
-        gi = sid->GetGi();
-        taxid = GetTaxIDForGI(gi);
+    if (sid->IsGi()) 
+	{
+        gi = sid->GetGi();  
     }
+	else
+	{
+		if (!m_id1)
+			m_id1= new CID1Client;
+		gi = m_id1->AskGetgi(*sid);
+	}
+	int taxid = GetTaxIDForGI(gi);
     return taxid;
 }
 
@@ -254,6 +259,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/05/18 20:00:59  cliu
+ * To enable read-only SeqTreeAPI
+ *
  * Revision 1.3  2005/07/07 17:27:01  lanczyck
  * add GetOrgRef method
  *
