@@ -67,6 +67,23 @@ CRemoteServices::x_FindDbInfoFromAvailableDatabases
     return retval;
 }
 
+vector< CRef<objects::CBlast4_database_info> >
+CRemoteServices::GetOrganismSpecificRepeatsDatabases()
+{
+    if (m_AvailableDatabases.empty()) {
+        x_GetAvailableDatabases();
+    }
+    vector< CRef<objects::CBlast4_database_info> > retval;
+
+    ITERATE(CBlast4_get_databases_reply::Tdata, dbinfo, m_AvailableDatabases) {
+        if ((*dbinfo)->GetDatabase().GetName().find("repeat_") != NPOS) {
+            retval.push_back(*dbinfo);
+        }
+    }
+
+    return retval;
+}
+
 void
 CRemoteServices::x_GetAvailableDatabases()
 {

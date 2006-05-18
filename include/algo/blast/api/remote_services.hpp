@@ -62,6 +62,10 @@ public:
     /// empty object is the requested database wasn't found
     CRef<objects::CBlast4_database_info>
     GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb);
+
+    /// Retrieve organism specific repeats databases
+    vector< CRef<objects::CBlast4_database_info> >
+    GetOrganismSpecificRepeatsDatabases();
     
 private:
 
