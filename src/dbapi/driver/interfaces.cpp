@@ -179,7 +179,9 @@ I_DriverContext::SConnAttr::SConnAttr(void)
 //  I_DriverContext::
 //
 
-I_DriverContext::I_DriverContext(void)
+I_DriverContext::I_DriverContext(void) :
+    m_LoginTimeout(0),
+    m_Timeout(0)
 {
     PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault() );
     PushDefConnMsgHandler ( &CDB_UserHandler::GetDefault() );
@@ -554,6 +556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/05/18 16:53:46  ssikorsk
+ * 	      Set default login timeout and operation timeout to 0.
+ *
  * Revision 1.23  2006/05/15 19:32:43  ssikorsk
  * Added EOwnership argument to methods PushCtxMsgHandler and PushDefConnMsgHandler
  * of class I_DriverContext.
