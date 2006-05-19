@@ -51,7 +51,9 @@ static inline CNcbiOstream& s_Write(CNcbiOstream& os, const string& str)
 static inline CNcbiIstream& s_Read(CNcbiIstream& is, string& str)
 {
     string::size_type len;
+    if (!is.good()) return is;
     is >> len;
+    if (!is.good()) return is;
     vector<char> buf(len+1);
     is.read(&buf[0], len+1);
     str.assign(buf.begin()+1, buf.end());
@@ -122,6 +124,10 @@ public:
                 auto_ptr<CNcbiIstream> fstr(new CNcbiIfstream(name.c_str()));
                 if (fstr->good()) {
                     m_IStream.reset(fstr.release());
+                } else {
+                    static string msg;
+                    msg = "Can not open " + name + " of input";                   
+                    m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
                 }
             }
         }
@@ -293,12 +299,13 @@ void CRemoteAppRequest_Impl::x_RemoveWDir()
 void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
 {
     Reset();
-
+    
     s_Read(is,m_CmdLine);
     s_Read(is,m_InBlobIdOrData);
 
     int fcount = 0;
     vector<string> args;
+    if (!is.good()) return;
     is >> fcount;
     if ( fcount > 0 )
         NStr::Tokenize(m_CmdLine, " ", args);
@@ -311,6 +318,7 @@ void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
         string blobid, fname;
         s_Read(is, blobid);
         s_Read(is, fname);
+        if (!is.good()) return;
         CFile file(fname);
         string nfname = m_TmpDirName + CDirEntry::GetPathSeparator() 
             + file.GetName();
@@ -342,10 +350,13 @@ void CRemoteAppRequest_Impl::Deserialize(CNcbiIstream& is)
     }
     s_Read(is, m_StdOutFileName);
     s_Read(is, m_StdErrFileName);
+    if (!is.good()) return;
     int tmp;
     is >> tmp;
     m_StorageType = (EStdOutErrStorageType)tmp;
+    if (!is.good()) return;
     is >> m_AppRunTimeout;
+    if (!is.good()) return;
     is >> tmp;
     m_ExlusiveMode = (bool)tmp;
 
@@ -661,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2006/05/19 13:37:45  didenko
+ * Improved error checking
+ *
  * Revision 6.7  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *
