@@ -415,16 +415,19 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
 	// Compose command line
     cmdline.reserve(kMaxCmdLength);
 	cmdline = cmdname;
-	cmdline += " "; 
-	cmdline += argv;
-    va_list vargs;
-    va_start(vargs, argv);
-    const char* p = NULL;
-    while ( (p = va_arg(vargs, const char*)) ) {
+
+    if (argv) {
 	    cmdline += " "; 
-	    cmdline += p;
+	    cmdline += argv;
+        va_list vargs;
+        va_start(vargs, argv);
+        const char* p = NULL;
+        while ( (p = va_arg(vargs, const char*)) ) {
+	        cmdline += " "; 
+	        cmdline += p;
+        }
+        va_end(vargs);
     }
-    va_end(vargs);
 
     // Just check mode parameter
     s_GetRealMode(mode);
@@ -473,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/05/19 16:37:47  dicuccio
+ * Guard against NULL argv in RunSilent()
+ *
  * Revision 1.35  2006/05/16 16:14:11  ivanov
  * MS Windows: GET_EXEC_ARGS: quote argv[0] in the list of parameters
  * for executed process if it contains spaces. The module name itself
