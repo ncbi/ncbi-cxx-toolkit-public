@@ -6,6 +6,11 @@ ABSTRACT
     WindowMasker is described in [1]. Please cite this paper in
     any publication that uses WindowMasker.
 
+    The statically linked binary version of windowmasker program
+    compiled for Linux platform is available via FTP at
+
+    ftp://ftp.ncbi.nlm.nih.gov/pub/agarwala/windowmasker/windowmasker
+
 
 [1] Morgulis A, Gertz EM, Schaffer AA, Agarwala R. WindowMasker:
     Window based masker for sequence genomes. Submitted for publication.
