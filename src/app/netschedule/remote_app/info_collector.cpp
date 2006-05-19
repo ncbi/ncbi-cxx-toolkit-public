@@ -231,9 +231,6 @@ CRemoteAppResult& CNSInfoCollector::x_GetResult()
     return *m_Result;
 }
 
-IBlobStorage* CNSInfoCollector::x_CreateStorage();
-
-
 CNcbiIstream& CNSInfoCollector::GetBlobContent(const string& blob_id,
                                                size_t* blob_size)
 {
@@ -246,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/19 14:07:20  didenko
+ * Removed x_CreateStorage method redeclaration
+ *
  * Revision 1.1  2006/05/19 13:40:40  didenko
  * Added ns_remote_job_control utility
  *
