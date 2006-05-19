@@ -221,7 +221,7 @@ public:
                                        m_Request.GetStdOutErrStorageType());
         unsigned int app_running_time = m_Request.GetAppRunTimeout();
 
-        int ret = 0;
+        int ret = -1;
         bool canceled = s_Exec(m_AppPath, 
                                args, 
                                m_Request.GetStdIn(), 
@@ -247,7 +247,7 @@ public:
                       << ": Job " << context.GetJobKey() + " " + context.GetJobOutput()
                       << stat);
         }
-        return 0;
+        return ret;
     }
 private:
 
@@ -317,6 +317,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/05/19 13:40:40  didenko
+ * Added ns_remote_job_control utility
+ *
  * Revision 1.13  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *

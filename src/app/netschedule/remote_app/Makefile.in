@@ -3,7 +3,7 @@
 # Meta-makefile ("remote_app" program)
 #################################
 
-APP_PROJ = remote_app ns_submit_remote_job
+APP_PROJ = remote_app ns_submit_remote_job ns_remote_job_control
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
