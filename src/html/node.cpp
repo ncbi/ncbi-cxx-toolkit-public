@@ -118,6 +118,8 @@ void CNCBINode::DoAppendChild(CNCBINode* child)
 
 CNodeRef CNCBINode::RemoveChild(CNCBINode* child)
 {
+    CNodeRef ref(child);
+
     if ( child  &&  HaveChildren() ) {
         SIZE_TYPE prev_size = Children().size();
         // Remove all child nodes from the list.
@@ -135,7 +137,7 @@ CNodeRef CNCBINode::RemoveChild(CNCBINode* child)
             }
         }
         if ( children.size() != prev_size ) {
-            return CNodeRef(child);
+            return ref;
         }
     }
     NCBI_THROW(CHTMLException, eNotFound,
@@ -405,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/05/19 18:21:36  yasmax
+ * CNCBINode::RemoveChild - fix problem while return refernce to removed child
+ *
  * Revision 1.40  2006/05/11 16:19:19  ivanov
  * Minor fixes for previous commit
  *
