@@ -47,6 +47,15 @@ CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage& storage,
 {
     m_Data = s_Flags[0];
 }
+CStringOrBlobStorageWriter::
+CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage* storage,
+                           string& data)
+    : m_MaxBuffSize(max_string_size), 
+      m_Storage(*storage), m_StorageGuard(storage),
+      m_BlobOstr(NULL), m_Data(data)
+{
+    m_Data = s_Flags[0];
+}
 
 CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter() 
 {
@@ -145,6 +154,21 @@ CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
                            IBlobStorage::ELockMode lock_mode)
     : m_Data(data), m_Storage(storage), m_BlobIstr(NULL)
 {
+    x_Init(data_size,lock_mode);
+}
+CStringOrBlobStorageReader::
+CStringOrBlobStorageReader(const string& data, IBlobStorage* storage, 
+                           size_t* data_size,
+                           IBlobStorage::ELockMode lock_mode)
+    : m_Data(data), m_Storage(*storage), m_StorageGuard(storage), 
+      m_BlobIstr(NULL)
+{
+    x_Init(data_size,lock_mode);
+}
+
+void CStringOrBlobStorageReader::x_Init(size_t* data_size,
+                                        IBlobStorage::ELockMode lock_mode)
+{
     if (NStr::CompareCase(m_Data, 0, s_FlagsLen, s_Flags[1]) == 0) {
         //    if (m_Storage.IsKeyValid(data)) {
         //        try {
@@ -232,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2006/05/19 13:34:42  didenko
+ * Now reader/writer can take an ownership of a blobstorage
+ *
  * Revision 6.11  2006/05/08 20:29:21  ucko
  * Tweak to fix compilation with GCC 2.95.
  *

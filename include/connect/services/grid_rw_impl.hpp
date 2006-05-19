@@ -53,6 +53,9 @@ public:
     CStringOrBlobStorageWriter(size_t max_string_size,
                                IBlobStorage& storage,
                                string& data_or_key);
+    CStringOrBlobStorageWriter(size_t max_string_size,
+                               IBlobStorage* storage,
+                               string& data_or_key);
 
     virtual ~CStringOrBlobStorageWriter();
 
@@ -70,6 +73,7 @@ private:
 
     size_t        m_MaxBuffSize;
     IBlobStorage& m_Storage;
+    auto_ptr<IBlobStorage> m_StorageGuard;
     CNcbiOstream* m_BlobOstr;
     string&       m_Data;
 
@@ -94,6 +98,11 @@ public:
                                size_t* data_size = NULL,
                                IBlobStorage::ELockMode lock_mode 
                                          = IBlobStorage::eLockWait);
+    CStringOrBlobStorageReader(const string& data_or_key, 
+                               IBlobStorage* storage,
+                               size_t* data_size = NULL,
+                               IBlobStorage::ELockMode lock_mode 
+                                         = IBlobStorage::eLockWait);
 
     virtual ~CStringOrBlobStorageReader();
    
@@ -107,9 +116,12 @@ private:
 
     const string& m_Data;
     IBlobStorage& m_Storage;
+    auto_ptr<IBlobStorage> m_StorageGuard;
     CNcbiIstream* m_BlobIstr;
     string::const_iterator m_CurPos;
 
+    void x_Init(size_t* data_size,
+                IBlobStorage::ELockMode lock_mode);
 private:
     CStringOrBlobStorageReader(const CStringOrBlobStorageReader&);
     CStringOrBlobStorageReader& operator=(const CStringOrBlobStorageReader&);
@@ -140,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/05/19 13:34:41  didenko
+ * Now reader/writer can take an ownership of a blobstorage
+ *
  * Revision 1.4  2006/05/08 15:16:42  didenko
  * Added support for an optional saving of a remote application's stdout
  * and stderr into files on a local file system
