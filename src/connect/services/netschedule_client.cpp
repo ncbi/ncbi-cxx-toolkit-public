@@ -752,7 +752,10 @@ CNetScheduleClient::GetStatus(const string& job_key,
     int st = atoi(str);
     status = (EJobStatus) st;
 
-    if ((status == eDone || status == eFailed)) {
+    if (status == eDone || status == eFailed 
+        || status == eRunning || status == ePending 
+        || status == eCanceled || status == eReturned
+        || status == eFailed) {
         //cerr << str <<endl;
         for ( ;*str && isdigit((unsigned char)(*str)); ++str) {
         }
@@ -784,7 +787,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
         }
         *output = NStr::ParseEscapes(*output);
         if (err_msg || input) {
-            err_msg->erase();
+            if (err_msg) err_msg->erase();
             if (!*str)
                 return status;
 
@@ -803,7 +806,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
                 }
             }
 
-            *err_msg = NStr::ParseEscapes(*err_msg);
+            if (err_msg) *err_msg = NStr::ParseEscapes(*err_msg);
         }
 
         if (input) {
@@ -1788,6 +1791,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/05/19 13:36:56  didenko
+ * Allow GetStatus method returning a job's input if it is in running, pending, returned status also
+ *
  * Revision 1.54  2006/05/10 15:56:44  kuznets
  * +JobDelayExpiration()
  *
