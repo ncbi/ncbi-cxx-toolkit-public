@@ -467,9 +467,9 @@ private:
 
     typedef map<string, string> TProperties;
 
-    mutable TUID         m_UID;
-    TProperties          m_Properties;
-    auto_ptr<CStopWatch> m_StopWatch;
+    mutable TUID m_UID;
+    TProperties  m_Properties;
+    CStopWatch*  m_StopWatch;
 };
 
 
@@ -1486,6 +1486,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.105  2006/05/19 03:58:35  grichenk
+ * Replaced auto_ptr<CStopWatch> with CStopWatch*
+ *
  * Revision 1.104  2006/05/18 19:07:26  grichenk
  * Added output to log file(s), application access log, new cgi log formatting.
  *
