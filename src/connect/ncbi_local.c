@@ -92,7 +92,7 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
     char* buf;
     int n;
 
-    if (!(buf = malloc(strlen(name) + 80)))
+    if (!(buf = malloc(strlen(name) + sizeof(REG_CONN_LOCAL_SERVER) + 80)))
         return 0/*failed*/;
 
     info = 0;
@@ -106,8 +106,9 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
         }
         sprintf(buf, "%s_" REG_CONN_LOCAL_SERVER "_%d", name, n);
         if (!(c = getenv(strupr(buf)))) {
-            sprintf(buf, REG_CONN_LOCAL_SERVER "_%d", n);
-            CORE_REG_GET(name, buf, service, sizeof(service) - 1, 0);
+            char* b = buf + strlen(name);
+            *b++ = '\0';
+            CORE_REG_GET(buf, b, service, sizeof(service) - 1, 0);
             if (!*service)
                 continue;
             c = service;
@@ -403,6 +404,9 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2006/05/19 23:24:56  lavr
+ * Speed-up s_LoadSingleService()
+ *
  * Revision 1.5  2006/04/20 19:23:24  lavr
  * Remove a comment that referenced iter->external
  *
