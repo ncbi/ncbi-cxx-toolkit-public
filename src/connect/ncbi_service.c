@@ -581,18 +581,24 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
                 BUF_Destroy(buf);
                 return 0;
             }
-        } else if (refer && strcasecmp(iter->op->name, "LBSMD") == 0) {
-            const char* host = referrer->client_host;
-            const char* name = iter->name;
+        } else if (refer && (str = strdup(iter->op->name)) != 0) {
+            size_t      slen   = strlen(strlwr(str));
+            const char* host   = referrer->client_host;
+            const char* name   = iter->name;
             if (!BUF_Write(&buf, referrer_header, sizeof(referrer_header)-1) ||
-                !BUF_Write(&buf, "lbsm://",         7)                       ||
-                !BUF_Write(&buf, host,              strlen(host))            ||
-                !BUF_Write(&buf, "/lbsmd?service=", 15)                      ||
-                !BUF_Write(&buf, name,              strlen(name))            ||
-                !BUF_Write(&buf, "\r\n",            2)) {
+                !BUF_Write(&buf, str,             slen)                      ||
+                !BUF_Write(&buf, "://",           3)                         ||
+                !BUF_Write(&buf, host,            strlen(host))              ||
+                !BUF_Write(&buf, "/",             1)                         ||
+                !BUF_Write(&buf, str,             slen)                      ||
+                !BUF_Write(&buf, "?service=",     9)                         ||
+                !BUF_Write(&buf, name,            strlen(name))              ||
+                !BUF_Write(&buf, "\r\n",          2)) {
                 BUF_Destroy(buf);
+                free(str);
                 return 0;
             }
+            free(str);
         }
         /* Form accepted server types */
         buflen = sizeof(accepted_types) - 1;
@@ -695,6 +701,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.81  2006/05/19 23:25:43  lavr
+ * Reformat HTTP Referer: to account for all types of mappers
+ *
  * Revision 6.80  2006/04/21 14:40:07  lavr
  * Use reinstated SConnNetInfo::lb_disable as before
  *
