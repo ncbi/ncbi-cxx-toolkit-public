@@ -411,8 +411,11 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2006/05/20 00:55:26  lavr
+ * Fix ChangeLog for last revision
+ *
  * Revision 1.7  2006/05/20 00:54:41  lavr
- * Allow LOCAL_SERVER spec be enclosed in [double]quotes (mostly for C tkit)
+ * Allow LOCAL_SERVER spec to enclose in [double]quotes (mostly for C tkit)
  *
  * Revision 1.6  2006/05/19 23:24:56  lavr
  * Speed-up s_LoadSingleService()
