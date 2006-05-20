@@ -106,10 +106,17 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
         }
         sprintf(buf, "%s_" REG_CONN_LOCAL_SERVER "_%d", name, n);
         if (!(c = getenv(strupr(buf)))) {
-            char* b = buf + strlen(name);
+            char*  b = buf + strlen(name);
+            size_t len;
             *b++ = '\0';
             CORE_REG_GET(buf, b, service, sizeof(service) - 1, 0);
-            if (!*service)
+            len = strlen(service);
+            if (len > 1  &&  (service[0] == '"'  ||  service[0] == '\'')
+                &&  service[len - 1] == service[0]  &&  (len -= 2) > 0) {
+                memmove(service, service + 1, len);
+                service[len] = '\0';
+            }
+            if (!len)
                 continue;
             c = service;
         }
@@ -404,6 +411,9 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2006/05/20 00:54:41  lavr
+ * Allow LOCAL_SERVER spec be enclosed in [double]quotes (mostly for C tkit)
+ *
  * Revision 1.6  2006/05/19 23:24:56  lavr
  * Speed-up s_LoadSingleService()
  *
