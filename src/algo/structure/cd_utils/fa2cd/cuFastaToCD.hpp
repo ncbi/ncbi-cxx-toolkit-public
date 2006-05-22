@@ -40,7 +40,8 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#include <algo/structure/cd_utils/cuCdCore.hpp>
+#include <algo/structure/cd_utils/cuCdFromFasta.hpp>
+//#include "cuCdFromFasta.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -71,7 +72,7 @@ public:
 private:
 
     ostream* m_outStream;
-    CCdCore m_ccdCore;
+    CCdFromFasta* m_ccdFromFasta;
 
     bool OutputCD(const string& filename, string& err);
     string BuildOutputFilename(const CArgs& args);
@@ -86,6 +87,9 @@ private:
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2006/05/22 17:15:44  lanczyck
+ * use new CCdCore subclass for a Fasta-generated CDs
+ *
  * Revision 1.1  2006/03/29 15:44:07  lanczyck
  * add files for fasta->cd converter; change Makefile accordingly
  *

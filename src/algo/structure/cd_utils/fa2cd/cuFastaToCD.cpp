@@ -81,6 +81,7 @@
 
 #include <algo/structure/cd_utils/cuReadFastaWrapper.hpp>
 #include <algo/structure/cd_utils/cuSeqAnnotFromFasta.hpp>
+#include <algo/structure/cd_utils/cuCdFromFasta.hpp>
 #include "cuFastaToCD.hpp"
 
 USING_NCBI_SCOPE;
@@ -89,7 +90,7 @@ USING_SCOPE(align_refine);
 USING_SCOPE(cd_utils);
 
 
-bool PurgeNonAlphaFromSequence(CCdCore& cd, unsigned int index) {
+bool PurgeNonAlphaFromSequence(CCdFromFasta& cd, unsigned int index) {
 
     bool result = false;
     CSeq_inst::TLength newLength;
@@ -129,7 +130,7 @@ bool PurgeNonAlphaFromSequence(CCdCore& cd, unsigned int index) {
     return result;
 }
 
-bool  BuildSeqAnnotForCD(CCdCore& cd, const vector<unsigned int>& blockStarts, const vector<unsigned int>& blockLengths, bool purgeGaps) 
+bool  BuildSeqAnnotForCD(CCdFromFasta& cd, const vector<unsigned int>& blockStarts, const vector<unsigned int>& blockLengths, bool purgeGaps) 
 {
     typedef CSeq_align::C_Segs::TDendiag TDD;
 
@@ -203,7 +204,7 @@ bool  BuildSeqAnnotForCD(CCdCore& cd, const vector<unsigned int>& blockStarts, c
     return true;
 }
 
-bool  TrimSeqAnnotForCD(CCdCore& cd, const set<unsigned int>& masterSeqIndicesToTrim, const set<unsigned int>& forcedBreaks)
+bool  TrimSeqAnnotForCD(CCdFromFasta& cd, const set<unsigned int>& masterSeqIndicesToTrim, const set<unsigned int>& forcedBreaks)
 {
     typedef CSeq_align::C_Segs::TDendiag TDD;
 
@@ -316,7 +317,7 @@ bool  TrimSeqAnnotForCD(CCdCore& cd, const set<unsigned int>& masterSeqIndicesTo
 //  If the 'scorer' is provided, a column is included in the resulting alignment only if the 
 //  score of that column meets or exceeds the 'scorerThreshold';   'scorerThreshold' is 
 //  ignored if 'scorer' is null.
-bool FastaSeqEntry_To_SeqAnnot(CCdCore& cd, ColumnScorer* scorer, double scorerThreshold) {
+bool FastaSeqEntry_To_SeqAnnot(CCdFromFasta& cd, ColumnScorer* scorer, double scorerThreshold) {
 
     bool builtIt = false;
     bool isInPssm, isAligned;
@@ -439,7 +440,7 @@ void CFasta2CD::Init(void)
                               "Bare-bones MFasta --> CD converter");
 
     argDescr->AddKey("i", "MFastaIn", "filename of file containing an MFasta alignment (ascii)", argDescr->eString);
-    argDescr->AddOptionalKey("a", "CdName", "name and accession of the CD generated\n(if not given, uses lowercase of the base of the input mFasta file's name)\n", argDescr->eString);
+    argDescr->AddOptionalKey("a", "CdName", "name and accession of the CD created\n(if not given, uses lowercase of the base of the input mFasta file's name)\n", argDescr->eString);
 
     argDescr->AddOptionalKey("o", "OutputCDFileName", "filename for output CD, adding '.acd' if not present\n(if not given, uses same basename as the input mFasta filename, adding the '.acd' extension)\n\n", argDescr->eString);//CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
@@ -474,8 +475,9 @@ int CFasta2CD::Run(void)
     string test, err;
     string fastaFile, cdOutFile, cdAcc, compareMethodStr;
     double threshold, dummyThreshold = -100.0;
-    TReadFastaFlags fastaFlags = fReadFasta_AssumeProt;
-    CBasicFastaWrapper fastaIO(fastaFlags, false);
+    CCdFromFasta::Fasta2CdParams params;
+//    TReadFastaFlags fastaFlags = fReadFasta_AssumeProt;
+//    CBasicFastaWrapper fastaIO(fastaFlags, false);
 
 
     // Process arguments
@@ -494,133 +496,77 @@ int CFasta2CD::Run(void)
     if (cdOutFile.length() == 0) cdOutFile = "cd.acd";
 */
 
-    cdAcc     = BuildCDName(args);
+    params.cdAcc     = BuildCDName(args);
     cdOutFile = BuildOutputFilename(args);
 
-    useLocalIds = (args["localIds"]);
-    if (useLocalIds) fastaFlags |= fReadFasta_NoParseID;
-    fastaIO.SetFastaFlags(fastaFlags);
+    params.useLocalIds = (args["localIds"]);
+//    if (useLocalIds) fastaFlags |= fReadFasta_NoParseID;
+//    fastaIO.SetFastaFlags(fastaFlags);
 
 //    fastaFlags |= fReadFasta_AllSeqIds;
 //    fastaFlags |= fReadFasta_RequireID;
 
-    useAlignmentAsis = (args["asIs"]);
+    params.useAsIs = (args["asIs"]);
 
     //  Command-line arg starts counting rows at 1.  Set master as row 0 by default.
-    masterIndex = (args["mr"]) ? (unsigned int) args["mr"].AsInteger() - 1 : 0;
+    params.masterIndex = (args["mr"]) ? (unsigned int) args["mr"].AsInteger() - 1 : 0;
 
 //    m_outStream = (outFile.size() > 0) ? new ofstream(outFile.c_str(), ios::out) : &cout;
     m_outStream = &cerr;
     SetDiagStream(m_outStream);
 
+/*
     if (fastaFile.size() == 0) {
         (*m_outStream) << "Unable to open file:  filename has size zero (?) \n";
         return -1;
     }
+*/
 
-    CSeqAnnotFromFasta fastaSeqAnnot(!useAlignmentAsis, false, false);
-    CSeqAnnotFromFasta::MasteringMethod masteringMethod = CSeqAnnotFromFasta::eMostAlignedAndFewestGaps; 
-    CNcbiIfstream ifs(fastaFile.c_str(), IOS_BASE::in);
+//    CSeqAnnotFromFasta fastaSeqAnnot(!useAlignmentAsis, false, false);
+    params.masterMethod = CSeqAnnotFromFasta::eMostAlignedAndFewestGaps; 
+//    CNcbiIfstream ifs(fastaFile.c_str(), IOS_BASE::in);
 
     //  Select a mastering method based on command-line parameters.
     if (args["mr"]) {
-        masteringMethod = (masterIndex > 0) ? CSeqAnnotFromFasta::eSpecifiedSequence : CSeqAnnotFromFasta::eFirstSequence;
+        params.masterMethod = (params.masterIndex > 0) ? CSeqAnnotFromFasta::eSpecifiedSequence : CSeqAnnotFromFasta::eFirstSequence;
     } else if (args["keepMaster"]) {
-        masteringMethod = CSeqAnnotFromFasta::eFirstSequence;
+        params.masterMethod = CSeqAnnotFromFasta::eFirstSequence;
     }
 
-    //  This parses the fasta file and constructs a Seq-annot object.  Alignment coordinates
-    //  are indexed to the *DEGAPPED* FASTA-input sequences cached in 'fastaSeqAnnot'.  Note 
-    //  that the Seq-entry in the 'fastaIO' object remains unaltered.
-    if (!fastaSeqAnnot.MakeSeqAnnotFromFasta(ifs, fastaIO, masteringMethod, masterIndex)) {
-        (*m_outStream) << "Unable to extract an alignment from file " << fastaFile.c_str() << endl << fastaIO.GetError().c_str() << endl;
-        return -1;
-    }
+//    cerr << "First param print:\n" << params.Print() << endl;
 
-    //  Fill in name for the CD.
-    m_ccdCore.SetName(cdAcc);
-
-    //  New to make a new accession object since none exists.
-    if (m_ccdCore.GetId().Get().size() == 0) {
-        CRef< CCdd_id > cdId(new CCdd_id());
-        CRef< CGlobal_id > global(new CGlobal_id());
-        global->SetAccession(cdAcc);
-        global->SetVersion(0);
-        cdId->SetGid(*global);
-        m_ccdCore.SetId().Set().push_back(cdId);
-    } else {
-        m_ccdCore.SetAccession(cdAcc);
-    }
-
-    //  Put the sequence data into the CD, after removing any gap characters.
-    CRef < CSeq_entry > se(new CSeq_entry);
-    se->Assign(*fastaIO.GetSeqEntry());
-
-    //  Degap the sequence data *after* the seq-annot was made,
-    //  and do some post-processing of the Bioseqs.
-    //  Assuming we have some identifiers followed by text that ends
-    //  up as a 'title' type of Seqdesc.
-    for (list<CRef <CSeq_entry > >::iterator i = se->SetSet().SetSeq_set().begin();
-         i != se->SetSet().SetSeq_set().end(); ++i, ++nSeq) {
-
-        CBioseq& bs = (*i)->SetSeq();
-        CSeqAnnotFromFasta::PurgeNonAlphaFromSequence(bs);
-
-        if (bs.SetDescr().Set().size() == 0 || !bs.SetDescr().Set().front()->IsTitle()) continue;
-
-        //  For some cases, the description can come in w/ bad character...
-        //  remove trailing non-printing characters from the description.
-        test = bs.SetDescr().Set().front()->SetTitle();
-        len = test.length();
-
-        while (len > 0 && !ncbi::GoodVisibleChar(test[len-1])) {
-            _TRACE("Description of seq " << nSeq  << " has " << len << " characters;");
-            _TRACE("    the last one is not a printable char; truncating it!\n");
-            bs.SetDescr().Set().front()->SetTitle().resize(len-1);  
-            test = bs.SetDescr().Set().front()->SetTitle();
-            len = test.length();
-        }
-
-        //cout << "|" << test << "|" << endl;
-        //cout << "    last character as c    = " << test.at(len-1) << endl;
-        //cout << "    last character as uc   = " << (unsigned char) test.at(len-1) << endl;
-        //cout << "    last character as int  = " << (int) test.at(len-1) << endl;
-        //cout << "    last character as uint = " << (unsigned int) test.at(len-1) << endl;
-    }
-
-    m_ccdCore.SetSequences(*se);
-
-    //  Add the alignment to the CD
-    CRef<CSeq_annot> alignment(fastaSeqAnnot.GetSeqAnnot());
-    m_ccdCore.SetSeqannot().push_back(alignment);
-
-#ifdef _READFASTA_TEST
-    string s;
-    bool writeResult1 = WriteASNToFile("Seq-entry.txt", *se, false, &err);
+//#ifdef _READFASTA_TEST
+//    string s;
+//    bool writeResult1 = WriteASNToFile("Seq-entry.txt", *se, false, &err);
 //    cerr << args.Print(s) << endl;
 //    return 0;
-#endif
+//#endif
+
+
+    m_ccdFromFasta = new CCdFromFasta(fastaFile, params);
+    if (!m_ccdFromFasta) return -1;
 
     //  Convert the sequence data into a block-aligned Seq-align packaged in a Seq-annot
     //  and install it in the CD.
     MedianColumnScorer medianScorer;
-    bool converted = FastaSeqEntry_To_SeqAnnot(m_ccdCore, (threshold == dummyThreshold) ? NULL : &medianScorer, threshold);
+    bool converted = FastaSeqEntry_To_SeqAnnot(*m_ccdFromFasta, (threshold == dummyThreshold) ? NULL : &medianScorer, threshold);
 
 
-    //  Write the CD object.
-    if (threshold == dummyThreshold || converted) {
-        OutputCD(cdOutFile, err);
-//        WriteASNToFile(cdOutFile.c_str(), m_ccdCore, false, &err);
+
+    //  Write the CD object (unless column scorer was used and it failed).
+    if (threshold != dummyThreshold && !converted) {
+        (*m_outStream) << "Error during Fasta->CD conversion using the median column scorer; no CD file written.\n";
+        return -1;
     } else {
-        (*m_outStream) << "Error during Fasta->CD conversion; no CD file written.\n";
+        m_ccdFromFasta->WriteToFile(cdOutFile);
+        return 0;
     }
 
-    return 0;
 }
 
 bool CFasta2CD::OutputCD(const string& filename, string& err) 
 {
-    return WriteASNToFile(filename.c_str(), m_ccdCore, false, &err);
+    return WriteASNToFile(filename.c_str(), *m_ccdFromFasta, false, &err);
 }
 
 string CFasta2CD::BuildCDName(const CArgs& args)
@@ -736,6 +682,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/22 17:15:44  lanczyck
+ * use new CCdCore subclass for a Fasta-generated CDs
+ *
  * Revision 1.1  2006/03/29 15:44:07  lanczyck
  * add files for fasta->cd converter; change Makefile accordingly
  *
