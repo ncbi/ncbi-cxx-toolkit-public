@@ -2513,15 +2513,13 @@ void CNetScheduleServer::WriteMsg(CSocket&       sock,
         *ptr++ = *prefix;
         ++msg_length;
     }
-    if (msg_size_control) {
-        for (; *msg; ++msg) {
-            *ptr++ = *msg;
-            ++msg_length;
-            if (msg_length >= kMaxMessageSize) {
-                LOG_POST(Error << "Message too large:" << msg);
-                _ASSERT(0);
-                return;
-            }
+    for (; *msg; ++msg) {
+        *ptr++ = *msg;
+        ++msg_length;
+        if (msg_size_control && msg_length >= kMaxMessageSize) {
+            LOG_POST(Error << "Message too large:" << msg);
+            _ASSERT(0);
+            return;
         }
     }
     *ptr++ = '\r';
@@ -2867,6 +2865,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2006/05/22 16:51:04  kuznets
+ * Fixed bug in reporting worker nodes
+ *
  * Revision 1.85  2006/05/22 15:19:40  kuznets
  * Added return code to failure reporting
  *

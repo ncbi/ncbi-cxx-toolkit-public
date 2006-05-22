@@ -1212,16 +1212,12 @@ void CQueueDataBase::CQueue::PrintNodeStat(CNcbiOstream & out) const
 
     SLockedQueue::TListenerList&  wnodes = m_LQueue.wnodes;
     SLockedQueue::TListenerList::size_type lst_size;
-    {{
-        CReadLockGuard guard(m_LQueue.wn_lock);
-        lst_size = wnodes.size();
-    }}
-
+    CReadLockGuard guard(m_LQueue.wn_lock);
+    lst_size = wnodes.size();
+  
     time_t curr = time(0);
 
     for (SLockedQueue::TListenerList::size_type i = 0; i < lst_size; ++i) {
-        {{
-        CReadLockGuard guard(m_LQueue.wn_lock);  
         const SQueueListener* ql = wnodes[i];
         host = ql->host;
         port = ql->udp_port;
@@ -1233,15 +1229,12 @@ void CQueueDataBase::CQueue::PrintNodeStat(CNcbiOstream & out) const
         }
 
         auth = ql->auth;
-        }}
 
         CTime lc_time(last_connect);
         lc_time.ToLocalTime();
         out << auth << " @ " << CSocketAPI::gethostbyaddr(host) 
             << "  UDP:" << port << "  " << lc_time.AsString() << "\n";
-        cerr << i << ". " << CSocketAPI::gethostbyaddr(host) << " " << port << endl;
     }
-    cerr << "----------------" << endl;
 }
 
 void CQueueDataBase::CQueue::PrintSubmHosts(CNcbiOstream & out) const
@@ -3749,6 +3742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2006/05/22 16:51:04  kuznets
+ * Fixed bug in reporting worker nodes
+ *
  * Revision 1.80  2006/05/22 15:19:40  kuznets
  * Added return code to failure reporting
  *
