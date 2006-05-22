@@ -162,6 +162,8 @@ typedef struct SPHIPatternSearchBlk {
                                            
     SLongPatternItems* multi_word_items; /**< Additional items, when pattern
                                             requires multiple words. */
+    Int4 num_patterns_db; /**< Number of patterns actually found during the 
+                                            database search. */
 } SPHIPatternSearchBlk;
 
     
