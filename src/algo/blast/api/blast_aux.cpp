@@ -245,8 +245,11 @@ CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*d
 
     ddc.Log("db_length", (unsigned long)m_Ptr->db_length); // Int8
     ddc.Log("dbseq_num", m_Ptr->dbseq_num);
-    ddc.Log("searchsp_eff", m_Ptr->num_searchspaces ?
-                         (unsigned long)m_Ptr->searchsp_eff[0] : 0); // Int8
+    for (Int4 i = 0; i < m_Ptr->num_searchspaces; i++) {
+        const string prefix = string("searchsp[") + NStr::IntToString(i) + 
+            string("]");
+        ddc.Log(prefix, m_Ptr->searchsp_eff[i]);
+    }
 }
 
 void
@@ -848,6 +851,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.97  2006/05/22 19:29:53  camacho
+ * Report all effective search spaces in CBlastEffectiveLengthsOptions::DebugDump
+ *
  * Revision 1.96  2006/05/22 19:26:33  papadopo
  * modify tracing code to deal with a possibly empty array of search spaces
  *
