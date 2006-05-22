@@ -1122,8 +1122,8 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    BlastHSPStreamClose(hsp_stream);
 
    if (Blast_ProgramIsPhiBlast(program_number)) {
-       PHIPatternSpaceCalc(query_info, diagnostics);
        pattern_blk = ((SPHIPatternSearchBlk*) lookup_wrap->lut);
+       pattern_blk->num_patterns_db = diagnostics->ungapped_stat->lookup_hits;
    } 
 
    if ((status = 
