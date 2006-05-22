@@ -567,10 +567,6 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    if (!query_info || !sbp)
       return -1;
 
-   /* Do nothing for PHI BLAST, because search space is calculated by 
-      completely different formulas there. */
-   if (Blast_ProgramIsPhiBlast(program_number))
-       return 0;
 
    /* use overriding value from effective lengths options or the real value
       from effective lengths parameters. */
@@ -599,6 +595,19 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    else
       db_num_seqs = eff_len_params->real_num_seqs;
    
+   /* PHI BLAST search space calculation is different. */
+   if (Blast_ProgramIsPhiBlast(program_number))
+   {
+        for (index = query_info->first_context;
+           index <= query_info->last_context;
+           index++) {
+           Int8 effective_search_space = db_length - (db_num_seqs*(query_info->contexts[index].length_adjustment));
+           query_info->contexts[index].eff_searchsp = effective_search_space;
+        }
+       
+       return 0;
+   }
+
    /* N.B.: the old code used kbp_gap_std instead of the kbp_gap alias (which
     * could be kbp_gap_psi), hence we duplicate that behavior here */
    kbp_ptr = (scoring_options->gapped_calculation ? sbp->kbp_gap_std : sbp->kbp);
@@ -803,62 +812,11 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
     /* Save pattern probability, because it needs to be passed back to
        formatting stage, where lookup table will not be available. */
     query_info->pattern_info->probability = pattern_blk->patternProbability;
-    
+
     /* Save minimal pattern length in the length adjustment field, because 
        that is essentially its meaning. */
     query_info->contexts[0].length_adjustment = 
         pattern_blk->minPatternMatchLength;
-    
+
     return 0;
 }
-
-/** Count the number of occurrences of pattern in sequence, which
- * do not overlap by more than half the pattern match length. 
- * @param query_info Query information structure, containing pattern info. [in]
- */
-static Int4
-s_GetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info)
-{
-    Int4 index; /*loop index*/
-    Int4 lastEffectiveOccurrence; /*last nonoverlapping occurrence*/
-    Int4 count; /* Count of effective (nonoverlapping) occurrences */
-    Int4 min_pattern_length;
-    SPHIQueryInfo* pat_info;
-
-    ASSERT(query_info && query_info->pattern_info && query_info->contexts);
-    
-    pat_info = query_info->pattern_info;
-
-    if (pat_info->num_patterns <= 1)
-        return pat_info->num_patterns;
-
-    /* Minimal length of a pattern is saved in the length adjustment field. */
-    min_pattern_length = query_info->contexts[0].length_adjustment;
-
-    count = 1;
-    lastEffectiveOccurrence = pat_info->occurrences[0].offset;
-    for(index = 1; index < pat_info->num_patterns; ++index) {
-        if (((pat_info->occurrences[index].offset - lastEffectiveOccurrence) * 2)
-            > min_pattern_length) {
-            lastEffectiveOccurrence = pat_info->occurrences[index].offset;
-            ++count;
-        }
-    }
-    
-    return count;
-}
-
-void
-PHIPatternSpaceCalc(BlastQueryInfo* query_info, 
-                    const BlastDiagnostics* diagnostics)
-{
-    Int4 num_query_patterns;
-    Int8 num_db_patterns;
-
-    ASSERT(query_info && diagnostics && diagnostics->ungapped_stat);
-
-    num_query_patterns = s_GetEffectiveNumberOfPatterns(query_info);
-    num_db_patterns = diagnostics->ungapped_stat->lookup_hits;
-    query_info->contexts[0].eff_searchsp = num_query_patterns * num_db_patterns;
-}
-
