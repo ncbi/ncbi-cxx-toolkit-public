@@ -92,9 +92,13 @@ public:
             LOG_POST("SERVER IS COMMITTING SUICIDE!!");
             CGridGlobals::GetInstance().KillNode();
         } else {
+            CNetScheduleClient::EShutdownLevel level =
+                CNetScheduleClient::eNormalShutdown;
+            if (request.find("IMMEDIATE") != NPOS) 
+                level = CNetScheduleClient::eShutdownImmidiate;
             os << "OK:";
             CGridGlobals::GetInstance().
-                RequestShutdown(CNetScheduleClient::eNormalShutdown);
+                RequestShutdown(level);
             LOG_POST("Shutdown request has been received from host: " << m_Host);
         }
     }
@@ -294,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.24  2006/05/22 18:02:07  didenko
+ * Added support for shutdown immediate command
+ *
  * Revision 6.23  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *
