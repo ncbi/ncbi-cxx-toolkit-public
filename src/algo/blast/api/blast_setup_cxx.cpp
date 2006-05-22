@@ -95,7 +95,9 @@ s_AdjustFirstContext(BlastQueryInfo* query_info,
 {
     ASSERT(query_info);
 
+#if _DEBUG      /* to eliminate compiler warning in release mode */
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
+#endif
 	bool translate = Blast_QueryIsTranslated(prog) ? true : false;
 
     ASSERT(is_na || translate);
@@ -1568,6 +1570,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.119  2006/05/22 19:30:18  camacho
+ * Eliminate compiler warnings
+ *
  * Revision 1.118  2006/05/15 15:36:27  camacho
  * Remove unneeded assertion for the case of plus strand only
  *
