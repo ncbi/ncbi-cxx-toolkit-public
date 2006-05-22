@@ -1,4 +1,4 @@
---$Revision: 6.6 $
+--$Revision: 6.7 $
 --**********************************************************************
 --
 --  NCBI Taxonomy Server
@@ -38,7 +38,8 @@ Taxon1-req ::= CHOICE {
         maxtaxid        NULL,           -- get max taxid
         getproptypes    NULL,           -- get property types
         getorgprop      Taxon1-info,    -- get properties for organism
-        searchname      Taxon1-info}    -- fancy search (token set, wild card)
+        searchname      Taxon1-info,    -- fancy search (token set, wild card)
+        dumpnames4class INTEGER}        -- all names of certain name class
 
 Taxon1-resp ::= CHOICE {
 	error		Taxon1-error,	-- sent on any error
@@ -65,7 +66,8 @@ Taxon1-resp ::= CHOICE {
         maxtaxid        INTEGER,
 	getproptypes    SET OF Taxon1-info,
         getorgprop      SET OF Taxon1-info,
-        searchname      SET OF Taxon1-name}
+        searchname      SET OF Taxon1-name,
+        dumpnames4class SET OF Taxon1-name}
 
 Taxon1-info ::= SEQUENCE {
 	ival1	INTEGER,
