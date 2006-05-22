@@ -535,21 +535,24 @@ static Int8 s_GetEffectiveSearchSpaceForContext(
                         const BlastEffectiveLengthsOptions* eff_len_options,
                         int context_index, Blast_Message **blast_message)
 {
+    Int8 retval = 0;
+
     if (eff_len_options->num_searchspaces == 0) {
-        return 0;
+        retval = 0;
     } else if (eff_len_options->num_searchspaces == 1) {
         if (context_index != 0) {
             Blast_MessageWrite(blast_message, eBlastSevWarning, context_index, 
                     "One search space is being used for multiple sequences");
         }
-        return eff_len_options->searchsp_eff[0];
+        retval = eff_len_options->searchsp_eff[0];
     } else if (eff_len_options->num_searchspaces > 1) {
         ASSERT(context_index < eff_len_options->num_searchspaces);
-        return eff_len_options->searchsp_eff[context_index];
+        retval = eff_len_options->searchsp_eff[context_index];
     } else {
         abort();    /* should never happen */
         return 0;
     }
+    return retval;
 }
 
 Int2 BLAST_CalcEffLengths (EBlastProgramType program_number, 
