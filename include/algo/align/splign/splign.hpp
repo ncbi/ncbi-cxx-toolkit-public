@@ -252,7 +252,7 @@ protected:
     size_t x_TestPolyA(void);
     void   x_SetPattern(THitRefs* hitrefs);
     void   x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const;
-    Uint4  x_GetGenomicExtent(const Uint4 query_extent) const;
+    Uint4  x_GetGenomicExtent(const Uint4 query_extent, Uint4 max_ext = 0) const;
 
     void   x_LoadSequence(vector<char>* seq, 
                           const objects::CSeq_id& seqid,
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2006/05/22 16:00:08  kapustin
+ * Pass max extent as an argument to x_GetGenomicExtent()
+ *
  * Revision 1.36  2006/04/18 17:08:36  kapustin
  * Use member to hold min length for pattern hit
  *
