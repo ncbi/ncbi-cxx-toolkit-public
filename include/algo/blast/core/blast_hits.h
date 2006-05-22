@@ -37,6 +37,7 @@
 #include <algo/blast/core/blast_parameters.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/blast_seqsrc.h>
+#include <algo/blast/core/pattern.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -410,10 +411,12 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
  * @param hsp_list HSP list found by PHI BLAST [in] [out]
  * @param sbp Scoring block with statistical parameters [in]
  * @param query_info Structure containing information about pattern counts [in]
+ * @param pattern_blk Structure containing information about pattern hits in db [in]
  */
 NCBI_XBLAST_EXPORT
 void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp, 
-                                const BlastQueryInfo* query_info);
+                                const BlastQueryInfo* query_info,
+                                const SPHIPatternSearchBlk* pattern_blk);
 
 /** Calculate bit scores from raw scores in an HSP list.
  * @param hsp_list List of HSPs [in] [out]
@@ -720,6 +723,14 @@ Blast_HSPResultsFromHSPStreamWithLimit(struct BlastHSPStream* hsp_stream,
 BlastHSPResults** 
 PHIBlast_HSPResultsSplit(const BlastHSPResults* results, 
                          const SPHIQueryInfo* pattern_info);
+
+
+/** Count the number of occurrences of pattern in sequence, which
+ * do not overlap by more than half the pattern match length. 
+ * @param query_info Query information structure, containing pattern info. [in]
+ */
+Int4
+PhiBlastGetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info);
 
 #ifdef __cplusplus
 }
