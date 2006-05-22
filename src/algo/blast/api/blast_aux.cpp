@@ -245,7 +245,8 @@ CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*d
 
     ddc.Log("db_length", (unsigned long)m_Ptr->db_length); // Int8
     ddc.Log("dbseq_num", m_Ptr->dbseq_num);
-    ddc.Log("searchsp_eff", (unsigned long)m_Ptr->searchsp_eff); // Int8
+    ddc.Log("searchsp_eff", m_Ptr->num_searchspaces ?
+                         (unsigned long)m_Ptr->searchsp_eff[0] : 0); // Int8
 }
 
 void
@@ -847,6 +848,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.96  2006/05/22 19:26:33  papadopo
+ * modify tracing code to deal with a possibly empty array of search spaces
+ *
  * Revision 1.95  2006/05/04 19:17:16  bealer
  * - EBlastProgramType to EProgram converter.
  *
