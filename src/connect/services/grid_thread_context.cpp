@@ -208,6 +208,10 @@ bool CGridThreadContext::PutResult(int ret_code,
                                    string& new_job_input)
 {
     _ASSERT(m_JobContext);
+    if ( m_JobContext->GetCommitStatus() != CWorkerNodeJobContext::eDone ) {
+        PutFailure(m_JobContext->GetErrMsg(), ret_code);
+        return false;
+    }
     bool more_jobs = false;
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (!debug_context || 
@@ -275,7 +279,7 @@ void CGridThreadContext::ReturnJob()
                             IWorkerNodeJobWatcher::eJobReturned);
 }
 /// @internal
-void CGridThreadContext::PutFailure(const string& msg)
+void CGridThreadContext::PutFailure(const string& msg, int ret_code)
 {
     _ASSERT(m_JobContext);
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
@@ -283,7 +287,10 @@ void CGridThreadContext::PutFailure(const string& msg)
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
         if (m_Reporter.get()) {
-            m_Reporter->PutFailure(m_JobContext->GetJobKey(),msg);
+            m_Reporter->PutFailure(m_JobContext->GetJobKey(),
+                                   msg,
+                                   m_JobContext->GetJobOutput(),
+                                   ret_code);
         }
     }
     m_JobContext->GetWorkerNode()
@@ -371,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.22  2006/05/22 18:11:43  didenko
+ * Added an option to fail a job if a remote app returns non zore code
+ *
  * Revision 6.21  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *

@@ -239,8 +239,15 @@ public:
 
         string stat = " is canceled.";
         if (!canceled) {
-            context.CommitJob();
-            stat = " is done.";
+            if (ret != 0 && m_FailOnNonZeroExit ) {
+                context.CommitJobWithFailure("Exited with " 
+                                             + NStr::IntToString(ret) +
+                                             " return code.");
+                stat = " is failed.";
+            } else {
+                context.CommitJob();
+                stat = " is done.";
+            }
         }
         if (context.IsLogRequested()) {
             LOG_POST( CTime(CTime::eCurrent).AsString() 
@@ -258,10 +265,12 @@ private:
     CRemoteAppResult_Executer  m_Result;
     int m_MaxAppRunningTime;
     int m_KeepAlivePeriod;
+    bool m_FailOnNonZeroExit;
 };
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
-    : m_Factory(context.GetConfig()), m_Request(m_Factory), m_Result(m_Factory)
+    : m_Factory(context.GetConfig()), m_Request(m_Factory), m_Result(m_Factory),
+      m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), m_FailOnNonZeroExit(false)
 {
     const IRegistry& reg = context.GetConfig();
 
@@ -270,6 +279,11 @@ CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
     
     m_KeepAlivePeriod = 
         reg.GetInt("remote_app","keep_alive_period",0,0,IRegistry::eReturn);
+
+    m_FailOnNonZeroExit =
+        reg.GetBool("remote_app", "fail_on_non_zero_exit", false, 0, 
+                    CNcbiRegistry::eReturn);
+
 
     m_AppPath = reg.GetString("remote_app", "app_path", "" );
     CFile file(m_AppPath);
@@ -317,6 +331,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/05/22 18:11:43  didenko
+ * Added an option to fail a job if a remote app returns non zore code
+ *
  * Revision 1.14  2006/05/19 13:40:40  didenko
  * Added ns_remote_job_control utility
  *

@@ -134,7 +134,7 @@ class CWorkerNodeRequest;
 class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
 {
 public:
-    
+
     ~CWorkerNodeJobContext();
 
     /// Get a job key
@@ -187,11 +187,24 @@ public:
     /// back to the client. 
     ///
     /// This method should be called at the end of IWorkerNodeJob::Do 
-    /// method. If this method is not called the job's result will NOT be sent 
+    /// method. If this method or CommitJobWithFailure are not called 
+    /// the job's result will NOT be sent 
     /// to the queue (job is returned back to the NetSchedule queue 
     /// and re-executed in a while)
     ///
-    void CommitJob()                       { m_JobCommitted = true; }
+    void CommitJob() { m_JobCommitted = eDone; }
+
+    /// Confirm that a job is finished, but an error has happend during its 
+    /// execution. 
+    ///
+    /// This method should be called at the end of IWorkerNodeJob::Do 
+    /// method. If this method or CommitJob are not called 
+    /// the job's result will NOT be sent 
+    /// to the queue (job is returned back to the NetSchedule queue 
+    /// and re-executed in a while)
+    ///
+    void CommitJobWithFailure(const string& err_msg) 
+    { m_JobCommitted = eFailure; m_ErrMsg = err_msg; }
 
     /// Check if node application shutdown was requested.
     ///
@@ -256,16 +269,24 @@ public:
     const string& GetJobOutput() const { return m_JobOutput; }
 
 private:    
+    enum ECommitStatus {
+        eDone,
+        eFailure,
+        eNotCommitted
+    };
+
     friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
     string& SetJobOutput()             { return m_JobOutput; }
     string& SetJobProgressMsgKey()     { return m_ProgressMsgKey; }
     size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
     bool IsJobExclusive() const        { return m_ExclusiveJob; }
+    const string& GetErrMsg() const    { return m_ErrMsg; }
     
     friend class CWorkerNodeRequest;
     CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
-    bool IsJobCommitted() const        { return m_JobCommitted; }   
+    bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }   
+    ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }   
     unsigned int GetJobNumber() const  { return m_JobNumber; }
 
     /// Only a CGridWorkerNode can create an instance of this class
@@ -285,12 +306,13 @@ private:
     string               m_JobInput;
     string               m_JobOutput;
     string               m_ProgressMsgKey;
-    bool                 m_JobCommitted;
+    ECommitStatus        m_JobCommitted;
     size_t               m_InputBlobSize;
     bool                 m_LogRequested;
     unsigned int         m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
     bool                 m_ExclusiveJob;
+    string               m_ErrMsg;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -635,6 +657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/05/22 18:11:42  didenko
+ * Added an option to fail a job if a remote app returns non zore code
+ *
  * Revision 1.45  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *

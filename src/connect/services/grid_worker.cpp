@@ -77,7 +77,7 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              unsigned int     job_number,
                                              bool             log_requested)
     : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
-      m_JobCommitted(false), m_LogRequested(log_requested), 
+      m_JobCommitted(eNotCommitted), m_LogRequested(log_requested), 
       m_JobNumber(job_number), m_ThreadContext(NULL), 
       m_ExclusiveJob(false)
 {
@@ -149,7 +149,7 @@ void CWorkerNodeJobContext::Reset(const string& job_key,
     
     m_JobOutput = "";
     m_ProgressMsgKey = "";
-    m_JobCommitted = false;
+    m_JobCommitted = eNotCommitted;
     m_InputBlobSize = 0;
     m_ExclusiveJob = false;
 }
@@ -705,6 +705,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/05/22 18:11:43  didenko
+ * Added an option to fail a job if a remote app returns non zore code
+ *
  * Revision 1.49  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *

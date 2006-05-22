@@ -68,7 +68,7 @@ public:
     bool IsJobCommitted() const;
     bool PutResult(int ret_code, string& new_job_key, string& new_job_input);
     void ReturnJob();
-    void PutFailure(const string& msg);
+    void PutFailure(const string& msg, int ret_code = 0);
     bool IsJobCanceled();
    
     IWorkerNodeJob* GetJob();
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2006/05/22 18:11:43  didenko
+ * Added an option to fail a job if a remote app returns non zore code
+ *
  * Revision 6.10  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config

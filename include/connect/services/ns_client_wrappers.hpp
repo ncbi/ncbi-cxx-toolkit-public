@@ -73,7 +73,9 @@ public:
     virtual string GetProgressMsg(const string& job_key) = 0;
 
     virtual void PutFailure(const string& job_key, 
-                            const string& err_msg) = 0;
+                            const string& err_msg,
+                            const string& output = kEmptyStr,
+                            int ret = 0) = 0;
 
     virtual CNetScheduleClient::EJobStatus 
                        GetStatus(const string& job_key, 
@@ -139,7 +141,9 @@ public:
     virtual string GetProgressMsg(const string& job_key);
 
     virtual void PutFailure(const string& job_key, 
-                            const string& err_msg);
+                            const string& err_msg,
+                            const string& output = kEmptyStr,
+                            int ret = 0);
 
     virtual CNetScheduleClient::EJobStatus 
                        GetStatus(const string& job_key, 
@@ -212,7 +216,9 @@ public:
     virtual string GetProgressMsg(const string& job_key);
 
     virtual void PutFailure(const string& job_key, 
-                            const string& err_msg);
+                            const string& err_msg,
+                            const string& output = kEmptyStr,
+                            int ret = 0);
 
     virtual CNetScheduleClient::EJobStatus 
                        GetStatus(const string& job_key, 
@@ -244,6 +250,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/22 18:11:43  didenko
+ * Added an option to fail a job if a remote app returns non zore code
+ *
  * Revision 1.3  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config

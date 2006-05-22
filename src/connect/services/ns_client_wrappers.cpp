@@ -123,11 +123,13 @@ string CNSCWrapperShared::GetProgressMsg(const string& job_key)
 }
 
 void CNSCWrapperShared::PutFailure(const string& job_key,
-                                   const string& err_msg)
+                                   const string& err_msg,
+                                   const string& output,
+                                   int ret)
 {
     CFastMutexGuard gurad(m_Mutex);
     //cerr << "PutFailure" << endl;
-    m_NSClient.PutFailure(job_key, err_msg);
+    m_NSClient.PutFailure(job_key, err_msg, output, ret);
 }
 
 CNetScheduleClient::EJobStatus 
@@ -245,9 +247,11 @@ string CNSCWrapperExclusive::GetProgressMsg(const string& job_key)
 }
 
 void CNSCWrapperExclusive::PutFailure(const string& job_key,
-                                      const string& err_msg)
+                                      const string& err_msg,
+                                      const string& output,
+                                      int ret)
 {
-    m_NSClient->PutFailure(job_key, err_msg);
+    m_NSClient->PutFailure(job_key, err_msg, output, ret);
 }
 
 CNetScheduleClient::EJobStatus 
@@ -292,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2006/05/22 18:11:43  didenko
+ * Added an option to fail a job if a remote app returns non zore code
+ *
  * Revision 6.3  2006/05/10 19:54:21  didenko
  * Added JobDelayExpiration method to CWorkerNodeContext class
  * Added keep_alive_period and max_job_run_time parmerter to the config
