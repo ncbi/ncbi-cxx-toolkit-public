@@ -1996,7 +1996,8 @@ void CQueueDataBase::CQueue::PutProgressMessage(unsigned int  job_id,
 
 
 void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
-                                       const string& err_msg)
+                                       const string& err_msg,
+                                       const string& output)
 {
     m_LQueue.status_tracker.SetStatus(job_id, CNetScheduleClient::eFailed);
 
@@ -2030,6 +2031,7 @@ void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
     db.status = (int) CNetScheduleClient::eFailed;
     db.time_done = curr;
     db.err_msg = err_msg;
+    db.output = output;
 
     cur.Update();
 
@@ -2061,6 +2063,8 @@ void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
         msg += NStr::IntToString(job_id);
         msg += " err_msg=";
         msg += err_msg;
+        msg += " output=";
+        msg += output;
         m_LQueue.monitor.SendString(msg);
     }
 
@@ -3741,6 +3745,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2006/05/22 12:36:33  kuznets
+ * Added output argument to PutFailure
+ *
  * Revision 1.78  2006/05/11 14:31:51  kuznets
  * Fixed bug in job prolongation
  *

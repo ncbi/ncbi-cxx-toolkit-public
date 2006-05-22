@@ -1290,7 +1290,8 @@ string CNetScheduleClient::GetProgressMsg(const string& job_key)
 
 
 void CNetScheduleClient::PutFailure(const string& job_key, 
-                                    const string& err_msg)
+                                    const string& err_msg,
+                                    const string& output)
 {
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
@@ -1310,6 +1311,9 @@ void CNetScheduleClient::PutFailure(const string& job_key,
     m_Tmp.append(" ");
     m_Tmp.append(" \"");
     m_Tmp.append(NStr::PrintableString(err_msg));
+    m_Tmp.append("\"");
+    m_Tmp.append(" \"");
+    m_Tmp.append(NStr::PrintableString(output));
     m_Tmp.append("\"");
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
@@ -1791,6 +1795,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/05/22 12:35:21  kuznets
+ * Added output argument to PutFailure
+ *
  * Revision 1.55  2006/05/19 13:36:56  didenko
  * Allow GetStatus method returning a job's input if it is in running, pending, returned status also
  *

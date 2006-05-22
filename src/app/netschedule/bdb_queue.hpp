@@ -195,7 +195,8 @@ public:
                                 const char*   msg);
         
         void JobFailed(unsigned int  job_id,
-                       const string& err_msg);
+                       const string& err_msg,
+                       const string& output);
 
         /// Get job with load balancing
         void GetJobLB(unsigned int   worker_node,
@@ -552,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/05/22 12:36:33  kuznets
+ * Added output argument to PutFailure
+ *
  * Revision 1.47  2006/05/10 15:59:06  kuznets
  * Implemented NS call to delay job expiration
  *

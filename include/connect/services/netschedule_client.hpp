@@ -445,10 +445,13 @@ public:
     ///     Job key
     /// @param err_msg
     ///     Short diagnostic message
+    /// @param output
+    ///     Output
     ///
     virtual
     void PutFailure(const string& job_key, 
-                    const string& err_msg);
+                    const string& err_msg,
+                    const string& output = kEmptyStr);
 
     /// Request of current job status
     /// eJobNotFound is returned if job status cannot be found 
@@ -957,6 +960,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/05/22 12:34:14  kuznets
+ * Added output argument to PutFailure
+ *
  * Revision 1.53  2006/05/10 15:56:05  kuznets
  * +JobDelayExpiration()
  *

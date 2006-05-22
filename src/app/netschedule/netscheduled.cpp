@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.10.2  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.10.3  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1511,7 +1511,7 @@ void CNetScheduleServer::ProcessPutFailure(CSocket&                sock,
     SJS_Request& req = tdata.req;
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
-    queue.JobFailed(job_id, req.err_msg);
+    queue.JobFailed(job_id, req.err_msg, req.output);
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
 
@@ -1964,8 +1964,8 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 13.WGET udp_port_number timeout
     // 14.JRTO JSID_01_1 timeout
     // 15.DROJ JSID_01_1
-    // 16.FPUT JSID_01_1 "error message"
-    // 17.MPUT JSID_01_1 "error message"
+    // 16.FPUT JSID_01_1 "error message" "output"
+    // 17.MPUT JSID_01_1 "progress message"
     // 18.MGET JSID_01_1
     // 19.MONI
     // 20.DUMP [JSID_01_1]
@@ -2375,7 +2375,24 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 NS_CHECKEND(s, "Misformed PUT error request")
                 req->err_msg.push_back(*s);
             }
-            
+
+            if (!*s) return;
+            NS_SKIPSPACE(s)
+            if (!*s) return;
+
+            if (*s !='"') {
+                NS_RETURN_ERROR("Misformed PUT error request")
+            }
+
+            char *ptr = req->output;
+            for (++s; true; ++s) {
+                if (*s == '"' && *(s-1) != '\\') break;
+                NS_CHECKEND(s, "Misformed PUT error request")
+                NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDataSize);
+                *ptr++ = *s;            
+            }
+            *ptr = 0;
+
             return;
         }
 
@@ -2857,6 +2874,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2006/05/22 12:36:33  kuznets
+ * Added output argument to PutFailure
+ *
  * Revision 1.83  2006/05/17 17:04:55  ucko
  * Tweak ProcessStatus to fix compilation with GCC, which does not permit
  * goto statements to skip over variable initializations.
