@@ -162,7 +162,8 @@ public:
     static void s_RunGreedy(typename THitRefs::iterator hri_beg, 
                             typename THitRefs::iterator hri_end,
                             THitRefs* phits_new,
-                            TCoord min_hit_len = 100) {
+                            TCoord min_hit_len = 100,
+                            double min_hit_idty = .9) {
 
         if(hri_beg > hri_end) {
             NCBI_THROW(CAlgoAlignUtilException, eInternal, 
@@ -329,7 +330,7 @@ public:
                             THitRef hit_new;
                             int newpos 
                                 = sx_Cleave(*he.m_Ptr, he.m_Point/2, cmin, cmax, 
-                                            min_hit_len, & hit_new);
+                                            min_hit_len, min_hit_idty, & hit_new);
 
                             if(newpos <= -2) { // eliminate
                                 del[hitrefidx] = skip[hitrefidx] = true;
@@ -463,7 +464,8 @@ protected:
     // return adjusted coordinate; -1 if unaffected; -2 to delete; -3 on exception;
     // 0 on split.
     static int sx_Cleave(THitRef& h, Uint1 where, 
-                         TCoord cmin, TCoord cmax, TCoord min_hit_len,
+                         TCoord cmin, TCoord cmax, 
+                         TCoord min_hit_len, double& min_idty,
                          THitRef* pnew_hit) 
     {
         int rv = -1;
@@ -484,7 +486,10 @@ protected:
                 pnew_hit->Reset(new THit (*h));
                 h->Modify(2*where + 1, lmax = cmin - 1);
                 (*pnew_hit)->Modify(2*where, lmin = cmax + 1);
-                return 0;
+                if((*pnew_hit)->GetIdentity() < min_idty) {
+                    pnew_hit->Reset(NULL);
+                }
+                return (h->GetIdentity() < min_idty)? -2: 0;
             }
             else if(ldif > rdif) {
 
@@ -512,7 +517,7 @@ protected:
 
             }
 
-            if(1 + lmax - lmin < min_hit_len) {
+            if(1 + lmax - lmin < min_hit_len || h->GetIdentity() < min_idty) {
                 return -2;
             }
         }
@@ -531,6 +536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/22 15:32:42  kapustin
+ * Add lower cutoff for identity
+ *
  * Revision 1.9  2006/04/17 19:26:15  kapustin
  * Better support for higher-scoring nested hits in MGR
  *
