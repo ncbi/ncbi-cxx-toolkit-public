@@ -654,12 +654,6 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     return rv;
 }
 
-
-static bool IsNullRef(const CSplign::THitRef& hr) {
-    return hr.IsNull();
-}
-
-
 // naive polya detection
 size_t CSplign::x_TestPolyA(void)
 {
@@ -1606,22 +1600,37 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
     if(exon_size < kMinTermExonSize) {
 
         bool turn2gap = false;
-        if(term_segs[0]->m_idty < kMinTermExonIdty) {
+        const double idty = term_segs[0]->m_idty;
+        if(idty < kMinTermExonIdty) {
             turn2gap = true;
         }
         else {
             
             // verify that the intron is not too long
 
-            const size_t b = side == 0? term_segs[1]->m_box[2]:
-                term_segs[0]->m_box[2];
-
-            const size_t a = side == 0? term_segs[0]->m_box[3]:
-                term_segs[1]->m_box[3];
+            size_t a, b;
+            const char *dnr, *acc;
+            if(side == 0) {
+                a = term_segs[0]->m_box[3];
+                b = term_segs[1]->m_box[2];
+                dnr = term_segs[0]->GetDonor();
+                acc = term_segs[1]->GetAcceptor();
+            }
+            else {
+                a = term_segs[1]->m_box[3];
+                b = term_segs[0]->m_box[2];
+                dnr = term_segs[1]->GetDonor();
+                acc = term_segs[0]->GetAcceptor();
+            }
 
             const size_t intron_len = b - a;
-            const size_t max_intron_len = x_GetGenomicExtent(exon_size); 
-            // = exon_size * kSubjPerQuery;
+
+            const bool consensus = CSplign::SSegment::s_IsConsensusSplice(dnr, acc);
+
+            const size_t max_ext = (idty < .96 || !consensus)? 
+                m_max_genomic_ext: (5000 *  kMinTermExonSize);
+
+            const size_t max_intron_len = x_GetGenomicExtent(exon_size, max_ext);
             if(intron_len > max_intron_len) {
                 turn2gap = true;
             }
@@ -1642,14 +1651,17 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
 }
 
 
-Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len) const 
+Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len, Uint4 max_ext) const 
 {
+    if(max_ext == 0) {
+        max_ext = m_max_genomic_ext;
+    }
+
     if(query_len >= kNonCoveredEndThreshold) {
         return GetMaxGenomicExtent();
     }
     else {
-        const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) 
-            * m_max_genomic_ext;
+        const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext;
         const double rv = k * pow(query_len, 1. / kPower);
         return Uint4(rv);
     }
@@ -1824,8 +1836,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.55  2006/05/18 21:05:41  kapustin
- * Adjust the term exon length cutoff
+ * Revision 1.56  2006/05/22 16:01:12  kapustin
+ * Adjust the term exon cut off procedure
  *
  * Revision 1.53  2006/04/19 14:47:10  kapustin
  * Eliminate hits shorter than the cut-off when pre-checking for max intron length
