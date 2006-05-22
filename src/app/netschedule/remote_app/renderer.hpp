@@ -138,9 +138,10 @@ public:
         eStdErr    = 1 << 6,
         eRawInput  = 1 << 7,
         eRawOutput = 1 << 8,
+        eErrMsg    = 1 << 9,
         
         eMinimal   = eId | eStatus | eRetCode,
-        eStandard  = eMinimal | eCmdLine,
+        eStandard  = eMinimal | eCmdLine | eErrMsg,
         eFull      = eStandard | eStdIn | eStdOut | eStdErr
     };
     typedef int TFlags;
@@ -187,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/22 18:13:35  didenko
+ * + Jobs err_msg report
+ *
  * Revision 1.1  2006/05/19 13:40:40  didenko
  * Added ns_remote_job_control utility
  *

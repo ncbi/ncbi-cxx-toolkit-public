@@ -80,6 +80,7 @@ public:
     const string& GetId() const { return m_Id; }
     const string& GetRawInput() const;
     const string& GetRawOutput() const;
+    const string& GetErrMsg() const;
     int GetRetCode() const;
 
     CNcbiIstream& GetStdIn() const;
@@ -103,6 +104,7 @@ private:
     string m_Input;
     string m_Output;
     int m_RetCode;
+    string m_ErrMsg;
 
     CNSInfoCollector& m_Collector;
     mutable CRemoteAppRequest_Executer* m_Request;
@@ -163,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/22 18:13:35  didenko
+ * + Jobs err_msg report
+ *
  * Revision 1.1  2006/05/19 13:40:40  didenko
  * Added ns_remote_job_control utility
  *

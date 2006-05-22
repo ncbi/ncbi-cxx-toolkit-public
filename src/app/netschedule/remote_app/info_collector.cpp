@@ -69,6 +69,12 @@ const string& CNSJobInfo::GetRawOutput() const
     x_Load();
     return m_Output;
 }
+const string& CNSJobInfo::GetErrMsg() const
+{
+    x_Load();
+    return m_ErrMsg;
+}
+
 
 CNcbiIstream& CNSJobInfo::GetStdIn() const
 {
@@ -100,7 +106,7 @@ void CNSJobInfo::x_Load()
         return;
 
     CNSClientHelper& cln = m_Collector.x_GetClient(m_Id);
-    m_Status = cln.GetStatus(m_Id, &m_RetCode, &m_Output, NULL, &m_Input);
+    m_Status = cln.GetStatus(m_Id, &m_RetCode, &m_Output, &m_ErrMsg, &m_Input);
 }
 void CNSJobInfo::x_Load() const
 {
@@ -243,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/22 18:13:35  didenko
+ * + Jobs err_msg report
+ *
  * Revision 1.2  2006/05/19 14:07:20  didenko
  * Removed x_CreateStorage method redeclaration
  *

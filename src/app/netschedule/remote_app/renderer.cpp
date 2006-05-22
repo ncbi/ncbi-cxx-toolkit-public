@@ -186,7 +186,8 @@ void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
         attrs.push_back(make_pair("Status", 
                                   CNetScheduleClient::StatusToString(status) ));
 
-    if (flags & eRetCode && status == CNetScheduleClient::eDone)
+    if (flags & eRetCode && (status == CNetScheduleClient::eDone ||
+                             status == CNetScheduleClient::eFailed) )
         attrs.push_back(make_pair("RetCode", 
                                   NStr::IntToString(info.GetRetCode()) ));
     
@@ -199,6 +200,9 @@ void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
     STagGuard guard(m_Writer,"Job", attrs);    
     if (flags & eCmdLine) {
         x_RenderString("CmdLine", info.GetCmdLine());
+    }
+    if (flags & eErrMsg && status == CNetScheduleClient::eFailed) {
+        x_RenderString("ErrMsg", info.GetErrMsg());
     }
     if (flags & eStdIn) {
         x_RenderStream("StdIn", info.GetStdIn());
@@ -269,6 +273,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/22 18:13:35  didenko
+ * + Jobs err_msg report
+ *
  * Revision 1.1  2006/05/19 13:40:40  didenko
  * Added ns_remote_job_control utility
  *
