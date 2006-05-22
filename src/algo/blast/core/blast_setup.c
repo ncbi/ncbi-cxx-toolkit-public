@@ -550,7 +550,6 @@ static Int8 s_GetEffectiveSearchSpaceForContext(
         retval = eff_len_options->searchsp_eff[context_index];
     } else {
         abort();    /* should never happen */
-        return 0;
     }
     return retval;
 }
