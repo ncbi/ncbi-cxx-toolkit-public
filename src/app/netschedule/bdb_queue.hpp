@@ -196,7 +196,8 @@ public:
         
         void JobFailed(unsigned int  job_id,
                        const string& err_msg,
-                       const string& output);
+                       const string& output,
+                       int           ret_code);
 
         /// Get job with load balancing
         void GetJobLB(unsigned int   worker_node,
@@ -553,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/05/22 15:19:40  kuznets
+ * Added return code to failure reporting
+ *
  * Revision 1.48  2006/05/22 12:36:33  kuznets
  * Added output argument to PutFailure
  *

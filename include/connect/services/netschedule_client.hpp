@@ -447,11 +447,13 @@ public:
     ///     Short diagnostic message
     /// @param output
     ///     Output
-    ///
+    /// @param ret_code
+    ///     Return code
     virtual
     void PutFailure(const string& job_key, 
                     const string& err_msg,
-                    const string& output = kEmptyStr);
+                    const string& output = kEmptyStr,
+                    int           ret_code = 0);
 
     /// Request of current job status
     /// eJobNotFound is returned if job status cannot be found 
@@ -960,6 +962,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/05/22 15:20:14  kuznets
+ * Added return code to failure reporting
+ *
  * Revision 1.54  2006/05/22 12:34:14  kuznets
  * Added output argument to PutFailure
  *

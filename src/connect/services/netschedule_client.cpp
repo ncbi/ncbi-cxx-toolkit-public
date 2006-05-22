@@ -1291,7 +1291,8 @@ string CNetScheduleClient::GetProgressMsg(const string& job_key)
 
 void CNetScheduleClient::PutFailure(const string& job_key, 
                                     const string& err_msg,
-                                    const string& output)
+                                    const string& output,
+                                    int           ret_code)
 {
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
@@ -1314,7 +1315,8 @@ void CNetScheduleClient::PutFailure(const string& job_key,
     m_Tmp.append("\"");
     m_Tmp.append(" \"");
     m_Tmp.append(NStr::PrintableString(output));
-    m_Tmp.append("\"");
+    m_Tmp.append("\" ");
+    m_Tmp.append(NStr::IntToString(ret_code));
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
@@ -1795,6 +1797,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/05/22 15:19:58  kuznets
+ * Added return code to failure reporting
+ *
  * Revision 1.56  2006/05/22 12:35:21  kuznets
  * Added output argument to PutFailure
  *

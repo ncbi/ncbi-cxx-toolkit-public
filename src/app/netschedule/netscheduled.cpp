@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.10.3  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.10.4  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -378,7 +378,8 @@ private:
     void WriteMsg(CSocket&      sock, 
                   const char*   prefix, 
                   const char*   msg,
-                  bool          comm_control = false);
+                  bool          comm_control = false,
+                  bool          msg_size_control = true);
 
 
 private:
@@ -1511,7 +1512,7 @@ void CNetScheduleServer::ProcessPutFailure(CSocket&                sock,
     SJS_Request& req = tdata.req;
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
-    queue.JobFailed(job_id, req.err_msg, req.output);
+    queue.JobFailed(job_id, req.err_msg, req.output, req.job_return_code);
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
 
@@ -1673,7 +1674,7 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
              st_str += ": ";
              st_str += NStr::UIntToString(count);
 
-             WriteMsg(sock, "OK:", st_str.c_str());
+             WriteMsg(sock, "OK:", st_str.c_str(), true, false);
 
              CNetScheduler_JobStatusTracker::TBVector::statistics 
                  bv_stat;
@@ -1705,7 +1706,7 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
     //        size_t os_str_len = ostr.pcount()-1;
     //        stat_str[os_str_len] = 0;
             try {
-                WriteMsg(sock, "OK:", stat_str);
+                WriteMsg(sock, "OK:", stat_str, true, false);
             } catch (...) {
                 ostr.freeze(false);
                 throw;
@@ -1723,10 +1724,8 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
         ostr << ends;
 
         char* stat_str = ostr.str();
-//        size_t os_str_len = ostr.pcount()-1;
-//        stat_str[os_str_len] = 0;
         try {
-            WriteMsg(sock, "OK:", stat_str);
+            WriteMsg(sock, "OK:", stat_str, true, false);
         } catch (...) {
             ostr.freeze(false);
             throw;
@@ -1742,7 +1741,7 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
 
         char* stat_str = ostr.str();
         try {
-            WriteMsg(sock, "OK:", stat_str);
+            WriteMsg(sock, "OK:", stat_str, true, false);
         } catch (...) {
             ostr.freeze(false);
             throw;
@@ -1758,29 +1757,13 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
 
         char* stat_str = ostr.str();
         try {
-            WriteMsg(sock, "OK:", stat_str);
+            WriteMsg(sock, "OK:", stat_str, true, false);
         } catch (...) {
             ostr.freeze(false);
             throw;
         }
         ostr.freeze(false);
     }}
-
-/*
-    {{
-        SOCK sk = sock.GetSOCK();
-        sock.SetOwnership(eNoOwnership);
-        sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
-
-        CConn_SocketStream ios(sk);
-
-        WriteMsg(sock, "OK:", "[Configured job submitters]:");
-        queue.PrintSubmHosts(ios);
-
-        WriteMsg(sock, "OK:", "[Configured workers]:");
-        queue.PrintWNodeHosts(ios);
-    }}
-*/
 
     WriteMsg(sock, "OK:", "END");
 }
@@ -1964,7 +1947,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 13.WGET udp_port_number timeout
     // 14.JRTO JSID_01_1 timeout
     // 15.DROJ JSID_01_1
-    // 16.FPUT JSID_01_1 "error message" "output"
+    // 16.FPUT JSID_01_1 "error message" "output" ret_code
     // 17.MPUT JSID_01_1 "progress message"
     // 18.MGET JSID_01_1
     // 19.MONI
@@ -2375,6 +2358,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 NS_CHECKEND(s, "Misformed PUT error request")
                 req->err_msg.push_back(*s);
             }
+            ++s;
 
             if (!*s) return;
             NS_SKIPSPACE(s)
@@ -2393,6 +2377,12 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             }
             *ptr = 0;
 
+            ++s;
+            if (!*s) return;
+            NS_SKIPSPACE(s)
+            if (!*s) return;
+
+            req->job_return_code = atoi(s);
             return;
         }
 
@@ -2507,7 +2497,8 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 void CNetScheduleServer::WriteMsg(CSocket&       sock, 
                                   const char*    prefix, 
                                   const char*    msg,
-                                  bool           comm_control)
+                                  bool           comm_control,
+                                  bool           msg_size_control)
 {
     SThreadData*   tdata = x_GetThreadData();
     if (tdata == 0) {
@@ -2522,13 +2513,15 @@ void CNetScheduleServer::WriteMsg(CSocket&       sock,
         *ptr++ = *prefix;
         ++msg_length;
     }
-    for (; *msg; ++msg) {
-        *ptr++ = *msg;
-        ++msg_length;
-        if (msg_length >= kMaxMessageSize) {
-            LOG_POST(Error << "Message too large:" << msg);
-            _ASSERT(0);
-            return;
+    if (msg_size_control) {
+        for (; *msg; ++msg) {
+            *ptr++ = *msg;
+            ++msg_length;
+            if (msg_length >= kMaxMessageSize) {
+                LOG_POST(Error << "Message too large:" << msg);
+                _ASSERT(0);
+                return;
+            }
         }
     }
     *ptr++ = '\r';
@@ -2874,6 +2867,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2006/05/22 15:19:40  kuznets
+ * Added return code to failure reporting
+ *
  * Revision 1.84  2006/05/22 12:36:33  kuznets
  * Added output argument to PutFailure
  *

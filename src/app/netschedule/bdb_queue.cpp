@@ -1239,7 +1239,9 @@ void CQueueDataBase::CQueue::PrintNodeStat(CNcbiOstream & out) const
         lc_time.ToLocalTime();
         out << auth << " @ " << CSocketAPI::gethostbyaddr(host) 
             << "  UDP:" << port << "  " << lc_time.AsString() << "\n";
+        cerr << i << ". " << CSocketAPI::gethostbyaddr(host) << " " << port << endl;
     }
+    cerr << "----------------" << endl;
 }
 
 void CQueueDataBase::CQueue::PrintSubmHosts(CNcbiOstream & out) const
@@ -1997,7 +1999,8 @@ void CQueueDataBase::CQueue::PutProgressMessage(unsigned int  job_id,
 
 void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
                                        const string& err_msg,
-                                       const string& output)
+                                       const string& output,
+                                       int           ret_code)
 {
     m_LQueue.status_tracker.SetStatus(job_id, CNetScheduleClient::eFailed);
 
@@ -2032,6 +2035,7 @@ void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
     db.time_done = curr;
     db.err_msg = err_msg;
     db.output = output;
+    db.ret_code = ret_code;
 
     cur.Update();
 
@@ -3745,6 +3749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2006/05/22 15:19:40  kuznets
+ * Added return code to failure reporting
+ *
  * Revision 1.79  2006/05/22 12:36:33  kuznets
  * Added output argument to PutFailure
  *
