@@ -1285,9 +1285,9 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
 
     case CNetScheduleClient::eFailed:
         {
-        bool b = queue.GetJobDescr(job_id, 0, 
+        bool b = queue.GetJobDescr(job_id, &ret_code, 
                              tdata.req.input,
-                             0,
+                             tdata.req.output,
                              tdata.req.err,
                              0,
                              0, 0, 
@@ -1295,8 +1295,9 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
 
         if (b) {
             sprintf(szBuf, 
-                    "%i %i \"\" \"%s\" \"%s\"", 
-                    st, 0, 
+                    "%i %i \"%s\" \"%s\" \"%s\"", 
+                    st, ret_code, 
+                    tdata.req.output,
                     tdata.req.err,
                     tdata.req.input);
             WriteMsg(sock, "OK:", szBuf);
@@ -2865,6 +2866,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2006/05/22 18:01:06  didenko
+ * Added sending ret_code and output from GetStatus method for jobs with failed status
+ *
  * Revision 1.86  2006/05/22 16:51:04  kuznets
  * Fixed bug in reporting worker nodes
  *
