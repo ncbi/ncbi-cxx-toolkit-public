@@ -718,8 +718,8 @@ void CDbBlast::x_RunTracebackSearch()
     // For PHI BLAST we need to pass the pattern search items structure to the
     // traceback code.
     if (Blast_ProgramIsPhiBlast(program)) {
-        PHIPatternSpaceCalc(m_iclsQueryInfo, m_ipDiagnostics);
         pattern_blk = (SPHIPatternSearchBlk*) m_ipLookupTable->lut;
+        pattern_blk->num_patterns_db = m_ipDiagnostics->ungapped_stat->lookup_hits;
     }
 
     if ((status = 
@@ -789,6 +789,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.89  2006/05/22 13:32:07  madden
+ * Remove call to defunct PHIPatternSpaceCalc
+ *
  * Revision 1.88  2006/05/18 16:26:25  papadopo
  * change signature of BLAST_CalcEffLengths
  *
