@@ -445,7 +445,7 @@ void CDiagContext::x_PrintMessage(EEventType event,
     string prop = GetProperty(kProperty_ClientIP);
     ostr << setw(15) << setiosflags(ios_base::left)
         << (prop.empty() ? "UNK_CLIENT" : prop)
-        << resetiosflags(ios_base::left) << " ";
+        << resetiosflags(IOS_BASE::left) << " ";
 
     prop = GetProperty(kProperty_SessionID);
     ostr << (prop.empty() ? "UNK_SESSION" : prop) << " ";
@@ -1947,6 +1947,8 @@ string CFileDiagHandler::GetLogFile(EDiagFileType file_type) const
         return m_Log.m_FileName;
     case eDiagFile_Trace:
         return m_Trace.m_FileName;
+    case eDiagFile_All:
+        break;  // kEmptyStr
     }
     return kEmptyStr;
 }
@@ -2625,6 +2627,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.115  2006/05/22 21:51:12  vakatov
+ * 1) ios_base --> IOS_BASE (for the sake of GCC 2.95)
+ * 2) Fixed a minor compiler warning
+ *
  * Revision 1.114  2006/05/18 19:07:27  grichenk
  * Added output to log file(s), application access log, new cgi log formatting.
  *
