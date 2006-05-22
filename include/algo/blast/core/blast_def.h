@@ -190,7 +190,7 @@ typedef struct SPHIQueryInfo {
     SPHIPatternInfo *occurrences; /**< Array of pattern occurrence information
                                         structures. */
     Int4 allocated_size; /**< Allocated size of the occurrences array. */
-    double probability; /**< Probability of the pattern */
+    double probability; /**< Estimated probability of the pattern */
 } SPHIQueryInfo;
 
 /************************* Progress monitoring/interruptible API *************/
