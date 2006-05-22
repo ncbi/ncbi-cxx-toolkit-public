@@ -70,7 +70,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
       m_HspResults   (0),
       m_SeqInfoSrc   (0),
       m_OwnSeqInfoSrc(false),
-      m_ResultType(eDatabaseSearch)
+      m_ResultType(eDatabaseSearch),
+      m_DBscanInfo(0)
 {
     x_Init(qf, opts, db.GetDatabaseName());
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
@@ -91,7 +92,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
       m_HspResults   (0),
       m_SeqInfoSrc   (0),
       m_OwnSeqInfoSrc(false),
-      m_ResultType(eDatabaseSearch)
+      m_ResultType(eDatabaseSearch),
+      m_DBscanInfo(0)
 {
     x_Init(qf, opts, db->GetDBNameList());
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
@@ -112,7 +114,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>    qf,
       m_HspResults   (0),
       m_SeqInfoSrc   (0),
       m_OwnSeqInfoSrc(false),
-      m_ResultType(eDatabaseSearch)
+      m_ResultType(eDatabaseSearch),
+      m_DBscanInfo(0)
 {
     BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
     m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
@@ -133,7 +136,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
       m_HspResults   (0),
       m_SeqInfoSrc   (InitSeqInfoSrc(seqsrc)),
       m_OwnSeqInfoSrc(true),
-      m_ResultType(eDatabaseSearch)
+      m_ResultType(eDatabaseSearch),
+      m_DBscanInfo(0)
 {
     x_Init(qf, opts, BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
@@ -153,7 +157,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
       m_HspResults   (0),
       m_SeqInfoSrc   (const_cast<IBlastSeqInfoSrc*>(&seqinfosrc)),
       m_OwnSeqInfoSrc(false),
-      m_ResultType(eDatabaseSearch)
+      m_ResultType(eDatabaseSearch),
+      m_DBscanInfo(0)
 {}
 
 CBlastTracebackSearch::~CBlastTracebackSearch()
@@ -168,6 +173,12 @@ void
 CBlastTracebackSearch::SetResultType(EResultType type)
 {
     m_ResultType = type;
+}
+
+void
+CBlastTracebackSearch::SetDBScanInfo(CRef<SDatabaseScanData> dbscan_info)
+{
+    m_DBscanInfo = dbscan_info;
 }
 
 void
@@ -213,6 +224,9 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
     if (kIsPhiBlast) {
         ASSERT(lookup_segments);
         ASSERT(m_InternalData->m_RpsData == NULL);
+        int num_pat_occurrences_in_db = 0;
+        if (m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern)
+           num_pat_occurrences_in_db = m_DBscanInfo->m_NumPatOccurInDB;
         LookupTableWrap* lut =
             CSetupFactory::CreateLookupTable(query_data, m_OptsMemento,
                  m_InternalData->m_ScoreBlk->GetPointer(), lookup_segments);
@@ -243,13 +257,11 @@ CBlastTracebackSearch::Run()
     // For PHI BLAST we need to pass the pattern search items structure to the
     // traceback code
     if (Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType)) {
-        // The following call modifies the effective search space fields in the
-        // BlastQueryInfo structure
-        PHIPatternSpaceCalc(m_InternalData->m_QueryInfo,
-                            m_InternalData->m_Diagnostics->GetPointer());
         ASSERT(m_InternalData->m_LookupTable);
+        ASSERT(m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern);
         phi_lookup_table = (SPHIPatternSearchBlk*) 
             m_InternalData->m_LookupTable->GetPointer()->lut;
+        phi_lookup_table->num_patterns_db = m_DBscanInfo->m_NumPatOccurInDB;
     }
     
     BlastHSPResults * hsp_results(0);
