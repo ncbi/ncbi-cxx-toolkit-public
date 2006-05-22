@@ -294,6 +294,12 @@ SInternalData::SInternalData()
     m_QueryInfo = 0;
 }
 
+SDatabaseScanData::SDatabaseScanData()
+   : kNoPhiBlastPattern(-1)
+{
+   m_NumPatOccurInDB = kNoPhiBlastPattern; 
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
