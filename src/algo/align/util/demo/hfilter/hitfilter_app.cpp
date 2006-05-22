@@ -305,6 +305,8 @@ int CAppHitFilter::Run()
     const CArgs& args = GetArgs();
     const string fmt_in = args["fmt_in"].AsString();
     const string fmt_out = args["fmt_out"].AsString();
+    const THit::TCoord min_len = args["min_len"].AsInteger();
+    const double min_idty = args["min_idty"].AsDouble();
 
     if((fmt_out == g_AsnTxt || fmt_out == g_AsnBin) &&
        (fmt_in != g_AsnTxt && fmt_in != g_AsnBin)) 
@@ -350,7 +352,7 @@ int CAppHitFilter::Run()
             ii_hi = ii = ii_dst;
         }
         THitRefs hits_new;
-        CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, &hits_new, kMinOutputHitLen);
+        CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, &hits_new, min_len, min_idty);
         sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
         THitRefs::iterator ii_hi0 = ii_hi;
         ii_hi = remove_if(ii_beg, ii_hi, CHitFilter<THit>::s_PNullRef);
@@ -461,6 +463,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/05/22 15:33:14  kapustin
+ * Apply length and identity cutoffs on the output
+ *
  * Revision 1.10  2006/04/17 19:33:23  kapustin
  * Advance hfilter application
  *
