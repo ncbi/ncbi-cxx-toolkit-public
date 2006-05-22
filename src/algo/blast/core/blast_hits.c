@@ -200,6 +200,43 @@ s_BlastHSPCopy(const BlastHSP* hsp)
     return new_hsp;
 }
 
+/** Count the number of occurrences of pattern in sequence, which
+ * do not overlap by more than half the pattern match length. 
+ * @param query_info Query information structure, containing pattern info. [in]
+ */
+Int4
+PhiBlastGetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info)
+{
+    Int4 index; /*loop index*/
+    Int4 lastEffectiveOccurrence; /*last nonoverlapping occurrence*/
+    Int4 count; /* Count of effective (nonoverlapping) occurrences */
+    Int4 min_pattern_length;
+    SPHIQueryInfo* pat_info;
+
+    ASSERT(query_info && query_info->pattern_info && query_info->contexts);
+
+    pat_info = query_info->pattern_info;
+
+    if (pat_info->num_patterns <= 1)
+        return pat_info->num_patterns;
+
+    /* Minimal length of a pattern is saved in the length adjustment field. */
+    min_pattern_length = query_info->contexts[0].length_adjustment;
+
+    count = 1;
+    lastEffectiveOccurrence = pat_info->occurrences[0].offset;
+    for(index = 1; index < pat_info->num_patterns; ++index) {
+        if (((pat_info->occurrences[index].offset - lastEffectiveOccurrence) * 2)
+            > min_pattern_length) {
+            lastEffectiveOccurrence = pat_info->occurrences[index].offset;
+            ++count;
+        }
+    }
+
+    return count;
+}
+
+
 /** Calculate e-value for an HSP found by PHI BLAST.
  * @param hsp An HSP found by PHI BLAST [in]
  * @param sbp Scoring block with statistical parameters [in]
@@ -207,22 +244,25 @@ s_BlastHSPCopy(const BlastHSP* hsp)
  */
 static void 
 s_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp, 
-                  const BlastQueryInfo* query_info)
+                  const BlastQueryInfo* query_info,
+                  const SPHIPatternSearchBlk* pattern_blk)
 {
    double paramC;
    double Lambda;
    Int8 pattern_space;
   
-   if (!hsp || !sbp)
-      return;
+   ASSERT(query_info && hsp && sbp && pattern_blk);
 
    paramC = sbp->kbp[0]->paramC;
    Lambda = sbp->kbp[0]->Lambda;
 
    pattern_space = query_info->contexts[0].eff_searchsp;
 
-   hsp->evalue = pattern_space*paramC*(1+Lambda*hsp->score)*
-                    exp(-Lambda*hsp->score);
+   /* We have the actual number of occurrences of pattern in db. */
+   hsp->evalue = paramC*(1+Lambda*hsp->score)*
+                PhiBlastGetEffectiveNumberOfPatterns(query_info)*
+                pattern_blk->num_patterns_db*
+                exp(-Lambda*hsp->score);
 }
 
 /** Update HSP data after reevaluation with ambiguities. In particular this 
@@ -1563,7 +1603,8 @@ void Blast_HSPListPHIGetBitScores(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
 
 void 
 Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp, 
-                           const BlastQueryInfo* query_info)
+                           const BlastQueryInfo* query_info,
+                           const SPHIPatternSearchBlk* pattern_blk)
 {
    Int4 index;
    BlastHSP* hsp;
@@ -1573,7 +1614,7 @@ Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp,
 
    for (index = 0; index < hsp_list->hspcnt; ++index) {
       hsp = hsp_list->hsp_array[index];
-      s_HSPPHIGetEvalue(hsp, sbp, query_info);
+      s_HSPPHIGetEvalue(hsp, sbp, query_info, pattern_blk);
    }
    /* The best e-value is the one for the highest scoring HSP, which 
       must be the first in the list. Check that HSPs are sorted by score
