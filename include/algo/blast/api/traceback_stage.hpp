@@ -95,7 +95,10 @@ public:
     /// Specifies how the Seq-align-set returned as part of the results if
     /// formatted.
     void SetResultType(EResultType type);
-    
+
+    /// Sets the m_DBscanInfo field.
+    void SetDBScanInfo(CRef<SDatabaseScanData> dbscan_info);
+
 private:
     /// Common initialization performed when doing traceback only
     void x_Init(CRef<IQueryFactory>   qf, 
@@ -131,6 +134,10 @@ private:
     /// Determines if BLAST database search or BLAST 2 sequences style of
     /// results should be produced
     EResultType m_ResultType;
+
+    /// Tracks information from database scanning phase.  Right now only used
+    /// for the number of occurrences of a pattern in phiblast run.
+    CRef<SDatabaseScanData> m_DBscanInfo;
 };
 
 END_SCOPE(BLAST)
