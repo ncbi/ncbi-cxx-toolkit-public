@@ -1131,6 +1131,17 @@ CTaxon1::GetNameClass(short nameclass_id, string& name_class_out )
     }
 }
 
+//---------------------------------------------
+// Get name class id by name class name
+// Returns: value < 0 - Incorrect class name
+///
+short
+CTaxon1::GetNameClassId( const string& class_name )
+{
+    SetLastError( NULL );
+    return m_plCache->FindNameClassByName( class_name.c_str() );
+}
+
 int
 CTaxon1::Join(int taxid1, int taxid2)
 {
@@ -1179,6 +1190,28 @@ CTaxon1::GetAllNames(int tax_id, TNameList& lNames, bool unique)
     }
 
     return count;
+}
+
+bool
+CTaxon1::DumpNames( short name_class, list< CRef< CTaxon1_name > >& lOut )
+{
+    SetLastError(NULL);
+    CTaxon1_req  req;
+    CTaxon1_resp resp;
+
+    req.SetDumpnames4class( name_class );
+
+    if( SendRequest( req, resp ) ) {
+        if( resp.IsDumpnames4class() ) {
+            // Correct response, return object
+            lOut.swap( resp.SetDumpnames4class() );
+        } else { // Internal: wrong respond type
+            SetLastError( "Response type is not Dumpnames4class" );
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /*---------------------------------------------
@@ -1998,6 +2031,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.38  2006/05/22 15:21:28  domrach
+ * Member f-ns GetNameClassId and DumpNames added
+ *
  * Revision 6.37  2006/02/01 23:21:21  domrach
  * GetSpecies() member f-n added
  *

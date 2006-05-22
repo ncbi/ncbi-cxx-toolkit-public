@@ -270,6 +270,12 @@ public:
     bool GetNameClass(short nameclass_id, string& class_name_out );
 
     //---------------------------------------------
+    // Get name class id by name class name
+    // Returns: value < 0 - Incorrect class name
+    ///
+    short GetNameClassId( const string& class_name );
+
+    //---------------------------------------------
     // Get the nearest common ancestor for two nodes
     // Returns: id of this ancestor (id == 1 means that root node only is
     // ancestor)
@@ -282,6 +288,14 @@ public:
     // If unique is true then only unique names will be stored
     ///
     int GetAllNames(int tax_id, TNameList& lNames, bool unique);
+
+    //---------------------------------------------
+    // Dump all names of the particular class
+    // Replaces the list of Taxon1_name with returned values
+    // Returns: TRUE - success
+    //          FALSE - failure
+    ///
+    bool DumpNames( short name_class, list< CRef< CTaxon1_name > >& out );
 
     //---------------------------------------------
     // Find out is taxonomy lookup system alive or not
@@ -670,6 +684,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.21  2006/05/22 15:21:28  domrach
+// Member f-ns GetNameClassId and DumpNames added
+//
 // Revision 1.20  2006/02/01 23:21:21  domrach
 // GetSpecies() member f-n added
 //
