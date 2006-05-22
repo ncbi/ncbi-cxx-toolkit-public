@@ -114,6 +114,9 @@ protected:
     void x_ProcessSnaps(TSnaps& snaps, CSeqDB& seqdb, CRef<CSeq_id> seqid_subj, 
                         TSeqPos right_bound);
 
+    CRef<objects::CSeq_id> x_ReadFastaSetId(const CArgValue& argval,
+                                            CRef<objects::CScope>);
+
     typedef map<int, CRef<CSeq_id> > TOidToSeqId;
     TOidToSeqId     m_Oid2SeqId;
 
@@ -131,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/05/22 15:52:22  kapustin
+ * Engage new FASTA reader in the pairwise mode
+ *
  * Revision 1.20  2006/05/08 15:19:02  kapustin
  * Code and file cleanup
  *

@@ -728,6 +728,30 @@ void CSplignApp::x_DoBatch2(void)
     }
 }
 
+
+CRef<objects::CSeq_id> CSplignApp::x_ReadFastaSetId(const CArgValue& argval,
+                                                    CRef<objects::CScope> scope)
+{
+    USING_SCOPE(objects);
+
+    CRef<ILineReader> line_reader;
+    try {
+        line_reader.Reset(
+            new CMemoryLineReader(new CMemoryFile(argval.AsString()),eTakeOwnership));
+    } catch (...) { // fall back to streams
+        line_reader.Reset(new CStreamLineReader(argval.AsInputFile()));
+    }
+    CFastaReader fasta_reader(* line_reader,
+                              CFastaReader::fAssumeNuc | CFastaReader::fOneSeq);
+    CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
+
+    scope->AddTopLevelSeqEntry(*se);
+    const CSeq_entry::TSeq& bioseq = se->GetSeq();    
+    const CSeq_entry::TSeq::TId& seqid = bioseq.GetId();
+    return seqid.back();
+}
+
+
 int CSplignApp::Run()
 { 
     USING_SCOPE(objects);
@@ -873,23 +897,8 @@ int CSplignApp::Run()
 
         scope.Reset (new CScope(*objmgr));
         scope->AddDefaults();
-
-        CRef<CSeq_entry> se (
-               ReadFasta(args["query"].AsInputFile(), fReadFasta_OneSeq));
-        scope->AddTopLevelSeqEntry(*se);
-        {{
-            const CSeq_entry::TSeq& bioseq = se->GetSeq();    
-            const CSeq_entry::TSeq::TId& seqid = bioseq.GetId();
-            seqid_query = seqid.back();
-        }}
-
-        se = ReadFasta(args["subj"].AsInputFile(), fReadFasta_OneSeq);
-        scope->AddTopLevelSeqEntry(*se);
-        {{
-            const CSeq_entry::TSeq& bioseq = se->GetSeq();    
-            const CSeq_entry::TSeq::TId& seqid = bioseq.GetId();
-            seqid_subj = seqid.back();
-        }}
+        seqid_query = x_ReadFastaSetId(args["query"], scope);
+        seqid_subj  = x_ReadFastaSetId(args["subj"] , scope);
     }
     else if(run_mode == eBatch1) {
         
@@ -1173,6 +1182,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/05/22 15:52:22  kapustin
+ * Engage new FASTA reader in the pairwise mode
+ *
  * Revision 1.67  2006/05/18 17:01:18  kapustin
  * More code cleanup
  *
