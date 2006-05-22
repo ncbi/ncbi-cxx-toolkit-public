@@ -236,10 +236,21 @@ void WriteNexusTree(CNcbiOstream& os, const CBioTreeDynamic& tree,
 };
 
 
-// Encode a label for Newick format: enclose it in single quotes,
+// Encode a label for Newick format:
+// If necessary, enclose it in single quotes,
 // but first escape any single quotes by doubling them.
 // e.g., "This 'label'" -> "'This ''label'''"
 static string s_EncodeLabel(const string& label) {
+    if (label.find_first_of("()[]':;,_") == string::npos) {
+        // No need to quote, but any spaces must be changed to underscores
+        string unquoted = label;
+        for (size_t i = 0; i < label.size(); ++i) {
+            if (unquoted[i] == ' ') {
+                unquoted[i] = '_';
+            }
+        }
+        return unquoted;
+    }
     if (label.find_first_of("'") == string::npos) {
         return '\'' + label + '\'';
     }
@@ -265,6 +276,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/05/22 14:26:35  jcherry
+ * Use the unquoted form of labels if possible
+ *
  * Revision 1.9  2006/05/18 15:46:25  tereshko
  * Return -1 instead of 0 when feature not found
  *
