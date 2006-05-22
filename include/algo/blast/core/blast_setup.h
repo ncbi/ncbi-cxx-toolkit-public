@@ -222,18 +222,6 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
                         const BlastSeqLoc          * lookup_segments,
                         BlastQueryInfo             * query_info);
 
-/** Calculates pattern space, which is used instead of search space in PHI BLAST
- * e-value calculations. Pattern space is equal to the product of the number of 
- * effective occurrences of pattern in query, and the number of pattern 
- * occurrences in database.
- * @param query_info The query information structure [in][out]
- * @param diagnostics The diagnostics structure containing the pattern count in 
- *                    database [in]
- */
-void
-PHIPatternSpaceCalc(BlastQueryInfo* query_info, 
-                    const BlastDiagnostics* diagnostics);
-
 #ifdef __cplusplus
 }
 #endif
@@ -242,6 +230,9 @@ PHIPatternSpaceCalc(BlastQueryInfo* query_info,
 /*
  *
 * $Log$
+* Revision 1.57  2006/05/22 13:21:40  madden
+* Remove prototype for PHIPatternSpaceCalc
+*
 * Revision 1.56  2006/05/18 16:21:50  papadopo
 * add message to BLAST_CalcEffLengths
 *
