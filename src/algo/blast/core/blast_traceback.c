@@ -687,7 +687,7 @@ s_PHITracebackFromHSPList(EBlastProgramType program_number,
    Blast_HSPListPurgeNullHSPs(hsp_list);
 
    /* Calculate scores and e-values. */
-   Blast_HSPListPHIGetEvalues(hsp_list, sbp, query_info);
+   Blast_HSPListPHIGetEvalues(hsp_list, sbp, query_info, pattern_blk);
    Blast_HSPListReapByEvalue(hsp_list, hit_params->options);
 
    Blast_HSPListPHIGetBitScores(hsp_list, sbp);
