@@ -38,6 +38,7 @@ static char const rcsid[] =
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/phi_lookup.h>
 #include <algo/blast/core/blast_rps.h>
+#include <algo/blast/core/blast_hits.h>
 
 /** Returns true if the Karlin-Altschul block doesn't have its lambda, K, and H
  * fields set to negative values. -1 is the sentinel used to mark them as
@@ -566,6 +567,72 @@ BlastLinkHSPParametersUpdate(const BlastInitialWordParameters* word_params,
    return 0;
 }
 
+/** Returns the estimated expect value for the pattern match with a given scoring alignment.
+ *  The true expect value is calculated based upon the number of times a pattern is actually
+ *  found in the database.
+ * @param score score from alignment [in]
+ * @param query_info provides statistical information on pattern [in]
+ * @param sbp provides Karlin-Altschul statistical params [in]
+ * @param effNumPatterns Number of times pattern occurs taking overlaps into account [in]
+ * @return estimated expect value.
+ */
+
+static double s_GetEstimatedPhiExpect(int score, const BlastQueryInfo* query_info, 
+    const BlastScoreBlk* sbp, int effNumPatterns)
+{
+   double paramC;
+   double Lambda;
+   double evalue;
+   Int8 pattern_space;
+
+   paramC = sbp->kbp[0]->paramC;
+   Lambda = sbp->kbp[0]->Lambda;
+
+   pattern_space = query_info->contexts[0].eff_searchsp;
+
+   /* We estimate the number of times pattern will occur. */
+   evalue = pattern_space*paramC*(1+Lambda*score)*
+              effNumPatterns*
+              query_info->pattern_info->probability*
+              exp(-Lambda*score);
+
+   return evalue;
+}
+
+/** Estimates a cutoff score for use in preliminary gapped stage of phiblast.
+ * @param ethresh expect value to provide score for [in]
+ * @param query_info provides statistical information on pattern [in]
+ * @param sbp provides Karlin-Altschul statistical params [in]
+ * @return cutoff score
+ */
+static Int4 s_PhiBlastCutoffScore(double ethresh, const BlastQueryInfo* query_info, const BlastScoreBlk* sbp)
+{
+
+        int lowScore = 0;
+        int highScore = 100;
+        int iteration=0;
+        const int kMaxIter=20;
+        int effNumPatterns = 0;
+
+        ASSERT(query_info && query_info->pattern_info && sbp);
+
+        effNumPatterns = PhiBlastGetEffectiveNumberOfPatterns(query_info);
+
+        for (iteration=0; iteration<kMaxIter; iteration++)
+        {
+              int targetScore = (lowScore+highScore)/2;
+              double expect = s_GetEstimatedPhiExpect(targetScore, query_info, sbp, effNumPatterns);
+              if (expect > ethresh)
+                  lowScore = targetScore;
+              else
+                  highScore = targetScore;
+
+              if ((highScore-lowScore) <= 1)
+                  break;
+        }
+        return lowScore;
+}
+
 BlastHitSavingParameters*
 BlastHitSavingParametersFree(BlastHitSavingParameters* parameters)
 
@@ -776,8 +843,7 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
       params->cutoff_score *= (Int4) scale_factor;
       params->cutoff_score_max *= (Int4) scale_factor;
    } else {  /* phi-blast */
-      params->cutoff_score = 0;
-      params->cutoff_score_max = 0;
+      params->cutoff_score =  params->cutoff_score_max = s_PhiBlastCutoffScore(5*options->expect_value, query_info, sbp);
    }
 
    ASSERT(params->cutoff_score_max >= params->cutoff_score);
@@ -875,6 +941,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2006/05/22 13:27:07  madden
+ * Calculate cutoff score for phiblast
+ *
  * Revision 1.16  2006/01/12 20:34:32  camacho
  * + assertions for validity of context
  *
