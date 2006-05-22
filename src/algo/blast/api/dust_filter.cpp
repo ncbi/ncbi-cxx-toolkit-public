@@ -122,6 +122,11 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
             query_masks->Add(*seq_interval);
         }
 
+        CRef<CSeq_loc_Mapper> mapper = s_CreateSeqLocMapper(query_id,
+                                                            query->seqloc,
+                                                            query->scope);
+        query_masks.Reset(mapper->Map(*query_masks));
+
         const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All;
         if (query->mask.NotEmpty()) {
             CRef<CSeq_loc> tmp(const_cast<CSeq_loc*>(&*query->mask));
@@ -131,11 +136,7 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
             query_masks->Merge(kTopFlags, 0);
             query->mask.Reset(query_masks);
         }
-        const_cast<CSeq_loc*>(&*query->mask)->ChangeToPackedInt();
-        CRef<CSeq_loc_Mapper> mapper = s_CreateSeqLocMapper(query_id,
-                                                            query->seqloc,
-                                                            query->scope);
-        query->mask.Reset(mapper->Map(*query->mask));
+
         const_cast<CSeq_loc*>(&*query->mask)->ChangeToPackedInt();
         _ASSERT(query->mask->IsPacked_int());
     }
@@ -205,6 +206,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.8  2006/05/22 15:13:12  camacho
+ *  From Mike DiCuccio: rearrangement of the code to avoid production of null
+ *  Seq-locs by the CSeq_loc_Mapper
+ *
  *  Revision 1.7  2006/05/15 15:37:22  camacho
  *  Fix usage of CSeq_loc_Mapper to avoid quadratic performance when processing dust results
  *
