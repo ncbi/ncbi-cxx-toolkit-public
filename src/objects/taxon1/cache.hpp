@@ -163,8 +163,9 @@ private:
     TNameClassMap m_ncStorage;
 
     bool     InitNameClasses();
+public:
     short    FindNameClassByName( const char* pchName ) const;
-
+private:
     // Division stuff
     short m_divViruses;
     short m_divPhages;
@@ -359,6 +360,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.16  2006/05/22 15:16:53  domrach
+ * Making FindNameClassByName public
+ *
  * Revision 6.15  2004/07/16 15:12:39  domrach
  * Forgotten destructor added. Memory leak fixed.
  *
