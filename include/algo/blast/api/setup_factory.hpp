@@ -310,6 +310,22 @@ struct NCBI_XBLAST_EXPORT SInternalData : public CObject
     CRef<CBlastRPSInfo> m_RpsData;
 };
 
+/// Structure to hold results of the preliminary (databases scanning phase)
+/// part of the search that are needed for the traceback.
+/// Generally this structure will be used if the preliminary and traceback parts
+/// are done as separate processes (or even machines).
+struct NCBI_XBLAST_EXPORT SDatabaseScanData : public CObject
+{
+    /// Default ctor
+    SDatabaseScanData();
+
+    /// set to -1 in ctor, indicate that m_NumPatOccurInDB is unset or not applicable.
+    const int kNoPhiBlastPattern;
+
+    /// Number of times pattern found to occur in database (for phi-blast only).
+    int m_NumPatOccurInDB; 
+};
+
 inline void
 CThreadable::SetNumberOfThreads(size_t nthreads)
 {
