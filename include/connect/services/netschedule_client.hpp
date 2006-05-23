@@ -565,9 +565,10 @@ public:
     /// Shutdown level
     ///
     enum EShutdownLevel {
-        eNoShutdown = 0,   ///< No Shutdown was requested
-        eNormalShutdown,   ///< Normal shutdown was requested
-        eShutdownImmidiate ///< Urgent shutdown was requested
+        eNoShutdown = 0,    ///< No Shutdown was requested
+        eNormalShutdown,    ///< Normal shutdown was requested
+        eShutdownImmidiate, ///< Urgent shutdown was requested
+        eDie                ///< Somethig wrong has happend, so server should kill itself
     };
 
     /// Return Connection Information string
@@ -592,7 +593,7 @@ protected:
 
     /// Shutdown the server daemon.
     ///
-    void ShutdownServer(bool send_die_signal = false);
+    void ShutdownServer(EShutdownLevel level = eNormalShutdown);
 
     /// Kill all jobs in the queue.
     ///
@@ -962,6 +963,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/05/23 14:02:36  didenko
+ * Added eDie shutdown level
+ *
  * Revision 1.55  2006/05/22 15:20:14  kuznets
  * Added return code to failure reporting
  *

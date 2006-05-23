@@ -239,7 +239,7 @@ int CNetScheduleControl::Run(void)
             NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
             return 1;
         }
-        nc_client.ShutdownServer(true);
+        nc_client.ShutdownServer(CNetScheduleClient::eDie);
         NcbiCout << "Die request has been sent to server" << NcbiEndl;
         return 0;
     }
@@ -291,6 +291,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/05/23 14:03:45  didenko
+ * Added eDie shutdown level
+ *
  * Revision 1.18  2006/03/13 16:01:36  kuznets
  * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
  *

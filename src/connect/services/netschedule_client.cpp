@@ -1381,17 +1381,28 @@ void CNetScheduleClient::UnRegisterClient(unsigned short udp_port)
 }
 
 
-void CNetScheduleClient::ShutdownServer(bool send_die_signal)
+void CNetScheduleClient::ShutdownServer(CNetScheduleClient::EShutdownLevel level)
 {
     bool connected = CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    string cmd = send_die_signal? "SHUTDOWN SUICIDE " : "SHUTDOWN ";
+    string cmd = "SHUTDOWN ";
+    switch( level ) {
+    case eDie :
+        cmd = "SHUTDOWN SUICIDE ";
+        break;
+    case eShutdownImmidiate :
+        cmd = "SHUTDOWN IMMEDIATE ";
+        break;
+    default:
+        break;
+    }
                                 
     MakeCommandPacket(&m_Tmp, cmd, connected);
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
-    if( send_die_signal )
+    if (level == eDie)
         return;
+    
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
@@ -1797,6 +1808,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/05/23 14:02:36  didenko
+ * Added eDie shutdown level
+ *
  * Revision 1.57  2006/05/22 15:19:58  kuznets
  * Added return code to failure reporting
  *
