@@ -316,20 +316,30 @@ void CQueueInfo::CollectInfo()
                 }
 
                 try {
-                    list<string> fields;
-                    NStr::Split( str, " ", fields);           
-                    string wn_host, wn_sport, stime, name;
-                    name = *fields.begin();
-                    list<string>::const_iterator lit = fields.end();
-                    --lit;
-                    stime = *lit; --lit;
-                    stime = *lit + ' ' + stime; --lit;
-                    wn_sport = (*lit).substr(4); --lit;
-                    wn_host = *lit;
-
-                    unsigned int wn_port = NStr::StringToUInt(wn_sport);
+                    string name;
+                    NStr::SplitInTwo(str, " ", name, str);
+                    NStr::TruncateSpacesInPlace(str);
+                    string prog;
+                    NStr::SplitInTwo(str, "@", prog, str);           
+                    NStr::TruncateSpacesInPlace(str);
+                    prog = prog.substr(6,prog.size()-8);
+                    string host;
+                    NStr::SplitInTwo(str, " ", host, str);
+                    string::size_type pos = host.find_first_of(".");
+                    if (pos != string::npos) {
+                        host.erase(pos, host.size());
+                    }
+                    if( NStr::Compare(host, "localhost") == 0)
+                        host = GetHost();
+                    NStr::TruncateSpacesInPlace(str);
+                    string sport, stime;
+                    NStr::SplitInTwo(str, " ", sport, stime);
+                    NStr::SplitInTwo(sport, ":", str, sport);
+                    NStr::TruncateSpacesInPlace(stime);
+                    unsigned short port = (unsigned short)NStr::StringToInt(sport);
+   
                     AutoPtr<CWorkerNodeInfo> node(
-                                   new CWorkerNodeInfo(wn_host, wn_port) );
+                                   new CWorkerNodeInfo(host, port) );
                     node->SetClientName(name);
                     node->SetLastAccess(CTime(stime, "M/D/Y h:m:s"));
                     
@@ -414,6 +424,9 @@ string CNetCacheStatInfo::GetStatistics() const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/05/23 19:42:10  didenko
+ * Fixed worker node info parsing
+ *
  * Revision 1.10  2005/11/01 01:42:56  ucko
  * CNetCacheClient_Control::CheckConnect: drop bogus "return", as the
  * return type is void.
