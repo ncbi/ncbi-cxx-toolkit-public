@@ -91,7 +91,7 @@ bool DTDEntity::IsExternal(void) const
 DTDAttribute::DTDAttribute(void)
 {
     m_Type = eUnknown;
-    m_ValueType = eDefault;
+    m_ValueType = eImplied;
 }
 DTDAttribute::DTDAttribute(const DTDAttribute& other)
 {
@@ -382,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2006/05/23 18:24:48  gouriano
+ * Make XML attributes optional by default
+ *
  * Revision 1.7  2006/05/09 15:16:43  gouriano
  * Added XML namespace definition possibility
  *
