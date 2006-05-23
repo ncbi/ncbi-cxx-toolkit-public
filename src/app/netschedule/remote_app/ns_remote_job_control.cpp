@@ -89,6 +89,7 @@ void CNSRemoveJobControlApp::Init(void)
                               "canceled", "returned", "all")
                             );
 
+    arg_desc->AddFlag("wnlist", "Show worker nodes");
     arg_desc->AddOptionalKey("jid",
                              "job_id",
                              "Show job by id",
@@ -113,6 +114,16 @@ void CNSRemoveJobControlApp::Init(void)
                               "raw_input", "raw_output")
                             );
 
+    arg_desc->AddOptionalKey("cmd",
+                             "cmd_name",
+                             "Perform a command",
+                             CArgDescriptions::eString);
+    arg_desc->SetConstraint("cmd", 
+                            &(*new CArgAllow_Strings(NStr::eNocase), 
+                              "shutdown_nodes", "kill_nodes")
+                            );
+
+
     arg_desc->AddOptionalKey("render",
                              "render_type",
                              "Renderer type",
@@ -136,6 +147,22 @@ void CNSRemoveJobControlApp::Init(void)
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
+
+class CWNodeShutdownAction : public  CNSInfoCollector::IWNodeAction
+{
+public:
+    CWNodeShutdownAction(CNetScheduleClient::EShutdownLevel level)
+        : m_Level(level) {}
+
+    virtual ~CWNodeShutdownAction() {};
+
+    virtual void operator()(const CWNodeInfo& info)
+    {
+        info.Shutdown(m_Level);
+    }
+private:
+    CNetScheduleClient::EShutdownLevel m_Level;
+};
 
 
 int CNSRemoveJobControlApp::Run(void)
@@ -255,8 +282,17 @@ int CNSRemoveJobControlApp::Run(void)
     } else if (args["bid"]) {
         string id = args["bid"].AsString();
         renderer->RenderBlob(id);
+    } else if (args["wnlist"]) {
+        renderer->RenderWNodes(flags);
+    } else if (args["cmd"]) {
+        string cmd = args["cmd"].AsString();
+        CNetScheduleClient::EShutdownLevel level = 
+            CNetScheduleClient::eShutdownImmidiate;
+        if (NStr::CompareNocase(cmd, "kill_nodes") == 0) 
+            level = CNetScheduleClient::eDie;
+        CWNodeShutdownAction action(level);
+        info_collector->TraverseNodes(action);
     }
-
 
     } catch (exception& ex) {
         writer->WriteBeginTag("Error");
@@ -278,6 +314,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/23 14:05:36  didenko
+ * Added wnlist, shutdown_nodes and kill_nodes commands
+ *
  * Revision 1.1  2006/05/19 13:40:40  didenko
  * Added ns_remote_job_control utility
  *

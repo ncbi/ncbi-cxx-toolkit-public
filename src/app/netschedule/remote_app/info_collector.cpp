@@ -42,6 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 CNSJobInfo::CNSJobInfo(const string& id, CNSInfoCollector& collector)
     : m_Id(id), m_Status(CNetScheduleClient::eLastStatus),
       m_RetCode(-1), m_Collector(collector), m_Request(NULL), m_Result(NULL)
@@ -144,6 +145,27 @@ CRemoteAppResult& CNSJobInfo::x_GetResult() const
 }
 
 ///////////////////////////////////////////////////////////////////
+//
+CWNodeInfo::CWNodeInfo(const string& name, const string& prog,
+               const string& host, unsigned short port,
+               const CTime& last_access)
+    : m_Name(name), m_Prog(prog), m_Host(host), m_Port(port), 
+      m_LastAccess(last_access)
+{
+}
+
+CWNodeInfo::~CWNodeInfo()
+{
+}
+
+void CWNodeInfo::Shutdown(CNetScheduleClient::EShutdownLevel level) const
+{
+    CNSClientHelper cln(m_Host, m_Port, "noname");
+    cln.ShutdownServer(level);
+}
+
+///////////////////////////////////////////////////////////////////
+//
 CNSInfoCollector::CNSInfoCollector(const string& queue, 
                                    const string& service_name,
                                    CBlobStorageFactory& factory)
@@ -244,11 +266,61 @@ CNcbiIstream& CNSInfoCollector::GetBlobContent(const string& blob_id,
     return m_Storage->GetIStream(blob_id, blob_size);
 }
 
+void CNSInfoCollector::TraverseNodes(IWNodeAction& action)
+{
+    std::set<pair<string, unsigned short> > unique;
+    NON_CONST_ITERATE(TServices, it, m_Services) {
+        CNcbiStrstream ios;
+        CNSClientHelper& cln = (*it->second);
+        cln.PrintStatistics(ios);
+
+        bool nodes_info = false;        
+        string str;
+        while ( NcbiGetlineEOL(ios, str) ) {
+            if ( NStr::StartsWith( str, "[Configured")) {
+                break;
+            }
+            if ( !nodes_info ) {
+                if( NStr::Compare( str, "[Worker node statistics]:") == 0)
+                    nodes_info = true;
+                else
+                    continue;
+            } else {
+                if (str.empty())
+                    continue;
+
+                string name;
+                NStr::SplitInTwo(str, " ", name, str);
+                NStr::TruncateSpacesInPlace(str);
+                string prog;
+                NStr::SplitInTwo(str, "@", prog, str);           
+                NStr::TruncateSpacesInPlace(str);
+                prog = prog.substr(6,prog.size()-8);
+                string host;
+                NStr::SplitInTwo(str, " ", host, str);
+                NStr::TruncateSpacesInPlace(str);
+                string sport, stime;
+                NStr::SplitInTwo(str, " ", sport, stime);
+                NStr::SplitInTwo(sport, ":", str, sport);
+                NStr::TruncateSpacesInPlace(stime);
+                unsigned short port = (unsigned short)NStr::StringToInt(sport);
+                if (unique.insert(make_pair(host,port)).second)
+                    action(CWNodeInfo(name, prog,host, port, 
+                                      CTime(stime, "M/D/Y h:m:s")));
+            }
+        }
+    }
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/23 14:05:36  didenko
+ * Added wnlist, shutdown_nodes and kill_nodes commands
+ *
  * Revision 1.3  2006/05/22 18:13:35  didenko
  * + Jobs err_msg report
  *

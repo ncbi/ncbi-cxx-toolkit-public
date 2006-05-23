@@ -133,12 +133,12 @@ public:
         eStatus    = 1 << 1,
         eRetCode   = 1 << 2,
         eCmdLine   = 1 << 3,
-        eStdIn     = 1 << 4,
-        eStdOut    = 1 << 5,
-        eStdErr    = 1 << 6,
-        eRawInput  = 1 << 7,
-        eRawOutput = 1 << 8,
-        eErrMsg    = 1 << 9,
+        eErrMsg    = 1 << 4,
+        eStdIn     = 1 << 5,
+        eStdOut    = 1 << 6,
+        eStdErr    = 1 << 7,
+        eRawInput  = 1 << 8,
+        eRawOutput = 1 << 9,
         
         eMinimal   = eId | eStatus | eRetCode,
         eStandard  = eMinimal | eCmdLine | eErrMsg,
@@ -155,6 +155,9 @@ public:
                            TFlags flags = eMinimal);
 
     void RenderBlob(const string& blob_id);
+
+    void RenderWNodes(TFlags flags = eMinimal);
+    void RenderWNode(const CWNodeInfo& info, TFlags flags = eMinimal);
 private:
     void x_RenderString(const string& name, const string& value);
     void x_RenderStream(const string& name, CNcbiIstream& is);
@@ -163,31 +166,14 @@ private:
     CNSInfoCollector& m_Collector;
 };
 
-class CNSJobListRenderAction : public  CNSInfoCollector::IJobAction
-{
-public:
-    CNSJobListRenderAction(CNSInfoRenderer& renderer,
-                           CNSInfoRenderer::TFlags flags = 
-                           CNSInfoRenderer::eMinimal)
-        : m_Renderer(renderer), m_Flags(flags) {}
-
-    virtual ~CNSJobListRenderAction() {};
-
-    virtual void operator()(const CNSJobInfo& info)
-    {
-        m_Renderer.RenderJob(info, m_Flags);
-    }
-private:
-    CNSInfoRenderer& m_Renderer;
-    CNSInfoRenderer::TFlags m_Flags;
-};
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/23 14:05:36  didenko
+ * Added wnlist, shutdown_nodes and kill_nodes commands
+ *
  * Revision 1.2  2006/05/22 18:13:35  didenko
  * + Jobs err_msg report
  *

@@ -159,6 +159,27 @@ struct STagGuard
     string m_Tag;
 };
 
+class CNSJobListRenderAction : public  CNSInfoCollector::IJobAction
+{
+public:
+    CNSJobListRenderAction(CNSInfoRenderer& renderer,
+                           CNSInfoRenderer::TFlags flags = 
+                           CNSInfoRenderer::eMinimal)
+        : m_Renderer(renderer), m_Flags(flags) {}
+
+    virtual ~CNSJobListRenderAction() {};
+
+    virtual void operator()(const CNSJobInfo& info)
+    {
+        m_Renderer.RenderJob(info, m_Flags);
+    }
+private:
+    CNSInfoRenderer& m_Renderer;
+    CNSInfoRenderer::TFlags m_Flags;
+};
+
+
+
 void CNSInfoRenderer::RenderJobByStatus(CNetScheduleClient::EJobStatus status,
                                         TFlags flags)
 {
@@ -264,6 +285,51 @@ void CNSInfoRenderer::x_RenderStream(const string& name, CNcbiIstream& is)
     }
 }
 
+void CNSInfoRenderer::RenderWNode(const CWNodeInfo& info, TFlags flags)
+{
+    ITagWriter::TAttributes attrs;
+    attrs.push_back(make_pair("Host", info.GetHost()));
+    attrs.push_back(make_pair("Port", NStr::IntToString(info.GetPort())));
+    if (flags <= eMinimal) {
+        m_Writer.WriteTag("WNode", attrs);
+        return;
+    }
+    STagGuard guard(m_Writer,"WNode", attrs);
+    if (flags <= eStandard) {
+        x_RenderString("Name", info.GetName());
+        x_RenderString("Prog", info.GetProgName());
+        x_RenderString("LastAccess", info.GetLastAccess().AsString("M/D/Y h:m:s"));
+    }
+
+}
+
+class CWNodeListRenderAction : public  CNSInfoCollector::IWNodeAction
+{
+public:
+    CWNodeListRenderAction(CNSInfoRenderer& renderer,
+                           CNSInfoRenderer::TFlags flags = 
+                           CNSInfoRenderer::eMinimal)
+        : m_Renderer(renderer), m_Flags(flags) {}
+
+    virtual ~CWNodeListRenderAction() {};
+
+    virtual void operator()(const CWNodeInfo& info)
+    {
+        m_Renderer.RenderWNode(info, m_Flags);
+    }
+private:
+    CNSInfoRenderer& m_Renderer;
+    CNSInfoRenderer::TFlags m_Flags;
+};
+
+
+void CNSInfoRenderer::RenderWNodes(TFlags flags)
+{
+    STagGuard guard(m_Writer,"WNodes");    
+    CWNodeListRenderAction action(*this, flags);
+    m_Collector.TraverseNodes(action);
+}
+
 
 ///////////////////////////////////////////////////////
 //
@@ -273,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/23 14:05:36  didenko
+ * Added wnlist, shutdown_nodes and kill_nodes commands
+ *
  * Revision 1.2  2006/05/22 18:13:35  didenko
  * + Jobs err_msg report
  *

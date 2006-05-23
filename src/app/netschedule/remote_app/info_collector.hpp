@@ -69,6 +69,8 @@ public:
     }
 };
 
+//////////////////////////////////////////////////////////////////////
+///
 class CNSInfoCollector;
 
 class CNSJobInfo
@@ -87,7 +89,7 @@ public:
     CNcbiIstream& GetStdOut() const;
     CNcbiIstream& GetStdErr() const;
     const string& GetCmdLine() const;
-    
+   
 private:
     friend class CNSInfoCollector;
     CNSJobInfo(const string& id, CNSInfoCollector& collector);
@@ -114,6 +116,36 @@ private:
     CNSJobInfo& operator=(const CNSJobInfo&);
 };
 
+//////////////////////////////////////////////////////////////////////
+///
+class CWNodeInfo
+{
+public:
+    ~CWNodeInfo();
+    
+    const string& GetName() const { return m_Host; }
+    const string& GetProgName() const { return m_Prog; }
+    const string& GetHost() const { return m_Host; }
+    unsigned short GetPort() const { return m_Port; }
+    const CTime& GetLastAccess() const { return m_LastAccess; }
+
+    void Shutdown(CNetScheduleClient::EShutdownLevel level) const;
+
+private:
+    friend class CNSInfoCollector;
+    CWNodeInfo(const string& name, const string& prog,
+               const string& host, unsigned short port,
+               const CTime& last_access);
+    
+    string m_Name;
+    string m_Prog;
+    string m_Host;
+    unsigned short m_Port;
+    CTime m_LastAccess;
+        
+};
+//////////////////////////////////////////////////////////////////////
+///
 class CNSInfoCollector
 {
 public:
@@ -127,7 +159,14 @@ public:
         virtual ~IJobAction() {}
         virtual void operator()(const CNSJobInfo& info) = 0;
     };
+    class IWNodeAction {
+    public:
+        virtual ~IWNodeAction() {}
+        virtual void operator()(const CWNodeInfo& info) = 0;
+    };
+
     void TraverseJobs(CNetScheduleClient::EJobStatus, IJobAction&);
+    void TraverseNodes(IWNodeAction&);
 
     CNSJobInfo* CreateJobInfo(const string& job_id);
 
@@ -165,6 +204,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/05/23 14:05:36  didenko
+ * Added wnlist, shutdown_nodes and kill_nodes commands
+ *
  * Revision 1.2  2006/05/22 18:13:35  didenko
  * + Jobs err_msg report
  *
