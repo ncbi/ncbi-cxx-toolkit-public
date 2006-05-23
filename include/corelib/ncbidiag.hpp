@@ -676,17 +676,20 @@ public:
                           const char* message);
     /// Display trouble error message.
     NCBI_XNCBI_EXPORT
-    static void DiagTrouble(const CDiagCompileInfo& info);
+    static void DiagTrouble(const CDiagCompileInfo& info,
+                            const char* message = NULL);
 
     /// Assert specfied expression and report results.
     NCBI_XNCBI_EXPORT
     static void DiagAssert(const CDiagCompileInfo& info,
-                           const char* expression);
+                           const char* expression,
+                           const char* message = NULL);
 
     /// Display validation message.
     NCBI_XNCBI_EXPORT
     static void DiagValidate(const CDiagCompileInfo& info,
-                             const char* expression, const char* message);
+                             const char* expression,
+                             const char* message);
 
 private:
     enum EValChngFlags {
@@ -1486,6 +1489,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.106  2006/05/23 16:03:54  grichenk
+ * Added NCBI_TROUBLE, NCBI_ASSERT, NCBI_VERIFY and _DEBUG_CODE
+ *
  * Revision 1.105  2006/05/19 03:58:35  grichenk
  * Replaced auto_ptr<CStopWatch> with CStopWatch*
  *

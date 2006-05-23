@@ -443,7 +443,7 @@ void CDiagContext::x_PrintMessage(EEventType event,
     ostr << s_GetHost() << " ";
 
     string prop = GetProperty(kProperty_ClientIP);
-    ostr << setw(15) << setiosflags(ios_base::left)
+    ostr << setw(15) << setiosflags(IOS_BASE::left)
         << (prop.empty() ? "UNK_CLIENT" : prop)
         << resetiosflags(IOS_BASE::left) << " ";
 
@@ -2276,16 +2276,20 @@ void CNcbiDiag::DiagFatal(const CDiagCompileInfo& info,
     CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
 }
 
-void CNcbiDiag::DiagTrouble(const CDiagCompileInfo& info)
+void CNcbiDiag::DiagTrouble(const CDiagCompileInfo& info,
+                            const char* message)
 {
-    DiagFatal(info, "Trouble!");
+    DiagFatal(info, message);
 }
 
 void CNcbiDiag::DiagAssert(const CDiagCompileInfo& info,
-                           const char* expression)
+                           const char* expression,
+                           const char* message)
 {
     CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal, eDPF_Trace) <<
-        "Assertion failed: (" << expression << ')' << Endm;
+        "Assertion failed: (" <<
+        (expression ? expression : "") << ") " <<
+        (message ? message : "") << Endm;
 }
 
 void CNcbiDiag::DiagValidate(const CDiagCompileInfo& info,
@@ -2294,7 +2298,7 @@ void CNcbiDiag::DiagValidate(const CDiagCompileInfo& info,
 {
 #ifdef _DEBUG
     if ( xncbi_GetValidateAction() != eValidate_Throw ) {
-        DiagAssert(info, expression);
+        DiagAssert(info, expression, message);
     }
 #endif
     throw CCoreException(info, 0, CCoreException::eCore, message);
@@ -2627,6 +2631,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.116  2006/05/23 16:03:54  grichenk
+ * Added NCBI_TROUBLE, NCBI_ASSERT, NCBI_VERIFY and _DEBUG_CODE
+ *
  * Revision 1.115  2006/05/22 21:51:12  vakatov
  * 1) ios_base --> IOS_BASE (for the sake of GCC 2.95)
  * 2) Fixed a minor compiler warning

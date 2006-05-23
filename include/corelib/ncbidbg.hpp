@@ -58,30 +58,40 @@ BEGIN_NCBI_SCOPE
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Trace) \
       << message << NCBI_NS_NCBI::Endm )
 
-#  define _TROUBLE NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO)
+#  define NCBI_TROUBLE(mess) \
+    NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, mess)
 
 #  ifdef _ASSERT
 #  undef _ASSERT
 #  endif
-#  define _ASSERT(expr) \
+#  define NCBI_ASSERT(expr, mess) \
     do { if ( !(expr) ) \
-        NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr); \
+        NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
     } while ( 0 )
 
-#  define _VERIFY(expr)   _ASSERT(expr)
+#  define NCBI_VERIFY(expr, mess) NCBI_ASSERT(expr, mess)
 
 #  define _DEBUG_ARG(arg) arg
+
+#  define _DEBUG_CODE(code) \
+    do { code } while ( 0 )
 
 
 #else  /* _DEBUG */
 
-#  define _TRACE(message) ((void)0)
-#  define _TROUBLE
-#  define _ASSERT(expr)   ((void)0)
-#  define _VERIFY(expr)   ((void)(expr))
+#  define _TRACE(message)           ((void)0)
+#  define NCBI_TROUBLE(mess)
+#  define NCBI_ASSERT(expr, mess)   ((void)0)
+#  define NCBI_VERIFY(expr, mess)   ((void)(expr))
 #  define _DEBUG_ARG(arg)
+#  define _DEBUG_CODE(code)         ((void)0)
 
 #endif  /* else!_DEBUG */
+
+
+#define _TROUBLE        NCBI_TROUBLE(NULL)
+#define _ASSERT(expr)   NCBI_ASSERT(expr, NULL)
+#define _VERIFY(expr)   NCBI_VERIFY(expr, NULL)
 
 
 /// Which action to perform.
@@ -110,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.36  2006/05/23 16:03:54  grichenk
+ * Added NCBI_TROUBLE, NCBI_ASSERT, NCBI_VERIFY and _DEBUG_CODE
+ *
  * Revision 1.35  2006/02/14 15:48:21  lavr
  * Indenting
  *
