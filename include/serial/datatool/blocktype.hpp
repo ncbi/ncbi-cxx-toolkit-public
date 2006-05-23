@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/05/23 15:34:55  gouriano
+* Corrected ASN spec generation for XML schema choice type
+*
 * Revision 1.16  2005/10/12 17:00:46  gouriano
 * Replace C_E class name in unisequence types by something more unique
 * Add typedef in generated code to provide backward compatibility
@@ -218,7 +221,7 @@ public:
         }
     bool UniElementNameExists(const string& name) const;
 
-private:
+protected:
     TMembers m_Members;
     CComments m_LastComments;
 };

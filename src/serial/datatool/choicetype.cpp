@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/05/23 15:35:18  gouriano
+* Corrected ASN spec generation for XML schema choice type
+*
 * Revision 1.33  2006/05/09 15:16:43  gouriano
 * Added XML namespace definition possibility
 *
@@ -169,6 +172,7 @@
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/choicestr.hpp>
 #include <serial/datatool/choiceptrstr.hpp>
+#include <serial/datatool/srcutil.hpp>
 #include <serial/member.hpp>
 #include <typeinfo>
 
@@ -224,6 +228,39 @@ const char* CChoiceDataType::GetASNKeyword(void) const
 const char* CChoiceDataType::GetDEFKeyword(void) const
 {
     return "_CHOICE_";
+}
+
+void CChoiceDataType::PrintASN(CNcbiOstream& out, int indent) const
+{
+    const CDataMember& m = *GetMembers().front();
+    if (!m.Attlist()) {
+        CParent::PrintASN(out, indent);
+        return;
+    }
+    out << "SEQUENCE" << " {";
+    ++indent;
+    PrintASNNewLine(out, indent);
+    m.PrintASN(out, indent, false);
+    PrintASNNewLine(out, indent);
+    out << GetMemberName() << " ";
+    out << GetASNKeyword() << " {";
+    ++indent;
+    ITERATE ( TMembers, i, GetMembers() ) {
+        TMembers::const_iterator next = i;
+        bool last = ++next == GetMembers().end();
+        const CDataMember& member = **i;
+        if (!member.Attlist()) {
+            PrintASNNewLine(out, indent);
+            member.PrintASN(out, indent, last);
+        }
+    }
+    --indent;
+    PrintASNNewLine(out, indent);
+    m_LastComments.PrintASN(out, indent, CComments::eMultiline);
+    out << "}";
+    --indent;
+    PrintASNNewLine(out, indent);
+    out << "}";
 }
 
 void CChoiceDataType::FixTypeTree(void) const

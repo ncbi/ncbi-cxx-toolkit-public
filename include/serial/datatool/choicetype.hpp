@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/05/23 15:34:55  gouriano
+* Corrected ASN spec generation for XML schema choice type
+*
 * Revision 1.6  2005/08/05 15:12:02  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -80,6 +83,8 @@ class CChoiceDataType : public CDataMemberContainerType
 {
     typedef CDataMemberContainerType CParent;
 public:
+    virtual void PrintASN(CNcbiOstream& out, int indent) const;
+
     void FixTypeTree(void) const;
     bool CheckValue(const CDataValue& value) const;
 
