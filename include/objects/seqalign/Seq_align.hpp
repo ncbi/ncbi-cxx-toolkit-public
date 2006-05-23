@@ -107,6 +107,8 @@ public:
     };
     CRef<CSeq_align> CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser = 0) const;
 
+    CRef<CSeq_align> CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser = 0) const;
+
     // Create a Dense-seg with widths from Dense-seg of nucleotides
     // Used by AlnMgr to handle translated nucl2nucl alignments
     // IMPORTANT NOTE: Do *NOT* use for alignments containing proteins;
@@ -149,6 +151,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/05/23 18:40:48  todorov
+* Added CreateDensegFromDisc.
+*
 * Revision 1.16  2006/05/08 21:42:24  todorov
 * Added a RemapToLoc method.
 *

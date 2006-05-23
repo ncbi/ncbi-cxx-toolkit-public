@@ -631,6 +631,136 @@ CSeq_align::CreateTranslatedDensegFromNADenseg() const
 }
 
 
+CRef<CSeq_align> 
+CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
+{
+    if ( !GetSegs().IsDisc() ) {
+        NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                   "CSeq_align::CreateDensegFromDisc(): "
+                   "Input Seq-align should have segs of type StdSeg!");
+    }
+
+    CRef<CSeq_align> new_sa(new CSeq_align);
+    new_sa->SetType(eType_not_set);
+
+    CDense_seg& new_ds = new_sa->SetSegs().SetDenseg();
+
+    CDense_seg::TStrands tmp_strands;
+
+    new_ds.SetDim(0);
+    new_ds.SetNumseg(0);
+
+    /// First pass: determine dim & numseg
+    ITERATE (CSeq_align_set::Tdata, sa_i, GetSegs().GetDisc().Get()) {
+        const CDense_seg& ds = (*sa_i)->GetSegs().GetDenseg();
+
+        /// Numseg
+        new_ds.SetNumseg() += ds.GetNumseg();
+
+        /// Dim
+        if ( !new_ds.GetDim() ) {
+            new_ds.SetDim(ds.GetDim());
+        } else if (new_ds.GetDim() != ds.GetDim() ) {
+            NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                       "CreateDensegFromDisc(): "
+                       "All disc dense-segs need to have the same dimension!");
+        }
+
+        /// Strands?
+        if ( !ds.GetStrands().empty() ) {
+            if (tmp_strands.empty()) {
+                tmp_strands = ds.GetStrands();
+            } else {
+                if (tmp_strands != ds.GetStrands()) {
+                    NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                               "CreateDensegFromDisc(): "
+                               "All disc dense-segs need to have the same strands!");
+                }
+            }
+        }
+    }
+    
+    new_ds.SetStarts().resize(new_ds.GetDim() * new_ds.GetNumseg());
+    new_ds.SetLens().resize(new_ds.GetNumseg());
+    if ( !tmp_strands.empty() ) {
+        new_ds.SetStrands().resize(new_ds.GetDim() * new_ds.GetNumseg());
+        for (CDense_seg::TNumseg seg = 0;  seg < new_ds.GetNumseg();  ++seg) {
+            for (CDense_seg::TDim row = 0;  row < new_ds.GetDim();  ++row) {
+                new_ds.SetStrands()[seg * new_ds.GetDim() + row] = tmp_strands[row];
+            }
+        }
+    }
+    
+
+    /// Second pass: validate and set ids and starts
+
+    CDense_seg::TNumseg new_seg = 0;
+    int                 new_starts_i = 0;
+
+    ITERATE (CSeq_align_set::Tdata, sa_i, GetSegs().GetDisc().Get()) {
+        const CDense_seg& ds = (*sa_i)->GetSegs().GetDenseg();
+        
+        _ASSERT(ds.GetStarts().size() == ds.GetNumseg() * ds.GetDim());
+        _ASSERT(new_ds.GetDim() == ds.GetDim());
+
+        /// Ids
+        if (new_ds.GetIds().empty()) {
+            new_ds.SetIds().resize(new_ds.GetDim());
+            for (CDense_seg::TDim row = 0;  row < ds.GetDim();  ++row) {
+                CRef<CSeq_id> id(new CSeq_id);
+                SerialAssign(*id, *ds.GetIds()[row]);
+                new_ds.SetIds()[row] = id;
+            }
+        } else {
+            if (SeqIdChooser) {
+                for (CDense_seg::TDim row = 0;  row < ds.GetDim();  ++row) {
+                    SeqIdChooser->ChooseSeqId(*new_ds.SetIds()[row], *ds.GetIds()[row]);
+                }
+            } else {
+#if _DEBUG                    
+                for (CDense_seg::TDim row = 0;  row < ds.GetDim();  ++row) {
+                    const CSeq_id& new_id = *new_ds.GetIds()[row];
+                    const CSeq_id& id     = *ds.GetIds()[row];
+                    if ( !SerialEquals(new_id, id) ) {
+                        string errstr =
+                            string("CreateDensegFromDisc(): Seq-ids: ") +
+                            new_id.AsFastaString() + " and " +
+                            id.AsFastaString() + " are not identical!" +
+                            " Without the OM it cannot be determined if they belong to"
+                            " the same sequence."
+                            " Define and pass ChooseSeqId to resolve seq-ids.";
+                        NCBI_THROW(CSeqalignException, eInvalidInputAlignment, errstr);
+                    }
+                }
+#endif
+            }
+        }
+
+        /// Starts
+        int starts_i = 0;
+        for (CDense_seg::TNumseg seg = 0;
+             seg < ds.GetNumseg();
+             ++new_seg, ++seg) {
+
+            new_ds.SetLens()[new_seg] = ds.GetLens()[seg];
+
+            for (CDense_seg::TDim row = 0;
+                 row < ds.GetDim(); 
+                 ++starts_i, ++new_starts_i, ++row) {
+                new_ds.SetStarts()[new_starts_i] = ds.GetStarts()[starts_i];
+            }
+        }
+    }
+
+    
+    /// Perform full test (including segment starts consistency check)
+    new_sa->Validate(true);
+
+
+    return new_sa;
+}
+
+
 void CSeq_align::RemapToLoc(TDim row,
                             const CSeq_loc& dst_loc,
                             bool ignore_strand)
@@ -676,6 +806,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2006/05/23 18:41:29  todorov
+* Added CreateDensegFromDisc.
+*
 * Revision 1.21  2006/05/09 15:44:37  todorov
 * Added support of disc alignments to RemapToLoc.
 *
