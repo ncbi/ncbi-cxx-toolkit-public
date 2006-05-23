@@ -249,7 +249,12 @@ TExitCode CExec::System(const char *cmdline)
                    "CExec::System: call to system failed");
     }
 #if defined(NCBI_OS_UNIX)
-    return cmdline ? WEXITSTATUS(status) : status;
+    if (cmdline) {
+        return WIFSIGNALED(status) ? WTERMSIG(status) + 0x80
+            : WEXITSTATUS(status);
+    } else {
+        return status;
+    }
 #else
     return status;
 #endif
@@ -476,6 +481,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/05/23 18:50:50  ucko
+ * System: if the child died on a signal, return a non-zero value
+ * (namely, the signal + 128, per typical shells).
+ *
  * Revision 1.36  2006/05/19 16:37:47  dicuccio
  * Guard against NULL argv in RunSilent()
  *
