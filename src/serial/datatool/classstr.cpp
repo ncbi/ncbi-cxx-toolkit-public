@@ -314,16 +314,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         }
     }
     // check if the class is Attlist
-    bool isAttlist = false;
+    bool isSet = false;
     if (!m_Members.empty()) {
         TMembers::const_iterator i = m_Members.begin();
         if (i->dataType) {
             const CDataType* t2 = i->dataType->GetParentType();
             if (t2) {
-                const CDataMember* d = t2->GetDataMember();
-                if (d) {
-                    isAttlist = d->Attlist();
-                }
+                isSet = dynamic_cast<const CDataSetType*>(t2) != 0;
             }
         }
     }
@@ -1274,7 +1271,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             methods << ";\n";
         }
-        if ( isAttlist || useTags ) {
+        if ( isSet ) {
             // Tagged class is not sequential
             methods << "    info->SetRandomOrder(true);\n";
         }
@@ -1516,6 +1513,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2006/05/23 15:35:55  gouriano
+* Corrected code generation for SET type
+*
 * Revision 1.74  2006/05/09 15:16:43  gouriano
 * Added XML namespace definition possibility
 *
