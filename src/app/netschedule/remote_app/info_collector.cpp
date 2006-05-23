@@ -298,6 +298,12 @@ void CNSInfoCollector::TraverseNodes(IWNodeAction& action)
                 prog = prog.substr(6,prog.size()-8);
                 string host;
                 NStr::SplitInTwo(str, " ", host, str);
+                string::size_type pos = host.find_first_of(".");
+                if (pos != string::npos) {
+                    host.erase(pos, host.size());
+                }
+                if( NStr::Compare(host, "localhost") == 0)
+                    host = it->first.first;
                 NStr::TruncateSpacesInPlace(str);
                 string sport, stime;
                 NStr::SplitInTwo(str, " ", sport, stime);
@@ -318,6 +324,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/05/23 19:31:51  didenko
+ * Cosmetics
+ *
  * Revision 1.4  2006/05/23 14:05:36  didenko
  * Added wnlist, shutdown_nodes and kill_nodes commands
  *
