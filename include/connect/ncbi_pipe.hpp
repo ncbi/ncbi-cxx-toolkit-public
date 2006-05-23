@@ -179,7 +179,7 @@ public:
     EIO_Status Open(const string&         cmd,
                     const vector<string>& args,
                     TCreateFlags          create_flags = 0,
-                    const string&         current_dir  = 0,
+                    const string&         current_dir  = kEmptyStr,
                     const char* const     env[]        = 0);
 
     /// Close pipe.
@@ -413,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/05/23 15:39:52  ivanov
+ * Set default value for current directory to kEmptyStr
+ *
  * Revision 1.28  2006/05/23 14:55:40  ivanov
  * CPipe::Open() - use string instead of char* for current directory
  *
