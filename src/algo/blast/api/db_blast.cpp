@@ -719,7 +719,8 @@ void CDbBlast::x_RunTracebackSearch()
     // traceback code.
     if (Blast_ProgramIsPhiBlast(program)) {
         pattern_blk = (SPHIPatternSearchBlk*) m_ipLookupTable->lut;
-        pattern_blk->num_patterns_db = m_ipDiagnostics->ungapped_stat->lookup_hits;
+        pattern_blk->num_patterns_db = 
+            static_cast<Int4>(m_ipDiagnostics->ungapped_stat->lookup_hits);
     }
 
     if ((status = 
@@ -789,6 +790,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.90  2006/05/23 11:52:42  camacho
+ * Fix compiler warning
+ *
  * Revision 1.89  2006/05/22 13:32:07  madden
  * Remove call to defunct PHIPatternSpaceCalc
  *
