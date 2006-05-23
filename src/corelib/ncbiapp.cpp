@@ -1090,7 +1090,6 @@ bool CNcbiApplication::x_SetupLogFiles(void)
     string path = GetDefaultLogPath();
     bool base_only = false;       // true if must use base name only
     bool try_all = true;
-    false;
 
     if ( !GetSplitLogFile() ) {
         return s_SetupLogFile(GetLogFileName(eDiagFile_All),
@@ -1167,6 +1166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.122  2006/05/23 18:49:41  grichenk
+ * Fixed warning
+ *
  * Revision 1.121  2006/05/18 19:07:27  grichenk
  * Added output to log file(s), application access log, new cgi log formatting.
  *
