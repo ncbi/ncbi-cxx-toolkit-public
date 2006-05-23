@@ -316,7 +316,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                             const_cast<char*> (cmd_line.c_str()),
                             NULL, NULL, TRUE, 0,
                             env_block.get(),
-                            current_dir.empty() ? 0, current_dir.c_str(),
+                            current_dir.empty() ? 0 : current_dir.c_str(),
                             &sinfo, &pinfo) ) {
             throw "CreateProcess() for \"" + cmd_line + "\" failed";
         }
@@ -1726,6 +1726,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/05/23 14:57:56  ivanov
+ * Fixed typo in last commit
+ *
  * Revision 1.59  2006/05/23 14:55:43  ivanov
  * CPipe::Open() - use string instead of char* for current directory
  *
