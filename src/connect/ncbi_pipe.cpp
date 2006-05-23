@@ -101,7 +101,7 @@ public:
     ~CPipeHandle();
     EIO_Status Open(const string& cmd, const vector<string>& args,
                     CPipe::TCreateFlags create_flags,
-                    const char*         current_dir,
+                    const string&       current_dir,
                     const char* const   env[]);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
     EIO_Status CloseHandle (CPipe::EChildIOHandle handle);
@@ -164,7 +164,7 @@ CPipeHandle::~CPipeHandle()
 EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
                              CPipe::TCreateFlags   create_flags,
-                             const char*           current_dir,
+                             const string&         current_dir,
                              const char* const     env[])
 {
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
@@ -315,7 +315,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         if ( !CreateProcess(NULL,
                             const_cast<char*> (cmd_line.c_str()),
                             NULL, NULL, TRUE, 0,
-                            env_block.get(), current_dir, &sinfo, &pinfo) ) {
+                            env_block.get(),
+                            current_dir.empty() ? 0, current_dir.c_str(),
+                            &sinfo, &pinfo) ) {
             throw "CreateProcess() for \"" + cmd_line + "\" failed";
         }
         ::CloseHandle(pinfo.hThread);
@@ -733,7 +735,7 @@ public:
     EIO_Status Open(const string&         cmd,
                     const vector<string>& args,
                     CPipe::TCreateFlags   create_flags,
-                    const char*           current_dir,
+                    const string&         current_dir,
                     const char* const     env[]);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
     EIO_Status CloseHandle(CPipe::EChildIOHandle handle);
@@ -908,7 +910,7 @@ static int s_ExecVPE(const char *file, char *const argv[], char *const envp[])
 EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
                              CPipe::TCreateFlags   create_flags,
-                             const char*           current_dir,
+                             const string&         current_dir,
                              const char* const     env[])
 
 {
@@ -1035,8 +1037,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             x_args[cnt + 1] = 0;
 
             // Change current working wirectory if specified
-            if (current_dir) {
-                chdir(current_dir);
+            if ( !current_dir.empty() ) {
+                chdir(current_dir.c_str());
             }
             // Execute the program
             if ( env ) {
@@ -1504,9 +1506,9 @@ CPipe::CPipe(void)
 
 
 CPipe::CPipe(const string& cmd, const vector<string>& args,
-             TCreateFlags create_flags,
-             const char*  current_dir,
-             const char*  const env[])
+             TCreateFlags  create_flags,
+             const string& current_dir,
+             const char*   const env[])
     : m_PipeHandle(0), m_ReadHandle(eStdOut),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
@@ -1535,9 +1537,9 @@ CPipe::~CPipe(void)
 
 
 EIO_Status CPipe::Open(const string& cmd, const vector<string>& args,
-                       TCreateFlags create_flags,
-                       const char*  current_dir,
-                       const char*  const env[])
+                       TCreateFlags  create_flags,
+                       const string& current_dir,
+                       const char*   const env[])
 {
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
@@ -1724,6 +1726,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/05/23 14:55:43  ivanov
+ * CPipe::Open() - use string instead of char* for current directory
+ *
  * Revision 1.58  2006/05/23 11:16:05  ivanov
  * Added possibility to specify a current working directory and
  * environment for created child processes.

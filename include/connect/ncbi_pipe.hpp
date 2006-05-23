@@ -134,18 +134,17 @@ public:
     ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param create_flags
     ///   Specifies the options to be applied when creating the pipe.
+    /// @current_dir
+    ///   Current directory for the new process if specified.
     /// @param env
     ///   Pointer to vector with environment variables which will be used
     ///   instead of current environment. Last value in an array must be NULL.
-    /// @current_dir
-    ///   Pointer to a null-terminated string that specifies the current 
-    ///   directory for the new process.
     /// @sa
     ///   Open()
     CPipe(const string&         cmd,
           const vector<string>& args,
           TCreateFlags          create_flags = 0,
-          const char*           current_dir  = 0,
+          const string&         current_dir  = kEmptyStr,
           const char* const     env[]        = 0);
 
     /// Destructor. 
@@ -165,15 +164,14 @@ public:
     ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param create_flags
     ///   Specifies options to be applied when creating the pipe.
+    /// @current_dir
+    ///   Current directory for the new process.
+    ///   The string must be an absolute path. On MS Windows it should
+    ///   also contains drive letter. If this parameter is empty, the new
+    ///   process will have the same current directory as the calling process.
     /// @param env
     ///   Pointer to vector with environment variables which will be used
     ///   instead of current environment. Last value in an array must be NULL.
-    /// @current_dir
-    ///   Pointer to a null-terminated string that specifies the current 
-    ///   directory for the new process. The string must be an absolute path,
-    ///   on MS Windows it should also contains drive letter.
-    ///   If this parameter is NULL, the new process will have the same
-    ///   current directory as the calling process.
     /// @return 
     ///   Completion status.
     /// @sa
@@ -181,7 +179,7 @@ public:
     EIO_Status Open(const string&         cmd,
                     const vector<string>& args,
                     TCreateFlags          create_flags = 0,
-                    const char*           current_dir  = 0,
+                    const string&         current_dir  = 0,
                     const char* const     env[]        = 0);
 
     /// Close pipe.
@@ -415,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/05/23 14:55:40  ivanov
+ * CPipe::Open() - use string instead of char* for current directory
+ *
  * Revision 1.27  2006/05/23 11:15:52  ivanov
  * Added possibility to specify a current working directory and
  * environment for created child processes.
