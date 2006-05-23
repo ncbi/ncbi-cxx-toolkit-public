@@ -33,6 +33,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/blob_storage.hpp>
 #include <corelib/rwstream.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/remote_job.hpp>
@@ -208,6 +209,9 @@ public:
 
     void Reset();
 
+    static void SetTempDir(const string& path);
+    static const string& GetTempDir();
+        
 private:
     static CAtomicCounter sm_DirCounter;
     static string sm_TmpDirPath;
@@ -233,7 +237,28 @@ private:
 };
 
 CAtomicCounter CRemoteAppRequest_Impl::sm_DirCounter;
-string CRemoteAppRequest_Impl::sm_TmpDirPath = ".";
+string CRemoteAppRequest_Impl::sm_TmpDirPath;
+
+
+/*static*/
+void CRemoteAppRequest_Impl::SetTempDir(const string& path)
+{
+    if (CDirEntry::IsAbsolutePath(path))
+        sm_TmpDirPath = path;
+    else {
+        string tmp = CDir::GetCwd() 
+            + CDirEntry::GetPathSeparator() 
+            + path;
+        sm_TmpDirPath = CDirEntry::NormalizePath(tmp);
+    }
+}
+/*static*/
+const string& CRemoteAppRequest_Impl::GetTempDir()
+{
+    if(sm_TmpDirPath.empty())
+        SetTempDir(".");
+    return sm_TmpDirPath;
+}
 
 
 void CRemoteAppRequest_Impl::Serialize(CNcbiOstream& os)
@@ -278,7 +303,7 @@ void CRemoteAppRequest_Impl::x_CreateWDir()
 {
     if( !m_TmpDirName.empty() )
         return;
-    m_TmpDirName = sm_TmpDirPath + CDirEntry::GetPathSeparator() +
+    m_TmpDirName = GetTempDir() + CDirEntry::GetPathSeparator() +
         NStr::UIntToString(sm_DirCounter.Add(1));
     CDir wdir(m_TmpDirName);
     if (wdir.Exists())
@@ -672,6 +697,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2006/05/23 16:59:32  didenko
+ * Added ability to run a remote application from a separate directory
+ * for each job
+ *
  * Revision 6.8  2006/05/19 13:37:45  didenko
  * Improved error checking
  *

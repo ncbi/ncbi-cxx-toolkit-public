@@ -70,10 +70,11 @@ static bool s_Exec(const string& cmd,
                    CWorkerNodeJobContext& context,
                    int max_app_running_time,
                    int app_running_time,
-                   int keep_alive_period)
+                   int keep_alive_period,
+                   const string& tmp_path)
 {
     CPipe pipe;
-    EIO_Status st = pipe.Open(cmd.c_str(), args, CPipe::fStdErr_Open);
+    EIO_Status st = pipe.Open(cmd.c_str(), args, CPipe::fStdErr_Open,tmp_path);
     if (st != eIO_Success)
         NCBI_THROW(CException, eInvalid, 
                    "Could not execute " + cmd + " file.");
@@ -195,6 +196,20 @@ static bool s_Exec(const string& cmd,
 /// Job reads an array of doubles, sorts it and returns data back
 /// to the client as a BLOB.
 ///
+
+struct STmpDirGuard
+{
+    STmpDirGuard(const string& path) : m_Path(path) 
+    { 
+        if (!m_Path.empty()) {
+            CDir dir(m_Path); 
+            if (!dir.Exists()) 
+                dir.CreatePath(); 
+        }
+    }
+    ~STmpDirGuard() { if (!m_Path.empty()) CDir(m_Path).Remove(); }
+    const string& m_Path;
+};
 class CRemoteAppJob : public IWorkerNodeJob
 {
 public:
@@ -209,6 +224,12 @@ public:
                       << ": " << context.GetJobKey() + " " + context.GetJobInput());
         }
 
+        string tmp_path = m_TempDir;
+        if (!tmp_path.empty())
+            tmp_path += CDirEntry::GetPathSeparator() + context.GetJobKey();
+
+        STmpDirGuard guard(tmp_path);
+
         m_Request.Receive(context.GetIStream());
         if (m_Request.IsExclusiveModeRequested())
             context.RequestExclusiveMode();
@@ -221,6 +242,7 @@ public:
                                        m_Request.GetStdOutErrStorageType());
         unsigned int app_running_time = m_Request.GetAppRunTimeout();
 
+            
         int ret = -1;
         bool canceled = s_Exec(m_AppPath, 
                                args, 
@@ -231,7 +253,8 @@ public:
                                context,
                                m_MaxAppRunningTime,
                                app_running_time,
-                               m_KeepAlivePeriod);
+                               m_KeepAlivePeriod,
+                               tmp_path);
 
         m_Result.SetRetCode(ret); 
         m_Result.Send(context.GetOStream());
@@ -266,11 +289,14 @@ private:
     int m_MaxAppRunningTime;
     int m_KeepAlivePeriod;
     bool m_FailOnNonZeroExit;
+    bool m_RunInSeparateDir;
+    string m_TempDir;
 };
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
     : m_Factory(context.GetConfig()), m_Request(m_Factory), m_Result(m_Factory),
-      m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), m_FailOnNonZeroExit(false)
+      m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), m_FailOnNonZeroExit(false),
+      m_RunInSeparateDir(false)
 {
     const IRegistry& reg = context.GetConfig();
 
@@ -284,8 +310,28 @@ CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
         reg.GetBool("remote_app", "fail_on_non_zero_exit", false, 0, 
                     CNcbiRegistry::eReturn);
 
+    m_RunInSeparateDir =
+        reg.GetBool("remote_app", "run_in_separate_dir", false, 0, 
+                    CNcbiRegistry::eReturn);
+
+    if (m_RunInSeparateDir) {
+        m_TempDir = reg.GetString("remote_app", "tmp_path", "." );
+        if (!CDirEntry::IsAbsolutePath(m_TempDir)) {
+            string tmp = CDir::GetCwd() 
+                + CDirEntry::GetPathSeparator() 
+                + m_TempDir;
+            m_TempDir = CDirEntry::NormalizePath(tmp);
+        }
+    }
 
     m_AppPath = reg.GetString("remote_app", "app_path", "" );
+    if (!CDirEntry::IsAbsolutePath(m_AppPath)) {
+        string tmp = CDir::GetCwd() 
+            + CDirEntry::GetPathSeparator() 
+            + m_AppPath;
+        m_AppPath = CDirEntry::NormalizePath(tmp);
+    }
+
     CFile file(m_AppPath);
     if (!file.Exists())
         NCBI_THROW(CException, eInvalid, 
@@ -331,6 +377,10 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/05/23 16:59:32  didenko
+ * Added ability to run a remote application from a separate directory
+ * for each job
+ *
  * Revision 1.15  2006/05/22 18:11:43  didenko
  * Added an option to fail a job if a remote app returns non zore code
  *
