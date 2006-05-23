@@ -100,7 +100,9 @@ public:
     CPipeHandle();
     ~CPipeHandle();
     EIO_Status Open(const string& cmd, const vector<string>& args,
-                    CPipe::TCreateFlags create_flags);
+                    CPipe::TCreateFlags create_flags,
+                    const char*         current_dir,
+                    const char* const   env[]);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
     EIO_Status CloseHandle (CPipe::EChildIOHandle handle);
     EIO_Status Read(void* buf, size_t count, size_t* n_read,
@@ -161,7 +163,9 @@ CPipeHandle::~CPipeHandle()
 
 EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
-                             CPipe::TCreateFlags   create_flags)
+                             CPipe::TCreateFlags   create_flags,
+                             const char*           current_dir,
+                             const char* const     env[])
 {
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
@@ -276,6 +280,31 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             cmd_line += *iter;
         }
 
+        // Convert environment array to block form
+        AutoPtr<char, ArrayDeleter<char> > env_block;
+        if ( env ) {
+            // Count block size.
+            // It should have one zero byte at least.
+            size_t size = 1; 
+            int count = 0;
+            while ( env[count] ) {
+                size += strlen(env[count++]) + 1 /*zero byte*/;
+            }
+            // Allocate memory
+            char* block = new char[size];
+            if ( !block )
+                NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+            env_block.reset(block);
+
+            // Copy environment strings
+            for (int i=0; i<count; i++) {
+                size_t n = strlen(env[i]) + 1;
+                memcpy(block, env[i], n);
+                block += n;
+            }
+            *block = '\0';
+        }
+
         // Create child process
         PROCESS_INFORMATION pinfo;
         STARTUPINFO sinfo;
@@ -286,7 +315,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         if ( !CreateProcess(NULL,
                             const_cast<char*> (cmd_line.c_str()),
                             NULL, NULL, TRUE, 0,
-                            NULL, NULL, &sinfo, &pinfo) ) {
+                            env_block.get(), current_dir, &sinfo, &pinfo) ) {
             throw "CreateProcess() for \"" + cmd_line + "\" failed";
         }
         ::CloseHandle(pinfo.hThread);
@@ -701,8 +730,11 @@ class CPipeHandle
 public:
     CPipeHandle();
     ~CPipeHandle();
-    EIO_Status Open(const string& cmd, const vector<string>& args,
-                    CPipe::TCreateFlags create_flags);
+    EIO_Status Open(const string&         cmd,
+                    const vector<string>& args,
+                    CPipe::TCreateFlags   create_flags,
+                    const char*           current_dir,
+                    const char* const     env[]);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
     EIO_Status CloseHandle(CPipe::EChildIOHandle handle);
     EIO_Status Read(void* buf, size_t count, size_t* read,
@@ -766,9 +798,119 @@ void s_Exit(int status, int fd)
 }
 
 
+// Emulate non-existent function execvpe().
+// On success, execve() does not return, on error -1 is returned,
+// and errno is set appropriately.
+
+static const char* kShell = "/bin/sh";
+static const char* kPathDefault = ":/bin:/usr/bin";
+
+static int s_ExecShell(const char *file, char *const argv[], char *const envp[])
+{
+    // Count number of arguments
+    int i;
+    for (i = 0; argv[i]; i++);
+    i++; // copy last zero element also
+    
+    // Construct an argument list for the shell.
+    // Not all compilers support next construction:
+    //   const char* args[i + 1];
+    const char **args = new const char*[i+1];
+    AutoPtr<const char*,  ArrayDeleter<const char*> > args_ptr(args);
+
+    args[0] = kShell;
+    args[1] = file;
+    for (; i > 1; i--) {
+        args[i] = argv[i - 1];
+    }
+    // Execute the shell
+    return execve(kShell, (char**)args, envp);
+}
+
+
+static int s_ExecVPE(const char *file, char *const argv[], char *const envp[])
+{
+    // If file name is not specified
+    if ( !file  ||  *file == '\0') {
+        errno = ENOENT;
+        return -1;
+    }
+    // If the file name contains path
+    if ( strchr(file, '/') ) {
+        execve(file, argv, envp);
+        if (errno == ENOEXEC) {
+            return s_ExecShell(file, argv, envp);
+        }
+        return -1;
+    }
+    // Get PATH environment variable   
+    const char *path = getenv("PATH");
+    if ( !path ) {
+        path = kPathDefault;
+    }
+    size_t file_len = strlen(file) + 1 /* '\0' */;
+    size_t buf_len = strlen(path) + file_len + 1 /* '/' */;
+    char* buf = new char[buf_len];
+    if ( !buf ) {
+        NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+    }
+    AutoPtr<char, ArrayDeleter<char> > buf_ptr(buf);
+
+    bool eacces_err = false;
+    const char* next = path;
+    while (*next) {
+        next = strchr(path,':');
+        if ( !next ) {
+            // Last part of the PATH environment variable
+            next = path + strlen(path);
+        }
+        size_t len = next - path;
+        if ( len ) {
+            // Copy directory name into the buffer
+            memmove(buf, path, next - path);
+        } else {
+            // Two colons side by side -- current directory
+            buf[0]='.';
+            len = 1;
+        }
+        // Add slash and file name
+        if (buf[len-1] != '/') {
+            buf[len++] = '/';
+        }
+        memcpy(buf + len, file, file_len);
+        path = next + 1;
+
+        // Try to execute file with generated name
+        execve(buf, argv, envp);
+        if (errno == ENOEXEC) {
+            return s_ExecShell(buf, argv, envp);
+        }
+        switch (errno) {
+        case EACCES:
+            // Permission denied. Memorize this thing and try next path.
+            eacces_err = true;
+        case ENOENT:
+        case ENOTDIR:
+            // Try next path directory
+            break;
+        default:
+            // We found an executable file, but cannot execute it
+            return -1;
+        }
+    }
+    if ( eacces_err ) {
+        errno = EACCES;
+    }
+    return -1;
+}
+
+
 EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
-                             CPipe::TCreateFlags   create_flags)
+                             CPipe::TCreateFlags   create_flags,
+                             const char*           current_dir,
+                             const char* const     env[])
+
 {
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
@@ -892,8 +1034,19 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             x_args[0] = cmd.c_str();
             x_args[cnt + 1] = 0;
 
+            // Change current working wirectory if specified
+            if (current_dir) {
+                chdir(current_dir);
+            }
             // Execute the program
-            status = execvp(cmd.c_str(), const_cast<char**> (x_args));
+            if ( env ) {
+                // Emulate non-existent execvpe()
+                status = s_ExecVPE(cmd.c_str(),
+                                   const_cast<char**> (x_args),
+                                   const_cast<char**>(env));
+            } else {
+                status = execvp(cmd.c_str(), const_cast<char**> (x_args));
+            }
             s_Exit(status, status_pipe[1]);
         }
 
@@ -921,14 +1074,15 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Retry if either blocked or interrupted
 
         // Try to read errno from forked process
-        int errcode, n;
+        int errcode;
+        size_t n;
         while ((n = read(status_pipe[0], &errcode, sizeof(errcode))) < 0) {
             if (errno != EINTR)
                 break;
         }
         if (n > 0) {
             // Child could not run -- rip it and exit with error
-            errno = (size_t)n >= sizeof(errcode) ? errcode : 0;
+            errno = n >= sizeof(errcode) ? errcode : 0;
             waitpid(m_Pid, 0, 0);
             string errmsg = "Failed to execute programm";
             if (errno) {
@@ -1350,7 +1504,9 @@ CPipe::CPipe(void)
 
 
 CPipe::CPipe(const string& cmd, const vector<string>& args,
-             TCreateFlags create_flags)
+             TCreateFlags create_flags,
+             const char*  current_dir,
+             const char*  const env[])
     : m_PipeHandle(0), m_ReadHandle(eStdOut),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
@@ -1362,7 +1518,7 @@ CPipe::CPipe(const string& cmd, const vector<string>& args,
         NCBI_THROW(CPipeException, eInit,
                    "Cannot create OS-specific pipe handle");
     }
-    EIO_Status status = Open(cmd, args, create_flags);
+    EIO_Status status = Open(cmd, args, create_flags, current_dir, env);
     if (status != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen, "CPipe::Open() failed");
     }
@@ -1379,14 +1535,17 @@ CPipe::~CPipe(void)
 
 
 EIO_Status CPipe::Open(const string& cmd, const vector<string>& args,
-                       TCreateFlags create_flags)
+                       TCreateFlags create_flags,
+                       const char*  current_dir,
+                       const char*  const env[])
 {
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
     }
     assert(CPipe::fStdIn_Close);
 
-    EIO_Status status = m_PipeHandle->Open(cmd, args, create_flags);
+    EIO_Status status = m_PipeHandle->Open(cmd, args, create_flags,
+                                           current_dir, env);
     if (status == eIO_Success) {
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
@@ -1565,6 +1724,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/05/23 11:16:05  ivanov
+ * Added possibility to specify a current working directory and
+ * environment for created child processes.
+ *
  * Revision 1.57  2006/03/13 11:44:47  ivanov
  * [Unix] CPipeHandle::Open() - using additional pipe to check if
  * the child has actually started.
@@ -1721,7 +1884,7 @@ END_NCBI_SCOPE
  * Formal comments rearrangement
  *
  * Revision 1.10  2003/03/03 14:47:20  dicuccio
- * Remplemented CPipe using private platform specific classes.  Remplemented
+ * Remplemented CPipe using private platform specific classes.  Reimplemented
  * Win32 pipes using CreatePipe() / CreateProcess() - enabled CPipe in windows
  * subsystem
  *
