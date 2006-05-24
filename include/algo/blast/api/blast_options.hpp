@@ -75,7 +75,10 @@ class CBlastOptionsLocal;
 class CBlastOptionsRemote;
 class CBlastOptionsMemento;
 
-/// Encapsulates ALL the BLAST algorithm's options.
+/// Encapsulates ALL the BLAST algorithm's options. To ensure that the default
+/// options are set properly, it is recommended that this object is not created
+/// directly by the calling code, instead, it should be obtained from calling
+/// CBlastOptionsHandle::[GS]etOptions().
 /// @note This class provides accessors and mutators for all BLAST options 
 /// without preventing the caller from setting inconsistent options.
 class NCBI_XBLAST_EXPORT CBlastOptions : public CObject
@@ -424,7 +427,9 @@ END_NCBI_SCOPE
   The purpose of the C++ BLAST options APIs is to provide convenient access to
   the various algorithm options for a variety of users of BLAST as well as a 
   means to validating the options, while isolating them from the details of 
-  the CORE BLAST implementation.
+  the CORE BLAST implementation. Please note that these objects are
+  instantiated with the default options set and these defaults can be queried 
+  via the corresponding accessor method(s).
 
   @section _basic_opts_usage Basic usage
   For users who only want to perform a single BLAST searches using default 
@@ -592,6 +597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.118  2006/05/24 20:08:32  camacho
+* Add comments about default options being set upon creation of the objects
+*
 * Revision 1.117  2006/05/24 17:12:19  camacho
 * add overloaded SetEffectiveSearchSpace
 *

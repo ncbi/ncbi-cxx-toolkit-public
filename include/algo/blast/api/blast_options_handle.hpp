@@ -81,8 +81,9 @@ public:
     /// @sa CBlastOptions class
     typedef CBlastOptions::EAPILocality EAPILocality;
     
-    /// Creates an options handle object for the requested program, throws an
-    /// exception if an unsupported program is requested
+    /// Creates an options handle object configured with default options for 
+    /// the requested program, throws an exception if an unsupported program 
+    /// is requested
     /// @param program BLAST program [in]
     /// @param locality Local processing (default) or remote processing.
     /// @return requested options handle with default values set
@@ -288,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/05/24 20:08:32  camacho
+ * Add comments about default options being set upon creation of the objects
+ *
  * Revision 1.25  2006/05/08 16:48:22  bealer
  * - Defaults mode / eBoth changes.
  *
