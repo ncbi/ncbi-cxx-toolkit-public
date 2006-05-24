@@ -1117,22 +1117,39 @@ BLASTGetTranslation(const Uint1* seq, const Uint1* seq_rev,
 }
 #endif
 
-string
-FindMatrixPath(const char* matrix_name, bool is_prot)
+/** Get the path to the matrix, without the actual matrix name.
+ * @param full_path including the matrix name, this string will be modified [in]
+ * @param matrix_name name of matrix (e.g., BLOSUM62) [in]
+ * @return char* to matrix path
+ */
+char* s_GetCStringOfMatrixPath(string& full_path, const string& matrix_name)
 {
-    string retval;
-    string full_path;       // full path to matrix file
+        // The following line erases the actual name of the matrix from the string.
+        full_path.erase(full_path.size() - matrix_name.size());
+        char* matrix_path = strdup(full_path.c_str());
+        return matrix_path;
+}
 
+int FindMatrixOrPath(const char* matrix_name, bool is_prot,
+                     char** matrix_path)
+{
     if (!matrix_name)
-        return retval;
+        return 1;
+
+    *matrix_path = NULL;
+    if (BlastScoreBlkGetCompiledInMatrix(matrix_name))
+        return 0;
 
     string mtx(matrix_name);
     mtx = NStr::ToUpper(mtx);
 
     // Look for matrix file in local directory
-    full_path = mtx;
+    string full_path = mtx;       // full path to matrix file
     if (CFile(full_path).Exists()) {
-        return retval;
+        string cwd = CDir::GetCwd();
+        cwd += CFile::GetPathSeparator();
+        *matrix_path = strdup(cwd.c_str());
+        return 0;
     }
     
     string path("");
@@ -1146,88 +1163,84 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
     
     full_path = CFile::MakePath(path, mtx);
     if (CFile(full_path).Exists()) {
-        retval = full_path;
-        retval.erase(retval.size() - mtx.size());
-        return retval;
+        *matrix_path = s_GetCStringOfMatrixPath(full_path, mtx);
+        return 0;
     }
 
     // Try appending "aa" or "nt" 
     full_path = path;
-    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += CFile::GetPathSeparator();
     full_path += is_prot ? "aa" : "nt";
-    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += CFile::GetPathSeparator();
     full_path += mtx;
     if (CFile(full_path).Exists()) {
-        retval = full_path;
-        retval.erase(retval.size() - mtx.size());
-        return retval;
+        *matrix_path = s_GetCStringOfMatrixPath(full_path, mtx);
+        return 0;
     }
 
     // Try using local "data" directory
     full_path = "data";
-    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += CFile::GetPathSeparator();
     full_path += mtx;
     if (CFile(full_path).Exists()) {
-        retval = full_path;
-        retval.erase(retval.size() - mtx.size());
-        return retval;
+        *matrix_path = s_GetCStringOfMatrixPath(full_path, mtx);
+        return 0;
     }
 
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (!app)
-        return retval;
+    {
+        *matrix_path = NULL;
+        return 1;
+    }
 
     const string& blastmat_env = app->GetEnvironment().Get("BLASTMAT");
     if (CFile(blastmat_env).Exists()) {
         full_path = blastmat_env;
-        full_path += CFile::AddTrailingPathSeparator(full_path);
+        full_path += CFile::GetPathSeparator();
         full_path += is_prot ? "aa" : "nt";
-        full_path += CFile::AddTrailingPathSeparator(full_path);
+        full_path += CFile::GetPathSeparator();
         full_path += mtx;
         if (CFile(full_path).Exists()) {
-            retval = full_path;
-            retval.erase(retval.size() - mtx.size());
-            return retval;
+            *matrix_path = s_GetCStringOfMatrixPath(full_path, mtx);
+            return 0;
         }
     }
 
 #ifdef OS_UNIX
     full_path = BLASTMAT_DIR;
-    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += CFile::GetPathSeparator();
     full_path += is_prot ? "aa" : "nt";
-    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += CFile::GetPathSeparator();
     full_path += mtx;
     if (CFile(full_path).Exists()) {
-        retval = full_path;
-        retval.erase(retval.size() - mtx.size());
-        return retval;
+        *matrix_path = s_GetCStringOfMatrixPath(full_path, mtx);
+        return 0;
     }
 #endif
 
     // Try again without the "aa" or "nt"
     if (CFile(blastmat_env).Exists()) {
         full_path = blastmat_env;
-        full_path += CFile::AddTrailingPathSeparator(full_path);
+        full_path += CFile::GetPathSeparator();
         full_path += mtx;
         if (CFile(full_path).Exists()) {
-            retval = full_path;
-            retval.erase(retval.size() - mtx.size());
-            return retval;
+            *matrix_path = s_GetCStringOfMatrixPath(full_path, mtx);
+            return 0;
         }
     }
 
 #ifdef OS_UNIX
     full_path = BLASTMAT_DIR;
-    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += CFile::GetPathSeparator();
     full_path += mtx;
     if (CFile(full_path).Exists()) {
-        retval = full_path;
-        retval.erase(retval.size() - mtx.size());
-        return retval;
+        *matrix_path = s_GetCStringOfMatrixPath(full_path, mtx);
+        return 0;
     }
 #endif
 
-    return retval;
+    return 1;
 }
 
 /// Checks if a BLAST database exists at a given file path: looks for 
@@ -1267,7 +1280,7 @@ FindBlastDbPath(const char* dbname, bool is_prot)
         const string& blastdb_env = app->GetEnvironment().Get("BLASTDB");
         if (CFile(blastdb_env).Exists()) {
             full_path = blastdb_env;
-            full_path += CFile::AddTrailingPathSeparator(full_path);
+            full_path += CFile::GetPathSeparator();
             full_path += database;
             if (BlastDbFileExists(full_path, is_prot)) {
                 retval = full_path;
@@ -1570,6 +1583,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.120  2006/05/24 17:20:32  madden
+ * Replace FindMatrixPath with FindMatrixOrPath, fix for usage of AddTrailingPathSeparator
+ *
  * Revision 1.119  2006/05/22 19:30:18  camacho
  * Eliminate compiler warnings
  *
