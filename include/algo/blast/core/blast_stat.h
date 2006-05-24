@@ -38,6 +38,7 @@
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_message.h>
+#include <util/tables/raw_scoremat.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -670,6 +671,15 @@ Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resPro
 */
 NCBI_XBLAST_EXPORT
 Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp);
+
+/** Returns a pointer to the static compiled in version of the 
+ * matrix.  If name is NULL or the matrix is not compiled in
+ * NULL is returned.
+ * @param name matrix name [in]
+ * @return pointer to matrix or NULL if not supported.
+ */
+NCBI_XBLAST_EXPORT 
+SNCBIPackedScoreMatrix* BlastScoreBlkGetCompiledInMatrix(const char* name);
 
 #ifdef __cplusplus
 }
