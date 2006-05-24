@@ -275,7 +275,7 @@ CSetupFactory::CreateBlastSeqSrc(const CSearchDatabase& db)
 }
 
 BlastSeqSrc*
-CSetupFactory::CreateBlastSeqSrc(ncbi::CSeqDB * db)
+CSetupFactory::CreateBlastSeqSrc(CSeqDB * db)
 {
     BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db);
     char* error_str = BlastSeqSrcGetInitError(retval);
