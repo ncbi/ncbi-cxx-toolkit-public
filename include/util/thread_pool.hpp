@@ -725,7 +725,6 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
     // Having the mutex, we can safely drop "volatile"
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
     TItemHandle handle(*q.begin());
-    handle->x_SetStatus(CQueueItem::eActive);
     q.erase(q.begin());
     if ( ! q.empty() ) {
         m_GetSem.Post();
@@ -736,6 +735,9 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
     // to insert multiple objects atomically.
     m_PutSem.TryWait();
     m_PutSem.Post();
+
+    guard.Release(); // avoid possible deadlocks from x_SetStatus
+    handle->x_SetStatus(CQueueItem::eActive);
     return handle;
 }
 
@@ -786,16 +788,21 @@ void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
     if (handle->GetStatus() != CQueueItem::ePending) {
         return;
     }
-    CMutexGuard guard(m_Mutex);
-    // Having the mutex, we can safely drop "volatile"
-    TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
-    typename TRealQueue::iterator it = q.find(handle);
-    // These sanity checks protect against race conditions and
-    // accidental use of handles from other queues.
-    if (it != q.end()  &&  *it == handle) {
-        q.erase(it);
-        handle->x_SetStatus(CQueueItem::eWithdrawn);
-    }
+    {{
+        CMutexGuard guard(m_Mutex);
+        // Having the mutex, we can safely drop "volatile"
+        TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
+        typename TRealQueue::iterator it = q.find(handle);
+        // These sanity checks protect against race conditions and
+        // accidental use of handles from other queues.
+        if (it != q.end()  &&  *it == handle) {
+            q.erase(it);
+        } else {
+            return;
+        }
+    }}
+    // run outside the guard to avoid possible deadlocks from x_SetStatus
+    handle->x_SetStatus(CQueueItem::eWithdrawn);
 }
 
 
@@ -1006,6 +1013,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2006/05/24 15:08:12  ucko
+* CBlockingQueue<>::{GetHandle,Withdraw}: take care not to call
+* CQueueItem::x_SetStatus with m_Mutex locked, as that can lead to
+* deadlocks in some circumstances.
+*
 * Revision 1.38  2006/05/01 17:29:37  ucko
 * CThreadInPool<>::Main: narrow handle's scope to avoid keeping any
 * associated resources around longer than necessary.
