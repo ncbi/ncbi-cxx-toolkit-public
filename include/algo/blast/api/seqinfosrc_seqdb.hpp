@@ -85,10 +85,15 @@ private:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/05/24 21:01:54  camacho
+ * Added missing closing doxygen brackets
+ *
  * Revision 1.10  2006/03/07 16:07:39  bealer
  * - Add HasGiList() to IBlastSeqInfoSrc and classes derived thereof.
  *

@@ -91,4 +91,6 @@ private:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 #endif  /* ALGO_BLAST_API__SEQINFOSRC_BIOSEQ_HPP */
