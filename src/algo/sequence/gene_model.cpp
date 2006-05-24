@@ -347,6 +347,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     /// location
                     CSeqTranslator::Translate
                         (*new_loc, handle, inst.SetSeq_data().SetIupacaa().Set(),
+                         NULL /* default genetic code */,
                          false /* trim at first stop codon */);
                     inst.SetLength(inst.GetSeq_data().GetIupacaa().Get().size());
 
@@ -384,6 +385,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/05/24 14:45:02  ucko
+ * Fix usage of CSeqTranslator::Translate per GCC 2.95's legitimate complaints.
+ *
  * Revision 1.8  2006/05/18 13:21:37  dicuccio
  * Updated enum name - should be fDensegAsExon
  *
