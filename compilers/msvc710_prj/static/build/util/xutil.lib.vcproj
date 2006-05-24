@@ -227,7 +227,7 @@
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				OptimizeForProcessor="0"
+				OptimizeForProcessor="3"
 				AdditionalIncludeDirectories="..\..\..\..\..\include\"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;"
 				IgnoreStandardIncludePath="FALSE"
