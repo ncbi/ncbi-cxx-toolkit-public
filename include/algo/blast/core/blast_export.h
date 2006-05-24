@@ -54,7 +54,7 @@
 
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
 
-/*
+/**
  * NULL operations for other cases
  */
 
@@ -66,6 +66,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2006/05/24 21:03:14  camacho
+ * Minor doxygen fix
+ *
  * Revision 1.3  2005/02/01 21:25:23  camacho
  * Doxygen fixes
  *
