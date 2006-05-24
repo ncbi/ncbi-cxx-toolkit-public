@@ -1715,6 +1715,17 @@ CBlastOptions::SetEffectiveSearchSpace(Int8 eff)
         m_Remote->SetValue(eBlastOpt_EffectiveSearchSpace, eff);
     }
 }
+void 
+CBlastOptions::SetEffectiveSearchSpace(const vector<Int8>& eff)
+{
+    if (m_Local) {
+        m_Local->SetEffectiveSearchSpace(eff);
+    }
+    if (m_Remote) {
+        x_Throwx("Error: GetEffectiveSearchSpace() for multiple search spaces "
+                 "not available.");
+    }
+}
 
 int 
 CBlastOptions::GetDbGeneticCode() const
@@ -1927,6 +1938,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2006/05/24 17:11:33  camacho
+* add overloaded SetEffectiveSearchSpace
+*
 * Revision 1.79  2006/05/08 16:48:02  bealer
 * - Defaults mode / eBoth changes.
 *

@@ -298,6 +298,7 @@ public:
 
     Int8 GetEffectiveSearchSpace() const;
     void SetEffectiveSearchSpace(Int8 eff);
+    void SetEffectiveSearchSpace(const vector<Int8>& eff);
 
     int GetDbGeneticCode() const;
     
@@ -591,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.117  2006/05/24 17:12:19  camacho
+* add overloaded SetEffectiveSearchSpace
+*
 * Revision 1.116  2006/05/08 16:48:22  bealer
 * - Defaults mode / eBoth changes.
 *
