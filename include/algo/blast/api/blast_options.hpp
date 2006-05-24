@@ -421,6 +421,8 @@ private:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /**
   @page blast_opts_cookbook C++ BLAST Options Cookbook
 
@@ -591,12 +593,14 @@ END_NCBI_SCOPE
 
   @author Christiam Camacho <camacho@ncbi.nlm.nih.gov>
  */
-/* @} */
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.119  2006/05/24 21:00:40  camacho
+* Moved doxygen documetation
+*
 * Revision 1.118  2006/05/24 20:08:32  camacho
 * Add comments about default options being set upon creation of the objects
 *
