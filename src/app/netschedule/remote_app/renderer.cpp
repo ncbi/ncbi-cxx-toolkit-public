@@ -184,8 +184,8 @@ void CNSInfoRenderer::RenderJobByStatus(CNetScheduleClient::EJobStatus status,
                                         TFlags flags)
 {
     ITagWriter::TAttributes attrs;
-    attrs.push_back(make_pair("Status", 
-                              CNetScheduleClient::StatusToString(status) ));
+    attrs.push_back(ITagWriter::TAttribute
+                    ("Status", CNetScheduleClient::StatusToString(status) ));
 
     STagGuard guard(m_Writer,"Jobs", attrs);    
     CNSJobListRenderAction action(*this, flags & ~eStatus);
@@ -202,15 +202,17 @@ void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
 {   
     CNetScheduleClient::EJobStatus status = info.GetStatus();
     ITagWriter::TAttributes attrs;
-    attrs.push_back(make_pair("Id", info.GetId()));
+    attrs.push_back(ITagWriter::TAttribute("Id", info.GetId()));
     if (flags & eStatus)
-        attrs.push_back(make_pair("Status", 
-                                  CNetScheduleClient::StatusToString(status) ));
+        attrs.push_back(ITagWriter::TAttribute
+                        ("Status", 
+                         CNetScheduleClient::StatusToString(status) ));
 
     if (flags & eRetCode && (status == CNetScheduleClient::eDone ||
                              status == CNetScheduleClient::eFailed) )
-        attrs.push_back(make_pair("RetCode", 
-                                  NStr::IntToString(info.GetRetCode()) ));
+        attrs.push_back(ITagWriter::TAttribute
+                        ("RetCode", 
+                         NStr::IntToString(info.GetRetCode()) ));
     
 
     if ( flags < eCmdLine) {
@@ -249,7 +251,7 @@ void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
 void CNSInfoRenderer::RenderBlob(const string& blob_id)
 {
     ITagWriter::TAttributes attrs;
-    attrs.push_back(make_pair("Id", blob_id));
+    attrs.push_back(ITagWriter::TAttribute("Id", blob_id));
     size_t bsize = 0;
     CNcbiIstream& is =  m_Collector.GetBlobContent(blob_id, &bsize);
     if (!is.good())
@@ -288,8 +290,9 @@ void CNSInfoRenderer::x_RenderStream(const string& name, CNcbiIstream& is)
 void CNSInfoRenderer::RenderWNode(const CWNodeInfo& info, TFlags flags)
 {
     ITagWriter::TAttributes attrs;
-    attrs.push_back(make_pair("Host", info.GetHost()));
-    attrs.push_back(make_pair("Port", NStr::IntToString(info.GetPort())));
+    attrs.push_back(ITagWriter::TAttribute("Host", info.GetHost()));
+    attrs.push_back(ITagWriter::TAttribute
+                    ("Port", NStr::IntToString(info.GetPort())));
     if (flags <= eMinimal) {
         m_Writer.WriteTag("WNode", attrs);
         return;
@@ -339,6 +342,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/24 01:03:54  ucko
+ * Explicitly use the new ITagWriter::TAttribute typedef to fix compilation
+ * on WorkShop, whose STL doesn't support pair<> interconversion.
+ *
  * Revision 1.3  2006/05/23 14:05:36  didenko
  * Added wnlist, shutdown_nodes and kill_nodes commands
  *
