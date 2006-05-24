@@ -140,7 +140,7 @@ public:
     ///   Pointer to vector with environment variables which will be used
     ///   instead of current environment. Last value in an array must be NULL.
     /// @sa
-    ///   Open()
+    ///   Open
     CPipe(const string&         cmd,
           const vector<string>& args,
           TCreateFlags          create_flags = 0,
@@ -160,6 +160,11 @@ public:
     ///
     /// @param cmd
     ///   Command name to execute.
+    ///   Be aware if the command contains relative path and 'current_dir'
+    ///   parameter is specified. Because on moment of execution the current
+    ///   directory is undefined, and can be still the same as in the parent
+    ///   process or already be changed to 'current_dir'. So, using absolute
+    ///   path is recommended in this case.
     /// @param args
     ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param create_flags
@@ -175,7 +180,7 @@ public:
     /// @return 
     ///   Completion status.
     /// @sa
-    ///   Read(), Write(), Close()
+    ///   Read, Write, Close
     EIO_Status Open(const string&         cmd,
                     const vector<string>& args,
                     TCreateFlags          create_flags = 0,
@@ -210,7 +215,7 @@ public:
     ///   Otherwise   - an error was detected;
     /// @sa
     ///   Description for flags fKeepOnClose, fCloseOnClose, fKillOnClose.
-    ///   Open()
+    ///   Open
     EIO_Status Close(int* exitcode = 0);
 
     /// Close specified pipe handle.
@@ -220,7 +225,7 @@ public:
     /// @return
     ///   Completion status.
     /// @sa
-    ///   Close()
+    ///   Close
     EIO_Status CloseHandle(EChildIOHandle handle);
 
     /// Read data from pipe. 
@@ -238,7 +243,7 @@ public:
     ///   conditions that may include EOF/error).
     ///   Return other (error) status only if no data at all could be obtained.
     /// @sa
-    ///   Write(), SetTimeout()
+    ///   Write, SetTimeout
     EIO_Status Read(void*          buf, 
                     size_t         count, 
                     size_t*        read = 0,
@@ -252,7 +257,7 @@ public:
     ///   Return eIO_Success if new handler is eStdOut or eStdErr.
     ///   Return eIO_Unknown otherwise.
     /// @sa
-    ///   Read()
+    ///   Read
     EIO_Status SetReadHandle(EChildIOHandle from_handle);
 
     /// Write data to pipe. 
@@ -267,7 +272,7 @@ public:
     ///   Return eIO_Success if some data were written.
     ///   Return other (error) code only if no data at all could be written.
     /// @sa
-    ///   Read(), SetTimeout()
+    ///   Read, SetTimeout
     EIO_Status Write(const void* buf,
                      size_t      count,
                      size_t*     written = 0);
@@ -306,7 +311,7 @@ public:
     ///   eIO_Timeout    - if the timeout was on last I/O;
     ///   eIO_Success    - otherwise.
     /// @sa
-    ///   Read(), Write()
+    ///   Read, Write
     EIO_Status Status(EIO_Event direction) const;
 
     /// Specify timeout for the pipe I/O.
@@ -321,7 +326,7 @@ public:
     /// @return
     ///   Completion status.
     /// @sa
-    ///   Read(), Write(), Close(), GetTimeout()
+    ///   Read, Write, Close, GetTimeout
     EIO_Status SetTimeout(EIO_Event event, const STimeout* timeout);
 
     /// Get pipe I/O timeout.
@@ -334,7 +339,7 @@ public:
     ///   (and correct) structure in memory at least until the pipe is
     ///   closed or SetTimeout() is called for this pipe.
     /// @sa
-    ///   SetTimeout()
+    ///   SetTimeout
     const STimeout* GetTimeout(EIO_Event event) const;
 
     /// Get the process handle for the piped child.
@@ -343,7 +348,7 @@ public:
     ///   Returned value greater than 0 is a child process handle.
     ///   Return 0 if child process is not running.
     /// @sa
-    ///   Open(), Close(), CProcess
+    ///   Open, Close, CProcess class
     TProcessHandle GetProcessHandle(void) const;
 
 protected:
@@ -413,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/05/24 14:14:23  ivanov
+ * CPipe::Open - added more comments
+ *
  * Revision 1.29  2006/05/23 15:39:52  ivanov
  * Set default value for current directory to kEmptyStr
  *
