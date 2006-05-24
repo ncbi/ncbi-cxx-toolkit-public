@@ -420,6 +420,11 @@ const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
     diag.m_Severity = eDiag_Trace;
     return diag;
 }
+inline
+const CNcbiDiag& Message(const CNcbiDiag& diag)  {
+    diag.m_PostFlags |= eDPF_IsMessage;
+    return diag;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -427,8 +432,10 @@ const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
 
 inline
 void CDiagBuffer::Reset(const CNcbiDiag& diag) {
-    if (&diag == m_Diag)
+    if (&diag == m_Diag) {
         m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
+        diag.ResetIsMessageFlag();
+    }
 }
 
 inline
@@ -640,6 +647,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/05/24 18:52:30  grichenk
+ * Added Message manipulator
+ *
  * Revision 1.57  2006/04/17 15:37:43  grichenk
  * Added code to parse a string back into SDiagMessage
  *

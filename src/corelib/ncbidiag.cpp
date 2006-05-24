@@ -699,20 +699,20 @@ void CDiagBuffer::Flush(void)
             size = dest.length();
         }
         SDiagMessage mess(sev, message, size,
-                            m_Diag->GetFile(),
-                            m_Diag->GetLine(),
-                            flags,
-                            NULL,
-                            m_Diag->GetErrorCode(),
-                            m_Diag->GetErrorSubCode(),
-                            NULL,
-                            m_Diag->GetModule(),
-                            m_Diag->GetClass(),
-                            m_Diag->GetFunction(),
-                            m_PID, m_TID,
-                            GetProcessPostNumber(true),
-                            ++m_ThreadPostCount,
-                            GetFastCGIIteration());
+                          m_Diag->GetFile(),
+                          m_Diag->GetLine(),
+                          flags,
+                          NULL,
+                          m_Diag->GetErrorCode(),
+                          m_Diag->GetErrorSubCode(),
+                          NULL,
+                          m_Diag->GetModule(),
+                          m_Diag->GetClass(),
+                          m_Diag->GetFunction(),
+                          m_PID, m_TID,
+                          GetProcessPostNumber(true),
+                          ++m_ThreadPostCount,
+                          GetFastCGIIteration());
         DiagHandler(mess);
     }
 
@@ -1078,7 +1078,12 @@ SDiagMessage::SDiagMessage(const string& message)
     // Severity
     if (p_col < p_sep  &&  next_char == ' ') {
         string severity = message.substr(pos, p_col - pos);
-        if ( CNcbiDiag::StrToSeverityLevel(severity.c_str(), m_Severity) ) {
+        if ( severity == "Message" ) {
+            m_Severity = eDiag_Info;
+            m_Flags |= eDPF_IsMessage;
+        }
+        if ( (m_Flags & eDPF_IsMessage) != 0  ||
+            CNcbiDiag::StrToSeverityLevel(severity.c_str(), m_Severity) ) {
             pos = p_col + 2;
             p_col = message.find(':', pos);
             next_char = p_col + 1 < len ? message[p_col + 1] : 0;
@@ -1268,8 +1273,14 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
 
     // <severity>:
     if (IsSetDiagPostFlag(eDPF_Severity, m_Flags)  &&
-        (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev)))
-        os << CNcbiDiag::SeverityName(m_Severity) << ": ";
+        (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev))) {
+        if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
+            os << "Message: ";
+        }
+        else {
+            os << CNcbiDiag::SeverityName(m_Severity) << ": ";
+        }
+    }
 
     // (<err_code>.<err_subcode>) or (err_text)
     if ((m_ErrCode  ||  m_ErrSubCode || m_ErrText)  &&
@@ -1453,8 +1464,14 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
 
     // <severity>:
     if (IsSetDiagPostFlag(eDPF_Severity, m_Flags)  &&
-        (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev)))
-        os << CNcbiDiag::SeverityName(m_Severity) << ": ";
+        (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev))) {
+        if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
+            os << "Message: ";
+        }
+        else {
+            os << CNcbiDiag::SeverityName(m_Severity) << ": ";
+        }
+    }
 
     // Class::Function
     bool print_location =
@@ -2631,6 +2648,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.117  2006/05/24 18:52:30  grichenk
+ * Added Message manipulator
+ *
  * Revision 1.116  2006/05/23 16:03:54  grichenk
  * Added NCBI_TROUBLE, NCBI_ASSERT, NCBI_VERIFY and _DEBUG_CODE
  *

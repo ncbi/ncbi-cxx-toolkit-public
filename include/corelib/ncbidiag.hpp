@@ -295,6 +295,7 @@ enum EDiagPostFlag {
     eDPF_OmitSeparator      = 0x800000, ///< No '---' separator before message
 
     eDPF_AppLog             = 0x1000000, ///< Post message to application log
+    eDPF_IsMessage          = 0x2000000, ///< Print "Message" severity name.
 
     /// Use global default flags (merge with).
     /// @sa SetDiagPostFlag(), UnsetDiagPostFlag(), IsSetDiagPostFlag()
@@ -600,6 +601,11 @@ public:
     /// message to TRACE
     friend const CNcbiDiag& Trace   (const CNcbiDiag& diag);
 
+    /// Set IsMessage flag to indicate that the current post is a message.
+    /// Do not flush current post or change the severity. The flag is reset
+    /// by the next Flush().
+    friend const CNcbiDiag& Message (const CNcbiDiag& diag);
+
     /// Get a common symbolic name for the severity levels.
     static const char* SeverityName(EDiagSev sev);
 
@@ -690,6 +696,9 @@ public:
     static void DiagValidate(const CDiagCompileInfo& info,
                              const char* expression,
                              const char* message);
+
+    /// Reset IsMessage flag.
+    void ResetIsMessageFlag(void) const { m_PostFlags &= ~eDPF_IsMessage; }
 
 private:
     enum EValChngFlags {
@@ -1489,6 +1498,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.107  2006/05/24 18:52:30  grichenk
+ * Added Message manipulator
+ *
  * Revision 1.106  2006/05/23 16:03:54  grichenk
  * Added NCBI_TROUBLE, NCBI_ASSERT, NCBI_VERIFY and _DEBUG_CODE
  *
