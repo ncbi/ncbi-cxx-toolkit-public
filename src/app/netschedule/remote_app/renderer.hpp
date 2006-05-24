@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 class ITagWriter
 {
 public:
-    typedef list<pair<string, string> > TAttributes;
+    typedef pair<string, string> TAttribute;
+    typedef list<TAttribute>     TAttributes;
 
     virtual ~ITagWriter() {}
 
@@ -171,6 +172,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/05/24 01:01:34  ucko
+ * Introduce an additional ITagWriter::TAttribute typedef for the sake of
+ * WorkShop, whose STL doesn't support pair<> interconversion.
+ *
  * Revision 1.3  2006/05/23 14:05:36  didenko
  * Added wnlist, shutdown_nodes and kill_nodes commands
  *
