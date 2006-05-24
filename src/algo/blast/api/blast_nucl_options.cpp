@@ -171,7 +171,7 @@ void
 CBlastNucleotideOptionsHandle::SetScoringOptionsDefaults()
 {
     SetMatrixName(NULL);
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), false).c_str());
+    SetMatrixPath(NULL);
     SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
     SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
     SetMatchReward(BLAST_REWARD);
@@ -188,7 +188,7 @@ void
 CBlastNucleotideOptionsHandle::SetMBScoringOptionsDefaults()
 {
     SetMatrixName(NULL);
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), false).c_str());
+    SetMatrixPath(NULL);
     SetGapOpeningCost(BLAST_GAP_OPEN_MEGABLAST);
     SetGapExtensionCost(BLAST_GAP_EXTN_MEGABLAST);
     SetMatchReward(BLAST_REWARD);
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/05/24 17:21:50  madden
+ * Replace FindMatrixPath with FindMatrixOrPath
+ *
  * Revision 1.27  2006/05/08 16:48:02  bealer
  * - Defaults mode / eBoth changes.
  *

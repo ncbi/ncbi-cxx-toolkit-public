@@ -406,7 +406,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "BlastScoringOptions");
     }
     BlastScoringOptionsSetMatrix(opts, matrix_name);
-    opts->matrix_path = strdup(FindMatrixPath(opts->matrix, true).c_str());
+    FindMatrixOrPath(opts->matrix, true, &opts->matrix_path); 
 
     // Setup the sequence block structure
     CBLAST_SequenceBlk query_blk;
@@ -612,6 +612,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2006/05/24 17:21:50  madden
+ * Replace FindMatrixPath with FindMatrixOrPath
+ *
  * Revision 1.45  2006/03/24 14:43:48  camacho
  * Doxygen fixes
  *

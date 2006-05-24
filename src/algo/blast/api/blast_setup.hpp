@@ -320,13 +320,19 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
                     const int nucl_length, const short frame, Uint1* translation);
 #endif
 
-/** Returns the path (including a trailing path separator) to the location
- * where the matrix can be found.
- * @param matrix_name matrix to search for
- * @param is_prot true if this is a protein matrix
- */
-string
-FindMatrixPath(const char* matrix_name, bool is_prot);
+/** Look for matrix among the compiled in matrices in tables library and
+* if not found, attempt to find it in the standard locations (current 
+* working directory, .ncbirc's Data section, etc).
+* @param matrix_name matrix to search for [in]
+* @param is_prot true if this is a protein matrix [in]
+* @param matrix_path pointer to where the matrix was found (includes 
+*     path trailing separator), iff it was not found in the tables library. If 
+*     the matrix wasn't found at all, NULL is returned. [in|out]
+* @return 0 if the matrix was found either in memory or in the file 
+*     system, 1 otherwise
+*/
+int FindMatrixOrPath(const char* matrix_name, bool is_prot,
+                     char** matrix_path);
 
 /** Returns the path (including a trailing path separator) to the location
  * where the BLAST database can be found.
@@ -483,6 +489,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2006/05/24 17:20:50  madden
+* Replace FindMatrixPath with FindMatrixOrPath
+*
 * Revision 1.61  2006/05/12 18:00:08  camacho
 * Minor
 *

@@ -91,7 +91,11 @@ void
 CBlastProteinOptionsHandle::SetScoringOptionsDefaults()
 {
     SetMatrixName(BLAST_DEFAULT_MATRIX); // BLOSUM62
-    SetMatrixPath(FindMatrixPath(BLAST_DEFAULT_MATRIX, true).c_str());
+    char* matrix_path = NULL; 
+    FindMatrixOrPath(BLAST_DEFAULT_MATRIX, true, &matrix_path);
+    if (matrix_path)
+       SetMatrixPath(matrix_path);
+    sfree(matrix_path);
     SetGapOpeningCost(BLAST_GAP_OPEN_PROT);
     SetGapExtensionCost(BLAST_GAP_EXTN_PROT);
     SetGappedMode();
@@ -141,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/05/24 17:21:50  madden
+ * Replace FindMatrixPath with FindMatrixOrPath
+ *
  * Revision 1.22  2006/01/23 16:37:11  papadopo
  * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
  *
