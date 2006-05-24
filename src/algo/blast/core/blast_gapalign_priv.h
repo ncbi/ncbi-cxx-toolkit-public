@@ -110,11 +110,6 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
 #define MB_HSP_CLOSE(q1, q2, s1, s2, c) \
 (ABS((q1-s1) - (q2-s2)) < c)
 
-/** Is one HSP contained in a diagonal strip around another? */
-#define MB_HSP_CONTAINED(qo1,qo2,qe2,so1,so2,se2,c) \
-(qo1>=qo2 && qo1<=qe2 && so1>=so2 && so1<=se2 && \
-MB_HSP_CLOSE(qo1,qo2,so1,so2,c))
-
 /** Modify a BlastScoreBlk structure so that it can be used in RPS-BLAST. This
  * involves allocating a SPsiBlastScoreMatrix structure so that the PSSMs 
  * memory mapped from the RPS-BLAST database files can be assigned to that
@@ -139,6 +134,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/05/24 18:25:57  papadopo
+ * remove MB_HSP_CONTAINED
+ *
  * Revision 1.12  2005/11/30 18:25:03  papadopo
  * move BlastGapDP, remove BlastGapSmallDP
  *
