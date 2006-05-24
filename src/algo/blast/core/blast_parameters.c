@@ -357,7 +357,7 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
       
          new_cutoff = 0;
          BLAST_Cutoffs(&new_cutoff, &cutoff_e, kbp, 
-                       MIN(subj_length, (Uint4) query_length)*subj_length,
+                       MIN((Uint8)subj_length, (Uint8) query_length)*((Uint8)subj_length), 
                        TRUE, gap_decay_rate);
 
          /* Perform this check for compatibility with the old code */
@@ -941,6 +941,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2006/05/24 17:18:35  madden
+ * Fix integer overflow in BlastInitialWordParametersUpdate
+ *
  * Revision 1.17  2006/05/22 13:27:07  madden
  * Calculate cutoff score for phiblast
  *
