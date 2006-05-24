@@ -55,7 +55,6 @@ static char const rcsid[] =
 
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_util.h>
-#include <util/tables/raw_scoremat.h>
 #include <algo/blast/core/blast_encoding.h>
 #include "blast_psi_priv.h"
 
@@ -1202,6 +1201,31 @@ BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
     return 0;
 }
 
+NCBI_XBLAST_EXPORT SNCBIPackedScoreMatrix*
+BlastScoreBlkGetCompiledInMatrix(const char* name)
+{
+    SNCBIPackedScoreMatrix* psm = NULL; 
+
+    if (name == NULL)
+        return NULL;
+
+    if (strcasecmp(name, "BLOSUM62") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum62;
+    } else if (strcasecmp(name, "BLOSUM45") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum45;
+    } else if (strcasecmp(name, "BLOSUM80") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum80;
+    } else if (strcasecmp(name, "PAM30") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam30;
+    } else if (strcasecmp(name, "PAM70") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam70;
+    } else if (strcasecmp(name, "PAM250") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam250;
+    }
+ 
+    return psm;
+}
+
 /** Sets sbp->matrix->data field using sbp->name field using
  * the matrices in the toolkit (util/tables/raw_scoremat.h).
  * @param sbp the object containing matrix and name [in|out]
@@ -1222,23 +1246,11 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     ASSERT(sbp->matrix->ncols == BLASTAA_SIZE);
     ASSERT(sbp->matrix->nrows == BLASTAA_SIZE);
 
-    matrix = sbp->matrix->data;
+    psm = BlastScoreBlkGetCompiledInMatrix(sbp->name); 
+    if (psm == NULL)
+       return 1;
 
-    if (strcasecmp(sbp->name, "BLOSUM62") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum62;
-    } else if (strcasecmp(sbp->name, "BLOSUM45") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum45;
-    } else if (strcasecmp(sbp->name, "BLOSUM80") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum80;
-    } else if (strcasecmp(sbp->name, "PAM30") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam30;
-    } else if (strcasecmp(sbp->name, "PAM70") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam70;
-    } else if (strcasecmp(sbp->name, "PAM250") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam250;
-    } else {
-        return 1;
-    }
+    matrix = sbp->matrix->data;
 
     /* Initialize with BLAST_SCORE_MIN */
     for (i = 0; i < sbp->alphabet_size; i++) {
@@ -4363,6 +4375,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.142  2006/05/24 17:19:02  madden
+ * Add BlastScoreBlkGetCompiledInMatrix
+ *
  * Revision 1.141  2006/04/20 19:28:30  madden
  * Prototype change for Blast_MessageWrite
  *
