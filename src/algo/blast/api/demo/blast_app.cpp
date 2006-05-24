@@ -76,11 +76,9 @@ environment.
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
-#include <algo/blast/core/hspstream_collector.h>
 
 // For on-the-fly tabular output
 #include "blast_tabular.hpp"
-#include "/home/camacho/work/debug_lib/scoped_timer.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -496,7 +494,6 @@ int CBlastApplication::Run(void)
         BLASTGetSeqLocFromStream(args["query"].AsInputFile(),
             *m_ObjMgr, strand, from, to, &id_counter,
             args["lcase"].AsBoolean());
-    const size_t kNumQueries = query_loc.size();
 
     if (args["dbrange"]) {
         const char* delimiters = " ,:;";
@@ -551,37 +548,14 @@ int CBlastApplication::Run(void)
           seqalignv = blaster.Run();
           PrintSeqAlign(seqalignv);
        } else {
-          //hsp_stream = Blast_HSPListCQueueInit();
-           // for now, drop the HSPs on the floor
-
-           EBlastProgramType p;
-           BlastProgram2Number(args["program"].AsString().c_str(), &p);
-
-            CBlastHitSavingOptions hit_options;
-            BlastHitSavingOptionsNew(p, &hit_options);
-
-            CBlastExtensionOptions ext_options;
-            BlastExtensionOptionsNew(p, &ext_options);
-
-            CBlastScoringOptions scoring_options;
-            BlastScoringOptionsNew(p, &scoring_options);
-
-            SBlastHitsParameters* blasthit_params=NULL;
-            SBlastHitsParametersNew(hit_options, ext_options, scoring_options,
-                                    &blasthit_params);
-
-            Blast_HSPListCollectorInit(p, blasthit_params, kNumQueries, TRUE);
-
+          hsp_stream = Blast_HSPListCQueueInit();
           
           CDbBlast blaster(query_loc, seq_src, *opts, 
                                hsp_stream, num_threads);
-          {{
-               CScopedTimer timer("Run single 57k query");
           blaster.SetupSearch();
 	  
           CSeqDbSeqInfoSrc seqinfo_src(args["db"].AsString(), db_is_aa);
 
-          /*
           // Start the on-the-fly formatting thread
           CBlastTabularFormatThread* tab_thread = 
               new CBlastTabularFormatThread(&blaster,
@@ -589,19 +563,15 @@ int CBlastApplication::Run(void)
                       &seqinfo_src);
 
           tab_thread->Run();
-          */
           
           blaster.RunPreliminarySearch();
           // Close the HSP stream for writing, allowing the formatting thread
           // to exit.
           BlastHSPStreamClose(hsp_stream);
-           }}
           // Join the on-the-fly formatting thead
-          /*
           void *exit_data;
           tab_thread->Join(&exit_data);
           hsp_stream = BlastHSPStreamFree(hsp_stream);
-          */
        }
 
     } catch (const CBlastException& exptn) {
