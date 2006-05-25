@@ -17,7 +17,8 @@ LIB =   xbma_refiner \
         scoremat \
         cn3d \
         mmdb \
-        $(SOBJMGR_LDEP) xconnect
+        id1cli id1 \
+        xconnect $(SOBJMGR_LDEP)
 
 #        $(OBJMGR_LIBS)
 
