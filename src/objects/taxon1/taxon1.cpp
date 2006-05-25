@@ -1139,7 +1139,10 @@ short
 CTaxon1::GetNameClassId( const string& class_name )
 {
     SetLastError( NULL );
-    return m_plCache->FindNameClassByName( class_name.c_str() );
+    if( m_plCache->InitNameClasses() ) {
+        return m_plCache->FindNameClassByName( class_name.c_str() );
+    }
+    return -1;
 }
 
 int
@@ -2031,6 +2034,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.39  2006/05/25 16:15:24  domrach
+ * Fixed bug in GetNameClassId
+ *
  * Revision 6.38  2006/05/22 15:21:28  domrach
  * Member f-ns GetNameClassId and DumpNames added
  *
