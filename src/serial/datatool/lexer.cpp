@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/05/25 18:53:31  gouriano
+* Added C-style comments, allowed by the standard
+*
 * Revision 1.20  2005/06/03 17:05:33  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
@@ -194,6 +197,14 @@ void ASNLexer::LookupComments(void)
                 break;
             }
             return;
+        case '/':
+            if ( Char(1) == '*' ) {
+                // comments
+                SkipChars(2);
+                SkipComment();
+                break;
+            }
+            return;
         default:
             return;
         }
@@ -217,6 +228,12 @@ void ASNLexer::SkipComment(void)
             break;
         case '-':
             if ( Char(1) == '-' ) {
+                SkipChars(2);
+                return;
+            }
+            break;
+        case '*':
+            if ( Char(1) == '/' ) {
                 SkipChars(2);
                 return;
             }
