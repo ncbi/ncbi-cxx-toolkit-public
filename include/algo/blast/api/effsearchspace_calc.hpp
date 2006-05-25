@@ -67,6 +67,12 @@ public:
     /// @param query_index index of the query sequence of interest
     Int8 GetEffSearchSpace(size_t query_index = 0) const;
 
+    /// Retrieve the effective search space calculated for a given query
+    /// context. This is needed because translated searches might have slightly
+    /// different search spaces for each of its contexts.
+    /// @param query_index index of the query sequence of interest
+    Int8 GetEffSearchSpaceForContext(size_t ctx_index) const;
+
 private:
     CRef<IQueryFactory> m_QueryFactory;
     EBlastProgramType m_Program;
