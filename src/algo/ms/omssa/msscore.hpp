@@ -369,12 +369,34 @@ public:
      */
     void DeleteMatchedPeakSet(void);
 
+    /**
+     * compare to another CMSMatchedPeakSet
+     * and set MatchType accordingly if there is a correlation
+     * 
+     * @param Other the other mass peak list
+     * @param SameDirection is the other mass peak list in the same direction?
+     */
+    void Compare(CMSMatchedPeakSet *Other, bool SameDirection);
+
+    /**
+     * Get Size of ion series
+     */
+    const int GetSize(void) const;
+
+    /**
+     * Set Size of ion series
+     */
+    int& SetSize(void);
+
 
 private:
     /**
      * list of matched peak info
      */
     TMatchedPeakSet MatchedPeakSet;
+
+    /** Size of ion series */
+    int Size;
 
 };
 
@@ -390,6 +412,17 @@ TMatchedPeakSet& CMSMatchedPeakSet::SetMatchedPeakSet(void)
     return MatchedPeakSet;
 }
 
+inline
+const int CMSMatchedPeakSet::GetSize(void) const
+{
+    return Size;
+}
+
+inline
+int& CMSMatchedPeakSet::SetSize(void)
+{
+    return Size;
+}
 
 /** map from an ion series to a set of matched peak sets */
 typedef std::map <int, CMSMatchedPeakSet *> TIonSeriesMatchMap;
@@ -411,12 +444,15 @@ public:
      * 
      * @param Charge charge of ion series
      * @param Series which ion series
+     * @param Size length of ion series
+     * @param Maxproductions the actual number of ions computed
      * 
      */
     CMSMatchedPeakSet * CreateSeries(
         TMSCharge Charge,
         TMSIonSeries Series,
-        int Size);
+        int Size,
+        int Maxproductions);
 
     /** 
      * get a series for modification
@@ -583,6 +619,7 @@ public:
      * @param MinIntensity the minimum intensity of the peak to consider it as a match
      * @param Skipb1 should the first forward going ion be ignored?
      * @param TerminalIon is either of the terminal ions statistically biased, e.g. only K or R at Cterm?
+     * @param Maxproductions the number of ions in the ions series actually calculated
      */
     void FillMatchedPeaks(
         TMSCharge Charge, 
@@ -590,7 +627,8 @@ public:
         int Size, 
         TMSIntensity MinIntensity, 
         bool Skipb1,
-        EMSTerminalBias TerminalIon
+        EMSTerminalBias TerminalIon,
+        int Maxproductions
         );
 
     /**

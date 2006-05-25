@@ -176,19 +176,21 @@ int CSearch::CompareLadders(int iMod,
                             bool OrLadders,
                             const TMassPeak *MassPeak)
 {
+    EMSPeakListTypes Which = Peaks->GetWhich(MassPeak->Charge);
+
     if (MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
-        Peaks->CompareSorted(*(BLadder[iMod]), MSCULLED2, 0); 
-        Peaks->CompareSorted(*(YLadder[iMod]), MSCULLED2, 0); 
-        Peaks->CompareSorted(*(B2Ladder[iMod]), MSCULLED2, 0); 
-        Peaks->CompareSorted(*(Y2Ladder[iMod]), MSCULLED2, 0);
+        Peaks->CompareSorted(*(BLadder[iMod]), Which, 0); 
+        Peaks->CompareSorted(*(YLadder[iMod]), Which, 0); 
+        Peaks->CompareSorted(*(B2Ladder[iMod]), Which, 0); 
+        Peaks->CompareSorted(*(Y2Ladder[iMod]), Which, 0);
         if (OrLadders) {
             BLadder[iMod]->Or(*(B2Ladder[iMod]));
             YLadder[iMod]->Or(*(Y2Ladder[iMod]));   
         }
     }
     else {
-        Peaks->CompareSorted(*(BLadder[iMod]), MSCULLED1, 0); 
-        Peaks->CompareSorted(*(YLadder[iMod]), MSCULLED1, 0); 
+        Peaks->CompareSorted(*(BLadder[iMod]), Which, 0); 
+        Peaks->CompareSorted(*(YLadder[iMod]), Which, 0); 
     }
     return 0;
 }
@@ -203,17 +205,19 @@ void CSearch::CompareLaddersRank(int iMod,
                                  int& M,
                                  int& Sum)
 {
+    EMSPeakListTypes Which = Peaks->GetWhich(MassPeak->Charge);
+
     if (MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
-        Peaks->CompareSortedRank(*(BLadder[iMod]), MSCULLED2, 0, Sum, M);
-        Peaks->CompareSortedRank(*(YLadder[iMod]), MSCULLED2, 0, Sum, M);
-        Peaks->CompareSortedRank(*(B2Ladder[iMod]), MSCULLED2, 0, Sum, M);
-        Peaks->CompareSortedRank(*(Y2Ladder[iMod]), MSCULLED2, 0, Sum, M);
-        N = Peaks->GetNum(MSCULLED2);
+        Peaks->CompareSortedRank(*(BLadder[iMod]), Which, 0, Sum, M);
+        Peaks->CompareSortedRank(*(YLadder[iMod]), Which, 0, Sum, M);
+        Peaks->CompareSortedRank(*(B2Ladder[iMod]), Which, 0, Sum, M);
+        Peaks->CompareSortedRank(*(Y2Ladder[iMod]), Which, 0, Sum, M);
+        N = (Peaks->GetPeakLists())[eMSPeakListCharge3]->GetNum();
     }
     else {
-        Peaks->CompareSortedRank(*(BLadder[iMod]), MSCULLED1, 0, Sum, M);
-        Peaks->CompareSortedRank(*(YLadder[iMod]), MSCULLED1, 0, Sum, M);
-        N = Peaks->GetNum(MSCULLED1);
+        Peaks->CompareSortedRank(*(BLadder[iMod]), Which, 0, Sum, M);
+        Peaks->CompareSortedRank(*(YLadder[iMod]), Which, 0, Sum, M);
+        N = (Peaks->GetPeakLists())[eMSPeakListCharge1]->GetNum();
     }
 }
 
@@ -604,9 +608,9 @@ void CSearch::InitLadders(void)
         BLadder.push_back(newLadder);
         newLadder.Reset(new CLadder(MaxLadderSize));
         YLadder.push_back(newLadder);
-        newLadder.Reset(new CLadder(MaxLadderSize));
+        newLadder.Reset(new CLadder(2*MaxLadderSize));
         B2Ladder.push_back(newLadder);
-        newLadder.Reset(new CLadder(MaxLadderSize));
+        newLadder.Reset(new CLadder(2*MaxLadderSize));
         Y2Ladder.push_back(newLadder);
     }
 }
@@ -635,6 +639,10 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         SetSettings().Reset(SettingsIn);
         SetRequest().Reset(MyRequestIn);
         SetResponse().Reset(MyResponseIn);
+
+        // force the mass scale settings to what is currently used.
+        SetSettings()->SetScale(MSSCALE);
+        SetResponse()->SetScale(MSSCALE);
 
         SetupMods(Modset);
 
@@ -953,7 +961,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     // need to use different criterion if semi-tryptic and  start position was
                     // moved.  otherwise this criterion is OK
                     if (NonSpecificMass < MaxMZ /*- MSSCALE2INT(MonoMass[7]) */&&
-                        GetEnzyme()->GetStop() < Sequence.GetData() + Sequence.GetLength() &&
+                        GetEnzyme()->GetStop() < Sequence.GetData() + Sequence.GetLength() - 1 /*-1 added*/ &&
                         (GetSettings()->GetMaxnoenzyme() == 0 ||
                          GetEnzyme()->GetStop() - PepStart[0] + 1 < GetSettings()->GetMaxnoenzyme())
                        ) {
@@ -981,7 +989,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     // for end, need to deal with end of protein case
                     if (!SequenceDone && GetEnzyme()->GetCleaveNum() > 0 &&
                         PepStart[0] != Sequence.GetData() &&
-                        GetEnzyme()->GetStop() != Sequence.GetData() + Sequence.GetLength() ) {
+                        GetEnzyme()->GetStop() != Sequence.GetData() + Sequence.GetLength() - 1 /* -1 added */ ) {
                         if (!SetEnzyme()->CheckCleaveChar(PepStart[0]-1) &&
                             !SetEnzyme()->CheckCleaveChar(GetEnzyme()->GetStop()))
                             goto PartialLoop;
@@ -1341,12 +1349,13 @@ void CSearch::WriteBioseqs(void)
 }
 
 
-void CSearch::PepCharge(CMSHit& Hit,
-                        int SeriesCharge,
-                        int Ion,
-                        int minintensity,
-                        int Which, 
-                        CMSPeak *Peaks)
+CMSMatchedPeakSet * CSearch::PepCharge(CMSHit& Hit,
+                                       int SeriesCharge,
+                                       int Ion,
+                                       int minintensity,
+                                       int Which, 
+                                       CMSPeak *Peaks,
+                                       int Maxproductions)
 {
     int iii;
     int lowmz(0), highmz;
@@ -1375,25 +1384,32 @@ void CSearch::PepCharge(CMSHit& Hit,
         }
     }
 
-    Hit.FillMatchedPeaks(SeriesCharge, Ion, Size, minintensity, false, TerminalBias);
+    Hit.FillMatchedPeaks(SeriesCharge, Ion, Size, minintensity, false, TerminalBias, SeriesCharge*Maxproductions);
     CMSMatchedPeakSet *MatchPeakSet = Hit.SetIonSeriesMatchMap().SetSeries(SeriesCharge, Ion);
+    TMatchedPeakSet::iterator bin, prev, next;
 
-    for (iii = 0; iii < Size; ++iii) {
+    for ( bin = MatchPeakSet->SetMatchedPeakSet().begin(); bin != MatchPeakSet->SetMatchedPeakSet().end(); ++bin) {
         // need to go thru match info, not hit info.
-        if(iii != 0) lowmz = (MatchPeakSet->GetMatchedPeakSet()[iii]->GetMZ() +
-            MatchPeakSet->GetMatchedPeakSet()[iii-1]->GetMZ())/2;
-        if(iii != Size-1) highmz = (MatchPeakSet->GetMatchedPeakSet()[iii]->GetMZ() +
-                 MatchPeakSet->GetMatchedPeakSet()[iii+1]->GetMZ())/2;
+        if(bin != MatchPeakSet->SetMatchedPeakSet().begin()) {
+            lowmz = ((*bin)->GetMZ() + (*prev)->GetMZ())/2;
+        }
+        next = bin;
+        ++next;
+        if(next != MatchPeakSet->SetMatchedPeakSet().end()) {
+            highmz = ((*bin)->GetMZ() + (*next)->GetMZ())/2;
+        }
         else highmz = Hit.GetExpMass()/SeriesCharge;
-        MatchPeakSet->SetMatchedPeakSet()[iii]->SetExpIons() = 
+        (*bin)->SetExpIons() = 
             Peaks->CountMZRange(lowmz,
                                 highmz,
                                 minintensity,
                                 Which) /
             (double)(highmz - lowmz);
 
-        MatchPeakSet->SetMatchedPeakSet()[iii]->SetMassTolerance() = (Peaks->GetTol())/SeriesCharge;
+        (*bin)->SetMassTolerance() = (Peaks->GetTol())/SeriesCharge;
+        prev = bin;
     }
+    return MatchPeakSet;
 }
 
 
@@ -1415,7 +1431,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 
             int tempMass = HitList[iHitList].GetExpMass();
             int Charge = HitList[iHitList].GetCharge();
-            int Which = Peaks->GetWhich(Charge);
+            EMSPeakListTypes Which = Peaks->GetWhich(Charge);
 
             // set up new score
             
@@ -1427,12 +1443,25 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             int minintensity = Threshold * Peaks->GetMaxI(Which);
 
             // fill out the match list
-            PepCharge(HitList[iHitList], 1, ForwardIon, minintensity, Which, Peaks);
-            PepCharge(HitList[iHitList], 1, BackwardIon, minintensity, Which, Peaks);
+            CMSMatchedPeakSet *b1 = 
+                PepCharge(HitList[iHitList], 1, ForwardIon, minintensity, Which, Peaks,
+                          GetSettings()->GetMaxproductions());
+            CMSMatchedPeakSet *y1 =
+                PepCharge(HitList[iHitList], 1, BackwardIon, minintensity, Which, Peaks,
+                          GetSettings()->GetMaxproductions());
+            b1->Compare(y1, false);
             // in case of +2 series
             if(Charge >= Peaks->GetConsiderMult()) {
-                PepCharge(HitList[iHitList], 2, ForwardIon, minintensity, Which, Peaks);
-                PepCharge(HitList[iHitList], 2, BackwardIon, minintensity, Which, Peaks);
+                CMSMatchedPeakSet *b2 = 
+                    PepCharge(HitList[iHitList], 2, ForwardIon, minintensity, Which, Peaks,
+                              GetSettings()->GetMaxproductions());
+                CMSMatchedPeakSet *y2 = 
+                    PepCharge(HitList[iHitList], 2, BackwardIon, minintensity, Which, Peaks,
+                              GetSettings()->GetMaxproductions());
+                y2->Compare(b1, false);
+                b2->Compare(y1, false);
+                b2->Compare(b1, true);
+                y2->Compare(y1, true);
             }
             double a = HitList[iHitList].CalcPoissonMean(0.5, GetEnzyme()->GetCleaveNum(), 0.5, 19);
 
@@ -1477,6 +1506,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 if (HitList[iHitList].GetM() != 0.0) {
                     double Perf = HitList[iHitList].CalcRankProb();
                     pval *= Perf;
+                    pval *= 10.0;  // correction to scales
                 }
                 else ERR_POST(Info << "M is zero");
             }

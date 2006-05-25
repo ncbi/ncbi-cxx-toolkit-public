@@ -67,7 +67,7 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
 {
 	if(!CanGetHitsets() ) return;
 
-	os << "Spectrum number, Filename/id, Peptide, E-value, Mass, gi, Accession, Start, Stop, Defline, Mods, Charge, Theo Mass" << endl;
+	os << "Spectrum number, Filename/id, Peptide, E-value, Mass, gi, Accession, Start, Stop, Defline, Mods, Charge, Theo Mass, P-value" << endl;
     // read out hits
     
     CMSResponse::THitsets::const_iterator iHits;
@@ -109,7 +109,8 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
                     (*iPephit)->GetStart() + 1 << "," << (*iPephit)->GetStop() + 1 << "," <<
                     CSVString((*iPephit)->GetDefline()) << "," << CSVString(ModString) <<
                     "," << (*iHit)->GetCharge() << 
-                    "," <<  (*iHit)->GetTheomass()/fMZ_scale  << endl;
+                    "," <<  (*iHit)->GetTheomass()/fMZ_scale <<
+                    "," <<  (*iHit)->GetPvalue() << endl;
             }
         }
     }
@@ -152,6 +153,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/05/25 17:11:56  lewisg
+* one filtered spectrum per precursor charge state
+*
 * Revision 1.6  2006/01/23 17:39:59  lewisg
 * fix csv header
 *

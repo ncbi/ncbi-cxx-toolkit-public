@@ -65,13 +65,13 @@ void CMSModSpecSet::CreateArrays(void)
         if((*iMods)->GetMonomass() == 0.0) continue;
 
         ModTypes[ModNum] = static_cast <EMSModType> ((*iMods)->GetType());
-        ModMass[ModNum] = static_cast <int> ((*iMods)->GetMonomass() * MSSCALE + 0.5);
+        ModMass[ModNum] = MSSCALE2INT((*iMods)->GetMonomass());
 
         // set up neutral loss if specified
         if((*iMods)->CanGetNeutralloss())
-            NeutralLoss[ModNum] = static_cast <int> 
-            (((*iMods)->GetMonomass() -
-              (*iMods)->GetNeutralloss().GetMonomass()) * MSSCALE + 0.5);
+            NeutralLoss[ModNum] = MSSCALE2INT 
+            ((*iMods)->GetMonomass() -
+              (*iMods)->GetNeutralloss().GetMonomass());
         else 
             NeutralLoss[ModNum] = ModMass[ModNum];
 
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/05/25 17:11:56  lewisg
+* one filtered spectrum per precursor charge state
+*
 * Revision 1.5  2005/10/24 21:46:13  lewisg
 * exact mass, peptide size limits, validation, code cleanup
 *

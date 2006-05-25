@@ -119,7 +119,7 @@ int CSpectrumSet::LoadMultDTA(CNcbiIstream& DTA, int Max)
     try {
         //       DTA.exceptions(ios_base::failbit | ios_base::badbit);
         do {
-
+            bool GotThisOne(false);  // was the most recent spectrum read?
             do {
                 MyGetline(DTA, Line);
             } while (NStr::Compare(Line, 0, 4, "<dta") != 0 && DTA && !DTA.eof());
@@ -176,9 +176,10 @@ int CSpectrumSet::LoadMultDTA(CNcbiIstream& DTA, int Max)
                 if (!GetDTABody(istr, InputPeaks)) 
                     break;
                 GotOne = true;
+                GotThisOne = true;
                 MyGetline(DTA, Line);
             } 
-            if(GotOne) {
+            if(GotThisOne) {
                 Peaks2Spectrum(InputPeaks, MySpectrum);
                 Set().push_back(MySpectrum);
             }
@@ -543,6 +544,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2006/05/25 17:10:17  lewisg
+ * one filtered spectrum per precursor charge state
+ *
  * Revision 1.25  2005/11/07 19:57:20  lewisg
  * iterative search
  *

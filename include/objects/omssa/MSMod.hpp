@@ -60,7 +60,7 @@ const char * const UniqueAA = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 //                             0123456789abcdef0123456789
 
 // used to scale all float masses into ints
-#define MSSCALE 100
+#define MSSCALE 1000
 #define MSSCALE2INT(x) (static_cast <int> ((x) * MSSCALE + 0.5))
 #define MSSCALE2DBL(x) ((x)/ static_cast <double> (MSSCALE))
 
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/05/25 17:11:56  lewisg
+* one filtered spectrum per precursor charge state
+*
 * Revision 1.3  2005/10/24 21:46:13  lewisg
 * exact mass, peptide size limits, validation, code cleanup
 *

@@ -59,6 +59,24 @@ BEGIN_SCOPE(omssa)
 
 class CMSPeak;
 
+/** enum that describes type of peak list */
+enum EMSPeakListTypes {
+    eMSPeakListOriginal, // original data (MSORIGINAL)
+    eMSPeakListTop, // top hits (MSTOPHITS)
+    eMSPeakListCharge1,  // charge +1 (MSCULLED1)
+    eMSPeakListCharge2,  // 
+    eMSPeakListCharge3,  // (MSCULLED2)
+    eMSPeakListCharge4,  // 
+    eMSPeakListCharge5,  // 
+    eMSPeakListCharge6,  // 
+    eMSPeakListCharge7,  // 
+    eMSPeakListCharge8,  // 
+    eMSPeakListCharge9,  // 
+    eMSPeakListCharge10,  // 
+    eMSPeakListChargeMax
+    };
+
+
 /**
  *  Class to hold mod information for a hit
  */
@@ -274,7 +292,7 @@ protected:
     void RecordMatchesScan(CLadder& Ladder,
                            int& iHitInfo,
                            CMSPeak *Peaks,
-                           int Which,
+                           EMSPeakListTypes Which,
                            int Offset);
 
 private:
@@ -489,19 +507,19 @@ typedef CMSHit * TMSHitList;
 #define MSBIN 100
 
 // culled for single charges
-#define MSCULLED1 1
+//#define MSCULLED1 1
 // culled for double charges
-#define MSCULLED2 2
+//#define MSCULLED2 2
 // original data
-#define MSORIGINAL 0
+//#define MSORIGINAL 0
 // only the few most intense peaks
-#define MSTOPHITS 3
+//#define MSTOPHITS 3
 // number of above cull states
-#define MSNUMDATA 4
+//#define MSNUMDATA 4
 
 
 // the maximum charge state that can be considered
-#define MSMAXCHARGE 10
+//#define MSMAXCHARGE 10
 
 /** 
  * function object for cull iterate 
@@ -522,6 +540,130 @@ typedef AutoPtr <unsigned, ArrayDeleter<unsigned> > TIntensity;
 
 // for statistical modelling
 // #define MSSTATRUN
+
+
+/**
+ * enumeration of peak sort order
+ */
+
+enum EMSPeakListSort {
+    eMSPeakListSortNone,
+    eMSPeakListSortMZ,
+    eMSPeakListSortIntensity
+};
+
+/**
+ * class for holding a set of peaks
+ */
+
+
+class NCBI_XOMSSA_EXPORT CMSPeakList : public CObject {
+public:
+    CMSPeakList(void);
+
+    CMZI * const GetMZI(void) const;
+    void SetMZI(CMZI *In);
+
+    char * const GetUsed(void) const;
+    void SetUsed(char * In);
+
+    const unsigned GetNum(void) const;
+    unsigned& SetNum(void);
+
+    const EMSPeakListSort GetSorted(void) const;
+    EMSPeakListSort& SetSorted(void);
+
+    /** 
+     * fill out the arrays and set defaults
+     * 
+     * @param Size size of the arrays
+     */
+    void CreateLists(int Size);
+
+    /**
+     * zero out the used list
+     */
+    void ClearUsed(void);
+
+    /**
+     * sort the peak by sort type
+     * @param SortType which sort to perform
+     */
+    void Sort(EMSPeakListSort SortType);
+
+    /**
+     * Rank the given spectrum by intensity.
+     * assumes the spectrum is sorted by intensity.
+     * highest intensity is given rank 1.
+     */
+    void Rank(void);
+
+private:
+    /**  m/z values and intensities */
+    AutoPtr <CMZI, ArrayDeleter<CMZI> > MZI; 
+    /** used to mark m/z values as used in a match */
+    AutoPtr <char, ArrayDeleter<char> > Used;
+    /** number of CMZI */
+    unsigned Num;
+    /** have the CMZI been sorted? */
+    EMSPeakListSort Sorted;
+};
+
+
+inline 
+void CMSPeakList::ClearUsed(void)
+{
+    memset(GetUsed(), 0, GetNum());
+}
+
+inline
+CMZI * const CMSPeakList::GetMZI(void) const
+{    
+    return MZI.get();
+}
+
+inline
+void CMSPeakList::SetMZI(CMZI *In)
+{
+    MZI.reset(In);
+}
+
+inline
+char * const CMSPeakList::GetUsed(void) const
+{
+    return Used.get();
+}
+
+inline
+void CMSPeakList::SetUsed(char * In)
+{
+    Used.reset(In);
+}
+
+inline
+const unsigned CMSPeakList::GetNum(void) const
+{
+    return Num;
+}
+
+inline
+unsigned& CMSPeakList::SetNum(void)
+{
+    return Num;
+}
+
+inline
+const EMSPeakListSort CMSPeakList::GetSorted(void) const
+{
+    return Sorted;
+}
+
+inline
+EMSPeakListSort& CMSPeakList::SetSorted(void)
+{
+    return Sorted;
+}
+
 
 /**
  * class to hold spectral data
@@ -565,12 +707,6 @@ public:
     ~CMSPeak(void);
 
     /**
-     * sort the peak by increasing m/z
-     * @param Which which of the mzi arrays should be sorted?
-     */
-    void Sort(int Which = MSORIGINAL);
-
-    /**
      * Compare the ladder and peaks and return back rank statistics
      * @param Ladder the ladder to compare
      * @param Which which exp spectrum to use
@@ -580,19 +716,10 @@ public:
      *
      */
     int CompareSortedRank(CLadder& Ladder,
-                          int Which, 
+                          EMSPeakListTypes Which, 
                           TIntensity* Intensity, 
                           int& Sum, 
                           int& M);
-
-    /**
-     * Rank the given spectrum by intensity.
-     * assumes the spectrum is sorted by intensity.
-     * highest intensity is given rank 1.
-     * 
-     * @param Which which experimental spectrum to use
-     */
-    void Rank(const int Which);
 
     /**
      * Read a spectrum set into a CMSPeak
@@ -619,7 +746,8 @@ public:
      * @param FileType file format to use
      * @param Which which MZI set to use
      */
-    void Write(std::ostream& FileOut, const EFileType FileType = eDTA, const int Which = MSORIGINAL) const;
+    void Write(std::ostream& FileOut, const EFileType FileType,
+ const EMSPeakListTypes Which) const;
 
     // functions used in SmartCull
     
@@ -693,11 +821,9 @@ public:
 	/**
 	 * Performs culling based on whether to consider multiply charged ions or not
      * 
-     * @param ConsiderMultProduct should we use multiply charged products?
      * @param Settings search settings, e.g. experimental tolerances
 	 */
-	void CullChargeAndWhich(bool ConsiderMultProduct,  // should we use multiply charged products?
-							const CMSSearchSettings& Settings
+	void CullChargeAndWhich(const CMSSearchSettings& Settings
 							);
 
     /**
@@ -721,14 +847,14 @@ public:
      * count number of AA intervals in spectrum.
      */
     const int CountAAIntervals(const CMassArray& MassArray,
-                               const bool Nodup=true,
-                               const int Which = MSCULLED1) const;
+                               const bool Nodup/*=true*/,
+                               const EMSPeakListTypes Which /*= MSCULLED1*/) const;
 	
     /**
      *  counts the number of peaks above % of maximum peak
      */
     const int AboveThresh(const double Threshold,
-                          const int Which = MSORIGINAL) const;
+                          const EMSPeakListTypes Which) const;
 	
     /**
      *  the number of peaks at and below the precursor ion
@@ -794,7 +920,7 @@ public:
      *  return number of allowed computed charges
      */
     const int GetNumCharges(void) const;
-
+#if 0
     /**
      * Get the number of peaks
      * 
@@ -808,6 +934,7 @@ public:
      * @param Which which experimental spectrum to use
      */
     CMZI *GetMZI(const int Which = MSORIGINAL) const;
+#endif
 
     /**
      * compare peaks to ladder using ContainsFast
@@ -815,7 +942,8 @@ public:
      * @param Ladder the ladder to compare
      * @param Which which experimental spectrum to use
      */
-    const int Compare(CLadder& Ladder, const int Which = MSCULLED1) const;
+    const int Compare(CLadder& Ladder, 
+                      const EMSPeakListTypes Which) const;
 
     /**
      * see if value is contained in peaks
@@ -824,7 +952,7 @@ public:
      * @param Which which experimental spectrum to use
      */
     const bool Contains(const int value,
-                        const int Which) const;
+                        const EMSPeakListTypes Which) const;
 
 
     /**
@@ -834,28 +962,28 @@ public:
      * @param Which which experimental spectrum to use
      */
     const bool ContainsFast(const int value,
-                            const int Which) const;
+                            const EMSPeakListTypes Which) const;
 
     /**
      * compares only the top hits
      * 
      * @param Ladder ladder to compare to
      */
-    const bool CompareTop(CLadder& Ladder) const;
+    const bool CompareTop(CLadder& Ladder);
 
     /**
      * Get Maximum intensity
      * 
      * @param Which which experimental spectrum to use
      */
-    const int GetMaxI(const int Which = MSORIGINAL) const;
+    const int GetMaxI(const EMSPeakListTypes Which) const;
 
     /**
      * returns the cull array index
      * 
      * @param Which which experimental spectrum to use
      */
-    const int GetWhich(const int Charge) const;
+    const EMSPeakListTypes GetWhich(const int Charge) const;
 
     /**
      * compare assuming all lists are sorted
@@ -867,8 +995,10 @@ public:
      * @param Which which experimental spectrum to use
      * @param Ladder the ladder to compare to
      */
-    const int CompareSorted(CLadder& Ladder, const int Which, TIntensity * Intensity) const;
-
+    const int CompareSorted(CLadder& Ladder,
+                            const EMSPeakListTypes Which,
+                            TIntensity * Intensity);
+    
     /**
      * initializes arrays used to track hits
      * 
@@ -989,20 +1119,14 @@ public:
      * get the precursor mass tolerance in Daltons.
      */
 	const int GetPrecursorTol(void) const;
-
+#if 0
     /**
      * return array to mark peaks as used
      * 
      * @param Which which experimental spectrum to use
      */
     char *SetUsed(const int Which);
-
-    /**
-     * clear used arrays for one cull type
-     * 
-     * @param Which which experimental spectrum to use
-     */
-    void ClearUsed(const int Which);
+#endif
 
     /**
      * clear used arrays for all cull types
@@ -1035,16 +1159,30 @@ public:
                            const int TestMZ, 
                            const int tol) const;
 
+    /**
+     * list of peaks, e.g. one for each charge
+     */
+    typedef vector < CRef < CMSPeakList > > TPeakLists;
 
+    /**
+     * get the peak lists
+     */
+    const TPeakLists& GetPeakLists(void) const;
+
+    /**
+     * set the peak lists
+     */
+    TPeakLists& SetPeakLists(void);
 
 private:
-    CMZI *MZI[MSNUMDATA]; // m/z values and intensities, sorted by m/z.  first is original, second is culled
-    char *Used[MSNUMDATA];  // used to mark m/z values as used in a match
-    unsigned Num[MSNUMDATA]; // number of CMZI.  first is original, second is culled
-    bool Sorted[MSNUMDATA]; // have the CMZI been sorted?
-    CMZI ** IntensitySort;  // points to CMZI original, sorted.
+    /** lists of peaks filtered at different precursor charges, etc. */
+    TPeakLists PeakLists;
+    //CMZI *MZI[MSNUMDATA]; // m/z values and intensities, sorted by m/z.  first is original, second is culled
+    //char *Used[MSNUMDATA];  // used to mark m/z values as used in a match
+    //unsigned Num[MSNUMDATA]; // number of CMZI.  first is original, second is culled
+    //bool Sorted[MSNUMDATA]; // have the CMZI been sorted?
     int Precursormz;
-    int Charges[MSMAXCHARGE];  // Computed allowed charges
+    int Charges[eMSPeakListChargeMax - eMSPeakListCharge1];  // Computed allowed charges
     int NumCharges;  // array size of Charges[]
 	
     //! product error tolerance of peptide
@@ -1063,11 +1201,11 @@ private:
     int Number;  // spectrum number taken from spectrum
 
     // list of hits
-    TMSHitList HitList[MSMAXCHARGE];
+    TMSHitList HitList[eMSPeakListChargeMax - eMSPeakListCharge1];
     int HitListSize;  // max size of hit list
-    int HitListIndex[MSMAXCHARGE];  // current size of HitList
-    int LastHitNum[MSMAXCHARGE];  // the smallest hit currently in List
-    int PeptidesExamined[MSMAXCHARGE];  // the number of peptides examined in search
+    int HitListIndex[eMSPeakListChargeMax - eMSPeakListCharge1];  // current size of HitList
+    int LastHitNum[eMSPeakListChargeMax - eMSPeakListCharge1];  // the smallest hit currently in List
+    int PeptidesExamined[eMSPeakListChargeMax - eMSPeakListCharge1];  // the number of peptides examined in search
 
     EMSHitError Error; // errors that have occurred in processing
 
@@ -1075,6 +1213,18 @@ private:
 
 
 ///////////////////   CMSPeak inline methods
+
+inline
+const CMSPeak::TPeakLists& CMSPeak::GetPeakLists(void) const
+{
+    return PeakLists;
+}
+
+inline
+CMSPeak::TPeakLists& CMSPeak::SetPeakLists(void)
+{
+    return PeakLists;
+}
 
 inline 
 void CMSPeak::SetPlusOne(const double PlusIn) 
@@ -1088,6 +1238,7 @@ const EChargeState CMSPeak::GetComputedCharge(void) const
     return ComputedCharge; 
 }
 
+#if 0
 inline 
 const unsigned CMSPeak::GetNum(const int Which) const
 { 
@@ -1099,7 +1250,7 @@ CMZI * CMSPeak::GetMZI(const int Which) const
 { 
     return MZI[Which];
 }
-
+#endif
 
 inline 
 TMSHitList& CMSPeak::GetHitList(const int Index)
@@ -1204,33 +1355,28 @@ const int CMSPeak::GetPrecursorTol(void) const
     return PrecursorTol; 
 }
 
+#if 0
 inline 
 char *CMSPeak::SetUsed(const int Which)
 {
     return Used[Which];
 }
-
-inline 
-void CMSPeak::ClearUsed(const int Which)
-{
-    memset(Used[Which], 0, Num[Which]);
-}
+#endif
 
 inline 
 void CMSPeak::ClearUsedAll(void)
 {
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
-	ClearUsed(GetWhich(GetCharges()[iCharges]));
-    ClearUsed(MSTOPHITS);
+        SetPeakLists()[GetWhich(GetCharges()[iCharges])]->ClearUsed();
+    SetPeakLists()[eMSPeakListTop]->ClearUsed();
 }
 
 // returns the cull array index
 inline 
-const int CMSPeak::GetWhich(const int Charge) const
+const EMSPeakListTypes CMSPeak::GetWhich(const int Charge) const
 {
-    if(Charge < ConsiderMult) return MSCULLED1;
-    else return MSCULLED2;
+    return static_cast <EMSPeakListTypes> (eMSPeakListCharge1 + Charge - 1);
 }
 
 inline
@@ -1331,6 +1477,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.38  2006/05/25 17:10:56  lewisg
+  one filtered spectrum per precursor charge state
+
   Revision 1.37  2006/03/13 15:48:11  lewisg
   omssamerge and intermediate score fixes
 

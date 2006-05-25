@@ -122,13 +122,16 @@ public:
     * @param MinIntensity the minimum intensity to consider
     * @param Which which version of experimental peaks to use
     * @param Peaks experimental peaks
+    * @param Maxproductions the number of ions in each series actually searched
+    * @return MatchedPeakSet that was filled out
     */
-    void PepCharge(CMSHit& Hit,
-                   int SeriesCharge,
-                   int Ion,
-                   int MinIntensity,
-                   int Which,
-                   CMSPeak *Peaks);
+    CMSMatchedPeakSet * PepCharge(CMSHit& Hit,
+                                  int SeriesCharge,
+                                  int Ion,
+                                  int MinIntensity,
+                                  int Which,
+                                  CMSPeak *Peaks,
+                                  int Maxproductions);
 
     /** 
      * Sets the scoring to use rank statistics
@@ -762,6 +765,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.39  2006/05/25 17:11:56  lewisg
+  one filtered spectrum per precursor charge state
+
   Revision 1.38  2006/03/13 15:48:11  lewisg
   omssamerge and intermediate score fixes
 

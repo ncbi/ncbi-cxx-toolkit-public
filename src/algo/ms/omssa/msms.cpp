@@ -153,8 +153,8 @@ bool CCleave::CalcAndCut(const char *SeqStart,
         // skip checking for mods
 
         if(!GetTopDown()  ||
-           (GetTopDown() && ( *PepStart - SeqStart < Maxproductions ||
-           SeqEnd - *PepStart < Maxproductions))) {
+           (GetTopDown() && ( *PepStart - SeqStart < 2*Maxproductions ||
+           SeqEnd - *PepStart < 2*Maxproductions))) {
             // check for mods that are type AA only, variable only
             CheckAAMods(eMSModType_modaa, VariableMods, NumMod, SeqChar, MaxNumMod, ModList,
                         *PepStart, false, Modset);
@@ -631,6 +631,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.32  2006/05/25 17:10:18  lewisg
+  one filtered spectrum per precursor charge state
+
   Revision 1.31  2006/01/23 17:47:37  lewisg
   refactor scoring
 

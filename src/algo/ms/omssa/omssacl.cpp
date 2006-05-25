@@ -114,7 +114,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(1, 1, 0));
+    SetVersion(CVersionInfo(2, 0, 0));
 }
 
 
@@ -227,6 +227,7 @@ void COMSSA::Init()
 {
 
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
+    argDesc->PrintUsageIfNoArgs();
 
     argDesc->AddDefaultKey("d", "blastdb", "Blast sequence library to search. Do not include .p* filename suffixes.",
 			   CArgDescriptions::eString, "nr");
@@ -382,7 +383,7 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("nox", "maxno", 
                       "maximum size of peptides for no-enzyme and semi-tryptic searches (0=none)",
                       CArgDescriptions::eInteger, 
-                      "0");
+                      "40");
     argDesc->AddDefaultKey("is", "subsetthresh", 
                            "evalue threshold to include a sequence in the iterative search, 0 = all",
                            CArgDescriptions::eDouble, 
@@ -395,7 +396,8 @@ void COMSSA::Init()
                             "evalue threshold to iteratively search a spectrum again, 0 = always",
                             CArgDescriptions::eDouble, 
                             "0.01");
-    argDesc->AddFlag("ns", "test");
+    argDesc->AddFlag("ns", "depreciated flag"); // no longer has an effect, replaced by "os"
+    argDesc->AddFlag("os", "use omssa 1.0 scoring");
 
 
     SetupArgDescriptions(argDesc.release());
@@ -478,6 +480,7 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
 	Settings->SetTophitnum(args["ht"].AsInteger());
 	Settings->SetMinhit(args["hm"].AsInteger());
 	Settings->SetMinspectra(args["hs"].AsInteger());
+    Settings->SetScale(MSSCALE); // presently ignored
 	Settings->SetCutoff(args["he"].AsDouble());
 	Settings->SetMaxmods(args["mm"].AsInteger());
     Settings->SetPseudocount(args["pc"].AsInteger());
@@ -547,7 +550,8 @@ int COMSSA::Run()
 	CSearch Search;
 
     // set up rank scoring
-    if(args["ns"]) Search.SetRankScore() = true;
+    if(args["os"]) Search.SetRankScore() = false;
+    else Search.SetRankScore() = true;
 
 	int retval = Search.InitBlast(args["d"].AsString().c_str());
 	if(retval) {
@@ -706,6 +710,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.48  2006/05/25 17:11:56  lewisg
+  one filtered spectrum per precursor charge state
+
   Revision 1.47  2005/11/16 20:01:13  lewisg
   turn off attribute tag in xml
 
