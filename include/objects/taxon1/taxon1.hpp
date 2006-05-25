@@ -272,6 +272,29 @@ public:
     //---------------------------------------------
     // Get name class id by name class name
     // Returns: value < 0 - Incorrect class name
+    // NOTE: Currently there are following name classes in Taxonomy:
+    //  scientific name
+    //  synonym
+    //  genbank synonym
+    //  common name
+    //  genbank common name
+    //  blast name
+    //  acronym
+    //  genbank acronym
+    //  anamorph
+    //  genbank anamorph
+    //  teleomorph
+    //  equivalent name
+    //  includes
+    //  in-part
+    //  misnomer
+    //  equivalent name
+    //  misspelling
+    //
+    // Scientific name is always present for each taxon. Note 'genbank'
+    // variants for some name classes (e.g. all common names for taxon
+    // is an union of names having both 'common name' and 'genbank common
+    // name' classes).
     ///
     short GetNameClassId( const string& class_name );
 
@@ -684,6 +707,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.22  2006/05/25 16:04:12  domrach
+// Comment added for GetNameClassId f-n
+//
 // Revision 1.21  2006/05/22 15:21:28  domrach
 // Member f-ns GetNameClassId and DumpNames added
 //
