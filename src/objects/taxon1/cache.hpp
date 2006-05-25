@@ -101,6 +101,7 @@ public:
 
 private:
     friend class CTaxon1Node;
+    friend class CTaxon1;
     struct SCacheEntry {
         friend class CTaxon1Node;
         CRef< CTaxon1_data > m_pTax1;
@@ -163,9 +164,7 @@ private:
     TNameClassMap m_ncStorage;
 
     bool     InitNameClasses();
-public:
     short    FindNameClassByName( const char* pchName ) const;
-private:
     // Division stuff
     short m_divViruses;
     short m_divPhages;
@@ -360,6 +359,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.17  2006/05/25 16:14:54  domrach
+ * Make friends with class CTaxon1
+ *
  * Revision 6.16  2006/05/22 15:16:53  domrach
  * Making FindNameClassByName public
  *
