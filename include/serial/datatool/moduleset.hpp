@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/05/25 17:29:05  gouriano
+* Added reference to the source when converting specification
+*
 * Revision 1.10  2005/06/06 17:41:07  gouriano
 * Added generation of modular XML schema
 *
@@ -118,12 +121,16 @@ public:
     bool CheckNames(void) const;
 
     void PrintASN(CNcbiOstream& out) const;
+    void PrintASNRefInfo(CNcbiOstream& out) const;
+
     void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTDModular(void) const;
+
+    void PrintXMLSchemaModular(void) const;
+    void PrintXMLRefInfo(CNcbiOstream& out) const;
     void BeginXMLSchema(CNcbiOstream& out) const;
     void EndXMLSchema(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;
-    void PrintDTDModular(void) const;
-    void PrintXMLSchemaModular(void) const;
 
     const string& GetSourceFileName(void) const;
     string GetFileNamePrefix(void) const;

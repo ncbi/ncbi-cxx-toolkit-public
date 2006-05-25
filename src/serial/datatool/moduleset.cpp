@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2006/05/25 17:29:24  gouriano
+* Added reference to the source when converting specification
+*
 * Revision 1.38  2006/04/13 12:58:54  gouriano
 * Added optional file name suffix to modular DTD or schema
 *
@@ -181,14 +184,25 @@ bool CFileModules::CheckNames(void) const
 void CFileModules::PrintASN(CNcbiOstream& out) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
+        PrintASNRefInfo(out);
         (*mi)->PrintASN(out);
     }
     m_LastComments.PrintASN(out, 0, CComments::eMultiline);
 }
 
+void CFileModules::PrintASNRefInfo(CNcbiOstream& out) const
+{
+    out <<
+        "-- ============================================\n"
+        "-- This specification was generated from \"" << GetSourceFileName() << "\"\n"
+        "-- by application DATATOOL on " << CTime(CTime::eCurrent).AsString() << "\n"
+        "-- =============================================\n\n";
+}
+
 void CFileModules::PrintDTD(CNcbiOstream& out) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
+        PrintXMLRefInfo(out);
         (*mi)->PrintDTD(out);
     }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
@@ -202,6 +216,7 @@ void CFileModules::PrintDTDModular(void) const
         {
             string fileName = fileNameBase + ".mod.dtd";
             CNcbiOfstream out(fileName.c_str());
+            PrintXMLRefInfo(out);
             (*mi)->PrintDTD(out);
             if ( !out )
                 ERR_POST(Fatal << "Cannot write to file "<<fileName);
@@ -209,6 +224,7 @@ void CFileModules::PrintDTDModular(void) const
         {
             string fileName = fileNameBase + ".dtd";
             CNcbiOfstream out(fileName.c_str());
+            PrintXMLRefInfo(out);
             (*mi)->PrintDTDModular(out);
             if ( !out )
                 ERR_POST(Fatal << "Cannot write to file "<<fileName);
@@ -242,6 +258,15 @@ void CFileModules::PrintXMLSchemaModular(void) const
     }
 }
 
+void CFileModules::PrintXMLRefInfo(CNcbiOstream& out) const
+{
+    out <<
+        "<!-- ============================================\n"
+        "     This specification was generated from \"" << GetSourceFileName() << "\"\n"
+        "     by application DATATOOL on " << CTime(CTime::eCurrent).AsString() << "\n"
+        "================================================= -->\n\n";
+}
+
 void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
 {
     string nsName("http://www.ncbi.nlm.nih.gov");
@@ -256,6 +281,7 @@ void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
         << "  targetNamespace=\"" << nsName << "\"\n"
         << "  elementFormDefault=\"qualified\"\n"
         << "  attributeFormDefault=\"unqualified\">\n\n";
+    PrintXMLRefInfo(out);
 }
 
 void CFileModules::EndXMLSchema(CNcbiOstream& out) const
