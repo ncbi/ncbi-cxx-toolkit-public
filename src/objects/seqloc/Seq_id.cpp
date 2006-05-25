@@ -706,7 +706,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'E':
             switch (pfx[1]) {
             case 'A':                     return eAcc_gb_patent;
-            case 'B':                     return eAcc_gb_est;
+            case 'B': case 'C':           return eAcc_gb_est;
             default:                      return eAcc_unreserved_nuc;
             }
 
@@ -1590,6 +1590,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.128  2006/05/25 14:39:34  ucko
+ * IdentifyAccession: EC -> eAcc_gb_est.
+ *
  * Revision 6.127  2006/04/11 15:07:20  ucko
  * ParseFastaIds: when fed an empty string (or just whitespace), return 0
  * rather than storing a blank local ID.
