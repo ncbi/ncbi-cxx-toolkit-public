@@ -70,7 +70,7 @@ CDB_Exception::Severity(void) const
     return result;
 }
 
-const char*         
+const char*
 CDB_Exception::SeverityString(void) const
 {
     return CNcbiDiag::SeverityName( GetSeverity() );
@@ -101,14 +101,14 @@ const char* CDB_Exception::SeverityString(EDB_Severity sev)
 }
 
 
-void 
+void
 CDB_Exception::ReportExtra(ostream& out) const
 {
     x_StartOfWhat( out );
     x_EndOfWhat( out );
 }
 
-void 
+void
 CDB_Exception::x_StartOfWhat(ostream& out) const
 {
     out << "[";
@@ -121,7 +121,7 @@ CDB_Exception::x_StartOfWhat(ostream& out) const
 }
 
 
-void 
+void
 CDB_Exception::x_EndOfWhat(ostream& out) const
 {
 //     out << "<<<";
@@ -135,7 +135,10 @@ CDB_Exception::x_Assign(const CException& src)
     const CDB_Exception& other = dynamic_cast<const CDB_Exception&>(src);
 
     CException::x_Assign(src);
+
     m_DBErrCode = other.m_DBErrCode;
+    m_ServerName = other.m_ServerName;
+    m_UserName = other.m_UserName;
 }
 
 
@@ -154,7 +157,7 @@ CDB_Exception::GetErrCodeString(void) const
     }
 }
 
-CDB_Exception* 
+CDB_Exception*
 CDB_Exception::Clone(void) const
 {
     const CDB_Exception& result = dynamic_cast<const CDB_Exception&>( *x_Clone() );
@@ -166,7 +169,7 @@ CDB_Exception::Clone(void) const
 //  CDB_RPCEx::
 //
 
-void 
+void
 CDB_RPCEx::ReportExtra(ostream& out) const
 {
     string extra_value;
@@ -198,7 +201,7 @@ CDB_RPCEx::x_Assign(const CException& src)
 //  CDB_SQLEx::
 //
 
-void 
+void
 CDB_SQLEx::ReportExtra(ostream& out) const
 {
     x_StartOfWhat( out );
@@ -276,7 +279,7 @@ CDB_MultiEx::Pop(void)
 
     // Remove "const" from the object because we do not own it any more ...
     return const_cast<CDB_Exception*>(result);
-} 
+}
 
 string CDB_MultiEx::WhatThis(void) const
 {
@@ -292,21 +295,21 @@ string CDB_MultiEx::WhatThis(void) const
 }
 
 
-void 
+void
 CDB_MultiEx::ReportExtra(ostream& out) const
 {
-    out 
+    out
         << WhatThis()
         << Endl();
 
     ReportErrorStack(out);
 
-    out 
+    out
         << Endl()
         << "---  [Multi-Exception]  End of backtrace  ---";
 }
 
-void 
+void
 CDB_MultiEx::ReportErrorStack(ostream& out) const
 {
     size_t record_num = m_Bag->GetData().size();
@@ -407,7 +410,7 @@ CDB_UserHandler::~CDB_UserHandler()
 static CDB_UserHandler_Wrapper& GetDefaultCDBErrorHandler(void)
 {
     static CSafeStaticRef<CDB_UserHandler_Wrapper> s_CDB_DefUserHandler;
-    
+
     return s_CDB_DefUserHandler.Get();
 }
 
@@ -424,8 +427,8 @@ CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
 
 
 bool CDB_UserHandler::HandleAll(const TExceptions& exceptions)
-{ 
-    return false; 
+{
+    return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -456,15 +459,21 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
 
     if (ex->GetSeverity() == eDiag_Info) {
         if ( m_Prefix.empty() ) {
-            LOG_POST( ex->GetMsg() );
+            LOG_POST(ex->GetMsg());
         } else {
             LOG_POST(m_Prefix << ' ' << ex->GetMsg());
         }
     } else {
         if ( m_Prefix.empty() ) {
-            LOG_POST( ex->what() );
+            LOG_POST(ex->what() <<
+                     " SERVER: '" << ex->GetServerName() <<
+                     "' USER: '" << ex->GetUserName() << "'"
+                     );
         } else {
-            LOG_POST(m_Prefix << ' ' << ex->what());
+            LOG_POST(m_Prefix << ' ' << ex->what() <<
+                     " SERVER: '" << ex->GetServerName() <<
+                     "' USER: '" << ex->GetUserName() << "'"
+                     );
         }
     }
 
@@ -529,6 +538,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/05/30 18:46:07  ssikorsk
+ * Added server and user names to the CDB_Exception class;
+ * Revamp CDB_UserHandler_Diag to report server and user names;
+ *
  * Revision 1.25  2006/05/16 21:18:38  ssikorsk
  * Improved methods CDB_UserHandler::GetDefault and CDB_UserHandler::SetDefault.
  *
