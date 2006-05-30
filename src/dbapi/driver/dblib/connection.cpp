@@ -51,26 +51,33 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 
-CDBL_Connection::CDBL_Connection(CDBLibContext* cntx, DBPROCESS* con,
-                                 bool reusable, const string& pool_name) :
-    m_Link(con), m_Context(cntx), m_Pool(pool_name), m_Reusable(reusable),
-    m_BCPAble(false), m_SecureLogin(false), m_ResProc(0)
+CDBL_Connection::CDBL_Connection(CDBLibContext* cntx, 
+                                 DBPROCESS* con,
+                                 bool reusable, 
+                                 const string& pool_name) :
+    m_Link(con), 
+    m_Context(cntx), 
+    m_Pool(pool_name), 
+    m_Reusable(reusable),
+    m_BCPAble(false), 
+    m_SecureLogin(false), 
+    m_ResProc(0)
 {
-    dbsetuserdata(m_Link, (BYTE*) this);
+    dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
 }
 
 
 bool CDBL_Connection::IsAlive()
 {
-    return DBDEAD(m_Link) == FALSE;
+    return DBDEAD(GetDBLibConnection()) == FALSE;
 }
 
 
 CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
                                       unsigned int nof_parms)
 {
-    CDBL_LangCmd* lcmd = new CDBL_LangCmd(this, m_Link, lang_query, nof_parms);
+    CDBL_LangCmd* lcmd = new CDBL_LangCmd(this, GetDBLibConnection(), lang_query, nof_parms);
     m_CMDs.push_back(lcmd);
     return Create_LangCmd(*lcmd);
 }
@@ -78,7 +85,7 @@ CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
 
 CDB_RPCCmd* CDBL_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 {
-    CDBL_RPCCmd* rcmd = new CDBL_RPCCmd(this, m_Link, rpc_name, nof_args);
+    CDBL_RPCCmd* rcmd = new CDBL_RPCCmd(this, GetDBLibConnection(), rpc_name, nof_args);
     m_CMDs.push_back(rcmd);
     return Create_RPCCmd(*rcmd);
 }
@@ -88,7 +95,7 @@ CDB_BCPInCmd* CDBL_Connection::BCPIn(const string& tab_name,
                                      unsigned int nof_cols)
 {
     CHECK_DRIVER_ERROR( !m_BCPAble, "No bcp on this connection", 210003 );
-    CDBL_BCPInCmd* bcmd = new CDBL_BCPInCmd(this, m_Link, tab_name, nof_cols);
+    CDBL_BCPInCmd* bcmd = new CDBL_BCPInCmd(this, GetDBLibConnection(), tab_name, nof_cols);
     m_CMDs.push_back(bcmd);
     return Create_BCPInCmd(*bcmd);
 }
@@ -99,7 +106,7 @@ CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
                                        unsigned int nof_params,
                                        unsigned int)
 {
-    CDBL_CursorCmd* ccmd = new CDBL_CursorCmd(this, m_Link, cursor_name,
+    CDBL_CursorCmd* ccmd = new CDBL_CursorCmd(this, GetDBLibConnection(), cursor_name,
                                               query, nof_params);
     m_CMDs.push_back(ccmd);
     return Create_CursorCmd(*ccmd);
@@ -132,20 +139,20 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) : 
     dynamic_cast<CDBL_ITDescriptor&> (descr_in);
 
-    if (Check(dbwritetext(m_Link,
+    if (Check(dbwritetext(GetDBLibConnection(),
                     (char*) desc.m_ObjName.c_str(),
                     desc.m_TxtPtr_is_NULL ? 0 : desc.m_TxtPtr,
                     DBTXPLEN,
                     desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                     log_it ? TRUE : FALSE,
                     (DBINT) data_size, 0)) != SUCCEED ||
-        Check(dbsqlok(m_Link)) != SUCCEED ||
-        //        dbresults(m_Link) == FAIL) {
-        x_Results(m_Link) == FAIL) {
+        Check(dbsqlok(GetDBLibConnection())) != SUCCEED ||
+        //        dbresults(GetDBLibConnection()) == FAIL) {
+        x_Results(GetDBLibConnection()) == FAIL) {
         DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210093 );
     }
 
-    CDBL_SendDataCmd* sd_cmd = new CDBL_SendDataCmd(this, m_Link, data_size);
+    CDBL_SendDataCmd* sd_cmd = new CDBL_SendDataCmd(this, GetDBLibConnection(), data_size);
     m_CMDs.push_back(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
 }
@@ -176,11 +183,11 @@ bool CDBL_Connection::Refresh()
     m_CMDs.clear();
 
     // cancel all pending commands
-    if (Check(dbcancel(m_Link)) != CS_SUCCEED)
+    if (Check(dbcancel(GetDBLibConnection())) != CS_SUCCEED)
         return false;
 
     // check the connection status
-    return DBDEAD(m_Link) == FALSE;
+    return DBDEAD(GetDBLibConnection()) == FALSE;
 }
 
 
@@ -288,8 +295,8 @@ void CDBL_Connection::DropCmd(CDB_BaseEnt& cmd)
 
 bool CDBL_Connection::Abort()
 {
-    int fdr= DBIORDESC(m_Link);
-    int fdw= DBIOWDESC(m_Link);
+    int fdr= DBIORDESC(GetDBLibConnection());
+    int fdw= DBIOWDESC(GetDBLibConnection());
     if(fdr >= 0) {
         close(fdr);
     }
@@ -301,10 +308,10 @@ bool CDBL_Connection::Abort()
 
 bool CDBL_Connection::Close(void)
 {
-    if (m_Link) {
+    if (GetDBLibConnection()) {
         try {
             Refresh();
-            dbclose(m_Link);
+            dbclose(GetDBLibConnection());
             CheckFunctCall();
             m_Link = NULL;
             return true;
@@ -346,7 +353,7 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
 
     if (size <= sizeof(buff)) { // we could write a blob in one chunk
         size_t s = stream.Read(buff, sizeof(buff));
-        if (Check(dbwritetext(m_Link, (char*) desc.m_ObjName.c_str(),
+        if (Check(dbwritetext(GetDBLibConnection(), (char*) desc.m_ObjName.c_str(),
                         desc.m_TxtPtr_is_NULL ? 0 : desc.m_TxtPtr,
                         DBTXPLEN,
                         desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
@@ -358,32 +365,32 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     }
 
     // write it in chunks
-    if (Check(dbwritetext(m_Link, (char*) desc.m_ObjName.c_str(),
+    if (Check(dbwritetext(GetDBLibConnection(), (char*) desc.m_ObjName.c_str(),
                     desc.m_TxtPtr_is_NULL ? 0 : desc.m_TxtPtr,
                     DBTXPLEN,
                     desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                     log_it ? TRUE : FALSE, (DBINT) size, 0)) != SUCCEED ||
-        Check(dbsqlok(m_Link)) != SUCCEED ||
-        //        dbresults(m_Link) == FAIL) {
-        x_Results(m_Link) == FAIL) {
+        Check(dbsqlok(GetDBLibConnection())) != SUCCEED ||
+        //        dbresults(GetDBLibConnection()) == FAIL) {
+        x_Results(GetDBLibConnection()) == FAIL) {
         DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210031 );
     }
 
     while (size > 0) {
         size_t s = stream.Read(buff, sizeof(buff));
         if (s < 1) {
-            Check(dbcancel(m_Link));
+            Check(dbcancel(GetDBLibConnection()));
             DATABASE_DRIVER_ERROR( "Text/Image data corrupted", 210032 );
         }
-        if (Check(dbmoretext(m_Link, (DBINT) s, (BYTE*) buff)) != SUCCEED) {
-            Check(dbcancel(m_Link));
+        if (Check(dbmoretext(GetDBLibConnection(), (DBINT) s, (BYTE*) buff)) != SUCCEED) {
+            Check(dbcancel(GetDBLibConnection()));
             DATABASE_DRIVER_ERROR( "dbmoretext failed", 210033 );
         }
         size -= s;
     }
 
-    //    if (dbsqlok(m_Link) != SUCCEED || dbresults(m_Link) == FAIL) {
-    if (Check(dbsqlok(m_Link)) != SUCCEED || x_Results(m_Link) == FAIL) {
+    //    if (dbsqlok(GetDBLibConnection()) != SUCCEED || dbresults(GetDBLibConnection()) == FAIL) {
+    if (Check(dbsqlok(GetDBLibConnection())) != SUCCEED || x_Results(GetDBLibConnection()) == FAIL) {
         DATABASE_DRIVER_ERROR( "dbsqlok/dbresults failed", 210034 );
     }
 
@@ -423,7 +430,7 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
                 while(res->Fetch()) {
                     res->ReadItem(&i, 1);
                 
-                    descr= new CDBL_ITDescriptor(*this, m_Link, descr_in);
+                    descr= new CDBL_ITDescriptor(*this, GetDBLibConnection(), descr_in);
                     // descr= res->GetImageOrTextDescriptor();
                     if(descr) {
                         break;
@@ -591,6 +598,23 @@ void CTDS_Connection::TDS_SetTimeout(void)
 }
 #endif
 
+RETCODE CDBL_Connection::Check(RETCODE rc)
+{
+    if (rc == FAIL && DBDEAD(GetDBLibConnection()) == TRUE) {
+        CDB_ClientEx ex(DIAG_COMPILE_INFO,
+                        0,
+                        "Database connection is closed",
+                        eDiag_Error,
+                        220000);
+
+        GetDBLExceptionStorage().Accept(ex);
+    }
+    
+    CheckFunctCall();
+    
+    return rc;
+}
+
 void CDBL_Connection::CheckFunctCall(void)
 {
     GetDBLExceptionStorage().Handle(m_MsgHandlers);
@@ -672,6 +696,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/05/30 18:55:06  ssikorsk
+ * Revamp code to use GetDBLibConnection and Check methods.
+ *
  * Revision 1.29  2006/05/15 19:37:54  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *
