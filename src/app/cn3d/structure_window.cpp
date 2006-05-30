@@ -239,7 +239,7 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menu->Append(MID_SHOW_SELECTED_RESIDUES, "Show &Selected Residues");
     menu->AppendSeparator();
     menu->Append(MID_DIST_SELECT, "Select by Dis&tance...");
-    menu->Append(MID_SELECT_CHAIN, "Select &Chain...");
+    menu->Append(MID_SELECT_CHAIN, "Toggle &Chain...");
     menu->Append(MID_SELECT_MOLECULE, "Select M&olecule...\tm");
     menuBar->Append(menu, "Se&lect");
 
@@ -598,9 +598,9 @@ void StructureWindow::OnSelect(wxCommandEvent& event)
         for (unsigned int i=0; i<names.size(); ++i)
             aChoices.Add(names[i].c_str());
         wxArrayInt selections;
-        size_t nSelected = wxGetMultipleChoices(selections, "Choose chain(s) to select:", "Select Chain", aChoices);
+        size_t nSelected = wxGetMultipleChoices(selections, "Choose chain(s) to toggle:", "Select Chain", aChoices);
         if (nSelected > 0) {
-            GlobalMessenger()->RemoveAllHighlights(true);
+//            GlobalMessenger()->RemoveAllHighlights(true);
             for (size_t i=0; i<selections.GetCount(); ++i) {
                 const Molecule *molecule = molecules[selections.Item(i)];
                 Molecule::ResidueMap::const_iterator r, re = molecule->residues.end();
@@ -1700,6 +1700,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2006/05/30 22:22:13  thiessen
+* toggle chain instead of selecting chain only
+*
 * Revision 1.50  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
