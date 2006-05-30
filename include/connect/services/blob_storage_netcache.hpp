@@ -135,7 +135,7 @@ private:
     auto_ptr<IReader> x_GetReader(const string& key,
                                   size_t& blob_size,
                                   ELockMode lockMode);
-    void x_Check();
+    void x_Check(const string& where);
 
     TCacheFlags m_CacheFlags;
     string*  m_CreatedBlobId;
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/30 16:41:05  didenko
+ * Improved error handling
+ *
  * Revision 1.6  2006/04/04 20:14:04  didenko
  * Disabled copy constractors and assignment operators
  *

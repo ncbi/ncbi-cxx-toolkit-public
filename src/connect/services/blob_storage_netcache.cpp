@@ -75,12 +75,12 @@ CBlobStorage_NetCache::~CBlobStorage_NetCache()
     }
 }
 
-void CBlobStorage_NetCache::x_Check()
+void CBlobStorage_NetCache::x_Check(const string& where)
 {
     if ( (m_IStream.get() && !(m_CacheFlags & eCacheInput)) || 
-         (m_OStream.get() || (m_CacheFlags & eCacheOutput) && m_CreatedBlobId) )
+         (m_OStream.get() && !(m_CacheFlags & eCacheOutput)) )//&& m_CreatedBlobId) )
         NCBI_THROW(CBlobStorageException,
-                   eBusy, "Communication channel is already in use.");
+                   eBusy, "Communication channel is already in use." + where);
 }
 
 auto_ptr<IReader> CBlobStorage_NetCache::x_GetReader(const string& key,
@@ -89,7 +89,7 @@ auto_ptr<IReader> CBlobStorage_NetCache::x_GetReader(const string& key,
 {
     CNetCacheClient::ELockMode mode = lockMode == eLockNoWait ? 
         CNetCacheClient::eLockNoWait : CNetCacheClient::eLockWait;
-    x_Check();
+    x_Check("GetReader");
     blob_size = 0;
 
     auto_ptr<IReader> reader;
@@ -192,7 +192,7 @@ CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
                                                    ELockMode)
 
 {
-    x_Check();
+    x_Check("CreateOStream");
     if (!(m_CacheFlags & eCacheOutput)) {
         auto_ptr<IWriter> writer;
         int try_count = 0;
@@ -229,7 +229,9 @@ CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
         if( !m_OStream.get() || !m_OStream->good()) {
             m_OStream.reset();
             NCBI_THROW(CBlobStorageException,
-                       eWriter, "Writer couldn't create a temporary file.");
+                       eWriter, 
+                       "Writer couldn't create a temporary file in \"" + m_TempDir + "\" dir. "
+                       "Check \"tmp_dir\" parameter in the registry for netcache client.");
         }
     }
     return *m_OStream;
@@ -237,7 +239,7 @@ CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
 
 string CBlobStorage_NetCache::CreateEmptyBlob()
 {
-    x_Check();
+    x_Check("CreateEmptyBlob");
     if (m_NCClient.get())
         return m_NCClient->PutData((const void*)NULL,0);
     return kEmptyStr;
@@ -245,7 +247,7 @@ string CBlobStorage_NetCache::CreateEmptyBlob()
 }
 void CBlobStorage_NetCache::DeleteBlob(const string& data_id)
 {
-    x_Check();
+    x_Check("DeleteBlob");
     if (!data_id.empty() && m_NCClient.get()) 
         m_NCClient->Remove(data_id);
 }
@@ -402,6 +404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2006/05/30 16:41:05  didenko
+ * Improved error handling
+ *
  * Revision 6.6  2006/05/03 20:03:52  didenko
  * Improved exceptions handling
  *

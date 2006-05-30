@@ -108,7 +108,9 @@ CNcbiIstream& CGridThreadContext::GetIStream(IBlobStorage::ELockMode mode)
                                               &m_JobContext->SetJobInputBlobSize(),
                                               mode);
         m_RStream.reset(new CRStream(reader, 0,0, 
-                                     CRWStreambuf::fOwnReader));
+                                     CRWStreambuf::fOwnReader 
+                                   | CRWStreambuf::fLogExceptions));
+        m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         return *m_RStream;
     }
     NCBI_THROW(CBlobStorageException,
@@ -126,7 +128,9 @@ CNcbiOstream& CGridThreadContext::GetOStream()
             new CStringOrBlobStorageWriter(max_data_size,
                                            *m_Writer,
                                            m_JobContext->SetJobOutput());
-        m_WStream.reset(new CWStream(writer, 0,0, CRWStreambuf::fOwnWriter));
+        m_WStream.reset(new CWStream(writer, 0,0, CRWStreambuf::fOwnWriter
+                                                | CRWStreambuf::fLogExceptions));
+        m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         return *m_WStream;
     }
     NCBI_THROW(CBlobStorageException,
@@ -378,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.23  2006/05/30 16:41:05  didenko
+ * Improved error handling
+ *
  * Revision 6.22  2006/05/22 18:11:43  didenko
  * Added an option to fail a job if a remote app returns non zore code
  *

@@ -103,7 +103,9 @@ CNcbiOstream& CGridJobSubmiter::GetOStream()
                                        m_GridClient.GetStorage(),
                                        m_Input);
 
-    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter));
+    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter 
+                                             | CRWStreambuf::fLogExceptions ));
+    m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     return *m_WStream;
     //    return m_GridClient.GetStorage().CreateOStream(m_Input);
 }
@@ -111,7 +113,6 @@ CNcbiOstream& CGridJobSubmiter::GetOStream()
 string CGridJobSubmiter::Submit(const string& affinity)
 {
     m_WStream.reset();
-
     string progress_msg_key;
     if (m_UseProgress)
         progress_msg_key = m_GridClient.GetStorage().CreateEmptyBlob();
@@ -161,7 +162,9 @@ CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
     IReader* reader = new CStringOrBlobStorageReader(m_Output,
                                                      m_GridClient.GetStorage(),
                                                      &m_BlobSize, mode);
-    m_RStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader));
+    m_RStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader
+                                          | CRWStreambuf::fLogExceptions));
+    m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     return *m_RStream;
     //    return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize, mode);
 }
@@ -194,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/05/30 16:41:05  didenko
+ * Improved error handling
+ *
  * Revision 1.10  2006/05/08 15:16:42  didenko
  * Added support for an optional saving of a remote application's stdout
  * and stderr into files on a local file system

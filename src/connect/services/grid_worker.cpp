@@ -225,7 +225,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
         string new_job_key, new_job_input;
     try {
         CRef<IWorkerNodeJob> job(thr_context.GetJob());         
-        int ret_code;
+        int ret_code = 0;
         try {
             ret_code = job->Do(thr_context.GetJobContext());
         }
@@ -705,6 +705,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/05/30 16:41:05  didenko
+ * Improved error handling
+ *
  * Revision 1.50  2006/05/22 18:11:43  didenko
  * Added an option to fail a job if a remote app returns non zore code
  *

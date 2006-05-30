@@ -86,7 +86,9 @@ public:
                                                        *m_Data)
                         );
             m_OStream.reset(new CWStream(writer.release(), 
-                                         0, 0, CRWStreambuf::fOwnWriter));
+                                         0, 0, CRWStreambuf::fOwnWriter
+                                             | CRWStreambuf::fLogExceptions));
+            m_OStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             *m_OStream << (int) type << " ";
             s_Write(*m_OStream, fname);
             if (!fname.empty() && type == eLocalFile) {                   
@@ -112,7 +114,9 @@ public:
                                                       IBlobStorage::eLockWait)
                        );
             m_IStream.reset(new CRStream(reader.release(),
-                                         0,0,CRWStreambuf::fOwnReader));
+                                         0,0,CRWStreambuf::fOwnReader
+                                           | CRWStreambuf::fLogExceptions));
+            m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             string name;
             int tmp = (int)eBlobStorage;
             if (m_IStream->good())
@@ -697,6 +701,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2006/05/30 16:41:05  didenko
+ * Improved error handling
+ *
  * Revision 6.9  2006/05/23 16:59:32  didenko
  * Added ability to run a remote application from a separate directory
  * for each job
