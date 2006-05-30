@@ -108,14 +108,17 @@ public:
     {
         return m_DatabaseName;
     }
+    
     EServerType GetServerType(void) const;
+    
+    string GetProgramBasename(void) const;
     
     
 private:
     void SetDatabaseParameters(void);
 
 private:
-
+    CNcbiArguments m_Arguments;
     string m_DriverName;
     string m_ServerName;
     string m_UserName;
@@ -239,6 +242,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2006/05/30 16:32:33  ssikorsk
+ * 	Made CNcbiArguments a member of CTestArguments.
+ *
  * Revision 1.37  2006/05/10 16:20:05  ssikorsk
  * Added class CErrHandler
  *
