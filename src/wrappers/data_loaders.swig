@@ -41,7 +41,10 @@ objtools/data_loaders/table/user_feature_dload.hpp
 objtools/data_loaders/table/table.hpp
 objtools/data_loaders/trace/trace_chgr.hpp
 objtools/data_loaders/lds/lds_dataloader.hpp
+objtools/data_loaders/genbank/blob_id.hpp
+objtools/data_loaders/genbank/cache_manager.hpp
 objtools/data_loaders/genbank/reader.hpp
+objtools/data_loaders/genbank/reader_id1_base.hpp
 objtools/data_loaders/genbank/reader_snp.hpp
 objtools/data_loaders/genbank/request_result.hpp
 objtools/data_loaders/genbank/seqref.hpp
@@ -55,6 +58,9 @@ objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/05/30 18:36:33  jcherry
+ * Added headers
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
