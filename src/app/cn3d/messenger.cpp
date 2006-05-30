@@ -394,6 +394,11 @@ void Messenger::RestoreCachedHighlights(void)
     PostRedrawAllStructures();
 }
 
+void Messenger::GetHighlights(MoleculeHighlightMap *copyHighlights)
+{
+    *copyHighlights = highlights;    // copy the lists
+}
+
 void Messenger::SetHighlights(const MoleculeHighlightMap& newHighlights)
 {
     RemoveAllHighlights(true);
@@ -577,6 +582,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2006/05/30 21:41:21  thiessen
+* add pattern search within selection
+*
 * Revision 1.50  2005/11/17 22:25:43  thiessen
 * remove more spurious uint-compared-to-zero
 *

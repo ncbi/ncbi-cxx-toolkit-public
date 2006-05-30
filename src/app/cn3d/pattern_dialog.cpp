@@ -1,12 +1,12 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        pattern_dialog.cpp
-// Purpose:     
-// Author:      
-// Modified by: 
+// Purpose:
+// Author:
+// Modified by:
 // Created:     10/01/04 10:47:06
 // RCS-ID:      $Id$
-// Copyright:   
-// Licence:     
+// Copyright:
+// Licence:
 /////////////////////////////////////////////////////////////////////////////
 
 #if defined(__GNUG__) && !defined(__APPLE__)
@@ -96,7 +96,7 @@ bool PatternDialog::Create( wxWindow* parent, wxWindowID id, const wxString& cap
  */
 
 void PatternDialog::CreateControls()
-{    
+{
 ////@begin PatternDialog content construction
 
     PatternDialog* itemDialog1 = this;
@@ -113,9 +113,10 @@ void PatternDialog::CreateControls()
 
     wxString itemRadioBox5Strings[] = {
         _("Replace"),
-        _("Add")
+        _("Add"),
+        _("Within")
     };
-    wxRadioBox* itemRadioBox5 = new wxRadioBox( itemDialog1, ID_RADIOBOX, _("Highlight mode"), wxDefaultPosition, wxDefaultSize, 2, itemRadioBox5Strings, 1, wxRA_SPECIFY_ROWS );
+    wxRadioBox* itemRadioBox5 = new wxRadioBox( itemDialog1, ID_RADIOBOX, _("Highlight mode"), wxDefaultPosition, wxDefaultSize, 3, itemRadioBox5Strings, 1, wxRA_SPECIFY_ROWS );
     m_Mode = itemRadioBox5;
     itemBoxSizer2->Add(itemRadioBox5, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 

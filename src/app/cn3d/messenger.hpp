@@ -117,7 +117,8 @@ public:
     // highlight any 'ole residue, regardless of molecule type
     void ToggleHighlight(const Molecule *molecule, int residueID, bool scrollViewersTo = false);
 
-    // set a bunch of highlights all at once - copies highlight list from given set
+    // get/set a bunch of highlights all at once - copies highlight list from given set
+    void GetHighlights(MoleculeHighlightMap *copyHighlights);
     void SetHighlights(const MoleculeHighlightMap& newHighlights);
 
     // highlights a sequence and moves viewer to that row
@@ -202,6 +203,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2006/05/30 21:41:21  thiessen
+* add pattern search within selection
+*
 * Revision 1.31  2005/10/28 17:06:12  thiessen
 * show only highlighted molecules when showing structure evidence
 *

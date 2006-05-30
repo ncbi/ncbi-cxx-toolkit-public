@@ -565,7 +565,7 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
     return true;
 }
 
-bool Sequence::HighlightPattern(const string& prositePattern) const
+bool Sequence::HighlightPattern(const string& prositePattern, const MoleculeHighlightMap& restrictTo) const
 {
     bool retval = true;
     try {
@@ -601,9 +601,29 @@ bool Sequence::HighlightPattern(const string& prositePattern) const
 //            for (i=0; i<regexp->NumFound(); ++i)
 //                TRACEMSG("    " << i << ": " << (regexp->GetResults(i)[0] + 1) << '-' << regexp->GetResults(i)[1]);
 
+            // check to see if this entire match is within the restricted set
+            bool addMatch = true;
+            if (restrictTo.size() > 0) {
+                MoleculeHighlightMap::const_iterator r = restrictTo.find(identifier);
+                if (r != restrictTo.end()) {
+                    for (i=1; i<regexp->NumFound(); ++i) {
+                        for (unsigned int j=regexp->GetResults(i)[0]; j<=regexp->GetResults(i)[1]-1; ++j) {
+                            if (!r->second[j]) {
+                                addMatch = false;
+                                break;
+                            }
+                        }
+                        if (!addMatch)
+                            break;
+                    }
+                } else
+                    addMatch = false;
+            }
+
             // parse the match subpatterns, highlight each subpattern range
-            for (i=1; i<regexp->NumFound(); ++i)
-                GlobalMessenger()->AddHighlights(this, regexp->GetResults(i)[0], regexp->GetResults(i)[1] - 1);
+            if (addMatch)
+                for (i=1; i<regexp->NumFound(); ++i)
+                    GlobalMessenger()->AddHighlights(this, regexp->GetResults(i)[0], regexp->GetResults(i)[1] - 1);
 
             // start next search after the end of this one
             start = regexp->GetResults(regexp->NumFound() - 1)[1];
@@ -625,6 +645,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2006/05/30 21:41:21  thiessen
+* add pattern search within selection
+*
 * Revision 1.76  2006/02/16 23:13:39  thiessen
 * better handling of non-standard fasta deflines
 *

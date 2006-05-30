@@ -95,8 +95,11 @@ public:
     void LaunchWebBrowserWithInfo(void) const;
 
     // highlight residues matching the given pattern; returns true if the pattern is valid,
-    // regardless of whether a match is found, or returns false on error
-    bool HighlightPattern(const std::string& pattern) const;
+    // regardless of whether a match is found, or returns false on error;
+    // if the 'restrictTo' map is not empty, it restricts highlights to only those matches
+    // within this map (for searching within a pre-selected subset)
+    typedef std::map < const MoleculeIdentifier *, std::vector < bool > > MoleculeHighlightMap;
+    bool HighlightPattern(const std::string& pattern, const MoleculeHighlightMap& restrictTo) const;
 };
 
 END_SCOPE(Cn3D)
@@ -106,6 +109,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/05/30 21:41:21  thiessen
+* add pattern search within selection
+*
 * Revision 1.35  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *

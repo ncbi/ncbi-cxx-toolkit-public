@@ -376,7 +376,11 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
     previousPattern = pattern;
     previousMode = dialog.m_Mode->GetStringSelection();
 
-    if (dialog.m_Mode->GetStringSelection() == "Replace")
+    // set up highlighting
+    Messenger::MoleculeHighlightMap restrictTo;
+    if (dialog.m_Mode->GetStringSelection() == "Within")
+        GlobalMessenger()->GetHighlights(&restrictTo);
+    if (dialog.m_Mode->GetStringSelection() == "Replace" || dialog.m_Mode->GetStringSelection() == "Within")
         GlobalMessenger()->RemoveAllHighlights(true);
 
     // highlight pattern from each (unique) sequence in the display
@@ -389,7 +393,7 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
         if (!sequence || usedSequences.find(sequence) != usedSequences.end()) continue;
         usedSequences[sequence] = true;
 
-        if (!sequence->HighlightPattern(pattern.c_str())) break;
+        if (!sequence->HighlightPattern(pattern.c_str(), restrictTo)) break;
     }
 }
 
@@ -419,6 +423,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2006/05/30 21:41:21  thiessen
+* add pattern search within selection
+*
 * Revision 1.57  2005/10/25 17:41:35  thiessen
 * fix flicker in alignment display; add progress meter and misc fixes to refiner
 *
