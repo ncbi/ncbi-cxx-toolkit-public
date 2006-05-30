@@ -3,7 +3,7 @@
 APP = dbl_lang
 SRC = dbl_lang
 
-LIB  = ncbi_xdbapi_dblib dbapi_driver $(XCONNEXT) xconnect xncbi
+LIB  = ncbi_xdbapi_dblib$(STATIC) dbapi_driver$(STATIC) $(XCONNEXT) xconnect xncbi
 LIBS = $(SYBASE_DBLIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS)

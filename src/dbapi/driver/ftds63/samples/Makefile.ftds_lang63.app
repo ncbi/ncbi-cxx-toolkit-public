@@ -3,7 +3,7 @@
 APP = ftds_lang63
 SRC = ftds_lang
 
-LIB  = ncbi_xdbapi_$(ftds63) $(FTDS63_LIB) dbapi_driver $(XCONNEXT) xconnect xncbi
+LIB  = ncbi_xdbapi_$(ftds63)$(STATIC) $(FTDS63_LIB) dbapi_driver$(STATIC) $(XCONNEXT) xconnect xncbi
 LIBS = $(FTDS63_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(FTDS63_INCLUDE) $(ORIG_CPPFLAGS)
