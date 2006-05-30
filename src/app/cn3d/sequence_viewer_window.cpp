@@ -67,7 +67,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_DELETE_ROW,                      SequenceViewerWindow::OnDeleteRow)
     EVT_MENU      (MID_MOVE_ROW,                        SequenceViewerWindow::OnMoveRow)
     EVT_MENU      (MID_SHOW_UPDATES,                    SequenceViewerWindow::OnShowUpdates)
-    EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_ROWS,   SequenceViewerWindow::OnRealign)
+    EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_HLIT_ROWS,  SequenceViewerWindow::OnRealign)
     EVT_MENU_RANGE(MID_SORT_IDENT, MID_PROXIMITY_SORT,  SequenceViewerWindow::OnSort)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
@@ -125,6 +125,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     updateMenu->AppendSeparator();
     updateMenu->Append(MID_REALIGN_ROW, "Realign &Individual Rows", "", true);
     updateMenu->Append(MID_REALIGN_ROWS, "Realign Rows from &List");
+    updateMenu->Append(MID_REALIGN_HLIT_ROWS, "Realign &Highlighted Rows");
     updateMenu->AppendSeparator();
     updateMenu->Append(MID_MARK_BLOCK, "Mark &Block", "", true);
     updateMenu->Append(MID_CLEAR_MARKS, "&Clear Marks");
@@ -175,6 +176,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_MOVE_ROW, enabled);
         menuBar->Enable(MID_REALIGN_ROW, enabled);
         menuBar->Enable(MID_REALIGN_ROWS, enabled);
+        menuBar->Enable(MID_REALIGN_HLIT_ROWS, enabled);
         menuBar->Enable(MID_MARK_BLOCK, enabled);
         menuBar->Enable(MID_CLEAR_MARKS, enabled);
         menuBar->Enable(MID_SELF_HIT, editable);
@@ -333,23 +335,34 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     }
     BlockMultipleAlignment *alignment = sequenceViewer->GetCurrentAlignments().front();
 
-    // get titles of current slave display rows (*not* rows from the AlignmentSet!)
+    // get slave rows to realign (in display order)
     SequenceDisplay::SequenceList sequences;
     sequenceViewer->GetCurrentDisplay()->GetSequences(alignment, &sequences);
-    wxString *titleStrs = new wxString[sequences.size() - 1];
-    unsigned int i;
-    for (i=1; i<sequences.size(); ++i)  // assuming master is first sequence
-        titleStrs[i - 1] = sequences[i]->identifier->ToString().c_str();
-
     vector < bool > selectedSlaves(sequences.size() - 1, false);
+    unsigned int i;
 
-    wxString title = "Realign Slaves of ";
-    title.Append(alignment->GetMaster()->identifier->ToString().c_str());
-    ShowHideDialog dialog(
-        titleStrs, &selectedSlaves,
-        NULL,   // no "apply" button or callback
-        true, this, -1, title, wxPoint(200, 100));
-    dialog.ShowModal();
+    // selection dialog
+    if (event.GetId() == MID_REALIGN_ROWS) {
+        // get titles of current slave display rows (*not* rows from the AlignmentSet!)
+        wxString *titleStrs = new wxString[sequences.size() - 1];
+        for (i=1; i<sequences.size(); ++i)  // assuming master is first sequence
+            titleStrs[i - 1] = sequences[i]->identifier->ToString().c_str();
+
+        wxString title = "Realign Slaves of ";
+        title.Append(alignment->GetMaster()->identifier->ToString().c_str());
+        ShowHideDialog dialog(
+            titleStrs, &selectedSlaves,
+            NULL,   // no "apply" button or callback
+            true, this, -1, title, wxPoint(200, 100));
+        dialog.ShowModal();
+    }
+
+    // select rows w/ any highlights
+    else if (event.GetId() == MID_REALIGN_HLIT_ROWS) {
+        for (i=1; i<sequences.size(); ++i)  // assuming master is first sequence
+            if (GlobalMessenger()->IsHighlightedAnywhere(sequences[i]->identifier))
+                selectedSlaves[i - 1] = true;
+    }
 
     // make list of slave rows to be realigned
     vector < unsigned int > rowOrder, realignSlaves;
@@ -586,6 +599,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2006/05/30 19:14:38  thiessen
+* add realign rows w/ highlights
+*
 * Revision 1.63  2005/11/28 22:19:44  thiessen
 * highlight blocks before running refiner
 *

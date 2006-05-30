@@ -95,6 +95,7 @@ private:
         MID_SHOW_UPDATES,
         MID_REALIGN_ROW,
         MID_REALIGN_ROWS,
+        MID_REALIGN_HLIT_ROWS,
         MID_MARK_BLOCK,
         MID_CLEAR_MARKS
     };
@@ -181,6 +182,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/05/30 19:14:38  thiessen
+* add realign rows w/ highlights
+*
 * Revision 1.33  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *
