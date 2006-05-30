@@ -68,19 +68,19 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDblibContextRegistry
 {
 public:
     static CDblibContextRegistry& Instance(void);
-    
+
     void Add(CDBLibContext* ctx);
     void Remove(CDBLibContext* ctx);
     void ClearAll(void);
     static void StaticClearAll(void);
-    
+
 private:
     CDblibContextRegistry(void);
     ~CDblibContextRegistry(void) throw();
-    
+
     mutable CMutex          m_Mutex;
     vector<CDBLibContext*>  m_Registry;
-    
+
     friend class CSafeStaticPtr<CDblibContextRegistry>;
 };
 
@@ -102,39 +102,39 @@ CDblibContextRegistry&
 CDblibContextRegistry::Instance(void)
 {
     static CSafeStaticPtr<CDblibContextRegistry> instance;
-    
+
     return instance.Get();
 }
 
-void 
+void
 CDblibContextRegistry::Add(CDBLibContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
-    
-    vector<CDBLibContext*>::iterator it = find(m_Registry.begin(), 
-                                               m_Registry.end(), 
+
+    vector<CDBLibContext*>::iterator it = find(m_Registry.begin(),
+                                               m_Registry.end(),
                                                ctx);
     if (it == m_Registry.end()) {
         m_Registry.push_back(ctx);
     }
 }
 
-void 
+void
 CDblibContextRegistry::Remove(CDBLibContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
-    
-    vector<CDBLibContext*>::iterator it = find(m_Registry.begin(), 
-                                              m_Registry.end(), 
+
+    vector<CDBLibContext*>::iterator it = find(m_Registry.begin(),
+                                              m_Registry.end(),
                                               ctx);
-    
+
     if (it != m_Registry.end()) {
         m_Registry.erase(it);
     }
 }
 
 
-void 
+void
 CDblibContextRegistry::ClearAll(void)
 {
     if (!m_Registry.empty())
@@ -142,13 +142,13 @@ CDblibContextRegistry::ClearAll(void)
         CMutexGuard mg(m_Mutex);
 
         while ( !m_Registry.empty() ) {
-            // x_Close will unregister and remove handler from the registry. 
+            // x_Close will unregister and remove handler from the registry.
             m_Registry.back()->x_Close(false);
         }
     }
 }
 
-void 
+void
 CDblibContextRegistry::StaticClearAll(void)
 {
     CDblibContextRegistry::Instance().ClearAll();
@@ -199,8 +199,8 @@ CTDSContext::CTDSContext(DBINT version) :
 
     SetApplicationName("TDSDriver");
 
-    CHECK_DRIVER_ERROR( 
-        g_pTDSContext != 0, 
+    CHECK_DRIVER_ERROR(
+        g_pTDSContext != 0,
         "You cannot use more than one ftds contexts "
        "concurrently", 200000 );
 
@@ -211,16 +211,16 @@ CTDSContext::CTDSContext(DBINT version) :
     }
 
 #if defined(NCBI_OS_MSWIN)
-    WSADATA wsaData; 
+    WSADATA wsaData;
     if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
     {
         DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
     }
 #endif
 
-    CHECK_DRIVER_ERROR( 
+    CHECK_DRIVER_ERROR(
         Check(dbinit()) != SUCCEED,
-        "dbinit failed", 
+        "dbinit failed",
         200001 );
 
     Check(dberrhandle(s_TDS_err_callback));
@@ -230,7 +230,7 @@ CTDSContext::CTDSContext(DBINT version) :
     m_Login = Check(dblogin());
 }
 
-void 
+void
 CTDSContext::x_AddToRegistry(void)
 {
     if (m_Registry) {
@@ -238,7 +238,7 @@ CTDSContext::x_AddToRegistry(void)
     }
 }
 
-void 
+void
 CTDSContext::x_RemoveFromRegistry(void)
 {
     if (m_Registry) {
@@ -246,7 +246,7 @@ CTDSContext::x_RemoveFromRegistry(void)
     }
 }
 
-void 
+void
 CTDSContext::x_SetRegistry(CDblibContextRegistry* registry)
 {
     CFastMutexGuard mg(m_Mtx);
@@ -256,7 +256,7 @@ CTDSContext::x_SetRegistry(CDblibContextRegistry* registry)
 
 bool CTDSContext::ConnectedToMSSQLServer(void) const
 {
-    return (m_TDSVersion == DBVERSION_70 || 
+    return (m_TDSVersion == DBVERSION_70 ||
             m_TDSVersion == DBVERSION_80 ||
             m_TDSVersion == DBVERSION_UNKNOWN);
 }
@@ -285,7 +285,7 @@ bool CTDSContext::SetTimeout(unsigned int nof_secs)
 bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     CFastMutexGuard mg(m_Mtx);
-    
+
     char s[64];
     sprintf(s, "%lu", (unsigned long) nof_bytes);
 
@@ -302,37 +302,37 @@ void CTDSContext::SetClientCharset(const char* charset) const
     DBSETLCHARSET( m_Login, const_cast<char*>(charset) );
 }
 
-I_Connection* 
+I_Connection*
 CTDSContext::MakeIConnection(const SConnAttr& conn_attr)
 {
     CFastMutexGuard mg(m_Mtx);
 
-    DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name, 
-                                         conn_attr.user_name, 
-                                         conn_attr.passwd, 
+    DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name,
+                                         conn_attr.user_name,
+                                         conn_attr.passwd,
                                          conn_attr.mode);
 
     if (!dbcon) {
         string err;
-        
+
         err += "Cannot connect to the server '" + conn_attr.srv_name;
         err += "' as user '" + conn_attr.user_name + "'";
         DATABASE_DRIVER_ERROR( err, 200011 );
     }
-    
+
     CTDS_Connection* t_con = NULL;
-    t_con = new CTDS_Connection(this, 
-                                dbcon, 
-                                conn_attr.reusable, 
+    t_con = new CTDS_Connection(this,
+                                dbcon,
+                                conn_attr.reusable,
                                 conn_attr.pool_name);
-    
+
     t_con->m_MsgHandlers = m_ConnHandlers;
     t_con->m_Server      = conn_attr.srv_name;
     t_con->m_User        = conn_attr.user_name;
     t_con->m_Passwd      = conn_attr.passwd;
     t_con->m_BCPAble     = (conn_attr.mode & fBcpIn) != 0;
     t_con->m_SecureLogin = (conn_attr.mode & fPasswordEncrypted) != 0;
-    
+
     return t_con;
 }
 
@@ -423,36 +423,45 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                                    const string& dberrstr,
                                    const string& /* oserrstr */)
 {
+    string server_name;
+    string user_name;
     string message = dberrstr;
-    
+
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*> (dbgetuserdata(dblink)) : 0;
 
     if ( link ) {
-        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+        server_name = link->m_Server;
+        user_name = link->m_User;
     }
-    
+
     switch (dberr) {
     case SYBETIME:
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx to(kBlankCompileInfo,
+            CDB_TimeoutEx ex(kBlankCompileInfo,
                              0,
                              message,
                              dberr);
-            
-            GetFTDS8ExceptionStorage().Accept(to);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
         }
         return INT_TIMEOUT;
     default:
         if(dberr == 1205) {
-            CDB_DeadlockEx dl(kBlankCompileInfo,
+            CDB_DeadlockEx ex(kBlankCompileInfo,
                               0,
                               message);
-            
-            GetFTDS8ExceptionStorage().Accept(dl);
-            
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
+
             return INT_CANCEL;
         }
 
@@ -464,13 +473,16 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx info(kBlankCompileInfo,
-                              0,
-                              message,
-                              eDiag_Info,
-                              dberr);
-            
-            GetFTDS8ExceptionStorage().Accept(info);
+            CDB_ClientEx ex(kBlankCompileInfo,
+                            0,
+                            message,
+                            eDiag_Info,
+                            dberr);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
         }
         break;
     case EXNONFATAL:
@@ -478,34 +490,40 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     case EXSERVER:
     case EXPROGRAM:
         {
-            CDB_ClientEx err(kBlankCompileInfo,
-                             0,
-                             message,
-                             eDiag_Error,
-                             dberr);
-            
-            GetFTDS8ExceptionStorage().Accept(err);
+            CDB_ClientEx ex(kBlankCompileInfo,
+                            0,
+                            message,
+                            eDiag_Error,
+                            dberr);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
         }
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx to(kBlankCompileInfo,
+            CDB_TimeoutEx ex(kBlankCompileInfo,
                              0,
                              message,
                              dberr);
-            
-            GetFTDS8ExceptionStorage().Accept(to);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
         }
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ftl(kBlankCompileInfo,
-                             0,
-                             message,
-                             eDiag_Critical,
-                             dberr);
-            
-            GetFTDS8ExceptionStorage().Accept(ftl);
+            CDB_ClientEx ex(kBlankCompileInfo,
+                            0,
+                            message,
+                            eDiag_Critical,
+                            dberr);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
         }
         break;
     }
@@ -521,8 +539,10 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
                                     const string& procname,
                                     int           line)
 {
+    string server_name;
+    string user_name;
     string message = msgtxt;
-    
+
     if (msgno == 5701  ||  msgno == 5703)
         return;
 
@@ -530,17 +550,21 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
         reinterpret_cast<CTDS_Connection*>(dbgetuserdata(dblink)) : 0;
 
     if ( link ) {
-        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+        server_name = link->m_Server;
+        user_name = link->m_User;
     } else {
-        message += " SERVER: '" + srvname + "'";
+        server_name = srvname;
     }
-    
+
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx dl(kBlankCompileInfo,
+        CDB_DeadlockEx ex(kBlankCompileInfo,
                           0,
                           message);
-        
-        GetFTDS8ExceptionStorage().Accept(dl);
+
+        ex.SetServerName(server_name);
+        ex.SetUserName(user_name);
+
+        GetFTDS8ExceptionStorage().Accept(ex);
     } else {
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
@@ -548,23 +572,29 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
             severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (!procname.empty()) {
-            CDB_RPCEx rpc(kBlankCompileInfo,
-                          0,
-                          message,
-                          sev,
-                          msgno,
-                          procname,
-                          line);
-            
-            GetFTDS8ExceptionStorage().Accept(rpc);
+            CDB_RPCEx ex(kBlankCompileInfo,
+                         0,
+                         message,
+                         sev,
+                         msgno,
+                         procname,
+                         line);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
         } else {
-            CDB_DSEx m(kBlankCompileInfo,
-                       0,
-                       message,
-                       sev,
-                       msgno);
-            
-            GetFTDS8ExceptionStorage().Accept(m);
+            CDB_DSEx ex(kBlankCompileInfo,
+                        0,
+                        message,
+                        sev,
+                        msgno);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
         }
     }
 }
@@ -839,6 +869,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/05/30 18:54:01  ssikorsk
+ * Revamp code to use server and user names with database exceptions;
+ *
  * Revision 1.72  2006/05/18 16:59:49  ssikorsk
  * Assign values to m_LoginTimeout and m_Timeout.
  *
