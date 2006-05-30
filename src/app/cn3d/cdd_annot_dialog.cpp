@@ -194,10 +194,25 @@ void CDDAnnotateDialog::OnCloseWindow(wxCloseEvent& event)
     Destroy();
 }
 
+static bool IsFirstResidueOfABlock(const BlockMultipleAlignment::ConstBlockList& blocks, unsigned int masterIndex)
+{
+    BlockMultipleAlignment::ConstBlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; ++b) {
+        int from = (*b)->GetRangeOfRow(0)->from;
+        if (from == (int) masterIndex)
+            return true;
+        else if (from > (int) masterIndex)
+            return false;
+    }
+    return false;
+}
+
 void CDDAnnotateDialog::GetCurrentHighlightedIntervals(IntervalList *intervals)
 {
     const BlockMultipleAlignment *alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
     const Sequence *master = alignment->GetMaster();
+    BlockMultipleAlignment::ConstBlockList blocks;
+    alignment->GetBlocks(&blocks);
 
     // find intervals of aligned residues of the master sequence that are currently highlighted
     intervals->clear();
@@ -210,11 +225,12 @@ void CDDAnnotateDialog::GetCurrentHighlightedIntervals(IntervalList *intervals)
                  alignment->IsAligned(0U, first))) ++first;
         if (first >= master->Length()) break;
 
-        // find last in contiguous stretch of highlighted residues
+        // find last in contiguous stretch of highlighted residues, but not crossing block boundaries
         last = first;
         while (last + 1 < master->Length() &&
                GlobalMessenger()->IsHighlighted(master, last + 1) &&
-               alignment->IsAligned(0U, last + 1)) ++last;
+               alignment->IsAligned(0U, last + 1) &&
+               !IsFirstResidueOfABlock(blocks, last + 1)) ++last;
 
         // create Seq-interval
         CRef < CSeq_interval > interval(new CSeq_interval());
@@ -222,7 +238,7 @@ void CDDAnnotateDialog::GetCurrentHighlightedIntervals(IntervalList *intervals)
         interval->SetTo(last);
         master->FillOutSeqId(&(interval->SetId()));
         intervals->push_back(interval);
-        first = last + 2;
+        first = last + 1;
     }
 }
 
@@ -1257,6 +1273,9 @@ wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2006/05/30 13:05:02  thiessen
+* don't let alignment annotation intervals in asn cross block boundaries
+*
 * Revision 1.42  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
