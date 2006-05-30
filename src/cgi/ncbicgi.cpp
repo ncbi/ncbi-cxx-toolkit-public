@@ -1315,7 +1315,9 @@ void CCgiRequest::Serialize(CNcbiOstream& os) const
 {
     WriteMap(os, GetEntries());
     WriteCgiCookies(os, GetCookies());
-    WriteEnvironment(os, *m_Env);
+    CNcbiEnvironment env;
+    WriteEnvironment(os, env);
+    //    WriteEnvironment(os, *m_Env);
     WriteContainer(os, GetIndexes());
     os << (int)m_QueryStringParsed;
     CNcbiIstream* istrm = GetInputStream();
@@ -1380,6 +1382,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2006/05/30 16:40:04  didenko
+ * Serialize method now serializes the whole environment
+ *
  * Revision 1.105  2006/01/10 20:00:07  grichenk
  * Allow to save request content.
  *
