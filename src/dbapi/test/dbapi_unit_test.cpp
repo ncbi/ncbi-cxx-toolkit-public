@@ -35,10 +35,12 @@
 
 #include <ncbi_source_ver.h>
 #include <dbapi/dbapi.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 #include "dbapi_unit_test.hpp"
 
 #include <test/test_assert.h>  /* This header must go last */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -121,15 +123,29 @@ CDBAPIUnitTest::~CDBAPIUnitTest(void)
 ///////////////////////////////////////////////////////////////////////////////
 bool CErrHandler::HandleIt(CDB_Exception* ex)
 {
-    // Ignore errors with ErrorCode set to 0 (this is related mostly to the 
-    // ftds driver)
-    if (ex->GetDBErrCode()) {
-        throw *ex;
-    }
-    
-    return true;
+    if ( !ex )
+        return false;
+
+    // Ignore errors with ErrorCode set to 0
+    // (this is related mostly to the FreeTDS driver)
+    if (ex->GetDBErrCode() == 0)
+        return true;
+
+    // On other errors, throw an exception (was not allowed before!)
+    throw *ex;    
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// void*
+// GetAppSymbol(const char* symbol)
+// {
+// #ifdef WIN32
+//     return ::GetProcAddress(::GetModuleHandle(NULL), symbol);
+// #else
+//     return ::dlsym(::dlopen(NULL, RTLD_LAZY), symbol);
+// #endif
+// }
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
@@ -143,6 +159,14 @@ CDBAPIUnitTest::TestInit(void)
             m_max_varchar_size = 1900;
         }
 
+#ifdef USE_STATICALLY_LINKED_DRIVERS
+
+        DBAPI_RegisterDriver_CTLIB();
+        DBAPI_RegisterDriver_DBLIB();
+        DBAPI_RegisterDriver_FTDS();
+        
+#endif
+        
         m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
@@ -1673,6 +1697,38 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 //                 while( rs->Next() ) {
 //                     string col2 = rs->GetVariant(2).GetString();
 //                     BOOST_CHECK_EQUAL(col2.size(), 355);
+//                 }
+//             }
+//         }
+//     }
+    
+//     // TMP
+//     {
+//         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+//         BOOST_CHECK( conn.get() != NULL );
+//
+//         conn->SetMode(IConnection::eBulkInsert);
+//
+//         conn->Connect(
+//             "mvread",
+//             "daervm",
+//             "MSSQL29",
+//             "MapViewHum36"
+//             );
+//
+//         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+//
+//         string sql;
+//
+//         sql  = "MM_GetData \'model\',\'1\',8335044,8800111,9606";
+//
+//         auto_stmt->SendSql( sql );
+//         while( auto_stmt->HasMoreResults() ) {
+//             if( auto_stmt->HasRows() ) {
+//                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+//
+//                 // Retrieve results, if any
+//                 while( rs->Next() ) {
 //                 }
 //             }
 //         }
@@ -3680,13 +3736,13 @@ CDBAPITestSuite::~CDBAPITestSuite(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-CTestArguments::CTestArguments(int argc, char * argv[])
+CTestArguments::CTestArguments(int argc, char * argv[]) :
+    m_Arguments(argc, argv)
 {
-    CNcbiArguments arguments(argc, argv);
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(arguments.GetProgramBasename(),
+    arg_desc->SetUsageContext(m_Arguments.GetProgramBasename(),
                               "dbapi_unit_test");
 
     // Describe the expected command-line arguments
@@ -3726,7 +3782,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
                             "TDS protocol version",
                             CArgDescriptions::eInteger);
 
-    auto_ptr<CArgs> args_ptr(arg_desc->CreateArgs(arguments));
+    auto_ptr<CArgs> args_ptr(arg_desc->CreateArgs(m_Arguments));
     const CArgs& args = *args_ptr;
 
 
@@ -3761,12 +3817,18 @@ CTestArguments::GetServerType(void) const
     return eUnknown;
 }
 
+string
+CTestArguments::GetProgramBasename(void) const
+{
+    return m_Arguments.GetProgramBasename();
+}
+
 void
 CTestArguments::SetDatabaseParameters(void)
 {
     if ( m_TDSVersion.empty() ) {
         if ( GetDriverName() == "ctlib" ) {
-            // m_DatabaseParameters["version"] = "125";
+            m_DatabaseParameters["version"] = "125";
         } else if ( GetDriverName() == "dblib"  &&  
                     GetServerType() == eSybase ) {
             // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
@@ -3815,6 +3877,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.75  2006/05/30 16:34:54  ssikorsk
+ * Use TDS v12.5 with the ctlib driver;
+ * Enabled static linking of DBAPI drivers to this application;
+ *
  * Revision 1.74  2006/05/15 19:50:15  ssikorsk
  * Let I_DriverContext to manage lifetime of error handlers.
  *
