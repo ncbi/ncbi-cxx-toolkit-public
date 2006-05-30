@@ -129,6 +129,12 @@ public:
     int ErrCode(void) const { return GetDBErrCode();                   }
     const string& Message(void) const { return GetMsg();               }
     const string& OriginatedFrom() const { return GetModule();         }
+    
+    void SetServerName(const string& name) { m_ServerName = name;      }
+    const string& GetServerName(void) const { return m_ServerName;     }
+    
+    void SetUserName(const string& name) { m_UserName = name;          }
+    const string& GetUserName(void) const { return m_UserName;         }
 
 public:
     virtual void ReportExtra(ostream& out) const;
@@ -157,9 +163,11 @@ protected:
 protected:
     void x_StartOfWhat(ostream& out) const;
     void x_EndOfWhat  (ostream& out) const;
-
-protected:
     virtual void x_Assign(const CException& src);
+    
+private:
+    string m_ServerName;
+    string m_UserName;
 };
 
 
@@ -492,6 +500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/05/30 18:44:18  ssikorsk
+ * Added server and user names to the CDB_Exception class.
+ *
  * Revision 1.26  2006/05/15 19:19:19  ssikorsk
  * Inherited CDB_UserHandler from CObject
  *
