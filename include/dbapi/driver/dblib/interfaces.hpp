@@ -330,6 +330,7 @@ private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
     RETCODE x_Results(DBPROCESS* pLink);
+    DBPROCESS* GetDBLibConnection(void) const { return m_Link; }
     
     template <typename T>
     T Check(T rc)
@@ -337,6 +338,7 @@ private:
         CheckFunctCall();
         return rc;
     }
+    RETCODE Check(RETCODE rc);
     
     void CheckFunctCall(void);
 
@@ -1163,6 +1165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/05/30 18:42:48  ssikorsk
+ * Added methods Check and GetDBLibConnection to the CDBL_Connection class.
+ *
  * Revision 1.41  2006/05/18 16:56:35  ssikorsk
  * Removed m_LoginTimeout and m_Timeout from CDBLibContext.
  *
