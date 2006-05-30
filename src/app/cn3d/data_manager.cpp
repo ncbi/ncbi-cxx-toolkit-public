@@ -954,6 +954,11 @@ bool CheckOneAlignment(const CRef<CSeq_align>& SeqAlign, string& Str) {
 
 bool ASNDataManager::MonitorAlignments(void) const
 {
+#ifndef _DEBUG
+    return true;
+
+#else
+//  ... for development only...
     bool okay = true;
     string messages;
     char buf[1024];
@@ -1003,6 +1008,7 @@ bool ASNDataManager::MonitorAlignments(void) const
         WARNINGMSG("MonitorAlignments() found errors:\n\n" << messages);
     }
     return okay;
+#endif
 }
 
 END_SCOPE(Cn3D)
@@ -1010,6 +1016,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/05/30 13:11:18  thiessen
+* turn off MonitorAlignments in release mode
+*
 * Revision 1.32  2005/12/08 14:30:22  thiessen
 * whoops, forgot to uncomment some stuff
 *
