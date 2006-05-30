@@ -607,7 +607,7 @@ bool Sequence::HighlightPattern(const string& prositePattern, const MoleculeHigh
                 MoleculeHighlightMap::const_iterator r = restrictTo.find(identifier);
                 if (r != restrictTo.end()) {
                     for (i=1; i<regexp->NumFound(); ++i) {
-                        for (unsigned int j=regexp->GetResults(i)[0]; j<=regexp->GetResults(i)[1]-1; ++j) {
+                        for (int j=regexp->GetResults(i)[0]; j<=regexp->GetResults(i)[1]-1; ++j) {
                             if (!r->second[j]) {
                                 addMatch = false;
                                 break;
@@ -645,6 +645,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2006/05/30 22:21:29  thiessen
+* fix warning
+*
 * Revision 1.77  2006/05/30 21:41:21  thiessen
 * add pattern search within selection
 *
