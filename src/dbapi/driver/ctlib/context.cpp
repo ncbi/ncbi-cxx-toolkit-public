@@ -66,7 +66,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContextRegistry
 {
 public:
     static CTLibContextRegistry& Instance(void);
-    
+
     void Add(CTLibContext* ctx);
     void Remove(CTLibContext* ctx);
     void ClearAll(void);
@@ -80,11 +80,11 @@ public:
 private:
     CTLibContextRegistry(void);
     ~CTLibContextRegistry(void) throw();
-    
+
     mutable CMutex          m_Mutex;
     vector<CTLibContext*>   m_Registry;
     bool                    m_ExitProcessPatched;
-    
+
     friend class CSafeStaticPtr<CTLibContextRegistry>;
 };
 
@@ -118,39 +118,39 @@ CTLibContextRegistry&
 CTLibContextRegistry::Instance(void)
 {
     static CSafeStaticPtr<CTLibContextRegistry> instance;
-    
+
     return instance.Get();
 }
 
-void 
+void
 CTLibContextRegistry::Add(CTLibContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
-    
-    vector<CTLibContext*>::iterator it = find(m_Registry.begin(), 
-                                              m_Registry.end(), 
+
+    vector<CTLibContext*>::iterator it = find(m_Registry.begin(),
+                                              m_Registry.end(),
                                               ctx);
     if (it == m_Registry.end()) {
         m_Registry.push_back(ctx);
     }
 }
 
-void 
+void
 CTLibContextRegistry::Remove(CTLibContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
-    
-    vector<CTLibContext*>::iterator it = find(m_Registry.begin(), 
-                                              m_Registry.end(), 
+
+    vector<CTLibContext*>::iterator it = find(m_Registry.begin(),
+                                              m_Registry.end(),
                                               ctx);
-    
+
     if (it != m_Registry.end()) {
         m_Registry.erase(it);
     }
 }
 
 
-void 
+void
 CTLibContextRegistry::ClearAll(void)
 {
     if (!m_Registry.empty())
@@ -158,13 +158,13 @@ CTLibContextRegistry::ClearAll(void)
         CMutexGuard mg(m_Mutex);
 
         while ( !m_Registry.empty() ) {
-            // x_Close will unregister and remove handler from the registry. 
+            // x_Close will unregister and remove handler from the registry.
             m_Registry.back()->x_Close(false);
         }
     }
 }
 
-void 
+void
 CTLibContextRegistry::StaticClearAll(void)
 {
     CTLibContextRegistry::Instance().ClearAll();
@@ -176,14 +176,14 @@ CTLibContextRegistry::StaticClearAll(void)
 //
 
 CS_START_EXTERN_C
-    CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context, 
+    CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context,
                                                 CS_CLIENTMSG* msg)
     {
         return CTLibContext::CTLIB_cserr_handler(context, msg)
             ? CS_SUCCEED : CS_FAIL;
     }
 
-    CS_RETCODE CS_PUBLIC s_CTLIB_cterr_callback(CS_CONTEXT* context, 
+    CS_RETCODE CS_PUBLIC s_CTLIB_cterr_callback(CS_CONTEXT* context,
                                                 CS_CONNECTION* con,
                                                 CS_CLIENTMSG* msg)
     {
@@ -191,7 +191,7 @@ CS_START_EXTERN_C
             ? CS_SUCCEED : CS_FAIL;
     }
 
-    CS_RETCODE CS_PUBLIC s_CTLIB_srverr_callback(CS_CONTEXT* context, 
+    CS_RETCODE CS_PUBLIC s_CTLIB_srverr_callback(CS_CONTEXT* context,
                                                  CS_CONNECTION* con,
                                                  CS_SERVERMSG* msg)
     {
@@ -292,22 +292,22 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     if ( p_pot ) {
         p_pot->Add((TPotItem) this);
     }
-    
+
     m_Registry = &CTLibContextRegistry::Instance();
     x_AddToRegistry();
 }
 
 
-CS_RETCODE 
+CS_RETCODE
 CTLibContext::Check(CS_RETCODE rc)
 {
     GetCTLExceptionStorage().Handle(m_CntxHandlers);
-    
+
     return rc;
 }
 
 
-void 
+void
 CTLibContext::x_AddToRegistry(void)
 {
     if (m_Registry) {
@@ -315,7 +315,7 @@ CTLibContext::x_AddToRegistry(void)
     }
 }
 
-void 
+void
 CTLibContext::x_RemoveFromRegistry(void)
 {
     if (m_Registry) {
@@ -323,11 +323,11 @@ CTLibContext::x_RemoveFromRegistry(void)
     }
 }
 
-void 
+void
 CTLibContext::x_SetRegistry(CTLibContextRegistry* registry)
 {
     CFastMutexGuard mg(m_Mtx);
-    
+
     m_Registry = registry;
 }
 
@@ -335,11 +335,11 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
     m_LoginTimeout = nof_secs;
     CS_INT t_out = (CS_INT) GetLoginTimeout();
-    return Check(ct_config(CTLIB_GetContext(), 
+    return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
-                           CS_LOGIN_TIMEOUT, 
-                           &t_out, 
-                           CS_UNUSED, 
+                           CS_LOGIN_TIMEOUT,
+                           &t_out,
+                           CS_UNUSED,
                            NULL)) == CS_SUCCEED;
 }
 
@@ -348,11 +348,11 @@ bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
     m_Timeout = nof_secs;
     CS_INT t_out = (CS_INT) GetTimeout();
-    return Check(ct_config(CTLIB_GetContext(), 
+    return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
-                           CS_TIMEOUT, 
-                           &t_out, 
-                           CS_UNUSED, 
+                           CS_TIMEOUT,
+                           &t_out,
+                           CS_UNUSED,
                            NULL)) == CS_SUCCEED;
 }
 
@@ -360,37 +360,37 @@ bool CTLibContext::SetTimeout(unsigned int nof_secs)
 bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     CS_INT ti_size = (CS_INT) nof_bytes;
-    return Check(ct_config(CTLIB_GetContext(), 
+    return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
-                           CS_TEXTLIMIT, 
-                           &ti_size, 
-                           CS_UNUSED, 
+                           CS_TEXTLIMIT,
+                           &ti_size,
+                           CS_UNUSED,
                            NULL)) == CS_SUCCEED;
 }
 
 
-I_Connection* 
+I_Connection*
 CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {
-    CS_CONNECTION* con = x_ConnectToServer(conn_attr.srv_name, 
-                                           conn_attr.user_name, 
-                                           conn_attr.passwd, 
+    CS_CONNECTION* con = x_ConnectToServer(conn_attr.srv_name,
+                                           conn_attr.user_name,
+                                           conn_attr.passwd,
                                            conn_attr.mode);
-    
+
     if (!con) {
         string err;
-        
+
         err += "Cannot connect to the server '" + conn_attr.srv_name;
         err += "' as user '" + conn_attr.user_name + "'";
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
-    CTL_Connection* t_con = new CTL_Connection(this, 
-                                               con, 
-                                               conn_attr.reusable, 
+    CTL_Connection* t_con = new CTL_Connection(this,
+                                               con,
+                                               conn_attr.reusable,
                                                conn_attr.pool_name);
     t_con->m_MsgHandlers = m_ConnHandlers;
-    
+
     return t_con;
 }
 
@@ -418,7 +418,7 @@ CTLibContext::~CTLibContext()
 }
 
 
-void 
+void
 CTLibContext::x_Close(bool delete_conn)
 {
     if ( CTLIB_GetContext() ) {
@@ -432,33 +432,33 @@ CTLibContext::x_Close(bool delete_conn)
                     CloseAllConn();
                 }
             }
-            
+
             CS_INT       outlen;
             CPointerPot* p_pot = 0;
 
-            if (Check(cs_config(CTLIB_GetContext(), 
-                          CS_GET, 
+            if (Check(cs_config(CTLIB_GetContext(),
+                          CS_GET,
                           CS_USERDATA,
-                          (void*) &p_pot, 
-                          (CS_INT) sizeof(p_pot), 
+                          (void*) &p_pot,
+                          (CS_INT) sizeof(p_pot),
                           &outlen)) == CS_SUCCEED
                 &&  p_pot != 0) {
                 p_pot->Remove(this);
-                if (p_pot->NofItems() == 0) { 
+                if (p_pot->NofItems() == 0) {
                     // this is a last driver for this context
                     delete p_pot;
 
                     if (x_SafeToFinalize()) {
-                        if (Check(ct_exit(CTLIB_GetContext(), 
+                        if (Check(ct_exit(CTLIB_GetContext(),
                                           CS_UNUSED)) != CS_SUCCEED) {
-                            Check(ct_exit(CTLIB_GetContext(), 
+                            Check(ct_exit(CTLIB_GetContext(),
                                           CS_FORCE_EXIT));
                         }
                         Check(cs_ctx_drop(CTLIB_GetContext()));
                     }
                 }
             }
-            
+
             m_Context = NULL;
             x_RemoveFromRegistry();
         }
@@ -524,12 +524,12 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
     }
 
     GetCTLExceptionStorage().Accept(CDB_ClientEx(
-        kBlankCompileInfo, 
-        0, msg->msgstring, 
-        sev, 
+        kBlankCompileInfo,
+        0, msg->msgstring,
+        sev,
         msg->msgnumber
         ));
-    
+
     return true;
 }
 
@@ -537,94 +537,104 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
 bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                                        CS_CLIENTMSG* msg)
 {
-    CS_INT           outlen;
-    CPointerPot*     p_pot = 0;
-    CTL_Connection*  link = 0;
-    string           message;
-    
+    CS_INT          outlen;
+    CPointerPot*    p_pot = 0;
+    CTL_Connection* link = 0;
+    string          message;
+    string          server_name;
+    string          user_name;
+
     if ( msg->msgstring ) {
         message.append( msg->msgstring );
     }
-    
+
     // Retrieve CDBHandlerStack ...
     if (con != 0  &&
-        ct_con_props(con, 
-                     CS_GET, 
+        ct_con_props(con,
+                     CS_GET,
                      CS_USERDATA,
-                     (void*) &link, 
+                     (void*) &link,
                      (CS_INT) sizeof(link),
                      &outlen ) == CS_SUCCEED  &&  link != 0) {
-        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+        // message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+        server_name = link->m_Server;
+        user_name = link->m_User;
     }
-    else if (cs_config(context, 
-                       CS_GET, 
+    else if (cs_config(context,
+                       CS_GET,
                        CS_USERDATA,
-                       (void*) &p_pot, 
+                       (void*) &p_pot,
                        (CS_INT) sizeof(p_pot),
                        &outlen ) == CS_SUCCEED  &&
              p_pot != 0  &&  p_pot->NofItems() > 0) {
-        CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
+        // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
     }
     else {
         if (msg->severity != CS_SV_INFORM) {
             ostrstream err_str;
-            
+
             // nobody can be informed, let's put it in stderr
             err_str << "CTLIB error handler detects the following error" << endl
                     << "Severity:" << msg->severity << err_str << " Msg # "
                     << msg->msgnumber << endl;
             err_str << msg->msgstring << endl;
-            
+
             if (msg->osstringlen > 1) {
                 err_str << "OS # "    << msg->osnumber
                         << " OS msg " << msg->osstring << endl;
             }
-            
+
             if (msg->sqlstatelen > 1  &&
                 (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
                 err_str << "SQL: " << msg->sqlstate << endl;
             }
-            
+
             ERR_POST((string)CNcbiOstrstreamToString(err_str));
         }
-        
+
         return true;
     }
 
     // Process the message ...
     switch (msg->severity) {
     case CS_SV_INFORM: {
-        CDB_ClientEx info( kBlankCompileInfo, 
-                           0, 
-                           message, 
-                           eDiag_Info, 
+        CDB_ClientEx ex( kBlankCompileInfo,
+                           0,
+                           message,
+                           eDiag_Info,
                            msg->msgnumber);
-        
-        GetCTLExceptionStorage().Accept(info);
-        
+
+        ex.SetServerName(server_name);
+        ex.SetUserName(user_name);
+
+        GetCTLExceptionStorage().Accept(ex);
+
         break;
     }
     case CS_SV_RETRY_FAIL: {
-        CDB_TimeoutEx to( 
-            kBlankCompileInfo, 
-            0, 
-            message, 
+        CDB_TimeoutEx ex(
+            kBlankCompileInfo,
+            0,
+            message,
             msg->msgnumber);
-        
-        GetCTLExceptionStorage().Accept(to);
-        
+
+        ex.SetServerName(server_name);
+        ex.SetUserName(user_name);
+
+        GetCTLExceptionStorage().Accept(ex);
+
         if( con ) {
             CS_INT status;
-            if((ct_con_props(con, 
-                             CS_GET, 
-                             CS_LOGIN_STATUS, 
-                             (CS_VOID*)&status, 
-                             CS_UNUSED, 
+            if((ct_con_props(con,
+                             CS_GET,
+                             CS_LOGIN_STATUS,
+                             (CS_VOID*)&status,
+                             CS_UNUSED,
                              NULL) != CS_SUCCEED) ||
                 (!status)) {
                 return false;
             }
-            
+
             if(ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN) != CS_SUCCEED) {
                 return false;
             }
@@ -632,32 +642,38 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
         else {
             return false;
         }
-        
+
         break;
     }
     case CS_SV_CONFIG_FAIL:
     case CS_SV_API_FAIL:
     case CS_SV_INTERNAL_FAIL: {
-        CDB_ClientEx err( kBlankCompileInfo, 
-                          0, 
-                          message, 
-                          eDiag_Error, 
+        CDB_ClientEx ex( kBlankCompileInfo,
+                          0,
+                          message,
+                          eDiag_Error,
                           msg->msgnumber);
-        
-        GetCTLExceptionStorage().Accept(err);
-        
+
+        ex.SetServerName(server_name);
+        ex.SetUserName(user_name);
+
+        GetCTLExceptionStorage().Accept(ex);
+
         break;
     }
     default: {
-        CDB_ClientEx ftl( 
-            kBlankCompileInfo, 
-            0, 
-            message, 
-            eDiag_Critical, 
+        CDB_ClientEx ex(
+            kBlankCompileInfo,
+            0,
+            message,
+            eDiag_Critical,
             msg->msgnumber);
-        
-        GetCTLExceptionStorage().Accept(ftl);
-        
+
+        ex.SetServerName(server_name);
+        ex.SetUserName(user_name);
+
+        GetCTLExceptionStorage().Accept(ex);
+
         break;
     }
     }
@@ -671,65 +687,71 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                         CS_SERVERMSG* msg)
 {
     if (
-        /* (msg->severity == 0  &&  msg->msgnumber == 0)  ||*/ 
+        /* (msg->severity == 0  &&  msg->msgnumber == 0)  ||*/
         // commented out because nobody remember why it is there and PubSeqOS does
         // send messages with 0 0 that need to be processed
         msg->msgnumber == 5701  ||  msg->msgnumber == 5703) {
         return true;
     }
 
-    CS_INT           outlen;
-    CPointerPot*     p_pot = 0;
-    CTL_Connection*  link = 0;
-    string           message;
-    string           ext_info;
-    
+    CS_INT          outlen;
+    CPointerPot*    p_pot = 0;
+    CTL_Connection* link = 0;
+    string          message;
+//     string          ext_info;
+    string          server_name;
+    string          user_name;
+
     if (con != 0  &&  ct_con_props(con, CS_GET, CS_USERDATA,
                                    (void*) &link, (CS_INT) sizeof(link),
                                    &outlen) == CS_SUCCEED  &&
         link != 0) {
-        
-        ext_info = " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+
+//         ext_info = " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+
+        server_name = link->m_Server;
+        user_name = link->m_User;
     }
-    else if (cs_config(context, CS_GET, 
+    else if (cs_config(context, CS_GET,
                        CS_USERDATA,
-                       (void*) &p_pot, 
+                       (void*) &p_pot,
                        (CS_INT) sizeof(p_pot),
                        &outlen) == CS_SUCCEED  &&
              p_pot != 0  &&  p_pot->NofItems() > 0) {
-        
-        CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-        
+
+        // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
+
         // Get server name from the message ...
-        ext_info += " SERVER: '";
-        ext_info.append( msg->svrname, msg->svrnlen );
-        ext_info += "'";
+//         ext_info += " SERVER: '";
+//         ext_info.append( msg->svrname, msg->svrnlen );
+//         ext_info += "'";
+        server_name = string(msg->svrname, msg->svrnlen);
     }
     else {
         ostrstream err_str;
-        
+
         err_str << "Message from the server ";
-        
+
         if (msg->svrnlen > 0) {
             err_str << "<" << msg->svrname << "> ";
         }
-        
+
         err_str << "msg # " << msg->msgnumber
                 << " severity: " << msg->severity << endl;
-        
+
         if (msg->proclen > 0) {
             err_str << "Proc: " << msg->proc << " line: " << msg->line << endl;
         }
-        
+
         if (msg->sqlstatelen > 1  &&
             (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
             err_str << "SQL: " << msg->sqlstate << endl;
         }
-        
+
         err_str << msg->text << endl;
-        
+
         ERR_POST((string)CNcbiOstrstreamToString(err_str));
-        
+
         return true;
     }
 
@@ -737,13 +759,17 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         message += msg->text;
     }
 
-    message += ext_info;
-    
+//    message += ext_info;
+
     if (msg->msgnumber == 1205 /*DEADLOCK*/) {
-        CDB_DeadlockEx dl(kBlankCompileInfo,
-                          0, 
+        CDB_DeadlockEx ex(kBlankCompileInfo,
+                          0,
                           message);
-        GetCTLExceptionStorage().Accept(dl);
+
+        ex.SetServerName(server_name);
+        ex.SetUserName(user_name);
+
+        GetCTLExceptionStorage().Accept(ex);
     }
     else {
         EDiagSev sev =
@@ -752,36 +778,45 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
             msg->severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (msg->proclen > 0) {
-            CDB_RPCEx rpc(kBlankCompileInfo,
+            CDB_RPCEx ex(kBlankCompileInfo,
                           0,
                           message,
                           sev,
                           (int) msg->msgnumber,
                           msg->proc,
                           (int) msg->line);
-            
-            GetCTLExceptionStorage().Accept(rpc);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetCTLExceptionStorage().Accept(ex);
         }
         else if (msg->sqlstatelen > 1  &&
                  (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-            CDB_SQLEx sql(kBlankCompileInfo,
+            CDB_SQLEx ex(kBlankCompileInfo,
                           0,
                           message,
                           sev,
                           (int) msg->msgnumber,
                           (const char*) msg->sqlstate,
                           (int) msg->line);
-            
-            GetCTLExceptionStorage().Accept(sql);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetCTLExceptionStorage().Accept(ex);
         }
         else {
-            CDB_DSEx m(kBlankCompileInfo,
-                       0,
-                       message,
-                       sev,
-                       (int) msg->msgnumber);
-            
-            GetCTLExceptionStorage().Accept(m);
+            CDB_DSEx ex(kBlankCompileInfo,
+                        0,
+                        message,
+                        sev,
+                        (int) msg->msgnumber);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+
+            GetCTLExceptionStorage().Accept(ex);
         }
     }
 
@@ -890,11 +925,11 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
 #ifdef CS_VERSION_120
         } else if ( vers.find("120") != string::npos ) {
             version = CS_VERSION_120;
-#endif            
+#endif
 #ifdef CS_VERSION_125
         } else if ( vers.find("125") != string::npos ) {
             version = CS_VERSION_125;
-#endif            
+#endif
         } else {
             char* e;
             long v= strtol(vers.c_str(), &e, 10);
@@ -1086,6 +1121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2006/05/30 18:48:13  ssikorsk
+ * Revamp code to use server and user names with database exceptions;
+ *
  * Revision 1.76  2006/05/18 16:57:41  ssikorsk
  * Assign values to m_LoginTimeout and m_Timeout.
  *
