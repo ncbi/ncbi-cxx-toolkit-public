@@ -69,6 +69,16 @@ void BlockIntersector::addOneAlignment(const BlockModel& bm)
 			m_aligned[pos]++;
 }
 
+void BlockIntersector::removeOneAlignment(const BlockModel& bm)
+{
+	m_totalRows--;
+	const std::vector<Block>& blocks = bm.getBlocks();
+	for(int b = 0; b < blocks.size(); b++)
+		for(int pos = blocks[b].getStart(); pos <= blocks[b].getEnd(); pos++)
+			if (m_aligned[pos] > 0)
+				m_aligned[pos]--;
+}
+
 
 BlockModel* BlockIntersector::getIntersectedAlignment()
 {
@@ -165,6 +175,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/05/30 21:11:43  cliu
+ * Make a new CD changes
+ *
  * Revision 1.2  2006/01/03 16:19:58  lanczyck
  * fixes for IBM;
  * add overload of 'getIntersectedAlignment' to force specific block boundaries

@@ -47,6 +47,7 @@ public:
 	~BlockIntersector();
 
 	void addOneAlignment(const BlockModel& bm);
+	void removeOneAlignment(const BlockModel& bm);
 	BlockModel* getIntersectedAlignment();
     //  'forcedBreak' contains sequences positions after which, if part
     //  of a block in the intersected alignment, forced the block to end.
@@ -70,6 +71,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/05/30 21:11:58  cliu
+ * Make a new CD changes
+ *
  * Revision 1.2  2006/01/03 16:15:29  lanczyck
  * fixes for IBM;
  * add overload of 'getIntersectedAlignment' to force specific block boundaries
