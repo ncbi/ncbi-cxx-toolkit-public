@@ -29,6 +29,7 @@
  *
  */
 
+%ignore *::CReaderCacheManager_SReaderCacheInfo;
 
 // hide util/thread_pool.hpp due to classes nested in CBlockingQueue
 #define THREAD_POOL__HPP
@@ -135,6 +136,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/05/30 18:36:08  jcherry
+ * %ignore CReaderCacheManager::SReaderCacheInfo
+ *
  * Revision 1.14  2006/02/09 19:42:51  jcherry
  * Work around problem with classes nested in CBlockingQueue (a template)
  *
