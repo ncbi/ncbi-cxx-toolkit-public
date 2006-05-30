@@ -556,7 +556,6 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                      (void*) &link,
                      (CS_INT) sizeof(link),
                      &outlen ) == CS_SUCCEED  &&  link != 0) {
-        // message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
         server_name = link->m_Server;
         user_name = link->m_User;
     }
@@ -698,7 +697,6 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     CPointerPot*    p_pot = 0;
     CTL_Connection* link = 0;
     string          message;
-//     string          ext_info;
     string          server_name;
     string          user_name;
 
@@ -706,9 +704,6 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                    (void*) &link, (CS_INT) sizeof(link),
                                    &outlen) == CS_SUCCEED  &&
         link != 0) {
-
-//         ext_info = " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
-
         server_name = link->m_Server;
         user_name = link->m_User;
     }
@@ -720,11 +715,6 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
              p_pot != 0  &&  p_pot->NofItems() > 0) {
 
         // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-
-        // Get server name from the message ...
-//         ext_info += " SERVER: '";
-//         ext_info.append( msg->svrname, msg->svrnlen );
-//         ext_info += "'";
         server_name = string(msg->svrname, msg->svrnlen);
     }
     else {
@@ -758,8 +748,6 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     if ( msg->text ) {
         message += msg->text;
     }
-
-//    message += ext_info;
 
     if (msg->msgnumber == 1205 /*DEADLOCK*/) {
         CDB_DeadlockEx ex(kBlankCompileInfo,
@@ -1121,6 +1109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2006/05/30 19:01:14  ssikorsk
+ * Removed outdated comments.
+ *
  * Revision 1.77  2006/05/30 18:48:13  ssikorsk
  * Revamp code to use server and user names with database exceptions;
  *
