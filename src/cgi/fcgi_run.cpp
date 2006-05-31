@@ -184,11 +184,11 @@ static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
     // Check if this CGI executable has been changed
     CTime mtimeNew = s_GetModTime
         (CCgiApplication::Instance()->GetArguments().GetProgramName());
-    if (mtimeNew != mtime) {
+    if ( !restart_reason  &&  mtimeNew != mtime) {
         _TRACE("CCgiApplication::x_RunFastCGI: "
                "the program modification date has changed");
         restart_reason = kSR_Executable;
-    } else if (watcher  &&  watcher->HasChanged()) {
+    } else if ( !restart_reason  &&  watcher  &&  watcher->HasChanged()) {
         // Check if the file we're watching (if any) has changed
         // (based on contents, not timestamp!)
         ERR_POST(Warning <<
@@ -629,6 +629,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.61  2006/05/31 22:17:12  ucko
+ * s_ShouldRestart: if restart_reason is already set, don't continue to
+ * check for (or log) circumstances calling for a restart.
+ *
  * Revision 1.60  2006/05/18 19:07:26  grichenk
  * Added output to log file(s), application access log, new cgi log formatting.
  *
