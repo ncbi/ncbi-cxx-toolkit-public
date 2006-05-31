@@ -292,7 +292,7 @@ bool   CCdCore::GetBlockStartsForRow(int rowIndex, vector<int>& starts) const {
     bool onMaster = (rowIndex) ? false : true;
     bool result = false;
     if (IsSeqAligns() && rowIndex >= 0) {
-        const CRef< CSeq_align >& seqAlign = GetSeqAlign(0);
+        const CRef< CSeq_align >& seqAlign = GetSeqAlign(rowIndex);
         if (seqAlign.NotEmpty()) {
             result = (GetBlockStarts(seqAlign, starts, onMaster) != 0);
             sort(starts.begin(), starts.end());
@@ -2337,6 +2337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/05/31 20:32:42  cliu
+ * fix a bug in GetBlockStartsForRow
+ *
  * Revision 1.6  2006/05/01 13:13:45  lanczyck
  * allow SetAccession to work even if there was no existing 'gid' type
  *
