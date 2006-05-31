@@ -82,6 +82,7 @@
 #include "molecule_identifier.hpp"
 #include "cn3d_cache.hpp"
 #include "cn3d_ba_interface.hpp"
+#include "cn3d_pssm.hpp"
 
 #include <wx/tokenzr.h>
 
@@ -1107,12 +1108,58 @@ static bool CompareUpdatesByIdentifier(BlockMultipleAlignment *a, BlockMultipleA
         b->GetSequenceOfRow(1)->identifier);
 }
 
+// assumes scores are stored in the master row double
+static bool CompareUpdatesByScore(BlockMultipleAlignment *a, BlockMultipleAlignment *b)
+{
+    return (a->GetRowDouble(0) > b->GetRowDouble(0));    // sort in descending order of score
+}
+
 static CompareUpdates updateComparisonFunction = NULL;
 
 void UpdateViewer::SortByIdentifier(void)
 {
     TRACEMSG("sorting updates by identifier");
     updateComparisonFunction = CompareUpdatesByIdentifier;
+    SortUpdates();
+}
+
+void UpdateViewer::SortByPSSM(void)
+{
+    TRACEMSG("sorting updates by PSSM");
+
+    const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
+    if (!multiple) {
+        ERRORMSG("Can't do sort by PSSM when no multiple alignment is present");
+        return;
+    }
+
+    AlignmentList& currentAlignments = GetCurrentAlignments();
+    AlignmentList::const_iterator a, ae = currentAlignments.end();
+    for (a=currentAlignments.begin(); a!=ae; ++a) {
+
+        const Sequence *updateSeq = (*a)->GetSequenceOfRow(1);
+        BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
+        (*a)->GetUngappedAlignedBlocks(&uaBlocks);
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = uaBlocks.end();
+
+        // compute scores of aligned residues vs PSSM from the multiple alignment (not the PSSM for the 2-row update alignment)
+        int score = 0;
+        for (b=uaBlocks.begin(); b!=be; ++b) {
+            const Block::Range *m = (*b)->GetRangeOfRow(0), *u = (*b)->GetRangeOfRow(1);
+            for (unsigned int i=0; i<(*b)->width; ++i)
+                score += multiple->GetPSSM().GetPSSMScore(
+                    LookupNCBIStdaaNumberFromCharacter(updateSeq->sequenceString[u->from + i]),
+                    m->from + i);
+        }
+
+        // store score in update alignment
+        (*a)->SetRowStatusLine(0, string("Score vs. PSSM: ") + NStr::IntToString(score));
+        (*a)->SetRowStatusLine(1, (*a)->GetRowStatusLine(0));
+        (*a)->SetRowDouble(0, score);
+        (*a)->SetRowDouble(1, score);
+    }
+
+    updateComparisonFunction = CompareUpdatesByScore;
     SortUpdates();
 }
 
@@ -1150,6 +1197,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2006/05/31 19:21:32  thiessen
+* add sort by pssm score
+*
 * Revision 1.85  2005/11/04 21:55:05  thiessen
 * complete migration of sequence import from FASTA
 *

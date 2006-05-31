@@ -99,6 +99,7 @@ public:
 
     // sort updates
     void SortByIdentifier(void);
+    void SortByPSSM(void);
 
 private:
     UpdateViewerWindow *updateWindow;
@@ -135,6 +136,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/05/31 19:21:32  thiessen
+* add sort by pssm score
+*
 * Revision 1.27  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

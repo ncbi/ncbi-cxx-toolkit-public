@@ -67,6 +67,7 @@ private:
         MID_DELETE_BLOCKS_ALL_ROWS,
         MID_SORT_UPDATES,
         MID_SORT_UPDATES_IDENTIFIER,
+        MID_SORT_UPDATES_PSSM,
         MID_IMPORT_SEQUENCES,
         MID_IMPORT_STRUCTURE,
         MID_THREAD_ONE,
@@ -245,6 +246,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2006/05/31 19:21:32  thiessen
+* add sort by pssm score
+*
 * Revision 1.39  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *

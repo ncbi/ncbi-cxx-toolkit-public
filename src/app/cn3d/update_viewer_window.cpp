@@ -61,7 +61,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
     EVT_CLOSE     (                                                     UpdateViewerWindow::OnCloseWindow)
     EVT_MENU_RANGE(MID_DELETE_ALL_BLOCKS, MID_DELETE_BLOCKS_ALL_ROWS,   UpdateViewerWindow::OnDelete)
-    EVT_MENU      (MID_SORT_UPDATES_IDENTIFIER,                         UpdateViewerWindow::OnSortUpdates)
+    EVT_MENU_RANGE(MID_SORT_UPDATES_IDENTIFIER, MID_SORT_UPDATES_PSSM,  UpdateViewerWindow::OnSortUpdates)
     EVT_MENU_RANGE(MID_THREAD_ONE, MID_THREAD_ALL,                      UpdateViewerWindow::OnRunThreader)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,                        UpdateViewerWindow::OnMerge)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,                      UpdateViewerWindow::OnDelete)
@@ -82,6 +82,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     editMenu->AppendSeparator();
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_SORT_UPDATES_IDENTIFIER, "By &Identifier");
+    subMenu->Append(MID_SORT_UPDATES_PSSM, "By &PSSM Score");
     editMenu->Append(MID_SORT_UPDATES, "So&rt Imports...", subMenu);
     editMenu->AppendSeparator();
     editMenu->Append(MID_IMPORT_SEQUENCES, "&Import Sequences");
@@ -336,6 +337,8 @@ void UpdateViewerWindow::OnSortUpdates(wxCommandEvent& event)
 {
     if (event.GetId() == MID_SORT_UPDATES_IDENTIFIER)
         updateViewer->SortByIdentifier();
+    else if (event.GetId() == MID_SORT_UPDATES_PSSM)
+        updateViewer->SortByPSSM();
 }
 
 void UpdateViewerWindow::OnSetRegion(wxCommandEvent& event)
@@ -654,6 +657,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2006/05/31 19:21:32  thiessen
+* add sort by pssm score
+*
 * Revision 1.66  2006/03/21 19:36:50  thiessen
 * add new merge-after-all option to block aligner
 *
