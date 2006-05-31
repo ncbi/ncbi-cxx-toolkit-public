@@ -142,6 +142,15 @@ typedef void (*ReleaseSeqBlkFnPtr)
                  BlastSeqSrcGetSeqArg structure.*/
     );
 
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+/** Function pointer typedef to retrieve gis for a given ordinal id */
+typedef Blast_GiList* (*GetGisFnPtr)
+    (void* seqsrc_impl, /**< BlastSeqSrc implementation's data structure */
+     void* arg /**< place holder argument to pass arguments to the
+                 client-defined BlastSeqSrc implementation */
+    );
+#endif /* KAPPA_PRINT_DIAGNOSTICS */
+
 /******************** BlastSeqSrcIterator API *******************************/
 
 /** Defines the type of data contained in the BlastSeqSrcIterator structure */
@@ -239,6 +248,9 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen);
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(ReleaseSeqBlkFnPtr, ReleaseSequence);
 
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext);
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetGisFnPtr, GetGis);
+#endif /* KAPPA_PRINT_DIAGNOSTICS */
 
 /* Not really a member functions, but fields */
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(void*, DataStructure);

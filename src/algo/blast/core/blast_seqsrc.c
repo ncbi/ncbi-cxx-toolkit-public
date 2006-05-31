@@ -75,6 +75,9 @@ struct BlastSeqSrc {
     void*             DataStructure;  /**< ADT holding the sequence data */
 
     char*             InitErrorStr;   /**< initialization error string */
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+    GetGisFnPtr       GetGis;         /**< Retrieve a sequence's gi(s) */
+#endif /* KAPPA_PRINT_DIAGNOSTICS */
 };
 
 BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info)
@@ -227,6 +230,88 @@ BlastSeqSrcReleaseSequence(const BlastSeqSrc* seq_src,
     (*seq_src->ReleaseSequence)(seq_src->DataStructure, sequence);
 }
 
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+
+static const size_t kInitialGiListSize = 10;
+const Int2 kBadParameter = -1;
+const Int2 kOutOfMemory = -2;
+
+Blast_GiList*
+Blast_GiListNew(void)
+{
+    return Blast_GiListNewEx(kInitialGiListSize);
+}
+
+Blast_GiList*
+Blast_GiListNewEx(size_t list_size)
+{
+    Blast_GiList* retval = (Blast_GiList*) calloc(1, sizeof(Blast_GiList));
+    if ( !retval ) {
+        return NULL;
+    }
+
+    retval->data = (Int4*) calloc(list_size, sizeof(Int4));
+    if ( !retval->data ) {
+        return Blast_GiListFree(retval);
+    }
+    retval->num_allocated = kInitialGiListSize;
+
+    return retval;
+}
+
+Blast_GiList*
+Blast_GiListFree(Blast_GiList* gilist)
+{
+    if ( !gilist ) {
+        return NULL;
+    }
+    if (gilist->data) {
+        sfree(gilist->data);
+    }
+    sfree(gilist);
+    return NULL;
+}
+
+Int2
+Blast_GiList_ReallocIfNecessary(Blast_GiList* gilist)
+{
+    ASSERT(gilist);
+
+    if (gilist->num_used+1 > gilist->num_allocated) {
+        /* we need more room for elements */
+        gilist->num_allocated *= 2;
+        gilist->data = (Int4*) realloc(gilist->data, 
+                                       gilist->num_allocated * sizeof(Int4));
+        if ( !gilist->data ) {
+            return kOutOfMemory;
+        }
+    }
+    return 0;
+}
+
+Int2
+Blast_GiList_Append(Blast_GiList* gilist, Int4 gi)
+{
+    Int2 retval = 0;
+    ASSERT(gilist);
+
+    if ( (retval = Blast_GiList_ReallocIfNecessary(gilist)) != 0) {
+        return retval;
+    }
+    gilist->data[gilist->num_used++] = gi;
+    return retval;
+}
+
+Blast_GiList*
+BlastSeqSrcGetGis(const BlastSeqSrc* seq_src, void* oid)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetSeqLen);
+    return (*seq_src->GetGis)(seq_src->DataStructure, oid);
+}
+
+#endif /* KAPPA_PRINT_DIAGNOSTICS */
+
 /******************** BlastSeqSrcIterator API *******************************/
 
 BlastSeqSrcIterator* BlastSeqSrcIteratorNew()
@@ -333,3 +418,6 @@ DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(ReleaseSeqBlkFnPtr, ReleaseSequence)
 
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext)
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetGisFnPtr, GetGis)
+#endif /* KAPPA_PRINT_DIAGNOSTICS */

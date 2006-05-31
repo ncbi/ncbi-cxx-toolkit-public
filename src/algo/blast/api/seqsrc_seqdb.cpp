@@ -49,6 +49,28 @@ USING_SCOPE(blast);
 
 extern "C" {
 
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+
+static Blast_GiList*
+s_SeqDbGetGiList(void* seqdb_handle, void* args)
+{
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    Int4* oid = (Int4*) args;
+
+    if (!seqdb || !oid)
+       return NULL;
+
+    vector<int> gis;
+    (*seqdb)->GetGis(*oid, gis);
+
+    Blast_GiList* retval = Blast_GiListNewEx(gis.size());
+    copy(gis.begin(), gis.end(), retval->data);
+
+    return retval;
+}
+
+#endif /* KAPPA_PRINT_DIAGNOSTICS */
+
 /// Retrieves the length of the longest sequence in the BlastSeqSrc.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static Int4 
@@ -386,6 +408,9 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
     _BlastSeqSrcImpl_SetGetSeqLen     (retval, & s_SeqDbGetSeqLen);
     _BlastSeqSrcImpl_SetIterNext      (retval, & s_SeqDbIteratorNext);
     _BlastSeqSrcImpl_SetReleaseSequence   (retval, & s_SeqDbReleaseSequence);
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+    _BlastSeqSrcImpl_SetGetGis        (retval, & s_SeqDbGetGiList);
+#endif /* KAPPA_PRINT_DIAGNOSTICS */
 }
 
 /// Populates a BlastSeqSrc, creating a new reference to the already existing 
@@ -490,6 +515,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2006/05/31 19:00:15  camacho
+ * + KAPPA_PRINT_DIAGNOSTICS debugging feature
+ *
  * Revision 1.38  2006/05/04 15:53:01  camacho
  * Removed unused BLAST_SequenceBlk::context field
  *

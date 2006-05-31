@@ -110,6 +110,13 @@ extern const int kUngappedHSPNumMax;
 NCBI_XBLAST_EXPORT
 void __sfree(void** x);
 
+#if 0
+/** Define this symbol to enable debugging APIs in the BlastSeqSrc interface to
+ * allow diagnostics/debugging to be performed in the composition based
+ * statistics code */
+#define KAPPA_PRINT_DIAGNOSTICS 1
+#endif
+
 /********************* Structure definitions ********************************/
 
 /** A structure containing two integers, used e.g. for locations for the 

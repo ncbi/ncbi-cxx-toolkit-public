@@ -227,6 +227,57 @@ BlastSeqSrcReleaseSequence(const BlastSeqSrc* seq_src,
 NCBI_XBLAST_EXPORT
 char* BlastSeqSrcGetInitError(const BlastSeqSrc* seq_src);
 
+/* This is a *debugging* feature for the code that implements the various
+ * composition-based statistics types of processing, added at the request of
+ * the authors of that code */
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+
+/** Data structure to contain a list of gis */
+typedef struct Blast_GiList {
+    Int4* data;             /**< Gis are stored here */
+    size_t num_allocated;   /**< Size of the data array */
+    size_t num_used;        /**< Number of elements populated in data */
+} Blast_GiList;
+
+/** Allocate a gi list with default size */
+Blast_GiList* Blast_GiListNew(void);
+
+/** Allocate a gi list with the requested size 
+ * @param list_size initial list size [in]
+ */
+Blast_GiList* Blast_GiListNewEx(size_t list_size);
+
+/** Deallocate memory associated with the gi list
+ * @return NULL
+ */
+Blast_GiList* Blast_GiListFree(Blast_GiList* gilist);
+
+/* Return values */
+
+/** Invalid parameter used in a function call */
+extern const Int2 kBadParameter;
+/** Failure due to out-of-memory condition */
+extern const Int2 kOutOfMemory;
+
+/** Appends to an existing gi list, allocating memory if necessary
+ * @return 0 on success or one of the constants defined above
+ */
+Int2 Blast_GiList_Append(Blast_GiList* gilist, Int4 gi);
+
+/** Retrieve a sequence's gi (if available). Caller is responsible for
+ * deallocating return value with Blast_GiListFree
+ * @param seq_src the BLAST sequence source [in]
+ * @param oid ordinal id of the sequence desired (should be Uint4) [in]
+ * @return the gis corresponding to the ordinal id requested, an empty list if
+ * there are no gis in the BlastSeqSrc implementation, or NULL in case of
+ * error
+ */
+NCBI_XBLAST_EXPORT
+Blast_GiList*
+BlastSeqSrcGetGis(const BlastSeqSrc* seq_src, void* oid);
+
+#endif /* KAPPA_PRINT_DIAGNOSTICS */
+
 /******************** BlastSeqSrcIterator API *******************************/
 
 /** Allocate and initialize an iterator over a BlastSeqSrc with a default chunk
