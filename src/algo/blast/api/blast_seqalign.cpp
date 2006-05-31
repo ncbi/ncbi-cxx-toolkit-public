@@ -1285,11 +1285,30 @@ void RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query)
             // or opposite to those in the segment, to force RemapToLoc to 
             // behave in the correct way.
             CSeq_loc q_seqloc;
-            ENa_strand q_strand = strands[0];
+            ENa_strand q_strand = strands[query_dimension];
             q_seqloc.SetInt().SetFrom(q_shift);
             q_seqloc.SetInt().SetTo(query.GetInt().GetTo());
             q_seqloc.SetInt().SetStrand(q_strand);
             q_seqloc.SetInt().SetId().Assign(CSeq_loc_CI(query).GetSeq_id());
+            itr->RemapToLoc(query_dimension, q_seqloc, true);
+        }
+        
+        for (CTypeIterator<CStd_seg> itr(Begin(*sar)); itr; ++itr) {
+            // Create temporary CSeq_locs with strands either matching 
+            // (for query and for subject if it is not on a minus strand),
+            // or opposite to those in the segment, to force RemapToLoc to 
+            // behave in the correct way.
+            
+            CSeq_loc q_seqloc;
+            
+            ENa_strand q_strand =
+                (itr->GetLoc())[query_dimension]->GetStrand();
+            
+            q_seqloc.SetInt().SetFrom(q_shift);
+            q_seqloc.SetInt().SetTo(query.GetInt().GetTo());
+            q_seqloc.SetInt().SetStrand(q_strand);
+            q_seqloc.SetInt().SetId().Assign(CSeq_loc_CI(query).GetSeq_id());
+            
             itr->RemapToLoc(query_dimension, q_seqloc, true);
         }
     }
@@ -1702,6 +1721,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2006/05/31 16:52:16  bealer
+* - Add Std-seg seqalign remapping code.
+*
 * Revision 1.67  2006/03/15 02:16:19  ucko
 * +<algorithm> (once indirectly included?) for sort().
 *
