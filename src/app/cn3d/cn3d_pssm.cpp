@@ -94,7 +94,7 @@ PSSMWrapper::PSSMWrapper(const BlockMultipleAlignment *bma) : multiple(bma)
 
         // use PssmMaker to create PSSM using consensus
         cd_utils::PssmMaker pm(&c, true, true);
-        cd_utils::PssmMakerOptions options; // comes with defaults
+        cd_utils::PssmMakerOptions options;     // comes with defaults
         options.requestFrequencyRatios = true;  // necessary for psi-blast
 //        options.scalingFactor = 100;          // do *NOT* use SF other than 1 for psi-blast
         pm.setOptions(options);
@@ -293,6 +293,11 @@ void PSSMWrapper::OutputPSSM(ncbi::CNcbiOstream& os, const string& title) const
         copy.SetPssm().SetQuery().SetSeq().SetDescr().Set().push_front(descr);
     }
 
+    // do not put scores in output pssm, only freq ratios
+    copy.SetPssm().ResetFinalData();
+    if (!copy.GetPssm().IsSetIntermediateData() || !copy.GetPssm().GetIntermediateData().IsSetFreqRatios())
+        ERRORMSG("PSSM is missing frequency ratios");
+
     CObjectOStreamAsn osa(os, false);
     osa << copy;
 }
@@ -341,6 +346,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2006/05/31 19:20:32  thiessen
+* output pssms with only freq ratios; use scaling factor of 1 for internal scoring matrix
+*
 * Revision 1.22  2006/04/25 16:49:50  thiessen
 * adjust for blast scoring changes
 *
