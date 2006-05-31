@@ -82,7 +82,7 @@ CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query,
     m_Reporter.SetExtraMsg( extra_msg );
 
     CODBC_LangCmd* lcmd = new CODBC_LangCmd(this, lang_query, nof_params);
-    m_CMDs.Add(lcmd);
+    m_CMDs.push_back(lcmd);
     return lcmd;
 }
 
@@ -100,7 +100,7 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
     m_Reporter.SetExtraMsg( extra_msg );
 
     CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(this, rpc_name, nof_args);
-    m_CMDs.Add(rcmd);
+    m_CMDs.push_back(rcmd);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -117,7 +117,7 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
     }
 
     CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(this, m_Link, table_name, nof_columns);
-    m_CMDs.Add(bcmd);
+    m_CMDs.push_back(bcmd);
     return Create_BCPInCmd(*bcmd);
 #endif
 }
@@ -136,7 +136,7 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
                                                 cursor_name, 
                                                 query,
                                                 nof_params);
-    m_CMDs.Add(ccmd);
+    m_CMDs.push_back(ccmd);
     return Create_CursorCmd(*ccmd);
 }
 
@@ -149,7 +149,7 @@ CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                               (CDB_ITDescriptor&)descr_in,  
                               data_size, 
                               log_it);
-    m_CMDs.Add(sd_cmd);
+    m_CMDs.push_back(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
 }
 
@@ -194,11 +194,14 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
 bool CODBC_Connection::Refresh()
 {
     // close all commands first
-    while(m_CMDs.NofItems() > 0) {
-        CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
-        delete pCmd;
-        m_CMDs.Remove((int) 0);
+    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
+        try {
+            delete *it;
+        } catch (CDB_Exception& ) {
+            _ASSERT(false);
+        }
     }
+    m_CMDs.clear();
 
     return IsAlive();
 }
@@ -276,11 +279,14 @@ void CODBC_Connection::Release()
 {
     m_BR = 0;
     // close all commands first
-    while(m_CMDs.NofItems() > 0) {
-        CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
-        delete pCmd;
-        m_CMDs.Remove((int) 0);
+    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
+        try {
+            delete *it;
+        } catch (CDB_Exception& ) {
+            _ASSERT(false);
+        }
     }
+    m_CMDs.clear();
 }
 
 
@@ -296,7 +302,11 @@ CODBC_Connection::~CODBC_Connection()
 
 void CODBC_Connection::DropCmd(CDB_BaseEnt& cmd)
 {
-    m_CMDs.Remove(static_cast<TPotItem> (&cmd));
+    deque<CDB_BaseEnt*>::iterator it = find(m_CMDs.begin(), m_CMDs.end(), &cmd);
+
+    if (it != m_CMDs.end()) {
+        m_CMDs.erase(it);
+    }
 }
 
 bool CODBC_Connection::Abort()
@@ -664,6 +674,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/05/31 16:56:11  ssikorsk
+ * Replaced CPointerPot with deque<CDB_BaseEnt*>
+ *
  * Revision 1.22  2006/05/15 19:39:30  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *

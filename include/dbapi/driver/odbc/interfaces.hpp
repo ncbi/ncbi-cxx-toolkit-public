@@ -145,8 +145,6 @@ protected:
 private:
     SQLHENV         m_Context;
     SQLULEN         m_PacketSize;
-    SQLULEN         m_LoginTimeout;
-    SQLULEN         m_Timeout;
     SQLUINTEGER     m_TextImageSize;
     CODBC_Reporter  m_Reporter;
     bool            m_UseDSN;
@@ -261,20 +259,20 @@ protected:
 private:
     bool x_SendData(CStatementBase& stmt, CDB_Stream& stream);
 
-    SQLHDBC         m_Link;
+    SQLHDBC                 m_Link;
 
-    CODBCContext*   m_Context;
-    CPointerPot     m_CMDs;
-    CDBHandlerStack m_MsgHandlers;
-    string          m_Server;
-    string          m_User;
-    string          m_Passwd;
-    string          m_Pool;
-    CODBC_Reporter  m_Reporter;
-    bool            m_Reusable;
-    bool            m_BCPable;
-    bool            m_SecureLogin;
-    CDB_ResultProcessor* m_ResProc;
+    CODBCContext*           m_Context;
+    deque<CDB_BaseEnt*>     m_CMDs;
+    CDBHandlerStack         m_MsgHandlers;
+    string                  m_Server;
+    string                  m_User;
+    string                  m_Passwd;
+    string                  m_Pool;
+    CODBC_Reporter          m_Reporter;
+    bool                    m_Reusable;
+    bool                    m_BCPable;
+    bool                    m_SecureLogin;
+    CDB_ResultProcessor*    m_ResProc;
 };
 
 
@@ -737,6 +735,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/05/31 16:55:31  ssikorsk
+ * Replaced CPointerPot with deque<CDB_BaseEnt*>
+ *
  * Revision 1.26  2006/05/15 19:39:20  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *
