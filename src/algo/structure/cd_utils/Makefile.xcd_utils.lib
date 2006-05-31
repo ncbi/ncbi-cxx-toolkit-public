@@ -5,7 +5,7 @@
 
 REQUIRES = objects
 
-ASN_DEP = cdd ncbimime taxon1
+ASN_DEP = cdd ncbimime taxon1 id1cli
 
 LIB = xcd_utils
 
