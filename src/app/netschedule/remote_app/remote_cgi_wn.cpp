@@ -140,7 +140,7 @@ CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext& context)
     : m_Factory(context.GetConfig()), m_Request(m_Factory), m_Result(m_Factory)
 {
     const IRegistry& reg = context.GetConfig();
-    m_Params.Load("remote_app", reg);
+    m_Params.Load("remote_cgi", reg);
 
     CFile file(m_Params.GetAppPath());
     if (!file.Exists())
@@ -158,7 +158,7 @@ public:
     CRemoteAppIdleTask(const IWorkerNodeInitContext& context) 
     {
         const IRegistry& reg = context.GetConfig();
-        m_AppCmd = reg.GetString("remote_app", "idle_app_cmd", "" );
+        m_AppCmd = reg.GetString("remote_cgi", "idle_app_cmd", "" );
         if (m_AppCmd.empty())
             throw runtime_error("Idle application is not set.");
     }
@@ -187,6 +187,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteCgiJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/01 18:55:53  didenko
+ * added config file for remote_cgi utility
+ *
  * Revision 1.1  2006/05/30 16:45:08  didenko
  * Added remote CGI runner utility
  *
