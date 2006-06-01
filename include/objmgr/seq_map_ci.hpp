@@ -39,6 +39,7 @@
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -214,13 +215,20 @@ public:
     typedef SSeqMapSelector::TFlags TFlags;
 
     CSeqMap_CI(void);
-    CSeqMap_CI(const CBioseq_Handle& bioseq,
-               const SSeqMapSelector& selector,
-               TSeqPos pos = 0);
+    CSeqMap_CI(const CBioseq_Handle&     bioseq,
+               const SSeqMapSelector&    selector,
+               TSeqPos                   pos = 0);
+    CSeqMap_CI(const CBioseq_Handle&     bioseq,
+               const SSeqMapSelector&    selector,
+               const CRange<TSeqPos>&    range);
     CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
                CScope*                   scope,
                const SSeqMapSelector&    selector,
                TSeqPos                   pos = 0);
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
+               CScope*                   scope,
+               const SSeqMapSelector&    selector,
+               const CRange<TSeqPos>&    range);
 
     ~CSeqMap_CI(void);
 
@@ -312,7 +320,8 @@ private:
 
     void x_Select(const CConstRef<CSeqMap>& seqMap,
                   const SSeqMapSelector& selector,
-                  TSeqPos pos);
+                  TSeqPos pos,
+                  TSeqPos end_pos);
 
     typedef vector<TSegmentInfo> TStack;
 
@@ -641,6 +650,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/06/01 13:51:42  vasilche
+* Added limiting range argument to CSeqMap_CI constructor.
+*
 * Revision 1.26  2005/12/15 21:32:51  vasilche
 * Fixed argument type EFlags -> TFlags.
 *

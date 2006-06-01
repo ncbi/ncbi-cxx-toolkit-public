@@ -136,7 +136,17 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        TSeqPos pos)
     : m_Scope(scope)
 {
-    x_Select(seqMap, sel, pos);
+    x_Select(seqMap, sel, pos, kInvalidSeqPos);
+}
+
+
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       const SSeqMapSelector& sel,
+                       const CRange<TSeqPos>& range)
+    : m_Scope(scope)
+{
+    x_Select(seqMap, sel, range.GetFrom(), range.GetToOpen());
 }
 
 
@@ -147,7 +157,19 @@ CSeqMap_CI::CSeqMap_CI(const CBioseq_Handle& bioseq,
 {
     SSeqMapSelector tse_sel(sel);
     tse_sel.SetLinkUsedTSE(bioseq.GetTSE_Handle());
-    x_Select(ConstRef(&bioseq.GetSeqMap()), tse_sel, pos);
+    x_Select(ConstRef(&bioseq.GetSeqMap()), tse_sel, pos, kInvalidSeqPos);
+}
+
+
+CSeqMap_CI::CSeqMap_CI(const CBioseq_Handle& bioseq,
+                       const SSeqMapSelector& sel,
+                       const CRange<TSeqPos>& range)
+    : m_Scope(&bioseq.GetScope())
+{
+    SSeqMapSelector tse_sel(sel);
+    tse_sel.SetLinkUsedTSE(bioseq.GetTSE_Handle());
+    x_Select(ConstRef(&bioseq.GetSeqMap()), tse_sel,
+             range.GetFrom(), range.GetToOpen());
 }
 
 
@@ -158,7 +180,8 @@ CSeqMap_CI::~CSeqMap_CI(void)
 
 void CSeqMap_CI::x_Select(const CConstRef<CSeqMap>& seqMap,
                           const SSeqMapSelector& selector,
-                          TSeqPos pos)
+                          TSeqPos pos,
+                          TSeqPos end_pos)
 {
     m_Selector = selector;
     if ( m_Selector.m_Length == kInvalidSeqPos ) {
@@ -177,7 +200,7 @@ void CSeqMap_CI::x_Select(const CConstRef<CSeqMap>& seqMap,
            m_Selector.m_Length,
            m_Selector.m_MinusStrand,
            pos - m_Selector.m_Position);
-    while ( !x_Found() ) {
+    while ( !x_Found() && GetPosition() < end_pos ) {
         if ( !x_Push(pos - m_Selector.m_Position) ) {
             x_SettleNext();
             break;
@@ -570,6 +593,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2006/06/01 13:51:42  vasilche
+* Added limiting range argument to CSeqMap_CI constructor.
+*
 * Revision 1.40  2005/12/15 21:32:51  vasilche
 * Fixed argument type EFlags -> TFlags.
 *

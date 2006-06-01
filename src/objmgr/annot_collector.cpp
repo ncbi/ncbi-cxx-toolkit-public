@@ -1051,7 +1051,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
             if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
                 sel.SetLimitTSE(bh.GetTSE_Handle());
             }
-            CSeqMap_CI smit(bh, sel, range.GetFrom());
+            CSeqMap_CI smit(bh, sel, range);
             while ( smit && smit.GetPosition() < range.GetToOpen() ) {
                 _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
                 if ( !CanResolveId(smit.GetRefSeqid(), bh) ) {
@@ -2276,6 +2276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2006/06/01 13:51:42  vasilche
+* Added limiting range argument to CSeqMap_CI constructor.
+*
 * Revision 1.72  2006/03/20 21:09:10  vasilche
 * Do not try synonyms Seq-ids when looking for external annotations.
 *
