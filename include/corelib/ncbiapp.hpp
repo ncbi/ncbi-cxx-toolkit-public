@@ -291,6 +291,9 @@ public:
                                            = eIgnoreLinks)
         const;
 
+    /// Get the program version information.
+    CVersionInfo GetVersion(void) const;
+
 protected:
     /// Disable argument descriptions.
     ///
@@ -348,9 +351,6 @@ protected:
     ///
     /// If not set, a default of 0.0.0 (unknown) is used.
     void SetVersion(const CVersionInfo& version);
-
-    /// Get the program version information.
-    CVersionInfo GetVersion(void) const;
 
     /// Setup the command line argument descriptions.
     ///
@@ -604,6 +604,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/06/01 18:32:38  gouriano
+ * Made GetVersion method public
+ *
  * Revision 1.58  2006/05/18 19:07:26  grichenk
  * Added output to log file(s), application access log, new cgi log formatting.
  *
