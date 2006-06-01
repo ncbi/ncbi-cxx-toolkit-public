@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -163,7 +164,8 @@ public:
                             typename THitRefs::iterator hri_end,
                             THitRefs* phits_new,
                             TCoord min_hit_len = 100,
-                            double min_hit_idty = .9) {
+                            double min_hit_idty = .9,
+                            size_t margin = 1) {
 
         if(hri_beg > hri_end) {
             NCBI_THROW(CAlgoAlignUtilException, eInternal, 
@@ -204,12 +206,60 @@ public:
             }
 
             // create additional markers for potential 'hot dogs'
+            THitEnds hit_mids;
+            typename THit::TId id;
+            id = (*(hit_ends.begin()->m_Ptr))->GetId(hit_ends.begin()->m_Point/2);
+            typedef pair<THitRef*, Uint1> THitEndInfo;
+            typedef set<THitEndInfo> TOpenHits;
+            TOpenHits open_hits;
+            open_hits.insert(
+                THitEndInfo(hit_ends.begin()->m_Ptr,hit_ends.begin()->m_Point/2));
+            ITERATE(typename THitEnds, ii, hit_ends) {
+
+                const Uint1 where = ii->m_Point/2;
+                THitRef* hitrefptr = ii->m_Ptr;
+                if((*hitrefptr)->GetId(where)->CompareOrdered(*id) != 0) {
+                    open_hits.clear();
+                    open_hits.insert(THitEndInfo(hitrefptr,where));
+                    id = (*hitrefptr)->GetId(where);
+                }
+                else {
+                    typename TOpenHits::const_iterator iise = open_hits.end();
+                    typename TOpenHits::iterator iis 
+                        = open_hits.find(THitEndInfo(hitrefptr,where));
+                    if(iis == iise) {
+                        open_hits.insert(THitEndInfo(hitrefptr,where));
+                    }
+                    else {
+                        open_hits.erase(iis);
+                        const float curscore = (*hitrefptr)->GetScore();
+                        ITERATE(typename TOpenHits, iis2, open_hits) {
+                            
+                            bool hd_score = ((*(iis2->first))->GetScore() < curscore);
+                            bool hd_xr = margin + (*hitrefptr)->GetMax(where)
+                                < (*(iis2->first))->GetMax(iis2->second);
+                            bool hd_xl = (*hitrefptr)->GetMin(where) > margin
+                                + (*(iis2->first))->GetMin(iis2->second);
+                            if(hd_score && hd_xr && hd_xl) {
+                                
+                                THitEnd hm;
+                                hm.m_Point = iis2->second * 2;
+                                hm.m_Ptr = iis2->first;
+                                hm.m_X = ( (*hitrefptr)->GetMin(where) 
+                                           + (*hitrefptr)->GetMax(where) ) / 2;
+                                hit_mids.insert(hm);
+                            }
+                        }
+                    }
+                }
+            }
+
+            /*
             typedef const THitEnd* THitEndPtr;
             typedef list<THitEndPtr> TMarkers;
             TMarkers mks;
             typename THit::TId id;
             id = (*(hit_ends.begin()->m_Ptr))->GetId(hit_ends.begin()->m_Point/2);
-            THitEnds hit_mids;
             ITERATE(typename THitEnds, ii, hit_ends) {
             
                 THitEndPtr cur = &(*ii);
@@ -251,6 +301,7 @@ public:
                     }
                 }
             }
+            */
 
             hit_ends.insert(hit_mids.begin(), hit_mids.end());
 
@@ -304,7 +355,7 @@ public:
                     const TCoord cmin = hc->GetMin(where);
                     const TCoord cmax = hc->GetMax(where);
 
-                    const THitEnd *phe_lo, *phe_hi;
+                    THitEnd *phe_lo, *phe_hi;
                     const Uint1 i1 = 2*where, i2 = i1 + 1;
                     if(hc->GetStrand(where)) {
                         phe_lo = &he[i1];
@@ -314,6 +365,16 @@ public:
                         phe_lo = &he[i2];
                         phe_hi = &he[i1];
                     }
+
+                    if(phe_lo->m_X >= margin) {
+                        phe_lo->m_X -= margin;
+                    }
+                    else {
+                        phe_lo->m_X = 0;
+                    }
+
+                    phe_hi->m_X += margin;
+
                     typedef typename THitEnds::iterator THitEndsIter;
                     THitEndsIter ii0 = hit_ends.lower_bound(*phe_lo);
                     THitEndsIter ii1 = hit_ends.upper_bound(*phe_hi);
@@ -446,7 +507,8 @@ protected:
             const THit& h1 = **m_Ptr;
             const THit& h2 = **rhs.m_Ptr;
             int c = h1.GetId(where1)->CompareOrdered(*h2.GetId(where2));
-            return c < 0? true: (c > 0? false: m_X < rhs.m_X);
+            return c < 0? true: (c > 0? false:
+             (m_X == rhs.m_X? (h1.GetScore() < h2.GetScore()): m_X < rhs.m_X) );
         }
 
         friend ostream& operator << (ostream& ostr, const SHitEnd& he) {
@@ -536,6 +598,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/01 19:51:50  kapustin
+ * Introduce coordinate margin to control RAM/speed balance
+ *
  * Revision 1.10  2006/05/22 15:32:42  kapustin
  * Add lower cutoff for identity
  *
