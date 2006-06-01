@@ -202,7 +202,7 @@ void CSeqMap_CI::x_Select(const CConstRef<CSeqMap>& seqMap,
            pos - m_Selector.m_Position);
     while ( !x_Found() && GetPosition() < end_pos ) {
         if ( !x_Push(pos - m_Selector.m_Position) ) {
-            x_SettleNext();
+            x_SettleNext(end_pos);
             break;
         }
     }
@@ -547,9 +547,9 @@ bool CSeqMap_CI::x_Found(void) const
 }
 
 
-bool CSeqMap_CI::x_SettleNext(void)
+bool CSeqMap_CI::x_SettleNext(TSeqPos end_pos)
 {
-    while ( !x_Found() ) {
+    while ( !x_Found() && GetPosition() < end_pos ) {
         if ( !x_Next() )
             return false;
     }
@@ -593,6 +593,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2006/06/01 15:25:33  vasilche
+* Fixed limit range test.
+*
 * Revision 1.41  2006/06/01 13:51:42  vasilche
 * Added limiting range argument to CSeqMap_CI constructor.
 *

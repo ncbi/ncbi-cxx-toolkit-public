@@ -315,7 +315,7 @@ private:
     bool x_TopNext(void);
     bool x_TopPrev(void);
 
-    bool x_SettleNext(void);
+    bool x_SettleNext(TSeqPos end_pos = kInvalidSeqPos);
     bool x_SettlePrev(void);
 
     void x_Select(const CConstRef<CSeqMap>& seqMap,
@@ -650,6 +650,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/06/01 15:25:33  vasilche
+* Fixed limit range test.
+*
 * Revision 1.27  2006/06/01 13:51:42  vasilche
 * Added limiting range argument to CSeqMap_CI constructor.
 *
