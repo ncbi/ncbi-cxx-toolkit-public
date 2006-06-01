@@ -146,6 +146,9 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
+/* Define to 1 if you have `ios::exceptions'. */
+#undef HAVE_IOS_EXCEPTIONS
+
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #undef HAVE_IOS_REGISTER_CALLBACK
 
@@ -220,6 +223,9 @@
 
 /* Define to 1 if libsqlite is available. */
 #undef HAVE_LIBSQLITE
+
+/* Define to 1 if libsqlite3 is available. */
+#undef HAVE_LIBSQLITE3
 
 /* Define to 1 if the NCBI SSS DB library is available. */
 #undef HAVE_LIBSSSDB

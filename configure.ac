@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.421 2006/05/09 18:00:35 ucko Exp $
+#  $Id: configure.ac,v 1.422 2006/06/01 18:45:17 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -253,9 +253,13 @@ AC_ARG_WITH(boost-tag,
 AC_ARG_WITH(boost-tag2,
    [ --without-boost-tag     use untagged Boost library names])
 AC_ARG_WITH(sqlite,
-   [ --with-sqlite=DIR       use SQLite installation in DIR])
+   [ --with-sqlite=DIR       use SQLite (2.x) installation in DIR])
 AC_ARG_WITH(sqlite2,
-   [ --without-sqlite,       do not use SQLite])
+   [ --without-sqlite,       do not use SQLite 2.x])
+AC_ARG_WITH(sqlite3,
+   [ --with-sqlite3=DIR      use SQLite 3.x installation in DIR])
+AC_ARG_WITH(sqlite3b,
+   [ --without-sqlite3,      do not use SQLite 3.x])
 AC_ARG_WITH(icu,
    [ --with-icu=DIR          use ICU installation in DIR])
 AC_ARG_WITH(icu2,
@@ -349,8 +353,8 @@ exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution ccache distcc \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype \
-fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
+z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype fltk \
+opengl mesa glut bdb odbc python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -390,7 +394,7 @@ for x_arg in "$@" ; do
       | --with-z=* | --with-bz2=* | --with-pcre=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-sqlite=* | --with-expat=* | --with-sablot=* \
+      | --with-sqlite=* | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* \
       | --with-libxml=* | --with-libxslt=* | --with-bdb=* | --with-odbc=* \
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
@@ -2401,6 +2405,19 @@ AC_CACHE_CHECK([for ios(_base)::register_callback],
 if test "$ncbi_cv_func_ios_register_callback" = yes; then
    AC_DEFINE(HAVE_IOS_REGISTER_CALLBACK, 1,
              [Define to 1 if you have `ios(_base)::register_callback'.])
+fi
+
+
+AC_CACHE_CHECK([for ios::exceptions],
+   ncbi_cv_func_ios_exceptions,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <iostream>]],
+       [[std::ios* s; std::ios::iostate st = s->exceptions();]])],
+       [ncbi_cv_func_ios_exceptions=yes],
+       [ncbi_cv_func_ios_exceptions=no])])
+if test "$ncbi_cv_func_ios_exceptions" = yes; then
+   AC_DEFINE(HAVE_IOS_EXCEPTIONS, 1,
+             [Define to 1 if you have `ios::exceptions'.])
 fi
 
 
@@ -4488,6 +4505,14 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
  AC_LANG_PROGRAM([#include <sqlite.h>],
     [char *errs; sqlite* db = sqlite_open("foo.db", 0, &errs);]))
+
+: ${SQLITE3_PATH=$NCBI/sqlite3}
+if test -d "$SQLITE3_PATH"; then
+   SQLITE3_PATH=`cd $SQLITE3_PATH  &&  $smart_pwd`
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(sqlite3,
+ AC_LANG_PROGRAM([#include <sqlite3.h>],
+    [sqlite3* db; int status = sqlite3_open("foo.db", &db);]))
 
 
 ### OEChem
