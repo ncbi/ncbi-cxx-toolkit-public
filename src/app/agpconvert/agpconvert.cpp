@@ -66,6 +66,10 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/taxon1/taxon1.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/pub/Pub_equiv.hpp>
 
 #include <algorithm>
 
@@ -207,6 +211,8 @@ int CAgpconvertApplication::Run(void)
 
     CSeq_entry ent_templ;
     CRef<CSeq_submit> submit_templ;  // may not be used
+    bool output_seq_submit = false;  // whether the output should be a
+                                     // Seq-submit (rather than a Seq-entry)
     try {
         // a Seq-entry?
         args["template"].AsInputFile() >> MSerial_AsnText >> ent_templ;
@@ -236,8 +242,37 @@ int CAgpconvertApplication::Run(void)
             ent->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
             ent->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
             submit_templ->SetData().SetEntrys().push_back(ent);
+
+            output_seq_submit = true;
         }
         ent_templ.Assign(*submit_templ->GetData().GetEntrys().front());
+        // The template may contain a set rather than a seq.
+        // That's OK if it contains only one na entry, which we'll use.
+        if (ent_templ.IsSet()) {
+            unsigned int num_nuc_ents = 0;
+            CSeq_entry tmp;
+            ITERATE (CBioseq_set::TSeq_set, ent_iter,
+                     ent_templ.GetSet().GetSeq_set()) {
+                if ((*ent_iter)->GetSeq().GetInst().IsNa()) {
+                    ++num_nuc_ents;
+                    tmp.Assign(**ent_iter);
+                    // Copy any descriptors from the set to the sequence
+                    ITERATE (CBioseq_set::TDescr::Tdata, desc_iter,
+                             ent_templ.GetSet().GetDescr().Get()) {
+                        CRef<CSeqdesc> desc(new CSeqdesc);
+                        desc->Assign(**desc_iter);
+                        tmp.SetSeq().SetDescr().Set().push_back(desc);
+                    }
+                }
+            }
+            if (num_nuc_ents == 1) {
+                ent_templ.Assign(tmp);
+            } else {
+                throw runtime_error("template contains "
+                                    + NStr::IntToString(num_nuc_ents)
+                                    + " nuc. Seq-entrys; should contain 1");
+            }
+        }
         // incorporate any Seqdesc's that follow in the file
         while (true) {
             try {
@@ -248,7 +283,17 @@ int CAgpconvertApplication::Run(void)
                 break;
             }
         }
+        if (!output_seq_submit) {
+            // Take Seq-submit.sub.cit and put it in the Bioseq
+            CRef<CPub> pub(new CPub);
+            pub->SetSub().Assign(submit_templ->GetSub().GetCit());
+            CRef<CSeqdesc> pub_desc(new CSeqdesc);
+            pub_desc->SetPub().SetPub().Set().push_back(pub);
+            ent_templ.SetSeq().SetDescr().Set().push_back(pub_desc);
+        }
     }
+
+    ent_templ.SetSeq().ResetAnnot();  // don't use any annots in the template
 
     // if validating against a file containing
     // sequence components, load it and make
@@ -599,14 +644,14 @@ int CAgpconvertApplication::Run(void)
             // write the entry in asn text
             string outfpath;
             string testval_type_flag;
-            if (!submit_templ) {
-                // template a Seq-entry, so write a Seq-entry
+            if (!output_seq_submit) {
+                // write a Seq-entry
                 outfpath = CDirEntry::MakePath(outdir, id_str, "ent");
                 testval_type_flag = "-e";
                 CNcbiOfstream ostr(outfpath.c_str());
                 ostr << MSerial_AsnText << new_entry;
             } else {
-                // template a Seq-submit, so write a Seq-submit
+                // write a Seq-submit
                 outfpath = CDirEntry::MakePath(outdir, id_str, "sqn");
                 testval_type_flag = "-s";
                 CSeq_submit new_submit;
@@ -655,6 +700,13 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/06/01 14:55:22  jcherry
+ * Produce a Seq-entry (rather than a Seq-submit) when the template is
+ * a Seq-submit, and turn Seq-submit.sub.cit into a Seqdesc.  Allow a
+ * Seq-submit template to contain a Bioseq-set rather than a Bioseq,
+ * so long as it contains exactly one nucleic acid Bioseq.  Never propagate
+ * annotations from the template.
+ *
  * Revision 1.13  2006/03/27 16:56:25  jcherry
  * #include <algorithm>
  *
