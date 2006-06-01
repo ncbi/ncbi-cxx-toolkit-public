@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.422 2006/06/01 18:45:17 ucko Exp $
+#  $Id: configure.ac,v 1.423 2006/06/01 18:54:14 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2405,19 +2405,6 @@ AC_CACHE_CHECK([for ios(_base)::register_callback],
 if test "$ncbi_cv_func_ios_register_callback" = yes; then
    AC_DEFINE(HAVE_IOS_REGISTER_CALLBACK, 1,
              [Define to 1 if you have `ios(_base)::register_callback'.])
-fi
-
-
-AC_CACHE_CHECK([for ios::exceptions],
-   ncbi_cv_func_ios_exceptions,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <iostream>]],
-       [[std::ios* s; std::ios::iostate st = s->exceptions();]])],
-       [ncbi_cv_func_ios_exceptions=yes],
-       [ncbi_cv_func_ios_exceptions=no])])
-if test "$ncbi_cv_func_ios_exceptions" = yes; then
-   AC_DEFINE(HAVE_IOS_EXCEPTIONS, 1,
-             [Define to 1 if you have `ios::exceptions'.])
 fi
 
 

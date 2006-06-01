@@ -146,9 +146,6 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
-/* Define to 1 if you have `ios::exceptions'. */
-#undef HAVE_IOS_EXCEPTIONS
-
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #undef HAVE_IOS_REGISTER_CALLBACK
 
