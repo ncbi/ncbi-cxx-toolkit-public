@@ -96,7 +96,13 @@ void CAppHitFilter::Init()
                             "Input is split into chunks with the number of hits "
                             "per chunk limited by this parameter.",
                             CArgDescriptions::eInteger, 
-                            "1000000");
+                            "5000000");
+    
+    argdescr->AddDefaultKey("coord_margin", "coord_margin", 
+                            "Larger values of this argument will result in less "
+                            "RAM used but longer running times.",
+                            CArgDescriptions::eInteger, 
+                            "1");
 
     argdescr->AddOptionalKey("ids", "ids", "Table to rename sequence IDs.",
                              CArgDescriptions::eInputFile);
@@ -320,6 +326,8 @@ int CAppHitFilter::Run()
         x_LoadIDs(args["ids"].AsInputFile());
     }
 
+    const size_t margin = args["coord_margin"].AsInteger();
+
     THitRefs restraint;
     if(args["constraints"]) {
         x_LoadConstraints(args["constraints"].AsInputFile(), restraint);
@@ -352,7 +360,9 @@ int CAppHitFilter::Run()
             ii_hi = ii = ii_dst;
         }
         THitRefs hits_new;
-        CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, &hits_new, min_len, min_idty);
+        CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, 
+                                      &hits_new, min_len, 
+                                      min_idty, margin);
         sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
         THitRefs::iterator ii_hi0 = ii_hi;
         ii_hi = remove_if(ii_beg, ii_hi, CHitFilter<THit>::s_PNullRef);
@@ -463,6 +473,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/06/01 19:51:36  kapustin
+ * Introduce coordinate margin argument to control RAM/speed balance
+ *
  * Revision 1.11  2006/05/22 15:33:14  kapustin
  * Apply length and identity cutoffs on the output
  *
