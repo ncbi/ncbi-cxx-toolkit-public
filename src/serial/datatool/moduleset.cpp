@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2006/06/01 12:50:01  gouriano
+* When generating specs, do not print current time
+*
 * Revision 1.39  2006/05/25 17:29:24  gouriano
 * Added reference to the source when converting specification
 *
@@ -195,7 +198,7 @@ void CFileModules::PrintASNRefInfo(CNcbiOstream& out) const
     out <<
         "-- ============================================\n"
         "-- This specification was generated from \"" << GetSourceFileName() << "\"\n"
-        "-- by application DATATOOL on " << CTime(CTime::eCurrent).AsString() << "\n"
+        "-- by application DATATOOL\n"
         "-- =============================================\n\n";
 }
 
@@ -263,7 +266,7 @@ void CFileModules::PrintXMLRefInfo(CNcbiOstream& out) const
     out <<
         "<!-- ============================================\n"
         "     This specification was generated from \"" << GetSourceFileName() << "\"\n"
-        "     by application DATATOOL on " << CTime(CTime::eCurrent).AsString() << "\n"
+        "     by application DATATOOL\n"
         "================================================= -->\n\n";
 }
 
