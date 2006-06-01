@@ -903,9 +903,9 @@ string CCgiApplication::GetLogFileName(EDiagFileType file_type) const
 
 string CCgiApplication::GetDefaultLogPath(void) const
 {
-    string log_path = "/log/www/";
+    string log_path = "/log/";
     const char* port = ::getenv("SERVER_PORT");
-    return port ? log_path + string(port) : log_path;
+    return port ? log_path + string(port) : log_path + "srv";
 }
 
 
@@ -1084,6 +1084,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.72  2006/06/01 16:16:45  grichenk
+* Default log location changed to /log/<port>
+*
 * Revision 1.71  2006/05/18 19:07:26  grichenk
 * Added output to log file(s), application access log, new cgi log formatting.
 *
