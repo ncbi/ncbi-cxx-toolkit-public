@@ -451,7 +451,7 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
         is.exceptions(IOS_BASE::goodbit);
     is.read(buf, avail);
     // readsome is not supposed to set a failbit on a stream initially good
-    is.setstate(is.rdstate() & ~IOS_BASE::failbit);
+    is.clear(is.rdstate() & ~IOS_BASE::failbit);
     if (save)
         is.exceptions(save);
     streamsize count = is.gcount();
@@ -470,7 +470,7 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
         is.exceptions(IOS_BASE::goodbit);
     is.read(buf, 1);
     // readsome is not supposed to set a failbit on a stream initially good
-    is.setstate(is.rdstate() & ~IOS_BASE::failbit);
+    is.clear(is.rdstate() & ~IOS_BASE::failbit);
     if (save)
         is.exceptions(save);
     if ( !is.good() )
@@ -508,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.48  2006/06/01 18:38:19  lavr
+ * s_DoReadsome():  setstate() -> clear()
+ *
  * Revision 1.47  2006/06/01 18:00:38  lavr
  * Fix Readsome() to throw exceptions (if requested) properly
  *
