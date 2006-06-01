@@ -380,7 +380,7 @@ void CStreamUtils::Pushback(CNcbiIstream&       is,
 }
 
 
-#ifdef NCBI_NO_READSOME
+#ifdef   NCBI_NO_READSOME
 #  undef NCBI_NO_READSOME
 #endif /*NCBI_NO_READSOME*/
 
@@ -434,9 +434,10 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
 {
     _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
-#  undef NCBI_NO_READSOME
-    if ( !is.good() )
+    if ( !is.good() ) {
+        is.setstate(is.rdstate() | IOS_BASE::failbit);
         return 0; // simulate construction of sentry in real readsome()
+    }
     // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" (and "fail") flag if gcount() < buf_size
     streamsize avail = is.rdbuf()->in_avail();
@@ -444,7 +445,15 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
         avail++; // we still must read
     else if (buf_size < avail)
         avail = buf_size;
+    // Protect read() from throwing any exceptions
+    IOS_BASE::iostate save = is.exceptions();
+    if (save)
+        is.exceptions(IOS_BASE::goodbit);
     is.read(buf, avail);
+    // readsome is not supposed to set a failbit on a stream initially good
+    is.setstate(is.rdstate() & ~IOS_BASE::failbit);
+    if (save)
+        is.exceptions(save);
     streamsize count = is.gcount();
     // Reset "eof" flag if some data have been read
     if (count  &&  is.eof()  &&  !is.bad())
@@ -456,7 +465,14 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     if (n != 0  ||  !is.good())
         return n;
     // No buffered data found, try to read from the real source [still good]
+    IOS_BASE::iostate save = is.exceptions();
+    if (save)
+        is.exceptions(IOS_BASE::goodbit);
     is.read(buf, 1);
+    // readsome is not supposed to set a failbit on a stream initially good
+    is.setstate(is.rdstate() & ~IOS_BASE::failbit);
+    if (save)
+        is.exceptions(save);
     if ( !is.good() )
         return 0;
     if (buf_size == 1)
@@ -492,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.47  2006/06/01 18:00:38  lavr
+ * Fix Readsome() to throw exceptions (if requested) properly
+ *
  * Revision 1.46  2006/05/02 16:11:26  lavr
  * Moved from util to here
  *
