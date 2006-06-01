@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/06/01 18:42:27  gouriano
+* Mark source spec info by a special tag
+*
 * Revision 1.11  2006/05/25 17:29:05  gouriano
 * Added reference to the source when converting specification
 *
@@ -121,13 +124,15 @@ public:
     bool CheckNames(void) const;
 
     void PrintASN(CNcbiOstream& out) const;
+
+    void GetRefInfo(list<string>& info) const;
     void PrintASNRefInfo(CNcbiOstream& out) const;
+    void PrintXMLRefInfo(CNcbiOstream& out) const;
 
     void PrintDTD(CNcbiOstream& out) const;
     void PrintDTDModular(void) const;
 
     void PrintXMLSchemaModular(void) const;
-    void PrintXMLRefInfo(CNcbiOstream& out) const;
     void BeginXMLSchema(CNcbiOstream& out) const;
     void EndXMLSchema(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2006/06/01 18:42:10  gouriano
+* Mark source spec info by a special tag
+*
 * Revision 1.40  2006/06/01 12:50:01  gouriano
 * When generating specs, do not print current time
 *
@@ -193,13 +196,39 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
     m_LastComments.PrintASN(out, 0, CComments::eMultiline);
 }
 
+void CFileModules::GetRefInfo(list<string>& info) const
+{
+    info.clear();
+    string s, h("::DATATOOL:: ");
+    s = h + "Generated from \"" + GetSourceFileName() + "\"";
+    info.push_back(s);
+    s = h + "by application DATATOOL version ";
+    s += CNcbiApplication::Instance()->GetVersion().Print();
+    info.push_back(s);
+    s = h + "on " + CTime(CTime::eCurrent).AsString();
+    info.push_back(s);
+}
+
 void CFileModules::PrintASNRefInfo(CNcbiOstream& out) const
 {
-    out <<
-        "-- ============================================\n"
-        "-- This specification was generated from \"" << GetSourceFileName() << "\"\n"
-        "-- by application DATATOOL\n"
-        "-- =============================================\n\n";
+    list<string> info;
+    GetRefInfo(info);
+    out << "-- ============================================\n";
+    ITERATE(list<string>, i, info) {
+        out << "-- " << *i << "\n";
+    }
+    out << "-- ============================================\n\n";
+}
+
+void CFileModules::PrintXMLRefInfo(CNcbiOstream& out) const
+{
+    list<string> info;
+    GetRefInfo(info);
+    out << "<!-- ============================================\n";
+    ITERATE(list<string>, i, info) {
+        out << "     " << *i << "\n";
+    }
+    out << "     ============================================ -->\n\n";
 }
 
 void CFileModules::PrintDTD(CNcbiOstream& out) const
@@ -259,15 +288,6 @@ void CFileModules::PrintXMLSchemaModular(void) const
             EndXMLSchema(out);
         }
     }
-}
-
-void CFileModules::PrintXMLRefInfo(CNcbiOstream& out) const
-{
-    out <<
-        "<!-- ============================================\n"
-        "     This specification was generated from \"" << GetSourceFileName() << "\"\n"
-        "     by application DATATOOL\n"
-        "================================================= -->\n\n";
 }
 
 void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
