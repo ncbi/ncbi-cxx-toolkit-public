@@ -56,6 +56,14 @@ class NCBI_BIOTREE_EXPORT CDistanceMatrix : public CDistanceMatrix_Base
 {
     typedef CDistanceMatrix_Base Tparent;
 public:
+    // Type of Phylip-style format
+    enum EFormat {
+        eSquare,  // full square matrix
+        eUpper,   // upper-triangular
+        eLower,   // lower-triangular
+        eGuess    // guess which of the above it is
+    };
+
     // constructor
     CDistanceMatrix(void);
     // destructor
@@ -66,6 +74,8 @@ public:
     // Set to values of an ordinary matrix.
     // Must be square and symmetric, with zeros on the main diagonal.
     void FromMatrix(const CNcbiMatrix<double>& mat);
+    // Read from a stream in the format used by Phylip
+    void Read(istream &istr, EFormat format = eGuess);
 private:
     // Prohibit copy constructor and assignment operator
     CDistanceMatrix(const CDistanceMatrix& value);
@@ -94,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/06/01 15:52:12  jcherry
+* BUGZID: 507  Added method to read format used by Phylip
+*
 * Revision 1.1  2006/05/15 15:38:37  jcherry
 * Initial version: provide interconversion with CNcbiMatrix<double>
 *

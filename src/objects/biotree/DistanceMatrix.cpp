@@ -100,6 +100,113 @@ void CDistanceMatrix::FromMatrix(const CNcbiMatrix<double>& mat)
 }
 
 
+void CDistanceMatrix::Read(istream &istr, EFormat format) {
+    if (format == eGuess) {
+        CT_POS_TYPE init_pos = istr.tellg();
+        try {
+            Read(istr, eSquare);
+            return;
+        }
+        catch (std::exception&) {
+            istr.seekg(init_pos);
+        }
+        try {
+            Read(istr, eUpper);
+            return;
+        }
+        catch (std::exception&) {
+            istr.seekg(init_pos);
+        }
+        Read(istr, eLower);
+        return;
+    }
+
+    string line;
+    NcbiGetlineEOL(istr, line);
+
+    unsigned int dim = NStr::StringToUInt(NStr::TruncateSpaces(line));
+
+    vector<string> names;
+    vector<vector<double> > values;
+
+    for (unsigned int i = 0; i < dim; ++i) {
+        unsigned int count = 0;
+        vector<double> line_values;
+        unsigned int min_expected_cols, max_expected_cols;
+        if (format == eSquare) {
+            min_expected_cols = dim;
+            max_expected_cols = dim;
+        } else if (format == eLower) {
+            min_expected_cols = i;
+            max_expected_cols = i + 1;  // main diagonal is optional
+        } else if (format == eUpper) {
+            min_expected_cols = dim - i;
+            max_expected_cols = dim - i;
+        } else {
+            throw runtime_error("invald matrix format specified");
+        }
+        while (true) {
+            NcbiGetlineEOL(istr, line);
+            if (istr.eof()) {
+                throw runtime_error("unexpected EOF");
+            }
+            if (!istr.good()) {
+                throw runtime_error("problem reading file");
+            }
+            if (count == 0) {
+                string name = NStr::TruncateSpaces(line.substr(0, 10));
+                names.push_back(name);
+                line = line.substr(10);
+            }
+            list<string> fields;
+            NStr::Split(line, " \t\n\r", fields);
+            ITERATE (list<string>, field, fields) {
+                line_values.push_back(NStr::StringToDouble(*field));
+            }
+            if (line_values.size() > max_expected_cols) {
+                throw runtime_error("too many columns in row");
+            }
+            if (line_values.size() >= min_expected_cols) {
+                break;
+            }
+            ++count;
+        }
+        values.push_back(line_values);
+    }
+    CNcbiMatrix<double> mat(dim, dim);
+    for (unsigned int i = 0; i < dim; ++i) {
+        for (unsigned int j = 0; j < dim; ++j) {
+            if (format == eSquare) {
+                mat(i, j) = values[i][j];
+            } else if (format == eUpper) {
+                if (i > j) {
+                    mat(i, j) = values[j][i];
+                } else {
+                    mat(i, j) = values[i][j];
+                }
+            } else {  // eLower
+                if (i == j) {
+                    if (values[i].size() == i + 1) {
+                        // diagonal value was provided in file
+                        mat(i, j) = values[i][j];
+                    } else {
+                        mat(i, j) = 0;
+                    }
+                } else if (i > j) {
+                    mat(i, j) = values[i][j];
+                } else {
+                    mat(i, j) = values[j][i];
+                }
+            }
+        }
+    }
+    FromMatrix(mat);
+    ResetLabels();
+    ITERATE (vector<string>, name, names) {
+        SetLabels().push_back(*name);
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -109,6 +216,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/06/01 15:52:13  jcherry
+* BUGZID: 507  Added method to read format used by Phylip
+*
 * Revision 1.1  2006/05/15 15:38:37  jcherry
 * Initial version: provide interconversion with CNcbiMatrix<double>
 *
