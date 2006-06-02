@@ -702,6 +702,20 @@ protected:
     {
         return m_Cmd->GetDiagnosticInfo();
     }
+    CDB_Result* GetCDBResultPtr(void) const
+    {
+        return m_Res;
+    }
+    CDB_Result& GetCDBResult(void)
+    {
+        _ASSERT(m_Res);
+        return *m_Res;
+    }
+    void SetCDBResultPtr(CDB_Result* res)
+    {
+        _ASSERT(res);
+        m_Res = res;
+    }
 
 protected:
     // data
@@ -735,6 +749,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/06/02 19:34:09  ssikorsk
+ * Added methods GetCDBResultPtr, GetCDBResult and SetCDBResultPtr to the
+ * CODBC_CursorResult class.
+ *
  * Revision 1.27  2006/05/31 16:55:31  ssikorsk
  * Replaced CPointerPot with deque<CDB_BaseEnt*>
  *
