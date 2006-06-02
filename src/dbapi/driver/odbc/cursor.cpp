@@ -64,6 +64,11 @@ bool CODBC_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
         m_CursCmd.BindParam(param_name, param_ptr);
 }
 
+struct I_LangCmd_Deleter
+{
+    static void Delete(I_LangCmd* object)
+    { object->Release(); }
+};
 
 CDB_Result* CODBC_CursorCmd::Open()
 {
@@ -98,7 +103,7 @@ CDB_Result* CODBC_CursorCmd::Open()
     // buff = "open " + m_Name;
 
     try {
-        auto_ptr<I_LangCmd> stmt(
+        AutoPtr<I_LangCmd, I_LangCmd_Deleter> stmt(
             GetConnection().xLangCmd("open " + m_Name));
 
         stmt->Send();
@@ -343,7 +348,7 @@ CODBC_CursorCmd::~CODBC_CursorCmd()
             Close();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -354,6 +359,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/02 19:39:03  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION );
+ * Use Release() instead of delete for I_LangCmd;
+ *
  * Revision 1.12  2006/02/17 17:56:32  ssikorsk
  * Use auto_ptr to manage dynamically allocated objects.
  *
