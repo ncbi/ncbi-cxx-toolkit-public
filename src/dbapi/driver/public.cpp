@@ -203,11 +203,11 @@ bool CDB_Connection::Close(void)
 //  CDB_Result::
 //
 
-CDB_Result::CDB_Result(I_Result* r)
+CDB_Result::CDB_Result(I_Result* r) :
+    m_IRes(r)
 {
-    CHECK_DRIVER_ERROR( !r, "No valid result provided", 200004 );
+    CHECK_DRIVER_ERROR( !m_IRes, "No valid result provided", 200004 );
 
-    SetIResult( r );
     GetIResult().Acquire((CDB_BaseEnt**) &m_IRes);
 }
 
@@ -728,6 +728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/02 20:58:52  ssikorsk
+ * Deleted CDB_Result::SetIResult;
+ *
  * Revision 1.24  2006/06/02 19:29:42  ssikorsk
  * Renamed CDB_Result::m_Res to m_IRes;
  * Renamed CDB_Result::GetResultSet to GetIResultPtr;
