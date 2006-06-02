@@ -176,7 +176,7 @@ public:
 
     // Return number of columns in the recordset.
     virtual int GetColumnNum(void) const;
-    
+
     // Get a result item (you can use either GetItem or ReadItem).
     // If "item_buf" is not NULL, then use "*item_buf" (its type should be
     // compatible with the type of retrieved item!) to retrieve the item to;
@@ -212,14 +212,9 @@ private:
         _ASSERT(m_IRes);
         return *m_IRes;
     }
-    void SetIResult(I_Result* res)
-    {
-        _ASSERT(res);
-        m_IRes = res;
-    }
-    
+
 private:
-    I_Result* m_IRes;
+    I_Result* const m_IRes;
 
     // The constructor should be called by "I_***Cmd" only!
     friend class CDB_BaseEnt;
@@ -519,6 +514,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/02 20:58:16  ssikorsk
+ * Deleted CDB_Result::SetIResult;
+ * Declared m_IRes as I_Result* const;
+ *
  * Revision 1.23  2006/06/02 19:29:29  ssikorsk
  * Renamed CDB_Result::m_Res to m_IRes;
  * Renamed CDB_Result::GetResultSet to GetIResultPtr;
