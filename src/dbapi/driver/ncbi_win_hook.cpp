@@ -1645,7 +1645,7 @@ namespace NWinHook
         try {
             bResult = RemoveHook(pszCalleeModName, pszFuncName);
         }
-        NCBI_CATCH_ALL( kEmptyStr )
+        NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 
         return (bResult);
     }
@@ -1862,7 +1862,7 @@ namespace NWinHook
                 ::FreeLibrary(m_ModDbghelp);
             }
         }
-        NCBI_CATCH_ALL( kEmptyStr )
+        NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
     }
 
     CPEi386& CPEi386::GetInstance(void)
@@ -1962,6 +1962,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/06/02 19:26:38  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.9  2006/04/24 21:40:22  ssikorsk
  * Restored previously changed types of pointers
  *

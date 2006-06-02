@@ -66,7 +66,7 @@ CDBExceptionStorage::~CDBExceptionStorage(void) throw()
             delete *it;
         }    
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
     
 void CDBExceptionStorage::Accept(CDB_Exception const& e)
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/02 19:26:38  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.1  2006/05/11 17:57:20  ssikorsk
  * Implemented CDBExceptionStorage class
  *

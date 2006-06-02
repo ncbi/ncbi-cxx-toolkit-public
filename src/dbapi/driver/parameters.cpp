@@ -190,7 +190,7 @@ CDB_Params::~CDB_Params()
         }
         delete [] m_Params;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -230,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/06/02 19:26:38  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.17  2005/11/02 14:32:39  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

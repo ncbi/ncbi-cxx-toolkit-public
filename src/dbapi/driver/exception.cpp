@@ -378,7 +378,7 @@ CDB_UserHandler_Wrapper::~CDB_UserHandler_Wrapper()
         delete m_Handler;
         m_Handler = 0;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -538,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/06/02 19:26:38  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.26  2006/05/30 18:46:07  ssikorsk
  * Added server and user names to the CDB_Exception class;
  * Revamp CDB_UserHandler_Diag to report server and user names;

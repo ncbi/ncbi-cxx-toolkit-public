@@ -274,7 +274,7 @@ CDB_Char::~CDB_Char()
     try {
         delete [] m_Val;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -315,7 +315,7 @@ CDB_LongChar::~CDB_LongChar()
     try {
         delete [] m_Val;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -378,7 +378,7 @@ CDB_Binary::~CDB_Binary()
     try {
         delete [] m_Val;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -417,7 +417,7 @@ CDB_LongBinary::~CDB_LongBinary()
     try {
         delete [] m_Val;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -549,7 +549,7 @@ CDB_Stream::~CDB_Stream()
     try {
         delete m_Store;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -946,6 +946,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/06/02 19:26:38  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.21  2005/11/02 14:32:39  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

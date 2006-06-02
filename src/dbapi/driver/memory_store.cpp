@@ -538,7 +538,7 @@ CMemStore::~CMemStore()
             m_Last = m_Current;
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -549,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/06/02 19:26:38  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.13  2006/04/21 14:48:00  ssikorsk
  * Removed TABs
  *
