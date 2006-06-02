@@ -183,7 +183,7 @@ CDB_Connection::~CDB_Connection()
             Context()->x_Recycle(m_Connect, m_Connect->IsReusable());
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -207,8 +207,8 @@ CDB_Result::CDB_Result(I_Result* r)
 {
     CHECK_DRIVER_ERROR( !r, "No valid result provided", 200004 );
 
-    SetResultSet( r );
-    GetResultSet()->Acquire((CDB_BaseEnt**) &m_Res);
+    SetIResult( r );
+    GetIResult().Acquire((CDB_BaseEnt**) &m_IRes);
 }
 
 
@@ -218,88 +218,88 @@ CDB_Result::CDB_Result(I_Result* r)
     
 EDB_ResType CDB_Result::ResultType() const
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->ResultType();
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().ResultType();
 }
 
 unsigned int CDB_Result::NofItems() const
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->NofItems();
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().NofItems();
 }
 
 const char* CDB_Result::ItemName(unsigned int item_num) const
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->ItemName(item_num);
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().ItemName(item_num);
 }
 
 size_t CDB_Result::ItemMaxSize(unsigned int item_num) const
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->ItemMaxSize(item_num);
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().ItemMaxSize(item_num);
 }
 
 EDB_Type CDB_Result::ItemDataType(unsigned int item_num) const
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->ItemDataType(item_num);
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().ItemDataType(item_num);
 }
 
 bool CDB_Result::Fetch()
 {
-    CHECK_RESULT( GetResultSet() );
+    CHECK_RESULT( GetIResultPtr() );
 //     if ( !GetResultSet() ) {
 //         return false;
 //     }
-    return GetResultSet()->Fetch();
+    return GetIResult().Fetch();
 }
 
 int CDB_Result::CurrentItemNo() const
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->CurrentItemNo();
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().CurrentItemNo();
 }
 
 int CDB_Result::GetColumnNum(void) const
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->GetColumnNum();
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().GetColumnNum();
 }
 
 CDB_Object* CDB_Result::GetItem(CDB_Object* item_buf)
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->GetItem(item_buf);
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().GetItem(item_buf);
 }
 
 size_t CDB_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->ReadItem(buffer, buffer_size, is_null);
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().ReadItem(buffer, buffer_size, is_null);
 }
 
 I_ITDescriptor* CDB_Result::GetImageOrTextDescriptor()
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->GetImageOrTextDescriptor();
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().GetImageOrTextDescriptor();
 }
 
 bool CDB_Result::SkipItem()
 {
-    CHECK_RESULT( GetResultSet() );
-    return GetResultSet()->SkipItem();
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().SkipItem();
 }
 
 
 CDB_Result::~CDB_Result()
 {
     try {
-        if ( GetResultSet() ) {
-            GetResultSet()->Release();
+        if ( GetIResultPtr() ) {
+            GetIResult().Release();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -400,7 +400,7 @@ CDB_LangCmd::~CDB_LangCmd()
             m_Cmd->Release();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -499,7 +499,7 @@ CDB_RPCCmd::~CDB_RPCCmd()
             m_Cmd->Release();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -555,7 +555,7 @@ CDB_BCPInCmd::~CDB_BCPInCmd()
             m_Cmd->Release();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -631,7 +631,7 @@ CDB_CursorCmd::~CDB_CursorCmd()
             m_Cmd->Release();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -664,7 +664,7 @@ CDB_SendDataCmd::~CDB_SendDataCmd()
             m_Cmd->Release();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -717,7 +717,7 @@ CDB_ResultProcessor::~CDB_ResultProcessor()
 
         if(m_Prev) m_Prev->Release();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -728,6 +728,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/02 19:29:42  ssikorsk
+ * Renamed CDB_Result::m_Res to m_IRes;
+ * Renamed CDB_Result::GetResultSet to GetIResultPtr;
+ * Renamed CDB_Result::SetResultSet to SetIResult;
+ * Added CDB_Result::GetIResult;
+ *
  * Revision 1.23  2006/05/15 19:34:42  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *
@@ -739,7 +745,8 @@ END_NCBI_SCOPE
  * instead of raw data access.
  *
  * Revision 1.20  2005/11/02 14:32:39  ssikorsk
- * Use NCBI_CATCH_ALL macro instead of catch(...)
+ * Use 
+ macro instead of catch(...)
  *
  * Revision 1.19  2005/10/26 12:25:15  ssikorsk
  * CDB_Result::Fetch returns false if m_Res is NULL now.

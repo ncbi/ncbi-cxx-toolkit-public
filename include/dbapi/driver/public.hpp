@@ -203,17 +203,23 @@ public:
     virtual ~CDB_Result();
 
 private:
-    I_Result* GetResultSet(void) const
+    I_Result* GetIResultPtr(void) const
     {
-        return m_Res;
+        return m_IRes;
     }
-    void SetResultSet(I_Result* res)
+    I_Result& GetIResult(void) const
     {
-        m_Res = res;
+        _ASSERT(m_IRes);
+        return *m_IRes;
+    }
+    void SetIResult(I_Result* res)
+    {
+        _ASSERT(res);
+        m_IRes = res;
     }
     
 private:
-    I_Result* m_Res;
+    I_Result* m_IRes;
 
     // The constructor should be called by "I_***Cmd" only!
     friend class CDB_BaseEnt;
@@ -513,6 +519,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/06/02 19:29:29  ssikorsk
+ * Renamed CDB_Result::m_Res to m_IRes;
+ * Renamed CDB_Result::GetResultSet to GetIResultPtr;
+ * Renamed CDB_Result::SetResultSet to SetIResult;
+ * Added CDB_Result::GetIResult;
+ *
  * Revision 1.22  2006/05/18 16:54:29  ssikorsk
  * Set interface version to 6.0.0
  *
