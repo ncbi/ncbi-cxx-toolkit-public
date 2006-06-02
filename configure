@@ -4461,6 +4461,11 @@ case "$host_os:$compiler" in
       # our ABI isn't too stable yet anyway.
       CFLAGS="-Wno-long-double -fpascal-strings $CFLAGS"
       CXXFLAGS="-Wno-long-double -fno-permissive -fpascal-strings $CXXFLAGS"
+      # -flat_namespace is necessary for proper handling of shared libraries
+      # that don't themselves link against all their dependencies.
+      LDFLAGS="-flat_namespace $LD_FLAGS"
+   else
+      LDFLAGS="-Wl,-flat_namespace $LD_FLAGS"
    fi
    if test -f /usr/include/dlfcn.h; then
       # may be able to do without /sw, so ignore it by default
@@ -6916,11 +6921,11 @@ case "$compiler" in
         # See <http://fink.sourceforge.net/doc/porting/shared.php>.
         has_dll_loadable=""
         if $CXX -v 2>&1 | grep -q Apple; then
-           LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
+           LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -undefined suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -undefined suppress -o"
         else
-           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-flat_namespace -Wl,-undefined,suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
+           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-undefined,suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
         fi
         ;;
       * )
