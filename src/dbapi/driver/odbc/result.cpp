@@ -935,7 +935,7 @@ CODBC_RowResult::~CODBC_RowResult()
             Close();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1150,7 +1150,7 @@ CODBC_CursorResult::~CODBC_CursorResult()
             m_Res = 0;
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1161,6 +1161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/06/02 19:37:40  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.28  2006/02/28 15:00:45  ssikorsk
  * Use larger type (SQLLEN) instead of SQLINTEGER where it needs to be converted to a pointer.
  *

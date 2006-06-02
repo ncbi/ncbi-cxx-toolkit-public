@@ -450,7 +450,7 @@ CODBC_BCPInCmd::~CODBC_BCPInCmd()
         if (m_WasSent)
             Cancel();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -461,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/02 19:34:58  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.12  2006/02/22 15:15:51  ssikorsk
  * *** empty log message ***
  *

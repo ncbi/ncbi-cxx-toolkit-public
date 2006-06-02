@@ -195,11 +195,7 @@ bool CODBC_Connection::Refresh()
 {
     // close all commands first
     ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
+        delete *it;
     }
     m_CMDs.clear();
 
@@ -280,12 +276,9 @@ void CODBC_Connection::Release()
     m_BR = 0;
     // close all commands first
     ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
+        delete *it;
     }
+
     m_CMDs.clear();
 }
 
@@ -295,8 +288,7 @@ CODBC_Connection::~CODBC_Connection()
     try {
         Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
-     
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -306,6 +298,8 @@ void CODBC_Connection::DropCmd(CDB_BaseEnt& cmd)
 
     if (it != m_CMDs.end()) {
         m_CMDs.erase(it);
+    } else {
+        _TROUBLE;
     }
 }
 
@@ -339,7 +333,7 @@ bool CODBC_Connection::Close(void)
             m_Link = NULL;
             return true;
         }
-        NCBI_CATCH_ALL( kEmptyStr )
+        NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
     }
 
     return false;
@@ -527,7 +521,13 @@ CStatementBase::CStatementBase(CODBC_Connection& conn)
 
 CStatementBase::~CStatementBase(void)
 {
-    SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+    try {
+        SQLRETURN rc = SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+        if(rc != SQL_SUCCESS) {
+            ReportErrors();
+        }
+    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 bool 
@@ -656,7 +656,7 @@ CODBC_SendDataCmd::~CODBC_SendDataCmd()
             *m_BR = 0;
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 void CODBC_SendDataCmd::xCancel()
@@ -674,6 +674,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/02 19:37:40  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.23  2006/05/31 16:56:11  ssikorsk
  * Replaced CPointerPot with deque<CDB_BaseEnt*>
  *

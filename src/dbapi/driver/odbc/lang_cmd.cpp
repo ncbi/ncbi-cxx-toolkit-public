@@ -340,7 +340,7 @@ CODBC_LangCmd::~CODBC_LangCmd()
             Cancel();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -561,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/06/02 19:37:40  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.20  2006/02/28 14:27:30  ssikorsk
  * Replaced int/SQLINTEGER variables with SQLLEN where needed.
  *

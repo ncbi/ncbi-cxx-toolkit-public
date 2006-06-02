@@ -42,6 +42,7 @@
 
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include "../ncbi_win_hook.hpp"
 
 #ifdef HAVE_ODBCSS_H
 #include <odbcss.h>
@@ -64,6 +65,7 @@ public:
     void Add(CODBCContext* ctx);
     void Remove(CODBCContext* ctx);
     void ClearAll(void);
+    static void StaticClearAll(void);
     
 private:
     CODBCContextRegistry(void);
@@ -78,6 +80,9 @@ private:
 
 CODBCContextRegistry::CODBCContextRegistry(void)
 {
+#if defined(NCBI_OS_MSWIN)
+    // NWinHook::COnExitProcess::Instance().Add(CODBCContextRegistry::StaticClearAll);
+#endif
 }
 
 CODBCContextRegistry::~CODBCContextRegistry(void) throw()
@@ -85,7 +90,7 @@ CODBCContextRegistry::~CODBCContextRegistry(void) throw()
     try {
         ClearAll();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 CODBCContextRegistry& 
@@ -135,6 +140,12 @@ CODBCContextRegistry::ClearAll(void)
             m_Registry.back()->x_Close(false);
         }
     }
+}
+
+void
+CODBCContextRegistry::StaticClearAll(void)
+{
+    CODBCContextRegistry::Instance().ClearAll();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -396,7 +407,7 @@ CODBCContext::~CODBCContext()
     try {
         x_Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -803,6 +814,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/06/02 19:37:40  ssikorsk
+ * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+ *
  * Revision 1.50  2006/05/18 17:11:11  ssikorsk
  * Assign values to m_LoginTimeout and m_Timeout
  *
