@@ -115,8 +115,8 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
             x_ReadFastaSequences(in);
         } else {
             CRef<SRecord> record = x_ParseFeatureInterval(line);
-            record->line_no = line_no;
             if (record) {
+                record->line_no = line_no;
                 string id = x_FeatureID(*record);
                 if (id.empty()) {
                     x_ParseAndPlace(*record);
@@ -1146,6 +1146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2006/06/05 13:14:47  ludwigf
+* FIXED: Moved exposed assignment through pointer to higher ground.
+*
 * Revision 1.22  2006/05/02 19:04:29  lavr
 * Use stream_utils.hpp from corelib location
 *
