@@ -685,7 +685,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         }
 
         XFilter(phitrefs);
-    
+
         if(phitrefs->size() == 0) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoHitsAfterFiltering);
         }
@@ -888,6 +888,17 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         }
     
         m_segments.resize(j0 + 1);
+
+        // scratch it if the total coverage is too low
+        double mcount = 0;
+        ITERATE(TSegments, jj, m_segments) {
+            if(jj->m_exon) {
+                mcount += jj->m_idty * jj->m_len;
+            }
+        }
+        if(mcount / (1 + qmax) < m_MinSingletonIdty) {
+            NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
+        }
 
         // convert coordinates back to original
         NON_CONST_ITERATE(TSegments, jj, m_segments) {
@@ -1627,7 +1638,7 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
 
             const bool consensus = CSplign::SSegment::s_IsConsensusSplice(dnr, acc);
 
-            const size_t max_ext = (idty < .96 || !consensus)? 
+            const size_t max_ext = (idty < .96 || !consensus || exon_size < 16)? 
                 m_max_genomic_ext: (5000 *  kMinTermExonSize);
 
             const size_t max_intron_len = x_GetGenomicExtent(exon_size, max_ext);
@@ -1836,6 +1847,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/06/05 12:52:23  kapustin
+ * Screen off final alignments with overall identity below the threshold
+ *
  * Revision 1.56  2006/05/22 16:01:12  kapustin
  * Adjust the term exon cut off procedure
  *
