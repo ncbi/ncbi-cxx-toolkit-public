@@ -45,7 +45,7 @@ class IPrefetchAction;
 
 CScope& CScopeSource::GetScope(void)
 {
-    if ( !m_Scope ) {
+    if ( m_Scope.IsNull() ) {
         m_Scope.Set(new CScope(m_BaseScope->GetObjectManager()));
         m_Scope->AddScope(*m_BaseScope.GetImpl());
     }
@@ -169,7 +169,7 @@ bool CPrefetchComplete<CBioseq_Handle>::Execute(CPrefetchToken token)
     if ( CPrefetchBioseq::Execute(token) ) {
         m_Result = GetHandle().GetCompleteObject();
     }
-    return GetResult();
+    return GetResult().NotNull();
 }
 
 
