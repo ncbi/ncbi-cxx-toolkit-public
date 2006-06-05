@@ -181,7 +181,7 @@ protected:
     virtual bool        HasFailed() const;
     virtual int         RowCount() const;
     virtual void        DumpResults();
-    virtual void        Release();
+    NCBI_DEPRECATED virtual void        Release();
     int                 LastInsertId() const;
 
 public:
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/06/05 19:07:07  ssikorsk
+ * Declared C...Cmd::Release deprecated.
+ *
  * Revision 1.21  2006/06/05 18:03:48  ssikorsk
  * Added method GetConnection to CMySql_LangCmd.
  *

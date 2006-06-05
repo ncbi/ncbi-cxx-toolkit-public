@@ -425,7 +425,7 @@ protected:
     virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
-    virtual void Release(void);
+    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     I_Result* GetResultSet(void) const;
@@ -475,7 +475,7 @@ protected:
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
     virtual void SetRecompile(bool recompile = true);
-    virtual void Release(void);
+    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     I_Result* GetResultSet(void) const;
@@ -529,7 +529,7 @@ protected:
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool Close(void);
-    virtual void Release(void);
+    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     CDBL_CursorResult* GetResultSet(void) const;
@@ -573,7 +573,7 @@ protected:
     virtual bool CompleteBatch(void);
     virtual bool Cancel(void);
     virtual bool CompleteBCP(void);
-    virtual void Release(void);
+    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     bool x_AssignParams(void* pb);
@@ -602,7 +602,7 @@ protected:
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
-    virtual void   Release(void);
+    NCBI_DEPRECATED virtual void   Release(void);
     virtual bool   Cancel(void);
 
 private:
@@ -1157,6 +1157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/06/05 19:06:43  ssikorsk
+ * Declared C...Cmd::Release deprecated.
+ *
  * Revision 1.44  2006/06/05 18:02:41  ssikorsk
  * Added method Cancel to CDBL_SendDataCmd.
  *
