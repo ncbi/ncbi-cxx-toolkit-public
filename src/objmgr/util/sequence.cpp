@@ -1590,6 +1590,8 @@ CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
                         case CSeq_data::e_Ncbistdaa:
                             data.SetNcbistdaa().Set().resize(len);
                             break;
+                        default:
+                            break;
                         }
                     }
                     inst.SetExt().SetDelta().Set().push_back(seq);
@@ -2811,6 +2813,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.140  2006/06/05 13:43:17  vasilche
+* Fixed warning.
+*
 * Revision 1.139  2006/05/16 15:32:26  dicuccio
 * Implement translation options for non-CDS-based translation
 *
