@@ -182,7 +182,6 @@ protected:
     virtual const string& PoolName(void) const;
     virtual I_DriverContext* Context(void) const;
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
-    virtual void Release(void);
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -258,7 +257,6 @@ protected:
     bool ProcessResultInternal(CDB_Result& res);
     bool ProcessResults(void);
     bool Cancel(void);
-    void CancelCmd(I_BaseCmd& cmd);
     bool AssignCmdParam(CDB_Object&   param,
                         const string& param_name,
                         CS_DATAFMT&   param_fmt,
@@ -781,6 +779,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/06/05 20:59:40  ssikorsk
+ * Moved method Release from CTL_Connection to I_Connection.
+ *
  * Revision 1.33  2006/06/05 19:06:28  ssikorsk
  * Declared C...Cmd::Release deprecated.
  *
