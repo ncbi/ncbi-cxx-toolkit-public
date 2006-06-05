@@ -1,25 +1,25 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  *  ===========================================================================
  *
@@ -41,17 +41,17 @@ BEGIN_NCBI_SCOPE
 
 ////////////////////////////////////////////////////////////////////////////
 // C_ITDescriptorGuard
-C_ITDescriptorGuard::C_ITDescriptorGuard(I_ITDescriptor* d) 
+C_ITDescriptorGuard::C_ITDescriptorGuard(I_ITDescriptor* d)
 {
     m_D = d;
 }
 
-C_ITDescriptorGuard::~C_ITDescriptorGuard(void) 
+C_ITDescriptorGuard::~C_ITDescriptorGuard(void)
 {
     if ( m_D )
         delete m_D;
 }
-    
+
 ////////////////////////////////////////////////////////////////////////////
 //  I_ITDescriptor::
 //
@@ -66,7 +66,7 @@ I_ITDescriptor::~I_ITDescriptor(void)
 //  CDB_BaseEnt::
 //
 
-CDB_BaseEnt::CDB_BaseEnt(void) 
+CDB_BaseEnt::CDB_BaseEnt(void)
 {
     m_BR = 0;
 }
@@ -205,7 +205,7 @@ void I_DriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
     m_CntxHandlers.Pop(h);
 }
 
-void I_DriverContext::PushDefConnMsgHandler(CDB_UserHandler* h, 
+void I_DriverContext::PushDefConnMsgHandler(CDB_UserHandler* h,
                                             EOwnership ownership)
 {
     CFastMutexGuard mg(m_Mtx);
@@ -223,7 +223,7 @@ void I_DriverContext::x_Recycle(I_Connection* conn, bool conn_reusable)
     CFastMutexGuard mg(m_Mtx);
 
     TConnPool::iterator it = find(m_InUse.begin(), m_InUse.end(), conn);
-    
+
     if (it != m_InUse.end()) {
         m_InUse.erase(it);
     }
@@ -241,14 +241,14 @@ void I_DriverContext::CloseUnusedConnections(const string&   srv_name,
     CFastMutexGuard mg(m_Mtx);
 
     TConnPool::value_type con;
-    
+
     // close all connections first
     NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
         con = *it;
-        
+
         if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
-        
+
         it = --m_NotInUse.erase(it);
         delete con;
     }
@@ -258,7 +258,7 @@ unsigned int I_DriverContext::NofConnections(const string& srv_name,
                                           const string& pool_name) const
 {
     CFastMutexGuard mg(m_Mtx);
-    
+
     if ( srv_name.empty() && pool_name.empty()) {
         return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
     }
@@ -272,49 +272,50 @@ unsigned int I_DriverContext::NofConnections(const string& srv_name,
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
         ++n;
     }
-    
+
     ITERATE(TConnPool, it, m_InUse) {
         con = *it;
         if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
         ++n;
     }
-    
+
     return n;
 }
 
 CDB_Connection* I_DriverContext::Create_Connection(I_Connection& connection)
 {
+    connection.m_MsgHandlers = m_ConnHandlers;
     m_InUse.push_back(&connection);
 
     return new CDB_Connection(&connection);
 }
 
-void 
+void
 I_DriverContext::SetApplicationName(const string& app_name)
 {
     m_AppName = app_name;
 }
 
-const string& 
+const string&
 I_DriverContext::GetApplicationName(void) const
 {
     return m_AppName;
 }
 
-void 
+void
 I_DriverContext::SetHostName(const string& host_name)
 {
     m_HostName = host_name;
 }
 
-const string& 
+const string&
 I_DriverContext::GetHostName(void) const
 {
     return m_HostName;
 }
 
-CDB_Connection* 
+CDB_Connection*
 I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
 {
     if (conn_attr.reusable && !m_NotInUse.empty()) {
@@ -323,14 +324,14 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
             // use a pool name
             NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
                 I_Connection* t_con(*it);
-                
+
                 // There is no pool name check here. We assume that a connection
                 // pool contains connections with appropriate server names only.
                 if (conn_attr.pool_name.compare(t_con->PoolName()) == 0) {
                     it = --m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return Create_Connection(*t_con);
-                    } 
+                    }
                     else {
                         delete t_con;
                     }
@@ -346,12 +347,12 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
             // try to use a server name
             NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
                 I_Connection* t_con(*it);
-                
+
                 if (conn_attr.srv_name.compare(t_con->ServerName()) == 0) {
                     it = --m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return Create_Connection(*t_con);
-                    } 
+                    }
                     else {
                         delete t_con;
                     }
@@ -363,13 +364,13 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
     if ((conn_attr.mode & fDoNotConnect) != 0) {
         return NULL;
     }
-    
+
     // Precondition check.
-    if (conn_attr.srv_name.empty() ||  
-        conn_attr.user_name.empty() ||  
+    if (conn_attr.srv_name.empty() ||
+        conn_attr.user_name.empty() ||
         conn_attr.passwd.empty()) {
         string err_msg("Insufficient info/credentials to connect.");
-        
+
         if (conn_attr.srv_name.empty()) {
             err_msg += " Server name has not been set.";
         }
@@ -379,16 +380,16 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
         if (conn_attr.passwd.empty()) {
             err_msg += " Password has not been set.";
         }
-        
+
         DATABASE_DRIVER_ERROR( err_msg, 200010 );
     }
-        
+
     I_Connection* t_con = MakeIConnection(conn_attr);
-    
+
     return Create_Connection(*t_con);
 }
 
-void 
+void
 I_DriverContext::CloseAllConn(void)
 {
     // close all connections first
@@ -402,7 +403,7 @@ I_DriverContext::CloseAllConn(void)
     }
 }
 
-void 
+void
 I_DriverContext::DeleteAllConn(void)
 {
     // close all connections first
@@ -417,7 +418,7 @@ I_DriverContext::DeleteAllConn(void)
     m_InUse.clear();
 }
 
-CDB_Connection* 
+CDB_Connection*
 I_DriverContext::Connect(const string&   srv_name,
                          const string&   user_name,
                          const string&   passwd,
@@ -434,28 +435,28 @@ I_DriverContext::Connect(const string&   srv_name,
     conn_attr.reusable = reusable;
     conn_attr.pool_name = pool_name;
 
-    CDB_Connection* t_con = 
+    CDB_Connection* t_con =
         CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
-            *this, 
+            *this,
             conn_attr);
-    
+
     if((!t_con && (mode & fDoNotConnect) != 0)) {
         return NULL;
     }
 
     if (!t_con) {
         string err;
-        
+
         err += "Cannot connect to the server '" + srv_name;
         err += "' as user '" + user_name + "'";
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
-    
+
     // return Create_Connection(*t_con);
     return t_con;
 }
 
-CDB_Connection* 
+CDB_Connection*
 I_DriverContext::ConnectValidated(const string&   srv_name,
                                   const string&   user_name,
                                   const string&   passwd,
@@ -474,24 +475,24 @@ I_DriverContext::ConnectValidated(const string&   srv_name,
     conn_attr.pool_name = pool_name;
 
     validator.DoNotDeleteThisObject();
-    CDB_Connection* t_con = 
+    CDB_Connection* t_con =
         CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
-            *this, 
-            conn_attr, 
+            *this,
+            conn_attr,
             &validator);
-    
+
     if((!t_con && (mode & fDoNotConnect) != 0)) {
         return NULL;
     }
 
     if (!t_con) {
         string err;
-        
+
         err += "Cannot connect to the server '" + srv_name;
         err += "' as user '" + user_name + "'";
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
-    
+
     return t_con;
 }
 
@@ -501,26 +502,36 @@ I_DriverContext::ConnectValidated(const string&   srv_name,
 
 CDB_LangCmd* I_Connection::Create_LangCmd(I_LangCmd&lang_cmd)
 {
+    m_CMDs.push_back(&lang_cmd);
+
     return new CDB_LangCmd(&lang_cmd);
 }
 
 CDB_RPCCmd* I_Connection::Create_RPCCmd(I_RPCCmd&rpc_cmd)
 {
+    m_CMDs.push_back(&rpc_cmd);
+
     return new CDB_RPCCmd(&rpc_cmd);
 }
 
 CDB_BCPInCmd* I_Connection::Create_BCPInCmd(I_BCPInCmd& bcpin_cmd)
 {
+    m_CMDs.push_back(&bcpin_cmd);
+
     return new CDB_BCPInCmd(&bcpin_cmd);
 }
 
 CDB_CursorCmd* I_Connection::Create_CursorCmd(I_CursorCmd& cursor_cmd)
 {
+    m_CMDs.push_back(&cursor_cmd);
+
     return new CDB_CursorCmd(&cursor_cmd);
 }
 
 CDB_SendDataCmd* I_Connection::Create_SendDataCmd(I_SendDataCmd& senddata_cmd)
 {
+    m_CMDs.push_back(&senddata_cmd);
+
     return new CDB_SendDataCmd(&senddata_cmd);
 }
 
@@ -534,6 +545,39 @@ I_Connection::~I_Connection(void)
     return;
 }
 
+
+void I_Connection::PushMsgHandler(CDB_UserHandler* h,
+                                    EOwnership ownership)
+{
+    m_MsgHandlers.Push(h, ownership);
+}
+
+
+void I_Connection::PopMsgHandler(CDB_UserHandler* h)
+{
+    m_MsgHandlers.Pop(h);
+}
+
+void I_Connection::DropCmd(CDB_BaseEnt& cmd)
+{
+    deque<CDB_BaseEnt*>::iterator it = find(m_CMDs.begin(), m_CMDs.end(), &cmd);
+
+    if (it != m_CMDs.end()) {
+        m_CMDs.erase(it);
+    }
+}
+
+void I_Connection::DeleteAllCommands(void)
+{
+    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
+        try {
+            delete *it;
+        } catch (CDB_Exception& ) {
+            _ASSERT(false);
+        }
+    }
+    m_CMDs.clear();
+}
 
 ////////////////////////////////////////////////////////////////////////////
 //  I_DriverMgr::
@@ -556,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/05 14:42:29  ssikorsk
+ * Added methods PushMsgHandler, PopMsgHandler and DropCmd to I_Connection.
+ *
  * Revision 1.24  2006/05/18 16:53:46  ssikorsk
  * 	      Set default login timeout and operation timeout to 0.
  *
