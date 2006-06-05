@@ -82,6 +82,12 @@ CScope::~CScope(void)
 }
 
 
+CObjectManager& CScope::GetObjectManager(void)
+{
+    return m_Impl->GetObjectManager();
+}
+
+
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
     return GetBioseqHandle(id, eGetBioseq_All);
@@ -468,6 +474,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.120  2006/06/05 13:42:05  vasilche
+* Added CScope::GetObjectManager().
+*
 * Revision 1.119  2005/11/15 19:22:08  didenko
 * Added transactions and edit commands support
 *

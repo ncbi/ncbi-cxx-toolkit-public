@@ -141,6 +141,8 @@ public:
     typedef vector<CSeq_entry_Handle>                TTSE_Handles;
     typedef vector<CBioseq_Handle>                   TBioseqHandles;
 
+    CObjectManager& GetObjectManager(void);
+
     //////////////////////////////////////////////////////////////////
     // Adding top level objects: DataLoader, Seq-entry, Bioseq, Seq-annot
     enum EPriority {
@@ -502,6 +504,13 @@ private:
 
     friend class CBioseq_ScopeInfo;
 };
+
+
+inline
+CObjectManager& CScope_Impl::GetObjectManager(void)
+{
+    return *m_ObjMgr;
+}
 
 
 END_SCOPE(objects)

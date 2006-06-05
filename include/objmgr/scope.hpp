@@ -87,6 +87,9 @@ public:
     explicit CScope(CObjectManager& objmgr);
     virtual ~CScope(void);
 
+    /// Get object manager controlling this scope
+    CObjectManager& GetObjectManager(void);
+
     // CBioseq_Handle methods:
     /// Get bioseq handle by seq-id
     CBioseq_Handle GetBioseqHandle(const CSeq_id& id);
@@ -310,6 +313,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2006/06/05 13:42:05  vasilche
+* Added CScope::GetObjectManager().
+*
 * Revision 1.90  2006/02/02 14:35:32  vasilche
 * Renamed old prefetch classes.
 *
