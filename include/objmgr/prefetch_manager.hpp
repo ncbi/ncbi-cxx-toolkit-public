@@ -63,6 +63,15 @@ public:
 };
 
 
+class IPrefetchActionSource
+{
+public:
+    virtual ~IPrefetchActionSource(void);
+
+    virtual CIRef<IPrefetchAction> GetNextAction(void) = 0;
+};
+
+
 class NCBI_XOBJMGR_EXPORT IPrefetchListener : public SPrefetchTypes
 {
 public:
@@ -157,6 +166,28 @@ public:
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CPrefetchCanceled,CException);
+};
+
+
+class NCBI_XOBJMGR_EXPORT CPrefetchSequence : public CObject
+{
+public:
+    CPrefetchSequence(CPrefetchManager& manager,
+                      IPrefetchActionSource* source,
+                      size_t active_size = 10);
+    ~CPrefetchSequence(void);
+    
+    /// Returns next action waiting for its result if necessary
+    CPrefetchToken GetNextToken(void);
+
+protected:
+    void EnqueNextAction(void);
+
+private:
+    CRef<CPrefetchManager>       m_Manager;
+    CIRef<IPrefetchActionSource> m_Source;
+    CMutex                       m_Mutex;
+    list<CPrefetchToken>         m_ActiveTokens;
 };
 
 

@@ -47,6 +47,11 @@ IPrefetchAction::~IPrefetchAction(void)
 }
 
 
+IPrefetchActionSource::~IPrefetchActionSource(void)
+{
+}
+
+
 IPrefetchListener::~IPrefetchListener(void)
 {
 }
@@ -171,6 +176,54 @@ const char* CPrefetchCanceled::GetErrCodeString(void) const
     case eCanceled: return "eCanceled";
     default:        return CException::GetErrCodeString();
     }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CPrefetchSequence
+
+
+CPrefetchSequence::CPrefetchSequence(CPrefetchManager& manager,
+                                     IPrefetchActionSource* source,
+                                     size_t active_size)
+    : m_Manager(&manager),
+      m_Source(source)
+{
+    for ( size_t i = 0; i < active_size; ++i ) {
+        EnqueNextAction();
+    }
+}
+
+
+CPrefetchSequence::~CPrefetchSequence(void)
+{
+}
+
+
+void CPrefetchSequence::EnqueNextAction(void)
+{
+    if ( !m_Source ) {
+        return;
+    }
+    CIRef<IPrefetchAction> action(m_Source->GetNextAction());
+    if ( !action ) {
+        m_Source.Reset();
+        return;
+    }
+    m_ActiveTokens.push_back(m_Manager->AddAction(action));
+}
+
+
+CPrefetchToken CPrefetchSequence::GetNextToken(void)
+{
+    CPrefetchToken ret;
+    CMutexGuard guard(m_Mutex);
+    if ( !m_ActiveTokens.empty() ) {
+        EnqueNextAction();
+        ret = m_ActiveTokens.front();
+        m_ActiveTokens.pop_front();
+    }
+    return ret;
 }
 
 
