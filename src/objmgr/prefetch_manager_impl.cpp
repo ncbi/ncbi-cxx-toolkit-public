@@ -142,7 +142,7 @@ CPrefetchRequest::SetState(CPrefetchManager_Impl& manager,
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CPrefetchToken::SetState: already done");
     }
-    CMutexGuard guard(manager.GetMutex());
+    CMutexGuard guard(manager.GetStateMutex());
     EState old_state = m_State;
     if ( !x_SetState(state) ) {
         NCBI_THROW(CObjMgrException, eOtherError,
@@ -158,7 +158,7 @@ bool CPrefetchRequest::TrySetState(CPrefetchManager_Impl& manager,
     if ( IsDone() ) {
         return m_State == state;
     }
-    CMutexGuard guard(manager.GetMutex());
+    CMutexGuard guard(manager.GetStateMutex());
     return x_SetState(state);
 }
 
@@ -167,7 +167,7 @@ CPrefetchToken::TProgress
 CPrefetchRequest::SetProgress(CPrefetchManager_Impl& manager,
                                  TProgress progress)
 {
-    CMutexGuard guard(manager.GetMutex());
+    CMutexGuard guard(manager.GetStateMutex());
     if ( m_State != eStarted ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CPrefetchToken::SetProgress: not processing");

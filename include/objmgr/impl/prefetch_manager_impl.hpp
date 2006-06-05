@@ -175,12 +175,17 @@ protected:
         {
             return m_Mutex;
         }
+    CMutex& GetStateMutex(void)
+        {
+            return m_StateMutex;
+        }
 
 private:
     typedef set<CRef<TThread> > TThreads;
 
     bool        m_CanceledAll;
     TThreads    m_Threads;
+    CMutex      m_StateMutex;
 };
 
 
