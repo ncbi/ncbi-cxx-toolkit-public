@@ -484,18 +484,13 @@ void C_GWLib_MsgCallback::exec(IGate* pGate)
 void CGW_Connection::PushMsgHandler(CDB_UserHandler* h,
                                     EOwnership ownership)
 {
-  m_MsgHandlers.Push(h, ownership);
+  I_Connection::PushMsgHandler(h, ownership);
 
   // Make sure there is a server-side handler listening to messages
   int i=(int)this;
   comprot_void1("GWLib:Connection:MsgHandler", remoteObj, &i);
 }
 
-
-void CGW_Connection::PopMsgHandler(CDB_UserHandler* h)
-{
-  m_MsgHandlers.Pop(h);
-}
 
 bool CGW_Connection::Abort()
 {
