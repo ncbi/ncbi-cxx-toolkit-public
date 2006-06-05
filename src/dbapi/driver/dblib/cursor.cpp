@@ -379,7 +379,7 @@ void CDBL_CursorCmd::Release()
 CDBL_CursorCmd::~CDBL_CursorCmd()
 {
     try {
-        m_BR = 0;
+        CDB_BaseEnt::Release();
 
         GetConnection().DropCmd(*this);
 
@@ -552,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/06/05 21:09:21  ssikorsk
+ * Replaced 'm_BR = 0' with 'CDB_BaseEnt::Release()'.
+ *
  * Revision 1.25  2006/06/05 19:10:06  ssikorsk
  * Moved logic from C...Cmd::Release into dtor.
  *

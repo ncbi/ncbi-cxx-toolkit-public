@@ -263,7 +263,7 @@ void CTDS_LangCmd::Release()
 CTDS_LangCmd::~CTDS_LangCmd()
 {
     try {
-        m_BR = 0;
+        CDB_BaseEnt::Release();
 
         GetConnection().DropCmd(*this);
 
@@ -493,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/06/05 21:09:22  ssikorsk
+ * Replaced 'm_BR = 0' with 'CDB_BaseEnt::Release()'.
+ *
  * Revision 1.21  2006/06/05 19:10:06  ssikorsk
  * Moved logic from C...Cmd::Release into dtor.
  *
