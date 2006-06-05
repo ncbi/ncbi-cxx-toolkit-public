@@ -603,6 +603,7 @@ protected:
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
     virtual void   Release(void);
+    virtual bool   Cancel(void);
 
 private:
     size_t           m_Bytes2go;
@@ -1156,6 +1157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/06/05 18:02:41  ssikorsk
+ * Added method Cancel to CDBL_SendDataCmd.
+ *
  * Revision 1.43  2006/06/05 14:35:14  ssikorsk
  * Removed members m_MsgHandlers and m_CMDs from CDBL_Connection.
  *
