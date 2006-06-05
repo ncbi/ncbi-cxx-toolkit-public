@@ -474,6 +474,7 @@ protected:
     virtual ~CTL_SendDataCmd(void);
 
     void Close(void);
+    virtual bool Cancel(void);
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
@@ -780,6 +781,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/06/05 18:02:21  ssikorsk
+ * Added method Cancel to CTL_SendDataCmd.
+ *
  * Revision 1.31  2006/06/05 14:34:49  ssikorsk
  * Removed members m_MsgHandlers and m_CMDs from CTL_Connection.
  *
