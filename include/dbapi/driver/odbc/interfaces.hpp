@@ -220,7 +220,6 @@ protected:
     virtual const string& PoolName(void) const;
     virtual I_DriverContext* Context(void) const;
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
-    virtual void Release(void);
 
     void ODBC_SetTimeout(SQLULEN nof_secs);
     void ODBC_SetTextImageSize(SQLULEN nof_bytes);
@@ -743,6 +742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/06/05 21:01:34  ssikorsk
+ * Moved method Release from CODBC_Connection to I_Connection.
+ *
  * Revision 1.31  2006/06/05 19:07:21  ssikorsk
  * Declared C...Cmd::Release deprecated.
  *
