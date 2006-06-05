@@ -42,9 +42,9 @@ BEGIN_NCBI_SCOPE
 //
 
 CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection* conn,
-                                 const string& cursor_name, 
+                                 const string& cursor_name,
                                  const string& query,
-                                 unsigned int nof_params) 
+                                 unsigned int nof_params)
 : CStatementBase(*conn)
 , m_CursCmd(conn, "declare " + cursor_name + " cursor for " + query, nof_params)
 , m_Name(cursor_name)
@@ -72,9 +72,8 @@ struct I_LangCmd_Deleter
 
 CDB_Result* CODBC_CursorCmd::Open()
 {
-    if (m_IsOpen) { // need to close it first
-        Close();
-    }
+    // need to close it first
+    Close();
 
     m_HasFailed = false;
 
@@ -176,7 +175,7 @@ CDB_ITDescriptor* CODBC_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     return m_LCmd->m_Res->GetImageOrTextDescriptor(item_num, cond);
 }
 
-bool CODBC_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+bool CODBC_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                     bool log_it)
 {
     CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
@@ -184,13 +183,13 @@ bool CODBC_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
     C_ITDescriptorGuard g((I_ITDescriptor*)desc);
 
     m_LCmd->Cancel();
-    
-    return (data.GetType() == eDB_Text)? 
+
+    return (data.GetType() == eDB_Text)?
         GetConnection().SendData(*desc, (CDB_Text&)data, log_it) :
         GetConnection().SendData(*desc, (CDB_Image&)data, log_it);
 }
 
-CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
+CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
                         bool log_it)
 {
     CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
@@ -201,7 +200,7 @@ CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size
     m_LCmd->Cancel();
 
     return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it);
-}                       
+}
 
 bool CODBC_CursorCmd::Delete(const string& table_name)
 {
@@ -329,11 +328,11 @@ bool CODBC_CursorCmd::Close()
 void CODBC_CursorCmd::Release()
 {
     m_BR = 0;
-    if (m_IsOpen) {
-        Close();
-        m_IsOpen = false;
-    }
+
+    Close();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -344,9 +343,8 @@ CODBC_CursorCmd::~CODBC_CursorCmd()
         if (m_BR) {
             *m_BR = 0;
         }
-        if (m_IsOpen) {
-            Close();
-        }
+
+        Close();
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -359,6 +357,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.13  2006/06/02 19:39:03  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION );
  * Use Release() instead of delete for I_LangCmd;

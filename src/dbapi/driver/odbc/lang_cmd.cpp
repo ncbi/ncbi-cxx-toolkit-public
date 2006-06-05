@@ -90,8 +90,7 @@ bool CODBC_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
 
 bool CODBC_LangCmd::Send()
 {
-    if (m_WasSent)
-        Cancel();
+    Cancel();
 
     m_HasFailed = false;
 
@@ -189,7 +188,9 @@ bool CODBC_LangCmd::Cancel()
             delete m_Res;
             m_Res = 0;
         }
+
         m_WasSent = false;
+
         if ( !Close() ) {
             return false;
         }
@@ -321,11 +322,11 @@ int CODBC_LangCmd::RowCount() const
 void CODBC_LangCmd::Release()
 {
     m_BR = 0;
-    if (m_WasSent) {
-        Cancel();
-        m_WasSent = false;
-    }
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -336,9 +337,8 @@ CODBC_LangCmd::~CODBC_LangCmd()
         if (m_BR) {
             *m_BR = 0;
         }
-        if (m_WasSent) {
-            Cancel();
-        }
+
+        Cancel();
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -561,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.21  2006/06/02 19:37:40  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *

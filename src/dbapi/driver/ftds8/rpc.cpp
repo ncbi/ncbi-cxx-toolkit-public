@@ -28,7 +28,7 @@
  * File Description:  TDS RPC command
  *
  */
- 
+
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
@@ -45,13 +45,13 @@ BEGIN_NCBI_SCOPE
 CTDS_RPCCmd::CTDS_RPCCmd(CTDS_Connection* conn, DBPROCESS* cmd,
                          const string& proc_name, unsigned int nof_params) :
     CDBL_Cmd( conn, cmd ),
-    m_Query(proc_name), 
+    m_Query(proc_name),
     m_Params(nof_params),
-    m_WasSent(false), 
-    m_HasFailed(false), 
-    m_Recompile(false), 
+    m_WasSent(false),
+    m_HasFailed(false),
+    m_Recompile(false),
     m_Res(0),
-    m_RowCount(-1), 
+    m_RowCount(-1),
     m_Status(0)
 {
     return;
@@ -76,8 +76,7 @@ bool CTDS_RPCCmd::SetParam(const string& param_name,
 
 bool CTDS_RPCCmd::Send()
 {
-    if (m_WasSent)
-        Cancel();
+    Cancel();
 
     m_HasFailed = false;
 
@@ -260,11 +259,11 @@ void CTDS_RPCCmd::SetRecompile(bool recompile)
 void CTDS_RPCCmd::Release()
 {
     m_BR = 0;
-    if (m_WasSent) {
-        Cancel();
-        m_WasSent = false;
-    }
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -274,8 +273,8 @@ CTDS_RPCCmd::~CTDS_RPCCmd()
     try {
         if (m_BR)
             *m_BR = 0;
-        if (m_WasSent)
-            Cancel();
+
+        Cancel();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -495,7 +494,7 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
             break;
         case eDB_DateTime:
             type = "datetime";
-            break;            
+            break;
         default:
             return false;
         }
@@ -549,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.18  2006/05/04 20:12:47  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

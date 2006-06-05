@@ -50,16 +50,16 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 
-CTDS_Connection::CTDS_Connection(CTDSContext* cntx, 
+CTDS_Connection::CTDS_Connection(CTDSContext* cntx,
                                  DBPROCESS* con,
-                                 bool reusable, 
+                                 bool reusable,
                                  const string& pool_name) :
-    m_Link(con), 
-    m_Context(cntx), 
-    m_Pool(pool_name), 
+    m_Link(con),
+    m_Context(cntx),
+    m_Pool(pool_name),
     m_Reusable(reusable),
-    m_BCPAble(false), 
-    m_SecureLogin(false), 
+    m_BCPAble(false),
+    m_SecureLogin(false),
     m_ResProc(0)
 {
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
@@ -125,11 +125,11 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
         p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
         if(p_desc == 0) return false;
     }
-    
+
 
     C_ITDescriptorGuard d_guard(p_desc);
 
-    CTDS_ITDescriptor& desc = p_desc? dynamic_cast<CTDS_ITDescriptor&> (*p_desc) : 
+    CTDS_ITDescriptor& desc = p_desc? dynamic_cast<CTDS_ITDescriptor&> (*p_desc) :
         dynamic_cast<CTDS_ITDescriptor&> (descr_in);
 
     if (Check(dbwritetext(GetDBLibConnection(),
@@ -292,11 +292,11 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
         p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
         if(p_desc == 0) return false;
     }
-    
+
 
     C_ITDescriptorGuard d_guard(p_desc);
 
-    CTDS_ITDescriptor& desc = p_desc? dynamic_cast<CTDS_ITDescriptor&> (*p_desc) : 
+    CTDS_ITDescriptor& desc = p_desc? dynamic_cast<CTDS_ITDescriptor&> (*p_desc) :
         dynamic_cast<CTDS_ITDescriptor&> (descr_in);
     // CTDS_ITDescriptor& desc = dynamic_cast<CTDS_ITDescriptor&> (descr_in);
     char buff[1800]; // maximal page size
@@ -362,7 +362,7 @@ I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
     q+= " where ";
     q+= descr_in.SearchConditions();
     q+= " \nset rowcount 0";
-    
+
     CDB_LangCmd* lcmd= LangCmd(q, 0);
     if(!lcmd->Send()) {
         DATABASE_DRIVER_ERROR( "Cannot send the language command", 210035 );
@@ -380,7 +380,7 @@ I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
             if(tt == eDB_Text || tt == eDB_Image) {
                 while(res->Fetch()) {
                     res->ReadItem(&i, 1);
-        
+
                     descr= new CTDS_ITDescriptor(*this, GetDBLibConnection(), descr_in);
                     // descr= res->GetImageOrTextDescriptor();
                     if(descr) break;
@@ -390,7 +390,7 @@ I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
         delete res;
     }
     delete lcmd;
-        
+
     return descr;
 }
 
@@ -433,9 +433,9 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
                         delete res;
                     }
                 }
-            } 
+            }
             continue;
-            
+
         case NO_MORE_RESULTS:
             x_Status = 2;
             break;
@@ -444,7 +444,7 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
         }
         break;
     }
-    
+
     // we've done with the row results at this point
     // let's look at return parameters and ret status
     if (m_ResProc && x_Status == 2) {
@@ -460,7 +460,7 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
             }
         }
     }
-    
+
     if (m_ResProc && x_Status == 4) {
         if (Check(dbhasretstat(pLink))) {
             res = new CTDS_StatusResult(*this, pLink);
@@ -476,7 +476,7 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
 }
 
 void CTDS_Connection::TDS_SetTimeout(void)
-{        
+{
     GetDBLibConnection()->tds_socket->timeout= (TDS_INT)(m_Context->TDS_GetTimeout());
 }
 
@@ -491,9 +491,9 @@ RETCODE CTDS_Connection::Check(RETCODE rc)
 
         GetFTDS8ExceptionStorage().Accept(ex);
     }
-    
+
     CheckFunctCall();
-    
+
     return rc;
 }
 
@@ -528,7 +528,7 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (nof_bytes > m_Bytes2go)
         nof_bytes = m_Bytes2go;
 
-    if (Check(dbmoretext(GetCmd(), static_cast<DBINT>(nof_bytes), (BYTE*) pChunk)) 
+    if (Check(dbmoretext(GetCmd(), static_cast<DBINT>(nof_bytes), (BYTE*) pChunk))
         != SUCCEED) {
         Check(dbcancel(GetCmd()));
         DATABASE_DRIVER_ERROR( "dbmoretext failed", 290001 );
@@ -547,14 +547,25 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 }
 
 
-void CTDS_SendDataCmd::Release()
+bool CTDS_SendDataCmd::Cancel(void)
 {
-    m_BR = 0;
     if (m_Bytes2go > 0) {
         Check(dbcancel(GetCmd()));
         m_Bytes2go = 0;
+        return true;
     }
+
+    return false;
+}
+
+void CTDS_SendDataCmd::Release()
+{
+    m_BR = 0;
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -578,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.24  2006/06/05 14:44:04  ssikorsk
  * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
  *

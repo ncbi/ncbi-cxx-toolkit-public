@@ -44,16 +44,15 @@ BEGIN_NCBI_SCOPE
 //  CTL_BCPInCmd::
 //
 
-CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn, 
+CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
                            CS_BLKDESC* cmd,
-                           const string& table_name, 
-                           unsigned int nof_columns) : 
+                           const string& table_name,
+                           unsigned int nof_columns) :
     CTL_Cmd(conn, NULL),
-m_Query(table_name), 
-m_Params(nof_columns)
+    m_Query(table_name),
+    m_Params(nof_columns)
 {
     m_Cmd        = cmd;
-    m_WasSent    = false;
     m_HasFailed  = false;
     m_Bind       = new SBcpBind[nof_columns];
 }
@@ -142,8 +141,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             m_Bind[i].datalen   =
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : 
-                                        (CS_VOID*) par.Value(), 
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                        (CS_VOID*) par.Value(),
                                       &m_Bind[i].datalen,
                                       &m_Bind[i].indicator));
             break;
@@ -154,8 +153,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   = (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : 
-                                        (CS_VOID*) par.Value(), 
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                        (CS_VOID*) par.Value(),
                                       &m_Bind[i].datalen,
                                       &m_Bind[i].indicator));
             break;
@@ -167,8 +166,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             m_Bind[i].datalen   =
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : 
-                                        (CS_VOID*) par.Value(), 
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                        (CS_VOID*) par.Value(),
                                       &m_Bind[i].datalen,
                                       &m_Bind[i].indicator));
             break;
@@ -179,8 +178,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   = (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : 
-                                        (CS_VOID*) par.Value(), 
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                        (CS_VOID*) par.Value(),
                                       &m_Bind[i].datalen,
                                       &m_Bind[i].indicator));
             break;
@@ -253,7 +252,7 @@ bool CTL_BCPInCmd::x_AssignParams()
                                       &m_Bind[i].indicator));
             break;
         }
-        default: 
+        default:
             return false;
         }
 
@@ -288,16 +287,16 @@ bool CTL_BCPInCmd::SendRow()
                 continue;
 
             m_HasFailed = (Check(blk_describe(x_GetSybaseCmd(), i + 1, &fmt)) != CS_SUCCEED);
-            CHECK_DRIVER_ERROR( 
+            CHECK_DRIVER_ERROR(
                 m_HasFailed,
                 "blk_describe failed (check the number of "
-                "columns in a table)", 
+                "columns in a table)",
                 123002 );
 
             m_HasFailed = (Check(blk_bind(x_GetSybaseCmd(), i + 1, &fmt, (void*) &m_Params,&datalen, &indicator)) != CS_SUCCEED);
-            CHECK_DRIVER_ERROR( 
+            CHECK_DRIVER_ERROR(
                 m_HasFailed,
-                "blk_bind failed for default value", 
+                "blk_bind failed for default value",
                 123003 );
         }
     }
@@ -310,7 +309,7 @@ bool CTL_BCPInCmd::SendRow()
     case CS_BLK_HAS_TEXT:  {
         char buff[2048];
         size_t n;
-    
+
         for (i = 0;  i < m_Params.NofParams();  i++) {
             if (m_Params.GetParamStatus(i) == 0)
                 continue;
@@ -326,9 +325,9 @@ bool CTL_BCPInCmd::SendRow()
                      datalen -= (CS_INT) n) {
                     n = par.Read(buff, 2048);
                     m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) n, 0)) == CS_FAIL);
-                    CHECK_DRIVER_ERROR( 
-                        m_HasFailed, 
-                        "blk_textxfer failed for the text/image field", 123005 
+                    CHECK_DRIVER_ERROR(
+                        m_HasFailed,
+                        "blk_textxfer failed for the text/image field", 123005
                         );
                 }
             }
@@ -358,8 +357,8 @@ bool CTL_BCPInCmd::Cancel()
     case CS_FAIL:
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
-    default: 
-        m_WasSent = false; 
+    default:
+        m_WasSent = false;
         return false;
     }
 }
@@ -400,23 +399,17 @@ bool CTL_BCPInCmd::CompleteBCP()
 void CTL_BCPInCmd::Release()
 {
     m_BR = 0;
-    
+
     // Cannot use CancelCmd(*this); because of Cancel()
-    if (m_WasSent) {
-        try {
-            Cancel();
-        } catch (const CDB_Exception& ) {
-        }
-        m_WasSent = false;
-    }
-    
+    Cancel();
+
     DropCmd(*this);
-    
+
     delete this;
 }
 
 
-CDB_Result* 
+CDB_Result*
 CTL_BCPInCmd::CreateResult(I_Result& result)
 {
     return Create_Result(result);
@@ -439,18 +432,12 @@ CTL_BCPInCmd::Close(void)
             *m_BR = 0;
         }
 
-        if ( m_WasSent ) {
-            try {
-                Cancel();
-            } catch (const CDB_Exception& ) {
-                _ASSERT(false);
-            }
-        }
+        Cancel();
 
         delete[] m_Bind;
 
         Check(blk_drop(x_GetSybaseCmd()));
-        
+
         m_Cmd = NULL;
     }
 }
@@ -463,6 +450,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/06/05 18:10:06  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.17  2006/05/03 15:10:36  ssikorsk
  * Implemented classs CTL_Cmd and CCTLExceptions;
  * Surrounded each native ctlib call with Check;

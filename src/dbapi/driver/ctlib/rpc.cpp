@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 //
 
 CTL_RPCCmd::CTL_RPCCmd(CTL_Connection* conn, CS_COMMAND* cmd,
-                       const string& proc_name, unsigned int nof_params) : 
+                       const string& proc_name, unsigned int nof_params) :
 CTL_Cmd(conn, cmd),
 m_Query(proc_name),
 m_Params(nof_params)
@@ -72,9 +72,7 @@ bool CTL_RPCCmd::SetParam(const string& param_name, CDB_Object* param_ptr,
 
 bool CTL_RPCCmd::Send()
 {
-    if ( m_WasSent ) {
-        Cancel();
-    }
+    Cancel();
 
     m_HasFailed = false;
 
@@ -145,14 +143,14 @@ CDB_Result* CTL_RPCCmd::Result()
 void CTL_RPCCmd::DumpResults()
 {
     auto_ptr<CDB_Result> res(Result());
-    
+
     while (res.get()) {
         if (!ProcessResultInternal(*res)) {
             while(res->Fetch());
         }
 
-        DeleteResult();        
-        
+        DeleteResult();
+
         res.reset(Result());
     }
 }
@@ -184,14 +182,14 @@ void CTL_RPCCmd::SetRecompile(bool recompile)
 void CTL_RPCCmd::Release()
 {
     m_BR = 0;
-    
+
     CancelCmd(*this);
-    
+
     delete this;
 }
 
 
-CDB_Result* 
+CDB_Result*
 CTL_RPCCmd::CreateResult(I_Result& result)
 {
     return Create_Result(result);
@@ -215,12 +213,7 @@ CTL_RPCCmd::Close(void)
             *m_BR = 0;
         }
 
-        if ( m_WasSent ) {
-            try {
-                Cancel();
-            } catch ( const CDB_Exception& ) {
-            }
-        }
+        Cancel();
 
         DropSybaseCmd();
     }
@@ -244,10 +237,10 @@ bool CTL_RPCCmd::x_AssignParams()
             ((m_Params.GetParamStatus(i) & CDB_Params::fOutput) == 0)
             ? CS_INPUTVALUE : CS_RETURN;
 
-        if ( !AssignCmdParam(param, 
-                             param_name, 
+        if ( !AssignCmdParam(param,
+                             param_name,
                              param_fmt,
-                             indicator, 
+                             indicator,
                              false/*!declare_only*/) ) {
             return false;
         }
@@ -264,6 +257,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/06/05 18:10:06  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.16  2006/05/03 15:10:36  ssikorsk
  * Implemented classs CTL_Cmd and CCTLExceptions;
  * Surrounded each native ctlib call with Check;

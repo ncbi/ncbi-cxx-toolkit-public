@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 
 CDBL_LangCmd::CDBL_LangCmd(CDBL_Connection* conn, DBPROCESS* cmd,
                            const string& lang_query,
-                           unsigned int nof_params) 
+                           unsigned int nof_params)
 : CDBL_Cmd( conn, cmd )
 , m_Query( lang_query )
 , m_Params( nof_params )
@@ -80,8 +80,7 @@ bool CDBL_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
 
 bool CDBL_LangCmd::Send()
 {
-    if (m_WasSent)
-        Cancel();
+    Cancel();
 
     m_HasFailed = false;
 
@@ -99,14 +98,14 @@ bool CDBL_LangCmd::Send()
         DATABASE_DRIVER_ERROR( "dbcmd failed", 220001 );
     }
 
-  
+
     // Timeout is already set by CDBLibContext ...
     // GetConnection().x_SetTimeout();
 
     m_HasFailed = Check(dbsqlsend(GetCmd())) != SUCCEED;
-    CHECK_DRIVER_ERROR( 
+    CHECK_DRIVER_ERROR(
         m_HasFailed,
-        "dbsqlsend failed", 
+        "dbsqlsend failed",
         220005 );
 
     m_WasSent = true;
@@ -132,12 +131,13 @@ bool CDBL_LangCmd::Cancel()
             ClearResultSet();
         }
         m_WasSent = false;
+
+        dbfreebuf(GetCmd());
+        CheckFunctCall();
+        m_Query.erase();
+
         return (Check(dbcancel(GetCmd())) == SUCCEED);
     }
-
-    dbfreebuf(GetCmd());
-    CheckFunctCall();
-    m_Query.erase();
     return true;
 }
 
@@ -303,11 +303,11 @@ int CDBL_LangCmd::RowCount() const
 void CDBL_LangCmd::Release()
 {
     m_BR = 0;
-    if (m_WasSent) {
-        Cancel();
-        m_WasSent = false;
-    }
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -317,8 +317,8 @@ CDBL_LangCmd::~CDBL_LangCmd()
     try {
         if (m_BR)
             *m_BR = 0;
-        if (m_WasSent)
-            Cancel();
+
+        Cancel();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -546,6 +546,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.24  2006/05/04 20:12:17  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

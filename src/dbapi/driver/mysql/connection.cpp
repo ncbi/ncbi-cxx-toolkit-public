@@ -78,6 +78,9 @@ bool CMySQL_Connection::IsAlive()
 
 void CMySQL_Connection::Release()
 {
+    m_BR = 0;
+    // close all commands first
+    DeleteAllCommands();
 }
 
 
@@ -215,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.11  2006/06/05 14:44:56  ssikorsk
  * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
  *

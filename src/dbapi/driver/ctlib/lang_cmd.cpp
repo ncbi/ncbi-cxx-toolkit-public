@@ -41,14 +41,14 @@ BEGIN_NCBI_SCOPE
 //  CTL_Cmd::
 //
 
-CTL_Cmd::CTL_Cmd(CTL_Connection* conn, 
+CTL_Cmd::CTL_Cmd(CTL_Connection* conn,
                  CS_COMMAND* cmd) :
 m_HasFailed(false),
 m_WasSent(false),
 m_RowCount(0),
 m_Connect(conn),
 m_Cmd(cmd),
-m_Res(NULL)    
+m_Res(NULL)
 {
 }
 
@@ -89,7 +89,7 @@ CTL_Cmd::ProcessResults(void)
     // process the results
     for (;;) {
         CS_INT res_type;
-    
+
         switch ( Check(ct_results(x_GetSybaseCmd(), &res_type)) ) {
         case CS_SUCCEED:
             break;
@@ -105,11 +105,11 @@ CTL_Cmd::ProcessResults(void)
         default:
             DATABASE_DRIVER_ERROR( "your request is pending", 122048 );
         }
-    
+
         if (ProcessResultInternal(res_type)) {
             continue;
         }
-        
+
         switch ( res_type ) {
         case CS_CMD_SUCCEED:
         case CS_CMD_DONE: // done with this command
@@ -123,18 +123,18 @@ CTL_Cmd::ProcessResults(void)
             continue;
         }
     }
-    
+
     return false;
 }
-    
-bool 
+
+bool
 CTL_Cmd::Cancel(void)
 {
     if ( m_WasSent ) {
         if ( m_Res ) {
             // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
-            ((CTL_RowResult*)m_Res)->m_EOR= true; 
-            
+            ((CTL_RowResult*)m_Res)->m_EOR= true;
+
             DeleteResult();
         }
 
@@ -154,16 +154,10 @@ CTL_Cmd::Cancel(void)
     return true;
 }
 
-void 
+void
 CTL_Cmd::CancelCmd(I_BaseCmd& cmd)
 {
-    if ( m_WasSent) {
-        try {
-            Cancel();
-        } catch ( const CDB_Exception& ) {
-        }
-        m_WasSent = false;
-    }
+    Cancel();
 
     DropCmd(cmd);
 }
@@ -395,9 +389,9 @@ CDB_Result* CTL_Cmd::MakeResult(void)
 {
     DeleteResult();
 
-    CHECK_DRIVER_ERROR( 
-        !m_WasSent, 
-        "you need to send a command first", 
+    CHECK_DRIVER_ERROR(
+        !m_WasSent,
+        "you need to send a command first",
         120010 );
 
     for (;;) {
@@ -413,9 +407,9 @@ CDB_Result* CTL_Cmd::MakeResult(void)
             m_HasFailed = true;
             if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
                 // we need to close this connection
-                DATABASE_DRIVER_ERROR( 
+                DATABASE_DRIVER_ERROR(
                     "Unrecoverable crash of ct_result. "
-                    "Connection must be closed", 
+                    "Connection must be closed",
                     120012 );
             }
             m_WasSent = false;
@@ -473,7 +467,7 @@ CDB_Result* CTL_Cmd::MakeResult(void)
 //
 
 CTL_LangCmd::CTL_LangCmd(CTL_Connection* conn, CS_COMMAND* cmd,
-                         const string& lang_query, unsigned int nof_params) : 
+                         const string& lang_query, unsigned int nof_params) :
 CTL_Cmd(conn, cmd),
 m_Query(lang_query),
 m_Params(nof_params)
@@ -505,9 +499,7 @@ bool CTL_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
 
 bool CTL_LangCmd::Send()
 {
-    if ( m_WasSent ) {
-        Cancel();
-    }
+    Cancel();
 
     m_HasFailed = false;
     switch ( Check(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
@@ -578,14 +570,14 @@ CDB_Result* CTL_LangCmd::Result()
 void CTL_LangCmd::DumpResults()
 {
     auto_ptr<CDB_Result> res(Result());
-    
+
     while (res.get()) {
         if (!ProcessResultInternal(*res)) {
             while(res->Fetch());
         }
 
-        DeleteResult();        
-        
+        DeleteResult();
+
         res.reset(Result());
     }
 }
@@ -612,13 +604,13 @@ int CTL_LangCmd::RowCount() const
 void CTL_LangCmd::Release()
 {
     m_BR = 0;
-    
+
     CancelCmd(*this);
-    
+
     delete this;
 }
 
-CDB_Result* 
+CDB_Result*
 CTL_LangCmd::CreateResult(I_Result& result)
 {
     return Create_Result(result);
@@ -640,15 +632,10 @@ CTL_LangCmd::Close(void)
         *m_BR = 0;
     }
 
-    if ( m_WasSent ) {
-        try {
-            Cancel();
-        } catch ( const CDB_Exception& ) {
-        }
-    }
+    Cancel();
 
     Check(ct_cmd_drop(x_GetSybaseCmd()));
-    
+
     SetSybaseCmd(NULL);
 }
 
@@ -667,10 +654,10 @@ bool CTL_LangCmd::x_AssignParams()
         const string& param_name = m_Params.GetParamName(i);
         CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
 
-        if ( !AssignCmdParam(param, 
-                             param_name, 
-                             param_fmt, 
-                             indicator, 
+        if ( !AssignCmdParam(param,
+                             param_name,
+                             param_fmt,
+                             indicator,
                              false/*!declare_only*/) ) {
             return false;
         }
@@ -687,6 +674,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/06/05 18:10:06  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.16  2006/05/03 15:10:36  ssikorsk
  * Implemented classs CTL_Cmd and CCTLExceptions;
  * Surrounded each native ctlib call with Check;

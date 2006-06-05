@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 //
 
 CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* conn, DBPROCESS* cmd,
-                         const string& proc_name, unsigned int nof_params) 
+                         const string& proc_name, unsigned int nof_params)
 : CDBL_Cmd( conn, cmd )
 , m_Query(proc_name)
 , m_Params(nof_params)
@@ -277,11 +277,11 @@ void CDBL_RPCCmd::SetRecompile(bool recompile)
 void CDBL_RPCCmd::Release()
 {
     m_BR = 0;
-    if (m_WasSent) {
-        Cancel();
-        m_WasSent = false;
-    }
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -291,8 +291,8 @@ CDBL_RPCCmd::~CDBL_RPCCmd()
     try {
         if (m_BR)
             *m_BR = 0;
-        if (m_WasSent)
-            Cancel();
+
+        Cancel();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -454,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.23  2006/05/04 20:12:17  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

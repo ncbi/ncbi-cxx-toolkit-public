@@ -599,14 +599,25 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     return nof_bytes;
 }
 
-void CODBC_SendDataCmd::Release()
+bool CODBC_SendDataCmd::Cancel(void)
 {
-    m_BR = 0;
     if (m_Bytes2go > 0) {
         xCancel();
         m_Bytes2go = 0;
+        return true;
     }
+
+    return false;
+}
+
+void CODBC_SendDataCmd::Release()
+{
+    m_BR = 0;
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -614,12 +625,12 @@ void CODBC_SendDataCmd::Release()
 CODBC_SendDataCmd::~CODBC_SendDataCmd()
 {
     try {
-        if (m_Bytes2go > 0) {
-            xCancel();
-        }
         if (m_BR) {
             *m_BR = 0;
         }
+
+        Cancel();
+
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -639,6 +650,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.26  2006/06/05 15:05:50  ssikorsk
  * Revamp code to use GetMsgHandlers() and DeleteAllCommands() instead of
  * m_MsgHandlers and m_CMDs.

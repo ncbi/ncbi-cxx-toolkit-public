@@ -668,16 +668,25 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 }
 
 
+bool CTL_SendDataCmd::Cancel(void)
+{
+    if ( m_Bytes2go ) {
+        Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
+        m_Bytes2go = 0;
+        return true;
+    }
+
+    return false;
+}
+
 void CTL_SendDataCmd::Release()
 {
     m_BR = 0;
 
-    if ( m_Bytes2go ) {
-        Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
-        m_Bytes2go = 0;
-    }
+    Cancel();
 
     DropCmd(*this);
+
     delete this;
 }
 
@@ -721,6 +730,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/06/05 18:10:06  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.32  2006/06/05 14:43:36  ssikorsk
  * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
  *

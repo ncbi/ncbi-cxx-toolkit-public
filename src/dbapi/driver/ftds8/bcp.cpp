@@ -51,7 +51,7 @@ CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* conn,
     m_Params(nof_columns),
     m_WasSent(false),
     m_HasFailed(false),
-    m_HasTextImage(false), 
+    m_HasTextImage(false),
     m_WasBound(false)
 {
     if (Check(bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN)) != SUCCEED) {
@@ -275,7 +275,7 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
                     == SUCCEED &&
-                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : 
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 :
                                static_cast<int>(val.Size()), i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
@@ -284,7 +284,7 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
                     == SUCCEED &&
-                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : 
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 :
                                static_cast<int>(val.Size()), i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
             }
@@ -393,7 +393,7 @@ bool CTDS_BCPInCmd::SendRow()
                 size_t l = val.Read(buff, sizeof(buff));
                 if (l > s)
                     l = s;
-                if (Check(bcp_moretext(GetCmd(), static_cast<int>(l), (BYTE*) buff)) 
+                if (Check(bcp_moretext(GetCmd(), static_cast<int>(l), (BYTE*) buff))
                     != SUCCEED) {
                     m_HasFailed = true;
                     string error;
@@ -418,11 +418,12 @@ bool CTDS_BCPInCmd::SendRow()
 
 bool CTDS_BCPInCmd::Cancel()
 {
-    if(m_WasSent) {
+    if (m_WasSent) {
         DBINT outrow = Check(bcp_done(GetCmd()));
-        m_WasSent= false;
+        m_WasSent = false;
         return outrow == 0;
     }
+
     return false;
 }
 
@@ -459,11 +460,11 @@ bool CTDS_BCPInCmd::CompleteBCP()
 void CTDS_BCPInCmd::Release()
 {
     m_BR = 0;
-    if (m_WasSent) {
-        Cancel();
-        m_WasSent = false;
-    }
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -473,8 +474,8 @@ CTDS_BCPInCmd::~CTDS_BCPInCmd()
     try {
         if (m_BR)
             *m_BR = 0;
-        if (m_WasSent)
-            Cancel();
+
+        Cancel();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -487,6 +488,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.14  2006/05/04 20:12:47  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

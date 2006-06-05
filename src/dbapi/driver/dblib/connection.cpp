@@ -625,14 +625,25 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 }
 
 
-void CDBL_SendDataCmd::Release()
+bool CDBL_SendDataCmd::Cancel(void)
 {
-    m_BR = 0;
     if (m_Bytes2go > 0) {
         Check(dbcancel(GetCmd()));
         m_Bytes2go = 0;
+        return true;
     }
+
+    return false;
+}
+
+void CDBL_SendDataCmd::Release()
+{
+    m_BR = 0;
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -640,8 +651,8 @@ void CDBL_SendDataCmd::Release()
 CDBL_SendDataCmd::~CDBL_SendDataCmd()
 {
     try {
-        if (m_Bytes2go > 0)
-            Check(dbcancel(GetCmd()));
+        Cancel();
+
         if (m_BR)
             *m_BR = 0;
     }
@@ -656,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.31  2006/06/05 14:43:57  ssikorsk
  * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
  *

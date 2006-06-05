@@ -49,6 +49,13 @@ CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection* conn,
 
 CMySQL_LangCmd::~CMySQL_LangCmd()
 {
+    try {
+        if (m_BR)
+            *m_BR = 0;
+
+        Cancel();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -79,7 +86,7 @@ bool CMySQL_LangCmd::Send()
         (&m_Connect->m_MySQL, m_Query.c_str(), m_Query.length()) != 0) {
         DATABASE_DRIVER_WARNING( "Failed: mysql_real_query", 800003 );
     }
-    
+
     my_ulonglong nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
     // There is not too much sence in comparing unsigned value with -1.
     // m_HasResults = nof_Rows == -1 || nof_Rows > 0;
@@ -138,13 +145,18 @@ void CMySQL_LangCmd::DumpResults()
 
 bool CMySQL_LangCmd::HasFailed() const
 {
-    if(mysql_errno(&m_Connect->m_MySQL) == 0) 
+    if(mysql_errno(&m_Connect->m_MySQL) == 0)
       return false;
     return true;
 }
 
 void CMySQL_LangCmd::Release()
 {
+    m_BR = 0;
+
+    GetConnection().DropCmd(*this);
+
+    delete this;
 }
 
 int CMySQL_LangCmd::LastInsertId() const
@@ -170,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.12  2006/02/16 19:37:42  ssikorsk
  * Get rid of compilation warnings
  *

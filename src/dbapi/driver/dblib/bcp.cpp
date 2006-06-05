@@ -51,9 +51,9 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection* conn,
                              unsigned int     nof_columns) :
     CDBL_Cmd( conn, cmd ),
     m_Params(nof_columns),
-    m_WasSent(false), 
+    m_WasSent(false),
     m_HasFailed(false),
-    m_HasTextImage(false), 
+    m_HasTextImage(false),
     m_WasBound(false)
 {
     if (Check(bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN)) != SUCCEED) {
@@ -114,7 +114,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 r = Check(bcp_bind(GetCmd(), (BYTE*) v, 0,
                              val.IsNULL() ? 0 : -1, 0, 0, SYBNUMERIC, i + 1));
                 pb = (void*) (v + 1);
-#else                
+#else
                 r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
                              val.IsNULL() ? 0 : -1, 0, 0, SYBINT8, i + 1));
 #endif
@@ -269,12 +269,12 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                     Check(bcp_collen(GetCmd(),  val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
                 pb = (void*) (v + 1);
-#else                
+#else
                 r = Check(bcp_colptr(GetCmd(), (BYTE*) val.BindVal(), i + 1))
                     == SUCCEED &&
                     Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
-#endif                
+#endif
             }
             break;
             case eDB_Char: {
@@ -443,11 +443,12 @@ bool CDBL_BCPInCmd::SendRow()
 
 bool CDBL_BCPInCmd::Cancel()
 {
-    if(m_WasSent) {
-    DBINT outrow = Check(bcp_done(GetCmd()));
-    m_WasSent= false;
-    return outrow == 0;
+    if (m_WasSent) {
+        DBINT outrow = Check(bcp_done(GetCmd()));
+        m_WasSent = false;
+        return outrow == 0;
     }
+
     return true;
 }
 
@@ -484,11 +485,11 @@ bool CDBL_BCPInCmd::CompleteBCP()
 void CDBL_BCPInCmd::Release()
 {
     m_BR = 0;
-    if (m_WasSent) {
-        Cancel();
-        m_WasSent = false;
-    }
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -499,9 +500,8 @@ CDBL_BCPInCmd::~CDBL_BCPInCmd()
         if (m_BR) {
             *m_BR = 0;
         }
-        if (m_WasSent) {
-            Cancel();
-        }
+
+        Cancel();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -514,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.21  2006/05/04 20:12:17  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

@@ -47,14 +47,14 @@ CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection* conn, DBPROCESS* cmd,
                                const string& cursor_name, const string& query,
                                unsigned int nof_params) :
     CDBL_Cmd( conn, cmd ),
-    m_Name(cursor_name), 
-    m_LCmd(0), 
+    m_Name(cursor_name),
+    m_LCmd(0),
     m_Query(query),
-    m_Params(nof_params), 
-    m_IsOpen(false), 
+    m_Params(nof_params),
+    m_IsOpen(false),
     m_HasFailed(false),
-    m_IsDeclared(false), 
-    m_Res(0), 
+    m_IsDeclared(false),
+    m_Res(0),
     m_RowCount(-1)
 {
 }
@@ -68,12 +68,12 @@ bool CDBL_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
 
 static bool for_update_of(const string& q)
 {
-    if((q.find("update") == string::npos) && 
+    if((q.find("update") == string::npos) &&
        (q.find("UPDATE") == string::npos))
         return false;
 
-    if((q.find("for update") != string::npos) || 
-       (q.find("FOR UPDATE") != string::npos)) 
+    if((q.find("for update") != string::npos) ||
+       (q.find("FOR UPDATE") != string::npos))
         return true;
 
     // TODO: add more logic here to find "for update" clause
@@ -83,20 +83,19 @@ static bool for_update_of(const string& q)
 CDB_Result* CDBL_CursorCmd::Open()
 {
     _ASSERT(GetConnection().m_Context);
-    
+
     const bool connected_to_MSSQLServer = GetConnection().m_Context->ConnectedToMSSQLServer();
-    
-    if (m_IsOpen) { // need to close it first
-        Close();
-    }
+
+    // We need to close it first
+    Close();
 
     m_HasFailed = false;
 
     // declare the cursor
     m_HasFailed = !x_AssignParams();
-    CHECK_DRIVER_ERROR( 
+    CHECK_DRIVER_ERROR(
         m_HasFailed,
-        "cannot assign params", 
+        "cannot assign params",
         222003 );
 
 
@@ -105,7 +104,7 @@ CDB_Result* CDBL_CursorCmd::Open()
     string buff;
     if ( connected_to_MSSQLServer ) {
         string cur_feat;
-        
+
         if(for_update_of(m_Query)) {
             cur_feat = " cursor FORWARD_ONLY SCROLL_LOCKS for ";
         } else {
@@ -115,19 +114,19 @@ CDB_Result* CDBL_CursorCmd::Open()
         buff = "declare " + m_Name + cur_feat + m_Query;
     } else {
         // Sybase ...
-        
+
         buff = "declare " + m_Name + " cursor for " + m_Query;
     }
 
     try {
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
-        
+
         cmd->Send();
         cmd->DumpResults();
     } catch ( const CDB_Exception& e) {
         DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor", 222001 );
     }
-    
+
     m_IsDeclared = true;
 
     // open the cursor
@@ -136,13 +135,13 @@ CDB_Result* CDBL_CursorCmd::Open()
 
     try {
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
-        
+
         cmd->Send();
         cmd->DumpResults();
     } catch ( const CDB_Exception& e) {
         DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor", 222002 );
     }
-    
+
     m_IsOpen = true;
 
     m_LCmd = 0;
@@ -197,12 +196,12 @@ I_ITDescriptor* CDBL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     while ( static_cast<unsigned int>(GetResultSet()->CurrentItemNo()) < item_num ) {
         if(!GetResultSet()->SkipItem()) return 0;
     }
-    
+
     I_ITDescriptor* desc= new CDBL_ITDescriptor(GetConnection(), GetCmd(), item_num+1);
     return desc;
 }
 
-bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                      bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
@@ -219,13 +218,13 @@ bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 //                     continue;
 //             }
         }
-#endif        
+#endif
         return GetConnection().x_SendData(*desc, data, log_it);
     }
     return false;
 }
 
-CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
+CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
                                              bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
@@ -239,11 +238,11 @@ CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
             if(r) delete r;
         }
 #endif
-        
+
         return GetConnection().SendDataCmd(*desc, size, log_it);
     }
     return 0;
-}                       
+}
 
 bool CDBL_CursorCmd::Delete(const string& table_name)
 {
@@ -257,7 +256,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
             auto_ptr<CDB_Result> r(m_LCmd->Result());
             // Not in ftds8 ...
 //             if (r.get()) {
-// 
+//
 //                 while (r->Fetch())
 //                     continue;
 //             }
@@ -374,11 +373,11 @@ bool CDBL_CursorCmd::Close()
 void CDBL_CursorCmd::Release()
 {
     m_BR = 0;
-    if (m_IsOpen) {
-        Close();
-        m_IsOpen = false;
-    }
+
+    Close();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -388,8 +387,8 @@ CDBL_CursorCmd::~CDBL_CursorCmd()
     try {
         if (m_BR)
             *m_BR = 0;
-        if (m_IsOpen)
-            Close();
+
+        Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -467,7 +466,7 @@ bool CDBL_CursorCmd::x_AssignParams()
                         val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                if(*c != '\0') return false; 
+                if(*c != '\0') return false;
                 val_buffer[i++] = '\'';
                 val_buffer[i] = '\0';
                 break;
@@ -558,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.23  2006/05/04 20:12:17  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

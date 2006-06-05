@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                              const string& cursor_name, const string& query,
-                             unsigned int nof_params, unsigned int fetch_size) : 
+                             unsigned int nof_params, unsigned int fetch_size) :
 CTL_Cmd(conn, cmd),
 m_Name(cursor_name),
 m_Query(query),
@@ -66,10 +66,8 @@ bool CTL_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
 
 CDB_Result* CTL_CursorCmd::Open()
 {
-    if ( m_IsOpen ) {
-        // need to close it first
-        Close();
-    }
+    // need to close it first
+    Close();
 
     if ( !m_Used ) {
         m_HasFailed = false;
@@ -243,27 +241,27 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     while ( static_cast<unsigned int>(GetResult().CurrentItemNo()) < item_num ) {
         if(!GetResult().SkipItem()) return 0;
     }
-    
+
     I_ITDescriptor* desc= 0;
     if(GetResult().CurrentItemNo() == item_num) {
         desc = GetResult().GetImageOrTextDescriptor();
     }
     else {
         auto_ptr<CTL_ITDescriptor> dsc(new CTL_ITDescriptor);
-        
+
         bool rc = (Check(ct_data_info(x_GetSybaseCmd(), CS_GET, item_num+1, &dsc->m_Desc))
                    != CS_SUCCEED);
 
-        CHECK_DRIVER_ERROR( 
+        CHECK_DRIVER_ERROR(
             rc,
-            "ct_data_info failed", 
+            "ct_data_info failed",
             130010 );
         desc = dsc.release();
     }
     return desc;
 }
 
-bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                     bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
@@ -272,14 +270,14 @@ bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
     return (desc) ? x_SendData(*desc, data, log_it) : false;
 }
 
-CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
+CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
                         bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
     C_ITDescriptorGuard d_guard(desc);
 
     return (desc) ? ConnSendDataCmd(*desc, size, log_it) : 0;
-}                       
+}
 
 bool CTL_CursorCmd::Delete(const string& table_name)
 {
@@ -332,11 +330,11 @@ bool CTL_CursorCmd::Close()
 
     DeleteResult();
 
-    switch ( Check(ct_cursor(x_GetSybaseCmd(), 
-                             CS_CURSOR_CLOSE, 
-                             0, 
-                             CS_UNUSED, 
-                             0, 
+    switch ( Check(ct_cursor(x_GetSybaseCmd(),
+                             CS_CURSOR_CLOSE,
+                             0,
+                             CS_UNUSED,
+                             0,
                              CS_UNUSED,
                              CS_UNUSED)) ) {
     case CS_SUCCEED:
@@ -377,9 +375,7 @@ CTL_CursorCmd::CloseForever(void)
             *m_BR = 0;
         }
 
-        if ( m_IsOpen ) {
-            Close();
-        }
+        Close();
 
         if ( m_Used ) {
             // deallocate the cursor
@@ -425,7 +421,7 @@ CTL_CursorCmd::CloseForever(void)
                 // Just ignore ...
                 _ASSERT(false);
             }
-            
+
         }
 
         DropSybaseCmd();
@@ -436,20 +432,17 @@ CTL_CursorCmd::CloseForever(void)
 void CTL_CursorCmd::Release()
 {
     m_BR = 0;
-    
+
     // Cannot use CancelCmd(*this); because of m_IsOpen
-    if ( m_IsOpen ) {
-        Close();
-        m_IsOpen = false;
-    }
-    
+    Close();
+
     DropCmd(*this);
-    
+
     delete this;
 }
 
 
-CDB_Result* 
+CDB_Result*
 CTL_CursorCmd::CreateResult(I_Result& result)
 {
     return Create_Result(result);
@@ -497,6 +490,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/06/05 18:10:06  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.16  2006/05/03 15:10:36  ssikorsk
  * Implemented classs CTL_Cmd and CCTLExceptions;
  * Surrounded each native ctlib call with Check;

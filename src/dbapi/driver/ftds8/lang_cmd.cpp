@@ -45,7 +45,7 @@ CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection* conn, DBPROCESS* cmd,
                            const string& lang_query,
                            unsigned int nof_params) :
     CDBL_Cmd( conn, cmd ),
-    m_Query(lang_query), 
+    m_Query(lang_query),
     m_Params(nof_params)
 {
 
@@ -80,8 +80,7 @@ bool CTDS_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
 
 bool CTDS_LangCmd::Send()
 {
-    if (m_WasSent)
-        Cancel();
+    Cancel();
 
     m_HasFailed = false;
 
@@ -99,13 +98,13 @@ bool CTDS_LangCmd::Send()
         DATABASE_DRIVER_ERROR( "dbcmd failed", 220001 );
     }
 
-    
+
     GetConnection().TDS_SetTimeout();
 
     m_HasFailed = Check(dbsqlsend(GetCmd())) != SUCCEED;
-    CHECK_DRIVER_ERROR( 
+    CHECK_DRIVER_ERROR(
         m_HasFailed,
-        "dbsqlsend failed", 
+        "dbsqlsend failed",
         220005 );
 
     m_WasSent = true;
@@ -128,12 +127,13 @@ bool CTDS_LangCmd::Cancel()
             m_Res = 0;
         }
         m_WasSent = false;
+
+        dbfreebuf(GetCmd());
+        CheckFunctCall();
+        m_Query.erase();
+
         return (Check(dbcancel(GetCmd())) == SUCCEED);
     }
-
-    dbfreebuf(GetCmd());
-    CheckFunctCall();
-    m_Query.erase();
     return true;
 }
 
@@ -154,9 +154,9 @@ CDB_Result* CTDS_LangCmd::Result()
         m_Res = 0;
     }
 
-    CHECK_DRIVER_ERROR( 
+    CHECK_DRIVER_ERROR(
         !m_WasSent,
-        "a command has to be sent first", 
+        "a command has to be sent first",
         220010 );
 
     if (m_Status == 0) {
@@ -257,11 +257,11 @@ int CTDS_LangCmd::RowCount() const
 void CTDS_LangCmd::Release()
 {
     m_BR = 0;
-    if (m_WasSent) {
-        Cancel();
-        m_WasSent = false;
-    }
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -271,8 +271,8 @@ CTDS_LangCmd::~CTDS_LangCmd()
     try {
         if (m_BR)
             *m_BR = 0;
-        if (m_WasSent)
-            Cancel();
+
+        Cancel();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -338,7 +338,7 @@ bool CTDS_LangCmd::x_AssignParams()
             break;
         case eDB_DateTime:
             type = "datetime";
-            break;            
+            break;
         default:
             return false;
         }
@@ -498,6 +498,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.19  2006/05/04 20:12:47  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

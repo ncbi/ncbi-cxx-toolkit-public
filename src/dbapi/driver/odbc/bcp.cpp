@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
                                SQLHDBC          cmd,
                                const string&    table_name,
-                               unsigned int     nof_columns) 
+                               unsigned int     nof_columns)
 : CStatementBase(*conn)
 , m_Cmd(cmd)
 , m_Params(nof_columns)
@@ -80,16 +80,16 @@ bool CODBC_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 bool CODBC_BCPInCmd::x_AssignParams(void* pb)
 {
     RETCODE r;
-    
+
     if (!m_WasBound) {
         for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
             if (m_Params.GetParamStatus(i) == 0) {
                 bcp_bind(m_Cmd, (BYTE*) pb, 0, SQL_NULL_DATA, 0, 0, 0, i+1);
                 continue;
             }
-            
+
             CDB_Object& param = *m_Params.GetParam(i);
-            
+
             switch ( param.GetType() ) {
             case eDB_Int:
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
@@ -99,11 +99,11 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA, 0, 0, SQLINT2, i + 1);
                 break;
-            case eDB_TinyInt: 
+            case eDB_TinyInt:
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA, 0, 0, SQLINT1, i + 1);
                 break;
-            case eDB_BigInt: 
+            case eDB_BigInt:
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA, 0, 0, SQLNUMERIC, i + 1);
                 break;
@@ -147,7 +147,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 break;
             case eDB_Text:
                 r = bcp_bind(m_Cmd, 0, 0,
-                             SQL_VARLEN_DATA, (BYTE*) "", 1, 
+                             SQL_VARLEN_DATA, (BYTE*) "", 1,
                              SQLTEXT, i + 1);
                 m_HasTextImage = true;
                 break;
@@ -169,9 +169,9 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
     for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
         if (m_Params.GetParamStatus(i) == 0)
             continue;
-        
+
         CDB_Object& param = *m_Params.GetParam(i);
-        
+
         switch ( param.GetType() ) {
         case eDB_Int: {
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
@@ -332,7 +332,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
 bool CODBC_BCPInCmd::SendRow()
 {
     char param_buff[2048]; // maximal row size, assured of buffer overruns
-    
+
     if (!x_AssignParams(param_buff)) {
         m_HasFailed = true;
         string err_message = "cannot assign params" + GetDiagnosticInfo();
@@ -392,11 +392,12 @@ bool CODBC_BCPInCmd::SendRow()
 
 bool CODBC_BCPInCmd::Cancel()
 {
-    if(m_WasSent) {
+    if (m_WasSent) {
         DBINT outrow = bcp_done(m_Cmd);
-        m_WasSent= false;
+        m_WasSent = false;
         return outrow == 0;
     }
+
     return true;
 }
 
@@ -433,11 +434,11 @@ bool CODBC_BCPInCmd::CompleteBCP()
 void CODBC_BCPInCmd::Release()
 {
     m_BR = 0;
-    if (m_WasSent) {
-        Cancel();
-        m_WasSent = false;
-    }
+
+    Cancel();
+
     GetConnection().DropCmd(*this);
+
     delete this;
 }
 
@@ -447,8 +448,8 @@ CODBC_BCPInCmd::~CODBC_BCPInCmd()
     try {
         if (m_BR)
             *m_BR = 0;
-        if (m_WasSent)
-            Cancel();
+
+        Cancel();
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -461,6 +462,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/06/05 18:10:07  ssikorsk
+ * Revamp code to use methods Cancel and Close more efficient.
+ *
  * Revision 1.13  2006/06/02 19:34:58  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *
