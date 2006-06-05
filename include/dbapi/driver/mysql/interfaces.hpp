@@ -123,13 +123,8 @@ protected:
     virtual bool IsReusable() const;
     virtual const string& PoolName() const;
     virtual I_DriverContext* Context() const;
-    virtual void PushMsgHandler(CDB_UserHandler* h,
-                                EOwnership ownership = eNoOwnership);
-    virtual void PopMsgHandler (CDB_UserHandler* h);
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release();
-
-    void DropCmd(CDB_BaseEnt& cmd);
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -277,6 +272,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/06/05 14:38:47  ssikorsk
+ * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
+ *
  * Revision 1.19  2006/05/15 19:38:56  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *

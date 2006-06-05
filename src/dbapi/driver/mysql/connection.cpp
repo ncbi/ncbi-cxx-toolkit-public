@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 CMySQL_Connection::CMySQL_Connection(CMySQLContext* cntx,
                                      const string&  srv_name,
                                      const string&  user_name,
-                                     const string&  passwd) : 
+                                     const string&  passwd) :
     m_Context(cntx),
     m_IsOpen(false)
 {
@@ -152,16 +152,6 @@ I_DriverContext* CMySQL_Connection::Context() const
     return m_Context;
 }
 
-void CMySQL_Connection::PushMsgHandler(CDB_UserHandler* /*h*/,
-                                       EOwnership /*ownership*/)
-{
-}
-
-
-void CMySQL_Connection::PopMsgHandler (CDB_UserHandler* /*h*/)
-{
-}
-
 CDB_ResultProcessor* CMySQL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
 {
     CDB_ResultProcessor* r= m_ResProc;
@@ -211,7 +201,7 @@ bool CMySQL_Connection::Close(void)
             mysql_close(&m_MySQL);
             m_IsOpen = false;
             return true;
-        } 
+        }
         NCBI_CATCH_ALL( kEmptyStr )
     }
 
@@ -225,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/05 14:44:56  ssikorsk
+ * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
+ *
  * Revision 1.10  2006/05/15 19:39:05  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *

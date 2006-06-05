@@ -83,19 +83,19 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
     m_Passwd.append(buf, (size_t) outlen);
 
     CS_BOOL flag;
-    Check(ct_con_props(x_GetSybaseConn(), 
-                       CS_GET, 
-                       CS_BULK_LOGIN, 
-                       &flag, 
-                       CS_UNUSED, 
+    Check(ct_con_props(x_GetSybaseConn(),
+                       CS_GET,
+                       CS_BULK_LOGIN,
+                       &flag,
+                       CS_UNUSED,
                        &outlen));
     m_BCPable = (flag == CS_TRUE);
 
-    Check(ct_con_props(x_GetSybaseConn(), 
-                       CS_GET, 
-                       CS_SEC_ENCRYPTION, 
-                       &flag, 
-                       CS_UNUSED, 
+    Check(ct_con_props(x_GetSybaseConn(),
+                       CS_GET,
+                       CS_SEC_ENCRYPTION,
+                       &flag,
+                       CS_UNUSED,
                        &outlen));
     m_SecureLogin = (flag == CS_TRUE);
 
@@ -103,15 +103,15 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
 }
 
 
-CS_RETCODE 
+CS_RETCODE
 CTL_Connection::Check(CS_RETCODE rc)
 {
-    GetCTLExceptionStorage().Handle(m_MsgHandlers);
-    
+    GetCTLExceptionStorage().Handle(GetMsgHandlers());
+
     return rc;
 }
 
-void 
+void
 CTL_Connection::x_CmdAlloc(CS_COMMAND** cmd)
 {
     switch ( Check(ct_cmd_alloc(m_Link, cmd)) ) {
@@ -128,11 +128,11 @@ CTL_Connection::x_CmdAlloc(CS_COMMAND** cmd)
 bool CTL_Connection::IsAlive()
 {
     CS_INT status;
-    if (Check(ct_con_props(x_GetSybaseConn(), 
-                           CS_GET, 
-                           CS_CON_STATUS, 
-                           &status, 
-                           CS_UNUSED, 
+    if (Check(ct_con_props(x_GetSybaseConn(),
+                           CS_GET,
+                           CS_CON_STATUS,
+                           &status,
+                           CS_UNUSED,
                            0))
         != CS_SUCCEED)
         return false;
@@ -151,7 +151,6 @@ CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
     x_CmdAlloc(&cmd);
 
     CTL_LangCmd* lcmd = new CTL_LangCmd(this, cmd, lang_query, nof_params);
-    m_CMDs.push_back(lcmd);
     return Create_LangCmd(*lcmd);
 }
 
@@ -164,7 +163,6 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
     x_CmdAlloc(&cmd);
 
     CTL_RPCCmd* rcmd = new CTL_RPCCmd(this, cmd, rpc_name, nof_args);
-    m_CMDs.push_back(rcmd);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -180,7 +178,6 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
     }
 
     CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(this, cmd, table_name, nof_columns);
-    m_CMDs.push_back(bcmd);
     return Create_BCPInCmd(*bcmd);
 }
 
@@ -196,7 +193,6 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 
     CTL_CursorCmd* ccmd = new CTL_CursorCmd(this, cmd, cursor_name, query,
                                             nof_params, batch_size);
-    m_CMDs.push_back(ccmd);
     return Create_CursorCmd(*ccmd);
 }
 
@@ -237,10 +233,9 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
         Check(ct_cancel(0, cmd, CS_CANCEL_ALL));
         Check(ct_cmd_drop(cmd));
         DATABASE_DRIVER_ERROR( "ct_data_info failed", 110093 );
-    }   
+    }
 
     CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(this, cmd, data_size);
-    m_CMDs.push_back(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
 }
 
@@ -262,14 +257,7 @@ bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt,
 bool CTL_Connection::Refresh()
 {
     // close all commands first
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
-    }
-    m_CMDs.clear();
+    DeleteAllCommands();
 
     // cancel all pending commands
     if (Check(ct_cancel(x_GetSybaseConn(), 0, CS_CANCEL_ALL) != CS_SUCCEED))
@@ -277,11 +265,11 @@ bool CTL_Connection::Refresh()
 
     // check the connection status
     CS_INT status;
-    if (Check(ct_con_props(x_GetSybaseConn(), 
-                           CS_GET, 
-                           CS_CON_STATUS, 
-                           &status, 
-                           CS_UNUSED, 
+    if (Check(ct_con_props(x_GetSybaseConn(),
+                           CS_GET,
+                           CS_CON_STATUS,
+                           &status,
+                           CS_UNUSED,
                            0))
         != CS_SUCCEED)
         return false;
@@ -341,18 +329,6 @@ I_DriverContext* CTL_Connection::Context() const
 }
 
 
-void CTL_Connection::PushMsgHandler(CDB_UserHandler* h,
-                                    EOwnership ownership)
-{
-    m_MsgHandlers.Push(h, ownership);
-}
-
-
-void CTL_Connection::PopMsgHandler(CDB_UserHandler* h)
-{
-    m_MsgHandlers.Pop(h);
-}
-
 CDB_ResultProcessor* CTL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
 {
     CDB_ResultProcessor* r= m_ResProc;
@@ -364,15 +340,7 @@ void CTL_Connection::Release()
 {
     m_BR = 0;
     // close all commands first
-
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
-    }
-    m_CMDs.clear();
+    DeleteAllCommands();
 }
 
 
@@ -382,16 +350,6 @@ CTL_Connection::~CTL_Connection()
         Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
-}
-
-
-void CTL_Connection::DropCmd(CDB_BaseEnt& cmd)
-{
-    deque<CDB_BaseEnt*>::iterator it = find(m_CMDs.begin(), m_CMDs.end(), &cmd);
-
-    if (it != m_CMDs.end()) {
-        m_CMDs.erase(it);
-    }
 }
 
 
@@ -412,7 +370,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
         if(p_desc == 0)
             return false;
     }
-    
+
 
     C_ITDescriptorGuard d_guard(p_desc);
     CS_COMMAND* cmd;
@@ -426,7 +384,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     }
 
     CTL_ITDescriptor& desc = p_desc ?
-        dynamic_cast<CTL_ITDescriptor&> (*p_desc) : 
+        dynamic_cast<CTL_ITDescriptor&> (*p_desc) :
             dynamic_cast<CTL_ITDescriptor&> (descr_in);
     // desc->m_Desc.datatype = CS_TEXT_TYPE;
     desc.m_Desc.total_txtlen  = size;
@@ -436,7 +394,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
         Check(ct_cancel(0, cmd, CS_CANCEL_ALL));
         Check(ct_cmd_drop(cmd));
         return false;
-    }   
+    }
 
     while (size > 0) {
         char   buff[1800];
@@ -467,7 +425,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
             if (x_ProcessResultInternal(cmd, res_type)) {
                 continue;
             }
-                    
+
             switch (res_type) {
             case CS_COMPUTE_RESULT:
             case CS_CURSOR_RESULT:
@@ -528,7 +486,7 @@ I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
     q+= " where ";
     q+= descr_in.SearchConditions();
     q+= " \nset rowcount 0";
-    
+
     CDB_LangCmd* lcmd= LangCmd(q, 0);
     bool rc = !lcmd->Send();
     CHECK_DRIVER_ERROR( rc, "Cannot send the language command", 110035 );
@@ -549,7 +507,7 @@ I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
         delete res;
     }
     delete lcmd;
-        
+
     return descr;
 }
 
@@ -557,11 +515,11 @@ bool CTL_Connection::Abort()
 {
     int fd = -1;
 
-    if(Check(ct_con_props(x_GetSybaseConn(), 
-                          CS_GET, 
-                          CS_ENDPOINT, 
-                          &fd, 
-                          CS_UNUSED, 
+    if(Check(ct_con_props(x_GetSybaseConn(),
+                          CS_GET,
+                          CS_ENDPOINT,
+                          &fd,
+                          CS_UNUSED,
                           0)) == CS_SUCCEED) {
         if(fd >= 0) {
             close(fd);
@@ -610,14 +568,14 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
             res.reset(new CTL_StatusResult(cmd, *this));
             break;
         }
-        
+
         if(res.get()) {
             auto_ptr<CDB_Result> dbres(Create_Result(*res));
             m_ResProc->ProcessResult(*dbres);
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -628,7 +586,7 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 //
 
 
-CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection* conn, 
+CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection* conn,
                                  CS_COMMAND* cmd,
                                  size_t nof_bytes) :
 CTL_Cmd(conn, cmd)
@@ -639,9 +597,9 @@ CTL_Cmd(conn, cmd)
 
 size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 {
-    CHECK_DRIVER_ERROR( 
-        !pChunk  ||  !nof_bytes, 
-        "wrong (zero) arguments", 
+    CHECK_DRIVER_ERROR(
+        !pChunk  ||  !nof_bytes,
+        "wrong (zero) arguments",
         190000 );
 
     if ( !m_Bytes2go )
@@ -670,26 +628,26 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
             if (ProcessResultInternal(res_type)) {
                 continue;
             }
-            
+
             switch ( res_type ) {
             case CS_COMPUTE_RESULT:
             case CS_CURSOR_RESULT:
             case CS_PARAM_RESULT:
             case CS_ROW_RESULT:
-            case CS_STATUS_RESULT: 
+            case CS_STATUS_RESULT:
                 {
                     CS_RETCODE ret_code;
-                    while ((ret_code = Check(ct_fetch(x_GetSybaseCmd(), 
-                                                      CS_UNUSED, 
+                    while ((ret_code = Check(ct_fetch(x_GetSybaseCmd(),
                                                       CS_UNUSED,
-                                                      CS_UNUSED, 0))) == 
+                                                      CS_UNUSED,
+                                                      CS_UNUSED, 0))) ==
                            CS_SUCCEED);
                     if (ret_code != CS_END_DATA) {
                         DATABASE_DRIVER_ERROR( "ct_fetch failed", 190006 );
                     }
                     break;
                 }
-            case CS_CMD_FAIL: 
+            case CS_CMD_FAIL:
                 Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL));
                 DATABASE_DRIVER_ERROR( "command failed", 190007 );
             default:
@@ -697,7 +655,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
             }
             continue;
         }
-        case CS_END_RESULTS: 
+        case CS_END_RESULTS:
             return nof_bytes;
         default:
             if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
@@ -713,18 +671,18 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 void CTL_SendDataCmd::Release()
 {
     m_BR = 0;
-    
+
     if ( m_Bytes2go ) {
         Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
         m_Bytes2go = 0;
     }
-    
+
     DropCmd(*this);
     delete this;
 }
 
 
-CDB_Result* 
+CDB_Result*
 CTL_SendDataCmd::CreateResult(I_Result& result)
 {
     return Create_Result(result);
@@ -751,7 +709,7 @@ CTL_SendDataCmd::Close(void)
             *m_BR = 0;
 
         Check(ct_cmd_drop(x_GetSybaseCmd()));
-        
+
         SetSybaseCmd(NULL);
     }
 }
@@ -763,6 +721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/06/05 14:43:36  ssikorsk
+ * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
+ *
  * Revision 1.31  2006/05/15 19:36:34  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *

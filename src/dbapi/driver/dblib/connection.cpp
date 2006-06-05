@@ -51,16 +51,16 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 
-CDBL_Connection::CDBL_Connection(CDBLibContext* cntx, 
+CDBL_Connection::CDBL_Connection(CDBLibContext* cntx,
                                  DBPROCESS* con,
-                                 bool reusable, 
+                                 bool reusable,
                                  const string& pool_name) :
-    m_Link(con), 
-    m_Context(cntx), 
-    m_Pool(pool_name), 
+    m_Link(con),
+    m_Context(cntx),
+    m_Pool(pool_name),
     m_Reusable(reusable),
-    m_BCPAble(false), 
-    m_SecureLogin(false), 
+    m_BCPAble(false),
+    m_SecureLogin(false),
     m_ResProc(0)
 {
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
@@ -78,7 +78,6 @@ CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
                                       unsigned int nof_parms)
 {
     CDBL_LangCmd* lcmd = new CDBL_LangCmd(this, GetDBLibConnection(), lang_query, nof_parms);
-    m_CMDs.push_back(lcmd);
     return Create_LangCmd(*lcmd);
 }
 
@@ -86,7 +85,6 @@ CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
 CDB_RPCCmd* CDBL_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 {
     CDBL_RPCCmd* rcmd = new CDBL_RPCCmd(this, GetDBLibConnection(), rpc_name, nof_args);
-    m_CMDs.push_back(rcmd);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -96,7 +94,6 @@ CDB_BCPInCmd* CDBL_Connection::BCPIn(const string& tab_name,
 {
     CHECK_DRIVER_ERROR( !m_BCPAble, "No bcp on this connection", 210003 );
     CDBL_BCPInCmd* bcmd = new CDBL_BCPInCmd(this, GetDBLibConnection(), tab_name, nof_cols);
-    m_CMDs.push_back(bcmd);
     return Create_BCPInCmd(*bcmd);
 }
 
@@ -108,7 +105,6 @@ CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
 {
     CDBL_CursorCmd* ccmd = new CDBL_CursorCmd(this, GetDBLibConnection(), cursor_name,
                                               query, nof_params);
-    m_CMDs.push_back(ccmd);
     return Create_CursorCmd(*ccmd);
 }
 
@@ -121,7 +117,7 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != 
+    if(descr_in.DescriptorType() !=
 #ifndef MS_DBLIB_IN_USE
         CDBL_ITDESCRIPTOR_TYPE_MAGNUM
 #else
@@ -132,11 +128,11 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
     if(p_desc == 0) return false;
     }
-    
+
 
     C_ITDescriptorGuard d_guard(p_desc);
 
-    CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) : 
+    CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) :
     dynamic_cast<CDBL_ITDescriptor&> (descr_in);
 
     if (Check(dbwritetext(GetDBLibConnection(),
@@ -153,7 +149,6 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     }
 
     CDBL_SendDataCmd* sd_cmd = new CDBL_SendDataCmd(this, GetDBLibConnection(), data_size);
-    m_CMDs.push_back(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
 }
 
@@ -173,14 +168,7 @@ bool CDBL_Connection::SendData(I_ITDescriptor& desc,
 bool CDBL_Connection::Refresh()
 {
     // close all commands first
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
-    }
-    m_CMDs.clear();
+    DeleteAllCommands();
 
     // cancel all pending commands
     if (Check(dbcancel(GetDBLibConnection())) != CS_SUCCEED)
@@ -239,18 +227,6 @@ I_DriverContext* CDBL_Connection::Context() const
 }
 
 
-void CDBL_Connection::PushMsgHandler(CDB_UserHandler* h,
-                                     EOwnership ownership)
-{
-    m_MsgHandlers.Push(h, ownership);
-}
-
-
-void CDBL_Connection::PopMsgHandler(CDB_UserHandler* h)
-{
-    m_MsgHandlers.Pop(h);
-}
-
 CDB_ResultProcessor* CDBL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
 {
     CDB_ResultProcessor* r= m_ResProc;
@@ -262,14 +238,7 @@ void CDBL_Connection::Release()
 {
     m_BR = 0;
     // close all commands first
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
-    }
-    m_CMDs.clear();
+    DeleteAllCommands();
 }
 
 
@@ -283,15 +252,6 @@ CDBL_Connection::~CDBL_Connection()
     NCBI_CATCH_ALL( kEmptyStr )
 }
 
-
-void CDBL_Connection::DropCmd(CDB_BaseEnt& cmd)
-{
-    deque<CDB_BaseEnt*>::iterator it = find(m_CMDs.begin(), m_CMDs.end(), &cmd);
-
-    if (it != m_CMDs.end()) {
-        m_CMDs.erase(it);
-    }
-}
 
 bool CDBL_Connection::Abort()
 {
@@ -343,11 +303,11 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
     if(p_desc == 0) return false;
     }
-    
+
 
     C_ITDescriptorGuard d_guard(p_desc);
 
-    CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) : 
+    CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) :
     dynamic_cast<CDBL_ITDescriptor&> (descr_in);
     char buff[1800]; // maximal page size
 
@@ -412,7 +372,7 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
     q+= " where ";
     q+= descr_in.SearchConditions();
     q+= " \nset rowcount 0";
-    
+
     CDB_LangCmd* lcmd= LangCmd(q, 0);
     if(!lcmd->Send()) {
         DATABASE_DRIVER_ERROR( "Cannot send the language command", 210035 );
@@ -429,7 +389,7 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
             if(tt == eDB_Text || tt == eDB_Image) {
                 while(res->Fetch()) {
                     res->ReadItem(&i, 1);
-                
+
                     descr= new CDBL_ITDescriptor(*this, GetDBLibConnection(), descr_in);
                     // descr= res->GetImageOrTextDescriptor();
                     if(descr) {
@@ -440,7 +400,7 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
         }
     }
     delete lcmd;
-        
+
     return descr;
 }
 
@@ -526,7 +486,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                         delete res;
                     }
                 }
-            } 
+            }
             continue;
 #else
 // This optimization is currently unavailable for MS dblib...
@@ -573,7 +533,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             }
         }
     }
-    
+
     if (m_ResProc && x_Status == 4) {
         if (Check(dbhasretstat(pLink))) {
             res = new CTDS_StatusResult(pLink);
@@ -609,15 +569,15 @@ RETCODE CDBL_Connection::Check(RETCODE rc)
 
         GetDBLExceptionStorage().Accept(ex);
     }
-    
+
     CheckFunctCall();
-    
+
     return rc;
 }
 
 void CDBL_Connection::CheckFunctCall(void)
 {
-    GetDBLExceptionStorage().Handle(m_MsgHandlers);
+    GetDBLExceptionStorage().Handle(GetMsgHandlers());
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -636,9 +596,9 @@ CDBL_SendDataCmd::CDBL_SendDataCmd(CDBL_Connection* conn, DBPROCESS* cmd,
 
 size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 {
-    CHECK_DRIVER_ERROR( 
-        !pChunk  ||  !nof_bytes, 
-        "wrong (zero) arguments", 
+    CHECK_DRIVER_ERROR(
+        !pChunk  ||  !nof_bytes,
+        "wrong (zero) arguments",
         290000 );
 
     if (!m_Bytes2go)
@@ -696,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/06/05 14:43:57  ssikorsk
+ * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
+ *
  * Revision 1.30  2006/05/30 18:55:06  ssikorsk
  * Revamp code to use GetDBLibConnection and Check methods.
  *

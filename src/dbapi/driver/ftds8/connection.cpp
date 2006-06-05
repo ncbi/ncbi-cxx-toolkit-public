@@ -77,7 +77,6 @@ CDB_LangCmd* CTDS_Connection::LangCmd(const string& lang_query,
                                       unsigned int nof_parms)
 {
     CTDS_LangCmd* lcmd = new CTDS_LangCmd(this, GetDBLibConnection(), lang_query, nof_parms);
-    m_CMDs.push_back(lcmd);
     return Create_LangCmd(*lcmd);
 }
 
@@ -85,7 +84,6 @@ CDB_LangCmd* CTDS_Connection::LangCmd(const string& lang_query,
 CDB_RPCCmd* CTDS_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 {
     CTDS_RPCCmd* rcmd = new CTDS_RPCCmd(this, GetDBLibConnection(), rpc_name, nof_args);
-    m_CMDs.push_back(rcmd);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -97,7 +95,6 @@ CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& tab_name,
         DATABASE_DRIVER_ERROR( "No bcp on this connection", 210003 );
     }
     CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(this, GetDBLibConnection(), tab_name, nof_cols);
-    m_CMDs.push_back(bcmd);
     return Create_BCPInCmd(*bcmd);
 }
 
@@ -109,7 +106,6 @@ CDB_CursorCmd* CTDS_Connection::Cursor(const string& cursor_name,
 {
     CTDS_CursorCmd* ccmd = new CTDS_CursorCmd(this, GetDBLibConnection(), cursor_name,
                                               query, nof_params);
-    m_CMDs.push_back(ccmd);
     return Create_CursorCmd(*ccmd);
 }
 
@@ -150,7 +146,6 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     }
 
     CTDS_SendDataCmd* sd_cmd = new CTDS_SendDataCmd(this, GetDBLibConnection(), data_size);
-    m_CMDs.push_back(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
 }
 
@@ -170,14 +165,7 @@ bool CTDS_Connection::SendData(I_ITDescriptor& desc,
 bool CTDS_Connection::Refresh()
 {
     // close all commands first
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
-    }
-    m_CMDs.clear();
+    DeleteAllCommands();
 
     // cancel all pending commands
     if (Check(dbcancel(GetDBLibConnection())) != CS_SUCCEED)
@@ -236,18 +224,6 @@ I_DriverContext* CTDS_Connection::Context() const
 }
 
 
-void CTDS_Connection::PushMsgHandler(CDB_UserHandler* h,
-                                     EOwnership ownership)
-{
-    m_MsgHandlers.Push(h, ownership);
-}
-
-
-void CTDS_Connection::PopMsgHandler(CDB_UserHandler* h)
-{
-    m_MsgHandlers.Pop(h);
-}
-
 CDB_ResultProcessor* CTDS_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
 {
     CDB_ResultProcessor* r= m_ResProc;
@@ -259,14 +235,7 @@ void CTDS_Connection::Release()
 {
     m_BR = 0;
     // close all commands first
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
-    }
-    m_CMDs.clear();
+    DeleteAllCommands();
 }
 
 
@@ -278,15 +247,6 @@ CTDS_Connection::~CTDS_Connection()
     NCBI_CATCH_ALL( kEmptyStr )
 }
 
-
-void CTDS_Connection::DropCmd(CDB_BaseEnt& cmd)
-{
-    deque<CDB_BaseEnt*>::iterator it = find(m_CMDs.begin(), m_CMDs.end(), &cmd);
-
-    if (it != m_CMDs.end()) {
-        m_CMDs.erase(it);
-    }
-}
 
 bool CTDS_Connection::Abort()
 {
@@ -539,7 +499,7 @@ RETCODE CTDS_Connection::Check(RETCODE rc)
 
 void CTDS_Connection::CheckFunctCall(void)
 {
-    GetFTDS8ExceptionStorage().Handle(m_MsgHandlers);
+    GetFTDS8ExceptionStorage().Handle(GetMsgHandlers());
 }
 
 
@@ -618,6 +578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/05 14:44:04  ssikorsk
+ * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
+ *
  * Revision 1.23  2006/05/30 18:55:14  ssikorsk
  * Revamp code to use GetDBLibConnection and Check methods.
  *

@@ -41,18 +41,18 @@ BEGIN_NCBI_SCOPE
 
 static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
-                                  SQLLEN size, 
-                                  bool is_text, 
-                                  bool logit, 
-                                  SQLPOINTER id, 
+                                  SQLLEN size,
+                                  bool is_text,
+                                  bool logit,
+                                  SQLPOINTER id,
                                   SQLLEN* ph);
 
 static bool ODBC_xSendDataGetId(CStatementBase& stmt,
                                 SQLPOINTER* id);
 
-CODBC_Connection::CODBC_Connection(CODBCContext* cntx, 
+CODBC_Connection::CODBC_Connection(CODBCContext* cntx,
                                    SQLHDBC conn,
-                                   bool reusable, 
+                                   bool reusable,
                                    const string& pool_name) :
 m_Link(conn),
 m_Context(cntx),
@@ -132,8 +132,8 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
         query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
-    CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(this, 
-                                                cursor_name, 
+    CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(this,
+                                                cursor_name,
                                                 query,
                                                 nof_params);
     m_CMDs.push_back(ccmd);
@@ -144,10 +144,10 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
 CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                                size_t data_size, bool log_it)
 {
-    CODBC_SendDataCmd* sd_cmd = 
+    CODBC_SendDataCmd* sd_cmd =
         new CODBC_SendDataCmd(this,
-                              (CDB_ITDescriptor&)descr_in,  
-                              data_size, 
+                              (CDB_ITDescriptor&)descr_in,
+                              data_size,
                               log_it);
     m_CMDs.push_back(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
@@ -169,7 +169,7 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_i
     }
 
     return x_SendData(stmt, img);
-    
+
 }
 
 
@@ -252,18 +252,6 @@ I_DriverContext* CODBC_Connection::Context() const
 }
 
 
-void CODBC_Connection::PushMsgHandler(CDB_UserHandler* h,
-                                      EOwnership ownership)
-{
-    m_MsgHandlers.Push(h, ownership);
-}
-
-
-void CODBC_Connection::PopMsgHandler(CDB_UserHandler* h)
-{
-    m_MsgHandlers.Pop(h);
-}
-
 CDB_ResultProcessor* CODBC_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
 {
     CDB_ResultProcessor* r= m_ResProc;
@@ -291,17 +279,6 @@ CODBC_Connection::~CODBC_Connection()
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
-
-void CODBC_Connection::DropCmd(CDB_BaseEnt& cmd)
-{
-    deque<CDB_BaseEnt*>::iterator it = find(m_CMDs.begin(), m_CMDs.end(), &cmd);
-
-    if (it != m_CMDs.end()) {
-        m_CMDs.erase(it);
-    } else {
-        _TROUBLE;
-    }
-}
 
 bool CODBC_Connection::Abort()
 {
@@ -339,13 +316,13 @@ bool CODBC_Connection::Close(void)
     return false;
 }
 
-static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn, 
+static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
                                   CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
-                                  SQLLEN size, 
-                                  bool is_text, 
-                                  bool logit, 
-                                  SQLPOINTER id, 
+                                  SQLLEN size,
+                                  bool is_text,
+                                  bool logit,
+                                  SQLPOINTER id,
                                   SQLLEN* ph)
 {
     string q= "update ";
@@ -376,7 +353,7 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
         stmt.ReportErrors();
     default: return false;
     }
-            
+
     SQLSMALLINT par_type, par_dig, par_null;
     SQLULEN par_size;
 
@@ -401,7 +378,7 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
 
     *ph = SQL_LEN_DATA_AT_EXEC(size);
 
-    switch(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT, 
+    switch(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
                      is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
                      // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
                      size, 0, id, 0, ph)) {
@@ -410,12 +387,12 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
     case SQL_SUCCESS: break;
     case SQL_ERROR:
         stmt.ReportErrors();
-    default: 
+    default:
         return false;
     }
-        
 
-    
+
+
     switch(SQLExecute(stmt.GetHandle())) {
     case SQL_NEED_DATA:
         return true;
@@ -467,7 +444,7 @@ bool CODBC_Connection::x_SendData(CStatementBase& stmt,
     case SQL_SUCCESS_WITH_INFO: stmt.ReportErrors();
     case SQL_SUCCESS:           break;
     case SQL_NO_DATA:           return true;
-    case SQL_NEED_DATA: 
+    case SQL_NEED_DATA:
         {
             string err_message = "Not all the data were sent" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 410044 );
@@ -479,13 +456,13 @@ bool CODBC_Connection::x_SendData(CStatementBase& stmt,
             DATABASE_DRIVER_ERROR( err_message, 410045 );
         }
     }
-    
+
     for(;;) {
         switch(SQLMoreResults( stmt.GetHandle() )) {
         case SQL_SUCCESS_WITH_INFO: stmt.ReportErrors();
         case SQL_SUCCESS:           continue;
         case SQL_NO_DATA:           break;
-        case SQL_ERROR:             
+        case SQL_ERROR:
             {
                 stmt.ReportErrors();
                 string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
@@ -501,7 +478,7 @@ bool CODBC_Connection::x_SendData(CStatementBase& stmt,
     }
     return true;
 }
-        
+
 void CODBC_Connection::ODBC_SetTimeout(SQLULEN nof_secs) {}
 void CODBC_Connection::ODBC_SetTextImageSize(SQLULEN nof_bytes) {}
 
@@ -530,7 +507,7 @@ CStatementBase::~CStatementBase(void)
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
-bool 
+bool
 CStatementBase::CheckRC(int rc) const
 {
     switch (rc)
@@ -557,10 +534,10 @@ CStatementBase::CheckRC(int rc) const
 //  CODBC_SendDataCmd::
 //
 
-CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn, 
+CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
                                      CDB_ITDescriptor& descr,
-                                     size_t nof_bytes, 
-                                     bool logit) 
+                                     size_t nof_bytes,
+                                     bool logit)
 : CStatementBase(*conn)
 , m_Bytes2go(nof_bytes)
 {
@@ -571,14 +548,14 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
 
         string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
-    }   
+    }
 }
 
 size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 {
     if(nof_bytes > m_Bytes2go) nof_bytes= m_Bytes2go;
     if(nof_bytes < 1) return 0;
-    
+
     switch(SQLPutData(GetHandle(), (SQLPOINTER)chunk_ptr, (SQLINTEGER)nof_bytes)) {
     case SQL_SUCCESS_WITH_INFO:
         ReportErrors();
@@ -599,7 +576,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     case SQL_SUCCESS_WITH_INFO: ReportErrors();
     case SQL_SUCCESS:           break;
     case SQL_NO_DATA:           break;
-    case SQL_NEED_DATA: 
+    case SQL_NEED_DATA:
         {
             string err_message = "Not all the data were sent" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 410044 );
@@ -617,7 +594,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         case SQL_SUCCESS_WITH_INFO: ReportErrors();
         case SQL_SUCCESS:           continue;
         case SQL_NO_DATA:           break;
-        case SQL_ERROR:             
+        case SQL_ERROR:
             {
                 ReportErrors();
                 string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
@@ -674,6 +651,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/05 14:44:32  ssikorsk
+ * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
+ *
  * Revision 1.24  2006/06/02 19:37:40  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *
