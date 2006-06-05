@@ -439,6 +439,7 @@ public:
     // Send chunk of data to the server.
     // Return number of bytes actually transferred to server.
     virtual size_t SendChunk(const void* data, size_t size);
+    virtual bool Cancel(void);
 
     // Destructor
     virtual ~CDB_SendDataCmd();
@@ -514,6 +515,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/05 18:01:53  ssikorsk
+ * Added method Cancel to CDB_SendDataCmd.
+ *
  * Revision 1.24  2006/06/02 20:58:16  ssikorsk
  * Deleted CDB_Result::SetIResult;
  * Declared m_IRes as I_Result* const;
