@@ -231,13 +231,6 @@ CDB_ResultProcessor* CTDS_Connection::SetResultProcessor(CDB_ResultProcessor* rp
     return r;
 }
 
-void CTDS_Connection::Release()
-{
-    m_BR = 0;
-    // close all commands first
-    DeleteAllCommands();
-}
-
 
 CTDS_Connection::~CTDS_Connection()
 {
@@ -264,14 +257,11 @@ bool CTDS_Connection::Abort()
 bool CTDS_Connection::Close(void)
 {
     if (GetDBLibConnection()) {
-        try {
-            Refresh();
-            dbclose(GetDBLibConnection());
-            CheckFunctCall();
-            m_Link = NULL;
-            return true;
-        }
-        NCBI_CATCH_ALL( kEmptyStr )
+        Refresh();
+        dbclose(GetDBLibConnection());
+        CheckFunctCall();
+        m_Link = NULL;
+        return true;
     }
 
     return false;
@@ -567,7 +557,7 @@ void CTDS_SendDataCmd::Release()
 CTDS_SendDataCmd::~CTDS_SendDataCmd()
 {
     try {
-        m_BR = 0;
+        CDB_BaseEnt::Release();
 
         GetConnection().DropCmd(*this);
 
@@ -584,6 +574,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/06/05 21:06:34  ssikorsk
+ * Deleted CTDS_Connection::Release;
+ * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";
+ *
  * Revision 1.26  2006/06/05 19:10:06  ssikorsk
  * Moved logic from C...Cmd::Release into dtor.
  *
