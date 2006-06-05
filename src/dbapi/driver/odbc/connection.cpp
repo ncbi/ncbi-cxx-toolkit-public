@@ -251,14 +251,6 @@ CDB_ResultProcessor* CODBC_Connection::SetResultProcessor(CDB_ResultProcessor* r
     return r;
 }
 
-void CODBC_Connection::Release()
-{
-    m_BR = 0;
-    // close all commands first
-    DeleteAllCommands();
-}
-
-
 CODBC_Connection::~CODBC_Connection()
 {
     try {
@@ -277,28 +269,26 @@ bool CODBC_Connection::Abort()
 bool CODBC_Connection::Close(void)
 {
     if (Refresh()) {
-        try {
-            switch(SQLDisconnect(m_Link)) {
-            case SQL_SUCCESS_WITH_INFO:
-            case SQL_ERROR:
-                ReportErrors();
-            case SQL_SUCCESS:
-                break;
-            default:
-                {
-                    string err_message = "SQLDisconnect failed (memory corruption suspected)" + GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 410009 );
-                }
+        switch(SQLDisconnect(m_Link)) {
+        case SQL_SUCCESS_WITH_INFO:
+        case SQL_ERROR:
+            ReportErrors();
+        case SQL_SUCCESS:
+            break;
+        default:
+            {
+                string err_message = "SQLDisconnect failed (memory corruption suspected)" + GetDiagnosticInfo();
+                DATABASE_DRIVER_ERROR( err_message, 410009 );
             }
-
-            if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
-                ReportErrors();
-            }
-
-            m_Link = NULL;
-            return true;
         }
-        NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+
+        if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
+            ReportErrors();
+        }
+
+        m_Link = NULL;
+
+        return true;
     }
 
     return false;
@@ -619,7 +609,7 @@ void CODBC_SendDataCmd::Release()
 CODBC_SendDataCmd::~CODBC_SendDataCmd()
 {
     try {
-        m_BR = 0;
+        CDB_BaseEnt::Release();
 
         GetConnection().DropCmd(*this);
 
@@ -643,6 +633,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/06/05 21:07:25  ssikorsk
+ * Deleted CODBC_Connection::Release;
+ * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";
+ *
  * Revision 1.28  2006/06/05 19:10:06  ssikorsk
  * Moved logic from C...Cmd::Release into dtor.
  *
