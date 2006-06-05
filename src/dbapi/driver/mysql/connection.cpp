@@ -76,14 +76,6 @@ bool CMySQL_Connection::IsAlive()
 }
 
 
-void CMySQL_Connection::Release()
-{
-    m_BR = 0;
-    // close all commands first
-    DeleteAllCommands();
-}
-
-
 CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
                                                 size_t          /*data_size*/,
                                                 bool            /*log_it*/)
@@ -110,6 +102,9 @@ bool CMySQL_Connection::SendData(I_ITDescriptor& /*desc*/,
 
 bool CMySQL_Connection::Refresh()
 {
+    // close all commands first
+    DeleteAllCommands();
+
     return true;
 }
 
@@ -200,12 +195,13 @@ bool CMySQL_Connection::Abort()
 bool CMySQL_Connection::Close(void)
 {
     if (m_IsOpen) {
-        try {
-            mysql_close(&m_MySQL);
-            m_IsOpen = false;
-            return true;
-        }
-        NCBI_CATCH_ALL( kEmptyStr )
+        Refresh();
+
+        mysql_close(&m_MySQL);
+
+        m_IsOpen = false;
+
+        return true;
     }
 
     return false;
@@ -218,6 +214,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/05 21:06:58  ssikorsk
+ * Deleted CMySQL_Connection::Release;
+ * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";
+ *
  * Revision 1.12  2006/06/05 18:10:07  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *
