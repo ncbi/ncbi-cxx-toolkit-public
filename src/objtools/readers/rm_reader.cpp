@@ -83,6 +83,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+struct CMaskData;
+
 //-----------------------------------------------------------------------------
 class CRmOutReader: public CRmReader
 //-----------------------------------------------------------------------------
@@ -104,12 +106,40 @@ public:
     virtual void Read( CRef<CSeq_annot> );
 
     //
+    //  internal helpers:
+    //
+protected:
+    virtual bool IsHeaderLine( const string& );
+    virtual bool IsIgnoredLine( const string& ); 
+    
+    virtual bool ParseRecord( const string& record, CMaskData& );
+    virtual bool VerifyData( const CMaskData& );
+    virtual bool MakeFeature( const CMaskData&, CRef<CSeq_feat>& );
+    
+    //
     //  data:
     //
+protected:
     static const unsigned long BUFFERSIZE = 256;
     char pReadBuffer[ BUFFERSIZE ];
 };
 
+//-----------------------------------------------------------------------------
+struct CMaskData
+//-----------------------------------------------------------------------------
+{
+    unsigned long sw_score;
+    unsigned long outer_pos_begin;
+    unsigned long outer_pos_end;
+    double perc_div;
+    double perc_del;
+    double perc_ins;
+    string query_sequence;
+    string strand;
+    string matching_repeat;
+    string repeat_class_family;
+};
+    
 
 CRmReader::CRmReader( CNcbiIstream& InStream )
     :
@@ -137,145 +167,264 @@ CRmOutReader::~CRmOutReader()
 
 void CRmOutReader::Read( CRef<CSeq_annot> entry )
 {
-    string lineBuffer;
+    const size_t MAX_ERROR_COUNT = 5;
+    
+    string line;
     CSeq_annot::C_Data::TFtable& ftable = entry->SetData().SetFtable();
     CRef<CSeq_feat> feat;
-        
-    NcbiGetlineEOL( m_InStream, lineBuffer );
-    while ( ! lineBuffer.empty() ) {
+    
+    size_t line_counter = 0;
+    size_t record_counter = 0;
+    size_t error_counter = 0;
+    
+    while ( ! m_InStream.eof() ) {
 
-        //
-        //  Parse the RMO record:
-        //
-        CNcbiIstrstream MaskData( lineBuffer.data(), (streamsize)lineBuffer.length() );
-    
-        const unsigned long STRINGBUFFERSIZE = 32;
+        NcbiGetlineEOL( m_InStream, line );
+        ++line_counter;
         
-        unsigned long swScore, outerPosBegin, outerPosEnd, innerPosBegin,
-            innerPosEnd;
-        double percDiv, percDel, percIns;
-        char querySequence[ STRINGBUFFERSIZE ], 
-            strand[ STRINGBUFFERSIZE ],
-            matchingRepeat[ STRINGBUFFERSIZE ], 
-            repeatClassFamily[ STRINGBUFFERSIZE ];
-        char tempBuffer[ STRINGBUFFERSIZE ];
-    
-        MaskData >> swScore;
-        MaskData >> percDiv;
-        MaskData >> percDel;
-        MaskData >> percIns;
-        MaskData.width( STRINGBUFFERSIZE ); MaskData >> querySequence;
-        MaskData >> outerPosBegin;
-        MaskData >> outerPosEnd;
-        MaskData.width( STRINGBUFFERSIZE ); MaskData >> tempBuffer;
-        MaskData.width( STRINGBUFFERSIZE ); MaskData >> strand;
-        MaskData.width( STRINGBUFFERSIZE ); MaskData >> matchingRepeat;
-        MaskData.width( STRINGBUFFERSIZE ); MaskData >> repeatClassFamily;
-        
-        MaskData.width( STRINGBUFFERSIZE ); MaskData >> tempBuffer;
-        char* valueStart = tempBuffer;
-        if ( *valueStart == '(' ) {
-            ++valueStart;
+        if ( IsHeaderLine( line ) || IsIgnoredLine( line ) ) {
+            continue;
         }
-        innerPosBegin = atoi( valueStart );
-    
-        MaskData.width( STRINGBUFFERSIZE ); MaskData >> tempBuffer;
-        valueStart = tempBuffer;
-        if ( *valueStart == '(' ) {
-            ++valueStart;
+        ++record_counter;
+        
+        CMaskData mask_data;
+        if ( ! ParseRecord( line, mask_data ) ) {
+            ++error_counter;
+            LOG_POST( Error << "Rmo Reader: Parse error in record " 
+                << record_counter << " (line " << line_counter 
+                << "). Record skipped" );
+            if ( error_counter < MAX_ERROR_COUNT ) {
+                continue;
+            }
+            else {
+                break;
+            }
         }
-        innerPosEnd = atoi( valueStart );
-    
-    
-        //
-        //  Basic sanity check on the data we got...
-        //
-        if ( MaskData.bad() ) {
-            NCBI_THROW( CException, eUnknown, "Not enough data on the line." );
+        
+        if ( ! VerifyData( mask_data ) ) {
+            ++error_counter;
+            LOG_POST( Error << "Rmo Reader: Verification error in record " 
+                << record_counter << " (line " << line_counter 
+                << "). Record skipped." );
+            if ( error_counter < MAX_ERROR_COUNT ) {
+                continue;
+            }
+            else {
+                break;
+            }
         }
-            // ... and probably some restrictions on what can be contained in the 
-            // parsed data.
-            // TODO: Add extra checks once we get a grip on the common error patterns.
-            
         
-        //
-        //  Use parse data to create another feature:
-        //
-        feat.Reset( new CSeq_feat );
-        feat->ResetLocation();
-        
-        //  data
-        CSeqFeatData& sfdata = feat->SetData();
-        CImp_feat_Base& imp = sfdata.SetImp();
-        imp.SetKey ( "repeat_region" );
-        
-        //  location
-        CRef<CSeq_loc> location (new CSeq_loc);
-        CSeq_interval& interval = location->SetInt();
-
-        /**
-        interval.SetFrom( outerPosBegin + innerPosBegin );
-        interval.SetTo( outerPosBegin + innerPosEnd );
-        **/
-
-        interval.SetFrom( outerPosBegin - 1 );
-        interval.SetTo( outerPosEnd - 1 );
-
-        if (interval.GetFrom() > interval.GetTo()) {
-            std::swap(interval.SetFrom(), interval.SetTo());
+        if ( ! MakeFeature( mask_data, feat ) ) {
+            // we don't tolerate even a few errors here!
+            error_counter = MAX_ERROR_COUNT;
+            LOG_POST( Error << "Rmo Reader: Unable to create feature table for record " 
+                << record_counter << " (line " << line_counter 
+                << "). Aborting file import." );
+            break;
         }
-        interval.SetStrand( (0 == strcmp( strand, "C" )) ? eNa_strand_minus : eNa_strand_plus );
-        CSeq_id seqId( querySequence );
-        interval.SetId().Assign( seqId );
-        feat->SetLocation (*location);
         
-        //  qualifiers
-        CSeq_feat::TQual& qual_list = feat->SetQual();
-         
-        CRef<CGb_qual> repeat( new CGb_qual );
-        repeat->SetQual( "repeat_region" );
-        repeat->SetVal( matchingRepeat );
-        qual_list.push_back( repeat );
-               
-        CRef<CGb_qual> rpt_family( new CGb_qual );
-        rpt_family->SetQual( "rpt_family" );
-        rpt_family->SetVal( repeatClassFamily );
-        qual_list.push_back( rpt_family );
-               
-        CRef<CGb_qual> sw_score( new CGb_qual );
-        sw_score->SetQual( "sw_score" );
-        sw_score->SetVal( NStr::IntToString(swScore) );
-        qual_list.push_back( sw_score );
-               
-        CRef<CGb_qual> perc_div( new CGb_qual );
-        perc_div->SetQual( "perc_div" );
-        perc_div->SetVal( NStr::DoubleToString(percDiv) );
-        qual_list.push_back( perc_div );
-               
-        CRef<CGb_qual> perc_del( new CGb_qual );
-        perc_del->SetQual( "perc_del" );
-        perc_del->SetVal( NStr::DoubleToString(percDel) );
-        qual_list.push_back( perc_del );
-               
-        CRef<CGb_qual> perc_ins( new CGb_qual );
-        perc_ins->SetQual( "perc_ins" );
-        perc_ins->SetVal( NStr::DoubleToString(percIns) );
-        qual_list.push_back( perc_ins );
-               
         ftable.push_back( feat );
-        
-        //
-        //  Get the next record:
-        //
-        NcbiGetlineEOL( m_InStream, lineBuffer );
     }
+    
+    if ( error_counter == MAX_ERROR_COUNT ) {
+        LOG_POST( Error << "Rmo Reader: File import aborted due to error count or severity." );
+        throw 0; // upper layer catches everything in sight and reports error to file_loader.
+    }
+}
+
+
+bool CRmOutReader::IsHeaderLine( const string& line )
+{
+    string labels_1st_line[] = { "SW", "perc", "query", "position", "matching", "" };
+    string labels_2nd_line[] = { "score", "div.", "del.", "ins.", "sequence", "" };
+
+    // try to identify 1st line of column labels:
+    size_t current_offset = 0;
+    size_t i = 0;
+    for ( NULL; labels_1st_line[i] != ""; ++i ) {
+        current_offset = NStr::FindCase( line, labels_1st_line[i], current_offset );
+        if ( NPOS == current_offset ) {
+            break;
+        }
+    }
+    if ( labels_1st_line[i] == "" ) {
+        return true;
+    }
+    
+    // try to identify 2nd line of column labels:
+    current_offset = 0;
+    i = 0;
+    for ( NULL; labels_2nd_line[i] != ""; ++i ) {
+        current_offset = NStr::FindCase( line, labels_2nd_line[i], current_offset );
+        if ( NPOS == current_offset ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool CRmOutReader::IsIgnoredLine( const string& line )
+{
+    //
+    //  Currently, only lines with only whitespace on them are ignored.
+    //
+    return ( NStr::TruncateSpaces( line ).length() == 0 );
+}
+
+
+bool CRmOutReader::ParseRecord( const string& record, CMaskData& mask_data )
+{
+    const size_t MIN_VALUE_COUNT = 15;
+    
+    string line = NStr::TruncateSpaces( record );
+    list< string > values;
+    if ( NStr::Split( line, " \t", values ).size() < MIN_VALUE_COUNT ) {
+        return false;
+    }
+    
+    try {
+        // 1: "SW score"
+        list<string>::iterator it = values.begin();
+        mask_data.sw_score = NStr::StringToUInt( *it );
+        
+        // 2: "perc div."
+        ++it;
+        mask_data.perc_div = NStr::StringToDouble( *it );
+        
+        // 3: "perc del."
+        ++it;
+        mask_data.perc_del = NStr::StringToDouble( *it );
+        
+        // 4: "perc ins."
+        ++it;
+        mask_data.perc_ins = NStr::StringToDouble( *it );
+        
+        // 5: "query sequence"
+        ++it;
+        mask_data.query_sequence = *it;
+        
+        // 6: "position begin"
+        ++it;
+        mask_data.outer_pos_begin = NStr::StringToUInt( *it );
+        
+        // 7: "in end"
+        ++it;
+        mask_data.outer_pos_end = NStr::StringToUInt( *it );
+        
+        // 8: "query (left)"
+        ++it;
+        /* not used */
+        
+        // 9: "" (meaning "strand")
+        ++it;
+        mask_data.strand = *it;
+        
+        // 10: "matching repeat"
+        ++it;
+        mask_data.matching_repeat = *it;
+        
+        // 11: "repeat class/family"
+        ++it;
+        mask_data.repeat_class_family = *it;
+        
+        // 12: "position in"
+        ++it;
+        /* not used */
+        
+        // 13: "in end"
+        ++it;
+        /* not used */
+        
+        // 14: "repeat left"
+        ++it;
+        /* not used */
+        
+        // 15: "ID"
+        ++it;
+        /* not used */
+        
+    }
+    catch( ... ) {
+        return false;
+    }
+    
+    return true;
+}
+
+
+bool CRmOutReader::VerifyData( const CMaskData& mask_data )
+{
+    //
+    //  This would be the place for any higher level checks of the mask data
+    //  collected from the record ...
+    // 
+    return true;
+}
+
+
+bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& feat )
+{
+    feat.Reset( new CSeq_feat );
+    feat->ResetLocation();
+    
+    //  data:
+    CSeqFeatData& sfdata = feat->SetData();
+    CImp_feat_Base& imp = sfdata.SetImp();
+    imp.SetKey( "repeat_region" );
+    
+    //  location:
+    CRef<CSeq_loc> location( new CSeq_loc );
+    CSeq_interval& interval = location->SetInt();
+    interval.SetFrom( min( mask_data.outer_pos_begin, mask_data.outer_pos_end ) -1 );
+    interval.SetTo( max( mask_data.outer_pos_begin, mask_data.outer_pos_end ) -1 );
+    interval.SetStrand( strcmp( mask_data.strand.c_str(), "C" ) ? 
+        eNa_strand_plus : eNa_strand_minus );
+    CSeq_id seq_id( mask_data.query_sequence );
+    interval.SetId().Assign( seq_id );
+    feat->SetLocation( *location );
+    
+    //  qualifiers:
+    CSeq_feat::TQual& qual_list = feat->SetQual();
+    
+    CRef<CGb_qual> repeat( new CGb_qual );
+    repeat->SetQual( "repeat_region" );
+    repeat->SetVal( mask_data.matching_repeat );
+    qual_list.push_back( repeat );
+    
+    CRef<CGb_qual> rpt_family( new CGb_qual );
+    rpt_family->SetQual( "rpt_family" );
+    rpt_family->SetVal( mask_data.repeat_class_family );
+    qual_list.push_back( rpt_family );
+    
+    CRef<CGb_qual> sw_score( new CGb_qual );
+    sw_score->SetQual( "sw_score" );
+    sw_score->SetVal( NStr::IntToString( mask_data.sw_score ) );
+    qual_list.push_back( sw_score );
+    
+    CRef<CGb_qual> perc_div( new CGb_qual );
+    perc_div->SetQual( "perc_div" );
+    perc_div->SetVal( NStr::DoubleToString( mask_data.perc_div ) );
+    qual_list.push_back( perc_div );
+    
+    CRef<CGb_qual> perc_del( new CGb_qual );
+    perc_del->SetQual( "perc_del" );
+    perc_del->SetVal( NStr::DoubleToString( mask_data.perc_del ) );
+    qual_list.push_back( perc_del );
+    
+    CRef<CGb_qual> perc_ins( new CGb_qual );
+    perc_ins->SetQual( "perc_ins" );
+    perc_ins->SetVal( NStr::DoubleToString( mask_data.perc_ins ) );
+    qual_list.push_back( perc_ins );
+    
+    return true;
 }
 
 
 CRmReader* CRmReader::OpenReader( CNcbiIstream& InStream )
 {
     //
-    //  This is the point to make sure we are dealing with the right file ytpe and
+    //  This is the point to make sure we are dealing with the right file type and
     //  to allocate the specialist reader for any subtype (OUT, HTML) we encouter.
     //  When this function returns the file pointer should be past the file header
     //  and at the beginning of the actual mask data.
@@ -289,17 +438,7 @@ CRmReader* CRmReader::OpenReader( CNcbiIstream& InStream )
     //
     //  2006-03-31: Only supported file type at this time: ReadMasker OUT.
     //
-    string line1, line2, line3;
-    if ( NcbiGetlineEOL( InStream, line1 ) && NcbiGetlineEOL( InStream, line2 ) 
-      && NcbiGetlineEOL( InStream, line3 ) ) {
-        if ( string::npos != line1.find( "SW" ) && string::npos != line1.find( "perc" )
-          && string::npos != line2.find( "div." ) && string::npos != line2.find( "del." )
-          && string::npos != line2.find( "ins." ) && line3.empty() ) {
-                  
-            return new CRmOutReader( InStream );
-        }
-    }
-    return 0;
+    return new CRmOutReader( InStream );
 }
 
 
@@ -315,6 +454,17 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/06/05 14:54:52  ludwigf
+ * ADDED: Error reporting. The first 5 bad records are reported to the log.
+ *  After that, we abort reading and throw, in the expectation that the upper
+ *  layer will turn the expectation into an error message.
+ *
+ * CHANGED: Parsing no longer insists in the three header lines to consider
+ *  the given stream good RMO. If there is no header, then we expect the data
+ *  to start right away.
+ *
+ * CHANGED: Parsing now uses NStr functions instead of istream iterators.
+ *
  * Revision 1.3  2006/05/05 20:06:38  dicuccio
  * Tweaks to repeat mask reading: use CNcbiIstrstream instead of naked istrstream;
  * corrected coordinates (use proper interval ranges, adjust for 1-based
