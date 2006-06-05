@@ -554,6 +554,101 @@ TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
 }
 
 
+void SeqIntPartialCheck(const CSeq_interval& itv,
+                        unsigned int& retval,
+                        bool is_first,
+                        bool is_last,
+                        CScope& scope)
+{
+    if (itv.IsSetFuzz_from()) {
+        const CInt_fuzz& fuzz = itv.GetFuzz_from();
+        if (fuzz.Which() == CInt_fuzz::e_Lim) {
+            CInt_fuzz::ELim lim = fuzz.GetLim();
+            if (lim == CInt_fuzz::eLim_gt) {
+                retval |= eSeqlocPartial_Limwrong;
+            } else if (lim == CInt_fuzz::eLim_lt  ||
+                lim == CInt_fuzz::eLim_unk) {
+                if (itv.IsSetStrand()  &&
+                    itv.GetStrand() == eNa_strand_minus) {
+                    if ( is_last ) {
+                        retval |= eSeqlocPartial_Stop;
+                    } else {
+                        retval |= eSeqlocPartial_Internal;
+                    }
+                    if (itv.GetFrom() != 0) {
+                        if ( is_last ) {
+                            retval |= eSeqlocPartial_Nostop;
+                        } else {
+                            retval |= eSeqlocPartial_Nointernal;
+                        }
+                    }
+                } else {
+                    if ( is_first ) {
+                        retval |= eSeqlocPartial_Start;
+                    } else {
+                        retval |= eSeqlocPartial_Internal;
+                    }
+                    if (itv.GetFrom() != 0) {
+                        if ( is_first ) {
+                            retval |= eSeqlocPartial_Nostart;
+                        } else {
+                            retval |= eSeqlocPartial_Nointernal;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if (itv.IsSetFuzz_to()) {
+        const CInt_fuzz& fuzz = itv.GetFuzz_to();
+        CInt_fuzz::ELim lim = fuzz.IsLim() ? 
+            fuzz.GetLim() : CInt_fuzz::eLim_unk;
+        if (lim == CInt_fuzz::eLim_lt) {
+            retval |= eSeqlocPartial_Limwrong;
+        } else if (lim == CInt_fuzz::eLim_gt  ||
+            lim == CInt_fuzz::eLim_unk) {
+            CBioseq_Handle hnd =
+                scope.GetBioseqHandle(itv.GetId());
+            bool miss_end = false;
+            if ( hnd ) {                            
+                if (itv.GetTo() != hnd.GetBioseqLength() - 1) {
+                    miss_end = true;
+                }
+            }
+            if (itv.IsSetStrand()  &&
+                itv.GetStrand() == eNa_strand_minus) {
+                if ( is_first ) {
+                    retval |= eSeqlocPartial_Start;
+                } else {
+                    retval |= eSeqlocPartial_Internal;
+                }
+                if (miss_end) {
+                    if ( is_first /* was last */) {
+                        retval |= eSeqlocPartial_Nostart;
+                    } else {
+                        retval |= eSeqlocPartial_Nointernal;
+                    }
+                }
+            } else {
+                if ( is_last ) {
+                    retval |= eSeqlocPartial_Stop;
+                } else {
+                    retval |= eSeqlocPartial_Internal;
+                }
+                if ( miss_end ) {
+                    if ( is_last ) {
+                        retval |= eSeqlocPartial_Nostop;
+                    } else {
+                        retval |= eSeqlocPartial_Nointernal;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 {
     unsigned int retval = 0;
@@ -589,94 +684,26 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
         case CSeq_loc::e_Int:
             {
                 const CSeq_interval& itv = slp->GetInt();
-                if (itv.IsSetFuzz_from()) {
-                    const CInt_fuzz& fuzz = itv.GetFuzz_from();
-                    if (fuzz.Which() == CInt_fuzz::e_Lim) {
-                        CInt_fuzz::ELim lim = fuzz.GetLim();
-                        if (lim == CInt_fuzz::eLim_gt) {
-                            retval |= eSeqlocPartial_Limwrong;
-                        } else if (lim == CInt_fuzz::eLim_lt  ||
-                            lim == CInt_fuzz::eLim_unk) {
-                            if (itv.IsSetStrand()  &&
-                                itv.GetStrand() == eNa_strand_minus) {
-                                if (slp == last) {
-                                    retval |= eSeqlocPartial_Stop;
-                                } else {
-                                    retval |= eSeqlocPartial_Internal;
-                                }
-                                if (itv.GetFrom() != 0) {
-                                    if (slp == last) {
-                                        retval |= eSeqlocPartial_Nostop;
-                                    } else {
-                                        retval |= eSeqlocPartial_Nointernal;
-                                    }
-                                }
-                            } else {
-                                if (slp == first) {
-                                    retval |= eSeqlocPartial_Start;
-                                } else {
-                                    retval |= eSeqlocPartial_Internal;
-                                }
-                                if (itv.GetFrom() != 0) {
-                                    if (slp == first) {
-                                        retval |= eSeqlocPartial_Nostart;
-                                    } else {
-                                        retval |= eSeqlocPartial_Nointernal;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                if (itv.IsSetFuzz_to()) {
-                    const CInt_fuzz& fuzz = itv.GetFuzz_to();
-                    CInt_fuzz::ELim lim = fuzz.IsLim() ? 
-                        fuzz.GetLim() : CInt_fuzz::eLim_unk;
-                    if (lim == CInt_fuzz::eLim_lt) {
-                        retval |= eSeqlocPartial_Limwrong;
-                    } else if (lim == CInt_fuzz::eLim_gt  ||
-                        lim == CInt_fuzz::eLim_unk) {
-                        CBioseq_Handle hnd =
-                            scope->GetBioseqHandle(itv.GetId());
-                        bool miss_end = false;
-                        if ( hnd ) {                            
-                            if (itv.GetTo() != hnd.GetBioseqLength() - 1) {
-                                miss_end = true;
-                            }
-                        }
-                        if (itv.IsSetStrand()  &&
-                            itv.GetStrand() == eNa_strand_minus) {
-                            if (slp == first) {
-                                retval |= eSeqlocPartial_Start;
-                            } else {
-                                retval |= eSeqlocPartial_Internal;
-                            }
-                            if (miss_end) {
-                                if (slp == first /* was last */) {
-                                    retval |= eSeqlocPartial_Nostart;
-                                } else {
-                                    retval |= eSeqlocPartial_Nointernal;
-                                }
-                            }
-                        } else {
-                            if (slp == last) {
-                                retval |= eSeqlocPartial_Stop;
-                            } else {
-                                retval |= eSeqlocPartial_Internal;
-                            }
-                            if (miss_end) {
-                                if (slp == last) {
-                                    retval |= eSeqlocPartial_Nostop;
-                                } else {
-                                    retval |= eSeqlocPartial_Nointernal;
-                                }
-                            }
-                        }
-                    }
-                }
+                SeqIntPartialCheck(slp->GetInt(), retval,
+                    slp == first, slp == last, *scope);
             }
             break;
+        case CSeq_loc::e_Packed_int:
+            {
+                const CPacked_seqint::Tdata& ints = slp->GetPacked_int().Get();
+                const CSeq_interval* first_int =
+                    ints.empty() ? 0 : ints.front().GetPointer();
+                const CSeq_interval* last_int =
+                    ints.empty() ? 0 : ints.back().GetPointer();
+                ITERATE(CPacked_seqint::Tdata, it, ints) {
+                    SeqIntPartialCheck(**it, retval,
+                        slp == first  &&  *it == first_int,
+                        slp == last  &&  *it == last_int,
+                        *scope);
+                    ++i2;
+                }
+                break;
+            }
         case CSeq_loc::e_Pnt:
             if (slp->GetPnt().IsSetFuzz()) {
                 const CInt_fuzz& fuzz = slp->GetPnt().GetFuzz();
@@ -761,6 +788,9 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
             break;
         }
         default:
+            break;
+        }
+        if ( !i2 ) {
             break;
         }
     }
@@ -2617,6 +2647,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2006/06/05 20:06:54  grichenk
+* Process packed-ints in SeqLocPartialCheck().
+*
 * Revision 1.20  2006/04/24 13:21:51  vasilche
 * Fixed Seq_loc overlapping logic.
 *
