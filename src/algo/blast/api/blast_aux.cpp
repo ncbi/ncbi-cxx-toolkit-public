@@ -293,7 +293,6 @@ CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) c
         return;
 
     ddc.Log("matrix", m_Ptr->matrix);
-    ddc.Log("matrix_path", m_Ptr->matrix_path);
     ddc.Log("reward", m_Ptr->reward);
     ddc.Log("penalty", m_Ptr->penalty);
     ddc.Log("gapped_calculation", m_Ptr->gapped_calculation);
@@ -851,6 +850,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.98  2006/06/05 13:29:22  madden
+ * Remove matrix_path as debug printout
+ *
  * Revision 1.97  2006/05/22 19:29:53  camacho
  * Report all effective search spaces in CBlastEffectiveLengthsOptions::DebugDump
  *
