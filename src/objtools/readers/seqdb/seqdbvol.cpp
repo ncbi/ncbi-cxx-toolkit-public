@@ -1605,117 +1605,6 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     return BDLS;
 }
 
-/// Compare two deflines for ordering purposes.
-///
-/// Given a CSeq_id, the ranking function produces an integer based on
-/// the type of id involved.  Each defline is searched for the Seq-id
-/// for which the ranking function produces the lowest number.  Then
-/// the best ranks of each defline are compared.  The defline with the
-/// lower rank is considered to come first in the ordering.
-///
-/// @param d1 A defline.
-/// @param d2 Another one.
-/// @param rank_func A ranking function.
-/// @return true if d1 comes before d2 in the defined ordering.
-static
-bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
-                      const CRef<CBlast_def_line>& d2,
-                      int (*rank_func)(const CRef<CSeq_id>&))
-{
-    if (d1.Empty() || d2.Empty()) {
-        return false;
-    }
-    
-    bool rv = false;
-    
-    if (d1->CanGetSeqid() && d2->CanGetSeqid()) {
-        
-        // First, use Seq-id by-type ranking.
-        
-        CRef<CSeq_id> c1 = FindBestChoice(d1->GetSeqid(), rank_func);
-        CRef<CSeq_id> c2 = FindBestChoice(d2->GetSeqid(), rank_func);
-        
-        int diff = rank_func(c1) - rank_func(c2);
-        
-        if (diff < 0) {
-            return true;
-        }
-        
-        if (diff > 0) {
-            return false;
-        }
-        
-        // Second, use GI numerical ranking (least value first).  I
-        // avoid the possibility of circular rankings by ranking GI
-        // above non-GI here, although this should not happen unless
-        // GIs are given a rank value equal to that of another type.
-        // Finally, if no ranking is possible here, a string
-        // comparison is done.
-        
-        const CSeq_id & cs1 = *d1->GetSeqid().front();
-        const CSeq_id & cs2 = *d2->GetSeqid().front();
-        
-        if (cs1.IsGi()) {
-            if (cs2.IsGi()) {
-                rv = cs1.GetGi() < cs2.GetGi();
-            } else {
-                rv = true;
-            }
-        } else {
-            if (cs2.IsGi()) {
-                rv = false;
-            } else {
-                // Neither is a GI - this will typically only happen
-                // for databases that have no GI.
-                
-                rv = cs1.AsFastaString() < cs2.AsFastaString();
-            }
-        }
-    }
-    
-    return rv;
-}
-
-/// Ranking function for protein databases.
-inline
-bool s_DeflineCompareAA(const CRef<CBlast_def_line>& d1,
-                        const CRef<CBlast_def_line>& d2)
-{
-    return s_DeflineCompare(d1, d2, CSeq_id::FastaAARank);
-}
-
-/// Ranking function for nucleotide databases.
-inline
-bool s_DeflineCompareNA(const CRef<CBlast_def_line>& d1,
-                        const CRef<CBlast_def_line>& d2)
-{
-    return s_DeflineCompare(d1, d2, CSeq_id::FastaNARank);
-}
-
-/// Sorts a defline set for a protein database.
-void s_SortDeflineSetAA(CRef<CBlast_def_line_set> s1)
-{
-    if (s1.Empty()) {
-        return;
-    }
-    
-    if (s1->CanGet()) {
-        s1->Set().sort(s_DeflineCompareAA);
-    }
-}
-
-/// Sorts a defline set for a nucleotide database.
-void s_SortDeflineSetNA(CRef<CBlast_def_line_set> s1)
-{
-    if (s1.Empty()) {
-        return;
-    }
-    
-    if (s1->CanGet()) {
-        s1->Set().sort(s_DeflineCompareNA);
-    }
-}
-
 CRef<CBlast_def_line_set>
 CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
 {
@@ -1749,12 +1638,6 @@ CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
     CRef<objects::CBlast_def_line_set> phil(new objects::CBlast_def_line_set);
     
     *inpstr >> *phil;
-    
-    //if (m_IsAA) {
-    //    s_SortDeflineSetAA(phil);
-    //} else {
-    //    s_SortDeflineSetNA(phil);
-    //}
     
     return phil;
 }
