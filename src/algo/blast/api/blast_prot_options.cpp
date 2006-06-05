@@ -91,11 +91,6 @@ void
 CBlastProteinOptionsHandle::SetScoringOptionsDefaults()
 {
     SetMatrixName(BLAST_DEFAULT_MATRIX); // BLOSUM62
-    char* matrix_path = NULL; 
-    FindMatrixOrPath(BLAST_DEFAULT_MATRIX, true, &matrix_path);
-    if (matrix_path)
-       SetMatrixPath(matrix_path);
-    sfree(matrix_path);
     SetGapOpeningCost(BLAST_GAP_OPEN_PROT);
     SetGapExtensionCost(BLAST_GAP_EXTN_PROT);
     SetGappedMode();
@@ -145,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/05 13:31:30  madden
+ * Remove call to FindMatrixOrPath
+ *
  * Revision 1.23  2006/05/24 17:21:50  madden
  * Replace FindMatrixPath with FindMatrixOrPath
  *
