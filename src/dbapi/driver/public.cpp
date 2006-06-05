@@ -50,6 +50,11 @@ CDB_Connection::CDB_Connection(I_Connection* c)
 }
 
 
+void CDB_Connection::Release(void)
+{
+    CDB_BaseEnt::Release();
+}
+
 bool CDB_Connection::IsAlive()
 {
     return (m_Connect == 0) ? false : m_Connect->IsAlive();
@@ -735,6 +740,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/06/05 21:03:02  ssikorsk
+ * Implemented CDB_Connection::Release.
+ *
  * Revision 1.26  2006/06/05 18:05:28  ssikorsk
  * Implemented CDB_SendDataCmd::Cancel.
  *
