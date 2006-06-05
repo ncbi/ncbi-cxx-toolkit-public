@@ -140,8 +140,6 @@ void CTSE_Default_Assigner::AddSeq_data(CTSE_Info& tse,
 {
     CBioseq_Info* last_bioseq = 0, *bioseq;
     ITERATE ( TLocationSet, it, locations ) {
-        const CSeq_id_Handle& loc_id = it->first;
-        int gi = loc_id.GetGi();
         bioseq = &x_GetBioseq(tse, it->first);
         if (bioseq != last_bioseq) {
             // Do not add duplicate chunks to the same bioseq
@@ -258,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/05 13:42:58  vasilche
+ * Removed unused variables.
+ *
  * Revision 1.8  2006/05/01 16:56:45  didenko
  * Attach SeqEntry edit command revamp
  *
