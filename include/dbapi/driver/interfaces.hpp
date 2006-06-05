@@ -337,6 +337,7 @@ protected:
     /// Send chunk of data to the server.
     /// Return number of bytes actually transferred to server.
     virtual size_t SendChunk(const void* pChunk, size_t nofBytes) = 0;
+    virtual bool Cancel(void) = 0;
 };
 
 
@@ -742,6 +743,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/06/05 18:01:15  ssikorsk
+ * Added method Cancel to I_SendDataCmd.
+ *
  * Revision 1.46  2006/06/05 14:34:05  ssikorsk
  * Added members m_MsgHandlers and m_CMDs to I_Connection.
  *
