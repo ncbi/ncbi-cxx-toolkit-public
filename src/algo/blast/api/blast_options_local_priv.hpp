@@ -396,17 +396,13 @@ CBlastOptionsLocal::SetMatrixName(const char* matrix)
 inline const char* 
 CBlastOptionsLocal::GetMatrixPath() const
 {
-    return m_ScoringOpts->matrix_path;
+    return NULL;
 }
 
 inline void 
 CBlastOptionsLocal::SetMatrixPath(const char* path)
 {
-    if (!path)
-        return;
-
-    sfree(m_ScoringOpts->matrix_path);
-    m_ScoringOpts->matrix_path = strdup(path);
+    return;
 }
 
 inline int
