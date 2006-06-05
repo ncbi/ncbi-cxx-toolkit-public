@@ -30,7 +30,6 @@
  */
   
 #include <ncbi_pch.hpp>
-//#include <util/regexp.hpp>
 #include <util/format_guess.hpp>
 #include <corelib/ncbifile.hpp>
 
@@ -298,21 +297,45 @@ bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count )
 }
 
 
+bool x_IsLinePhrapId( const string& line ) 
+{
+    vector<string> values;
+    if ( NStr::Tokenize( line, " \t", values, NStr::eMergeDelims ).empty() ) {
+        return false;
+    }
+    
+    //
+    //  Old style: "^DNA \\w+ "
+    //
+    if ( values[0] == "DNA" ) {
+        return true;
+    }
+    
+    //
+    //  New style: "^AS [0-9]+ [0-9]+"
+    //
+    if ( values[0] == "AS" ) {
+        return ( 0 <= NStr::StringToNumeric( values[1] ) && 
+          0 <= NStr::StringToNumeric( values[2] ) );
+    }
+    
+    return false;
+}
+
+
 bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
 {
-//    list<string> lines;
-//    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
-//        //  seemingly not even ASCII ...
-//        return false;
-//    }
-//
-//    CRegexp re_new("^AS [0-9]+ [0-9]+");
-//    CRegexp re_old("^DNA \\w+");
-//    ITERATE( list<string>, it, lines ) {
-//        if ( !re_new.GetMatch( *it ).empty() || !re_old.GetMatch( *it ).empty() ) {
-//            return true;
-//        }       
-//    }
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    
+    ITERATE( list<string>, it, lines ) {
+        if ( x_IsLinePhrapId( *it ) ) {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -697,6 +720,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/06/05 16:19:53  ludwigf
+ * ADDED: File type check for PHRAP ACE restored with the dependency on
+ *  regexp removed.
+ *
  * Revision 1.22  2006/06/05 15:42:26  ludwigf
  * *** TEMPORARY *** : Removed file type check for PHRAP ACE as it introduced
  *  and unwanted dependency on regexp. This check will be back as soon as I
