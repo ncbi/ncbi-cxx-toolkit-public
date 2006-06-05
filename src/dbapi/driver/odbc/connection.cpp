@@ -62,7 +62,7 @@ m_Reusable(reusable),
 m_BCPable(false),
 m_SecureLogin(false)
 {
-    m_Reporter.SetHandlerStack(&m_MsgHandlers);
+    m_Reporter.SetHandlerStack(&GetMsgHandlers());
 }
 
 
@@ -82,7 +82,6 @@ CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query,
     m_Reporter.SetExtraMsg( extra_msg );
 
     CODBC_LangCmd* lcmd = new CODBC_LangCmd(this, lang_query, nof_params);
-    m_CMDs.push_back(lcmd);
     return lcmd;
 }
 
@@ -100,7 +99,6 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
     m_Reporter.SetExtraMsg( extra_msg );
 
     CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(this, rpc_name, nof_args);
-    m_CMDs.push_back(rcmd);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -117,7 +115,6 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
     }
 
     CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(this, m_Link, table_name, nof_columns);
-    m_CMDs.push_back(bcmd);
     return Create_BCPInCmd(*bcmd);
 #endif
 }
@@ -136,7 +133,6 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
                                                 cursor_name,
                                                 query,
                                                 nof_params);
-    m_CMDs.push_back(ccmd);
     return Create_CursorCmd(*ccmd);
 }
 
@@ -149,7 +145,6 @@ CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                               (CDB_ITDescriptor&)descr_in,
                               data_size,
                               log_it);
-    m_CMDs.push_back(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
 }
 
@@ -194,10 +189,7 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
 bool CODBC_Connection::Refresh()
 {
     // close all commands first
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        delete *it;
-    }
-    m_CMDs.clear();
+    DeleteAllCommands();
 
     return IsAlive();
 }
@@ -263,11 +255,7 @@ void CODBC_Connection::Release()
 {
     m_BR = 0;
     // close all commands first
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        delete *it;
-    }
-
-    m_CMDs.clear();
+    DeleteAllCommands();
 }
 
 
@@ -486,7 +474,7 @@ void CODBC_Connection::ODBC_SetTextImageSize(SQLULEN nof_bytes) {}
 /////////////////////////////////////////////////////////////////////////////
 CStatementBase::CStatementBase(CODBC_Connection& conn)
 : m_ConnectPtr(&conn)
-, m_Reporter(&conn.m_MsgHandlers, SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
+, m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
 {
     SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_STMT, conn.m_Link, &m_Cmd);
 
@@ -651,6 +639,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/06/05 15:05:50  ssikorsk
+ * Revamp code to use GetMsgHandlers() and DeleteAllCommands() instead of
+ * m_MsgHandlers and m_CMDs.
+ *
  * Revision 1.25  2006/06/05 14:44:32  ssikorsk
  * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
  *
