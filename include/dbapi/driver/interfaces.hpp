@@ -611,6 +611,9 @@ public:
     I_Connection(void);
     virtual ~I_Connection(void);
 
+    ///
+    virtual void Release(void);
+
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
@@ -743,6 +746,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/06/05 20:58:18  ssikorsk
+ * Added method Release to I_Connection.
+ *
  * Revision 1.47  2006/06/05 18:01:15  ssikorsk
  * Added method Cancel to I_SendDataCmd.
  *
