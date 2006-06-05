@@ -583,7 +583,6 @@ static bool s_LocIsFuzz(const CSeq_feat& feat, const CSeq_loc& loc)
             }}
             case CSeq_loc::e_Packed_int:
             {{  
-                bool fuzz = false;
                 if ( l.GetPacked_int().IsPartialStart(eExtreme_Biological) 
                   || l.GetPacked_int().IsPartialStop(eExtreme_Biological) ) {
                     return true;
@@ -3819,6 +3818,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2006/06/05 13:10:41  ludwigf
+* CHANGED: Removed warning generating unused local variable.
+*
 * Revision 1.75  2006/05/08 14:55:36  ludwigf
 * FIXED: Tilde expansion in the /note qualifier of source features.
 *
