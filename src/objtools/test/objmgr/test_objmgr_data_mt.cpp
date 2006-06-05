@@ -46,6 +46,8 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/annot_ci.hpp>
+#include <objmgr/prefetch_manager.hpp>
+#include <objmgr/prefetch_actions.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -117,6 +119,7 @@ protected:
     bool m_no_reset;
     bool m_keep_handles;
     bool m_verbose;
+    CRef<CPrefetchManager> m_prefetch_manager;
 
     bool failed;
 };
@@ -203,43 +206,75 @@ bool CTestOM::Thread_Run(int idx)
     CScope scope(*m_ObjMgr);
     scope.AddDefaults();
 
-    int from, to;
+    vector<CSeq_id_Handle> ids = m_Ids;
+    
     // make them go in opposite directions
-    if (idx % 2 == 0) {
-        from = 0;
-        to = m_Ids.size()-1;
-    } else {
-        from = m_Ids.size()-1;
-        to = 0;
+    bool rev = idx % 2;
+    if ( rev ) {
+        reverse(ids.begin(), ids.end());
     }
-    int delta = (to > from) ? 1 : -1;
 
+    SAnnotSelector sel(CSeqFeatData::e_not_set);
+    if ( m_no_named ) {
+        sel.ResetAnnotsNames().AddUnnamedAnnots();
+    }
+    else if ( m_no_snp ) {
+        sel.ExcludeNamedAnnots("SNP");
+    }
+    if ( m_adaptive ) {
+        sel.SetAdaptiveDepth();
+    }
+    if ( idx%2 == 0 ) {
+        sel.SetOverlapType(sel.eOverlap_Intervals);
+        sel.SetResolveMethod(sel.eResolve_All);
+    }
+    
     set<CBioseq_Handle> handles;
 
     bool ok = true;
     for ( int pass = 0; pass < m_pass_count; ++pass ) {
+        CRef<CPrefetchSequence> prefetch;
+        if ( m_prefetch_manager ) {
+            // Initialize prefetch token;
+            prefetch = new CPrefetchSequence
+                (*m_prefetch_manager,
+                 new CPrefetchFeat_CIActionSource(CScopeSource::New(scope),
+                                                  ids, sel));
+        }
+
         const int kMaxErrorCount = 3;
         static int error_count = 0;
         TFeats feats;
-        for ( int i = from, end = to+delta; i != end; i += delta ) {
-            CSeq_id_Handle sih = m_Ids[i];
+        for ( size_t i = 0; i < ids.size(); ++i ) {
+            CSeq_id_Handle sih = ids[i];
             CNcbiOstrstream out;
             if ( m_verbose ) {
-                out << CTime(CTime::eCurrent).AsString() << " " <<
-                    abs(i-from) << ": " << sih.AsString();
+                out << CTime(CTime::eCurrent).AsString() << " " << i << ": "
+                    << sih.AsString();
             }
-            TMapKey key(sih, delta>0);
+            TMapKey key(sih, rev);
             try {
                 // load sequence
-                bool preload_ids = ((idx ^ i) & 2) != 0;
+                bool preload_ids = !prefetch && ((idx ^ i) & 2) != 0;
                 vector<CSeq_id_Handle> ids1, ids2, ids3;
                 if ( preload_ids ) {
                     ids1 = scope.GetIds(sih);
                     sort(ids1.begin(), ids1.end());
                 }
 
-                CBioseq_Handle handle = scope.GetBioseqHandle(sih);
-                if (!handle) {
+                CPrefetchToken token;
+                if ( prefetch ) {
+                    token = prefetch->GetNextToken();
+                }
+                CBioseq_Handle handle;
+                if ( token ) {
+                    handle = CStdPrefetch::GetBioseqHandle(token);
+                }
+                else {
+                    handle = scope.GetBioseqHandle(sih);
+                }
+
+                if ( !handle ) {
                     if ( preload_ids ) {
                         _ASSERT(ids1.empty());
                     }
@@ -253,7 +288,7 @@ bool CTestOM::Thread_Run(int idx)
                 ids2 = handle.GetId();
                 sort(ids2.begin(), ids2.end());
                 _ASSERT(!ids2.empty());
-                ids3 = scope.GetIds(sih);
+                ids3 = handle.GetScope().GetIds(sih);
                 sort(ids3.begin(), ids3.end());
                 _ASSERT(ids2 == ids3);
                 if ( preload_ids ) {
@@ -291,29 +326,22 @@ bool CTestOM::Thread_Run(int idx)
                     // enumerate features
                     CSeq_loc loc;
                     loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
-                    SAnnotSelector sel(CSeqFeatData::e_not_set);
-                    if ( m_no_named ) {
-                        sel.ResetAnnotsNames().AddUnnamedAnnots();
-                    }
-                    else if ( m_no_snp ) {
-                        sel.ExcludeNamedAnnots("SNP");
-                    }
-                    if ( m_adaptive ) {
-                        sel.SetAdaptiveDepth();
-                    }
-                    if ( idx%2 == 0 ) {
-                        sel.SetOverlapType(sel.eOverlap_Intervals);
-                        sel.SetResolveMethod(sel.eResolve_All);
-                    }
 
                     feats.clear();
                     set<CSeq_annot_Handle> annots;
                     if ( idx%2 == 0 ) {
-                        for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
+                        CFeat_CI it;
+                        if ( token ) {
+                            it = CStdPrefetch::GetFeat_CI(token);
+                        }
+                        else {
+                            it = CFeat_CI(scope, loc, sel);
+                        }
+                        for ( ; it;  ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
                             annots.insert(it.GetAnnot());
                         }
-                        CAnnot_CI annot_it(scope, loc, sel);
+                        CAnnot_CI annot_it(handle.GetScope(), loc, sel);
                         if ( m_verbose ) {
                             out << " Seq-annots: " << annot_it.size()
                                 << " features: " << feats.size();
@@ -331,7 +359,15 @@ bool CTestOM::Thread_Run(int idx)
                         _ASSERT(annots == annots2);
                     }
                     else if ( idx%4 == 1 ) {
-                        for ( CFeat_CI it(handle, sel); it;  ++it ) {
+                        CFeat_CI it;
+                        if ( token ) {
+                            it = CStdPrefetch::GetFeat_CI(token);
+                        }
+                        else {
+                            it = CFeat_CI(handle, sel);
+                        }
+
+                        for ( ; it;  ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
                             annots.insert(it.GetAnnot());
                         }
@@ -447,6 +483,7 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddFlag("keep_handles",
                  "Remember bioseq handles if not resetting scope history");
     args.AddFlag("verbose", "Print each Seq-id before processing");
+    args.AddFlag("prefetch", "Use prefetching");
     return true;
 }
 
@@ -522,6 +559,11 @@ bool CTestOM::TestApp_Init(void)
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
+    if ( args["prefetch"] ) {
+        LOG_POST("Using prefetch");
+        m_prefetch_manager = new CPrefetchManager();
+    }
+
     return true;
 }
 
@@ -565,6 +607,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/06/05 15:28:35  vasilche
+* Use real limited prefetch with separate scopes.
+*
 * Revision 1.17  2006/03/15 14:48:18  ucko
 * +<algorithm> for sort(); -<vector>, already included via ncbistd.hpp.
 * Move CVS log to end.

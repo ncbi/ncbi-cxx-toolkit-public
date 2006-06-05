@@ -115,7 +115,7 @@ protected:
     bool m_no_external;
     bool m_adaptive;
     int  m_pause;
-    bool m_prefetch;
+    CRef<CPrefetchManager> m_prefetch_manager;
     bool m_verbose;
     bool m_count_all;
     int  m_pass_count;
@@ -249,16 +249,14 @@ bool CTestOM::Thread_Run(int idx)
     CScope scope(*m_ObjMgr);
     scope.AddDefaults();
 
-    int from, to;
+    vector<CSeq_id_Handle> ids = m_Ids;
+    
     // make them go in opposite directions
-    if (idx % 2 == 0) {
-        from = 0;
-        to = m_Ids.size()-1;
-    } else {
-        from = m_Ids.size()-1;
-        to = 0;
+    bool rev = idx % 2;
+    if ( rev ) {
+        reverse(ids.begin(), ids.end());
     }
-    int delta = (to > from) ? 1 : -1;
+
     int pause = m_pause;
 
     set<CBioseq_Handle> handles;
@@ -287,57 +285,49 @@ bool CTestOM::Thread_Run(int idx)
     int all_feat_count = 0, all_desc_count = 0;
     bool ok = true;
     for ( int pass = 0; pass < m_pass_count; ++pass ) {
-        CRef<CStdPrefetch> prefetch;
-        vector<CPrefetchToken> pf_bh_tokens, pf_fi_tokens;
-        if (m_prefetch) {
-            LOG_POST("Using prefetch");
+        CRef<CPrefetchSequence> prefetch;
+        if ( m_prefetch_manager ) {
             // Initialize prefetch token;
-            prefetch = new CStdPrefetch();
-            pf_bh_tokens.resize(m_Ids.size());
-            pf_fi_tokens.resize(m_Ids.size());
-            for ( int i = from, end = to+delta; i != end; i += delta ) {
-                CSeq_id_Handle sih = m_Ids[i];
-                pf_bh_tokens[i] = prefetch->GetBioseqHandle(scope, sih);
-                pf_fi_tokens[i] =
-                    prefetch->GetFeat_CI(scope, sih,
-                                         CRange<TSeqPos>::GetWhole(),
-                                         eNa_strand_unknown,
-                                         sel);
-            }
+            prefetch = new CPrefetchSequence
+                (*m_prefetch_manager,
+                 new CPrefetchFeat_CIActionSource(CScopeSource::New(scope),
+                                                  m_Ids, sel));
         }
 
         const int kMaxErrorCount = 30;
         int error_count = 0, null_handle_count = 0;
         TFeats feats;
-        for ( int i = from, end = to+delta; i != end; i += delta ) {
+        for ( size_t i = 0; i < ids.size(); ++i ) {
             CSeq_id_Handle sih = m_Ids[i];
-            if ( i != from && pause ) {
+            if ( i != 0 && pause ) {
                 SleepSec(pause);
             }
             if ( m_verbose ) {
                 NcbiCout << CTime(CTime::eCurrent).AsString() << " " <<
-                    abs(i-from) << ": " << sih.AsString() << NcbiFlush;
+                    i << ": " << sih.AsString() << NcbiFlush;
             }
             try {
                 // load sequence
-                bool preload_ids = (i & 1) != 0;
+                bool preload_ids = !prefetch && (i & 1) != 0;
                 vector<CSeq_id_Handle> ids1, ids2, ids3;
                 if ( preload_ids ) {
                     ids1 = scope.GetIds(sih);
                     sort(ids1.begin(), ids1.end());
                 }
 
+                CPrefetchToken token;
+                if ( prefetch ) {
+                    token = prefetch->GetNextToken();
+                }
                 CBioseq_Handle handle;
-                if (m_prefetch) {
-                    if ( !m_no_reset ) {
-                        static int count = 0; if ( ++count == 100 ) return 0;
-                    }
-                    handle = CStdPrefetch::GetBioseqHandle(pf_bh_tokens[i]);
+                if ( token ) {
+                    handle = CStdPrefetch::GetBioseqHandle(token);
                 }
                 else {
                     handle = scope.GetBioseqHandle(sih);
                 }
-                if (!handle) {
+
+                if ( !handle ) {
                     if ( preload_ids ) {
                         _ASSERT(ids1.empty());
                     }
@@ -352,7 +342,7 @@ bool CTestOM::Thread_Run(int idx)
                 all_ids_count += ids2.size();
                 sort(ids2.begin(), ids2.end());
                 _ASSERT(!ids2.empty());
-                ids3 = scope.GetIds(sih);
+                ids3 = handle.GetScope().GetIds(sih);
                 sort(ids3.begin(), ids3.end());
                 _ASSERT(ids2 == ids3);
                 if ( preload_ids ) {
@@ -397,7 +387,7 @@ bool CTestOM::Thread_Run(int idx)
                     }
 
                     // check seqvector
-                    if ( 0 ) {{
+                    if ( 0 ) {
                         string buff;
                         CSeqVector sv =
                             handle.GetSeqVector(handle.eCoding_Iupac, 
@@ -413,7 +403,7 @@ bool CTestOM::Thread_Run(int idx)
                                                  handle.eStrand_Minus);
                         sv.GetSeqData(sv.size()-stop, sv.size()-start, buff);
                         //cout << "NEG: " << buff << endl;
-                             }}
+                    }
 
                     // enumerate descriptions
                     // Seqdesc iterator
@@ -431,12 +421,13 @@ bool CTestOM::Thread_Run(int idx)
                     set<CSeq_annot_Handle> annots;
                     if ( idx%2 == 0 ) {
                         CFeat_CI it;
-                        if ( m_prefetch ) {
-                            it = CStdPrefetch::GetFeat_CI(pf_fi_tokens[i]);
+                        if ( token ) {
+                            it = CStdPrefetch::GetFeat_CI(token);
                         }
                         else {
                             it = CFeat_CI(handle, sel);
                         }
+
                         all_feat_count += it.GetSize();
                         for ( ; it; ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
@@ -470,12 +461,13 @@ bool CTestOM::Thread_Run(int idx)
                         CSeq_loc loc;
                         loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
                         CFeat_CI it;
-                        if ( m_prefetch ) {
-                            it = CStdPrefetch::GetFeat_CI(pf_fi_tokens[i]);
+                        if ( token ) {
+                            it = CStdPrefetch::GetFeat_CI(token);
                         }
                         else {
                             it = CFeat_CI(scope, loc, sel);
                         }
+
                         all_feat_count += it.GetSize();
                         for ( ; it;  ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
@@ -551,7 +543,7 @@ bool CTestOM::Thread_Run(int idx)
                     break;
                 }
             }
-            if ( !m_prefetch && !m_no_reset ) {
+            if ( !m_no_reset ) {
                 scope.ResetHistory();
             }
         }
@@ -687,7 +679,11 @@ bool CTestOM::TestApp_Init(void)
     m_no_external = args["no_external"];
     m_adaptive = args["adaptive"];
     m_pause    = args["pause"].AsInteger();
-    m_prefetch = args["prefetch"];
+    if ( args["prefetch"] ) {
+        LOG_POST("Using prefetch");
+        // Initialize prefetch token;
+        m_prefetch_manager = new CPrefetchManager();
+    }
     m_verbose = args["verbose"];
     m_pass_count = args["pass_count"].AsInteger();
     m_count_all = args["count_all"];
@@ -735,6 +731,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2006/06/05 15:28:32  vasilche
+* Use real limited prefetch with separate scopes.
+*
 * Revision 1.24  2006/05/02 17:02:27  vasilche
 * Optional counting of all found object for easier detection of discrepancies.
 *
