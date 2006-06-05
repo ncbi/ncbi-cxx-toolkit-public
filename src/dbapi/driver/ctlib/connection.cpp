@@ -336,13 +336,6 @@ CDB_ResultProcessor* CTL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
     return r;
 }
 
-void CTL_Connection::Release()
-{
-    m_BR = 0;
-    // close all commands first
-    DeleteAllCommands();
-}
-
 
 CTL_Connection::~CTL_Connection()
 {
@@ -532,18 +525,15 @@ bool CTL_Connection::Abort()
 bool CTL_Connection::Close(void)
 {
     if (x_GetSybaseConn()) {
-        try {
-            if (!Refresh()  ||  Check(ct_close(x_GetSybaseConn(), CS_UNUSED)) != CS_SUCCEED) {
-                Check(ct_close(x_GetSybaseConn(), CS_FORCE_CLOSE));
-            }
-
-            Check(ct_con_drop(x_GetSybaseConn()));
-
-            m_Link = NULL;
-
-            return true;
+        if (!Refresh()  ||  Check(ct_close(x_GetSybaseConn(), CS_UNUSED)) != CS_SUCCEED) {
+            Check(ct_close(x_GetSybaseConn(), CS_FORCE_CLOSE));
         }
-        NCBI_CATCH_ALL( kEmptyStr )
+
+        Check(ct_con_drop(x_GetSybaseConn()));
+
+        m_Link = NULL;
+
+        return true;
     }
 
     return false;
@@ -695,7 +685,7 @@ CTL_SendDataCmd::CreateResult(I_Result& result)
 CTL_SendDataCmd::~CTL_SendDataCmd()
 {
     try {
-        m_BR = 0;
+        CDB_BaseEnt::Release();
 
         Cancel();
 
@@ -730,6 +720,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/06/05 21:05:37  ssikorsk
+ * Deleted CTL_Connection::Release;
+ * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";
+ *
  * Revision 1.34  2006/06/05 19:10:06  ssikorsk
  * Moved logic from C...Cmd::Release into dtor.
  *
