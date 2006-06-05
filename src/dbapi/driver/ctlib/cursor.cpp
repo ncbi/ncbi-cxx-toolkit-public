@@ -243,7 +243,7 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     }
 
     I_ITDescriptor* desc= 0;
-    if(GetResult().CurrentItemNo() == item_num) {
+    if(static_cast<unsigned int>(GetResult().CurrentItemNo()) == item_num) {
         desc = GetResult().GetImageOrTextDescriptor();
     }
     else {
@@ -431,13 +431,6 @@ CTL_CursorCmd::CloseForever(void)
 
 void CTL_CursorCmd::Release()
 {
-    m_BR = 0;
-
-    // Cannot use CancelCmd(*this); because of m_IsOpen
-    Close();
-
-    DropCmd(*this);
-
     delete this;
 }
 
@@ -452,8 +445,10 @@ CTL_CursorCmd::CreateResult(I_Result& result)
 CTL_CursorCmd::~CTL_CursorCmd()
 {
     try {
-        // !!! It calls Close() internaly which is virtual !!!
-        // !!! Be aware of this !!!
+        m_BR = 0;
+
+        DropCmd(*this);
+
         CloseForever();
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -490,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/06/05 19:10:06  ssikorsk
+ * Moved logic from C...Cmd::Release into dtor.
+ *
  * Revision 1.17  2006/06/05 18:10:06  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *

@@ -398,13 +398,6 @@ bool CTL_BCPInCmd::CompleteBCP()
 
 void CTL_BCPInCmd::Release()
 {
-    m_BR = 0;
-
-    // Cannot use CancelCmd(*this); because of Cancel()
-    Cancel();
-
-    DropCmd(*this);
-
     delete this;
 }
 
@@ -419,6 +412,10 @@ CTL_BCPInCmd::CreateResult(I_Result& result)
 CTL_BCPInCmd::~CTL_BCPInCmd()
 {
     try {
+        m_BR = 0;
+
+        DropCmd(*this);
+
         Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -450,6 +447,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/06/05 19:10:06  ssikorsk
+ * Moved logic from C...Cmd::Release into dtor.
+ *
  * Revision 1.18  2006/06/05 18:10:06  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *

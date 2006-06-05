@@ -64,12 +64,6 @@ bool CODBC_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
         m_CursCmd.BindParam(param_name, param_ptr);
 }
 
-struct I_LangCmd_Deleter
-{
-    static void Delete(I_LangCmd* object)
-    { object->Release(); }
-};
-
 CDB_Result* CODBC_CursorCmd::Open()
 {
     // need to close it first
@@ -102,8 +96,7 @@ CDB_Result* CODBC_CursorCmd::Open()
     // buff = "open " + m_Name;
 
     try {
-        AutoPtr<I_LangCmd, I_LangCmd_Deleter> stmt(
-            GetConnection().xLangCmd("open " + m_Name));
+        auto_ptr<I_LangCmd> stmt(GetConnection().xLangCmd("open " + m_Name));
 
         stmt->Send();
         stmt->DumpResults();
@@ -255,7 +248,7 @@ bool CODBC_CursorCmd::Close()
     }
 
     if (m_LCmd) {
-        m_LCmd->Release();
+        delete m_LCmd;
         m_LCmd= 0;
     }
 
@@ -276,11 +269,12 @@ bool CODBC_CursorCmd::Close()
                 }
             }
 #endif
-            m_LCmd->Release();
+            delete m_LCmd;
         } catch (const CDB_Exception& e) {
-            if (m_LCmd)
-                m_LCmd->Release();
-            m_LCmd = 0;
+            if (m_LCmd) {
+                delete m_LCmd;
+                m_LCmd = 0;
+            }
 
             string err_message = "failed to close cursor" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
@@ -307,11 +301,12 @@ bool CODBC_CursorCmd::Close()
                 }
             }
 #endif
-            m_LCmd->Release();
+            delete m_LCmd;
         } catch (const CDB_Exception& e) {
-            if (m_LCmd)
-                m_LCmd->Release();
-            m_LCmd = 0;
+            if (m_LCmd) {
+                delete m_LCmd;
+                m_LCmd = 0;
+            }
 
             string err_message = "failed to deallocate cursor" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
@@ -327,12 +322,6 @@ bool CODBC_CursorCmd::Close()
 
 void CODBC_CursorCmd::Release()
 {
-    m_BR = 0;
-
-    Close();
-
-    GetConnection().DropCmd(*this);
-
     delete this;
 }
 
@@ -340,9 +329,9 @@ void CODBC_CursorCmd::Release()
 CODBC_CursorCmd::~CODBC_CursorCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        m_BR = 0;
+
+        GetConnection().DropCmd(*this);
 
         Close();
     }
@@ -357,6 +346,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/06/05 19:10:06  ssikorsk
+ * Moved logic from C...Cmd::Release into dtor.
+ *
  * Revision 1.14  2006/06/05 18:10:07  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *

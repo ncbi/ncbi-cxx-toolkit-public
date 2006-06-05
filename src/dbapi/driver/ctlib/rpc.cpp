@@ -181,10 +181,6 @@ void CTL_RPCCmd::SetRecompile(bool recompile)
 
 void CTL_RPCCmd::Release()
 {
-    m_BR = 0;
-
-    CancelCmd(*this);
-
     delete this;
 }
 
@@ -199,6 +195,10 @@ CTL_RPCCmd::CreateResult(I_Result& result)
 CTL_RPCCmd::~CTL_RPCCmd()
 {
     try {
+        m_BR = 0;
+
+        CancelCmd(*this);
+
         Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -257,6 +257,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/06/05 19:10:06  ssikorsk
+ * Moved logic from C...Cmd::Release into dtor.
+ *
  * Revision 1.17  2006/06/05 18:10:06  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *

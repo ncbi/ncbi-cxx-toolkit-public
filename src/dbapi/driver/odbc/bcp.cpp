@@ -433,12 +433,6 @@ bool CODBC_BCPInCmd::CompleteBCP()
 
 void CODBC_BCPInCmd::Release()
 {
-    m_BR = 0;
-
-    Cancel();
-
-    GetConnection().DropCmd(*this);
-
     delete this;
 }
 
@@ -446,8 +440,9 @@ void CODBC_BCPInCmd::Release()
 CODBC_BCPInCmd::~CODBC_BCPInCmd()
 {
     try {
-        if (m_BR)
-            *m_BR = 0;
+        m_BR = 0;
+
+        GetConnection().DropCmd(*this);
 
         Cancel();
     }
@@ -462,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/06/05 19:10:06  ssikorsk
+ * Moved logic from C...Cmd::Release into dtor.
+ *
  * Revision 1.14  2006/06/05 18:10:07  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *

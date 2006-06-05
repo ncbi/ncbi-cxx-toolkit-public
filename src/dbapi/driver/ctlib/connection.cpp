@@ -681,12 +681,6 @@ bool CTL_SendDataCmd::Cancel(void)
 
 void CTL_SendDataCmd::Release()
 {
-    m_BR = 0;
-
-    Cancel();
-
-    DropCmd(*this);
-
     delete this;
 }
 
@@ -701,6 +695,12 @@ CTL_SendDataCmd::CreateResult(I_Result& result)
 CTL_SendDataCmd::~CTL_SendDataCmd()
 {
     try {
+        m_BR = 0;
+
+        Cancel();
+
+        DropCmd(*this);
+
         Close();
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -730,6 +730,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/06/05 19:10:06  ssikorsk
+ * Moved logic from C...Cmd::Release into dtor.
+ *
  * Revision 1.33  2006/06/05 18:10:06  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *

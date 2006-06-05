@@ -372,12 +372,6 @@ bool CDBL_CursorCmd::Close()
 
 void CDBL_CursorCmd::Release()
 {
-    m_BR = 0;
-
-    Close();
-
-    GetConnection().DropCmd(*this);
-
     delete this;
 }
 
@@ -385,8 +379,9 @@ void CDBL_CursorCmd::Release()
 CDBL_CursorCmd::~CDBL_CursorCmd()
 {
     try {
-        if (m_BR)
-            *m_BR = 0;
+        m_BR = 0;
+
+        GetConnection().DropCmd(*this);
 
         Close();
     }
@@ -557,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/05 19:10:06  ssikorsk
+ * Moved logic from C...Cmd::Release into dtor.
+ *
  * Revision 1.24  2006/06/05 18:10:07  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *

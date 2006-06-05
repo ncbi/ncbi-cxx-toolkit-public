@@ -612,12 +612,6 @@ bool CODBC_SendDataCmd::Cancel(void)
 
 void CODBC_SendDataCmd::Release()
 {
-    m_BR = 0;
-
-    Cancel();
-
-    GetConnection().DropCmd(*this);
-
     delete this;
 }
 
@@ -625,12 +619,11 @@ void CODBC_SendDataCmd::Release()
 CODBC_SendDataCmd::~CODBC_SendDataCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        m_BR = 0;
+
+        GetConnection().DropCmd(*this);
 
         Cancel();
-
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -650,6 +643,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/06/05 19:10:06  ssikorsk
+ * Moved logic from C...Cmd::Release into dtor.
+ *
  * Revision 1.27  2006/06/05 18:10:07  ssikorsk
  * Revamp code to use methods Cancel and Close more efficient.
  *
