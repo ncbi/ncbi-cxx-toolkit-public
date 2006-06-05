@@ -178,6 +178,8 @@ public:
 
     void SetName(const string& name);
     const string& GetName(void) const;
+    void SetNamed(bool named=true);
+    bool IsNamed(void) const;
 
     void SetType( EType type);
     void SetTypeIfUnknown( EType type);
@@ -223,6 +225,7 @@ private:
     map<string,EOccurrence> m_RefOcc;
     bool m_Refd;
     bool m_Embd;
+    bool m_Named;
 };
 
 
@@ -260,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2006/06/05 15:33:32  gouriano
+ * Implemented local elements when parsing XML schema
+ *
  * Revision 1.7  2006/05/10 18:49:07  gouriano
  * Added more types
  *

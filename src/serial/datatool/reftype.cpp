@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/06/05 15:33:14  gouriano
+* Implemented local elements when parsing XML schema
+*
 * Revision 1.33  2006/05/16 14:30:13  gouriano
 * Corrected generation of ASN spec - to make sure it is valid
 *
@@ -181,7 +184,7 @@ void CReferenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) 
 
     if (tag == userType || (GetEnforcedStdXml() && uniType)) {
         const CDataType* realType = Resolve();
-        realType->PrintDTDElement(out);
+        realType->PrintDTDElement(out, contents_only);
         return;
     }
     out <<

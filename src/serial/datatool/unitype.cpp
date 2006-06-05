@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2006/06/05 15:33:14  gouriano
+* Implemented local elements when parsing XML schema
+*
 * Revision 1.39  2006/05/09 15:16:43  gouriano
 * Added XML namespace definition possibility
 *
@@ -235,13 +238,20 @@ void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only
         typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
 
     if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
-        if (!GetParentType() || typeStatic) {
+        if (!GetParentType() || typeStatic || !contents_only) {
             out << "\n<!ELEMENT " << tag << ' ';
         }
-        if (typeStatic) {
+        if (typeStatic || !contents_only) {
             out << '(';
-            typeStatic->PrintDTDElement(out, true);
-            out << ")>";
+            typeElem->PrintDTDElement(out, true);
+            out << ")";
+            if (!typeStatic && !GetParentType()) {
+                if (m_NonEmpty) {
+                    out << '+';
+                } else {
+                    out << '*';
+                }
+            }
         } else {
             if (!GetParentType()) {
                 out << '(';
@@ -256,7 +266,7 @@ void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only
                 }
             }
         }
-        if (!GetParentType()) {
+        if (!contents_only) {
             out << ">";
         }
         return;

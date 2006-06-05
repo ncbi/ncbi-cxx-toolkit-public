@@ -449,7 +449,7 @@ void DTDParser::FixEmbeddedNames(DTDElement& node)
     list<string> fixed;
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         DTDElement& refNode = m_MapElement[*i];
-        if (refNode.IsEmbedded() && refNode.GetName() == *i) {
+        if (refNode.IsEmbedded() && !refNode.IsNamed() && refNode.GetName() == *i) {
             for ( int depth=1; depth<100; ++depth) {
                 string testName = refNode.CreateEmbeddedName(depth);
                 if (find(refs.begin(),refs.end(),testName) == refs.end()) {
@@ -752,7 +752,7 @@ CDataType* DTDParser::x_Type(
         if (refs.size() == 1) {
             string refName = refs.front();
             DTDElement& refNode = m_MapElement[refName];
-            if (refNode.IsEmbedded() &&
+            if (refNode.IsEmbedded() && !refNode.IsNamed() &&
                 (node.GetOccurrence(refName) == DTDElement::eOne)) {
                 type = x_Type(refNode,
                               fromInside ? occ : refNode.GetOccurrence(),
@@ -774,7 +774,9 @@ CDataType* DTDParser::x_Type(
     bool attrib = !ignoreAttrib && node.HasAttributes();
     bool ref = fromInside && !node.IsEmbedded();
 
-    if ((cont && uniseq && (attrib || (node.IsEmbedded() && fromInside))) || (!cont && attrib)) {
+    if ((cont && uniseq && (attrib ||
+        (node.IsEmbedded() && !node.IsNamed() && fromInside))) ||
+        (!cont && attrib)) {
         if (ref) {
             type = new CReferenceDataType(node.GetName());
         } else {
@@ -862,7 +864,7 @@ CDataType* DTDParser::TypesBlock(
             ParseError(i->c_str(),"definition");
         }
         DTDElement::EOccurrence occ = node.GetOccurrence(*i);
-        if (refNode.IsEmbedded()) {
+        if (refNode.IsEmbedded() && !refNode.IsNamed()) {
             occ = refNode.GetOccurrence();
         }
         AutoPtr<CDataType> type(Type(refNode, occ, true));
@@ -871,7 +873,7 @@ CDataType* DTDParser::TypesBlock(
             (occ == DTDElement::eZeroOrMore)) {
             member->SetOptional();
         }
-        if (refNode.IsEmbedded()) {
+        if (refNode.IsEmbedded() && !refNode.IsNamed()) {
             member->SetNotag();
         }
         member->SetNoPrefix();
@@ -1106,6 +1108,10 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
             case DTDElement::eZeroOrMore:  cout << "(0..*)"; break;
             case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
             }
+            if (m_MapElement.find(*ir) != m_MapElement.end() &&
+                m_MapElement[*ir].IsEmbedded()) {
+                cout << "        [" << m_MapElement[*ir].GetName() << "]";
+            }
             cout << endl;
         }
     }
@@ -1180,6 +1186,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.30  2006/06/05 15:33:14  gouriano
+ * Implemented local elements when parsing XML schema
+ *
  * Revision 1.29  2006/05/16 18:26:30  gouriano
  * Use CDataSetType for attribute block
  *

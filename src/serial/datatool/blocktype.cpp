@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2006/06/05 15:33:14  gouriano
+* Implemented local elements when parsing XML schema
+*
 * Revision 1.64  2006/05/16 14:30:13  gouriano
 * Corrected generation of ASN spec - to make sure it is valid
 *
@@ -328,6 +331,9 @@ void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
 
 void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
+    if (!contents_only) {
+        out << "\n";
+    }
     string tag = XmlTagName();
     bool hasAttlist= false, isAttlist= false;
     bool hasNotag= false;
@@ -447,7 +453,7 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
         }
     }
     if (hasAttlist) {
-        out << "\n<!ATTLIST " << tag << '\n';
+        out << "\n<!ATTLIST " << tag;
         ITERATE ( TMembers, i, m_Members ) {
             const CDataMember& member = **i;
             if (member.Attlist()) {
@@ -520,6 +526,9 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
             if (GetParentType()->GetDataMember()) {
                 isOptional = GetParentType()->GetDataMember()->Optional();
                 parent_hasNotag = GetParentType()->GetDataMember()->Notag();
+                if (!parent_hasNotag) {
+                    isSeq = false;
+                }
             } else {
                 isOptional = !uniType->IsNonEmpty();
             }

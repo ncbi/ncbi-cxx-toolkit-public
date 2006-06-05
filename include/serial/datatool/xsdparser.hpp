@@ -62,7 +62,7 @@ protected:
 
     void ParseHeader();
     void ParseInclude(void);
-    string ParseElementContent(DTDElement* owner);
+    string ParseElementContent(DTDElement* owner, int& emb);
     void ParseContent(DTDElement& node);
     void ParseDocumentation(void);
     void ParseContainer(DTDElement& node);
@@ -121,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2006/06/05 15:33:32  gouriano
+ * Implemented local elements when parsing XML schema
+ *
  * Revision 1.3  2006/05/10 18:48:52  gouriano
  * Added documentation parsing
  *

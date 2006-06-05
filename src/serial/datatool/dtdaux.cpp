@@ -193,6 +193,7 @@ DTDElement::DTDElement(void)
     m_Occ  = eOne;
     m_Refd = false;
     m_Embd = false;
+    m_Named= false;
 }
 
 DTDElement::DTDElement(const DTDElement& other)
@@ -207,6 +208,7 @@ DTDElement::DTDElement(const DTDElement& other)
     m_Refs     = other.m_Refs;
     m_RefOcc   = other.m_RefOcc;
     m_Attrib   = other.m_Attrib;
+    m_Named    = other.m_Named;
 }
 
 DTDElement::~DTDElement(void)
@@ -222,7 +224,14 @@ const string& DTDElement::GetName(void) const
 {
     return m_Name;
 }
-
+void DTDElement::SetNamed(bool named)
+{
+    m_Named = named;
+}
+bool DTDElement::IsNamed(void) const
+{
+    return m_Named;
+}
 
 void DTDElement::SetType( EType type)
 {
@@ -382,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2006/06/05 15:33:14  gouriano
+ * Implemented local elements when parsing XML schema
+ *
  * Revision 1.8  2006/05/23 18:24:48  gouriano
  * Make XML attributes optional by default
  *

@@ -57,6 +57,7 @@ void XSDParser::BuildDocumentTree(void)
     ParseHeader();
 
     TToken tok;
+    int emb=0;
     for (;;) {
         tok = GetNextToken();
         switch ( tok ) {
@@ -64,7 +65,7 @@ void XSDParser::BuildDocumentTree(void)
             ParseInclude();
             break;
         case K_ELEMENT:
-            ParseElementContent(0);
+            ParseElementContent(0, emb);
             break;
         case K_ATTRIBUTE:
             ParseAttributeContent();
@@ -285,7 +286,7 @@ void XSDParser::ParseInclude(void)
     ParseHeader();
 }
 
-string XSDParser::ParseElementContent(DTDElement* owner)
+string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
 {
     TToken tok;
     string name;
@@ -296,8 +297,16 @@ string XSDParser::ParseElementContent(DTDElement* owner)
             ref=true;
 
         } else if (IsAttribute("name")) {
+            ref=false;
             name = m_Value;
-            m_MapElement[name].SetName(name);
+            if (owner) {
+                name = owner->GetName();
+                name += "__emb#__";
+                name += NStr::IntToString(emb++);
+                m_MapElement[name].SetEmbedded();
+                m_MapElement[name].SetNamed();
+            }
+            m_MapElement[name].SetName(m_Value);
 
         } else if (IsAttribute("type")) {
             if (!DefineElementType(m_MapElement[name])) {
@@ -414,7 +423,7 @@ void XSDParser::ParseContent(DTDElement& node)
             break;
         case K_ELEMENT:
             {
-	            string name = ParseElementContent(&node);
+	            string name = ParseElementContent(&node,emb);
 	            AddElementContent(node,name);
             }
             break;
@@ -820,6 +829,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2006/06/05 15:33:14  gouriano
+ * Implemented local elements when parsing XML schema
+ *
  * Revision 1.4  2006/05/10 18:54:23  gouriano
  * Added documentation parsing
  *
