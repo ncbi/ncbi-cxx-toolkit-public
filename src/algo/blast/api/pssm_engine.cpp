@@ -406,7 +406,6 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "BlastScoringOptions");
     }
     BlastScoringOptionsSetMatrix(opts, matrix_name);
-    FindMatrixOrPath(opts->matrix, true, &opts->matrix_path); 
 
     // Setup the sequence block structure
     CBLAST_SequenceBlk query_blk;
@@ -436,7 +435,8 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
                                      kProgramType,
                                      &retval,
                                      kScaleFactor,
-                                     &errors);
+                                     &errors,
+                                     &BlastFindMatrixPath);
     if (status != 0) {
         retval = BlastScoreBlkFree(retval);
         if (errors) {
@@ -612,6 +612,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2006/06/05 13:30:28  madden
+ * Add call to BlastFindMatrixPath
+ *
  * Revision 1.46  2006/05/24 17:21:50  madden
  * Replace FindMatrixPath with FindMatrixOrPath
  *

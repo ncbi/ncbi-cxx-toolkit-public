@@ -44,6 +44,7 @@ static char const rcsid[] =
 
 #include "blast_aux_priv.hpp"
 #include "blast_memento_priv.hpp"
+#include "blast_setup.hpp"
 
 // SeqAlignVector building
 #include "blast_seqalign.hpp"
@@ -137,7 +138,8 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                   lookup_segments,
                                   &core_masked_query_regions,
                                   &retval,
-                                  &blast_msg);
+                                  &blast_msg,
+                                  &BlastFindMatrixPath);
 
     Blast_Message2TSearchMessages(blast_msg.Get(), query_info, search_messages);
     if (status != 0) {

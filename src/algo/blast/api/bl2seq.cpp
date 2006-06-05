@@ -227,7 +227,7 @@ CBl2Seq::SetupSearch()
                              m_OptsHandle->GetOptions().GetScoringOpts(),
                              mi_clsQueries, mi_clsQueryInfo, scale_factor,
                              &mi_pLookupSegments, &m_ipFilteredRegions, &mi_pScoreBlock,
-                             &blmsg);
+                             &blmsg, &BlastFindMatrixPath);
 
         // TODO: Check that lookup_segments are not filtering the whole 
         // sequence (SSeqRange set to -1 -1)
@@ -343,6 +343,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.92  2006/06/05 13:30:28  madden
+ * Add call to BlastFindMatrixPath
+ *
  * Revision 1.91  2006/03/22 15:03:35  camacho
  * Expanded interruptible API to support user-provided data
  *

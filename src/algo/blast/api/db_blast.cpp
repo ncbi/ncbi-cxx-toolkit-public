@@ -566,7 +566,7 @@ void CDbBlast::SetupSearch()
                             m_iclsQueryInfo, scale_factor,
                             (need_lookup_table ? &m_ipLookupSegments : NULL),
                             &m_ipFilteredRegions, &m_ipScoreBlock, 
-                            &blast_message);
+                            &blast_message, &BlastFindMatrixPath);
 
         if (status != 0) {
             string msg = blast_message ? blast_message->message : 
@@ -790,6 +790,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.91  2006/06/05 13:30:28  madden
+ * Add call to BlastFindMatrixPath
+ *
  * Revision 1.90  2006/05/23 11:52:42  camacho
  * Fix compiler warning
  *
