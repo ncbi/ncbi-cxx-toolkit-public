@@ -48,6 +48,9 @@ NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 6, 0, 0);
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
 public:
+    ///
+    virtual void Release(void);
+
     // Check out if connection is alive (this function doesn't ping the server,
     // it just checks the status of connection which was set by the last
     // i/o operation)
@@ -515,6 +518,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/06/05 20:58:45  ssikorsk
+ * Added method Release to CDB_Connection.
+ *
  * Revision 1.25  2006/06/05 18:01:53  ssikorsk
  * Added method Cancel to CDB_SendDataCmd.
  *
