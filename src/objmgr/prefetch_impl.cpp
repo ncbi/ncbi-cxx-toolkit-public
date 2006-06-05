@@ -196,13 +196,14 @@ void CPrefetchThreadOld::Terminate(void)
 void* CPrefetchThreadOld::Main(void)
 {
     do {
-        CRef<CPrefetchTokenOld_Impl> token = m_Queue.Get();
+        TPrefetchQueue::TItemHandle handle = m_Queue.GetHandle();
+        CRef<CPrefetchTokenOld_Impl> token = handle->GetRequest();
         {{
             CFastMutexGuard guard(m_Lock);
             if (m_Stop) {
                 return 0;
             }
-            _ASSERT( token );
+            _ASSERT( handle );
             if ( token->IsEmpty() ) {
                 // Token may have been canceled
                 continue;
@@ -253,6 +254,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/06/05 15:25:19  vasilche
+* Use thread pool handles.
+*
 * Revision 1.9  2006/02/02 14:35:33  vasilche
 * Renamed old prefetch classes.
 *
