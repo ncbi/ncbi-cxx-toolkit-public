@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Aleksey Grichenko
+ * Author: Aleksey Grichenko, Denis Vakatov
  *
  * File Description:
  *	 Generic cache.
@@ -42,6 +42,7 @@ const char* CCacheException::GetErrCodeString(void) const
     switch ( GetErrCode() ) {
     case eIndexOverflow:   return "eIndexOverflow";
     case eWeightOverflow:  return "eWeightOverflow";
+    case eNotFound:        return "eNotFound";
     case eOtherError:      return "eOtherError";
     default:               return CException::GetErrCodeString();
     }
@@ -54,6 +55,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/05 15:28:06  grichenk
+ * Added CreateElement() callback, improved indexing, added comments.
+ *
  * Revision 1.2  2006/03/06 18:28:25  grichenk
  * Moved ncbi_cache from corelib to util.
  *

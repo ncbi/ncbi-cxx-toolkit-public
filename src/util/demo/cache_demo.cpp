@@ -95,8 +95,8 @@ void CCacheDemoApp::SimpleCacheDemo(void)
     for (int i = 0; i < 1000; i++) {
         CRef<CObjElement> element(new CObjElement(i*10));
         TSimpleCache::EAddResult result;
-        cache.Add(i, element, 1, &result);
-        _ASSERT(result == TSimpleCache::eElement_Added);
+        cache.Add(i, element, 1, 0, &result);
+        _ASSERT(result == TSimpleCache::eAdd_Inserted);
     }
     // Try to get the elements from the cache. Some will be missing
     // since cache size is less than total number of elements inserted.
@@ -105,6 +105,9 @@ void CCacheDemoApp::SimpleCacheDemo(void)
         if (element) {
             // If present, check the element's size.
             _ASSERT(element->GetSize() == i*10);
+        }
+        if (i % 10 == 0) {
+            cache.Remove(i);
         }
     }
 }
@@ -130,18 +133,21 @@ class CDemoHandler_HeapAlloc
 {
 public:
     // Delete each object upon removal from the cache.
-    void RemoveElement(const int& key, CHeapElement* value)
+    void RemoveElement(const int& /*key*/, CHeapElement* value)
     {
         delete value;
     }
     // Inserting an element does not require special processing.
-    void InsertElement(const int& key, CHeapElement* value) {}
+    void InsertElement(const int& /*key*/, CHeapElement* value) {}
     // Possibility to insert an element depends only on the cache size.
-    ECache_InsertFlag CanInsertElement(const int& key,
+    ECache_InsertFlag CanInsertElement(const int& /*key*/,
                                        const CHeapElement* value)
     {
+        if ( !value )
+            return eCache_DoNotCache;
         return eCache_CheckSize;
     }
+    CHeapElement* CreateValue(const int& /*key*/) { return NULL; }
 };
 
 
@@ -162,8 +168,8 @@ void CCacheDemoApp::HeapCacheDemo(void)
     for (int i = 0; i < 1000; i++) {
         CHeapElement* element = new CHeapElement(i*10);
         THeapCache::EAddResult result;
-        cache.Add(i, element, 1, &result);
-        _ASSERT(result == THeapCache::eElement_Added);
+        cache.Add(i, element, 1, 0, &result);
+        _ASSERT(result == THeapCache::eAdd_Inserted);
     }
     // Get the objects back if still available.
     for (int i = 0; i < 1000; i++) {
@@ -188,19 +194,21 @@ public:
     CDemoHandler_MemSize(void) : m_Total(0) {}
     ~CDemoHandler_MemSize(void) { _ASSERT(m_Total == 0); }
 
-    void RemoveElement(const int& key, CRef<CObjElement> value)
+    void RemoveElement(const int& /*key*/, CRef<CObjElement> value)
     {
         // Decrease total memory used upon element removal.
         m_Total -= value->GetSize();
     }
-    void InsertElement(const int& key, const CRef<CObjElement>& value)
+    void InsertElement(const int& /*key*/, const CRef<CObjElement>& value)
     {
         // Increase total memory used upon element insertion.
         m_Total += value->GetSize();
     }
-    ECache_InsertFlag CanInsertElement(const int& key,
+    ECache_InsertFlag CanInsertElement(const int& /*key*/,
                                        const CRef<CObjElement>& value)
     {
+        if ( !value )
+            return eCache_DoNotCache;
         // Check if there's enough memory available for the new element
         if ( m_Total + value->GetSize() <= kMaxMemCacheSize ) {
             // Ok to insert
@@ -215,7 +223,8 @@ public:
         // enough memory for the insertion.
         return eCache_NeedCleanup;
     }
-
+    CRef<CObjElement> CreateValue(const int& /*key*/)
+        { return CRef<CObjElement>(NULL); }
 private:
     // Total memory used by the cached elements
     size_t m_Total;
@@ -240,14 +249,14 @@ void CCacheDemoApp::MemoryCacheDemo(void)
     for (int i = 0; i < 1000; i++) {
         TElement element(new CObjElement(i*10));
         TMemCache::EAddResult result;
-        cache.Add(i, element, 1, &result);
+        cache.Add(i, element, 1, 0, &result);
         // The element should be inserted only if its size is less than
         // the max. allowed size of the cache.
         if (element->GetSize() <= kMaxMemCacheSize) {
-            _ASSERT(result == TMemCache::eElement_Added);
+            _ASSERT(result == TMemCache::eAdd_Inserted);
         }
         else {
-            _ASSERT(result == TMemCache::eElement_Ignored);
+            _ASSERT(result == TMemCache::eAdd_NotInserted);
         }
     }
     for (int i = 0; i < 1000; i++) {
@@ -286,9 +295,11 @@ public:
         // Count the elements inserted.
         m_Count++;
     }
-    ECache_InsertFlag CanInsertElement(const int& key,
+    ECache_InsertFlag CanInsertElement(const int& /*key*/,
                                        const CRef<CObjElement>& value)
     {
+        if ( !value )
+            return eCache_DoNotCache;
         // If the overflow is detected, set the flag and request
         // clean up until the cache is empty.
         if (m_Overflow  ||  m_Count >= kMaxOverflowCacheSize) {
@@ -298,6 +309,8 @@ public:
         // If there's no overflow, allow to insert the new element.
         return eCache_CanInsert;
     }
+    CRef<CObjElement> CreateValue(const int& /*key*/)
+        { return CRef<CObjElement>(NULL); }
 
 private:
     size_t m_Count;
@@ -322,7 +335,7 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
     for (int i = 0; i < 1000; i++) {
         TElement element(new CObjElement(i*10));
         TEmptyOnOverflowCache::EAddResult result;
-        cache.Add(i, element, 1, &result);
+        cache.Add(i, element, 1, 0, &result);
         if ( i % kMaxOverflowCacheSize == 0 ) {
             _ASSERT(cache.GetSize() == 1);
         }
@@ -350,6 +363,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/06/05 15:28:06  grichenk
+ * Added CreateElement() callback, improved indexing, added comments.
+ *
  * Revision 1.3  2006/03/24 22:06:37  grichenk
  * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
  *

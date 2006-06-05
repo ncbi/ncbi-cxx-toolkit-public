@@ -52,20 +52,24 @@ private:
 class CTestHandler
 {
 public:
-    void RemoveElement(const Uint8& key, CElement* value)
+    void RemoveElement(const Uint8& /*key*/, CElement* value)
     {
         delete value;
     }
-    void InsertElement(const Uint8& key, CElement* value) {}
-    ECache_InsertFlag CanInsertElement(const Uint8& key, CElement* value)
+    void InsertElement(const Uint8& /*key*/, CElement* value) {}
+    ECache_InsertFlag CanInsertElement(const Uint8& /*key*/, CElement* value)
     {
+        if ( !value ) {
+            return eCache_CheckSize; // eCache_DoNotCache;
+        }
         return eCache_CheckSize;
     }
+    CElement* CreateValue(const Uint8& /*key*/) { return NULL; }
 };
 
 
 typedef CElement* TElement;
-typedef CFastMutex TCacheLock;
+typedef CMutex    TCacheLock;
 typedef CCacheTraits<Uint8,
                      TElement,
                      TCacheLock,
@@ -237,6 +241,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/05 15:28:06  grichenk
+ * Added CreateElement() callback, improved indexing, added comments.
+ *
  * Revision 1.4  2006/03/24 22:06:37  grichenk
  * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
  *
