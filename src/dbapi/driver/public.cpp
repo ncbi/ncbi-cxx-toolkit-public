@@ -57,7 +57,7 @@ bool CDB_Connection::IsAlive()
 
 #define CHECK_CONNECTION( conn ) \
     CHECK_DRIVER_WARNING( !conn, "Connection has been closed", 200002 )
-    
+
 CDB_LangCmd* CDB_Connection::LangCmd(const string& lang_query,
                                      unsigned int  nof_params)
 {
@@ -215,7 +215,7 @@ CDB_Result::CDB_Result(I_Result* r) :
 #define CHECK_RESULT( res ) \
     CHECK_DRIVER_WARNING( !res, "This result is not available anymore", 200003 )
 
-    
+
 EDB_ResType CDB_Result::ResultType() const
 {
     CHECK_RESULT( GetIResultPtr() );
@@ -319,7 +319,7 @@ CDB_LangCmd::CDB_LangCmd(I_LangCmd* c)
 
 #define CHECK_COMMAND( cmd ) \
     CHECK_DRIVER_WARNING( !cmd, "This command cannot be used anymore", 200005 )
-    
+
 
 bool CDB_LangCmd::More(const string& query_text)
 {
@@ -657,6 +657,13 @@ size_t CDB_SendDataCmd::SendChunk(const void* pChunk, size_t nofBytes)
 }
 
 
+bool CDB_SendDataCmd::Cancel(void)
+{
+    CHECK_DRIVER_WARNING( !m_Cmd, "This command cannot be used anymore", 200005 );
+
+    return m_Cmd->Cancel();
+}
+
 CDB_SendDataCmd::~CDB_SendDataCmd()
 {
     try {
@@ -728,6 +735,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/06/05 18:05:28  ssikorsk
+ * Implemented CDB_SendDataCmd::Cancel.
+ *
  * Revision 1.25  2006/06/02 20:58:52  ssikorsk
  * Deleted CDB_Result::SetIResult;
  *
@@ -748,7 +758,7 @@ END_NCBI_SCOPE
  * instead of raw data access.
  *
  * Revision 1.20  2005/11/02 14:32:39  ssikorsk
- * Use 
+ * Use
  macro instead of catch(...)
  *
  * Revision 1.19  2005/10/26 12:25:15  ssikorsk
