@@ -63,7 +63,7 @@ public:
 };
 
 
-class IPrefetchActionSource
+class NCBI_XOBJMGR_EXPORT IPrefetchActionSource
 {
 public:
     virtual ~IPrefetchActionSource(void);

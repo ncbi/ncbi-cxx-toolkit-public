@@ -196,7 +196,7 @@ private:
 
 
 template<>
-class CPrefetchComplete<CBioseq_Handle>
+class NCBI_XOBJMGR_EXPORT CPrefetchComplete<CBioseq_Handle>
     : public CPrefetchBioseq
 {
 public:
@@ -228,7 +228,7 @@ private:
 };
 
 
-class ISeq_idSource
+class NCBI_XOBJMGR_EXPORT ISeq_idSource
 {
 public:
     virtual ~ISeq_idSource(void);
@@ -264,8 +264,9 @@ private:
 };
 
 
-class CPrefetchBioseqActionSource : public CObject,
-                                    public IPrefetchActionSource
+class NCBI_XOBJMGR_EXPORT CPrefetchBioseqActionSource
+    : public CObject,
+      public IPrefetchActionSource
 {
 public:
     typedef vector<CSeq_id_Handle> TIds;
@@ -283,8 +284,9 @@ private:
 };
 
 
-class CPrefetchFeat_CIActionSource : public CObject,
-                                     public IPrefetchActionSource
+class NCBI_XOBJMGR_EXPORT CPrefetchFeat_CIActionSource
+    : public CObject,
+      public IPrefetchActionSource
 {
 public:
     typedef vector<CSeq_id_Handle> TIds;
