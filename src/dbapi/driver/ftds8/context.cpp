@@ -326,7 +326,6 @@ CTDSContext::MakeIConnection(const SConnAttr& conn_attr)
                                 conn_attr.reusable,
                                 conn_attr.pool_name);
 
-    t_con->m_MsgHandlers = m_ConnHandlers;
     t_con->m_Server      = conn_attr.srv_name;
     t_con->m_User        = conn_attr.user_name;
     t_con->m_Passwd      = conn_attr.passwd;
@@ -869,6 +868,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/06/05 14:49:45  ssikorsk
+ * Set value of m_MsgHandlers in I_DriverContext::Create_Connection.
+ *
  * Revision 1.73  2006/05/30 18:54:01  ssikorsk
  * Revamp code to use server and user names with database exceptions;
  *

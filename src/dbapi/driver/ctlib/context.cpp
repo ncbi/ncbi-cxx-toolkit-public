@@ -389,7 +389,6 @@ CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
                                                con,
                                                conn_attr.reusable,
                                                conn_attr.pool_name);
-    t_con->m_MsgHandlers = m_ConnHandlers;
 
     return t_con;
 }
@@ -1109,6 +1108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2006/06/05 14:49:31  ssikorsk
+ * Set value of m_MsgHandlers in I_DriverContext::Create_Connection.
+ *
  * Revision 1.78  2006/05/30 19:01:14  ssikorsk
  * Removed outdated comments.
  *

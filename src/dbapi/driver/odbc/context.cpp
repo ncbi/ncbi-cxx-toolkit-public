@@ -61,19 +61,19 @@ class CODBCContextRegistry
 {
 public:
     static CODBCContextRegistry& Instance(void);
-    
+
     void Add(CODBCContext* ctx);
     void Remove(CODBCContext* ctx);
     void ClearAll(void);
     static void StaticClearAll(void);
-    
+
 private:
     CODBCContextRegistry(void);
     ~CODBCContextRegistry(void) throw();
-    
+
     mutable CMutex          m_Mutex;
     vector<CODBCContext*>   m_Registry;
-    
+
     friend class CSafeStaticPtr<CODBCContextRegistry>;
 };
 
@@ -93,42 +93,42 @@ CODBCContextRegistry::~CODBCContextRegistry(void) throw()
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
-CODBCContextRegistry& 
+CODBCContextRegistry&
 CODBCContextRegistry::Instance(void)
 {
     static CSafeStaticPtr<CODBCContextRegistry> instance;
-    
+
     return *instance;
 }
 
-void 
+void
 CODBCContextRegistry::Add(CODBCContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
-    
-    vector<CODBCContext*>::iterator it = find(m_Registry.begin(), 
-                                              m_Registry.end(), 
+
+    vector<CODBCContext*>::iterator it = find(m_Registry.begin(),
+                                              m_Registry.end(),
                                               ctx);
     if (it == m_Registry.end()) {
         m_Registry.push_back(ctx);
     }
 }
 
-void 
+void
 CODBCContextRegistry::Remove(CODBCContext* ctx)
 {
     CMutexGuard mg(m_Mutex);
-    
-    vector<CODBCContext*>::iterator it = find(m_Registry.begin(), 
-                                              m_Registry.end(), 
+
+    vector<CODBCContext*>::iterator it = find(m_Registry.begin(),
+                                              m_Registry.end(),
                                               ctx);
-    
+
     if (it != m_Registry.end()) {
         m_Registry.erase(it);
     }
 }
 
-void 
+void
 CODBCContextRegistry::ClearAll(void)
 {
     if (!m_Registry.empty())
@@ -136,7 +136,7 @@ CODBCContextRegistry::ClearAll(void)
         CMutexGuard mg(m_Mutex);
 
         while ( !m_Registry.empty() ) {
-            // x_Close will unregister and remove handler from the registry. 
+            // x_Close will unregister and remove handler from the registry.
             m_Registry.back()->x_Close(false);
         }
     }
@@ -152,14 +152,14 @@ CODBCContextRegistry::StaticClearAll(void)
 //
 //  CODBC_Reporter::
 //
-CODBC_Reporter::CODBC_Reporter(CDBHandlerStack* hs, 
-                               SQLSMALLINT ht, 
+CODBC_Reporter::CODBC_Reporter(CDBHandlerStack* hs,
+                               SQLSMALLINT ht,
                                SQLHANDLE h,
-                               const CODBC_Reporter* parent_reporter) 
+                               const CODBC_Reporter* parent_reporter)
 : m_HStack(hs)
 , m_HType(ht)
 , m_Handle(h)
-, m_ParentReporter(parent_reporter) 
+, m_ParentReporter(parent_reporter)
 {
 }
 
@@ -167,7 +167,7 @@ CODBC_Reporter::~CODBC_Reporter(void)
 {
 }
 
-string 
+string
 CODBC_Reporter::GetExtraMsg(void) const
 {
     if ( m_ParentReporter != NULL ) {
@@ -288,7 +288,7 @@ CODBCContext::CODBCContext(SQLLEN version, bool use_dsn)
     x_AddToRegistry();
 }
 
-void 
+void
 CODBCContext::x_AddToRegistry(void)
 {
     if (m_Registry) {
@@ -296,7 +296,7 @@ CODBCContext::x_AddToRegistry(void)
     }
 }
 
-void 
+void
 CODBCContext::x_RemoveFromRegistry(void)
 {
     if (m_Registry) {
@@ -304,7 +304,7 @@ CODBCContext::x_RemoveFromRegistry(void)
     }
 }
 
-void 
+void
 CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 {
     m_Registry = registry;
@@ -321,7 +321,7 @@ bool CODBCContext::SetLoginTimeout(unsigned int nof_secs)
 bool CODBCContext::SetTimeout(unsigned int nof_secs)
 {
     CFastMutexGuard mg(m_Mtx);
-    
+
     m_Timeout = nof_secs;
 
     ITERATE(TConnPool, it, m_NotInUse) {
@@ -347,7 +347,7 @@ bool CODBCContext::SetTimeout(unsigned int nof_secs)
 bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     CFastMutexGuard mg(m_Mtx);
-    
+
     m_TextImageSize = (SQLUINTEGER) nof_bytes;
 
     ITERATE(TConnPool, it, m_NotInUse) {
@@ -370,35 +370,34 @@ bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
 }
 
 
-I_Connection* 
+I_Connection*
 CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
 {
     CFastMutexGuard mg(m_Mtx);
-    
-    SQLHDBC con = x_ConnectToServer(conn_attr.srv_name, 
-                                    conn_attr.user_name, 
-                                    conn_attr.passwd, 
+
+    SQLHDBC con = x_ConnectToServer(conn_attr.srv_name,
+                                    conn_attr.user_name,
+                                    conn_attr.passwd,
                                     conn_attr.mode);
-    
+
     if (!con) {
         string err;
-        
+
         err += "Cannot connect to the server '" + conn_attr.srv_name;
         err += "' as user '" + conn_attr.user_name + "'" + m_Reporter.GetExtraMsg();
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
-    CODBC_Connection* t_con = new CODBC_Connection(this, 
-                                                   con, 
-                                                   conn_attr.reusable, 
+    CODBC_Connection* t_con = new CODBC_Connection(this,
+                                                   con,
+                                                   conn_attr.reusable,
                                                    conn_attr.pool_name);
-    t_con->m_MsgHandlers = m_ConnHandlers;
     t_con->m_Server      = conn_attr.srv_name;
     t_con->m_User        = conn_attr.user_name;
     t_con->m_Passwd      = conn_attr.passwd;
     t_con->m_BCPable     = (conn_attr.mode & fBcpIn) != 0;
     t_con->m_SecureLogin = (conn_attr.mode & fPasswordEncrypted) != 0;
-    
+
     return t_con;
 }
 
@@ -448,7 +447,7 @@ CODBCContext::x_Close(bool delete_conn)
 void CODBCContext::ODBC_SetPacketSize(SQLUINTEGER packet_size)
 {
     CFastMutexGuard mg(m_Mtx);
-    
+
     m_PacketSize = (SQLULEN)packet_size;
 }
 
@@ -495,12 +494,12 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
 
     string extra_msg = " SERVER: " + srv_name + "; USER: " + user_name;
     m_Reporter.SetExtraMsg( extra_msg );
-        
+
     if(!m_UseDSN) {
-        const string conn_str_suffix(srv_name + 
-                                     ";UID=" + 
-                                     user_name + 
-                                     ";PWD=" + 
+        const string conn_str_suffix(srv_name +
+                                     ";UID=" +
+                                     user_name +
+                                     ";PWD=" +
                                      passwd);
 #ifdef NCBI_OS_MSWIN
         // Default connection string ...
@@ -511,7 +510,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
             enum EState {eStInitial, eStSingleQuote};
             vector<string> driver_names;
             const IRegistry& registry = app->GetConfig();
-            const string odbc_driver_name = 
+            const string odbc_driver_name =
                 registry.GetString("ODBC", "DRIVER_NAME", "'SQL Server'");
 
             NStr::Tokenize(odbc_driver_name, " ", driver_names);
@@ -553,19 +552,19 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
                     string conn_str("DRIVER={" + driver_name + "};SERVER=");
                     conn_str += conn_str_suffix;
 
-                    r = SQLDriverConnect(con, 
-                                        0, 
-                                        (SQLCHAR*) conn_str.c_str(), 
+                    r = SQLDriverConnect(con,
+                                        0,
+                                        (SQLCHAR*) conn_str.c_str(),
                                         SQL_NTS,
-                                        0, 
-                                        0, 
-                                        0, 
+                                        0,
+                                        0,
+                                        0,
                                         SQL_DRIVER_NOPROMPT);
 
                     switch(r) {
                     case SQL_SUCCESS_WITH_INFO:
                         xReportConError(con);
-                    case SQL_SUCCESS: 
+                    case SQL_SUCCESS:
                         return con;
                     case SQL_ERROR:
                         xReportConError(con);
@@ -590,7 +589,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         // Ignore non-complete driver name ...
         // Use default driver name ...
         connect_str += conn_str_suffix;
-        
+
         r = SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
                              0, 0, 0, SQL_DRIVER_NOPROMPT);
     }
@@ -603,7 +602,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
     switch(r) {
     case SQL_SUCCESS_WITH_INFO:
         xReportConError(con);
-    case SQL_SUCCESS: 
+    case SQL_SUCCESS:
         return con;
     case SQL_ERROR:
         xReportConError(con);
@@ -814,6 +813,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/06/05 14:51:47  ssikorsk
+ * Set value of m_MsgHandlers in I_DriverContext::Create_Connection.
+ *
  * Revision 1.51  2006/06/02 19:37:40  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *
