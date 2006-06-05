@@ -57,13 +57,13 @@ class C_GWLib_MsgCallback;
 class CGW_Base
 {
   friend class CGW_Connection;
-  
+
 protected:
     ~CGW_Base(void)
     {
       comprot_void("GWLib:Base:delete",remoteObj);
     }
-    
+
 protected:
   int remoteObj;
   virtual void Release(void)
@@ -79,7 +79,7 @@ protected:
 class CGWContext : public I_DriverContext
 {
   int remoteObj;
-  
+
 public:
   CGWContext(CSSSConnection& sssConnection);
   virtual ~CGWContext(void)
@@ -204,8 +204,6 @@ protected:
     return localContext;
   }
 
-  // void DropCmd(CDB_BaseEnt& cmd);
-
   virtual bool xSendData(I_ITDescriptor& desc, CDB_Stream* img, bool log_it = true);
   virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it = true);
   virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt, bool log_it = true);
@@ -214,9 +212,7 @@ protected:
 
   virtual void PushMsgHandler(CDB_UserHandler* /*h*/,
                               EOwnership ownership = eNoOwnership);
-  virtual void PopMsgHandler (CDB_UserHandler* /*h*/);
   // virtual void Release() {}
-  CDBHandlerStack m_MsgHandlers;
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -281,7 +277,7 @@ public:
 class CGW_LangCmd : public I_LangCmd, CGW_BaseCmd
 {
   friend class CGW_Connection;
-  
+
 protected:
     CGW_LangCmd(CGW_Connection* con_arg, int remoteObj_arg)
     {
@@ -348,7 +344,7 @@ protected:
 class CGW_RPCCmd : public I_RPCCmd, CGW_BaseCmd
 {
   friend class CGW_Connection;
-  
+
 protected:
     CGW_RPCCmd(CGW_Connection* con_arg, int remoteObj_arg)
     {
@@ -416,7 +412,7 @@ protected:
 class CGW_BCPInCmd : public I_BCPInCmd, CGW_Base
 {
   friend class CGW_Connection;
-  
+
 protected:
     CGW_BCPInCmd(CGW_Connection* con_arg, int remoteObj_arg)
     {
@@ -456,7 +452,7 @@ protected:
 class CGW_CursorCmd : public I_CursorCmd, CGW_Base
 {
   friend class CGW_Connection;
-  
+
 protected:
     CGW_CursorCmd(CGW_Connection* con_arg, int remoteObj_arg)
     {
@@ -517,7 +513,7 @@ class CGW_SendDataCmd : public I_SendDataCmd, CGW_Base
 {
   friend class CGW_Connection;
   friend class CGW_CursorCmd;
-  
+
 protected:
     CGW_SendDataCmd(CGW_Connection* con_arg, int remoteObj_arg)
     {
@@ -542,10 +538,10 @@ public:
     {
       remoteObj = remoteObj_arg;
     }
-    
+
 private:
   int remoteObj;
-  
+
 public:
   int getRemoteObj(void)
   {
@@ -663,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/05 14:40:10  ssikorsk
+ * Moved method PopMsgHandler into I_Connection.
+ *
  * Revision 1.10  2006/05/15 19:37:33  ssikorsk
  * Added EOwnership argument to method PushMsgHandler.
  *
