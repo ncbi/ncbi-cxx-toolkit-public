@@ -30,7 +30,7 @@
  */
   
 #include <ncbi_pch.hpp>
-#include <util/regexp.hpp>
+//#include <util/regexp.hpp>
 #include <util/format_guess.hpp>
 #include <corelib/ncbifile.hpp>
 
@@ -300,19 +300,19 @@ bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count )
 
 bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
 {
-    list<string> lines;
-    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
-        //  seemingly not even ASCII ...
-        return false;
-    }
-
-    CRegexp re_new("^AS [0-9]+ [0-9]+");
-    CRegexp re_old("^DNA \\w+");
-    ITERATE( list<string>, it, lines ) {
-        if ( !re_new.GetMatch( *it ).empty() || !re_old.GetMatch( *it ).empty() ) {
-            return true;
-        }       
-    }
+//    list<string> lines;
+//    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+//        //  seemingly not even ASCII ...
+//        return false;
+//    }
+//
+//    CRegexp re_new("^AS [0-9]+ [0-9]+");
+//    CRegexp re_old("^DNA \\w+");
+//    ITERATE( list<string>, it, lines ) {
+//        if ( !re_new.GetMatch( *it ).empty() || !re_old.GetMatch( *it ).empty() ) {
+//            return true;
+//        }       
+//    }
     return false;
 }
 
@@ -697,6 +697,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/06/05 15:42:26  ludwigf
+ * *** TEMPORARY *** : Removed file type check for PHRAP ACE as it introduced
+ *  and unwanted dependency on regexp. This check will be back as soon as I
+ *  rewrite the offending section of code.
+ *
  * Revision 1.21  2006/06/05 15:10:08  ludwigf
  * ADDED: File type checks for PHRAP ACE, GTF, AGP, Newick tree.
  *
