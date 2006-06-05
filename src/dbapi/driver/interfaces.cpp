@@ -579,6 +579,14 @@ void I_Connection::DeleteAllCommands(void)
     m_CMDs.clear();
 }
 
+void I_Connection::Release(void)
+{
+    CDB_BaseEnt::Release();
+
+    // close all commands first
+    DeleteAllCommands();
+}
+
 ////////////////////////////////////////////////////////////////////////////
 //  I_DriverMgr::
 //
@@ -600,6 +608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/06/05 21:02:38  ssikorsk
+ * Implemented I_Connection::Release.
+ *
  * Revision 1.25  2006/06/05 14:42:29  ssikorsk
  * Added methods PushMsgHandler, PopMsgHandler and DropCmd to I_Connection.
  *
