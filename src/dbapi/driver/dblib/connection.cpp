@@ -234,13 +234,6 @@ CDB_ResultProcessor* CDBL_Connection::SetResultProcessor(CDB_ResultProcessor* rp
     return r;
 }
 
-void CDBL_Connection::Release()
-{
-    m_BR = 0;
-    // close all commands first
-    DeleteAllCommands();
-}
-
 
 CDBL_Connection::~CDBL_Connection()
 {
@@ -269,14 +262,14 @@ bool CDBL_Connection::Abort()
 bool CDBL_Connection::Close(void)
 {
     if (GetDBLibConnection()) {
-        try {
-            Refresh();
-            dbclose(GetDBLibConnection());
-            CheckFunctCall();
-            m_Link = NULL;
-            return true;
-        }
-        NCBI_CATCH_ALL( kEmptyStr )
+        Refresh();
+
+        dbclose(GetDBLibConnection());
+        CheckFunctCall();
+
+        m_Link = NULL;
+
+        return true;
     }
 
     return false;
@@ -645,7 +638,7 @@ void CDBL_SendDataCmd::Release()
 CDBL_SendDataCmd::~CDBL_SendDataCmd()
 {
     try {
-        m_BR = 0;
+        CDB_BaseEnt::Release();
 
         GetConnection().DropCmd(*this);
 
@@ -662,6 +655,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/06/05 21:06:05  ssikorsk
+ * Deleted CDBL_Connection::Release;
+ * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";
+ *
  * Revision 1.33  2006/06/05 19:10:06  ssikorsk
  * Moved logic from C...Cmd::Release into dtor.
  *
