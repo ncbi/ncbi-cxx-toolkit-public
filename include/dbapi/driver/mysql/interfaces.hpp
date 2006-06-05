@@ -188,6 +188,12 @@ public:
     string EscapeString(const char* str, unsigned long len);
 
 private:
+    CMySQL_Connection& GetConnection(void)
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+
     CMySQL_Connection* m_Connect;
     string             m_Query;
     bool               m_HasResults;
@@ -272,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/06/05 18:03:48  ssikorsk
+ * Added method GetConnection to CMySql_LangCmd.
+ *
  * Revision 1.20  2006/06/05 14:38:47  ssikorsk
  * Moved methods PushMsgHandler, PopMsgHandler and DropCmd into I_Connection.
  *
