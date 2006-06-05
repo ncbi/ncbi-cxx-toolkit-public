@@ -26,10 +26,11 @@
  * Author: Anatoliy Kuznetsov
  *
  * File Description:  Implemented methods to identify file formats.
- *
+ * 
  */
-
+  
 #include <ncbi_pch.hpp>
+#include <util/regexp.hpp>
 #include <util/format_guess.hpp>
 #include <corelib/ncbifile.hpp>
 
@@ -52,6 +53,481 @@ static inline bool isLineEnd(char ch)
 {
     return ch == 0x0D || ch == 0x0A || ch == '\n';
 }
+
+// Check if a buffer has nothing but whitespace in it
+static bool isLineBlank( const char* line )
+{
+    for ( size_t i=0; line[i] != 0; ++i ) {
+        if ( ! isspace( line[i] ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool x_SplitLines( const char* byte_buf, size_t byte_count, list< string>& lines )
+//
+//  Note:   We are assuming that the data at hand is consistent in its line 
+//          delimiters.
+//          Thus, we should see '\n' but never '\r' for files created in a UNIX 
+//           environment,
+//          we should see '\r', but never '\n' for files coming from a Mac,
+//          and we should see '\n' and '\r' only in the "\r\n" combination for 
+//           Windows originated files.
+//
+{
+    //
+    //  Make sure the given data is ASCII before checking potential line breaks:
+    //
+    const size_t MIN_HIGH_RATIO = 20;
+    size_t high_count = 0;
+    for ( size_t i=0; i < byte_count; ++i ) {
+        if ( 0x80 & byte_buf[i] ) {
+            ++high_count;
+        }
+    }
+    if ( 0 < high_count && byte_count / high_count < MIN_HIGH_RATIO ) {
+        return false;
+    }
+
+    //
+    //  Let's expect at least one line break in the given data:
+    //
+    string data( byte_buf, byte_count );
+    
+    lines.clear();
+    if ( NStr::Split( data, "\r\n", lines ).size() > 1 ) {
+        return true;
+    }
+    lines.clear();
+    if ( NStr::Split( data, "\r", lines ).size() > 1 ) {
+        return true;
+    }
+    lines.clear();
+    if ( NStr::Split( data, "\n", lines ).size() > 1 ) {
+        return true;
+    }
+    
+    //
+    //  Suspicious for non-binary files. Unfortunately, it can actually happen
+    //  for Newick tree files.
+    //
+    lines.clear();
+    lines.push_back( data );
+    return true;
+}
+
+
+bool x_IsLineRepeatMasker( const string& line ) 
+{
+    const size_t MIN_VALUES_PER_RECORD = 15;
+    
+    //
+    //  Make sure there is enough stuff on that line:
+    //
+    list<string> values;
+    if ( NStr::Split( line, " \t", values ).size() < MIN_VALUES_PER_RECORD ) {
+        return false;
+    }
+    
+    //
+    //  Look at specific values and make sure they are of the correct type:
+    //
+    
+    try {
+        //  1: positive integer:
+        list<string>::iterator it = values.begin();
+        NStr::StringToUInt( *it );
+    
+        //  2: float:
+        ++it;
+        NStr::StringToDouble( *it );
+    
+        //  3: float:
+        ++it;
+        NStr::StringToDouble( *it );
+    
+        //  4: float:
+        ++it;
+        NStr::StringToDouble( *it );
+        
+        //  5: string, not checked
+        ++it;
+        
+        //  6: positive integer:
+        ++it;
+        NStr::StringToUInt( *it );
+        
+        //  7: positive integer:
+        ++it;
+        NStr::StringToUInt( *it );
+        
+        //  8: positive integer, likely in paretheses, not checked:
+        ++it;
+        
+        //  9: '+' or 'C':
+        ++it;
+        if ( *it != "+" && *it != "C" ) {
+            return false;
+        }
+        
+        //  and that's enough for now. But there are at least two more fields 
+        //  with values that look testable.
+        
+    }
+    catch ( ... ) {
+        return false;
+    }
+        
+    return true;
+}
+
+
+bool x_IsInputRepeatMaskerWithHeader( list< string >& lines  )
+{
+    //
+    //  Repeatmasker files consist of columnar data with a couple of lines
+    //  of column labels prepended to it (but sometimes someone strips those
+    //  labels).
+    //  This function tries to identify repeatmasker data by those column
+    //  label lines. They should be the first non-blanks in the file.
+    //
+    string labels_1st_line[] = { "SW", "perc", "query", "position", "matching", "" };
+    string labels_2nd_line[] = { "score", "div.", "del.", "ins.", "sequence", "" };
+    
+    if ( lines.empty() ) {
+        return false;
+    }
+    
+    //
+    //  Purge junk lines:
+    //
+    list<string>::iterator it = lines.begin();
+    for  ( NULL; it != lines.end(); ++it ) {
+        NStr::TruncateSpacesInPlace( *it );
+        if ( *it != "" ) {
+            break;
+        }
+    }
+    
+    //
+    //  Verify first line of labels:
+    //
+    size_t current_offset = 0;
+    for ( size_t i=0; labels_1st_line[i] != ""; ++i ) {
+        current_offset = NStr::FindCase( *it, labels_1st_line[i], current_offset );
+        if ( current_offset == NPOS ) {
+            return false;
+        }
+    }
+    
+    //
+    //  Verify second line of labels:
+    //
+    ++it;
+    if ( it == lines.end() ) {
+        return false;
+    }
+    current_offset = 0;
+    for ( size_t j=0; labels_2nd_line[j] != ""; ++j ) {
+        current_offset = NStr::FindCase( *it, labels_2nd_line[j], current_offset );
+        if ( current_offset == NPOS ) {
+            return false;
+        }
+    }
+    
+    //
+    //  Should have at least one extra line:
+    //
+    ++it;
+    if ( it == lines.end() ) {
+        return false;
+    }
+            
+    return true;
+}
+
+
+bool x_IsInputRepeatMaskerWithoutHeader( list< string>& lines  )
+{
+    //
+    //  Repeatmasker files consist of columnar data with a couple of lines
+    //  of column labels prepended to it (but sometimes someone strips those
+    //  labels).
+    //  This function assumes the column labels have been stripped and attempts
+    //  to identify RMO by checking the data itself.
+    //
+    
+    if ( ! lines.empty() ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
+    }
+    if ( lines.empty() ) {
+        return false;
+    }
+    
+    //
+    //  We declare the data as RMO if we are able to parse every record in the 
+    //  sample we got:
+    //
+    for ( list<string>::iterator it = lines.begin(); it != lines.end(); ++it ) {
+        NStr::TruncateSpacesInPlace( *it );
+        if ( *it == "" ) {
+            continue;
+        }
+        if ( ! x_IsLineRepeatMasker( *it ) ) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+
+bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count ) 
+{
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    
+    return x_IsInputRepeatMaskerWithHeader( lines ) || 
+        x_IsInputRepeatMaskerWithoutHeader( lines  );
+}
+
+
+bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
+{
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+
+    CRegexp re_new("^AS [0-9]+ [0-9]+");
+    CRegexp re_old("^DNA \\w+");
+    ITERATE( list<string>, it, lines ) {
+        if ( !re_new.GetMatch( *it ).empty() || !re_old.GetMatch( *it ).empty() ) {
+            return true;
+        }       
+    }
+    return false;
+}
+
+
+bool x_IsLineGtf( const string& line )
+{
+    vector<string> tokens;
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+        return false;
+    }
+    try {
+        NStr::StringToInt( tokens[3] );
+        NStr::StringToInt( tokens[4] );
+        if ( tokens[5] != "." ) {
+            NStr::StringToDouble( tokens[5] );
+        }
+    }
+    catch( ... ) {
+        return false;
+    }
+        
+    if ( tokens[6] != "+" && tokens[6] != "." && tokens[6] != "-" ) {
+        return false;
+    }
+    if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
+        return false;
+    }
+    if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
+        return false;
+    }
+    return true;
+}
+
+
+bool x_IsLineAgp( const string& line ) 
+{
+    vector<string> tokens;
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+        return false;
+    }
+    try {
+        NStr::StringToInt( tokens[1] );
+        NStr::StringToInt( tokens[2] );
+        NStr::StringToInt( tokens[3] );
+        
+        if ( tokens[4].size() != 1 || NPOS == tokens[4].find_first_of( "ADFGPNOW" ) ) {
+            return false;
+        }
+        if ( tokens[4] == "N" ) {
+            NStr::StringToInt( tokens[5] ); // gap length
+        }
+        else {
+            NStr::StringToInt( tokens[6] ); // component start
+            NStr::StringToInt( tokens[7] ); // component end
+            
+            if ( tokens.size() != 9 ) {
+                return false;
+            }
+            if ( tokens[8].size() != 1 || NPOS == tokens[8].find_first_of( "+-" ) ) {
+                return false;
+            }
+        }
+    }
+    catch( ... ) {
+        return false;
+    }
+    
+    return true;
+}
+    
+
+bool x_IsInputGtf( const char* byte_buf, size_t byte_count )
+{
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( ! lines.empty() ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
+    }
+    if ( lines.empty() ) {
+        return false;
+    }
+    
+    ITERATE( list<string>, it, lines ) {
+        if ( ! x_IsLineGtf( *it ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool x_IsInputAgp( const char* byte_buf, size_t byte_count )
+{
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( ! lines.empty() ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
+    }
+    if ( lines.empty() ) {
+        return false;
+    }
+        
+    ITERATE( list<string>, it, lines ) {
+        if ( ! x_IsLineAgp( *it ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool x_IsLineNewick( const string& cline )
+{
+    //
+    //  Note:
+    //  Newick lines are a little tricky. They contain tree structure of the form
+    //  (a,b), where each a or be can either be a another tree structure, or a
+    //  label of the form 'ABCD'. The trickiness comes from the fact that these 
+    //  beasts are highly recursive, to the point that our 1k read buffer may not
+    //  even cover a single line in the file. Which means, we might only have a
+    //  partial line to work with.
+    //
+    //  The test:
+    //  Throw away all the labels, i.e. everything between an odd-numbered ' and
+    //  an even numbered tick. After that, there should only remain '(', ')', ';', 
+    //  ''', ',', or whitespace.
+    //  Moreover, if there is a semicolon, it must be at the end of the line. 
+    //
+    string line = NStr::TruncateSpaces( cline );
+    if ( line.empty() ) {
+        return false;
+    }
+    string compressed_line;
+    bool in_label = false;
+    for ( size_t i=0; line[i] != 0; ++i ) {
+        if ( ! in_label ) {
+            compressed_line += line[i];
+        }
+        if ( line[i] == '\'' ) {
+            in_label = !in_label;
+        }
+    }
+    if ( NPOS != compressed_line.find_first_not_of( "();\', \t" ) ) {
+        return false;
+    }
+    size_t pos_semicolon = compressed_line.find_first_of( ";" );
+    if ( NPOS != pos_semicolon && compressed_line.size() -1 != pos_semicolon ) {
+        return false;
+    }
+        
+    return true;
+}
+
+
+bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
+{
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( lines.empty() ) {
+        return false;
+    }
+        
+    ITERATE( list<string>, it, lines ) {
+        if ( ! x_IsLineNewick( *it ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool x_IsInputXml( const char* byte_buf, size_t byte_count )
+{
+    if (byte_count > 5) {
+        const char* xml_sig = "<?XML";
+        for (unsigned i = 0; i < 5; ++i) {
+            unsigned char ch = byte_buf[i];
+            char upch = toupper(ch);
+            if (upch != xml_sig[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    return false;
+}
+
+
+bool x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
+{
+    //
+    //  Criterion: Presence of any non-printing characters
+    //
+    for (unsigned int i = 0;  i < byte_count;  ++i) {
+        if ( !isgraph((unsigned char) byte_buf[i])  &&  
+            !isspace((unsigned char) byte_buf[i]) ) 
+        {
+            return true;
+        }
+    }
+    return false;
+}
+    
 
 CFormatGuess::ESequenceType 
 CFormatGuess::SequenceType(const char* str, unsigned length)
@@ -114,40 +590,33 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
         return eUnknown;
     }
 
-    // Buffer analysis (completely ad-hoc heuristics).
+    if ( x_IsInputRepeatMasker( (const char*)buf, count ) ) {
+        return eRmo;
+    }
+    if ( x_IsInputPhrapAce( (const char*)buf, count ) ) {
+        return ePhrapAce;
+    }
+    if ( x_IsInputGtf( (const char*)buf, count ) ) {
+        return eGtf;
+    }
+    if ( x_IsInputAgp( (const char*)buf, count ) ) {
+        return eAgp;
+    }
+    if ( x_IsInputNewick( (const char*)buf, count ) ) {
+        return eNewick;
+    }
+    if ( x_IsInputXml( (const char*)buf, count ) ) {
+        return eXml;
+    }
+    if ( x_IsInputBinaryAsn( (const char*)buf, count ) ) {
+        return eBinaryASN;
+    }
 
-    // Check for XML signature...
-    {{
-        if (count > 5) {
-            const char* xml_sig = "<?XML";
-            bool xml_flag = true;
-            for (unsigned i = 0; i < 5; ++i) {
-                unsigned char ch = buf[i];
-                char upch = toupper(ch);
-                if (upch != xml_sig[i]) {
-                    xml_flag = false;
-                    break;
-                }
-            }
-            if (xml_flag) {
-                
-                return eXml;
-            }
-        }
-
-    }}
-
-    // check for binary ASN.1 - the presence of any non-printing characters
-    // can confirm this
+    //
+    //  The following is actually three tests rolled into one, based on symbol
+    //  frequencies in the input sample. I am eaving them "as is".
+    //
     unsigned int i = 0;
-    {{
-        for (i = 0;  i < count;  ++i) {
-            if ( !isgraph((unsigned char) buf[i])  &&  !isspace((unsigned char) buf[i]) ) {
-                return eBinaryASN;
-            }
-        }
-    }}
-    
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
     unsigned seq_length = (unsigned)count;
@@ -219,17 +688,6 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
             return eTextASN;
         }
     }
-
-    // Signature check
-    if (buf[1] == 0x80) {
-        if (buf[0] == 0x30 || buf[0] == 0x31) {
-            //return eBinaryASN;
-        }
-        if (buf[0] >= 0xA0) {
-            //return eBinaryASN;
-        }
-    }
-
     return format;
 
 }
@@ -239,6 +697,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/06/05 15:10:08  ludwigf
+ * ADDED: File type checks for PHRAP ACE, GTF, AGP, Newick tree.
+ *
  * Revision 1.20  2005/06/22 15:45:56  kuznets
  * Added X as a legal protein character
  *
