@@ -51,7 +51,12 @@ public:
         eBinaryASN,
         eTextASN,
         eFasta,
-        eXml
+        eXml,
+        eRmo,                           // repeatmasker out
+        ePhrapAce,
+        eGtf,
+        eAgp,
+        eNewick
     };
 
     enum ESequenceType {
@@ -75,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/06/05 15:06:36  ludwigf
+ * ADDED: IDs for the PHRAP ACE, GTF, AGP, and Newick tree file types.
+ *
  * Revision 1.3  2004/03/23 22:29:50  jcherry
  * Added Format(CNcbiIstream& input)
  *
