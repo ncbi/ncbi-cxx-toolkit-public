@@ -40,163 +40,169 @@ BEGIN_SCOPE(objects)
 
 class IPrefetchAction;
 
+/////////////////////////////////////////////////////////////////////////////
+// CScopeSource
 
-CPrefetchAction_GetBioseqHandle::
-CPrefetchAction_GetBioseqHandle(CScope& scope,
-                                const CSeq_id_Handle& id)
-    : m_Scope(scope),
-      m_Seq_id(id)
+CScope& CScopeSource::GetScope(void)
 {
-    if ( !id ) {
+    if ( !m_Scope ) {
+        m_Scope.Set(new CScope(m_BaseScope->GetObjectManager()));
+        m_Scope->AddScope(*m_BaseScope.GetImpl());
+    }
+    return m_Scope;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CPrefetchBioseq
+
+CPrefetchBioseq::CPrefetchBioseq(const CScopeSource& scope)
+    : CScopeSource(scope)
+{
+}
+
+
+CPrefetchBioseq::CPrefetchBioseq(const CBioseq_Handle& bioseq)
+    : CScopeSource(bioseq.GetScope()),
+      m_Result(bioseq)
+{
+    if ( !bioseq ) {
         NCBI_THROW(CObjMgrException, eOtherError,
-                   "CPrefetchAction_GetBioseqHandle: seq-id is null");
+                   "CPrefetchBioseq: bioseq handle is null");
     }
 }
 
 
-bool CPrefetchAction_GetBioseqHandle::Execute(CPrefetchToken token)
+CPrefetchBioseq::CPrefetchBioseq(const CScopeSource& scope,
+                                 const CSeq_id_Handle& id)
+    : CScopeSource(scope),
+      m_Seq_id(id)
 {
-    m_Result = m_Scope->GetBioseqHandle(m_Seq_id, CScope::eGetBioseq_All);
-    return m_Result;
+    if ( !id ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CPrefetchBioseq: seq-id is null");
+    }
 }
 
 
-CPrefetchAction_Feat_CI::
-CPrefetchAction_Feat_CI(CScope& scope,
-                        CConstRef<CSeq_loc> loc,
-                        const SAnnotSelector& selector)
-    : m_Scope(scope),
+bool CPrefetchBioseq::Execute(CPrefetchToken token)
+{
+    if ( !GetResult() && GetSeq_id() ) {
+        m_Result = GetScope().GetBioseqHandle(GetSeq_id());
+    }
+    return GetResult();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CPrefetchFeat_CI
+
+CPrefetchFeat_CI::CPrefetchFeat_CI(const CScopeSource& scope,
+                                   CConstRef<CSeq_loc> loc,
+                                   const SAnnotSelector& selector)
+    : CPrefetchBioseq(scope),
       m_Loc(loc),
       m_Selector(selector)
 {
     if ( !loc ) {
         NCBI_THROW(CObjMgrException, eOtherError,
-                   "CPrefetchAction_Feat_CI: loc is null");
+                   "CPrefetchFeat_CI: loc is null");
     }
 }
 
 
-CPrefetchAction_Feat_CI::
-CPrefetchAction_Feat_CI(const CBioseq_Handle& bioseq,
-                        const CRange<TSeqPos>& range,
-                        ENa_strand strand,
-                        const SAnnotSelector& selector)
-    : m_Bioseq(bioseq),
+CPrefetchFeat_CI::CPrefetchFeat_CI(const CBioseq_Handle& bioseq,
+                                   const CRange<TSeqPos>& range,
+                                   ENa_strand strand,
+                                   const SAnnotSelector& selector)
+    : CPrefetchBioseq(bioseq),
       m_Range(range),
       m_Strand(strand),
       m_Selector(selector)
 {
-    if ( !bioseq ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "CPrefetchAction_Feat_CI: bioseq is null");
-    }
 }
 
 
-CPrefetchAction_Feat_CI::
-CPrefetchAction_Feat_CI(CScope& scope,
-                        const CSeq_id_Handle& seq_id,
-                        const CRange<TSeqPos>& range,
-                        ENa_strand strand,
-                        const SAnnotSelector& selector)
-    : m_Scope(scope),
-      m_Seq_id(seq_id),
+CPrefetchFeat_CI::CPrefetchFeat_CI(const CScopeSource& scope,
+                                   const CSeq_id_Handle& seq_id,
+                                   const CRange<TSeqPos>& range,
+                                   ENa_strand strand,
+                                   const SAnnotSelector& selector)
+    : CPrefetchBioseq(scope, seq_id),
       m_Range(range),
       m_Strand(strand),
       m_Selector(selector)
 {
-    if ( !seq_id ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "CPrefetchAction_Feat_CI: seq-id is null");
-    }
 }
 
 
-bool CPrefetchAction_Feat_CI::Execute(CPrefetchToken token)
+bool CPrefetchFeat_CI::Execute(CPrefetchToken token)
 {
     if ( m_Loc ) {
-        m_Result = CFeat_CI(*m_Scope, *m_Loc, m_Selector);
+        m_Result = CFeat_CI(GetScope(), *m_Loc, m_Selector);
     }
-    else if ( m_Bioseq ) {
-        m_Result = CFeat_CI(m_Bioseq, m_Range, m_Strand, m_Selector);
-    }
-    else {
-        CBioseq_Handle bioseq =
-            m_Scope->GetBioseqHandle(m_Seq_id, CScope::eGetBioseq_All);
-        m_Result = CFeat_CI(bioseq, m_Range, m_Strand, m_Selector);
+    else if ( CPrefetchBioseq::Execute(token) ) {
+        m_Result = CFeat_CI(GetBioseqHandle(), m_Range, m_Strand, m_Selector);
     }
     return m_Result;
 }
 
 
-CPrefetchToken CStdPrefetch::GetBioseqHandle(CPrefetchManager& manager,
-                                             CScope& scope,
-                                             const CSeq_id_Handle& id)
+/////////////////////////////////////////////////////////////////////////////
+// CPrefetchComplete<CBioseq_Handle>
+
+CPrefetchComplete<CBioseq_Handle>::CPrefetchComplete(const THandle& handle)
+    : CPrefetchBioseq(handle)
 {
-    return manager.AddAction
-        (new CPrefetchAction_GetBioseqHandle(scope, id));
 }
 
 
-CBioseq_Handle CStdPrefetch::GetBioseqHandle(CPrefetchToken token)
+CPrefetchComplete<CBioseq_Handle>::CPrefetchComplete(const CScopeSource& scope,
+                                                     const CSeq_id_Handle& id)
+    : CPrefetchBioseq(scope, id)
 {
-    CPrefetchAction_GetBioseqHandle* action =
-        dynamic_cast<CPrefetchAction_GetBioseqHandle*>(token.GetAction());
-    if ( !action ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "CStdPrefetch::GetBioseqHandle: wrong token");
+}
+
+
+bool CPrefetchComplete<CBioseq_Handle>::Execute(CPrefetchToken token)
+{
+    if ( CPrefetchBioseq::Execute(token) ) {
+        m_Result = GetHandle().GetCompleteObject();
     }
-    Wait(token);
-    return action->GetResult();
+    return GetResult();
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CStdPrefetch
 
-CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
-                                        CScope& scope,
-                                        CConstRef<CSeq_loc> loc,
-                                        const SAnnotSelector& sel)
-{
-    return manager.AddAction
-        (new CPrefetchAction_Feat_CI(scope, loc, sel));
+namespace {
+    class CWaitingListener
+        : public CObject, public IPrefetchListener
+    {
+    public:
+        CWaitingListener(void)
+            : m_Sema(0, kMax_Int)
+            {
+            }
+
+        virtual void PrefetchNotify(CPrefetchToken token, EEvent /*event*/)
+            {
+                if ( token.IsDone() ) {
+                    m_Sema.Post();
+                }
+            }
+
+        void Wait(void)
+            {
+                m_Sema.Wait();
+                m_Sema.Post();
+            }
+    
+    private:
+        CSemaphore m_Sema;
+    };
 }
-
-
-CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
-                                        const CBioseq_Handle& bioseq,
-                                        const CRange<TSeqPos>& range,
-                                        ENa_strand strand,
-                                        const SAnnotSelector& sel)
-{
-    return manager.AddAction
-        (new CPrefetchAction_Feat_CI(bioseq, range, strand, sel));
-}
-
-
-CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
-                                        CScope& scope,
-                                        const CSeq_id_Handle& seq_id,
-                                        const CRange<TSeqPos>& range,
-                                        ENa_strand strand,
-                                        const SAnnotSelector& sel)
-{
-    return manager.AddAction
-        (new CPrefetchAction_Feat_CI(scope, seq_id, range, strand, sel));
-}
-
-
-CFeat_CI CStdPrefetch::GetFeat_CI(CPrefetchToken token)
-{
-    CPrefetchAction_Feat_CI* action =
-        dynamic_cast<CPrefetchAction_Feat_CI*>(token.GetAction());
-    if ( !action ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "CStdPrefetch::GetFeat_CI: wrong token");
-    }
-    Wait(token);
-    return action->GetResult();
-}
-
 
 
 void CStdPrefetch::Wait(CPrefetchToken token)
@@ -214,6 +220,149 @@ void CStdPrefetch::Wait(CPrefetchToken token)
     }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CStdPrefetch::GetBioseqHandle
+
+CPrefetchToken CStdPrefetch::GetBioseqHandle(CPrefetchManager& manager,
+                                             const CScopeSource& scope,
+                                             const CSeq_id_Handle& id)
+{
+    return manager.AddAction(new CPrefetchBioseq(scope, id));
+}
+
+
+CBioseq_Handle CStdPrefetch::GetBioseqHandle(CPrefetchToken token)
+{
+    CPrefetchBioseq* action =
+        dynamic_cast<CPrefetchBioseq*>(token.GetAction());
+    if ( !action ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CStdPrefetch::GetBioseqHandle: wrong token");
+    }
+    Wait(token);
+    return action->GetResult();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CStdPrefetch::GetFeat_CI
+
+CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
+                                        const CScopeSource& scope,
+                                        CConstRef<CSeq_loc> loc,
+                                        const SAnnotSelector& sel)
+{
+    return manager.AddAction(new CPrefetchFeat_CI(scope, loc, sel));
+}
+
+
+CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
+                                        const CBioseq_Handle& bioseq,
+                                        const CRange<TSeqPos>& range,
+                                        ENa_strand strand,
+                                        const SAnnotSelector& sel)
+{
+    return manager.AddAction(new CPrefetchFeat_CI(bioseq,
+                                                  range, strand, sel));
+}
+
+
+CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
+                                        const CScopeSource& scope,
+                                        const CSeq_id_Handle& seq_id,
+                                        const CRange<TSeqPos>& range,
+                                        ENa_strand strand,
+                                        const SAnnotSelector& sel)
+{
+    return manager.AddAction(new CPrefetchFeat_CI(scope, seq_id,
+                                                  range, strand, sel));
+}
+
+
+CFeat_CI CStdPrefetch::GetFeat_CI(CPrefetchToken token)
+{
+    CPrefetchFeat_CI* action =
+        dynamic_cast<CPrefetchFeat_CI*>(token.GetAction());
+    if ( !action ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CStdPrefetch::GetFeat_CI: wrong token");
+    }
+    Wait(token);
+    return action->GetResult();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// ISeq_idSource
+
+ISeq_idSource::~ISeq_idSource(void)
+{
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// IPrefetchActionSource
+
+CPrefetchBioseqActionSource::CPrefetchBioseqActionSource(const CScopeSource& scope,
+                                                         ISeq_idSource* ids)
+    : m_Scope(scope),
+      m_Ids(ids)
+{
+}
+
+
+CPrefetchBioseqActionSource::CPrefetchBioseqActionSource(const CScopeSource& scope,
+                                                         const TIds& ids)
+    : m_Scope(scope),
+      m_Ids(new CStdSeq_idSource<TIds>(ids))
+{
+}
+
+
+CIRef<IPrefetchAction> CPrefetchBioseqActionSource::GetNextAction(void)
+{
+    CIRef<IPrefetchAction> ret;
+    CSeq_id_Handle id = m_Ids->GetNextSeq_id();
+    if ( id ) {
+        ret.Reset(new CPrefetchBioseq(m_Scope, id));
+    }
+    return ret;
+}
+
+
+CPrefetchFeat_CIActionSource::CPrefetchFeat_CIActionSource(const CScopeSource& scope,
+                                                           const TIds& ids,
+                                                           const SAnnotSelector& sel)
+    : m_Scope(scope),
+      m_Ids(new CStdSeq_idSource<TIds>(ids)),
+      m_Selector(sel)
+{
+}
+
+
+CPrefetchFeat_CIActionSource::CPrefetchFeat_CIActionSource(const CScopeSource& scope,
+                                                           ISeq_idSource* ids,
+                                                           const SAnnotSelector& sel)
+    : m_Scope(scope),
+      m_Ids(ids),
+      m_Selector(sel)
+{
+}
+
+
+CIRef<IPrefetchAction> CPrefetchFeat_CIActionSource::GetNextAction(void)
+{
+    CIRef<IPrefetchAction> ret;
+    CSeq_id_Handle id = m_Ids->GetNextSeq_id();
+    if ( id ) {
+        ret.Reset(new CPrefetchFeat_CI(m_Scope, id,
+                                       CRange<TSeqPos>::GetWhole(),
+                                       eNa_strand_unknown,
+                                       m_Selector));
+    }
+    return ret;
+}
 
 
 END_SCOPE(objects)

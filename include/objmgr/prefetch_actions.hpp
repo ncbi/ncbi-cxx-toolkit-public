@@ -50,62 +50,107 @@ class CScope;
  */
 
 
-class NCBI_XOBJMGR_EXPORT CPrefetchAction_GetBioseqHandle
-    : public CObject, public IPrefetchAction
+class NCBI_XOBJMGR_EXPORT CScopeSource
+{
+public:
+    CScopeSource(void)
+        {
+        }
+    CScopeSource(CScope& scope)
+        : m_Scope(scope)
+        {
+        }
+
+    static CScopeSource New(CScope& scope)
+        {
+            CScopeSource ret;
+            ret.m_BaseScope.Set(&scope);
+            return ret;
+        }
+
+    CScope& GetScope(void);
+
+private:
+    CHeapScope m_Scope;
+    CHeapScope m_BaseScope;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CPrefetchBioseq
+    : public CObject, public IPrefetchAction, public CScopeSource
 {
 public:
     typedef CBioseq_Handle TResult;
 
-    CPrefetchAction_GetBioseqHandle(CScope& scope, const CSeq_id_Handle& id);
+    CPrefetchBioseq(const CScopeSource& scope,
+                    const CSeq_id_Handle& id);
 
     virtual bool Execute(CPrefetchToken token);
 
+    const CSeq_id_Handle& GetSeq_id(void) const
+        {
+            return m_Seq_id;
+        }
+    const CBioseq_Handle& GetBioseqHandle(void) const
+        {
+            return m_Result;
+        }
     const CBioseq_Handle& GetResult(void) const
         {
             return m_Result;
         }
 
+protected:
+    CPrefetchBioseq(const CScopeSource& scope);
+    CPrefetchBioseq(const CBioseq_Handle& bioseq);
+
 private:
-    CHeapScope      m_Scope;
     CSeq_id_Handle  m_Seq_id;
     TResult         m_Result;
 };
 
 
-class NCBI_XOBJMGR_EXPORT CPrefetchAction_Feat_CI
-    : public CObject, public IPrefetchAction
+class NCBI_XOBJMGR_EXPORT CPrefetchFeat_CI
+    : public CPrefetchBioseq
 {
 public:
     typedef CFeat_CI TResult;
 
-    CPrefetchAction_Feat_CI(CScope& scope,
-                            CConstRef<CSeq_loc> loc,
-                            const SAnnotSelector& selector);
-    CPrefetchAction_Feat_CI(const CBioseq_Handle& bioseq,
-                            const CRange<TSeqPos>& range,
-                            ENa_strand strand,
-                            const SAnnotSelector& selector);
-    CPrefetchAction_Feat_CI(CScope& scope,
-                            const CSeq_id_Handle& seq_id,
-                            const CRange<TSeqPos>& range,
-                            ENa_strand strand,
-                            const SAnnotSelector& selector);
+    // from location
+    CPrefetchFeat_CI(const CScopeSource& scope,
+                     CConstRef<CSeq_loc> loc,
+                     const SAnnotSelector& selector);
+
+    // from bioseq
+    CPrefetchFeat_CI(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     ENa_strand strand,
+                     const SAnnotSelector& selector);
+    CPrefetchFeat_CI(const CScopeSource& scope,
+                     const CSeq_id_Handle& seq_id,
+                     const CRange<TSeqPos>& range,
+                     ENa_strand strand,
+                     const SAnnotSelector& selector);
 
     virtual bool Execute(CPrefetchToken token);
 
+    const SAnnotSelector& GetSelector(void) const
+        {
+            return m_Selector;
+        }
+    const CFeat_CI& GetFeat_CI(void) const
+        {
+            return m_Result;
+        }
     const CFeat_CI& GetResult(void) const
         {
             return m_Result;
         }
 
 private:
-    CHeapScope          m_Scope;
     // from location
     CConstRef<CSeq_loc> m_Loc;
     // from bioseq
-    CBioseq_Handle      m_Bioseq;
-    // from seq-id
-    CSeq_id_Handle      m_Seq_id;
     CRange<TSeqPos>     m_Range;
     ENa_strand          m_Strand;
     // filter
@@ -116,15 +161,15 @@ private:
 
 
 template<class Handle>
-class CPrefetchAction_GetComplete
-    : public CObject, public IPrefetchAction
+class CPrefetchComplete
+    : public IPrefetchAction
 {
 public:
     typedef Handle THandle;
     typedef typename THandle::TObject TObject;
     typedef CConstRef<TObject> TResult;
 
-    CPrefetchAction_GetComplete(const Handle& handle)
+    CPrefetchComplete(const THandle& handle)
         : m_Handle(handle)
         {
         }
@@ -135,6 +180,10 @@ public:
             return m_Result;
         }
 
+    const THandle GetHandle(void) const
+        {
+            return m_Handle;
+        }
     const CConstRef<TObject>& GetResult(void) const
         {
             return m_Result;
@@ -146,89 +195,144 @@ private:
 };
 
 
-class CWaitingListener
-    : public CObject, public IPrefetchListener
+template<>
+class CPrefetchComplete<CBioseq_Handle>
+    : public CPrefetchBioseq
 {
 public:
-    CWaitingListener(void)
-        : m_Sema(0, kMax_Int)
+    typedef CBioseq_Handle THandle;
+    typedef THandle::TObject TObject;
+    typedef CConstRef<TObject> TResult;
+
+    CPrefetchComplete(const THandle& handle);
+    CPrefetchComplete(const CScopeSource& scope,
+                      const CSeq_id_Handle& seq_id);
+
+    virtual bool Execute(CPrefetchToken token);
+
+    const THandle GetHandle(void) const
         {
+            return GetBioseqHandle();
+        }
+    const CConstRef<TObject>& GetComplete(void) const
+        {
+            return m_Result;
+        }
+    const CConstRef<TObject>& GetResult(void) const
+        {
+            return m_Result;
         }
 
-    virtual void PrefetchNotify(CPrefetchToken token, EEvent /*event*/)
-        {
-            if ( token.IsDone() ) {
-                m_Sema.Post();
-            }
-        }
-
-    void Wait(void)
-        {
-            m_Sema.Wait();
-            m_Sema.Post();
-        }
-    
 private:
-    CSemaphore m_Sema;
+    TResult m_Result;
 };
 
 
-class NCBI_XOBJMGR_EXPORT CStdPrefetch : public CPrefetchManager
+class ISeq_idSource
+{
+public:
+    virtual ~ISeq_idSource(void);
+    virtual CSeq_id_Handle GetNextSeq_id(void) = 0;
+};
+
+
+template<class Container>
+class CStdSeq_idSource : public CObject,
+                         public ISeq_idSource
+{
+public:
+    typedef Container TContainer;
+    typedef typename TContainer::const_iterator TIterator;
+
+    CStdSeq_idSource(const TContainer& cont)
+        : m_Container(cont), m_Iterator(m_Container.begin())
+        {
+        }
+
+    virtual CSeq_id_Handle GetNextSeq_id(void)
+        {
+            CSeq_id_Handle ret;
+            if ( m_Iterator != m_Container.end() ) {
+                ret = *m_Iterator++;
+            }
+            return ret;
+        }
+
+private:
+    TContainer m_Container;
+    TIterator m_Iterator;
+};
+
+
+class CPrefetchBioseqActionSource : public CObject,
+                                    public IPrefetchActionSource
+{
+public:
+    typedef vector<CSeq_id_Handle> TIds;
+
+    CPrefetchBioseqActionSource(const CScopeSource& scope,
+                                ISeq_idSource* ids);
+    CPrefetchBioseqActionSource(const CScopeSource& scope,
+                                const TIds& ids);
+    
+    virtual CIRef<IPrefetchAction> GetNextAction(void);
+
+private:
+    CScopeSource         m_Scope;
+    CIRef<ISeq_idSource> m_Ids;
+};
+
+
+class CPrefetchFeat_CIActionSource : public CObject,
+                                     public IPrefetchActionSource
+{
+public:
+    typedef vector<CSeq_id_Handle> TIds;
+
+    CPrefetchFeat_CIActionSource(const CScopeSource& scope,
+                                 ISeq_idSource* ids,
+                                 const SAnnotSelector& sel);
+    CPrefetchFeat_CIActionSource(const CScopeSource& scope,
+                                 const TIds& ids,
+                                 const SAnnotSelector& sel);
+    
+    virtual CIRef<IPrefetchAction> GetNextAction(void);
+
+private:
+    CScopeSource         m_Scope;
+    CIRef<ISeq_idSource> m_Ids;
+    SAnnotSelector       m_Selector;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CStdPrefetch
 {
 public:
     static void Wait(CPrefetchToken token);
 
     // GetBioseqHandle
     static CPrefetchToken GetBioseqHandle(CPrefetchManager& manager,
-                                          CScope& scope,
+                                          const CScopeSource& scope,
                                           const CSeq_id_Handle& id);
-    CPrefetchToken GetBioseqHandle(CScope& scope,
-                                   const CSeq_id_Handle& id)
-        {
-            return GetBioseqHandle(*this, scope, id);
-        }
     static CBioseq_Handle GetBioseqHandle(CPrefetchToken token);
 
     // GetFeat_CI
-    static CPrefetchToken GetFeat_CI(CPrefetchManager& manager,
-                                     CScope& scope,
-                                     CConstRef<CSeq_loc> loc,
-                                     const SAnnotSelector& sel);
-    CPrefetchToken GetFeat_CI(CScope& scope,
-                              CConstRef<CSeq_loc> loc,
-                              const SAnnotSelector& sel)
-        {
-            return GetFeat_CI(*this, scope, loc, sel);
-        }
-    static CPrefetchToken GetFeat_CI(CPrefetchManager& manager,
-                                     CScope& scope,
-                                     const CSeq_id_Handle& seq_id,
-                                     const CRange<TSeqPos>& range,
-                                     ENa_strand strand,
-                                     const SAnnotSelector& sel);
-    CPrefetchToken GetFeat_CI(CScope& scope,
-                              const CSeq_id_Handle& seq_id,
-                              const CRange<TSeqPos>& range,
-                              ENa_strand strand,
-                              const SAnnotSelector& sel)
-        {
-            return GetFeat_CI(*this, scope, seq_id, range, strand, sel);
-        }
     static CPrefetchToken GetFeat_CI(CPrefetchManager& manager,
                                      const CBioseq_Handle& bioseq,
                                      const CRange<TSeqPos>& range,
                                      ENa_strand strand,
                                      const SAnnotSelector& sel);
-    CPrefetchToken GetFeat_CI(CScope& scope,
-                              const CBioseq_Handle& bioseq,
-                              const CRange<TSeqPos>& range,
-                              ENa_strand strand,
-                              const SAnnotSelector& sel)
-        {
-            return GetFeat_CI(*this, bioseq, range, strand, sel);
-        }
+    static CPrefetchToken GetFeat_CI(CPrefetchManager& manager,
+                                     const CScopeSource& scope,
+                                     const CSeq_id_Handle& seq_id,
+                                     const CRange<TSeqPos>& range,
+                                     ENa_strand strand,
+                                     const SAnnotSelector& sel);
+    static CPrefetchToken GetFeat_CI(CPrefetchManager& manager,
+                                     const CScopeSource& scope,
+                                     CConstRef<CSeq_loc> loc,
+                                     const SAnnotSelector& sel);
     static CFeat_CI GetFeat_CI(CPrefetchToken token);
-
 };
 
 
