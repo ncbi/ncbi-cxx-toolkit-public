@@ -142,11 +142,14 @@ static bool s_IsProducedByDatatool(const string&    src_path_abs,
     }
     string asn_name = asn_base + ".asn";
     string dtd_name = asn_base + ".dtd";
+    string xsd_name = asn_base + ".xsd";
 
     //try to find this name in datatool generated sources container
     ITERATE(list<CDataToolGeneratedSrc>, p, project.m_DatatoolSources) {
         const CDataToolGeneratedSrc& asn = *p;
-        if ((asn.m_SourceFile == asn_name) || (asn.m_SourceFile == dtd_name))
+        if ((asn.m_SourceFile == asn_name) ||
+            (asn.m_SourceFile == dtd_name) ||
+            (asn.m_SourceFile == xsd_name))
             return true;
     }
     return false;
@@ -163,7 +166,8 @@ static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
     if ( dir.GetEntries("*.module").empty() ) 
         return false;
     if ( dir.GetEntries("*.asn").empty() &&
-         dir.GetEntries("*.dtd").empty()  ) 
+         dir.GetEntries("*.dtd").empty() &&
+         dir.GetEntries("*.xsd").empty() ) 
         return false;
 
     return true;
@@ -382,6 +386,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/05 16:14:52  gouriano
+ * Added support of XML schema
+ *
  * Revision 1.12  2004/12/20 15:23:19  gouriano
  * Changed diagnostic output
  *

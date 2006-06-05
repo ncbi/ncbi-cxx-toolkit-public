@@ -702,6 +702,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                 source_file_path += ".asn";
             else if ( CDirEntry(source_file_path + ".dtd").Exists() )
                 source_file_path += ".dtd";
+            else if ( CDirEntry(source_file_path + ".xsd").Exists() )
+                source_file_path += ".xsd";
 
             CDataToolGeneratedSrc data_tool_src;
             CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
@@ -926,6 +928,8 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
         source_file_path += ".asn";
     else if ( CDirEntry(source_file_path + ".dtd").Exists() )
         source_file_path += ".dtd";
+    else if ( CDirEntry(source_file_path + ".xsd").Exists() )
+        source_file_path += ".xsd";
 
     CDataToolGeneratedSrc data_tool_src;
     CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
@@ -983,6 +987,8 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
             asn_path_abs += ".asn";
         else if ( CDirEntry(asn_dir_abs + ".dtd").Exists() )
             asn_path_abs += ".dtd";
+        else if ( CDirEntry(asn_dir_abs + ".xsd").Exists() )
+            asn_path_abs += ".xsd";
 
         CDataToolGeneratedSrc data_tool_src;
         CDataToolGeneratedSrc::LoadFrom(asn_path_abs, &data_tool_src);
@@ -1638,6 +1644,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/06/05 16:14:52  gouriano
+ * Added support of XML schema
+ *
  * Revision 1.36  2006/04/24 16:43:28  gouriano
  * Corrected redefinition of makefile macros
  *
