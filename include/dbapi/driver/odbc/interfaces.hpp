@@ -65,8 +65,8 @@ class CODBCContextRegistry;
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Reporter
 {
 public:
-    CODBC_Reporter(CDBHandlerStack* hs, 
-                   SQLSMALLINT ht, 
+    CODBC_Reporter(CDBHandlerStack* hs,
+                   SQLSMALLINT ht,
                    SQLHANDLE h,
                    const CODBC_Reporter* parent_reporter = NULL);
     ~CODBC_Reporter(void);
@@ -86,10 +86,10 @@ public:
         m_ExtraMsg = em;
     }
     string GetExtraMsg(void) const;
-    
+
 private:
     CODBC_Reporter(void);
-    
+
 private:
     CDBHandlerStack* m_HStack;
     SQLHANDLE m_Handle;
@@ -111,7 +111,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public I_DriverContext
 public:
     CODBCContext(SQLLEN version = SQL_OV_ODBC3, bool use_dsn= false);
     virtual ~CODBCContext(void);
-    
+
 public:
     //
     // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
@@ -141,7 +141,7 @@ public:
 
 protected:
     virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
-    
+
 private:
     SQLHENV         m_Context;
     SQLULEN         m_PacketSize;
@@ -161,7 +161,7 @@ private:
     void x_SetRegistry(CODBCContextRegistry* registry);
     void x_Close(bool delete_conn = true);
 
-    
+
     friend class CODBCContextRegistry;
 };
 
@@ -184,9 +184,9 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public I_Connection
     friend class CODBC_SendDataCmd;
 
 protected:
-    CODBC_Connection(CODBCContext* cntx, 
+    CODBC_Connection(CODBCContext* cntx,
                      SQLHDBC conn,
-                     bool reusable, 
+                     bool reusable,
                      const string& pool_name);
     virtual ~CODBC_Connection(void);
 
@@ -219,16 +219,11 @@ protected:
     virtual bool IsReusable(void) const;
     virtual const string& PoolName(void) const;
     virtual I_DriverContext* Context(void) const;
-    virtual void PushMsgHandler(CDB_UserHandler* h,
-                                EOwnership ownership = eNoOwnership);
-    virtual void PopMsgHandler (CDB_UserHandler* h);
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
     virtual void Release(void);
 
     void ODBC_SetTimeout(SQLULEN nof_secs);
     void ODBC_SetTextImageSize(SQLULEN nof_bytes);
-
-    void DropCmd(CDB_BaseEnt& cmd);
 
     CODBC_LangCmd* xLangCmd(const string&   lang_query,
                             unsigned int    nof_params = 0);
@@ -262,8 +257,6 @@ private:
     SQLHDBC                 m_Link;
 
     CODBCContext*           m_Context;
-    deque<CDB_BaseEnt*>     m_CMDs;
-    CDBHandlerStack         m_MsgHandlers;
     string                  m_Server;
     string                  m_User;
     string                  m_Passwd;
@@ -340,8 +333,8 @@ private:
 //  CODBC_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd : 
-    public CStatementBase, 
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd :
+    public CStatementBase,
     public I_LangCmd
 {
     friend class CODBC_Connection;
@@ -390,15 +383,15 @@ private:
 //  CODBC_RPCCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd : 
-    public CStatementBase, 
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd :
+    public CStatementBase,
     public I_RPCCmd
 {
     friend class CODBC_Connection;
-    
+
 protected:
     CODBC_RPCCmd(CODBC_Connection* conn,
-                 const string& proc_name, 
+                 const string& proc_name,
                  unsigned int nof_params);
     virtual ~CODBC_RPCCmd(void);
 
@@ -441,15 +434,15 @@ private:
 //  CODBC_CursorCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd : 
-    public CStatementBase, 
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd :
+    public CStatementBase,
     public I_CursorCmd
 {
     friend class CODBC_Connection;
-    
+
 protected:
     CODBC_CursorCmd(CODBC_Connection* conn,
-                    const string& cursor_name, 
+                    const string& cursor_name,
                     const string& query,
                     unsigned int nof_params);
     virtual ~CODBC_CursorCmd(void);
@@ -492,16 +485,16 @@ private:
 //
 // This class is not implemented yet ...
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd : 
-    public CStatementBase, 
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd :
+    public CStatementBase,
     public I_BCPInCmd
 {
     friend class CODBC_Connection;
-    
+
 protected:
-    CODBC_BCPInCmd(CODBC_Connection* conn, 
+    CODBC_BCPInCmd(CODBC_Connection* conn,
                    SQLHDBC cmd,
-                   const string& table_name, 
+                   const string& table_name,
                    unsigned int nof_columns);
     virtual ~CODBC_BCPInCmd(void);
 
@@ -531,16 +524,16 @@ private:
 //  CODBC_SendDataCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd : 
-    public CStatementBase, 
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd :
+    public CStatementBase,
     public I_SendDataCmd
 {
     friend class CODBC_Connection;
-    
+
 protected:
-    CODBC_SendDataCmd(CODBC_Connection* conn, 
+    CODBC_SendDataCmd(CODBC_Connection* conn,
                       CDB_ITDescriptor& descr,
-                      size_t nof_bytes, 
+                      size_t nof_bytes,
                       bool logit);
     virtual ~CODBC_SendDataCmd(void);
 
@@ -568,7 +561,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public I_Result
     friend class CODBC_RPCCmd;
     friend class CODBC_CursorCmd;
     friend class CODBC_Connection;
-    
+
 protected:
     CODBC_RowResult(
         CStatementBase& stmt,
@@ -649,11 +642,11 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_StatusResult :  public CODBC_RowResult
 {
     friend class CODBC_RPCCmd;
     friend class CODBC_Connection;
-    
+
 protected:
     CODBC_StatusResult(CStatementBase& stmt);
     virtual ~CODBC_StatusResult(void);
-    
+
 protected:
     virtual EDB_ResType ResultType(void) const;
 };
@@ -662,14 +655,14 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_ParamResult :  public CODBC_RowResult
 {
     friend class CODBC_RPCCmd;
     friend class CODBC_Connection;
-    
+
 protected:
     CODBC_ParamResult(
         CStatementBase& stmt,
         SQLSMALLINT nof_cols
         );
     virtual ~CODBC_ParamResult(void);
-    
+
 protected:
     virtual EDB_ResType ResultType(void) const;
 };
@@ -677,7 +670,7 @@ protected:
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorResult : public I_Result
 {
     friend class CODBC_CursorCmd;
-    
+
 protected:
     CODBC_CursorResult(CODBC_LangCmd* cmd);
     virtual ~CODBC_CursorResult(void);
@@ -749,6 +742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/06/05 14:36:28  ssikorsk
+ * Removed members m_MsgHandlers and m_CMDs from CODBC_Connection.
+ *
  * Revision 1.28  2006/06/02 19:34:09  ssikorsk
  * Added methods GetCDBResultPtr, GetCDBResult and SetCDBResultPtr to the
  * CODBC_CursorResult class.
