@@ -74,7 +74,7 @@ protected:
 
 /// NetCache internal exception
 ///
-class CNetBVStoreException : public CNetServiceException
+class NCBI_XCONNECT_EXPORT CNetBVStoreException : public CNetServiceException
 {
 public:
     typedef CNetServiceException TParent;
@@ -106,7 +106,7 @@ public:
 ///
 /// @note This implementation is thread safe and syncronized
 ///
-class NCBI_NET_CACHE_EXPORT CNetBVStoreClient : public CNetBVStoreClientBase
+class NCBI_XCONNECT_EXPORT CNetBVStoreClient : public CNetBVStoreClientBase
 {
 public:
     typedef CNetBVStoreClientBase TParent;
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/05 16:21:57  vasilche
+ * Fixed _EXPORT.
+ *
  * Revision 1.1  2006/06/02 12:46:26  kuznets
  * initial revision
  *
