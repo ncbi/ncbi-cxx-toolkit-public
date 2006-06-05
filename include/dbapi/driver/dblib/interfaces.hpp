@@ -304,7 +304,6 @@ protected:
     virtual const string& PoolName(void) const;
     virtual I_DriverContext* Context(void) const;
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
-    virtual void Release(void);
 
     /// abort the connection
     /// Attention: it is not recommended to use this method unless you absolutely have to.
@@ -1157,6 +1156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/06/05 21:00:03  ssikorsk
+ * Moved method Release from CDBL_Connection to I_Connection.
+ *
  * Revision 1.45  2006/06/05 19:06:43  ssikorsk
  * Declared C...Cmd::Release deprecated.
  *
