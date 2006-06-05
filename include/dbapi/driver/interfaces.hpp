@@ -45,6 +45,7 @@
 
 #include <map>
 #include <list>
+#include <deque>
 
 
 /** @addtogroup DbInterfaces
@@ -100,7 +101,7 @@ class NCBI_DBAPIDRIVER_EXPORT C_ITDescriptorGuard
 public:
     C_ITDescriptorGuard(I_ITDescriptor* d);
     ~C_ITDescriptorGuard(void);
-    
+
 private:
     I_ITDescriptor* m_D;
 };
@@ -138,7 +139,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_BaseEnt
 public:
     CDB_BaseEnt(void);
     virtual ~CDB_BaseEnt(void);
-    
+
 public:
     void Acquire(CDB_BaseEnt** br) {
         m_BR = br;
@@ -167,7 +168,7 @@ public:
     I_BaseCmd(void);
     // Destructor
     virtual ~I_BaseCmd(void);
-    
+
 public:
     /// Send command to the server
     virtual bool Send(void) = 0;
@@ -212,11 +213,11 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT I_LangCmd : public I_BaseCmd
 {
     friend class CDB_LangCmd;
-    
+
 public:
     I_LangCmd(void);
     virtual ~I_LangCmd(void);
-    
+
 protected:
     /// Add more text to the language command
     virtual bool More(const string& query_text) = 0;
@@ -233,7 +234,7 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT I_RPCCmd : public I_BaseCmd
 {
     friend class CDB_RPCCmd;
-    
+
 public:
     I_RPCCmd(void);
     virtual ~I_RPCCmd(void);
@@ -381,7 +382,7 @@ public:
 
     /// Return number of columns in the recordset.
     virtual int GetColumnNum(void) const = 0;
-    
+
     /// Get a result item (you can use either GetItem or ReadItem).
     /// If "item_buf" is not NULL, then use "*item_buf" (its type should be
     /// compatible with the type of retrieved item!) to retrieve the item to;
@@ -416,10 +417,10 @@ class NCBI_DBAPIDRIVER_EXPORT I_DriverContext
 {
 protected:
     I_DriverContext(void);
-    
+
 public:
     virtual ~I_DriverContext(void);
-    
+
 
     /// Connection mode
     enum EConnectionMode {
@@ -432,7 +433,7 @@ public:
 
     struct NCBI_DBAPIDRIVER_EXPORT SConnAttr {
         SConnAttr(void);
-        
+
         string          srv_name;
         string          user_name;
         string          passwd;
@@ -440,14 +441,14 @@ public:
         bool            reusable;
         string          pool_name;
     };
-    
+
     /// Set login and connection timeouts.
     /// NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
     ///        DB API), then set the timeout to infinite.
     /// Return FALSE on error.
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0) = 0;
     virtual bool SetTimeout      (unsigned int nof_secs = 0) = 0;
-    
+
     unsigned int GetLoginTimeout (void) const { return m_LoginTimeout; }
     unsigned int GetTimeout      (void) const { return m_Timeout;        }
 
@@ -459,19 +460,19 @@ public:
     /// Create new connection to specified server (within this context).
     /// It is your responsibility to delete the returned connection object.
     /// reusable - controls connection pooling mechanism. If it is set to true
-    /// then a connection will be added to a pool  of connections instead of 
+    /// then a connection will be added to a pool  of connections instead of
     /// closing.
     ///
     /// pool_name - name of a pool to which this connection is going to belong.
-    /// 
+    ///
     /// srv_name, user_name and passwd may be set to empty string.
     ///
-    /// If pool_name is provided then connection will be taken from a pool 
+    /// If pool_name is provided then connection will be taken from a pool
     /// having this name if a pool is not empty.
-    /// It is your responsibility to put connections with the same 
+    /// It is your responsibility to put connections with the same
     /// server/user/password values in a pool.
     /// If a pool name is not provided but a server name (srv_name) is provided
-    /// instead then connection with the same name will be taken from a pool of 
+    /// instead then connection with the same name will be taken from a pool of
     /// connections if a pool is not empty.
     /// If a pool is empty then new connection will be created unless you passed
     /// mode = fDoNotConnect. In this case NULL will be returned.
@@ -488,19 +489,19 @@ public:
     /// Create new connection to specified server (within this context).
     /// It is your responsibility to delete the returned connection object.
     /// reusable - controls connection pooling mechanism. If it is set to true
-    /// then a connection will be added to a pool  of connections instead of 
+    /// then a connection will be added to a pool  of connections instead of
     /// closing.
     ///
     /// pool_name - name of a pool to which this connection is going to belong.
-    /// 
+    ///
     /// srv_name, user_name and passwd may be set to empty string.
     ///
-    /// If pool_name is provided then connection will be taken from a pool 
+    /// If pool_name is provided then connection will be taken from a pool
     /// having this name if a pool is not empty.
-    /// It is your responsibility to put connections with the same 
+    /// It is your responsibility to put connections with the same
     /// server/user/password values in a pool.
     /// If a pool name is not provided but a server name (srv_name) is provided
-    /// instead then connection with the same name will be taken from a pool of 
+    /// instead then connection with the same name will be taken from a pool of
     /// connections if a pool is not empty.
     /// If a pool is empty then new connection will be created unless you passed
     /// mode = fDoNotConnect. In this case NULL will be returned.
@@ -532,7 +533,7 @@ public:
 
     /// Add `per-connection' err.message handler "h" to the stack of default
     /// handlers which are inherited by all newly created connections.
-    void PushDefConnMsgHandler(CDB_UserHandler* h, 
+    void PushDefConnMsgHandler(CDB_UserHandler* h,
                                EOwnership ownership = eNoOwnership);
 
     /// Remove `per-connection' mess. handler "h" and all above it in the stack.
@@ -550,7 +551,7 @@ public:
     void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
                                 const string& pool_name = kEmptyStr);
 
-    /// app_name defines the application name that a connection will use when 
+    /// app_name defines the application name that a connection will use when
     /// connecting to a server.
     void SetApplicationName(const string& app_name);
     const string& GetApplicationName(void) const;
@@ -560,14 +561,14 @@ public:
 
 protected:
     typedef list<I_Connection*> TConnPool;
-    
+
     // To allow children of I_DriverContext to create CDB_Connection
     CDB_Connection* Create_Connection(I_Connection& connection);
     CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr);
     virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr) = 0;
     void CloseAllConn(void);
     void DeleteAllConn(void);
-    
+
     /// Used connections
     TConnPool m_NotInUse;
     /// Unused(reserve) connections
@@ -587,10 +588,10 @@ private:
     /// Return unused connection "conn" to the driver context for future
     /// reuse (if "conn_reusable" is TRUE) or utilization
     void x_Recycle(I_Connection* conn, bool conn_reusable);
-    
+
     string          m_AppName;
     string          m_HostName;
-    
+
     friend class CDB_Connection;
     friend class IDBConnectionFactory;
 };
@@ -669,20 +670,20 @@ protected:
 
     /// Put the message handler into message handler stack
     virtual void PushMsgHandler(CDB_UserHandler* h,
-                                EOwnership ownership = eNoOwnership) = 0;
+                                EOwnership ownership = eNoOwnership);
 
     /// Remove the message handler (and all above it) from the stack
-    virtual void PopMsgHandler(CDB_UserHandler* h) = 0;
+    virtual void PopMsgHandler(CDB_UserHandler* h);
 
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp)=0;
 
     /// These methods to allow the children of I_Connection to create
     /// various command-objects
-    static CDB_LangCmd*     Create_LangCmd     (I_LangCmd&     lang_cmd    );
-    static CDB_RPCCmd*      Create_RPCCmd      (I_RPCCmd&      rpc_cmd     );
-    static CDB_BCPInCmd*    Create_BCPInCmd    (I_BCPInCmd&    bcpin_cmd   );
-    static CDB_CursorCmd*   Create_CursorCmd   (I_CursorCmd&   cursor_cmd  );
-    static CDB_SendDataCmd* Create_SendDataCmd (I_SendDataCmd& senddata_cmd);
+    CDB_LangCmd*     Create_LangCmd     (I_LangCmd&     lang_cmd    );
+    CDB_RPCCmd*      Create_RPCCmd      (I_RPCCmd&      rpc_cmd     );
+    CDB_BCPInCmd*    Create_BCPInCmd    (I_BCPInCmd&    bcpin_cmd   );
+    CDB_CursorCmd*   Create_CursorCmd   (I_CursorCmd&   cursor_cmd  );
+    CDB_SendDataCmd* Create_SendDataCmd (I_SendDataCmd& senddata_cmd);
 
     /// abort the connection
     /// Attention: it is not recommended to use this method unless you absolutely have to.
@@ -696,6 +697,23 @@ protected:
     /// Returns: true - if successfully closed an open connection.
     ///          false - if not
     virtual bool Close(void) = 0;
+
+protected:
+    const CDBHandlerStack& GetMsgHandlers(void) const
+    {
+        return m_MsgHandlers;
+    }
+    CDBHandlerStack& GetMsgHandlers(void)
+    {
+        return m_MsgHandlers;
+    }
+
+    void DropCmd(CDB_BaseEnt& cmd);
+    void DeleteAllCommands(void);
+
+private:
+    CDBHandlerStack     m_MsgHandlers;
+    deque<CDB_BaseEnt*> m_CMDs;
 };
 
 
@@ -707,7 +725,7 @@ class NCBI_DBAPIDRIVER_EXPORT I_DriverMgr
 public:
     I_DriverMgr(void);
     virtual ~I_DriverMgr(void);
-    
+
 public:
     virtual void RegisterDriver(const string& driver_name,
                                 FDBAPI_CreateContext driver_ctx_func) = 0;
@@ -724,6 +742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/06/05 14:34:05  ssikorsk
+ * Added members m_MsgHandlers and m_CMDs to I_Connection.
+ *
  * Revision 1.45  2006/05/18 16:52:22  ssikorsk
  * 	 Added GetLoginTimeout and GetTimeout methods to the I_DriverContext class.
  *
