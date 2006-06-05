@@ -540,6 +540,7 @@ protected:
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
     virtual void   Release(void);
+    virtual bool   Cancel(void);
 
 
 private:
@@ -742,6 +743,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/06/05 18:04:17  ssikorsk
+ * Added method Cancel to CODBC_SendDataCmd.
+ *
  * Revision 1.29  2006/06/05 14:36:28  ssikorsk
  * Removed members m_MsgHandlers and m_CMDs from CODBC_Connection.
  *
