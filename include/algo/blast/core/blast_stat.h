@@ -55,6 +55,8 @@ extern "C" {
 
 #define BLASTMAT_DIR "/usr/ncbi/blast/matrix" /**< Default location for blast databases. */
 
+typedef char* (*GET_MATRIX_PATH) (const char*, Boolean);
+
 /**
   Structure to hold the Karlin-Altschul parameters.
 */
@@ -227,10 +229,11 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
  * -read in the matrix
  * -set maxscore
  * @param sbp Scoring block [in] [out]
- * @param matrix Full path to the matrix in the directory structure [in]
+ * @param get_path pointer to function that will return path to matrix.  Only called
+ *  if built-in matrix not found [in]
 */
 NCBI_XBLAST_EXPORT
-Int2 Blast_ScoreBlkMatrixFill (BlastScoreBlk* sbp, char* matrix);
+Int2 Blast_ScoreBlkMatrixFill (BlastScoreBlk* sbp, GET_MATRIX_PATH get_path);
  
 /** Callocs a Blast_KarlinBlk
  * @return pointer to the Blast_KarlinBlk

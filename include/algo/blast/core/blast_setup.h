@@ -70,7 +70,8 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
         BlastSeqLoc* *lookup_segments,
         BlastMaskLoc* *mask,
         BlastScoreBlk* *sbpp, 
-        Blast_Message* *blast_message);
+        Blast_Message* *blast_message,
+        GET_MATRIX_PATH get_path);
 
 /** Blast_ScoreBlkKbpGappedCalc, fills the ScoreBlkPtr for a gapped search.  
  *      Should be moved to blast_stat.c in the future.
@@ -173,7 +174,8 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
 NCBI_XBLAST_EXPORT
 Int2 Blast_ScoreBlkMatrixInit(EBlastProgramType program_number, 
     const BlastScoringOptions* scoring_options,
-    BlastScoreBlk* sbp);
+    BlastScoreBlk* sbp,
+    GET_MATRIX_PATH get_path);
 
 /** Initializes the score block structure.
  * @param query_blk Query sequence(s) [in]
@@ -191,7 +193,8 @@ Int2 BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     EBlastProgramType program_number, 
     BlastScoreBlk* *sbpp, 
     double scale_factor, 
-    Blast_Message* *blast_message);
+    Blast_Message* *blast_message,
+    GET_MATRIX_PATH get_path);
 
 
 /** Adjusts the mask locations coordinates to a sequence interval. Removes those
@@ -230,6 +233,9 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
 /*
  *
 * $Log$
+* Revision 1.58  2006/06/05 13:27:11  madden
+* Add support for GET_MATRIX_PATH callback
+*
 * Revision 1.57  2006/05/22 13:21:40  madden
 * Remove prototype for PHIPatternSpaceCalc
 *

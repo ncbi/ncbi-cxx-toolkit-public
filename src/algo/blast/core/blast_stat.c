@@ -1286,8 +1286,9 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
 }
 
 Int2
-Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, char* matrix_path)
+Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
 {
+    Boolean matrix_found = FALSE;
     Int2 status = 0;
     
     /* For nucleotide case we first create a default matrix, based on the 
@@ -1295,39 +1296,44 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, char* matrix_path)
     if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
        if ( (status=BlastScoreBlkNuclMatrixCreate(sbp)) != 0)
           return status;
+       matrix_found = TRUE;
+    }
+    else
+    {  /* Try to get compiled in matrix for proteins. */
+       status = BlastScoreBlkProteinMatrixLoad(sbp);
+       if (status == 0)
+          matrix_found = TRUE;
     }
 
-    if (sbp->read_in_matrix) {
-        if (matrix_path && *matrix_path != NULLB) {
+    if (matrix_found == FALSE && sbp->read_in_matrix && get_path) {
+            char* matrix_path = get_path(sbp->name, TRUE);
+            if (matrix_path) {
 
-            FILE *fp = NULL;
-            char* full_matrix_path = NULL;
-            int path_len = strlen(matrix_path);
-            int buflen = path_len + strlen(sbp->name);
+                FILE *fp = NULL;
+                char* full_matrix_path = NULL;
+                int path_len = strlen(matrix_path);
+                int buflen = path_len + strlen(sbp->name);
 
-            full_matrix_path = (char*) malloc((buflen + 1) * sizeof(char));
-            if (!full_matrix_path) {
-                return -1;
-            }
-            strncpy(full_matrix_path, matrix_path, buflen);
-            strncat(full_matrix_path, sbp->name, buflen - path_len);
+                full_matrix_path = (char*) malloc((buflen + 1) * sizeof(char));
+                if (!full_matrix_path) {
+                    return -1;
+                }
+                strncpy(full_matrix_path, matrix_path, buflen);
+                strncat(full_matrix_path, sbp->name, buflen - path_len);
 
-            if ( (fp=fopen(full_matrix_path, "r")) == NULL) {
-               return -1;
-            }
-            sfree(full_matrix_path);
+                sfree(matrix_path);
 
-            if ( (status=BlastScoreBlkProteinMatrixRead(sbp, fp)) != 0) {
-               fclose(fp);
-               return status;
-            }
-            fclose(fp);
+                if ( (fp=fopen(full_matrix_path, "r")) == NULL) {
+                   return -1;
+                }
+                sfree(full_matrix_path);
 
-        } else {
-            if ( (status = BlastScoreBlkProteinMatrixLoad(sbp)) !=0) {
-                return status;
-            }
-        }
+                if ( (status=BlastScoreBlkProteinMatrixRead(sbp, fp)) != 0) {
+                   fclose(fp);
+                   return status;
+                }
+                fclose(fp);
+            } 
     }
 
     if ( (status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
@@ -4375,6 +4381,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.143  2006/06/05 13:27:33  madden
+ * Add support for GET_MATRIX_PATH callback
+ *
  * Revision 1.142  2006/05/24 17:19:02  madden
  * Add BlastScoreBlkGetCompiledInMatrix
  *

@@ -111,14 +111,14 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
  */
 static Int2
 s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
-   Blast_Message** blast_message)
+   Blast_Message** blast_message, GET_MATRIX_PATH get_path)
 {
    Blast_KarlinBlk* kbp;
    char buffer[1024];
    Int2 status = 0;
 
    sbp->read_in_matrix = TRUE;
-   if ((status = Blast_ScoreBlkMatrixFill(sbp, options->matrix_path)) != 0)
+   if ((status = Blast_ScoreBlkMatrixFill(sbp, get_path)) != 0)
       return status;
    kbp = sbp->kbp_gap_std[0] = Blast_KarlinBlkNew();
    /* Point both non-allocated Karlin block arrays to kbp_gap_std. */
@@ -299,7 +299,8 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
 Int2
 Blast_ScoreBlkMatrixInit(EBlastProgramType program_number, 
                   const BlastScoringOptions* scoring_options,
-                  BlastScoreBlk* sbp)
+                  BlastScoreBlk* sbp,
+                  GET_MATRIX_PATH get_path)
 {
     Int2 status = 0;
 
@@ -312,9 +313,7 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
         BLAST_ScoreSetAmbigRes(sbp, 'N');
         sbp->penalty = scoring_options->penalty;
         sbp->reward = scoring_options->reward;
-        if (scoring_options->matrix_path &&
-            *scoring_options->matrix_path != NULLB &&
-            scoring_options->matrix && *scoring_options->matrix != NULLB) {
+        if (scoring_options->matrix && *scoring_options->matrix != NULLB) {
  
             sbp->read_in_matrix = TRUE;
             sbp->name = strdup(scoring_options->matrix);
@@ -332,7 +331,7 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
         BLAST_ScoreSetAmbigRes(sbp, 'X');
         sbp->name = BLAST_StrToUpper(scoring_options->matrix);
     }
-    status = Blast_ScoreBlkMatrixFill(sbp, scoring_options->matrix_path);
+    status = Blast_ScoreBlkMatrixFill(sbp, get_path);
     if (status) {
         return status;
     }
@@ -347,7 +346,8 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
                         EBlastProgramType program_number, 
                         BlastScoreBlk* *sbpp, 
                         double scale_factor, 
-                        Blast_Message* *blast_message)
+                        Blast_Message* *blast_message,
+                        GET_MATRIX_PATH get_path)
 {
     BlastScoreBlk* sbp;
     Int2 status=0;      /* return value. */
@@ -369,7 +369,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     *sbpp = sbp;
     sbp->scale_factor = scale_factor;
 
-    status = Blast_ScoreBlkMatrixInit(program_number, scoring_options, sbp);
+    status = Blast_ScoreBlkMatrixInit(program_number, scoring_options, sbp, get_path);
     if (status) {
         Blast_Perror(blast_message, status, -1);
         return status;
@@ -377,7 +377,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
 
     /* Fills in block for gapped blast. */
     if (Blast_ProgramIsPhiBlast(program_number)) {
-       status = s_PHIScoreBlkFill(sbp, scoring_options, blast_message);
+       status = s_PHIScoreBlkFill(sbp, scoring_options, blast_message, get_path);
     } else {
        status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, query_blk->sequence, 
                query_info, blast_message);
@@ -435,7 +435,8 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     BlastSeqLoc **lookup_segments, 
     BlastMaskLoc **mask,
     BlastScoreBlk **sbpp, 
-    Blast_Message **blast_message)
+    Blast_Message **blast_message,
+    GET_MATRIX_PATH get_path)
 {
     Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
     Int2 status = 0;            /* return value */
@@ -516,7 +517,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
 
     status = BlastSetup_ScoreBlkInit(query_blk, query_info, scoring_options, 
                                      program_number, sbpp, scale_factor, 
-                                     blast_message);
+                                     blast_message, get_path);
     if (status) {
         return status;
     }
