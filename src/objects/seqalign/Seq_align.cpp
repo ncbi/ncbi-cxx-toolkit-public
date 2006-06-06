@@ -761,6 +761,35 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
 }
 
 
+void CSeq_align::OffsetRow(TDim row,
+                          TSeqPos offset)
+{
+    if (offset == 0) return;
+
+    _ASSERT(offset > 0);
+
+    switch (SetSegs().Which()) {
+    case TSegs::e_Denseg:
+        SetSegs().SetDenseg().OffsetRow(row, offset);
+        break;
+    case TSegs::e_Std:
+        NON_CONST_ITERATE(TSegs::TStd, std_it, SetSegs().SetStd()) {
+            (*std_it)->OffsetRow(row, offset);
+        }
+        break;
+    case TSegs::e_Disc:
+        NON_CONST_ITERATE(CSeq_align_set::Tdata, seq_align_it, SetSegs().SetDisc().Set()) {
+            (*seq_align_it)->OffsetRow(row, offset);
+        }
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::OffsetRow only supports Dense-seg and Std-seg alignments.");
+    }
+}
+
+
+/// @deprecated
 void CSeq_align::RemapToLoc(TDim row,
                             const CSeq_loc& dst_loc,
                             bool ignore_strand)
@@ -806,6 +835,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2006/06/06 22:42:54  todorov
+* Added OffsetRow method.
+* Marked RemapToLoc for deprecation.
+*
 * Revision 1.22  2006/05/23 18:41:29  todorov
 * Added CreateDensegFromDisc.
 *

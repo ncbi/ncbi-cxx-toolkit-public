@@ -67,11 +67,13 @@ public:
     CRange<TSignedSeqPos> GetSeqRange(TDim row) const;
     
 
-    /// Remap row coords according to a given seq-loc
-    /// Optionally, ignore the strand of the loc
-    void RemapToLoc(TDim row,
-                    const CSeq_loc& dst_loc,
-                    bool ignore_strand = false);
+    /// Offset row's coords
+    void OffsetRow(TDim row, TSeqPos offset);
+
+    /// @deprecated
+    NCBI_DEPRECATED void RemapToLoc(TDim row,
+                                    const CSeq_loc& dst_loc,
+                                    bool ignore_strand = false);
 
 
 private:
@@ -104,6 +106,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/06/06 22:44:47  todorov
+* Added OffsetRow method.
+* Marked RemapToLoc for deprecation.
+*
 * Revision 1.3  2006/05/08 21:43:11  todorov
 * Added a RemapToLoc method.
 *

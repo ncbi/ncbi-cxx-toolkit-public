@@ -115,11 +115,14 @@ public:
     //                 the code will not check for this
     CRef<CSeq_align> CreateTranslatedDensegFromNADenseg(void) const;
 
-    /// Remap row coords according to a given seq-loc
-    /// Optionally, ignore the strand of the loc
-    void RemapToLoc(TDim row,
-                    const CSeq_loc& dst_loc,
-                    bool ignore_strand = false);
+
+    /// Offset row's coords
+    void OffsetRow(TDim row, TSeqPos offset);
+
+    /// @deprecated
+    NCBI_DEPRECATED void RemapToLoc(TDim row,
+                                    const CSeq_loc& dst_loc,
+                                    bool ignore_strand = false);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -151,6 +154,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/06/06 22:44:47  todorov
+* Added OffsetRow method.
+* Marked RemapToLoc for deprecation.
+*
 * Revision 1.17  2006/05/23 18:40:48  todorov
 * Added CreateDensegFromDisc.
 *

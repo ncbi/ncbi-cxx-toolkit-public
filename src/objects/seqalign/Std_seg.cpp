@@ -149,6 +149,34 @@ CRange<TSignedSeqPos> CStd_seg::GetSeqRange(TDim row) const
 }
 
 
+void CStd_seg::OffsetRow(TDim row,
+                        TSeqPos offset)
+
+{
+    if (offset == 0) return;
+
+    _ASSERT(offset > 0);
+
+    CSeq_loc& src_loc = *SetLoc()[row];
+
+    switch (src_loc.Which()) {
+    case CSeq_loc::e_Int:
+        src_loc.SetInt().SetFrom() += offset;
+        src_loc.SetInt().SetTo() += offset;
+        break;
+    case CSeq_loc::e_Pnt:
+        src_loc.SetPnt().SetPoint() += offset;
+        break;
+    case CSeq_loc::e_Empty:
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CStd_seg::OffsetRow only supports pnt and int source seq-locs");
+    }
+}
+
+
+/// @deprecated
 void CStd_seg::RemapToLoc(TDim row,
                           const CSeq_loc& dst_loc,
                           bool ignore_strand)
@@ -241,6 +269,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/06/06 22:42:54  todorov
+* Added OffsetRow method.
+* Marked RemapToLoc for deprecation.
+*
 * Revision 1.6  2006/05/09 15:58:09  todorov
 * Added another debug-mode ids consistency check.
 *

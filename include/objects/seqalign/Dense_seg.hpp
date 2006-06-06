@@ -109,10 +109,12 @@ public:
     /// Trim leading/training gaps if possible
     void TrimEndGaps();
 
-    /// Remap row coords according to a given seq-loc
-    /// Optionally, ignore the strand of the loc
-    void RemapToLoc(TDim row, const CSeq_loc& loc,
-                    bool ignore_strand = false);
+    /// Offset row's coords
+    void OffsetRow(TDim row, TSeqPos offset);
+
+    /// @deprecated
+    NCBI_DEPRECATED void RemapToLoc(TDim row, const CSeq_loc& loc,
+                                    bool ignore_strand = false);
 
     // initialize from pairwise alignment transcript
     void FromTranscript(TSeqPos query_start, ENa_strand query_strand,
@@ -215,6 +217,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/06/06 22:44:47  todorov
+* Added OffsetRow method.
+* Marked RemapToLoc for deprecation.
+*
 * Revision 1.16  2006/03/15 15:49:03  dicuccio
 * Added TrimEndGaps()
 *

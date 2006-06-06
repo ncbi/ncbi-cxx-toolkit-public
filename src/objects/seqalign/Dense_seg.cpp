@@ -618,6 +618,25 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
 }
 
 
+
+void CDense_seg::OffsetRow(TDim row,
+                           TSeqPos offset)
+{
+    if (offset == 0) return;
+
+    _ASSERT(offset > 0);
+
+    for (TNumseg seg = 0, pos = row;
+         seg < GetNumseg();
+         ++seg, pos += GetDim()) {
+        if (GetStarts()[pos] >= 0) {
+            SetStarts()[pos] += offset;
+        }
+    }
+}
+
+
+/// @deprecated
 void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
                             bool ignore_strand)
 {
@@ -1134,6 +1153,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2006/06/06 22:42:54  todorov
+* Added OffsetRow method.
+* Marked RemapToLoc for deprecation.
+*
 * Revision 1.30  2006/05/09 16:29:50  todorov
 * Exception text change.
 *
