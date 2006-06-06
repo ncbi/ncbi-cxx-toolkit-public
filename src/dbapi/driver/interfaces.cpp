@@ -569,14 +569,10 @@ void I_Connection::DropCmd(CDB_BaseEnt& cmd)
 
 void I_Connection::DeleteAllCommands(void)
 {
-    ITERATE(deque<CDB_BaseEnt*>, it, m_CMDs) {
-        try {
-            delete *it;
-        } catch (CDB_Exception& ) {
-            _ASSERT(false);
-        }
+    while (!m_CMDs.empty()) {
+        // Destructor will remove an entity from a container ...
+        delete m_CMDs.front();
     }
-    m_CMDs.clear();
 }
 
 void I_Connection::Release(void)
@@ -608,6 +604,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/06/06 19:12:27  ssikorsk
+ * Fixed I_Connection::DeleteAllCommands.
+ *
  * Revision 1.26  2006/06/05 21:02:38  ssikorsk
  * Implemented I_Connection::Release.
  *
