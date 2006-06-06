@@ -459,18 +459,20 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
 
     if (ex->GetSeverity() == eDiag_Info) {
         if ( m_Prefix.empty() ) {
-            LOG_POST(ex->GetSeverity() << ex->GetMsg());
+            LOG_POST(Severity(ex->GetSeverity()) << ex->GetMsg());
         } else {
-            LOG_POST(ex->GetSeverity() << m_Prefix << ' ' << ex->GetMsg());
+            LOG_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
+                     ex->GetMsg());
         }
     } else {
         if ( m_Prefix.empty() ) {
-            LOG_POST(ex->GetSeverity() << ex->what() <<
+            LOG_POST(Severity(ex->GetSeverity()) << ex->what() <<
                      " SERVER: '" << ex->GetServerName() <<
                      "' USER: '" << ex->GetUserName() << "'"
                      );
         } else {
-            LOG_POST(ex->GetSeverity() << m_Prefix << ' ' << ex->what() <<
+            LOG_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
+                     ex->what() <<
                      " SERVER: '" << ex->GetServerName() <<
                      "' USER: '" << ex->GetUserName() << "'"
                      );
@@ -538,6 +540,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/06/06 20:37:14  ssikorsk
+ * Use "Severity" manipulator to put a severity of an exception into log.
+ *
  * Revision 1.28  2006/06/06 19:55:46  ssikorsk
  * Put severity of an exception into log within CDB_UserHandler_Diag::HandleIt.
  *
