@@ -55,7 +55,7 @@ extern "C" {
 
 #define BLASTMAT_DIR "/usr/ncbi/blast/matrix" /**< Default location for blast databases. */
 
-typedef char* (*GET_MATRIX_PATH) (const char*, Boolean);
+typedef char* (*GET_MATRIX_PATH) (const char*, Boolean);  /**< Typedef for callback to get matrix path (toolkit dependent). */
 
 /**
   Structure to hold the Karlin-Altschul parameters.

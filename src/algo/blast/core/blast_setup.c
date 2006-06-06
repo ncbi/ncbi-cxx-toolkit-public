@@ -108,6 +108,7 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
  * @param sbp Scoring block structure [in] [out]
  * @param options Scoring options structure [in]
  * @param blast_message Structure for reporting errors [out]
+ * @param get_path callback function for matrix path [in]
  */
 static Int2
 s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,

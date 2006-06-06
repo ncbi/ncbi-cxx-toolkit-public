@@ -59,6 +59,7 @@ extern "C" {
  * @param mask masking locations. [out]
  * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
+ * @param get_path callback function to get matrix path [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 BLAST_MainSetUp(EBlastProgramType program_number,
@@ -169,6 +170,7 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
  * @param program_number Used to set fields on sbp [in]
  * @param scoring_options Scoring_options [in]
  * @param sbp Contains fields to be set, should not be NULL. [out]
+ * @param get_path callback function to get matrix path [in]
  *
 */
 NCBI_XBLAST_EXPORT
@@ -185,6 +187,7 @@ Int2 Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
  * @param sbpp Initialized score block [out]
  * @param scale_factor Matrix scaling factor for this search [in]
  * @param blast_message Error message [out]
+ * @param get_path callback function to get matrix path [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk, 
@@ -233,6 +236,9 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
 /*
  *
 * $Log$
+* Revision 1.59  2006/06/06 15:15:05  madden
+* Doxygen fix
+*
 * Revision 1.58  2006/06/05 13:27:11  madden
 * Add support for GET_MATRIX_PATH callback
 *
