@@ -368,6 +368,14 @@ void CNcbiDiag::x_EndMess(void) const
 //  Other CNcbiDiag:: manipulators
 
 inline
+const CNcbiDiag& CNcbiDiag::Put(const Severity*,
+                                const Severity& severity) const
+{
+    m_Severity = severity.m_Level;
+    return *this;
+}
+
+inline
 const CNcbiDiag& Reset(const CNcbiDiag& diag)  {
     diag.m_Buffer.Reset(diag);
     diag.SetErrorCode(0, 0);
@@ -492,7 +500,8 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            int         proc_post,
                            int         thr_post,
                            int         iter)
-    : m_Data(0)
+    : m_Data(0),
+      m_Format(eFormat_Auto)
 {
     m_Severity   = severity;
     m_Buffer     = buf;
@@ -647,6 +656,10 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/06/06 16:44:07  grichenk
+ * Added SetDoubleDiagHandler().
+ * Added Severity().
+ *
  * Revision 1.58  2006/05/24 18:52:30  grichenk
  * Added Message manipulator
  *

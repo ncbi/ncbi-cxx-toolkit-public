@@ -331,6 +331,21 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Severity --
+///
+/// Set post severity to a given level.
+
+class Severity
+{
+public:
+    Severity(EDiagSev sev)
+        : m_Level(sev) {}
+    EDiagSev m_Level;         ///< Severity level
+};
+
+
 class CNcbiDiag;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -538,6 +553,12 @@ public:
     /// Example:
     ///   CNcbiDiag() << ErrCode(5,3) << "My message";
     const CNcbiDiag& Put(const ErrCode*, const ErrCode& err_code) const;
+
+    /// Helper method to set severity level.
+    ///
+    /// Example:
+    ///   CNcbiDiag() << Severity(eDiag_Error) << "My message";
+    const CNcbiDiag& Put(const Severity*, const Severity& severity) const;
 
     /// Helper method to post an exception to diagnostic stream.
     ///
@@ -1021,8 +1042,19 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     CNcbiOstream& x_OldWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     CNcbiOstream& x_NewWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     string x_GetModule(void) const;
+
 private:
+    enum EFormatFlag {
+        eFormat_Old,  // Force old post format
+        eFormat_New,  // Force new post format
+        eFormat_Auto  // Get post format from CDiagContext, default
+    };
+    void x_SetFormat(EFormatFlag fmt) const { m_Format = fmt; }
+    bool x_IsSetOldFormat(void) const;
+    friend class CDoubleDiagHandler;
+
     SDiagMessageData* m_Data;
+    mutable EFormatFlag m_Format;
 };
 
 /// Insert message in output stream.
@@ -1133,6 +1165,7 @@ public:
     virtual void Post(const SDiagMessage& mess);
 
     NCBI_XNCBI_EXPORT friend bool IsDiagStream(const CNcbiOstream* os);
+    friend class CDoubleDiagHandler;
 
 protected:
     CNcbiOstream* m_Stream;         ///< Diagnostic stream
@@ -1241,6 +1274,10 @@ private:
     SLogFileInfo  m_Trace;
     CTime*        m_LastReopen;
 };
+
+
+/// Output diagnostics using both old and new style handlers.
+NCBI_XNCBI_EXPORT extern void SetDoubleDiagHandler(void);
 
 
 /// Set diagnostic stream.
@@ -1498,6 +1535,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.108  2006/06/06 16:44:07  grichenk
+ * Added SetDoubleDiagHandler().
+ * Added Severity().
+ *
  * Revision 1.107  2006/05/24 18:52:30  grichenk
  * Added Message manipulator
  *
