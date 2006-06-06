@@ -139,6 +139,7 @@ typedef struct BlastHitList {
    Boolean heapified; /**< Is this hit list already heapified? */
    BlastHSPList** hsplist_array; /**< Array of HSP lists for individual
                                           database hits */
+   Int4 hsplist_current; /**< Number of allocated HSP list arrays. */
 } BlastHitList;
 
 /** The structure to contain all BLAST results, for multiple queries */
