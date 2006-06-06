@@ -172,6 +172,7 @@ bool CNetBVStoreClient::ReadRealloc(unsigned id,
         };
 
         ptr += nn_read;
+        bsize -= nn_read;
     } // while
     return true;
 }
@@ -248,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/06 18:21:06  kuznets
+ * fixed bug with buffer read
+ *
  * Revision 1.1  2006/06/02 12:47:03  kuznets
  * initial revision
  *
