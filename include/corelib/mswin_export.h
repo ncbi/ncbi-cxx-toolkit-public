@@ -350,6 +350,14 @@
 #  define NCBI_DBAPIDRIVER_FTDS_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library dbapi_driver_sqlite3
+ */
+#ifdef NCBI_DBAPIDRIVER_SQLITE3_EXPORTS
+#  define NCBI_DBAPIDRIVER_SQLITE3_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_DBAPIDRIVER_SQLITE3_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library dbapi
  */
 #ifdef NCBI_DBAPI_EXPORTS
@@ -1107,6 +1115,7 @@
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
+#  define NCBI_DBAPIDRIVER_SQLITE3_EXPORT
 #  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT
 #  define NCBI_DBAPI_CACHE_EXPORT
 #  define NCBI_DBAPI_EXPORT
@@ -1220,6 +1229,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.115  2006/06/06 19:52:35  ssikorsk
+ * + NCBI_DBAPIDRIVER_SQLITE3_EXPORT
+ *
  * Revision 1.114  2006/03/22 15:59:53  dicuccio
  * Added export specifier for COBALT.  Reordered dummy defines for Unix.
  *
