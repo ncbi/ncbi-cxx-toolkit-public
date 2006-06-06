@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <set>
 #include <map>
 
@@ -685,6 +686,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/06 00:30:10  ucko
+ * +<corelib/ncbi_limits.hpp> for numeric_limits<>
+ *
  * Revision 1.5  2006/06/05 15:28:05  grichenk
  * Added CreateElement() callback, improved indexing, added comments.
  *
