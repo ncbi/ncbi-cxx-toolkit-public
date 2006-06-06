@@ -226,7 +226,7 @@ static void s_Offset(long *value, time_t offset, long bound, int *major)
         NCBI_THROW(CTimeException, eArgument, "CTime: " what " value is out of range"); \
     }
 
-#define CHECK_RANGE_YEAR(value)  CHECK_RANGE(value, "year", 1583, kMax_UInt)
+#define CHECK_RANGE_YEAR(value)  CHECK_RANGE(value, "year", 1583, kMax_Int)
 #define CHECK_RANGE_MONTH(value) CHECK_RANGE(value, "month", 1, 12)
 #define CHECK_RANGE_DAY(value)   CHECK_RANGE(value, "day", 1, 31)
 #define CHECK_RANGE_HOUR(value)  CHECK_RANGE(value, "hour", 0, 23)
@@ -2165,6 +2165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/06/06 12:30:17  ivanov
+ * Use kMax_Int as maximum value for year in CHECK_RANGE_YEAR macro
+ *
  * Revision 1.73  2006/06/06 12:20:02  ivanov
  * Fixed compilation warnings on MSVC8 64-bit.
  * Added more checks for time components in Set*() methods.
