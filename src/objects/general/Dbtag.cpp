@@ -115,6 +115,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
     TDbxrefPair("ZFIN", CDbtag::eDbtagType_ZFIN),
     TDbxrefPair("axeldb", CDbtag::eDbtagType_axeldb),
+    TDbxrefPair("cdd", CDbtag::eDbtagType_CDD), // all-caps preferred, though
     TDbxrefPair("dbEST", CDbtag::eDbtagType_dbEST),
     TDbxrefPair("dbSNP", CDbtag::eDbtagType_dbSNP),
     TDbxrefPair("dbSTS", CDbtag::eDbtagType_dbSTS),
@@ -419,6 +420,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.31  2006/06/06 20:39:19  ucko
+ * kApprovedDbXrefs: allow "cdd" as a synonym for "CDD".
+ * (The list is case-sensitive in general.)
+ *
  * Revision 6.30  2006/03/14 20:21:51  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *
