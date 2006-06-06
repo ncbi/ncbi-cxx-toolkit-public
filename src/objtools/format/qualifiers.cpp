@@ -718,6 +718,8 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         CDbtag::TDb db = dbt.GetDb();
         if (db == "PID"  ||  db == "GI") {
             continue;
+        } else if (db == "cdd") {
+            db = "CDD"; // canonicalize
         }
 
         if (ctx.Config().DropBadDbxref()) {
@@ -992,6 +994,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2006/06/06 20:39:59  ucko
+* CFlatXrefQVal::Format: canonicalize the database name "cdd" to "CDD".
+*
 * Revision 1.34  2006/01/26 19:54:37  ludwigf
 * FIXED: User object methods would always be displayed as "Method" regardless
 *  of what the ASN.1 said.
