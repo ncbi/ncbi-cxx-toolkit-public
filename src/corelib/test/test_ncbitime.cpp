@@ -260,7 +260,7 @@ static void s_TestMisc(void)
         LOG_POST("DiffMinute     = " +
                  NStr::DoubleToString(t2.DiffMinute(t1),2));
         assert((t2.DiffMinute(t1)-1611.27) < 0.01);
-        LOG_POST("DiffSecond     = " + NStr::IntToString(t2.DiffSecond(t1)));
+        LOG_POST("DiffSecond     = " + NStr::Int8ToString(t2.DiffSecond(t1)));
         assert(t2.DiffSecond(t1) == 96676);
         LOG_POST("DiffNanoSecond = " +
                  NStr::DoubleToString(t2.DiffNanoSecond(t1),0));
@@ -604,10 +604,10 @@ static void s_TestGMT(void)
         CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
         CTime t(timer);
         LOG_POST(STR(t));
-        LOG_POST(NStr::UIntToString(tg.GetTimeT()/3600) + " - " +
-                 NStr::UIntToString(tl.GetTimeT()/3600) + " - " +
-                 NStr::UIntToString( t.GetTimeT()/3600) + " - " +
-                 NStr::UIntToString(timer/3600) + "\n");
+        LOG_POST(NStr::Int8ToString(tg.GetTimeT()/3600) + " - " +
+                 NStr::Int8ToString(tl.GetTimeT()/3600) + " - " +
+                 NStr::Int8ToString( t.GetTimeT()/3600) + " - " +
+                 NStr::Int8ToString(timer/3600) + "\n");
         assert(timer == tg.GetTimeT());
         assert(timer == tl.GetTimeT());
         assert(timer == t.GetTimeT());
@@ -616,13 +616,13 @@ static void s_TestGMT(void)
             CTime tt(2001, 4, 1, i>0 ? 2 : 1, i>0 ? (i-1) : 59, 
                      0, 0, CTime::eLocal, CTime::eHour);
             LOG_POST(tt.AsString() + " - " + 
-                     NStr::UIntToString(tt.GetTimeT()/3600)); 
+                     NStr::Int8ToString(tt.GetTimeT()/3600)); 
         }
         for (int i = 0; i < 2; i++) {
             CTime tt(2001, 10, 28, i > 0 ? 1 : 0, i > 0 ? (i-1) : 59,
                      0, 0, CTime::eLocal, CTime::eHour);
             LOG_POST(tt.AsString() + " - " + 
-                     NStr::UIntToString(tt.GetTimeT()/3600)); 
+                     NStr::Int8ToString(tt.GetTimeT()/3600)); 
         }
     }}
     //------------------------------------------------------------------------
@@ -633,10 +633,10 @@ static void s_TestGMT(void)
         CTime ts(2001, 6, 1, 12);
 
         LOG_POST(STR(tw) + " diff from GMT = " +
-                 NStr::IntToString(tw.TimeZoneDiff() / 3600));
+                 NStr::Int8ToString(tw.TimeZoneDiff() / 3600));
         assert(tw.TimeZoneDiff() / 3600 == -5);
         LOG_POST(STR(ts) + " diff from GMT = " +
-                 NStr::IntToString(ts.TimeZoneDiff() / 3600));
+                 NStr::Int8ToString(ts.TimeZoneDiff() / 3600));
         assert(ts.TimeZoneDiff()/3600 == -4);
 
         for (; tw < ts; tw++) {
@@ -653,10 +653,10 @@ static void s_TestGMT(void)
         CTime tw(2001, 6, 1, 12); 
         CTime ts(2002, 1, 1, 12);
         LOG_POST(STR(tw) + " diff from GMT = " +
-                 NStr::IntToString(tw.TimeZoneDiff() / 3600));
+                 NStr::Int8ToString(tw.TimeZoneDiff() / 3600));
         assert(tw.TimeZoneDiff() / 3600 == -4);
         LOG_POST(STR(ts) + " diff from GMT = " +
-                 NStr::IntToString(ts.TimeZoneDiff() / 3600));
+                 NStr::Int8ToString(ts.TimeZoneDiff() / 3600));
         assert(ts.TimeZoneDiff() / 3600 == -5);
 
         for (; tw < ts; tw++) {
@@ -1065,6 +1065,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.31  2006/06/06 12:21:05  ivanov
+ * Use NStr::Int8ToString for time_t values
+ *
  * Revision 6.30  2006/01/12 15:43:20  ivanov
  * Use LOG_POST instead of cout
  *
