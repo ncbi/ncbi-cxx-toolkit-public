@@ -459,18 +459,18 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
 
     if (ex->GetSeverity() == eDiag_Info) {
         if ( m_Prefix.empty() ) {
-            LOG_POST(ex->GetMsg());
+            LOG_POST(ex->GetSeverity() << ex->GetMsg());
         } else {
-            LOG_POST(m_Prefix << ' ' << ex->GetMsg());
+            LOG_POST(ex->GetSeverity() << m_Prefix << ' ' << ex->GetMsg());
         }
     } else {
         if ( m_Prefix.empty() ) {
-            LOG_POST(ex->what() <<
+            LOG_POST(ex->GetSeverity() << ex->what() <<
                      " SERVER: '" << ex->GetServerName() <<
                      "' USER: '" << ex->GetUserName() << "'"
                      );
         } else {
-            LOG_POST(m_Prefix << ' ' << ex->what() <<
+            LOG_POST(ex->GetSeverity() << m_Prefix << ' ' << ex->what() <<
                      " SERVER: '" << ex->GetServerName() <<
                      "' USER: '" << ex->GetUserName() << "'"
                      );
@@ -538,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/06/06 19:55:46  ssikorsk
+ * Put severity of an exception into log within CDB_UserHandler_Diag::HandleIt.
+ *
  * Revision 1.27  2006/06/02 19:26:38  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *
