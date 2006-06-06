@@ -302,12 +302,18 @@ double
 Blast_Overall_P_Value(double p_comp,
                       double p_alignment)
 {
-    double p_return;              /* the p-value to return */
     double product;               /* the product of the two input p-values */
 
     product = p_comp * p_alignment;
-    p_return = product * (1.0 - log(product));
-    return p_return;
+    if (product > 0) {
+        return product * (1.0 - log(product));
+    } else {
+        /* product is either correctly 0, in which case the overall P
+         * is also corectly zero; or incorrectly nonpositive (possibly
+         * NaN), in which case we return the nonsense value so as not
+         * to hide the error */
+        return product;
+    }
 }
 
 
