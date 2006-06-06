@@ -434,6 +434,7 @@ void CNetBVSServer::ParseRequest(const char* reqstr, SBVS_Request* req)
     case 'B':
         if (SBVS_Commands::IsCmd(s_BVS_cmd_codes.BGET, s)) {
             s += 4;
+            req->req_type = eGet;
             NS_SKIPSPACE(s)
             NS_CHECKEND(s, "Misformed BGET request")
             req->id = (unsigned)atoi(s);
@@ -443,6 +444,7 @@ void CNetBVSServer::ParseRequest(const char* reqstr, SBVS_Request* req)
             NS_SKIPNUM(s)
             NS_SKIPSPACE(s)
             req->range_to = (unsigned)atoi(s);
+            return;
         }
         break;
     default:
@@ -627,7 +629,7 @@ void CNetBVStoreDApp::Init(void)
 
     //arg_desc->AddFlag("reinit", "Recreate the storage directory.");
     arg_desc->AddOptionalKey("bvsname", "bvsname", 
-        "Name and path of storage (path|name) ",
+        "Name and path of storage (path=name) ",
                              CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
@@ -704,7 +706,7 @@ int CNetBVStoreDApp::Run(void)
         if (args["bvsname"]) {
             string bvsname = args["bvsname"].AsString();
             string spath, sname;
-            bool split = NStr::SplitInTwo(bvsname, "|", spath, sname);
+            bool split = NStr::SplitInTwo(bvsname, "=", spath, sname);
             if (split) {
                 thr_srv->MountBVStore(spath, sname, 10 * 1024 * 1024);
             } else {
@@ -738,6 +740,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/06 16:12:56  kuznets
+ * minor fix
+ *
  * Revision 1.1  2006/06/02 12:44:55  kuznets
  * Initial revision
  *
