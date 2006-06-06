@@ -2507,6 +2507,8 @@ BlastHitList* Blast_HitListNew(Int4 hitlist_size)
       calloc(1, sizeof(BlastHitList));
    new_hitlist->hsplist_max = hitlist_size;
    new_hitlist->low_score = INT4_MAX;
+   new_hitlist->hsplist_count = 0;
+   new_hitlist->hsplist_current = 0;
    return new_hitlist;
 }
 
@@ -2586,6 +2588,38 @@ s_BlastHitListInsertHSPListInHeap(BlastHitList* hit_list,
       hit_list->low_score = hit_list->hsplist_array[0]->hsp_array[0]->score;
 }
 
+/** Given a BlastHitList pointer this function makes the 
+ * hsplist_array larger, up to a maximum size.
+ * These incremental increases are mostly an issue for users who
+ * put in a very large number for number of hits to save, but only save a few.
+ * @param hit_list object containing the hsplist_array to grow [in]
+ * @return zero on success, 1 if full already.
+ */
+Int2 s_Blast_HitListGrowHSPListArray(BlastHitList* hit_list)
+
+{
+    const int kStartValue = 100; /* default number of hsplist_array to start with. */
+
+    ASSERT(hit_list);
+
+    if (hit_list->hsplist_current >= hit_list->hsplist_max)
+       return 1;
+
+    if (hit_list->hsplist_current <= 0)
+       hit_list->hsplist_current = kStartValue;
+    else
+       hit_list->hsplist_current = MIN(2*hit_list->hsplist_current, hit_list->hsplist_max);
+
+    hit_list->hsplist_array = 
+       (BlastHSPList**) realloc(hit_list->hsplist_array, hit_list->hsplist_current*sizeof(BlastHSPList*));
+
+    if (hit_list->hsplist_array == NULL)
+       return -1;
+
+    return 0;
+}
+
+
 
 Int2 Blast_HitListUpdate(BlastHitList* hit_list, 
                          BlastHSPList* hsp_list)
@@ -2597,9 +2631,12 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
    if (hit_list->hsplist_count < hit_list->hsplist_max) {
       /* If the array of HSP lists for this query is not yet allocated, 
          do it here */
-      if (!hit_list->hsplist_array)
-         hit_list->hsplist_array = (BlastHSPList**)
-            malloc(hit_list->hsplist_max*sizeof(BlastHSPList*));
+      if (hit_list->hsplist_current == hit_list->hsplist_count)
+      {
+         Int2 status = s_Blast_HitListGrowHSPListArray(hit_list);
+         if (status)
+           return status;
+      }
       /* Just add to the end; sort later */
       hit_list->hsplist_array[hit_list->hsplist_count++] = hsp_list;
       hit_list->worst_evalue = 
@@ -3229,6 +3266,7 @@ s_TrimResultsByTotalHSPLimit(BlastHSPResults* results, Uint4 total_hsp_limit)
             continue;
         /* The count of HSPs is separate for each query. */
         hsplist_count = hit_list->hsplist_count;
+
         hsplist_array = (BlastHSPList**) 
             malloc(hsplist_count*sizeof(BlastHSPList*));
         
