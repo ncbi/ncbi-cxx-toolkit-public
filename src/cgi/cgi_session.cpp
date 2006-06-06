@@ -192,13 +192,16 @@ string CCgiSession::x_RetrieveSessionId() const
         const CCgiCookie* cookie = cookies.Find(m_SessionIdName, "", ""); 
 
         if (cookie) {
+            GetDiagContext().SetProperty("session_id", cookie->GetValue());
             return cookie->GetValue();
         }
     }
     bool is_found = false;
     const CCgiEntry& entry = m_Request.GetEntry(m_SessionIdName, &is_found);
-    if (is_found)
+    if (is_found) {
+        GetDiagContext().SetProperty("session_id", entry.GetValue());
         return entry.GetValue();
+    }
     return "";
 }
 
@@ -217,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/06/06 16:44:50  grichenk
+ * Set session id in CDiagContext.
+ *
  * Revision 1.3  2005/12/20 20:36:02  didenko
  * Comments cosmetics
  * Small interace changes
