@@ -194,10 +194,11 @@ bool CODBC_LangCmd::Cancel()
         if ( !Close() ) {
             return false;
         }
+
+        ResetParams();
+        // m_Query.erase();
     }
 
-    ResetParams();
-    // m_Query.erase();
     return true;
 }
 
@@ -555,6 +556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/06 14:46:31  ssikorsk
+ * Fixed CODBC_LangCmd::Cancel.
+ *
  * Revision 1.24  2006/06/05 21:09:22  ssikorsk
  * Replaced 'm_BR = 0' with 'CDB_BaseEnt::Release()'.
  *
