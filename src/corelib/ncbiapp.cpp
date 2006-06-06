@@ -68,15 +68,6 @@ static const char* s_ArgCfgFile = "-conffile";
 static const char* s_ArgVersion = "-version";
 
 
-static void s_DiagToStdlog_Cleanup(void* data)
-{
-    // SetupDiag(eDS_ToStdlog)
-    CNcbiOfstream* os_log = static_cast<CNcbiOfstream*> (data);
-    delete os_log;
-}
-
-
-
 ///////////////////////////////////////////////////////
 // CNcbiApplication
 //
@@ -1166,6 +1157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.123  2006/06/06 20:57:37  grichenk
+ * Removed s_DiagToStdlog_Cleanup().
+ *
  * Revision 1.122  2006/05/23 18:49:41  grichenk
  * Fixed warning
  *
