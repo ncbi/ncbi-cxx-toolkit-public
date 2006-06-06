@@ -204,9 +204,9 @@ static CTime s_Number2Date(unsigned num, const CTime& t)
 // Calc <value> + <offset> on module <bound>.
 // Normalized value return in <value> and other part, which above
 // than <bound>, write at <major>.
-static void s_Offset(long *value, time_t offset, long bound, int *major)
+static void s_Offset(long *value, Int8 offset, long bound, int *major)
 {
-    time_t v = *value + offset;
+    Int8 v = *value + offset;
     *major += (int)(v / bound);
     *value = (long)(v % bound);
     if (*value < 0) {
@@ -820,7 +820,7 @@ string CTime::GetFormat(void)
     return *format;
 }
 
-string CTime::AsString(const string& fmt, long out_tz) const
+string CTime::AsString(const string& fmt, TSeconds out_tz) const
 {
     if ( fmt.empty() ) {
         return AsString(GetFormat());
@@ -881,7 +881,7 @@ string CTime::AsString(const string& fmt, long out_tz) const
                       if (IsGmtTime()) {
                           break;
                       }
-                      long tz = (out_tz == eCurrentTimeZone) ?
+                      TSeconds tz = (out_tz == eCurrentTimeZone) ?
                           TimeZone() : out_tz;
                       str += (tz > 0) ? '-' : '+';
                       if (tz < 0) tz = -tz;
@@ -1228,7 +1228,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
 }
 
 
-CTime& CTime::AddSecond(time_t seconds, EDaylight adl)
+CTime& CTime::AddSecond(TSeconds seconds, EDaylight adl)
 {
     if ( !seconds ) {
         return *this;
@@ -1445,9 +1445,9 @@ CTime& CTime::Clear()
 }
 
 
-time_t CTime::DiffSecond(const CTime& t) const
+TSeconds CTime::DiffSecond(const CTime& t) const
 {
-    int dSec  = Second() - t.Second();
+    TSeconds dSec  = Second() - t.Second();
     int dMin  = Minute() - t.Minute();
     int dHour = Hour()   - t.Hour();
     int dDay  = (*this)  - t;
@@ -1512,7 +1512,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     // Special conversion from <const CTime> to <CTime>
     CTime tmp(from);
     int sign = 0;
-    int diff = 0;
+    TSeconds diff = 0;
     // Primary procedure call
     if ( shift_time ) {
         sign = ( *this > from ) ? 1 : -1;
@@ -1533,7 +1533,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     }
     // Make correction with temporary time shift
     time_t t = GetTimeT();
-    CTime tn(t + diff + 3600 * kShift * sign);
+    CTime tn(t + (time_t)diff + 3600 * kShift * sign);
     if (from.GetTimeZoneFormat() == eLocal) {
         tn.ToLocalTime();
     }
@@ -2165,6 +2165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/06/06 19:08:20  ivanov
+ * CTime:: Use new type TSeconds in some methods for time representation
+ *
  * Revision 1.74  2006/06/06 12:30:17  ivanov
  * Use kMax_Int as maximum value for year in CHECK_RANGE_YEAR macro
  *

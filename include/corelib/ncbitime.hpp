@@ -83,6 +83,9 @@ const long kMilliSecondsPerSecond = 1000;
 
 // Time formats in databases (always contain local time only!)
 
+/// Number of seconds.
+typedef Int8 TSeconds;
+
 /// Database format for time where day and time is unsigned 16 bit.
 typedef struct {
     Uint2 days;   ///< Days from 1/1/1900
@@ -450,7 +453,7 @@ public:
     /// @sa
     ///   GetFormat, SetFormat
     string AsString(const string& fmt = kEmptyStr,
-                    long  out_tz      = eCurrentTimeZone) const;
+                    TSeconds out_tz   = eCurrentTimeZone) const;
 
 
     /// Return time as string using the format returned by GetFormat().
@@ -675,7 +678,7 @@ public:
     /// @param seconds
     ///   Seconds to add. Default is 1 second.
     ///   If negative, it will result in a "subtraction" operation.
-    CTime& AddSecond(time_t seconds = 1, EDaylight adl = eDaylightDefault);
+    CTime& AddSecond(TSeconds seconds = 1, EDaylight adl = eDaylightDefault);
 
     /// Add specified nanoseconds.
     ///
@@ -774,7 +777,7 @@ public:
     double DiffMinute(const CTime& t) const;
 
     /// Difference in seconds from specified time.
-    time_t DiffSecond(const CTime& t) const;
+    TSeconds DiffSecond(const CTime& t) const;
 
     /// Difference in nanoseconds from specified time.
     double DiffNanoSecond(const CTime& t) const;
@@ -818,7 +821,7 @@ public:
     ETimeZonePrecision SetTimeZonePrecision(ETimeZonePrecision val);
 
     /// Get difference between local timezone and GMT in seconds.
-    int TimeZoneDiff(void) const;
+    TSeconds TimeZoneDiff(void) const;
 
     /// Get current time as local time.
     CTime GetLocalTime(void) const;
@@ -1708,9 +1711,9 @@ CTime::ETimeZonePrecision CTime::SetTimeZonePrecision(ETimeZonePrecision val)
 }
 
 inline 
-int CTime::TimeZoneDiff(void) const
+TSeconds CTime::TimeZoneDiff(void) const
 {
-    return (int)GetLocalTime().DiffSecond(GetGmtTime());
+    return GetLocalTime().DiffSecond(GetGmtTime());
 }
 
 inline 
@@ -2021,6 +2024,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/06/06 19:08:12  ivanov
+ * CTime:: Use new type TSeconds in some methods for time representation
+ *
  * Revision 1.59  2006/06/06 12:18:58  ivanov
  * Fixed compilation warnings on MSVC8 64-bit
  *
