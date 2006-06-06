@@ -145,7 +145,6 @@ static const char* kFormatSymbolsSpan = "-dhHmMsSnN";
 // Error messages
 static const string kMsgInvalidTime = "CTime:  invalid";
 
-
 // Get number of days in "date"
 static unsigned s_Date2Number(const CTime& date)
 {
@@ -205,24 +204,36 @@ static CTime s_Number2Date(unsigned num, const CTime& t)
 // Calc <value> + <offset> on module <bound>.
 // Normalized value return in <value> and other part, which above
 // than <bound>, write at <major>.
-static void s_Offset(long *value, long offset, long bound, int *major)
+static void s_Offset(long *value, time_t offset, long bound, int *major)
 {
-    *value += offset;
-    *major += (int) (*value / bound);
-    *value %= bound;
+    time_t v = *value + offset;
+    *major += (int)(v / bound);
+    *value = (long)(v % bound);
     if (*value < 0) {
         *major -= 1;
         *value += bound;
     }
 }
 
+// Macro to check range for time components.
+// See also:
+//      CTime::m_Data
+//      CTime::IsValid
+//      CTime::Set*() methods
 
-// Macro to check range for nanoseconds. Nanoseconds have a 'long' type in all
-// functions, but internally CTime store it as Int4.
-#define CHECK_NS_RANGE(value) \
-    if ( value < kMin_I4  ||  value > kMax_I4 ) {  \
-        NCBI_THROW(CTimeException, eArgument, "CTime: nanoseconds value is out of range."); \
+#define CHECK_RANGE(value, what, min, max) \
+    if ( value < min  ||  value > max ) {  \
+        NCBI_THROW(CTimeException, eArgument, "CTime: " what " value is out of range"); \
     }
+
+#define CHECK_RANGE_YEAR(value)  CHECK_RANGE(value, "year", 1583, kMax_UInt)
+#define CHECK_RANGE_MONTH(value) CHECK_RANGE(value, "month", 1, 12)
+#define CHECK_RANGE_DAY(value)   CHECK_RANGE(value, "day", 1, 31)
+#define CHECK_RANGE_HOUR(value)  CHECK_RANGE(value, "hour", 0, 23)
+#define CHECK_RANGE_MIN(value)   CHECK_RANGE(value, "minute", 0, 59)
+#define CHECK_RANGE_SEC(value)   CHECK_RANGE(value, "second", 0, 61)
+#define CHECK_RANGE_NSEC(value)  CHECK_RANGE(value, "nanosecond", 0, kNanoSecondsPerSecond - 1)
+
 
 
 //============================================================================
@@ -426,6 +437,7 @@ void CTime::x_Init(const string& str, const string& fmt)
         // Set time part
         switch ( *fff ) {
         case 'Y':
+            CHECK_RANGE_YEAR(value);
             m_Data.year = (unsigned int)value;
             break;
         case 'y':
@@ -434,42 +446,49 @@ void CTime::x_Init(const string& str, const string& fmt)
             } else if (value >= 50  &&  value < 100) {
                 value += 1900;
             }
+            CHECK_RANGE_YEAR(value);
             m_Data.year = (unsigned int)value;
             break;
         case 'M':
+            CHECK_RANGE_MONTH(value);
             m_Data.month = (unsigned char)value;
             break;
         case 'D':
         case 'd':
+            CHECK_RANGE_DAY(value);
             m_Data.day = (unsigned char)value;
             break;
         case 'h':
+            CHECK_RANGE_HOUR(value);
             m_Data.hour = (unsigned char)value;
             break;
         case 'H':
+            CHECK_RANGE_HOUR(value);
             m_Data.hour = (unsigned char)value % 12;
             is_12hour = true;
             break;
         case 'm':
+            CHECK_RANGE_MIN(value);
             m_Data.min = (unsigned char)value;
             break;
         case 's':
+            CHECK_RANGE_SEC(value);
             m_Data.sec = (unsigned char)value;
             break;
         case 'l':
-            CHECK_NS_RANGE(value);
+            CHECK_RANGE_NSEC((Int8)value * 1000000);
             m_Data.nanosec = (Int4)value * 1000000;
             break;
         case 'r':
-            CHECK_NS_RANGE(value);
+            CHECK_RANGE_NSEC((Int8)value * 1000);
             m_Data.nanosec = (Int4)value * 1000;
             break;
         case 'S':
-            CHECK_NS_RANGE(value);
+            CHECK_RANGE_NSEC(value);
             m_Data.nanosec = (Int4)value;
             break;
         default:
-            NCBI_THROW(CTimeException, eFormat, "CTime:  format is incorrect");
+            NCBI_THROW(CTimeException, eFormat, "CTime: format is incorrect");
         }
     }
 
@@ -480,15 +499,14 @@ void CTime::x_Init(const string& str, const string& fmt)
 
     // Check on errors
     if (weekday != -1  &&  weekday != DayOfWeek()) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid day of week");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: invalid day of week");
     }
-
     while ( isspace((unsigned char)(*sss)) )
         sss++;
     if (*fff != '\0'  ||  *sss != '\0') {
-        NCBI_THROW(CTimeException, eFormat, "CTime:  format is incorrect");
+        NCBI_THROW(CTimeException, eFormat, "CTime: format is incorrect");
     }
-
+    // Validate time value
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -505,13 +523,20 @@ CTime::CTime(int year, int month, int day, int hour,
              int minute, int second, long nanosecond,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
+    CHECK_RANGE_YEAR(year);
+    CHECK_RANGE_MONTH(month);
+    CHECK_RANGE_DAY(day);
+    CHECK_RANGE_HOUR(hour);
+    CHECK_RANGE_MIN(minute);
+    CHECK_RANGE_SEC(second);
+    CHECK_RANGE_NSEC(nanosecond);
+
     m_Data.year        = year;
     m_Data.month       = month;
     m_Data.day         = day;
     m_Data.hour        = hour;
     m_Data.min         = minute;
     m_Data.sec         = second;
-    CHECK_NS_RANGE(nanosecond);
     m_Data.nanosec     = (Int4)nanosecond;
     m_Data.tz          = tz;
     m_Data.tzprec      = tzp;
@@ -559,11 +584,13 @@ CTime::CTime(const string& str, const string& fmt,
 
 void CTime::SetYear(int year)
 {
+    CHECK_RANGE_YEAR(year);
     m_Data.year = year;
     int n_days = DaysInMonth();
     if ( m_Data.day > n_days ) {
         m_Data.day = n_days;
     }
+    // additional checks
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -572,11 +599,13 @@ void CTime::SetYear(int year)
 
 void CTime::SetMonth(int month)
 {
+    CHECK_RANGE_MONTH(month);
     m_Data.month = month;
     int n_days = DaysInMonth();
     if ( m_Data.day > n_days ) {
         m_Data.day = n_days;
     }
+    // additional checks
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -585,12 +614,14 @@ void CTime::SetMonth(int month)
 
 void CTime::SetDay(int day)
 {
+    CHECK_RANGE_DAY(day);
     int n_days = DaysInMonth();
     if ( day > n_days ) {
         m_Data.day = n_days;
     } else {
         m_Data.day = day;
     }
+    // additional checks
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -599,38 +630,29 @@ void CTime::SetDay(int day)
 
 void CTime::SetHour(int hour)
 {
+    CHECK_RANGE_HOUR(hour);
     m_Data.hour = hour;
-    if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
-    }
 }
 
 
 void CTime::SetMinute(int minute)
 {
+    CHECK_RANGE_MIN(minute);
     m_Data.min = minute;
-    if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
-    }
 }
 
 
 void CTime::SetSecond(int second)
 {
+    CHECK_RANGE_SEC(second);
     m_Data.sec = second;
-    if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
-    }
 }
 
 
 void CTime::SetNanoSecond(long nanosecond)
 {
-    CHECK_NS_RANGE(nanosecond);
+    CHECK_RANGE_NSEC(nanosecond);
     m_Data.nanosec = (Int4)nanosecond;
-    if ( !IsValid() ) {
-        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
-    }
 }
 
 
@@ -1089,7 +1111,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     m_Data.hour        = t->tm_hour;
     m_Data.min         = t->tm_min;
     m_Data.sec         = t->tm_sec;
-    CHECK_NS_RANGE(ns);
+    CHECK_RANGE_NSEC(ns);
     m_Data.nanosec     = (Int4)ns;
     return *this;
 }
@@ -1206,7 +1228,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
 }
 
 
-CTime& CTime::AddSecond(long seconds, EDaylight adl)
+CTime& CTime::AddSecond(time_t seconds, EDaylight adl)
 {
     if ( !seconds ) {
         return *this;
@@ -1423,7 +1445,7 @@ CTime& CTime::Clear()
 }
 
 
-int CTime::DiffSecond(const CTime& t) const
+time_t CTime::DiffSecond(const CTime& t) const
 {
     int dSec  = Second() - t.Second();
     int dMin  = Minute() - t.Minute();
@@ -2143,6 +2165,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/06/06 12:20:02  ivanov
+ * Fixed compilation warnings on MSVC8 64-bit.
+ * Added more checks for time components in Set*() methods.
+ *
  * Revision 1.72  2006/03/31 15:59:39  ivanov
  * CStopWatch::CStopWatch(bool) - added stopwatch state initialization
  *
