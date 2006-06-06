@@ -130,7 +130,7 @@ inline
 bool s_DeflineCompareWrapper(const CRef<CBlast_def_line>& d1, 
                              const CRef<CBlast_def_line>& d2)
 {
-    return s_DeflineCompare(d1, d2, CSeq_id::BestRank);
+    return s_DeflineCompare(d1, d2, CSeq_id::WorstRank);
 }
 
 void
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/06/06 15:23:12  camacho
+* Replace CSeq_id::BestRank for CSeq_id::WorstRank
+*
 * Revision 1.1  2006/06/05 15:14:26  camacho
 * + SortBySeqIdRank
 *
