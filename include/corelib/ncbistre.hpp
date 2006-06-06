@@ -453,42 +453,42 @@ private:
 class NCBI_XNCBI_EXPORT CUpcaseStringConverter
 {
 public:
-    CUpcaseStringConverter(const string& s) : m_String(s) { }
+    explicit CUpcaseStringConverter(const string& s) : m_String(s) { }
     const string& m_String;
 };
 
 class NCBI_XNCBI_EXPORT CUpcaseCharPtrConverter
 {
 public:
-    CUpcaseCharPtrConverter(const char* s) : m_String(s) { }
+    explicit CUpcaseCharPtrConverter(const char* s) : m_String(s) { }
     const char* m_String;
 };
 
 class NCBI_XNCBI_EXPORT CLocaseStringConverter
 {
 public:
-    CLocaseStringConverter(const string& s) : m_String(s) { }
+    explicit CLocaseStringConverter(const string& s) : m_String(s) { }
     const string& m_String;
 };
 
 class NCBI_XNCBI_EXPORT CLocaseCharPtrConverter
 {
 public:
-    CLocaseCharPtrConverter(const char* s) : m_String(s) { }
+    explicit CLocaseCharPtrConverter(const char* s) : m_String(s) { }
     const char* m_String;
 };
 
 class NCBI_XNCBI_EXPORT CPrintableStringConverter
 {
 public:
-    CPrintableStringConverter(const string& s) : m_String(s) { }
+    explicit CPrintableStringConverter(const string& s) : m_String(s) { }
     const string& m_String;
 };
 
 class NCBI_XNCBI_EXPORT CPrintableCharPtrConverter
 {
 public:
-    CPrintableCharPtrConverter(const char* s) : m_String(s) { }
+    explicit CPrintableCharPtrConverter(const char* s) : m_String(s) { }
     const char* m_String;
 };
 
@@ -590,6 +590,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/06/06 13:30:59  vasilche
+ * Added 'explicit' keyword to converters constructors
+ *
  * Revision 1.49  2006/02/16 13:17:28  lavr
  * Move readsome-tolerant MIPSPro-specific streambuf-base further down
  *
