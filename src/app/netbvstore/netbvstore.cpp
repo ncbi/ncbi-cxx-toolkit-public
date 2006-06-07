@@ -210,7 +210,7 @@ void CNetBVSServer::Process(SOCK sock)
      
         // Set socket parameters
 
-        socket.DisableOSSendDelay();
+        //socket.DisableOSSendDelay();
         STimeout to = {m_InactivityTimeout, 0};
         socket.SetTimeout(eIO_ReadWrite , &to);
 
@@ -740,6 +740,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/07 15:48:09  kuznets
+ * commented out socket send delay
+ *
  * Revision 1.2  2006/06/06 16:12:56  kuznets
  * minor fix
  *
