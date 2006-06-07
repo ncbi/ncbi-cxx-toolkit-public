@@ -341,7 +341,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
     }
 
     {{
-        char* iter_header = SERV_Print(uuu->iter, uuu->net_info);
+        char* iter_header = SERV_Print(uuu->iter, 0);
         switch (info->type) {
         case fSERV_Ncbid:
             user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
@@ -519,7 +519,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     if (!user_header)
         return 0;
 
-    if ((iter_header = SERV_Print(uuu->iter, uuu->net_info)) != 0) {
+    if ((iter_header = SERV_Print(uuu->iter, net_info)) != 0) {
         size_t uh_len;
         if ((uh_len = strlen(user_header)) > 0) {
             char*  ih;
@@ -848,6 +848,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.73  2006/06/07 20:06:48  lavr
+ * Adjust use of net_infos passed to SERV_Print()
+ *
  * Revision 6.72  2006/04/23 18:27:54  lavr
  * BUGFIX:  typo in SServiceConnector allocation caused memory corruption
  *
