@@ -205,7 +205,7 @@ bool CSeqAnnotFromFasta::MakeIBMSeqAnnot(CCdCore& dummyCD)
     unsigned int nSeq = (unsigned int) dummyCD.GetNumSequences(), maxLenIndex = 0;
     unsigned char uc;
     string masterSequence, sequence;
-    vector<string> columnStrings;
+//    vector<string> columnStrings;
     vector<unsigned int> residueCount;  
     set<unsigned int> masterSeqIndices, forcedBreaks;  
 
@@ -234,7 +234,7 @@ bool CSeqAnnotFromFasta::MakeIBMSeqAnnot(CCdCore& dummyCD)
 
     //  Count number of residues in each column.
     residueCount.resize(maxLen);
-    columnStrings.resize(maxLen);
+//    columnStrings.resize(maxLen);
     for (i = 0; i < nSeq; ++i) {
         sequence = m_sequences[i];
         len = sequence.length();
@@ -244,7 +244,7 @@ bool CSeqAnnotFromFasta::MakeIBMSeqAnnot(CCdCore& dummyCD)
             if (isalpha(uc)) {
                 ++residueCount[j];
             }
-            columnStrings[j] += sequence[j];
+//            columnStrings[j] += sequence[j];
         }
      }
 
@@ -294,7 +294,7 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
     unsigned int nSeq = (unsigned int) dummyCD.GetNumSequences(), maxLenIndex = 0;
     unsigned char uc;
     string sequence, masterSequence;
-    vector<string> columnStrings;
+//    string masterColumnString, slaveColumnString;
     vector<unsigned int> residueCount, masterResidueCount;  
     set<unsigned int> masterSeqIndices, forcedBreaks;  
 
@@ -341,11 +341,11 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
 
 
     //  For each master-slave pair, flag the columns that are aligned.
-    columnStrings.resize(2);
     for (i = 0; i < nSeq; ++i) {
         if (i == m_masterIndex) continue;
 
-        columnStrings.clear();
+//        masterColumnString.erase();
+//        slaveColumnString.erase();
         residueCount.assign(maxLen, 0);
         sequence = m_sequences[i];
         len = min((unsigned int)sequence.length(), masterLen);
@@ -355,8 +355,8 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
             if (isalpha(uc) && masterResidueCount[j] > 0) {
                 residueCount[j] = 1;
             }
-            columnStrings[0] += masterSequence[j];
-            columnStrings[1] += sequence[j];
+//            masterColumnString += masterSequence[j];
+//            slaveColumnString += sequence[j];
         }
 
         //  Find this pair's block model
@@ -749,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/07 20:34:16  lanczyck
+ * comment out debugging code
+ *
  * Revision 1.2  2006/03/29 20:06:27  ucko
  * Ensure that min's arguments have the same type in MakeAsIsSeqAnnot.
  * Add an include directive for <algorithm>, which may help the MSVC build.
