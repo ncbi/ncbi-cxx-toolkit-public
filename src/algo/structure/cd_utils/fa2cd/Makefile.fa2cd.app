@@ -40,6 +40,8 @@ LIB =   xbma_refiner \
 
 #NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lblastcompadj -lncbiobj -lncbi
 
+LDFLAGS = $(FAST_LDFLAGS) -static
+
 LIBS = $(ORIG_LIBS)
 
 #LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) 
