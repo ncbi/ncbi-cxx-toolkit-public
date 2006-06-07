@@ -283,6 +283,7 @@ typedef struct BlastExtensionOptions {
    Int4 compositionBasedStats; /**< mode of compositional adjustment to use;
                                    if zero then compositional adjustment is
                                    not used */
+   Int4 unifiedP; /**< Indicates unified P values to be used in blastp or tblastn */
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastExtensionOptions;
 
