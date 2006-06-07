@@ -962,6 +962,30 @@ static void s_Destroy(CONNECTOR connector)
 }
 
 
+/* NB: HTTP tag name misspelled as "Referer" as per the standard. */
+static void s_AddReferer(SConnNetInfo* net_info)
+{
+    const char* s;
+    char* referer;
+    if (!net_info  ||  !net_info->http_referer  ||  !*net_info->http_referer)
+        return;
+    if ((s = net_info->http_user_header) != 0) {
+        int/*bool*/ first;
+        for (first = 1;  *s;  first = 0) {
+            if (strncasecmp(s++, "\nReferer: " + first, 10 - first) == 0)
+                return;
+            if (!(s = strchr(s, '\n')))
+                break;
+        }
+    }
+    if (!(referer = malloc(strlen(net_info->http_referer) + 12)))
+        return;
+    sprintf(referer, "Referer: %s\r\n", net_info->http_referer);
+    ConnNetInfo_ExtendUserHeader(net_info, referer);
+    free(referer);
+}
+
+
 /***********************************************************************
  *  EXTERNAL -- the connector's "constructor"
  ***********************************************************************/
@@ -998,6 +1022,7 @@ extern CONNECTOR HTTP_CreateConnectorEx
     uuu->net_info        = net_info ?
         ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
+    s_AddReferer(uuu->net_info);
 
     uuu->parse_http_hdr  = parse_http_hdr;
     uuu->adjust_net_info = adjust_net_info;
@@ -1041,6 +1066,9 @@ extern void HTTP_SetNcbiMessageHook(FHTTP_NcbiMessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.73  2006/06/07 20:05:00  lavr
+ * Take advantage of newly added SConnNetInfo::http_referer
+ *
  * Revision 6.72  2006/02/14 15:49:42  lavr
  * Introduce and use CORE_TRACE macros (NOP in Release mode)
  *
