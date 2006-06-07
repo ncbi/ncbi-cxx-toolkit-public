@@ -55,7 +55,7 @@ extern "C" {
 
 #define BLASTMAT_DIR "/usr/ncbi/blast/matrix" /**< Default location for blast databases. */
 
-typedef char* (*GET_MATRIX_PATH) (const char*, Boolean);  /**< Typedef for callback to get matrix path (toolkit dependent). */
+typedef char* (*GET_MATRIX_PATH) (const char*, Boolean);
 
 /**
   Structure to hold the Karlin-Altschul parameters.
@@ -354,6 +354,46 @@ Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess);
  */
 NCBI_XBLAST_EXPORT
 double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, Int8  searchsp);
+
+/** Convert a P-value to an E-value.
+ *
+ * P-values and E-values may either represent statistics of a database
+ * search or represent statistics on the two sequences being compared.
+ * If given a database P-value, this routine will return a database
+ * E-value; if given a pairwise P-value, it will return a pairwise
+ * E-value.
+ *  
+ * In the context of a database search, the available P-value is often
+ * a pairwise P-value, whereas the desired E-value is a database
+ * E-value.  When this it the case, the value returned by this routine
+ * should be multiplied by the effective length of the database and
+ * divided by the effective length of the subject.
+ * 
+ * @param p the P-value to be converted [in] @return the corresponding
+ * expect value.
+ */
+NCBI_XBLAST_EXPORT double BLAST_KarlinPtoE(double p);
+
+/** Convert an E-value to a P-value.
+ * 
+ * E-values and P-values may either represent statistics of a database
+ * search or represent statistics on the two sequences being compared.
+ * If given a database E-value, this routine will return a database
+ * P-value; if given a pairwise E-value, it will return a pairwise
+ * P-value.
+ *
+ * In the context of a database search, the available E-value is
+ * typically a database E-value, whereas the desired P-value is a
+ * pairwise P-value.  When this is the case, the E-value should be
+ * divided by the effective length of the database and multiplied by
+ * the effective length of the subject, before BLAST_KarlinEtoP is
+ * called.
+ *
+ * @param x the expect value to be converted [in]
+ * @return the corresponding p-value.
+ */
+NCBI_XBLAST_EXPORT
+double BLAST_KarlinEtoP(double x);
 
 /** Compute a divisor used to weight the evalue of a collection of
  * "nsegs" distinct alignments.  These divisors are used to compensate

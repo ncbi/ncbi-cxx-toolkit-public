@@ -3677,27 +3677,27 @@ BLAST_KarlinStoE_simple(Int4 S,
    return (double) searchsp * exp((double)(-Lambda * S) + kbp->logK);
 }
 
-/** BlastKarlinPtoE -- convert a P-value to an Expect value
- * When using BlastKarlinPtoE in the context of a database search,
- * the returned E-value should be multiplied by the effective
- * length of the database and divided by the effective lnegth of
- * the subject.
- * @param p the P-value to be converted [in]
- * @return the corresponding expect value.
-*/
-static double
-BlastKarlinPtoE(double p)
+/* Convert a P-value to an E-value. */
+double
+BLAST_KarlinPtoE(double p)
 {
-        if (p < 0. || p > 1.0) 
-   {
-                return INT4_MIN;
-        }
+    if (p < 0.0 || p > 1.0) {
+        return INT4_MIN;
+    }
+    if (p == 1.0)
+        return INT4_MAX;
 
-   if (p == 1)
-      return INT4_MAX;
-
-        return -BLAST_Log1p(-p);
+    return -BLAST_Log1p(-p);
 }
+
+
+/* Convert an E-value to a P-value. */
+double
+BLAST_KarlinEtoP(double x)
+{
+    return -BLAST_Expm1(-x);
+}
+
 
 /** Internal data structure used by Romberg integration callbacks. */
 typedef struct SRombergCbackArgs {
@@ -3958,7 +3958,7 @@ BLAST_SmallGapSumE(
         xsum -= BLAST_LnFactorial((double) num);
 
         sum_p = s_BlastSumP(num, xsum);
-        sum_e = BlastKarlinPtoE(sum_p) *
+        sum_e = BLAST_KarlinPtoE(sum_p) *
             ((double) searchsp_eff / (double) pair_search_space);
     }
     if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
@@ -4016,7 +4016,7 @@ BLAST_UnevenGapSumE(Int4 query_start_points, Int4 subject_start_points,
         xsum -= BLAST_LnFactorial((double) num);
 
         sum_p = s_BlastSumP(num, xsum);
-        sum_e = BlastKarlinPtoE(sum_p) *
+        sum_e = BLAST_KarlinPtoE(sum_p) *
             ((double) searchsp_eff / (double) pair_search_space);
     }
     if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
@@ -4066,7 +4066,7 @@ BLAST_LargeGapSumE(
       
       sum_p = s_BlastSumP(num, xsum);
       
-      sum_e = BlastKarlinPtoE(sum_p) *
+      sum_e = BLAST_KarlinPtoE(sum_p) *
           ((double) searchsp_eff / (lcl_query_length * lcl_subject_length));
     }
     if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
@@ -4381,6 +4381,13 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.144  2006/06/07 16:49:31  madden
+ *     - Renamed BlastKarlinPtoE as BLAST_KarlinPtoE and made it external;
+ *       it is need by the composition adjustment routines.
+ *     - Added a Blast_KarlinEtoP routine, the inverse of
+ *       BLAST_KarlinPtoE.
+ *     (from Mike Gertz).
+ *
  * Revision 1.143  2006/06/05 13:27:33  madden
  * Add support for GET_MATRIX_PATH callback
  *
