@@ -56,7 +56,10 @@ static char const rcsid[] =
 #include <algo/blast/composition_adjustment/compo_heap.h>
 #include <algo/blast/composition_adjustment/redo_alignment.h>
 #include <algo/blast/composition_adjustment/matrix_frequency_data.h>
+#include <algo/blast/composition_adjustment/unified_pvalues.h>
 
+/* Define KAPPA_PRINT_DIAGNOSTICS to turn on printing of
+ * diagnostic information from some routines. */
 
 /** Compile-time option; if set to a true value, then blastp runs
     that use Blast_RedoAlignmentCore to compute the traceback will not
@@ -100,6 +103,102 @@ s_HSPListNormalizeScores(BlastHSPList * hsp_list,
         /* Compute the bit score using the newly computed scaled score. */
         hsp->bit_score = (hsp->score*lambda*scoreDivisor - logK)/NCBIMATH_LN2;
     }
+}
+
+
+/**
+ * Adjusts the E-values in a BLAST_HitList to be composites of
+ * a composition-based P-value and a score/alignment-based P-value
+ *
+ * @param hsp_list           the hitlist whose E-values need to be adjusted
+ * @param comp_p_value      P-value from sequence composition
+ * @param search            is the structure with all the information about
+ *                          the search
+ * @param matching_sequence_length length of database sequence
+ * @param dblen_eff         effective database length
+ * @param length_adjustment  length_adjustment for E-values
+ * @param LambdaRatio       the ratio between the observed value of Lambda
+ *                          and the predicted value of lambda (used to print
+ *                          diagnostics)
+ * @param subject_id        the subject id of this sequence (used to print
+ *                          diagnostics)
+ **/
+static void
+s_AdjustEvaluesForComposition(
+    BlastHSPList *hsp_list,
+    double comp_p_value,
+    const BlastSeqSrc* seqSrc,
+    Int4 subject_length,
+    BlastContextInfo * query_context,
+    double LambdaRatio,
+    int subject_id)
+{
+    /* Smallest observed evalue after adjustment */
+    double best_evalue = DBL_MAX;
+
+    /* True length of the query */
+    int query_length =      query_context->query_length;
+    /* Length adjustment to compensate for edge effects */
+    int length_adjustment = query_context->length_adjustment;
+
+    /* Effective lengths of the query, subject, and database */
+    double query_eff   = MAX((query_length - length_adjustment), 1);
+    double subject_eff = MAX((subject_length - length_adjustment), 1.0);
+    double dblen_eff = (double) query_context->eff_searchsp / query_eff;
+    
+    /* Scale factor to convert the database E-value to the sequence E-value */
+    double db_to_sequence_scale = subject_eff / dblen_eff;
+
+    int        hsp_index;
+    for (hsp_index = 0;  hsp_index < hsp_list->hspcnt;  hsp_index++) {
+        /* for all HSPs */
+        double align_p_value;     /* P-value for the alignment score */
+        double combined_p_value;  /* combination of two P-values */
+
+        /* HSP for this iteration */
+        BlastHSP * hsp = hsp_list->hsp_array[hsp_index];
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+        /* Original E-value, saved if diagnostics are printed. */
+        double old_e_value = hsp->evalue;
+#endif
+        hsp->evalue *= db_to_sequence_scale;
+
+        align_p_value = BLAST_KarlinEtoP(hsp->evalue);
+        combined_p_value = Blast_Overall_P_Value(comp_p_value,align_p_value);
+        hsp->evalue = BLAST_KarlinPtoE(combined_p_value);
+        hsp->evalue /= db_to_sequence_scale;
+
+        if (hsp->evalue < best_evalue) {
+            best_evalue = hsp->evalue;
+        }
+
+#ifdef KAPPA_PRINT_DIAGNOSTICS
+        {{
+            int    sequence_gi; /*GI of a sequence*/
+            Blast_GiList* gi_list; /*list of GI's for a sequence*/
+            gi_list = BlastSeqSrcGetGis(seqSrc, (void *) (&subject_id));
+            if ((gi_list) && (gi_list->num_used > 0)) {
+                sequence_gi = gi_list->data[0];
+            } else {
+                sequence_gi = (-1);
+            }
+            printf("GI %d Lambda ratio %e comp. p-value %e; "
+                   "adjust E-value of query length %d match length "
+                   "%d from %e to %e\n",
+                   sequence_gi, LambdaRatio, comp_p_value,
+                   query_length, subject_length, old_e_value, hsp->evalue);
+            Blast_GiListFree(gi_list);
+        }}
+#endif
+    } /* end for all HSPs */
+
+    hsp_list->best_evalue = best_evalue;
+
+    /* suppress unused parameter warnings if diagnostics are not printed */
+    (void) seqSrc;
+    (void) query_length;
+    (void) LambdaRatio;
+    (void) subject_id;
 }
 
 
@@ -281,9 +380,11 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
 static int
 s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                           BlastHSPList * hsp_list,
+			  const BlastSeqSrc* seqSrc,
                           int subject_length,
                           EBlastProgramType program_number,
                           BlastQueryInfo* queryInfo,
+                          int query_index,
                           BlastScoreBlk* sbp,
                           const BlastHitSavingParameters* hitParams,
                           double pvalueForThisPair,
@@ -306,6 +407,14 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                                              1, because both scores and
                                              Lambda are scaled, so they
                                              will cancel each other. */
+    }
+    if (eBlastTypeBlastp == program_number) {
+        if ((0 <= pvalueForThisPair) && (pvalueForThisPair <= 1)) {
+            s_AdjustEvaluesForComposition(hsp_list, pvalueForThisPair, seqSrc,
+                                          subject_length,
+                                          &queryInfo->contexts[query_index],
+                                          LambdaRatio, subject_id);
+        }
     }
     if (status == 0) {
         Blast_HSPListReapByEvalue(hsp_list, hitParams->options);
@@ -1771,7 +1880,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     double LambdaRatio; /*lambda ratio*/
     /* which test function do we use to see if a composition-adjusted
        p-value is desired; value needs to be passed in eventually*/
-    int compositionTestIndex = 0;
+    int compositionTestIndex = extendParams->options->unifiedP;
 
     if (positionBased) {
         matrix = sbp->psi_matrix->pssm->data;
@@ -1974,12 +2083,13 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                 status_code =
                     s_HitlistEvaluateAndPurge(&bestScore, &bestEvalue,
                                               hsp_list,
+					      seqSrc,
                                               matchingSeq.length,
                                               program_number,
-                                              queryInfo, sbp,
-                                              hitParams,
+                                              queryInfo, query_index,
+                                              sbp, hitParams,
                                               pvalueForThisPair, LambdaRatio,
-                                              0);
+                                              matchingSeq.index);
                 if (status_code != 0) {
                     goto query_loop_cleanup;
                 }
