@@ -1116,7 +1116,6 @@ void CAutoDef::GetAvailableModifiers(CAutoDef::TAvailableModifierSet &mod_set)
         CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
         modifier_list.clear();
         m_ComboList[0]->GetAvailableModifiers (modifier_list);
-        unsigned int num_present = 0;
         for (unsigned int k = 0; k < modifier_list.size(); k++) {
             mod_set.insert(CAutoDefAvailableModifier(modifier_list[k]));
         }
@@ -1130,6 +1129,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2006/06/07 19:17:10  bollin
+* removed unused variable
+*
 * Revision 1.19  2006/05/16 15:11:13  bollin
 * fixed bug related to checks for segmented sets
 *
