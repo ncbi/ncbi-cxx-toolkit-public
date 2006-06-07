@@ -1270,47 +1270,16 @@ CreateEmptySeq_align_set(CSeq_align_set* sas)
 void RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query)
 {
     _ASSERT(sar);
-    const int query_dimension = 0;
-
+    const int query_row = 0;
+    
     TSeqPos q_shift = 0;
-
+    
     if (query.IsInt()) {
         q_shift = query.GetInt().GetFrom();
     }
+    
     if (q_shift > 0) {
-        for (CTypeIterator<CDense_seg> itr(Begin(*sar)); itr; ++itr) {
-            const vector<ENa_strand> strands = itr->GetStrands();
-            // Create temporary CSeq_locs with strands either matching 
-            // (for query and for subject if it is not on a minus strand),
-            // or opposite to those in the segment, to force RemapToLoc to 
-            // behave in the correct way.
-            CSeq_loc q_seqloc;
-            ENa_strand q_strand = strands[query_dimension];
-            q_seqloc.SetInt().SetFrom(q_shift);
-            q_seqloc.SetInt().SetTo(query.GetInt().GetTo());
-            q_seqloc.SetInt().SetStrand(q_strand);
-            q_seqloc.SetInt().SetId().Assign(CSeq_loc_CI(query).GetSeq_id());
-            itr->RemapToLoc(query_dimension, q_seqloc, true);
-        }
-        
-        for (CTypeIterator<CStd_seg> itr(Begin(*sar)); itr; ++itr) {
-            // Create temporary CSeq_locs with strands either matching 
-            // (for query and for subject if it is not on a minus strand),
-            // or opposite to those in the segment, to force RemapToLoc to 
-            // behave in the correct way.
-            
-            CSeq_loc q_seqloc;
-            
-            ENa_strand q_strand =
-                (itr->GetLoc())[query_dimension]->GetStrand();
-            
-            q_seqloc.SetInt().SetFrom(q_shift);
-            q_seqloc.SetInt().SetTo(query.GetInt().GetTo());
-            q_seqloc.SetInt().SetStrand(q_strand);
-            q_seqloc.SetInt().SetId().Assign(CSeq_loc_CI(query).GetSeq_id());
-            
-            itr->RemapToLoc(query_dimension, q_seqloc, true);
-        }
+        sar->OffsetRow(query_row, q_shift);
     }
 }
 
@@ -1721,6 +1690,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2006/06/07 17:52:38  bealer
+* - Fix tblastx issue(s) with new traceback.
+*
 * Revision 1.68  2006/05/31 16:52:16  bealer
 * - Add Std-seg seqalign remapping code.
 *

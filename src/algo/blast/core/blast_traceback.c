@@ -1128,8 +1128,13 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                            ext_params->options, hit_params, 
                                            gen_code_string);
             }
-
+            
             BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
+         } else if (! score_params->options->gapped_calculation) {
+             /* Compute bit scores for searches where the traceback
+                phase is seperated from the preliminary search. */
+             
+             Blast_HSPListGetBitScores(hsp_list, FALSE, sbp);
          }
          
          /* Free HSP list structure if all HSPs have been deleted. */
