@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.10.4  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.11.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -110,7 +110,8 @@ typedef enum {
     eDumpQueue,
     ePrintQueue,
     eReloadConfig,
-    eQList
+    eQList,
+    eStatusSnapshot
 } EJS_RequestType;
 
 /// Request context
@@ -326,6 +327,10 @@ public:
     void ProcessStatistics(CSocket&                sock,
                            SThreadData&            tdata,
                            CQueueDataBase::CQueue& queue);
+
+    void ProcessStatusSnapshot(CSocket&                sock,
+                               SThreadData&            tdata,
+                               CQueueDataBase::CQueue& queue);
 
     void ProcessMonitor(CSocket&                sock,
                         SThreadData&            tdata,
@@ -701,6 +706,9 @@ end_version_control:
                 break;
             case eStatusJob:
                 ProcessStatus(socket, *tdata, queue);
+                break;
+            case eStatusSnapshot:
+                ProcessStatusSnapshot(socket, *tdata, queue);
                 break;
             case eGetJob:
                 if (!queue.IsWorkerAllowed()) {
@@ -1223,6 +1231,33 @@ void CNetScheduleServer::ProcessJobDelayExpiration(CSocket&                sock,
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     queue.JobDelayExpiration(job_id, req.timeout);
     WriteMsg(sock, "OK:", "");
+}
+
+
+void CNetScheduleServer::ProcessStatusSnapshot(
+                                            CSocket&                sock,
+                                            SThreadData&            tdata,
+                                            CQueueDataBase::CQueue& queue)
+{
+    SJS_Request& req = tdata.req;
+    const char* aff_token = req.affinity_token;
+    CNetScheduler_JobStatusTracker::TStatusSummaryMap st_map;
+
+    bool aff_exists = queue.CountStatus(&st_map, aff_token);
+    if (!aff_exists) {
+        WriteMsg(sock, "OK:", "Unknown affinity token.");
+        return;
+    }
+    ITERATE(CNetScheduler_JobStatusTracker::TStatusSummaryMap,
+            it,
+            st_map) {
+        string st_str = CNetScheduleClient::StatusToString(it->first);
+        st_str.push_back(' ');
+        st_str.append(NStr::UIntToString(it->second));
+        WriteMsg(sock, "OK:", st_str.c_str());
+    } // ITERATE
+    WriteMsg(sock, "OK:", "END");
+
 }
 
 
@@ -1881,6 +1916,7 @@ struct SNS_Commands
     unsigned  URGC;
     unsigned  FRES;
     unsigned  JDEX;
+    unsigned  STSN;
 
 
     SNS_Commands()
@@ -1912,6 +1948,7 @@ struct SNS_Commands
         ::memcpy(&URGC, "URGC", 4);
         ::memcpy(&FRES, "FRES", 4);
         ::memcpy(&JDEX, "JDEX", 4);
+        ::memcpy(&STSN, "STSN", 4);
     }
 
     /// 4 byte command comparison (make sure str is aligned)
@@ -1962,6 +1999,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 27.QPRT Status
     // 28.FRES JSID_01_1
     // 29.JDEX JSID_01_1 timeout
+    // 30.STSN [aff="Affinity token"]
 
 
     const char* s = reqstr;
@@ -2097,6 +2135,38 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                     *ptr++ = *s;
                 }
                 *ptr = 0;
+            }
+
+            return;
+        }
+
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.STSN, s)) {
+            req->req_type = eStatusSnapshot;
+            s += 4;
+
+            NS_SKIPSPACE(s)
+            
+            if (!*s) {
+                req->affinity_token[0] = 0;
+                return;
+            }
+
+            if (strncmp(s, "aff=", 4) == 0) {
+                s += 4;
+                if (*s != '"') {
+                    NS_RETURN_ERROR("Misformed Status Snapshot request")
+                }
+                ++s;
+                char *ptr = req->affinity_token;
+                for (++s; *s != '"'; ++s) {
+                    NS_CHECKEND(s, "Misformed Status Snapshot request")
+                    NS_CHECKSIZE(ptr - req->affinity_token, 
+                                 kNetScheduleMaxDataSize);
+                    *ptr++ = *s;
+                }
+                *ptr = 0;
+                ++s;
+                NS_SKIPSPACE(s)
             }
 
             return;
@@ -2866,6 +2936,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2006/06/07 13:00:01  kuznets
+ * Implemented command to get status summary based on affinity token
+ *
  * Revision 1.87  2006/05/22 18:01:06  didenko
  * Added sending ret_code and output from GetStatus method for jobs with failed status
  *

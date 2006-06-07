@@ -245,6 +245,12 @@ public:
         CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
 
+        /// count status snapshot for affinity token
+        /// returns false if affinity token not found
+        bool CountStatus(
+            CNetScheduler_JobStatusTracker::TStatusSummaryMap*   status_map, 
+            const char*          affinity_token);
+
 
         /// Set job run-expiration timeout
         /// @param tm
@@ -489,6 +495,9 @@ public:
         void x_ReadAffIdx_NoLock(const bm::bvector<>& aff_id_set,
                                  bm::bvector<>*       job_candidates);
 
+        void x_ReadAffIdx_NoLock(unsigned             aff_id,
+                                 bm::bvector<>*       job_candidates);
+
     private:
         CQueue(const CQueue&);
         CQueue& operator=(const CQueue&);
@@ -554,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/06/07 13:00:01  kuznets
+ * Implemented command to get status summary based on affinity token
+ *
  * Revision 1.49  2006/05/22 15:19:40  kuznets
  * Added return code to failure reporting
  *

@@ -41,6 +41,8 @@
 #include <util/bitset/ncbi_bitset.hpp>
 #include <corelib/ncbimtx.hpp>
 
+#include <map>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -53,6 +55,9 @@ class CNetScheduler_JobStatusTracker
 public:
     typedef bm::bvector<>     TBVector;
     typedef vector<TBVector*> TStatusStorage;
+
+    /// Status to number of jobs map
+    typedef map<CNetScheduleClient::EJobStatus, unsigned> TStatusSummaryMap;
 
 public:
     CNetScheduler_JobStatusTracker();
@@ -170,6 +175,11 @@ public:
 
     /// Return number of jobs in specified status
     unsigned CountStatus(CNetScheduleClient::EJobStatus status) const;
+
+    /// Count all status vectors using candidate_set(optioal) as a mask 
+    /// (AND_COUNT)
+    void CountStatus(TStatusSummaryMap*   status_map, 
+                     const bm::bvector<>* candidate_set);
 
     void StatusStatistics(CNetScheduleClient::EJobStatus status,
                           TBVector::statistics*          st) const;
@@ -341,6 +351,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/06/07 13:00:01  kuznets
+ * Implemented command to get status summary based on affinity token
+ *
  * Revision 1.17  2006/03/17 14:25:29  kuznets
  * Force reschedule (to re-try failed jobs)
  *

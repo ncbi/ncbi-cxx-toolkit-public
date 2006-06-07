@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 
 #include <connect/services/netschedule_client.hpp>
+#include <util/bitset/bmalgo.h>
 
 #include "job_status.hpp"
 
@@ -103,6 +104,27 @@ CNetScheduler_JobStatusTracker::CountStatus(
         cnt += m_BorrowedIds.count();
     }
     return cnt;
+}
+
+void CNetScheduler_JobStatusTracker::CountStatus(
+                            TStatusSummaryMap*   status_map, 
+                            const bm::bvector<>* candidate_set)
+{
+    _ASSERT(status_map);
+    status_map->erase(status_map->begin(), status_map->end());
+    
+    CReadLockGuard guard(m_Lock);
+
+    for (size_t i = 0; i < m_StatusStor.size(); ++i) {
+        const TBVector& bv = *m_StatusStor[i];
+        unsigned cnt;
+        if (candidate_set) {
+            cnt = bm::count_and(bv, *candidate_set);
+        } else {
+            cnt = bv.count();
+        }
+        (*status_map)[(CNetScheduleClient::EJobStatus)i] = cnt;
+    } // for
 }
 
 void 
@@ -861,6 +883,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/06/07 13:00:01  kuznets
+ * Implemented command to get status summary based on affinity token
+ *
  * Revision 1.28  2006/03/17 14:25:29  kuznets
  * Force reschedule (to re-try failed jobs)
  *

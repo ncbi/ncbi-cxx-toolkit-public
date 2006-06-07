@@ -3060,6 +3060,31 @@ CQueueDataBase::CQueue::GetStatus(unsigned int job_id) const
     return m_LQueue.status_tracker.GetStatus(job_id);
 }
 
+bool CQueueDataBase::CQueue::CountStatus(
+    CNetScheduler_JobStatusTracker::TStatusSummaryMap*   status_map, 
+    const char*                                        affinity_token)
+{
+    _ASSERT(status_map);
+    unsigned aff_id = 0;
+    bm::bvector<> aff_jobs;
+    if (affinity_token && *affinity_token) {
+        aff_id = m_LQueue.affinity_dict.GetTokenId(affinity_token);
+        if (!aff_id) {
+            return false;
+        }
+        // read affinity vector
+        {{
+            CFastMutexGuard guard(m_LQueue.lock);
+            x_ReadAffIdx_NoLock(aff_id, &aff_jobs);
+        }}
+    }
+
+    m_LQueue.status_tracker.CountStatus(status_map, aff_id!=0 ? &aff_jobs : 0); 
+
+    return true;
+}
+
+
 CBDB_FileCursor* CQueueDataBase::CQueue::GetCursor(
     CBDB_Transaction& trans
     )
@@ -3076,6 +3101,9 @@ CBDB_FileCursor* CQueueDataBase::CQueue::GetCursor(
     return cur;
     
 }
+
+
+
 
 bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
 {
@@ -3730,9 +3758,17 @@ CQueueDataBase::CQueue::x_ReadAffIdx_NoLock(
     bm::bvector<>::enumerator en(aff_id_set.first());
     for(; en.valid(); ++en) {  // for each affinity id
         unsigned aff_id = *en;
-        m_LQueue.aff_idx.aff_id = aff_id;
-        m_LQueue.aff_idx.ReadVectorOr(job_candidates);
+        x_ReadAffIdx_NoLock(aff_id, job_candidates);
     }
+}
+
+
+void 
+CQueueDataBase::CQueue::x_ReadAffIdx_NoLock(unsigned           aff_id,
+                                            bm::bvector<>*     job_candidates)
+{
+    m_LQueue.aff_idx.aff_id = aff_id;
+    m_LQueue.aff_idx.ReadVectorOr(job_candidates);
 }
 
 
@@ -3742,6 +3778,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2006/06/07 13:00:01  kuznets
+ * Implemented command to get status summary based on affinity token
+ *
  * Revision 1.81  2006/05/22 16:51:04  kuznets
  * Fixed bug in reporting worker nodes
  *
