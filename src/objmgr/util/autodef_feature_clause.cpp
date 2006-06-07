@@ -876,7 +876,7 @@ void CAutoDefFeatureClause::AddToLocation(CRef<CSeq_loc> loc, bool also_set_part
         partial3 |= loc->IsPartialStop(eExtreme_Biological);
     }
     m_ClauseLocation = Seq_loc_Add(*m_ClauseLocation, *loc, 
-                                   CSeq_loc::fSort | CSeq_loc::fMerge_All, 
+                                   CSeq_loc::fSort | CSeq_loc::fMerge_Overlapping, 
                                    &(m_BH.GetScope()));
 
                                       
@@ -972,7 +972,10 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
     }
     
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    
     sequence::ECompare loc_compare = gene_clause->CompareLocation(*m_ClauseLocation);
+    
+
     string noncoding_product_name;
     
     // only add gene to certain other types of clauses
@@ -1523,6 +1526,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2006/06/07 19:42:39  bollin
+* changed flags for combining locations for feature clauses.  Fixes bug in
+* naming alternately spliced coding regions in master segment definition lines.
+*
 * Revision 1.18  2006/05/18 11:44:52  bollin
 * when listing subclauses for a coding region in the automatically generated
 * definition lines, list the 3' UTR after partial/complete cds.
