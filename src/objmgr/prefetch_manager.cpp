@@ -68,34 +68,35 @@ CPrefetchToken::~CPrefetchToken(void)
 
 
 CPrefetchToken::CPrefetchToken(const CPrefetchToken& token)
-    : m_Handle(token.m_Handle), m_Manager(token.m_Manager)
+    : m_QueueItem(token.m_QueueItem)
 {
 }
 
 
 CPrefetchToken& CPrefetchToken::operator=(const CPrefetchToken& token)
 {
-    m_Handle = token.m_Handle;
-    m_Manager = token.m_Manager;
+    m_QueueItem = token.m_QueueItem;
     return *this;
 }
 
 
 CPrefetchToken::CPrefetchToken(CPrefetchRequest* impl)
-    : m_Handle(impl->m_QueueItem), m_Manager(impl->GetManager())
+    : m_QueueItem(impl->m_QueueItem)
 {
+    _ASSERT(impl);
 }
 
 
-CPrefetchToken::CPrefetchToken(CPrefetchManager_Impl::TItemHandle handle)
-    : m_Handle(handle), m_Manager(handle->GetRequest().GetManager())
+CPrefetchToken::CPrefetchToken(CObject* queue_item)
+    : m_QueueItem(queue_item)
 {
+    _ASSERT(queue_item);
 }
 
 
 CPrefetchRequest& CPrefetchToken::x_GetImpl(void) const
 {
-    return m_Handle.GetNCObject().SetRequest();
+    return dynamic_cast<CPrefetchManager_Impl::TItemHandle::TObjectType&>(m_QueueItem.GetNCObject()).SetRequest();
 }
 
 
@@ -113,7 +114,7 @@ IPrefetchListener* CPrefetchToken::GetListener(void) const
 
 void CPrefetchToken::SetListener(IPrefetchListener* listener)
 {
-    x_GetImpl().SetListener(m_Manager.GetNCObject(), listener);
+    x_GetImpl().SetListener(listener);
 }
 
 
@@ -137,13 +138,13 @@ CPrefetchToken::TProgress CPrefetchToken::GetProgress(void) const
 
 CPrefetchToken::TProgress CPrefetchToken::SetProgress(TProgress progress)
 {
-    return x_GetImpl().SetProgress(m_Manager.GetNCObject(), progress);
+    return x_GetImpl().SetProgress(progress);
 }
 
 
 void CPrefetchToken::Cancel(void) const
 {
-    x_GetImpl().Cancel(m_Manager.GetNCObject());
+    x_GetImpl().Cancel();
 }
 
 
@@ -197,6 +198,10 @@ CPrefetchSequence::CPrefetchSequence(CPrefetchManager& manager,
 
 CPrefetchSequence::~CPrefetchSequence(void)
 {
+    CMutexGuard guard(m_Mutex);
+    ITERATE ( list<CPrefetchToken>, it, m_ActiveTokens ) {
+        it->Cancel();
+    }
 }
 
 

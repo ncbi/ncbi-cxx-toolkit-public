@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/impl/prefetch_manager_impl.hpp>
+#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -53,6 +53,24 @@ class CPrefetchRequest;
 class CPrefetchManager;
 class CPrefetchManager_Impl;
 class CPrefetchThread;
+
+struct SPrefetchTypes
+{
+    enum EState {
+        eInvalid,   // no prefetch token available
+        eQueued,    // placed in queue
+        eStarted,   // moved from queue to processing
+        eAdvanced,  // got new data while processing
+        eCompleted, // finished processing successfully
+        eCanceled,  // canceled by user request
+        eFailed     // finished processing unsuccessfully
+    };
+    typedef EState EEvent;
+    
+    typedef int TPriority;
+    typedef int TProgress;
+};
+
 
 class NCBI_XOBJMGR_EXPORT IPrefetchAction : public SPrefetchTypes
 {
@@ -89,7 +107,7 @@ public:
     CPrefetchToken(const CPrefetchToken& token);
     CPrefetchToken& operator=(const CPrefetchToken& token);
 
-    DECLARE_OPERATOR_BOOL_REF(m_Handle);
+    DECLARE_OPERATOR_BOOL_REF(m_QueueItem);
 
     IPrefetchAction* GetAction(void) const;
     IPrefetchListener* GetListener(void) const;
@@ -113,14 +131,13 @@ protected:
     friend class CPrefetchManager_Impl;
     friend class CPrefetchThread;
 
-    CPrefetchToken(CPrefetchRequest* impl);
-    CPrefetchToken(CPrefetchManager_Impl::TItemHandle handle);
+    explicit CPrefetchToken(CPrefetchRequest* impl);
+    explicit CPrefetchToken(CObject* queue_item);
 
     CPrefetchRequest& x_GetImpl(void) const;
 
 private:
-    CPrefetchManager_Impl::TItemHandle  m_Handle;
-    CRef<CPrefetchManager_Impl>         m_Manager;
+    CRef<CObject>                       m_QueueItem;
 };
 
 
@@ -143,6 +160,13 @@ public:
         {
             return AddAction(0, action, listener);
         }
+
+    // Returns prefetch state in current thread.
+    static EState GetCurrentTokenState(void);
+
+    // Checks if prefetch is active in current thread.
+    // Throws CPrefetchCanceled exception if the current token is canceled.
+    static bool IsActive(void);
 
 protected:
     friend class CPrefetchToken;

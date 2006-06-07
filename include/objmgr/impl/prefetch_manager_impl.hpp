@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimisc.hpp>
-//#include <objmgr/prefetch_manager.hpp>
+#include <objmgr/prefetch_manager.hpp>
 #include <util/thread_pool.hpp>
 #include <set>
 
@@ -55,36 +55,14 @@ class CPrefetchManager_Impl;
  */
 
 
-struct SPrefetchTypes
-{
-    enum EState {
-        eQueued,    // placed in queue
-        eStarted,   // moved from queue to processing
-        eAdvanced,  // got new data while processing
-        eCompleted, // finished processing successfully
-        eCanceled,  // canceled by user request
-        eFailed     // finished processing unsuccessfully
-    };
-    typedef EState EEvent;
-    
-    typedef int TPriority;
-    typedef int TProgress;
-};
-
-
 class NCBI_XOBJMGR_EXPORT CPrefetchRequest : public SPrefetchTypes
 {
 public:
-    CPrefetchRequest(CPrefetchManager_Impl* manager,
-                        IPrefetchAction* action,
-                        IPrefetchListener* listener);
+    CPrefetchRequest(CObjectFor<CMutex>* state_mutex,
+                     IPrefetchAction* action,
+                     IPrefetchListener* listener);
     ~CPrefetchRequest(void);
     
-    CPrefetchManager_Impl* GetManager(void) const
-        {
-            return m_Manager;
-        }
-
     IPrefetchAction* GetAction(void) const
         {
             return m_Action.GetNCPointer();
@@ -94,8 +72,7 @@ public:
         {
             return m_Listener.GetNCPointerOrNull();
         }
-    void SetListener(CPrefetchManager_Impl& manager,
-                     IPrefetchListener* listener);
+    void SetListener(IPrefetchListener* listener);
     
     EState GetState(void) const
         {
@@ -109,18 +86,18 @@ public:
         }
 
     // returns old state
-    EState SetState(CPrefetchManager_Impl& manager, EState state);
+    EState SetState(EState state);
     // returns true if new state is equal to 'state'
-    bool TrySetState(CPrefetchManager_Impl& manager, EState state);
+    bool TrySetState(EState state);
 
     TProgress GetProgress(void) const
         {
             return m_Progress;
         }
-    TProgress SetProgress(CPrefetchManager_Impl& manager, TProgress progress);
-    void Cancel(CPrefetchManager_Impl& manager);
+    TProgress SetProgress(TProgress progress);
+    void Cancel(void);
     
-    static CPrefetchToken GetCurrentToken(void);
+    //static CPrefetchToken GetCurrentToken(void);
 
 protected:
     bool x_SetState(EState state);
@@ -131,8 +108,8 @@ private:
     friend class CPrefetchManager_Impl;
 
     // back references
-    CPrefetchManager_Impl*      m_Manager;
-    CBlockingQueue<CPrefetchRequest>::CQueueItem* m_QueueItem;
+    CRef<CObjectFor<CMutex> >   m_StateMutex;
+    CObject*                    m_QueueItem;
 
     CIRef<IPrefetchAction>      m_Action;
     CIRef<IPrefetchListener>    m_Listener;
@@ -175,17 +152,17 @@ protected:
         {
             return m_Mutex;
         }
-    CMutex& GetStateMutex(void)
-        {
-            return m_StateMutex;
-        }
 
 private:
     typedef set<CRef<TThread> > TThreads;
 
     bool        m_CanceledAll;
     TThreads    m_Threads;
-    CMutex      m_StateMutex;
+    CRef<CObjectFor<CMutex> > m_StateMutex;
+
+private:
+    CPrefetchManager_Impl(const CPrefetchManager_Impl&);
+    void operator=(const CPrefetchManager_Impl&);
 };
 
 
