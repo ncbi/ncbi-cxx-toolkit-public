@@ -480,6 +480,18 @@ public:
                          string*       err_msg = 0,
                          string*       input   = 0);
 
+    /// Status map, shows number of jobs in each status
+    typedef map<EJobStatus, unsigned> TStatusMap;
+
+    /// Returns statuses for a given affnity token
+    /// @param status_map
+    ///    Status map (status to job count)
+    /// @param affinity_token
+    ///    Affinity token (optional)
+    virtual
+    void StatusSnapshot(TStatusMap*   status_map,
+                        const string& affinity_token);
+
     /// Transfer job to the "Returned" status. It will be
     /// re-executed after a while. 
     ///
@@ -788,6 +800,7 @@ public:
                  string*        jout = 0,
                  string*        jerr = 0);
 
+
     virtual
     void RegisterClient(unsigned short udp_port);
 
@@ -963,6 +976,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/06/07 12:58:39  kuznets
+ * +StatusSnapshot() method
+ *
  * Revision 1.56  2006/05/23 14:02:36  didenko
  * Added eDie shutdown level
  *

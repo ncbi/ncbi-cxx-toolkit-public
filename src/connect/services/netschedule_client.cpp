@@ -1328,6 +1328,56 @@ void CNetScheduleClient::PutFailure(const string& job_key,
 }
 
 
+void CNetScheduleClient::StatusSnapshot(TStatusMap*   status_map,
+                                        const string& affinity_token)
+{
+    _ASSERT(status_map);
+
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+    bool connected = CheckConnect(kEmptyStr);
+    CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "STSN ", connected);
+    m_Tmp.append(" \"");
+    m_Tmp.append(affinity_token);
+    m_Tmp.append("\"");
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+
+    while (1) {
+        if (!ReadStr(*m_Sock, &m_Tmp)) {
+            break;
+        }
+        if (m_Tmp.find("OK:") != 0) {
+            if (m_Tmp.find("ERR:") == 0) {
+                string msg = "Server error:";
+                TrimErr(&m_Tmp);
+                msg += m_Tmp;
+                NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+            }
+        } else {
+            m_Tmp.erase(0, 3); // "OK:"
+        }
+
+        if (m_Tmp == "END")
+            break;
+
+        // parse the status message
+        string st_str, cnt_str;
+        bool delim = NStr::SplitInTwo(m_Tmp, " ", st_str, cnt_str);
+        if (delim) {
+            EJobStatus status = StringToStatus(st_str);
+            unsigned cnt = NStr::StringToUInt(cnt_str);
+            (*status_map)[status] += cnt;
+        }
+    }
+
+}
+
+
 void CNetScheduleClient::ReturnJob(const string& job_key)
 {
     if (m_RequestRateControl) {
@@ -1808,6 +1858,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/06/07 12:59:01  kuznets
+ * +StatusSnapshot() method
+ *
  * Revision 1.58  2006/05/23 14:02:36  didenko
  * Added eDie shutdown level
  *
