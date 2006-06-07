@@ -262,6 +262,7 @@ void CAutoDefFeatureClause_Base::GroupmRNAs()
                 || m_ClauseList[j]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion) {
                 continue;
             } else {
+                m_ClauseList[j]->Label();
                 mRNA_used |= m_ClauseList[j]->AddmRNA (m_ClauseList[k]);
             }
         }
@@ -576,7 +577,7 @@ unsigned int CAutoDefFeatureClause_Base::x_LastIntervalChangeBeforeEnd ()
             || (!m_ClauseList[0]->IsAltSpliced() && !m_ClauseList[1]->IsAltSpliced()))) {
         return m_ClauseList.size();
     } else {
-        return 0;
+        return 1;
     }    
 }
 
@@ -756,8 +757,13 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
 {
     if (clause1 >= m_ClauseList.size() || clause2 >= m_ClauseList.size()
         || m_ClauseList[clause1]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion
-        || m_ClauseList[clause2]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion
-        || m_ClauseList[clause1]->CompareLocation(*(m_ClauseList[clause2]->GetLocation())) != eOverlap) {
+        || m_ClauseList[clause2]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion) {
+        return false;
+    }
+    
+    
+    unsigned int loc_compare = m_ClauseList[clause1]->CompareLocation(*(m_ClauseList[clause2]->GetLocation()));
+    if (loc_compare != eOverlap && loc_compare != eSame) {
         return false;
     }
     // are genes the same?
@@ -785,13 +791,13 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
         return true;
     }
     
-    unsigned int match_left_len = 0, match_left_token = 0;
+    unsigned int match_left_len = 1, match_left_token = 0;
     unsigned int len1 = product1.length();
     unsigned int len2 = product2.length();
 
     // find the length of match on the left
     while (match_left_len < len1 && match_left_len < len2
-           && NStr::EqualNocase(product1, 0, match_left_len, product2)) {
+           && NStr::Equal (product1.substr(0, match_left_len), product2.substr(0, match_left_len))) {
         unsigned char ch = product1.c_str()[match_left_len];
         
         if (ch == ',' || ch == '-' || (isspace(ch) && match_left_token != match_left_len - 1)) {
@@ -799,16 +805,20 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
         }
         match_left_len++;
     }
+    if (!NStr::Equal (product1.substr(0, match_left_len), product2.substr(0, match_left_len))
+        && match_left_len > 0) {
+        match_left_len--;
+    }
     if (match_left_len == len1 && m_ClauseList[clause1]->IsAltSpliced()) {
         match_left_token = match_left_len;
     } else {
         match_left_len = match_left_token;
     }
-
+    
     // find the length of the match on the right
     unsigned int match_right_len = 0, match_right_token = 0;
     while (match_right_len < len1 && match_right_len < len2
-           && NStr::EndsWith(product1, product2.substr(len1 - match_right_len - 1, match_right_len + 1))) {
+           && NStr::Equal (product1.substr(len1 - match_right_len - 1), product2.substr(len2 - match_right_len - 1))) {
         unsigned char ch = product1.c_str()[len1 - match_right_len - 1];
         
         if (ch == ',' || ch == '-' || isspace(ch)) {
@@ -816,6 +826,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
         }
         match_right_len++;
     }
+    
     if (match_right_len == len1 && m_ClauseList[clause1]->IsAltSpliced()) {
         match_right_token = match_right_len;
     } else {
@@ -1453,7 +1464,6 @@ CRef<CSeq_loc> CAutoDefExonListClause::SeqLocIntersect (CRef<CSeq_loc> loc1, CRe
         CSeq_loc_CI::TRange range1 = loc_iter1.GetRange();
         
         for (CSeq_loc_CI loc_iter2(*loc2); loc_iter2;  ++loc_iter2) {
-            ENa_strand strand2 = loc_iter2.GetStrand();
             CSeq_loc_CI::TRange range2 = loc_iter2.GetRange();
             
             unsigned int intersect_start = max(range1.GetFrom(), range2.GetFrom());
@@ -1563,6 +1573,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2006/06/07 19:20:36  bollin
+* removed compiler warning, resolved bugs in labeling of alternately spliced
+* coding regions
+*
 * Revision 1.12  2006/05/15 12:03:34  bollin
 * changes to handle segmented sets
 *
