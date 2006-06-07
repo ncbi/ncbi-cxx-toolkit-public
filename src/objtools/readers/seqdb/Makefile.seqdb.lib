@@ -13,7 +13,8 @@ seqdbvolset \
 seqdboidlist \
 seqdbisam \
 seqdbtax \
-seqdbgilistset
+seqdbgilistset \
+seqdbexpert
 
 LIB = seqdb
 
