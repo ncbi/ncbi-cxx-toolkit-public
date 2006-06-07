@@ -650,7 +650,7 @@ bool AlignmentUtility::DoLeaveNOut(
         //  The toRealign container will hold the orignial, unmodified alignment
         //  obtained by ExtractRows above.
         if (nFailed > 0) {
-            ERROR_MESSAGE("DoLeaveNOut encountered problems realigning some rows.\nThe rows implicated will be left unchanged:" + failedMsg + "\n\n");
+            ERR_POST(ncbi::Error << "Encountered problems realigning some rows; those implicated are unchanged:\n       " + failedMsg + "\n\n");
         }
 
         // merge realigned rows back onto the end of the multiple alignment,
@@ -885,6 +885,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2006/06/07 18:38:36  lanczyck
+* reformat DoLeaveNOut error message
+*
 * Revision 1.28  2006/04/05 19:23:03  lanczyck
 * DoLeaveNOut:  try and recover from some previously thrown errors by doing nothing to a row that failed block alignment or has block constraint errors;\nmessage modifications
 *
