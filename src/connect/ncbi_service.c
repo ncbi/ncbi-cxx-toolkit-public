@@ -540,12 +540,10 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
 }
 
 
-static void s_FillOutReferer(SERV_ITER iter, SConnNetInfo* net_info)
+static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
 {
     char* str, *referer = 0;
 
-    if (!net_info || net_info->http_referer || !iter->op || !iter->op->name)
-        return;
     if (strcasecmp(iter->op->name, "DISPD") == 0) {
         const char* host = net_info->host;
         const char* path = net_info->path;
@@ -575,6 +573,7 @@ static void s_FillOutReferer(SERV_ITER iter, SConnNetInfo* net_info)
         strcat(strcat(strcat(referer, str), "?service="), name);
         free(str);
     }
+    assert(!net_info->http_referer);
     net_info->http_referer = referer;
 }
 
@@ -598,7 +597,8 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info)
         return 0;
     }
     if (iter) {
-        s_FillOutReferer(iter, net_info);
+        if (net_info && !net_info->http_referer && iter->op && iter->op->name)
+            s_SetDefaultReferer(iter, net_info);
         /* form accepted server types */
         buflen = sizeof(accepted_types) - 1;
         memcpy(buffer, accepted_types, buflen);
@@ -700,6 +700,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.83  2006/06/07 20:17:29  lavr
+ * Slight rearrangement: s_FillOutReferer -> s_SetDefaultReferer
+ *
  * Revision 6.82  2006/06/07 20:06:27  lavr
  * +s_FillOutReferer()
  *
