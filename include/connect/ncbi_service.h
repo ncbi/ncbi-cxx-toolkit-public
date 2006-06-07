@@ -37,9 +37,9 @@
 #include <connect/ncbi_host_info.h>
 
 
-/* Revision 6.210 */
+/* Revision 6.220 */
 #define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  210
+#define SERV_CLIENT_REVISION_MINOR  220
 
 
 /** @addtogroup ServiceSupport
@@ -219,6 +219,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2006/06/07 20:23:07  lavr
+ * Bump up minor client version number to 220 (full now is 6.220)
+ *
  * Revision 6.47  2006/04/20 19:27:18  lavr
  * More comments for SERV_Open*() family of calls
  *
