@@ -112,9 +112,9 @@ bool CNetBVStoreClient::ReadRealloc(unsigned id,
                                     unsigned from,
                                     unsigned to)
 {
-    size_t bsize;
+    size_t bsize=0;
 
-    bool reconnected = CheckConnect();
+    /*bool reconnected = */CheckConnect();
     string& cmd = m_Tmp;
     cmd = "BGET ";
     cmd.append(NStr::UIntToString(id));
@@ -238,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/06/07 16:19:36  kuznets
+ * code cleanup
+ *
  * Revision 1.3  2006/06/07 15:44:06  kuznets
  * CheckAlive made optional and disabled by default
  *
