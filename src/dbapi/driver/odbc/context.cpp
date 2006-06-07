@@ -125,6 +125,7 @@ CODBCContextRegistry::Remove(CODBCContext* ctx)
 
     if (it != m_Registry.end()) {
         m_Registry.erase(it);
+        ctx->x_SetRegistry(NULL);
     }
 }
 
@@ -439,6 +440,10 @@ CODBCContext::x_Close(bool delete_conn)
 
             m_Context = NULL;
             x_RemoveFromRegistry();
+        }
+    } else {
+        if (delete_conn && x_SafeToFinalize()) {
+            DeleteAllConn();
         }
     }
 }
@@ -813,6 +818,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/06/07 22:20:16  ssikorsk
+ * Context finalization improvements.
+ *
  * Revision 1.52  2006/06/05 14:51:47  ssikorsk
  * Set value of m_MsgHandlers in I_DriverContext::Create_Connection.
  *

@@ -130,6 +130,7 @@ CDblibContextRegistry::Remove(CDBLibContext* ctx)
 
     if (it != m_Registry.end()) {
         m_Registry.erase(it);
+        ctx->x_SetRegistry(NULL);
     }
 }
 
@@ -249,8 +250,6 @@ CTDSContext::x_RemoveFromRegistry(void)
 void
 CTDSContext::x_SetRegistry(CDblibContextRegistry* registry)
 {
-    CFastMutexGuard mg(m_Mtx);
-
     m_Registry = registry;
 }
 
@@ -383,6 +382,10 @@ CTDSContext::x_Close(bool delete_conn)
 #if defined(NCBI_OS_MSWIN)
             WSACleanup();
 #endif
+        }
+    } else {
+        if (delete_conn && x_SafeToFinalize()) {
+            DeleteAllConn();
         }
     }
 }
@@ -868,6 +871,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/06/07 22:19:54  ssikorsk
+ * Context finalization improvements.
+ *
  * Revision 1.74  2006/06/05 14:49:45  ssikorsk
  * Set value of m_MsgHandlers in I_DriverContext::Create_Connection.
  *
