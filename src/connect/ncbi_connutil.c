@@ -57,7 +57,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         char* value, size_t value_size,
                                         const char* def_value)
 {
-    char        buf[256];
+    char        buf[128];
     const char* val;
     char*       s;
 
@@ -130,7 +130,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                                                 (service  &&  *service
                                                  ? strlen(service) + 1 : 0));
     /* aux. storage for the string-to-int conversions, etc. */
-    char   str[256];
+    char   str[1024];
     int    val;
     double dbl;
     char*  s;
@@ -255,6 +255,11 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->http_user_header = strdup(str);
     } else
         info->http_user_header = 0;
+
+    /* default referer */
+    ConnNetInfo_GetValue(0, REG_CONN_HTTP_REFERER, str, sizeof(str),
+                         DEF_CONN_HTTP_REFERER);
+    info->http_referer = *str ? strdup(str) : 0;
 
     /* not adjusted yet... */
     info->http_proxy_adjusted = 0/*false*/;
@@ -514,7 +519,7 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
             } else
                 l = len;
             if (l != linelen) {
-                size_t off  = (size_t)(line - hdr);
+                size_t off = (size_t)(line - hdr);
                 if (l > linelen) {
                     char* temp = (char*)realloc(hdr, hdrlen + l - linelen + 1);
                     if (!temp) {
@@ -820,6 +825,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     }
     x_info->http_user_header = 0;
     ConnNetInfo_SetUserHeader(x_info, info->http_user_header);
+    x_info->http_referer = info->http_referer ? strdup(info->http_referer) : 0;
     return x_info;
 }
 
@@ -850,7 +856,9 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
     if (!(s = (char*) malloc(sizeof(*info) + 4096 +
                              (info->service ? strlen(info->service) : 0) +
                              (info->http_user_header
-                              ? strlen(info->http_user_header) : 0)))) {
+                              ? strlen(info->http_user_header) : 0) +
+                             (info->http_referer
+                              ? strlen(info->http_referer) : 0)))) {
         LOG_WRITE(lg, eLOG_Error, "ConnNetInfo_Log: Cannot alloc temp buffer");
         return;
     }
@@ -892,7 +900,8 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
     s_SaveBool      (s, "stateless",       info->stateless);
     s_SaveBool      (s, "firewall",        info->firewall);
     s_SaveBool      (s, "lb_disable",      info->lb_disable);
-    s_SaveString    (s, "user_header",     info->http_user_header);
+    s_SaveString    (s, "http_user_header",info->http_user_header);
+    s_SaveString    (s, "http_referer",    info->http_referer);
     s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
 
@@ -906,6 +915,10 @@ extern void ConnNetInfo_Destroy(SConnNetInfo* info)
     if (!info)
         return;
     ConnNetInfo_SetUserHeader(info, 0);
+    if (info->http_referer) {
+        free((void*) info->http_referer);
+        info->http_referer = 0;
+    }
     free(info);
 }
 
@@ -2003,6 +2016,9 @@ size_t CONNUTIL_GetVMPageSize(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.109  2006/06/07 20:04:10  lavr
+ * +SConnNetInfo::http_referer
+ *
  * Revision 6.108  2006/04/21 14:38:12  lavr
  * ConnNetInfo_GetValue() simplified and sped up considerably
  *

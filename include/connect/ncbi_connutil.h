@@ -151,6 +151,7 @@ typedef struct {
     int/*bool*/    firewall;         /* to use firewall/relay in connects    */
     int/*bool*/    lb_disable;       /* to disable local load-balancing      */
     const char*    http_user_header; /* user header to add to HTTP request   */
+    const char*    http_referer;     /* default referrer (when not spec'd)   */
 
     /* the following field(s) are for the internal use only -- don't touch!  */
     int/*bool*/    http_proxy_adjusted;
@@ -207,6 +208,9 @@ typedef struct {
 
 #define REG_CONN_HTTP_USER_HEADER "HTTP_USER_HEADER"
 #define DEF_CONN_HTTP_USER_HEADER 0
+
+#define REG_CONN_HTTP_REFERER     "HTTP_REFERER"
+#define DEF_CONN_HTTP_REFERER     0
 
 /* Environment/registry keys that are not kept in SConnNetInfo */
 #define REG_CONN_SERVICE_NAME     "SERVICE_NAME"
@@ -766,6 +770,9 @@ extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2006/06/07 20:03:46  lavr
+ * +SConnNetInfo::http_referer
+ *
  * Revision 6.56  2006/04/21 14:41:19  lavr
  * REG_CONN_SERVICE_NAME added
  *
