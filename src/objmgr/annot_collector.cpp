@@ -1739,7 +1739,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
             guard.Release();
             ITERATE(TStubMap, it, stubs) {
                 if ( m_Selector->m_MaxSize != kMax_UInt ) {
-                    it->first->GetChunk(*it->second.begin()).Load();
+                    it->first->LoadChunk(*it->second.begin());
                     break;
                 }
                 it->first->LoadChunks(it->second);
@@ -2276,6 +2276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2006/06/07 19:44:29  vasilche
+* To not send large requests in prefetch thread.
+*
 * Revision 1.73  2006/06/01 13:51:42  vasilche
 * Added limiting range argument to CSeqMap_CI constructor.
 *

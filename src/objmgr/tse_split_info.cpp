@@ -44,6 +44,7 @@
 #include <objmgr/data_loader.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/seq_map.hpp>
+#include <objmgr/prefetch_manager.hpp>
 #include <objects/seq/Seq_literal.hpp>
 
 #include <algorithm>
@@ -205,12 +206,6 @@ CTSE_Chunk_Info& CTSE_Split_Info::GetSkeletonChunk(void)
 }
 
 
-void CTSE_Split_Info::LoadChunks(const TChunkIds& ids) const
-{
-    x_LoadChunks(ids);
-}
-
-
 // split info
 void CTSE_Split_Info::x_AddDescInfo(const TDescInfo& info, TChunkId chunk_id)
 {
@@ -336,12 +331,20 @@ bool CTSE_Split_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 
 void CTSE_Split_Info::x_LoadChunk(TChunkId chunk_id) const
 {
+    CPrefetchManager::IsActive();
     GetChunk(chunk_id).Load();
 }
 
 
 void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
 {
+    if ( CPrefetchManager::IsActive() ) {
+        ITERATE ( TChunkIds, it, chunk_ids ) {
+            LoadChunk(*it);
+        }
+        return;
+    }
+
     CTSE_Split_Info& info_nc = const_cast<CTSE_Split_Info&>(*this);
     typedef vector< CRef<CTSE_Chunk_Info> > TChunkRefs;
     typedef vector< AutoPtr<CInitGuard> >   TInitGuards;

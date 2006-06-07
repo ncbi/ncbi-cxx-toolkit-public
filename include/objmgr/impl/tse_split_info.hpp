@@ -104,6 +104,7 @@ public:
     CTSE_Chunk_Info& GetChunk(TChunkId chunk_id);
     const CTSE_Chunk_Info& GetChunk(TChunkId chunk_id) const;
     CTSE_Chunk_Info& GetSkeletonChunk(void);
+    void LoadChunk(TChunkId id) const;
     void LoadChunks(const TChunkIds& ids) const;
 
     // split information
@@ -169,6 +170,20 @@ private:
     CTSE_Split_Info(const CTSE_Split_Info&);
     CTSE_Split_Info& operator=(const CTSE_Split_Info&);
 };
+
+
+inline
+void CTSE_Split_Info::LoadChunk(TChunkId id) const
+{
+    x_LoadChunk(id);
+}
+
+
+inline
+void CTSE_Split_Info::LoadChunks(const TChunkIds& ids) const
+{
+    x_LoadChunks(ids);
+}
 
 
 END_SCOPE(objects)
