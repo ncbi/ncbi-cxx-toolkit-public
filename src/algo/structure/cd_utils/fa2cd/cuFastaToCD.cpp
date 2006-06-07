@@ -31,6 +31,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <algorithm>
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>
@@ -88,7 +90,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(align_refine);
 USING_SCOPE(cd_utils);
-
 
 bool PurgeNonAlphaFromSequence(CCdFromFasta& cd, unsigned int index) {
 
@@ -470,8 +471,8 @@ void CFasta2CD::Init(void)
 int CFasta2CD::Run(void)
 {
 
-    bool useLocalIds, useAlignmentAsis;
-    unsigned int len, masterIndex, nSeq = 1;
+//    bool useLocalIds, useAlignmentAsis;
+    unsigned int nSeq = 1;
     string test, err;
     string fastaFile, cdOutFile, cdAcc, compareMethodStr;
     double threshold, dummyThreshold = -100.0;
@@ -682,6 +683,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/07 20:31:36  lanczyck
+ * add <algorithm> to includes for PC; remove unused variables
+ *
  * Revision 1.2  2006/05/22 17:15:44  lanczyck
  * use new CCdCore subclass for a Fasta-generated CDs
  *
