@@ -157,11 +157,13 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Update
 /* Private interface: print and return the HTTP-compliant header portion
  * (<CR><LF> separated lines, including the last line) out of the information
  * contained in the iterator; to be used in mapping requests to DISPD.
+ * Also, if "net_info" is non-NULL and "net_info->http_referer" is NULL,
+ * then fill out "net_info->http_referer" appropriately.
  * Return value must be 'free'd.
  */
 extern NCBI_XCONNECT_EXPORT char* SERV_Print
-(SERV_ITER           iter,
- const SConnNetInfo* referrer
+(SERV_ITER     iter,
+ SConnNetInfo* net_info
  );
 
 
@@ -198,6 +200,9 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2006/06/07 20:06:02  lavr
+ * SERV_Print() to set referer (if absent) via its second argument
+ *
  * Revision 6.39  2006/03/06 20:28:37  lavr
  * Comments
  *
