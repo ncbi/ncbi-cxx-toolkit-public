@@ -102,6 +102,11 @@ void CNetScheduleControl::Init(void)
                              "Print queue statistics",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("affstat",
+                             "aff_stat_queue",
+                             "Print queue statistics summary based on affinity(queue:affinity)",
+                             CArgDescriptions::eString);
+
     arg_desc->AddOptionalKey(
         "dump",
         "dump_queue",
@@ -176,6 +181,24 @@ int CNetScheduleControl::Run(void)
         CNetScheduleClient_Control cl(host, port, queue);
         cl.PrintStatistics(NcbiCout);
         NcbiCout << NcbiEndl;
+    }
+
+    if (args["affstat"]) {  
+        string queue_aff = args["affstat"].AsString(); 
+        string queue, aff;
+        NStr::SplitInTwo(queue_aff, ":", queue, aff);
+        if (queue.empty()) {
+            queue = queue_aff;
+        }
+        CNetScheduleClient_Control cl(host, port, queue);
+
+        CNetScheduleClient::TStatusMap st_map;
+        cl.StatusSnapshot(&st_map, aff);
+        ITERATE(CNetScheduleClient::TStatusMap, it, st_map) {
+            NcbiCout << CNetScheduleClient::StatusToString(it->first) << ":"
+                     << it->second
+                     << NcbiEndl;
+        }        
     }
 
     if (args["dump"]) {  
@@ -291,6 +314,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/06/07 14:59:58  kuznets
+ * Added option to get job status summary by affnity token
+ *
  * Revision 1.19  2006/05/23 14:03:45  didenko
  * Added eDie shutdown level
  *
