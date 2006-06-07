@@ -599,7 +599,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info)
     if (iter) {
         if (net_info && !net_info->http_referer && iter->op && iter->op->name)
             s_SetDefaultReferer(iter, net_info);
-        /* form accepted server types */
+        /* Form accepted server types */
         buflen = sizeof(accepted_types) - 1;
         memcpy(buffer, accepted_types, buflen);
         for (t = 1; t; t <<= 1) {
@@ -621,7 +621,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info)
                 return 0;
             }
         }
-        /* how many server-infos for the dispatcher to send to us */
+        /* How many server-infos for the dispatcher to send to us */
         if (iter->ismask  ||  (iter->pref  &&  iter->host)) {
             if (!BUF_Write(&buf, server_count, sizeof(server_count) - 1)  ||
                 !BUF_Write(&buf,
@@ -700,6 +700,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.84  2006/06/07 20:19:57  lavr
+ * Formatting;  also note that minor revision number has been bumped up to 220
+ *
  * Revision 6.83  2006/06/07 20:17:29  lavr
  * Slight rearrangement: s_FillOutReferer -> s_SetDefaultReferer
  *
