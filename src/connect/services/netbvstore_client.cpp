@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 
 
 CNetBVStoreClientBase::CNetBVStoreClientBase(const string& client_name)
-    : CNetServiceClient(client_name)
+    : CNetServiceClient(client_name),
+      m_CheckAlive(false)
 {
 }
 
@@ -53,7 +54,8 @@ CNetBVStoreClientBase::CNetBVStoreClientBase(const string&  host,
                                          const string&      store_name,
                                          const string&      client_name)
     : CNetServiceClient(host, port, client_name),
-      m_StoreName(store_name)
+      m_StoreName(store_name),
+      m_CheckAlive(false)
 {
 }
 
@@ -181,28 +183,15 @@ bool CNetBVStoreClient::ReadRealloc(unsigned id,
 bool CNetBVStoreClient::CheckConnect()
 {
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
-		// check if netcache session is in OK state
-		// we have to do that, because if client program failed to 
-		// read the whole BLOB (deserialization error?) the network protocol
-		// stucks in an incorrect state (needs to be closed)
-		try {
-			WriteStr("A?", 3);
-            WaitForServer();
-    		if (!ReadStr(*m_Sock, &m_Tmp)) {
-				delete m_Sock;m_Sock = 0;
-				return CheckConnect();
-    		}
-			if (m_Tmp[0] != 'O' || m_Tmp[1] != 'K') {
-				delete m_Sock; m_Sock = 0;
-				return CheckConnect();
-			}
-		} 
-		catch (exception& /*ex*/) {
-			delete m_Sock; m_Sock = 0;
-			return CheckConnect();
-		}
 
-        return false; // we are connected, nothing to do
+        if (m_CheckAlive) {
+            bool alive = CNetBVStoreClientBase::CheckAlive();
+            if (alive) {
+                return false; // we are connected, nothing to do
+            } else {
+                return CheckConnect();
+            }
+        }
     }
     if (!m_Host.empty()) { // we can restore connection
         CSocketAPI::SetReuseAddress(eOn);
@@ -249,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/07 15:44:06  kuznets
+ * CheckAlive made optional and disabled by default
+ *
  * Revision 1.2  2006/06/06 18:21:06  kuznets
  * fixed bug with buffer read
  *

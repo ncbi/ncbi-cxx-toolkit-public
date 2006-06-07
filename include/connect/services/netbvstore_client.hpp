@@ -57,6 +57,7 @@ public:
                           unsigned short port,
                           const string&  store_name,
                           const string&  client_name);
+    void SetCheckAlive(bool on_off) { m_CheckAlive = on_off; }
 
 protected:
     bool CheckAlive();
@@ -67,6 +68,7 @@ protected:
     void TrimPrefix(string* str) const;
 protected:
     string  m_StoreName;
+    bool    m_CheckAlive;
 };
 
 
@@ -141,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/07 15:43:52  kuznets
+ * CheckAlive made optional and disabled by default
+ *
  * Revision 1.2  2006/06/05 16:21:57  vasilche
  * Fixed _EXPORT.
  *
