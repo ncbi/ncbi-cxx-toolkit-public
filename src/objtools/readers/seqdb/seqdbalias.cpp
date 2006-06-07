@@ -1478,8 +1478,8 @@ GetAliasFileValues(TAliasFileValues & afv) const
 void CSeqDBAliasFile::GetAliasFileValues(TAliasFileValues   & afv,
                                          const CSeqDBVolSet & volset)
 {
-    m_Node.CompleteAliasFileValues(volset);
-    m_Node.GetAliasFileValues(afv);
+    m_Node->CompleteAliasFileValues(volset);
+    m_Node->GetAliasFileValues(afv);
 }
 
 

@@ -129,6 +129,12 @@ s_SeqDBInit(const string & dbname,
 
 CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list)
 {
+    if (dbname.size() == 0) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Database name is required.");
+    }
+    
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
@@ -146,6 +152,12 @@ CSeqDB::CSeqDB(const string & dbname,
                bool           use_mmap,
                CSeqDBGiList * gi_list)
 {
+    if (dbname.size() == 0) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Database name is required.");
+    }
+    
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          oid_begin,
@@ -153,6 +165,12 @@ CSeqDB::CSeqDB(const string & dbname,
                          use_mmap,
                          gi_list);
     
+    m_Impl->Verify();
+}
+
+CSeqDB::CSeqDB()
+{
+    m_Impl = new CSeqDBImpl;
     m_Impl->Verify();
 }
 

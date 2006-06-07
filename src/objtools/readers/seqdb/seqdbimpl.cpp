@@ -120,6 +120,39 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     CHECK_MARKER();
 }
 
+CSeqDBImpl::CSeqDBImpl()
+    : m_Atlas           (false, & m_FlushCB),
+      m_Aliases         (m_Atlas, "", '-'),
+      m_RestrictBegin   (0),
+      m_RestrictEnd     (0),
+      m_NextChunkOID    (0),
+      m_NumSeqs         (0),
+      m_NumOIDs         (0),
+      m_TotalLength     (0),
+      m_VolumeLength    (0),
+      m_SeqType         ('-'),
+      m_OidListSetup    (true),
+      m_UserGiList      (0),
+      m_HeaderCache     (1),
+      m_NeedTotalsScan  (false)
+{
+    INIT_CLASS_MARK();
+    
+    try {
+        m_TaxInfo = new CSeqDBTaxInfo(m_Atlas);
+    }
+    catch(CSeqDBException &) {
+    }
+    
+    // Don't setup the flush callback until the implementation data
+    // structures are fully populated (otherwise flushing may try to
+    // flush unconstructed memory leases).
+    
+    m_FlushCB.SetImpl(this);
+    
+    CHECK_MARKER();
+}
+
 void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
 {
     CHECK_MARKER();

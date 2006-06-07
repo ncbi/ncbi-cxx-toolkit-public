@@ -915,7 +915,7 @@ private:
 /// functionality to classes like CSeqDBImpl (and others) that do not
 /// need to understand alias walkers, nodes, and tree traversal.
 
-class CSeqDBAliasFile {
+class CSeqDBAliasFile : CObject {
     /// Import type to allow shorter name.
     typedef TSeqDBAliasFileValues TAliasFileValues;
     
@@ -939,10 +939,16 @@ public:
     CSeqDBAliasFile(CSeqDBAtlas     & atlas,
                     const string    & name_list,
                     char              prot_nucl)
-        : m_AliasSets (atlas),
-          m_Node      (atlas, name_list, prot_nucl, m_AliasSets)
+        : m_AliasSets (atlas)
     {
-        m_Node.GetVolumeNames(m_VolumeNames);
+        if (name_list.size() && prot_nucl != '-') {
+            m_Node.Reset(new CSeqDBAliasNode(atlas,
+                                             name_list,
+                                             prot_nucl,
+                                             m_AliasSets));
+            
+            m_Node->GetVolumeNames(m_VolumeNames);
+        }
     }
     
     /// Get the list of volume names.
@@ -971,7 +977,7 @@ public:
     ///   A string describing the database
     string GetTitle(const CSeqDBVolSet & volset) const
     {
-        return m_Node.GetTitle(volset);
+        return m_Node->GetTitle(volset);
     }
     
     /// Get the number of sequences available
@@ -988,7 +994,7 @@ public:
     ///   The number of included sequences
     Int8 GetNumSeqs(const CSeqDBVolSet & volset) const
     {
-        return m_Node.GetNumSeqs(volset);
+        return m_Node->GetNumSeqs(volset);
     }
     
     /// Get the size of the OID range
@@ -1004,7 +1010,7 @@ public:
     ///   The number of OIDs found during traversal
     Int8 GetNumOIDs(const CSeqDBVolSet & volset) const
     {
-        return m_Node.GetNumOIDs(volset);
+        return m_Node->GetNumOIDs(volset);
     }
     
     /// Get the total length of the set of databases
@@ -1023,7 +1029,7 @@ public:
     ///   The total length of all included sequences
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const
     {
-        return m_Node.GetTotalLength(volset);
+        return m_Node->GetTotalLength(volset);
     }
     
     /// Get the sum of the volume lengths
@@ -1039,7 +1045,7 @@ public:
     ///   The sum of all volumes lengths as traversed
     Uint8 GetVolumeLength(const CSeqDBVolSet & volset) const
     {
-        return m_Node.GetVolumeLength(volset);
+        return m_Node->GetVolumeLength(volset);
     }
     
     /// Get the membership bit
@@ -1056,7 +1062,7 @@ public:
     ///   The membership bit, or zero if none was found.
     int GetMembBit(const CSeqDBVolSet & volset) const
     {
-        return m_Node.GetMembBit(volset);
+        return m_Node->GetMembBit(volset);
     }
 
     /// Check whether a db scan is need to compute correct totals.
@@ -1071,7 +1077,7 @@ public:
     ///   True if the database scan is required.
     bool NeedTotalsScan(const CSeqDBVolSet & volset) const
     {
-        return m_Node.NeedTotalsScan(volset);
+        return m_Node->NeedTotalsScan(volset);
     }
     
     /// Set filtering options for all volumes
@@ -1086,7 +1092,7 @@ public:
     ///   The database volume set
     void SetMasks(CSeqDBVolSet & volset)
     {
-        m_Node.SetMasks(volset);
+        m_Node->SetMasks(volset);
     }
     
     /// Get Name/Value Data From Alias Files
@@ -1123,7 +1129,7 @@ private:
 
     /// This is the alias node tree's "artificial" topmost node, which
     /// aggregates the user provided database names.
-    CSeqDBAliasNode m_Node;
+    CRef<CSeqDBAliasNode> m_Node;
     
     /// The cached output of the topmost node's GetVolumeNames().
     vector<string> m_VolumeNames;

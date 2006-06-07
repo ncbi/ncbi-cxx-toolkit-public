@@ -113,7 +113,7 @@ public:
     /// Defines types of database summary information.
     typedef CSeqDB::ESummaryType ESummaryType;
     
-    /// Constructor
+    /// Standard Constructor
     ///
     /// This builds a CSeqDBImpl object from the provided parameters,
     /// which correspond to those of the longer CSeqDB constructor.
@@ -141,6 +141,12 @@ public:
                int            oid_end,
                bool           use_mmap,
                CSeqDBGiList * gi_list);
+    
+    /// Default Constructor
+    /// 
+    /// This builds a null version of the CSeqDBImpl object.  It is in
+    /// support of the default constructor for the CSeqDBExpert class.
+    CSeqDBImpl();
     
     /// Destructor
     ~CSeqDBImpl();

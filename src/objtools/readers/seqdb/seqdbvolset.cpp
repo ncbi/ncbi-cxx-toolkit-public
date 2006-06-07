@@ -82,6 +82,11 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     }
 }
 
+CSeqDBVolSet::CSeqDBVolSet()
+    : m_RecentVol(0)
+{
+}
+
 CSeqDBVolSet::~CSeqDBVolSet()
 {
     for(int i = 0; i < (int) m_VolList.size(); i++) {

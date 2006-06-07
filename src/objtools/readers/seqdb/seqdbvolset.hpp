@@ -402,7 +402,7 @@ public:
     /// Type used to return the set of volume filters.
     typedef CSeqDBVolEntry::TFilters TFilters;
     
-    /// Constructor
+    /// Standard Constructor
     /// 
     /// An object of this class will be constructed after the alias
     /// files have been read, and the volume names will come from that
@@ -421,6 +421,12 @@ public:
                  const vector<string> & vol_names,
                  char                   prot_nucl,
                  CSeqDBGiList         * user_gilist);
+    
+    /// Default Constructor
+    ///
+    /// An empty volume set will be created; this is in support of the
+    /// CSeqDBExpert class's default constructor.
+    CSeqDBVolSet();
     
     /// Destructor
     ///

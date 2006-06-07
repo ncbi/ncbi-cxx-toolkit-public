@@ -789,7 +789,7 @@ public:
     /// @param info
     ///   A structure containing taxonomic description strings.
     void GetTaxInfo(int taxid, SSeqDBTaxInfo & info) const;
-    
+
     /// Fetch data as a CSeq_data object.
     ///
     /// All or part of the sequence is fetched in a CSeq_data object.
@@ -808,9 +808,15 @@ public:
                                TSeqPos begin,
                                TSeqPos end) const;
     
-private:
+protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
+    
+    /// No-argument Constructor
+    /// 
+    /// This version of the constructor is used as an extension by the
+    /// 'expert' interface in seqdbexpert.hpp.
+    CSeqDB();
 };
 
 
