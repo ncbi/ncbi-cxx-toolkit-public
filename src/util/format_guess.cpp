@@ -455,6 +455,30 @@ bool x_IsInputAgp( const char* byte_buf, size_t byte_count )
 }
 
 
+bool x_IsLabelNewick( const string& label )
+{
+    //  Starts with a string of anything other than "[]:", optionally followed by
+    //  a single ':', followed by a number, optionally followed by a dot and
+    //  another number.
+    if ( NPOS != label.find_first_of( "[]" ) ) {
+        return false;
+    }
+    size_t colon = label.find( ':' );
+    if ( NPOS == colon ) {
+        return true;
+    }
+    size_t dot = label.find_first_not_of( "0123456789", colon + 1 );
+    if ( NPOS == dot ) {
+        return true;
+    }
+    if ( label[ dot ] != '.' ) {
+        return false;
+    }
+    size_t end = label.find_first_not_of( "0123456789", dot + 1 );
+    return ( NPOS == end );
+}
+
+
 bool x_IsLineNewick( const string& cline )
 {
     //
@@ -476,30 +500,41 @@ bool x_IsLineNewick( const string& cline )
     if ( line.empty() ) {
         return false;
     }
-    string compressed_line;
-    bool in_label = false;
+    string delimiters = " ,();";
     for ( size_t i=0; line[i] != 0; ++i ) {
-        if ( ! in_label ) {
-            compressed_line += line[i];
+    
+        if ( NPOS != delimiters.find( line[i] ) ) {
+            if ( line[i] == ';' && i != line.size() - 1 ) {
+                return false;
+            }
+            else {
+                continue;
+            }
         }
-        if ( line[i] == '\'' ) {
-            in_label = !in_label;
+        if ( line[i] == '[' || line[i] == ']' ) {
+            return false;
         }
-    }
-    if ( NPOS != compressed_line.find_first_not_of( "();\', \t" ) ) {
-        return false;
-    }
-    size_t pos_semicolon = compressed_line.find_first_of( ";" );
-    if ( NPOS != pos_semicolon && compressed_line.size() -1 != pos_semicolon ) {
-        return false;
-    }
-        
+        size_t label_end = line.find_first_of( delimiters, i );
+        string label = line.substr( i, label_end - i );
+        if ( ! x_IsLabelNewick( label ) ) {
+            return false;
+        }
+        if ( NPOS == label_end ) {
+            return true;
+        }
+        i = label_end;
+    }    
     return true;
 }
 
 
 bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
 {
+    // Maybe we get home early ...
+    if ( byte_count > 0 && byte_buf[0] != '(' ) {
+        return false;
+    }
+    
     list<string> lines;
     if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
         //  seemingly not even ASCII ...
@@ -508,11 +543,14 @@ bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
     if ( lines.empty() ) {
         return false;
     }
-        
+    
+    string one_line;    
     ITERATE( list<string>, it, lines ) {
-        if ( ! x_IsLineNewick( *it ) ) {
-            return false;
-        }
+        one_line += *it;
+    }
+    
+    if ( ! x_IsLineNewick( one_line ) ) {
+        return false;
     }
     return true;
 }
@@ -720,6 +758,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/08 18:48:41  ludwigf
+ * FIXED: "Guessing" of Newick Tree file format.
+ *
  * Revision 1.23  2006/06/05 16:19:53  ludwigf
  * ADDED: File type check for PHRAP ACE restored with the dependency on
  *  regexp removed.
