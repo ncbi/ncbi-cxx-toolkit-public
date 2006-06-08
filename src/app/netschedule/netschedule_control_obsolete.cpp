@@ -195,7 +195,7 @@ int CNetScheduleControl::Run(void)
         CNetScheduleClient::TStatusMap st_map;
         cl.StatusSnapshot(&st_map, aff);
         ITERATE(CNetScheduleClient::TStatusMap, it, st_map) {
-            NcbiCout << CNetScheduleClient::StatusToString(it->first) << ":"
+            NcbiCout << CNetScheduleClient::StatusToString(it->first) << ": "
                      << it->second
                      << NcbiEndl;
         }        
@@ -314,6 +314,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/06/08 19:20:17  kuznets
+ * Minor formatting fix
+ *
  * Revision 1.20  2006/06/07 14:59:58  kuznets
  * Added option to get job status summary by affnity token
  *
