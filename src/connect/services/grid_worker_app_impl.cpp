@@ -400,7 +400,11 @@ int CGridWorkerApp_Impl::Run()
     if (idle_run_delay < 1) idle_run_delay = 1;
 
     unsigned int infinit_loop_time = 
-        reg.GetInt("server","infinit_loop_time",0,0,IRegistry::eReturn);
+        reg.GetInt("server","infinite_loop_time",0,0,IRegistry::eReturn);
+
+    if (infinit_loop_time == 0)
+        infinit_loop_time = 
+            reg.GetInt("server","infinit_loop_time",0,0,IRegistry::eReturn);
                              
     bool idle_exclusive =
         reg.GetBool("server", "idle_exclusive", true, 0, 
@@ -606,6 +610,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.22  2006/06/08 19:39:35  didenko
+ * Spelling correction
+ *
  * Revision 6.21  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *
