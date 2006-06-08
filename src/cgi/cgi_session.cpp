@@ -179,6 +179,10 @@ const CCgiCookie * const CCgiSession::GetSessionCookie() const
             exp.AddMinute(-5);
             const_cast<CCgiSession*>(this)->
                 m_SessionCookie->SetExpTime(exp);
+        } else {
+            if (!m_SessionCookieExpTime.IsEmpty())
+                const_cast<CCgiSession*>(this)->
+                    m_SessionCookie->SetExpTime(m_SessionCookieExpTime);
         }
         
     }
@@ -220,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/08 15:58:10  didenko
+ * Added possibility to set an expiration date for a session cookie
+ *
  * Revision 1.4  2006/06/06 16:44:50  grichenk
  * Set session id in CDiagContext.
  *

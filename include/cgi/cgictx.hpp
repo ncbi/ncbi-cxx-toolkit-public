@@ -272,6 +272,11 @@ public:
     void SetSessionCookiePath(const string& path)
     { m_SessionCookiePath = path; }
 
+    /// Set session cookie's expiration time
+    /// Default: none
+    void SetSessionCookieExpTime(const CTime& exp_time)
+    { m_SessionCookieExpTime = exp_time; }
+
 private:
 
     // Only CgiContext can create an instance of this class
@@ -287,6 +292,7 @@ private:
     string m_SessionIdName;
     string m_SessionCookieDomain;
     string m_SessionCookiePath;
+    CTime m_SessionCookieExpTime;
 };
 
 /* @} */
@@ -406,6 +412,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.35  2006/06/08 15:58:10  didenko
+* Added possibility to set an expiration date for a session cookie
+*
 * Revision 1.34  2005/12/20 20:36:02  didenko
 * Comments cosmetics
 * Small interace changes

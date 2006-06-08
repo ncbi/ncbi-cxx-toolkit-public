@@ -142,6 +142,7 @@ void CCgiContext::x_InitSession()
     m_Session->SetSessionIdName(params.m_SessionIdName);
     m_Session->SetSessionCookieDomain(params.m_SessionCookieDomain);
     m_Session->SetSessionCookiePath(params.m_SessionCookiePath);
+    m_Session->SetSessionCookieExpTime(params.m_SessionCookieExpTime);
 
     m_Request->x_SetSession(*m_Session);
     m_Response.x_SetSession(*m_Session);
@@ -323,6 +324,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.48  2006/06/08 15:58:10  didenko
+* Added possibility to set an expiration date for a session cookie
+*
 * Revision 1.47  2006/01/05 15:25:32  lavr
 * Spelling
 *

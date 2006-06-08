@@ -178,6 +178,9 @@ public:
     /// @sa SetSessionIdName
     void SetSessionCookiePath(const string& path);
 
+    /// Set session cookie expiration time
+    void SetSessionCookieExpTime(const CTime& exp_time);
+
     /// Get a cookie pertaining to the session. May create new cookie,
     /// if needed and allowed to.
     /// @return
@@ -196,6 +199,7 @@ private:
     string m_SessionIdName;
     string m_SessionCookieDomain;
     string m_SessionCookiePath;
+    CTime m_SessionCookieExpTime;
     auto_ptr<CCgiCookie> m_SessionCookie;
     EStatus m_Status;
 
@@ -309,6 +313,11 @@ void CCgiSession::SetSessionCookiePath(const string& path)
 {
     m_SessionCookiePath = path;
 }
+inline
+void CCgiSession::SetSessionCookieExpTime(const CTime& exp_time)
+{
+    m_SessionCookieExpTime = exp_time;
+}
 
 
 END_NCBI_SCOPE
@@ -320,6 +329,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/08 15:58:10  didenko
+ * Added possibility to set an expiration date for a session cookie
+ *
  * Revision 1.5  2005/12/21 14:35:05  ucko
  * Restore include of <memory> for auto_ptr<>!
  *
