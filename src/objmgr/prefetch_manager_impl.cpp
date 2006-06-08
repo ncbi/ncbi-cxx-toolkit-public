@@ -101,7 +101,7 @@ CPrefetchRequest::CPrefetchRequest(CObjectFor<CMutex>* state_mutex,
       m_QueueItem(0),
       m_Action(action),
       m_Listener(listener),
-      m_State(eQueued),
+      m_State(eInvalid),
       m_Progress(0)
 {
 }
@@ -109,6 +109,17 @@ CPrefetchRequest::CPrefetchRequest(CObjectFor<CMutex>* state_mutex,
 
 CPrefetchRequest::~CPrefetchRequest(void)
 {
+}
+
+
+void CPrefetchRequest::SetQueueItem(CObject* queue_item)
+{
+    _ASSERT(queue_item);
+    _ASSERT(!m_QueueItem);
+    _ASSERT(m_State == eInvalid);
+    _ASSERT(this == &dynamic_cast<CPrefetchManager_Impl::TItemHandle::TObjectType&>(*queue_item).SetRequest());
+    m_QueueItem = queue_item;
+    m_State = eQueued;
 }
 
 
@@ -221,14 +232,12 @@ CPrefetchToken CPrefetchManager_Impl::AddAction(TPriority priority,
                                                 IPrefetchAction* action,
                                                 IPrefetchListener* listener)
 {
+    CMutexGuard guard(GetMutex());
     CPrefetchToken token(AcceptRequest(CPrefetchRequest(m_StateMutex,
                                                         action,
                                                         listener),
                                        priority));
-    _ASSERT(token.m_QueueItem);
-    _ASSERT(!token.x_GetImpl().m_QueueItem);
-    token.x_GetImpl().m_QueueItem = token.m_QueueItem.GetNCPointer();
-    _ASSERT(token.x_GetImpl().m_QueueItem);
+    token.x_GetImpl().SetQueueItem(token.m_QueueItem.GetNCPointer());
     return token;
 }
 
@@ -282,7 +291,7 @@ void CPrefetchManager_Impl::KillAllThreads(void)
     }
     CPrefetchThread* thread = CPrefetchThread::GetCurrentThread();
     ITERATE(TThreads, it, m_Threads) {
-        if ( *it != thread ) {
+        if ( it->GetPointer() != thread ) {
             it->GetNCObject().Join();
         }
     }

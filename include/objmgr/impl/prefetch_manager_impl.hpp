@@ -100,6 +100,7 @@ public:
     //static CPrefetchToken GetCurrentToken(void);
 
 protected:
+    void SetQueueItem(CObject* queue_item);
     bool x_SetState(EState state);
     
 private:
