@@ -683,7 +683,6 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
             break;
         case CSeq_loc::e_Int:
             {
-                const CSeq_interval& itv = slp->GetInt();
                 SeqIntPartialCheck(slp->GetInt(), retval,
                     slp == first, slp == last, *scope);
             }
@@ -2647,6 +2646,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2006/06/08 19:21:29  grichenk
+* Removed unused variable.
+*
 * Revision 1.21  2006/06/05 20:06:54  grichenk
 * Process packed-ints in SeqLocPartialCheck().
 *
