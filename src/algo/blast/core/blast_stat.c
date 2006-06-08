@@ -1333,8 +1333,12 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
                    return status;
                 }
                 fclose(fp);
+                matrix_found = TRUE;
             } 
     }
+
+    if (matrix_found == FALSE)
+        return -1;
 
     if ( (status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
          return status;
@@ -4381,6 +4385,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.145  2006/06/08 15:36:37  madden
+ * In Blast_ScoreBlkMatrixFill check that matrix was found, or return -1
+ *
  * Revision 1.144  2006/06/07 16:49:31  madden
  *     - Renamed BlastKarlinPtoE as BLAST_KarlinPtoE and made it external;
  *       it is need by the composition adjustment routines.
