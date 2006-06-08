@@ -168,8 +168,6 @@ inline double ColumnResidueProfile::reweightColumnByRowWeights(const vector<doub
 	double resWeight = 0;
 	for (int i = 0; i < m_residues.size(); i++)
 	{
-		//debug
-		char aa = m_residues[i];
 		pair <ResidueRowsMap::const_iterator, ResidueRowsMap::const_iterator> range =
 			m_residueRowsMap.equal_range(m_residues[i]);
 		resWeight = 0;
@@ -958,6 +956,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/06/08 16:28:56  cliu
+ * remove a debug line.
+ *
  * Revision 1.8  2006/03/09 19:17:24  cliu
  * export the inclusionThreshold parameter
  *
