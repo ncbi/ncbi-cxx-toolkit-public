@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
  **\brief This class encapsulates the dusting functionality of winmask.
  **
  **/
-class NCBI_XALGOWINMASK_EXPORT CDustMasker
+class CDustMasker
 {
 public:
 
@@ -93,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2006/06/08 19:58:26  morgulis
+ * Removed NCBI_XALGOWINMASK_EXPORT qualifier from CDustMasker and CSDustMasker.
+ *
  * Revision 1.1  2005/07/14 20:43:45  morgulis
  * moving from libraries
  *
