@@ -70,7 +70,7 @@ public:
     ~CDistanceMatrix(void);
     
     // Create an ordinary matrix representation
-    void AsMatrix(CNcbiMatrix<double>& mat);
+    void AsMatrix(CNcbiMatrix<double>& mat) const;
     // Set to values of an ordinary matrix.
     // Must be square and symmetric, with zeros on the main diagonal.
     void FromMatrix(const CNcbiMatrix<double>& mat);
@@ -104,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/06/08 18:08:08  jcherry
+* Made AsMatrix const
+*
 * Revision 1.2  2006/06/01 15:52:12  jcherry
 * BUGZID: 507  Added method to read format used by Phylip
 *

@@ -52,7 +52,7 @@ CDistanceMatrix::~CDistanceMatrix(void)
 }
 
 
-void CDistanceMatrix::AsMatrix(CNcbiMatrix<double>& mat)
+void CDistanceMatrix::AsMatrix(CNcbiMatrix<double>& mat) const
 {
     size_t sz = GetLabels().size();
     if (GetDistances().size() != sz * (sz - 1) / 2) {
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/06/08 18:08:08  jcherry
+* Made AsMatrix const
+*
 * Revision 1.2  2006/06/01 15:52:13  jcherry
 * BUGZID: 507  Added method to read format used by Phylip
 *
