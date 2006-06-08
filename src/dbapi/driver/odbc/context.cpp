@@ -442,7 +442,7 @@ CODBCContext::x_Close(bool delete_conn)
             x_RemoveFromRegistry();
         }
     } else {
-        if (delete_conn && x_SafeToFinalize()) {
+        if (delete_conn) {
             DeleteAllConn();
         }
     }
@@ -818,6 +818,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/06/08 14:19:59  ssikorsk
+ * Fixed a compilation problem.
+ *
  * Revision 1.53  2006/06/07 22:20:16  ssikorsk
  * Context finalization improvements.
  *
