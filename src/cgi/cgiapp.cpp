@@ -516,9 +516,8 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 req.GetProperty(eCgi_RemoteAddr));
 
             // Print request start message
-            string args = req.GetProperty(eCgi_QueryString);
             if ( !CDiagContext::IsSetOldPostFormat() ) {
-                GetDiagContext().PrintRequestStart(args);
+                GetDiagContext().PrintRequestStart(req.GetCGIEntriesStr());
             }
 
             // Start timer
@@ -1084,6 +1083,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.73  2006/06/08 19:23:09  grichenk
+* Include POST data into request start logging.
+* Allow to exclude some arguments from the output.
+*
 * Revision 1.72  2006/06/01 16:16:45  grichenk
 * Default log location changed to /log/<port>
 *

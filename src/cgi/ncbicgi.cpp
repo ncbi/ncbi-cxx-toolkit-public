@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgi_serial.hpp>
@@ -1376,12 +1377,56 @@ CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
 }
 
 
+NCBI_PARAM_DECL(string, CGI, LOG_EXCLUDE_ARGS);
+NCBI_PARAM_DEF_EX(string, CGI, LOG_EXCLUDE_ARGS, kEmptyStr, eParam_NoThread,
+                  CGI_LOG_EXCLUDE_ARGS);
+typedef NCBI_PARAM_TYPE(CGI, LOG_EXCLUDE_ARGS) TCGI_LogExcludeArgs;
+
+
+string CCgiRequest::GetCGIEntriesStr(void) const
+{
+    string exclusions = TCGI_LogExcludeArgs::GetDefault();
+    list<string> excl_list;
+    NStr::Split(exclusions, "&", excl_list);
+
+    typedef set<string, PNocase> TExclusions;
+    TExclusions excl_set;
+    ITERATE(list<string>, it, excl_list) {
+        excl_set.insert(*it);
+    }
+
+    string args;
+    ITERATE(TCgiEntries, entry, m_Entries) {
+        if ( entry->first.empty() ) {
+            continue;
+        }
+        if (entry->first.empty()  ||
+            excl_set.find(entry->first) != excl_set.end()) {
+            continue;
+        }
+        if ( !args.empty() ) {
+            args += "&";
+        }
+        args += URL_EncodeString(entry->first);
+        string val = entry->second.substr(0, 16384);
+        if ( !val.empty() ) {
+            args += "=" + URL_EncodeString(val);
+        }
+    }
+    return args;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2006/06/08 19:23:09  grichenk
+ * Include POST data into request start logging.
+ * Allow to exclude some arguments from the output.
+ *
  * Revision 1.106  2006/05/30 16:40:04  didenko
  * Serialize method now serializes the whole environment
  *

@@ -711,8 +711,11 @@ public:
     void Deserialize(CNcbiIstream& is, TFlags flags = 0);
 
     const CNcbiEnvironment& GetEnvironment() const { return *m_Env; }
-    
 
+    /// Get full set of arguments (both GET and POST), URL-encoded.
+    /// A &-separated list of exclusions can be set in CGI_LOG_EXCLUDE_ARGS
+    /// variable or [CGI] LOG_EXCLUDE_ARGS value in ini file.
+    string GetCGIEntriesStr(void) const;
 
 private:
     /// set of environment variables
@@ -939,6 +942,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.84  2006/06/08 19:23:09  grichenk
+* Include POST data into request start logging.
+* Allow to exclude some arguments from the output.
+*
 * Revision 1.83  2006/01/10 20:00:06  grichenk
 * Allow to save request content.
 *
