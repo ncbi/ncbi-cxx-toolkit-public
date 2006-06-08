@@ -176,7 +176,7 @@ const CCgiCookie * const CCgiSession::GetSessionCookie() const
                                                  m_SessionCookiePath));
         if (m_Status == eDeleted) {
             CTime exp(CTime::eCurrent, CTime::eGmt);
-            exp.AddMinute(-5);
+            exp.AddYear(-10);
             const_cast<CCgiSession*>(this)->
                 m_SessionCookie->SetExpTime(exp);
         } else {
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/08 16:54:13  didenko
+ * Modified the expiration date for a deleted cgi session
+ *
  * Revision 1.5  2006/06/08 15:58:10  didenko
  * Added possibility to set an expiration date for a session cookie
  *
