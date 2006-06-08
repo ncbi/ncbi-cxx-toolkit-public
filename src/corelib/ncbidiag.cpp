@@ -2029,7 +2029,7 @@ extern bool SetLogFile(const string& file_name,
         return double_handler->SetLogFile(
             file_name, file_type, quick_flush, mode);
     }
-    bool no_split = !s_SplitLogFile || file_name.empty() || file_name == "-";
+    bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
             return false;
@@ -2497,8 +2497,10 @@ CDoubleDiagHandler::~CDoubleDiagHandler(void)
 
 void CDoubleDiagHandler::Post(const SDiagMessage& mess)
 {
-    mess.x_SetFormat(SDiagMessage::eFormat_Old);
-    m_StreamHandler->Post(mess);
+    if ((mess.m_Flags & eDPF_AppLog) == 0) {
+        mess.x_SetFormat(SDiagMessage::eFormat_Old);
+        m_StreamHandler->Post(mess);
+    }
     mess.x_SetFormat(SDiagMessage::eFormat_New);
     m_FileHandler->Post(mess);
 }
@@ -2527,7 +2529,7 @@ bool CDoubleDiagHandler::SetLogFile(const string& file_name,
                                     bool          quick_flush,
                                     ios::openmode mode)
 {
-    bool no_split = !s_SplitLogFile || file_name.empty() || file_name == "-";
+    bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
             return false;
@@ -2804,6 +2806,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.119  2006/06/08 19:21:10  grichenk
+ * Fixed log output to special files (empty name and "-").
+ * Do not print duplicate start/stop messages from CDoubleDiagHandler.
+ *
  * Revision 1.118  2006/06/06 16:44:07  grichenk
  * Added SetDoubleDiagHandler().
  * Added Severity().
