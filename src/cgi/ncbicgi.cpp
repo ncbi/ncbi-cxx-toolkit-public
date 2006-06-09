@@ -40,6 +40,7 @@
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgi_serial.hpp>
 #include <cgi/cgi_session.hpp>
+#include <algorithm>
 
 #include <stdio.h>
 #include <time.h>
@@ -1399,32 +1400,24 @@ typedef NCBI_PARAM_TYPE(CGI, LOG_EXCLUDE_ARGS) TCGI_LogExcludeArgs;
 string CCgiRequest::GetCGIEntriesStr(void) const
 {
     string exclusions = TCGI_LogExcludeArgs::GetDefault();
-    list<string> excl_list;
-    NStr::Split(exclusions, "&", excl_list);
-
-    typedef set<string, PNocase> TExclusions;
-    TExclusions excl_set;
-    ITERATE(list<string>, it, excl_list) {
-        excl_set.insert(*it);
-    }
+    list<string> excl;
+    NStr::Split(exclusions, "&", excl);
 
     string args;
     ITERATE(TCgiEntries, entry, m_Entries) {
-        if ( entry->first.empty() ) {
-            continue;
-        }
-        if (entry->first.empty()  ||
-            excl_set.find(entry->first) != excl_set.end()) {
+        if ((entry->first.empty()  &&  entry->second.empty())  ||
+            find(excl.begin(), excl.end(), entry->first) != excl.end()) {
             continue;
         }
         if ( !args.empty() ) {
             args += "&";
         }
-        args += URL_EncodeString(entry->first);
-        string val = entry->second.substr(0, 16384);
-        if ( !val.empty() ) {
-            args += "=" + URL_EncodeString(val);
+        if ( !entry->first.empty() ) {
+            args += URL_EncodeString(entry->first,
+                eUrlEncode_ProcessMarkChars) + "=";
         }
+        string val = entry->second.substr(0, 16384);
+        args += URL_EncodeString(val, eUrlEncode_ProcessMarkChars);
     }
     return args;
 }
@@ -1436,6 +1429,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2006/06/09 14:44:08  grichenk
+ * Allow empty names and values in GetCGIEntriesStr().
+ *
  * Revision 1.108  2006/06/09 14:30:25  golikov
  * GetSessionId
  *
