@@ -171,8 +171,8 @@ CDBAPIUnitTest::TestInit(void)
         m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
-//         drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
-//         drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
+        drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
+        drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
 
         m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         BOOST_CHECK( m_Conn.get() != NULL );
@@ -3878,6 +3878,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.77  2006/06/09 15:26:20  ssikorsk
+ * Restored previously disabled CErrHandler..
+ *
  * Revision 1.76  2006/06/08 18:51:31  ssikorsk
  * Do not install CErrHandler as a default handler for all connections temporarily.
  *
