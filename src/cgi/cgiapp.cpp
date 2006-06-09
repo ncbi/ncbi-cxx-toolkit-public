@@ -514,6 +514,8 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 req.GetProperty(eCgi_ServerName));
             GetDiagContext().SetProperty("client_ip",
                 req.GetProperty(eCgi_RemoteAddr));
+            GetDiagContext().SetProperty("session_id",
+                req.GetSessionId());
 
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
@@ -550,6 +552,8 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             if ( !CDiagContext::IsSetOldPostFormat() ) {
                 GetDiagContext().PrintRequestStop();
             }
+            GetDiagContext().SetProperty("client_ip", kEmptyStr);
+            GetDiagContext().SetProperty("session_id", kEmptyStr);
             break;
         }
     case eExit:
@@ -1083,6 +1087,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.74  2006/06/09 14:31:24  golikov
+* set/reset sesion_id
+*
 * Revision 1.73  2006/06/08 19:23:09  grichenk
 * Include POST data into request start logging.
 * Allow to exclude some arguments from the output.
