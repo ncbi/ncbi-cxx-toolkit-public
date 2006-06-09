@@ -473,6 +473,17 @@ protected:
     /// exit_code).
     virtual void AppStop(int exit_code);
 
+    /// When to return a user-set exit code
+    enum EExitMode {
+        eNoExits          = 0,   ///< never (stick to existing logic)
+        eExceptionalExits = 0x1, ///< when an (uncaught) exception occurs
+        eAllExits         = 0x3  ///< always (ignoring Run's return value)
+    };
+    /// Force the program to return a specific exit code later, either
+    /// when it exits due to an exception or unconditionally.  In the
+    /// latter case, Run's return value will be ignored.
+    void SetExitCode(int exit_code, EExitMode when = eExceptionalExits);
+
 private:
     /// Read standard NCBI application configuration settings.
     ///
@@ -524,6 +535,8 @@ private:
     string                     m_RealExePath; ///< Symlink-free executable path
     mutable string             m_LogFileName; ///< Log file name
     string                     m_ConfigPath;  ///< Path to .ini file used
+    int                        m_ExitCode;    ///< Exit code to force
+    EExitMode                  m_ExitCodeCond; ///< When to force it (if ever)
 };
 
 
@@ -604,6 +617,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/06/09 15:45:57  ucko
+ * Add a protected SetExitCode method that can be used to force AppMain
+ * to return a specified value, either unconditionally or only on
+ * uncaught exceptions.
+ *
  * Revision 1.59  2006/06/01 18:32:38  gouriano
  * Made GetVersion method public
  *

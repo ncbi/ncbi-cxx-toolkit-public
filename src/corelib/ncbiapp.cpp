@@ -90,6 +90,7 @@ CNcbiApplication::CNcbiApplication(void)
     m_HideArgs = 0;
     m_StdioFlags = 0;
     m_CinBuffer = 0;
+    m_ExitCodeCond = eNoExits;
 
     // Register the app. instance
     if ( m_Instance ) {
@@ -391,6 +392,7 @@ int CNcbiApplication::AppMain
 
     // Call:  Init() + Run() + Exit()
     int exit_code = 1;
+    bool got_exception = false;
 
     try {
         // Initialize the application
@@ -471,10 +473,12 @@ int CNcbiApplication::AppMain
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("Application's initialization failed", e);
+            got_exception = true;
             exit_code = 2;
         }
         catch (exception& e) {
             ERR_POST("Application's initialization failed: " << e.what());
+            got_exception = true;
             exit_code = 2;
         }
 
@@ -488,10 +492,12 @@ int CNcbiApplication::AppMain
             }
             catch (CException& e) {
                 NCBI_REPORT_EXCEPTION("Application's execution failed", e);
+                got_exception = true;
                 exit_code = 3;
             }
             catch (exception& e) {
                 ERR_POST("Application's execution failed: " << e.what());
+                got_exception = true;
                 exit_code = 3;
             }
         }
@@ -505,9 +511,11 @@ int CNcbiApplication::AppMain
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("Application's cleanup failed", e);
+            got_exception = true;
         }
         catch (exception& e) {
             ERR_POST("Application's cleanup failed: "<< e.what());
+            got_exception = true;
         }
 
     }
@@ -518,6 +526,7 @@ int CNcbiApplication::AppMain
             LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
         NCBI_REPORT_EXCEPTION("", e);
+        got_exception = true;
         exit_code = 1;
     }
     catch (...) {
@@ -527,6 +536,13 @@ int CNcbiApplication::AppMain
         ERR_POST(Warning <<
                  "Application has thrown an exception of unknown type");
         throw;
+    }
+
+    if (m_ExitCodeCond == eAllExits
+        ||  (got_exception  &&  m_ExitCodeCond == eExceptionalExits)) {
+        _TRACE("Overriding exit code from " << exit_code
+               << " to " << m_ExitCodeCond);
+        exit_code = m_ExitCode;
     }
 
     // Application stop
@@ -1151,12 +1167,24 @@ void CNcbiApplication::AppStop(int exit_code)
 }
 
 
+void CNcbiApplication::SetExitCode(int exit_code, EExitMode when)
+{
+    m_ExitCode = exit_code;
+    m_ExitCodeCond = when;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.124  2006/06/09 15:46:06  ucko
+ * Add a protected SetExitCode method that can be used to force AppMain
+ * to return a specified value, either unconditionally or only on
+ * uncaught exceptions.
+ *
  * Revision 1.123  2006/06/06 20:57:37  grichenk
  * Removed s_DiagToStdlog_Cleanup().
  *
