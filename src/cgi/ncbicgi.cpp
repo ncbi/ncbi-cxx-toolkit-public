@@ -1412,12 +1412,10 @@ string CCgiRequest::GetCGIEntriesStr(void) const
         if ( !args.empty() ) {
             args += "&";
         }
-        if ( !entry->first.empty() ) {
-            args += URL_EncodeString(entry->first,
-                eUrlEncode_ProcessMarkChars) + "=";
-        }
-        string val = entry->second.substr(0, 16384);
-        args += URL_EncodeString(val, eUrlEncode_ProcessMarkChars);
+        args += URL_EncodeString(entry->first, eUrlEncode_ProcessMarkChars);
+        args += "=";
+        args += URL_EncodeString(entry->second.substr(0, 16384),
+                                 eUrlEncode_ProcessMarkChars);
     }
     return args;
 }
@@ -1429,6 +1427,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.110  2006/06/09 19:28:25  golikov
+ * args str may have empty_name=val
+ *
  * Revision 1.109  2006/06/09 14:44:08  grichenk
  * Allow empty names and values in GetCGIEntriesStr().
  *
