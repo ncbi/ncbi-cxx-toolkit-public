@@ -2485,7 +2485,7 @@ extern void SetDiagStream(CNcbiOstream* os, bool quick_flush,
 
 CDoubleDiagHandler::CDoubleDiagHandler(void)
 {
-    m_StreamHandler.reset(new CStreamDiagHandler(&NcbiCout));
+    m_StreamHandler.reset(new CStreamDiagHandler(&NcbiCerr));
     m_FileHandler.reset(new CFileDiagHandler());
 }
 
@@ -2806,6 +2806,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.120  2006/06/09 14:32:19  golikov
+ * typo fixed
+ *
  * Revision 1.119  2006/06/08 19:21:10  grichenk
  * Fixed log output to special files (empty name and "-").
  * Do not print duplicate start/stop messages from CDoubleDiagHandler.
