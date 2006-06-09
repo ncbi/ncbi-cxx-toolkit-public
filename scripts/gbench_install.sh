@@ -177,7 +177,6 @@ CopyFiles()
             rm -f $target_dir/bin/$x $target_dir/bin/$x.old
             RelativeCP $src_file $target_dir/bin/
         else
-            echo "++++++++ RP proc: $x_common_rb"
             $x_common_rb
             COMMON_Error "File not found: $src_file"
         fi
@@ -297,7 +296,15 @@ source_dir=`FindDirPath $src_dir /src/gui/gbench`
 source_dir="${source_dir}/src/gui/gbench"
 
 # Set the rollback escape command (used by COMMON_ExecRB)
-x_common_rb="rm -rf $target_dir"
+CleanAfterFailure() {
+    bad_cache=$target_dir/plugins/plugin-cache
+    if test -f "$bad_cache"; then
+        echo "Moving $bad_cache to $src_dir/status/bad-plugin-cache.$$"
+        mv "$bad_cache" "$src_dir/status/bad-plugin-cache.$$"
+    fi
+    rm -rf "$target_dir"
+}
+x_common_rb="CleanAfterFailure"
 
 MakeDirs $target_dir
 target_dir=`cd "$target_dir" && /bin/pwd`
