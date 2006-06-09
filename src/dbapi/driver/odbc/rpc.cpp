@@ -357,6 +357,8 @@ void CODBC_RPCCmd::SetRecompile(bool recompile)
 
 void CODBC_RPCCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -364,7 +366,9 @@ void CODBC_RPCCmd::Release()
 CODBC_RPCCmd::~CODBC_RPCCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         GetConnection().DropCmd(*this);
 
@@ -597,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.24  2006/06/06 14:46:06  ssikorsk
  * Fixed CODBC_RPCCmd::Cancel.
  *

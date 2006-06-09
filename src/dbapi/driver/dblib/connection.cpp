@@ -631,6 +631,8 @@ bool CDBL_SendDataCmd::Cancel(void)
 
 void CDBL_SendDataCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -638,7 +640,9 @@ void CDBL_SendDataCmd::Release()
 CDBL_SendDataCmd::~CDBL_SendDataCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         GetConnection().DropCmd(*this);
 
@@ -655,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.34  2006/06/05 21:06:05  ssikorsk
  * Deleted CDBL_Connection::Release;
  * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";

@@ -431,6 +431,8 @@ CTL_CursorCmd::CloseForever(void)
 
 void CTL_CursorCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -445,7 +447,9 @@ CTL_CursorCmd::CreateResult(I_Result& result)
 CTL_CursorCmd::~CTL_CursorCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         DropCmd(*this);
 
@@ -485,6 +489,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.19  2006/06/05 21:09:21  ssikorsk
  * Replaced 'm_BR = 0' with 'CDB_BaseEnt::Release()'.
  *

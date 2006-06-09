@@ -550,6 +550,8 @@ bool CTDS_SendDataCmd::Cancel(void)
 
 void CTDS_SendDataCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -557,7 +559,9 @@ void CTDS_SendDataCmd::Release()
 CTDS_SendDataCmd::~CTDS_SendDataCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         GetConnection().DropCmd(*this);
 
@@ -574,6 +578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.27  2006/06/05 21:06:34  ssikorsk
  * Deleted CTDS_Connection::Release;
  * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";

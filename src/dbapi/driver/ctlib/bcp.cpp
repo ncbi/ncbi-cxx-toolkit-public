@@ -398,6 +398,8 @@ bool CTL_BCPInCmd::CompleteBCP()
 
 void CTL_BCPInCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -412,7 +414,9 @@ CTL_BCPInCmd::CreateResult(I_Result& result)
 CTL_BCPInCmd::~CTL_BCPInCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         DropCmd(*this);
 
@@ -447,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.20  2006/06/05 21:09:21  ssikorsk
  * Replaced 'm_BR = 0' with 'CDB_BaseEnt::Release()'.
  *

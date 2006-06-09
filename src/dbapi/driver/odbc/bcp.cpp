@@ -433,6 +433,8 @@ bool CODBC_BCPInCmd::CompleteBCP()
 
 void CODBC_BCPInCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -440,7 +442,9 @@ void CODBC_BCPInCmd::Release()
 CODBC_BCPInCmd::~CODBC_BCPInCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         GetConnection().DropCmd(*this);
 
@@ -457,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.16  2006/06/05 21:09:22  ssikorsk
  * Replaced 'm_BR = 0' with 'CDB_BaseEnt::Release()'.
  *

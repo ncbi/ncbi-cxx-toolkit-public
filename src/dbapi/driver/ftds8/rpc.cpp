@@ -258,6 +258,8 @@ void CTDS_RPCCmd::SetRecompile(bool recompile)
 
 void CTDS_RPCCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -265,7 +267,9 @@ void CTDS_RPCCmd::Release()
 CTDS_RPCCmd::~CTDS_RPCCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         GetConnection().DropCmd(*this);
 
@@ -543,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.21  2006/06/05 21:09:22  ssikorsk
  * Replaced 'm_BR = 0' with 'CDB_BaseEnt::Release()'.
  *

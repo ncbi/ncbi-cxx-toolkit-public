@@ -322,6 +322,8 @@ int CODBC_LangCmd::RowCount() const
 
 void CODBC_LangCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -329,7 +331,9 @@ void CODBC_LangCmd::Release()
 CODBC_LangCmd::~CODBC_LangCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         GetConnection().DropCmd(*this);
 
@@ -556,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.25  2006/06/06 14:46:31  ssikorsk
  * Fixed CODBC_LangCmd::Cancel.
  *

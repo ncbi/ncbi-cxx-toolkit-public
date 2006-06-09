@@ -75,7 +75,7 @@ CMySQL_RowResult::CMySQL_RowResult(CMySQL_Connection* conn)
     }
 
     m_NofCols = mysql_num_fields(m_Result);
-    m_ColFmt  = new SMySQL_ColDescr[m_NofCols];
+    m_ColFmt = new SMySQL_ColDescr[m_NofCols];
     MYSQL_FIELD* fields = mysql_fetch_fields(m_Result);
     for (unsigned int n = 0;  n < m_NofCols;  n++) {
         m_ColFmt[n].max_length = fields[n].max_length;
@@ -87,6 +87,7 @@ CMySQL_RowResult::CMySQL_RowResult(CMySQL_Connection* conn)
 
 CMySQL_RowResult::~CMySQL_RowResult()
 {
+    delete [] m_ColFmt;
 }
 
 
@@ -203,7 +204,7 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
     case eDB_Int:
         int_val = NStr::StringToLong(d_ptr);
         break;
-        
+
     case eDB_BigInt:
         int8_val = NStr::StringToLong(d_ptr);
         break;
@@ -341,6 +342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.11  2006/02/16 19:37:42  ssikorsk
  * Get rid of compilation warnings
  *

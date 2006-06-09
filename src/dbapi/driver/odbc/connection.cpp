@@ -602,6 +602,8 @@ bool CODBC_SendDataCmd::Cancel(void)
 
 void CODBC_SendDataCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
 }
 
@@ -609,7 +611,9 @@ void CODBC_SendDataCmd::Release()
 CODBC_SendDataCmd::~CODBC_SendDataCmd()
 {
     try {
-        CDB_BaseEnt::Release();
+        if (m_BR) {
+            *m_BR = 0;
+        }
 
         GetConnection().DropCmd(*this);
 
@@ -633,6 +637,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.29  2006/06/05 21:07:25  ssikorsk
  * Deleted CODBC_Connection::Release;
  * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";

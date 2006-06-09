@@ -47,19 +47,6 @@ CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection* conn,
 }
 
 
-CMySQL_LangCmd::~CMySQL_LangCmd()
-{
-    try {
-        CDB_BaseEnt::Release();
-
-        GetConnection().DropCmd(*this);
-
-        Cancel();
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
-}
-
-
 bool CMySQL_LangCmd::More(const string& query_text)
 {
     m_Query += query_text;
@@ -153,7 +140,24 @@ bool CMySQL_LangCmd::HasFailed() const
 
 void CMySQL_LangCmd::Release()
 {
+    CDB_BaseEnt::Release();
+
     delete this;
+}
+
+
+CMySQL_LangCmd::~CMySQL_LangCmd()
+{
+    try {
+        if (m_BR) {
+            *m_BR = 0;
+        }
+
+        GetConnection().DropCmd(*this);
+
+        Cancel();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 int CMySQL_LangCmd::LastInsertId() const
@@ -179,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/06/09 19:59:22  ssikorsk
+ * Fixed CDB_BaseEnt garbage collector logic.
+ *
  * Revision 1.15  2006/06/05 21:09:22  ssikorsk
  * Replaced 'm_BR = 0' with 'CDB_BaseEnt::Release()'.
  *
