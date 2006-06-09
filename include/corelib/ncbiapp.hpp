@@ -475,9 +475,9 @@ protected:
 
     /// When to return a user-set exit code
     enum EExitMode {
-        eNoExits          = 0,   ///< never (stick to existing logic)
-        eExceptionalExits = 0x1, ///< when an (uncaught) exception occurs
-        eAllExits         = 0x3  ///< always (ignoring Run's return value)
+        eNoExits,          ///< never (stick to existing logic)
+        eExceptionalExits, ///< when an (uncaught) exception occurs
+        eAllExits          ///< always (ignoring Run's return value)
     };
     /// Force the program to return a specific exit code later, either
     /// when it exits due to an exception or unconditionally.  In the
@@ -617,6 +617,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/06/09 16:05:14  ucko
+ * Don't force EExitMode's values to particular numbers.
+ *
  * Revision 1.60  2006/06/09 15:45:57  ucko
  * Add a protected SetExitCode method that can be used to force AppMain
  * to return a specified value, either unconditionally or only on
