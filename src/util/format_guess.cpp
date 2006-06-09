@@ -53,18 +53,6 @@ static inline bool isLineEnd(char ch)
     return ch == 0x0D || ch == 0x0A || ch == '\n';
 }
 
-// Check if a buffer has nothing but whitespace in it
-static bool isLineBlank( const char* line )
-{
-    for ( size_t i=0; line[i] != 0; ++i ) {
-        if ( ! isspace( line[i] ) ) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
 bool x_SplitLines( const char* byte_buf, size_t byte_count, list< string>& lines )
 //
 //  Note:   We are assuming that the data at hand is consistent in its line 
@@ -203,7 +191,7 @@ bool x_IsInputRepeatMaskerWithHeader( list< string >& lines  )
     //  Purge junk lines:
     //
     list<string>::iterator it = lines.begin();
-    for  ( NULL; it != lines.end(); ++it ) {
+    for  ( ; it != lines.end(); ++it ) {
         NStr::TruncateSpacesInPlace( *it );
         if ( *it != "" ) {
             break;
@@ -555,6 +543,39 @@ bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
     return true;
 }
 
+/*
+bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
+{
+    // Alignment files come in all different shapes and broken formats,
+    // and some of them are hard to recognize as such, in particular
+    // if they have been hacked up in a text editor.
+    
+    // This functions only concerns itself with the ones that are
+    // easy to recognize.
+    
+    // Note: We can live with false negatives. Avoid false positives
+    // at all cost.
+    
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( lines.empty() ) {
+        return false;
+    }
+    
+    ITERATE( list<string>, it, lines ) {
+        if ( NPOS != it->find( "#NEXUS" ) ) {
+            return true;
+        }
+        if ( NPOS != it->find( "CLUSTAL" ) ) {
+            return true;
+        }
+    }
+    return false;
+}
+*/        
 
 bool x_IsInputXml( const char* byte_buf, size_t byte_count )
 {
@@ -669,6 +690,9 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     if ( x_IsInputXml( (const char*)buf, count ) ) {
         return eXml;
     }
+//    if ( x_IsInputAlignment( (const char*)buf, count ) ) {
+//        return eAlignment;
+//    }
     if ( x_IsInputBinaryAsn( (const char*)buf, count ) ) {
         return eBinaryASN;
     }
@@ -758,6 +782,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/09 15:08:29  ludwigf
+ * FIXED: Two warnings that I introduced in the last check in.
+ *
  * Revision 1.24  2006/06/08 18:48:41  ludwigf
  * FIXED: "Guessing" of Newick Tree file format.
  *
