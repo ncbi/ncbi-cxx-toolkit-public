@@ -1,5 +1,5 @@
 @echo off
-REM $Id: lock_ptb_config.bat,v 1.1 2006/03/29 13:35:32 gouriano Exp $
+REM $Id: lock_ptb_config.bat,v 1.2 2006/06/09 17:02:44 gouriano Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -59,7 +59,7 @@ exit /b 1
 
 :do_ON
 for %%c in ( %CFG_LIST% ) do (
-  if exist %MSVC_PRJ%%CFG_PLATFORM%.%%c (
+  if exist "%MSVC_PRJ%%CFG_PLATFORM%.%%c" (
     if not %%c==%PTB_PLATFORM% (
       echo ******************************************************************************
       echo Requested platform %PTB_PLATFORM% does not match already configured %%c
@@ -70,23 +70,23 @@ for %%c in ( %CFG_LIST% ) do (
     goto do_ON_lock
   )
 )
-echo %CFG_PLATFORM% > %MSVC_PRJ%%CFG_PLATFORM%.%PTB_PLATFORM%
+echo %CFG_PLATFORM% > "%MSVC_PRJ%%CFG_PLATFORM%.%PTB_PLATFORM%"
 
 :do_ON_lock
-if exist %MSVC_PRJ%%PTB_RUNNING% (
+if exist "%MSVC_PRJ%%PTB_RUNNING%" (
   echo ******************************************************************************
   echo There is another CONFIGURE process running in this tree.
   echo If you believe it is not so, - delete '%MSVC_PRJ%%PTB_RUNNING%' file
   echo ******************************************************************************
   goto return_error
 )
-echo ptb_running > %MSVC_PRJ%%PTB_RUNNING%
+echo ptb_running > "%MSVC_PRJ%%PTB_RUNNING%"
 goto done
 
 
 :do_OFF
-if exist %MSVC_PRJ%%PTB_RUNNING% (
-  del %MSVC_PRJ%%PTB_RUNNING%
+if exist "%MSVC_PRJ%%PTB_RUNNING%" (
+  del "%MSVC_PRJ%%PTB_RUNNING%"
 )
 goto done
 
