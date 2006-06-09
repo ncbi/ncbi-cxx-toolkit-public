@@ -1353,9 +1353,22 @@ void CCgiRequest::Deserialize(CNcbiIstream& is, TFlags flags)
 }
 
 
+const string& CCgiRequest::GetSessionId(void) const
+{
+    _ASSERT(m_Session);
+    try {
+        return m_Session->GetId();
+    } catch (CCgiSessionException& ex) {
+        if (ex.GetErrCode() != CCgiSessionException::eSessionId) {
+            NCBI_RETHROW(ex, CCgiSessionException, eImplException, 
+                         "Session implementaion error");
+        }
+    }
+    return kEmptyStr;
+}
+
 CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
 {
-
     _ASSERT(m_Session);
     try {
         m_Session->Load();
@@ -1423,6 +1436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2006/06/09 14:30:25  golikov
+ * GetSessionId
+ *
  * Revision 1.107  2006/06/08 19:23:09  grichenk
  * Include POST data into request start logging.
  * Allow to exclude some arguments from the output.

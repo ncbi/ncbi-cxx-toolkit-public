@@ -663,7 +663,11 @@ public:
         eCreateIfNotExist,
         eDontCreateIfNotExist
     };
-    /// Get session
+
+    /// Get session id only NO LOAD!!!
+    ///
+    const string& GetSessionId(void) const;
+    /// Get session (load)
     ///
     CCgiSession& GetSession(ESessionCreateMode mode = eCreateIfNotExist) const;
 
@@ -942,6 +946,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.85  2006/06/09 14:25:27  golikov
+* GetSessionId
+*
 * Revision 1.84  2006/06/08 19:23:09  grichenk
 * Include POST data into request start logging.
 * Allow to exclude some arguments from the output.
