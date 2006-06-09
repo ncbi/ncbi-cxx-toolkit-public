@@ -70,7 +70,7 @@ const string& CCgiSession::GetId() const
         const_cast<CCgiSession*>(this)->m_SessionId = x_RetrieveSessionId();
         if (m_SessionId.empty())
             NCBI_THROW(CCgiSessionException, eSessionId,
-                       "SessioId can not be retrieved from the cgi request");
+                       "SessionId can not be retrieved from the cgi request");
     }
     return m_SessionId;
 }
@@ -193,20 +193,18 @@ string CCgiSession::x_RetrieveSessionId() const
 {
     if (m_CookieSupport == eUseCookie) {
         const CCgiCookies& cookies = m_Request.GetCookies();
-        const CCgiCookie* cookie = cookies.Find(m_SessionIdName, "", ""); 
+        const CCgiCookie* cookie = cookies.Find(m_SessionIdName, kEmptyStr, kEmptyStr); 
 
         if (cookie) {
-            GetDiagContext().SetProperty("session_id", cookie->GetValue());
             return cookie->GetValue();
         }
     }
     bool is_found = false;
     const CCgiEntry& entry = m_Request.GetEntry(m_SessionIdName, &is_found);
     if (is_found) {
-        GetDiagContext().SetProperty("session_id", entry.GetValue());
         return entry.GetValue();
     }
-    return "";
+    return kEmptyStr;
 }
 
 void CCgiSession::x_Load() const
@@ -224,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/09 14:31:05  golikov
+ * typo; removed diag interaction
+ *
  * Revision 1.6  2006/06/08 16:54:13  didenko
  * Modified the expiration date for a deleted cgi session
  *
