@@ -1,7 +1,8 @@
 # $Id$
 
 LIB_PROJ = dbapi_driver
-SUB_PROJ = samples ctlib ftds63 dblib msdblib ftds8 mysql odbc util
+SUB_PROJ = samples ctlib ftds63 dblib msdblib ftds8 mysql odbc sqlite3 util \
+		   test_dll
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
