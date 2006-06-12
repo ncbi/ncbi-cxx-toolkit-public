@@ -2798,11 +2798,18 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                          (Boolean) (ext_params->options->ePrelimGapExt == 
                                     eGreedyWithTracebackExt));
          } else {
-            /*  Start the gapped alignment on the fourth character of the
-             *  eight character word that seeded the alignment; the start
-             *  is included in the leftward extension. */
-            init_hsp->offsets.qs_offsets.s_off += 3;
-            init_hsp->offsets.qs_offsets.q_off += 3;
+            /*  Assuming the ungapped alignment is long enough to
+                contain an 8-letter seed of exact matches, start 
+                the gapped alignment inside the first byte of the 
+                seed that contains all matches. Note that even if 
+                the ungapped alignment is not long enough, 
+                s_BlastDynProgNtGappedAlignment will still round 
+                the start point up to the first 4-base boundary 
+                on the subject sequence */
+            if (s_end >= init_hsp->offsets.qs_offsets.s_off + 8) {
+               init_hsp->offsets.qs_offsets.s_off += 3;
+               init_hsp->offsets.qs_offsets.q_off += 3;
+            }
             status = s_BlastDynProgNtGappedAlignment(&query_tmp, subject, 
                          gap_align, score_params, init_hsp);
          }
