@@ -2048,6 +2048,28 @@ void x_PushRange(CSeq_loc& dst,
             dst.SetEmpty().Assign(*idh.GetSeqId());
         }
     }
+    else if ( rg.GetLength() == 1 ) {
+        // Preserve points
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*idh.GetSeqId());
+        CRef<CSeq_point> pnt(new CSeq_point);
+        pnt->SetId(*id);
+        pnt->SetPoint(rg.GetFrom());
+        if (strand != eNa_strand_unknown) {
+            pnt->SetStrand(strand);
+        }
+        if ( rg.IsSetFuzzFrom() ) {
+            pnt->SetFuzz().Assign(rg.GetFuzzFrom());
+        }
+        if (dst.IsMix()) {
+            CRef<CSeq_loc> pnt_loc(new CSeq_loc);
+            pnt_loc->SetPnt(*pnt);
+            dst.SetMix().Set().push_back(pnt_loc);
+        }
+        else {
+            dst.SetPnt(*pnt);
+        }
+    }
     else {
         CRef<CSeq_id> id(new CSeq_id);
         id->Assign(*idh.GetSeqId());
@@ -2585,6 +2607,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.60  2006/06/12 20:04:21  grichenk
+ * Preserve Seq-points in Merge().
+ *
  * Revision 6.59  2006/03/16 18:58:30  grichenk
  * Indicate intervals truncated while mapping by fuzz lim tl/tr.
  *
