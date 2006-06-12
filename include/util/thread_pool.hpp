@@ -137,7 +137,7 @@ public:
     /// @param max_size
     ///   The maximum size of the queue (may not be zero!)
     CBlockingQueue(size_t max_size = kMax_UInt)
-        : m_GetSem(0,1), m_PutSem(1,1), m_HungerSem(0, kMax_Int),
+        : m_GetSem(0,1), m_PutSem(1,1), m_HungerSem(0,1), m_HungerCnt(0),
           m_MaxSize(min(max_size, size_t(0xFFFFFF))),
           m_RequestCounter(0xFFFFFF)
         { _ASSERT(max_size > 0); }
@@ -260,8 +260,9 @@ protected:
     volatile TRealQueue m_Queue;     ///< The queue
     CSemaphore          m_GetSem;    ///< Raised if the queue contains data
     mutable CSemaphore  m_PutSem;    ///< Raised if the queue has room
-    mutable CSemaphore  m_HungerSem; ///< Raised if Get has to wait
+    mutable CSemaphore  m_HungerSem; ///< Raised if Get[Handle] has to wait
     mutable CMutex      m_Mutex;     ///< Guards access to queue
+    size_t              m_HungerCnt; ///< Number of threads waiting for data
 
 private:
     size_t              m_MaxSize;        ///< The maximum size of the queue
@@ -286,8 +287,8 @@ public:
 
     /// Thread run mode 
     enum ERunMode {
-        eNormal,   /// Process request and stay in the pool
-        eRunOnce   /// Process request and die
+        eNormal,   ///< Process request and stay in the pool
+        eRunOnce   ///< Process request and die
     };
 
     /// Constructor
@@ -327,8 +328,8 @@ private:
     virtual void* Main(void);
     virtual void OnExit(void);
 
-    TPool*   m_Pool;     /// A pool that holds this thread
-    ERunMode m_RunMode;  /// A running mode
+    TPool*   m_Pool;     ///< The pool that holds this thread
+    ERunMode m_RunMode;  ///< How long to keep running
 
 };
 
@@ -374,7 +375,7 @@ public:
     /// Start processing threads
     ///
     /// @param num_threads
-    ///    A number of threads to start
+    ///    The number of threads to start
     void Spawn(unsigned int num_threads);
 
     /// Put a request in the queue with a given priority
@@ -382,7 +383,7 @@ public:
     /// @param request
     ///   A request
     /// @param priority
-    ///   A priority of the request. The higher the priority 
+    ///   The priority of the request. The higher the priority 
     ///   the sooner the request will be processed.   
     TItemHandle AcceptRequest(const TRequest& request,
                               TUserPriority priority = 0,
@@ -433,7 +434,7 @@ protected:
     /// Create a new thread
     ///
     /// @param mode
-    ///   A thread's running mode
+    ///   How long the thread should stay around
     virtual TThread* NewThread(ERunMode mode) = 0;
 
     /// Register a thread. It is called by TThread::Main.
@@ -624,22 +625,16 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
         if (timeout_nsec >= (unsigned long)kMax_Long) {
             timeout_nsec = kMax_Long;
         }
-        CTime     start(CTime::eCurrent, CTime::eGmt);
-        CTimeSpan span (min((long)timeout_sec,
-                            kMax_Long - (long)timeout_nsec / 1000000000),
-                        timeout_nsec);
+        CTimeSpan span(min((long)timeout_sec,
+                           kMax_Long - (long)timeout_nsec / 1000000000L),
+                       timeout_nsec);
         while (span.GetSign() == ePositive  &&  q.size() == m_MaxSize) {
+            CTime start(CTime::eCurrent, CTime::eGmt);
             // Temporarily release the mutex while waiting, to avoid deadlock.
-            // See WaitForRoom's comments for more details.
             guard.Release();
-            if (m_PutSem.TryWait(span.GetCompleteSeconds(),
-                                 span.GetNanoSecondsAfterSecond())) {
-                guard.Guard(m_Mutex);
-                m_PutSem.TryWait();
-                m_PutSem.Post();
-            } else {
-                guard.Guard(m_Mutex);
-            }
+            m_PutSem.TryWait(span.GetCompleteSeconds(),
+                             span.GetNanoSecondsAfterSecond());
+            guard.Guard(m_Mutex);
             span -= CurrentTime(CTime::eGmt) - start;
         }
         if (q.size() == m_MaxSize) {
@@ -648,6 +643,7 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
                        "attempt to insert into a full queue");
         }
     } else if (q.empty()) {
+        m_GetSem.TryWait(); // sometimes needed per DiCuccio's report (!)
         m_GetSem.Post();
     }
     if (m_RequestCounter == 0) {
@@ -657,15 +653,14 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
             val.m_Priority = (val.m_Priority & 0xFF000000) | m_RequestCounter--;
         }
     }
-    /// Structure of the internal priority
-    /// The highest byte is a user specified priory,
-    /// the next 3 bytes are a counter which insures that 
-    /// requests with the same user's priority are processed 
+    /// Structure of the internal priority:
+    /// The highest byte is a user specified priority;
+    /// the other three bytes are a counter which ensures that 
+    /// requests with the same user-specified priority are processed 
     /// in FIFO order
     TPriority real_priority = (priority << 24) | m_RequestCounter--;
     TItemHandle handle(new CQueueItem(real_priority, data));
     q.insert(handle);
-    m_HungerSem.TryWait();
     if (q.size() == m_MaxSize) {
         m_PutSem.TryWait();
     }
@@ -681,8 +676,8 @@ void CBlockingQueue<TRequest>::WaitForRoom(unsigned int timeout_sec,
     if (m_PutSem.TryWait(timeout_sec, timeout_nsec)) {
         // We couldn't acquire the mutex previously without risk of
         // deadlock, so we acquire it now and ensure that the
-        // semaphore's still down before attempting to raise it, to
-        // prevent races with Get().
+        // semaphore's still down before attempting to reraise it, to
+        // prevent races with Get[Handle]().
         CMutexGuard guard(m_Mutex);
         m_PutSem.TryWait();
         m_PutSem.Post();
@@ -698,6 +693,7 @@ void CBlockingQueue<TRequest>::WaitForHunger(unsigned int timeout_sec,
 {
     if (m_HungerSem.TryWait(timeout_sec, timeout_nsec)) {
         CMutexGuard guard(m_Mutex);
+        m_HungerSem.TryWait(); // ensure it's still down, a la WaitForRoom
         m_HungerSem.Post();
     } else {
         NCBI_THROW(CBlockingQueueException, eTimedOut,
@@ -711,22 +707,45 @@ typename CBlockingQueue<TRequest>::TItemHandle
 CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
                                     unsigned int timeout_nsec)
 {
-    if ( !m_GetSem.TryWait() ) {
-        // nothing available at present
-        m_HungerSem.Post();
-        if ( !m_GetSem.TryWait(timeout_sec, timeout_nsec) ) {
-            m_HungerSem.TryWait();
-            NCBI_THROW(CBlockingQueueException, eTimedOut,
-                       "CBlockingQueue<>::Get[Handle]: timed out");        
-        }
-    }
-
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
+
+    if (q.empty()) {
+        ++m_HungerCnt;
+        m_HungerSem.TryWait();
+        m_HungerSem.Post();
+        if (timeout_nsec >= (unsigned long)kMax_Long) {
+            timeout_nsec = kMax_Long;
+        }
+        CTimeSpan span(min((long)timeout_sec,
+                           kMax_Long - (long)timeout_nsec / 1000000000L),
+                       timeout_nsec);
+        while (span.GetSign() == ePositive  &&  q.empty()) {
+            CTime start(CTime::eCurrent, CTime::eGmt);
+            // Temporarily release the mutex while waiting, to avoid deadlock.
+            guard.Release();
+            m_GetSem.TryWait(span.GetCompleteSeconds(),
+                             span.GetNanoSecondsAfterSecond());
+            guard.Guard(m_Mutex);
+            span -= CurrentTime(CTime::eGmt) - start;
+        }
+        if (q.empty()) {
+            if (--m_HungerCnt == 0) {
+                m_HungerSem.TryWait(); // give up
+            }
+            NCBI_THROW(CBlockingQueueException, eTimedOut,
+                       "CBlockingQueue<>::Get[Handle]: timed out");
+        }
+    }
+    if (--m_HungerCnt == 0) {
+        m_HungerSem.TryWait();
+    }
+
     TItemHandle handle(*q.begin());
     q.erase(q.begin());
     if ( ! q.empty() ) {
+        m_GetSem.TryWait();
         m_GetSem.Post();
     }
 
@@ -1013,6 +1032,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2006/06/12 20:31:44  ucko
+* More fixes to CBlockingQueue<>'s logic, largely per Mike DiCuccio's
+* recent report that race conditions still exist.
+* Minor documentation cleanups.
+*
 * Revision 1.39  2006/05/24 15:08:12  ucko
 * CBlockingQueue<>::{GetHandle,Withdraw}: take care not to call
 * CQueueItem::x_SetStatus with m_Mutex locked, as that can lead to
