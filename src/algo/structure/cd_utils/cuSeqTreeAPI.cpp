@@ -46,7 +46,7 @@ BEGIN_SCOPE(cd_utils)
 SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly)
 	: m_ma(), m_seqTree(0), m_useMembership(true),
 	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false),
-	m_loadOnly(loadExistingTreeOnly), m_cd(0)
+	m_loadOnly(loadExistingTreeOnly), m_cd(0), m_taxClient(0)
 {
 	vector<CDFamily> families;
 	CDFamily::createFamilies(cds, families);
@@ -211,11 +211,11 @@ void SeqTreeAPI::annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node)
 {
 	if (m_useMembership)
 	{
-		if (!nodeData.membership.empty())
+		/*if (!nodeData.membership.empty() && m_loadOnly)
 		{
 			node.annotation = nodeData.membership;
-		}
-		else if ((m_ma.GetNumRows() > 0))
+		}*/
+		if ((m_ma.GetNumRows() > 0))
 		{
 			CCdCore* cd = m_ma.GetScopedLeafCD(nodeData.rowID);
 			if (cd)
@@ -224,7 +224,12 @@ void SeqTreeAPI::annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node)
 			}
 		}
 		else if (m_cd)
-			node.annotation = m_cd->GetAccession();
+		{
+			if (!nodeData.membership.empty())
+				node.annotation = nodeData.membership;
+			else
+				node.annotation = m_cd->GetAccession();
+		}
 	}
 	else
 	{
@@ -327,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2006/06/12 18:29:33  cliu
+ * refill membership annotations.
+ *
  * Revision 1.10  2006/05/18 20:00:59  cliu
  * To enable read-only SeqTreeAPI
  *
