@@ -1,0 +1,7 @@
+# $Id$
+
+LIB_PROJ = ncbi_xdbapi_sqlite3
+SUB_PROJ = samples
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
