@@ -91,71 +91,50 @@ CSL3Context::MakeIConnection(const SConnAttr& conn_attr)
 // DriverManager related functions
 //
 
-static I_DriverContext* MYSQL_CreateContext(const map<string,string>* /*attr*/)
+static I_DriverContext* SQLite3_CreateContext(const map<string,string>* /*attr*/)
 {
     return new CSL3Context();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-const string kDBAPI_MYSQL_DriverName("mysql");
+const string kDBAPI_SQLite3_DriverName("sqlite3");
 
-class CDbapiMySqlCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CSL3Context>
+class CDbapiSQLite3CF2 : public CSimpleClassFactoryImpl<I_DriverContext, CSL3Context>
 {
 public:
     typedef CSimpleClassFactoryImpl<I_DriverContext, CSL3Context> TParent;
 
 public:
-    CDbapiMySqlCF2(void);
-    ~CDbapiMySqlCF2(void);
+    CDbapiSQLite3CF2(void);
+    ~CDbapiSQLite3CF2(void);
 
 };
 
-CDbapiMySqlCF2::CDbapiMySqlCF2(void)
-    : TParent( kDBAPI_MYSQL_DriverName, 0 )
+CDbapiSQLite3CF2::CDbapiSQLite3CF2(void)
+    : TParent( kDBAPI_SQLite3_DriverName, 0 )
 {
     return ;
 }
 
-CDbapiMySqlCF2::~CDbapiMySqlCF2(void)
+CDbapiSQLite3CF2::~CDbapiSQLite3CF2(void)
 {
     return ;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-NCBI_EntryPoint_xdbapi_mysql(
+NCBI_EntryPoint_xdbapi_sqlite3(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CDbapiMySqlCF2>::NCBI_EntryPointImpl( info_list, method );
+    CHostEntryPointImpl<CDbapiSQLite3CF2>::NCBI_EntryPointImpl( info_list, method );
 }
 
-NCBI_DBAPIDRIVER_MYSQL_EXPORT
+NCBI_DBAPIDRIVER_SQLITE3_EXPORT
 void
-DBAPI_RegisterDriver_MYSQL(void)
+DBAPI_RegisterDriver_SQLITE3(void)
 {
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_mysql );
-}
-
-///////////////////////////////////////////////////////////////////////////////
-NCBI_DBAPIDRIVER_MYSQL_EXPORT
-void DBAPI_RegisterDriver_MYSQL(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("mysql", MYSQL_CreateContext);
-    DBAPI_RegisterDriver_MYSQL();
-}
-
-void DBAPI_RegisterDriver_MYSQL_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_MYSQL(mgr);
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_MYSQL_EXPORT
-    void* DBAPI_E_mysql()
-    {
-        return (void*) DBAPI_RegisterDriver_MYSQL_old;
-    }
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_sqlite3 );
 }
 
 
@@ -166,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/12 21:25:19  ssikorsk
+ * Fixed registration of a driver.
+ *
  * Revision 1.1  2006/06/12 20:30:51  ssikorsk
  * Initial version
  *
