@@ -1414,7 +1414,7 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                              const SPHIQueryInfo    * pattern_info)
 {
     TSeqAlignVector retval;
- //   CRef<CSeq_align_set> wrap_list(new CSeq_align_set());
+    CRef<CSeq_align_set> wrap_list(new CSeq_align_set());
 
     /* Split results into an array of BlastHSPResults structures corresponding
        to different pattern occurrences. */
@@ -1443,24 +1443,20 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                                               true,
                                               false));
                 
-                retval.push_back(seq_aligns);
-
                 // Wrap this Seq-align-set in a discontinuous Seq-align and 
                 // attach it to the final Seq-align-set.
-/*
                 CRef<CSeq_align> wrap_align(new CSeq_align());
                 wrap_align->SetType(CSeq_align::eType_partial);
                 wrap_align->SetDim(2); // Always a pairwise alignment
                 wrap_align->SetSegs().SetDisc(*seq_aligns);
                 wrap_list->Set().push_back(wrap_align);
-*/
             }
         }
         sfree(phi_results);
     }
     
     // Put the final Seq-align-set into the vector
-    // retval.push_back(wrap_list);
+    retval.push_back(wrap_list);
 
     return retval;
 }
@@ -1694,6 +1690,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2006/06/12 17:22:47  madden
+* Undo accidental commit
+*
 * Revision 1.70  2006/06/12 17:17:16  madden
 * Remove [GS]etMatrixPath
 *
