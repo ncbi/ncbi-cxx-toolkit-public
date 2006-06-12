@@ -226,28 +226,31 @@ FindPolyTail(objects::CSeqVector_CI begin, objects::CSeqVector_CI end,
 }
 
 
-#if 0   // yields uncompilable code
-
 %{
 #include <algo/phy_tree/bio_tree.hpp>
 #include <algo/phy_tree/bio_tree_conv.hpp>
 %}
-
-%include algo/phy_tree/bio_tree.hpp
+#define ALGO_PHY_TREE___BIO_TREE__HPP
+//%include algo/phy_tree/bio_tree.hpp
 %include algo/phy_tree/bio_tree_conv.hpp
 
-%template(CBioTreeDynamic)
-    ncbi::CBioTree<ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,
-                                         ncbi::CBioTreeFeatureList> >;
+//%template(CBioTreeDynamic)
+//    ncbi::CBioTree<ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,
+//                                         ncbi::CBioTreeFeatureList> >;
 %template(TTreeNode)
     ncbi::CTreeNode<ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,
                                           ncbi::CBioTreeFeatureList> >;
 %template(TBioTreeBaseNode) ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,
                                                   ncbi::CBioTreeFeatureList>;
 namespace ncbi {
+    class CBioTreeDynamic
+    {
+    };
     void BioTreeConvertContainer2Dynamic
     (CBioTreeDynamic& dyn_tree, 
      const objects::CBioTreeContainer& tree_container);
+    void BioTreeConvert2Container(objects::CBioTreeContainer& tree_container,
+                                  const CBioTreeDynamic& dyn_tree);
 }
 
 %ignore ncbi::CTreeNode<ncbi::CPhyNodeData>::RemoveAllSubNodes;
@@ -276,12 +279,14 @@ public:
         cout << *self;
     }
 }
-#endif
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/06/12 14:54:32  jcherry
+ * Enable wrapping of some tree-related things
+ *
  * Revision 1.14  2005/12/15 20:31:24  jcherry
  * Added headers
  *
