@@ -30,7 +30,7 @@
  *
  */
 
-/// @file seqdb_expert.hpp
+/// @file seqdbexpert.hpp
 /// Defines `expert' version of CSeqDB interfaces.
 ///
 /// Defines classes:
@@ -114,6 +114,27 @@ public:
     /// any gotten by the GetSequence() call, whether or not they have
     /// been returned by RetSequence().
     ~CSeqDBExpert();
+    
+    /// Raw Sequence and Ambiguity Data
+    ///
+    /// Get a pointer to the raw sequence and ambiguity data, and the
+    /// length of each.  The encoding for these is not defined here
+    /// and should not be relied on to be compatible between different
+    /// database format versions.  NULL can be supplied for parameters
+    /// that are not needed (except oid).  RetSequence() must be
+    /// called with the pointer returned by 'buffer' if and only if
+    /// that pointer is supplied as non-null by the user.  Protein
+    /// sequences will never have ambiguity data.  Ambiguity data will
+    /// be packed in the returned buffer at offset *seq_length.
+    ///
+    /// @param oid Ordinal id of the sequence.
+    /// @param buffer Buffer of raw data.
+    /// @param seq_length Returned length of the sequence data.
+    /// @param seq_length Returned length of the ambiguity data.
+    void GetRawSeqAndAmbig(int           oid,
+                           const char ** buffer,
+                           int         * seq_length,
+                           int         * ambig_length) const;
 };
 
 END_NCBI_SCOPE
