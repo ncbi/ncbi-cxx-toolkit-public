@@ -1100,5 +1100,30 @@ void CSeqDBImpl::GetTotals(ESummaryType   sumtype,
     }
 }
 
+void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
+                                   const char ** buffer,
+                                   int         * seq_length,
+                                   int         * ambig_length) const
+{
+    CHECK_MARKER();
+    
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    int vol_oid = 0;
+    
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        vol->GetRawSeqAndAmbig(vol_oid,
+                               buffer,
+                               seq_length,
+                               ambig_length,
+                               locked);
+        
+        return;
+    }
+    
+    NCBI_THROW(CSeqDBException, eArgErr, "OID not in valid range.");
+}
+
 END_NCBI_SCOPE
 

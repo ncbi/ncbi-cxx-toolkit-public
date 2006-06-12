@@ -2096,5 +2096,65 @@ CSeqDBVol::GetSeqData(int              oid,
     return seq_data;
 }
 
+void
+CSeqDBVol::GetRawSeqAndAmbig(int              oid,
+                             const char    ** buffer,
+                             int            * seq_length,
+                             int            * amb_length,
+                             CSeqDBLockHold & locked) const
+{
+    if (seq_length)
+        *seq_length = 0;
+    
+    if (amb_length)
+        *amb_length = 0;
+    
+    if (buffer)
+        *buffer = 0;
+    
+    TIndx start_S = 0;
+    TIndx end_S   = 0;
+    TIndx start_A = 0;
+    TIndx end_A   = 0;
+    
+    m_Atlas.Lock(locked);
+    
+    m_Idx.GetSeqStartEnd(oid, start_S, end_S);
+    bool amb_ok = true;
+    
+    if (m_IsAA) {
+        // No ambiguities in protein dbs.
+        end_A = start_A = end_S;
+    } else {
+        amb_ok = m_Idx.GetAmbStartEnd(oid, start_A, end_A);
+    }
+    
+    int s_len = int(end_S - start_S);
+    int a_len = int(end_A - start_A);
+    
+    if (! (s_len && amb_ok)) {
+        NCBI_THROW(CSeqDBException, eFileErr,
+                   "File error: could not get sequence data.");
+    }
+    
+    if (amb_length) {
+        *amb_length = a_len;
+    }
+    
+    if (seq_length) {
+        *seq_length = s_len;
+    }
+    
+    if (buffer) {
+        *buffer = m_Seq.GetRegion(start_S, end_A, true, locked);
+    }
+    
+    if (((buffer && *buffer) || a_len) && (! *seq_length)) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "OID not in valid range.");
+    }
+}
+
 END_NCBI_SCOPE
 

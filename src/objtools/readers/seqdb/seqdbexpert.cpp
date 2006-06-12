@@ -62,5 +62,15 @@ CSeqDBExpert::~CSeqDBExpert()
 {
 }
 
+void CSeqDBExpert::GetRawSeqAndAmbig(int           oid,
+                                     const char ** buf,
+                                     int         * seq_length,
+                                     int         * ambig_length) const
+{
+    m_Impl->Verify();
+    m_Impl->GetRawSeqAndAmbig(oid, buf, seq_length, ambig_length);
+    m_Impl->Verify();
+}
+
 END_NCBI_SCOPE
 
