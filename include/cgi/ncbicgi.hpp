@@ -660,14 +660,12 @@ public:
     TCgiIndexes& GetIndexes(void);
 
     enum ESessionCreateMode {
-        eCreateIfNotExist,
-        eDontCreateIfNotExist
+        eCreateIfNotExist,     ///< If Session does not exist the new one will be created    
+        eDontCreateIfNotExist, ///< If Session does not exist the exception will be thrown
+        eDontLoad              ///< Do not try to load or create session
     };
 
-    /// Get session id only NO LOAD!!!
-    ///
-    const string& GetSessionId(void) const;
-    /// Get session (load)
+    /// Get session
     ///
     CCgiSession& GetSession(ESessionCreateMode mode = eCreateIfNotExist) const;
 
@@ -946,6 +944,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.86  2006/06/12 18:44:34  didenko
+* Fixed cgi sessionid logging
+*
 * Revision 1.85  2006/06/09 14:25:27  golikov
 * GetSessionId
 *

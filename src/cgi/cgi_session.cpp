@@ -67,7 +67,7 @@ CCgiSession::~CCgiSession()
 const string& CCgiSession::GetId() const
 {
     if (m_SessionId.empty()) {
-        const_cast<CCgiSession*>(this)->m_SessionId = x_RetrieveSessionId();
+        const_cast<CCgiSession*>(this)->m_SessionId = RetrieveSessionId();
         if (m_SessionId.empty())
             NCBI_THROW(CCgiSessionException, eSessionId,
                        "SessionId can not be retrieved from the cgi request");
@@ -84,6 +84,7 @@ void CCgiSession::SetId(const string& id)
         m_Status = eNotLoaded;
     }
     m_SessionId = id;
+    GetDiagContext().SetProperty("session_id", m_SessionId);
 }
 
 void CCgiSession::Load()
@@ -109,6 +110,7 @@ void CCgiSession::CreateNewSession()
         NCBI_THROW(CCgiSessionException, eImplNotSet,
                    "The session implemetatin is not set");
     m_SessionId = m_Impl->CreateNewSession();
+    GetDiagContext().SetProperty("session_id", m_SessionId);
     m_Status = eNew;
 }
 
@@ -152,12 +154,13 @@ void CCgiSession::RemoveAttribute(const string& name)
 void CCgiSession::DeleteSession()
 {
     if (m_SessionId.empty()) {
-        m_SessionId = x_RetrieveSessionId();
+        m_SessionId = RetrieveSessionId();
         if (m_SessionId.empty())
             return;
     }
     Load();
     m_Impl->DeleteSession();
+    GetDiagContext().SetProperty("session_id", kEmptyStr);;
     m_Status = eDeleted;
 }
 
@@ -189,7 +192,7 @@ const CCgiCookie * const CCgiSession::GetSessionCookie() const
     return m_SessionCookie.get();
 }
 
-string CCgiSession::x_RetrieveSessionId() const
+string CCgiSession::RetrieveSessionId() const
 {
     if (m_CookieSupport == eUseCookie) {
         const CCgiCookies& cookies = m_Request.GetCookies();
@@ -222,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/06/12 18:44:34  didenko
+ * Fixed cgi sessionid logging
+ *
  * Revision 1.7  2006/06/09 14:31:05  golikov
  * typo; removed diag interaction
  *

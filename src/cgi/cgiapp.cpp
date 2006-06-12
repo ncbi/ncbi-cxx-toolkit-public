@@ -515,7 +515,8 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             GetDiagContext().SetProperty("client_ip",
                 req.GetProperty(eCgi_RemoteAddr));
             GetDiagContext().SetProperty("session_id",
-                req.GetSessionId());
+                                         req.GetSession(CCgiRequest::eDontLoad)
+                                               .RetrieveSessionId());
 
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
@@ -1087,6 +1088,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.75  2006/06/12 18:44:34  didenko
+* Fixed cgi sessionid logging
+*
 * Revision 1.74  2006/06/09 14:31:24  golikov
 * set/reset sesion_id
 *

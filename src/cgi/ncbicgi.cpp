@@ -1353,36 +1353,24 @@ void CCgiRequest::Deserialize(CNcbiIstream& is, TFlags flags)
         x_ProcessInputStream(flags, &is, -1);
 }
 
-
-const string& CCgiRequest::GetSessionId(void) const
-{
-    _ASSERT(m_Session);
-    try {
-        return m_Session->GetId();
-    } catch (CCgiSessionException& ex) {
-        if (ex.GetErrCode() != CCgiSessionException::eSessionId) {
-            NCBI_RETHROW(ex, CCgiSessionException, eImplException, 
-                         "Session implementaion error");
-        }
-    }
-    return kEmptyStr;
-}
-
 CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
 {
     _ASSERT(m_Session);
+    if (mode == eDontLoad)
+        return *m_Session;
+
     try {
         m_Session->Load();
     } catch (CCgiSessionException& ex) {
         if (ex.GetErrCode() != CCgiSessionException::eSessionId) {
             NCBI_RETHROW(ex, CCgiSessionException, eImplException, 
-                         "Session implementaion error");
+                         "Session implementation error");
         }
     }
     if (m_Session->GetStatus() != CCgiSession::eLoaded) {
         if (mode != eCreateIfNotExist)
             NCBI_THROW(CCgiSessionException, eSessionDoesnotExist, 
-                       "Session doesnot exist.");
+                       "Session doesn't exist.");
         else
             m_Session->CreateNewSession();
     }
@@ -1427,6 +1415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.111  2006/06/12 18:44:34  didenko
+ * Fixed cgi sessionid logging
+ *
  * Revision 1.110  2006/06/09 19:28:25  golikov
  * args str may have empty_name=val
  *

@@ -187,7 +187,10 @@ public:
     ///  Session CGI cookie; 
     ///  NULL if no session is loaded or if cookie support is disabled.
     const CCgiCookie* const GetSessionCookie(void) const;
-    
+
+    /// Retrieve a session id from a query string or a session cookie
+    string RetrieveSessionId() const;
+
 private:
     const CCgiRequest& m_Request;
     ICgiSessionStorage* m_Impl;
@@ -203,7 +206,6 @@ private:
     auto_ptr<CCgiCookie> m_SessionCookie;
     EStatus m_Status;
 
-    string x_RetrieveSessionId() const;
     void x_Load() const;
 private:
     CCgiSession(const CCgiSession&);
@@ -329,6 +331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/12 18:44:34  didenko
+ * Fixed cgi sessionid logging
+ *
  * Revision 1.6  2006/06/08 15:58:10  didenko
  * Added possibility to set an expiration date for a session cookie
  *
