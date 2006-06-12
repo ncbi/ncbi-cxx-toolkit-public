@@ -191,7 +191,9 @@ bool CNetBVStoreClient::CheckConnect()
             } else {
                 return CheckConnect();
             }
-        }
+        } else {
+			return false; // presumably, we are connected
+		}
     }
     if (!m_Host.empty()) { // we can restore connection
         CSocketAPI::SetReuseAddress(eOn);
@@ -238,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/12 19:53:43  kuznets
+ * fixed bug with reconnection
+ *
  * Revision 1.4  2006/06/07 16:19:36  kuznets
  * code cleanup
  *
