@@ -97,8 +97,8 @@ namespace std {
     class string {
     public:
         // Used by some functions
-        // System-dependent, but hopefully long will suffice
-        typedef long size_type;  
+        // System-dependent, but hopefully unsigned long will suffice
+        typedef unsigned long size_type;  
                     
         string(void);
         string(const string& rhs);
@@ -116,6 +116,9 @@ namespace std {
             }
         }
         void erase(void);
+        string substr() const;
+        string substr(size_type start) const;
+        string substr(size_type start, size_type length) const;
 
         %extend {
             char __getitem__(int i) {
@@ -186,6 +189,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/12 13:58:34  jcherry
+ * Added string::substr.  Use unsigned long for size_type.
+ *
  * Revision 1.4  2005/08/18 22:01:49  jcherry
  * Wrap more std::string constructors
  *
