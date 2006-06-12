@@ -55,6 +55,8 @@ html/writer_htmlenc.hpp
 
 cgi/caf.hpp
 cgi/cgi_exception.hpp
+cgi/cgi_util.hpp
+cgi/cgi_session.hpp
 cgi/cgi_serial.hpp
 cgi/cgiapp.hpp
 cgi/cgictx.hpp
@@ -74,6 +76,9 @@ misc/cgi_redirect/redirect.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/12 13:59:04  jcherry
+ * Added headers
+ *
  * Revision 1.5  2005/08/03 14:57:10  jcherry
  * Added headers
  *
