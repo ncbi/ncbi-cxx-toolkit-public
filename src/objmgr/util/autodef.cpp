@@ -750,6 +750,8 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
         unsigned int stop = mapped_loc.GetStop(eExtreme_Positional);
         // unless it's a gene, don't use it unless it ends in the sequence we're looking at
         if ((subtype == CSeqFeatData::eSubtype_gene 
+             || subtype == CSeqFeatData::eSubtype_mRNA
+             || subtype == CSeqFeatData::eSubtype_cdregion
              || (stop >= range.GetFrom() && stop <= range.GetTo()))
             && !x_IsFeatureSuppressed(cf.GetData().GetSubtype())) {
             new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
@@ -851,6 +853,11 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
         main_clause.SuppressTransposonAndInsertionSequenceSubfeatures();
     }
 
+    // if this is a segment, remove genes, mRNAs, and CDSs
+    // unless they end on this segment or have subclauses that need their protein/gene
+    // information
+    main_clause.RemoveNonSegmentClauses(range);
+    
     main_clause.Label();
 
     if (!m_SuppressAltSplicePhrase) {
@@ -1129,6 +1136,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2006/06/12 15:43:18  bollin
+* coding region, gene, and mRNA features are needed for their protein/gene
+* information on segment definition lines, but should not be listed unless the
+* feature itself ends on the segment.
+*
 * Revision 1.20  2006/06/07 19:17:10  bollin
 * removed unused variable
 *

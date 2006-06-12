@@ -751,7 +751,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         // label any subclauses
         if (m_ClauseList.size() > 0) {
             bool suppress_final_and = false;
-            if (subtype == CSeqFeatData::eSubtype_cdregion || m_ClauseInfoOnly) {
+            if (subtype == CSeqFeatData::eSubtype_cdregion && !m_ClauseInfoOnly) {
                 suppress_final_and = true;
             }
         
@@ -760,7 +760,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
             // create subclause list for interval
             interval += ListClauses(false, suppress_final_and);
             
-            if (subtype == CSeqFeatData::eSubtype_cdregion) {
+            if (subtype == CSeqFeatData::eSubtype_cdregion && !m_ClauseInfoOnly) {
                 if (utr3 != NULL) {
                     interval += ", ";
                 } else if (m_ClauseList.size() == 1) {
@@ -1526,6 +1526,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2006/06/12 15:43:18  bollin
+* coding region, gene, and mRNA features are needed for their protein/gene
+* information on segment definition lines, but should not be listed unless the
+* feature itself ends on the segment.
+*
 * Revision 1.19  2006/06/07 19:42:39  bollin
 * changed flags for combining locations for feature clauses.  Fixes bug in
 * naming alternately spliced coding regions in master segment definition lines.

@@ -971,6 +971,26 @@ void CAutoDefFeatureClause_Base::GroupClauses(bool gene_cluster_opp_strand)
 }
 
 
+void CAutoDefFeatureClause_Base::RemoveNonSegmentClauses(CRange<TSeqPos> range)
+{
+    bool has_remaining_subclauses = false;
+    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
+        if (m_ClauseList[k] != NULL && !m_ClauseList[k]->IsMarkedForDeletion()) {
+            m_ClauseList[k]->RemoveNonSegmentClauses(range);
+            unsigned int stop = m_ClauseList[k]->GetLocation()->GetStop(eExtreme_Positional);
+            if (stop < range.GetFrom() || stop > range.GetTo()) {
+                if (m_ClauseList[k]->GetNumSubclauses() == 0) {
+                    m_ClauseList[k]->MarkForDeletion();
+                } else {
+                    m_ClauseList[k]->SetInfoOnly(true);
+                }
+            }
+        }
+    }
+    RemoveDeletedSubclauses();
+}
+
+
 string CAutoDefFeatureClause_Base::FindGeneProductName(CAutoDefFeatureClause_Base *gene_clause)
 {
     if (gene_clause == NULL) {
@@ -1573,6 +1593,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2006/06/12 15:43:18  bollin
+* coding region, gene, and mRNA features are needed for their protein/gene
+* information on segment definition lines, but should not be listed unless the
+* feature itself ends on the segment.
+*
 * Revision 1.13  2006/06/07 19:20:36  bollin
 * removed compiler warning, resolved bugs in labeling of alternately spliced
 * coding regions

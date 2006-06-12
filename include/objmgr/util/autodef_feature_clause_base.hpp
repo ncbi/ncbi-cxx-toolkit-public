@@ -77,6 +77,7 @@ public:
     virtual CAutoDefFeatureClause_Base *FindBestParentClause(CAutoDefFeatureClause_Base * subclause, bool gene_cluster_opp_strand);
     
     void GroupClauses(bool gene_cluster_opp_strand);
+    void RemoveNonSegmentClauses(CRange<TSeqPos> range);
     void GroupAltSplicedExons(CBioseq_Handle bh);
 
     virtual CRef<CSeq_loc> GetLocation();
@@ -103,6 +104,7 @@ public:
     void SetMakePlural() { m_MakePlural = true; }
     bool HasmRNA() { return m_HasmRNA; }
     void SetSuppressLocusTag(bool do_suppress) { m_SuppressLocusTag = do_suppress; }
+    void SetInfoOnly (bool info_only) { m_ClauseInfoOnly = info_only; }
     void PluralizeInterval();
     void PluralizeDescription();
     
@@ -216,6 +218,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2006/06/12 15:43:22  bollin
+* coding region, gene, and mRNA features are needed for their protein/gene
+* information on segment definition lines, but should not be listed unless the
+* feature itself ends on the segment.
+*
 * Revision 1.8  2006/05/15 12:03:23  bollin
 * changes to handle segmented sets
 *
