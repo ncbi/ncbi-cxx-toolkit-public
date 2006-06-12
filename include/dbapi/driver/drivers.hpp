@@ -56,6 +56,7 @@ extern void DBAPI_RegisterDriver_FTDS    (void);
 extern void DBAPI_RegisterDriver_ODBC    (void);
 extern void DBAPI_RegisterDriver_MSDBLIB (void);
 extern void DBAPI_RegisterDriver_MYSQL   (void);
+extern void DBAPI_RegisterDriver_SQLITE3 (void);
 
 END_NCBI_SCOPE
 
@@ -66,6 +67,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/06/12 21:23:54  ssikorsk
+ * Added DBAPI_RegisterDriver_SQLITE3
+ *
  * Revision 1.7  2005/03/01 15:21:52  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *
