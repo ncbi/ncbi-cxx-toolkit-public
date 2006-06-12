@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2006/06/12 20:03:44  grichenk
+ * x_IsMinusStrand() uses IsReverse().
+ *
  * Revision 6.11  2006/03/16 18:58:30  grichenk
  * Indicate intervals truncated while mapping by fuzz lim tl/tr.
  *
@@ -93,11 +96,7 @@ CSeq_interval::~CSeq_interval(void)
 
 bool CSeq_interval::x_IsMinusStrand(void) const
 {
-    ENa_strand strand = eNa_strand_unknown;
-    if ( IsSetStrand() ) {
-        strand = GetStrand();
-    }
-    return (strand == eNa_strand_minus)  ||  (strand == eNa_strand_both_rev);
+    return IsSetStrand() && IsReverse(GetStrand());
 }
 
 
