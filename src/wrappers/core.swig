@@ -219,6 +219,7 @@ connect/services/grid_worker.hpp
 connect/services/grid_worker_app.hpp
 connect/services/grid_worker_app_impl.hpp
 connect/services/netcache_client.hpp
+connect/services/neticache_client.hpp
 connect/services/netschedule_client.hpp
 connect/services/netschedule_storage.hpp
 connect/services/netservice_client.hpp
@@ -357,6 +358,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/06/12 14:01:14  jcherry
+ * Added header
+ *
  * Revision 1.16  2006/03/14 17:00:03  jcherry
  * Work-around for CObjectIStream::Open
  *
