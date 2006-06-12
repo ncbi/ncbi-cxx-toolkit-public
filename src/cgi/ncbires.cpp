@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2006/06/12 18:58:49  golikov
+* rethrow IOS_BASE::failure
+*
 * Revision 1.31  2004/05/17 20:56:50  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -189,7 +192,8 @@ void CNcbiResource::HandleRequest( CCgiContext& ctx )
 									? ( defCom = true, GetDefaultCommand() )
 									: (*it)->Clone() );
 		cmd->Execute( ctx );
-		
+    } catch( IOS_BASE::failure& e ) {
+        throw;
     } catch( std::exception& e ) {
 	    _TRACE( e.what() );
 		ctx.PutMsg( string("Error handling request: ") + e.what() );
