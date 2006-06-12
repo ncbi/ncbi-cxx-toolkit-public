@@ -327,6 +327,22 @@ int CAgpconvertApplication::Run(void)
     // object identifiers to chromsome names
     map<string, string> chr_names;
     if (args["chromosomes"]) {
+        // Make sure there's not already a chromosome in the template
+        ITERATE (CSeq_descr::Tdata, desc,
+                 ent_templ.GetSeq().GetDescr().Get()) {
+            if ((*desc)->IsSource() && (*desc)->GetSource().IsSetSubtype()) {
+                ITERATE (CBioSource::TSubtype, sub_type,
+                         (*desc)->GetSource().GetSubtype()) {
+                    if ((*sub_type)->GetSubtype() ==
+                        CSubSource::eSubtype_chromosome) {
+                        throw runtime_error("-chromosomes given but template "
+                                            "contains a chromosome SubSource");
+                    }
+                }
+            }
+        }
+
+        // Load from file
         CNcbiIstream& istr = args["chromosomes"].AsInputFile();
         string line;
         while (!istr.eof()) {
@@ -606,7 +622,8 @@ int CAgpconvertApplication::Run(void)
             }
 
             // if requested, set chromosome name in source subtype
-            if (args["chromosomes"]) {
+            if (args["chromosomes"]
+                && chr_names.find(col1) != chr_names.end()) {
                 CRef<CSubSource> sub_source(new CSubSource);
                 sub_source->SetSubtype(CSubSource::eSubtype_chromosome);
                 sub_source->SetName(chr_names[col1]);
@@ -623,11 +640,6 @@ int CAgpconvertApplication::Run(void)
                                         "Source Desc's; expected exactly one");
                 }
                 CSeqdesc& source_desc = *source_descs[0];
-                if (source_desc.GetSource().IsSetSubtype()) {
-                    cout << "** warning: overriding BioSource subtype "
-                        "from template for " << col1 << endl;
-                    source_desc.SetSource().SetSubtype().clear();
-                }
                 source_desc.SetSource().SetSubtype().push_back(sub_source);
             }
         
@@ -700,6 +712,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/06/12 14:47:42  jcherry
+ * Changed behavior of -chromosomes: do nothing in cases where there is
+ * no mapping for an id (rather than adding empty chromosome), don't clear
+ * existing SubSource's, and fail if there's already a chromosome subsource.
+ *
  * Revision 1.14  2006/06/01 14:55:22  jcherry
  * Produce a Seq-entry (rather than a Seq-submit) when the template is
  * a Seq-submit, and turn Seq-submit.sub.cit into a Seqdesc.  Allow a
