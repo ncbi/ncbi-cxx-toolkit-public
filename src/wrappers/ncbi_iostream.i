@@ -263,7 +263,7 @@ namespace std {
     %extend ostream {
     public:
         ostream& operator<< (const std::string& str) {*self << str; return *self;};
-        ostream& write(const string& str) {
+        ostream& write(const std::string& str) {
             self->write(str.c_str(), str.size());
             return *self;
         }
@@ -306,11 +306,11 @@ namespace std {
     public:
         // Simplified constructors
         ostringstream(void);
-        ostringstream(const string& str);
+        ostringstream(const std::string& str);
         
         // Get/set the string
-        string str(void) const;
-        void str(const string& buf);
+        std::string str(void) const;
+        void str(const std::string& buf);
     };
 
 #ifdef SWIGPYTHON
@@ -325,11 +325,11 @@ namespace std {
     public:
         // Simplified constructors
         istringstream(void);
-        istringstream(const string& str);
+        istringstream(const std::string& str);
         
         // Get/set the string
-        string str(void) const;
-        void str(const string& buf);
+        std::string str(void) const;
+        void str(const std::string& buf);
     };
     
 
@@ -338,11 +338,11 @@ namespace std {
     public:
         // Simplified constructors
         stringstream(void);
-        stringstream(const string& str);
+        stringstream(const std::string& str);
         
         // Get/set the string
-        string str(void) const;
-        void str(const string& buf);
+        std::string str(void) const;
+        void str(const std::string& buf);
     };
     
 }
@@ -358,6 +358,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/12 14:00:15  jcherry
+ * "string" -> "std::string"
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
