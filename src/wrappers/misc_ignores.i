@@ -30,6 +30,11 @@
  */
 
 
+// require operator==
+%ignore ncbi::CTreeNode::FindNode;
+%ignore ncbi::CTreeNode::FindNodes;
+%ignore ncbi::CTreeNode::FindSubNode;
+
 // Default assignment operator can't be used
 %ignore *::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
 
@@ -239,6 +244,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/12 14:53:57  jcherry
+ * %ignore some CTreeNode methods
+ *
  * Revision 1.8  2005/11/22 15:20:53  jcherry
  * %ignore some protected methods that SWIG tries to wrap on Windows
  *
