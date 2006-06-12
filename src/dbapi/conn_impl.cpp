@@ -92,7 +92,9 @@ void CConnection::ForceSingle(bool enable)
 }
 
 CDB_Connection*
-CConnection::GetCDB_Connection() {
+CConnection::GetCDB_Connection() 
+{
+	CHECK_NCBI_DBAPI(m_connection == 0, "Database connection has not been initialized");
     return m_connection;
 }
 
@@ -108,7 +110,7 @@ void CConnection::Connect(const string& user,
                                     password,
                                     m_modeMask,
                                     m_ds->IsPoolUsed());
-    if(m_connection) {
+    if(GetCDB_Connection()) {
         SetDbName(database);
     }
 
@@ -128,7 +130,7 @@ void CConnection::ConnectValidated(IConnValidator& validator,
 									validator,
                                     m_modeMask,
                                     m_ds->IsPoolUsed());
-    if(m_connection) {
+    if(GetCDB_Connection()) {
         SetDbName(database);
     }
 
@@ -162,10 +164,7 @@ string CConnection::GetDatabase()
 
 bool CConnection::IsAlive()
 {
-    if( m_connection != 0 )
-        return m_connection->IsAlive();
-    else
-        return false;
+    return GetCDB_Connection()->IsAlive();
 }
 
 void CConnection::SetDbName(const string& name,
@@ -178,7 +177,7 @@ void CConnection::SetDbName(const string& name,
         return;
 
 
-    CDB_Connection* work = (conn == 0 ? m_connection : conn);
+    CDB_Connection* work = (conn == 0 ? GetCDB_Connection() : conn);
     string sql = "use " + m_database;
     CDB_LangCmd* cmd = work->LangCmd(sql.c_str());
     cmd->Send();
@@ -263,7 +262,7 @@ void CConnection::Close()
 
 void CConnection::Abort()
 {
-    m_connection->Abort();
+    GetCDB_Connection()->Abort();
     //FreeResources();
 }
 
@@ -534,6 +533,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.42  2006/06/12 16:05:10  kholodov
+* Added: Exception is thrown when using non-initialized m_connection
+*
 * Revision 1.41  2006/01/26 18:08:23  kholodov
 * Added: ConnectValidated() method
 *
