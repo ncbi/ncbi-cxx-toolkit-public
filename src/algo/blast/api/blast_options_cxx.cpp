@@ -1529,25 +1529,6 @@ CBlastOptions::SetMatrixName(const char* matrix)
     }
 }
 
-const char* 
-CBlastOptions::GetMatrixPath() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetMatrixPath() not available.");
-    }
-    return m_Local->GetMatrixPath();
-}
-void 
-CBlastOptions::SetMatrixPath(const char* path)
-{
-    if (m_Local) {
-        m_Local->SetMatrixPath(path);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_MatrixPath, path);
-    }
-}
-
 int 
 CBlastOptions::GetMatchReward() const
 {
@@ -1961,6 +1942,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.82  2006/06/12 17:17:16  madden
+* Remove [GS]etMatrixPath
+*
 * Revision 1.81  2006/06/12 16:52:30  madden
 * Add [GS]etUnifiedP
 *

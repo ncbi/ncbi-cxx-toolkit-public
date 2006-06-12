@@ -113,12 +113,6 @@ public:
     /// @param matrix MatrixName [in]
     void SetMatrixName(const char* matrix) { m_Opts->SetMatrixName(matrix); }
 
-    /// Returns MatrixPath
-    const char* GetMatrixPath() const { return m_Opts->GetMatrixPath(); }
-    /// Sets MatrixPath
-    /// @param path MatrixPath [in]
-    void SetMatrixPath(const char* path) { m_Opts->SetMatrixPath(path); }
-
     /// Returns GapOpeningCost
     int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
     /// Sets GapOpeningCost
@@ -172,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/06/12 17:16:44  madden
+ * Remove [GS]etMatrixPath
+ *
  * Revision 1.14  2005/05/09 20:08:48  bealer
  * - Add program and service strings to CBlastOptions for remote blast.
  * - New CBlastOptionsHandle constructor for CRemoteBlast.

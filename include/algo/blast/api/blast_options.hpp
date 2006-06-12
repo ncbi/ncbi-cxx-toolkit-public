@@ -271,9 +271,6 @@ public:
     const char* GetMatrixName() const;
     void SetMatrixName(const char* matrix);
 
-    const char* GetMatrixPath() const;
-    void SetMatrixPath(const char* path);
-
     int GetMatchReward() const;
     void SetMatchReward(int r);
 
@@ -601,6 +598,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.121  2006/06/12 17:16:44  madden
+* Remove [GS]etMatrixPath
+*
 * Revision 1.120  2006/06/12 16:51:50  madden
 * Add [GS]etUnifiedP
 *

@@ -209,9 +209,6 @@ public:
     const char* GetMatrixName() const;
     void SetMatrixName(const char* matrix);
 
-    const char* GetMatrixPath() const;
-    void SetMatrixPath(const char* path);
-
     int GetMatchReward() const;
     void SetMatchReward(int r);         // r should be a positive integer
 
@@ -394,18 +391,6 @@ CBlastOptionsLocal::SetMatrixName(const char* matrix)
 
     sfree(m_ScoringOpts->matrix);
     m_ScoringOpts->matrix = strdup(matrix);
-}
-
-inline const char* 
-CBlastOptionsLocal::GetMatrixPath() const
-{
-    return NULL;
-}
-
-inline void 
-CBlastOptionsLocal::SetMatrixPath(const char* path)
-{
-    return;
 }
 
 inline int

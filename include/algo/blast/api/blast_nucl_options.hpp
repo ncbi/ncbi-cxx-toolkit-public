@@ -183,12 +183,6 @@ public:
     /// @param matrix MatrixName [in]
     void SetMatrixName(const char* matrix) { m_Opts->SetMatrixName(matrix); }
 
-    /// Returns MatrixPath
-    const char* GetMatrixPath() const { return m_Opts->GetMatrixPath(); }
-    /// Sets MatrixPath
-    /// @param path MatrixPath [in]
-    void SetMatrixPath(const char* path) { m_Opts->SetMatrixPath(path); }
-
     /// Returns GapOpeningCost
     int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
     /// Sets GapOpeningCost
@@ -264,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/06/12 17:16:44  madden
+ * Remove [GS]etMatrixPath
+ *
  * Revision 1.29  2006/01/23 16:37:45  papadopo
  * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
  *
