@@ -451,7 +451,7 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
        }
    }
 
-   if (score > reduced_cutoff) {
+   if (score >= reduced_cutoff) {
        /* the current score is high enough; throw away the
           alignment and recompute it rigorously */
        s_NuclUngappedExtendExact(query, subject, matrix, q_off,
