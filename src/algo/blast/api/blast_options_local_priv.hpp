@@ -163,6 +163,9 @@ public:
     bool GetSmithWatermanMode() const;
     void SetSmithWatermanMode(bool m = true);
 
+    int GetUnifiedP() const;
+    void SetUnifiedP(int u = 0);
+
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
@@ -902,6 +905,18 @@ CBlastOptionsLocal::SetSmithWatermanMode(bool m)
        m_ExtnOpts->eTbackExt = eSmithWatermanTbck;
     else
        m_ExtnOpts->eTbackExt = eDynProgTbck;
+}
+
+inline int
+CBlastOptionsLocal::GetUnifiedP() const
+{
+   return m_ExtnOpts->unifiedP;
+}
+
+inline void
+CBlastOptionsLocal::SetUnifiedP(int u)
+{
+   m_ExtnOpts->unifiedP = u;
 }
 
 /******************* Hit saving options *************************/

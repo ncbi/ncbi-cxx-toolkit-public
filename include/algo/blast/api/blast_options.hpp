@@ -224,6 +224,9 @@ public:
     bool GetSmithWatermanMode() const;
     void SetSmithWatermanMode(bool m = true);
 
+    int GetUnifiedP() const;
+    void SetUnifiedP(int u = 0);
+
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
@@ -598,6 +601,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.120  2006/06/12 16:51:50  madden
+* Add [GS]etUnifiedP
+*
 * Revision 1.119  2006/05/24 21:00:40  camacho
 * Moved doxygen documetation
 *

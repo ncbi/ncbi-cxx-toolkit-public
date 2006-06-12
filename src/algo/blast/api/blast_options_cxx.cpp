@@ -118,7 +118,8 @@ enum EBlastOptIdx {
     eBlastOpt_PseudoCount,
     eBlastOpt_GapTracebackAlgorithm,
     eBlastOpt_CompositionBasedStats,
-    eBlastOpt_SmithWatermanMode
+    eBlastOpt_SmithWatermanMode,
+    eBlastOpt_UnifiedP
 };
 
 /// Encapsulates all blast input parameters
@@ -1296,6 +1297,28 @@ CBlastOptions::SetSmithWatermanMode(bool m)
     }
 }
 
+int 
+CBlastOptions::GetUnifiedP() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetUnifiedP() not available.");
+    }
+
+    return m_Local->GetUnifiedP();
+}
+
+void 
+CBlastOptions::SetUnifiedP(int u)
+{
+   if (m_Local) {
+      m_Local->SetUnifiedP(u);
+   }
+   if (m_Remote) {
+      m_Remote->SetValue(eBlastOpt_UnifiedP, u);
+   }
+}
+ 
+
 /******************* Hit saving options *************************/
 int 
 CBlastOptions::GetHitlistSize() const
@@ -1938,6 +1961,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.81  2006/06/12 16:52:30  madden
+* Add [GS]etUnifiedP
+*
 * Revision 1.80  2006/05/24 17:11:33  camacho
 * add overloaded SetEffectiveSearchSpace
 *
