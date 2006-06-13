@@ -507,13 +507,13 @@ void x_GetBestOverlappingFeat(const CSeq_loc& loc,
         for ( ;  feat_it;  ++feat_it) {
             // treat subset as a special case
             Int8 cur_diff = ( !revert_locations ) ?
-                TestForOverlap(loc,
-                               feat_it->GetLocation(),
+                TestForOverlap(feat_it->GetLocation(),
+                               loc,
                                overlap_type,
                                circular_length,
                                &scope) :
-                TestForOverlap(feat_it->GetLocation(),
-                               loc,
+                TestForOverlap(loc,
+                               feat_it->GetLocation(),
                                overlap_type,
                                circular_length,
                                &scope);
@@ -697,7 +697,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
     x_GetBestOverlappingFeat(cds_feat.GetLocation(),
                              CSeqFeatData::e_Rna,
                              CSeqFeatData::eSubtype_mRNA,
-                             eOverlap_CheckIntervals,
+                             eOverlap_Contained,
                              feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -705,20 +705,6 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
             mrna_feat = feats.front().second;
         }
         return mrna_feat;
-    }
-
-    // check for transcript_id; this is a fast check
-    string transcript_id = cds_feat.GetNamedQual("transcript_id");
-    if ( !transcript_id.empty() ) {
-        ITERATE (vector<TFeatScore>, feat_iter, feats) {
-            const CSeq_feat& feat = *feat_iter->second;
-            string other_transcript_id =
-                feat.GetNamedQual("transcript_id");
-            if (transcript_id == other_transcript_id) {
-                mrna_feat.Reset(&feat);
-                return mrna_feat;
-            }
-        }
     }
 
     if (cds_feat.IsSetProduct()) {
@@ -787,7 +773,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                 SAnnotSelector cds_sel;
                 cds_sel.SetOverlapIntervals()
                     .ExcludeNamedAnnots("SNP")
-                    .SetResolveAll()
+                    .SetResolveTSE()
                     .SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
                 CFeat_CI other_iter(scope, mrna.GetProduct(), cds_sel);
                 for ( ;  other_iter  &&  !mrna_feat;  ++other_iter) {
@@ -811,6 +797,20 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
             }
         }
         catch (CException&) {
+        }
+    }
+
+    // check for transcript_id; this is a fast check
+    string transcript_id = cds_feat.GetNamedQual("transcript_id");
+    if ( !transcript_id.empty() ) {
+        ITERATE (vector<TFeatScore>, feat_iter, feats) {
+            const CSeq_feat& feat = *feat_iter->second;
+            string other_transcript_id =
+                feat.GetNamedQual("transcript_id");
+            if (transcript_id == other_transcript_id) {
+                mrna_feat.Reset(&feat);
+                return mrna_feat;
+            }
         }
     }
 
@@ -845,31 +845,15 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     x_GetBestOverlappingFeat(mrna_feat.GetLocation(),
                              CSeqFeatData::e_Cdregion,
                              CSeqFeatData::eSubtype_cdregion,
-                             eOverlap_CheckIntervals,
+                             eOverlap_Contains,
                              feats, scope);
+
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
         if (feats.size() == 1) {
             cds_feat = feats.front().second;
         }
         return cds_feat;
-    }
-
-    //
-    // check for transcript_id; this is fast
-    // this is generally only available in GTF/GFF-imported features
-    //
-    string transcript_id = mrna_feat.GetNamedQual("transcript_id");
-    if ( !transcript_id.empty() ) {
-        ITERATE (TFeatScores, feat_iter, feats) {
-            const CSeq_feat& feat = *feat_iter->second;
-            string other_transcript_id =
-                feat.GetNamedQual("transcript_id");
-            if (transcript_id == other_transcript_id) {
-                cds_feat.Reset(&feat);
-                return cds_feat;
-            }
-        }
     }
 
     if (mrna_feat.IsSetExt()) {
@@ -932,7 +916,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                     SAnnotSelector sel;
                     sel.SetOverlapIntervals()
                         .ExcludeNamedAnnots("SNP")
-                        .SetResolveAll()
+                        .SetResolveTSE()
                         .SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
 
                      CFeat_CI iter(mrna_handle, sel);
@@ -980,6 +964,21 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
         while (false);
     }
 
+    // check for transcript_id
+    // this is generally only available in GTF/GFF-imported features
+    string transcript_id = mrna_feat.GetNamedQual("transcript_id");
+    if ( !transcript_id.empty() ) {
+        ITERATE (TFeatScores, feat_iter, feats) {
+            const CSeq_feat& feat = *feat_iter->second;
+            string other_transcript_id =
+                feat.GetNamedQual("transcript_id");
+            if (transcript_id == other_transcript_id) {
+                cds_feat.Reset(&feat);
+                return cds_feat;
+            }
+        }
+    }
+
     //
     // try to find the best by overlaps alone
     //
@@ -1008,7 +1007,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
     x_GetBestOverlappingFeat(mrna_feat.GetLocation(),
                              CSeqFeatData::e_Gene,
                              CSeqFeatData::eSubtype_any,
-                             eOverlap_Contains,
+                             eOverlap_Contained,
                              feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -1096,7 +1095,7 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
     x_GetBestOverlappingFeat(cds_feat.GetLocation(),
                              CSeqFeatData::e_Gene,
                              CSeqFeatData::eSubtype_any,
-                             eOverlap_Contains,
+                             eOverlap_Contained,
                              feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -1157,8 +1156,11 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
                      TBestFeatOpts opts)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
-    CFeat_CI feat_it(scope, gene_feat.GetLocation(),
-                     CSeqFeatData::eSubtype_mRNA);
+    SAnnotSelector sel;
+    sel.SetResolveTSE()
+        .SetAdaptiveDepth()
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    CFeat_CI feat_it(scope, gene_feat.GetLocation(), sel);
     if (feat_it.GetSize() == 0) {
         return;
     }
@@ -1225,7 +1227,7 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
                 /// regardless of the gene-id binding, we always ignore these
                 const CGene_ref* other_ref =
                     feat_it->GetOriginalFeature().GetGeneXref();
-                if ( !other_ref  ||  other_ref->IsSuppressed() ) {
+                if ( other_ref  &&  other_ref->IsSuppressed() ) {
                     continue;
                 }
 
@@ -1261,7 +1263,7 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
     CConstRef<CSeq_feat> feat =
         sequence::GetBestOverlappingFeat(gene_feat.GetLocation(),
                                          CSeqFeatData::eSubtype_mRNA,
-                                         sequence::eOverlap_CheckIntervals,
+                                         sequence::eOverlap_Contains,
                                          scope, opts);
     if (feat) {
         mrna_feats.push_back(feat);
@@ -2813,6 +2815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.141  2006/06/13 19:08:58  dicuccio
+* Cleaned up logic and bugs in GetBestXxxForXxx(), GetXxxForXxx() functions
+*
 * Revision 1.140  2006/06/05 13:43:17  vasilche
 * Fixed warning.
 *
