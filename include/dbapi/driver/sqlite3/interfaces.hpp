@@ -44,6 +44,7 @@ BEGIN_NCBI_SCOPE
 class CSL3Context;
 class CSL3_Connection;
 class CSL3_LangCmd;
+class CSL3_RowResult;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -292,6 +293,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/13 14:22:33  ucko
+ * Add a proper file-scope forward declaration of CSL3_RowResult.
+ *
  * Revision 1.1  2006/06/12 20:28:45  ssikorsk
  * Initial version
  *
