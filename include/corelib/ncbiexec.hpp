@@ -87,6 +87,7 @@ public:
     /// In the eWait spawn functions returns an exit code of a process.
     /// Throws an exceptions if you try to get exit code instead of 
     /// stored process handle, and otherwise.
+    /// In some cases can store both - an exit code and handle (see Wait()).
     class NCBI_XNCBI_EXPORT CResult
     {
     public:
@@ -94,16 +95,23 @@ public:
         TExitCode      GetExitCode     (void);
         /// Get process handle/pid
         TProcessHandle GetProcessHandle(void); 
-        NCBI_DEPRECATED operator intptr_t(void) const
-            { return m_IsHandle ? (intptr_t) m_Result.handle :
-                                  (intptr_t) m_Result.exitcode; }
+        // Deprecated operator for compatibility with previous
+        // versions of Spawn methods which returns integer value.
+        NCBI_DEPRECATED operator intptr_t(void) const;
 
     private:
-        union {
+        /// Flags defines what this class store
+        enum EFlags {
+            fExitCode  = (1<<1),
+            fHandle    = (1<<2),
+            fBoth      = fExitCode | fHandle
+        };
+        typedef int TFlags;  ///< Binary OR of "EFlags"
+        struct {
             TExitCode      exitcode;
             TProcessHandle handle;
-        } m_Result;        ///< Result of Spawn*() methods
-        bool m_IsHandle;   ///< m_Result stores handle if TRUE
+        } m_Result;          ///< Result of Spawn*() methods
+        TFlags m_Flags;      ///< What m_Result stores
 
         friend class CExec;
     };
@@ -417,22 +425,57 @@ public:
     SpawnVPE(EMode mode, const char *cmdname,
              const char *const *argv, const char *const *envp);
 
-    /// Run console application .
+    /// Wait until specified process terminates.
     ///
-    /// Wait until the child process with "handle" terminates, and return
-    /// immeditately if the specifed child process has already terminated.
+    /// Wait until the process with "handle" terminates, and return
+    /// immeditately if the specifed process has already terminated.
     /// @param handle
-    ///   Wait on child process with identifier "handle", returned by one 
+    ///   Wait on process with identifier "handle", returned by one 
     ///   of the Spawn* function in eNoWait and eDetach modes.
     /// @param timeout
     ///   Time-out interval. By default it is infinite.
     /// @return
-    ///   - Exit code of child process, if no errors.
+    ///   - Exit code of the process, if no errors.
     ///   - (-1), if error has occurred.
     static TExitCode Wait(TProcessHandle handle,
-                          unsigned long timeout = kMax_ULong);
+                          unsigned long  timeout = kInfiniteTimeoutMs);
 
-    /// Spawn a new process with specified command-line
+    /// Mode used to wait processes termination.
+    enum EWaitMode {
+        eWaitAny,     ///< Wait any process to terminate
+        eWaitAll      ///< Wait all processes to terminate
+    };
+
+    /// Wait until any/all processes terminates.
+    ///
+    /// Wait until any/all processes from specified list terminates.
+    /// Return immeditately if the specifed processes has already terminated.
+    /// @param handles
+    ///   List of process identifiers. Each identifier is a value returned
+    ///   by one of the Spawn* function in eNoWait and eDetach modes.
+    ///   Handles for terminated processes going to "result" list, and
+    ///   has been removed from this one.
+    /// @param mode
+    ///   Wait termination for any or all possible processes within
+    ///   specified timeout. 
+    ///    eWaitAny - wait until at least one process terminates.
+    ///    eWaitAll - wait until all processes terminates or timeout expires.
+    /// @param result
+    ///   List of process handles/exitcodes of terminated processes from
+    ///   the list "handles". If this list have elements, that they will
+    ///   be removed.
+    /// @param timeout
+    ///   Time-out interval. By default it is infinite.
+    /// @return
+    ///   - Number of terminated processes (size of the "result" list),
+    ///     if no errors. Regardless of timeout status.
+    ///   - (-1), if error has occurred.
+    static int Wait(list<TProcessHandle>& handles, 
+                    EWaitMode             mode,
+                    list<CResult>&        result,
+                    unsigned long         timeout = kInfiniteTimeoutMs);
+
+    /// Run console application in invisible mode.
     ///
     /// MSWin:
     ///    This function try to run a program in invisible mode, without
@@ -514,6 +557,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/06/13 13:28:38  ivanov
+ * Added variation of CExec::Wait() to work with list of process handles.
+ * Extended CExec::CResult class to store both, process handle and
+ * return code. Minor comments fixes.
+ *
  * Revision 1.18  2006/05/09 14:05:03  ivanov
  * Added export specifier for CExec::CResult
  *
