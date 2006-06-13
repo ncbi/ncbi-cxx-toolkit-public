@@ -241,6 +241,7 @@ PhiBlastGetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info)
  * @param hsp An HSP found by PHI BLAST [in]
  * @param sbp Scoring block with statistical parameters [in]
  * @param query_info Structure containing information about pattern counts [in]
+ * @param pattern_blk Structure containing counts of PHI pattern hits [in]
  */
 static void 
 s_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp, 
@@ -1065,7 +1066,7 @@ void Blast_HSPListSortByEvalue(BlastHSPList* hsp_list)
 }
 
 
-/* Retrieve the starting diagonal of an HSP
+/** Retrieve the starting diagonal of an HSP
  * @param hsp The target HSP
  * @return The starting diagonal
  */
@@ -1075,7 +1076,7 @@ s_HSPStartDiag(const BlastHSP *hsp)
     return hsp->query.offset - hsp->subject.offset;
 }
 
-/* Retrieve the ending diagonal of an HSP
+/** Retrieve the ending diagonal of an HSP
  * @param hsp The target HSP
  * @return The ending diagonal
  */
@@ -2913,6 +2914,9 @@ Int2 Blast_HSPResultsPerformCulling(BlastHSPResults *results,
    return 0;
 }
 
+/** Callback used for sorting HSPs by score, with HSPs
+ *  from different contexts segregated from each other
+ */
 static int
 s_ScoreCompareHSPWithContext(const void* h1, const void* h2)
 {
