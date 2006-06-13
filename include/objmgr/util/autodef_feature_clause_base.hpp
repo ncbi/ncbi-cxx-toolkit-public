@@ -108,6 +108,8 @@ public:
     void PluralizeInterval();
     void PluralizeDescription();
     
+    void ShowSubclauses();
+    
     // Grouping functions
     void RemoveDeletedSubclauses();
    
@@ -218,6 +220,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2006/06/13 15:36:49  bollin
+* added ShowSubclauses method (used for debugging)
+*
 * Revision 1.9  2006/06/12 15:43:22  bollin
 * coding region, gene, and mRNA features are needed for their protein/gene
 * information on segment definition lines, but should not be listed unless the
