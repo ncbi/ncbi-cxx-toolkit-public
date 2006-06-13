@@ -32,6 +32,7 @@
 #include <stdarg.h>
 #include <corelib/ncbiexec.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_system.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <process.h>
@@ -51,7 +52,7 @@ BEGIN_NCBI_SCOPE
 
 TExitCode CExec::CResult::GetExitCode(void)
 {
-    if ( m_IsHandle ) {
+    if ( (m_Flags & fExitCode) == 0 ) {
         NCBI_THROW(CExecException, eResult,
                    "CExec:: CResult contains process handle, not exit code");
     }
@@ -60,11 +61,26 @@ TExitCode CExec::CResult::GetExitCode(void)
 
 TProcessHandle CExec::CResult::GetProcessHandle(void)
 {
-    if ( !m_IsHandle ) {
+    if ( (m_Flags & fHandle) == 0 ) {
         NCBI_THROW(CExecException, eResult,
                    "CExec:: CResult contains process exit code, not handle");
     }
     return m_Result.handle;
+}
+
+CExec::CResult::operator intptr_t(void) const
+{
+    switch (m_Flags) {
+        case fExitCode:
+            return (intptr_t)m_Result.exitcode;
+        case fHandle:
+            return (intptr_t)m_Result.handle;
+        default:
+            NCBI_THROW(CExecException, eResult,
+                       "CExec:: CResult undefined concersion");
+    }
+    // Not reached
+    return 0;
 }
 
 
@@ -226,10 +242,10 @@ static void s_CheckExecArg(const char* arg)
     } \
     CResult result; \
     if (mode == eWait) { \
-        result.m_IsHandle = false; \
+        result.m_Flags = CResult::fExitCode; \
         result.m_Result.exitcode = (TExitCode)status; \
     } else { \
-        result.m_IsHandle = true; \
+        result.m_Flags = CResult::fHandle; \
         result.m_Result.handle = (TProcessHandle)status; \
     } \
     return result
@@ -390,9 +406,60 @@ CExec::SpawnVPE(EMode mode, const char *cmdname,
 }
 
 
-int CExec::Wait(TProcessHandle handle, unsigned long timeout)
+TExitCode CExec::Wait(TProcessHandle handle, unsigned long timeout)
 {
     return CProcess(handle, CProcess::eHandle).Wait(timeout);
+}
+
+
+// Predefined timeout (in milliseconds)
+const unsigned long kWaitPrecision = 100;
+
+int CExec::Wait(list<TProcessHandle>& handles, 
+                EWaitMode             mode,
+                list<CResult>&        result,
+                unsigned long         timeout)
+{
+    typedef list<TProcessHandle>::iterator THandleIt;
+    result.clear();
+
+    for (;;) {
+        // Check each process
+        for (THandleIt it = handles.begin(); it != handles.end(); ) {
+            TProcessHandle handle = *it;
+            TExitCode exitcode = Wait(handle, 0);
+            if ( exitcode != -1 ) {
+                CResult res;
+                res.m_Flags = CResult::fBoth;
+                res.m_Result.handle = handle;
+                res.m_Result.exitcode = exitcode;
+                result.push_back(res);
+                THandleIt cur = it;
+                ++it;
+                handles.erase(cur);
+            } else {
+                ++it;
+            }
+        }
+        if ( (mode == eWaitAny  &&  !result.empty())  ||
+             (mode == eWaitAll  &&  handles.empty()) ) {
+            break;
+        }
+        // Wait before next loop
+        unsigned long x_sleep = kWaitPrecision;
+        if (timeout != kInfiniteTimeoutMs) {
+            if (x_sleep > timeout) {
+                x_sleep = timeout;
+            }
+            if ( !x_sleep ) {
+                break;
+            }
+            timeout -= x_sleep;
+        }
+        SleepMilliSec(x_sleep);
+    }
+    // Return number of terminated processes
+    return (int)result.size();
 }
 
 
@@ -481,6 +548,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/06/13 13:29:17  ivanov
+ * Added variation of CExec::Wait() to work with list of process handles.
+ * Extended CExec::CResult class to store both, process handle and
+ * return code.
+ *
  * Revision 1.37  2006/05/23 18:50:50  ucko
  * System: if the child died on a signal, return a non-zero value
  * (namely, the signal + 128, per typical shells).
