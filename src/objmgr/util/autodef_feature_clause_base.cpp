@@ -99,6 +99,9 @@ void CAutoDefFeatureClause_Base::AddSubclause (CAutoDefFeatureClause_Base *subcl
 {
     if (subclause) {
         m_ClauseList.push_back(subclause);
+        if (subclause->IsAltSpliced()) {
+            m_IsAltSpliced = true;
+        }
     }
 }
 
@@ -248,6 +251,7 @@ void CAutoDefFeatureClause_Base::Label()
 void CAutoDefFeatureClause_Base::GroupmRNAs()
 {
     unsigned int k, j;
+    
     // Add mRNAs to other clauses
     for (k = 0; k < m_ClauseList.size(); k++) {
         if (m_ClauseList[k]->IsMarkedForDeletion()
@@ -256,7 +260,7 @@ void CAutoDefFeatureClause_Base::GroupmRNAs()
         }
         m_ClauseList[k]->Label();
         bool mRNA_used = false;
-        for (j = 0; j < m_ClauseList.size(); j++) {
+        for (j = 0; j < m_ClauseList.size() && !mRNA_used; j++) {
             if (m_ClauseList[j]->IsMarkedForDeletion()
                 || j == k
                 || m_ClauseList[j]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion) {
@@ -667,6 +671,22 @@ void CAutoDefFeatureClause_Base::RemoveDeletedSubclauses()
 }
 
 
+void CAutoDefFeatureClause_Base::ShowSubclauses()
+{
+    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
+        bool marked = m_ClauseList[k]->IsMarkedForDeletion();                      
+        bool partial = m_ClauseList[k]->IsPartial();
+        string desc1 = m_ClauseList[k]->GetDescription();
+        
+        unsigned int stop = m_ClauseList[k]->GetLocation()->GetStop(eExtreme_Positional);
+        unsigned int start = m_ClauseList[k]->GetLocation()->GetStart(eExtreme_Positional);
+            
+        CSeqFeatData::ESubtype st1 = m_ClauseList[k]->GetMainFeatureSubtype();
+        m_ClauseList[k]->ShowSubclauses();
+    }
+}
+
+
 bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsigned int clause2)
 {
     if (clause1 == clause2
@@ -678,6 +698,7 @@ bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsign
         || !NStr::Equal(m_ClauseList[clause1]->GetDescription(), m_ClauseList[clause2]->GetDescription())
         || (m_ClauseList[clause1]->IsAltSpliced() && !m_ClauseList[clause2]->IsAltSpliced())
         || (!m_ClauseList[clause1]->IsAltSpliced() && m_ClauseList[clause2]->IsAltSpliced())) {
+        
         return false;
     }
     
@@ -708,33 +729,37 @@ void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
         if (m_ClauseList[k]->IsMarkedForDeletion()) {
             continue;
         }
-        if (x_OkToConsolidate(k, last_clause)) {
-            // Add subfeatures from new clause to last clause
-            TClauseList new_subfeatures;
-            new_subfeatures.clear();
-            m_ClauseList[k]->TransferSubclauses(new_subfeatures);
-            for (unsigned int j = 0; j < new_subfeatures.size(); j++) {
-                m_ClauseList[last_clause]->AddSubclause(new_subfeatures[j]);
-                new_subfeatures[j] = NULL;
+        for (unsigned int n = k + 1; n < m_ClauseList.size(); n++) {
+            if (m_ClauseList[n]->IsMarkedForDeletion()) {
+                continue;
             }
-            new_subfeatures.clear();
+            if (x_OkToConsolidate(k, n)) {
+                // Add subfeatures from new clause to last clause
+                TClauseList new_subfeatures;
+                new_subfeatures.clear();
+                m_ClauseList[n]->TransferSubclauses(new_subfeatures);
+                for (unsigned int j = 0; j < new_subfeatures.size(); j++) {
+                    m_ClauseList[k]->AddSubclause(new_subfeatures[j]);
+                    new_subfeatures[j] = NULL;
+                }
+                new_subfeatures.clear();
             
-            // Add new clause location to last clause
-            m_ClauseList[last_clause]->AddToLocation(m_ClauseList[k]->GetLocation());
-            // if we have two clauses that are really identical instead of
-            // just sharing a "prefix", make the description plural
-            if (NStr::Equal(m_ClauseList[last_clause]->GetInterval(), m_ClauseList[k]->GetInterval())) {
-                m_ClauseList[last_clause]->SetMakePlural();
+                // Add new clause location to last clause
+                m_ClauseList[k]->AddToLocation(m_ClauseList[n]->GetLocation());
+                // if we have two clauses that are really identical instead of
+                // just sharing a "prefix", make the description plural
+                if (NStr::Equal(m_ClauseList[k]->GetInterval(), m_ClauseList[n]->GetInterval())) {
+                    m_ClauseList[k]->SetMakePlural();
+                }
+            
+                // this will regenerate the interval
+                m_ClauseList[k]->Label();
+            
+                // mark new clause for deletion
+                m_ClauseList[n]->MarkForDeletion();
             }
-            
-            // this will regenerate the interval
-            m_ClauseList[last_clause]->Label();
-            
-            // mark new clause for deletion
-            m_ClauseList[k]->MarkForDeletion();
-        } else {
-            last_clause = k;
         }
+   
     }
 } 
 
@@ -762,8 +787,8 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
     }
     
     
-    unsigned int loc_compare = m_ClauseList[clause1]->CompareLocation(*(m_ClauseList[clause2]->GetLocation()));
-    if (loc_compare != eOverlap && loc_compare != eSame) {
+    sequence::ECompare loc_compare = m_ClauseList[clause1]->CompareLocation(*(m_ClauseList[clause2]->GetLocation()));
+    if (loc_compare == eNoOverlap) {
         return false;
     }
     // are genes the same?
@@ -1593,6 +1618,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2006/06/13 15:37:12  bollin
+* fixed bugs in calculating alternate splicing for segmented sets
+*
 * Revision 1.14  2006/06/12 15:43:18  bollin
 * coding region, gene, and mRNA features are needed for their protein/gene
 * information on segment definition lines, but should not be listed unless the

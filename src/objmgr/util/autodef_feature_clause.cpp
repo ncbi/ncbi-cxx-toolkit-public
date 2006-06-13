@@ -929,7 +929,11 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
         m_ProductNameChosen = true;
     }       
     
-  return used_mRNA;
+    if (used_mRNA && mRNAClause->IsAltSpliced()) {
+        m_IsAltSpliced = true;
+    }
+    
+    return used_mRNA;
 }
 
 
@@ -1526,6 +1530,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2006/06/13 15:37:12  bollin
+* fixed bugs in calculating alternate splicing for segmented sets
+*
 * Revision 1.20  2006/06/12 15:43:18  bollin
 * coding region, gene, and mRNA features are needed for their protein/gene
 * information on segment definition lines, but should not be listed unless the
