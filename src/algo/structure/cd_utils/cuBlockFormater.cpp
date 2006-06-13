@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-BlockFormater::BlockFormater(const vector< const CRef< CSeq_align > > & seqAlignVec, int masterSeqLen)
+BlockFormater::BlockFormater(vector< CRef< CSeq_align > > & seqAlignVec, int masterSeqLen)
 : m_seqAlignVec(seqAlignVec), m_masterLen(masterSeqLen), m_intersector(0)
 {
 }
@@ -169,6 +169,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/06/13 13:02:35  cliu
+ * add BlockFormater with the bug fix.
+ *
  * Revision 1.1  2006/06/06 20:44:37  cliu
  * add BlockFormater
  *

@@ -50,7 +50,8 @@ SRC = \
 	cuSeqTreeAPI \
     cuReadFastaWrapper \
     cuSeqAnnotFromFasta \
-    cuCdFromFasta
+    cuCdFromFasta \
+	cuBlockFormater
 
 DLL_LIB = xobjread
 
