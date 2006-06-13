@@ -44,7 +44,7 @@ BEGIN_SCOPE(cd_utils)
 class BlockFormater
 {
 public:
-	BlockFormater(const vector< const CRef< CSeq_align > > & seqAlignVec, int masterSeqLen);
+	BlockFormater(vector< CRef< CSeq_align > > & seqAlignVec, int masterSeqLen);
 	~BlockFormater();
 
 	void setReferenceSeqAlign(const CRef< CSeq_align > sa);
@@ -57,7 +57,7 @@ public:
 	void formatBlocksForQualifiedRows(list< CRef< CSeq_align > > & seqAlignVec);
 
 private:
-	const vector< const CRef< CSeq_align > >& m_seqAlignVec;
+	vector< CRef< CSeq_align > >& m_seqAlignVec;
 	int m_masterLen;
 	BlockIntersector* m_intersector;
 	CRef< CSeq_align > m_refSeqAlign;
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/06/13 13:04:04  cliu
+ * fix the compiling error on lynux
+ *
  * Revision 1.1  2006/06/06 20:45:33  cliu
  * add BlockFormater
  *
