@@ -341,7 +341,7 @@ int CProcess::Wait(unsigned long timeout) const
 {
 #if defined(NCBI_OS_UNIX)
     TPid pid     = (TPid)m_Process;
-    int  options = timeout == kMax_ULong/*infinite*/ ? 0 : WNOHANG;
+    int  options = (timeout == kInfiniteTimeoutMs) ? 0 : WNOHANG;
     int  status;
 
     // Check process termination within timeout (or infinite)
@@ -353,7 +353,7 @@ int CProcess::Wait(unsigned long timeout) const
             return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
         } else if (ws == 0) {
             // Process is still running
-            _ASSERT(timeout != kMax_ULong/*infinite*/);
+            _ASSERT(timeout != kInfiniteTimeoutMs);
             unsigned long x_sleep = kWaitPrecision;
             if (x_sleep > timeout) {
                 x_sleep = timeout;
@@ -382,7 +382,7 @@ int CProcess::Wait(unsigned long timeout) const
             enable_sync = false;
             hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
             if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
-                return false;
+                return -1;
             }
         }
     } else {
@@ -398,16 +398,17 @@ int CProcess::Wait(unsigned long timeout) const
              status != STILL_ACTIVE ) {
             throw (int)status;
         }
+        status = -1;
         // Wait for process termination, or timeout expired
         if (enable_sync  &&  timeout) {
-            DWORD tv = (timeout == kMax_ULong) ? INFINITE : (DWORD)timeout;
+            DWORD tv = (timeout == kInfiniteTimeoutMs) ? INFINITE : (DWORD)timeout;
             if (WaitForSingleObject(hProcess, tv) != WAIT_OBJECT_0) {
                 throw -1;
             }
-        }
-        // Get process exit code
-        if ( !GetExitCodeProcess(hProcess, &status) ) {
-            throw -1;
+            // Get process exit code
+            if ( !GetExitCodeProcess(hProcess, &status) ) {
+                throw -1;
+            }
         }
     }
     catch (int e) {
@@ -565,6 +566,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/06/13 13:23:36  ivanov
+ * MSWin: Wait() -- fixed bug with incorrect return code for zero timeouts.
+ * Use kInfiniteTimeoutMs instead of kMax_ULong.
+ *
  * Revision 1.26  2006/05/11 13:14:09  ivanov
  * Fixed compilation warnings on MSVC8/64
  *
