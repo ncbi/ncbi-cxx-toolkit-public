@@ -183,6 +183,15 @@ int CCgiApplication::Run(void)
             x_OnEvent(eStartRequest, 0);
 
             VerifyCgiContext(*m_Context);
+            // Set HTTP_REFERER
+            string args =
+                m_Context->GetRequest().GetProperty(eCgi_QueryString);
+            string ref = m_Context->GetSelfURL();
+            if ( !args.empty() ) {
+                ref += "?" + args;
+            }
+            GetConfig().Set("CONN", "HTTP_REFERER",
+                ref, IRegistry::fTransient);
             result = ProcessRequest(*m_Context);
             if (result != 0) {
                 SetHTTPStatus(500);
@@ -512,8 +521,11 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             const CCgiRequest& req = m_Context->GetRequest();
             GetDiagContext().SetProperty("server_name",
                 req.GetProperty(eCgi_ServerName));
-            GetDiagContext().SetProperty("client_ip",
-                req.GetProperty(eCgi_RemoteAddr));
+            string client = req.GetRandomProperty("CAF_PROXIED_HOST");
+            if ( client.empty() ) {
+                client = req.GetProperty(eCgi_RemoteAddr);
+            }
+            GetDiagContext().SetProperty("client_ip", client);
             GetDiagContext().SetProperty("session_id",
                                          req.GetSession(CCgiRequest::eDontLoad)
                                                .RetrieveSessionId());
@@ -1088,6 +1100,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.76  2006/06/13 14:42:42  grichenk
+* Set CONN_HTTP_REFERER to the self-URL plus query string.
+* Use CAF_PROXIED_HOST to get client IP.
+*
 * Revision 1.75  2006/06/12 18:44:34  didenko
 * Fixed cgi sessionid logging
 *
