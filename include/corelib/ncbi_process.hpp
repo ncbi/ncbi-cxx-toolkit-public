@@ -55,8 +55,10 @@
  * @{
  */
 
-
 BEGIN_NCBI_SCOPE
+
+/// Infinite timeout in milliseconds.
+const unsigned long kInfiniteTimeoutMs = kMax_ULong;
 
 /// Turn on/off workaround for linux PID and PPID
 #if defined(NCBI_OS_LINUX)
@@ -162,7 +164,7 @@ public:
     ///   - (-1), if error has occurred.
     /// @sa
     ///   IsAlive
-    int Wait(unsigned long timeout = kMax_ULong) const;
+    int Wait(unsigned long timeout = kInfiniteTimeoutMs) const;
 
 private:
 #if defined NCBI_THREAD_PID_WORKAROUND
@@ -295,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/06/13 13:22:16  ivanov
+ * Use kInfiniteTimeoutMs constant instead of kMax_ULong
+ *
  * Revision 1.19  2006/05/11 13:14:18  ivanov
  * Fixed compilation warnings on MSVC8/64
  *
