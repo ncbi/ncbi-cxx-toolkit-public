@@ -184,21 +184,20 @@ int CCgiApplication::Run(void)
 
             VerifyCgiContext(*m_Context);
             // Set HTTP_REFERER
+            string ref = m_Context->GetSelfURL();
             string args =
                 m_Context->GetRequest().GetProperty(eCgi_QueryString);
-            string ref = m_Context->GetSelfURL();
             if ( !args.empty() ) {
                 ref += "?" + args;
             }
-            GetConfig().Set("CONN", "HTTP_REFERER",
-                ref, IRegistry::fTransient);
+            GetConfig().Set("CONN", "HTTP_REFERER", ref);
             result = ProcessRequest(*m_Context);
             if (result != 0) {
                 SetHTTPStatus(500);
             }
         }
         catch (CCgiException& e) {
-            if ( e.GetStatusCode() < CCgiException::e200_Ok  ||
+            if ( e.GetStatusCode() <  CCgiException::e200_Ok  ||
                  e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
                 throw;
             }
@@ -1100,6 +1099,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.77  2006/06/14 22:20:34  vakatov
+* Removed extraneous eTransient flag in a call to GetConfig().Set()
+*
 * Revision 1.76  2006/06/13 14:42:42  grichenk
 * Set CONN_HTTP_REFERER to the self-URL plus query string.
 * Use CAF_PROXIED_HOST to get client IP.
