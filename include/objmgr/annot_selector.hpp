@@ -192,32 +192,73 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// GetResolveMethod() returns current value of resolve_method.
+    ///
+    ///  @sa
+    ///    SetResolveMethod(), SetResolveNone(), SetResolveTSE(),
+    ///    SetResolveAll()
     EResolveMethod GetResolveMethod(void) const
         {
             return m_ResolveMethod;
         }
+    /// SetResolveMethod() controls visibility of subsegments depending
+    /// on whether it's packaged together with master sequence.
+    ///   eResolve_None means to skip all subsegments completely.
+    ///       It has the same effect as calling SetResolveDepth(0).
+    ///   eResolve_TSE means to look on 'near' segments, packaged in the
+    ///       Same TSE (top level Seq-entry).
+    ///   eResolve_All lifts any restriction of segments by packaging.
+    /// This option works in addition to 'resolve depth', 'adaptive depth',
+    /// and 'exact depth'.
+    ///
+    ///  @sa
+    ///    SetResolveNone(), SetResolveTSE(), SetResolveAll(),
+    ///    SetResolveDepth(), SetExactDepth(), SetAdaptiveDepth().
     SAnnotSelector& SetResolveMethod(EResolveMethod resolve_method)
         {
             m_ResolveMethod = resolve_method;
             return *this;
         }
+    /// SetResolveNone() is equivalent to SetResolveMethod(eResolve_None).
+    ///  @sa
+    ///    SetResolveMethod()
     SAnnotSelector& SetResolveNone(void)
         {
             return SetResolveMethod(eResolve_None);
         }
+    /// SetResolveTSE() is equivalent to SetResolveMethod(eResolve_TSE).
+    ///  @sa
+    ///    SetResolveMethod()
     SAnnotSelector& SetResolveTSE(void)
         {
             return SetResolveMethod(eResolve_TSE);
         }
+    /// SetResolveAll() is equivalent to SetResolveMethod(eResolve_All).
+    ///  @sa
+    ///    SetResolveMethod()
     SAnnotSelector& SetResolveAll(void)
         {
             return SetResolveMethod(eResolve_All);
         }
 
+    /// GetResolveDepth() returns current limit of subsegment resolution
+    /// in searching annotations.
+    ///
+    ///  @sa
+    ///    SetResolveDepth()
     int GetResolveDepth(void) const
         {
             return m_ResolveDepth;
         }
+    /// SetResolveDepth sets the limit of subsegment resolution
+    /// in searching annotations.
+    /// Zero means look for annotations directly pointing
+    /// to the sequence. One means to look on direct segments
+    /// of the sequence too.
+    /// By default the limit is set to kIntMax, meaning no restriction.
+    /// 
+    ///  @sa
+    ///    SetExactDepth(), SetAdaptiveDepth(), SetAdaptiveTrigger()
     SAnnotSelector& SetResolveDepth(int depth)
         {
             m_ResolveDepth = depth;
@@ -225,22 +266,80 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     typedef vector<SAnnotTypeSelector> TAdaptiveTriggers;
+    /// GetAdaptiveDepth() returns current value of 'adaptive depth' flag.
+    ///
+    ///  @sa
+    ///    SetAdaptiveDepth()
     bool GetAdaptiveDepth(void) const
         {
             return m_AdaptiveDepth;
         }
+    /// SetAdaptiveDepth() requests to restrict subsegment resolution
+    /// depending on annotations found on lower level of segments.
+    /// It's meaningful in cases when features on segments are also
+    /// annotated on master sequence. Setting this flag will avoid
+    /// duplicates, and speed up loading.
+    /// Annotation iterator will look for annotations of special types,
+    /// by default it's gene, mrna, and cds. If any annotation from those
+    /// types is found the iterator will treat this as annotated sequence,
+    /// and not look for more annotations on subsegments.
+    /// This option works in addition to SetResolveDepth(), so subsegment
+    /// resolution stops when either specified depth is reached, or if
+    /// any adaptive trigger annotation is found.
+    /// Adaptive depth flag has no effect if 'exact depth' is set.
+    ///
+    /// Note, that trigger annotations on one segment has no effect on
+    /// adaptive resolution of another segment.
+    /// So, for example, if
+    /// Master sequence A has segments B1 and B2, while B1 has segments
+    /// C11 and C12, and B2 has segments C21 and C22:
+    ///  |--------------- A ----------------|
+    ///  |------ B1 ------||------ B2 ------|
+    ///  |- C11 -||- C12 -||- C21 -||- C22 -|
+    /// Also, there are genes only on sequences B1, C11, C12, C21, and C22.
+    /// For simplicity, there are no other adaptive trigger annotations.
+    /// In this case annotation iterator in 'adaptive' mode will return
+    /// genes and other annotations from sequences A, B1, B2, C21, and C22.
+    /// It will skip searching on C11, and C12 because trigger feature will
+    /// be found on B1.
+    ///
+    ///  @sa
+    ///    SetResolveDepth(), SetExactDepth(), SetAdaptiveTrigger()
     SAnnotSelector& SetAdaptiveDepth(bool value = true)
         {
             m_AdaptiveDepth = value;
             return *this;
         }
+    /// SetAdaptiveTrigger() allows to change default set of adaptive trigger
+    /// annotations.
+    /// Default set is: gene, mrna, cds.
     SAnnotSelector& SetAdaptiveTrigger(const SAnnotTypeSelector& sel);
 
+    /// SetExactDepth() specifies that annotations will be searched
+    /// on the segment level specified by SetResolveDepth() only.
+    /// By default this flag is not set, and annotations iterators
+    /// will also return annotations from above levels.
+    /// This flag, when set, overrides 'adaptive depth' flag.
+    ///
+    /// Examples:
+    ///   SetResolveDepth(0)
+    ///       - only direct annotations on the sequence will be found.
+    ///   SetResolveDepth(1), SetExactDepth(false) (default)
+    ///       - find annotations on the sequence, and its direct segments.
+    ///   SetResolveDepth(1), SetExactDepth(true)
+    ///       - find annotations on the direct segments.
+    ///
+    ///  @sa
+    ///    SetResolveDepth(), SetAdaptiveDepth(), SetAdaptiveTrigger()
     SAnnotSelector& SetExactDepth(bool value = true)
         {
             m_ExactDepth = value;
             return *this;
         }
+    /// GetExactDepth() returns current value of 'exact depth' flag.
+    ///
+    ///  @sa
+    ///    SetExactDepth()
     bool GetExactDepth(void) const
         {
             return m_ExactDepth;
@@ -446,6 +545,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2006/06/14 15:14:53  vasilche
+* Added description of segment resolution controls.
+*
 * Revision 1.49  2006/02/14 15:47:41  grichenk
 * Added methods for collecting types of annotations.
 *
