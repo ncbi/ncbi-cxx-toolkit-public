@@ -622,11 +622,11 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
     // Having the mutex, we can safely drop "volatile"
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
     if (q.size() == m_MaxSize) {
-        if (timeout_nsec >= (unsigned long)kMax_Long) {
-            timeout_nsec = kMax_Long;
+        if (timeout_sec >= (unsigned long)kMax_Long) {
+            timeout_sec = kMax_Long;
         }
         CTimeSpan span(min((long)timeout_sec,
-                           kMax_Long - (long)timeout_nsec / 1000000000L),
+                           kMax_Long - (long)(timeout_nsec / 1000000000UL)),
                        timeout_nsec);
         while (span.GetSign() == ePositive  &&  q.size() == m_MaxSize) {
             CTime start(CTime::eCurrent, CTime::eGmt);
@@ -715,11 +715,11 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
         ++m_HungerCnt;
         m_HungerSem.TryWait();
         m_HungerSem.Post();
-        if (timeout_nsec >= (unsigned long)kMax_Long) {
-            timeout_nsec = kMax_Long;
+        if (timeout_sec >= (unsigned long)kMax_Long) {
+            timeout_sec = kMax_Long;
         }
         CTimeSpan span(min((long)timeout_sec,
-                           kMax_Long - (long)timeout_nsec / 1000000000L),
+                           kMax_Long - (long)(timeout_nsec / 1000000000UL)),
                        timeout_nsec);
         while (span.GetSign() == ePositive  &&  q.empty()) {
             CTime start(CTime::eCurrent, CTime::eGmt);
@@ -1032,6 +1032,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2006/06/14 14:00:57  ucko
+* Fix CBlockingQueue<>'s timespan-handling logic.
+*
 * Revision 1.40  2006/06/12 20:31:44  ucko
 * More fixes to CBlockingQueue<>'s logic, largely per Mike DiCuccio's
 * recent report that race conditions still exist.
