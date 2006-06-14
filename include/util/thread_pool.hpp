@@ -815,7 +815,12 @@ void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
         // These sanity checks protect against race conditions and
         // accidental use of handles from other queues.
         if (it != q.end()  &&  *it == handle) {
-            q.erase(it);
+            q.erase(it);   
+            
+            if(q.empty())   {
+                // m_GetSem may be signaled - clear it
+                m_GetSem.TryWait();
+            }
         } else {
             return;
         }
@@ -1032,6 +1037,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2006/06/14 18:35:44  yazhuk
+* CBlockingQueue::Withdraw()  - decrement m_GetSem if the queue becomes empty
+*
 * Revision 1.41  2006/06/14 14:00:57  ucko
 * Fix CBlockingQueue<>'s timespan-handling logic.
 *
