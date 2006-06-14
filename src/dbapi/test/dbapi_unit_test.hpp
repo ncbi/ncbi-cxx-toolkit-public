@@ -83,17 +83,17 @@ public:
     {
         return m_DriverName;
     }
-    
+
     string GetServerName(void) const
     {
         return m_ServerName;
     }
-    
+
     string GetUserName(void) const
     {
         return m_UserName;
     }
-    
+
     string GetUserPassword(void) const
     {
         return m_UserPassword;
@@ -108,12 +108,12 @@ public:
     {
         return m_DatabaseName;
     }
-    
+
     EServerType GetServerType(void) const;
-    
+
     string GetProgramBasename(void) const;
-    
-    
+
+
 private:
     void SetDatabaseParameters(void);
 
@@ -160,11 +160,11 @@ public:
     // Test particular methods.
     void TestGetRowCount();
     void CheckGetRowCount(
-        int row_count, 
+        int row_count,
         ETransBehavior tb = eNoTrans,
         IStatement* stmt = NULL);
     void CheckGetRowCount2(
-        int row_count, 
+        int row_count,
         ETransBehavior tb = eNoTrans,
         IStatement* stmt = NULL);
 
@@ -185,6 +185,8 @@ public:
     void Test_DateTime(void);
     void Test_Insert(void);
     void Test_HasMoreResults(void);
+    void Create_Destroy(void);
+    void Multiple_Close(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -198,7 +200,6 @@ public:
     void Test_Exception(void);
 
     // Test scenarios.
-    void Create_Destroy(void);
     void Repeated_Usage(void);
     void Single_Value_Writing(void);
     void Single_Value_Reading(void);
@@ -213,10 +214,10 @@ protected:
     {
         return m_TableName;
     }
-    static void DumpResults(const auto_ptr<IStatement>& auto_stmt);
+    static void DumpResults(IStatement* const stmt);
     static int GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
                                const string& table_name);
-    
+
 private:
     const CTestArguments    m_args;
     auto_ptr<CErrHandler>   m_ErrHandler;
@@ -242,6 +243,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2006/06/14 19:35:39  ssikorsk
+ * Added Create_Destroy and Multiple_Close tests.
+ *
  * Revision 1.38  2006/05/30 16:32:33  ssikorsk
  * 	Made CNcbiArguments a member of CTestArguments.
  *

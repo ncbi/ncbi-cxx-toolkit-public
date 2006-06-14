@@ -350,6 +350,278 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 
 ///////////////////////////////////////////////////////////////////////////////
 void
+CDBAPIUnitTest::Create_Destroy(void)
+{
+    ///////////////////////
+    // CreateStatement
+    ///////////////////////
+
+    // Destroy a statement before a connection get destroyed ...
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt.get());
+    }
+
+    // Do not destroy statement, let it be destroyed ...
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        IStatement* stmt(local_conn->CreateStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt);
+    }
+
+    ///////////////////////
+    // GetStatement
+    ///////////////////////
+
+    // Destroy a statement before a connection get destroyed ...
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        auto_ptr<IStatement> stmt(local_conn->GetStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt.get());
+    }
+
+    // Do not destroy statement, let it be destroyed ...
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        IStatement* stmt(local_conn->GetStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt);
+    }
+}
+
+void CDBAPIUnitTest::Multiple_Close(void)
+{
+    ///////////////////////
+    // CreateStatement
+    ///////////////////////
+
+    // Destroy a statement before a connection get destroyed ...
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt.get());
+
+        // Close a statement first ...
+        stmt->Close();
+        stmt->Close();
+        stmt->Close();
+
+        local_conn->Close();
+        local_conn->Close();
+        local_conn->Close();
+    }
+
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt.get());
+
+        // Close a connection first ...
+        local_conn->Close();
+        local_conn->Close();
+        local_conn->Close();
+
+        stmt->Close();
+        stmt->Close();
+        stmt->Close();
+    }
+
+    // Do not destroy a statement, let it be destroyed ...
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        IStatement* stmt(local_conn->CreateStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt);
+
+        // Close a statement first ...
+        stmt->Close();
+        stmt->Close();
+        stmt->Close();
+
+        local_conn->Close();
+        local_conn->Close();
+        local_conn->Close();
+    }
+
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        IStatement* stmt(local_conn->CreateStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt);
+
+        // Close a connection first ...
+        local_conn->Close();
+        local_conn->Close();
+        local_conn->Close();
+
+        stmt->Close();
+        stmt->Close();
+        stmt->Close();
+    }
+
+    ///////////////////////
+    // GetStatement
+    ///////////////////////
+
+    // Destroy a statement before a connection get destroyed ...
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        auto_ptr<IStatement> stmt(local_conn->GetStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt.get());
+
+        // Close a statement first ...
+        stmt->Close();
+        stmt->Close();
+        stmt->Close();
+
+        local_conn->Close();
+        local_conn->Close();
+        local_conn->Close();
+    }
+
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        auto_ptr<IStatement> stmt(local_conn->GetStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt.get());
+
+        // Close a connection first ...
+        local_conn->Close();
+        local_conn->Close();
+        local_conn->Close();
+
+        stmt->Close();
+        stmt->Close();
+        stmt->Close();
+    }
+
+    // Do not destroy a statement, let it be destroyed ...
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        IStatement* stmt(local_conn->GetStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt);
+
+        // Close a statement first ...
+        stmt->Close();
+        stmt->Close();
+        stmt->Close();
+
+        local_conn->Close();
+        local_conn->Close();
+        local_conn->Close();
+    }
+
+    {
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        local_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName(),
+            m_args.GetDatabaseName()
+            );
+
+        IStatement* stmt(local_conn->GetStatement());
+        stmt->SendSql( "SELECT name FROM sysobjects" );
+        DumpResults(stmt);
+
+        // Close a connection first ...
+        local_conn->Close();
+        local_conn->Close();
+        local_conn->Close();
+
+        stmt->Close();
+        stmt->Close();
+        stmt->Close();
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
 CDBAPIUnitTest::Test_HasMoreResults(void)
 {
     string sql;
@@ -1040,11 +1312,11 @@ BulkAddRow(const auto_ptr<IBulkInsert>& bi, const CVariant& col)
 }
 
 void
-CDBAPIUnitTest::DumpResults(const auto_ptr<IStatement>& auto_stmt)
+CDBAPIUnitTest::DumpResults(IStatement* const stmt)
 {
-    while ( auto_stmt->HasMoreResults() ) {
-        if ( auto_stmt->HasRows() ) {
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+    while ( stmt->HasMoreResults() ) {
+        if ( stmt->HasRows() ) {
+            auto_ptr<IResultSet> rs( stmt->GetResultSet() );
         }
     }
 }
@@ -1189,7 +1461,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             }
 
             // Dump results ...
-            DumpResults( auto_stmt );
+            DumpResults( auto_stmt.get() );
         }
     }
 
@@ -1242,7 +1514,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 }
 
                 // Dump results ...
-                DumpResults( auto_stmt );
+                DumpResults( auto_stmt.get() );
             }
         }
 
@@ -1294,7 +1566,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 }
 
                 // Dump results ...
-                DumpResults( auto_stmt );
+                DumpResults( auto_stmt.get() );
             }
         }
     }
@@ -1520,7 +1792,7 @@ int
 CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
                                 const string& table_name)
 {
-    DumpResults(auto_stmt);
+    DumpResults(auto_stmt.get());
     auto_stmt->ClearParamList();
     auto_stmt->SendSql( "select count(*) FROM " + table_name );
     BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -2253,7 +2525,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 2 );
-            DumpResults(auto_stmt);
+            DumpResults(auto_stmt.get());
         }
 
         // Read first inserted value back ...
@@ -2266,7 +2538,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 0 );
-            DumpResults(auto_stmt);
+            DumpResults(auto_stmt.get());
             // !!! Do not forget to clear a parameter list ....
             // Workaround for the ctlib driver ...
             auto_stmt->ClearParamList();
@@ -2282,7 +2554,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 1 );
-            DumpResults(auto_stmt);
+            DumpResults(auto_stmt.get());
             // !!! Do not forget to clear a parameter list ....
             // Workaround for the ctlib driver ...
             auto_stmt->ClearParamList();
@@ -3541,11 +3813,6 @@ CDBAPIUnitTest::Test_Exception(void)
 }
 
 void
-CDBAPIUnitTest::Create_Destroy(void)
-{
-}
-
-void
 CDBAPIUnitTest::Repeated_Usage(void)
 {
 }
@@ -3597,6 +3864,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
     add(tc_init);
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Create_Destroy, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Multiple_Close, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
     // development ....
     // tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
@@ -3878,6 +4153,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.78  2006/06/14 19:36:07  ssikorsk
+ * Added Create_Destroy and Multiple_Close tests.
+ *
  * Revision 1.77  2006/06/09 15:26:20  ssikorsk
  * Restored previously disabled CErrHandler..
  *
