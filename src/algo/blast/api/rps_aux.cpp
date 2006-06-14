@@ -102,8 +102,8 @@ CBlastRPSAuxInfo::CBlastRPSAuxInfo(const string& matrix,
                                    const vector<double>& karlin_k)
     : m_Data(0)
 {
-    ASSERT(!matrix.empty());
-    ASSERT(!karlin_k.empty());
+    _ASSERT(!matrix.empty());
+    _ASSERT(!karlin_k.empty());
 
     try {
         m_Data = new BlastRPSAuxInfo;
@@ -378,7 +378,7 @@ CBlastRPSInfo::CBlastRPSInfo(const string& rps_dbname)
         NCBI_RETHROW(e, CBlastException, eRpsInit,
                      "Cannot retrieve path to RPS database");
     }
-    ASSERT(!path.empty());
+    _ASSERT(!path.empty());
 
     // Load the various files
     m_AuxFile.Reset(new CRpsAuxFile(path));

@@ -84,11 +84,11 @@ CQueryFactoryInfo::CQueryFactoryInfo(CRef<IQueryFactory> query_factory,
 {
     CRef<IRemoteQueryData> query_data(query_factory->MakeRemoteQueryData());
     CRef<CBioseq_set> bss(query_data->GetBioseqSet());
-    ASSERT(bss.NotEmpty());
+    _ASSERT(bss.NotEmpty());
     m_QuerySource.Reset(new CBlastQuerySourceBioseqSet(*bss, m_IsProt));
 
     SetupSubjects_OMF(*m_QuerySource, program, &m_SeqBlkVector, &m_MaxLength);
-    ASSERT(!m_SeqBlkVector.empty());
+    _ASSERT(!m_SeqBlkVector.empty());
 }
 
 /// Destructor
@@ -154,7 +154,7 @@ static Int4
 s_QueryFactoryGetMaxLength(void* multiseq_handle, void*)
 {
     CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
-    ASSERT(seq_info);
+    _ASSERT(seq_info);
     return seq_info->GetMaxLength();
 }
 
@@ -164,11 +164,11 @@ static Int4
 s_QueryFactoryGetAvgLength(void* multiseq_handle, void*)
 {
     CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
-    ASSERT(seq_info);
+    _ASSERT(seq_info);
 
     if (seq_info->GetAvgLength() == 0) {
         const Uint4 num_seqs(seq_info->GetNumSeqs());
-        ASSERT(seq_info->GetNumSeqs() > 0);
+        _ASSERT(seq_info->GetNumSeqs() > 0);
 
         Int8 total_length(0);
         for (Uint4 index = 0; index < num_seqs; ++index) 
@@ -184,7 +184,7 @@ static Int4
 s_QueryFactoryGetNumSeqs(void* multiseq_handle, void*)
 {
     CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
-    ASSERT(seq_info);
+    _ASSERT(seq_info);
     return seq_info->GetNumSeqs();
 }
 
@@ -208,7 +208,7 @@ static Boolean
 s_QueryFactoryGetIsProt(void* multiseq_handle, void*)
 {
     CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
-    ASSERT(seq_info);
+    _ASSERT(seq_info);
     return (Boolean) seq_info->GetIsProtein();
 }
 
@@ -223,8 +223,8 @@ s_QueryFactoryGetSequence(void* multiseq_handle, void* args)
     CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
     BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
 
-    ASSERT(seq_info);
-    ASSERT(args);
+    _ASSERT(seq_info);
+    _ASSERT(args);
 
     if (seq_info->GetNumSeqs() == 0 || !seq_args)
         return BLAST_SEQSRC_ERROR;
@@ -234,7 +234,7 @@ s_QueryFactoryGetSequence(void* multiseq_handle, void* args)
     catch (const std::out_of_range&) {
         return BLAST_SEQSRC_EOF;
     }
-    ASSERT(seq_blk);
+    _ASSERT(seq_blk);
 
     BlastSequenceBlkCopy(&seq_args->seq, seq_blk);
     /* If this is a nucleotide sequence, and it is the traceback stage, 
@@ -257,7 +257,7 @@ static void
 s_QueryFactoryReleaseSequence(void* /*multiseq_handle*/, void* args)
 {
     BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
-    ASSERT(seq_args);
+    _ASSERT(seq_args);
     if (seq_args->seq->sequence_start_allocated)
         sfree(seq_args->seq->sequence_start);
 }
@@ -273,8 +273,8 @@ s_QueryFactoryGetSeqLen(void* multiseq_handle, void* args)
     CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*)multiseq_handle;
     Int4 index;
 
-    ASSERT(seq_info);
-    ASSERT(args);
+    _ASSERT(seq_info);
+    _ASSERT(args);
 
     index = *((Int4*) args);
     return seq_info->GetSeqBlk(index)->length;
@@ -294,7 +294,7 @@ s_QueryFactoryGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
 {
     CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
 
-    ASSERT(itr);
+    _ASSERT(itr);
 
     if (itr->current_pos == UINT4_MAX) {
         itr->current_pos = 0;
@@ -317,8 +317,8 @@ s_QueryFactoryIteratorNext(void* multiseq_handle, BlastSeqSrcIterator* itr)
     Int4 retval = BLAST_SEQSRC_EOF;
     Int2 status = 0;
 
-    ASSERT(multiseq_handle);
-    ASSERT(itr);
+    _ASSERT(multiseq_handle);
+    _ASSERT(itr);
 
     if ((status = s_QueryFactoryGetNextChunk(multiseq_handle, itr))
         == BLAST_SEQSRC_EOF) {
@@ -363,8 +363,8 @@ s_QueryFactorySrcFree(BlastSeqSrc* seq_src)
 static BlastSeqSrc* 
 s_QueryFactorySrcNew(BlastSeqSrc* retval, void* args)
 {
-    ASSERT(retval);
-    ASSERT(args);
+    _ASSERT(retval);
+    _ASSERT(args);
 
     SQueryFactorySrcNewArgs* seqsrc_args = (SQueryFactorySrcNewArgs*) args;
     

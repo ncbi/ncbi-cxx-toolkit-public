@@ -65,7 +65,7 @@ s_QueryInfo_SetContext(BlastQueryInfo*   qinfo,
                        Uint4             index,
                        Uint4             length)
 {
-    ASSERT(index <= static_cast<Uint4>(qinfo->last_context));
+    _ASSERT(index <= static_cast<Uint4>(qinfo->last_context));
     
     if (index) {
         Uint4 prev_loc = qinfo->contexts[index-1].query_offset;
@@ -93,14 +93,14 @@ s_AdjustFirstContext(BlastQueryInfo* query_info,
                      ENa_strand strand_opt,
                      const IBlastQuerySource& queries)
 {
-    ASSERT(query_info);
+    _ASSERT(query_info);
 
 #if _DEBUG      /* to eliminate compiler warning in release mode */
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
 #endif
 	bool translate = Blast_QueryIsTranslated(prog) ? true : false;
 
-    ASSERT(is_na || translate);
+    _ASSERT(is_na || translate);
 
     // Only if the strand specified by the options is NOT both or unknown,
     // it takes precedence over what is specified by the query's strand
@@ -121,7 +121,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                    ENa_strand strand_opt,
                    BlastQueryInfo** qinfo)
 {
-    ASSERT(qinfo);
+    _ASSERT(qinfo);
     CBlastQueryInfo query_info(BlastQueryInfoNew(prog, queries.Size()));
     if (query_info.Get() == NULL) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query info");
@@ -253,7 +253,7 @@ s_AddMask(EBlastProgramType prog,
           ENa_strand strand,
           TSeqPos query_length)
 {
-    ASSERT(query_index < mask->total_size);
+    _ASSERT(query_index < mask->total_size);
     unsigned num_contexts = GetNumberOfContexts(prog);
     
     if (Blast_QueryIsTranslated(prog)) {
@@ -320,7 +320,7 @@ s_AddMask(EBlastProgramType           prog,
           ENa_strand                  strand,
           TSeqPos                     query_length)
 {
-    ASSERT(query_index < mask->total_size);
+    _ASSERT(query_index < mask->total_size);
     unsigned num_contexts = GetNumberOfContexts(prog);
     
     if (Blast_QueryIsTranslated(prog)) {
@@ -469,7 +469,7 @@ s_GetRestrictedBlastSeqLocs(IBlastQuerySource & queries,
 static void
 s_InvalidateQueryContexts(BlastQueryInfo* qinfo, int query_index)
 {
-    ASSERT(qinfo);
+    _ASSERT(qinfo);
     for (int i = qinfo->first_context; i <= qinfo->last_context; i++) {
         if (qinfo->contexts[i].query_index == query_index) {
             qinfo->contexts[i].is_valid = FALSE;
@@ -486,8 +486,8 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                  const Uint1* genetic_code,
                  TSearchMessages& messages)
 {
-    ASSERT(seqblk);
-    ASSERT( !queries.Empty() );
+    _ASSERT(seqblk);
+    _ASSERT( !queries.Empty() );
     if (messages.size() != (size_t)queries.Size()) {
         messages.resize(queries.Size());
     }
@@ -541,10 +541,10 @@ SetupQueries_OMF(IBlastQuerySource& queries,
             SBlastSequence sequence;
             
             if (translate) {
-                ASSERT(strand == eNa_strand_both ||
+                _ASSERT(strand == eNa_strand_both ||
                        strand == eNa_strand_plus ||
                        strand == eNa_strand_minus);
-                ASSERT(Blast_QueryIsTranslated(prog));
+                _ASSERT(Blast_QueryIsTranslated(prog));
 
                 // Get both strands of the original nucleotide sequence with
                 // sentinels
@@ -575,7 +575,7 @@ SetupQueries_OMF(IBlastQuerySource& queries,
 
             } else if (is_na) {
 
-                ASSERT(strand == eNa_strand_both ||
+                _ASSERT(strand == eNa_strand_both ||
                        strand == eNa_strand_plus ||
                        strand == eNa_strand_minus);
                 
@@ -644,9 +644,9 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
                   vector<BLAST_SequenceBlk*>* seqblk_vec,
                   unsigned int* max_subjlen)
 {
-    ASSERT(seqblk_vec);
-    ASSERT(max_subjlen);
-    ASSERT(!subjects.Empty());
+    _ASSERT(seqblk_vec);
+    _ASSERT(max_subjlen);
+    _ASSERT(!subjects.Empty());
 
     // Nucleotide subject sequences are stored in ncbi2na format, but the
     // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
@@ -749,7 +749,7 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
 
     sv.SetCoding(CSeq_data::e_Ncbistdaa);
     buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingProtein);
-    ASSERT(buflen != 0);
+    _ASSERT(buflen != 0);
     buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
     if ( !buf ) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, 
@@ -803,7 +803,7 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
                                   objects::ENa_strand strand, 
                                   ESentinelType sentinel)
 {
-    ASSERT(strand == eNa_strand_plus || strand == eNa_strand_minus);
+    _ASSERT(strand == eNa_strand_plus || strand == eNa_strand_minus);
     
     if (strand == eNa_strand_plus) {
         sv.SetPlusStrand();
@@ -821,7 +821,7 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
     sv.SetCoding(CSeq_data::e_Ncbi4na);
     buflen = CalculateSeqBufferLength(sv.size(), encoding,
                                       strand, sentinel);
-    ASSERT(buflen != 0);
+    _ASSERT(buflen != 0);
     buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
     if ( !buf ) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, 
@@ -833,7 +833,7 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
 
     if (encoding == eBlastEncodingNucleotide) {
         for (i = 0; i < sv.size(); i++) {
-            ASSERT(sv[i] < BLASTNA_SIZE);
+            _ASSERT(sv[i] < BLASTNA_SIZE);
             *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
         }
     } else {
@@ -915,7 +915,7 @@ GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding,
         }
 
     case eBlastEncodingNcbi2na:
-        ASSERT(sentinel == eNoSentinels);
+        _ASSERT(sentinel == eNoSentinels);
         return GetSequenceCompressedNucleotide(sv);
 
     default:
@@ -985,7 +985,7 @@ GetSubjectEncoding(EBlastProgramType program)
 
 SBlastSequence CompressNcbi2na(const SBlastSequence& source)
 {
-    ASSERT(source.data.get());
+    _ASSERT(source.data.get());
 
     TSeqPos i;                  // loop index of original sequence
     TSeqPos ci;                 // loop index for compressed sequence
@@ -1042,8 +1042,8 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length,
     // Strand and sentinels are irrelevant in this encoding.
     // Strand is always plus and sentinels cannot be represented
     case eBlastEncodingNcbi2na:
-        ASSERT(sentinel == eNoSentinels);
-        ASSERT(strand == eNa_strand_plus);
+        _ASSERT(sentinel == eNoSentinels);
+        _ASSERT(strand == eNa_strand_plus);
         retval = sequence_length / COMPRESSION_RATIO + 1;
         break;
 
@@ -1066,8 +1066,8 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length,
         break;
 
     case eBlastEncodingProtein:
-        ASSERT(sentinel == eSentinels);
-        ASSERT(strand == eNa_strand_unknown);
+        _ASSERT(sentinel == eSentinels);
+        _ASSERT(strand == eNa_strand_unknown);
         retval = sequence_length + 2;
         break;
 
@@ -1319,9 +1319,9 @@ SafeSetupQueries(IBlastQuerySource& queries,
                  BlastQueryInfo* query_info,
                  TSearchMessages& messages)
 {
-    ASSERT(options);
-    ASSERT(query_info);
-    ASSERT( !queries.Empty() );
+    _ASSERT(options);
+    _ASSERT(query_info);
+    _ASSERT( !queries.Empty() );
 
     CBLAST_SequenceBlk retval;
     TAutoUint1ArrayPtr gc = FindGeneticCode(options->GetQueryGeneticCode());
@@ -1336,8 +1336,8 @@ BlastQueryInfo*
 SafeSetupQueryInfo(const IBlastQuerySource& queries,
                    const CBlastOptions* options)
 {
-    ASSERT(!queries.Empty());
-    ASSERT(options);
+    _ASSERT(!queries.Empty());
+    _ASSERT(options);
 
     CBlastQueryInfo retval;
     SetupQueryInfo_OMF(queries, options->GetProgramType(),
@@ -1572,6 +1572,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.122  2006/06/14 15:58:54  camacho
+ * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+ *
  * Revision 1.121  2006/06/05 13:28:39  madden
  * Add BlastFindMatrixPath, remove FindMatrixOrPath
  *

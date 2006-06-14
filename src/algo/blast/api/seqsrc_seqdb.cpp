@@ -199,9 +199,9 @@ s_SeqDbReleaseSequence(void* seqdb_handle, void* args)
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     BlastSeqSrcGetSeqArg* seqdb_args = (BlastSeqSrcGetSeqArg*) args;
 
-    ASSERT(seqdb);
-    ASSERT(seqdb_args);
-    ASSERT(seqdb_args->seq);
+    _ASSERT(seqdb);
+    _ASSERT(seqdb_args);
+    _ASSERT(seqdb_args->seq);
 
     if (seqdb_args->seq->sequence_start_allocated) {
         (*seqdb)->RetSequence((const char**)&seqdb_args->seq->sequence_start);
@@ -279,8 +279,8 @@ s_SeqDbIteratorNext(void* seqdb_handle, BlastSeqSrcIterator* itr)
     Int4 retval = BLAST_SEQSRC_EOF;
     Int4 status = BLAST_SEQSRC_SUCCESS;
 
-    ASSERT(seqdb_handle);
-    ASSERT(itr);
+    _ASSERT(seqdb_handle);
+    _ASSERT(itr);
 
     /* If internal iterator is uninitialized/invalid, retrieve the next chunk 
        from the BlastSeqSrc */
@@ -390,8 +390,8 @@ s_SeqDbSrcCopy(BlastSeqSrc* seq_src)
 static void 
 s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
 {
-    ASSERT(retval);
-    ASSERT(seqdb);
+    _ASSERT(retval);
+    _ASSERT(seqdb);
     
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
@@ -421,8 +421,8 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
 static BlastSeqSrc* 
 s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
 {
-    ASSERT(retval);
-    ASSERT(args);
+    _ASSERT(retval);
+    _ASSERT(args);
     
     CRef<CSeqDB> * seqdb = (CRef<CSeqDB> *) args;
     CRef<CSeqDB> * cref  = new CRef<CSeqDB>(*seqdb);
@@ -440,11 +440,11 @@ s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
 static BlastSeqSrc* 
 s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 {
-    ASSERT(retval);
-    ASSERT(args);
+    _ASSERT(retval);
+    _ASSERT(args);
     
     CSeqDbSrcNewArgs* seqdb_args = (CSeqDbSrcNewArgs*) args;
-    ASSERT(seqdb_args);
+    _ASSERT(seqdb_args);
     
     CRef<CSeqDB>* seqdb = new CRef<CSeqDB>(NULL);
     try {
@@ -515,6 +515,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2006/06/14 15:58:54  camacho
+ * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+ *
  * Revision 1.39  2006/05/31 19:00:15  camacho
  * + KAPPA_PRINT_DIAGNOSTICS debugging feature
  *

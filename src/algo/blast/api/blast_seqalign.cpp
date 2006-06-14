@@ -70,7 +70,7 @@ GetSequenceLengthAndId(const IBlastSeqInfoSrc * seqinfo_src,
                        CConstRef<CSeq_id>     & seqid,
                        TSeqPos                * length)
 {
-    ASSERT(length);
+    _ASSERT(length);
     list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
     
     seqid.Reset(seqid_list.front());
@@ -207,7 +207,7 @@ s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp,
                       Int4 query_length, Int4 subject_length,
                       bool translate1, bool translate2)
 {
-    ASSERT(hsp != NULL);
+    _ASSERT(hsp != NULL);
 
     ENa_strand m_strand, s_strand;    // strands of alignment
     TSignedSeqPos m_start, s_start;   // running starts of alignment
@@ -301,8 +301,8 @@ s_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
                vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
                vector<ENa_strand>& strands)
 {
-    ASSERT(master);
-    ASSERT(slave);
+    _ASSERT(master);
+    _ASSERT(slave);
 
     CRef<CDense_seg> dense_seg(new CDense_seg());
 
@@ -341,8 +341,8 @@ s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
                 vector<ENa_strand>& strands, bool translate_master, 
                 bool translate_slave)
 {
-    ASSERT(master);
-    ASSERT(slave);
+    _ASSERT(master);
+    _ASSERT(slave);
 
     CSeq_align::C_Segs::TStd retval;
     int nsegs = (int) lengths.size();   // number of segments in alignment
@@ -474,7 +474,7 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                     const CSeq_id* id1, const CSeq_id* id2,
                     Int4 query_length, Int4 subject_length)
 {
-    ASSERT(hsp != NULL);
+    _ASSERT(hsp != NULL);
 
     vector<TSignedSeqPos> starts;
     vector<TSeqPos> lengths;
@@ -575,7 +575,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                        const CSeq_id* query_id, const CSeq_id* subject_id,
                        Int4 query_length, Int4 subject_length)
 {
-    ASSERT(hsp != NULL);
+    _ASSERT(hsp != NULL);
 
     CRef<CSeq_align> seqalign(new CSeq_align());
 
@@ -1292,8 +1292,8 @@ static void
 s_RemapToSubjectLoc(CRef<CSeq_align> subj_aligns, const CSeq_loc& subj_loc)
 {
     const int kSubjDimension = 1;
-    ASSERT(subj_aligns->GetSegs().IsDisc());
-    ASSERT(subj_loc.IsInt() || subj_loc.IsWhole());
+    _ASSERT(subj_aligns->GetSegs().IsDisc());
+    _ASSERT(subj_loc.IsInt() || subj_loc.IsWhole());
 
     /// Iterate over this subject's HSPs...
     NON_CONST_ITERATE(CSeq_align_set::Tdata, hsp, 
@@ -1485,7 +1485,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                     bool is_gapped, 
                                     bool is_ooframe)
 {
-    ASSERT(results->num_queries == query_data.GetNumQueries());
+    _ASSERT(results->num_queries == query_data.GetNumQueries());
 
     TSeqAlignVector retval;
     CConstRef<CSeq_id> subject_id;
@@ -1547,7 +1547,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                                    subj_length,
                                                    gi_list);
             }
-            ASSERT(hit_align->GetSegs().IsDisc());
+            _ASSERT(hit_align->GetSegs().IsDisc());
             RemapToQueryLoc(hit_align, *seqloc);
             s_RemapToSubjectLoc(hit_align, *seqinfo_src.GetSeqLoc(subj_index));
             seq_aligns.Reset(new CSeq_align_set());
@@ -1572,7 +1572,7 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
     TSeqAlignVector retval;
     retval.reserve(query_data.GetNumQueries());
 
-    ASSERT(results->num_queries == (int)query_data.GetNumQueries());
+    _ASSERT(results->num_queries == (int)query_data.GetNumQueries());
 
     for (Uint4 index = 0; index < seqinfo_src->Size(); index++) {
         TSeqAlignVector seqalign =
@@ -1583,7 +1583,7 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
            size. */
-        ASSERT(seqalign.size() == (size_t)query_data.GetNumQueries());
+        _ASSERT(seqalign.size() == (size_t)query_data.GetNumQueries());
 
         if (retval.size() == 0) {
             // First time around, just fill the empty vector with the 
@@ -1609,7 +1609,7 @@ s_BlastResults2SeqAlignDatabaseSearch_OMF(const BlastHSPResults  * results,
                                           bool                     is_gapped,
                                           bool                     is_ooframe)
 {
-    ASSERT(results->num_queries == (int)query.GetNumQueries());
+    _ASSERT(results->num_queries == (int)query.GetNumQueries());
     
     TSeqAlignVector retval;
     CConstRef<CSeq_id> query_id;
@@ -1690,6 +1690,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2006/06/14 15:58:54  camacho
+* Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+*
 * Revision 1.71  2006/06/12 17:22:47  madden
 * Undo accidental commit
 *
@@ -1828,7 +1831,7 @@ END_NCBI_SCOPE
 * fix msvc warning
 *
 * Revision 1.26  2003/11/24 20:59:12  ucko
-* Change one ASSERT to _ASSERT (probably more appropriate in general)
+* Change one _ASSERT to _ASSERT (probably more appropriate in general)
 * due to MSVC brokenness.
 *
 * Revision 1.25  2003/11/24 17:14:58  camacho

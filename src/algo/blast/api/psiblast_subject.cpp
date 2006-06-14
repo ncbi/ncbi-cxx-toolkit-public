@@ -83,7 +83,7 @@ IPsiBlastSubject::MakeSeqSrc()
     if ( !m_SeqSrc ) {
         x_MakeSeqSrc();
         s_CheckForBlastSeqSrcErrors(m_SeqSrc);
-        ASSERT(m_SeqSrc);
+        _ASSERT(m_SeqSrc);
     }
     return m_SeqSrc;
 }
@@ -93,7 +93,7 @@ IPsiBlastSubject::MakeSeqInfoSrc()
 {
     if ( !m_SeqInfoSrc ) {
         x_MakeSeqInfoSrc();
-        ASSERT(m_SeqInfoSrc);
+        _ASSERT(m_SeqInfoSrc);
     }
     return m_SeqInfoSrc;
 }

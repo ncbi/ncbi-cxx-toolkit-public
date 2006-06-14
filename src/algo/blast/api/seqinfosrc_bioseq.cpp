@@ -68,9 +68,9 @@ list< CRef<CSeq_id> > CBioseqSeqInfoSrc::GetId(Uint4 index) const
 {
     list< CRef<CSeq_id> > retval;
     CConstRef<CSeq_loc> sl(m_DataSource.GetSeqLoc(static_cast<int>(index)));
-    ASSERT(sl.NotEmpty());
+    _ASSERT(sl.NotEmpty());
     CRef<CSeq_id> seqid(const_cast<CSeq_id*>(sl->GetId()));
-    ASSERT(seqid.NotEmpty());
+    _ASSERT(seqid.NotEmpty());
     retval.push_back(seqid);
     return retval;
 }

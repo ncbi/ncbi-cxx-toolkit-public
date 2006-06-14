@@ -160,7 +160,7 @@ CSearchResults::GetSeqId() const
         const int query_index = 0;
         
         CRef<CSeq_align> first_disc_align = align_set->Get().front();
-        ASSERT(first_disc_align->GetType() == CSeq_align::eType_disc);
+        _ASSERT(first_disc_align->GetType() == CSeq_align::eType_disc);
         CRef<CSeq_align> first_align = 
             first_disc_align->GetSegs().GetDisc().Get().front();
         retval.Reset(& first_align->GetSeq_id(query_index));

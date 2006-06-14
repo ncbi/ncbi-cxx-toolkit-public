@@ -141,12 +141,12 @@ s_HspListToBlastSeqLoc(BlastHSPList * hsp_list,
                        int            query_start,
                        BlastSeqLoc ** locs)
 {
-    ASSERT(hsp_list);
+    _ASSERT(hsp_list);
     
     for (Int4 hsp_index = 0; hsp_index < hsp_list->hspcnt; ++hsp_index) {
         BlastHSP * hsp = hsp_list->hsp_array[hsp_index];
         
-        ASSERT(hsp);
+        _ASSERT(hsp);
         
         int left(0), right(0);
         
@@ -178,7 +178,7 @@ s_HspListToBlastSeqLoc(BlastHSPList * hsp_list,
 static void
 s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
 {
-    ASSERT(results->num_queries == (Int4)query.size());
+    _ASSERT(results->num_queries == (Int4)query.size());
     
     for (Int4 query_index = 0; query_index < (Int4)query.size(); ++query_index) {
         BlastHitList* hit_list = results->hitlist_array[query_index];
@@ -236,7 +236,7 @@ s_FillMaskLocFromBlastHSPResults(CBlastQueryVector & query,
                                  BlastHSPResults   * results,
                                  EBlastProgramType   program)
 {
-    ASSERT(results->num_queries == (Int4)query.Size());
+    _ASSERT(results->num_queries == (Int4)query.Size());
     
     for (Int4 query_index = 0; query_index < (Int4)query.Size(); ++query_index) {
         BlastHitList* hit_list = results->hitlist_array[query_index];
@@ -442,6 +442,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.28  2006/06/14 15:58:54  camacho
+ *  Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+ *
  *  Revision 1.27  2006/03/22 20:07:40  bealer
  *  - Check in fix for BlastSeqLoc double free.
  *

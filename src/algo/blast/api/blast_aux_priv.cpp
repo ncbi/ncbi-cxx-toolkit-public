@@ -76,7 +76,7 @@ InitSeqInfoSrc(CSeqDB* seqdb)
 
 CConstRef<CSeq_loc> CreateWholeSeqLocFromIds(const list< CRef<CSeq_id> > seqids)
 {
-    ASSERT(!seqids.empty());
+    _ASSERT(!seqids.empty());
     CRef<CSeq_loc> retval(new CSeq_loc);
     retval->SetWhole().Assign(**seqids.begin());
     return retval;

@@ -180,8 +180,8 @@ s_QueryVectorToTSeqLocs(const CBlastQueryVector & queries)
 static CRef<CBioseq_set>
 s_TSeqLocsToBioseqSet(const CObjMgr_QueryFactory::TSeqLocs* seqlocs)
 {
-    ASSERT(seqlocs);
-    ASSERT(!seqlocs->empty());
+    _ASSERT(seqlocs);
+    _ASSERT(!seqlocs->empty());
 
     CRef<CBioseq_set> retval(new CBioseq_set);
     CRef<CScope> scope = CSimpleOM::NewScope();
@@ -289,7 +289,7 @@ int
 CObjMgr_LocalQueryData::GetNumQueries()
 {
     int retval = m_QuerySource->Size();
-    ASSERT(retval == GetQueryInfo()->num_queries);
+    _ASSERT(retval == GetQueryInfo()->num_queries);
     return retval;
 }
 

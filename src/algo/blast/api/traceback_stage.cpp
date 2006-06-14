@@ -222,8 +222,8 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
 
     // N.B.: Only PHI BLAST pseudo lookup table is necessary
     if (kIsPhiBlast) {
-        ASSERT(lookup_segments);
-        ASSERT(m_InternalData->m_RpsData == NULL);
+        _ASSERT(lookup_segments);
+        _ASSERT(m_InternalData->m_RpsData == NULL);
         int num_pat_occurrences_in_db = 0;
         if (m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern)
            num_pat_occurrences_in_db = m_DBscanInfo->m_NumPatOccurInDB;
@@ -251,14 +251,14 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
 CSearchResultSet
 CBlastTracebackSearch::Run()
 {
-    ASSERT(m_OptsMemento);
+    _ASSERT(m_OptsMemento);
     SPHIPatternSearchBlk* phi_lookup_table(0);
 
     // For PHI BLAST we need to pass the pattern search items structure to the
     // traceback code
     if (Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType)) {
-        ASSERT(m_InternalData->m_LookupTable);
-        ASSERT(m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern);
+        _ASSERT(m_InternalData->m_LookupTable);
+        _ASSERT(m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern);
         phi_lookup_table = (SPHIPatternSearchBlk*) 
             m_InternalData->m_LookupTable->GetPointer()->lut;
         phi_lookup_table->num_patterns_db = m_DBscanInfo->m_NumPatOccurInDB;
@@ -289,8 +289,8 @@ CBlastTracebackSearch::Run()
     
     m_HspResults.Reset(WrapStruct(hsp_results, Blast_HSPResultsFree));
     
-    ASSERT(m_SeqInfoSrc);
-    ASSERT(m_QueryFactory);
+    _ASSERT(m_SeqInfoSrc);
+    _ASSERT(m_QueryFactory);
 
     TSeqAlignVector aligns =
         LocalBlastResults2SeqAlign(hsp_results,

@@ -504,7 +504,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
         const IBlastSeqInfoSrc* seqinfo_src,
         bool is_gapped, bool is_ooframe)
 {
-    ASSERT(results->num_queries == (int)query.size());
+    _ASSERT(results->num_queries == (int)query.size());
 
     TSeqAlignVector retval;
     CConstRef<CSeq_id> query_id;
@@ -586,7 +586,7 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
         query_source.GetBlastSequence(0, eBlastEncodingProtein,
                                       eNa_strand_unknown,
                                       eSentinels, &warnings);
-    ASSERT(warnings.empty());
+    _ASSERT(warnings.empty());
 
     CPsiBlastInputData input(query_seq.data.get()+1,    // skip sentinel
                              query_seq.length-2,        // don't count sentinels
@@ -711,6 +711,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2006/06/14 15:58:54  camacho
+* Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+*
 * Revision 1.71  2006/03/28 19:55:28  camacho
 * Doxygen fixes
 *
@@ -902,7 +905,7 @@ END_NCBI_SCOPE
 * Pass subject SSeqLoc directly to BLAST_OneSubjectResults2CSeqAlign instead of BlastSeqSrc
 *
 * Revision 1.10  2004/07/15 14:50:09  madden
-* removed commented out ASSERT
+* removed commented out _ASSERT
 *
 * Revision 1.9  2004/07/06 15:48:40  dondosha
 * Use EBlastProgramType enumeration type instead of EProgram when calling C code

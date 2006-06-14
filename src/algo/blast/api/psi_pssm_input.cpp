@@ -134,7 +134,7 @@ CPsiBlastInputData::~CPsiBlastInputData()
 void
 CPsiBlastInputData::Process()
 {
-    ASSERT(m_Query != NULL);
+    _ASSERT(m_Query != NULL);
 
     // Update the number of aligned sequences
     m_MsaDimensions.num_seqs = x_CountAndSelectQualifyingAlignments();
@@ -159,7 +159,7 @@ CPsiBlastInputData::x_CountAndSelectQualifyingAlignments()
     proc(*m_SeqAlignSet, m_Opts.inclusion_ethresh, hit_ids);
 
     ITERATE(CPsiBlastAlignmentProcessor::THitIdentifiers, itr, hit_ids) {
-        ASSERT(itr->first < m_ProcessHit.size());
+        _ASSERT(itr->first < m_ProcessHit.size());
         m_ProcessHit[itr->first] = 1U;
     }
     return hit_ids.size();
@@ -169,7 +169,7 @@ unsigned int
 CPsiBlastInputData::GetNumAlignedSequences() const
 {
     // Process() should result in this field being assigned a non-zero value
-    ASSERT(m_MsaDimensions.num_seqs != 0);
+    _ASSERT(m_MsaDimensions.num_seqs != 0);
     return m_MsaDimensions.num_seqs;
 }
 
@@ -248,7 +248,7 @@ CPsiBlastInputData::x_ExtractAlignmentDataUseBestAlign()
                 min_evalue = evalue;
             }
         }
-        ASSERT(best_alignment != hsp_list.end());
+        _ASSERT(best_alignment != hsp_list.end());
 
         x_ProcessDenseg((*best_alignment)->GetSegs().GetDenseg(), 
                         seq_index, min_evalue);
@@ -257,14 +257,14 @@ CPsiBlastInputData::x_ExtractAlignmentDataUseBestAlign()
 
     }
 
-    ASSERT(seq_index == GetNumAlignedSequences()+1);
+    _ASSERT(seq_index == GetNumAlignedSequences()+1);
 }
 #endif
 
 void
 CPsiBlastInputData::x_CopyQueryToMsa()
 {
-    ASSERT(m_Msa);
+    _ASSERT(m_Msa);
 
     for (unsigned int i = 0; i < GetQueryLength(); i++) {
         m_Msa->data[kQueryIndex][i].letter = m_Query[i];
@@ -303,21 +303,21 @@ CPsiBlastInputData::x_ExtractAlignmentData()
             double evalue = GetLowestEvalue((*hsp_itr)->GetScore());
             // ... below the e-value inclusion threshold
             if (evalue < m_Opts.inclusion_ethresh) {
-                ASSERT(msa_index < GetNumAlignedSequences() + 1);
+                _ASSERT(msa_index < GetNumAlignedSequences() + 1);
                 x_ProcessDenseg((*hsp_itr)->GetSegs().GetDenseg(), msa_index);
             }
         }
         msa_index++;
     }
 
-    ASSERT(seq_index == m_ProcessHit.size());
+    _ASSERT(seq_index == m_ProcessHit.size());
 }
 
 void
 CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg, 
                                     unsigned int msa_index)
 {
-    ASSERT(denseg.GetDim() == 2);
+    _ASSERT(denseg.GetDim() == 2);
 
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
     const vector<TSignedSeqPos>& starts = denseg.GetStarts();
@@ -389,7 +389,7 @@ CPsiBlastInputData::TSeqPair
 CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds, 
                                          objects::CScope& scope) 
 {
-    ASSERT(ds.GetDim() == 2);
+    _ASSERT(ds.GetDim() == 2);
     TSeqPos subjlen = 0;                    // length of the return value
     TSeqPos subj_start = kInvalidSeqPos;    // start of subject alignment
     bool subj_start_found = false;
@@ -410,7 +410,7 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
 
         subj_index += ds.GetDim();
     }
-    ASSERT(subj_start_found);
+    _ASSERT(subj_start_found);
 
     CSeq_loc seqloc;
     seqloc.SetInt().SetFrom(subj_start);
@@ -466,6 +466,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/06/14 15:58:54  camacho
+ * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+ *
  * Revision 1.14  2005/11/14 15:24:48  camacho
  * Implemented alignment processor to extract relevant sequences for PSSM generation
  *

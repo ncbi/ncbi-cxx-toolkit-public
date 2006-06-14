@@ -503,8 +503,8 @@ FindGeneticCode(int genetic_code)
     TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
             CSeq_data::e_Ncbistdaa);
 
-    ASSERT(gc_ncbistdaa.IsNcbistdaa());
-    ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
+    _ASSERT(gc_ncbistdaa.IsNcbistdaa());
+    _ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
 
     try {
         retval = new Uint1[nconv];
@@ -561,7 +561,7 @@ EProgramToEBlastProgramType(EProgram p)
 
 EProgram ProgramNameToEnum(const std::string& program_name)
 {
-    ASSERT( !program_name.empty() );
+    _ASSERT( !program_name.empty() );
 
     string lowercase_program_name(program_name);
     lowercase_program_name = NStr::ToLower(lowercase_program_name);
@@ -641,7 +641,7 @@ static pair<BlastSeqLoc*, bool>
 s_GetBlastnMask(const BlastMaskLoc* mask, unsigned int query_index)
 {
     const unsigned int kNumContexts = GetNumberOfContexts(eBlastTypeBlastn);
-    ASSERT(query_index*kNumContexts < (unsigned int)mask->total_size);
+    _ASSERT(query_index*kNumContexts < (unsigned int)mask->total_size);
 
     unsigned int context_index(query_index * kNumContexts);
 
@@ -694,7 +694,7 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
                           const BlastMaskLoc* mask, 
                           TSeqLocInfoVector& mask_v)
 {
-    ASSERT(mask);
+    _ASSERT(mask);
     const unsigned int kNumContexts = GetNumberOfContexts(program);
     const CPacked_seqint::Tdata& query_intervals = queries.Get();
 
@@ -850,6 +850,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.99  2006/06/14 15:58:54  camacho
+ * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+ *
  * Revision 1.98  2006/06/05 13:29:22  madden
  * Remove matrix_path as debug printout
  *

@@ -113,12 +113,12 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                 TSeqLocInfoVector* masked_query_regions,
                                 const CBlastRPSInfo* rps_info)
 {
-    ASSERT(opts_memento);
+    _ASSERT(opts_memento);
 
     double rps_scale_factor(1.0);
 
     if (rps_info) {
-        ASSERT(Blast_ProgramIsRpsBlast(opts_memento->m_ProgramType));
+        _ASSERT(Blast_ProgramIsRpsBlast(opts_memento->m_ProgramType));
         rps_scale_factor = rps_info->GetScalingFactor();
     }
 
@@ -238,7 +238,7 @@ CSetupFactory::x_CreateHspStream(const CBlastOptionsMemento* opts_memento,
                                  size_t number_of_queries,
                                  bool is_multi_threaded)
 {
-    ASSERT(opts_memento);
+    _ASSERT(opts_memento);
 
     SBlastHitsParameters* blast_hit_params(0);
     SBlastHitsParametersNew(opts_memento->m_HitSaveOpts,

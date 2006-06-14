@@ -152,7 +152,7 @@ s_MultiSeqGetMaxLength(void* multiseq_handle, void*)
     Uint4 index;
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
-    ASSERT(seq_info);
+    _ASSERT(seq_info);
     
     if ((retval = seq_info->GetMaxLength()) > 0)
         return retval;
@@ -175,7 +175,7 @@ s_MultiSeqGetAvgLength(void* multiseq_handle, void*)
     Uint4 index;
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
-    ASSERT(seq_info);
+    _ASSERT(seq_info);
 
     if ((avg_length = seq_info->GetAvgLength()) > 0)
         return avg_length;
@@ -197,7 +197,7 @@ s_MultiSeqGetNumSeqs(void* multiseq_handle, void*)
 {
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
-    ASSERT(seq_info);
+    _ASSERT(seq_info);
     return seq_info->GetNumSeqs();
 }
 
@@ -222,7 +222,7 @@ s_MultiSeqGetIsProt(void* multiseq_handle, void*)
 {
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
-    ASSERT(seq_info);
+    _ASSERT(seq_info);
 
     return (Boolean) seq_info->GetIsProtein();
 }
@@ -239,8 +239,8 @@ s_MultiSeqGetSequence(void* multiseq_handle, void* args)
     BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
     Int4 index;
 
-    ASSERT(seq_info);
-    ASSERT(args);
+    _ASSERT(seq_info);
+    _ASSERT(args);
 
     if (seq_info->GetNumSeqs() == 0 || !seq_args)
         return BLAST_SEQSRC_ERROR;
@@ -271,7 +271,7 @@ static void
 s_MultiSeqReleaseSequence(void* /*multiseq_handle*/, void* args)
 {
     BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
-    ASSERT(seq_args);
+    _ASSERT(seq_args);
     if (seq_args->seq->sequence_start_allocated)
         sfree(seq_args->seq->sequence_start);
 }
@@ -287,8 +287,8 @@ s_MultiSeqGetSeqLen(void* multiseq_handle, void* args)
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*)multiseq_handle;
     Int4 index;
 
-    ASSERT(seq_info);
-    ASSERT(args);
+    _ASSERT(seq_info);
+    _ASSERT(args);
 
     index = *((Int4*) args);
     return seq_info->GetSeqBlk(index)->length;
@@ -308,7 +308,7 @@ s_MultiSeqGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
 {
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
-    ASSERT(itr);
+    _ASSERT(itr);
 
     if (itr->current_pos == UINT4_MAX) {
         itr->current_pos = 0;
@@ -331,8 +331,8 @@ s_MultiSeqIteratorNext(void* multiseq_handle, BlastSeqSrcIterator* itr)
     Int4 retval = BLAST_SEQSRC_EOF;
     Int2 status = 0;
 
-    ASSERT(multiseq_handle);
-    ASSERT(itr);
+    _ASSERT(multiseq_handle);
+    _ASSERT(itr);
 
     if ((status = s_MultiSeqGetNextChunk(multiseq_handle, itr))
         == BLAST_SEQSRC_EOF) {
@@ -377,8 +377,8 @@ s_MultiSeqSrcFree(BlastSeqSrc* seq_src)
 static BlastSeqSrc* 
 s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 {
-    ASSERT(retval);
-    ASSERT(args);
+    _ASSERT(retval);
+    _ASSERT(args);
 
     SMultiSeqSrcNewArgs* seqsrc_args = (SMultiSeqSrcNewArgs*) args;
     
@@ -445,6 +445,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2006/06/14 15:58:54  camacho
+ * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+ *
  * Revision 1.37  2006/02/17 16:14:09  camacho
  * Return NcbiEmptyCStr from GetName function
  *

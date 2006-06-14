@@ -59,13 +59,13 @@ public:
     {}
     ~CPrelimSearchRunner() {}
     int operator()() {
-        ASSERT(m_OptsMemento);
-        ASSERT(m_InternalData.m_Queries);
-        ASSERT(m_InternalData.m_QueryInfo);
-        ASSERT(m_InternalData.m_SeqSrc);
-        ASSERT(m_InternalData.m_ScoreBlk);
-        ASSERT(m_InternalData.m_LookupTable);
-        ASSERT(m_InternalData.m_HspStream);
+        _ASSERT(m_OptsMemento);
+        _ASSERT(m_InternalData.m_Queries);
+        _ASSERT(m_InternalData.m_QueryInfo);
+        _ASSERT(m_InternalData.m_SeqSrc);
+        _ASSERT(m_InternalData.m_ScoreBlk);
+        _ASSERT(m_InternalData.m_LookupTable);
+        _ASSERT(m_InternalData.m_HspStream);
         Int2 retval = Blast_RunPreliminarySearch(m_OptsMemento->m_ProgramType,
                                  m_InternalData.m_Queries,
                                  m_InternalData.m_QueryInfo,

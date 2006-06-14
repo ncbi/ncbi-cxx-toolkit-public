@@ -185,7 +185,7 @@ CLocalPssmSearch::Run()
     CRef<CSearchResults> psi_results = psiblast.Run();
 
     retval.AddResult(psi_results);
-    ASSERT(retval.GetNumResults() == 1);
+    _ASSERT(retval.GetNumResults() == 1);
     return retval;
 }
 

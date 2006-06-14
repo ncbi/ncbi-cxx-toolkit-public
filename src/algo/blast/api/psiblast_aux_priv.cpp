@@ -80,8 +80,8 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
                              TSearchMessages& messages,
                              CConstRef<CBlastOptions> options)
 {
-    ASSERT(score_blk);
-    ASSERT(pssm.NotEmpty());
+    _ASSERT(score_blk);
+    _ASSERT(pssm.NotEmpty());
 
     if ( !score_blk->protein_alphabet ) {
         NCBI_THROW(CBlastException, eInvalidArgument,
@@ -113,15 +113,15 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     // Assign the matrix scores/frequency ratios
     const size_t kQueryLength = pssm->GetPssm().GetNumColumns();
     score_blk->psi_matrix = SPsiBlastScoreMatrixNew(kQueryLength);
-    ASSERT((int)score_blk->alphabet_size == (int)pssm->GetPssm().GetNumRows());
+    _ASSERT((int)score_blk->alphabet_size == (int)pssm->GetPssm().GetNumRows());
 
     // Get the scores
     bool missing_scores = false;
     try {
         auto_ptr< CNcbiMatrix<int> > scores
             (CScorematPssmConverter::GetScores(pssm));
-        ASSERT(score_blk->psi_matrix->pssm->ncols == scores->GetCols());
-        ASSERT(score_blk->psi_matrix->pssm->nrows == scores->GetRows());
+        _ASSERT(score_blk->psi_matrix->pssm->ncols == scores->GetCols());
+        _ASSERT(score_blk->psi_matrix->pssm->nrows == scores->GetRows());
 
         for (TSeqPos c = 0; c < scores->GetCols(); c++) {
             for (TSeqPos r = 0; r < scores->GetRows(); r++) {
@@ -140,9 +140,9 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     try {
         auto_ptr< CNcbiMatrix<double> > freq_ratios
             (CScorematPssmConverter::GetFreqRatios(pssm));
-        ASSERT(score_blk->psi_matrix->pssm->ncols == 
+        _ASSERT(score_blk->psi_matrix->pssm->ncols == 
                freq_ratios->GetCols());
-        ASSERT(score_blk->psi_matrix->pssm->nrows == 
+        _ASSERT(score_blk->psi_matrix->pssm->nrows == 
                freq_ratios->GetRows());
 
         for (TSeqPos c = 0; c < freq_ratios->GetCols(); c++) {
@@ -191,14 +191,14 @@ CScorematPssmConverter::GetScores(CConstRef<objects::CPssmWithParameters>
     }
 
     const CPssm& pssm = pssm_asn->GetPssm();
-    ASSERT((size_t)pssm.GetFinalData().GetScores().size() ==
+    _ASSERT((size_t)pssm.GetFinalData().GetScores().size() ==
            (size_t)pssm.GetNumRows()*pssm_asn->GetPssm().GetNumColumns());
 
     auto_ptr< CNcbiMatrix<int> > retval
         (new CNcbiMatrix<int>(pssm.GetNumRows(), 
                               pssm.GetNumColumns(), 
                               BLAST_SCORE_MIN));
-    ASSERT(retval->GetRows() == (size_t)BLASTAA_SIZE);
+    _ASSERT(retval->GetRows() == (size_t)BLASTAA_SIZE);
 
     CPssmFinalData::TScores::const_iterator itr =
         pssm.GetFinalData().GetScores().begin();
@@ -215,7 +215,7 @@ CScorematPssmConverter::GetScores(CConstRef<objects::CPssmWithParameters>
             }
         }
     }
-    ASSERT(itr == pssm.GetFinalData().GetScores().end());
+    _ASSERT(itr == pssm.GetFinalData().GetScores().end());
     return retval.release();
 }
 
@@ -234,13 +234,13 @@ CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters>
     }
 
     const CPssm& pssm = pssm_asn->GetPssm();
-    ASSERT((size_t)pssm.GetIntermediateData().GetFreqRatios().size() ==
+    _ASSERT((size_t)pssm.GetIntermediateData().GetFreqRatios().size() ==
            (size_t)pssm.GetNumRows()*pssm_asn->GetPssm().GetNumColumns());
 
     auto_ptr< CNcbiMatrix<double> > retval
         (new CNcbiMatrix<double>(pssm.GetNumRows(),
                                  pssm.GetNumColumns()));
-    ASSERT(retval->GetRows() == (size_t)BLASTAA_SIZE);
+    _ASSERT(retval->GetRows() == (size_t)BLASTAA_SIZE);
 
     CPssmIntermediateData::TFreqRatios::const_iterator itr =
         pssm.GetIntermediateData().GetFreqRatios().begin();
@@ -257,7 +257,7 @@ CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters>
             }
         }
     }
-    ASSERT(itr == pssm.GetIntermediateData().GetFreqRatios().end());
+    _ASSERT(itr == pssm.GetIntermediateData().GetFreqRatios().end());
     return retval.release();
 }
 
@@ -278,7 +278,7 @@ PsiBlastAddAncilliaryPssmData(CPssmWithParameters& pssm,
                               int gap_extend)
 {
     pssm.SetPssm().SetQuery().SetSeq(const_cast<CBioseq&>(query));
-    ASSERT(pssm.GetParams().GetRpsdbparams().IsSetMatrixName());
+    _ASSERT(pssm.GetParams().GetRpsdbparams().IsSetMatrixName());
     pssm.SetParams().SetRpsdbparams().SetGapOpen(gap_open);
     pssm.SetParams().SetRpsdbparams().SetGapExtend(gap_extend);
 }
@@ -291,8 +291,8 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
 
     CRef<ILocalQueryData> query_data(seq_fetcher->MakeLocalQueryData(&opts));
     BLAST_SequenceBlk* seqblk = query_data->GetSequenceBlk();
-    ASSERT(query_data->GetSeqLength(0) == seqblk->length);
-    ASSERT(query_data->GetSeqLength(0) == pssm->GetPssm().GetNumColumns());
+    _ASSERT(query_data->GetSeqLength(0) == seqblk->length);
+    _ASSERT(query_data->GetSeqLength(0) == pssm->GetPssm().GetNumColumns());
     auto_ptr< CNcbiMatrix<double> > freq_ratios
         (CScorematPssmConverter::GetFreqRatios(pssm));
 
@@ -355,7 +355,7 @@ CPsiBlastAlignmentProcessor::operator()
     // For each discontinuous Seq-align corresponding to each query-subj pair
     // (i.e.: for each hit)
     ITERATE(CSeq_align_set::Tdata, hit, alignments.Get()) {
-        ASSERT((*hit)->GetSegs().IsDisc());
+        _ASSERT((*hit)->GetSegs().IsDisc());
 
         // For each HSP of this query-subj pair
         ITERATE(CSeq_align::C_Segs::TDisc::Tdata, hsp,
@@ -465,8 +465,8 @@ CPsiBlastValidate::QueryFactory(CRef<IQueryFactory> query_factory,
             NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
         }
     }
-    ASSERT(sblk);
-    ASSERT(sblk->length > 0);
+    _ASSERT(sblk);
+    _ASSERT(sblk->length > 0);
 
     CFormatGuess::ESequenceType sequence_type =
         CFormatGuess::SequenceType((const char*)sblk->sequence_start,

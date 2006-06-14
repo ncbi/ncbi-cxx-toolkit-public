@@ -143,7 +143,7 @@ CBlastSeqVectorFromCSeq_data::SetCoding(objects::CSeq_data::E_Choice c)
                                              0, size(),
                                              tmp,
                                              x_Encoding_CSeq_data2CSeqUtil(c));
-        ASSERT(nconv == tmp.size());
+        _ASSERT(nconv == tmp.size());
         nconv += 0; // to eliminate compiler warning
         m_Encoding = x_Encoding_CSeq_data2CSeqUtil(c);
         m_SequenceData = tmp;
@@ -200,7 +200,7 @@ CBlastSeqVectorFromCSeq_data::x_ComplementData()
 {
     TSeqPos nconv = CSeqManip::ReverseComplement(m_SequenceData,
                                                  m_Encoding, 0, size());
-    ASSERT(nconv == size());
+    _ASSERT(nconv == size());
     nconv += 0; // eliminate compiler warning
 }
 

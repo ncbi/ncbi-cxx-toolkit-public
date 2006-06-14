@@ -139,7 +139,7 @@ int
 CObjMgrFree_LocalQueryData::GetNumQueries()
 {
     int retval = m_QuerySource->Size();
-    ASSERT(retval == GetQueryInfo()->num_queries);
+    _ASSERT(retval == GetQueryInfo()->num_queries);
     return retval;
 }
 

@@ -171,7 +171,7 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
     m_InternalData->m_LookupTable.Reset
         (new TLookupTableWrap(lut, LookupTableWrapFree));
     lookup_segments = BlastSeqLocFree(lookup_segments);
-    ASSERT(lookup_segments == NULL);
+    _ASSERT(lookup_segments == NULL);
 
     // 6. Create diagnostics
     BlastDiagnostics* diags = IsMultiThreaded()
@@ -246,7 +246,7 @@ CBlastPrelimSearch::Run()
          ? x_LaunchMultiThreadedSearch()
          : CPrelimSearchRunner(*m_InternalData, m_OptsMemento)());
     
-    ASSERT(retval == 0);
+    _ASSERT(retval == 0);
     if (retval) {
         NCBI_THROW(CBlastException, eCoreBlastError,
                    BlastErrorCode2String(retval));

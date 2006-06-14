@@ -88,16 +88,16 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
 CSearchResultSet
 CLocalBlast::Run()
 {
-    ASSERT(m_QueryFactory);
-    ASSERT(m_PrelimSearch);
-    ASSERT(m_Opts);
+    _ASSERT(m_QueryFactory);
+    _ASSERT(m_PrelimSearch);
+    _ASSERT(m_Opts);
 
     // Note: we need to pass the search messages ...
     // filtered query regions should be masked in the BLAST_SequenceBlk
     // already.
     
     m_InternalData = m_PrelimSearch->Run();
-    ASSERT(m_InternalData);
+    _ASSERT(m_InternalData);
 
     TSearchMessages search_msgs = m_PrelimSearch->GetSearchMessages();
 

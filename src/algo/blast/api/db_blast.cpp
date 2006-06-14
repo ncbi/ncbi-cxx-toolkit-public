@@ -355,13 +355,13 @@ CDbBlast::CDbBlast(ILocalQueryData* query_data,
 void
 CDbBlast::x_SetupQueryDataStructuresFromInterface(void)
 {
-    ASSERT(m_ipQueryData);
+    _ASSERT(m_ipQueryData);
     m_iclsQueryInfo.Reset(
             const_cast<BlastQueryInfo*>(m_ipQueryData->GetQueryInfo()));
     m_iclsQueries.Reset(
             const_cast<BLAST_SequenceBlk*>(m_ipQueryData->GetSequenceBlk()));
-    ASSERT(m_iclsQueryInfo.Get());
-    ASSERT(m_iclsQueries.Get());
+    _ASSERT(m_iclsQueryInfo.Get());
+    _ASSERT(m_iclsQueries.Get());
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
@@ -790,6 +790,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.92  2006/06/14 15:58:54  camacho
+ * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+ *
  * Revision 1.91  2006/06/05 13:30:28  madden
  * Add call to BlastFindMatrixPath
  *

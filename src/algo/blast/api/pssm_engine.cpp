@@ -133,7 +133,7 @@ s_CheckAgainstNullData(IPssmInputFreqRatios* pssm_input_freqratios)
 static void
 s_Validate(IPssmInputData* pssm_input_msa)
 {
-    ASSERT(pssm_input_msa);
+    _ASSERT(pssm_input_msa);
 
     if ( !pssm_input_msa->GetData() ) {
         NCBI_THROW(CPssmEngineException, eNullInputData,
@@ -155,7 +155,7 @@ s_Validate(IPssmInputData* pssm_input_msa)
 static void
 s_Validate(IPssmInputFreqRatios* pssm_input_fr)
 {
-    ASSERT(pssm_input_fr);
+    _ASSERT(pssm_input_fr);
 
     ITERATE(CNcbiMatrix<double>, itr, pssm_input_fr->GetData()) {
         if (*itr < 0.0) {
@@ -291,7 +291,7 @@ private:
 CRef<CPssmWithParameters>
 CPssmEngine::x_CreatePssmFromFreqRatios()
 {
-    ASSERT(m_PssmInputFreqRatios);
+    _ASSERT(m_PssmInputFreqRatios);
 
     m_PssmInputFreqRatios->Process();
     s_Validate(m_PssmInputFreqRatios);
@@ -322,7 +322,7 @@ CPssmEngine::x_CreatePssmFromFreqRatios()
 CRef<CPssmWithParameters>
 CPssmEngine::x_CreatePssmFromMsa()
 {
-    ASSERT(m_PssmInput);
+    _ASSERT(m_PssmInput);
 
     m_PssmInput->Process();
     s_Validate(m_PssmInput);
@@ -354,7 +354,7 @@ unsigned char*
 CPssmEngine::x_GuardProteinQuery(const unsigned char* query,
                                  unsigned int query_length)
 {
-    ASSERT(query);
+    _ASSERT(query);
 
     unsigned char* retval = NULL;
     retval = (unsigned char*) malloc(sizeof(unsigned char)*(query_length + 2));
@@ -389,8 +389,8 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
                                     unsigned int query_length,
                                     const char* matrix_name)
 {
-    ASSERT(query);
-    ASSERT(matrix_name);
+    _ASSERT(query);
+    _ASSERT(matrix_name);
 
     // This program type will need to be changed when psi-tblastn is
     // implemented
@@ -449,7 +449,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
         }
     }
 
-    ASSERT(retval->kbp_ideal);
+    _ASSERT(retval->kbp_ideal);
 
     m_ScoreBlk.Reset(retval);
 }
@@ -483,7 +483,7 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
                               const PSIBlastOptions* opts,
                               const PSIDiagnosticsResponse* diagnostics)
 {
-    ASSERT(pssm);
+    _ASSERT(pssm);
 
     CRef<CPssmWithParameters> retval(new CPssmWithParameters);
 
@@ -531,8 +531,8 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
         return retval;
     }
 
-    ASSERT(pssm->nrows == diagnostics->alphabet_size);
-    ASSERT(pssm->ncols == diagnostics->query_length);
+    _ASSERT(pssm->nrows == diagnostics->alphabet_size);
+    _ASSERT(pssm->ncols == diagnostics->query_length);
 
     if (diagnostics->information_content) {
         NCBI_THROW(CBlastException, eNotSupported, "Information content "
@@ -612,6 +612,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2006/06/14 15:58:54  camacho
+ * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
+ *
  * Revision 1.47  2006/06/05 13:30:28  madden
  * Add call to BlastFindMatrixPath
  *

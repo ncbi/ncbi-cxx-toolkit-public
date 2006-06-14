@@ -141,7 +141,7 @@ CPsiBlastImpl::Run()
 
     // Run the traceback stage
     IBlastSeqInfoSrc* seqinfo_src(m_Subject->MakeSeqInfoSrc());
-    ASSERT(seqinfo_src);
+    _ASSERT(seqinfo_src);
     TSearchMessages search_messages = prelim_search.GetSearchMessages();
     CBlastTracebackSearch tback(m_Query, 
                                 core_data, 
