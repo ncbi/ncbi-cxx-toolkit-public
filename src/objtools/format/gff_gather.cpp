@@ -66,8 +66,6 @@ void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         x_GatherAlignments();
     }
     ItemOS() << new CBaseCountItem(ctx);
-    x_GatherSequence();
-
     ItemOS() << new CEndSectionItem(ctx);
 }
 
@@ -81,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/06/14 18:13:45  dicuccio
+* Don't gather sequence objects in GTF - they aren't used
+*
 * Revision 1.10  2004/11/24 16:52:50  shomrat
 * Standardize flat-file customization flags
 *
