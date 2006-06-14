@@ -42,11 +42,12 @@ static const string kAsnDeflineObjLabel = "ASN1_BlastDefLine";
 static const string kTaxDataObjLabel    = "TaxNamesData";
 
 enum LinkoutTypes {
-  eLocuslink = (1<<0),
-  eUnigene   = (1<<1),
-  eStructure = (1<<2),
-  eGeo       = (1<<3),
-  eGene      = (1<<4)
+  eLocuslink       = (1<<0),
+  eUnigene         = (1<<1),
+  eStructure       = (1<<2),
+  eGeo             = (1<<3),
+  eGene            = (1<<4),
+  eInMapviewer     = (1<<16)
 };
 
 END_objects_SCOPE
@@ -56,6 +57,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/06/14 21:47:45  jianye
+* added eInMapviewer
+*
 * Revision 1.3  2004/08/19 13:03:47  dicuccio
 * Added missing include for ncbistd.hpp (to get BEGIN_NCBI_SCOPE/END_NCBI_SCOPE)
 *
