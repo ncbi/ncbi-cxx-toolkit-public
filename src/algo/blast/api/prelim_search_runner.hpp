@@ -104,34 +104,27 @@ class CPrelimSearchThread : public CThread
 {
 public:
     CPrelimSearchThread(SInternalData& internal_data,
-                        const CBlastOptionsMemento* opts_memento);
+                        const CBlastOptionsMemento* opts_memento)
+        : m_InternalData(internal_data), m_OptsMemento(opts_memento)
+    {
+        // The following fields need to be copied to ensure MT-safety
+        BlastSeqSrc* seqsrc = 
+            BlastSeqSrcCopy(m_InternalData.m_SeqSrc->GetPointer());
+        m_InternalData.m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 
+                                                       BlastSeqSrcFree));
+    }
+
 protected:
-    virtual void* Main(void);
-    virtual ~CPrelimSearchThread(void);
+    virtual ~CPrelimSearchThread(void) {}
+
+    virtual void* Main(void) {
+        return (void*) CPrelimSearchRunner(m_InternalData, m_OptsMemento)();
+    }
+
 private:
     SInternalData& m_InternalData;
     const CBlastOptionsMemento* m_OptsMemento;
 };
-
-CPrelimSearchThread::CPrelimSearchThread(SInternalData& internal_data,
-                                     const CBlastOptionsMemento* opts_memento)
-    : m_InternalData(internal_data), m_OptsMemento(opts_memento)
-{
-    // The following fields need to be copied to ensure MT-safety
-    BlastSeqSrc* seqsrc = 
-        BlastSeqSrcCopy(m_InternalData.m_SeqSrc->GetPointer());
-    m_InternalData.m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
-}
-
-CPrelimSearchThread::~CPrelimSearchThread()
-{
-}
-
-void*
-CPrelimSearchThread::Main(void)
-{
-    return (void*) CPrelimSearchRunner(m_InternalData, m_OptsMemento)();
-}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
