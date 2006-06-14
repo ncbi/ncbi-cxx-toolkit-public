@@ -57,40 +57,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-/// Thread class to run the preliminary stage of the BLAST search
-class CPrelimSearchThread : public CThread
-{
-public:
-    CPrelimSearchThread(SInternalData& internal_data,
-                        const CBlastOptionsMemento* opts_memento);
-protected:
-    virtual void* Main(void);
-    ~CPrelimSearchThread(void);
-private:
-    SInternalData& m_InternalData;
-    const CBlastOptionsMemento* m_OptsMemento;
-};
-
-CPrelimSearchThread::CPrelimSearchThread(SInternalData& internal_data,
-                                         const CBlastOptionsMemento* opts_memento)
-    : m_InternalData(internal_data), m_OptsMemento(opts_memento)
-{
-    // The following fields need to be copied to ensure MT-safety
-    BlastSeqSrc* seqsrc = 
-        BlastSeqSrcCopy(m_InternalData.m_SeqSrc->GetPointer());
-    m_InternalData.m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
-}
-
-CPrelimSearchThread::~CPrelimSearchThread()
-{
-}
-
-void*
-CPrelimSearchThread::Main(void)
-{
-    return (void*) CPrelimSearchRunner(m_InternalData, m_OptsMemento)();
-}
-
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
                                        const CSearchDatabase& dbinfo)
