@@ -624,10 +624,10 @@ public:
     /// @param buffer Buffer of raw data.
     /// @param seq_length Returned length of the sequence data.
     /// @param seq_length Returned length of the ambiguity data.
-    void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
-                                       const char ** buffer,
-                                       int         * seq_length,
-                                       int         * ambig_length) const;
+    void GetRawSeqAndAmbig(int           oid,
+                           const char ** buffer,
+                           int         * seq_length,
+                           int         * ambig_length) const;
     
 private:
     CLASS_MARKER_FIELD("IMPL")
