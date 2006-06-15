@@ -32,10 +32,12 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_socket.h>
-#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_userhost.hpp>
+#include <connect/ncbi_util.h>
+
 
 BEGIN_NCBI_SCOPE
+
 
 void SetDiagUserAndHost(TDiagUserAndHost flags)
 {
@@ -45,7 +47,7 @@ void SetDiagUserAndHost(TDiagUserAndHost flags)
         ctx.GetProperty("username").empty()) {
         const int buf_len = 256;
         char buf[buf_len];
-        CONNUTIL_GetUsername(buf, buf_len);
+        CORE_GetUsername(buf, buf_len);
         if ( *buf ) {
             GetDiagContext().SetUsername(buf);
         }
@@ -55,7 +57,7 @@ void SetDiagUserAndHost(TDiagUserAndHost flags)
         ctx.GetProperty("hostname").empty()) {
         const int buf_len = 256;
         char buf[buf_len];
-        if ( SOCK_gethostname(buf, buf_len) == 0) {
+        if (SOCK_gethostname(buf, buf_len) == 0) {
             GetDiagContext().SetHostname(buf);
         }
     }
@@ -69,9 +71,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/06/15 02:45:37  lavr
+ * Use CORE_GetUsername, now from <ncbi_util.h>
+ *
  * Revision 1.1  2006/01/30 19:55:27  grichenk
  * Initial revision
- *
  *
  * ===========================================================================
  */
