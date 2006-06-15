@@ -384,7 +384,8 @@ string CGFFFormatter::x_GetGeneID(const CFlatFeature& feat,
     string main_acc = ctx.GetAccession();
     if (ctx.IsPart()) {
         const CSeq_id& id = *(ctx.GetMaster().GetHandle().GetSeqId());
-        main_acc = ctx.GetPreferredSynonym(id).GetSeqIdString(true);
+        CSeq_id_Handle idh = ctx.GetPreferredSynonym(id);
+        main_acc = idh.GetSeqId()->GetSeqIdString(true);
     }
 
     string gene_id = main_acc + ':' + gene;
@@ -438,8 +439,8 @@ string CGFFFormatter::x_GetTranscriptID
     if (mrna_feat.GetPointer()  &&  mrna_feat->IsSetProduct()) {
         try {
             const CSeq_id& id = sequence::GetId(mrna_feat->GetProduct(), 0);
-            string transcript_id =
-                ctx.GetPreferredSynonym(id).GetSeqIdString(true);
+            CSeq_id_Handle idh = ctx.GetPreferredSynonym(id);
+            string transcript_id = idh.GetSeqId()->GetSeqIdString(true);
             return transcript_id;
         }
         catch (...) {
@@ -573,6 +574,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/06/15 17:52:05  dicuccio
+* Changes to match API shift in GetPreferredSynonym()
+*
 * Revision 1.17  2005/07/15 18:33:39  dicuccio
 * Dump correct frame for GFF files
 *
