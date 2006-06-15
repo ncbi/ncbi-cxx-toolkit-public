@@ -77,6 +77,11 @@ public:
         if (m_Request.IsExclusiveModeRequested())
             context.RequestExclusiveMode();
 
+        if (context.IsLogRequested()) {
+            LOG_POST( CTime(CTime::eCurrent).AsString() 
+                      << ": running : " << m_Params.GetAppPath() << " " << m_Request.GetCmdLine());
+        }
+
         vector<string> args;
         NStr::Tokenize(m_Request.GetCmdLine(), " ", args);
         
@@ -181,6 +186,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/06/15 20:08:31  didenko
+ * Added logging of a command line.
+ *
  * Revision 1.17  2006/05/30 16:43:36  didenko
  * Moved the commonly used code to separate files.
  *
