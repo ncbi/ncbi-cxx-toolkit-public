@@ -120,22 +120,15 @@ CBioseqContext::~CBioseqContext(void)
 }
 
 
-const CSeq_id& CBioseqContext::GetPreferredSynonym(const CSeq_id& id) const
+CSeq_id_Handle CBioseqContext::GetPreferredSynonym(const CSeq_id& id) const
 {
     if ( id.IsGi()  &&  id.GetGi() == m_Gi ) {
-        return *m_PrimaryId;
+        return CSeq_id_Handle::GetHandle(*m_PrimaryId);
     }
 
-    CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandle(id);
-    if ( h ) {
-        if ( h == m_Handle ) {
-            return *m_PrimaryId;
-        } else if ( h.GetSeqId().NotEmpty() ) {
-            return *FindBestChoice(h.GetBioseqCore()->GetId(), CSeq_id::Score);
-        }
-    }
-
-    return id;
+    CSeq_id_Handle idh =
+        sequence::GetId(id, m_Handle.GetScope(), sequence::eGetId_Best);
+    return idh;
 }
 
 
@@ -187,8 +180,15 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 
     if (user_loc != NULL) {
         // map the user location to the current bioseq
-        CSeq_loc_Mapper mapper(m_Handle, CSeq_loc_Mapper::eSeqMap_Up);
-        loc.Reset(mapper.Map(*user_loc));
+        CSeq_id_Handle idh1 = CSeq_id_Handle::GetHandle(*m_Handle.GetSeqId());
+        CSeq_id_Handle idh2 = sequence::GetIdHandle(*user_loc, &m_Handle.GetScope());
+        if ( !sequence::IsSameBioseq(idh1, idh2, &m_Handle.GetScope()) ) {
+            CSeq_loc_Mapper mapper(m_Handle, CSeq_loc_Mapper::eSeqMap_Up);
+            loc.Reset(mapper.Map(*user_loc));
+        } else {
+            loc.Reset(new CSeq_loc);
+            loc->Assign(*user_loc);
+        }
 
         if (loc) {
             if (loc->IsWhole()) {
@@ -657,6 +657,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2006/06/15 17:50:59  dicuccio
+* Use seq-id handle instead of raw seq-id in GetPreferredSynonym().  Use
+* sequence::GetId() to retrieve synonym instead of requiring retrieval of bioseq
+* handle
+*
 * Revision 1.41  2005/12/06 15:33:35  ludwigf
 * FIXED: CMasterContext::x_SetBaseName() would sometimes retain an unwanted
 * suffix when computing the base name.

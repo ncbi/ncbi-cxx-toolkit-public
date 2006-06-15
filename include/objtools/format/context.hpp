@@ -87,7 +87,7 @@ public:
 
     // -- id information
     CSeq_id* GetPrimaryId(void) { return m_PrimaryId; }
-    const CSeq_id& GetPreferredSynonym(const CSeq_id& id) const;
+    CSeq_id_Handle GetPreferredSynonym(const CSeq_id& id) const;
     const string& GetAccession(void) const { return m_Accession; }
     int  GetGI(void) const { return m_Gi; }
     
@@ -557,6 +557,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/06/15 17:50:59  dicuccio
+* Use seq-id handle instead of raw seq-id in GetPreferredSynonym().  Use
+* sequence::GetId() to retrieve synonym instead of requiring retrieval of bioseq
+* handle
+*
 * Revision 1.28  2005/09/13 19:22:55  jcherry
 * Added export specifiers
 *
