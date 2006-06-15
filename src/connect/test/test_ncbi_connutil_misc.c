@@ -369,17 +369,6 @@ static void TEST_ConnNetInfo(void)
 }
 
 
-static void TEST_GetUsername(void)
-{
-    char buffer[512];
-    const char* username = CONNUTIL_GetUsername(buffer, sizeof(buffer));
-    printf("Username = %s%s%s\n",
-           username ? (*username ? "" : "\"") : "<",
-           username ?   username              : "NULL",
-           username ? (*username ? "" : "\"") : ">");
-}
-
-
 /***********************************************************************
  *  MAIN
  */
@@ -396,7 +385,6 @@ int main(void)
     TEST_BASE64_Encoding();
     TEST_MIME();
     TEST_ConnNetInfo();
-    TEST_GetUsername();
 
     CORE_SetLOG(0);
     return 0;
@@ -406,6 +394,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2006/06/15 03:02:52  lavr
+ * GetUsername test moved from here to test_ncbi_core.c
+ *
  * Revision 6.24  2006/04/19 02:22:57  lavr
  * Modify test for Pre/Post overrides of SConnNetInfo::args
  *
