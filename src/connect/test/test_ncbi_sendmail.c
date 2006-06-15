@@ -121,6 +121,7 @@ int main(int argc, const char* argv[])
         return 0;
     }
 
+#if 1
     CORE_LOG(eLOG_Note, "Phase 1 of 2: Testing CORE_SendMail");
 
     n = (sizeof(to)/sizeof(to[0]))*
@@ -137,6 +138,9 @@ int main(int argc, const char* argv[])
                     CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
             }
     }
+#else
+    CORE_LOG(eLOG_Note, "Phase 1 of 2: Skipping CORE_SendMail tests");
+#endif
 
     CORE_LOG(eLOG_Note, "Phase 2 of 2: Testing CORE_SendMailEx");
 
@@ -149,14 +153,14 @@ int main(int argc, const char* argv[])
 
     CORE_LOG(eLOG_Note, "Testing bad port");
     info.mx_port = 10;
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "Bad port", &info);
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
 
     CORE_LOG(eLOG_Note, "Testing bad protocol");
     info.mx_port = 21;
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "Protocol", &info);
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
@@ -165,7 +169,7 @@ int main(int argc, const char* argv[])
     info.mx_host = "www.ncbi.nlm.nih.gov";
     info.mx_timeout.sec = 5;
     info.mx_port = 80;
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "Timeout", &info);
     if (!retval)
         CORE_LOG(eLOG_Error, "Test failed");
     else
@@ -176,7 +180,7 @@ int main(int argc, const char* argv[])
 
     CORE_LOG(eLOG_Note, "Testing bad host");
     info.mx_host = "abrakadabra";
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "Bad host", &info);
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
@@ -185,7 +189,7 @@ int main(int argc, const char* argv[])
 
     CORE_LOG(eLOG_Note, "Testing cc");
     info.cc = "vakatov";
-    retval = CORE_SendMailEx("", "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx("", "CORE_SendMailEx", "CC", &info);
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
     CORE_LOG(eLOG_Note, "Test passed");
@@ -193,7 +197,7 @@ int main(int argc, const char* argv[])
     CORE_LOG(eLOG_Note, "Testing bcc");
     info.cc = 0;
     info.bcc = "vakatov";
-    retval = CORE_SendMailEx(0, "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx(0, "CORE_SendMailEx", "Bcc", &info);
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
     CORE_LOG(eLOG_Note, "Test passed");
@@ -206,7 +210,7 @@ int main(int argc, const char* argv[])
     for (i = 0; i < TEST_HUGE_BODY_SIZE - 1; i++)
         huge_body[i] = "0123456789\nABCDEFGHIJKLMNOPQRSTUVWXYZ ."[rand() % 39];
     huge_body[i] = 0;
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", huge_body, &info);
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", huge_body, &info);
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
     if (!(fp = fopen("test_ncbi_sendmail.out", "w")) ||
@@ -220,20 +224,19 @@ int main(int argc, const char* argv[])
 
     CORE_LOG(eLOG_Note, "Testing custom headers");
     info.header = "Organization: NCBI/NLM/NIH\nReference: abcdefghijk";
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test",
-                             "Custom header test", &info);
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "Custom header",&info);
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
     CORE_LOG(eLOG_Note, "Test passed");
 
     CORE_LOG(eLOG_Note, "Testing no recipients");
-    retval = CORE_SendMailEx(0, "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx(0, "CORE_SendMailEx", "No recipients", &info);
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
 
     CORE_LOG(eLOG_Note, "Testing AS-IS message");
-    info.mx_no_header = 1/*true*/;
+    info.mx_options = fSendMail_NoMxHeader;
     retval = CORE_SendMailEx("lavr",
                              "BAD SUBJECT SHOULD NOT APPEAR BUT IGNORED",
                              "From: yourself\n"
@@ -257,20 +260,29 @@ int main(int argc, const char* argv[])
     CORE_LOG(eLOG_Note, "Test passed");
 
     info.body_size = 0;
-    info.mx_no_header = 0;
+    info.mx_options = 0;
     info.mx_host = mx_host;
 
     CORE_LOG(eLOG_Note, "Testing bad from");
     strcpy(info.from, "blahblah@blahblah");
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "Bad from",&info);
     if (!retval)
         CORE_LOG(eLOG_Error, "Test failed");
     else
         CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
 
+    SendMailInfo_Init(&info);
+    CORE_LOG(eLOG_Note, "Testing drop no FQDN option");
+    info.mx_options |= fSendMail_DropNonFQDNHost;
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "No FQDN", &info);
+    if (retval)
+        CORE_LOGF(eLOG_Error, ("Test failed: %s", retval));
+    else
+        CORE_LOG(eLOG_Note, "Test passed");
+
     CORE_LOG(eLOG_Note, "Testing bad magic");
     info.magic_number = 0;
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "Bad Magic", &info);
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
@@ -283,6 +295,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2006/06/15 03:02:13  lavr
+ * fSendMail_DropNonFQDNHost test added
+ *
  * Revision 6.17  2005/12/14 21:44:55  lavr
  * Prettier formatting only
  *
