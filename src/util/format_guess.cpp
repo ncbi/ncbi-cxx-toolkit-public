@@ -328,6 +328,75 @@ bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
 }
 
 
+bool x_IsLineGlimmer3(const string& line)
+{
+    list<string> toks;
+    NStr::Split(line, "\t ", toks);
+    if (toks.size() != 5) {
+        return false;
+    }
+
+    list<string>::iterator i = toks.begin();
+
+    /// first column: skip (ascii identifier)
+    ++i;
+
+    /// second, third columns: both ints
+    try {
+        NStr::StringToInt(*i++);
+        NStr::StringToInt(*i++);
+    }
+    catch (...) {
+        return false;
+    }
+
+    /// fourth column: int in the range of -3...3
+    try {
+        int frame = NStr::StringToInt(*i++);
+        if (frame < -3  ||  frame > 3) {
+            return false;
+        }
+    }
+    catch (...) {
+        return false;
+    }
+
+    /// fifth column: score; double
+    try {
+        NStr::StringToDouble(*i);
+    }
+    catch (...) {
+    }
+
+    return true;
+}
+
+
+bool x_IsInputGlimmer3( const char* byte_buf, size_t byte_count )
+{
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+
+    /// first line should be a FASTA defline
+    list<string>::iterator it = lines.begin();
+    if (it->empty()  ||  (*it)[0] != '>') {
+        return false;
+    }
+
+    /// next lines should be easily parseable, with five columns
+    for (++it;  it != lines.end();  ++it) {
+        if (x_IsLineGlimmer3(*it)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 bool x_IsLineGtf( const string& line )
 {
     vector<string> tokens;
@@ -681,6 +750,9 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     if ( x_IsInputGtf( (const char*)buf, count ) ) {
         return eGtf;
     }
+    if ( x_IsInputGlimmer3( (const char*)buf, count ) ) {
+        return eGlimmer3;
+    }
     if ( x_IsInputAgp( (const char*)buf, count ) ) {
         return eAgp;
     }
@@ -782,6 +854,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/06/15 17:45:40  dicuccio
+ * Added recognition of Glimmer3 predictions
+ *
  * Revision 1.25  2006/06/09 15:08:29  ludwigf
  * FIXED: Two warnings that I introduced in the last check in.
  *

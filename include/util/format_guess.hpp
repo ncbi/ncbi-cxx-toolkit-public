@@ -52,7 +52,8 @@ public:
         eTextASN,
         eFasta,
         eXml,
-        eRmo,                           // repeatmasker out
+        eRmo,           // repeatmasker out
+        eGlimmer3,      // Glimmer3 predictions file
         ePhrapAce,
         eGtf,
         eAgp,
@@ -80,6 +81,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/15 17:45:40  dicuccio
+ * Added recognition of Glimmer3 predictions
+ *
  * Revision 1.4  2006/06/05 15:06:36  ludwigf
  * ADDED: IDs for the PHRAP ACE, GTF, AGP, and Newick tree file types.
  *
