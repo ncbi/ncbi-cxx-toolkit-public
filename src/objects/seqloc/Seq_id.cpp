@@ -572,8 +572,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             if (main_size != acc.size()) {
                 return eAcc_unknown; // these should all be unversioned
             }
-            if (digit_pos == 0  &&
-                (main_size == 4  ||  (main_size > 4  &&  acc[4] == '|'))) {
+            if (digit_pos == 0  &&  main_size >= 4
+                &&  (main_size <= 5
+                     ||  (ispunct((unsigned char)acc[4])  &&  acc[4] != '.'))) {
                 return eAcc_pdb;
             } else if (digit_pos == 1  &&  main_size == 6
                        &&  (pfx[0] == 'O' || pfx[0] == 'P' || pfx[0] == 'Q')
@@ -1237,8 +1238,13 @@ CSeq_id& CSeq_id::Set(const string& the_id_in)
             NCBI_THROW(CSeqIdException, eFormat, "Malformatted ID " + the_id);
         case e_Pdb:
         {
-            string mol, chain;
-            NStr::SplitInTwo(the_id, "|", mol, chain);
+            string mol(the_id, 0, 4), chain;
+            // NStr::SplitInTwo(the_id, "|", mol, chain);
+            if (the_id.size() > 5) {
+                chain = the_id.substr(5);
+            } else if (the_id.size() == 5  &&  the_id[4] != '|') {
+                chain = the_id[4];
+            }
             return Set(type, mol, chain);
         }
         default:
@@ -1550,7 +1556,7 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
             } else if (NStr::EqualNocase(name, "VB")) {
                 pdb.SetChain('|');
             } else if (name.size() == 2  &&  name[0] == name[1]) {
-                pdb.SetChain(Locase(static_cast<unsigned char>(name[0])));
+                pdb.SetChain(tolower(static_cast<unsigned char>(name[0])));
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
                            "Unexpected PDB chain id " + name + " for " + acc);
@@ -1590,6 +1596,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.129  2006/06/15 14:19:17  ucko
+ * Loosen syntax requirements for bare PDB accessions.
+ *
  * Revision 6.128  2006/05/25 14:39:34  ucko
  * IdentifyAccession: EC -> eAcc_gb_est.
  *

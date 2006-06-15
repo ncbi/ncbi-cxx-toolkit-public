@@ -180,10 +180,14 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromPDBAcc)
     CHECK(id->IsPdb());
     CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     CHECK_EQUAL(id->GetPdb().GetChain(), ' ');
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV2")));
+    // CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV2")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV.2")));
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAVX")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAVX")));
+    CHECK(id->IsPdb());
+    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
+    CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
+
     CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|X")));
     CHECK(id->IsPdb());
     CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
@@ -192,7 +196,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromPDBAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|XY")));
     CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|XX")));
     CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
-    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|!")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV_!")));
     CHECK_EQUAL(id->GetPdb().GetChain(), '!');
     CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|VB")));
     CHECK_EQUAL(id->GetPdb().GetChain(), '|');
@@ -702,6 +706,9 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/06/15 14:19:24  ucko
+* Loosen syntax requirements for bare PDB accessions.
+*
 * Revision 1.8  2006/02/17 16:04:43  ucko
 * #undef numeric_limits on older versions of WorkShop to keep Boost's
 * inclusion of <limits> from breaking.
