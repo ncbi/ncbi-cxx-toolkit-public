@@ -341,9 +341,21 @@ static void TEST_UTIL_Log(void)
 }
 
 
+static void TEST_GetUsername(void)
+{
+    char buffer[512];
+    const char* username = CORE_GetUsername(buffer, sizeof(buffer));
+    printf("Username = %s%s%s\n",
+           username ? (*username ? "" : "\"") : "<",
+           username ?   username              : "NULL",
+           username ? (*username ? "" : "\"") : ">");
+}
+
+
 static void TEST_UTIL(void)
 {
   DO_TEST(TEST_UTIL_Log);
+  DO_TEST(TEST_GetUsername);
 }
 
 
@@ -363,6 +375,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2006/06/15 03:02:32  lavr
+ * GetUsername test moved here
+ *
  * Revision 6.10  2005/04/20 18:23:11  lavr
  * +"../ncbi_assert.h"
  *
