@@ -1297,8 +1297,6 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     CScope& scope = ctx.GetScope();
     CFlatItemOStream& out = *m_ItemOS;
 
-    CRef<CSeq_loc_Mapper> mapper(s_CreateMapper(ctx));
-
     CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
 
     CSeq_feat_Handle prev_feat;
@@ -1313,18 +1311,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
             prev_feat = feat;
 
-            // NB: map location (if necessary). mapping done by the
-            // feature iterator is inadequate for the flat-file needs.
-            CConstRef<CSeq_loc> feat_loc(&original_feat.GetLocation());
-            if (mapper) {
-                CRef<CSeq_loc> temp;
-                temp.Reset(mapper->Map(*feat_loc));
-                temp->SetId(*ctx.GetPrimaryId());
-                feat_loc = temp;
-            }
-            if (!feat_loc  ||  feat_loc->IsNull()) {
-                continue;
-            }
+            CConstRef<CSeq_loc> feat_loc(&it->GetLocation());
         
             // make sure location ends on the current bioseq
             if (ctx.IsPart()) {
@@ -1332,7 +1319,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                     // may need to map sig_peptide on a different segment
                     if (feat.GetData().IsCdregion()) {
                         if (!ctx.Config().IsFormatFTable()) {
-                            x_GetFeatsOnCdsProduct(original_feat, ctx, mapper);
+                            x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx);
                         }
                     }
                     continue;
@@ -1368,7 +1355,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                     {{  
                         // map features from protein
                         if (!ctx.Config().IsFormatFTable()) {
-                            x_GetFeatsOnCdsProduct(original_feat, ctx, mapper);
+                            x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx);
                         }
                         break;
                     }}
@@ -1539,8 +1526,8 @@ SAnnotSelector s_GetCdsProductSel(CBioseqContext& ctx)
 
 void CFlatGatherer::x_GetFeatsOnCdsProduct
 (const CSeq_feat& feat,
- CBioseqContext& ctx,
- CRef<CSeq_loc_Mapper>& mapper) const
+ const CSeq_loc& mapped_loc,
+ CBioseqContext& ctx) const
 {
     const CFlatFileConfig& cfg = ctx.Config();
 
@@ -1571,7 +1558,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
     }
 
     // map from cds product to nucleotide
-    CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
+    CSeq_loc_Mapper prot_to_cds(feat.GetProduct(), mapped_loc, &scope);
     
     CSeq_feat_Handle prev;  // keep track of the previous feature
     for ( ; it; ++it ) {
@@ -1593,10 +1580,6 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
 
         // map prot location to nuc location
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
-        // possibly map again (e.g. from part to master)
-        if ( mapper.NotEmpty()  &&  loc.NotEmpty() ) {
-            loc.Reset(mapper->Map(*loc));
-        }
         if (loc) {
             if (loc->IsMix()  ||  loc->IsPacked_int()) {
                 loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_Abutting, &scope);
@@ -1653,6 +1636,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2006/06/15 17:51:40  dicuccio
+* Use object manager feature remapping instead of creating CSeq_loc_Mapper
+*
 * Revision 1.55  2006/03/23 16:24:41  ludwigf
 * CHANGED: Disabled merging for source features that differ only by location.
 *

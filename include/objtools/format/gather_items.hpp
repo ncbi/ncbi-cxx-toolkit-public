@@ -83,8 +83,7 @@ protected:
 
     // features
     void x_GatherFeatures  (void) const;
-    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CBioseqContext& ctx,
-        CRef<CSeq_loc_Mapper>& mapper) const;
+    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, const CSeq_loc& mapped_loc, CBioseqContext& ctx) const;
     void x_CopyCDSFromCDNA(const CSeq_feat& feat, CBioseqContext& ctx) const;
     bool x_SkipFeature(const CSeq_feat& feat, const CBioseqContext& ctx) const;
     void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,
@@ -152,6 +151,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/06/15 17:51:41  dicuccio
+* Use object manager feature remapping instead of creating CSeq_loc_Mapper
+*
 * Revision 1.17  2005/09/07 16:04:12  shomrat
 * Added export specifier
 *
