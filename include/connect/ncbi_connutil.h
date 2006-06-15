@@ -78,12 +78,6 @@
  *       SOCK_StripToPattern()
  *       BUF_StripToPattern()
  *
- *    7.CRC32
- *       CRC32_Update()
- *
- *    8.Miscellaneous
- *       CONNUTIL_GetUsername()
- *       CONNUTIL_GetVMPageSize()
  */
 
 #include <connect/ncbi_buffer.h>
@@ -729,36 +723,6 @@ size_t HostPortToString
 (unsigned int, unsigned short, char*, size_t);
 
 
-/* Calculate/Update CRC32
- * Return the checksum updated according to the contents of the block
- * pointed to by "ptr" and having "count" bytes in it.
- */
-extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
-(unsigned int checksum,  /* Checksum to update (start with 0) */
- const void*  ptr,       /* Block of data                     */
- size_t       count      /* Size of data                      */
- );
-
-
-/* Obtain and store current user's name in the buffer provided.
- * Return 0 when the user name cannot be determined.
- * Otherwise, return "buf".
- * Note that resultant strlen(buf) is always guaranteed to be less
- * than "bufsize", extra non-fit characters discarded.
- * Both "buf" and "bufsize" must not be zeros.
- */
-extern NCBI_XCONNECT_EXPORT const char* CONNUTIL_GetUsername
-(char*        buf,       /* Pointer to buffer to store the user name at */
- size_t       bufsize    /* Size of buffer in bytes                     */
- );
-
-
-/* Obtain virtual memory page size.
- * Return 0 if the page size cannot be determined.
- */
-extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
-
-
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -770,6 +734,9 @@ extern NCBI_XCONNECT_EXPORT size_t CONNUTIL_GetVMPageSize(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2006/06/15 02:43:59  lavr
+ * GetUsername, GetVMPageSize, CRC32 moved from here to ncbi_util.h
+ *
  * Revision 6.57  2006/06/07 20:03:46  lavr
  * +SConnNetInfo::http_referer
  *
