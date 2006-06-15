@@ -119,10 +119,18 @@ public:
             m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             string name;
             int tmp = (int)eBlobStorage;
-            if (m_IStream->good())
-                *m_IStream >> tmp;
-            if (m_IStream->good())
-                s_Read(*m_IStream, name);
+            static string msg;
+            try {
+                if (m_IStream->good())
+                    *m_IStream >> tmp;
+                if (m_IStream->good())
+                    s_Read(*m_IStream, name);
+            } catch (IOS_BASE::failure& ex ){ 
+                msg = "The Blob data does not match a remote app data";                   
+                m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
+                return *m_IStream;
+            }
+            
             if (fname) *fname = name;
             if (type) *type = (EStdOutErrStorageType)tmp;
             if (!name.empty() && (EStdOutErrStorageType)tmp == eLocalFile) {
@@ -130,7 +138,6 @@ public:
                 if (fstr->good()) {
                     m_IStream.reset(fstr.release());
                 } else {
-                    static string msg;
                     msg = "Can not open " + name + " of input";                   
                     m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
                 }
@@ -701,6 +708,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2006/06/15 15:10:43  didenko
+ * Improved streams error handling
+ *
  * Revision 6.10  2006/05/30 16:41:05  didenko
  * Improved error handling
  *

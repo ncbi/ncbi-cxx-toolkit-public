@@ -646,6 +646,8 @@ public:
             string service = 
                 conf.GetString(m_DriverName, 
                                "service", CConfig::eErr_NoThrow, "");
+            NStr::TruncateSpacesInPlace(service);
+
             if (!service.empty()) {
                 unsigned int rebalance_time = conf.GetInt(m_DriverName, 
                                                 "rebalance_time",
@@ -690,7 +692,13 @@ public:
             } else { // non lb client
                 string host = 
                     conf.GetString(m_DriverName, 
-                                  "host", CConfig::eErr_Throw, kEmptyStr);
+                                   "host", CConfig::eErr_Throw, kEmptyStr);
+                NStr::TruncateSpacesInPlace(host);
+                if( host.empty()) {
+                    string msg = "Cannot init plugin " + m_DriverName +
+                     ", missing parameter: host or service";
+                    NCBI_THROW(CConfigException, eParameterMissing, msg);
+                }
                 unsigned int port = conf.GetInt(m_DriverName,
                                                "port",
                                                CConfig::eErr_Throw, 9100);
@@ -730,6 +738,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/15 15:10:43  didenko
+ * Improved streams error handling
+ *
  * Revision 1.24  2006/05/08 11:37:36  kuznets
  * Added out/err redirection parameters
  *
