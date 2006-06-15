@@ -53,39 +53,52 @@ extern "C" {
 #define MX_TIMEOUT      120
 
 
+/* Options apply to various fields of SSendMailInfo structure, below */
+typedef enum {
+    fSendMail_NoMxHeader      = (1 << 0),  /* Don't add standard mail header,
+                                            * just use provided by user      */
+    fSendMail_DropNonFQDNHost = (1 << 8)   /* Drop host part in "from" field
+                                            * if it does not look like an FQDN
+                                            * (that is, has no at least two
+                                            * domain name labels separated by a
+                                            * dot); leave only username part */
+} ESendMailOptions;
+typedef unsigned int TSendMailOptions;  /* Bitwise OR of ESendMailOption */
+
+
 /* Define optional parameters for communication with sendmail
  */
 typedef struct {
-    unsigned int magic_number;  /* Filled in by SendMailInfo_Init        */
-    const char*  cc;            /* Carbon copy recipient(s)              */
-    const char*  bcc;           /* Blind carbon copy recipient(s)        */
-    char         from[1024];    /* Originator address                    */
-    const char*  header;        /* Custom header fields ('\n'-separated) */
-    size_t       body_size;     /* Message body size (if specified)      */ 
-    const char*  mx_host;       /* Host to contact sendmail at           */
-    short        mx_port;       /* Port to contact sendmail at           */
-    STimeout     mx_timeout;    /* Timeout for all network transactions  */
-    unsigned     mx_no_header;  /* Boolean whether to complete MX header */
+    unsigned int     magic_number;  /* Filled in by SendMailInfo_Init        */
+    const char*      cc;            /* Carbon copy recipient(s)              */
+    const char*      bcc;           /* Blind carbon copy recipient(s)        */
+    char             from[1024];    /* Originator address                    */
+    const char*      header;        /* Custom header fields ('\n'-separated) */
+    size_t           body_size;     /* Message body size (if specified)      */
+    const char*      mx_host;       /* Host to contact sendmail at           */
+    short            mx_port;       /* Port to contact sendmail at           */
+    STimeout         mx_timeout;    /* Timeout for all network transactions  */
+    TSendMailOptions mx_options;    /* From the above                        */
 } SSendMailInfo;
 
 
 /* NOTE about recipient lists:
  * They are not parsed; valid recipient (according to the standard)
  * can be specified in the form "Name" <address>; recipients should
- * be separated by commas. In case of address-only recipients (with no
+ * be separated by commas.  In case of address-only recipients (with no
  * "Name" part above), angle brackets around the address may be omitted.
  *
  * NOTE about message body size:
- * If not specified (0) and by default the message body size is calculated
- * as strlen() of passed body argument, which must be NUL-terminated.
+ * If not specified (0), and by default, the message body size is calculated
+ * as strlen() of passed body argument, which thus must be '\0'-terminated.
  * Otherwise, exactly "body_size" bytes are read from the location pointed
- * to by "body" parameter and are sent in the message.
+ * to by "body" parameter, and are sent in the message.
  *
  * NOTE about MX header:
- * message header is automatically prepended to a message that has
- * "mx_no_header" flag cleared (default).  Otherwise, only "header" part
- * (if any) is sent to the mail exchanger, and the rest of the header and
- * the message body is passed "as is" following it.
+ * A message header is automatically prepended to a message that has the
+ * fSendMail_NoMxHeader flag cleared in "mx_options (default).  Otherwise,
+ * only "header" part (if any) is sent to the MTA (mail tranfser agent), and
+ * the rest of the header and the message body is passed "as is" following it.
  * Message header separator and proper message formatting is then
  * the caller's responsibility.
  */
@@ -101,7 +114,7 @@ typedef struct {
  *   'mx_*' filled out in accordance with corresponding macros defined above;
  *          application may choose different values afterwards.
  * Return value equals the argument passed in.
- * Note: This call is the only valid way to init SSendMailInfo.
+ * Note: This call is the only valid way to properly init SSendMailInfo.
  */
 extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_Init
 (SSendMailInfo*       info
@@ -111,7 +124,7 @@ extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_Init
 /* Send a simple message to recipient(s) defined in 'to',
  * and having subject 'subject', which may be empty (both NULL and "" treated
  * equally as empty subjects), and message body 'body' (may be NULL/empty,
- * if not empty, lines are separated by '\n', must be NUL-terminated).
+ * if not empty, lines are separated by '\n', must be '\0'-terminated).
  * Return value 0 means success; otherwise descriptive error message
  * gets returned. Communicaiton parameters for connection with sendmail
  * are set using default values as described in SendMailInfo_Init().
@@ -126,7 +139,7 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
  * all additional parameters of the message and the communication via
  * argument 'info'. In case of 'info' == NULL, the call is completely
  * equivalent to CORE_SendMail().
- * NB: Body is not neccessarily NUL-terminated if "info" contains non-default
+ * NB: Body is not neccessarily '\0'-terminated if "info" contains non-default
  * (non-zero) message body size (see SSendMailInfo::body_size above).
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
@@ -148,6 +161,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2006/06/15 02:56:05  lavr
+ * SSendMailInfo::mx_options implemented
+ *
  * Revision 6.17  2005/04/28 14:18:12  lavr
  * A bit of clarification about multiple/single email address formats
  *
