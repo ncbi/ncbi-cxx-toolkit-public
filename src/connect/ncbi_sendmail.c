@@ -32,8 +32,9 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_sendmail.h>
+#include <connect/ncbi_socket.h>
+#include <connect/ncbi_util.h>
 #include <ctype.h>
 #include <stdlib.h>
 #ifdef NCBI_CXX_TOOLKIT
@@ -148,11 +149,12 @@ static int/*bool*/ s_SockReadResponse(SOCK sock, int code, int alt_code,
 }
 
 
-static int/*bool*/ s_SockWrite(SOCK sock, const char* buf)
+static int/*bool*/ s_SockWrite(SOCK sock, const char* buf, size_t len)
 {
-    size_t len = strlen(buf);
     size_t n;
 
+    if (!len)
+        len = strlen(buf);
     if (SOCK_Write(sock, buf, len, &n, eIO_WritePersist) == eIO_Success  &&
         n == len) {
         return 1/*success*/;
@@ -161,19 +163,22 @@ static int/*bool*/ s_SockWrite(SOCK sock, const char* buf)
 }
 
 
-static char* s_ComposeFrom(char* buf, size_t buf_size)
+static void s_MakeFrom(char* buf, size_t buf_size)
 {
     size_t buf_len, hostname_len;
 
-    if (!CONNUTIL_GetUsername(buf, buf_size) || !*buf)
+    if (!CORE_GetUsername(buf, buf_size)  ||  !*buf)
         strncpy0(buf, "anonymous", buf_size - 1);
     buf_len = strlen(buf);
     hostname_len = buf_size - buf_len;
     if (hostname_len-- > 1) {
         buf[buf_len++] = '@';
-        SOCK_gethostname(&buf[buf_len], hostname_len);
+        if ((!SOCK_gethostbyaddr(0, &buf[buf_len], hostname_len)  ||
+             !strchr(&buf[buf_len], '.'))
+            &&  SOCK_gethostname(&buf[buf_len], hostname_len) != 0) {
+            buf[--buf_len] = '\0';
+        }
     }
-    return buf;
 }
 
 
@@ -183,15 +188,14 @@ SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info)
         info->magic_number    = MX_MAGIC_NUMBER;
         info->cc              = 0;
         info->bcc             = 0;
-        if (!s_ComposeFrom(info->from, sizeof(info->from)))
-            info->from[0]     = 0;
+        s_MakeFrom(info->from, sizeof(info->from));
         info->header          = 0;
         info->body_size       = 0;
         info->mx_host         = MX_HOST;
         info->mx_port         = MX_PORT;
         info->mx_timeout.sec  = MX_TIMEOUT;
         info->mx_timeout.usec = 0;
-        info->mx_no_header    = 0/*false*/;
+        info->mx_options      = 0;
     }
     return info;
 }
@@ -262,15 +266,15 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
         }
         if (k >= buf_size)
             SENDMAIL_RETURN("Recepient address is too long");
-        buf[k] = 0;
+        buf[k] = '\0'/*just in case*/;
         if (quote) {
             CORE_LOGF(eLOG_Warning, ("[SendMail]  Unbalanced delimiters in "
                                      "recepient %s for %s: \"%c\" expected",
                                      buf, what, quote));
         }
-        if (!s_SockWrite(sock, "RCPT TO: <")  ||
-            !s_SockWrite(sock, buf)           ||
-            !s_SockWrite(sock, ">" MX_CRLF)) {
+        if (!s_SockWrite(sock, "RCPT TO: <", 0)  ||
+            !s_SockWrite(sock, buf, k)           ||
+            !s_SockWrite(sock, ">" MX_CRLF, 1 + 2)) {
             SENDMAIL_RETURN(write_error);
         }
         if (!s_SockReadResponse(sock, 250, 251, buf, buf_size))
@@ -279,6 +283,23 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
             break;
     }
     return 0;
+}
+
+
+static size_t s_FromSize(const SSendMailInfo* info)
+{
+    const char* at, *dot;
+    size_t len = strlen(info->from);
+
+    if (!*info->from  ||  !(info->mx_options & fSendMail_DropNonFQDNHost))
+        return len;
+    if (!(at = memchr(info->from, '@', len))  ||  at == info->from + len - 1)
+        return len - 1;
+    if (!(dot = memchr(at + 1, '.', len - (size_t)(at - info->from) - 1))
+        ||  dot == at + 1  ||  dot == info->from + len - 1) {
+        return (size_t)(at - info->from);
+    }
+    return len;
 }
 
 
@@ -323,19 +344,22 @@ const char* CORE_SendMailEx(const char*          to,
     if (!SENDMAIL_READ_RESPONSE(220, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in connection init", buffer);
 
-    if (SOCK_gethostname(buffer, sizeof(buffer)) != 0)
+    if ((!(info->mx_options & fSendMail_DropNonFQDNHost)  ||
+         !SOCK_gethostbyaddr(0, buffer, sizeof(buffer)))  &&
+        SOCK_gethostname(buffer, sizeof(buffer)) != 0) {
         SENDMAIL_RETURN("Unable to get local host name");
-    if (!s_SockWrite(sock, "HELO ")         ||
-        !s_SockWrite(sock, buffer)          ||
-        !s_SockWrite(sock, MX_CRLF)) {
+    }
+    if (!s_SockWrite(sock, "HELO ", 0)  ||
+        !s_SockWrite(sock, buffer, 0)   ||
+        !s_SockWrite(sock, MX_CRLF, 2)) {
         SENDMAIL_RETURN("Write error in HELO command");
     }
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in HELO command", buffer);
 
-    if (!s_SockWrite(sock, "MAIL FROM: <")  ||
-        !s_SockWrite(sock, info->from)      ||
-        !s_SockWrite(sock, ">" MX_CRLF)) {
+    if (!s_SockWrite(sock, "MAIL FROM: <", 0)             ||
+        !s_SockWrite(sock, info->from, s_FromSize(info))  ||
+        !s_SockWrite(sock, ">" MX_CRLF, 1 + 2)) {
         SENDMAIL_RETURN("Write error in MAIL command");
     }
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
@@ -359,38 +383,38 @@ const char* CORE_SendMailEx(const char*          to,
             return error;
     }
 
-    if (!s_SockWrite(sock, "DATA" MX_CRLF))
+    if (!s_SockWrite(sock, "DATA" MX_CRLF, 0))
         SENDMAIL_RETURN("Write error in DATA command");
     if (!SENDMAIL_READ_RESPONSE(354, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in DATA command", buffer);
 
-    if (!info->mx_no_header) {
+    if (!(info->mx_options & fSendMail_NoMxHeader)) {
         /* Follow RFC822 to compose message headers. Note that
-         * 'Date:'and 'From:' are both added by sendmail automatically.
+         * 'Date:'and 'From:' are both added by sendmail automagically.
          */ 
-        if (!s_SockWrite(sock, "Subject: ")           ||
-            (subject && !s_SockWrite(sock, subject))  ||
-            !s_SockWrite(sock, MX_CRLF))
+        if (!s_SockWrite(sock, "Subject: ", 0)             ||
+            (subject  &&  !s_SockWrite(sock, subject, 0))  ||
+            !s_SockWrite(sock, MX_CRLF, 2))
             SENDMAIL_RETURN("Write error in sending subject");
 
-        if (to && *to) {
-            if (!s_SockWrite(sock, "To: ")            ||
-                !s_SockWrite(sock, to)                ||
-                !s_SockWrite(sock, MX_CRLF))
+        if (to  &&  *to) {
+            if (!s_SockWrite(sock, "To: ", 0)              ||
+                !s_SockWrite(sock, to, 0)                  ||
+                !s_SockWrite(sock, MX_CRLF, 2))
                 SENDMAIL_RETURN("Write error in sending To");
         }
 
-        if (info->cc && *info->cc) {
-            if (!s_SockWrite(sock, "Cc: ")            ||
-                !s_SockWrite(sock, info->cc)          ||
-                !s_SockWrite(sock, MX_CRLF))
+        if (info->cc  &&  *info->cc) {
+            if (!s_SockWrite(sock, "Cc: ", 0)              ||
+                !s_SockWrite(sock, info->cc, 0)            ||
+                !s_SockWrite(sock, MX_CRLF, 2))
                 SENDMAIL_RETURN("Write error in sending Cc");
         }
     } else if (subject && *subject)
         CORE_LOG(eLOG_Warning,"[SendMail]  Subject ignored in as-is messages");
 
     if (!s_SockWrite(sock, "X-Mailer: CORE_SendMail (NCBI "
-                     NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF)) {
+                     NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF, 0)) {
         SENDMAIL_RETURN("Write error in sending mailer information");
     }
 
@@ -416,21 +440,21 @@ const char* CORE_SendMailEx(const char*          to,
                 if (++n >= m)
                     break;
             }
-            buffer[k] = 0;
-            if (!s_SockWrite(sock, buffer))
+            buffer[k] = '\0'/*just in case*/;
+            if (!s_SockWrite(sock, buffer, k))
                 SENDMAIL_RETURN("Write error while sending custom header");
         }
         if (n < m)
             SENDMAIL_RETURN("Header write error");
-        if (!newline && !s_SockWrite(sock, MX_CRLF))
+        if (!newline && !s_SockWrite(sock, MX_CRLF, 2))
             SENDMAIL_RETURN("Write error while finalizing custom header");
     }
 
     if (body) {
         size_t n = 0, m = info->body_size ? info->body_size : strlen(body);
         int/*bool*/ newline = 0/*false*/;
-        if (!info->mx_no_header  &&  m) {
-            if (!s_SockWrite(sock, MX_CRLF))
+        if (!(info->mx_options & fSendMail_NoMxHeader)  &&  m) {
+            if (!s_SockWrite(sock, MX_CRLF, 2))
                 SENDMAIL_RETURN("Write error in message body delimiter");
         }
         while (n < m) {
@@ -455,23 +479,23 @@ const char* CORE_SendMailEx(const char*          to,
                 if (++n >= m)
                     break;
             }
-            buffer[k] = 0;
-            if (!s_SockWrite(sock, buffer))
+            buffer[k] = '\0'/*just in case*/;
+            if (!s_SockWrite(sock, buffer, k))
                 SENDMAIL_RETURN("Write error while sending message body");
         }
         if (n < m)
             SENDMAIL_RETURN("Body write error");
-        if ((!newline  &&  m  &&  !s_SockWrite(sock, MX_CRLF))
-            ||  !s_SockWrite(sock, "." MX_CRLF)) {
+        if ((!newline  &&  m  &&  !s_SockWrite(sock, MX_CRLF, 2))
+            ||  !s_SockWrite(sock, "." MX_CRLF, 1 + 2)) {
             SENDMAIL_RETURN("Write error while finalizing message body");
         }
-    } else if (!s_SockWrite(sock, "." MX_CRLF))
+    } else if (!s_SockWrite(sock, "." MX_CRLF, 1 + 2))
         SENDMAIL_RETURN("Write error while finalizing message");
 
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in sending message", buffer);
 
-    if (!s_SockWrite(sock, "QUIT" MX_CRLF))
+    if (!s_SockWrite(sock, "QUIT" MX_CRLF, 0))
         SENDMAIL_RETURN("Write error in QUIT command");
     if (!SENDMAIL_READ_RESPONSE(221, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in QUIT command", buffer);
@@ -489,6 +513,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2006/06/15 02:46:43  lavr
+ * Implement mx_options (and more sophisticated host name discovery)
+ *
  * Revision 6.27  2006/01/27 17:09:12  lavr
  * Take advantage of new CONNUTIL_GetUsername()
  *
@@ -541,7 +568,7 @@ const char* CORE_SendMailEx(const char*          to,
  * Use "ncbi_config.h"
  *
  * Revision 6.10  2001/07/13 20:15:12  lavr
- * Write lock then unlock when using not MT-safe s_ComposeFrom()
+ * Write lock then unlock when using not MT-safe s_MakeFrom()
  *
  * Revision 6.9  2001/05/18 20:41:43  lavr
  * Beautifying: change log corrected
