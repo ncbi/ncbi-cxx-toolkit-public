@@ -395,7 +395,7 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
 
     CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(m_RPSdb.c_str(), TRUE));
     CDbBlast blaster(m_tQueries, seq_src, rps_opts);
-    blaster.PartialRun();
+    blaster.RunWithoutSeqalignGeneration();
 
     // copy out the results
 
@@ -666,6 +666,9 @@ END_NCBI_SCOPE
 
 /* ====================================================================
  * $Log$
+ * Revision 1.14  2006/06/15 17:43:03  papadopo
+ * PartialRun -> RunWithoutSeqalignGeneration
+ *
  * Revision 1.13  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers

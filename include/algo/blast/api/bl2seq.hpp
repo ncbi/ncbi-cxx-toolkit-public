@@ -126,7 +126,7 @@ public:
     /// Runs the search but does not produce seqalign output
     /// (useful if the raw search results are needed, rather
     /// than a set of complete Seq-aligns)
-    virtual void PartialRun();
+    virtual void RunWithoutSeqalignGeneration();
 
     /// Retrieves regions filtered on the query/queries
     TSeqLocInfoVector GetFilteredQueryRegions() const;
@@ -311,6 +311,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2006/06/15 17:42:24  papadopo
+* PartialRun -> RunWithoutSeqalignGeneration
+*
 * Revision 1.49  2006/03/22 15:03:25  camacho
 * Expanded interruptible API to support user-provided data
 *

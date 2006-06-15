@@ -36,8 +36,7 @@
 ///     Run();
 ///
 /// Full search, returning BlastHSPResults:
-///     PartialRun(); 
-///     GetResults(); 
+///     RunWithoutSeqalignGeneration(); 
 ///
 /// Preliminary search only, returning BlastHSPResults:
 ///     SetupSearch();
@@ -125,7 +124,7 @@ public:
     /// Perform BLAST search
     virtual TSeqAlignVector Run();
     /// Run BLAST search, without converting results to Seq-align form.
-    virtual void PartialRun();
+    virtual void RunWithoutSeqalignGeneration();
     /// Perform the main part of the search setup
     virtual void SetupSearch();
     /// Run the preliminary stage of the search engine; assumes that main
@@ -331,6 +330,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2006/06/15 17:42:24  papadopo
+* PartialRun -> RunWithoutSeqalignGeneration
+*
 * Revision 1.39  2005/09/28 18:21:34  camacho
 * Rearrangement of headers/functions to segregate object manager dependencies.
 *

@@ -189,7 +189,7 @@ CBl2Seq::Run()
 }
 
 void
-CBl2Seq::PartialRun()
+CBl2Seq::RunWithoutSeqalignGeneration()
 {
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
     m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
@@ -343,6 +343,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.93  2006/06/15 17:40:21  papadopo
+ * PartialRun -> RunWithoutSeqalignGeneration
+ *
  * Revision 1.92  2006/06/05 13:30:28  madden
  * Add call to BlastFindMatrixPath
  *

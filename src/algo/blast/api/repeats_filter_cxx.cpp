@@ -369,7 +369,7 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_db)
     }
 
     CDbBlast blaster(query, seq_src, repeat_opts);
-    blaster.PartialRun();
+    blaster.RunWithoutSeqalignGeneration();
 
     seq_src = BlastSeqSrcFree(seq_src);
 
@@ -421,7 +421,7 @@ Blast_FindRepeatFilterLoc(CBlastQueryVector& queries, const char* filter_db)
     }
     
     CDbBlast blaster(temp_query, seq_src, repeat_opts);
-    blaster.PartialRun();
+    blaster.RunWithoutSeqalignGeneration();
     
     seq_src = BlastSeqSrcFree(seq_src);
     
@@ -442,6 +442,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.29  2006/06/15 17:40:21  papadopo
+ *  PartialRun -> RunWithoutSeqalignGeneration
+ *
  *  Revision 1.28  2006/06/14 15:58:54  camacho
  *  Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
  *

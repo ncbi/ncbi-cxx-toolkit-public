@@ -622,7 +622,7 @@ void CDbBlast::SetupSearch()
     }
 }
 
-void CDbBlast::PartialRun()
+void CDbBlast::RunWithoutSeqalignGeneration()
 {
     GetOptionsHandle().Validate();
     SetupSearch();
@@ -634,7 +634,7 @@ void CDbBlast::PartialRun()
 TSeqAlignVector
 CDbBlast::Run()
 {
-    PartialRun();
+    RunWithoutSeqalignGeneration();
     return x_Results2SeqAlign();
 }
 
@@ -790,6 +790,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.93  2006/06/15 17:40:21  papadopo
+ * PartialRun -> RunWithoutSeqalignGeneration
+ *
  * Revision 1.92  2006/06/14 15:58:54  camacho
  * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
  *

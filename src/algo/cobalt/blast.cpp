@@ -171,7 +171,7 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
     blastp_opts.SetEvalueThreshold(max(m_BlastpEvalue, 10.0));
     blastp_opts.SetSegFiltering(false);
     CBl2Seq blaster(filler_locs, m_tQueries, blastp_opts);
-    blaster.PartialRun();
+    blaster.RunWithoutSeqalignGeneration();
 
     BlastHSPResults *tmp_results = blaster.GetResults();
     _ASSERT(tmp_results);
@@ -262,6 +262,9 @@ END_NCBI_SCOPE
 
 /* ====================================================================
  * $Log$
+ * Revision 1.12  2006/06/15 17:43:03  papadopo
+ * PartialRun -> RunWithoutSeqalignGeneration
+ *
  * Revision 1.11  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers
