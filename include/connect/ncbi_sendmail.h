@@ -55,9 +55,9 @@ extern "C" {
 
 /* Options apply to various fields of SSendMailInfo structure, below */
 typedef enum {
-    fSendMail_NoMxHeader      = (1 << 0),  /* Don't add standard mail header,
+    fSendMail_NoMxHeader       = (1 << 0), /* Don't add standard mail header,
                                             * just use provided by user      */
-    fSendMail_DropNonFQDNHost = (1 << 8)   /* Drop host part in "from" field
+    fSendMail_StripNonFQDNHost = (1 << 8)  /* Strip host part in "from" field
                                             * if it does not look like an FQDN
                                             * (that is, has no at least two
                                             * domain name labels separated by a
@@ -79,6 +79,7 @@ typedef struct {
     short            mx_port;       /* Port to contact sendmail at           */
     STimeout         mx_timeout;    /* Timeout for all network transactions  */
     TSendMailOptions mx_options;    /* From the above                        */
+#define mx_no_header mx_options     /* compatibility */
 } SSendMailInfo;
 
 
@@ -161,6 +162,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2006/06/15 19:52:26  lavr
+ * Compatibility support in SSendMailInfo::mx_options
+ *
  * Revision 6.18  2006/06/15 02:56:05  lavr
  * SSendMailInfo::mx_options implemented
  *

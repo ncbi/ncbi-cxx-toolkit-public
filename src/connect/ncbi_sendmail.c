@@ -291,7 +291,7 @@ static size_t s_FromSize(const SSendMailInfo* info)
     const char* at, *dot;
     size_t len = strlen(info->from);
 
-    if (!*info->from  ||  !(info->mx_options & fSendMail_DropNonFQDNHost))
+    if (!*info->from  ||  !(info->mx_options & fSendMail_StripNonFQDNHost))
         return len;
     if (!(at = memchr(info->from, '@', len))  ||  at == info->from + len - 1)
         return len - 1;
@@ -344,7 +344,7 @@ const char* CORE_SendMailEx(const char*          to,
     if (!SENDMAIL_READ_RESPONSE(220, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in connection init", buffer);
 
-    if ((!(info->mx_options & fSendMail_DropNonFQDNHost)  ||
+    if ((!(info->mx_options & fSendMail_StripNonFQDNHost)  ||
          !SOCK_gethostbyaddr(0, buffer, sizeof(buffer)))  &&
         SOCK_gethostname(buffer, sizeof(buffer)) != 0) {
         SENDMAIL_RETURN("Unable to get local host name");
@@ -513,6 +513,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2006/06/15 19:52:40  lavr
+ * Compatibility support in SSendMailInfo::mx_options
+ *
  * Revision 6.28  2006/06/15 02:46:43  lavr
  * Implement mx_options (and more sophisticated host name discovery)
  *

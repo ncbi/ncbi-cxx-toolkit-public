@@ -273,7 +273,7 @@ int main(int argc, const char* argv[])
 
     SendMailInfo_Init(&info);
     CORE_LOG(eLOG_Note, "Testing drop no FQDN option");
-    info.mx_options |= fSendMail_DropNonFQDNHost;
+    info.mx_options |= fSendMail_StripNonFQDNHost;
     retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "No FQDN", &info);
     if (retval)
         CORE_LOGF(eLOG_Error, ("Test failed: %s", retval));
@@ -295,8 +295,11 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2006/06/15 19:52:47  lavr
+ * Compatibility support in SSendMailInfo::mx_options
+ *
  * Revision 6.18  2006/06/15 03:02:13  lavr
- * fSendMail_DropNonFQDNHost test added
+ * fSendMail_StripNonFQDNHost test added
  *
  * Revision 6.17  2005/12/14 21:44:55  lavr
  * Prettier formatting only
