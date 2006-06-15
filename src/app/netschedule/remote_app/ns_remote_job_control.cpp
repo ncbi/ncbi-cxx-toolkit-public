@@ -68,19 +68,19 @@ void CNSRemoveJobControlApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Remote application jobs submitter");
 
-    arg_desc->AddKey("q", "queue_name", "NetSchedule queue name", 
-                     CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("q", "queue_name", "NetSchedule queue name", 
+                             CArgDescriptions::eString);
 
-    arg_desc->AddKey("ns", "service", 
-                     "NetSchedule service addrress (service_name or host:port)", 
-                     CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("ns", "service", 
+                             "NetSchedule service addrress (service_name or host:port)", 
+                             CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("nc", "service", 
                      "NetCache service addrress (service_name or host:port)", 
                      CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("jlist",
-                             "jobs_file",
+                             "status",
                              "Show jobs by status",
                              CArgDescriptions::eString);
     arg_desc->SetConstraint("jlist", 
@@ -88,6 +88,8 @@ void CNSRemoveJobControlApp::Init(void)
                               "done", "failed", "running", "pending", 
                               "canceled", "returned", "all")
                             );
+
+    arg_desc->AddFlag("qlist", "Show queue list");
 
     arg_desc->AddFlag("wnlist", "Show worker nodes");
     arg_desc->AddOptionalKey("jid",
@@ -120,7 +122,7 @@ void CNSRemoveJobControlApp::Init(void)
                              CArgDescriptions::eString);
     arg_desc->SetConstraint("cmd", 
                             &(*new CArgAllow_Strings(NStr::eNocase), 
-                              "shutdown_nodes", "kill_nodes")
+                              "shutdown_nodes", "kill_nodes", "drop_jobs")
                             );
 
 
@@ -148,7 +150,7 @@ void CNSRemoveJobControlApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-class CWNodeShutdownAction : public  CNSInfoCollector::IWNodeAction
+class CWNodeShutdownAction : public  CNSInfoCollector::IAction<CWNodeInfo>
 {
 public:
     CWNodeShutdownAction(CNetScheduleClient::EShutdownLevel level)
@@ -165,6 +167,19 @@ private:
 };
 
 
+static void s_FillReg(IRWRegistry& reg, const string& section, const string& value)
+{
+    string host, sport;
+    if (NStr::SplitInTwo(value, ":", host, sport)) {
+        reg.Set(section, "host", host);
+        reg.Set(section, "port", sport);
+        reg.Set(section, "service", " ");
+    } else {
+        reg.Set(section, "service", value);
+        reg.Set(section, "host", " ");
+        reg.Set(section, "port", " ");
+    }
+ }
 int CNSRemoveJobControlApp::Run(void)
 {
 
@@ -174,18 +189,21 @@ int CNSRemoveJobControlApp::Run(void)
     
     IRWRegistry& reg = GetConfig();
     reg.Set(kNetCacheDriverName, "client_name", "ns_remote_job_control");
+    reg.Set(kNetScheduleDriverName, "client_name", "ns_remote_job_control");
 
-    string service, host, sport;
     if ( args["nc"]) {
-        service = args["nc"].AsString();
-        if (NStr::SplitInTwo(service, ":", host, sport)) {
-            unsigned int port = NStr::StringToUInt(sport);
-            reg.Set(kNetCacheDriverName, "host", host);
-            reg.Set(kNetCacheDriverName, "port", sport);
-        } else {
-            reg.Set(kNetCacheDriverName, "service", service);
-        }
+        s_FillReg(reg, kNetCacheDriverName, args["nc"].AsString());
     }
+
+    if (args["q"]) {
+        string queue = args["q"].AsString();   
+        reg.Set(kNetScheduleDriverName, "queue_name", queue);
+    }
+
+    if ( args["ns"]) {
+        s_FillReg(reg, kNetScheduleDriverName, args["ns"].AsString());
+    }
+
 
 
     CNcbiOstream* out = &NcbiCout;
@@ -214,21 +232,38 @@ int CNSRemoveJobControlApp::Run(void)
         writer.reset(new CTextTagWriter(*out));
 
     try {
-    string queue = "noname";
-    if (args["q"]) {
-        queue = args["q"].AsString();   
-    }
+    auto_ptr<CConfig::TParamTree> ptree(CConfig::ConvertRegToTree(reg));
+    const CConfig::TParamTree* ns_tree = ptree->FindSubNode(kNetScheduleDriverName);
+    if (!ns_tree) 
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "Could not find \"" + string(kNetScheduleDriverName) + "\" section");
+
+    CConfig ns_conf(ns_tree);
+    string queue = ns_conf.GetString(kNetScheduleDriverName, "queue_name", CConfig::eErr_NoThrow, "");
+    NStr::TruncateSpacesInPlace(queue);
+    if (queue.empty()) 
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "\"queue_name\" parameter is not set neither in config file nor in cmd line");
+
+    string service, host;
+    service = ns_conf.GetString(kNetScheduleDriverName, "service", CConfig::eErr_NoThrow, "");
+    NStr::TruncateSpacesInPlace(service);
+    host = ns_conf.GetString(kNetScheduleDriverName, "host", CConfig::eErr_NoThrow, "");
+    NStr::TruncateSpacesInPlace(host);
+    if (service.empty() && host.empty())
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "Neither \"service\" nor \"host\" parameters are not set "
+                   "neither in config file nor in cmd line");
+
     CBlobStorageFactory factory(reg);
-    if ( args["ns"]) {
-        service = args["ns"].AsString();
-        if (NStr::SplitInTwo(service, ":", host, sport)) {
-            unsigned short port = NStr::StringToUInt(sport);
-            info_collector.reset(new CNSInfoCollector(queue, host, port,
-                                                      factory));
-        } else {
-            info_collector.reset(new CNSInfoCollector(queue, service,
-                                                      factory));
-        }
+    if (!service.empty())
+        info_collector.reset(new CNSInfoCollector(queue, service,
+                                                  factory));
+    else {
+        unsigned short port = ns_conf.GetInt(kNetScheduleDriverName, "port",
+                                             CConfig::eErr_Throw, 0);
+        info_collector.reset(new CNSInfoCollector(queue, host, port,
+                                                  factory));
     }
 
     CNSInfoRenderer::TFlags flags = 0;
@@ -284,14 +319,25 @@ int CNSRemoveJobControlApp::Run(void)
         renderer->RenderBlob(id);
     } else if (args["wnlist"]) {
         renderer->RenderWNodes(flags);
+    } else if (args["qlist"]) {
+        renderer->RenderQueueList();
     } else if (args["cmd"]) {
         string cmd = args["cmd"].AsString();
-        CNetScheduleClient::EShutdownLevel level = 
-            CNetScheduleClient::eShutdownImmidiate;
-        if (NStr::CompareNocase(cmd, "kill_nodes") == 0) 
-            level = CNetScheduleClient::eDie;
-        CWNodeShutdownAction action(level);
-        info_collector->TraverseNodes(action);
+        if (NStr::CompareNocase(cmd, "shutdown_nodes") == 0) {
+            CNetScheduleClient::EShutdownLevel level = 
+                CNetScheduleClient::eShutdownImmidiate;
+            CWNodeShutdownAction action(level);
+            info_collector->TraverseNodes(action);
+        }
+        if (NStr::CompareNocase(cmd, "kill_nodes") == 0) {
+            CNetScheduleClient::EShutdownLevel level = 
+                level = CNetScheduleClient::eDie;
+            CWNodeShutdownAction action(level);
+            info_collector->TraverseNodes(action);
+        }
+        if (NStr::CompareNocase(cmd, "drop_jobs") == 0) {
+            info_collector->DropQueue();
+        }
     }
 
     } catch (exception& ex) {
@@ -314,6 +360,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/15 15:27:08  didenko
+ * Added drop_jobs command
+ *
  * Revision 1.2  2006/05/23 14:05:36  didenko
  * Added wnlist, shutdown_nodes and kill_nodes commands
  *

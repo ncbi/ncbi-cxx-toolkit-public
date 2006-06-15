@@ -159,7 +159,7 @@ struct STagGuard
     string m_Tag;
 };
 
-class CNSJobListRenderAction : public  CNSInfoCollector::IJobAction
+class CNSJobListRenderAction : public  CNSInfoCollector::IAction<CNSJobInfo>
 {
 public:
     CNSJobListRenderAction(CNSInfoRenderer& renderer,
@@ -306,7 +306,7 @@ void CNSInfoRenderer::RenderWNode(const CWNodeInfo& info, TFlags flags)
 
 }
 
-class CWNodeListRenderAction : public  CNSInfoCollector::IWNodeAction
+class CWNodeListRenderAction : public  CNSInfoCollector::IAction<CWNodeInfo>
 {
 public:
     CWNodeListRenderAction(CNSInfoRenderer& renderer,
@@ -333,6 +333,45 @@ void CNSInfoRenderer::RenderWNodes(TFlags flags)
     m_Collector.TraverseNodes(action);
 }
 
+class CNSServerQRenderAction : public  CNSInfoCollector::IAction<CNSServerInfo>
+{
+public:
+    CNSServerQRenderAction(CNSInfoRenderer& renderer)
+        : m_Renderer(renderer) {}
+
+    virtual ~CNSServerQRenderAction() {};
+
+    virtual void operator()(const CNSServerInfo& info)
+    {
+        m_Renderer.RenderQueueList(info);
+    }
+private:
+    CNSInfoRenderer& m_Renderer;
+};
+
+void CNSInfoRenderer::RenderQueueList()
+{
+    STagGuard guard(m_Writer,"Queues");    
+    CNSServerQRenderAction action(*this);
+    m_Collector.TraverseNSServers(action);
+}
+void CNSInfoRenderer::RenderQueueList(const CNSServerInfo& info)
+{
+    list<string> qlist;
+    info.GetQueueList(qlist);
+    if (qlist.empty())
+        return;
+
+    ITagWriter::TAttributes attrs;
+    attrs.push_back(ITagWriter::TAttribute("Host", info.GetHost()));
+    attrs.push_back(ITagWriter::TAttribute
+                    ("Port", NStr::IntToString(info.GetPort())));
+    
+    STagGuard guard(m_Writer,"NSServer", attrs);
+    ITERATE(list<string>, it, qlist) {
+        x_RenderString("Queue", *it);
+    }
+}
 
 ///////////////////////////////////////////////////////
 //
@@ -342,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/15 15:27:08  didenko
+ * Added drop_jobs command
+ *
  * Revision 1.4  2006/05/24 01:03:54  ucko
  * Explicitly use the new ITagWriter::TAttribute typedef to fix compilation
  * on WorkShop, whose STL doesn't support pair<> interconversion.

@@ -159,6 +159,10 @@ public:
 
     void RenderWNodes(TFlags flags = eMinimal);
     void RenderWNode(const CWNodeInfo& info, TFlags flags = eMinimal);
+
+    void RenderQueueList();
+    void RenderQueueList(const CNSServerInfo& info);
+
 private:
     void x_RenderString(const string& name, const string& value);
     void x_RenderStream(const string& name, CNcbiIstream& is);
@@ -172,6 +176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/15 15:27:08  didenko
+ * Added drop_jobs command
+ *
  * Revision 1.4  2006/05/24 01:01:34  ucko
  * Introduce an additional ITagWriter::TAttribute typedef for the sake of
  * WorkShop, whose STL doesn't support pair<> interconversion.

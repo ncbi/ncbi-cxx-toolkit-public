@@ -144,6 +144,33 @@ private:
     CTime m_LastAccess;
         
 };
+
+//////////////////////////////////////////////////////////////////////
+///
+class CNSServerInfo
+{
+public:
+    ~CNSServerInfo();
+
+    const string& GetHost() const { return m_Host; }
+    unsigned int GetPort() const { return m_Port; }
+
+    void GetQueueList(list<string>& qlist) const;
+
+private:
+    friend class CNSInfoCollector;
+    CNSServerInfo(const string& host, unsigned int port, 
+                CNSInfoCollector& collector);
+
+    string m_Host;
+    unsigned short m_Port;
+
+    CNSInfoCollector& m_Collector;
+
+    CNSServerInfo(const CNSServerInfo&);
+    CNSServerInfo& operator=(const CNSServerInfo&);
+};
+
 //////////////////////////////////////////////////////////////////////
 ///
 class CNSInfoCollector
@@ -154,19 +181,17 @@ public:
     CNSInfoCollector(const string& queue, const string& host, unsigned short port,
                      CBlobStorageFactory& factory);
 
-    class IJobAction {
+    template<typename TInfo>
+    class IAction {
     public:
-        virtual ~IJobAction() {}
-        virtual void operator()(const CNSJobInfo& info) = 0;
-    };
-    class IWNodeAction {
-    public:
-        virtual ~IWNodeAction() {}
-        virtual void operator()(const CWNodeInfo& info) = 0;
+        virtual ~IAction() {}
+        virtual void operator()(const TInfo& info) = 0;
     };
 
-    void TraverseJobs(CNetScheduleClient::EJobStatus, IJobAction&);
-    void TraverseNodes(IWNodeAction&);
+    void TraverseJobs(CNetScheduleClient::EJobStatus, IAction<CNSJobInfo>&);
+    void TraverseNodes(IAction<CWNodeInfo>&);
+    void TraverseNSServers(IAction<CNSServerInfo>&);
+    void DropQueue();
 
     CNSJobInfo* CreateJobInfo(const string& job_id);
 
@@ -175,6 +200,7 @@ public:
 private:
 
     friend class CNSJobInfo;
+    friend class CNSServerInfo;
 
     typedef pair<string, unsigned short> TSrvID;
     typedef map<TSrvID, AutoPtr<CNSClientHelper> > TServices;
@@ -186,6 +212,8 @@ private:
     CRemoteAppResult& x_GetResult();
 
     IBlobStorage* x_CreateStorage() { return m_Factory.CreateInstance(); }
+
+    void x_GetQueueList(const TSrvID&, list<string>& qlist);
 
     string m_QueueName;
     CBlobStorageFactory& m_Factory;
@@ -204,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/06/15 15:27:08  didenko
+ * Added drop_jobs command
+ *
  * Revision 1.3  2006/05/23 14:05:36  didenko
  * Added wnlist, shutdown_nodes and kill_nodes commands
  *

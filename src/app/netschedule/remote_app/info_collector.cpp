@@ -164,6 +164,23 @@ void CWNodeInfo::Shutdown(CNetScheduleClient::EShutdownLevel level) const
     cln.ShutdownServer(level);
 }
 
+//////////////////////////////////////////////////////////////////////
+///
+CNSServerInfo::~CNSServerInfo() 
+{}
+
+void CNSServerInfo::GetQueueList(list<string>& qlist) const
+{
+    m_Collector.x_GetQueueList(CNSInfoCollector::TSrvID(m_Host,m_Port), qlist);
+}
+
+CNSServerInfo::CNSServerInfo(const string& host, unsigned int port, 
+                         CNSInfoCollector& collector)
+    : m_Host(host), m_Port(port), m_Collector(collector)
+{
+}
+
+
 ///////////////////////////////////////////////////////////////////
 //
 CNSInfoCollector::CNSInfoCollector(const string& queue, 
@@ -201,7 +218,7 @@ CNSInfoCollector::CNSInfoCollector(const string& queue,
 }
 
 void CNSInfoCollector::TraverseJobs(CNetScheduleClient::EJobStatus status, 
-                                    CNSInfoCollector::IJobAction& action)
+                                    CNSInfoCollector::IAction<CNSJobInfo>& action)
 {
     NON_CONST_ITERATE(TServices, it, m_Services) {
         CNcbiStrstream str;
@@ -266,7 +283,17 @@ CNcbiIstream& CNSInfoCollector::GetBlobContent(const string& blob_id,
     return m_Storage->GetIStream(blob_id, blob_size);
 }
 
-void CNSInfoCollector::TraverseNodes(IWNodeAction& action)
+void CNSInfoCollector::x_GetQueueList(const TSrvID& srv, list<string>& qlist)
+{
+    TServices::iterator it = m_Services.find(srv);
+    if (it != m_Services.end()) {
+        CNSClientHelper& cln = *(it->second);
+        string ql = cln.GetQueueList();
+        NStr::Split(ql, ",;", qlist);        
+    }
+}
+
+void CNSInfoCollector::TraverseNodes(IAction<CWNodeInfo>& action)
 {
     std::set<pair<string, unsigned short> > unique;
     NON_CONST_ITERATE(TServices, it, m_Services) {
@@ -317,6 +344,20 @@ void CNSInfoCollector::TraverseNodes(IWNodeAction& action)
         }
     }
 }
+void CNSInfoCollector::TraverseNSServers(IAction<CNSServerInfo>& action)
+{
+    NON_CONST_ITERATE(TServices, it, m_Services) {
+        action( CNSServerInfo(it->first.first, it->first.second, *this) );
+    }
+}
+
+void CNSInfoCollector::DropQueue()
+{
+    NON_CONST_ITERATE(TServices, it, m_Services) {
+        CNSClientHelper& cln = (*it->second);
+        cln.DropQueue();
+    }
+}
 
 
 END_NCBI_SCOPE
@@ -324,6 +365,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/15 15:27:08  didenko
+ * Added drop_jobs command
+ *
  * Revision 1.5  2006/05/23 19:31:51  didenko
  * Cosmetics
  *
