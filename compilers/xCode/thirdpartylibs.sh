@@ -18,15 +18,14 @@ if [ -f $TEMP ]; then
   exit -1
 fi
 
-
 LIBS="
- giflib-4.1.4*http://voxel.dl.sourceforge.net/sourceforge/libungif
+ giflib-4.1.4*http://superb-east.dl.sourceforge.net/sourceforge/libungif
  jpegsrc.v6b*http://www.ijg.org/files
- libpng-1.2.8-config*voxel.dl.sourceforge.net/sourceforge/libpng
+ libpng-1.2.8-config*superb-east.dl.sourceforge.net/sourceforge/libpng
  tiff-3.7.1*ftp://ftp.remotesensing.org/libtiff/old
  sqlite-2.8.16*http://www.sqlite.org
  db-4.4.20.NC*http://downloads.sleepycat.com
- fltk-1.1.6-source*http://voxel.dl.sourceforge.net/sourceforge/fltk"
+ fltk-1.1.6-source*http://superb-east.dl.sourceforge.net/sourceforge/fltk"
 
 
 cd $TEMP
