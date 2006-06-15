@@ -332,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2006/06/15 21:06:17  cliu
+ * Remove LF from the DOS format
+ *
  * Revision 1.11  2006/06/12 18:29:33  cliu
  * refill membership annotations.
  *
