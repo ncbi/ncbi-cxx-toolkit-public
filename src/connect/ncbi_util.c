@@ -26,10 +26,11 @@
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Auxiliary (optional) code for "ncbi_core.[ch]"
+ *   Auxiliary (optional) code mostly to support "ncbi_core.[ch]"
  *
  */
 
+#include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #ifndef NCBI_CXX_TOOLKIT
 #  include <ncbistd.h>
@@ -41,6 +42,20 @@
 #  include <stdlib.h>
 #  include <string.h>
 #  include <time.h>
+#endif
+#if defined(NCBI_OS_UNIX)
+#  ifndef NCBI_OS_SOLARIS
+#    include <limits.h>
+#  endif
+#  if defined(HAVE_GETPWUID)  ||  defined(HAVE_GETPWUID_R)
+#    include <pwd.h>
+#  endif
+#  include <unistd.h>
+#elif defined(NCBI_OS_MSWIN)
+#  if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
 #endif
 
 
@@ -483,7 +498,7 @@ extern REG CORE_GetREG(void)
 
 
 /******************************************************************************
- *  MISCELLANEOUS
+ *  CORE_GetPlatform
  */
 
 extern const char* CORE_GetPlatform(void)
@@ -495,6 +510,215 @@ extern const char* CORE_GetPlatform(void)
 #endif /*NCBI_CXX_TOOLKIT*/
 }
 
+
+
+/****************************************************************************
+ * CORE_GetUsername
+ */
+
+extern const char* CORE_GetUsername(char* buf, size_t bufsize)
+{
+#if defined(NCBI_OS_UNIX)
+#  if !defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_GETLOGIN_R)
+#    ifndef LOGIN_NAME_MAX
+#      ifdef _POSIX_LOGIN_NAME_MAX
+#        define LOGIN_NAME_MAX _POSIX_LOGIN_NAME_MAX
+#      else
+#        define LOGIN_NAME_MAX 256
+#      endif
+#    endif
+    char loginbuf[LOGIN_NAME_MAX + 1];
+#  endif
+    struct passwd* pw;
+#  if !defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_GETPWUID_R)
+    struct passwd pwd;
+    char pwdbuf[256];
+#  endif
+#elif defined(NCBI_OS_MSWIN)
+    char  loginbuf[256 + 1];
+    DWORD loginbufsize = sizeof(loginbuf) - 1;
+#endif
+    const char* login;
+
+    assert(buf  &&  bufsize);
+
+#ifndef NCBI_OS_UNIX
+
+#  ifdef NCBI_OS_MSWIN
+    if (GetUserName(loginbuf, &loginbufsize)) {
+        assert(loginbufsize < sizeof(loginbuf));
+        loginbuf[loginbufsize] = '\0';
+        strncpy0(buf, loginbuf, bufsize - 1);
+        return buf;
+    }
+    if ((login = getenv("USERNAME")) != 0) {
+        strncpy0(buf, login, bufsize - 1);
+        return buf;
+    }
+#  endif
+
+#else /*!NCBI_OS_UNIX*/
+
+#  if defined(NCBI_OS_SOLARIS)  ||  !defined(HAVE_GETLOGIN_R)
+    /* NB:  getlogin() is MT-safe on Solaris, yet getlogin_r() comes in two
+     * flavors that differ only in return type, so to make things simpler,
+     * use plain getlogin() here */
+#    ifndef NCBI_OS_SOLARIS
+    CORE_LOCK_WRITE;
+#    endif
+    if ((login = getlogin()) != 0)
+        strncpy0(buf, login, bufsize - 1);
+#    ifndef NCBI_OS_SOLARIS
+    CORE_UNLOCK;
+#    endif
+    if (login)
+        return buf;
+#  else
+    if (getlogin_r(loginbuf, sizeof(loginbuf) - 1) == 0) {
+        loginbuf[sizeof(loginbuf) - 1] = '\0';
+        strncpy0(buf, loginbuf, bufsize - 1);
+        return buf;
+    }
+#  endif
+
+#  if defined(NCBI_OS_SOLARIS)  ||  \
+    (!defined(HAVE_GETPWUID_R)  &&  defined(HAVE_GETPWUID))
+    /* NB:  getpwuid() is MT-safe on Solaris, so use it here, if available */
+#  ifndef NCBI_OS_SOLARIS
+    CORE_LOCK_WRITE;
+#  endif
+    if ((pw = getpwuid(getuid())) != 0  &&  pw->pw_name)
+        strncpy0(buf, pw->pw_name, bufsize - 1);
+#  ifndef NCBI_OS_SOLARIS
+    CORE_UNLOCK;
+#  endif
+    if (pw  &&  pw->pw_name)
+        return buf;
+#  elif defined(HAVE_GETPWUID_R)
+#    if   HAVE_GETPWUID_R == 4
+    /* obsolete but still existent */
+    pw = getpwuid_r(getuid(), &pwd, pwdbuf, sizeof(pwdbuf));
+#    elif HAVE_GETPWUID_R == 5
+    /* POSIX-conforming */
+    if (getpwuid_r(getuid(), &pwd, pwdbuf, sizeof(pwdbuf), &pw) != 0)
+        pw = 0;
+#    else
+#      error "Unknown value of HAVE_GETPWUID_R, 4 or 5 expected."
+#    endif
+    if (pw  &&  pw->pw_name) {
+        assert(pw == &pwd);
+        strncpy0(buf, pw->pw_name, bufsize - 1);
+        return buf;
+    }
+#  endif /*HAVE_GETPWUID_R*/
+
+#endif /*!NCBI_OS_UNIX*/
+
+    /* last resort */
+    if (!(login = getenv("USER"))  &&  !(login = getenv("LOGNAME"))) {
+        buf[0] = '\0';
+        return 0;
+    }
+    strncpy0(buf, login, bufsize - 1);
+    return buf;
+}
+
+
+
+/****************************************************************************
+ * CORE_GetVMPageSize:  Get page size granularity
+ * See also at corelib's ncbi_system.cpp::GetVirtualMemoryPageSize().
+ */
+
+size_t CORE_GetVMPageSize(void)
+{
+    static size_t ps = 0;
+
+    if (!ps) {
+#if defined(NCBI_OS_MSWIN)
+        SYSTEM_INFO si;
+        GetSystemInfo(&si); 
+        ps = (size_t) si.dwAllocationGranularity;
+#elif defined(NCBI_OS_UNIX) 
+#  if   defined(_SC_PAGESIZE)
+#    define NCBI_SC_PAGESIZE _SC_PAGESIZE
+#  elif defined(_SC_PAGE_SIZE)
+#    define NCBI_SC_PAGESIZE _SC_PAGE_SIZE
+#  elif defined(NCBI_SC_PAGESIZE)
+#    undef  NCBI_SC_PAGESIZE
+#  endif
+#  ifndef   NCBI_SC_PAGESIZE
+        long x = 0;
+#  else
+        long x = sysconf(NCBI_SC_PAGESIZE);
+#    undef  NCBI_SC_PAGESIZE
+#  endif
+        if (x <= 0) {
+#  ifdef HAVE_GETPAGESIZE
+            if ((x = getpagesize()) <= 0)
+                return 0;
+#  else
+            return 0;
+#  endif
+        }
+        ps = (size_t) x;
+#endif /*OS_TYPE*/
+    }
+    return ps;
+}
+
+
+
+/****************************************************************************
+ * CRC32
+ */
+
+/* Standard Ethernet/ZIP polynomial */
+#define CRC32_POLY 0x04C11DB7UL
+
+
+static unsigned int s_CRC32[256];
+
+
+static void s_CRC32_Init(void)
+{
+    size_t i;
+    if (s_CRC32[255])
+        return;
+    for (i = 0;  i < 256;  i++) {
+        unsigned int byteCRC = (unsigned int) i << 24;
+        int j;
+        for (j = 0;  j < 8;  j++) {
+            if (byteCRC & 0x80000000UL)
+                byteCRC = (byteCRC << 1) ^ CRC32_POLY;
+            else
+                byteCRC = (byteCRC << 1);
+        }
+        s_CRC32[i] = byteCRC;
+    }
+}
+
+
+extern unsigned int CRC32_Update(unsigned int checksum,
+                                 const void *ptr, size_t count)
+{
+    const unsigned char* str = (const unsigned char*) ptr;
+    size_t j;
+
+    s_CRC32_Init();
+    for (j = 0;  j < count;  j++) {
+        size_t i = ((checksum >> 24) ^ *str++) & 0xFF;
+        checksum <<= 8;
+        checksum  ^= s_CRC32[i];
+    }
+    return checksum;
+}
+
+
+
+/******************************************************************************
+ *  MISCELLANEOUS
+ */
 
 extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
                                       int/*bool*/ ignore_case)
@@ -546,6 +770,9 @@ extern int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2006/06/15 02:45:13  lavr
+ * GetUsername, GetVMPageSize (got CORE prefix), CRC32 moved here
+ *
  * Revision 6.34  2006/04/14 20:09:28  lavr
  * +UTIL_MatchesMaskEx()
  *
