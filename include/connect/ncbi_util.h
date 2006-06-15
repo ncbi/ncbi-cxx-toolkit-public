@@ -26,20 +26,31 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Auxiliary (optional) code for "ncbi_core.[ch]"
+ *   Auxiliary (optional) core mostly to support "ncbi_core.[ch]"
  *
- *********************************
- *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), MessagePlusErrno(),
- *                CORE_SetLOCK(), CORE_GetLOCK(),
- *                CORE_SetLOG(),  CORE_GetLOG(),   CORE_SetLOGFILE()
- *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
+ * 1. CORE support:
  *    macros:     LOG_Write(), LOG_Data(),
  *                LOG_WRITE(), LOG_DATA(),
  *                THIS_FILE, THIS_MODULE,
  *                LOG_WRITE_ERRNO_EX(), LOG_WRITE_ERRNO()
+ *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
+ *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), MessagePlusErrno(),
+ *                CORE_SetLOCK(), CORE_GetLOCK(),
+ *                CORE_SetLOG(),  CORE_GetLOG(),   CORE_SetLOGFILE()
+ *
+ * 2. Auxiliary API:
+ *       CORE_GetPlatform()
+ *       CORE_GetUsername()
+ *       CORE_GetVMPageSize()
+ *
+ * 3. CRC32 support:
+ *       CRC32_Update()
+ *
+ * 4. Miscellaneous:
+ *       UTIL_MatchesMask[Ex]()
  *
  */
 
@@ -230,13 +241,53 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 
 
 /******************************************************************************
- *  MISC
+ *  Auxiliary API
  */
 
 /* Return read-only textual but machine-readable platform description.
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 
+
+/* Obtain and store current user's name in the buffer provided.
+ * Return 0 when the user name cannot be determined.
+ * Otherwise, return "buf".
+ * Note that resultant strlen(buf) is always guaranteed to be less
+ * than "bufsize", extra non-fit characters discarded.
+ * Both "buf" and "bufsize" must not be zeros.
+ */
+extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsername
+(char*        buf,       /* Pointer to buffer to store the user name at */
+ size_t       bufsize    /* Size of buffer in bytes                     */
+ );
+
+
+/* Obtain virtual memory page size.
+ * Return 0 if the page size cannot be determined.
+ */
+extern NCBI_XCONNECT_EXPORT size_t CORE_GetVMPageSize(void);
+
+
+
+/******************************************************************************
+ *  CRC32
+ */
+
+/* Calculate/Update CRC32
+ * Return the checksum updated according to the contents of the block
+ * pointed to by "ptr" and having "count" bytes in it.
+ */
+extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
+(unsigned int checksum,  /* Checksum to update (start with 0) */
+ const void*  ptr,       /* Block of data                     */
+ size_t       count      /* Size of data                      */
+ );
+
+
+
+/******************************************************************************
+ *  Miscellanea
+ */
 
 extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMaskEx
 (const char* name,
@@ -262,6 +313,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2006/06/15 02:43:28  lavr
+ * GetUsername, GetVMPageSize (got "CORE" prefix), CRC32 moved here
+ *
  * Revision 6.23  2006/04/14 20:07:55  lavr
  * +UTIL_MatchesMaskEx()
  *
