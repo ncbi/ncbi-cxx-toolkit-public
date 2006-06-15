@@ -298,12 +298,15 @@ bool CZipCompression::CompressBuffer(
         ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
-    LIMIT_SIZE_PARAM_U(src_len);
+    if (src_len > kMax_UInt) {
+        SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
+        ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
+        return false;
+    }
     LIMIT_SIZE_PARAM_U(dst_size);
 
-    size_t    header_len = 0;
-    int       errcode    = Z_OK;
-    z_stream  stream;
+    size_t header_len = 0;
+    int    errcode    = Z_OK;
     
     // Write gzip file header
     if ( F_ISSET(fWriteGZipFormat) ) {
@@ -315,42 +318,42 @@ bool CZipCompression::CompressBuffer(
         }
     }
 
-    stream.next_in  = (unsigned char*)src_buf;
-    stream.avail_in = (unsigned int)src_len;
+    STREAM->next_in  = (unsigned char*)src_buf;
+    STREAM->avail_in = (unsigned int)src_len;
 #ifdef MAXSEG_64K
     // Check for source > 64K on 16-bit machine:
-    if ( stream.avail_in != src_len ) {
+    if ( STREAM->avail_in != src_len ) {
         SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
         ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
 #endif
-    stream.next_out = (unsigned char*)dst_buf + header_len;
-    stream.avail_out = (unsigned int)(dst_size - header_len);
-    if ( stream.avail_out != dst_size - header_len ) {
+    STREAM->next_out = (unsigned char*)dst_buf + header_len;
+    STREAM->avail_out = (unsigned int)(dst_size - header_len);
+    if ( STREAM->avail_out != dst_size - header_len ) {
         SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
         ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
 
-    stream.zalloc = (alloc_func)0;
-    stream.zfree  = (free_func)0;
-    stream.opaque = (voidpf)0;
+    STREAM->zalloc = (alloc_func)0;
+    STREAM->zfree  = (free_func)0;
+    STREAM->opaque = (voidpf)0;
 
-    errcode = deflateInit2_(&stream, GetLevel(), Z_DEFLATED,
+    errcode = deflateInit2_(STREAM, GetLevel(), Z_DEFLATED,
                             header_len ? -m_WindowBits : m_WindowBits,
                             m_MemLevel, m_Strategy,
                             ZLIB_VERSION, (int)sizeof(z_stream));
     if (errcode == Z_OK) {
-        errcode = deflate(&stream, Z_FINISH);
-        *dst_len = stream.total_out + header_len;
+        errcode = deflate(STREAM, Z_FINISH);
+        *dst_len = STREAM->total_out + header_len;
         if (errcode == Z_STREAM_END) {
-            errcode = deflateEnd(&stream);
+            errcode = deflateEnd(STREAM);
         } else {
             if ( errcode == Z_OK ) {
                 errcode = Z_BUF_ERROR;
             }
-            deflateEnd(&stream);
+            deflateEnd(STREAM);
         }
     }
     SetError(errcode, zError(errcode));
@@ -392,36 +395,39 @@ bool CZipCompression::DecompressBuffer(
         ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
-    LIMIT_SIZE_PARAM_U(src_len);
+    if (src_len > kMax_UInt) {
+        SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
+        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        return false;
+    }
     LIMIT_SIZE_PARAM_U(dst_size);
 
-    size_t    header_len = 0;
-    int       errcode    = Z_OK;
-    z_stream  stream;
+    size_t header_len = 0;
+    int    errcode    = Z_OK;
     
     // Check file header
     if ( F_ISSET(fCheckFileHeader) ) {
         // Check gzip header in the buffer
         header_len = s_CheckGZipHeader(src_buf, src_len);
     }
-    stream.next_in  = (unsigned char*)src_buf + header_len;
-    stream.avail_in = (unsigned int)(src_len - header_len);
+    STREAM->next_in  = (unsigned char*)src_buf + header_len;
+    STREAM->avail_in = (unsigned int)(src_len - header_len);
     // Check for source > 64K on 16-bit machine:
-    if ( stream.avail_in != src_len - header_len ) {
+    if ( STREAM->avail_in != src_len - header_len ) {
         SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
         ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
-    stream.next_out = (unsigned char*)dst_buf;
-    stream.avail_out = (unsigned int)dst_size;
-    if ( stream.avail_out != dst_size ) {
+    STREAM->next_out = (unsigned char*)dst_buf;
+    STREAM->avail_out = (unsigned int)dst_size;
+    if ( STREAM->avail_out != dst_size ) {
         SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
         ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
 
-    stream.zalloc = (alloc_func)0;
-    stream.zfree  = (free_func)0;
+    STREAM->zalloc = (alloc_func)0;
+    STREAM->zfree  = (free_func)0;
 
     // "window bits" is passed < 0 to tell that there is no zlib header.
     // Note that in this case inflate *requires* an extra "dummy" byte
@@ -429,19 +435,19 @@ bool CZipCompression::DecompressBuffer(
     // return Z_STREAM_END. Here the gzip CRC32 ensures that 4 bytes are
     // present after the compressed stream.
         
-    errcode = inflateInit2_(&stream, header_len ? -m_WindowBits :m_WindowBits,
+    errcode = inflateInit2_(STREAM, header_len ? -m_WindowBits :m_WindowBits,
                             ZLIB_VERSION, (int)sizeof(z_stream));
 
     if (errcode == Z_OK) {
-        errcode = inflate(&stream, Z_FINISH);
-        *dst_len = stream.total_out;
+        errcode = inflate(STREAM, Z_FINISH);
+        *dst_len = STREAM->total_out;
         if (errcode == Z_STREAM_END) {
-            errcode = inflateEnd(&stream);
+            errcode = inflateEnd(STREAM);
         } else {
             if ( errcode == Z_OK ) {
                 errcode = Z_BUF_ERROR;
             }
-            inflateEnd(&stream);
+            inflateEnd(STREAM);
         }
     }
     SetError(errcode, zError(errcode));
@@ -450,6 +456,33 @@ bool CZipCompression::DecompressBuffer(
         return false;
     }
     return true;
+}
+
+
+long CZipCompression::EstimateCompressionBufferSize(size_t src_len)
+{
+#if !defined(ZLIB_VERNUM) || ZLIB_VERNUM < 0x1200
+    return -1;
+#else
+    size_t header_len = 0;
+    int    errcode    = Z_OK;
+    
+    if ( F_ISSET(fWriteGZipFormat) ) {
+        header_len = 10 /* default empty GZIP header */;
+    }
+    STREAM->zalloc = (alloc_func)0;
+    STREAM->zfree  = (free_func)0;
+    STREAM->opaque = (voidpf)0;
+    errcode = deflateInit2_(STREAM, GetLevel(), Z_DEFLATED,
+                            header_len ? -m_WindowBits : m_WindowBits,
+                            m_MemLevel, m_Strategy,
+                            ZLIB_VERSION, (int)sizeof(z_stream));
+    if (errcode != Z_OK) {
+        SetError(errcode, zError(errcode));
+        return -1;
+    }
+    return deflateBound(STREAM, src_len) + header_len;
+#endif
 }
 
 
@@ -470,7 +503,6 @@ bool CZipCompression::CompressFile(const string& src_file,
     if ( !cf.Open(dst_file, CCompressionFile::eMode_Write, &info) ) {
         return false;
     } 
-    // --- 
 
     // Make compression
     if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
@@ -759,7 +791,11 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
                       /* out */            size_t* in_avail,
                       /* out */            size_t* out_avail)
 {
-    LIMIT_SIZE_PARAM_U(in_len);
+    if (in_len > kMax_UInt) {
+        SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
+        ERR_POST(FormatErrorMessage("CZipCompressor::Process"));
+        return eStatus_Error;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     size_t header_len = 0;
@@ -943,7 +979,11 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    LIMIT_SIZE_PARAM_U(in_len);
+    if (in_len > kMax_UInt) {
+        SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
+        ERR_POST(FormatErrorMessage("CZipDecompressor::Process"));
+        return eStatus_Error;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     STREAM->next_in   = (unsigned char*)const_cast<char*>(in_buf);
@@ -1078,6 +1118,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/06/15 18:23:57  ivanov
+ * Added CZipCompression::EstimateCompressionBufferSize().
+ * Replace locals z_stream with class member STREAM.
+ *
  * Revision 1.27  2006/05/09 13:56:37  ivanov
  * Get rid of warning on MSVC8
  *
