@@ -45,6 +45,7 @@ BEGIN_SCOPE(objects)
 
 class CScope;
 class CPrefetchToken;
+class CPrefetchThread;
 class IPrefetchAction;
 class IPrefetchListener;
 class CPrefetchManager_Impl;
@@ -105,6 +106,7 @@ protected:
     
 private:
     friend class CPrefetchToken;
+    friend class CPrefetchThread;
     friend class CPrefetchManager;
     friend class CPrefetchManager_Impl;
 

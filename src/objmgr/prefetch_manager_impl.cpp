@@ -114,12 +114,17 @@ CPrefetchRequest::~CPrefetchRequest(void)
 
 void CPrefetchRequest::SetQueueItem(CObject* queue_item)
 {
-    _ASSERT(queue_item);
-    _ASSERT(!m_QueueItem);
-    _ASSERT(m_State == eInvalid);
-    _ASSERT(this == &dynamic_cast<CPrefetchManager_Impl::TItemHandle::TObjectType&>(*queue_item).SetRequest());
-    m_QueueItem = queue_item;
-    m_State = eQueued;
+    if ( m_QueueItem != queue_item ) {
+        CMutexGuard guard(m_StateMutex->GetData());
+        if ( m_QueueItem != queue_item ) {
+            _ASSERT(queue_item);
+            _ASSERT(!m_QueueItem);
+            _ASSERT(m_State == eInvalid);
+            _ASSERT(this == &dynamic_cast<CPrefetchManager_Impl::TItemHandle::TObjectType&>(*queue_item).SetRequest());
+            m_QueueItem = queue_item;
+            m_State = eQueued;
+        }
+    }
 }
 
 
@@ -232,7 +237,6 @@ CPrefetchToken CPrefetchManager_Impl::AddAction(TPriority priority,
                                                 IPrefetchAction* action,
                                                 IPrefetchListener* listener)
 {
-    CMutexGuard guard(GetMutex());
     CPrefetchToken token(AcceptRequest(CPrefetchRequest(m_StateMutex,
                                                         action,
                                                         listener),
@@ -289,11 +293,8 @@ void CPrefetchManager_Impl::KillAllThreads(void)
         catch (CBlockingQueueException&) { // guard against races
         }
     }
-    CPrefetchThread* thread = CPrefetchThread::GetCurrentThread();
     ITERATE(TThreads, it, m_Threads) {
-        if ( it->GetPointer() != thread ) {
-            it->GetNCObject().Join();
-        }
+        it->GetNCObject().Join();
     }
     m_Threads.clear();
 }
@@ -333,13 +334,6 @@ private:
     void operator=(const CSaveCurrentToken&);
 };
 
-/*
-CPrefetchToken CPrefetchRequest::GetCurrentToken(void)
-{
-    CPrefetchThread* thread = CPrefetchThread::GetCurrentThread();
-    return thread? thread->GetCurrentToken(): CPrefetchToken();
-}
-*/
 
 CPrefetchManager::EState CPrefetchManager::GetCurrentTokenState(void)
 {
@@ -373,6 +367,7 @@ void CPrefetchThread::CancelAll(void)
 void CPrefetchThread::ProcessRequest(TItemHandle handle)
 {
     CPrefetchToken token(handle);
+    token.x_GetImpl().SetQueueItem(token.m_QueueItem.GetNCPointer());
     CPrefetchRequest& impl(token.x_GetImpl());
     try {
         IPrefetchAction* action = impl.GetAction();
