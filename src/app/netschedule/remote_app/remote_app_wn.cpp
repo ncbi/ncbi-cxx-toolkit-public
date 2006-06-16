@@ -83,7 +83,38 @@ public:
         }
 
         vector<string> args;
-        NStr::Tokenize(m_Request.GetCmdLine(), " ", args);
+        //args.push_back(m_Request.GetCmdLine());
+        //NStr::Tokenize(m_Request.GetCmdLine(), " ", args);
+        const string& cmdline = m_Request.GetCmdLine();
+        if (!cmdline.empty()) {
+            string arg;
+            for(SIZE_TYPE i = 0; i < cmdline.size(); ) {
+                if (cmdline[i] == ' ') {
+                    if( !arg.empty() ) {
+                        args.push_back(arg);
+                        arg.erase();
+                    }
+                    i++;
+                    continue;
+                }
+                if (cmdline[i] == '\'' || cmdline[i] == '"') {
+                    if( !arg.empty() ) {
+                        args.push_back(arg);
+                        arg.erase();
+                    }
+                    char quote = cmdline[i];
+                    while( ++i < cmdline.size() && cmdline[i] != quote )
+                        arg += cmdline[i];
+
+                    args.push_back(arg);
+                    arg.erase();
+                    ++i;
+                    continue;
+                }
+                arg += cmdline[i++];                
+            }
+        }
+        
         
         m_Result.SetStdOutErrFileNames(m_Request.GetStdOutFileName(),
                                        m_Request.GetStdErrFileName(),
@@ -186,6 +217,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/06/16 16:00:11  didenko
+ * fixed command line arguments parsing
+ *
  * Revision 1.18  2006/06/15 20:08:31  didenko
  * Added logging of a command line.
  *
