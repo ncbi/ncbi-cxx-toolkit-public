@@ -274,10 +274,18 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Prepare command line to run
         string cmd_line(cmd);
         ITERATE (vector<string>, iter, args) {
+            string arg = *iter;
+            // Escape the argument with quotes if it is empty
+            // or contains spaces.
+            if ( arg.empty()  ||
+                (arg.find(' ') != NPOS  &&  arg[0] != '"') ) {
+                arg = '"' + arg + '"';
+            }
+            // Add argument to command line
             if ( !cmd_line.empty() ) {
                 cmd_line += " ";
             }
-            cmd_line += *iter;
+            cmd_line += arg;
         }
 
         // Convert environment array to block form
@@ -725,7 +733,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 //////////////////////////////////////////////////////////////////////////////
 //
 // CPipeHandle -- Unix version
-
+//
 
 class CPipeHandle
 {
@@ -1726,6 +1734,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/06/16 14:46:25  ivanov
+ * MSWin: CPipeHandle::Open -- escape arguments with quotes if it
+ * is empty or contains spaces.
+ *
  * Revision 1.60  2006/05/23 14:57:56  ivanov
  * Fixed typo in last commit
  *
