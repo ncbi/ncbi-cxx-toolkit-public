@@ -47,7 +47,8 @@ enum LinkoutTypes {
   eStructure       = (1<<2),
   eGeo             = (1<<3),
   eGene            = (1<<4),
-  eInMapviewer     = (1<<16)
+  eNotInMapviewer  = (1<<16),
+  eNonGenomic      = (1<<17)
 };
 
 END_objects_SCOPE
@@ -57,6 +58,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/06/16 15:15:16  jianye
+* adding more flags
+*
 * Revision 1.4  2006/06/14 21:47:45  jianye
 * added eInMapviewer
 *
