@@ -48,6 +48,14 @@ install_sqlite:
 	$(TEST_NOT_STAMP)\sqlite.installed     if exist "$(SQLITE_SRC)\*.pdb" copy /Y $(SQLITE_SRC)\*.pdb $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\sqlite.installed     echo "" > $(THIRDPARTY_CFG_PATH)\sqlite.installed
 
+SQLITE3_SRC         = $(SQLITE3_BINPATH)\$(INTDIR)
+install_sqlite3:
+	$(TEST_NOT_STAMP)\sqlite3.installed     echo Coping SQLite3 DLLs
+	$(TEST_IF__STAMP)\sqlite3.installed     echo SQLite3 DLLs are already installed
+	$(TEST_NOT_STAMP)\sqlite3.installed     if exist "$(SQLITE3_SRC)\*.dll" copy /Y $(SQLITE3_SRC)\*.dll $(INSTALL_BINPATH)
+	$(TEST_NOT_STAMP)\sqlite3.installed     if exist "$(SQLITE3_SRC)\*.pdb" copy /Y $(SQLITE3_SRC)\*.pdb $(INSTALL_BINPATH)
+	$(TEST_NOT_STAMP)\sqlite3.installed     echo "" > $(THIRDPARTY_CFG_PATH)\sqlite3.installed
+
 #
 # All other third-parties
 #

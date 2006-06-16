@@ -57,10 +57,11 @@ THIRD_PARTY_LIBS = \
 				install_fltk       \
 				install_berkeleydb \
 				install_sqlite     \
+				install_sqlite3     \
 				install_wxwindows  \
 				install_sybase     \
 				install_mysql      \
-				install_mssql   
+				install_mssql
 
 
 
@@ -77,7 +78,7 @@ clean :
 
 ###############################################################
 #
-# Target: Create output directory - may be not present if 
+# Target: Create output directory - may be not present if
 # C++ Toolkit was not build yet
 #
 dirs :

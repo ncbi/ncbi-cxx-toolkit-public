@@ -47,11 +47,19 @@ install_berkeleydb:
 
 SQLITE_SRC          = $(SQLITE_BINPATH)\$(INTDIR)
 install_sqlite:
-	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     echo Copying SQLITE DLLs...
-	$(TEST_IF__STAMP)\sqlite$(STAMP_SUFFIX).installed     echo SQLITE DLLs are already installed
-	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     if exist "$(SQLITE_SRC)\*.dll" (copy /Y "$(SQLITE_SRC)\*.dll" "$(INSTALL_BINPATH)" > NUL) else (echo WARNING: SQLITE DLLs not found.)
+	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     echo Copying SQLite DLLs...
+	$(TEST_IF__STAMP)\sqlite$(STAMP_SUFFIX).installed     echo SQLite DLLs are already installed
+	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     if exist "$(SQLITE_SRC)\*.dll" (copy /Y "$(SQLITE_SRC)\*.dll" "$(INSTALL_BINPATH)" > NUL) else (echo WARNING: SQLite DLLs not found.)
 	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     if exist "$(SQLITE_SRC)\*.pdb" (copy /Y "$(SQLITE_SRC)\*.pdb" "$(INSTALL_BINPATH)" > NUL)
 	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     if exist "$(SQLITE_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\sqlite$(STAMP_SUFFIX).installed")
+
+SQLITE3_SRC          = $(SQLITE3_BINPATH)\$(INTDIR)
+install_sqlite3:
+	$(TEST_NOT_STAMP)\sqlite3$(STAMP_SUFFIX).installed     echo Copying SQLite3 DLLs...
+	$(TEST_IF__STAMP)\sqlite3$(STAMP_SUFFIX).installed     echo SQLite3 DLLs are already installed
+	$(TEST_NOT_STAMP)\sqlite3$(STAMP_SUFFIX).installed     if exist "$(SQLITE3_SRC)\*.dll" (copy /Y "$(SQLITE3_SRC)\*.dll" "$(INSTALL_BINPATH)" > NUL) else (echo WARNING: SQLite3 DLLs not found.)
+	$(TEST_NOT_STAMP)\sqlite3$(STAMP_SUFFIX).installed     if exist "$(SQLITE3_SRC)\*.pdb" (copy /Y "$(SQLITE3_SRC)\*.pdb" "$(INSTALL_BINPATH)" > NUL)
+	$(TEST_NOT_STAMP)\sqlite3$(STAMP_SUFFIX).installed     if exist "$(SQLITE3_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\sqlite3$(STAMP_SUFFIX).installed")
 
 #
 # All other third-parties
