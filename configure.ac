@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.424 2006/06/02 19:21:47 ucko Exp $
+#  $Id: configure.ac,v 1.425 2006/06/16 19:59:36 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1467,9 +1467,15 @@ case "$host_os" in
 esac
 
 # When using ccache and distcc together, ccache needs to be on the
-# outside, so look for distcc first.
+# outside, so look for distcc(.sh) first.
 
 if test "$with_distcc" = "yes"; then
+   if test -z "$DISTCC" -a -x $NCBI/bin/distcc.sh ; then
+      echo 'int f() { return 0; }' > conftest.c
+      if $NCBI/bin/distcc.sh $CC -c conftest.c; then
+         DISTCC=$NCBI/bin/distcc.sh
+      fi
+   fi
    AC_CHECK_PROG(DISTCC, distcc, distcc, [])
    if test -n "$DISTCC" ; then
       CC_WRAPPER="$DISTCC $CC_WRAPPER"

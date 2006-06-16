@@ -5494,9 +5494,15 @@ fi
 esac
 
 # When using ccache and distcc together, ccache needs to be on the
-# outside, so look for distcc first.
+# outside, so look for distcc(.sh) first.
 
 if test "$with_distcc" = "yes"; then
+   if test -z "$DISTCC" -a -x $NCBI/bin/distcc.sh ; then
+      echo 'int f() { return 0; }' > conftest.c
+      if $NCBI/bin/distcc.sh $CC -c conftest.c; then
+         DISTCC=$NCBI/bin/distcc.sh
+      fi
+   fi
    # Extract the first word of "distcc", so it can be a program name with args.
 set dummy distcc; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
