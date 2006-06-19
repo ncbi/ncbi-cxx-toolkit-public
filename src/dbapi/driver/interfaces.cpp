@@ -126,6 +126,7 @@ I_RPCCmd::~I_RPCCmd(void)
 
 I_BCPInCmd::I_BCPInCmd(void)
 {
+    return;
 }
 
 I_BCPInCmd::~I_BCPInCmd(void)
@@ -216,6 +217,18 @@ void I_DriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 {
     CFastMutexGuard mg(m_Mtx);
     m_ConnHandlers.Pop(h);
+
+    // Remove this handler from all connections
+    TConnPool::value_type con = NULL;
+    ITERATE(TConnPool, it, m_NotInUse) {
+        con = *it;
+        con->PopMsgHandler(h);
+    }
+
+    ITERATE(TConnPool, it, m_InUse) {
+        con = *it;
+        con->PopMsgHandler(h);
+    }
 }
 
 void I_DriverContext::x_Recycle(I_Connection* conn, bool conn_reusable)
@@ -571,7 +584,7 @@ void I_Connection::DeleteAllCommands(void)
 {
     while (!m_CMDs.empty()) {
         // Destructor will remove an entity from a container ...
-        delete m_CMDs.front();
+        delete m_CMDs.back();
     }
 }
 
@@ -604,6 +617,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/06/19 19:10:11  ssikorsk
+ * Fixed I_DriverContext::PopDefConnMsgHandler to pop msg handlers
+ * from created connections.
+ *
  * Revision 1.27  2006/06/06 19:12:27  ssikorsk
  * Fixed I_Connection::DeleteAllCommands.
  *
