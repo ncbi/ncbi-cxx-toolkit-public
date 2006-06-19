@@ -1340,7 +1340,7 @@ void CNetScheduleClient::StatusSnapshot(TStatusMap*   status_map,
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     MakeCommandPacket(&m_Tmp, "STSN ", connected);
-    m_Tmp.append(" \"");
+    m_Tmp.append(" aff=\"");
     m_Tmp.append(affinity_token);
     m_Tmp.append("\"");
 
@@ -1858,6 +1858,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/06/19 14:34:49  kuznets
+ * fixed bug in affinity processing
+ *
  * Revision 1.59  2006/06/07 12:59:01  kuznets
  * +StatusSnapshot() method
  *
