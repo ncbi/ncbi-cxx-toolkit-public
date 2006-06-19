@@ -178,13 +178,24 @@ string CBlobStorage_NetCache::GetBlobAsString(const string& data_id)
     size_t b_size = 0;
     auto_ptr<IReader> reader = x_GetReader(data_id, b_size, eLockWait);
     string buf(b_size,0);
-    //AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
-    ERW_Result res = reader->Read(&*buf.begin(), b_size);
-    if( res != eRW_Success && res != eRW_Eof)
-        NCBI_THROW(CBlobStorageException,
-                   eReader, "Reader couldn't read a blob. BlobKey: " + data_id);
-    //    buf.get()[b_size] = 0;   
-    //return string(buf.get());
+
+    size_t idx = 0;
+    ERW_Result res = eRW_Success;
+    while (res != eRW_Eof) {
+        size_t bytes_read = 0;
+        res = reader->Read(&buf[idx], b_size, &bytes_read);
+        switch (res) {
+        case eRW_Success:
+        case eRW_Eof:
+            b_size -= bytes_read;
+            idx += bytes_read;
+            break;
+        default:
+            NCBI_THROW(CBlobStorageException,
+                       eReader, "Reader couldn't read a blob. BlobKey: " + data_id);
+        } // switch
+    } // for
+   
     return buf;
 }
 
@@ -404,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2006/06/19 14:53:06  didenko
+ * Fixed GetBlobAsString method
+ *
  * Revision 6.7  2006/05/30 16:41:05  didenko
  * Improved error handling
  *
