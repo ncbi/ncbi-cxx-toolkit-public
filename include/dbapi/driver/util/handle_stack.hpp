@@ -4,30 +4,30 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
  *
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
  *
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
+ *  purpose.
  *
- *  Please cite the author in any work or product based on this material.   
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
  * Author:  Vladimir Soussov
- *   
+ *
  * File Description:  Stack of handlers
  *
  */
@@ -45,12 +45,10 @@ public:
     CDBHandlerStack(size_t n = 8);
     CDBHandlerStack(const CDBHandlerStack& s);
     ~CDBHandlerStack(void);
-    
+
     CDBHandlerStack& operator= (const CDBHandlerStack& s);
 
 public:
-    typedef deque<CRef<CDB_UserHandler> > TContainer;
-    
     void Push(CDB_UserHandler* h, EOwnership ownership = eNoOwnership);
     void Pop (CDB_UserHandler* h, bool last = true);
 
@@ -58,11 +56,62 @@ public:
     // Return TRUE if exceptions have been successfully processed.
     bool HandleExceptions(CDB_UserHandler::TExceptions& exeptions);
 
-    
+
+public:
+    class CUserHandlerWrapper : public CObject
+    {
+    public:
+        CUserHandlerWrapper(CDB_UserHandler* handler, bool guard = false) :
+            m_ObjGuard(guard ? handler : NULL),
+            m_UserHandler(handler)
+        {
+        }
+
+        bool operator==(CDB_UserHandler* handler)
+        {
+            return m_UserHandler.GetPointer() == handler;
+        }
+
+        const CDB_UserHandler* GetHandler(void) const
+        {
+            return m_UserHandler.GetPointer();
+        }
+        CDB_UserHandler* GetHandler(void)
+        {
+            return m_UserHandler.GetPointer();
+        }
+
+    private:
+        class CObjGuard
+        {
+        public:
+            CObjGuard(CObject* const obj) :
+                m_Obj(obj)
+            {
+                if (m_Obj) {
+                    m_Obj->AddReference();
+                }
+            }
+            ~CObjGuard(void)
+            {
+                if (m_Obj) {
+                    m_Obj->ReleaseReference();
+                }
+            }
+
+        private:
+            CObject* const m_Obj;
+        };
+
+        const CObjGuard         m_ObjGuard;
+        CRef<CDB_UserHandler>   m_UserHandler;
+    };
+
+    typedef deque<CRef<CUserHandlerWrapper> > TContainer;
+
 private:
     TContainer m_Stack;
 };
-
 
 END_NCBI_SCOPE
 
@@ -73,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/19 19:03:57  ssikorsk
+ * Improved CDBHandlerStack::TContainer.
+ *
  * Revision 1.8  2006/05/15 19:28:11  ssikorsk
  * Added EOwnership argument to the method Push.
  *
