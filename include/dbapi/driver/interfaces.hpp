@@ -96,11 +96,12 @@ public:
 };
 
 
+/// auto_ptr<I_ITDescriptor> does the same job ...
 class NCBI_DBAPIDRIVER_EXPORT C_ITDescriptorGuard
 {
 public:
-    C_ITDescriptorGuard(I_ITDescriptor* d);
-    ~C_ITDescriptorGuard(void);
+    NCBI_DEPRECATED C_ITDescriptorGuard(I_ITDescriptor* d);
+    NCBI_DEPRECATED ~C_ITDescriptorGuard(void);
 
 private:
     I_ITDescriptor* m_D;
@@ -746,6 +747,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/06/19 19:01:17  ssikorsk
+ * Declared class C_ITDescriptorGuard deprecated.
+ *
  * Revision 1.48  2006/06/05 20:58:18  ssikorsk
  * Added method Release to I_Connection.
  *
