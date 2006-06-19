@@ -508,6 +508,12 @@ public:
     static CResult
     RunSilent(EMode mode, const char *cmdname,
               const char *argv, ... /*, NULL */);
+
+    /// Quote argument.
+    ///
+    /// Enclose argument in quotes if necessary.
+    /// Used for concatenation arguments into command line.
+    static string QuoteArg(const string& arg);
 };
 
 
@@ -557,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/06/19 13:59:31  ivanov
+ * + CExec::QuoteArg()
+ *
  * Revision 1.19  2006/06/13 13:28:38  ivanov
  * Added variation of CExec::Wait() to work with list of process handles.
  * Extended CExec::CResult class to store both, process handle and

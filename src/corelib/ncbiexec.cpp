@@ -496,7 +496,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
         const char* p = NULL;
         while ( (p = va_arg(vargs, const char*)) ) {
 	        cmdline += " "; 
-	        cmdline += p;
+            cmdline += CExec::QuoteArg(p);
         }
         va_end(vargs);
     }
@@ -542,12 +542,27 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
 }
 
 
+string CExec::QuoteArg(const string& arg)
+{
+    // Enclose argument in quotes if it is empty,
+    // or contains spaces and not contains quotes.
+    if ( arg.empty()  ||
+        (arg.find(' ') != NPOS  &&  arg.find('"') == NPOS) ) {
+        return '"' + arg + '"';
+    }
+    return arg;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/06/19 13:59:37  ivanov
+ * + CExec::QuoteArg()
+ *
  * Revision 1.38  2006/06/13 13:29:17  ivanov
  * Added variation of CExec::Wait() to work with list of process handles.
  * Extended CExec::CResult class to store both, process handle and
