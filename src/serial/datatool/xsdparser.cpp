@@ -517,7 +517,7 @@ void XSDParser::ParseSimpleContent(DTDElement& node)
     TToken tok;
     for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
         ;
-    if (tok != K_CLOSING) {
+    if (tok == K_CLOSING) {
         ParseContent(node);
     }
 }
@@ -829,6 +829,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2006/06/19 17:34:40  gouriano
+ * Corrected parsing of simpleContent
+ *
  * Revision 1.5  2006/06/05 15:33:14  gouriano
  * Implemented local elements when parsing XML schema
  *
