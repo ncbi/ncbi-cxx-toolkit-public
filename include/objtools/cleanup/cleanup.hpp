@@ -76,6 +76,9 @@ public:
     /// Cleanup a Seq-feat. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
 
+    // Extended Cleanup
+        /// Cleanup a Seq-entry. 
+    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry_Handle se, bool report_only = false);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -227,6 +230,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/06/19 12:59:02  bollin
+* added ExtendedCleanup method
+*
 * Revision 1.9  2006/05/17 17:39:05  bollin
 * added CScope member
 *
