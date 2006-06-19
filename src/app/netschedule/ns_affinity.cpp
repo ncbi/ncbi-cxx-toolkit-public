@@ -172,6 +172,9 @@ unsigned CAffinityDict::GetTokenId(const char* aff_token)
 
     CFastMutexGuard guard(m_DbLock);
 
+    m_AffDictDB->SetTransaction(0);
+    m_AffDict_TokenIdx->SetTransaction(0);
+
     CBDB_CursorGuard cg1(*m_CurTokenIdx);
     m_CurTokenIdx->ReOpen(0);
     m_CurTokenIdx->SetCondition(CBDB_FileCursor::eEQ);
@@ -182,6 +185,21 @@ unsigned CAffinityDict::GetTokenId(const char* aff_token)
     }
     return 0;
 }
+
+string CAffinityDict::GetAffToken(unsigned aff_id)
+{
+    string token;
+    CFastMutexGuard guard(m_DbLock);
+    m_AffDictDB->SetTransaction(0);
+    m_AffDictDB->aff_id = aff_id;
+    if (m_AffDictDB->Fetch() != eBDB_Ok) {
+        return kEmptyStr;
+    }
+
+    m_AffDictDB->token.ToString(token);
+    return token;    
+}
+
 
 void CAffinityDict::RemoveToken(unsigned          aff_id, 
                                 CBDB_Transaction& trans)
@@ -319,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/06/19 16:15:49  kuznets
+ * fixed crash when working with affinity
+ *
  * Revision 1.3  2006/02/21 14:44:57  kuznets
  * Bug fixes, improvements in statistics
  *

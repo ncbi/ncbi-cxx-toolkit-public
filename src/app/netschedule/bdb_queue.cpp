@@ -1087,6 +1087,13 @@ void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB&      db,
     out << NS_PFNAME("run_counter: ") << (unsigned) db.run_counter << fsp;
     out << NS_PFNAME("ret_code: ") << (unsigned) db.ret_code << fsp;
 
+    unsigned aff_id = (unsigned) db.aff_id;
+    if (aff_id) {
+        string token = m_LQueue.affinity_dict.GetAffToken(aff_id);
+        out << NS_PFNAME("aff_token: ") << "'" << token << "'" << fsp;
+    }
+    out << NS_PFNAME("aff_id: ") << aff_id << fsp;
+
     out << NS_PFNAME("input: ")        << "'" <<(string) db.input       << "'" << fsp;
     out << NS_PFNAME("output: ")       << "'" <<(string) db.output       << "'" << fsp;
     out << NS_PFNAME("err_msg: ")      << "'" <<(string) db.err_msg      << "'" << fsp;
@@ -3768,6 +3775,7 @@ CQueueDataBase::CQueue::x_ReadAffIdx_NoLock(unsigned           aff_id,
                                             bm::bvector<>*     job_candidates)
 {
     m_LQueue.aff_idx.aff_id = aff_id;
+    m_LQueue.aff_idx.SetTransaction(0);
     m_LQueue.aff_idx.ReadVectorOr(job_candidates);
 }
 
@@ -3778,6 +3786,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2006/06/19 16:15:49  kuznets
+ * fixed crash when working with affinity
+ *
  * Revision 1.82  2006/06/07 13:00:01  kuznets
  * Implemented command to get status summary based on affinity token
  *

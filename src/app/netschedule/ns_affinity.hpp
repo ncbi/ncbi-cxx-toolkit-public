@@ -81,6 +81,9 @@ public:
     /// Returns 0 if token does not exist
     unsigned GetTokenId(const char* aff_token);
 
+    /// Get affinity string by id
+    string GetAffToken(unsigned aff_id);
+
     /// Remove affinity token
     void RemoveToken(unsigned          aff_id, 
                      CBDB_Transaction& trans);
@@ -167,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/19 16:15:49  kuznets
+ * fixed crash when working with affinity
+ *
  * Revision 1.2  2006/02/09 17:07:42  kuznets
  * Various improvements in job scheduling with respect to affinity
  *

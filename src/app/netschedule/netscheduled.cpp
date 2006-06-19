@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.11.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.11.1  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2090,7 +2090,6 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 if (*s != '"') {
                     NS_RETURN_ERROR("Misformed SUBMIT request")
                 }
-                ++s;
                 char *ptr = req->affinity_token;
                 for (++s; *s != '"'; ++s) {
                     NS_CHECKEND(s, "Misformed SUBMIT request")
@@ -2100,6 +2099,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 }
                 *ptr = 0;
                 ++s;
+
                 NS_SKIPSPACE(s)
             }
 
@@ -2156,7 +2156,6 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 if (*s != '"') {
                     NS_RETURN_ERROR("Misformed Status Snapshot request")
                 }
-                ++s;
                 char *ptr = req->affinity_token;
                 for (++s; *s != '"'; ++s) {
                     NS_CHECKEND(s, "Misformed Status Snapshot request")
@@ -2936,6 +2935,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2006/06/19 16:15:49  kuznets
+ * fixed crash when working with affinity
+ *
  * Revision 1.89  2006/06/19 14:32:21  kuznets
  * fixed bug in affinity status
  *
