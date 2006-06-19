@@ -427,6 +427,8 @@ static string s_GetHost(void)
 }
 
 
+const char* kDiagTimeFormat = "Y/M/D:h:m:s";
+
 void CDiagContext::x_PrintMessage(EEventType event,
                                   const string& message) const
 {
@@ -439,7 +441,7 @@ void CDiagContext::x_PrintMessage(EEventType event,
         << setw(3) << GetFastCGIIteration() << " "
         << setfill(' ')
         << GetStringUID() << " "
-        << now.AsString("M/D/Y:h:m:s") << " ";
+        << now.AsString(kDiagTimeFormat) << " ";
     ostr << s_GetHost() << " ";
 
     string prop = GetProperty(kProperty_ClientIP);
@@ -1006,12 +1008,8 @@ SDiagMessage::SDiagMessage(const string& message)
         if (p == NPOS) {
             p = pos;
         }
-        p = message.find(' ', p + 1);
-        if (p == NPOS) {
-            p = len;
-        }
         tmp = message.substr(pos, p - pos);
-        m_Data->m_Time = CTime(tmp, "M/D/y h:m:s");
+        m_Data->m_Time = CTime(tmp, kDiagTimeFormat);
         pos = p + 1;
     }
     catch (CTimeException) {
@@ -1381,8 +1379,7 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     }
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
-        static const char timefmt[] = "M/D/y h:m:s ";
-        os << GetTime().AsString(timefmt);
+        os << GetTime().AsString(kDiagTimeFormat) << " ";
     }
     // PID/TID
     bool print_pid = IsSetDiagPostFlag(eDPF_PID, m_Flags);
@@ -2806,6 +2803,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.121  2006/06/19 20:24:32  grichenk
+ * Changed time format to Y/M/D:h:m:s.
+ *
  * Revision 1.120  2006/06/09 14:32:19  golikov
  * typo fixed
  *
