@@ -23,13 +23,11 @@
  *
  * ===========================================================================
  *
- * Author:  Adapted from CDTree-1 code by Chris Lanczycki
+ * Author:  Charlie Liu
  *
  * File Description:
  *
- *       High-level algorithmic operations on one or more CCd objects.
- *       (methods that only traverse the cdd ASN.1 data structure are in 
- *        placed in the CCd class itself)
+ *       API to handle SeqTree
  *
  * ===========================================================================
  */
@@ -282,19 +280,21 @@ bool SeqTreeAPI::loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions*
 		tmpOptions = &tmpOptionsObj;
 
 	SeqLocToSeqItemMap liMap;
-	if (!SeqTreeAsnizer::convertToSeqTree(cd->GetSeqtree(), *tmpTree, liMap))
+	if (!SeqTreeAsnizer::convertToSeqTree(cd->SetSeqtree(), *tmpTree, liMap))
 		return false;
 	CRef< CAlgorithm_type > algType(const_cast<CAlgorithm_type*> (&(cd->GetSeqtree().GetAlgorithm())));
 	SeqTreeAsnizer::convertToTreeOption(algType, *treeOptions);
+	bool validated = false;
 	if(tmpTree->isSequenceCompositionSame(ma))
-		return true;
+		validated = true;
 	else //if not same, resolve RowID with SeqLoc
 	{
 		if (SeqTreeAsnizer::resolveRowId(ma, liMap))
-			return tmpTree->isSequenceCompositionSame(ma);
-		else
-			return false;
+			validated = tmpTree->isSequenceCompositionSame(ma);
 	}
+	if (validated)
+		SeqTreeAsnizer::refillAsnMembership(ma, liMap);
+	return validated;
 }
 
 bool SeqTreeAPI::loadExistingTree(CCdCore* cd, TreeOptions* treeOptions, SeqTree* seqTree)
@@ -318,7 +318,7 @@ bool SeqTreeAPI::loadExistingTree(CCdCore* cd, TreeOptions* treeOptions, SeqTree
 		tmpOptions = &tmpOptionsObj;
 
 	SeqLocToSeqItemMap liMap;
-	if (!SeqTreeAsnizer::convertToSeqTree(cd->GetSeqtree(), *tmpTree, liMap))
+	if (!SeqTreeAsnizer::convertToSeqTree(cd->SetSeqtree(), *tmpTree, liMap))
 		return false;
 	CRef< CAlgorithm_type > algType(const_cast<CAlgorithm_type*> (&(cd->GetSeqtree().GetAlgorithm())));
 	SeqTreeAsnizer::convertToTreeOption(algType, *treeOptions);
@@ -332,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2006/06/19 13:48:19  cliu
+ * refill membership
+ *
  * Revision 1.12  2006/06/15 21:06:17  cliu
  * Remove LF from the DOS format
  *

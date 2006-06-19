@@ -146,11 +146,11 @@ void SeqTreeAsnizer::fillAsnSeqTreeNode(const AlignmentCollection& ac, const Seq
 	}
 }
 
-bool SeqTreeAsnizer::convertToSeqTree(const CSequence_tree & asnSeqTree, SeqTree& seqTree, SeqLocToSeqItemMap& liMap)
+bool SeqTreeAsnizer::convertToSeqTree(CSequence_tree & asnSeqTree, SeqTree& seqTree, SeqLocToSeqItemMap& liMap)
 {	
 	if (!asnSeqTree.IsSetRoot())
 		return false;
-	const CSeqTree_node& root = asnSeqTree.GetRoot();
+	CSeqTree_node& root = asnSeqTree.SetRoot();
 	//add the node self
 	SeqItem sItem;
 	fillSeqItem(root, sItem);
@@ -160,8 +160,8 @@ bool SeqTreeAsnizer::convertToSeqTree(const CSequence_tree & asnSeqTree, SeqTree
 	{
 		if (root.GetChildren().IsChildren())
 		{
-			const list< CRef< CSeqTree_node > >& children = root.GetChildren().GetChildren();
-			list< CRef< CSeqTree_node > >::const_iterator lcit = children.begin();
+			list< CRef< CSeqTree_node > >& children = root.SetChildren().SetChildren();
+			list< CRef< CSeqTree_node > >::iterator lcit = children.begin();
 			for(; lcit != children.end(); lcit++)
 			{
 				addChildNode(seqTree, rootIterator, **lcit, liMap);
@@ -195,7 +195,7 @@ void SeqTreeAsnizer::fillSeqItem(const CSeqTree_node& node, SeqItem& seqItem)
 
 //recursive
 bool SeqTreeAsnizer::addChildNode(SeqTree& seqTree, SeqTreeIterator parentNode, 
-								  const CSeqTree_node& asnNode, SeqLocToSeqItemMap& liMap)
+								  CSeqTree_node& asnNode, SeqLocToSeqItemMap& liMap)
 {
 	SeqItem sItem;
 	fillSeqItem(asnNode, sItem);
@@ -204,16 +204,19 @@ bool SeqTreeAsnizer::addChildNode(SeqTree& seqTree, SeqTreeIterator parentNode,
 	{
 		if (asnNode.GetChildren().IsChildren())
 		{
-			const list< CRef< CSeqTree_node > >& children = asnNode.GetChildren().GetChildren();
-			list< CRef< CSeqTree_node > >::const_iterator lcit = children.begin();
+			list< CRef< CSeqTree_node > >& children = asnNode.SetChildren().SetChildren();
+			list< CRef< CSeqTree_node > >::iterator lcit = children.begin();
 			for(; lcit != children.end(); lcit++)
 			{
 				addChildNode(seqTree, np, **lcit, liMap);
 			}
 		}
 		else //it is Footprint Node
+		{
+			TreeNodePair tnp(np, &asnNode);
 			liMap.insert(SeqLocToSeqItemMap::value_type(
-				&(asnNode.GetChildren().GetFootprint().GetSeqRange()), np));
+				&(asnNode.GetChildren().GetFootprint().GetSeqRange()), tnp));
+		}
 	}
 	return true;
 }
@@ -226,10 +229,23 @@ bool SeqTreeAsnizer::resolveRowId(const AlignmentCollection& ac, SeqLocToSeqItem
 		int row = ac.FindSeqInterval(*(sit->first));
 		if (row < 0)
 			return false;
-		sit->second->rowID = row;
+		sit->second.it->rowID = row;
 		CCdCore* cd = ac.GetScopedLeafCD(row);
 		if (cd)
-			sit->second->membership = cd->GetAccession();
+			sit->second.it->membership = cd->GetAccession();
+	}
+	return true;
+}
+
+bool SeqTreeAsnizer::refillAsnMembership(const AlignmentCollection& ac, SeqLocToSeqItemMap& liMap)
+{
+	SeqLocToSeqItemMap::iterator sit = liMap.begin();
+	for (; sit != liMap.end(); sit++)
+	{
+		int row = sit->second.it->rowID;
+		CCdCore* cd = ac.GetScopedLeafCD(row);
+		if (cd)
+			sit->second.asnNode->SetAnnotation().SetPresentInChildCD(cd->GetAccession());
 	}
 	return true;
 }
