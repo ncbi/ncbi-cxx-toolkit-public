@@ -52,8 +52,8 @@ public:
     // trivial definitions for CDataType's pure virtuals
     // (I *said* this was fake... ;-))
     void       PrintASN(CNcbiOstream&, int)     const { }
+    void       PrintXMLSchema(CNcbiOstream&, int, bool)     const { }
     void       PrintDTDElement(CNcbiOstream&, bool)   const { }
-    void       PrintXMLSchemaElement(CNcbiOstream&)   const { }
     bool       CheckValue(const CDataValue&)    const { return false; }
     TObjectPtr CreateDefault(const CDataValue&) const { return 0; }
 
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.4  2005/02/02 19:08:59  gouriano
 * Corrected DTD generation
 *

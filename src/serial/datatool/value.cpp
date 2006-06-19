@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.24  2005/02/22 15:06:53  gouriano
 * Corrected GetXmlString method for strings: removed quotes
 *
@@ -301,8 +304,7 @@ void CBlockDataValue::PrintASN(CNcbiOstream& out, int indent) const
         PrintASNNewLine(out, indent);
         (*i)->PrintASN(out, indent);
     }
-    PrintASNNewLine(out, indent - 1);
-    out << '}';
+    PrintASNNewLine(out, indent - 1) << '}';
 }
 string CBlockDataValue::GetXmlString(void) const
 {

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.29  2006/05/09 15:16:14  gouriano
 * Added XML namespace definition possibility
 *
@@ -247,16 +250,14 @@ public:
     bool InChoice(void) const;
 
     void PrintASNTypeComments(CNcbiOstream& out, int indent) const;
+    void PrintXMLSchemaTypeComments(CNcbiOstream& out, int indent) const;
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
+    virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const = 0;
+    virtual string GetSchemaTypeString(void) const;
     void PrintDTD(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out, const CComments& extra) const;
     virtual void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const = 0;
     virtual void PrintDTDExtra(CNcbiOstream& out) const;
-
-    void PrintXMLSchema(CNcbiOstream& out) const;
-    virtual void PrintXMLSchemaElement(CNcbiOstream& out) const = 0;
-    void PrintXMLSchema(CNcbiOstream& out, const CComments& extra) const;
-    virtual void PrintXMLSchemaExtra(CNcbiOstream& out) const;
 
     virtual CTypeRef GetTypeInfo(void);
     virtual const CTypeInfo* GetAnyTypeInfo(void);
@@ -264,8 +265,6 @@ public:
     virtual const CTypeInfo* GetRealTypeInfo(void);
     virtual CTypeInfo* CreateTypeInfo(void);
     CTypeInfo* UpdateModuleName(CTypeInfo* typeInfo) const;
-
-    static CNcbiOstream& NewLine(CNcbiOstream& out, int indent);
 
     void Warning(const string& mess) const;
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.9  2005/02/02 19:08:59  gouriano
 * Corrected DTD generation
 *
@@ -90,10 +93,9 @@ public:
     CReferenceDataType(const string& n);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
-    void PrintXMLSchemaElement(CNcbiOstream& out) const;
-    void PrintXMLSchemaExtra(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;

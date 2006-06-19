@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.41  2006/06/01 18:42:10  gouriano
 * Mark source spec info by a special tag
 *
@@ -196,6 +199,18 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
     m_LastComments.PrintASN(out, 0, CComments::eMultiline);
 }
 
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
+{
+    BeginXMLSchema(out);
+    ITERATE ( TModules, mi, m_Modules ) {
+        (*mi)->PrintXMLSchema(out);
+    }
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
+    EndXMLSchema(out);
+}
+
 void CFileModules::GetRefInfo(list<string>& info) const
 {
     info.clear();
@@ -312,19 +327,6 @@ void CFileModules::EndXMLSchema(CNcbiOstream& out) const
     out << "</xs:schema>\n";
 }
 
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
-{
-    BeginXMLSchema(out);
-    ITERATE ( TModules, mi, m_Modules ) {
-        (*mi)->PrintXMLSchema(out);
-    }
-    m_LastComments.PrintDTD(out, CComments::eMultiline);
-    EndXMLSchema(out);
-}
-
-
 const string& CFileModules::GetSourceFileName(void) const
 {
     return m_SourceFileName;
@@ -397,6 +399,15 @@ void CFileSet::PrintASN(CNcbiOstream& out) const
     }
 }
 
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+void CFileSet::PrintXMLSchema(CNcbiOstream& out) const
+{
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
+        (*i)->PrintXMLSchema(out);
+    }
+}
+
 void CFileSet::PrintDTD(CNcbiOstream& out) const
 {
 #if 0
@@ -434,16 +445,6 @@ void CFileSet::PrintXMLSchemaModular(void) const
         (*i)->PrintXMLSchemaModular();
     }
 }
-
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-void CFileSet::PrintXMLSchema(CNcbiOstream& out) const
-{
-    ITERATE ( TModuleSets, i, m_ModuleSets ) {
-        (*i)->PrintXMLSchema(out);
-    }
-}
-
 
 CDataType* CFileSet::ExternalResolve(const string& module, const string& name,
                                      bool allowInternal) const

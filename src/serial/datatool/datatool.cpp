@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,5,0) );
+    SetVersion( CVersionInfo(1,6,0) );
 }
 
 void CDataTool::Init(void)
@@ -648,6 +648,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.97  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.96  2006/06/05 15:33:14  gouriano
 * Implemented local elements when parsing XML schema
 *

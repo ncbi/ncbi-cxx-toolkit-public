@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.12  2006/06/01 18:42:27  gouriano
 * Mark source spec info by a special tag
 *
@@ -124,6 +127,7 @@ public:
     bool CheckNames(void) const;
 
     void PrintASN(CNcbiOstream& out) const;
+    void PrintXMLSchema(CNcbiOstream& out) const;
 
     void GetRefInfo(list<string>& info) const;
     void PrintASNRefInfo(CNcbiOstream& out) const;
@@ -135,7 +139,6 @@ public:
     void PrintXMLSchemaModular(void) const;
     void BeginXMLSchema(CNcbiOstream& out) const;
     void EndXMLSchema(CNcbiOstream& out) const;
-    void PrintXMLSchema(CNcbiOstream& out) const;
 
     const string& GetSourceFileName(void) const;
     string GetFileNamePrefix(void) const;
@@ -188,8 +191,9 @@ public:
     bool CheckNames(void) const;
 
     void PrintASN(CNcbiOstream& out) const;
-    void PrintDTD(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;
+    void PrintDTD(CNcbiOstream& out) const;
+
     void PrintDTDModular(void) const;
     void PrintXMLSchemaModular(void) const;
 

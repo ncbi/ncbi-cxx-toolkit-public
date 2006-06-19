@@ -27,9 +27,369 @@
 *
 * File Description:
 *   Type description of 'SET OF' and 'SEQUENCE OF'
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <ncbi_pch.hpp>
+#include <serial/stltypes.hpp>
+#include <serial/autoptrinfo.hpp>
+#include <serial/datatool/exceptions.hpp>
+#include <serial/datatool/unitype.hpp>
+#include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/statictype.hpp>
+#include <serial/datatool/stlstr.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/reftype.hpp>
+#include <serial/datatool/srcutil.hpp>
+
+BEGIN_NCBI_SCOPE
+
+CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
+{
+    SetElementType(element);
+    m_NonEmpty = false;
+    m_NoPrefix = false;
+    ForbidVar("_type", "short");
+    ForbidVar("_type", "int");
+    ForbidVar("_type", "long");
+    ForbidVar("_type", "unsigned");
+    ForbidVar("_type", "unsigned short");
+    ForbidVar("_type", "unsigned int");
+    ForbidVar("_type", "unsigned long");
+    ForbidVar("_type", "string");
+}
+
+const char* CUniSequenceDataType::GetASNKeyword(void) const
+{
+    return "SEQUENCE";
+}
+
+const char* CUniSequenceDataType::GetDEFKeyword(void) const
+{
+    return "_SEQUENCE_OF_";
+}
+
+void CUniSequenceDataType::SetElementType(const AutoPtr<CDataType>& type)
+{
+    if ( GetElementType() )
+        NCBI_THROW(CDatatoolException,eInvalidData,
+            "double element type " + LocationString());
+    m_ElementType = type;
+}
+
+void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
+{
+    out << GetASNKeyword() << " OF ";
+    GetElementType()->PrintASNTypeComments(out, indent + 1);
+    GetElementType()->PrintASN(out, indent);
+}
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
+    int indent, bool contents_only) const
+{
+    const CDataType* typeElem = GetElementType();
+    const CReferenceDataType* typeRef =
+        dynamic_cast<const CReferenceDataType*>(typeElem);
+    const CStaticDataType* typeStatic =
+        dynamic_cast<const CStaticDataType*>(typeElem);
+    const CDataMemberContainerType* typeContainer =
+        dynamic_cast<const CDataMemberContainerType*>(typeElem);
+
+    string tag(XmlTagName()), type(typeElem->GetSchemaTypeString());
+    string userType = typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
+
+    if (GetEnforcedStdXml() && (typeStatic || (typeRef && tag == userType))) {
+        PrintASNNewLine(out, indent++) << "<xs:element ";
+        if (typeRef) {
+            out << "ref";
+        } else {
+            out << "name";
+        }
+        out << "=\"" << tag << "\"";
+        if (typeStatic && !type.empty()) {
+            out << " type=\"" << type << "\"";
+        }
+        if (GetParentType()) {
+            bool isOptional = GetDataMember() ?
+                GetDataMember()->Optional() : !IsNonEmpty();
+            if (isOptional) {
+                out << " minOccurs=\"0\"";
+            }
+            out << " maxOccurs=\"unbounded\"";
+        }
+        out << "/>";
+    } else {
+        string asnk("SEQUENCE");
+        string xsdk("sequence");
+        bool isMixed = false;
+        if (typeContainer) {
+            asnk = typeContainer->GetASNKeyword();
+            ITERATE ( CDataMemberContainerType::TMembers, i, typeContainer->GetMembers() ) {
+                if (i->get()->Notag()) {
+                    const CStringDataType* str =
+                        dynamic_cast<const CStringDataType*>(i->get()->GetType());
+                    if (str != 0) {
+                        isMixed = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if(NStr::CompareCase(asnk,"CHOICE")==0) {
+            xsdk = "choice";
+        }
+        if (!contents_only) {
+            string tmp = "<xs:element name=\"" + tag + "\"";
+            if (GetDataMember() && GetDataMember()->Optional()) {
+                tmp += " minOccurs=\"0\"";
+            }
+            PrintASNNewLine(out, indent++) << tmp << ">";
+            PrintASNNewLine(out, indent++) << "<xs:complexType";
+            if (isMixed) {
+                out << " mixed=\"true\"";
+            }
+            out << ">";
+            PrintASNNewLine(out, indent++) << "<xs:" << xsdk;
+            if (!IsNonEmpty()) {
+                out << " minOccurs=\"0\"";
+            }
+            out << " maxOccurs=\"unbounded\">";
+        }
+        typeElem->PrintXMLSchema(out,indent,true);
+        if (!contents_only) {
+            PrintASNNewLine(out, --indent) << "</xs:" << xsdk << ">";
+            PrintASNNewLine(out, --indent) << "</xs:complexType>";
+            PrintASNNewLine(out, --indent) << "</xs:element>";
+        }
+    }
+}
+
+void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
+{
+    const CDataType* typeElem = GetElementType();
+    const CReferenceDataType* typeRef =
+        dynamic_cast<const CReferenceDataType*>(typeElem);
+    const CStaticDataType* typeStatic = 0;
+    if (GetEnforcedStdXml()) {
+        typeStatic = dynamic_cast<const CStaticDataType*>(typeElem);
+    }
+    string tag(XmlTagName());
+    string userType =
+        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
+
+    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
+        if (!GetParentType() || typeStatic || !contents_only) {
+            out << "\n<!ELEMENT " << tag << ' ';
+        }
+        if (typeStatic || !contents_only) {
+            out << '(';
+            typeElem->PrintDTDElement(out, true);
+            out << ")";
+            if (!typeStatic && !GetParentType()) {
+                if (m_NonEmpty) {
+                    out << '+';
+                } else {
+                    out << '*';
+                }
+            }
+        } else {
+            if (!GetParentType()) {
+                out << '(';
+            }
+            typeElem->PrintDTDElement(out,true);
+            if (!GetParentType()) {
+                out << ')';
+                if (m_NonEmpty) {
+                    out << '+';
+                } else {
+                    out << '*';
+                }
+            }
+        }
+        if (!contents_only) {
+            out << ">";
+        }
+        return;
+    }
+    out <<
+        "\n<!ELEMENT "<< tag << ' ';
+    if ( typeRef ) {
+        out <<"(" << typeRef->UserTypeXmlTagName() << "*)";
+    } else {
+        if (typeStatic) {
+            out << "(" << typeStatic->GetXMLContents() << ")";
+        } else {
+            out <<"(" << typeElem->XmlTagName() << "*)";
+        }
+    }
+    out << ">";
+}
+
+void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
+{
+    const CDataType* typeElem = GetElementType();
+    const CReferenceDataType* typeRef =
+        dynamic_cast<const CReferenceDataType*>(typeElem);
+    string tag(XmlTagName());
+    string userType =
+        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
+
+    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
+        const CStaticDataType* typeStatic =
+            dynamic_cast<const CStaticDataType*>(typeElem);
+        if (!typeStatic) {
+            typeElem->PrintDTDExtra(out);
+        }
+        return;
+    }
+
+    if ( !typeRef ) {
+        if ( GetParentType() == 0 )
+            out << '\n';
+        typeElem->PrintDTD(out);
+    }
+}
+
+void CUniSequenceDataType::FixTypeTree(void) const
+{
+    CParent::FixTypeTree();
+    string name("E");
+    const CDataMemberContainerType* elem =
+        dynamic_cast<const CDataMemberContainerType*>(m_ElementType.get());
+    if (elem) {
+        const CDataMemberContainerType* par =
+            dynamic_cast<const CDataMemberContainerType*>(GetParentType());
+        if (par) {
+#if 1
+            name = string("E_") + Identifier(GetMemberName());
+#else
+            if (par->UniElementNameExists(name)) {
+                name = string("E_") + Identifier(GetMemberName());
+            }
+#endif
+        }
+    }
+    m_ElementType->SetParent(this, name, "E");
+    m_ElementType->SetInSet(this);
+}
+
+bool CUniSequenceDataType::CheckType(void) const
+{
+    return m_ElementType->Check();
+}
+
+bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
+{
+    const CBlockDataValue* block =
+        dynamic_cast<const CBlockDataValue*>(&value);
+    if ( !block ) {
+        value.Warning("block of values expected");
+        return false;
+    }
+    bool ok = true;
+    ITERATE ( CBlockDataValue::TValues, i, block->GetValues() ) {
+        if ( !m_ElementType->CheckValue(**i) )
+            ok = false;
+    }
+    return ok;
+}
+
+TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
+{
+    NCBI_THROW(CDatatoolException,eNotImplemented,
+        "SET/SEQUENCE OF default not implemented");
+}
+
+CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
+{
+    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateTypeInfo(
+//        m_ElementType->GetTypeInfo().Get()));
+        m_ElementType->GetTypeInfo().Get(), GlobalName()));
+}
+
+bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
+{
+    return true;
+}
+
+AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
+{
+    AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
+    CTypeStrings::AdaptForSTL(tData);
+    string templ = GetAndVerifyVar("_type");
+    if ( templ.empty() )
+        templ = "list";
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData, GetNamespaceName()));
+}
+
+CUniSetDataType::CUniSetDataType(const AutoPtr<CDataType>& elementType)
+    : CParent(elementType)
+{
+}
+
+const char* CUniSetDataType::GetASNKeyword(void) const
+{
+    return "SET";
+}
+
+const char* CUniSetDataType::GetDEFKeyword(void) const
+{
+    return "_SET_OF_";
+}
+
+CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
+{
+    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateSetTypeInfo(
+        GetElementType()->GetTypeInfo().Get(), GlobalName()));
+}
+
+AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
+{
+    string templ = GetAndVerifyVar("_type");
+    const CDataSequenceType* seq =
+        dynamic_cast<const CDataSequenceType*>(GetElementType());
+    if ( seq && seq->GetMembers().size() == 2 ) {
+        const CDataMember& keyMember = *seq->GetMembers().front();
+        const CDataMember& valueMember = *seq->GetMembers().back();
+        if ( !keyMember.Optional() && !valueMember.Optional() ) {
+            AutoPtr<CTypeStrings> tKey = keyMember.GetType()->GetFullCType();
+            if ( tKey->CanBeKey() ) {
+                AutoPtr<CTypeStrings> tValue = valueMember.GetType()->GetFullCType();
+                CTypeStrings::AdaptForSTL(tValue);
+                if ( templ.empty() )
+                    templ = "multimap";
+                return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
+                                                                 tKey,
+                                                                 tValue,
+                                                                 GetNamespaceName()));
+            }
+        }
+    }
+    AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
+    CTypeStrings::AdaptForSTL(tData);
+    if ( templ.empty() ) {
+        if ( tData->CanBeKey() ) {
+            templ = "list";
+        }
+        else {
+            return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData,
+                GetNamespaceName(), true));
+        }
+    }
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData,
+        GetNamespaceName(), true));
+}
+
+END_NCBI_SCOPE
+
+/*
+* ===========================================================================
 * $Log$
+* Revision 1.41  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.40  2006/06/05 15:33:14  gouriano
 * Implemented local elements when parsing XML schema
 *
@@ -169,333 +529,3 @@
 *
 * ===========================================================================
 */
-
-#include <ncbi_pch.hpp>
-#include <serial/stltypes.hpp>
-#include <serial/autoptrinfo.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/unitype.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/stlstr.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/reftype.hpp>
-#include <serial/datatool/srcutil.hpp>
-
-BEGIN_NCBI_SCOPE
-
-CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
-{
-    SetElementType(element);
-    m_NonEmpty = false;
-    m_NoPrefix = false;
-    ForbidVar("_type", "short");
-    ForbidVar("_type", "int");
-    ForbidVar("_type", "long");
-    ForbidVar("_type", "unsigned");
-    ForbidVar("_type", "unsigned short");
-    ForbidVar("_type", "unsigned int");
-    ForbidVar("_type", "unsigned long");
-    ForbidVar("_type", "string");
-}
-
-const char* CUniSequenceDataType::GetASNKeyword(void) const
-{
-    return "SEQUENCE";
-}
-
-const char* CUniSequenceDataType::GetDEFKeyword(void) const
-{
-    return "_SEQUENCE_OF_";
-}
-
-void CUniSequenceDataType::SetElementType(const AutoPtr<CDataType>& type)
-{
-    if ( GetElementType() )
-        NCBI_THROW(CDatatoolException,eInvalidData,
-            "double element type " + LocationString());
-    m_ElementType = type;
-}
-
-void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
-{
-    out << GetASNKeyword() << " OF ";
-    GetElementType()->PrintASNTypeComments(out, indent + 1);
-    GetElementType()->PrintASN(out, indent);
-}
-
-void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
-{
-    const CDataType* typeElem = GetElementType();
-    const CReferenceDataType* typeRef =
-        dynamic_cast<const CReferenceDataType*>(typeElem);
-    const CStaticDataType* typeStatic = 0;
-    if (GetEnforcedStdXml()) {
-        typeStatic = dynamic_cast<const CStaticDataType*>(typeElem);
-    }
-    string tag(XmlTagName());
-    string userType =
-        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
-
-    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
-        if (!GetParentType() || typeStatic || !contents_only) {
-            out << "\n<!ELEMENT " << tag << ' ';
-        }
-        if (typeStatic || !contents_only) {
-            out << '(';
-            typeElem->PrintDTDElement(out, true);
-            out << ")";
-            if (!typeStatic && !GetParentType()) {
-                if (m_NonEmpty) {
-                    out << '+';
-                } else {
-                    out << '*';
-                }
-            }
-        } else {
-            if (!GetParentType()) {
-                out << '(';
-            }
-            typeElem->PrintDTDElement(out,true);
-            if (!GetParentType()) {
-                out << ')';
-                if (m_NonEmpty) {
-                    out << '+';
-                } else {
-                    out << '*';
-                }
-            }
-        }
-        if (!contents_only) {
-            out << ">";
-        }
-        return;
-    }
-    out <<
-        "\n<!ELEMENT "<< tag << ' ';
-    if ( typeRef ) {
-        out <<"(" << typeRef->UserTypeXmlTagName() << "*)";
-    } else {
-        if (typeStatic) {
-            out << "(" << typeStatic->GetXMLContents() << ")";
-        } else {
-            out <<"(" << typeElem->XmlTagName() << "*)";
-        }
-    }
-    out << ">";
-}
-
-void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
-{
-    const CDataType* typeElem = GetElementType();
-    const CReferenceDataType* typeRef =
-        dynamic_cast<const CReferenceDataType*>(typeElem);
-    string tag(XmlTagName());
-    string userType =
-        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
-
-    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
-        const CStaticDataType* typeStatic =
-            dynamic_cast<const CStaticDataType*>(typeElem);
-        if (!typeStatic) {
-            typeElem->PrintDTDExtra(out);
-        }
-        return;
-    }
-
-    if ( !typeRef ) {
-        if ( GetParentType() == 0 )
-            out << '\n';
-        typeElem->PrintDTD(out);
-    }
-}
-
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-// modified by Andrei Gourianov, gouriano@ncbi
-void CUniSequenceDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
-{
-    const CDataType* typeElem = GetElementType();
-    const CReferenceDataType* typeRef =
-        dynamic_cast<const CReferenceDataType*>(typeElem);
-    string tag(XmlTagName());
-    string userType =
-        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
-
-    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
-        const CStaticDataType* typeStatic =
-            dynamic_cast<const CStaticDataType*>(typeElem);
-        if (typeStatic) {
-            typeStatic->PrintXMLSchemaElementWithTag( out, tag);
-        } else {
-            typeElem->PrintXMLSchemaElement(out);
-        }
-        return;
-    }
-
-    out << "<xs:element name=\"" << tag << "\">\n"
-        << "  <xs:complexType>\n"
-        << "    <xs:sequence>\n"
-        << "      <xs:element ref=\"" << userType
-        << "\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>\n"
-        << "    </xs:sequence>\n"
-        << "  </xs:complexType>\n"
-        << "</xs:element>\n";
-}
-
-void CUniSequenceDataType::PrintXMLSchemaExtra(CNcbiOstream& out) const
-{
-    const CDataType* typeElem = GetElementType();
-    const CReferenceDataType* typeRef =
-        dynamic_cast<const CReferenceDataType*>(typeElem);
-    string tag(XmlTagName());
-    string userType =
-        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
-
-    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
-        const CStaticDataType* typeStatic =
-            dynamic_cast<const CStaticDataType*>(typeElem);
-        if (!typeStatic) {
-            typeElem->PrintXMLSchemaExtra(out);
-        }
-        return;
-    }
-
-    if ( !typeRef ) {
-        if ( GetParentType() == 0 )
-            out << '\n';
-        typeElem->PrintXMLSchema(out);
-    }
-}
-
-void CUniSequenceDataType::FixTypeTree(void) const
-{
-    CParent::FixTypeTree();
-    string name("E");
-    const CDataMemberContainerType* elem =
-        dynamic_cast<const CDataMemberContainerType*>(m_ElementType.get());
-    if (elem) {
-        const CDataMemberContainerType* par =
-            dynamic_cast<const CDataMemberContainerType*>(GetParentType());
-        if (par) {
-#if 1
-            name = string("E_") + Identifier(GetMemberName());
-#else
-            if (par->UniElementNameExists(name)) {
-                name = string("E_") + Identifier(GetMemberName());
-            }
-#endif
-        }
-    }
-    m_ElementType->SetParent(this, name, "E");
-    m_ElementType->SetInSet(this);
-}
-
-bool CUniSequenceDataType::CheckType(void) const
-{
-    return m_ElementType->Check();
-}
-
-bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
-{
-    const CBlockDataValue* block =
-        dynamic_cast<const CBlockDataValue*>(&value);
-    if ( !block ) {
-        value.Warning("block of values expected");
-        return false;
-    }
-    bool ok = true;
-    ITERATE ( CBlockDataValue::TValues, i, block->GetValues() ) {
-        if ( !m_ElementType->CheckValue(**i) )
-            ok = false;
-    }
-    return ok;
-}
-
-TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
-{
-    NCBI_THROW(CDatatoolException,eNotImplemented,
-        "SET/SEQUENCE OF default not implemented");
-}
-
-CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
-{
-    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateTypeInfo(
-//        m_ElementType->GetTypeInfo().Get()));
-        m_ElementType->GetTypeInfo().Get(), GlobalName()));
-}
-
-bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
-{
-    return true;
-}
-
-AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
-{
-    AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
-    CTypeStrings::AdaptForSTL(tData);
-    string templ = GetAndVerifyVar("_type");
-    if ( templ.empty() )
-        templ = "list";
-    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData, GetNamespaceName()));
-}
-
-CUniSetDataType::CUniSetDataType(const AutoPtr<CDataType>& elementType)
-    : CParent(elementType)
-{
-}
-
-const char* CUniSetDataType::GetASNKeyword(void) const
-{
-    return "SET";
-}
-
-const char* CUniSetDataType::GetDEFKeyword(void) const
-{
-    return "_SET_OF_";
-}
-
-CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
-{
-    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateSetTypeInfo(
-        GetElementType()->GetTypeInfo().Get(), GlobalName()));
-}
-
-AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
-{
-    string templ = GetAndVerifyVar("_type");
-    const CDataSequenceType* seq =
-        dynamic_cast<const CDataSequenceType*>(GetElementType());
-    if ( seq && seq->GetMembers().size() == 2 ) {
-        const CDataMember& keyMember = *seq->GetMembers().front();
-        const CDataMember& valueMember = *seq->GetMembers().back();
-        if ( !keyMember.Optional() && !valueMember.Optional() ) {
-            AutoPtr<CTypeStrings> tKey = keyMember.GetType()->GetFullCType();
-            if ( tKey->CanBeKey() ) {
-                AutoPtr<CTypeStrings> tValue = valueMember.GetType()->GetFullCType();
-                CTypeStrings::AdaptForSTL(tValue);
-                if ( templ.empty() )
-                    templ = "multimap";
-                return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
-                                                                 tKey,
-                                                                 tValue,
-                                                                 GetNamespaceName()));
-            }
-        }
-    }
-    AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
-    CTypeStrings::AdaptForSTL(tData);
-    if ( templ.empty() ) {
-        if ( tData->CanBeKey() ) {
-            templ = "list";
-        }
-        else {
-            return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData,
-                GetNamespaceName(), true));
-        }
-    }
-    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData,
-        GetNamespaceName(), true));
-}
-
-END_NCBI_SCOPE

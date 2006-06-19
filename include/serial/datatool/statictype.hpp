@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.18  2005/11/29 17:40:57  gouriano
 * Added CBitString class
 *
@@ -128,9 +131,8 @@ class CStaticDataType : public CDataType {
     typedef CDataType CParent;
 public:
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
-    void PrintXMLSchemaElement(CNcbiOstream& out) const;
-    void PrintXMLSchemaElementWithTag(CNcbiOstream& out,const string& tag) const;
 
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
@@ -139,7 +141,7 @@ public:
     virtual const char* GetDefaultCType(void) const = 0;
     virtual const char* GetASNKeyword(void) const = 0;
     virtual const char* GetXMLContents(void) const = 0;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const = 0;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
 };
 
 class CNullDataType : public CStaticDataType {
@@ -154,7 +156,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
 };
 
 class CBoolDataType : public CStaticDataType {
@@ -169,7 +171,8 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+    virtual string GetSchemaTypeString(void) const;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
 
     void PrintDTDExtra(CNcbiOstream& out) const;
 };
@@ -187,7 +190,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+    virtual string GetSchemaTypeString(void) const;
 };
 
 class CStringDataType : public CStaticDataType {
@@ -211,7 +214,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+    virtual string GetSchemaTypeString(void) const;
 protected:
     EType m_Type;
 };
@@ -239,7 +242,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
 };
 
 class COctetStringDataType : public CBitStringDataType {
@@ -253,7 +256,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+    virtual string GetSchemaTypeString(void) const;
 private:
     bool x_AsBitString(void) const;
 };
@@ -271,7 +274,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+    virtual string GetSchemaTypeString(void) const;
 };
 
 class CBigIntDataType : public CIntDataType {
@@ -286,15 +289,15 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+    virtual string GetSchemaTypeString(void) const;
 };
 
 class CAnyContentDataType : public CStaticDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
-    void PrintXMLSchemaElement(CNcbiOstream& out) const;
 
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
@@ -303,7 +306,6 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
 END_NCBI_SCOPE

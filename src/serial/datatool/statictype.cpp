@@ -27,9 +27,820 @@
 *
 * File Description:
 *   Type descriptions of predefined types
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <ncbi_pch.hpp>
+#include <serial/datatool/exceptions.hpp>
+#include <serial/datatool/statictype.hpp>
+#include <serial/datatool/stdstr.hpp>
+#include <serial/datatool/stlstr.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/srcutil.hpp>
+#include <serial/stdtypes.hpp>
+#include <serial/stltypes.hpp>
+#include <serial/autoptrinfo.hpp>
+#include <typeinfo>
+#include <vector>
+
+BEGIN_NCBI_SCOPE
+
+TObjectPtr CStaticDataType::CreateDefault(const CDataValue& ) const
+{
+    NCBI_THROW(CDatatoolException, eNotImplemented,
+                 GetASNKeyword() + string(" default not implemented"));
+}
+
+void CStaticDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
+{
+    out << GetASNKeyword();
+}
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
+    int indent, bool contents_only) const
+{
+    string tag( XmlTagName());
+    string xsdk("element"), use;
+    const CDataMember* mem = GetDataMember();
+    bool optional = mem ? mem->Optional() : false;
+
+    if (GetParentType() && GetParentType()->GetDataMember()) {
+        if (GetParentType()->GetDataMember()->Attlist()) {
+            xsdk = "attribute";
+            if (optional) {
+                use = "optional";
+                if (mem->GetDefault()) {
+                    use += "\" default=\"" + mem->GetDefault()->GetXmlString();
+                }
+            } else {
+                use = "required";
+            }
+        }
+    }
+    PrintASNNewLine(out, indent) << "<xs:" << xsdk << " name=\"" << tag << "\"";
+    string type = GetSchemaTypeString();
+    if (!type.empty()) {
+        out << " type=\"" << type << "\"";
+    }
+    if (!use.empty()) {
+        out << " use=\"" << use << "\"";
+    } else {
+        const CBoolDataType* bt = dynamic_cast<const CBoolDataType*>(this);
+        if (mem && optional) {
+            if (bt) {
+                out << " minOccurs=\"0\"";
+            } else {
+                if (mem->GetDefault()) {
+                    out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
+                } else {
+                    out << " minOccurs=\"0\"";
+                }
+            }
+        }
+    }
+    if (type.empty() && PrintXMLSchemaContents(out,indent+1)) {
+        PrintASNNewLine(out, indent) << "</xs:" << xsdk << ">";
+    } else {
+        out << "/>";
+    }
+}
+
+bool CStaticDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
+{
+    return false;
+}
+
+void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
+{
+    string tag(XmlTagName());
+    string content(GetXMLContents());
+    if (GetParentType() && 
+        GetParentType()->GetDataMember() &&
+        GetParentType()->GetDataMember()->Attlist()) {
+        const CDataMember* mem = GetDataMember();
+        out << tag << " CDATA ";
+        if (mem->GetDefault()) {
+            out << "\"" << mem->GetDefault()->GetXmlString() << "\"";
+        } else {
+            if (mem->Optional()) {
+                out << "#IMPLIED";
+            } else {
+                out << "#REQUIRED";
+            }
+        }
+        out << '\n';
+    } else {
+        string open("("), close(")");
+        if (content == "EMPTY") {
+            open.erase();
+            close.erase();
+        }
+        if (!contents_only) {
+            out << "\n<!ELEMENT " << tag << ' ' << open;
+        }
+        out << content;
+        if (!contents_only) {
+            out << close << ">";
+        }
+    }
+}
+
+AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
+{
+    string type = GetAndVerifyVar("_type");
+    if ( type.empty() )
+        type = GetDefaultCType();
+    return AutoPtr<CTypeStrings>(new CStdTypeStrings(type));
+}
+
+const char* CNullDataType::GetASNKeyword(void) const
+{
+    return "NULL";
+}
+
+const char* CNullDataType::GetDEFKeyword(void) const
+{
+    return "_NULL_";
+}
+
+const char* CNullDataType::GetXMLContents(void) const
+{
+    return "EMPTY";
+}
+
+bool CNullDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
+{
+    out << ">";
+    PrintASNNewLine(out, indent) << "<xs:complexType/>";
+    return true;
+}
+
+bool CNullDataType::CheckValue(const CDataValue& value) const
+{
+    CheckValueType(value, CNullDataValue, "NULL");
+    return true;
+}
+
+TObjectPtr CNullDataType::CreateDefault(const CDataValue& ) const
+{
+    NCBI_THROW(CDatatoolException, eNotImplemented,
+        "NULL cannot have DEFAULT");
+}
+
+CTypeRef CNullDataType::GetTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<bool>::CreateTypeInfoNullBool());
+    return &CStdTypeInfo<bool>::GetTypeInfoNullBool;
+}
+
+AutoPtr<CTypeStrings> CNullDataType::GetFullCType(void) const
+{
+    return AutoPtr<CTypeStrings>(new CNullTypeStrings());
+}
+
+const char* CNullDataType::GetDefaultCType(void) const
+{
+    return "bool";
+}
+
+const char* CBoolDataType::GetASNKeyword(void) const
+{
+    return "BOOLEAN";
+}
+
+const char* CBoolDataType::GetDEFKeyword(void) const
+{
+    return "_BOOLEAN_";
+}
+
+const char* CBoolDataType::GetXMLContents(void) const
+{
+//    return "%BOOLEAN;";
+    return "EMPTY";
+}
+
+string CBoolDataType::GetSchemaTypeString(void) const
+{
+    if (GetParentType() && 
+        GetParentType()->GetDataMember() &&
+        GetParentType()->GetDataMember()->Attlist()) {
+        return "xs:boolean";
+    }
+    return kEmptyStr;
+}
+
+bool CBoolDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
+{
+    if (GetParentType() && 
+        GetParentType()->GetDataMember() &&
+        GetParentType()->GetDataMember()->Attlist()) {
+        return false;
+    }
+    out << ">";
+    const CBoolDataValue *val = GetDataMember() ?
+        dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault()) : 0;
+
+    PrintASNNewLine(out,indent++) << "<xs:complexType>";
+    PrintASNNewLine(out,indent++) << "<xs:attribute name=\"value\" use=";
+    if (val) {
+        out << "\"optional\" default=";
+        if (val->GetValue()) {
+            out << "\"true\"";
+        } else {
+            out << "\"false\"";
+        }
+    } else {
+        out << "\"required\"";
+    }
+    out << ">";
+    PrintASNNewLine(out,indent++) << "<xs:simpleType>";
+    PrintASNNewLine(out,indent++) << "<xs:restriction base=\"xs:string\">";
+    PrintASNNewLine(out,indent)   << "<xs:enumeration value=\"true\"/>";
+    PrintASNNewLine(out,indent)   << "<xs:enumeration value=\"false\"/>";
+    PrintASNNewLine(out,--indent) << "</xs:restriction>";
+    PrintASNNewLine(out,--indent) << "</xs:simpleType>";
+    PrintASNNewLine(out,--indent) << "</xs:attribute>";
+    PrintASNNewLine(out,--indent) << "</xs:complexType>";
+    return true;
+}
+
+void CBoolDataType::PrintDTDExtra(CNcbiOstream& out) const
+{
+    const char *attr;
+    const CBoolDataValue *val = GetDataMember() ?
+        dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault()) : 0;
+
+    if(val) {
+        attr = val->GetValue() ? "\"true\"" : "\"false\"";
+    }
+    else {
+        attr = "#REQUIRED";
+    }
+
+    out <<
+      "\n<!ATTLIST "<<XmlTagName()<<" value ( true | false ) " 
+	<< attr << " >\n";
+}
+
+bool CBoolDataType::CheckValue(const CDataValue& value) const
+{
+    CheckValueType(value, CBoolDataValue, "BOOLEAN");
+    return true;
+}
+
+TObjectPtr CBoolDataType::CreateDefault(const CDataValue& value) const
+{
+    return new bool(dynamic_cast<const CBoolDataValue&>(value).GetValue());
+}
+
+string CBoolDataType::GetDefaultString(const CDataValue& value) const
+{
+    return (dynamic_cast<const CBoolDataValue&>(value).GetValue()?
+            "true": "false");
+}
+
+CTypeRef CBoolDataType::GetTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<bool>::CreateTypeInfo());
+    return &CStdTypeInfo<bool>::GetTypeInfo;
+}
+
+const char* CBoolDataType::GetDefaultCType(void) const
+{
+    return "bool";
+}
+
+CRealDataType::CRealDataType(void)
+{
+    ForbidVar("_type", "string");
+}
+
+const char* CRealDataType::GetASNKeyword(void) const
+{
+    return "REAL";
+}
+
+const char* CRealDataType::GetDEFKeyword(void) const
+{
+    return "_REAL_";
+}
+
+const char* CRealDataType::GetXMLContents(void) const
+{
+    return "%REAL;";
+}
+
+string CRealDataType::GetSchemaTypeString(void) const
+{
+    return "xs:double";
+}
+
+bool CRealDataType::CheckValue(const CDataValue& value) const
+{
+    const CBlockDataValue* block = dynamic_cast<const CBlockDataValue*>(&value);
+    if ( !block ) {
+        return  dynamic_cast<const CDoubleDataValue*>(&value) != 0  ||
+                dynamic_cast<const CIntDataValue*>(&value) != 0;
+    }
+    if ( block->GetValues().size() != 3 ) {
+        value.Warning("wrong number of elements in REAL value");
+        return false;
+    }
+    for ( CBlockDataValue::TValues::const_iterator i = block->GetValues().begin();
+          i != block->GetValues().end(); ++i ) {
+        CheckValueType(**i, CIntDataValue, "INTEGER");
+    }
+    return true;
+}
+
+TObjectPtr CRealDataType::CreateDefault(const CDataValue& value) const
+{
+    double d=0.;
+    const CDoubleDataValue* dbl = dynamic_cast<const CDoubleDataValue*>(&value);
+    if (dbl) {
+        d = dbl->GetValue();
+    } else {
+        const CIntDataValue* i = dynamic_cast<const CIntDataValue*>(&value);
+        if (i) {
+            d = (double)(i->GetValue());
+        }
+    }
+    return new double(d);
+}
+
+string CRealDataType::GetDefaultString(const CDataValue& value) const
+{
+    const CDoubleDataValue* dbl = dynamic_cast<const CDoubleDataValue*>(&value);
+    if (dbl) {
+        return NStr::DoubleToString(dbl->GetValue());
+    } else {
+        const CIntDataValue* i = dynamic_cast<const CIntDataValue*>(&value);
+        if (i) {
+            return NStr::DoubleToString((double)(i->GetValue()));
+        }
+    }
+    value.Warning("REAL value expected");
+    return kEmptyStr;
+}
+
+TTypeInfo CRealDataType::GetRealTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<double>::CreateTypeInfo());
+    return CStdTypeInfo<double>::GetTypeInfo();
+}
+
+const char* CRealDataType::GetDefaultCType(void) const
+{
+    return "double";
+}
+
+CStringDataType::CStringDataType(EType type)
+    : m_Type(type)
+{
+    ForbidVar("_type", "short");
+    ForbidVar("_type", "int");
+    ForbidVar("_type", "long");
+    ForbidVar("_type", "unsigned");
+    ForbidVar("_type", "unsigned short");
+    ForbidVar("_type", "unsigned int");
+    ForbidVar("_type", "unsigned long");
+}
+
+const char* CStringDataType::GetASNKeyword(void) const
+{
+    if (m_Type == eStringTypeUTF8) {
+        return "UTF8String";
+    }
+    return "VisibleString";
+}
+
+const char* CStringDataType::GetDEFKeyword(void) const
+{
+    if (m_Type == eStringTypeUTF8) {
+        return "_UTF8String_";
+    }
+    return "_VisibleString_";
+}
+
+const char* CStringDataType::GetXMLContents(void) const
+{
+    return "#PCDATA";
+}
+
+string CStringDataType::GetSchemaTypeString(void) const
+{
+    return "xs:string";
+}
+
+bool CStringDataType::CheckValue(const CDataValue& value) const
+{
+    CheckValueType(value, CStringDataValue, "string");
+    return true;
+}
+
+TObjectPtr CStringDataType::CreateDefault(const CDataValue& value) const
+{
+    if (m_Type == eStringTypeUTF8) {
+        return new (CStringUTF8*)(new CStringUTF8(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+    }
+    return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+}
+
+string CStringDataType::GetDefaultString(const CDataValue& value) const
+{
+    string s;
+    s += '\"';
+    const string& v = dynamic_cast<const CStringDataValue&>(value).GetValue();
+    for ( string::const_iterator i = v.begin(); i != v.end(); ++i ) {
+        switch ( *i ) {
+        case '\r':
+            s += "\\r";
+            break;
+        case '\n':
+            s += "\\n";
+            break;
+        case '\"':
+            s += "\\\"";
+            break;
+        case '\\':
+            s += "\\\\";
+            break;
+        default:
+            s += *i;
+        }
+    }
+    return s + '\"';
+}
+
+TTypeInfo CStringDataType::GetRealTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<string>::CreateTypeInfo());
+    return CStdTypeInfo<string>::GetTypeInfo();
+}
+
+bool CStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
+{
+    return true;
+}
+
+AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
+{
+    string type = GetAndVerifyVar("_type");
+    if ( type.empty() )
+        type = GetDefaultCType();
+    return AutoPtr<CTypeStrings>(new CStringTypeStrings(type));
+}
+
+const char* CStringDataType::GetDefaultCType(void) const
+{
+    if (m_Type == eStringTypeUTF8) {
+        return "ncbi::CStringUTF8";
+    }
+    return "NCBI_NS_STD::string";
+}
+
+CStringStoreDataType::CStringStoreDataType(void)
+{
+}
+
+const char* CStringStoreDataType::GetASNKeyword(void) const
+{
+    return "StringStore";
+}
+
+const char* CStringStoreDataType::GetDEFKeyword(void) const
+{
+    return "_StringStore_";
+}
+
+TTypeInfo CStringStoreDataType::GetRealTypeInfo(void)
+{
+    return CStdTypeInfo<string>::GetTypeInfoStringStore();
+}
+
+bool CStringStoreDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
+{
+    return true;
+}
+
+AutoPtr<CTypeStrings> CStringStoreDataType::GetFullCType(void) const
+{
+    string type = GetAndVerifyVar("_type");
+    if ( type.empty() )
+        type = GetDefaultCType();
+    return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type));
+}
+
+const char* CBitStringDataType::GetASNKeyword(void) const
+{
+    return "BIT STRING";
+}
+
+const char* CBitStringDataType::GetDEFKeyword(void) const
+{
+    return "_BIT_STRING_";
+}
+
+bool CBitStringDataType::CheckValue(const CDataValue& value) const
+{
+    CheckValueType(value, CBitStringDataValue, "BIT STRING");
+    return true;
+}
+
+TTypeInfo CBitStringDataType::GetRealTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<CBitString>::CreateTypeInfo());
+    return CStdTypeInfo<CBitString>::GetTypeInfo();
+}
+
+bool CBitStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
+{
+    return true;
+}
+
+AutoPtr<CTypeStrings> CBitStringDataType::GetFullCType(void) const
+{
+    return AutoPtr<CTypeStrings>(new CBitStringTypeStrings( GetDefaultCType() ));
+}
+
+const char* CBitStringDataType::GetDefaultCType(void) const
+{
+    return "ncbi::CBitString";
+}
+
+const char* CBitStringDataType::GetXMLContents(void) const
+{
+    return "%BITS;";
+}
+
+bool CBitStringDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
+{
+    out << ">";
+    PrintASNNewLine(out,indent++) << "<xs:simpleType>";
+    PrintASNNewLine(out,indent++) << "<xs:restriction base=\"xs:string\">";
+    PrintASNNewLine(out,indent)   << "<xs:pattern value=\"([0-1])*\"/>";
+    PrintASNNewLine(out,--indent) << "</xs:restriction>";
+    PrintASNNewLine(out,--indent) << "</xs:simpleType>";
+    return true;
+}
+
+const char* COctetStringDataType::GetASNKeyword(void) const
+{
+    return "OCTET STRING";
+}
+
+const char* COctetStringDataType::GetDEFKeyword(void) const
+{
+    return "_OCTET_STRING_";
+}
+
+const char* COctetStringDataType::GetDefaultCType(void) const
+{
+    if (x_AsBitString()) {
+        return CBitStringDataType::GetDefaultCType();
+    }
+    return "NCBI_NS_STD::vector<char>";
+}
+
+const char* COctetStringDataType::GetXMLContents(void) const
+{
+    return "%OCTETS;";
+}
+
+string COctetStringDataType::GetSchemaTypeString(void) const
+{
+    return "xs:hexBinary";
+}
+
+bool COctetStringDataType::CheckValue(const CDataValue& value) const
+{
+    CheckValueType(value, COctetStringDataType, "OCTET STRING");
+    return true;
+}
+
+TTypeInfo COctetStringDataType::GetRealTypeInfo(void)
+{
+    if (x_AsBitString()) {
+        return CBitStringDataType::GetRealTypeInfo();
+    }
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<vector<char> >::CreateTypeInfo());
+    return CStdTypeInfo< vector<char> >::GetTypeInfo();
+}
+
+bool COctetStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
+{
+    return true;
+}
+
+AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
+{
+    if (x_AsBitString()) {
+        return CBitStringDataType::GetFullCType();
+    }
+    string charType = GetVar("_char");
+    if ( charType.empty() )
+        charType = "char";
+    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType, GetNamespaceName()));
+}
+
+bool COctetStringDataType::x_AsBitString(void) const
+{
+    string type = GetVar("_type");
+    return NStr::FindNoCase(type, "CBitString") != NPOS;
+}
+
+CIntDataType::CIntDataType(void)
+{
+    ForbidVar("_type", "string");
+}
+
+const char* CIntDataType::GetASNKeyword(void) const
+{
+    return "INTEGER";
+}
+
+const char* CIntDataType::GetDEFKeyword(void) const
+{
+    return "_INTEGER_";
+}
+
+const char* CIntDataType::GetXMLContents(void) const
+{
+    return "%INTEGER;";
+}
+
+string CIntDataType::GetSchemaTypeString(void) const
+{
+    return "xs:integer";
+}
+
+bool CIntDataType::CheckValue(const CDataValue& value) const
+{
+    CheckValueType(value, CIntDataValue, "INTEGER");
+    return true;
+}
+
+TObjectPtr CIntDataType::CreateDefault(const CDataValue& value) const
+{
+    return new Int4(dynamic_cast<const CIntDataValue&>(value).GetValue());
+}
+
+string CIntDataType::GetDefaultString(const CDataValue& value) const
+{
+    return NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
+}
+
+CTypeRef CIntDataType::GetTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<Int4>::CreateTypeInfo());
+    return &CStdTypeInfo<Int4>::GetTypeInfo;
+}
+
+const char* CIntDataType::GetDefaultCType(void) const
+{
+    return "int";
+}
+
+const char* CBigIntDataType::GetASNKeyword(void) const
+{
+    return "BigInt";
+}
+
+const char* CBigIntDataType::GetDEFKeyword(void) const
+{
+    return "_BigInt_";
+}
+
+const char* CBigIntDataType::GetXMLContents(void) const
+{
+    return "%INTEGER;";
+}
+
+string CBigIntDataType::GetSchemaTypeString(void) const
+{
+    return "xs:integer";
+}
+
+bool CBigIntDataType::CheckValue(const CDataValue& value) const
+{
+    CheckValueType(value, CIntDataValue, "BigInt");
+    return true;
+}
+
+TObjectPtr CBigIntDataType::CreateDefault(const CDataValue& value) const
+{
+    return new Int8(dynamic_cast<const CIntDataValue&>(value).GetValue());
+}
+
+string CBigIntDataType::GetDefaultString(const CDataValue& value) const
+{
+    return NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
+}
+
+CTypeRef CBigIntDataType::GetTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<Int8>::CreateTypeInfo());
+    return &CStdTypeInfo<Int8>::GetTypeInfo;
+}
+
+const char* CBigIntDataType::GetDefaultCType(void) const
+{
+    return "Int8";
+}
+
+
+bool CAnyContentDataType::CheckValue(const CDataValue& /* value */) const
+{
+    return true;
+}
+
+void CAnyContentDataType::PrintASN(CNcbiOstream& out, int /* indent */) const
+{
+    out << GetASNKeyword();
+}
+
+void CAnyContentDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only) const
+{
+    if (!contents_only) {
+        PrintASNNewLine(out,indent++) <<
+            "<xs:element name=\"" << XmlTagName() << "\">";
+    }
+    PrintASNNewLine(out,indent++) << "<xs:complexType>";
+    PrintASNNewLine(out,indent++) << "<xs:sequence>";
+    PrintASNNewLine(out,indent)   << "<xs:any processContents=\"lax\"/>";
+    PrintASNNewLine(out,--indent) << "</xs:sequence>";
+    PrintASNNewLine(out,--indent) << "</xs:complexType>";
+    if (!contents_only) {
+        PrintASNNewLine(out,--indent) << "</xs:element>";
+    }
+}
+
+void CAnyContentDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
+{
+    if (!contents_only) {
+        out << "\n<!ELEMENT " << XmlTagName() << " ";
+    }
+    out << GetXMLContents();
+    if (!contents_only) {
+        out << ">";
+    }
+}
+
+TObjectPtr CAnyContentDataType::CreateDefault(const CDataValue& value) const
+{
+    return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+}
+
+AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
+{
+// TO BE CHANGED !!!
+    string type = GetAndVerifyVar("_type");
+    if ( type.empty() )
+        type = GetDefaultCType();
+    return AutoPtr<CTypeStrings>(new CAnyContentTypeStrings(type));
+}
+
+const char* CAnyContentDataType::GetDefaultCType(void) const
+{
+    return "ncbi::CAnyContentObject";
+}
+
+const char* CAnyContentDataType::GetASNKeyword(void) const
+{
+// not exactly, but...
+// (ASN.1 does not seem to support this type of data)
+    return "VisibleString";
+}
+
+const char* CAnyContentDataType::GetDEFKeyword(void) const
+{
+    return "_AnyContent_";
+}
+
+const char* CAnyContentDataType::GetXMLContents(void) const
+{
+    return "ANY";
+}
+
+END_NCBI_SCOPE
+
+/*
+* ===========================================================================
 * $Log$
+* Revision 1.47  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.46  2006/05/10 18:55:34  gouriano
 * Corrected schema for boolean attributes
 *
@@ -194,799 +1005,3 @@
 *
 * ===========================================================================
 */
-
-#include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/stdstr.hpp>
-#include <serial/datatool/stlstr.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/stltypes.hpp>
-#include <serial/autoptrinfo.hpp>
-#include <typeinfo>
-#include <vector>
-
-BEGIN_NCBI_SCOPE
-
-TObjectPtr CStaticDataType::CreateDefault(const CDataValue& ) const
-{
-    NCBI_THROW(CDatatoolException, eNotImplemented,
-                 GetASNKeyword() + string(" default not implemented"));
-}
-
-void CStaticDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
-{
-    out << GetASNKeyword();
-}
-
-void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
-{
-    string tag(XmlTagName());
-    string content(GetXMLContents());
-    if (GetParentType() && 
-        GetParentType()->GetDataMember() &&
-        GetParentType()->GetDataMember()->Attlist()) {
-        const CDataMember* mem = GetDataMember();
-        out << tag << " CDATA ";
-        if (mem->GetDefault()) {
-            out << "\"" << mem->GetDefault()->GetXmlString() << "\"";
-        } else {
-            if (mem->Optional()) {
-                out << "#IMPLIED";
-            } else {
-                out << "#REQUIRED";
-            }
-        }
-        out << '\n';
-    } else {
-        string open("("), close(")");
-        if (content == "EMPTY") {
-            open.erase();
-            close.erase();
-        }
-        if (!contents_only) {
-            out << "\n<!ELEMENT " << tag << ' ' << open;
-        }
-        out << content;
-        if (!contents_only) {
-            out << close << ">";
-        }
-    }
-}
-
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-// modified by Andrei Gourianov, gouriano@ncbi
-void CStaticDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
-{
-    string tag( XmlTagName());
-    PrintXMLSchemaElementWithTag( out, tag);
-}
-
-void CStaticDataType::PrintXMLSchemaElementWithTag(
-    CNcbiOstream& out, const string& tag) const
-{
-    string tagOpen("<xs:element"), tagClose("</xs:element"), use;
-    if (GetEnforcedStdXml() &&
-        GetParentType() && 
-        GetParentType()->GetDataMember() &&
-        GetParentType()->GetDataMember()->Attlist()) {
-        const CDataMember* mem = GetDataMember();
-        tagOpen = "        <xs:attribute";
-        tagClose= "        </xs:attribute";
-        if (mem->Optional()) {
-            use = "optional";
-            if (mem->GetDefault()) {
-                use += "\" default=\"" + mem->GetDefault()->GetXmlString();
-            }
-        } else {
-            use = "required";
-        }
-    }
-    string type;
-    string contents;
-    GetXMLSchemaContents(type,contents);
-
-    out << tagOpen << " name=\"" << tag << "\"";
-    if (!type.empty()) {
-        out << " type=\"" << type << "\"";
-    }
-    if (!use.empty()) {
-        out << " use=\"" << use << "\"";
-    } else {
-        const CBoolDataType* bt = dynamic_cast<const CBoolDataType*>(this);
-        if (!bt) {
-            const CDataMember* mem = GetDataMember();
-            if (mem && mem->Optional() && mem->GetDefault()) {
-                out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
-            }
-        }
-    }
-    if (!contents.empty()) {
-        out << ">\n" << contents << tagClose << ">\n";
-    } else {
-        out << "/>\n";
-    }
-}
-
-AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
-{
-    string type = GetAndVerifyVar("_type");
-    if ( type.empty() )
-        type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStdTypeStrings(type));
-}
-
-const char* CNullDataType::GetASNKeyword(void) const
-{
-    return "NULL";
-}
-
-const char* CNullDataType::GetDEFKeyword(void) const
-{
-    return "_NULL_";
-}
-
-const char* CNullDataType::GetXMLContents(void) const
-{
-    return "EMPTY";
-}
-
-void CNullDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    type.erase();
-    contents = "  <xs:complexType/>\n";
-}
-
-bool CNullDataType::CheckValue(const CDataValue& value) const
-{
-    CheckValueType(value, CNullDataValue, "NULL");
-    return true;
-}
-
-TObjectPtr CNullDataType::CreateDefault(const CDataValue& ) const
-{
-    NCBI_THROW(CDatatoolException, eNotImplemented,
-        "NULL cannot have DEFAULT");
-}
-
-CTypeRef CNullDataType::GetTypeInfo(void)
-{
-    if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<bool>::CreateTypeInfoNullBool());
-    return &CStdTypeInfo<bool>::GetTypeInfoNullBool;
-}
-
-AutoPtr<CTypeStrings> CNullDataType::GetFullCType(void) const
-{
-    return AutoPtr<CTypeStrings>(new CNullTypeStrings());
-}
-
-const char* CNullDataType::GetDefaultCType(void) const
-{
-    return "bool";
-}
-
-const char* CBoolDataType::GetASNKeyword(void) const
-{
-    return "BOOLEAN";
-}
-
-const char* CBoolDataType::GetDEFKeyword(void) const
-{
-    return "_BOOLEAN_";
-}
-
-const char* CBoolDataType::GetXMLContents(void) const
-{
-//    return "%BOOLEAN;";
-    return "EMPTY";
-}
-
-void CBoolDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    if (GetParentType() && 
-        GetParentType()->GetDataMember() &&
-        GetParentType()->GetDataMember()->Attlist()) {
-        type = "xs:boolean";
-        contents.erase();
-        return;
-    }
-    type.erase();
-    const CBoolDataValue *val = GetDataMember() ?
-        dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault()) : 0;
-    contents =
-        "  <xs:complexType>\n"
-        "    <xs:attribute name=\"value\" use=";
-    if (val) {
-        contents += "\"optional\" default=";
-        contents += val->GetValue() ? "\"true\"" : "\"false\"";
-    } else {
-        contents += "\"required\"";
-    }
-    contents += ">\n"
-        "      <xs:simpleType>\n"
-        "        <xs:restriction base=\"xs:string\">\n"
-        "          <xs:enumeration value=\"true\"/>\n"
-        "          <xs:enumeration value=\"false\"/>\n"
-        "        </xs:restriction>\n"
-        "      </xs:simpleType>\n"
-        "    </xs:attribute>\n"
-        "  </xs:complexType>\n";
-}
-
-void CBoolDataType::PrintDTDExtra(CNcbiOstream& out) const
-{
-    const char *attr;
-    const CBoolDataValue *val = GetDataMember() ?
-        dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault()) : 0;
-
-    if(val) {
-        attr = val->GetValue() ? "\"true\"" : "\"false\"";
-    }
-    else {
-        attr = "#REQUIRED";
-    }
-
-    out <<
-      "\n<!ATTLIST "<<XmlTagName()<<" value ( true | false ) " 
-	<< attr << " >\n";
-}
-
-bool CBoolDataType::CheckValue(const CDataValue& value) const
-{
-    CheckValueType(value, CBoolDataValue, "BOOLEAN");
-    return true;
-}
-
-TObjectPtr CBoolDataType::CreateDefault(const CDataValue& value) const
-{
-    return new bool(dynamic_cast<const CBoolDataValue&>(value).GetValue());
-}
-
-string CBoolDataType::GetDefaultString(const CDataValue& value) const
-{
-    return (dynamic_cast<const CBoolDataValue&>(value).GetValue()?
-            "true": "false");
-}
-
-CTypeRef CBoolDataType::GetTypeInfo(void)
-{
-    if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<bool>::CreateTypeInfo());
-    return &CStdTypeInfo<bool>::GetTypeInfo;
-}
-
-const char* CBoolDataType::GetDefaultCType(void) const
-{
-    return "bool";
-}
-
-CRealDataType::CRealDataType(void)
-{
-    ForbidVar("_type", "string");
-}
-
-const char* CRealDataType::GetASNKeyword(void) const
-{
-    return "REAL";
-}
-
-const char* CRealDataType::GetDEFKeyword(void) const
-{
-    return "_REAL_";
-}
-
-const char* CRealDataType::GetXMLContents(void) const
-{
-    return "%REAL;";
-}
-
-void CRealDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    type = "xs:double";
-    contents.erase();
-}
-
-bool CRealDataType::CheckValue(const CDataValue& value) const
-{
-    const CBlockDataValue* block = dynamic_cast<const CBlockDataValue*>(&value);
-    if ( !block ) {
-        return  dynamic_cast<const CDoubleDataValue*>(&value) != 0  ||
-                dynamic_cast<const CIntDataValue*>(&value) != 0;
-    }
-    if ( block->GetValues().size() != 3 ) {
-        value.Warning("wrong number of elements in REAL value");
-        return false;
-    }
-    for ( CBlockDataValue::TValues::const_iterator i = block->GetValues().begin();
-          i != block->GetValues().end(); ++i ) {
-        CheckValueType(**i, CIntDataValue, "INTEGER");
-    }
-    return true;
-}
-
-TObjectPtr CRealDataType::CreateDefault(const CDataValue& value) const
-{
-    double d=0.;
-    const CDoubleDataValue* dbl = dynamic_cast<const CDoubleDataValue*>(&value);
-    if (dbl) {
-        d = dbl->GetValue();
-    } else {
-        const CIntDataValue* i = dynamic_cast<const CIntDataValue*>(&value);
-        if (i) {
-            d = (double)(i->GetValue());
-        }
-    }
-    return new double(d);
-}
-
-string CRealDataType::GetDefaultString(const CDataValue& value) const
-{
-    const CDoubleDataValue* dbl = dynamic_cast<const CDoubleDataValue*>(&value);
-    if (dbl) {
-        return NStr::DoubleToString(dbl->GetValue());
-    } else {
-        const CIntDataValue* i = dynamic_cast<const CIntDataValue*>(&value);
-        if (i) {
-            return NStr::DoubleToString((double)(i->GetValue()));
-        }
-    }
-    value.Warning("REAL value expected");
-    return kEmptyStr;
-}
-
-TTypeInfo CRealDataType::GetRealTypeInfo(void)
-{
-    if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<double>::CreateTypeInfo());
-    return CStdTypeInfo<double>::GetTypeInfo();
-}
-
-const char* CRealDataType::GetDefaultCType(void) const
-{
-    return "double";
-}
-
-CStringDataType::CStringDataType(EType type)
-    : m_Type(type)
-{
-    ForbidVar("_type", "short");
-    ForbidVar("_type", "int");
-    ForbidVar("_type", "long");
-    ForbidVar("_type", "unsigned");
-    ForbidVar("_type", "unsigned short");
-    ForbidVar("_type", "unsigned int");
-    ForbidVar("_type", "unsigned long");
-}
-
-const char* CStringDataType::GetASNKeyword(void) const
-{
-    if (m_Type == eStringTypeUTF8) {
-        return "UTF8String";
-    }
-    return "VisibleString";
-}
-
-const char* CStringDataType::GetDEFKeyword(void) const
-{
-    if (m_Type == eStringTypeUTF8) {
-        return "_UTF8String_";
-    }
-    return "_VisibleString_";
-}
-
-const char* CStringDataType::GetXMLContents(void) const
-{
-    return "#PCDATA";
-}
-
-void CStringDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    type = "xs:string";
-    contents.erase();
-}
-
-bool CStringDataType::CheckValue(const CDataValue& value) const
-{
-    CheckValueType(value, CStringDataValue, "string");
-    return true;
-}
-
-TObjectPtr CStringDataType::CreateDefault(const CDataValue& value) const
-{
-    if (m_Type == eStringTypeUTF8) {
-        return new (CStringUTF8*)(new CStringUTF8(dynamic_cast<const CStringDataValue&>(value).GetValue()));
-    }
-    return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
-}
-
-string CStringDataType::GetDefaultString(const CDataValue& value) const
-{
-    string s;
-    s += '\"';
-    const string& v = dynamic_cast<const CStringDataValue&>(value).GetValue();
-    for ( string::const_iterator i = v.begin(); i != v.end(); ++i ) {
-        switch ( *i ) {
-        case '\r':
-            s += "\\r";
-            break;
-        case '\n':
-            s += "\\n";
-            break;
-        case '\"':
-            s += "\\\"";
-            break;
-        case '\\':
-            s += "\\\\";
-            break;
-        default:
-            s += *i;
-        }
-    }
-    return s + '\"';
-}
-
-TTypeInfo CStringDataType::GetRealTypeInfo(void)
-{
-    if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<string>::CreateTypeInfo());
-    return CStdTypeInfo<string>::GetTypeInfo();
-}
-
-bool CStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
-{
-    return true;
-}
-
-AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
-{
-    string type = GetAndVerifyVar("_type");
-    if ( type.empty() )
-        type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStringTypeStrings(type));
-}
-
-const char* CStringDataType::GetDefaultCType(void) const
-{
-    if (m_Type == eStringTypeUTF8) {
-        return "ncbi::CStringUTF8";
-    }
-    return "NCBI_NS_STD::string";
-}
-
-CStringStoreDataType::CStringStoreDataType(void)
-{
-}
-
-const char* CStringStoreDataType::GetASNKeyword(void) const
-{
-    return "StringStore";
-}
-
-const char* CStringStoreDataType::GetDEFKeyword(void) const
-{
-    return "_StringStore_";
-}
-
-TTypeInfo CStringStoreDataType::GetRealTypeInfo(void)
-{
-    return CStdTypeInfo<string>::GetTypeInfoStringStore();
-}
-
-bool CStringStoreDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
-{
-    return true;
-}
-
-AutoPtr<CTypeStrings> CStringStoreDataType::GetFullCType(void) const
-{
-    string type = GetAndVerifyVar("_type");
-    if ( type.empty() )
-        type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type));
-}
-
-const char* CBitStringDataType::GetASNKeyword(void) const
-{
-    return "BIT STRING";
-}
-
-const char* CBitStringDataType::GetDEFKeyword(void) const
-{
-    return "_BIT_STRING_";
-}
-
-bool CBitStringDataType::CheckValue(const CDataValue& value) const
-{
-    CheckValueType(value, CBitStringDataValue, "BIT STRING");
-    return true;
-}
-
-TTypeInfo CBitStringDataType::GetRealTypeInfo(void)
-{
-    if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<CBitString>::CreateTypeInfo());
-    return CStdTypeInfo<CBitString>::GetTypeInfo();
-}
-
-bool CBitStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
-{
-    return true;
-}
-
-AutoPtr<CTypeStrings> CBitStringDataType::GetFullCType(void) const
-{
-    return AutoPtr<CTypeStrings>(new CBitStringTypeStrings( GetDefaultCType() ));
-}
-
-const char* CBitStringDataType::GetDefaultCType(void) const
-{
-    return "ncbi::CBitString";
-}
-
-const char* CBitStringDataType::GetXMLContents(void) const
-{
-    return "%BITS;";
-}
-
-void CBitStringDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    type.erase();
-    contents =
-        "  <xs:simpleType>\n"
-        "    <xs:restriction base=\"xs:string\">\n"
-        "      <xs:pattern value=\"([0-1])*\"/>\n"
-        "    </xs:restriction>\n"
-        "  </xs:simpleType>\n";
-}
-
-const char* COctetStringDataType::GetASNKeyword(void) const
-{
-    return "OCTET STRING";
-}
-
-const char* COctetStringDataType::GetDEFKeyword(void) const
-{
-    return "_OCTET_STRING_";
-}
-
-const char* COctetStringDataType::GetDefaultCType(void) const
-{
-    if (x_AsBitString()) {
-        return CBitStringDataType::GetDefaultCType();
-    }
-    return "NCBI_NS_STD::vector<char>";
-}
-
-const char* COctetStringDataType::GetXMLContents(void) const
-{
-    return "%OCTETS;";
-}
-
-void COctetStringDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    type = "xs:hexBinary";
-    contents.erase();
-}
-
-bool COctetStringDataType::CheckValue(const CDataValue& value) const
-{
-    CheckValueType(value, COctetStringDataType, "OCTET STRING");
-    return true;
-}
-
-TTypeInfo COctetStringDataType::GetRealTypeInfo(void)
-{
-    if (x_AsBitString()) {
-        return CBitStringDataType::GetRealTypeInfo();
-    }
-    if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<vector<char> >::CreateTypeInfo());
-    return CStdTypeInfo< vector<char> >::GetTypeInfo();
-}
-
-bool COctetStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
-{
-    return true;
-}
-
-AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
-{
-    if (x_AsBitString()) {
-        return CBitStringDataType::GetFullCType();
-    }
-    string charType = GetVar("_char");
-    if ( charType.empty() )
-        charType = "char";
-    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType, GetNamespaceName()));
-}
-
-bool COctetStringDataType::x_AsBitString(void) const
-{
-    string type = GetVar("_type");
-    return NStr::FindNoCase(type, "CBitString") != NPOS;
-}
-
-CIntDataType::CIntDataType(void)
-{
-    ForbidVar("_type", "string");
-}
-
-const char* CIntDataType::GetASNKeyword(void) const
-{
-    return "INTEGER";
-}
-
-const char* CIntDataType::GetDEFKeyword(void) const
-{
-    return "_INTEGER_";
-}
-
-const char* CIntDataType::GetXMLContents(void) const
-{
-    return "%INTEGER;";
-}
-
-void CIntDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    type = "xs:integer";
-    contents.erase();
-}
-
-bool CIntDataType::CheckValue(const CDataValue& value) const
-{
-    CheckValueType(value, CIntDataValue, "INTEGER");
-    return true;
-}
-
-TObjectPtr CIntDataType::CreateDefault(const CDataValue& value) const
-{
-    return new Int4(dynamic_cast<const CIntDataValue&>(value).GetValue());
-}
-
-string CIntDataType::GetDefaultString(const CDataValue& value) const
-{
-    return NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
-}
-
-CTypeRef CIntDataType::GetTypeInfo(void)
-{
-    if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<Int4>::CreateTypeInfo());
-    return &CStdTypeInfo<Int4>::GetTypeInfo;
-}
-
-const char* CIntDataType::GetDefaultCType(void) const
-{
-    return "int";
-}
-
-const char* CBigIntDataType::GetASNKeyword(void) const
-{
-    return "BigInt";
-}
-
-const char* CBigIntDataType::GetDEFKeyword(void) const
-{
-    return "_BigInt_";
-}
-
-const char* CBigIntDataType::GetXMLContents(void) const
-{
-    return "%INTEGER;";
-}
-
-void CBigIntDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    type = "xs:integer";
-    contents.erase();
-}
-
-bool CBigIntDataType::CheckValue(const CDataValue& value) const
-{
-    CheckValueType(value, CIntDataValue, "BigInt");
-    return true;
-}
-
-TObjectPtr CBigIntDataType::CreateDefault(const CDataValue& value) const
-{
-    return new Int8(dynamic_cast<const CIntDataValue&>(value).GetValue());
-}
-
-string CBigIntDataType::GetDefaultString(const CDataValue& value) const
-{
-    return NStr::IntToString(dynamic_cast<const CIntDataValue&>(value).GetValue());
-}
-
-CTypeRef CBigIntDataType::GetTypeInfo(void)
-{
-    if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<Int8>::CreateTypeInfo());
-    return &CStdTypeInfo<Int8>::GetTypeInfo;
-}
-
-const char* CBigIntDataType::GetDefaultCType(void) const
-{
-    return "Int8";
-}
-
-
-bool CAnyContentDataType::CheckValue(const CDataValue& /* value */) const
-{
-    return true;
-}
-
-void CAnyContentDataType::PrintASN(CNcbiOstream& out, int /* indent */) const
-{
-    out << GetASNKeyword();
-}
-
-void CAnyContentDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
-{
-    if (!contents_only) {
-        out << "\n<!ELEMENT " << XmlTagName() << " ";
-    }
-    out << GetXMLContents();
-    if (!contents_only) {
-        out << ">";
-    }
-}
-
-void CAnyContentDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
-{
-    out << 
-        "<xs:element name=\"" << XmlTagName() << "\">\n"
-        "  <xs:complexType>\n"
-        "    <xs:sequence>\n"
-        "      <xs:any processContext=\"lax\"/>\n"
-        "    </xs:sequence>\n"
-        "  </xs:complexType>\n"
-        "</xs:element>\n";
-}
-
-TObjectPtr CAnyContentDataType::CreateDefault(const CDataValue& value) const
-{
-    return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
-}
-
-AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
-{
-// TO BE CHANGED !!!
-    string type = GetAndVerifyVar("_type");
-    if ( type.empty() )
-        type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CAnyContentTypeStrings(type));
-}
-
-const char* CAnyContentDataType::GetDefaultCType(void) const
-{
-    return "ncbi::CAnyContentObject";
-}
-
-const char* CAnyContentDataType::GetASNKeyword(void) const
-{
-// not exactly, but...
-// (ASN.1 does not seem to suppport this type of data)
-    return "VisibleString";
-}
-
-const char* CAnyContentDataType::GetDEFKeyword(void) const
-{
-    return "_AnyContent_";
-}
-
-const char* CAnyContentDataType::GetXMLContents(void) const
-{
-    return "ANY";
-}
-
-void CAnyContentDataType::GetXMLSchemaContents(string& type, string& contents) const
-{
-    type.erase();
-    contents.erase();
-}
-
-END_NCBI_SCOPE

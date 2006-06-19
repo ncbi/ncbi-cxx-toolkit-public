@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.14  2006/05/16 14:30:29  gouriano
 * Corrected generation of ASN spec - to make sure it is valid
 *
@@ -149,8 +152,9 @@ public:
     void AddImports(const string& module, const list<string>& types);
 
     virtual void PrintASN(CNcbiOstream& out) const;
-    virtual void PrintDTD(CNcbiOstream& out) const;
     virtual void PrintXMLSchema(CNcbiOstream& out) const;
+    virtual void PrintDTD(CNcbiOstream& out) const;
+
     void PrintDTDModular(CNcbiOstream& out) const;
     void PrintXMLSchemaModular(CNcbiOstream& out) const;
     string GetDTDPublicName(void) const;

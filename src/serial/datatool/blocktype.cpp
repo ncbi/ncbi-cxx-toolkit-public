@@ -27,233 +27,6 @@
 *
 * File Description:
 *   Type description for compound types: SET, SEQUENCE and CHOICE
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.65  2006/06/05 15:33:14  gouriano
-* Implemented local elements when parsing XML schema
-*
-* Revision 1.64  2006/05/16 14:30:13  gouriano
-* Corrected generation of ASN spec - to make sure it is valid
-*
-* Revision 1.63  2006/05/09 15:16:43  gouriano
-* Added XML namespace definition possibility
-*
-* Revision 1.62  2005/11/17 20:24:42  vasilche
-* Use bool consistently to prevent indexing.
-*
-* Revision 1.61  2005/10/12 17:00:19  gouriano
-* Replace C_E class name in unisequence types by something more unique
-* Add typedef in generated code to provide backward compatibility
-*
-* Revision 1.60  2005/08/05 15:11:40  gouriano
-* Allow DEF file tuneups by data type, not only by name
-*
-* Revision 1.59  2005/04/26 14:18:50  vasilche
-* Allow allocation of objects in CObjectMemoryPool.
-*
-* Revision 1.58  2005/02/22 17:44:15  gouriano
-* removed unused variable
-*
-* Revision 1.57  2005/02/22 15:07:34  gouriano
-* Corrected writing element's default value when generating XML schema
-*
-* Revision 1.56  2005/02/09 16:05:10  gouriano
-* Corrected schema generation for elements with mixed content
-*
-* Revision 1.55  2005/02/09 14:33:25  gouriano
-* Corrected formatting when writing DTD
-*
-* Revision 1.54  2005/02/02 19:08:36  gouriano
-* Corrected DTD generation
-*
-* Revision 1.53  2005/01/12 18:05:10  gouriano
-* Corrected generation of XML schema for sequence of choice types,
-* and simple types with default
-*
-* Revision 1.52  2004/09/27 18:28:40  gouriano
-* Improved diagnostics when creating DataMember with no name
-*
-* Revision 1.51  2004/06/18 15:27:35  gouriano
-* Improved diagnostics
-*
-* Revision 1.50  2004/05/17 21:03:13  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.49  2003/11/21 16:59:11  gouriano
-* Correct conversion of ASN spec into XML schema in case of containers
-*
-* Revision 1.48  2003/06/24 20:55:42  gouriano
-* corrected code generation and serialization of non-empty unnamed containers (XML)
-*
-* Revision 1.47  2003/06/16 14:41:05  gouriano
-* added possibility to convert DTD to XML schema
-*
-* Revision 1.46  2003/05/14 14:42:22  gouriano
-* added generation of XML schema
-*
-* Revision 1.45  2003/04/10 20:13:41  vakatov
-* Rollback the "uninitialized member" verification -- it still needs to
-* be worked upon...
-*
-* Revision 1.43  2003/03/11 20:06:47  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.42  2003/03/10 18:55:18  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.41  2003/02/10 17:56:16  gouriano
-* make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
-*
-* Revision 1.40  2002/12/17 16:26:34  gouriano
-* added new flags to CMemberInfo in CDataContainerType::CreateClassInfo
-*
-* Revision 1.39  2002/11/19 19:48:29  gouriano
-* added support of XML attributes of choice variants
-*
-* Revision 1.38  2002/11/14 21:02:54  gouriano
-* added support of XML attribute lists
-*
-* Revision 1.37  2002/10/15 13:58:04  gouriano
-* use "noprefix" flag
-*
-* Revision 1.36  2002/02/21 17:17:13  grichenk
-* Prohibited unnamed members in ASN.1 specifications
-*
-* Revision 1.35  2001/06/11 14:35:02  grichenk
-* Added support for numeric tags in ASN.1 specifications and data streams.
-*
-* Revision 1.34  2001/05/17 15:07:11  lavr
-* Typos corrected
-*
-* Revision 1.33  2001/02/15 21:39:14  kholodov
-* Modified: pointer to parent CDataMember added to CDataType class.
-* Modified: default value for BOOLEAN type in DTD is copied from ASN.1 spec.
-*
-* Revision 1.32  2000/11/29 17:42:42  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* Revision 1.31  2000/11/20 17:26:31  vasilche
-* Fixed warnings on 64 bit platforms.
-* Updated names of config variables.
-*
-* Revision 1.30  2000/11/15 20:34:54  vasilche
-* Added user comments to ENUMERATED types.
-* Added storing of user comments to ASN.1 module definition.
-*
-* Revision 1.29  2000/11/14 21:41:24  vasilche
-* Added preserving of ASN.1 definition comments.
-*
-* Revision 1.28  2000/11/09 18:14:43  vasilche
-* Fixed nonstandard behaviour of 'for' statement on MS VC.
-*
-* Revision 1.27  2000/11/08 17:02:50  vasilche
-* Added generation of modular DTD files.
-*
-* Revision 1.26  2000/11/07 17:26:24  vasilche
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-* Added possibility to set include directory for whole module
-*
-* Revision 1.25  2000/10/03 17:22:49  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.24  2000/09/19 14:10:26  vasilche
-* Added files to MSVC project
-* Updated shell scripts to use new datattool path on MSVC
-* Fixed internal compiler error on MSVC
-*
-* Revision 1.23  2000/09/18 20:00:28  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.22  2000/08/25 15:59:19  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.21  2000/08/15 19:45:27  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.20  2000/07/03 18:42:57  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-*
-* Revision 1.19  2000/06/16 16:31:37  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.18  2000/05/24 20:57:14  vasilche
-* Use new macro _DEBUG_ARG to avoid warning about unused argument.
-*
-* Revision 1.17  2000/05/24 20:09:27  vasilche
-* Implemented DTD generation.
-*
-* Revision 1.16  2000/05/03 14:38:17  vasilche
-* SERIAL: added support for delayed reading to generated classes.
-* DATATOOL: added code generation for delayed reading.
-*
-* Revision 1.15  2000/04/17 19:11:07  vasilche
-* Fixed failed assertion.
-* Removed redundant namespace specifications.
-*
-* Revision 1.14  2000/04/12 15:36:48  vasilche
-* Added -on <namespace> argument to datatool.
-* Removed unnecessary namespace specifications in generated files.
-*
-* Revision 1.13  2000/04/07 19:26:23  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.12  2000/03/14 14:43:10  vasilche
-* All OPTIONAL members implemented via CRef<> by default.
-*
-* Revision 1.11  2000/03/10 15:00:45  vasilche
-* Fixed OPTIONAL members reading.
-*
-* Revision 1.10  2000/03/07 14:06:30  vasilche
-* Added generation of reference counted objects.
-*
-* Revision 1.9  2000/02/01 21:47:53  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.8  1999/12/21 17:18:33  vasilche
-* Added CDelayedFostream class which rewrites file only if contents is changed.
-*
-* Revision 1.7  1999/12/03 21:42:10  vasilche
-* Fixed conflict of enums in choices.
-*
-* Revision 1.6  1999/12/01 17:36:24  vasilche
-* Fixed CHOICE processing.
-*
-* Revision 1.5  1999/11/18 17:13:05  vasilche
-* Fixed generation of ENUMERATED CHOICE and VisibleString.
-* Added generation of initializers to zero for primitive types and pointers.
-*
-* Revision 1.4  1999/11/16 15:41:16  vasilche
-* Added plain pointer choice.
-* By default we use C pointer instead of auto_ptr.
-* Start adding initializers.
-*
-* Revision 1.3  1999/11/15 20:31:37  vasilche
-* Fixed error on GCC
-*
-* Revision 1.2  1999/11/15 19:36:13  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -327,6 +100,186 @@ void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
     PrintASNNewLine(out, indent);
     m_LastComments.PrintASN(out, indent, CComments::eMultiline);
     out << "}";
+}
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
+    int indent, bool contents_only) const
+{
+    string tag = XmlTagName();
+    string asnk = GetASNKeyword();
+    string xsdk, tmp;
+    bool hasAttlist= false, isAttlist= false;
+    bool hasNotag= false, isOptional= false, isSeq= false, isMixed=false;
+    bool isSimple= false, isSimpleSeq= false;
+    bool parent_isSeq= false;
+    string simpleType;
+    list<string> opentag, closetag1, closetag2;
+
+    parent_isSeq = (dynamic_cast<const CUniSequenceDataType*>(GetParentType()) != 0);
+    if (GetEnforcedStdXml()) {
+        ITERATE ( TMembers, i, m_Members ) {
+            if (i->get()->Attlist()) {
+                hasAttlist = true;
+                break;
+            }
+        }
+        if (( hasAttlist && GetMembers().size() > 2) ||
+            (!hasAttlist && GetMembers().size() > 1)) {
+            ITERATE ( TMembers, i, m_Members ) {
+                if (i->get()->Notag()) {
+                    const CStringDataType* str =
+                        dynamic_cast<const CStringDataType*>(i->get()->GetType());
+                    if (str != 0) {
+                        isMixed = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (GetDataMember()) {
+            isAttlist = GetDataMember()->Attlist();
+            hasNotag   = GetDataMember()->Notag();
+            isOptional= GetDataMember()->Optional();
+        }
+        if (hasNotag && GetMembers().size()==1) {
+            const CDataMember* member = GetMembers().front().get();
+            isOptional = member->Optional();
+            const CUniSequenceDataType* typeSeq =
+                dynamic_cast<const CUniSequenceDataType*>(member->GetType());
+            isSeq = (typeSeq != 0);
+            if (isSeq) {
+                const CDataMemberContainerType* data =
+                    dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
+                if (data) {
+                    asnk = data->GetASNKeyword();
+                }
+            }
+        }
+        if (hasAttlist && GetMembers().size()==2) {
+            ITERATE ( TMembers, i, GetMembers() ) {
+                if (i->get()->Attlist()) {
+                    continue;
+                }
+                if (i->get()->SimpleType()) {
+                    isSimple = true;
+                    simpleType = i->get()->GetType()->GetSchemaTypeString();
+                } else {
+                    const CUniSequenceDataType* typeSeq =
+                        dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType());
+                    isSimpleSeq = (typeSeq != 0);
+                    if (isSimpleSeq) {
+                        isSeq = true;
+                        const CDataMember *mem = typeSeq->GetDataMember();
+                        if (mem) {
+                            const CDataMemberContainerType* data =
+                                dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
+                            if (data) {
+                                asnk = data->GetASNKeyword();
+                                ITERATE ( TMembers, m, data->m_Members ) {
+                                    if (m->get()->Notag()) {
+                                        const CStringDataType* str =
+                                            dynamic_cast<const CStringDataType*>(m->get()->GetType());
+                                        if (str != 0) {
+                                            isMixed = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (mem->Notag()) {
+                                isOptional = mem->Optional();
+                            } else {
+                                isSeq = isSimpleSeq = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (!isAttlist && !parent_isSeq) {
+        if (!hasNotag) {
+            if (!contents_only) {
+                opentag.push_back("<xs:element name=\"" + tag + "\">");
+                closetag2.push_front("</xs:element>");
+
+                tmp = "<xs:complexType";
+                if (isMixed) {
+                    tmp += " mixed=\"true\"";
+                }
+                opentag.push_back(tmp + ">");
+                closetag2.push_front("</xs:complexType>");
+            }
+        }
+        if (!isSimple) {
+            if(NStr::CompareCase(asnk,"CHOICE")==0) {
+                xsdk = "choice";
+            } else if(NStr::CompareCase(asnk,"SEQUENCE")==0) {
+                xsdk = "sequence";
+            } else if(NStr::CompareCase(asnk,"SET")==0) {
+                xsdk = "all";
+            }
+            tmp = "<xs:" + xsdk;
+            if (isOptional) {
+                tmp += " minOccurs=\"0\"";
+            }
+            if (isSeq) {
+                tmp += " maxOccurs=\"unbounded\"";
+            }
+            opentag.push_back(tmp + ">");
+            closetag1.push_front("</xs:" + xsdk + ">");
+        } else if (!simpleType.empty()) {
+            opentag.push_back("<xs:simpleContent>");
+            closetag2.push_front("</xs:simpleContent>");
+            opentag.push_back("<xs:extension base=\"" + simpleType + "\">");
+            closetag2.push_front("</xs:extension>");
+        }
+    }
+    ITERATE ( list<string>, s, opentag ) {
+        PrintASNNewLine(out, indent++) << *s;
+    }
+    if (isAttlist) {
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataMember& member = **i;
+            member.PrintXMLSchema(out, indent);
+        }
+    } else if (!isSimple) {
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataMember& member = **i;
+            if (member.Attlist()) {
+                continue;
+            }
+            if (isMixed && member.Notag()) {
+                if (dynamic_cast<const CStringDataType*>(member.GetType())) {
+                    continue;
+                }
+            }
+            if (isSimpleSeq || hasNotag) {
+                member.GetType()->PrintXMLSchema(out, indent, true);
+            } else {
+                member.PrintXMLSchema(out, indent);
+            }
+        }
+    }
+    ITERATE ( list<string>, s, closetag1 ) {
+        PrintASNNewLine(out, --indent) << *s;
+    }
+    if (hasAttlist) {
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataMember& member = **i;
+            if (member.Attlist()) {
+                member.PrintXMLSchema(out, indent);
+            }
+        }
+    }
+    ITERATE ( list<string>, s, closetag2 ) {
+        PrintASNNewLine(out, --indent) << *s;
+    }
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
 
 void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
@@ -480,244 +433,6 @@ void CDataMemberContainerType::PrintDTDExtra(CNcbiOstream& out) const
     }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
-
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-// modified by Andrei Gourianov, gouriano@ncbi
-void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
-{
-    string tag = XmlTagName();
-    string asnk = GetASNKeyword();
-    string xsdk;
-    bool hasAttlist= false, isAttlist= false;
-    bool hasNotag= false, isOptional= false, isSeq= false, isMixed=false;
-    bool isSimple= false, isSimpleSeq= false;
-    bool parent_hasNotag= false;
-    string openTag, closeTag1, closeTag2, simpleType, simpleContents;
-
-    if (GetEnforcedStdXml()) {
-        ITERATE ( TMembers, i, m_Members ) {
-            if (i->get()->Attlist()) {
-                hasAttlist = true;
-                break;
-            }
-        }
-        if (( hasAttlist && GetMembers().size() > 2) ||
-            (!hasAttlist && GetMembers().size() > 1)) {
-            ITERATE ( TMembers, i, m_Members ) {
-                if (i->get()->Notag()) {
-                    const CStringDataType* str =
-                        dynamic_cast<const CStringDataType*>(i->get()->GetType());
-                    isMixed = (str != 0);
-                }
-            }
-        }
-        if (GetDataMember()) {
-            isAttlist = GetDataMember()->Attlist();
-            hasNotag   = GetDataMember()->Notag();
-            isOptional= GetDataMember()->Optional();
-            isSeq   = (dynamic_cast<const CUniSequenceDataType*>(GetDataMember()->GetType()) != 0);
-        }
-        const CUniSequenceDataType* uniType = 
-            dynamic_cast<const CUniSequenceDataType*>(GetParentType());
-        if (uniType) {
-            tag = GetParentType()->XmlTagName();
-            isSeq = true;
-            if (GetParentType()->GetDataMember()) {
-                isOptional = GetParentType()->GetDataMember()->Optional();
-                parent_hasNotag = GetParentType()->GetDataMember()->Notag();
-                if (!parent_hasNotag) {
-                    isSeq = false;
-                }
-            } else {
-                isOptional = !uniType->IsNonEmpty();
-            }
-        }
-        if (hasNotag && GetMembers().size()==1) {
-            const CDataMember* member = GetMembers().front().get();
-            isOptional = member->Optional();
-            const CUniSequenceDataType* typeSeq =
-                dynamic_cast<const CUniSequenceDataType*>(member->GetType());
-            isSeq = (typeSeq != 0);
-            if (isSeq) {
-                const CDataMemberContainerType* data =
-                    dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
-                if (data) {
-                    asnk = data->GetASNKeyword();
-                }
-            }
-        }
-        if (hasAttlist && GetMembers().size()==2) {
-            ITERATE ( TMembers, i, GetMembers() ) {
-                if (i->get()->Attlist()) {
-                    continue;
-                }
-                if (i->get()->SimpleType()) {
-                    isSimple = true;
-                    const CStaticDataType* statType =
-                        dynamic_cast<const CStaticDataType*>(i->get()->GetType());
-                    if (!statType) {
-                        NCBI_THROW(CDatatoolException,eInvalidData,
-                                   string("Wrong element type: ") + tag);
-                    }
-                    statType->GetXMLSchemaContents(simpleType, simpleContents);
-                } else {
-                    const CUniSequenceDataType* typeSeq =
-                        dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType());
-                    isSimpleSeq = (typeSeq != 0);
-                    if (isSimpleSeq) {
-                        isSeq = true;
-                        const CDataMember *mem = typeSeq->GetDataMember();
-                        if (mem) {
-                            const CDataMemberContainerType* data =
-                                dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
-                            if (data) {
-                                asnk = data->GetASNKeyword();
-                            }
-                            if (mem->Notag()) {
-                                isOptional = mem->Optional();
-                            } else {
-                                isSeq = isSimpleSeq = false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    x_AddSavedName(tag);
-    if(NStr::CompareCase(asnk,"CHOICE")==0) {
-        xsdk = "choice";
-    } else if(NStr::CompareCase(asnk,"SEQUENCE")==0) {
-        xsdk = "sequence";
-    }
-
-    if (isAttlist || parent_hasNotag) {
-        openTag.erase();
-        closeTag1.erase();
-        closeTag2.erase();
-    } else if (isSimple) {
-        openTag   = "<xs:element name=\"" + tag + "\">\n"
-                    "  <xs:complexType";
-        if (isMixed) {
-            openTag += " mixed=\"true\"";
-        }
-        openTag += ">\n";
-        if (!simpleType.empty()) {
-            openTag  +="    <xs:simpleContent>\n"
-                       "      <xs:extension base=\"" + simpleType + "\">\n";
-        }
-        closeTag1.erase();
-        closeTag2.erase();
-        if (!simpleType.empty()) {
-            closeTag2+= "      </xs:extension>\n"
-                        "    </xs:simpleContent>\n";
-        }
-        closeTag2+= "  </xs:complexType>\n"
-                    "</xs:element>\n";
-    } else {
-        openTag.erase();
-        if (!hasNotag) {
-            openTag += "<xs:element name=\"" + tag + "\">\n" +
-                       "  <xs:complexType";
-            if (isMixed) {
-                openTag += " mixed=\"true\"";
-            }
-            openTag += ">\n";
-        }
-        openTag     += "    <xs:"  + xsdk;
-        if (isOptional) {
-            openTag += " minOccurs=\"0\"";
-        }
-        if (isSeq) {
-            openTag += " maxOccurs=\"unbounded\"";
-        }
-        openTag     += ">\n";
-        closeTag1    = "    </xs:" + xsdk + ">\n";
-        closeTag2.erase();
-        if (!hasNotag) {
-            closeTag2+= "  </xs:complexType>\n"
-                        "</xs:element>\n";
-        }
-    }
-
-    out << openTag;
-    if (isAttlist) {
-        ITERATE ( TMembers, i, m_Members ) {
-            i->get()->GetType()->PrintXMLSchemaElement(out);
-        }
-    } else if (!isSimple) {
-        ITERATE ( TMembers, i, m_Members ) {
-            const CDataMember& member = **i;
-            string member_name( member.GetType()->XmlTagName());
-            bool uniseq = false;
-            if (GetEnforcedStdXml()) {
-                if (member.Attlist()) {
-                    continue;
-                }
-                const CUniSequenceDataType* type =
-                    dynamic_cast<const CUniSequenceDataType*>(member.GetType());
-                uniseq = (type != 0);
-                if (uniseq) {
-                    if (isSimpleSeq) {
-                        type->PrintXMLSchemaElement(out);
-                        continue;
-                    }
-                    const CReferenceDataType* typeRef =
-                        dynamic_cast<const CReferenceDataType*>(type->GetElementType());
-                    if (typeRef) {
-                        if (type->XmlTagName() != typeRef->UserTypeXmlTagName()) {
-                            uniseq = false;
-                        }
-                    }
-                }
-                if (member.Notag()) {
-                    if (isMixed && dynamic_cast<const CStringDataType*>(member.GetType())) {
-                        continue;
-                    }
-                    member.GetType()->PrintXMLSchemaElement(out);
-                    continue;
-                }
-            }
-            out << "      <xs:element ref=\"" << member_name << "\"";
-            if ( member.Optional()) {
-                out << " minOccurs=\"0\"";
-            }
-            if (uniseq) {
-                out << " maxOccurs=\"unbounded\"";
-            }
-            out << "/>\n";
-        }
-    }
-    out << closeTag1;
-    if (hasAttlist) {
-        ITERATE ( TMembers, i, m_Members ) {
-            const CDataMember& member = **i;
-            if (member.Attlist()) {
-                member.GetType()->PrintXMLSchemaElement(out);
-            }
-        }
-    }
-    out << closeTag2;
-}
-
-void CDataMemberContainerType::PrintXMLSchemaExtra(CNcbiOstream& out) const
-{
-    if ( GetParentType() == 0 ) {
-        out << "\n";
-    }
-    ITERATE ( TMembers, i, m_Members ) {
-        const CDataMember& member = **i;
-        if (member.Notag()) {
-            member.GetType()->PrintXMLSchemaExtra(out);
-        } else {
-            member.PrintXMLSchema(out);
-        }
-    }                                                                                         
-    m_LastComments.PrintDTD(out, CComments::eMultiline);
-}
-
 
 void CDataMemberContainerType::FixTypeTree(void) const
 {
@@ -1029,14 +744,22 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
     }
 }
 
+void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent) const
+{
+    GetType()->PrintXMLSchemaTypeComments(out, indent);
+    bool oneLineComment = m_Comments.OneLine();
+    if ( !oneLineComment )
+        m_Comments.PrintDTD(out, CComments::eNoEOL);
+    GetType()->PrintXMLSchema(out, indent);
+    if ( oneLineComment ) {
+        out << ' ';
+        m_Comments.PrintDTD(out, CComments::eOneLine);
+    }
+}
+
 void CDataMember::PrintDTD(CNcbiOstream& out) const
 {
     GetType()->PrintDTD(out, m_Comments);
-}
-
-void CDataMember::PrintXMLSchema(CNcbiOstream& out) const
-{
-    GetType()->PrintXMLSchema(out,m_Comments);
 }
 
 bool CDataMember::Check(void) const
@@ -1076,5 +799,236 @@ void CDataMember::SetSimpleType(void)
     m_SimpleType = true;
 }
 
-
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.66  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
+* Revision 1.65  2006/06/05 15:33:14  gouriano
+* Implemented local elements when parsing XML schema
+*
+* Revision 1.64  2006/05/16 14:30:13  gouriano
+* Corrected generation of ASN spec - to make sure it is valid
+*
+* Revision 1.63  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
+* Revision 1.62  2005/11/17 20:24:42  vasilche
+* Use bool consistently to prevent indexing.
+*
+* Revision 1.61  2005/10/12 17:00:19  gouriano
+* Replace C_E class name in unisequence types by something more unique
+* Add typedef in generated code to provide backward compatibility
+*
+* Revision 1.60  2005/08/05 15:11:40  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
+* Revision 1.59  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
+* Revision 1.58  2005/02/22 17:44:15  gouriano
+* removed unused variable
+*
+* Revision 1.57  2005/02/22 15:07:34  gouriano
+* Corrected writing element's default value when generating XML schema
+*
+* Revision 1.56  2005/02/09 16:05:10  gouriano
+* Corrected schema generation for elements with mixed content
+*
+* Revision 1.55  2005/02/09 14:33:25  gouriano
+* Corrected formatting when writing DTD
+*
+* Revision 1.54  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
+* Revision 1.53  2005/01/12 18:05:10  gouriano
+* Corrected generation of XML schema for sequence of choice types,
+* and simple types with default
+*
+* Revision 1.52  2004/09/27 18:28:40  gouriano
+* Improved diagnostics when creating DataMember with no name
+*
+* Revision 1.51  2004/06/18 15:27:35  gouriano
+* Improved diagnostics
+*
+* Revision 1.50  2004/05/17 21:03:13  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.49  2003/11/21 16:59:11  gouriano
+* Correct conversion of ASN spec into XML schema in case of containers
+*
+* Revision 1.48  2003/06/24 20:55:42  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
+* Revision 1.47  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
+* Revision 1.46  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
+* Revision 1.45  2003/04/10 20:13:41  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
+*
+* Revision 1.43  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
+* Revision 1.42  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
+* Revision 1.41  2003/02/10 17:56:16  gouriano
+* make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
+*
+* Revision 1.40  2002/12/17 16:26:34  gouriano
+* added new flags to CMemberInfo in CDataContainerType::CreateClassInfo
+*
+* Revision 1.39  2002/11/19 19:48:29  gouriano
+* added support of XML attributes of choice variants
+*
+* Revision 1.38  2002/11/14 21:02:54  gouriano
+* added support of XML attribute lists
+*
+* Revision 1.37  2002/10/15 13:58:04  gouriano
+* use "noprefix" flag
+*
+* Revision 1.36  2002/02/21 17:17:13  grichenk
+* Prohibited unnamed members in ASN.1 specifications
+*
+* Revision 1.35  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
+* Revision 1.34  2001/05/17 15:07:11  lavr
+* Typos corrected
+*
+* Revision 1.33  2001/02/15 21:39:14  kholodov
+* Modified: pointer to parent CDataMember added to CDataType class.
+* Modified: default value for BOOLEAN type in DTD is copied from ASN.1 spec.
+*
+* Revision 1.32  2000/11/29 17:42:42  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependency.
+*
+* Revision 1.31  2000/11/20 17:26:31  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
+* Revision 1.30  2000/11/15 20:34:54  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
+* Revision 1.29  2000/11/14 21:41:24  vasilche
+* Added preserving of ASN.1 definition comments.
+*
+* Revision 1.28  2000/11/09 18:14:43  vasilche
+* Fixed nonstandard behaviour of 'for' statement on MS VC.
+*
+* Revision 1.27  2000/11/08 17:02:50  vasilche
+* Added generation of modular DTD files.
+*
+* Revision 1.26  2000/11/07 17:26:24  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
+* Revision 1.25  2000/10/03 17:22:49  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.24  2000/09/19 14:10:26  vasilche
+* Added files to MSVC project
+* Updated shell scripts to use new datattool path on MSVC
+* Fixed internal compiler error on MSVC
+*
+* Revision 1.23  2000/09/18 20:00:28  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.22  2000/08/25 15:59:19  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.21  2000/08/15 19:45:27  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.20  2000/07/03 18:42:57  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+*
+* Revision 1.19  2000/06/16 16:31:37  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.18  2000/05/24 20:57:14  vasilche
+* Use new macro _DEBUG_ARG to avoid warning about unused argument.
+*
+* Revision 1.17  2000/05/24 20:09:27  vasilche
+* Implemented DTD generation.
+*
+* Revision 1.16  2000/05/03 14:38:17  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
+* Revision 1.15  2000/04/17 19:11:07  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
+* Revision 1.14  2000/04/12 15:36:48  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
+* Revision 1.13  2000/04/07 19:26:23  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.12  2000/03/14 14:43:10  vasilche
+* All OPTIONAL members implemented via CRef<> by default.
+*
+* Revision 1.11  2000/03/10 15:00:45  vasilche
+* Fixed OPTIONAL members reading.
+*
+* Revision 1.10  2000/03/07 14:06:30  vasilche
+* Added generation of reference counted objects.
+*
+* Revision 1.9  2000/02/01 21:47:53  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.8  1999/12/21 17:18:33  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
+* Revision 1.7  1999/12/03 21:42:10  vasilche
+* Fixed conflict of enums in choices.
+*
+* Revision 1.6  1999/12/01 17:36:24  vasilche
+* Fixed CHOICE processing.
+*
+* Revision 1.5  1999/11/18 17:13:05  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
+* Revision 1.4  1999/11/16 15:41:16  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
+* Revision 1.3  1999/11/15 20:31:37  vasilche
+* Fixed error on GCC
+*
+* Revision 1.2  1999/11/15 19:36:13  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/

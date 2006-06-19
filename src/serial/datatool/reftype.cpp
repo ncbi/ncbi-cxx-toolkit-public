@@ -27,9 +27,219 @@
 *
 * File Description:
 *   Type reference definition
-*
+*/
+
+#include <ncbi_pch.hpp>
+#include <serial/datatool/reftype.hpp>
+#include <serial/datatool/unitype.hpp>
+#include <serial/datatool/statictype.hpp>
+#include <serial/datatool/typestr.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/module.hpp>
+#include <serial/datatool/exceptions.hpp>
+#include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/enumtype.hpp>
+#include <serial/datatool/srcutil.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/serialimpl.hpp>
+
+BEGIN_NCBI_SCOPE
+
+CReferenceDataType::CReferenceDataType(const string& n)
+    : m_UserTypeName(n)
+{
+}
+
+void CReferenceDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
+{
+    out << CDataTypeModule::ToAsnName(m_UserTypeName);
+}
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
+    int indent, bool contents_only) const
+{
+    string tag(XmlTagName());
+    string userType(UserTypeXmlTagName());
+
+    if (tag == userType || (GetEnforcedStdXml() && contents_only)) {
+        PrintASNNewLine(out,indent) <<
+            "<xs:element ref=\"" << userType << "\"";
+        if (GetDataMember() && GetDataMember()->Optional()) {
+            out << " minOccurs=\"0\"";
+        }
+        out << "/>";
+    } else {
+        if (!contents_only) {
+            PrintASNNewLine(out,indent++) << "<xs:element name=\"" << tag << "\"";
+            if (GetDataMember() && GetDataMember()->Optional()) {
+                out << " minOccurs=\"0\"";
+            }
+            out << ">";
+            PrintASNNewLine(out,indent++) << "<xs:complexType>";
+            PrintASNNewLine(out,indent++) << "<xs:sequence>";
+        }
+        PrintASNNewLine(out,indent) << "<xs:element ref=\"" << userType << "\"/>";
+        if (!contents_only) {
+            PrintASNNewLine(out,--indent) << "</xs:sequence>";
+            PrintASNNewLine(out,--indent) << "</xs:complexType>";
+            PrintASNNewLine(out,--indent) << "</xs:element>";
+        }
+    }
+}
+
+void CReferenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
+{
+    string tag(XmlTagName());
+    string userType(UserTypeXmlTagName());
+    const CUniSequenceDataType* uniType = 
+        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
+
+    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
+        const CDataType* realType = Resolve();
+        realType->PrintDTDElement(out, contents_only);
+        return;
+    }
+    out <<
+        "\n<!ELEMENT "<<XmlTagName()<<" ("<<UserTypeXmlTagName()<<")>";
+}
+
+void CReferenceDataType::PrintDTDExtra(CNcbiOstream& out) const
+{
+    string tag(XmlTagName());
+    string userType(UserTypeXmlTagName());
+    const CUniSequenceDataType* uniType = 
+        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
+
+    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
+        Resolve()->PrintDTDExtra(out);
+    }
+}
+
+void CReferenceDataType::FixTypeTree(void) const
+{
+    CParent::FixTypeTree();
+    CDataType* resolved = ResolveOrNull();
+    if ( resolved )
+        resolved->AddReference(this);
+}
+
+bool CReferenceDataType::CheckType(void) const
+{
+    try {
+        ResolveLocal(m_UserTypeName);
+        return true;
+    }
+    catch ( CNotFoundException& exc) {
+        Warning("Unresolved type: " + m_UserTypeName + ": " + exc.what());
+    }
+    return false;
+}
+
+bool CReferenceDataType::CheckValue(const CDataValue& value) const
+{
+    CDataType* resolved = ResolveOrNull();
+    if ( !resolved )
+        return false;
+    return resolved->CheckValue(value);
+}
+
+TTypeInfo CReferenceDataType::GetRealTypeInfo(void)
+{
+    CDataType* dataType = ResolveOrThrow();
+    if ( dynamic_cast<CDataMemberContainerType*>(dataType) ||
+         dynamic_cast<CEnumDataType*>(dataType) )
+        return dataType->GetRealTypeInfo();
+    return CParent::GetRealTypeInfo();
+}
+
+CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
+{
+    CClassTypeInfo* info = CClassInfoHelper<AnyType>::CreateClassInfo(m_UserTypeName.c_str());
+    info->SetImplicit();
+    CMemberInfo* mem = info->AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
+    if (GetDataMember() && GetDataMember()->NoPrefix()) {
+        mem->SetNoPrefix();
+    }
+    if ( GetParentType() == 0 ) {
+        // global
+        info->SetModuleName(GetModule()->GetName());
+    }
+    return info;
+}
+
+TObjectPtr CReferenceDataType::CreateDefault(const CDataValue& value) const
+{
+    return ResolveOrThrow()->CreateDefault(value);
+}
+
+string CReferenceDataType::GetDefaultString(const CDataValue& value) const
+{
+    return ResolveOrThrow()->GetDefaultString(value);
+}
+
+AutoPtr<CTypeStrings> CReferenceDataType::GenerateCode(void) const
+{
+    return CParent::GenerateCode();
+}
+
+AutoPtr<CTypeStrings> CReferenceDataType::GetFullCType(void) const
+{
+    const CDataType* resolved = ResolveOrThrow();
+    if ( resolved->Skipped() )
+        return resolved->GetFullCType();
+    else
+        return resolved->GetRefCType();
+}
+
+CDataType* CReferenceDataType::ResolveOrNull(void) const
+{
+    try {
+        return ResolveLocal(m_UserTypeName);
+    }
+    catch ( CNotFoundException& /* ignored */) {
+    }
+    return 0;
+}
+
+CDataType* CReferenceDataType::ResolveOrThrow(void) const
+{
+    try {
+        return ResolveLocal(m_UserTypeName);
+    }
+    catch ( CNotFoundException& exc) {
+        NCBI_RETHROW_SAME(exc, LocationString());
+    }
+    // ASSERT("Not reached" == 0);
+    return static_cast<CDataType*>(NULL);  // Happy compiler fix
+}
+
+CDataType* CReferenceDataType::Resolve(void)
+{
+    CDataType* resolved = ResolveOrNull();
+    if ( !resolved )
+        return this;
+    return resolved;
+}
+
+const CDataType* CReferenceDataType::Resolve(void) const
+{
+    CDataType* resolved = ResolveOrNull();
+    if ( !resolved )
+        return this;
+    return resolved;
+}
+
+END_NCBI_SCOPE
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.34  2006/06/05 15:33:14  gouriano
 * Implemented local elements when parsing XML schema
 *
@@ -149,209 +359,3 @@
 *
 * ===========================================================================
 */
-
-#include <ncbi_pch.hpp>
-#include <serial/datatool/reftype.hpp>
-#include <serial/datatool/unitype.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/typestr.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/enumtype.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/serialimpl.hpp>
-
-BEGIN_NCBI_SCOPE
-
-CReferenceDataType::CReferenceDataType(const string& n)
-    : m_UserTypeName(n)
-{
-}
-
-void CReferenceDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
-{
-    out << CDataTypeModule::ToAsnName(m_UserTypeName);
-}
-
-void CReferenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
-{
-    string tag(XmlTagName());
-    string userType(UserTypeXmlTagName());
-    const CUniSequenceDataType* uniType = 
-        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
-
-    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
-        const CDataType* realType = Resolve();
-        realType->PrintDTDElement(out, contents_only);
-        return;
-    }
-    out <<
-        "\n<!ELEMENT "<<XmlTagName()<<" ("<<UserTypeXmlTagName()<<")>";
-}
-
-void CReferenceDataType::PrintDTDExtra(CNcbiOstream& out) const
-{
-    string tag(XmlTagName());
-    string userType(UserTypeXmlTagName());
-    const CUniSequenceDataType* uniType = 
-        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
-
-    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
-        Resolve()->PrintDTDExtra(out);
-    }
-}
-
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-// modified by Andrei Gourianov, gouriano@ncbi
-void CReferenceDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
-{
-    string tag(XmlTagName());
-    string userType(UserTypeXmlTagName());
-    const CUniSequenceDataType* uniType = 
-        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
-
-    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
-        const CDataType* realType = Resolve();
-        realType->PrintXMLSchemaElement(out);
-        return;
-    }
-
-    out << "<xs:element name=\"" << tag << "\">\n"
-        << "  <xs:complexType>\n";
-    out << "    <xs:sequence>\n"
-        << "      <xs:element ref=\"" << userType << "\"/>\n"
-        << "    </xs:sequence>\n";
-    out << "  </xs:complexType>\n"
-        << "</xs:element>\n";
-}
-
-void CReferenceDataType::PrintXMLSchemaExtra(CNcbiOstream& out) const
-{
-    string tag(XmlTagName());
-    string userType(UserTypeXmlTagName());
-    const CUniSequenceDataType* uniType = 
-        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
-
-    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
-        Resolve()->PrintXMLSchemaExtra(out);
-    }
-}
-
-void CReferenceDataType::FixTypeTree(void) const
-{
-    CParent::FixTypeTree();
-    CDataType* resolved = ResolveOrNull();
-    if ( resolved )
-        resolved->AddReference(this);
-}
-
-bool CReferenceDataType::CheckType(void) const
-{
-    try {
-        ResolveLocal(m_UserTypeName);
-        return true;
-    }
-    catch ( CNotFoundException& exc) {
-        Warning("Unresolved type: " + m_UserTypeName + ": " + exc.what());
-    }
-    return false;
-}
-
-bool CReferenceDataType::CheckValue(const CDataValue& value) const
-{
-    CDataType* resolved = ResolveOrNull();
-    if ( !resolved )
-        return false;
-    return resolved->CheckValue(value);
-}
-
-TTypeInfo CReferenceDataType::GetRealTypeInfo(void)
-{
-    CDataType* dataType = ResolveOrThrow();
-    if ( dynamic_cast<CDataMemberContainerType*>(dataType) ||
-         dynamic_cast<CEnumDataType*>(dataType) )
-        return dataType->GetRealTypeInfo();
-    return CParent::GetRealTypeInfo();
-}
-
-CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
-{
-    CClassTypeInfo* info = CClassInfoHelper<AnyType>::CreateClassInfo(m_UserTypeName.c_str());
-    info->SetImplicit();
-    CMemberInfo* mem = info->AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
-    if (GetDataMember() && GetDataMember()->NoPrefix()) {
-        mem->SetNoPrefix();
-    }
-    if ( GetParentType() == 0 ) {
-        // global
-        info->SetModuleName(GetModule()->GetName());
-    }
-    return info;
-}
-
-TObjectPtr CReferenceDataType::CreateDefault(const CDataValue& value) const
-{
-    return ResolveOrThrow()->CreateDefault(value);
-}
-
-string CReferenceDataType::GetDefaultString(const CDataValue& value) const
-{
-    return ResolveOrThrow()->GetDefaultString(value);
-}
-
-AutoPtr<CTypeStrings> CReferenceDataType::GenerateCode(void) const
-{
-    return CParent::GenerateCode();
-}
-
-AutoPtr<CTypeStrings> CReferenceDataType::GetFullCType(void) const
-{
-    const CDataType* resolved = ResolveOrThrow();
-    if ( resolved->Skipped() )
-        return resolved->GetFullCType();
-    else
-        return resolved->GetRefCType();
-}
-
-CDataType* CReferenceDataType::ResolveOrNull(void) const
-{
-    try {
-        return ResolveLocal(m_UserTypeName);
-    }
-    catch ( CNotFoundException& /* ignored */) {
-    }
-    return 0;
-}
-
-CDataType* CReferenceDataType::ResolveOrThrow(void) const
-{
-    try {
-        return ResolveLocal(m_UserTypeName);
-    }
-    catch ( CNotFoundException& exc) {
-        NCBI_RETHROW_SAME(exc, LocationString());
-    }
-    // ASSERT("Not reached" == 0);
-    return static_cast<CDataType*>(NULL);  // Happy compiler fix
-}
-
-CDataType* CReferenceDataType::Resolve(void)
-{
-    CDataType* resolved = ResolveOrNull();
-    if ( !resolved )
-        return this;
-    return resolved;
-}
-
-const CDataType* CReferenceDataType::Resolve(void) const
-{
-    CDataType* resolved = ResolveOrNull();
-    if ( !resolved )
-        return this;
-    return resolved;
-}
-
-END_NCBI_SCOPE

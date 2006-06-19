@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.17  2006/05/23 15:34:55  gouriano
 * Corrected ASN spec generation for XML schema choice type
 *
@@ -122,9 +125,8 @@ public:
     ~CDataMember(void);
 
     void PrintASN(CNcbiOstream& out, int indent, bool last) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent) const;
     void PrintDTD(CNcbiOstream& out) const;
-    void PrintXMLSchema(CNcbiOstream& out) const;
-    void PrintXMLSchemaElement(CNcbiOstream& out) const;
 
     bool Check(void) const;
 
@@ -195,10 +197,9 @@ public:
     typedef list< AutoPtr<CDataMember> > TMembers;
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
-    void PrintXMLSchemaElement(CNcbiOstream& out) const;
-    void PrintXMLSchemaExtra(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;

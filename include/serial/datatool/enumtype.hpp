@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.14  2005/08/05 15:12:02  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -148,9 +151,9 @@ public:
     TValue& AddValue(const string& name, TEnumValueType value);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
-    void PrintXMLSchemaElement(CNcbiOstream& out) const;
 
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;

@@ -110,6 +110,16 @@ void CDataType::PrintASNTypeComments(CNcbiOstream& out, int indent) const
     m_Comments.PrintASN(out, indent);
 }
 
+void CDataType::PrintXMLSchemaTypeComments(CNcbiOstream& out, int /*indent*/) const
+{
+    m_Comments.PrintDTD(out, CComments::eNoEOL);
+}
+
+string CDataType::GetSchemaTypeString(void) const
+{
+    return kEmptyStr;
+}
+
 void CDataType::PrintDTD(CNcbiOstream& out) const
 {
     if (x_IsSavedName(XmlTagName())) {
@@ -144,49 +154,6 @@ void CDataType::PrintDTD(CNcbiOstream& out,
 }
 
 void CDataType::PrintDTDExtra(CNcbiOstream& /*out*/) const
-{
-}
-
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-void CDataType::PrintXMLSchema(CNcbiOstream& out) const
-{
-    if (m_DataMember && (m_DataMember->Attlist() || m_DataMember->Notag())) {
-        return;
-    }
-    if (x_IsSavedName(XmlTagName())) {
-        return;
-    }
-    m_Comments.PrintDTD(out);
-    PrintXMLSchemaElement(out);
-    x_AddSavedName(XmlTagName());
-    PrintXMLSchemaExtra(out);
-}
-                                                                                                                                                      
-void CDataType::PrintXMLSchema(CNcbiOstream& out,
-                         const CComments& extra) const
-{
-    if (m_DataMember && (m_DataMember->Attlist() || m_DataMember->Notag())) {
-        return;
-    }
-    if (x_IsSavedName(XmlTagName())) {
-        return;
-    }
-    m_Comments.PrintDTD(out);
-    bool oneLineComment = extra.OneLine();
-    if ( oneLineComment ) {
-        out << ' ';
-        extra.PrintDTD(out, CComments::eOneLine);
-        out << '\n';
-    } else {
-        extra.PrintDTD(out);
-    }
-    PrintXMLSchemaElement(out);
-    x_AddSavedName(XmlTagName());
-    PrintXMLSchemaExtra(out);
-}
-
-void CDataType::PrintXMLSchemaExtra(CNcbiOstream& /*out*/) const
 {
 }
 
@@ -720,6 +687,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.86  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.85  2006/05/09 15:16:43  gouriano
 * Added XML namespace definition possibility
 *

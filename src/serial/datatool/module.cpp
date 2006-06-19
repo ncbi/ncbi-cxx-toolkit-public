@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.45  2006/05/17 20:40:01  ucko
 * Fix compilation errors with older versions of GCC.
 *
@@ -272,6 +275,61 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
         "\n";
 }
 
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
+{
+    out <<
+        "<!-- ============================================ -->\n"
+        "<!-- This section is mapped from module \"" << GetName() << "\"\n"
+        "================================================= -->\n";
+
+    m_Comments.PrintDTD(out, CComments::eMultiline);
+
+    if ( !m_Exports.empty() ) {
+        out <<
+            "<!-- Elements used by other modules:\n";
+
+        ITERATE ( TExports, i, m_Exports ) {
+            if ( i != m_Exports.begin() )
+                out << ",\n";
+            out << "          " << *i;
+        }
+
+        out << " -->\n\n";
+    }
+    if ( !m_Imports.empty() ) {
+        out <<
+            "<!-- Elements referenced from other modules:\n";
+        ITERATE ( TImports, i, m_Imports ) {
+            if ( i != m_Imports.begin() )
+                out << ",\n";
+            const Import* imp = i->get();
+            ITERATE ( list<string>, t, imp->types ) {
+                if ( t != imp->types.begin() )
+                    out << ",\n";
+                out <<
+                    "          " << *t;
+            }
+            out << " FROM "<< imp->moduleName;
+        }
+        out << " -->\n\n";
+    }
+
+    if ( !m_Exports.empty() || !m_Imports.empty() ) {
+        out <<
+            "<!-- ============================================ -->\n\n";
+    }
+
+    ITERATE ( TDefinitions, i, m_Definitions ) {
+        out << "\n";
+        i->second->PrintXMLSchema(out,0);
+    }
+
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
+    out << "\n\n";
+}
+
 void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
 {
     out <<
@@ -327,59 +385,6 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
 
     out << "\n\n";
 }
-
-// XML schema generator submitted by
-// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
-void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
-{
-    out <<
-        "<!-- ============================================ -->\n"
-        "<!-- This section is mapped from module \"" << GetName() << "\"\n"
-        "================================================= -->\n";
-                                                                                                                                    
-    m_Comments.PrintDTD(out, CComments::eMultiline);
-
-    if ( !m_Exports.empty() ) {
-        out <<
-            "<!-- Elements used by other modules:\n";
-
-        ITERATE ( TExports, i, m_Exports ) {
-            if ( i != m_Exports.begin() )
-                out << ",\n";
-            out << "          " << *i;
-        }
-
-        out << " -->\n\n";
-    }
-    if ( !m_Imports.empty() ) {
-        out <<
-            "<!-- Elements referenced from other modules:\n";
-        ITERATE ( TImports, i, m_Imports ) {
-            if ( i != m_Imports.begin() )
-                out << ",\n";
-            const Import* imp = i->get();
-            ITERATE ( list<string>, t, imp->types ) {
-                if ( t != imp->types.begin() )
-                    out << ",\n";
-                out <<
-                    "          " << *t;
-            }
-            out << " FROM "<< imp->moduleName;
-        }
-        out << " -->\n\n";
-    }
-    if ( !m_Exports.empty() || !m_Imports.empty() ) {
-        out <<
-            "<!-- ============================================ -->\n";
-    }
-    out << "\n";
-
-    ITERATE ( TDefinitions, i, m_Definitions ) {
-        i->second->PrintXMLSchema(out);
-    }
-    m_LastComments.PrintDTD(out, CComments::eMultiline);
-}
-
 
 static
 string DTDFileNameBase(const string& name)

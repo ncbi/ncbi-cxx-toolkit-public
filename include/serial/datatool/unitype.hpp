@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
 * Revision 1.11  2005/08/05 15:12:02  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -92,11 +95,9 @@ public:
     CUniSequenceDataType(const AutoPtr<CDataType>& elementType);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
-
-    void PrintXMLSchemaElement(CNcbiOstream& out) const;
-    void PrintXMLSchemaExtra(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;
