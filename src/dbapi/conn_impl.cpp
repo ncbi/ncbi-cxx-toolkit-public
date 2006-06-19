@@ -103,6 +103,7 @@ void CConnection::Connect(const string& user,
                           const string& server,
                           const string& database)
 {
+    CHECK_NCBI_DBAPI(m_connection == 0, "Connection is already open");
 
     m_connection = m_ds->
         GetDriverContext()->Connect(server,
@@ -122,6 +123,7 @@ void CConnection::ConnectValidated(IConnValidator& validator,
 								   const string& server,
                                    const string& database)
 {
+    CHECK_NCBI_DBAPI(m_connection == 0, "Connection is already open");
 
     m_connection = m_ds->
         GetDriverContext()->ConnectValidated(server,
@@ -164,20 +166,17 @@ string CConnection::GetDatabase()
 
 bool CConnection::IsAlive()
 {
-    return GetCDB_Connection()->IsAlive();
+	return m_connection == 0 ? false : m_connection->IsAlive();
 }
 
-void CConnection::SetDbName(const string& name,
-                            CDB_Connection* conn)
+void CConnection::SetDbName(const string& name, CDB_Connection* conn)
 {
-
     m_database = name;
 
     if( m_database.empty() )
         return;
 
-
-    CDB_Connection* work = (conn == 0 ? GetCDB_Connection() : conn);
+	CDB_Connection* work = (conn == 0 ? GetCDB_Connection() : conn);
     string sql = "use " + m_database;
     CDB_LangCmd* cmd = work->LangCmd(sql.c_str());
     cmd->Send();
@@ -189,17 +188,19 @@ void CConnection::SetDbName(const string& name,
 
 CDB_Connection* CConnection::CloneCDB_Conn()
 {
+	CDB_Connection *curr = GetCDB_Connection();
     CDB_Connection *temp = m_ds->
-   GetDriverContext()->Connect(GetCDB_Connection()->ServerName(),
+    GetDriverContext()->Connect(GetCDB_Connection()->ServerName(),
                                GetCDB_Connection()->UserName(),
                                GetCDB_Connection()->Password(),
                                m_modeMask,
                                true);
-    _TRACE("CDB_Connection " << (void*)GetCDB_Connection()
+    _TRACE("CDB_Connection " << (void*)curr
         << " cloned, new CDB_Connection: " << (void*)temp);
     SetDbName(m_database, temp);
     return temp;
 }
+
 CConnection* CConnection::Clone()
 {
     CConnection *conn = new CConnection(CloneCDB_Conn(), m_ds);
@@ -216,12 +217,13 @@ CConnection* CConnection::Clone()
 
 IConnection* CConnection::CloneConnection(EOwnership ownership)
 {
+	CDB_Connection *cdbConn = CloneCDB_Conn();
     CConnection *conn = new CConnection(m_ds, ownership);
 
     conn->m_modeMask = this->m_modeMask;
     conn->m_forceSingle = this->m_forceSingle;
     conn->m_database = this->m_database;
-    conn->m_connection = CloneCDB_Conn();
+    conn->m_connection = cdbConn;
     if( m_msgToEx )
         conn->MsgToEx(true);
 
@@ -275,6 +277,8 @@ void CConnection::FreeResources()
 // New part
 IStatement* CConnection::GetStatement()
 {
+    CHECK_NCBI_DBAPI(m_connection == 0, "No connection established");
+
     CHECK_NCBI_DBAPI( 
         m_connUsed, 
         "CConnection::GetStatement(): Connection taken, cannot use this method"
@@ -297,7 +301,7 @@ ICallableStatement*
 CConnection::GetCallableStatement(const string& proc,
                                   int nofArgs)
 {
-    CHECK_NCBI_DBAPI(
+	CHECK_NCBI_DBAPI(
         m_connUsed,
         "CConnection::GetCallableStatement(): Connection taken, cannot use this method"
         );
@@ -533,6 +537,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.43  2006/06/19 17:16:12  kholodov
+* Restored old IsAlive() behavior, added additional checks for valid connection
+*
 * Revision 1.42  2006/06/12 16:05:10  kholodov
 * Added: Exception is thrown when using non-initialized m_connection
 *

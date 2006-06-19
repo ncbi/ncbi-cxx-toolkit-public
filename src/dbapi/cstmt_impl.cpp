@@ -45,8 +45,8 @@ CCallableStatement::CCallableStatement(const string& proc,
                        CConnection* conn)
   : CStatement(conn), m_status(0), m_nofParams(nofArgs)
 {
+    SetBaseCmd(conn->GetCDB_Connection()->RPC(proc.c_str(), nofArgs));
     SetIdent("CCallableStatement");
-  SetBaseCmd(conn->GetCDB_Connection()->RPC(proc.c_str(), nofArgs));
 }
 
 CCallableStatement::~CCallableStatement()
@@ -136,6 +136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2006/06/19 17:16:12  kholodov
+* Restored old IsAlive() behavior, added additional checks for valid connection
+*
 * Revision 1.20  2005/12/28 15:09:13  kholodov
 * Removed empty SendSql() definition
 *

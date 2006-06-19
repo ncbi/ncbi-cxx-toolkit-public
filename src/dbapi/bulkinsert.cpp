@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2006/06/19 17:16:12  kholodov
+* Restored old IsAlive() behavior, added additional checks for valid connection
+*
 * Revision 1.8  2005/11/02 15:02:25  ssikorsk
 * Catch all exceptions in destructors.
 *
@@ -77,9 +80,8 @@ CBulkInsert::CBulkInsert(const string& name,
                          CConnection* conn)
     : m_nofCols(cols), m_cmd(0), m_conn(conn)
 {
-    SetIdent("CBulkInsert");
-
     m_cmd = m_conn->GetCDB_Connection()->BCPIn(name, cols);
+    SetIdent("CBulkInsert");
 }
 
 CBulkInsert::~CBulkInsert()

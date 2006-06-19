@@ -181,7 +181,7 @@ void CStatement::x_Send(const string& sql)
 
 IResultSet* CStatement::ExecuteQuery(const string& sql)
 {
-    Execute(sql);
+    SendSql(sql);
     while( HasMoreResults() ) {
         if( HasRows() ) {
             return GetResultSet();
@@ -191,7 +191,7 @@ IResultSet* CStatement::ExecuteQuery(const string& sql)
 }
 void CStatement::ExecuteUpdate(const string& sql)
 {
-    Execute(sql);
+    SendSql(sql);
     //while( HasMoreResults() );
     GetBaseCmd()->DumpResults();
 }
@@ -324,6 +324,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.36  2006/06/19 17:16:12  kholodov
+* Restored old IsAlive() behavior, added additional checks for valid connection
+*
 * Revision 1.35  2006/02/21 14:59:23  kholodov
 * Streams implemented thru Reader/Writer interface
 *
