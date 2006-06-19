@@ -71,7 +71,7 @@ protected:
     virtual bool CollectParams(CGridCgiContext&);
 
     // Prepare the job's input data
-    virtual void PrepareJobData(CGridJobSubmiter& submiter);
+    virtual void PrepareJobData(CGridJobSubmitter& submitter);
 
     // Show an information page
     virtual void OnJobSubmitted(CGridCgiContext& ctx);
@@ -240,9 +240,9 @@ bool CCgi2RCgiApp::CollectParams(CGridCgiContext& ctx)
 }
 
 
-void CCgi2RCgiApp::PrepareJobData(CGridJobSubmiter& submiter)
+void CCgi2RCgiApp::PrepareJobData(CGridJobSubmitter& submitter)
 {   
-    CNcbiOstream& os = submiter.GetOStream();
+    CNcbiOstream& os = submitter.GetOStream();
     // Send jobs input data
     m_CgiContext->GetRequest().Serialize(os);
 }
@@ -404,6 +404,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/19 19:41:05  didenko
+ * Spelling fix
+ *
  * Revision 1.5  2006/01/18 17:51:03  didenko
  * When job is done just all its output to the response output stream
  *

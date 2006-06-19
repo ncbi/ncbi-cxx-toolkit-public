@@ -51,7 +51,7 @@ enum EStdOutErrStorageType {
 ///
 /// It is used by a client application which wants to run a remote application
 /// through NetSchedule infrastructure and should be used in conjunction with 
-/// CGridJobSubmiter class
+/// CGridJobSubmitter class
 ///
 class NCBI_XCONNECT_EXPORT CRemoteAppRequest
 {
@@ -211,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/06/19 19:41:05  didenko
+ * Spelling fix
+ *
  * Revision 1.7  2006/06/19 13:36:27  didenko
  * added logging information
  *

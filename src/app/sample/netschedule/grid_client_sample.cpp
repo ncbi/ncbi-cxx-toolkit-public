@@ -110,11 +110,11 @@ int CGridClientSampleApp::Run(void)
     NcbiCout << "Submit a job..." << jobs_number << NcbiEndl;
 
     for (int i = 0; i < jobs_number; ++i) {
-        // Get a job submiter
-        CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
+        // Get a job submitter
+        CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
 
         // Get an ouptut stream
-        CNcbiOstream& os = job_submiter.GetOStream();
+        CNcbiOstream& os = job_submitter.GetOStream();
 
         // Send jobs input data
         os << "doubles ";  // output_type - just a list of doubels
@@ -126,7 +126,7 @@ int CGridClientSampleApp::Run(void)
         }
         
         // Submit a job
-        job_keys.push_back(job_submiter.Submit());
+        job_keys.push_back(job_submitter.Submit());
     }
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
      
@@ -207,6 +207,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/06/19 19:41:06  didenko
+ * Spelling fix
+ *
  * Revision 1.9  2006/03/15 21:59:54  ucko
  * +<algorithm> for remove().
  *

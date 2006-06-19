@@ -54,11 +54,11 @@ class CGridClient;
 
 /// Grid Job Submiter
 ///
-class NCBI_XCONNECT_EXPORT CGridJobSubmiter
+class NCBI_XCONNECT_EXPORT CGridJobSubmitter
 {
 public:
 
-    ~CGridJobSubmiter();
+    ~CGridJobSubmitter();
 
     /// Set a job's input This string will be sent to 
     /// then the job is submitted.
@@ -82,7 +82,7 @@ public:
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
-    CGridJobSubmiter(CGridClient&, bool use_progress, bool use_embedded_storage);
+    CGridJobSubmitter(CGridClient&, bool use_progress, bool use_embedded_storage);
 
     CGridClient& m_GridClient;
     string       m_Input;
@@ -92,8 +92,8 @@ private:
 
     /// The copy constructor and the assignment operator
     /// are prohibited
-    CGridJobSubmiter(const CGridJobSubmiter&);
-    CGridJobSubmiter& operator=(CGridJobSubmiter&);
+    CGridJobSubmitter(const CGridJobSubmitter&);
+    CGridJobSubmitter& operator=(CGridJobSubmitter&);
 };
 
 /// Grid Job Status checker
@@ -212,7 +212,7 @@ public:
 
     /// Get a job submiter
     ///
-    CGridJobSubmiter& GetJobSubmiter();
+    CGridJobSubmitter& GetJobSubmitter();
 
     /// Get a job status checker
     ///
@@ -243,7 +243,7 @@ private:
     IBlobStorage& m_NSStorage;
 
     string                     m_Input;
-    auto_ptr<CGridJobSubmiter> m_JobSubmiter;
+    auto_ptr<CGridJobSubmitter> m_JobSubmitter;
     auto_ptr<CGridJobStatus>   m_JobStatus;
 
     /// The copy constructor and the assignment operator
@@ -252,6 +252,8 @@ private:
     CGridClient& operator=(const CGridClient&);
 };
 
+// Correct spelling
+#define CGridJobSubmiter CGridJobSubmitter
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -260,6 +262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/19 19:41:05  didenko
+ * Spelling fix
+ *
  * Revision 1.10  2006/05/03 14:50:08  didenko
  * Added affinity support
  *

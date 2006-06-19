@@ -74,7 +74,7 @@ protected:
     virtual bool CollectParams(CGridCgiContext&);
 
     // Prepare the job's input data
-    virtual void PrepareJobData(CGridJobSubmiter& submiter);
+    virtual void PrepareJobData(CGridJobSubmitter& submitter);
 
     // Show an information page
     virtual void OnJobSubmitted(CGridCgiContext& ctx);
@@ -189,9 +189,9 @@ bool CGridCgiSampleApplication::CollectParams(CGridCgiContext&)
 }
 
 
-void CGridCgiSampleApplication::PrepareJobData(CGridJobSubmiter& submiter)
+void CGridCgiSampleApplication::PrepareJobData(CGridJobSubmitter& submitter)
 {   
-    CNcbiOstream& os = submiter.GetOStream();
+    CNcbiOstream& os = submitter.GetOStream();
     // Send jobs input data
     os << "doubles ";  // request output type just a list of doubles
     os << m_Doubles.size() << ' ';
@@ -374,6 +374,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/06/19 19:41:06  didenko
+ * Spelling fix
+ *
  * Revision 1.13  2005/08/04 12:57:04  ivanov
  * Use 'flag' version of NStr::StringTo*()
  *

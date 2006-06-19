@@ -189,7 +189,7 @@ protected:
     /// This method is called when a job is ready to be send to a the queue.
     /// Override this method to prepare input data for the worker node.
     /// 
-    virtual void PrepareJobData(CGridJobSubmiter& submiter) = 0;
+    virtual void PrepareJobData(CGridJobSubmitter& submitter) = 0;
 
     /// This method is called just after a job has been submitted.
     /// Override this method to render information HTML page.
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/06/19 19:41:05  didenko
+ * Spelling fix
+ *
  * Revision 1.22  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

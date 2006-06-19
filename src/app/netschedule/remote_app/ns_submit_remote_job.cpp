@@ -257,9 +257,9 @@ int CNSSubmitRemoveJobApp::Run(void)
         }
 
 
-        CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
-        request.Send(job_submiter.GetOStream());
-        string job_key = job_submiter.Submit(affinity);
+        CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
+        request.Send(job_submitter.GetOStream());
+        string job_key = job_submitter.Submit(affinity);
         if (out)
             *out << job_key << NcbiEndl;
         return 0;
@@ -304,9 +304,9 @@ int CNSSubmitRemoveJobApp::Run(void)
                 request.RequestExclusiveMode();
             }
             
-            CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
-            request.Send(job_submiter.GetOStream());
-            string job_key = job_submiter.Submit(affinity);
+            CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
+            request.Send(job_submitter.GetOStream());
+            string job_key = job_submitter.Submit(affinity);
             if (out)
                 *out << job_key << NcbiEndl;
         }
@@ -326,6 +326,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/19 19:41:06  didenko
+ * Spelling fix
+ *
  * Revision 1.4  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *

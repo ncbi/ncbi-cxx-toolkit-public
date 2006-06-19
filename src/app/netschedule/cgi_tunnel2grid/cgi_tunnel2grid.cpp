@@ -76,7 +76,7 @@ protected:
     virtual bool CollectParams(CGridCgiContext&);
 
     // Prepare the job's input data
-    virtual void PrepareJobData(CGridJobSubmiter& submiter);
+    virtual void PrepareJobData(CGridJobSubmitter& submitter);
 
     // Show an information page
     virtual void OnJobSubmitted(CGridCgiContext& ctx);
@@ -296,13 +296,13 @@ bool CCgiTunnel2Grid::CollectParams(CGridCgiContext& ctx)
 }
 
 
-void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmiter& submiter)
+void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmitter& submitter)
 {   
     if ( !m_UserBlobId.empty() ) {
-        submiter.SetJobInput(m_UserBlobId);
+        submitter.SetJobInput(m_UserBlobId);
         return;
     }
-    CNcbiOstream& os = submiter.GetOStream();
+    CNcbiOstream& os = submitter.GetOStream();
     // Send jobs input data
     if (m_CgiContext) {
         m_CgiContext->GetRequest().Serialize(os);
@@ -498,6 +498,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/19 19:41:06  didenko
+ * Spelling fix
+ *
  * Revision 1.24  2006/05/08 15:54:35  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and

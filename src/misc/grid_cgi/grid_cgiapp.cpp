@@ -267,7 +267,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             if (CollectParams(grid_ctx)) {
                 bool finished = false;
                 // Get a job submiter
-                CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
+                CGridJobSubmitter& job_submiter = GetGridClient().GetJobSubmitter();
                 // Submit a job
                 try {
                     PrepareJobData(job_submiter);
@@ -437,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/06/19 19:41:06  didenko
+ * Spelling fix
+ *
  * Revision 1.31  2006/04/12 19:03:49  didenko
  * Renamed parameter "use_embedded_input" to "use_embedded_storage"
  *

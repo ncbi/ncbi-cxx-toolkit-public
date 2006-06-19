@@ -46,7 +46,7 @@ CGridClient::CGridClient(CNetScheduleClient& ns_client,
                          bool use_embedded_storage)
 : m_NSClient(ns_client), m_NSStorage(storage)
 {
-    m_JobSubmiter.reset(new CGridJobSubmiter(*this,
+    m_JobSubmitter.reset(new CGridJobSubmitter(*this,
                                              progress_msg == eProgressMsgOn,
                                              use_embedded_storage));
     m_JobStatus.reset(new CGridJobStatus(*this, 
@@ -58,9 +58,9 @@ CGridClient::~CGridClient()
 {
 }
 
-CGridJobSubmiter& CGridClient::GetJobSubmiter()
+CGridJobSubmitter& CGridClient::GetJobSubmitter()
 {
-    return *m_JobSubmiter;
+    return *m_JobSubmitter;
 }
 CGridJobStatus& CGridClient::GetJobStatus(const string& job_key)
 {
@@ -80,7 +80,7 @@ void CGridClient::RemoveDataBlob(const string& data_key)
 
 //////////////////////////////////////////////////////////////////////////////
 //
-CGridJobSubmiter::CGridJobSubmiter(CGridClient& grid_client, 
+CGridJobSubmitter::CGridJobSubmitter(CGridClient& grid_client, 
                                    bool use_progress,
                                    bool use_embedded_storage)
     : m_GridClient(grid_client), m_UseProgress(use_progress), 
@@ -88,14 +88,14 @@ CGridJobSubmiter::CGridJobSubmiter(CGridClient& grid_client,
 {
 }
 
-CGridJobSubmiter::~CGridJobSubmiter()
+CGridJobSubmitter::~CGridJobSubmitter()
 {
 }
-void CGridJobSubmiter::SetJobInput(const string& input)
+void CGridJobSubmitter::SetJobInput(const string& input)
 {
     m_Input = input;
 }
-CNcbiOstream& CGridJobSubmiter::GetOStream()
+CNcbiOstream& CGridJobSubmitter::GetOStream()
 {
     size_t max_data_size = m_UseEmbeddedStorage ? kNetScheduleMaxDataSize : 0;
     IWriter* writer = 
@@ -110,7 +110,7 @@ CNcbiOstream& CGridJobSubmiter::GetOStream()
     //    return m_GridClient.GetStorage().CreateOStream(m_Input);
 }
 
-string CGridJobSubmiter::Submit(const string& affinity)
+string CGridJobSubmitter::Submit(const string& affinity)
 {
     m_WStream.reset();
     string progress_msg_key;
@@ -197,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/06/19 19:41:06  didenko
+ * Spelling fix
+ *
  * Revision 1.11  2006/05/30 16:41:05  didenko
  * Improved error handling
  *

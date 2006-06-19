@@ -93,10 +93,10 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                       CGridClient::eProgressMsgOn)
                       );
     
-    CGridJobSubmiter& job_submiter = grid_client->GetJobSubmiter();
-    CNcbiOstream& job_os = job_submiter.GetOStream();
+    CGridJobSubmitter& job_submitter = grid_client->GetJobSubmitter();
+    CNcbiOstream& job_os = job_submitter.GetOStream();
     cgi_request.Serialize(job_os);
-    string job_key = job_submiter.Submit();
+    string job_key = job_submitter.Submit();
     string url = s_GetCgiTunnel2GridUrl(cgi_request);
     url += "?ctg_project=" + URL_EncodeString(project_name);
     url += "&job_key=" + job_key;
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/19 19:41:06  didenko
+ * Spelling fix
+ *
  * Revision 1.4  2006/02/27 14:50:21  didenko
  * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
  *

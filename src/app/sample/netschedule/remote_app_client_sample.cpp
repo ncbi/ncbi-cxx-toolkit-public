@@ -137,7 +137,7 @@ int CRemoteAppClientSampleApp::Run(void)
     CRemoteAppRequest request(factory);
     for (int i = 0; i < jobs_number; ++i) {
         CNcbiOstream& os = request.GetStdIn();
-        /*
+        
         if (i % 5 == 0) {
             os.write(kData.c_str(),kData.size());
             os << endl << i << endl;
@@ -146,14 +146,16 @@ int CRemoteAppClientSampleApp::Run(void)
             os.write(kData.c_str(),kData.size());
             os.write(kData.c_str(),kData.size());
          } else 
-        */
+        
             os << "Request data";
 
         request.SetCmdLine("-a sss -f=/tmp/dddd.f1");
-        //        request.AddFileForTransfer("/tmp/dddd.f1");
+        request.AddFileForTransfer("/tmp/dddd.f1");
+
+        //request.SetStdOutErrFileNames("/tmp/out.txt", "/tmp/err.txt", eLocalFile);
 
         // Get a job submiter
-        CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
+        CGridJobSubmitter& job_submiter = GetGridClient().GetJobSubmitter();
 
         // Serialize the requset;
         request.Send(job_submiter.GetOStream());
@@ -239,8 +241,10 @@ void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
 {
     CBlobStorageFactory factory(GetConfig());
     auto_ptr<IBlobStorage> storage(factory.CreateInstance());
-    string str = storage->GetBlobAsString(blob_key);
-    NcbiCout << str << NcbiEndl;
+    //    string str = storage->GetBlobAsString(blob_key);
+    //    NcbiCout << str << NcbiEndl;
+    CNcbiIstream& is = storage->GetIStream(blob_key);
+    NcbiCout << is.rdbuf() << NcbiEndl;
 }
 
 void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
@@ -288,6 +292,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/19 19:41:06  didenko
+ * Spelling fix
+ *
  * Revision 1.4  2006/04/04 19:15:34  didenko
  * Added ShowBlob method
  *
