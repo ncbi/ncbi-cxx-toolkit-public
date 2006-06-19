@@ -1433,7 +1433,7 @@ bool CNcbiRegistry::x_Set(const string& section, const string& name,
 {
     TFlags flags2 = (flags & fPersistent) ? flags : (flags | fTransient);
     bool was_empty = Get(section, name, flags).empty();
-    _TRACE('[' << section << ']' << name << " = " << value << ':' << flags);
+    _TRACE('[' << section << ']' << name << " = " << value);
     if ((flags & fNoOverride)  &&  !was_empty) {
         return false;
     }
@@ -1482,6 +1482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/06/19 20:23:30  grichenk
+ * Removed flags from _TRACE
+ *
  * Revision 1.59  2006/05/08 15:54:36  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and
