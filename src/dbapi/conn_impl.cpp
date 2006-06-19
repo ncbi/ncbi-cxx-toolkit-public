@@ -92,7 +92,7 @@ void CConnection::ForceSingle(bool enable)
 }
 
 CDB_Connection*
-CConnection::GetCDB_Connection() 
+CConnection::GetCDB_Connection()
 {
 	CHECK_NCBI_DBAPI(m_connection == 0, "Database connection has not been initialized");
     return m_connection;
@@ -103,7 +103,7 @@ void CConnection::Connect(const string& user,
                           const string& server,
                           const string& database)
 {
-    CHECK_NCBI_DBAPI(m_connection == 0, "Connection is already open");
+    CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
 
     m_connection = m_ds->
         GetDriverContext()->Connect(server,
@@ -123,7 +123,7 @@ void CConnection::ConnectValidated(IConnValidator& validator,
 								   const string& server,
                                    const string& database)
 {
-    CHECK_NCBI_DBAPI(m_connection == 0, "Connection is already open");
+    CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
 
     m_connection = m_ds->
         GetDriverContext()->ConnectValidated(server,
@@ -279,8 +279,8 @@ IStatement* CConnection::GetStatement()
 {
     CHECK_NCBI_DBAPI(m_connection == 0, "No connection established");
 
-    CHECK_NCBI_DBAPI( 
-        m_connUsed, 
+    CHECK_NCBI_DBAPI(
+        m_connUsed,
         "CConnection::GetStatement(): Connection taken, cannot use this method"
         );
 /*
@@ -537,6 +537,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.44  2006/06/19 18:25:48  ssikorsk
+* Fixed checking for an already open connection in CConnection::Connect/ConnectValidated.
+*
 * Revision 1.43  2006/06/19 17:16:12  kholodov
 * Restored old IsAlive() behavior, added additional checks for valid connection
 *
