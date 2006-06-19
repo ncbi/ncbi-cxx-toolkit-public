@@ -237,6 +237,7 @@ CPrefetchToken CPrefetchManager_Impl::AddAction(TPriority priority,
                                                 IPrefetchAction* action,
                                                 IPrefetchListener* listener)
 {
+    CMutexGuard guard(m_StateMutex->GetData());
     CPrefetchToken token(AcceptRequest(CPrefetchRequest(m_StateMutex,
                                                         action,
                                                         listener),
@@ -367,7 +368,6 @@ void CPrefetchThread::CancelAll(void)
 void CPrefetchThread::ProcessRequest(TItemHandle handle)
 {
     CPrefetchToken token(handle);
-    token.x_GetImpl().SetQueueItem(token.m_QueueItem.GetNCPointer());
     CPrefetchRequest& impl(token.x_GetImpl());
     try {
         IPrefetchAction* action = impl.GetAction();
