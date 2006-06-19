@@ -1163,8 +1163,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
         }
         if (cfg.ShowContigFeatures()) {
             sel.SetResolveAll()
-               .SetAdaptiveDepth(true)
-               .SetSegmentSelectFirst();
+               .SetAdaptiveDepth(true);
         } else {
             sel.SetLimitTSE(ctx.GetHandle().GetTSE_Handle())
                .SetResolveTSE();
@@ -1636,6 +1635,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2006/06/19 20:22:34  grichenk
+* Added comments. Removed SegmentSelect flag.
+*
 * Revision 1.56  2006/06/15 17:51:40  dicuccio
 * Use object manager feature remapping instead of creating CSeq_loc_Mapper
 *

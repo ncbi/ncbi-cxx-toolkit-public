@@ -61,7 +61,6 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_ResolveDepth(kMax_Int),
       m_OverlapType(eOverlap_Intervals),
       m_ResolveMethod(eResolve_TSE),
-      m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
       m_UnresolvedFlag(eIgnoreUnresolved),
@@ -86,7 +85,6 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_ResolveDepth(kMax_Int),
       m_OverlapType(eOverlap_Intervals),
       m_ResolveMethod(eResolve_TSE),
-      m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
       m_UnresolvedFlag(eIgnoreUnresolved),
@@ -107,7 +105,6 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_ResolveDepth(kMax_Int),
       m_OverlapType(eOverlap_Intervals),
       m_ResolveMethod(eResolve_TSE),
-      m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
       m_UnresolvedFlag(eIgnoreUnresolved),
@@ -136,7 +133,6 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_ResolveDepth = sel.m_ResolveDepth;
         m_OverlapType = sel.m_OverlapType;
         m_ResolveMethod = sel.m_ResolveMethod;
-        m_SegmentSelect = sel.m_SegmentSelect;
         m_SortOrder = sel.m_SortOrder;
         m_LimitObjectType = sel.m_LimitObjectType;
         m_UnresolvedFlag = sel.m_UnresolvedFlag;
@@ -623,6 +619,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/06/19 20:22:34  grichenk
+* Added comments. Removed SegmentSelect flag.
+*
 * Revision 1.30  2006/02/14 15:47:41  grichenk
 * Added methods for collecting types of annotations.
 *

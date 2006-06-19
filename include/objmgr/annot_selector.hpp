@@ -65,7 +65,7 @@ class CAnnotObject_Info;
 ///
 ///  SAnnotSelector --
 ///
-///  Structure to select type of Seq-annot
+///  Structure to control retrieval of Seq-annots
 
 struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
 {
@@ -80,18 +80,13 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         eResolve_TSE,    ///< default - search only on segments in the same TSE
         eResolve_All     ///< Search annotations for all referenced sequences
     };
-    /// Flag to indicate adaptive segment selection
-    enum ESegmentSelect {
-        eSegmentSelect_All,
-        eSegmentSelect_First,
-        eSegmentSelect_Last
-    };
     /// Flag to indicate sorting method
     enum ESortOrder {
         eSortOrder_None,    ///< do not sort annotations for faster retrieval
         eSortOrder_Normal,  ///< default - increasing start, decreasing length
         eSortOrder_Reverse  ///< decresing end, decreasing length
     };
+    /// Flag to indicate handling of unresolved seq-ids
     enum EUnresolvedFlag {
         eIgnoreUnresolved, ///< Ignore unresolved ids (default)
         eSearchUnresolved, ///< Search annotations for unresolvable IDs
@@ -108,7 +103,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector(const SAnnotSelector& sel);
     SAnnotSelector& operator=(const SAnnotSelector& sel);
     ~SAnnotSelector(void);
-    
+
+    /// Set annotation type (feat, align, graph)
     SAnnotSelector& SetAnnotType(TAnnotType type)
         {
             x_ClearAnnotTypesSet();
@@ -116,6 +112,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Set feature type (also set annotation type to feat)
     SAnnotSelector& SetFeatType(TFeatType type)
         {
             x_ClearAnnotTypesSet();
@@ -123,6 +120,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Set feature subtype (also set annotation and feat type)
     SAnnotSelector& SetFeatSubtype(TFeatSubtype subtype)
         {
             x_ClearAnnotTypesSet();
@@ -130,11 +128,17 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Include annotation type in the search
     SAnnotSelector& IncludeAnnotType(TAnnotType type);
+    /// Exclude annotation type from the search
     SAnnotSelector& ExcludeAnnotType(TAnnotType type);
+    /// Include feature type in the search
     SAnnotSelector& IncludeFeatType(TFeatType type);
+    /// Exclude feature type from the search
     SAnnotSelector& ExcludeFeatType(TFeatType type);
+    /// Include feature subtype in the search
     SAnnotSelector& IncludeFeatSubtype(TFeatSubtype subtype);
+    /// Exclude feature subtype from the search
     SAnnotSelector& ExcludeFeatSubtype(TFeatSubtype subtype);
 
     /// Check annot type (ignore subtypes).
@@ -152,40 +156,60 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     bool IncludedFeatType(TFeatType type) const;
     bool IncludedFeatSubtype(TFeatSubtype subtype) const;
 
+    /// Check if type of the annotation matches the selector
     bool MatchType(const CAnnotObject_Info& annot_info) const;
 
+    /// Return true if the features should be searched using their
+    /// product rather than location.
     bool GetFeatProduct(void) const
         {
             return m_FeatProduct;
         }
+    /// Set flag indicating if the features should be searched by
+    /// their product rather than location.
     SAnnotSelector& SetByProduct(bool byProduct = true)
         {
             m_FeatProduct = byProduct;
             return *this;
         }
 
+    /// Get the selected overlap type
     EOverlapType GetOverlapType(void) const
         {
             return m_OverlapType;
         }
+    /// Set overlap type.
+    ///   eOverlap_Intervals - default, overlapping of locations should
+    ///       be checked using individual intervals.
+    ///   eOverlap_TotalRange indicates that overlapping of locations
+    ///       should be checked only by their total range.
     SAnnotSelector& SetOverlapType(EOverlapType overlap_type)
         {
             m_OverlapType = overlap_type;
             return *this;
         }
+    /// Check overlapping of individual intervals
     SAnnotSelector& SetOverlapIntervals(void)
         {
             return SetOverlapType(eOverlap_Intervals);
         }
+    /// Check overlapping only of total ranges
     SAnnotSelector& SetOverlapTotalRange(void)
         {
             return SetOverlapType(eOverlap_TotalRange);
         }
 
+    /// Get the selected sort order
     ESortOrder GetSortOrder(void) const
         {
             return m_SortOrder;
         }
+    /// Set sort order of annotations.
+    ///   eSortOrder_None - do not sort annotations for faster retrieval.
+    ///   eSortOrder_Normal - default. Sort by start (increasing), then by
+    ///       length (decreasing).
+    ///   eSortOrder_Reverse - sort by end (decresing), then length
+    ///       (decreasing).
     SAnnotSelector& SetSortOrder(ESortOrder sort_order)
         {
             m_SortOrder = sort_order;
@@ -213,7 +237,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     ///
     ///  @sa
     ///    SetResolveNone(), SetResolveTSE(), SetResolveAll(),
-    ///    SetResolveDepth(), SetExactDepth(), SetAdaptiveDepth().
+    ///    SetResolveDepth(), SetExactDepth(), SetAdaptiveDepth(),
+    ///    SetUnresolvedFlag().
     SAnnotSelector& SetResolveMethod(EResolveMethod resolve_method)
         {
             m_ResolveMethod = resolve_method;
@@ -345,50 +370,53 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return m_ExactDepth;
         }
 
-    /// set maximum count of annotations to find
-    /// if max_size == 0 - no limit
+    /// Get maximum allowed number of annotations to find.
     size_t GetMaxSize(void) const
         {
             return m_MaxSize;
         }
+    /// Set maximum number of annotations to find.
+    /// Set to 0 for no limit (default).
     SAnnotSelector& SetMaxSize(size_t max_size)
         {
             m_MaxSize = max_size? max_size: kMax_UInt;
             return *this;
         }
 
-    SAnnotSelector& SetSegmentSelect(ESegmentSelect ss)
-        {
-            m_SegmentSelect = ss;
-            return *this;
-        }
-    SAnnotSelector& SetSegmentSelectAll(void)
-        {
-            return SetSegmentSelect(eSegmentSelect_All);
-        }
-    SAnnotSelector& SetSegmentSelectFirst(void)
-        {
-            return SetSegmentSelect(eSegmentSelect_First);
-        }
-    SAnnotSelector& SetSegmentSelectLast(void)
-        {
-            return SetSegmentSelect(eSegmentSelect_Last);
-        }
-
+    /// Check if the parent object of annotations is set. If set,
+    /// only the annotations from the object (TSE, seq-entry or seq-annot)
+    /// will be found.
     bool HasLimit(void)
         {
             return m_LimitObject.NotEmpty();
         }
+    /// Remove restrictions on the parent object of annotations.
     SAnnotSelector& SetLimitNone(void);
+    /// Limit annotations to those from the TSE only.
     SAnnotSelector& SetLimitTSE(const CTSE_Handle& limit);
     SAnnotSelector& SetLimitTSE(const CSeq_entry_Handle& limit);
+    /// Limit annotations to those from the seq-entry only.
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry_Handle& limit);
+    /// Limit annotations to those from the seq-annot only.
     SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot_Handle& limit);
 
+    /// Get current method of handling unresolved seq-ids
     EUnresolvedFlag GetUnresolvedFlag(void) const
         {
             return m_UnresolvedFlag;
         }
+    /// Set method of handling unresolved seq-ids. A seq-id may be
+    /// unresolvable due to EResolveMethod restrictions. E.g. a
+    /// seq-id may be a far reference, while the annotations for this
+    /// seq-id are stored in the master sequence TSE.
+    ///   eIgnoreUnresolved - default, do not search for annotations
+    ///       on unresolved seq-ids.
+    ///   eSearchUnresolved - search for annotations on unresolved
+    ///       seq-ids.
+    ///   eFailUnresolved - throw CAnnotException exception if a seq-id
+    ///       can not be resolved.
+    ///  @sa
+    ///    SetSearchExternal()
     SAnnotSelector& SetUnresolvedFlag(EUnresolvedFlag flag)
         {
             m_UnresolvedFlag = flag;
@@ -419,8 +447,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& SetSearchExternal(const CSeq_entry_Handle& tse);
     SAnnotSelector& SetSearchExternal(const CBioseq_Handle& seq);
 
-    /// Exclude all external annotations from search.
-    /// Effective when no limit is set.
+    /// Exclude all external annotations from the search.
+    /// Effective only when no limit is set.
     SAnnotSelector& SetExcludeExternal(bool exclude = true)
         {
             m_ExcludeExternal = exclude;
@@ -484,6 +512,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     /// Collect available annot types rather than annots.
+    ///  @sa
+    ///    CAnnotTypes_CI::GetAnnotTypes()
     SAnnotSelector& SetCollectTypes(bool value = true)
         {
             m_CollectTypes = value;
@@ -508,7 +538,6 @@ protected:
     int                   m_ResolveDepth;
     EOverlapType          m_OverlapType;
     EResolveMethod        m_ResolveMethod;
-    ESegmentSelect        m_SegmentSelect;
     ESortOrder            m_SortOrder;
 
     enum ELimitObject {
@@ -545,6 +574,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2006/06/19 20:22:34  grichenk
+* Added comments. Removed SegmentSelect flag.
+*
 * Revision 1.50  2006/06/14 15:14:53  vasilche
 * Added description of segment resolution controls.
 *
