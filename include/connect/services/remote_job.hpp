@@ -110,6 +110,7 @@ public:
     unsigned int GetAppRunTimeout() const;
     bool IsExclusiveModeRequested() const;
     const string& GetWorkingDir() const;
+    const string& GetInBlobIdOrData() const;
 
     /// Deserialize a request from a given stream.
     void Receive(CNcbiIstream& is);
@@ -192,6 +193,11 @@ public:
     /// cleans itself an it can be reused.
     void Send(CNcbiOstream& os);
 
+    const string& GetOutBlobIdOrData() const;
+    const string& GetErrBlobIdOrData() const;
+
+    void Reset();
+
 private:
     CRemoteAppResult_Executer(const CRemoteAppResult_Executer&);
     CRemoteAppResult_Executer& operator=(const CRemoteAppResult_Executer&);
@@ -205,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/19 13:36:27  didenko
+ * added logging information
+ *
  * Revision 1.6  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *

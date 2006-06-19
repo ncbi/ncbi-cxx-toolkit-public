@@ -215,6 +215,8 @@ public:
     EStdOutErrStorageType GetStdOutErrStorageType() const
     { return m_StorageType; }
 
+    const string& GetInBlobIdOrData() const { return m_InBlobIdOrData; }
+
     void Serialize(CNcbiOstream& os);
     void Deserialize(CNcbiIstream& is);
 
@@ -501,6 +503,12 @@ EStdOutErrStorageType CRemoteAppRequest_Executer::GetStdOutErrStorageType() cons
     return m_Impl->GetStdOutErrStorageType(); 
 }
 
+const string& CRemoteAppRequest_Executer::GetInBlobIdOrData() const
+{
+    return m_Impl->GetInBlobIdOrData();
+}
+
+
 void CRemoteAppRequest_Executer::Receive(CNcbiIstream& is)
 {
     m_Impl->Deserialize(is);
@@ -573,6 +581,8 @@ public:
     const string& GetStdErrFileName() const { return m_StdErrFileName; }
     EStdOutErrStorageType GetStdOutErrStorageType() const
     { return m_StorageType; }
+    const string& GetOutBlobIdOrData() const { return m_OutBlobIdOrData; }
+    const string& GetErrBlobIdOrData() const { return m_ErrBlobIdOrData; }
 
 private:
     auto_ptr<IBlobStorage> m_OutBlob;
@@ -598,7 +608,6 @@ void CRemoteAppResult_Impl::Serialize(CNcbiOstream& os)
     s_Write(os, m_OutBlobIdOrData);
     s_Write(os, m_ErrBlobIdOrData);
     os << m_RetCode;
-    Reset();
 }
 void CRemoteAppResult_Impl::Deserialize(CNcbiIstream& is)
 {
@@ -649,6 +658,14 @@ void CRemoteAppResult_Executer::SetRetCode(int ret_code)
 {
     m_Impl->SetRetCode(ret_code);
 }
+const string& CRemoteAppResult_Executer::GetOutBlobIdOrData() const
+{
+    return m_Impl->GetOutBlobIdOrData();
+}
+const string& CRemoteAppResult_Executer::GetErrBlobIdOrData() const
+{
+    return m_Impl->GetErrBlobIdOrData();
+}
 
 void CRemoteAppResult_Executer::SetStdOutErrFileNames(const string& stdout_fname,
                                                       const string& stderr_fname,
@@ -660,6 +677,10 @@ void CRemoteAppResult_Executer::SetStdOutErrFileNames(const string& stdout_fname
 void CRemoteAppResult_Executer::Send(CNcbiOstream& os)
 {
     m_Impl->Serialize(os);
+}
+void CRemoteAppResult_Executer::Reset()
+{
+    m_Impl->Reset();
 }
 
 
@@ -708,6 +729,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2006/06/19 13:36:27  didenko
+ * added logging information
+ *
  * Revision 6.11  2006/06/15 15:10:43  didenko
  * Improved streams error handling
  *
