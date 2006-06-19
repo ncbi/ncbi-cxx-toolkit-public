@@ -38,6 +38,7 @@
 
 #ifdef NCBI_OS_MSWIN
 #  include <windows.h>
+#  include <corelib/ncbiexec.hpp>
 #elif defined NCBI_OS_UNIX
 #  include <unistd.h>
 #  include <errno.h>
@@ -274,18 +275,12 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Prepare command line to run
         string cmd_line(cmd);
         ITERATE (vector<string>, iter, args) {
-            string arg = *iter;
-            // Escape the argument with quotes if it is empty
-            // or contains spaces.
-            if ( arg.empty()  ||
-                (arg.find(' ') != NPOS  &&  arg[0] != '"') ) {
-                arg = '"' + arg + '"';
-            }
-            // Add argument to command line
+            // Add argument to command line.
+            // Escape it with quotes if necessary.
             if ( !cmd_line.empty() ) {
                 cmd_line += " ";
             }
-            cmd_line += arg;
+            cmd_line += CExec::QuoteArg(*iter);
         }
 
         // Convert environment array to block form
@@ -1734,6 +1729,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/06/19 14:01:36  ivanov
+ * Use CExec::QuoteArg() to quote command line arguments if necessary
+ *
  * Revision 1.61  2006/06/16 14:46:25  ivanov
  * MSWin: CPipeHandle::Open -- escape arguments with quotes if it
  * is empty or contains spaces.
