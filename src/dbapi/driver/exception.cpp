@@ -393,12 +393,9 @@ bool CDB_UserHandler_Wrapper::HandleIt(CDB_Exception* ex)
 //  CDB_UserHandler::
 //
 
-CDB_UserHandler::~CDB_UserHandler()
+CDB_UserHandler::~CDB_UserHandler(void)
 {
-    // Cheat on CObject ...
-    while (Referenced()) {
-        ReleaseReference();
-    }
+    return;
 }
 
 
@@ -540,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/06/19 19:07:05  ssikorsk
+ * Revamp CDB_UserHandler::~CDB_UserHandler to work with new CHandlerStack.
+ *
  * Revision 1.29  2006/06/06 20:37:14  ssikorsk
  * Use "Severity" manipulator to put a severity of an exception into log.
  *
