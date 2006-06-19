@@ -173,7 +173,7 @@ bool CODBC_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 {
     CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
     if(desc == 0) return false;
-    C_ITDescriptorGuard g((I_ITDescriptor*)desc);
+    auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
 
     m_LCmd->Cancel();
 
@@ -187,7 +187,7 @@ CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size
 {
     CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
     if(desc == 0) return 0;
-    C_ITDescriptorGuard g((I_ITDescriptor*)desc);
+    auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
 
     // Next line will cause dbapi_unit_test to fail ...
     m_LCmd->Cancel();
@@ -350,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/06/19 19:11:44  ssikorsk
+ * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
+ *
  * Revision 1.17  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

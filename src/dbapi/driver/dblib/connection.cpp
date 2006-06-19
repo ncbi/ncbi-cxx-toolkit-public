@@ -130,7 +130,7 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     }
 
 
-    C_ITDescriptorGuard d_guard(p_desc);
+    auto_ptr<I_ITDescriptor> d_guard(p_desc);
 
     CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) :
     dynamic_cast<CDBL_ITDescriptor&> (descr_in);
@@ -298,7 +298,7 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     }
 
 
-    C_ITDescriptorGuard d_guard(p_desc);
+    auto_ptr<I_ITDescriptor> d_guard(p_desc);
 
     CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) :
     dynamic_cast<CDBL_ITDescriptor&> (descr_in);
@@ -659,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/06/19 19:11:44  ssikorsk
+ * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
+ *
  * Revision 1.35  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

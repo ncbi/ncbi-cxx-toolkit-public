@@ -265,7 +265,7 @@ bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                     bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    C_ITDescriptorGuard d_guard(desc);
+    auto_ptr<I_ITDescriptor> d_guard(desc);
 
     return (desc) ? x_SendData(*desc, data, log_it) : false;
 }
@@ -274,7 +274,7 @@ CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
                         bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    C_ITDescriptorGuard d_guard(desc);
+    auto_ptr<I_ITDescriptor> d_guard(desc);
 
     return (desc) ? ConnSendDataCmd(*desc, size, log_it) : 0;
 }
@@ -489,6 +489,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/06/19 19:11:44  ssikorsk
+ * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
+ *
  * Revision 1.20  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

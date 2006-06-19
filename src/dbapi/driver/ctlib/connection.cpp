@@ -212,7 +212,7 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
         if(p_desc == 0) return 0;
     }
 
-    C_ITDescriptorGuard d_guard(p_desc);
+    auto_ptr<I_ITDescriptor> d_guard(p_desc);
     CS_COMMAND* cmd;
 
     x_CmdAlloc(&cmd);
@@ -365,7 +365,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     }
 
 
-    C_ITDescriptorGuard d_guard(p_desc);
+    auto_ptr<I_ITDescriptor> d_guard(p_desc);
     CS_COMMAND* cmd;
 
     x_CmdAlloc(&cmd);
@@ -724,6 +724,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/06/19 19:11:44  ssikorsk
+ * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
+ *
  * Revision 1.36  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *
