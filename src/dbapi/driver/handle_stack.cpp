@@ -1,30 +1,30 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
  * Author:  Vladimir Soussov
- *   
+ *
  * File Description:  Handlers Stack
  *
  */
@@ -37,34 +37,55 @@
 BEGIN_NCBI_SCOPE
 
 
-CDBHandlerStack::CDBHandlerStack(size_t n)
+CDBHandlerStack::CDBHandlerStack(size_t)
 {
-    n = n;
 }
 
-CDBHandlerStack::~CDBHandlerStack() 
+CDBHandlerStack::~CDBHandlerStack()
 {
 }
 
 void CDBHandlerStack::Push(CDB_UserHandler* h, EOwnership ownership)
 {
+    CHECK_DRIVER_ERROR(h == NULL, "An attempt to pass NULL instead of "
+                       "a valid CDB_UserHandler object", 0);
+
     const bool referenced = h->Referenced();
-    CRef<CDB_UserHandler> obj(h);
-    
-    if (ownership == eNoOwnership && !referenced) {
-        // Cheat on CRef ...
-        h->AddReference();
-    }
-    
+    CRef<CUserHandlerWrapper>
+        obj(new CUserHandlerWrapper(h, (ownership == eNoOwnership &&
+                                        !referenced)));
+
     m_Stack.push_back(TContainer::value_type(obj));
 }
 
+namespace
+{
+    class CFunctor
+    {
+    public:
+        CFunctor(CDB_UserHandler* const h) :
+            m_Handler(h)
+        {
+        }
+
+        bool operator()(const CDBHandlerStack::TContainer::value_type& hwrapper)
+        {
+            return hwrapper->GetHandler() == m_Handler;
+        }
+
+    private:
+        CDB_UserHandler* const m_Handler;
+    };
+}
 
 void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 {
+    CHECK_DRIVER_ERROR(h == NULL, "An attempt to pass NULL instead of "
+                       "a valid CDB_UserHandler object", 0);
+
     if ( last ) {
         while ( !m_Stack.empty() ) {
-            if (m_Stack.back() == h) {
+            if (m_Stack.back().GetObject() == h) {
                 m_Stack.pop_back();
                 break;
             } else {
@@ -73,9 +94,9 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
         }
     } else {
         TContainer::iterator cit;
-        
-        cit = find(m_Stack.begin(), m_Stack.end(), h);
-        
+
+        cit = find_if(m_Stack.begin(), m_Stack.end(), CFunctor(h));
+
         if ( cit != m_Stack.end() ) {
             m_Stack.erase(cit, m_Stack.end());
         }
@@ -83,7 +104,7 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 }
 
 
-CDBHandlerStack::CDBHandlerStack(const CDBHandlerStack& s) : 
+CDBHandlerStack::CDBHandlerStack(const CDBHandlerStack& s) :
 m_Stack( s.m_Stack )
 {
     return;
@@ -107,7 +128,7 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex)
     // a const_reverse_iterator.  (Sigh.)
     TContainer& s = m_Stack;
     NON_CONST_REVERSE_ITERATE(TContainer, cit, s) {
-        if ( cit->NotNull() && (*cit)->HandleIt(ex) ) {
+        if ( cit->NotNull() && (*cit)->GetHandler()->HandleIt(ex) ) {
             break;
         }
     }
@@ -118,11 +139,11 @@ bool CDBHandlerStack::HandleExceptions(CDB_UserHandler::TExceptions& exeptions)
 {
     TContainer& s = m_Stack;
     NON_CONST_REVERSE_ITERATE(TContainer, cit, s) {
-        if ( cit->NotNull() && (*cit)->HandleAll(exeptions) ) {
+        if ( cit->NotNull() && (*cit)->GetHandler()->HandleAll(exeptions) ) {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -133,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/19 19:07:52  ssikorsk
+ * New CDBHandlerStack implementation.
+ *
  * Revision 1.12  2006/05/16 21:17:21  ssikorsk
  * Improved method Push.
  *
