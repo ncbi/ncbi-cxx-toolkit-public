@@ -127,6 +127,23 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 }
 
 
+// *********************** Extended Cleanup implementation ********************
+CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry_Handle se, bool report_only)
+{
+    CRef<CCleanupChange> errors;
+#if 0
+    CRef<CCleanupChange> errors(new CCleanupChange(&se));
+    CCleanup_imp clean_i(errors, m_Scope, 0);
+    // first, do basic cleanup
+    clean_i.BasicCleanup(se);
+#endif
+    
+    return errors;
+}
+
+
+
+
 // *********************** CCleanupChange implementation **********************
 
 
@@ -353,6 +370,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/06/19 13:00:15  bollin
+* empty ExtendedCleanup function
+*
 * Revision 1.8  2006/05/17 17:39:36  bollin
 * added parsing and cleanup of anticodon qualifiers on tRNA features and
 * transl_except qualifiers on coding region features
