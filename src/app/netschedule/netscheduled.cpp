@@ -1245,7 +1245,7 @@ void CNetScheduleServer::ProcessStatusSnapshot(
 
     bool aff_exists = queue.CountStatus(&st_map, aff_token);
     if (!aff_exists) {
-        WriteMsg(sock, "OK:", "Unknown affinity token.");
+        WriteMsg(sock, "ERR:", "Unknown affinity token.");
         return;
     }
     ITERATE(CNetScheduler_JobStatusTracker::TStatusSummaryMap,
@@ -2936,6 +2936,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2006/06/19 14:32:21  kuznets
+ * fixed bug in affinity status
+ *
  * Revision 1.88  2006/06/07 13:00:01  kuznets
  * Implemented command to get status summary based on affinity token
  *
