@@ -66,7 +66,7 @@ public:
     {
         if (context.IsLogRequested()) {
             LOG_POST( CTime(CTime::eCurrent).AsString() 
-                      << ": " << context.GetJobKey() + " " + context.GetJobInput());
+                      << ": " << context.GetJobKey() << " is received.");
         }
 
         string tmp_path = m_Params.GetTempDir();
@@ -78,8 +78,11 @@ public:
             context.RequestExclusiveMode();
 
         if (context.IsLogRequested()) {
-            LOG_POST( CTime(CTime::eCurrent).AsString() 
-                      << ": running : " << m_Params.GetAppPath() << " " << m_Request.GetCmdLine());
+            if (!m_Request.GetInBlobIdOrData().empty())
+                LOG_POST( context.GetJobKey()
+                          << " Input data: " << m_Request.GetInBlobIdOrData());
+            LOG_POST( context.GetJobKey()
+                  << " Running : " << m_Params.GetAppPath() << " " << m_Request.GetCmdLine());
         }
 
         vector<string> args;
@@ -98,10 +101,10 @@ public:
                     continue;
                 }
                 if (cmdline[i] == '\'' || cmdline[i] == '"') {
-                    if( !arg.empty() ) {
+                    /*                    if( !arg.empty() ) {
                         args.push_back(arg);
                         arg.erase();
-                    }
+                        }*/
                     char quote = cmdline[i];
                     while( ++i < cmdline.size() && cmdline[i] != quote )
                         arg += cmdline[i];
@@ -113,6 +116,8 @@ public:
                 }
                 arg += cmdline[i++];                
             }
+            if( !arg.empty() ) 
+                args.push_back(arg);
         }
         
         
@@ -137,7 +142,6 @@ public:
 
         m_Result.SetRetCode(ret); 
         m_Result.Send(context.GetOStream());
-        m_Request.Reset();
 
         string stat = " is canceled.";
         if (!canceled) {
@@ -153,9 +157,22 @@ public:
         }
         if (context.IsLogRequested()) {
             LOG_POST( CTime(CTime::eCurrent).AsString() 
-                      << ": Job " << context.GetJobKey() + " " + context.GetJobOutput()
-                      << stat);
+                      << ": Job " << context.GetJobKey() << stat << " ExitCode: " << ret);
+            if (!m_Request.GetStdOutFileName().empty())
+                LOG_POST( context.GetJobKey()
+                          << " StdOutFile: " << m_Request.GetStdOutFileName());
+            if (!m_Request.GetStdErrFileName().empty())
+                LOG_POST( context.GetJobKey()
+                          << " StdErrFile: " << m_Request.GetStdErrFileName());
+            if (!m_Result.GetOutBlobIdOrData().empty())
+                LOG_POST( context.GetJobKey()
+                          << " Out data: " << m_Result.GetOutBlobIdOrData());
+            if (!m_Result.GetErrBlobIdOrData().empty())
+                LOG_POST( context.GetJobKey()
+                          << " Err data: " << m_Result.GetErrBlobIdOrData());
         }
+        m_Request.Reset();
+        m_Result.Reset();
         return ret;
     }
 private:
@@ -217,6 +234,10 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/06/19 13:26:38  didenko
+ * fixed cmdline parsing
+ * added logging information
+ *
  * Revision 1.19  2006/06/16 16:00:11  didenko
  * fixed command line arguments parsing
  *
