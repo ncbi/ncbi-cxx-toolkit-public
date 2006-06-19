@@ -101,7 +101,7 @@ int CGridClientTestApp::Run(void)
     CNetScheduleClient::EJobStatus status;
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
-    CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
+    CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
 
     string job_key;
     string input1 = "Hello ";
@@ -110,7 +110,7 @@ int CGridClientTestApp::Run(void)
     for (unsigned i = 0; i < jcount; ++i) {
         string ns_key;
         vector<double>* dvec = new vector<double>;
-        CNcbiOstream& os = job_submiter.GetOStream();
+        CNcbiOstream& os = job_submitter.GetOStream();
         os << "doubles " << vsize << ' ';
         srand( (unsigned)time( NULL ) );
         for (int j = 0; j < vsize; ++j) {
@@ -118,7 +118,7 @@ int CGridClientTestApp::Run(void)
             os << d << ' ';
             dvec->push_back(d);
         }
-        string job_key = job_submiter.Submit();
+        string job_key = job_submitter.Submit();
         sort(dvec->begin(),dvec->end());
         jobs[job_key] = dvec;
 
@@ -215,6 +215,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/19 20:09:15  ucko
+ * Fix spelling of "submitter"
+ *
  * Revision 1.5  2005/04/18 13:37:45  didenko
  * Changed program version
  *
