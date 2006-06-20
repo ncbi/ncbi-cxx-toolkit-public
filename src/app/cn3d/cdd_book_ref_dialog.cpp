@@ -220,7 +220,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cType, ID_C_TYPE, wxChoice)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tAddress, ID_T_ADDRESS, wxTextCtrl)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tSubaddress, ID_T_SUBADDRESS, wxTextCtrl)
-    if (selectedItem >= 0 && selectedItem < listbox->GetCount()) {
+    if (selectedItem >= 0 && selectedItem < listbox->GetCount() && listbox->GetClientData(selectedItem) && !editOn) {
         listbox->SetSelection(selectedItem, true);
         const CCdd_book_ref& bref =
             (*(reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem))))->GetBook_ref();
@@ -245,13 +245,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
         cType->SetSelection(0);
         tAddress->Clear();
         tSubaddress->Clear();
-        // special case for new but as yet unsaved item, always last item
-        if (editOn && selectedItem == listbox->GetCount()) {
-            listbox->Append(wxString("(new item - hit 'Save' when finished)"), (void *) NULL);
-            listbox->SetSelection(selectedItem, true);
-        }
     }
-
 
     // set widget states
     listbox->Enable(!editOn);
@@ -279,10 +273,33 @@ void CDDBookRefDialog::SetWidgetStates(void)
     bPaste->Enable(!readOnly && !editOn);
 }
 
+static void InsertAfter(int selectedItem, CCdd_descr_set *descrSet, CCdd_descr *descr)
+{
+    if (selectedItem < 0) {
+        descrSet->Set().push_back(CRef < CCdd_descr >(descr));
+        return;
+    }
+
+    CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
+    int s = 0;
+    for (d=descrSet->Set().begin(); d!=de; ++d) {
+        if ((*d)->IsBook_ref()) {
+            if (s == selectedItem) {
+                ++d;
+                descrSet->Set().insert(d, CRef < CCdd_descr >(descr));
+                return;
+            }
+            ++s;
+        }
+    }
+    ERRORMSG("InsertAfter() - selectedItem = " << selectedItem << " but there aren't that many book refs");
+}
+
 void CDDBookRefDialog::OnClick(wxCommandEvent& event)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_LISTBOX, wxListBox)
     CRef < CCdd_descr > *selDescr = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
+    static bool isNew = false;
 
     if (event.GetId() == ID_B_DONE) {
         Close(false);
@@ -319,6 +336,7 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
 
     else if (event.GetId() == ID_B_EDIT) {
         editOn = true;
+        isNew = false;
     }
 
     else if (event.GetId() == ID_B_SAVE) {
@@ -331,15 +349,17 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
             return;
         }
         CCdd_descr *descr;
-        if (selDescr) {
+        if (selDescr && !isNew) {
             // editing existing item
             descr = selDescr->GetPointer();
         } else {
             // create new item
             CRef < CCdd_descr > newDescr(new CCdd_descr);
-            descrSet->Set().push_back(newDescr);
+            InsertAfter(selectedItem, descrSet, newDescr.GetPointer());
+            ++selectedItem;
             descr = newDescr.GetPointer();
         }
+        isNew = false;
         descr->SetBook_ref().SetBookname(tName->GetValue().c_str());
         descr->SetBook_ref().SetTextelement(*(enum2str.Find(string(cType->GetStringSelection().c_str()))));
         long address, subaddress;
@@ -367,8 +387,8 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
     }
 
     else if (event.GetId() == ID_B_NEW) {
-        selectedItem = listbox->GetCount();
         editOn = true;
+        isNew = true;
     }
 
     else if (event.GetId() == ID_B_PASTE) {
@@ -376,7 +396,7 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
             if (wxTheClipboard->IsSupported(wxDF_TEXT)) {
                 wxTextDataObject data;
                 wxTheClipboard->GetData(data);
-                wxStringTokenizer sharp(data.GetText(), "#", wxTOKEN_STRTOK);
+                wxStringTokenizer sharp(data.GetText().Strip(wxString::both), "#", wxTOKEN_STRTOK);
                 if (sharp.CountTokens() == 1 || sharp.CountTokens() == 2) {
                     bool haveSubaddr = (sharp.CountTokens() == 2);
                     wxStringTokenizer dot(sharp.GetNextToken(), ".", wxTOKEN_STRTOK);
@@ -401,9 +421,10 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
                                 else
                                     descr->SetBook_ref().SetCsubelementid(subaddrStr.c_str());
                             }
-                            descrSet->Set().push_back(descr);
+                            InsertAfter(selectedItem, descrSet, descr.GetPointer());
+                            ++selectedItem;
                             sSet->SetDataChanged(StructureSet::eCDDData);
-                            selectedItem = listbox->GetCount();
+                            isNew = false;
                         }
                     }
                 }
@@ -413,7 +434,7 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
     }
 
     else if (event.GetId() == ID_B_DELETE) {
-        if (selDescr) {
+        if (selDescr && !isNew) {
             CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
             for (d=descrSet->Set().begin(); d!=de; ++d) {
                 if (&(*d) == selDescr) {
@@ -424,9 +445,9 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
                     break;
                 }
             }
-        } else
-            --selectedItem;
+        }
         editOn = false;
+        isNew = false;
     }
 
     else if (event.GetId() == ID_LISTBOX) {
@@ -555,6 +576,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/06/20 21:01:40  thiessen
+* insert new refs after selected one (instead of at end)
+*
 * Revision 1.9  2006/03/16 20:30:45  thiessen
 * allow character book element/subelement
 *

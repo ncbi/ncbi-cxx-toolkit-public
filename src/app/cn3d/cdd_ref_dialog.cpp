@@ -144,7 +144,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
     // get listbox and descr from selected item
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_L_REFS, wxListBox)
     CCdd_descr *descr = NULL;
-    selectItem = listbox->GetSelection();
+    selectItem = (listbox->GetSelection() != wxNOT_FOUND) ? listbox->GetSelection() : -1;
     if (selectItem >= 0 && selectItem < listbox->GetCount())
         descr = dynamic_cast<CCdd_descr*>(
             reinterpret_cast<CObject*>(listbox->GetClientData(selectItem)));
@@ -168,9 +168,12 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
             if (id.size() > 0 && id.ToLong(&pmidVal) && pmidVal > 0) {
                 CRef < CCdd_descr > ref(new CCdd_descr());
                 ref->SetReference().SetPmid().Set((int) pmidVal);
-                descrSet->Set().push_back(ref);
+                CCdd_descr_set::Tdata::iterator d = descrSet->Set().begin();
+                for (int s=-1; s<selectItem; ++s)
+                    ++d;
+                descrSet->Set().insert(d, ref);
                 sSet->SetDataChanged(StructureSet::eCDDData);
-                selectItem = listbox->GetCount();
+                ++selectItem;
                 ResetListBox();
             } else
                 ERRORMSG("Invalid PMID: '" << id.c_str() << "'");
@@ -325,6 +328,9 @@ wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit, bool set_sizer 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/06/20 21:01:40  thiessen
+* insert new refs after selected one (instead of at end)
+*
 * Revision 1.14  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
