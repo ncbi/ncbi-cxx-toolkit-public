@@ -1,14 +1,14 @@
 #
 # $Id$
 #
-# Generate source files and makefiles from ASN.1 spec or DTD.
+# Generate source files and makefiles from ASN.1 spec or XML DTD or schema.
 # (NOTE:  hard-wired for the C++ Toolkit directory structure.)
 #
 
 SRCDIR = $(top_srcdir)/src/$(MODULE_PATH)
 INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
 
-# Despite its name, MODULE_ASN may actually be a DTD.
+# Despite its name, MODULE_ASN may actually be an XML DTD or schema.
 SPEC = $(MODULE_ASN)
 # Newer versions of new_module.sh will override IMPFILES, but we keep
 # the ASN.1-centric default for compatibility with older versions.
