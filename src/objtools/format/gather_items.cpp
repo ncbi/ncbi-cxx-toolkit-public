@@ -1115,7 +1115,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
 
     // set feature types to be collected
     {{
-        sel.SetAnnotType(CSeq_annot::C_Data::e_Ftable);
+        //sel.SetAnnotType(CSeq_annot::C_Data::e_Ftable);
         // source features are collected elsewhere
         sel.ExcludeFeatType(CSeqFeatData::e_Biosrc);
         // pub features are used in the REFERENCES section
@@ -1635,6 +1635,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2006/06/20 17:28:33  dicuccio
+* Don't restrict to an annotation type
+*
 * Revision 1.57  2006/06/19 20:22:34  grichenk
 * Added comments. Removed SegmentSelect flag.
 *
