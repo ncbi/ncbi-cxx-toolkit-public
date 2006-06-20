@@ -112,6 +112,12 @@ public:
     void BasicCleanup(CSeq_annot& sa);
     /// Cleanup a Seq-feat.
     void BasicCleanup(CSeq_feat& sf);
+    
+    //Extended Cleanup
+    void ExtendedCleanup(CSeq_entry& se);
+    void ExtendedCleanup(CSeq_submit& ss);
+    void ExtendedCleanup(CBioseq& bs);
+    void ExtendedCleanup(CBioseq_set& bss);
 
 private:
     void Setup(const CSeq_entry& se);
@@ -159,6 +165,11 @@ private:
     bool BasicCleanup(CProt_ref& rna, const CGb_qual& gb_qual);
     bool BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual);
 
+    // Extended Cleanup
+    void x_MolInfoUpdate(CBioseq& bs);
+    void x_MolInfoUpdate(CBioseq_set& bss);
+    void x_MolInfoUpdate(CSeq_descr& sdr);
+    
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
     void x_CleanupRna(CSeq_feat& feat);
@@ -210,6 +221,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/06/20 19:43:39  bollin
+ * added MolInfoUpdate to ExtendedCleanup
+ *
  * Revision 1.9  2006/05/17 17:39:36  bollin
  * added parsing and cleanup of anticodon qualifiers on tRNA features and
  * transl_except qualifiers on coding region features

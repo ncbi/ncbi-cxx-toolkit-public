@@ -47,6 +47,8 @@
 #include <objects/biblio/Cit_gen.hpp>
 #include <serial/iterator.hpp>
 
+#include <objects/seq/MolInfo.hpp>
+
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanupp.hpp"
 #include "cleanup_utils.hpp"
@@ -303,6 +305,243 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
     }
 }
 
+// Extended Cleanup Methods
+void CCleanup_imp::ExtendedCleanup(CSeq_entry& se)
+{
+    Setup(se);
+    switch (se.Which()) {
+        case CSeq_entry::e_Seq:
+            ExtendedCleanup(se.SetSeq());
+            break;
+        case CSeq_entry::e_Set:
+            ExtendedCleanup(se.SetSet());
+            break;
+        case CSeq_entry::e_not_set:
+        default:
+            break;
+    }
+    Finish(se);
+}
+
+
+void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
+{
+    // TODO Cleanup Submit-block.
+    
+    switch (ss.GetData().Which()) {
+        case CSeq_submit::TData::e_Entrys:
+            NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, ss.SetData().SetEntrys()) {
+                ExtendedCleanup(**it);
+            }
+            break;
+        case CSeq_submit::TData::e_Annots:
+#if 0        
+            NON_CONST_ITERATE(CSeq_submit::TData::TAnnots, it, ss.SetData().SetAnnots()) {
+                BasicCleanup(**it);
+            }
+            break;
+#endif            
+        case CSeq_submit::TData::e_Delete:
+        case CSeq_submit::TData::e_not_set:
+        default:
+            break;
+    }
+}
+
+
+void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
+{
+    x_MolInfoUpdate(bss);
+    
+    if (bss.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
+            BasicCleanup(**it);
+        }
+    }
+    if (bss.IsSetDescr()) {
+        BasicCleanup(bss.SetDescr());
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    ExtendedCleanup(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    ExtendedCleanup(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
+void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
+{
+    CBioseq_Handle handle = m_Scope->GetBioseqHandle(bs);
+        
+    if (bs.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
+            BasicCleanup(**it);
+        }
+    }
+    if (bs.IsSetDescr()) {
+        BasicCleanup(bs.SetDescr());
+    }
+}
+
+//   For any Bioseq or BioseqSet that has a MolInfo descriptor,
+//1) If the Bioseq or BioseqSet also has a MolType descriptor, if the MolInfo biomol value is not set 
+//   and the value from the MolType descriptor is MOLECULE_TYPE_GENOMIC, MOLECULE_TYPE_PRE_MRNA, 
+//   MOLECULE_TYPE_MRNA, MOLECULE_TYPE_RRNA, MOLECULE_TYPE_TRNA, MOLECULE_TYPE_SNRNA, MOLECULE_TYPE_SCRNA, 
+//   MOLECULE_TYPE_PEPTIDE, MOLECULE_TYPE_OTHER_GENETIC_MATERIAL, MOLECULE_TYPE_GENOMIC_MRNA_MIX, or 255, 
+//   the value from the MolType descriptor will be used to set the MolInfo biomol value.  The MolType descriptor
+//   will be removed, whether its value was copied to the MolInfo descriptor or not.
+//2) If the Bioseq or BioseqSet also has a Method descriptor, if the MolInfo technique value has not been set and 
+//   the Method descriptor value is “concept_trans”, “seq_pept”, “both”, “seq_pept_overlap”,  “seq_pept_homol”, 
+//   “concept_transl_a”, or “other”, then the Method descriptor value will be used to set the MolInfo technique value.  
+//   The Method descriptor will be removed, whether its value was copied to the MolInfo descriptor or not.
+void CCleanup_imp::x_MolInfoUpdate(CSeq_descr& sdr)
+{
+    bool has_molinfo = false;
+    CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
+    CMolInfo::TTech   tech = CMolInfo::eTech_unknown;
+    bool changed = false;
+    
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((*it)->Which() == CSeqdesc::e_Molinfo) {
+            if (!has_molinfo) {
+                has_molinfo = true;
+                const CMolInfo& mol_info = (*it)->GetMolinfo();
+                if (mol_info.CanGetBiomol()) {
+                    biomol = mol_info.GetBiomol();
+                }
+                if (mol_info.CanGetTech()) {
+                    tech = mol_info.GetTech();
+                }
+            }          
+        } else if ((*it)->Which() == CSeqdesc::e_Mol_type) {
+            if (biomol == CMolInfo::eBiomol_unknown) {
+                CSeqdesc::TMol_type mol_type = (*it)->GetMol_type();
+                if (mol_type == CMolInfo::eBiomol_genomic
+                    || mol_type == CMolInfo::eBiomol_pre_RNA
+                    || mol_type == CMolInfo::eBiomol_mRNA
+                    || mol_type == CMolInfo::eBiomol_rRNA
+                    || mol_type == CMolInfo::eBiomol_tRNA
+                    || mol_type == CMolInfo::eBiomol_snRNA
+                    || mol_type == CMolInfo::eBiomol_scRNA
+                    || mol_type == CMolInfo::eBiomol_peptide
+                    || mol_type == CMolInfo::eBiomol_other_genetic
+                    || mol_type == CMolInfo::eBiomol_genomic_mRNA
+                    || mol_type == CMolInfo::eBiomol_other) {
+                    biomol = mol_type;
+                }
+            }
+        } else if ((*it)->Which() == CSeqdesc::e_Method) {
+            if (tech == CMolInfo::eTech_unknown) {
+                CSeqdesc::TMethod method = (*it)->GetMethod();
+                switch (method) {
+                    case eGIBB_method_concept_trans:
+                        tech = CMolInfo::eTech_concept_trans;
+                        break;
+                    case eGIBB_method_seq_pept:
+                        tech = CMolInfo::eTech_seq_pept;
+                        break;
+                    case eGIBB_method_both:
+                        tech = CMolInfo::eTech_both;
+                        break;
+                    case eGIBB_method_seq_pept_overlap:
+                        tech = CMolInfo::eTech_seq_pept_overlap;
+                        break;
+                    case eGIBB_method_seq_pept_homol:
+                        tech = CMolInfo::eTech_seq_pept_homol;
+                        break;
+                    case eGIBB_method_concept_trans_a:
+                        tech = CMolInfo::eTech_concept_trans_a;
+                        break;
+                    case eGIBB_method_other:
+                        tech = CMolInfo::eTech_other;
+                        break;
+                }
+            }
+        }
+            
+    }
+    if (!has_molinfo) {
+        return;
+    }    
+    
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((*it)->Which() == CSeqdesc::e_Molinfo) {
+            CSeqdesc::TMolinfo& mi = (*it)->SetMolinfo();
+            if (biomol != CMolInfo::eBiomol_unknown) {
+                if (!mi.CanGetBiomol() || mi.GetBiomol() != biomol) {
+                    changed = true;
+                    mi.SetBiomol (biomol);
+                }
+            }
+            if (tech != CMolInfo::eTech_unknown) {
+                if (!mi.CanGetTech() || mi.GetTech() != tech) {
+                    changed = true;
+                    mi.SetTech (tech);
+                }
+            }
+            break;
+        }
+    }
+
+    bool found = true;
+    while (found) {
+        found = false;
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+            if ((*it)->Which() == CSeqdesc::e_Method || (*it)->Which() == CSeqdesc::e_Mol_type) {
+                sdr.Set().erase(it);
+                found = true;
+                break;
+            }
+        }        
+    }
+}
+
+
+void CCleanup_imp::x_MolInfoUpdate(CBioseq& bs)
+{
+    if (bs.IsSetDescr()) {
+        x_MolInfoUpdate(bs.SetDescr());
+    }
+}
+
+
+void CCleanup_imp::x_MolInfoUpdate(CBioseq_set& bss)
+{
+    if (bss.IsSetDescr()) {
+        x_MolInfoUpdate(bss.SetDescr());
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_MolInfoUpdate(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_MolInfoUpdate(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -311,6 +550,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/06/20 19:43:39  bollin
+ * added MolInfoUpdate to ExtendedCleanup
+ *
  * Revision 1.6  2006/05/17 17:39:36  bollin
  * added parsing and cleanup of anticodon qualifiers on tRNA features and
  * transl_except qualifiers on coding region features
