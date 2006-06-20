@@ -2123,8 +2123,10 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     bool amb_ok = true;
     
     if (m_IsAA) {
-        // No ambiguities in protein dbs.
-        end_A = start_A = end_S;
+        // No ambiguities in protein dbs, but there is a NUL between
+        // sequences, so we subtract one to remove that.
+        
+        end_A = start_A = --end_S;
     } else {
         amb_ok = m_Idx.GetAmbStartEnd(oid, start_A, end_A);
     }
