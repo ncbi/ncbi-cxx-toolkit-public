@@ -606,13 +606,133 @@ private:
     string m_EntrezQuery;
     
     /// First database sequence.
-    string m_FirstDbSequence;
+    string m_FirstDbSeq;
     
     /// Final database sequence.
-    string m_FinalDbSequence;
+    string m_FinalDbSeq;
     
     /// GI list.
     list<Int4> m_GiList;
+};
+
+
+/// Class to build BlastOptionsHandle from blast4 ASN objects.
+///
+/// This class takes a program, service, and lists of name/value
+/// inputs in the form of the blast4 ASN objects, and builds a
+/// CBlastOptionsHandle object.  Some fields expressed in blast4's
+/// returned data are not part of the CBlastOptionsHandle; these are
+/// returned via seperate getters.
+
+class NCBI_XBLAST_EXPORT CBlastOptionsBuilder {
+public:
+    /// List of name/value pairs.
+    typedef list< CRef<objects::CBlast4_parameter> > TValueList;
+    
+    /// Constructor
+    ///
+    /// This takes the program and service strings, using them to
+    /// determine the type of CBlastOptionsHandle to return.  Some of
+    /// the name/value pairs also influence the type of blast options
+    /// handle required.
+    ///
+    /// @param program Blast4 program string (e.g. blastn or blastp).
+    /// @param program Blast4 service string (e.g. plain or rpsblast).
+    CBlastOptionsBuilder(const string & program,
+                         const string & service);
+    
+    /// Build and return options as a CBlastOptionsHandle.
+    ///
+    /// A CBlastOptionsHandle is constructed and returned.
+    ///
+    /// @param aopts List of algorithm options.
+    /// @param popts List of program options.
+    CRef<CBlastOptionsHandle>
+    GetSearchOptions(const objects::CBlast4_parameters & aopts,
+                     const objects::CBlast4_parameters & popts);
+    
+    /// Check whether an Entrez query is specified.
+    bool HaveEntrezQuery();
+    
+    /// Get the Entrez query.
+    string GetEntrezQuery();
+    
+    /// Check whether an OID range start point is specified.
+    bool HaveFirstDbSeq();
+    
+    /// Get the OID range start point.
+    int GetFirstDbSeq();
+    
+    /// Check whether an OID range end point is specified.
+    bool HaveFinalDbSeq();
+    
+    /// Get the OID range end point.
+    int GetFinalDbSeq();
+    
+    /// Check whether a GI list is specified.
+    bool HaveGiList();
+    
+    /// Get the GI list.
+    list<int> GetGiList();
+    
+private:
+    template<typename T>
+    class SOptional {
+    public:
+        SOptional()
+            : m_IsSet(false), m_Value(T())
+        {
+        }
+        
+        bool Have()
+        {
+            return m_IsSet;
+        }
+        
+        T Get()
+        {
+            return m_Value;
+        }
+        
+        SOptional<T> & operator=(const T & x)
+        {
+            m_IsSet = true;
+            m_Value = x;
+            return *this;
+        }
+        
+    private:
+        bool m_IsSet;
+        T    m_Value;
+    };
+    
+    EProgram x_ComputeProgram(const string & program,
+                              const string & service);
+    
+    EProgram
+    x_AdjustProgram(const TValueList & L,
+                    EProgram           program);
+    
+    void x_ApplyInteractions(CBlastOptionsHandle & boh);
+    
+    void x_ProcessOneOption(CBlastOptionsHandle          & opts,
+                            const string                 & nm,
+                            const objects::CBlast4_value & v);
+    
+    void x_ProcessOptions(CBlastOptionsHandle & opts,
+                        const TValueList    & L);
+    
+    string m_Program;
+    string m_Service;
+    bool   m_PerformCulling;
+    int    m_HspRangeMax;
+    
+    // Specific option values and 'set-ness'.
+    
+    SOptional<string>      m_EntrezQuery;
+    SOptional<int>         m_FirstDbSeq;
+    SOptional<int>         m_FinalDbSeq;
+    SOptional< list<int> > m_GiList;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the
@@ -653,6 +773,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/06/20 18:35:48  bealer
+ * - Add interface for blast4 ASN parsing.
+ *
  * Revision 1.37  2006/05/12 13:57:33  ucko
  * Drop redundant class qualifier from x_AdjustProgram's declaration per
  * GCC 4.1.

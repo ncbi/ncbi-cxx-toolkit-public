@@ -1474,9 +1474,18 @@ NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame,
     return CSeqLocInfo::eFrameNotSet;
 }
 
-static
-EProgram s_ComputeProgramFromStrings(const string & program,
-                                     const string & service)
+CBlastOptionsBuilder::CBlastOptionsBuilder(const string & program,
+                                           const string & service)
+    : m_Program        (program),
+      m_Service        (service),
+      m_PerformCulling (false),
+      m_HspRangeMax    (0)
+{
+}
+
+EProgram
+CBlastOptionsBuilder::x_ComputeProgram(const string & program,
+                                       const string & service)
 {
     string p = program;
     const string & s = service;
@@ -1523,43 +1532,11 @@ EProgram s_ComputeProgramFromStrings(const string & program,
     }
     
     return ProgramNameToEnum(p);
-};
+}
 
-struct SInteractingOptions {
-    SInteractingOptions()
-        : m_PerformCulling(false),
-          m_HspRangeMax   (0)
-    {
-    }
-    
-    void SetPerformCulling(bool pc)
-    {
-        m_PerformCulling = pc;
-    }
-    
-    void SetHspRangeMax(int hrm)
-    {
-        m_HspRangeMax = hrm;
-    }
-    
-    void SetOptions(CBlastOptionsHandle & boh)
-    {
-        CBlastOptions & bo = boh.SetOptions();
-        
-        if (m_PerformCulling) {
-            bo.SetCullingLimit(m_HspRangeMax);
-        }
-    }
-    
-private:
-    bool m_PerformCulling;
-    int  m_HspRangeMax;
-};
-
-void CRemoteBlast::x_ProcessOneOption(CBlastOptionsHandle & opts,
-                                      const string        & nm,
-                                      const CBlast4_value & v,
-                                      SInteractingOptions & io)
+void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
+                                              const string        & nm,
+                                              const CBlast4_value & v)
 {
     // Note that this code does not attempt to detect or repair
     // inconsistencies; since this request has already been processed
@@ -1588,7 +1565,7 @@ void CRemoteBlast::x_ProcessOneOption(CBlastOptionsHandle & opts,
             ECompoAdjustModes adjmode = (ECompoAdjustModes) v.GetInteger();
             bo.SetCompositionBasedStats(adjmode);
         } else if (nm == "Culling") {
-            io.SetPerformCulling(v.GetBoolean());
+            m_PerformCulling = v.GetBoolean();
         } else if (nm == "CutoffScore") {
             opts.SetCutoffScore(v.GetInteger());
         } else {
@@ -1622,9 +1599,9 @@ void CRemoteBlast::x_ProcessOneOption(CBlastOptionsHandle & opts,
         if (nm == "FilterString") {
             opts.SetFilterString(v.GetString().c_str());
         } else if (nm == "FinalDbSeq") {
-            m_FinalDbSequence = v.GetInteger();
+            m_FinalDbSeq = v.GetInteger();
         } else if (nm == "FirstDbSeq") {
-            m_FirstDbSequence = v.GetInteger();
+            m_FirstDbSeq = v.GetInteger();
         } else {
             found = false;
         }
@@ -1646,7 +1623,7 @@ void CRemoteBlast::x_ProcessOneOption(CBlastOptionsHandle & opts,
         if (nm == "HitlistSize") {
             opts.SetHitlistSize(v.GetInteger());
         } else if (nm == "HspRangeMax") {
-            io.SetHspRangeMax(v.GetInteger());
+            m_HspRangeMax = v.GetInteger();
         } else {
             found = false;
         }
@@ -1765,21 +1742,30 @@ void CRemoteBlast::x_ProcessOneOption(CBlastOptionsHandle & opts,
     }
 }
 
-void CRemoteBlast::x_ProcessOptions(CBlastOptionsHandle & opts,
-                                    const TValueList    & L,
-                                    SInteractingOptions & io)
+void
+CBlastOptionsBuilder::x_ProcessOptions(CBlastOptionsHandle & opts,
+                                       const TValueList    & L)
 {
     ITERATE(TValueList, iter, L) {
         string name = (**iter).GetName();
         const CBlast4_value & v = (**iter).GetValue();
         
-        x_ProcessOneOption(opts, name, v, io);
+        x_ProcessOneOption(opts, name, v);
     }
 }
 
-EProgram CRemoteBlast::x_AdjustProgram(const TValueList    & L,
-                                       const string        & pstr,
-                                       EProgram              program)
+void CBlastOptionsBuilder::x_ApplyInteractions(CBlastOptionsHandle & boh)
+{
+    CBlastOptions & bo = boh.SetOptions();
+        
+    if (m_PerformCulling) {
+        bo.SetCullingLimit(m_HspRangeMax);
+    }
+}
+
+EProgram
+CBlastOptionsBuilder::x_AdjustProgram(const TValueList & L,
+                                      EProgram           program)
 {
     bool problem = false;
     string name;
@@ -1812,7 +1798,7 @@ EProgram CRemoteBlast::x_AdjustProgram(const TValueList    & L,
             string msg = "Incorrect combination of option (";
             msg += name;
             msg += ") and program (";
-            msg += pstr;
+            msg += m_Program;
             msg += ")";
             
             NCBI_THROW(CRemoteBlastException,
@@ -1824,29 +1810,92 @@ EProgram CRemoteBlast::x_AdjustProgram(const TValueList    & L,
     return program;
 }
 
+CRef<CBlastOptionsHandle> CBlastOptionsBuilder::
+GetSearchOptions(const objects::CBlast4_parameters & aopts,
+                 const objects::CBlast4_parameters & popts)
+{
+    EProgram program = x_ComputeProgram(m_Program, m_Service);
+    
+    program = x_AdjustProgram(aopts.Get(), program);
+    
+    // Using eLocal allows more of the options to be returned to the user.
+    
+    CRef<CBlastOptionsHandle>
+        cboh(CBlastOptionsFactory::Create(program, CBlastOptions::eLocal));
+    
+    x_ProcessOptions(*cboh, aopts.Get());
+    x_ProcessOptions(*cboh, popts.Get());
+    
+    x_ApplyInteractions(*cboh);
+    
+    return cboh;
+}
+
+bool CBlastOptionsBuilder::HaveEntrezQuery()
+{
+    return m_EntrezQuery.Have();
+}
+
+string CBlastOptionsBuilder::GetEntrezQuery()
+{
+    return m_EntrezQuery.Get();
+}
+
+bool CBlastOptionsBuilder::HaveFirstDbSeq()
+{
+    return m_FirstDbSeq.Have();
+}
+
+int CBlastOptionsBuilder::GetFirstDbSeq()
+{
+    return m_FirstDbSeq.Get();
+}
+
+bool CBlastOptionsBuilder::HaveFinalDbSeq()
+{
+    return m_FinalDbSeq.Have();
+}
+
+int CBlastOptionsBuilder::GetFinalDbSeq()
+{
+    return m_FinalDbSeq.Get();
+}
+
+bool CBlastOptionsBuilder::HaveGiList()
+{
+    return m_GiList.Have();
+}
+
+list<int> CBlastOptionsBuilder::GetGiList()
+{
+    return m_GiList.Get();
+}
+
 CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
 {
     if (m_CBOH.Empty()) {
-        SInteractingOptions io;
-        
         string program_s = GetProgram();
         string service_s = GetService();
         
-        EProgram program = s_ComputeProgramFromStrings(program_s, service_s);
+        CBlastOptionsBuilder bob(program_s, service_s);
         
-        program = x_AdjustProgram(m_AlgoOpts->Get(), program_s, program);
+        m_CBOH = bob.GetSearchOptions(*m_AlgoOpts, *m_ProgramOpts);
         
-        // Using eLocal allows more of the options to be returned to the user.
+        if (bob.HaveEntrezQuery()) {
+            m_EntrezQuery = bob.GetEntrezQuery();
+        }
         
-        CRef<CBlastOptionsHandle>
-            cboh(CBlastOptionsFactory::Create(program, CBlastOptions::eLocal));
+        if (bob.HaveFirstDbSeq()) {
+            m_FirstDbSeq = bob.GetFirstDbSeq();
+        }
         
-        x_ProcessOptions(*cboh, m_AlgoOpts->Get(), io);
-        x_ProcessOptions(*cboh, m_ProgramOpts->Get(), io);
+        if (bob.HaveFinalDbSeq()) {
+            m_FinalDbSeq = bob.GetFinalDbSeq();
+        }
         
-        io.SetOptions(*cboh);
-        
-        m_CBOH = cboh;
+        if (bob.HaveGiList()) {
+            m_GiList = bob.GetGiList();
+        }
     }
     
     return m_CBOH;
@@ -1870,6 +1919,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2006/06/20 18:35:51  bealer
+* - Add interface for blast4 ASN parsing.
+*
 * Revision 1.46  2006/05/04 19:26:43  bealer
 * - Added CRemoteBlast::GetSearchOptions() to build CBlastOptionHandle.
 *
