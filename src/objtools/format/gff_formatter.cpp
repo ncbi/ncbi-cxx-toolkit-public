@@ -419,14 +419,16 @@ string CGFFFormatter::x_GetTranscriptID
     const CSeq_feat& seqfeat = feat.GetFeat();
 
     // if our feature already is an mRNA, we need look no further
-    CConstRef<CSeq_feat> mrna_feat;
-    switch (seqfeat.GetData().GetSubtype()) {
-    case CSeqFeatData::eSubtype_mRNA:
-        mrna_feat.Reset(&seqfeat);
+    CConstRef<CSeq_feat> rna_feat;
+    switch (seqfeat.GetData().Which()) {
+    case CSeqFeatData::e_Rna:
+        rna_feat.Reset(&seqfeat);
         break;
 
-    case CSeqFeatData::eSubtype_cdregion:
-        mrna_feat = sequence::GetBestMrnaForCds(seqfeat, ctx.GetScope());
+    case CSeqFeatData::e_Cdregion:
+        if (seqfeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
+            rna_feat = sequence::GetBestMrnaForCds(seqfeat, ctx.GetScope());
+        }
         break;
 
     default:
@@ -436,9 +438,9 @@ string CGFFFormatter::x_GetTranscriptID
     //
     // check if the mRNA feature we found has a product
     //
-    if (mrna_feat.GetPointer()  &&  mrna_feat->IsSetProduct()) {
+    if (rna_feat.GetPointer()  &&  rna_feat->IsSetProduct()) {
         try {
-            const CSeq_id& id = sequence::GetId(mrna_feat->GetProduct(), 0);
+            const CSeq_id& id = sequence::GetId(rna_feat->GetProduct(), 0);
             CSeq_id_Handle idh = ctx.GetPreferredSynonym(id);
             string transcript_id = idh.GetSeqId()->GetSeqIdString(true);
             return transcript_id;
@@ -574,6 +576,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/06/20 15:17:47  dicuccio
+* x_GetTranscriptId(): assign transcript IDs for all RNAs; handle transcript IDs
+* for CDSs explicitly, and use only mRNA assignments here.
+*
 * Revision 1.18  2006/06/15 17:52:05  dicuccio
 * Changes to match API shift in GetPreferredSynonym()
 *
