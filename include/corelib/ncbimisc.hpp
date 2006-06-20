@@ -612,14 +612,17 @@ private:
 // "min" and "max" templates
 //
 
+// Always get rid of the old non-conformant min/max macros
+#ifdef min
+#  undef min
+#endif
+#ifdef max
+#  undef max
+#endif
+
 #if defined(HAVE_NO_MINMAX_TEMPLATE)
 #  define NOMINMAX
-#  ifdef min
-#    undef min
-#  endif
-#  ifdef max
-#    undef max
-#  endif
+
 /// Min function template.
 template <class T>
 inline
@@ -940,6 +943,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2006/06/20 18:03:19  vakatov
+ * Unconditionally #undef the old non-conformant min() and max() macros
+ *
  * Revision 1.95  2006/03/14 13:16:51  ivanov
  * + enum EInterruptOnSignal
  *
