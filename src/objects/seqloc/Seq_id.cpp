@@ -679,9 +679,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'I': case 'J':                     return eAcc_ddbj_est;
             case 'P': case 'Y':                     return eAcc_gb_genome;
             case 'Q': case 'S':                     return eAcc_embl_patent;
-            case 'R': case 'T':                     return eAcc_embl_genome;
-                // no specific assignment yet
-            case 'U':                               return eAcc_embl_other_nuc;
+            case 'R': case 'T': case 'U':           return eAcc_embl_genome;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -691,7 +689,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'D':                               return eAcc_ddbj_patent;
             case 'E':                               return eAcc_ddbj_gss;
             case 'F': case 'G':                     return eAcc_ddbj_con;
-                // no specific assignments for DG-DM yet
+                // no specific assignments for DH-DM yet
             case 'H': case 'I': case 'J': case 'K':
             case 'L': case 'M':                     return eAcc_ddbj_other_nuc;
             case 'N': case 'R': case 'T': case 'V':
@@ -1596,6 +1594,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.130  2006/06/20 21:02:48  ucko
+ * IdentifyAccession: EMBL has specifically assigned CU to genome
+ * projects; also correct the comment for unassigned DDBJ Dx prefixes.
+ *
  * Revision 6.129  2006/06/15 14:19:17  ucko
  * Loosen syntax requirements for bare PDB accessions.
  *
