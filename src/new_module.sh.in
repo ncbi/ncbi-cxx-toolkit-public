@@ -58,6 +58,11 @@ case "$1" in
         EXT="DTD"
         shift
         ;;
+    --schema | --xsd)
+        ext="xsd"
+        EXT="XSD"
+        shift
+        ;;
     *)
         ext="asn"
         EXT="ASN"
@@ -94,7 +99,7 @@ if test -z "$spec"; then
     spec="$module.$ext"
 fi
 
-# now $spec is source ASN.1 specification or DTD,
+# now $spec is source ASN.1 specification or XML DTD or schema
 # $module.module is module description file
 # check files
 if test -f "$spec"; then
@@ -113,12 +118,19 @@ for i in $imports; do
     if test -f "$p/src/$i.asn"; then
           impdeps="${impdeps}${space}${p}/src/$i.asn"
           impfiles="${impfiles}${space}$i.asn"
+    elif test -f "$p/src/$i.xsd"; then
+          impdeps="${impdeps}${space}${p}/src/$i.xsd"
+          impfiles="${impfiles}${space}$i.xsd"
     elif test -f "$p/src/$i.dtd"; then
           impdeps="${impdeps}${space}${p}/src/$i.dtd"
           impfiles="${impfiles}${space}$i.dtd"
     elif test -f "$top_srcdir/src/$i.asn"; then
           impdeps="${impdeps}${space}${top_srcdir}/src/$i.asn"
           impfiles="${impfiles}${space}$i.asn"
+          need_main=true
+    elif test -f "$top_srcdir/src/$i.xsd"; then
+          impdeps="${impdeps}${space}${top_srcdir}/src/$i.xsd"
+          impfiles="${impfiles}${space}$i.xsd"
           need_main=true
     elif test -f "$top_srcdir/src/$i.dtd"; then
           impdeps="${impdeps}${space}${top_srcdir}/src/$i.dtd"
