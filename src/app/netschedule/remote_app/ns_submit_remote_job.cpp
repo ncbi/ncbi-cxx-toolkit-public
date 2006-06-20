@@ -301,7 +301,10 @@ int CNSSubmitRemoveJobApp::Run(void)
             }
             srt = s_FindParam(line, "exclusive=");
             if (!srt.empty()) {
-                request.RequestExclusiveMode();
+                if(NStr::CompareNocase(srt, "yes") == 0 ||
+                   NStr::CompareNocase(srt, "true") == 0 ||
+                   srt == "1" )
+                    request.RequestExclusiveMode();
             }
             
             CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
@@ -326,6 +329,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/20 16:40:26  didenko
+ * Added checking for the value of "exclusive" parameter
+ *
  * Revision 1.5  2006/06/19 19:41:06  didenko
  * Spelling fix
  *
