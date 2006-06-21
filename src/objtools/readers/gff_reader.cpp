@@ -33,7 +33,6 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/gff_reader.hpp>
-#include <objmgr/util/feature.hpp>
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiutil.hpp>
@@ -1146,6 +1145,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2006/06/21 15:48:45  ucko
+* Drop gratuitous (and inappropriate) inclusion of feature.hpp.
+*
 * Revision 1.23  2006/06/05 13:14:47  ludwigf
 * FIXED: Moved exposed assignment through pointer to higher ground.
 *
