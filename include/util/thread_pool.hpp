@@ -679,8 +679,10 @@ void CBlockingQueue<TRequest>::WaitForRoom(unsigned int timeout_sec,
         // semaphore's still down before attempting to reraise it, to
         // prevent races with Get[Handle]().
         CMutexGuard guard(m_Mutex);
-        m_PutSem.TryWait();
-        m_PutSem.Post();
+        if (const_cast<TRealQueue&>(m_Queue).size() < m_MaxSize) {
+            m_PutSem.TryWait();
+            m_PutSem.Post();
+        }
     } else {
         NCBI_THROW(CBlockingQueueException, eTimedOut,
                    "CBlockingQueue<>::WaitForRoom: timed out");        
@@ -693,8 +695,10 @@ void CBlockingQueue<TRequest>::WaitForHunger(unsigned int timeout_sec,
 {
     if (m_HungerSem.TryWait(timeout_sec, timeout_nsec)) {
         CMutexGuard guard(m_Mutex);
-        m_HungerSem.TryWait(); // ensure it's still down, a la WaitForRoom
-        m_HungerSem.Post();
+        if (m_HungerCnt > 0) {
+            m_HungerSem.TryWait(); // ensure it's still down, a la WaitForRoom
+            m_HungerSem.Post();
+        }
     } else {
         NCBI_THROW(CBlockingQueueException, eTimedOut,
                    "CBlockingQueue<>::WaitForHunger: timed out");        
@@ -951,6 +955,13 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
     } else if (urgent  &&  m_UrgentThreadCount.Get() < m_MaxUrgentThreads) {
         return true;
     } else {
+        try {
+            // This should be redundant with the delta < 0 case, but
+            // I've gotten reports that suggest otherwise. :-/
+            m_Queue.WaitForHunger(0);
+            return true;
+        } catch (...) {
+        }
         return false;
     }
 }
@@ -1037,6 +1048,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2006/06/21 19:49:09  ucko
+* CBlockingQueue<>::WaitFor{Room,Hunger}: re-raise the relevant
+* semaphore only if its condition still holds.
+* CPoolOfThreads<>::HasImmediateRoom: also return true if
+* m_Queue.WaitForHunger(0) succeeds, even if m_Delta suggests otherwise.
+*
 * Revision 1.42  2006/06/14 18:35:44  yazhuk
 * CBlockingQueue::Withdraw()  - decrement m_GetSem if the queue becomes empty
 *
