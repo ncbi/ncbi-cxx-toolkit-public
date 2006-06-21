@@ -92,7 +92,8 @@ int CImageTestApp::Run(void)
 {
     CArgs args = GetArgs();
 
-    CNcbiIstream& istr = args["image"].AsInputFile();
+    string fname = args["image"].AsString();
+    //CNcbiIstream& istr = args["image"].AsInputFile();
     int x = args["x"].AsInteger();
     int y = args["y"].AsInteger();
     int w = args["wd"].AsInteger();
@@ -100,7 +101,7 @@ int CImageTestApp::Run(void)
 
     CStopWatch sw;
     sw.Start();
-    CRef<CImage> image(CImageIO::ReadSubImage(istr, x, y, w, h));
+    CRef<CImage> image(CImageIO::ReadSubImage(fname, x, y, w, h));
     double read_time = sw.Elapsed();
 
     if ( !image ) {
@@ -149,6 +150,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/21 13:05:02  dicuccio
+ * Temporary fix: avoid using streams-based image retrieval without a specified
+ * type
+ *
  * Revision 1.5  2004/05/17 21:08:03  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
