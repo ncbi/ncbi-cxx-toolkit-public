@@ -50,7 +50,17 @@
 
 // jpeglib include (not extern'ed already (!))
 extern "C" {
+
+#ifdef HAVE_STDLIB_H
+#  undef HAVE_STDLIB_H
+#  define REDEFINE_HAVE_STDLIB_H
+#endif
+
 #include <jpeglib.h>
+
+#if defined(REDEFINE_HAVE_STDLIB_H)  && !defined(HAVE_STDLIB_H)
+#  define HAVE_STDLIB_H 1
+#endif
 }
 
 
@@ -63,7 +73,12 @@ static const int sc_JpegBufLen = 4096;
 static void s_JpegErrorHandler(j_common_ptr ptr)
 {
     string msg("Error processing JPEG image: ");
-    msg += ptr->err->jpeg_message_table[ptr->err->msg_code];
+
+    /// format the message
+    char buffer[JMSG_LENGTH_MAX];
+    (*ptr->err->format_message)(ptr, buffer);
+
+    msg += buffer;
     if (ptr->is_decompressor) {
         NCBI_THROW(CImageException, eReadError, msg);
     } else {
@@ -462,7 +477,6 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr,
                      jpeg_read_scanlines(&cinfo, scanline, 1);
                      memcpy(data, scanline[0] + offs, scan_w);
                      data += to_stride;
-                     scanline[0] += stride;
                  }
              }}
             break;
@@ -717,6 +731,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/21 13:23:23  dicuccio
+ * Use standard error formatting from libjpeg.  Fix serious bug in ReadSubImage():
+ * don't increment scanline
+ *
  * Revision 1.10  2005/02/01 21:47:15  grichenk
  * Fixed warnings
  *
