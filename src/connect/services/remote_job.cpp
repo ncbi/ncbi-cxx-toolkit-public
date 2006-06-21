@@ -125,7 +125,7 @@ public:
                     *m_IStream >> tmp;
                 if (m_IStream->good())
                     s_Read(*m_IStream, name);
-            } catch (IOS_BASE::failure& ex ){ 
+            } catch (...) {
                 msg = "The Blob data does not match a remote app data";                   
                 m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
                 return *m_IStream;
@@ -729,6 +729,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2006/06/21 17:49:11  ucko
+ * CBlobStreamHelper::GetIStream: broaden the catch statement for
+ * compatibility with GCC 2.95, which lacks IOS_BASE::failure.
+ *
  * Revision 6.12  2006/06/19 13:36:27  didenko
  * added logging information
  *
