@@ -361,6 +361,8 @@ void CGridWorkerNode::Start()
             if (m_MaxThreads > 1) {
                 try {
                     m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
+                    if (!m_ThreadsPool->HasImmediateRoom())
+                        continue;
                 } catch (CBlockingQueueException&) {
                     continue;
                 }
@@ -705,6 +707,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/06/21 19:37:48  didenko
+ * Temporary workaround for a bug in CPoolOfThreads
+ *
  * Revision 1.51  2006/05/30 16:41:05  didenko
  * Improved error handling
  *
