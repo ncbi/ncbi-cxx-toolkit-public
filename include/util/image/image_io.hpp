@@ -92,11 +92,13 @@ public:
 
     // read an image from a file, returning the object for user management
     static CImage* ReadImage(const string& file);
-    static CImage* ReadImage(CNcbiIstream& istr);
+    static CImage* ReadImage(CNcbiIstream& istr,
+                             EType type = CImageIO::eUnknown);
 
     // read only part of an image from a file
     static CImage* ReadSubImage(CNcbiIstream& istr,
-                                size_t x, size_t y, size_t w, size_t h);
+                                size_t x, size_t y, size_t w, size_t h,
+                                EType type = CImageIO::eUnknown);
     static CImage* ReadSubImage(const string& file,
                                 size_t x, size_t y, size_t w, size_t h);
 
@@ -131,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/21 13:20:31  dicuccio
+ * ReadImage(), ReadSubImage(): accept optional type argument
+ *
  * Revision 1.6  2004/12/27 20:54:49  vakatov
  * Remove an extraneous comma in enum to get rid of a warning
  *

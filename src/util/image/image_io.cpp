@@ -88,16 +88,21 @@ CImageIO::EType CImageIO::GetTypeFromMagic(CNcbiIstream& istr)
     // magic numbers live in the first few bytes
     unsigned char magic[kMaxMagic];
     memset(magic, 0x00, kMaxMagic);
+
     istr.read((char *)magic, kMaxMagic);
     istr.seekg(-istr.gcount(), ios::cur);
+
+    EType type = eUnknown;
 
     // we just compare against our (small) table of known image magic values
     for (const SMagicInfo* i = kMagicTable;  i->m_Length;  ++i) {
         if (memcmp(magic, i->m_Signature, i->m_Length) == 0) {
-            return i->m_Type;
+            type = i->m_Type;
+            break;
         }
     }
-    return eUnknown;
+
+    return type;
 }
 
 
@@ -161,10 +166,14 @@ CImage* CImageIO::ReadImage(const string& file)
 }
 
 
-CImage* CImageIO::ReadImage(CNcbiIstream& istr)
+CImage* CImageIO::ReadImage(CNcbiIstream& istr,
+                            EType type)
 {
     try {
-        CRef<CImageIOHandler> handler(x_GetHandler(GetTypeFromMagic(istr)));
+        if (type == eUnknown) {
+            type = GetTypeFromMagic(istr);
+        }
+        CRef<CImageIOHandler> handler(x_GetHandler(type));
         return handler->ReadImage(istr);
     }
     catch (CImageException& e) {
@@ -188,10 +197,14 @@ CImage* CImageIO::ReadSubImage(const string& file,
 
 
 CImage* CImageIO::ReadSubImage(CNcbiIstream& istr,
-                               size_t x, size_t y, size_t w, size_t h)
+                               size_t x, size_t y, size_t w, size_t h,
+                               EType type)
 {
     try {
-        CRef<CImageIOHandler> handler(x_GetHandler(GetTypeFromMagic(istr)));
+        if (type == eUnknown) {
+            type = GetTypeFromMagic(istr);
+        }
+        CRef<CImageIOHandler> handler(x_GetHandler(type));
         return handler->ReadImage(istr, x, y, w, h);
     }
     catch (CImageException& e) {
@@ -324,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/21 13:20:33  dicuccio
+ * ReadImage(), ReadSubImage(): accept optional type argument
+ *
  * Revision 1.4  2004/05/17 21:07:58  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
