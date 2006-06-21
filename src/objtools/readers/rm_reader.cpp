@@ -241,7 +241,7 @@ bool CRmOutReader::IsHeaderLine( const string& line )
     // try to identify 1st line of column labels:
     size_t current_offset = 0;
     size_t i = 0;
-    for ( NULL; labels_1st_line[i] != ""; ++i ) {
+    for ( ; labels_1st_line[i] != ""; ++i ) {
         current_offset = NStr::FindCase( line, labels_1st_line[i], current_offset );
         if ( NPOS == current_offset ) {
             break;
@@ -254,7 +254,7 @@ bool CRmOutReader::IsHeaderLine( const string& line )
     // try to identify 2nd line of column labels:
     current_offset = 0;
     i = 0;
-    for ( NULL; labels_2nd_line[i] != ""; ++i ) {
+    for ( ; labels_2nd_line[i] != ""; ++i ) {
         current_offset = NStr::FindCase( line, labels_2nd_line[i], current_offset );
         if ( NPOS == current_offset ) {
             return false;
@@ -454,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/21 17:41:48  dicuccio
+ * Fix compiler warnings
+ *
  * Revision 1.4  2006/06/05 14:54:52  ludwigf
  * ADDED: Error reporting. The first 5 bad records are reported to the log.
  *  After that, we abort reading and throw, in the expectation that the upper
