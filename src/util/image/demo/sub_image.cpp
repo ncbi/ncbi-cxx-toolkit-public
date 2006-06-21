@@ -67,7 +67,8 @@ void CImageTestApp::Init(void)
                               "Image read/write test application");
 
     arg_desc->AddDefaultPositional("image", "Image to crop",
-                                   CArgDescriptions::eInputFile, "-");
+                                   CArgDescriptions::eInputFile, "-",
+                                   CArgDescriptions::fBinary);
 
     arg_desc->AddOptionalKey("out", "OutFile",
                              "File name of resultant JPEG image",
@@ -92,8 +93,7 @@ int CImageTestApp::Run(void)
 {
     CArgs args = GetArgs();
 
-    string fname = args["image"].AsString();
-    //CNcbiIstream& istr = args["image"].AsInputFile();
+    CNcbiIstream& istr = args["image"].AsInputFile();
     int x = args["x"].AsInteger();
     int y = args["y"].AsInteger();
     int w = args["wd"].AsInteger();
@@ -101,7 +101,7 @@ int CImageTestApp::Run(void)
 
     CStopWatch sw;
     sw.Start();
-    CRef<CImage> image(CImageIO::ReadSubImage(fname, x, y, w, h));
+    CRef<CImage> image(CImageIO::ReadSubImage(istr, x, y, w, h));
     double read_time = sw.Elapsed();
 
     if ( !image ) {
@@ -150,6 +150,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/21 13:17:30  dicuccio
+ * Revert previous change; open stream in binary mode
+ *
  * Revision 1.6  2006/06/21 13:05:02  dicuccio
  * Temporary fix: avoid using streams-based image retrieval without a specified
  * type
