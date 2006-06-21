@@ -3,7 +3,7 @@
 # Meta-makefile ("objtools/readers" project)
 ############################################
 
-LIB_PROJ = xobjread
+LIB_PROJ = xobjread xobjreadex
 SUB_PROJ = seqdb app
 
 srcdir = @srcdir@

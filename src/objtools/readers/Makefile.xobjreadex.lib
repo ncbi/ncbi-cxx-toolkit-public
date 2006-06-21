@@ -1,0 +1,9 @@
+# $Id$
+
+ASN_DEP = seq seqset
+
+LIB = xobjreadex
+SRC = glimmer_reader
+
+
+REQUIRES = objects
