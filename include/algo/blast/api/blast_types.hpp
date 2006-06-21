@@ -202,22 +202,14 @@ CSearchMessage::operator<(const CSearchMessage& rhs) const
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
-/**
-  @mainpage NCBI C++ Toolkit BLAST API documentation
-
-  Available documentation
-
-  @li @ref blast_opts_cookbook
-  @li @ref blast_opts_cpp_design
-  @li @ref _impl_blast_seqsrc_howto
-
-*/
-
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2006/06/21 21:04:00  vakatov
+* Moved DOXYGEN MainPage content to "doc/tools/doxygen/metamodules_doxygen.h"
+*
 * Revision 1.26  2006/05/24 21:01:32  camacho
 * Added mainpage to organize doxygen documents
 *
