@@ -31,6 +31,24 @@
  */
 
 
+/* ========================================================================= */
+
+/**
+  @mainpage NCBI C++ Toolkit API
+
+  NOTE: This page contains only a limited set of selected articles.
+        To see all of the documentation, visit the "Modules" section. 
+
+  @li @ref blast_opts_cookbook
+  @li @ref blast_opts_cpp_design
+  @li @ref _impl_blast_seqsrc_howto
+*/
+
+
+
+/* ========================================================================= */
+
+
 /** @defgroup CORELIB
  *  Core Library members
  */
