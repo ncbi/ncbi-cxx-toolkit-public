@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <util/image/image_io.hpp>
 #include <util/image/image_exception.hpp>
+#include <corelib/stream_utils.hpp>
 
 #include "image_io_raw.hpp"
 #include "image_io_bmp.hpp"
@@ -90,7 +91,7 @@ CImageIO::EType CImageIO::GetTypeFromMagic(CNcbiIstream& istr)
     memset(magic, 0x00, kMaxMagic);
 
     istr.read((char *)magic, kMaxMagic);
-    istr.seekg(-istr.gcount(), ios::cur);
+    CStreamUtils::Pushback(istr, (CT_CHAR_TYPE*)magic, istr.gcount());
 
     EType type = eUnknown;
 
@@ -337,6 +338,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/21 13:44:18  dicuccio
+ * Further tweak: use CStreamUtils::Pushback() instead of seeking on a stream
+ *
  * Revision 1.6  2006/06/21 13:22:37  dicuccio
  * Ooops, add optional type to filename-based variants of ReadImage(),
  * ReadSubImage()
