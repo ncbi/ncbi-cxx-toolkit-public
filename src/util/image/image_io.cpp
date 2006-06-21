@@ -159,15 +159,14 @@ CImageIO::EType CImageIO::GetTypeFromFileName(const string& fname)
 // ReadImage()
 // read an image from disk, returning its contents
 //
-CImage* CImageIO::ReadImage(const string& file)
+CImage* CImageIO::ReadImage(const string& file, EType type)
 {
     CNcbiIfstream istr(file.c_str(), ios::in|ios::binary);
-    return ReadImage(istr);
+    return ReadImage(istr, type);
 }
 
 
-CImage* CImageIO::ReadImage(CNcbiIstream& istr,
-                            EType type)
+CImage* CImageIO::ReadImage(CNcbiIstream& istr, EType type)
 {
     try {
         if (type == eUnknown) {
@@ -189,10 +188,11 @@ CImage* CImageIO::ReadImage(CNcbiIstream& istr,
 // read part of an image from disk, returning its contents
 //
 CImage* CImageIO::ReadSubImage(const string& file,
-                               size_t x, size_t y, size_t w, size_t h)
+                               size_t x, size_t y, size_t w, size_t h,
+                               EType type)
 {
     CNcbiIfstream istr(file.c_str(), ios::in|ios::binary);
-    return ReadSubImage(istr, x, y, w, h);
+    return ReadSubImage(istr, x, y, w, h, type);
 }
 
 
@@ -337,6 +337,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/21 13:22:37  dicuccio
+ * Ooops, add optional type to filename-based variants of ReadImage(),
+ * ReadSubImage()
+ *
  * Revision 1.5  2006/06/21 13:20:33  dicuccio
  * ReadImage(), ReadSubImage(): accept optional type argument
  *

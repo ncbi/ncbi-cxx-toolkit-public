@@ -91,7 +91,8 @@ public:
     static EType GetTypeFromFileName(const string& file);
 
     // read an image from a file, returning the object for user management
-    static CImage* ReadImage(const string& file);
+    static CImage* ReadImage(const string& file,
+                             EType type = CImageIO::eUnknown);
     static CImage* ReadImage(CNcbiIstream& istr,
                              EType type = CImageIO::eUnknown);
 
@@ -100,7 +101,8 @@ public:
                                 size_t x, size_t y, size_t w, size_t h,
                                 EType type = CImageIO::eUnknown);
     static CImage* ReadSubImage(const string& file,
-                                size_t x, size_t y, size_t w, size_t h);
+                                size_t x, size_t y, size_t w, size_t h,
+                                EType type = CImageIO::eUnknown);
 
     // write an image to a file in a specified format.  If the format type is
     // eUnknown, it will be guessed from the file extension.
@@ -133,6 +135,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/06/21 13:22:37  dicuccio
+ * Ooops, add optional type to filename-based variants of ReadImage(),
+ * ReadSubImage()
+ *
  * Revision 1.7  2006/06/21 13:20:31  dicuccio
  * ReadImage(), ReadSubImage(): accept optional type argument
  *
