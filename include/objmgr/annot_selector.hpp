@@ -107,8 +107,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     /// Set annotation type (feat, align, graph)
     SAnnotSelector& SetAnnotType(TAnnotType type)
         {
-            x_ClearAnnotTypesSet();
-            SAnnotTypeSelector::SetAnnotType(type);
+            if ( GetAnnotType() != type ) {
+                x_ClearAnnotTypesSet();
+                SAnnotTypeSelector::SetAnnotType(type);
+            }
             return *this;
         }
 
@@ -574,6 +576,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2006/06/21 20:09:45  vasilche
+* Reset included annot subtypes only if annot type is changed.
+*
 * Revision 1.51  2006/06/19 20:22:34  grichenk
 * Added comments. Removed SegmentSelect flag.
 *

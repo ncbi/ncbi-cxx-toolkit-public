@@ -108,9 +108,9 @@ struct SAnnotTypeSelector
 
     void SetAnnotType(TAnnotType type)
         {
-            m_AnnotType = type;
-            // Reset feature type/subtype
-            if (m_AnnotType != CSeq_annot::C_Data::e_Ftable) {
+            if ( m_AnnotType != type ) {
+                m_AnnotType = type;
+                // Reset feature type/subtype
                 m_FeatType = CSeqFeatData::e_not_set;
                 m_FeatSubtype = CSeqFeatData::eSubtype_any;
             }
@@ -148,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/06/21 20:09:45  vasilche
+* Reset included annot subtypes only if annot type is changed.
+*
 * Revision 1.1  2004/08/05 18:23:25  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *
