@@ -299,7 +299,7 @@ int CNSSubmitRemoveJobApp::Run(void)
                 unsigned int rt = NStr::StringToUInt(srt);
                 request.SetAppRunTimeout(rt);
             }
-            srt = s_FindParam(line, "exclusive=");
+            srt = s_FindParam(line, "exclusive=\"");
             if (!srt.empty()) {
                 if(NStr::CompareNocase(srt, "yes") == 0 ||
                    NStr::CompareNocase(srt, "true") == 0 ||
@@ -329,6 +329,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/21 20:24:40  didenko
+ * fixed exlucive parameter parsing
+ *
  * Revision 1.6  2006/06/20 16:40:26  didenko
  * Added checking for the value of "exclusive" parameter
  *
