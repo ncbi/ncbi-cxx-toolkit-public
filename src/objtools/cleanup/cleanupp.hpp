@@ -174,6 +174,9 @@ private:
     void x_RemoveEmptyGenbankDesc(CBioseq& bs);
     void x_RemoveEmptyGenbankDesc(CBioseq_set& bss);
 
+    void x_CleanGenbankBlockStrings (CSeq_descr& sdr);
+    void x_CleanGenbankBlockStrings (CBioseq& bs);
+    void x_CleanGenbankBlockStrings (CBioseq_set& bss);
     
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
@@ -226,6 +229,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/06/21 17:21:28  bollin
+ * added cleanup of GenbankBlock descriptor strings to ExtendedCleanup
+ *
  * Revision 1.11  2006/06/21 14:12:59  bollin
  * added step for removing empty GenBank block descriptors to ExtendedCleanup
  *

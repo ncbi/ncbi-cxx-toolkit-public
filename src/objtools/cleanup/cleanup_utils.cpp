@@ -74,6 +74,70 @@ void CleanString(string& str)
 }
 
 
+void TrimInternalSemicolons (string& str)
+{
+    size_t pos, next_pos;
+  
+    pos = NStr::Find (str, ";");
+    while (pos != string::npos) {
+        next_pos = pos + 1;
+        bool has_space = false;
+        while (next_pos < str.length() && (str[next_pos] == ';' || str[next_pos] == ' ' || str[next_pos] == '\t')) {
+            if (str[next_pos] == ' ') {
+                has_space = true;
+            }
+            next_pos++;
+        }
+        if (next_pos == pos + 1 || (has_space && next_pos == pos + 2)) {
+            // nothing to fix, advance semicolon search
+            pos = NStr::Find (str, ";", next_pos);
+        } else if (next_pos == str.length()) {
+            // nothing but semicolons, spaces, and tabs from here to the end of the string
+            // just truncate it
+            str = str.substr(0, pos);
+            pos = string::npos;
+        } else {
+            if (has_space) {
+                str = str.substr(0, pos + 1) + " " + str.substr(next_pos);
+            } else {
+                str = str.substr(0, pos + 1) + str.substr(next_pos);
+            }
+            pos = NStr::Find (str, ";", pos + 1);
+        }
+    }
+}
+
+
+void CleanVisString (string& str)
+{
+    CleanString (str);
+    TrimInternalSemicolons (str);
+}
+
+
+void CleanVisStringList ( list< string >& str_list)
+{
+    list< string > non_blank;
+                   
+    non_blank.clear();
+    while (str_list.size() > 0) {
+        string tmp = str_list.front();
+        str_list.pop_front();
+        CleanVisString (tmp);
+                        
+        if (!NStr::IsBlank (tmp)) {
+            non_blank.push_back (tmp);
+        }
+    }
+    str_list.clear();
+    while (non_blank.size() > 0) {
+        string tmp = non_blank.front();
+        non_blank.pop_front();
+        str_list.push_back(tmp);
+    }
+}
+
+
 void RemoveSpaces(string& str)
 {
     if (str.empty()) {
@@ -552,6 +616,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/06/21 17:21:28  bollin
+* added cleanup of GenbankBlock descriptor strings to ExtendedCleanup
+*
 * Revision 1.3  2006/05/18 13:49:33  ucko
 * RemoveWhiteSpace: don't bother clear()ing a brand new string,
 * particularly given that GCC 2.95 would require erase() instead.

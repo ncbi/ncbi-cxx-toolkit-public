@@ -355,6 +355,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
     x_RemoveEmptyGenbankDesc(bss);
     x_MolInfoUpdate(bss);
     x_RemoveEmptyGenbankDesc(bss);
+    x_CleanGenbankBlockStrings(bss);
     BasicCleanup(bss);
 
 }
@@ -366,6 +367,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
     x_RemoveEmptyGenbankDesc(bs);
     x_MolInfoUpdate(bs);
     x_RemoveEmptyGenbankDesc(bs);
+    x_CleanGenbankBlockStrings(bs);
     BasicCleanup (bs);
 }
 
@@ -517,6 +519,25 @@ void CCleanup_imp::x_MolInfoUpdate(CBioseq_set& bss)
 }
 
 
+bool IsGenbankBlockEmpty (CGB_block& block) 
+{
+    if ((!block.CanGetExtra_accessions() || block.GetExtra_accessions().size() == 0)
+        && (!block.CanGetSource() || NStr::IsBlank(block.GetSource()))
+        && (!block.CanGetKeywords() || block.GetKeywords().size() == 0)
+        && (!block.CanGetOrigin() || NStr::IsBlank(block.GetOrigin()))
+        && (!block.CanGetDate() || NStr::IsBlank (block.GetDate()))
+        && (!block.CanGetEntry_date())
+        && (!block.CanGetDiv() || NStr::IsBlank(block.GetDiv()))
+        && (!block.CanGetTaxonomy() || NStr::IsBlank(block.GetTaxonomy()))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+// Was CleanupGenbankCallback in C Toolkit
+// removes taxonomy
 // remove Genbank Block descriptors when
 //      if (gbp->extra_accessions == NULL && gbp->source == NULL &&
 //         gbp->keywords == NULL && gbp->origin == NULL &&
@@ -534,15 +555,10 @@ void CCleanup_imp::x_RemoveEmptyGenbankDesc(CSeq_descr& sdr)
                 CGB_block& block = (*it)->SetGenbank();
                 block.ResetTaxonomy();
                 (*it)->SetGenbank(block);
-                if ((!block.CanGetExtra_accessions() || block.GetExtra_accessions().size() == 0)
-                    && (!block.CanGetSource() || NStr::IsBlank(block.GetSource()))
-                    && (!block.CanGetKeywords() || block.GetKeywords().size() == 0)
-                    && (!block.CanGetOrigin() || NStr::IsBlank(block.GetOrigin()))
-                    && !block.CanGetDate()
-                    && !block.CanGetEntry_date()
-                    && (!block.CanGetDiv() || NStr::IsBlank(block.GetDiv()))) {
+                if (IsGenbankBlockEmpty(block)) {
                     sdr.Set().erase(it);
                     found = true;
+                    break;
                 }
             }
         }
@@ -589,6 +605,134 @@ void CCleanup_imp::x_RemoveEmptyGenbankDesc(CBioseq_set& bss)
 }
 
 
+// was EntryCheckGBBlock in C Toolkit
+// cleans strings for the GenBankBlock, removes descriptor if block is now empty
+void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr)
+{
+    bool found = true;
+    
+    while (found) {
+        found = false;
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+            if ((*it)->Which() == CSeqdesc::e_Genbank) {
+                CGB_block& block = (*it)->SetGenbank();
+                
+                // clean extra accessions
+                if (block.CanGetExtra_accessions()) {
+                    CleanVisStringList(block.SetExtra_accessions());
+                    if (block.GetExtra_accessions().size() == 0) {
+                        block.ResetExtra_accessions();
+                    }
+                }
+                
+                // clean keywords
+                if (block.CanGetKeywords()) {
+                    CleanVisStringList(block.SetKeywords());
+                    if (block.GetKeywords().size() == 0) {
+                        block.ResetKeywords();
+                    }
+                }
+                
+                // clean source
+                if (block.CanGetSource()) {
+                    string source = block.GetSource();
+                    CleanVisString (source);
+                    if (NStr::IsBlank (source)) {
+                        block.ResetSource();
+                    } else {
+                        block.SetSource (source);
+                    }
+                }
+                // clean origin
+                if (block.CanGetOrigin()) {
+                    string origin = block.GetOrigin();
+                    CleanVisString (origin);
+                    if (NStr::IsBlank (origin)) {
+                        block.ResetOrigin();
+                    } else {
+                        block.SetOrigin(origin);
+                    }
+                }
+                //clean date
+                if (block.CanGetDate()) {
+                    string date = block.GetDate();
+                    CleanVisString (date);
+                    if (NStr::IsBlank (date)) {
+                        block.ResetDate();
+                    } else {
+                        block.SetDate(date);
+                    }
+                }
+                //clean div
+                if (block.CanGetDiv()) {
+                    string div = block.GetDiv();
+                    CleanVisString (div);
+                    if (NStr::IsBlank (div)) {
+                        block.ResetDiv();
+                    } else {
+                        block.SetDiv(div);
+                    }
+                }
+                //clean taxonomy
+                if (block.CanGetTaxonomy()) {
+                    string tax = block.GetTaxonomy();
+                    if (NStr::IsBlank (tax)) {
+                        block.ResetTaxonomy();
+                    } else {
+                        block.SetTaxonomy(tax);
+                    }
+                }
+                
+                if (IsGenbankBlockEmpty(block)) {
+                    sdr.Set().erase(it);
+                    found = true;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
+void CCleanup_imp::x_CleanGenbankBlockStrings(CBioseq& bs)
+{
+    if (bs.IsSetDescr()) {
+        x_CleanGenbankBlockStrings(bs.SetDescr());
+        if (bs.SetDescr().Set().empty()) {
+            bs.ResetDescr();
+        }
+    }
+}
+
+
+void CCleanup_imp::x_CleanGenbankBlockStrings(CBioseq_set& bss)
+{
+    if (bss.IsSetDescr()) {
+        x_CleanGenbankBlockStrings(bss.SetDescr());
+        if (bss.SetDescr().Set().empty()) {
+            bss.ResetDescr();
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_CleanGenbankBlockStrings(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_CleanGenbankBlockStrings(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -596,6 +740,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/06/21 17:21:28  bollin
+ * added cleanup of GenbankBlock descriptor strings to ExtendedCleanup
+ *
  * Revision 1.8  2006/06/21 14:12:59  bollin
  * added step for removing empty GenBank block descriptors to ExtendedCleanup
  *

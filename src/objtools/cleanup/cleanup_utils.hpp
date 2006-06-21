@@ -56,6 +56,11 @@ void ConvertDoubleQuotes(string& str)
 /// truncate spaces and semicolons
 void CleanString(string& str);
 
+// truncate trailing and leading spaces, trailing semicolons,
+// and redundant semicolons and extra spaces after semicolons
+void CleanVisString(string& str);
+void CleanVisStringList ( list< string >& str_list);
+
 /// remove all spaces from a string
 void RemoveSpaces(string& str);
 
@@ -207,6 +212,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/06/21 17:21:28  bollin
+* added cleanup of GenbankBlock descriptor strings to ExtendedCleanup
+*
 * Revision 1.4  2006/05/17 18:58:02  bollin
 * made destructors virtual, to remove compiler warnings
 *
