@@ -351,48 +351,22 @@ void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
 
 void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
 {
+    BasicCleanup(bss);
+    x_RemoveEmptyGenbankDesc(bss);
     x_MolInfoUpdate(bss);
-    
-    if (bss.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
-            BasicCleanup(**it);
-        }
-    }
-    if (bss.IsSetDescr()) {
-        BasicCleanup(bss.SetDescr());
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    ExtendedCleanup(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    ExtendedCleanup(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
-    }
+    x_RemoveEmptyGenbankDesc(bss);
+    BasicCleanup(bss);
+
 }
 
 
 void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
 {
-    CBioseq_Handle handle = m_Scope->GetBioseqHandle(bs);
-        
-    if (bs.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
-            BasicCleanup(**it);
-        }
-    }
-    if (bs.IsSetDescr()) {
-        BasicCleanup(bs.SetDescr());
-    }
+    BasicCleanup (bs);
+    x_RemoveEmptyGenbankDesc(bs);
+    x_MolInfoUpdate(bs);
+    x_RemoveEmptyGenbankDesc(bs);
+    BasicCleanup (bs);
 }
 
 //   For any Bioseq or BioseqSet that has a MolInfo descriptor,
@@ -543,6 +517,78 @@ void CCleanup_imp::x_MolInfoUpdate(CBioseq_set& bss)
 }
 
 
+// remove Genbank Block descriptors when
+//      if (gbp->extra_accessions == NULL && gbp->source == NULL &&
+//         gbp->keywords == NULL && gbp->origin == NULL &&
+//         gbp->date == NULL && gbp->entry_date == NULL &&
+//         gbp->div == NULL && gbp->taxonomy == NULL) {
+
+void CCleanup_imp::x_RemoveEmptyGenbankDesc(CSeq_descr& sdr)
+{
+    bool found = true;
+    
+    while (found) {
+        found = false;
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+            if ((*it)->Which() == CSeqdesc::e_Genbank) {
+                CGB_block& block = (*it)->SetGenbank();
+                block.ResetTaxonomy();
+                (*it)->SetGenbank(block);
+                if ((!block.CanGetExtra_accessions() || block.GetExtra_accessions().size() == 0)
+                    && (!block.CanGetSource() || NStr::IsBlank(block.GetSource()))
+                    && (!block.CanGetKeywords() || block.GetKeywords().size() == 0)
+                    && (!block.CanGetOrigin() || NStr::IsBlank(block.GetOrigin()))
+                    && !block.CanGetDate()
+                    && !block.CanGetEntry_date()
+                    && (!block.CanGetDiv() || NStr::IsBlank(block.GetDiv()))) {
+                    sdr.Set().erase(it);
+                    found = true;
+                }
+            }
+        }
+    }
+}
+
+
+void CCleanup_imp::x_RemoveEmptyGenbankDesc(CBioseq& bs)
+{
+    if (bs.IsSetDescr()) {
+        x_RemoveEmptyGenbankDesc(bs.SetDescr());
+        if (bs.SetDescr().Set().empty()) {
+            bs.ResetDescr();
+        }
+    }
+}
+
+
+void CCleanup_imp::x_RemoveEmptyGenbankDesc(CBioseq_set& bss)
+{
+    if (bss.IsSetDescr()) {
+        x_RemoveEmptyGenbankDesc(bss.SetDescr());
+        if (bss.SetDescr().Set().empty()) {
+            bss.ResetDescr();
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_RemoveEmptyGenbankDesc(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_RemoveEmptyGenbankDesc(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -550,6 +596,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/06/21 14:12:59  bollin
+ * added step for removing empty GenBank block descriptors to ExtendedCleanup
+ *
  * Revision 1.7  2006/06/20 19:43:39  bollin
  * added MolInfoUpdate to ExtendedCleanup
  *

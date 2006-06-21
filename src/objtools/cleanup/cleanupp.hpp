@@ -170,6 +170,11 @@ private:
     void x_MolInfoUpdate(CBioseq_set& bss);
     void x_MolInfoUpdate(CSeq_descr& sdr);
     
+    void x_RemoveEmptyGenbankDesc(CSeq_descr& sdr);
+    void x_RemoveEmptyGenbankDesc(CBioseq& bs);
+    void x_RemoveEmptyGenbankDesc(CBioseq_set& bss);
+
+    
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
     void x_CleanupRna(CSeq_feat& feat);
@@ -221,6 +226,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/06/21 14:12:59  bollin
+ * added step for removing empty GenBank block descriptors to ExtendedCleanup
+ *
  * Revision 1.10  2006/06/20 19:43:39  bollin
  * added MolInfoUpdate to ExtendedCleanup
  *
