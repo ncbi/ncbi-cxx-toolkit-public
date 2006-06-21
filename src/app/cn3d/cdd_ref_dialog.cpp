@@ -144,21 +144,25 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
     // get listbox and descr from selected item
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_L_REFS, wxListBox)
     CCdd_descr *descr = NULL;
-    selectItem = (listbox->GetSelection() != wxNOT_FOUND) ? listbox->GetSelection() : -1;
-    if (selectItem >= 0 && selectItem < listbox->GetCount())
-        descr = dynamic_cast<CCdd_descr*>(
-            reinterpret_cast<CObject*>(listbox->GetClientData(selectItem)));
+    wxArrayInt selections;
+    int nSelected = listbox->GetSelections(selections);
+    selectItem = (nSelected > 0) ? selections.Item(selections.GetCount() - 1) : -1;
+    if (selectItem >= 0 && selectItem < listbox->GetCount())    // pointer to last descr selected
+        descr = dynamic_cast<CCdd_descr*>(reinterpret_cast<CObject*>(listbox->GetClientData(selectItem)));
 
-    // launch URL given PMID
-    if (event.GetId() == ID_B_LAUNCH && descr) {
-        wxString url;
-        url.Printf("http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?"
-            "cmd=Retrieve&db=PubMed&dopt=Abstract&list_uids=%i",
-            descr->GetReference().GetPmid().Get());
-        LaunchWebPage(url);
+    // launch URL(s) given PMID
+    if (event.GetId() == ID_B_LAUNCH && nSelected > 0) {
+        string url("http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&dopt=Abstract&list_uids=");
+        for (int i=0; i<nSelected; ++i) {
+            descr = dynamic_cast<CCdd_descr*>(reinterpret_cast<CObject*>(listbox->GetClientData(selections.Item(i))));
+            if (i > 0)
+                url += ",";
+            url += NStr::IntToString(descr->GetReference().GetPmid().Get());
+        }
+        LaunchWebPage(url.c_str());
     }
 
-    // add reference
+    // add reference(s)
     else if (event.GetId() == ID_B_ADD) {
         wxString ids = wxGetTextFromUser("Enter a list of PubMed IDs:", "Input PMIDs", "", this);
         wxStringTokenizer tkz(ids, " ,;\t\r\n", wxTOKEN_STRTOK);
@@ -168,9 +172,13 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
             if (id.size() > 0 && id.ToLong(&pmidVal) && pmidVal > 0) {
                 CRef < CCdd_descr > ref(new CCdd_descr());
                 ref->SetReference().SetPmid().Set((int) pmidVal);
-                CCdd_descr_set::Tdata::iterator d = descrSet->Set().begin();
-                for (int s=-1; s<selectItem; ++s)
-                    ++d;
+                CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
+                for (d=descrSet->Set().begin(); d!=de; ++d) {
+                    if (d->GetPointer() == descr) {
+                        ++d;
+                        break;
+                    }
+                }
                 descrSet->Set().insert(d, ref);
                 sSet->SetDataChanged(StructureSet::eCDDData);
                 ++selectItem;
@@ -181,7 +189,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
     }
 
     // edit reference
-    else if (event.GetId() == ID_B_EDIT && descr) {
+    else if (event.GetId() == ID_B_EDIT && nSelected == 1) {
         wxString init;
         init.Printf("%i", descr->GetReference().GetPmid().Get());
         wxString pmidStr = wxGetTextFromUser("Enter/edit the PubMed ID:", "Edit PMID", init, this);
@@ -193,20 +201,27 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
         }
     }
 
-    // delete reference
-    else if (event.GetId() == ID_B_DELETE && descr) {
+    // delete reference(s)
+    else if (event.GetId() == ID_B_DELETE && nSelected > 0) {
+        CCdd_descr_set keepDescrs;
         CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
         for (d=descrSet->Set().begin(); d!=de; ++d) {
-            if (d->GetPointer() == descr) {
-                descrSet->Set().erase(d);
-                sSet->SetDataChanged(StructureSet::eCDDData);
-                ResetListBox();
-                break;
-            }
+            int i;
+            for (i=0; i<nSelected; ++i)
+                if (d->GetPointer() ==
+                        dynamic_cast<CCdd_descr*>(reinterpret_cast<CObject*>(listbox->GetClientData(selections.Item(i)))))
+                    break;
+            if (i == nSelected) // this descr is not one of those selected in the listbox
+                keepDescrs.Set().push_back(*d);
+        }
+        if (keepDescrs.Get().size() != descrSet->Get().size()) {
+            descrSet->Set() = keepDescrs.Set(); // copy list
+            sSet->SetDataChanged(StructureSet::eCDDData);
+            ResetListBox();
         }
     }
 
-    else if ((event.GetId() == ID_B_UP || event.GetId() == ID_B_DOWN) && descr) {
+    else if ((event.GetId() == ID_B_UP || event.GetId() == ID_B_DOWN) && nSelected == 1) {
         CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end(), p = descrSet->Set().end(), n;
         for (d=descrSet->Set().begin(); d!=de; ++d) {
             if (d->GetPointer() == descr) {
@@ -274,7 +289,7 @@ wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit, bool set_sizer 
     wxFlexGridSizer *item3 = new wxFlexGridSizer( 1, 0, 0 );
 
     wxString *strs4 = (wxString*) NULL;
-    wxListBox *item4 = new wxListBox( parent, ID_L_REFS, wxDefaultPosition, wxSize(80,100), 0, strs4, wxLB_SINGLE|wxLB_NEEDED_SB );
+    wxListBox *item4 = new wxListBox( parent, ID_L_REFS, wxDefaultPosition, wxSize(80,100), 0, strs4, wxLB_EXTENDED|wxLB_NEEDED_SB );
     item3->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxGridSizer *item5 = new wxGridSizer( 2, 0, 0 );
@@ -328,6 +343,9 @@ wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit, bool set_sizer 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/06/21 16:23:41  thiessen
+* allow multiple selections
+*
 * Revision 1.15  2006/06/20 21:01:40  thiessen
 * insert new refs after selected one (instead of at end)
 *
