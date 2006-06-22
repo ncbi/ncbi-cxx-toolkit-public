@@ -49,7 +49,7 @@
 
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/general/date.hpp>
+#include <objects/general/Date.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanupp.hpp"
@@ -1072,6 +1072,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/06/22 17:47:52  ucko
+ * Correctly capitalize Date.hpp.
+ *
  * Revision 1.13  2006/06/22 17:29:15  bollin
  * added method to merge multiple create dates to Extended Cleanup
  *
