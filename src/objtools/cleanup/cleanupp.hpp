@@ -118,6 +118,7 @@ public:
     void ExtendedCleanup(CSeq_submit& ss);
     void ExtendedCleanup(CBioseq& bs);
     void ExtendedCleanup(CBioseq_set& bss);
+    void ExtendedCleanup(CSeq_annot& sa);
 
 private:
     void Setup(const CSeq_entry& se);
@@ -178,6 +179,10 @@ private:
     void x_CleanGenbankBlockStrings (CBioseq& bs);
     void x_CleanGenbankBlockStrings (CBioseq_set& bss);
     
+    void x_RemoveEmptyFeatures (CSeq_annot& sa);
+    void x_RemoveEmptyFeatures (CBioseq& bs);
+    void x_RemoveEmptyFeatures (CBioseq_set& bss);
+    
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
     void x_CleanupRna(CSeq_feat& feat);
@@ -229,6 +234,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/06/22 13:28:29  bollin
+ * added step to remove empty features to ExtendedCleanup
+ *
  * Revision 1.12  2006/06/21 17:21:28  bollin
  * added cleanup of GenbankBlock descriptor strings to ExtendedCleanup
  *

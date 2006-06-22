@@ -48,6 +48,7 @@
 #include <serial/iterator.hpp>
 
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanupp.hpp"
@@ -335,12 +336,10 @@ void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
             }
             break;
         case CSeq_submit::TData::e_Annots:
-#if 0        
             NON_CONST_ITERATE(CSeq_submit::TData::TAnnots, it, ss.SetData().SetAnnots()) {
-                BasicCleanup(**it);
+                ExtendedCleanup(**it);
             }
             break;
-#endif            
         case CSeq_submit::TData::e_Delete:
         case CSeq_submit::TData::e_not_set:
         default:
@@ -353,9 +352,11 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
 {
     BasicCleanup(bss);
     x_RemoveEmptyGenbankDesc(bss);
+    x_RemoveEmptyFeatures(bss);
     x_MolInfoUpdate(bss);
     x_RemoveEmptyGenbankDesc(bss);
     x_CleanGenbankBlockStrings(bss);
+    x_RemoveEmptyFeatures(bss);
     BasicCleanup(bss);
 
 }
@@ -365,11 +366,22 @@ void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
 {
     BasicCleanup (bs);
     x_RemoveEmptyGenbankDesc(bs);
+    x_RemoveEmptyFeatures(bs);    
     x_MolInfoUpdate(bs);
     x_RemoveEmptyGenbankDesc(bs);
     x_CleanGenbankBlockStrings(bs);
+    x_RemoveEmptyFeatures(bs);    
     BasicCleanup (bs);
 }
+
+
+void CCleanup_imp::ExtendedCleanup(CSeq_annot& sa)
+{
+    BasicCleanup (sa);
+    x_RemoveEmptyFeatures(sa);
+    BasicCleanup (sa);
+}
+
 
 //   For any Bioseq or BioseqSet that has a MolInfo descriptor,
 //1) If the Bioseq or BioseqSet also has a MolType descriptor, if the MolInfo biomol value is not set 
@@ -519,7 +531,7 @@ void CCleanup_imp::x_MolInfoUpdate(CBioseq_set& bss)
 }
 
 
-bool IsGenbankBlockEmpty (CGB_block& block) 
+bool IsEmpty (CGB_block& block) 
 {
     if ((!block.CanGetExtra_accessions() || block.GetExtra_accessions().size() == 0)
         && (!block.CanGetSource() || NStr::IsBlank(block.GetSource()))
@@ -533,6 +545,72 @@ bool IsGenbankBlockEmpty (CGB_block& block)
     } else {
         return false;
     }
+}
+
+bool IsEmpty (CGene_ref& gene_ref)
+{
+    if ((!gene_ref.CanGetLocus() || NStr::IsBlank (gene_ref.GetLocus()))
+        && (!gene_ref.CanGetAllele() || NStr::IsBlank (gene_ref.GetAllele()))
+        && (!gene_ref.CanGetDesc() || NStr::IsBlank (gene_ref.GetDesc()))
+        && (!gene_ref.CanGetMaploc() || NStr::IsBlank (gene_ref.GetMaploc()))
+        && (!gene_ref.CanGetLocus_tag() || NStr::IsBlank (gene_ref.GetLocus_tag()))
+        && (!gene_ref.CanGetDb() || gene_ref.GetDb().size() == 0)
+        && (!gene_ref.CanGetSyn() || gene_ref.GetSyn().size() == 0)) {
+        return true;
+    } else {
+        return false;
+    }   
+}
+
+
+bool IsEmpty (CSeq_feat& sf)
+{
+    if (sf.CanGetData() && sf.SetData().IsGene()) {
+        if (IsEmpty(sf.SetData().SetGene())) {
+            if (!sf.CanGetComment() || NStr::IsBlank (sf.GetComment())) {
+                return true;
+            } else {
+                // convert this feature to a misc_feat
+                sf.SetData().Reset();
+                sf.SetData().SetImp().SetKey("misc_feature");
+            }
+        }
+    } else if (sf.CanGetData() && sf.SetData().IsProt()) {
+        CProt_ref& prot = sf.SetData().SetProt();
+        if (prot.CanGetProcessed()) {
+            unsigned int processed = sf.SetData().GetProt().GetProcessed();
+            
+            if (processed != CProt_ref::eProcessed_signal_peptide
+                && processed != CProt_ref::eProcessed_transit_peptide
+                && (!prot.CanGetName() || prot.GetName().size() == 0)
+                && sf.CanGetComment()
+                && NStr::StartsWith (sf.GetComment(), "putative")) {
+                prot.SetName ().push_back(sf.GetComment());
+                sf.ResetComment();
+            }
+
+            if (processed == CProt_ref::eProcessed_mature && (!prot.CanGetName() || prot.GetName().size() == 0)) {
+                prot.SetName().push_back("unnamed");
+            }
+            
+            if (processed != CProt_ref::eProcessed_signal_peptide
+                && processed != CProt_ref::eProcessed_transit_peptide
+                && (!prot.CanGetName() 
+                    || prot.GetName().size() == 0 
+                    || NStr::IsBlank(prot.GetName().front()))
+                && (!prot.CanGetDesc() || NStr::IsBlank(prot.GetDesc()))
+                && (!prot.CanGetEc() || prot.GetEc().size() == 0)
+                && (!prot.CanGetActivity() || prot.GetActivity().size() == 0)
+                && (!prot.CanGetDb() || prot.GetDb().size() == 0)) {
+                return true;
+            }
+        }
+    } else if (sf.CanGetData() && sf.SetData().IsComment()) {
+        if (!sf.CanGetComment() || NStr::IsBlank (sf.GetComment())) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -555,7 +633,7 @@ void CCleanup_imp::x_RemoveEmptyGenbankDesc(CSeq_descr& sdr)
                 CGB_block& block = (*it)->SetGenbank();
                 block.ResetTaxonomy();
                 (*it)->SetGenbank(block);
-                if (IsGenbankBlockEmpty(block)) {
+                if (IsEmpty(block)) {
                     sdr.Set().erase(it);
                     found = true;
                     break;
@@ -683,7 +761,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr)
                     }
                 }
                 
-                if (IsGenbankBlockEmpty(block)) {
+                if (IsEmpty(block)) {
                     sdr.Set().erase(it);
                     found = true;
                     break;
@@ -733,6 +811,68 @@ void CCleanup_imp::x_CleanGenbankBlockStrings(CBioseq_set& bss)
 }
 
 
+// removes or converts empty features
+void CCleanup_imp::x_RemoveEmptyFeatures (CSeq_annot& sa)
+{
+    if (sa.IsSetData()  &&  sa.GetData().IsFtable()) {
+        CSeq_annot::C_Data::TFtable& ftable = sa.SetData().SetFtable();
+        CSeq_annot::C_Data::TFtable new_table;
+        new_table.clear();
+        
+        while (ftable.size() > 0) {
+            CRef< CSeq_feat > sf = ftable.front();
+            ftable.pop_front();
+            
+            if (!IsEmpty(*sf)) {
+                new_table.push_back (sf);
+            }
+        }
+        while (new_table.size() > 0) {
+            CRef< CSeq_feat > sf = new_table.front();
+            new_table.pop_front();
+            ftable.push_back (sf);
+        }
+    }
+}
+
+
+void CCleanup_imp::x_RemoveEmptyFeatures (CBioseq& bs)
+{
+    if (bs.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
+            x_RemoveEmptyFeatures(**it);
+        }
+    }
+}
+
+
+void CCleanup_imp::x_RemoveEmptyFeatures (CBioseq_set& bss)
+{
+    if (bss.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
+            x_RemoveEmptyFeatures(**it);
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_RemoveEmptyFeatures(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_RemoveEmptyFeatures(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }    
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -740,6 +880,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/06/22 13:28:29  bollin
+ * added step to remove empty features to ExtendedCleanup
+ *
  * Revision 1.9  2006/06/21 17:21:28  bollin
  * added cleanup of GenbankBlock descriptor strings to ExtendedCleanup
  *

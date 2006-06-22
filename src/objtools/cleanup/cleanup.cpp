@@ -147,6 +147,15 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_submit& ss)
 }
 
 
+CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_annot& sa)
+{
+    CRef<CCleanupChange> errors(new CCleanupChange(&sa));
+    CCleanup_imp clean_i(errors, m_Scope, 0);
+    clean_i.ExtendedCleanup(sa);
+    return errors;
+}
+
+
 // *********************** CCleanupChange implementation **********************
 
 
@@ -373,6 +382,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/06/22 13:28:29  bollin
+* added step to remove empty features to ExtendedCleanup
+*
 * Revision 1.10  2006/06/20 19:43:39  bollin
 * added MolInfoUpdate to ExtendedCleanup
 *
