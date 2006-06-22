@@ -184,8 +184,8 @@ I_DriverContext::I_DriverContext(void) :
     m_LoginTimeout(0),
     m_Timeout(0)
 {
-    PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault() );
-    PushDefConnMsgHandler ( &CDB_UserHandler::GetDefault() );
+    PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault(), eTakeOwnership );
+    PushDefConnMsgHandler ( &CDB_UserHandler::GetDefault(), eTakeOwnership );
 }
 
 I_DriverContext::~I_DriverContext(void)
@@ -617,6 +617,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/06/22 18:42:11  ssikorsk
+ * In I_DriverContext::I_DriverContext register default message handler
+ * with eTakeOwnership.
+ *
  * Revision 1.28  2006/06/19 19:10:11  ssikorsk
  * Fixed I_DriverContext::PopDefConnMsgHandler to pop msg handlers
  * from created connections.
