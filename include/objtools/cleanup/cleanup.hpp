@@ -81,6 +81,8 @@ public:
     CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry& se);
     /// Cleanup a Seq-submit. 
     CConstRef<CCleanupChange> ExtendedCleanup(CSeq_submit& ss);
+    /// Cleanup a Seq-Annot.
+    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_annot& sa);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -232,6 +234,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/06/22 13:49:48  bollin
+* added method for extended cleanup of CSeq_annot
+*
 * Revision 1.11  2006/06/20 19:43:10  bollin
 * added extended cleanup for SeqSubmit
 *
