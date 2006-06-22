@@ -741,9 +741,9 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
             NCBI_THROW(CBlockingQueueException, eTimedOut,
                        "CBlockingQueue<>::Get[Handle]: timed out");
         }
-    }
-    if (--m_HungerCnt == 0) {
-        m_HungerSem.TryWait();
+        if (--m_HungerCnt == 0) {
+            m_HungerSem.TryWait();
+        }
     }
 
     TItemHandle handle(*q.begin());
@@ -955,6 +955,7 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
     } else if (urgent  &&  m_UrgentThreadCount.Get() < m_MaxUrgentThreads) {
         return true;
     } else {
+#if 0 // real bug should be fixed now
         try {
             // This should be redundant with the delta < 0 case, but
             // I've gotten reports that suggest otherwise. :-/
@@ -962,6 +963,7 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
             return true;
         } catch (...) {
         }
+#endif
         return false;
     }
 }
@@ -1048,6 +1050,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2006/06/22 14:56:46  ucko
+* CBlockingQueue<>::GetHandle: fix imbalanced management of m_HungerCnt.
+* CPoolOfThreads<>::HasImmediateRoom: conditionalize out the extra logic
+* introduced in the previous revision, as it should now truly be redundant.
+*
 * Revision 1.43  2006/06/21 19:49:09  ucko
 * CBlockingQueue<>::WaitFor{Room,Hunger}: re-raise the relevant
 * semaphore only if its condition still holds.
