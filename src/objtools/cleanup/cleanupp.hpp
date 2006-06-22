@@ -183,6 +183,10 @@ private:
     void x_RemoveEmptyFeatures (CBioseq& bs);
     void x_RemoveEmptyFeatures (CBioseq_set& bss);
     
+    void x_RemoveMultipleTitles (CSeq_descr& sdr);
+    void x_RemoveMultipleTitles(CBioseq& bs);
+    void x_RemoveMultipleTitles(CBioseq_set& bss);
+    
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
     void x_CleanupRna(CSeq_feat& feat);
@@ -234,6 +238,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/06/22 15:39:00  bollin
+ * added step for removing multiple titles to Extended Cleanup
+ *
  * Revision 1.13  2006/06/22 13:28:29  bollin
  * added step to remove empty features to ExtendedCleanup
  *

@@ -352,6 +352,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
 {
     BasicCleanup(bss);
     x_RemoveEmptyGenbankDesc(bss);
+    x_RemoveMultipleTitles(bss);
     x_RemoveEmptyFeatures(bss);
     x_MolInfoUpdate(bss);
     x_RemoveEmptyGenbankDesc(bss);
@@ -366,6 +367,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
 {
     BasicCleanup (bs);
     x_RemoveEmptyGenbankDesc(bs);
+    x_RemoveMultipleTitles(bs);
     x_RemoveEmptyFeatures(bs);    
     x_MolInfoUpdate(bs);
     x_RemoveEmptyGenbankDesc(bs);
@@ -835,6 +837,76 @@ void CCleanup_imp::x_CleanGenbankBlockStrings(CBioseq_set& bss)
 }
 
 
+// removes all title descriptors except the last one
+// Was RemoveMultipleTitles in C Toolkit
+void CCleanup_imp::x_RemoveMultipleTitles (CSeq_descr& sdr)
+{
+    int num_titles = 0;
+    CSeq_descr::Tdata& current_list = sdr.Set();
+    CSeq_descr::Tdata new_list;
+    
+    new_list.clear();
+    
+    while (current_list.size() > 0) {
+        CRef< CSeqdesc > sd = current_list.back();
+        current_list.pop_back();
+        if ((*sd).Which() == CSeqdesc::e_Title ) {
+            if (num_titles == 0) {
+                num_titles ++;
+                new_list.push_front(sd);
+            }
+        } else {
+            new_list.push_front(sd);
+        }
+    }
+    
+    while (new_list.size() > 0) {
+        CRef< CSeqdesc > sd = new_list.front();
+        new_list.pop_front();
+        current_list.push_back (sd);
+    }
+}
+
+
+void CCleanup_imp::x_RemoveMultipleTitles(CBioseq& bs)
+{
+    if (bs.IsSetDescr()) {
+        x_RemoveMultipleTitles(bs.SetDescr());
+        if (bs.SetDescr().Set().empty()) {
+            bs.ResetDescr();
+        }
+    }
+}
+
+
+void CCleanup_imp::x_RemoveMultipleTitles(CBioseq_set& bss)
+{
+    if (bss.IsSetDescr()) {
+        x_RemoveMultipleTitles(bss.SetDescr());
+        if (bss.SetDescr().Set().empty()) {
+            bss.ResetDescr();
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_RemoveMultipleTitles(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_RemoveMultipleTitles(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
 // removes or converts empty features
 void CCleanup_imp::x_RemoveEmptyFeatures (CSeq_annot& sa)
 {
@@ -897,6 +969,8 @@ void CCleanup_imp::x_RemoveEmptyFeatures (CBioseq_set& bss)
 }
 
 
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -904,6 +978,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/06/22 15:39:00  bollin
+ * added step for removing multiple titles to Extended Cleanup
+ *
  * Revision 1.11  2006/06/22 13:59:58  bollin
  * provide explicit conversion from EGIBB_mol to CMolInfo::EBiomol
  * removes compiler warnings
