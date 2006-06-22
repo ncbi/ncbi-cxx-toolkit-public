@@ -362,8 +362,8 @@ void CGridWorkerNode::Start()
                 try {
                     m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
                     /// Then CStdPoolOfThreads is fixed these 2 lines should be removed
-                    if (!m_ThreadsPool->HasImmediateRoom())
-                        continue;
+                        //if (!m_ThreadsPool->HasImmediateRoom())
+                        //continue;
                     //////
                 } catch (CBlockingQueueException&) {
                     continue;
@@ -709,6 +709,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/06/22 15:02:16  didenko
+ * Commented out the temporary fix again.
+ *
  * Revision 1.54  2006/06/22 13:52:36  didenko
  * Returned back a temporary fix for CStdPoolOfThreads
  * Added check_status_period configuration paramter
