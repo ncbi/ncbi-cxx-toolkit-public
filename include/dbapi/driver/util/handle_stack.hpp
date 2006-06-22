@@ -66,6 +66,9 @@ public:
             m_UserHandler(handler)
         {
         }
+        ~CUserHandlerWrapper(void)
+        {
+        }
 
         bool operator==(CDB_UserHandler* handler)
         {
@@ -92,6 +95,13 @@ public:
                     m_Obj->AddReference();
                 }
             }
+            CObjGuard(const CObjGuard& other) :
+                m_Obj(other.m_Obj)
+            {
+                if (m_Obj) {
+                    m_Obj->AddReference();
+                }
+            }
             ~CObjGuard(void)
             {
                 if (m_Obj) {
@@ -99,8 +109,25 @@ public:
                 }
             }
 
+            CObjGuard& operator=(const CObjGuard& other)
+            {
+                if (this != &other) {
+                    if (m_Obj) {
+                        m_Obj->ReleaseReference();
+                    }
+
+                    m_Obj = other.m_Obj;
+
+                    if (m_Obj) {
+                        m_Obj->AddReference();
+                    }
+                }
+
+                return *this;
+            }
+
         private:
-            CObject* const m_Obj;
+            CObject* m_Obj;
         };
 
         const CObjGuard         m_ObjGuard;
@@ -122,6 +149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/06/22 18:30:37  ssikorsk
+ * Added copy ctor and copy operator to CDBHandlerStack::CUserHandlerWrapper::CObjGuard.
+ *
  * Revision 1.9  2006/06/19 19:03:57  ssikorsk
  * Improved CDBHandlerStack::TContainer.
  *
