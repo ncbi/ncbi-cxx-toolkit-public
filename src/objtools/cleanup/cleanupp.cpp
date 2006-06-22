@@ -416,18 +416,42 @@ void CCleanup_imp::x_MolInfoUpdate(CSeq_descr& sdr)
         } else if ((*it)->Which() == CSeqdesc::e_Mol_type) {
             if (biomol == CMolInfo::eBiomol_unknown) {
                 CSeqdesc::TMol_type mol_type = (*it)->GetMol_type();
-                if (mol_type == CMolInfo::eBiomol_genomic
-                    || mol_type == CMolInfo::eBiomol_pre_RNA
-                    || mol_type == CMolInfo::eBiomol_mRNA
-                    || mol_type == CMolInfo::eBiomol_rRNA
-                    || mol_type == CMolInfo::eBiomol_tRNA
-                    || mol_type == CMolInfo::eBiomol_snRNA
-                    || mol_type == CMolInfo::eBiomol_scRNA
-                    || mol_type == CMolInfo::eBiomol_peptide
-                    || mol_type == CMolInfo::eBiomol_other_genetic
-                    || mol_type == CMolInfo::eBiomol_genomic_mRNA
-                    || mol_type == CMolInfo::eBiomol_other) {
-                    biomol = mol_type;
+                switch (mol_type) {
+                    case eGIBB_mol_unknown:
+                        break;
+                    case eGIBB_mol_genomic:
+                        biomol = CMolInfo::eBiomol_genomic;
+                        break;
+                    case eGIBB_mol_pre_mRNA:
+                        biomol = CMolInfo::eBiomol_pre_RNA;
+                        break;
+                    case eGIBB_mol_mRNA:
+                        biomol = CMolInfo::eBiomol_mRNA;
+                        break;
+                    case eGIBB_mol_rRNA:
+                        biomol = CMolInfo::eBiomol_rRNA;
+                        break;
+                    case eGIBB_mol_tRNA:
+                        biomol = CMolInfo::eBiomol_tRNA;
+                        break;
+                    case eGIBB_mol_snRNA:
+                        biomol = CMolInfo::eBiomol_snRNA;
+                        break;
+                    case eGIBB_mol_scRNA:
+                        biomol = CMolInfo::eBiomol_scRNA;
+                        break;
+                    case eGIBB_mol_peptide:
+                        biomol = CMolInfo::eBiomol_peptide;
+                        break;
+                    case eGIBB_mol_other_genetic:
+                        biomol = CMolInfo::eBiomol_other_genetic;
+                        break;
+                    case eGIBB_mol_genomic_mRNA:
+                        biomol = CMolInfo::eBiomol_genomic_mRNA;
+                        break;
+                    case eGIBB_mol_other:
+                        biomol = CMolInfo::eBiomol_other;
+                        break;
                 }
             }
         } else if ((*it)->Which() == CSeqdesc::e_Method) {
@@ -880,6 +904,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/06/22 13:59:58  bollin
+ * provide explicit conversion from EGIBB_mol to CMolInfo::EBiomol
+ * removes compiler warnings
+ *
  * Revision 1.10  2006/06/22 13:28:29  bollin
  * added step to remove empty features to ExtendedCleanup
  *
