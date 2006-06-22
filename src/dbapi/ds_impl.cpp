@@ -51,15 +51,22 @@ CDataSource::~CDataSource()
     try {
         _TRACE("Deleting " << GetIdent() << " " << (void*)this);
         Notify(CDbapiDeletedEvent(this));
-        
+
+        if (m_multiExH) {
+            // Unregister a msg handler with a context ...
+            m_context->PopCntxMsgHandler(m_multiExH);
+            m_context->PopDefConnMsgHandler(m_multiExH);
+        }
+
+        delete m_multiExH;
+
         // We won't delete context unless all connections are closed.
         // This will cause a memory leak but it also will prevent from
         // accessing an already freed memory.
         if (m_context->NofConnections() == 0) {
             delete m_context;
         }
-        
-        delete m_multiExH;
+
         _TRACE(GetIdent() << " " << (void*)this << " deleted.");
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -144,7 +151,7 @@ string CDataSource::GetErrorInfo()
 
 I_DriverContext* CDataSource::GetDriverContext() {
     CHECK_NCBI_DBAPI(
-        m_context == 0, 
+        m_context == 0,
         "CDataSource::GetDriverContext(): no valid context"
         );
 
@@ -154,7 +161,7 @@ I_DriverContext* CDataSource::GetDriverContext() {
 const I_DriverContext* CDataSource::GetDriverContext() const
 {
     //CHECK_NCBI_DBAPI(
-    //    m_context == 0, 
+    //    m_context == 0,
     //    "CDataSource::GetDriverContext(): no valid context"
     //    );
 
@@ -188,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/06/22 18:33:56  ssikorsk
+ * Explicitly unregister message handler with a context before deleting of a context.
+ *
  * Revision 1.22  2006/04/05 16:30:01  ssikorsk
  * Added more detailed comment to the previous fix.
  *
