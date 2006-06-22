@@ -660,6 +660,10 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
 		cd->SetMaster3d().push_back(SeqID);
 		}
 	}
+	if (resetFields) 
+	{
+		ResetFields(cd);
+    }
 	return remasterAlignannot(*cd, Row);
 }
 
@@ -759,9 +763,6 @@ int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields)
                     pCD->EraseSequence(consensusSeqListIds[i]);
                 }
             }
-              if (resetFields) {
-                ResetFields(pCD);
-              }
         }
     }
 
@@ -904,6 +905,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2006/06/22 02:32:08  cliu
+ * reset fields in remaster function
+ *
  * Revision 1.17  2006/03/14 19:19:07  cliu
  * remake div-rank only for CDs with good blocks.
  *
