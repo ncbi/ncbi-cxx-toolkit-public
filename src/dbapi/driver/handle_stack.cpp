@@ -50,10 +50,8 @@ void CDBHandlerStack::Push(CDB_UserHandler* h, EOwnership ownership)
     CHECK_DRIVER_ERROR(h == NULL, "An attempt to pass NULL instead of "
                        "a valid CDB_UserHandler object", 0);
 
-    const bool referenced = h->Referenced();
     CRef<CUserHandlerWrapper>
-        obj(new CUserHandlerWrapper(h, (ownership == eNoOwnership &&
-                                        !referenced)));
+        obj(new CUserHandlerWrapper(h, ownership == eNoOwnership));
 
     m_Stack.push_back(TContainer::value_type(obj));
 }
@@ -154,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/06/22 18:39:50  ssikorsk
+ * Changed CDBHandlerStack::Pushb to guard all objects with eNoOwnership.
+ *
  * Revision 1.13  2006/06/19 19:07:52  ssikorsk
  * New CDBHandlerStack implementation.
  *
