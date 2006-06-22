@@ -478,9 +478,16 @@ bool x_IsInputGtf( const char* byte_buf, size_t byte_count )
     if ( lines.empty() ) {
         return false;
     }
+
+    list<string>::iterator it = lines.begin();
+    for ( ;  it != lines.end();  ++it) {
+        if ( !it->empty()  &&  (*it)[0] != '#') {
+            break;
+        }
+    }
     
-    ITERATE( list<string>, it, lines ) {
-        if ( ! x_IsLineGtf( *it ) ) {
+    for ( ;  it != lines.end();  ++it) {
+        if ( !x_IsLineGtf( *it ) ) {
             return false;
         }
     }
@@ -854,6 +861,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/06/22 17:58:28  dicuccio
+ * Ignore leading comment lines in GTF/GFF files
+ *
  * Revision 1.26  2006/06/15 17:45:40  dicuccio
  * Added recognition of Glimmer3 predictions
  *
