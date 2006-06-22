@@ -49,6 +49,7 @@
 
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/general/date.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanupp.hpp"
@@ -353,6 +354,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
     BasicCleanup(bss);
     x_RemoveEmptyGenbankDesc(bss);
     x_RemoveMultipleTitles(bss);
+    x_MergeMultipleDates(bss);
     x_RemoveEmptyFeatures(bss);
     x_MolInfoUpdate(bss);
     x_RemoveEmptyGenbankDesc(bss);
@@ -368,6 +370,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
     BasicCleanup (bs);
     x_RemoveEmptyGenbankDesc(bs);
     x_RemoveMultipleTitles(bs);
+    x_MergeMultipleDates(bs);
     x_RemoveEmptyFeatures(bs);    
     x_MolInfoUpdate(bs);
     x_RemoveEmptyGenbankDesc(bs);
@@ -907,6 +910,97 @@ void CCleanup_imp::x_RemoveMultipleTitles(CBioseq_set& bss)
 }
 
 
+// Retain the most recent create date, remove the others
+// Was MergeMultipleDates in C Toolkit
+void CCleanup_imp::x_MergeMultipleDates (CSeq_descr& sdr)
+{
+    CSeq_descr::Tdata& current_list = sdr.Set();
+    CSeq_descr::Tdata new_list;    
+    CSeq_descr::Tdata dates_list;    
+    int num_dates = 0;
+    
+    new_list.clear();
+    dates_list.clear();
+    
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((**it).Which() == CSeqdesc::e_Create_date ) {
+            if (dates_list.size() > 0) {
+                if ((*(dates_list.back())).GetCreate_date().Compare ((**it).GetCreate_date()) == CDate::eCompare_before) {
+                    dates_list.pop_back();
+                    dates_list.push_back(*it);
+                }
+            } else {
+                dates_list.push_back(*it);
+            }
+            num_dates ++;
+        }
+    }
+    if (dates_list.size() == 0 || num_dates == 1) {
+        return;
+    }
+    
+    num_dates = 0;
+    while (current_list.size() > 0) {
+        CRef< CSeqdesc > sd = current_list.front();
+        current_list.pop_front();
+        if ((*sd).Which() == CSeqdesc::e_Create_date ) {
+            if (num_dates == 0
+                && (*(dates_list.back())).GetCreate_date().Compare (sd->GetCreate_date()) == CDate::eCompare_same) {
+                new_list.push_back(sd);
+                num_dates ++;
+            }
+        } else {
+            new_list.push_back(sd);
+        }
+                
+    }
+    
+    while (new_list.size() > 0) {
+        CRef< CSeqdesc > sd = new_list.front();
+        new_list.pop_front();
+        current_list.push_back (sd);
+    }
+}
+
+void CCleanup_imp::x_MergeMultipleDates(CBioseq& bs)
+{
+    if (bs.IsSetDescr()) {
+        x_MergeMultipleDates(bs.SetDescr());
+        if (bs.SetDescr().Set().empty()) {
+            bs.ResetDescr();
+        }
+    }
+}
+
+
+void CCleanup_imp::x_MergeMultipleDates(CBioseq_set& bss)
+{
+    if (bss.IsSetDescr()) {
+        x_MergeMultipleDates(bss.SetDescr());
+        if (bss.SetDescr().Set().empty()) {
+            bss.ResetDescr();
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_MergeMultipleDates(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_MergeMultipleDates(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
 // removes or converts empty features
 void CCleanup_imp::x_RemoveEmptyFeatures (CSeq_annot& sa)
 {
@@ -978,6 +1072,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/06/22 17:29:15  bollin
+ * added method to merge multiple create dates to Extended Cleanup
+ *
  * Revision 1.12  2006/06/22 15:39:00  bollin
  * added step for removing multiple titles to Extended Cleanup
  *
