@@ -263,6 +263,7 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
             case CRNA_ref::eType_rRNA:   m_Subtype = eSubtype_rRNA;     break;
             case CRNA_ref::eType_snRNA:  m_Subtype = eSubtype_snRNA;    break;
             case CRNA_ref::eType_scRNA:  m_Subtype = eSubtype_scRNA;    break;
+            case CRNA_ref::eType_snoRNA: m_Subtype = eSubtype_snoRNA;   break;
             default:                     m_Subtype = eSubtype_otherRNA; break;
             }
             break;
@@ -2452,6 +2453,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.32  2006/06/22 22:14:44  shkeda
+* Added snoRNA Subtype conversion
+*
 * Revision 6.31  2006/04/18 17:05:45  rsmith
 * _ASSERT -> _VERIFY to eliminate compiler warnings.
 *
