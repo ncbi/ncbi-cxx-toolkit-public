@@ -191,6 +191,10 @@ private:
     void x_MergeMultipleDates(CBioseq& bs);
     void x_MergeMultipleDates(CBioseq_set& bss);
     
+    void x_MergeAdjacentAnnots (list< CRef< CSeq_annot > >& annot_list);
+    void x_MergeAdjacentAnnots (CBioseq& bs);
+    void x_MergeAdjacentAnnots (CBioseq_set& bss);
+    
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
     void x_CleanupRna(CSeq_feat& feat);
@@ -242,6 +246,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/06/22 18:16:01  bollin
+ * added step to merge adjacent Seq-Annots to ExtendedCleanup
+ *
  * Revision 1.15  2006/06/22 17:29:15  bollin
  * added method to merge multiple create dates to Extended Cleanup
  *

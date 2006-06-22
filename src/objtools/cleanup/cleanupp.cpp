@@ -356,10 +356,12 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
     x_RemoveMultipleTitles(bss);
     x_MergeMultipleDates(bss);
     x_RemoveEmptyFeatures(bss);
+    x_MergeAdjacentAnnots(bss);
     x_MolInfoUpdate(bss);
     x_RemoveEmptyGenbankDesc(bss);
     x_CleanGenbankBlockStrings(bss);
     x_RemoveEmptyFeatures(bss);
+    x_MergeAdjacentAnnots(bss);
     BasicCleanup(bss);
 
 }
@@ -371,11 +373,13 @@ void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
     x_RemoveEmptyGenbankDesc(bs);
     x_RemoveMultipleTitles(bs);
     x_MergeMultipleDates(bs);
-    x_RemoveEmptyFeatures(bs);    
+    x_RemoveEmptyFeatures(bs); 
+    x_MergeAdjacentAnnots(bs);   
     x_MolInfoUpdate(bs);
     x_RemoveEmptyGenbankDesc(bs);
     x_CleanGenbankBlockStrings(bs);
-    x_RemoveEmptyFeatures(bs);    
+    x_RemoveEmptyFeatures(bs);
+    x_MergeAdjacentAnnots(bs);    
     BasicCleanup (bs);
 }
 
@@ -1063,6 +1067,83 @@ void CCleanup_imp::x_RemoveEmptyFeatures (CBioseq_set& bss)
 }
 
 
+// combine CSeq_annot objects if two adjacent objects in the list are both
+// feature table annotations, both have no id, no name, no db, and no description
+void CCleanup_imp::x_MergeAdjacentAnnots (list< CRef< CSeq_annot > >& annot_list)
+{
+    list< CRef< CSeq_annot > > new_list;
+    
+    new_list.clear();
+    
+    while (annot_list.size() > 0) {
+        CRef<CSeq_annot> sa = annot_list.front();
+        annot_list.pop_front();
+        if (new_list.size() == 0 
+            || ! (*sa).CanGetData()
+            || ! (*sa).GetData().IsFtable()
+            || (*sa).IsSetId()
+            || (*sa).IsSetName()
+            || (*sa).IsSetDb()
+            || (*sa).IsSetDesc()
+            || ! new_list.back()->CanGetData()
+            || ! new_list.back()->GetData().IsFtable()
+            || new_list.back()->IsSetId()
+            || new_list.back()->IsSetName()
+            || new_list.back()->IsSetDb()
+            || new_list.back()->IsSetDesc()) {
+            new_list.push_back (sa);
+        } else {
+            // add features from this annot to the previous one
+            CSeq_annot::C_Data::TFtable& ftable = new_list.back()->SetData().SetFtable();
+            CSeq_annot::C_Data::TFtable& new_table = (*sa).SetData().SetFtable();
+            while (new_table.size() > 0) {
+                CRef< CSeq_feat > sf = new_table.front();
+                new_table.pop_front();
+                ftable.push_back(sf);
+            }
+        }
+    }
+    
+    while (new_list.size() > 0) {
+        CRef<CSeq_annot> sa = new_list.front();
+        new_list.pop_front();
+        annot_list.push_back(sa);
+    }
+}
+
+
+void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq& bs)
+{
+    if (bs.IsSetAnnot()) {
+        x_MergeAdjacentAnnots(bs.SetAnnot());
+    }
+}
+
+
+void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_set& bss)
+{
+    if (bss.IsSetAnnot()) {
+        x_MergeAdjacentAnnots(bss.SetAnnot());
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_MergeAdjacentAnnots(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_MergeAdjacentAnnots(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }    
+}
+
 
 
 END_SCOPE(objects)
@@ -1072,6 +1153,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/06/22 18:16:01  bollin
+ * added step to merge adjacent Seq-Annots to ExtendedCleanup
+ *
  * Revision 1.14  2006/06/22 17:47:52  ucko
  * Correctly capitalize Date.hpp.
  *
