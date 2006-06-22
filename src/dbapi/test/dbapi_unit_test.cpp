@@ -2270,6 +2270,33 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // Remove handlers ...
         drv_context->PopDefConnMsgHandler( drv_err_handler.get() );
     }
+
+    // SetLogStream ...
+    {
+        {
+            // Enable multiexception ...
+            m_DS->SetLogStream(0);
+
+            // Create a new connection ...
+            IConnection* conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+
+            delete conn;
+
+            m_DS->SetLogStream(&cerr);
+        }
+
+        {
+            // Enable multiexception ...
+            m_DS->SetLogStream(0);
+
+            // Create a new connection ...
+            IConnection* conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+
+            m_DS->SetLogStream(&cerr);
+
+            delete conn;
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -4153,6 +4180,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.79  2006/06/22 18:44:10  ssikorsk
+ * Added testing of SetLogStream to Test_UserErrorHandler.
+ *
  * Revision 1.78  2006/06/14 19:36:07  ssikorsk
  * Added Create_Destroy and Multiple_Close tests.
  *
