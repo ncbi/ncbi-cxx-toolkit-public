@@ -111,11 +111,16 @@ public:
 
         string stat = " is canceled.";
         if (!canceled) {
-            if (ret != 0 && m_Params.FailOnNonZeroExit() ) {
-                context.CommitJobWithFailure("Exited with " 
-                                             + NStr::IntToString(ret) +
-                                             " return code.");
-                stat = " is failed.";
+            if (ret != 0 && m_Params.GetNonZeroExitAction() != 
+                           CRemoteAppParams::eDoneOnNonZeroExit) {
+                if (m_Params.GetNonZeroExitAction() == CRemoteAppParams::eFailOnNonZeroExit) {
+                    context.CommitJobWithFailure("Exited with " 
+                                                 + NStr::IntToString(ret) +
+                                                 " return code.");
+                    stat = " is failed.";
+                } else if (m_Params.GetNonZeroExitAction() == 
+                           CRemoteAppParams::eReturnOnNonZeroExit)
+                    stat = " is returned.";
             } else {
                 context.CommitJob();
                 stat = " is done.";
@@ -187,6 +192,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteCgiJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/22 19:33:14  didenko
+ * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
+ *
  * Revision 1.2  2006/06/01 18:55:53  didenko
  * added config file for remote_cgi utility
  *

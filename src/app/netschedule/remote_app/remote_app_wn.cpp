@@ -145,11 +145,16 @@ public:
 
         string stat = " is canceled.";
         if (!canceled) {
-            if (ret != 0 && m_Params.FailOnNonZeroExit() ) {
-                context.CommitJobWithFailure("Exited with " 
-                                             + NStr::IntToString(ret) +
-                                             " return code.");
-                stat = " is failed.";
+            if (ret != 0 && m_Params.GetNonZeroExitAction() != 
+                           CRemoteAppParams::eDoneOnNonZeroExit) {
+                if (m_Params.GetNonZeroExitAction() == CRemoteAppParams::eFailOnNonZeroExit) {
+                    context.CommitJobWithFailure("Exited with " 
+                                                 + NStr::IntToString(ret) +
+                                                 " return code.");
+                    stat = " is failed.";
+                } else if (m_Params.GetNonZeroExitAction() == 
+                           CRemoteAppParams::eReturnOnNonZeroExit)
+                    stat = " is returned.";
             } else {
                 context.CommitJob();
                 stat = " is done.";
@@ -234,6 +239,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/06/22 19:33:14  didenko
+ * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
+ *
  * Revision 1.20  2006/06/19 13:26:38  didenko
  * fixed cmdline parsing
  * added logging information

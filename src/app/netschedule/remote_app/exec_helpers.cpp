@@ -46,7 +46,8 @@ BEGIN_NCBI_SCOPE
 //////////////////////////////////////////////////////////////////////////////
 ///
 CRemoteAppParams::CRemoteAppParams()
-    : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), m_FailOnNonZeroExit(false),
+    : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), 
+      m_NonZeroExitAction(eDoneOnNonZeroExit),
       m_RunInSeparateDir(false)
 {
 }
@@ -59,9 +60,27 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
     m_KeepAlivePeriod = 
         reg.GetInt(sec_name,"keep_alive_period",0,0,IRegistry::eReturn);
 
-    m_FailOnNonZeroExit =
-        reg.GetBool(sec_name, "fail_on_non_zero_exit", false, 0, 
-                    CNcbiRegistry::eReturn);
+    if (reg.HasEntry(sec_name, "non_zero_exit_action") ) {
+        string val = reg.GetString(sec_name, "non_zero_exit_action", "");
+        if (NStr::CompareNocase(val, "fail") == 0 )
+            m_NonZeroExitAction = eFailOnNonZeroExit;
+        else if (NStr::CompareNocase(val, "return") == 0 )
+            m_NonZeroExitAction = eReturnOnNonZeroExit;
+        else if (NStr::CompareNocase(val, "done") == 0 )
+            m_NonZeroExitAction = eDoneOnNonZeroExit;
+        else {
+            LOG_POST(Warning << "Unknown parameter value : Section [" 
+                     << sec_name << "], param : \"non_zero_exit_action\", value : \""
+                     << val << "\". Allowed values: fail, return, done"); 
+        }
+
+    } else {
+        if (reg.HasEntry(sec_name, "fail_on_non_zero_exit") ) {
+            if (reg.GetBool(sec_name, "fail_on_non_zero_exit", false, 0, 
+                            CNcbiRegistry::eReturn) )
+                m_NonZeroExitAction = eFailOnNonZeroExit;
+        }
+    }
 
     m_RunInSeparateDir =
         reg.GetBool(sec_name, "run_in_separate_dir", false, 0, 
@@ -255,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/22 19:33:14  didenko
+ * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
+ *
  * Revision 1.1  2006/05/30 16:43:36  didenko
  * Moved the commonly used code to separate files.
  *

@@ -57,6 +57,12 @@ class IRegistry;
 class CRemoteAppParams 
 {
 public:
+    enum ENonZeroExitAction {
+        eDoneOnNonZeroExit,
+        eFailOnNonZeroExit,
+        eReturnOnNonZeroExit
+    };
+
     CRemoteAppParams();
 
     void Load(const string& sec_name, const IRegistry&);
@@ -64,7 +70,7 @@ public:
     const string& GetAppPath() const { return m_AppPath; }
     int GetMaxAppRunningTime() const { return m_MaxAppRunningTime; }
     int GetKeepAlivePeriod() const { return m_KeepAlivePeriod; }
-    bool FailOnNonZeroExit() const { return m_FailOnNonZeroExit; }
+    ENonZeroExitAction GetNonZeroExitAction() const { return m_NonZeroExitAction; }
     bool RunInSeparateDir() const { return m_RunInSeparateDir; }
     const string& GetTempDir() const { return m_TempDir; }
 
@@ -72,7 +78,7 @@ private:
     string m_AppPath;
     int m_MaxAppRunningTime;
     int m_KeepAlivePeriod;
-    bool m_FailOnNonZeroExit;
+    ENonZeroExitAction m_NonZeroExitAction;
     bool m_RunInSeparateDir;
     string m_TempDir;
 };
@@ -83,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/22 19:33:14  didenko
+ * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
+ *
  * Revision 1.1  2006/05/30 16:43:36  didenko
  * Moved the commonly used code to separate files.
  *
