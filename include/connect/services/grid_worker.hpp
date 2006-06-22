@@ -525,6 +525,8 @@ public:
 
     void SetUseEmbeddedStorage(bool on_off) { m_UseEmbeddedStorage = on_off; }
     bool IsEmeddedStorageUsed() const { return m_UseEmbeddedStorage; }
+    unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
+    void SetCheckStatusPeriod(unsigned int sec) { m_CheckStatusPeriod = sec; }
     /// Start jobs execution.
     ///
     void Start();
@@ -577,6 +579,7 @@ private:
     CSemaphore                   m_HoldSem;
     mutable CFastMutex           m_HoldMutex;
     bool                         m_UseEmbeddedStorage;
+    unsigned int                 m_CheckStatusPeriod;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
@@ -627,25 +630,6 @@ private:
 
 };
 
-class CGridWorkerNodeException : public CException
-{
-public:
-    enum EErrCode {
-        eExclusiveModeIsAlreadySet
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eExclusiveModeIsAlreadySet:    return "eExclusiveModeIsAlreadySet";
-        default:                      return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CGridWorkerNodeException, CException);
-};
-
 /* @} */
 
 
@@ -657,6 +641,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/06/22 13:52:35  didenko
+ * Returned back a temporary fix for CStdPoolOfThreads
+ * Added check_status_period configuration paramter
+ * Fixed exclusive mode checking
+ *
  * Revision 1.46  2006/05/22 18:11:42  didenko
  * Added an option to fail a job if a remote app returns non zore code
  *

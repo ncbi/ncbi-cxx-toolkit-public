@@ -156,8 +156,6 @@ void CWorkerNodeJobContext::Reset(const string& job_key,
 
 void CWorkerNodeJobContext::RequestExclusiveMode()
 {
-    if (CGridGlobals::GetInstance().IsExclusiveMode())
-        NCBI_THROW(CGridWorkerNodeException, eExclusiveModeIsAlreadySet, "");
     CGridGlobals::GetInstance().SetExclusiveMode(true);
     m_ExclusiveJob = true;
 }
@@ -202,7 +200,8 @@ CGridThreadContext& CWorkerNodeRequest::x_GetThreadContext()
 {
     CGridThreadContext* context = s_tls->GetValue();
     if (!context) {
-        context = new CGridThreadContext(m_Context->GetWorkerNode());
+        context = new CGridThreadContext(m_Context->GetWorkerNode(), 
+                                         m_Context->GetWorkerNode().GetCheckStatusPeriod());
         s_tls->SetValue(context, s_TlsCleanup);
     }
     context->SetJobContext(*m_Context);
@@ -213,7 +212,7 @@ static auto_ptr<CGridThreadContext> s_SingleTHreadContext;
 static CGridThreadContext& s_GetSingleTHreadContext(CGridWorkerNode& node)
 {
     if (!s_SingleTHreadContext.get())
-        s_SingleTHreadContext.reset(new CGridThreadContext(node));
+        s_SingleTHreadContext.reset(new CGridThreadContext(node, node.GetCheckStatusPeriod()));
     return *s_SingleTHreadContext;
 }
 
@@ -229,9 +228,9 @@ static void s_RunJob(CGridThreadContext& thr_context)
         try {
             ret_code = job->Do(thr_context.GetJobContext());
         }
-        catch (CGridWorkerNodeException& ex) {
+        catch (CGridGlobalsException& ex) {
             if (ex.GetErrCode() != 
-                CGridWorkerNodeException::eExclusiveModeIsAlreadySet) 
+                CGridGlobalsException::eExclusiveModeIsAlreadySet) 
                 throw;            
             if(thr_context.GetJobContext().IsLogRequested()) {
                 LOG_POST("Job " << thr_context.GetJobContext().GetJobKey() 
@@ -314,7 +313,8 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_LogRequested(false), m_OnHold(false),
-      m_HoldSem(0,10000), m_UseEmbeddedStorage(false)
+      m_HoldSem(0,10000), m_UseEmbeddedStorage(false),
+      m_CheckStatusPeriod(2)
 {
 }
 
@@ -361,8 +361,10 @@ void CGridWorkerNode::Start()
             if (m_MaxThreads > 1) {
                 try {
                     m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
-                    //                    if (!m_ThreadsPool->HasImmediateRoom())
-                    //                        continue;
+                    /// Then CStdPoolOfThreads is fixed these 2 lines should be removed
+                    if (!m_ThreadsPool->HasImmediateRoom())
+                        continue;
+                    //////
                 } catch (CBlockingQueueException&) {
                     continue;
                 }
@@ -707,6 +709,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/06/22 13:52:36  didenko
+ * Returned back a temporary fix for CStdPoolOfThreads
+ * Added check_status_period configuration paramter
+ * Fixed exclusive mode checking
+ *
  * Revision 1.53  2006/06/21 20:10:37  didenko
  * Commented out previous changes
  *

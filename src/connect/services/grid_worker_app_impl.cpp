@@ -436,6 +436,9 @@ int CGridWorkerApp_Impl::Run()
     string admin_hosts = 
             reg.GetString("server", "admin_hosts", "");
 
+    unsigned int check_status_period = 
+        reg.GetInt("server","check_status_period",2,0,IRegistry::eReturn);
+
     bool use_embedded_input = false;
     if (!reg.Get(kNetScheduleDriverName, "use_embedded_storage").empty())
         use_embedded_input = reg.
@@ -514,6 +517,7 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetAdminHosts(admin_hosts);
     m_WorkerNode->ActivateServerLog(server_log);
     m_WorkerNode->AcivatePermanentConnection(permanent_conntction);
+    m_WorkerNode->SetCheckStatusPeriod(check_status_period);
 
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxJobsAllowed(max_total_jobs);
@@ -610,6 +614,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.23  2006/06/22 13:52:36  didenko
+ * Returned back a temporary fix for CStdPoolOfThreads
+ * Added check_status_period configuration paramter
+ * Fixed exclusive mode checking
+ *
  * Revision 6.22  2006/06/08 19:39:35  didenko
  * Spelling correction
  *

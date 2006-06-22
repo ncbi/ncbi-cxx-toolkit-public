@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 class CGridThreadContext
 {
 public:
-    explicit CGridThreadContext(CGridWorkerNode& node);
+    explicit CGridThreadContext(CGridWorkerNode& node, long check_status_period = 2);
 
     CWorkerNodeJobContext& GetJobContext();
 
@@ -84,7 +84,8 @@ private:
     auto_ptr<CNcbiOstream>        m_WStream;
 
     auto_ptr<IBlobStorage>        m_ProgressWriter;
-    CRequestRateControl           m_RateControl; 
+    CRequestRateControl           m_MsgThrottler; 
+    CRequestRateControl           m_StatusThrottler; 
 
     CGridThreadContext(const CGridThreadContext&);
     CGridThreadContext& operator=(const CGridThreadContext&);
@@ -95,6 +96,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2006/06/22 13:52:36  didenko
+ * Returned back a temporary fix for CStdPoolOfThreads
+ * Added check_status_period configuration paramter
+ * Fixed exclusive mode checking
+ *
  * Revision 6.11  2006/05/22 18:11:43  didenko
  * Added an option to fail a job if a remote app returns non zore code
  *

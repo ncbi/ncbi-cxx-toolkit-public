@@ -105,8 +105,8 @@ public:
     bool ReuseJobObject() const { return m_ReuseJobObject; }
     void SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
     void SetWorker(CGridWorkerNode& worker) { m_Worker = &worker; }
-    void SetExclusiveMode(bool on_off) { m_ExclusiveMode = on_off; }
-    bool IsExclusiveMode() const { return m_ExclusiveMode; }
+    void SetExclusiveMode(bool on_off);
+    bool IsExclusiveMode() const;
 
 
     /// Request node shutdown
@@ -137,10 +137,30 @@ private:
     const CTime  m_StartTime;
     CGridWorkerNode* m_Worker;
     volatile bool m_ExclusiveMode;
+    mutable CFastMutex m_ExclModeGuard;
 
     CGridGlobals(const CGridGlobals&);
     CGridGlobals& operator=(const CGridGlobals&);
     
+};
+
+class CGridGlobalsException : public CException
+{
+public:
+    enum EErrCode {
+        eExclusiveModeIsAlreadySet
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eExclusiveModeIsAlreadySet:    return "eExclusiveModeIsAlreadySet";
+        default:                      return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CGridGlobalsException, CException);
 };
 
 END_NCBI_SCOPE
@@ -150,6 +170,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/22 13:52:35  didenko
+ * Returned back a temporary fix for CStdPoolOfThreads
+ * Added check_status_period configuration paramter
+ * Fixed exclusive mode checking
+ *
  * Revision 1.6  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *

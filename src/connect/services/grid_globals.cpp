@@ -210,11 +210,29 @@ void CGridGlobals::KillNode()
         GetJobsWatcher().x_KillNode(*m_Worker);    
 }
 
+void CGridGlobals::SetExclusiveMode(bool on_off) 
+{ 
+    CFastMutexGuard guard(m_ExclModeGuard);
+    if (m_ExclusiveMode && on_off)
+        NCBI_THROW(CGridGlobalsException, eExclusiveModeIsAlreadySet, "");
+    m_ExclusiveMode = on_off; 
+}
+bool CGridGlobals::IsExclusiveMode() const 
+{ 
+    CFastMutexGuard guard(m_ExclModeGuard);
+    return m_ExclusiveMode; 
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2006/06/22 13:52:36  didenko
+ * Returned back a temporary fix for CStdPoolOfThreads
+ * Added check_status_period configuration paramter
+ * Fixed exclusive mode checking
+ *
  * Revision 6.5  2006/05/15 15:26:53  didenko
  * Added support for running exclusive jobs
  *

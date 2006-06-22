@@ -44,8 +44,9 @@
 BEGIN_NCBI_SCOPE
 
 /// @internal
-CGridThreadContext::CGridThreadContext(CGridWorkerNode& node)
-    : m_JobContext(NULL), m_RateControl(1)
+CGridThreadContext::CGridThreadContext(CGridWorkerNode& node, long check_status_period)
+    : m_JobContext(NULL), m_MsgThrottler(1), 
+      m_StatusThrottler(1,CTimeSpan(check_status_period > 1 ? check_status_period : 1, 0))
 {
     m_Reporter.reset(node.CreateClient());
     m_Reader.reset(node.CreateStorage());
@@ -140,7 +141,7 @@ CNcbiOstream& CGridThreadContext::GetOStream()
 void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immediately)
 {
     _ASSERT(m_JobContext);
-    if ( !send_immediately && !m_RateControl.Approve(CRequestRateControl::eErrCode))
+    if ( !send_immediately && !m_MsgThrottler.Approve(CRequestRateControl::eErrCode))
         return;
     try {
         CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
@@ -308,7 +309,7 @@ bool CGridThreadContext::IsJobCanceled()
     if (!debug_context || 
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
-        if (m_Reporter.get()) {
+        if (m_Reporter.get() && m_StatusThrottler.Approve(CRequestRateControl::eErrCode)) {
             int ret_code;
             string output;
             CNetScheduleClient::EJobStatus status = 
@@ -367,7 +368,7 @@ void CGridThreadContext::CloseStreams()
     m_WStream.reset(); // Destructor of IWriter resets m_Writer also
 
     m_ProgressWriter->Reset();
-    m_RateControl.Reset(1);
+    m_MsgThrottler.Reset(1);
 
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (debug_context) {
@@ -382,6 +383,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.24  2006/06/22 13:52:36  didenko
+ * Returned back a temporary fix for CStdPoolOfThreads
+ * Added check_status_period configuration paramter
+ * Fixed exclusive mode checking
+ *
  * Revision 6.23  2006/05/30 16:41:05  didenko
  * Improved error handling
  *
