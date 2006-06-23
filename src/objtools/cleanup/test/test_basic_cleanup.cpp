@@ -53,7 +53,6 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
-
 // Object Manager includes
 /*
 #include <objmgr/object_manager.hpp>
@@ -103,10 +102,6 @@ private:
     CRef<CSeq_entry> ReadSeqEntry(void);
     SIZE_TYPE PrintChanges(CConstRef<CCleanupChange> errors, 
         const CArgs& args);
-    SIZE_TYPE PrintBatchErrors(CConstRef<CCleanupChange> errors,
-        const CArgs& args);
-
-    void PrintChangeItem(const CCleanupChangeItem& item, CNcbiOstream& os);
     
     auto_ptr<CObjectIStream> m_In;
     auto_ptr<CObjectOStream> m_Out;
@@ -197,7 +192,7 @@ int CTest_cleanupApplication::Run(void)
 
     unsigned int result = 0;
     if (args["x"]) {            
-        if ( changes->Size() > 0 ) {
+        if ( changes->ChangeCount() > 0 ) {
             result = PrintChanges(changes, args);
         }
     }
@@ -224,8 +219,8 @@ void CTest_cleanupApplication::ReadClassMember
                 // BasicCleanup Seq-entry
                 CCleanup cleanup;
                 CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(*se, m_Options);
-                if ( changes->Size() > 0 ) {
-                    m_Reported += PrintBatchErrors(changes, GetArgs());
+                if ( changes->ChangeCount() > 0 ) {
+                    m_Reported += PrintChanges(changes, GetArgs());
                 }
             } catch (exception e) {
                 if ( !m_Continue ) {
@@ -258,24 +253,6 @@ void CTest_cleanupApplication::ProcessReleaseFile
     *m_In >> *seqset;
 
     NcbiCerr << m_Reported << " messages reported" << endl;
-}
-
-
-SIZE_TYPE CTest_cleanupApplication::PrintBatchErrors
-(CConstRef<CCleanupChange> changes,
- const CArgs& args)
-{
-    if ( changes->Size() == 0 ) {
-        return 0;
-    }
-
-    CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
-
-    for ( CCleanupChange_CI vit(*changes); vit; ++vit ) {
-        PrintChangeItem(*vit, *os);
-    }
-
-    return changes->Size();
 }
 
 
@@ -380,29 +357,19 @@ SIZE_TYPE CTest_cleanupApplication::PrintChanges
 {
     CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
 
-    if ( changes->Size() == 0 ) {
+    if ( changes->ChangeCount() == 0 ) {
         return 0;
     }
 
-    for ( CCleanupChange_CI vit(*changes); vit; ++vit) {
-        PrintChangeItem(*vit, *os);
+    ITERATE(vector<CCleanupChange::EChanges>, vit, changes->GetAllChanges()) {
+        *os << CCleanupChange::GetDescription(*vit) << endl;
     }
 
-    *os << "Number of changes: " << changes->Size() << endl;
+    *os << "Number of changes: " << changes->ChangeCount() << endl;
 
-    return changes->Size();
+    return changes->ChangeCount();
 }
 
-
-void CTest_cleanupApplication::PrintChangeItem
-(const CCleanupChangeItem& item,
- CNcbiOstream&os)
-{
-    os  << item.GetChangeCode() <<" ["
-        << item.GetMsg() << "] " 
-        << item.GetObjDesc()
-        << endl;
-}
 
 
 
@@ -423,6 +390,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/06/23 18:02:32  rsmith
+ * new CCleanupChange class
+ *
  * Revision 1.1  2006/03/20 16:17:58  rsmith
  * initial checkin
  *
