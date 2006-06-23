@@ -72,58 +72,68 @@ void CCleanup::SetScope(CRef<CScope> scope)
 }
 
 
+static
+CRef<CCleanupChange> makeCleanupChange(Uint4 options)
+{
+    CRef<CCleanupChange> changes;
+    if (! (options  &  CCleanup::eClean_NoReporting)) {
+        changes.Reset(new CCleanupChange);        
+    }
+    return changes;
+}
+
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&se));
-    CCleanup_imp clean_i(errors, m_Scope, options);
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
     clean_i.BasicCleanup(se);
-    return errors;
+    return changes;
 }
 
 
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_submit& ss, Uint4 options)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&ss));
-    CCleanup_imp clean_i(errors, m_Scope, options);
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
     clean_i.BasicCleanup(ss);
-    return errors;
+    return changes;
 }
 
 
 /// Cleanup a Bioseq. 
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&bs));
-    CCleanup_imp clean_i(errors, m_Scope, options);
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
     clean_i.BasicCleanup(bs);
-    return errors;
+    return changes;
 }
 
 
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&bss));
-    CCleanup_imp clean_i(errors, m_Scope, options);
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
     clean_i.BasicCleanup(bss);
-    return errors;
+    return changes;
 }
 
 
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot& sa, Uint4 options)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&sa));
-    CCleanup_imp clean_i(errors, m_Scope, options);
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
     clean_i.BasicCleanup(sa);
-    return errors;
+    return changes;
 }
 
 
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&sf));
-    CCleanup_imp clean_i(errors, m_Scope, options);
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
     clean_i.BasicCleanup(sf);
-    return errors;
+    return changes;
 }
 
 
@@ -159,220 +169,101 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_annot& sa)
 // *********************** CCleanupChange implementation **********************
 
 
-CCleanupChange::CCleanupChange(const CSerialObject* obj) :
-    m_Cleaned(obj)
-{
-}
-
-void CCleanupChange::AddChangedItem
-(unsigned int         cc,
- const string&        msg,
- const string&        desc,
- const CSerialObject& obj)
-{
-    CRef<CCleanupChangeItem> item(new CCleanupChangeItem(cc, msg, desc, obj));
-    m_ChangeItems.push_back(item);
-}
-
-
-CCleanupChange::~CCleanupChange()
+CCleanupChange::CCleanupChange()
 {
 }
 
 
-SIZE_TYPE CCleanupChange::Size(void) const 
+size_t CCleanupChange::ChangeCount() const
 {
-    return m_ChangeItems.size();
+    return m_Changes.count();
 }
 
 
-const CSerialObject* CCleanupChange::GetCleaned(void) const
+bool CCleanupChange::IsChanged(CCleanupChange::EChanges e) const
 {
-    return m_Cleaned.GetPointerOrNull();
+    return m_Changes.test(e);
 }
 
 
-// ************************ CCleanupChange_CI implementation **************
-
-CCleanupChange_CI::CCleanupChange_CI(void) :
-    m_Changes(0),
-    m_ChangeCodeFilter(kEmptyStr) // eChange_UNKNOWN
+void CCleanupChange::SetChanged(CCleanupChange::EChanges e)
 {
+    m_Changes.set(e);
 }
 
 
-CCleanupChange_CI::CCleanupChange_CI
-(const CCleanupChange& ve,
- const string& errcode) :
-    m_Changes(&ve),
-    m_Current(ve.m_ChangeItems.begin()),
-    m_ChangeCodeFilter(errcode)
+vector<CCleanupChange::EChanges> CCleanupChange::GetAllChanges() const
 {
-    if ( IsValid()  &&  !Filter(**m_Current) ) {
-        Next();
+    vector<EChanges>  result;
+    for (size_t i = eNoChange + 1; i < m_Changes.size(); ++i) {
+        if (m_Changes.test(i)) {
+            result.push_back( (EChanges) i);
+        }
     }
+    return result;
 }
 
 
-CCleanupChange_CI::CCleanupChange_CI(const CCleanupChange_CI& other)
+vector<string> CCleanupChange::GetAllDescriptions() const
 {
-    if ( this != &other ) {
-        *this = other;
+    vector<string>  result;
+    for (size_t i = eNoChange + 1; i < m_Changes.size(); ++i) {
+        if (m_Changes.test(i)) {
+            result.push_back( GetDescription((EChanges) i) );
+        }
     }
+    return result;
 }
 
 
-CCleanupChange_CI::~CCleanupChange_CI(void)
+string CCleanupChange::GetDescription(EChanges e)
 {
-}
-
-
-CCleanupChange_CI& CCleanupChange_CI::operator=(const CCleanupChange_CI& iter)
-{
-    if (this == &iter) {
-        return *this;
+    if (e <= eNoChange  ||  e >= eNumberofChangeTypes) {
+        return sm_ChangeDesc[eNoChange];
     }
-
-    m_Changes = iter.m_Changes;
-    m_Current = iter.m_Current;
-    m_ChangeCodeFilter = iter.m_ChangeCodeFilter;
-    return *this;
+    return sm_ChangeDesc[e];
 }
 
 
-CCleanupChange_CI& CCleanupChange_CI::operator++(void)
-{
-    Next();
-    return *this;
-}
-
-
-bool CCleanupChange_CI::IsValid(void) const
-{
-    return m_Current != m_Changes->m_ChangeItems.end();
-}
-
-
-const CCleanupChangeItem& CCleanupChange_CI::operator*(void) const
-{
-    return **m_Current;
-}
-
-
-const CCleanupChangeItem* CCleanupChange_CI::operator->(void) const
-{
-    return &(**m_Current);
-}
-
-
-bool CCleanupChange_CI::Filter(const CCleanupChangeItem& item) const
-{
-    if ( (m_ChangeCodeFilter.empty()  ||  
-          NStr::StartsWith(item.GetChangeCode(), m_ChangeCodeFilter)) ) {
-        return true;;
-    }
-    return false;
-}
-
-
-void CCleanupChange_CI::Next(void)
-{
-    if ( AtEnd() ) {
-        return;
-    }
-
-    do {
-        ++m_Current;
-    } while ( !AtEnd()  &&  !Filter(**m_Current) );
-}
-
-
-bool CCleanupChange_CI::AtEnd(void) const
-{
-    return m_Current == m_Changes->m_ChangeItems.end();
-}
-
-
-// *********************** CCleanupChangeItem implementation ********************
-
-
-CCleanupChangeItem::CCleanupChangeItem
-(unsigned int         cc,
- const string&        msg,
- const string&        desc,
- const CSerialObject& obj)
-  : m_ChangeIndex(cc),
-    m_Message(msg),
-    m_Desc(desc),
-    m_Object(&obj)
-{
-}
-
-
-CCleanupChangeItem::~CCleanupChangeItem(void)
-{
-}
-
-
-const string& CCleanupChangeItem::ConvertChangeCode(unsigned int err)
-{
-    static const string s_Terse [] = {
-        "UNKNOWN"
-    };
-    if (err <= eChange_UNKNOWN) {
-        return s_Terse [err];
-    }
-    return s_Terse [eChange_UNKNOWN];
-}
-
-
-const string& CCleanupChangeItem::GetChangeCode(void) const
-{
-    return ConvertChangeCode(m_ChangeIndex);
-}
-
-
-unsigned int CCleanupChangeItem::GetChangeIndex(void) const
-{
-    return m_ChangeIndex;
-}
-
-
-unsigned int CCleanupChangeItem::GetChangeCount(void)
-{
-    return eChange_UNKNOWN + 1;
-}
-
-
-const string& CCleanupChangeItem::GetMsg(void) const
-{
-    return m_Message;
-}
-
-
-const string& CCleanupChangeItem::GetObjDesc(void) const
-{
-    return m_Desc;
-}
-
-
-const string& CCleanupChangeItem::GetVerbose(void) const
-{
-    static const string s_Verbose [] = {
-        "UNKNOWN"
-    };
-    if (m_ChangeIndex <= eChange_UNKNOWN) {
-        return s_Verbose [m_ChangeIndex];
-    }
-    return s_Verbose [eChange_UNKNOWN];
-}
-
-
-const CSerialObject& CCleanupChangeItem::GetObject(void) const
-{
-    return *m_Object;
-}
-
+const char* CCleanupChange::sm_ChangeDesc[] = {
+    "Invalid Change Code",
+    // set when strings are changed.
+    "Trim Spaces",
+    "Clean Double Quotes",
+    // set when lists are sorted or uniqued.
+    "Clean Qualifiers List",
+    "Clean Dbxrefs List",
+    "Clean CitonFeat List",
+    "Clean Keywords List",
+    "Clean Subsource List",
+    "Clean Orgmod List",
+    // Set when fields are moved or have content changes
+    "Repair BioseqMol",
+    "Change Feature Key",
+    "Normalize Authors",
+    "Change Publication",
+    "Change Qualifiers",
+    "Change Dbxrefs",
+    "Change Keywords",
+    "Change Subsource",
+    "Change Orgmod",
+    // Set when fields are rescued
+    "Change tRna",
+    "Change rRna",
+    "Change ITS",
+    "Change Anticodon",
+    "Change Code Break",
+    "Change Genetic Code",
+    "Copy GeneXref",
+    "Copy ProtXref",
+    // set when locations are repaired
+    "Change Seqloc",
+    "Change Strand",
+    "Change WholeLocation",
+    // set when any other change is made.
+    "Change Other",
+    "Invalid Change Code"
+};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -382,6 +273,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/06/23 17:10:37  rsmith
+* totally rewrite CCleanupChange class.
+*
 * Revision 1.11  2006/06/22 13:28:29  bollin
 * added step to remove empty features to ExtendedCleanup
 *
