@@ -100,7 +100,7 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT C_ITDescriptorGuard
 {
 public:
-    NCBI_DEPRECATED C_ITDescriptorGuard(I_ITDescriptor* d);
+    NCBI_DEPRECATED_CTOR(C_ITDescriptorGuard(I_ITDescriptor* d));
     NCBI_DEPRECATED ~C_ITDescriptorGuard(void);
 
 private:
@@ -747,6 +747,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/06/23 14:55:26  ucko
+ * Declare C_ITDescriptorGuard's constructor with NCBI_DEPRECATED_CTOR
+ * to ensure proper compilation with some versions of GCC (3.1.x - 3.3.x).
+ *
  * Revision 1.49  2006/06/19 19:01:17  ssikorsk
  * Declared class C_ITDescriptorGuard deprecated.
  *
