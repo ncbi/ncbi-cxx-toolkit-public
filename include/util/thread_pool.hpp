@@ -221,6 +221,10 @@ public:
     /// Withdraw a pending request from consideration.
     void         Withdraw(TItemHandle handle);
 
+    /// Get the number of threads waiting for requests, for debugging
+    /// purposes only.
+    size_t       GetHunger(void) const { return m_HungerCnt; }
+
     class CQueueItem : public CQueueItemBase
     {
     public:
@@ -955,15 +959,15 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
     } else if (urgent  &&  m_UrgentThreadCount.Get() < m_MaxUrgentThreads) {
         return true;
     } else {
-#if 0 // real bug should be fixed now
         try {
             // This should be redundant with the delta < 0 case, but
             // I've gotten reports that suggest otherwise. :-/
             m_Queue.WaitForHunger(0);
+            ERR_POST("Possible thread pool bug.  delta: " << m_Delta.Get()
+                     << "; hunger: " << m_Queue.GetHunger());
             return true;
         } catch (...) {
         }
-#endif
         return false;
     }
 }
@@ -1050,6 +1054,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2006/06/23 14:28:32  ucko
+* Reenable "redundant" logic in HasImmediateRoom, and print some
+* debugging information when it triggers.
+*
 * Revision 1.44  2006/06/22 14:56:46  ucko
 * CBlockingQueue<>::GetHandle: fix imbalanced management of m_HungerCnt.
 * CPoolOfThreads<>::HasImmediateRoom: conditionalize out the extra logic
