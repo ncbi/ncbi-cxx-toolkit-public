@@ -720,7 +720,7 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
 
     if (q.empty()) {
-        ++m_HungerCnt;
+        _VERIFY(++m_HungerCnt);
         m_HungerSem.TryWait();
         m_HungerSem.Post();
         if (timeout_sec >= (unsigned long)kMax_Long) {
@@ -738,15 +738,13 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
             guard.Guard(m_Mutex);
             span -= CurrentTime(CTime::eGmt) - start;
         }
-        if (q.empty()) {
-            if (--m_HungerCnt == 0) {
-                m_HungerSem.TryWait(); // give up
-            }
-            NCBI_THROW(CBlockingQueueException, eTimedOut,
-                       "CBlockingQueue<>::Get[Handle]: timed out");
-        }
+        // One way or another, we're no longer waiting...
         if (--m_HungerCnt == 0) {
             m_HungerSem.TryWait();
+        }
+        if (q.empty()) {
+            NCBI_THROW(CBlockingQueueException, eTimedOut,
+                       "CBlockingQueue<>::Get[Handle]: timed out");
         }
     }
 
@@ -1054,6 +1052,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2006/06/23 19:35:16  ucko
+* Streamline logic in GetHandle(), and add another sanity check.
+*
 * Revision 1.45  2006/06/23 14:28:32  ucko
 * Reenable "redundant" logic in HasImmediateRoom, and print some
 * debugging information when it triggers.
