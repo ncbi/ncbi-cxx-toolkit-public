@@ -63,6 +63,11 @@ public:
     virtual CImage* ReadImage(CNcbiIstream& istr,
                               size_t x, size_t y, size_t w, size_t h) = 0;
 
+    /// Read a portion of an image from a stream, returning a pointer to the
+    /// image.  The callee is responsible for cleaning up the image
+    virtual bool ReadImageInfo(CNcbiIstream& istr,
+                               size_t* width, size_t* height, size_t* depth) = 0;
+
     /// Read a scanline of an image from a file.  This will come back as a
     /// single string of unsigned characters; the order is RGBRGBRGB...
     virtual void ReadScanLine(CNcbiIstream&          /* istr */,
@@ -85,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.5  2005/02/01 21:47:15  grichenk
  * Fixed warnings
  *

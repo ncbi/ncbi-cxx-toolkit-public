@@ -416,6 +416,54 @@ CImage* CImageIOPng::ReadImage(CNcbiIstream& istr,
 }
 
 
+bool CImageIOPng::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    png_structp png_ptr  = NULL;
+    png_infop   info_ptr = NULL;
+    png_infop   end_ptr  = NULL;
+
+    try {
+        // create our PNG structures
+        s_PngReadInit(png_ptr, info_ptr, end_ptr);
+
+        // begin reading our image
+        png_set_read_fn(png_ptr, &istr, s_PngRead);
+        png_read_info(png_ptr, info_ptr);
+
+        // store and validate our image's parameters
+        size_t sub_width  = 0;
+        size_t sub_height = 0;
+        size_t sub_depth  = 0;
+        size_t x = (size_t)-1;
+        size_t y = (size_t)-1;
+        size_t w = (size_t)-1;
+        size_t h = (size_t)-1;
+        s_PngReadValidate(png_ptr, info_ptr, sub_width, sub_height, sub_depth,
+                          x, y, w, h);
+        if (width) {
+            *width = sub_width;
+        }
+        if (height) {
+            *height = sub_height;
+        }
+        if (depth) {
+            *depth = sub_depth;
+        }
+
+        // close and return
+        s_PngReadFinalize(png_ptr, info_ptr, end_ptr);
+        return true;
+    }
+    catch (...) {
+        // destroy everything
+        s_PngReadFinalize(png_ptr, info_ptr, end_ptr);
+    }
+
+    return false;
+}
+
+
 //
 // WriteImage()
 // write an image to a file in PNG format
@@ -560,6 +608,14 @@ CImage* CImageIOPng::ReadImage(CNcbiIstream& /* file */,
 }
 
 
+bool CImageIOPng::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    NCBI_THROW(CImageException, eUnsupported,
+               "CImageIOPng::ReadImageInfo(): PNG format not supported");
+}
+
+
 void CImageIOPng::WriteImage(const CImage& /* image */,
                              CNcbiOstream& /* file */,
                              CImageIO::ECompress)
@@ -587,6 +643,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.7  2005/02/01 21:47:15  grichenk
  * Fixed warnings
  *

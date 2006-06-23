@@ -88,7 +88,7 @@ static void s_TiffWarningHandler(const char* module, const char* fmt,
 //
 static tsize_t s_TIFFReadHandler(thandle_t handle, tdata_t data, tsize_t len)
 {
-    CNcbiIfstream* istr = reinterpret_cast<CNcbiIfstream*>(handle);
+    CNcbiIstream* istr = reinterpret_cast<CNcbiIstream*>(handle);
     if (istr) {
         istr->read(reinterpret_cast<char*>(data), len);
         return istr->gcount();
@@ -98,7 +98,7 @@ static tsize_t s_TIFFReadHandler(thandle_t handle, tdata_t data, tsize_t len)
 
 static tsize_t s_TIFFWriteHandler(thandle_t handle, tdata_t data, tsize_t len)
 {
-    std::ofstream* ostr = reinterpret_cast<std::ofstream*>(handle);
+    CNcbiOstream* ostr = reinterpret_cast<CNcbiOstream*>(handle);
     if (ostr) {
         ostr->write(reinterpret_cast<char*>(data), len);
         if (*ostr) {
@@ -117,8 +117,9 @@ static tsize_t s_TIFFDummyIOHandler(thandle_t, tdata_t, tsize_t)
 static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
                                 int whence)
 {
-    CNcbiIfstream* istr = reinterpret_cast<CNcbiIfstream*>(handle);
-    if (istr) {
+    CNcbiIstream* istr = reinterpret_cast<CNcbiIstream*>(handle);
+    if (istr  &&  *istr) {
+        size_t pos0 = istr->tellg();
         switch (whence) {
         case SEEK_SET:
             istr->seekg(offset, ios::beg);
@@ -133,6 +134,7 @@ static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
             break;
         }
 
+        size_t pos1 = istr->tellg();
         return istr->tellg() - CT_POS_TYPE(0);
     }
     return (toff_t)-1;
@@ -140,7 +142,7 @@ static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
 
 static int s_TIFFCloseHandler(thandle_t handle)
 {
-    std::ofstream* ostr = reinterpret_cast<std::ofstream*>(handle);
+    CNcbiOstream* ostr = reinterpret_cast<CNcbiOstream*>(handle);
     if (ostr) {
         ostr->flush();
         if ( !*ostr ) {
@@ -153,7 +155,7 @@ static int s_TIFFCloseHandler(thandle_t handle)
 static toff_t s_TIFFSizeHandler(thandle_t handle)
 {
     toff_t offs = 0;
-    CNcbiIfstream* istr = reinterpret_cast<CNcbiIfstream*>(handle);
+    CNcbiIstream* istr = reinterpret_cast<CNcbiIstream*>(handle);
     if (istr) {
         CT_POS_TYPE curr_pos = istr->tellg();
         istr->seekg(0, ios::end);
@@ -325,6 +327,58 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr,
 }
 
 
+bool CImageIOTiff::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    TIFF*            tiff             = NULL;
+    TIFFErrorHandler old_err_handler  = NULL;
+    TIFFErrorHandler old_warn_handler = NULL;
+
+    bool success = false;
+    try {
+
+        old_err_handler  = TIFFSetErrorHandler(&s_TiffReadErrorHandler);
+        old_warn_handler = TIFFSetWarningHandler(&s_TiffWarningHandler);
+
+        // open our file
+        tiff = TIFFClientOpen("", "rm",
+                              reinterpret_cast<thandle_t>(&istr),
+                              s_TIFFReadHandler,
+                              s_TIFFDummyIOHandler,
+                              s_TIFFSeekHandler,
+                              s_TIFFCloseHandler,
+                              s_TIFFSizeHandler,
+                              s_TIFFMapFileHandler,
+                              s_TIFFUnmapFileHandler);
+        if ( !tiff ) {
+            NCBI_THROW(CImageException, eReadError,
+                       "CImageIOTiff::ReadImageInfo(): error opening file ");
+        }
+
+        // extract the size parameters
+        if (width) {
+            TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, width);
+        }
+        if (height) {
+            TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, height);
+        }
+        if (depth) {
+            TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, depth);
+        }
+        TIFFClose(tiff);
+
+        success = true;
+    }
+    catch (...) {
+    }
+
+    TIFFSetErrorHandler(old_err_handler);
+    TIFFSetWarningHandler(old_warn_handler);
+
+    return success;
+}
+
+
 //
 // WriteImage()
 // write an image to a file in TIFF format
@@ -444,6 +498,14 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream&,
 }
 
 
+bool CImageIOTiff::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    NCBI_THROW(CImageException, eUnsupported,
+               "CImageIOTiff::ReadImageInfo(): TIFF format not supported");
+}
+
+
 void CImageIOTiff::WriteImage(const CImage&, CNcbiOstream&,
                               CImageIO::ECompress)
 {
@@ -469,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.10  2004/11/23 17:16:36  ivanov
  * Fixed compilation warnings
  *

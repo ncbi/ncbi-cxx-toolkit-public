@@ -500,6 +500,58 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr,
 }
 
 
+bool CImageIOJpeg::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    vector<JOCTET> buffer(sc_JpegBufLen);
+    JOCTET* buf_ptr = &buffer[0];
+
+    // standard libjpeg stuff
+    struct jpeg_decompress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+
+    try {
+        // open our file for reading
+        // set up the standard error handler
+        cinfo.err = jpeg_std_error(&jerr);
+        cinfo.err->error_exit = s_JpegErrorHandler;
+        cinfo.err->output_message = s_JpegOutputHandler;
+
+        jpeg_create_decompress(&cinfo);
+
+        // set up our standard stream processor
+        s_JpegReadSetup(&cinfo, istr, buf_ptr);
+
+        //jpeg_stdio_src(&cinfo, fp);
+        jpeg_read_header(&cinfo, TRUE);
+
+        // decompression parameters
+        cinfo.dct_method = JDCT_FLOAT;
+        jpeg_start_decompress(&cinfo);
+
+        if (width) {
+            *width = cinfo.output_width;
+        }
+        if (height) {
+            *height = cinfo.output_height;
+        }
+        if (depth) {
+            *depth = cinfo.out_color_components;
+        }
+
+        // standard clean-up
+        jpeg_destroy_decompress(&cinfo);
+
+        return true;
+    }
+    catch (...) {
+        // clean up our mess
+        jpeg_destroy_decompress(&cinfo);
+    }
+    return false;
+}
+
+
 //
 // WriteImage()
 // write an image to a file in JPEG format
@@ -703,6 +755,14 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& /* file */,
 }
 
 
+bool CImageIOJpeg::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    NCBI_THROW(CImageException, eUnsupported,
+               "CImageIOJpeg::ReadImageInfo(): JPEG format not supported");
+}
+
+
 void CImageIOJpeg::WriteImage(const CImage& /* image */,
                               CNcbiOstream& /* file */,
                               CImageIO::ECompress)
@@ -731,6 +791,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.11  2006/06/21 13:23:23  dicuccio
  * Use standard error formatting from libjpeg.  Fix serious bug in ReadSubImage():
  * don't increment scanline

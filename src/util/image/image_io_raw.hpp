@@ -53,6 +53,8 @@ public:
     CImage* ReadImage(CNcbiIstream& istr);
     CImage* ReadImage(CNcbiIstream& istr,
                       size_t x, size_t y, size_t w, size_t h);
+    bool ReadImageInfo(CNcbiIstream& istr,
+                       size_t* width, size_t* height, size_t* depth);
 
     // write images to file in raw format
     void WriteImage(const CImage& image, CNcbiOstream& ostr,
@@ -68,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.1  2003/12/16 15:48:11  dicuccio
  * Added support for RAW image files
  *

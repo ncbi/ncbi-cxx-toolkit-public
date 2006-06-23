@@ -106,6 +106,15 @@ CImage* CImageIORaw::ReadImage(CNcbiIstream& istr,
 }
 
 
+bool CImageIORaw::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    NCBI_THROW(CImageException, eUnsupported,
+               "CImageIORaw::ReadImageInfo(): RAW format inspection "
+               "unimplemented");
+}
+
+
 void CImageIORaw::WriteImage(const CImage& image, CNcbiOstream& ostr,
                              CImageIO::ECompress)
 {
@@ -160,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.3  2005/02/01 21:47:15  grichenk
  * Fixed warnings
  *

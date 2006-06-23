@@ -50,6 +50,14 @@ CImage* CImageIOBmp::ReadImage(CNcbiIstream&,
                "read unimplemented");
 }
 
+bool CImageIOBmp::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    NCBI_THROW(CImageException, eUnsupported,
+               "CImageIOBmp::ReadImageInfo(): BMP format inspection "
+               "unimplemented");
+}
+
 void CImageIOBmp::WriteImage(const CImage&, CNcbiOstream&,
                              CImageIO::ECompress)
 {
@@ -72,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.4  2004/05/17 21:07:58  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

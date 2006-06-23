@@ -91,7 +91,8 @@ CImageIO::EType CImageIO::GetTypeFromMagic(CNcbiIstream& istr)
     memset(magic, 0x00, kMaxMagic);
 
     istr.read((char *)magic, kMaxMagic);
-    CStreamUtils::Pushback(istr, (CT_CHAR_TYPE*)magic, istr.gcount());
+    istr.seekg(-istr.gcount(), ios::cur);
+    //CStreamUtils::Pushback(istr, (CT_CHAR_TYPE*)magic, istr.gcount());
 
     EType type = eUnknown;
 
@@ -154,6 +155,43 @@ CImageIO::EType CImageIO::GetTypeFromFileName(const string& fname)
     }
     return eUnknown;
 }
+
+/// read just the image information 
+bool CImageIO::ReadImageInfo(const string& file,
+                             size_t* width, size_t* height, size_t* depth,
+                             EType* type)
+{
+    CNcbiIfstream istr(file.c_str(), ios::in|ios::binary);
+    return ReadImageInfo(istr, width, height, depth, type);
+}
+
+
+bool CImageIO::ReadImageInfo(CNcbiIstream& istr,
+                             size_t* width, size_t* height, size_t* depth,
+                             EType* type)
+{
+    try {
+        /// first, set up a simple buffer - we hold the first 16k
+        /// or so of the image.  this will allow us to manage things like TIFF
+        /// image directories
+
+        EType image_type = GetTypeFromMagic(istr);
+        if (type) {
+            *type = image_type;
+        }
+        CRef<CImageIOHandler> handler(x_GetHandler(image_type));
+
+        size_t pos = istr.tellg();
+        bool res = handler->ReadImageInfo(istr, width, height, depth);
+        istr.seekg(pos, ios::beg);
+        return res;
+    }
+    catch (CImageException& e) {
+        LOG_POST(Error << "Error reading image: " << e.what());
+    }
+    return false;
+}
+
 
 
 //
@@ -338,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.7  2006/06/21 13:44:18  dicuccio
  * Further tweak: use CStreamUtils::Pushback() instead of seeking on a stream
  *

@@ -226,6 +226,42 @@ CImage* CImageIOGif::ReadImage(CNcbiIstream& istr,
 }
 
 
+bool CImageIOGif::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    GifFileType* fp = NULL;
+    try {
+        // open our file for reading
+        fp = DGifOpen(&istr, s_GifRead);
+        if ( !fp ) {
+            NCBI_THROW(CImageException, eReadError,
+                       "CImageIOGif::ReadImageInfo(): "
+                       "cannot open file for reading");
+        }
+
+        // allocate an image
+        if (width) {
+            *width = fp->SWidth;
+        }
+        if (height) {
+            *height = fp->SHeight;
+        }
+        if (depth) {
+            *depth = 3;
+        }
+
+        // close up and exit
+        DGifCloseFile(fp);
+        return true;
+    }
+    catch (...) {
+        DGifCloseFile(fp);
+        fp = NULL;
+    }
+
+    return false;
+}
+
 //
 // WriteImage()
 // this writes out a GIF image.
@@ -445,7 +481,7 @@ BEGIN_NCBI_SCOPE
 CImage* CImageIOGif::ReadImage(CNcbiIstream&)
 {
     NCBI_THROW(CImageException, eUnsupported,
-               "CImageIOGif::ReadImage(): GIF format read unimplemented");
+               "CImageIOGif::ReadImage(): GIF format not supported");
 }
 
 
@@ -453,16 +489,22 @@ CImage* CImageIOGif::ReadImage(CNcbiIstream&,
                                size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
-               "CImageIOGif::ReadImage(): GIF format partial "
-               "read unimplemented");
+               "CImageIOGif::ReadImage(): GIF format not supported");
 }
 
+
+bool CImageIOGif::ReadImageInfo(CNcbiIstream& istr,
+                                size_t* width, size_t* height, size_t* depth)
+{
+    NCBI_THROW(CImageException, eUnsupported,
+               "CImageIOGif::ReadImageInfo(): GIF format not supported");
+}
 
 void CImageIOGif::WriteImage(const CImage&, CNcbiOstream&,
                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
-               "CImageIOGif::WriteImage(): GIF format write unimplemented");
+               "CImageIOGif::WriteImage(): GIF format not supported");
 }
 
 
@@ -471,8 +513,7 @@ void CImageIOGif::WriteImage(const CImage&, CNcbiOstream&,
                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
-               "CImageIOGif::WriteImage(): GIF format partial "
-               "write unimplemented");
+               "CImageIOGif::WriteImage(): GIF format not supported");
 }
 
 
@@ -483,6 +524,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.6  2004/05/17 21:07:58  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

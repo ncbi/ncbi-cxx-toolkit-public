@@ -96,6 +96,13 @@ public:
     static CImage* ReadImage(CNcbiIstream& istr,
                              EType type = CImageIO::eUnknown);
 
+    static bool ReadImageInfo(const string& file,
+                              size_t* width, size_t* height, size_t* depth,
+                              EType* type);
+    static bool ReadImageInfo(CNcbiIstream& istr,
+                              size_t* width, size_t* height, size_t* depth,
+                              EType* type);
+
     // read only part of an image from a file
     static CImage* ReadSubImage(CNcbiIstream& istr,
                                 size_t x, size_t y, size_t w, size_t h,
@@ -135,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/23 16:18:45  dicuccio
+ * Added ability to inspect image's information (size, width, height, depth)
+ *
  * Revision 1.8  2006/06/21 13:22:37  dicuccio
  * Ooops, add optional type to filename-based variants of ReadImage(),
  * ReadSubImage()
