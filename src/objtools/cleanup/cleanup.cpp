@@ -140,29 +140,29 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 // *********************** Extended Cleanup implementation ********************
 CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry& se)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&se));
-    CCleanup_imp clean_i(errors, m_Scope, 0);
+    CRef<CCleanupChange> changes(makeCleanupChange(0));
+    CCleanup_imp clean_i(changes, m_Scope, 0);
     clean_i.ExtendedCleanup(se);
     
-    return errors;
+    return changes;
 }
 
 
 CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_submit& ss)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&ss));
-    CCleanup_imp clean_i(errors, m_Scope, 0);
+    CRef<CCleanupChange> changes(makeCleanupChange(0));
+    CCleanup_imp clean_i(changes, m_Scope, 0);
     clean_i.ExtendedCleanup(ss);
-    return errors;
+    return changes;
 }
 
 
 CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_annot& sa)
 {
-    CRef<CCleanupChange> errors(new CCleanupChange(&sa));
-    CCleanup_imp clean_i(errors, m_Scope, 0);
+    CRef<CCleanupChange> changes(makeCleanupChange(0));
+    CCleanup_imp clean_i(changes, m_Scope, 0);
     clean_i.ExtendedCleanup(sa);
-    return errors;
+    return changes;
 }
 
 
@@ -273,6 +273,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/06/23 17:27:43  bollin
+* fixed ExtendedCleanup functions to use new constructor for CCleanupChange
+*
 * Revision 1.12  2006/06/23 17:10:37  rsmith
 * totally rewrite CCleanupChange class.
 *
