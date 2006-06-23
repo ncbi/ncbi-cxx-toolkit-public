@@ -488,6 +488,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
     case eBlastOpt_PercentIdentity:
         x_SetParam("PercentIdentity", v);
         return;
+
+    case eBlastOpt_InclusionThreshold:
+        x_SetParam("i-thresh", v);
+        return;
         
     default:
         break;
@@ -1942,6 +1946,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.83  2006/06/23 14:15:37  camacho
+* Added support for setting inclusion threshold in remote options
+*
 * Revision 1.82  2006/06/12 17:17:16  madden
 * Remove [GS]etMatrixPath
 *
