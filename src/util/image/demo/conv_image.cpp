@@ -77,7 +77,8 @@ void CConvImageApp::Init(void)
                              CArgDescriptions::eString);
     arg_desc->SetConstraint("fmt",
                             &(*new CArgAllow_Strings(),
-                              "jpeg", "tiff", "png", "bmp", "sgi", "raw"));
+                              "jpeg", "tiff", "png", "bmp",
+                              "sgi", "raw", "gif"));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -107,7 +108,7 @@ int CConvImageApp::Run(void)
              << ") in " << read_time << " seconds");
 
     CImageIO::EType fmt = CImageIO::GetTypeFromFileName(out_file);
-    if (args["fmt"]) {
+    if (args["fmt"].HasValue()) {
         string str = args["fmt"].AsString();
         if (str == "jpeg") {
             fmt = CImageIO::eJpeg;
@@ -121,6 +122,8 @@ int CConvImageApp::Run(void)
             fmt = CImageIO::eRaw;
         } else if (str == "sgi") {
             fmt = CImageIO::eSgi;
+        } else if (str == "gif") {
+            fmt = CImageIO::eGif;
         }
     }
 
@@ -160,6 +163,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/23 16:17:47  dicuccio
+ * Add gif as an explicit format option
+ *
  * Revision 1.4  2004/06/16 12:04:14  dicuccio
  * Added include for image_util.hpp
  *
