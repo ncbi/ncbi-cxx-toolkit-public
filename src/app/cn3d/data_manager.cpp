@@ -302,7 +302,7 @@ bool ASNDataManager::ConvertMimeDataToCDD(const std::string& cddName)
         CRef < CCdd_id > id(new CCdd_id());
         cdd->SetId().Set().push_back(id);
         CNcbiOstrstream oss;
-        oss << "loc" << localID++;
+        oss << "loc_" << localID++;
         id->SetGid().SetAccession((string) CNcbiOstrstreamToString(oss));
 
         // fill in data
@@ -1016,6 +1016,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/06/26 20:31:02  thiessen
+* tweak locally assigned accessions when converting mime to cdd
+*
 * Revision 1.33  2006/05/30 13:11:18  thiessen
 * turn off MonitorAlignments in release mode
 *
