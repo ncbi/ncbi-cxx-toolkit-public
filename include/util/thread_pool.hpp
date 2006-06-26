@@ -271,6 +271,16 @@ protected:
 private:
     size_t              m_MaxSize;        ///< The maximum size of the queue
     Uint4               m_RequestCounter; ///
+
+    typedef bool (CBlockingQueue::*TQueuePredicate)(const TRealQueue& q) const;
+
+    bool x_GetSemPred(const TRealQueue& q) const { return !q.empty(); }
+    bool x_PutSemPred(const TRealQueue& q) const { return q.size()<m_MaxSize; }
+    bool x_HungerSemPred(const TRealQueue& q) const { return q.empty(); }
+
+    bool x_WaitForPredicate(TQueuePredicate pred, CSemaphore& sem,
+                            CMutexGuard& guard, unsigned int timeout_sec,
+                            unsigned int timeout_nsec) const;
 };
 
 
@@ -625,29 +635,14 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
-    if (q.size() == m_MaxSize) {
-        if (timeout_sec >= (unsigned long)kMax_Long) {
-            timeout_sec = kMax_Long;
-        }
-        CTimeSpan span(min((long)timeout_sec,
-                           kMax_Long - (long)(timeout_nsec / 1000000000UL)),
-                       timeout_nsec);
-        while (span.GetSign() == ePositive  &&  q.size() == m_MaxSize) {
-            CTime start(CTime::eCurrent, CTime::eGmt);
-            // Temporarily release the mutex while waiting, to avoid deadlock.
-            guard.Release();
-            m_PutSem.TryWait(span.GetCompleteSeconds(),
-                             span.GetNanoSecondsAfterSecond());
-            guard.Guard(m_Mutex);
-            span -= CurrentTime(CTime::eGmt) - start;
-        }
-        if (q.size() == m_MaxSize) {
-            NCBI_THROW(CBlockingQueueException, eFull,
-                       "CBlockingQueue<>::Put: "
-                       "attempt to insert into a full queue");
-        }
-    } else if (q.empty()) {
-        m_GetSem.TryWait(); // sometimes needed per DiCuccio's report (!)
+    if ( !x_WaitForPredicate(&CBlockingQueue::x_PutSemPred, m_PutSem, guard,
+                             timeout_sec, timeout_nsec) ) {
+        NCBI_THROW(CBlockingQueueException, eFull,
+                   "CBlockingQueue<>::Put: "
+                   "attempt to insert into a full queue");
+    }
+    if (q.empty()) {
+        m_GetSem.TryWait(); // is this still needed?
         m_GetSem.Post();
     }
     if (m_RequestCounter == 0) {
@@ -676,20 +671,14 @@ template <typename TRequest>
 void CBlockingQueue<TRequest>::WaitForRoom(unsigned int timeout_sec,
                                            unsigned int timeout_nsec) const
 {
-    // Make sure there's room, but don't actually consume anything
-    if (m_PutSem.TryWait(timeout_sec, timeout_nsec)) {
-        // We couldn't acquire the mutex previously without risk of
-        // deadlock, so we acquire it now and ensure that the
-        // semaphore's still down before attempting to reraise it, to
-        // prevent races with Get[Handle]().
-        CMutexGuard guard(m_Mutex);
-        if (const_cast<TRealQueue&>(m_Queue).size() < m_MaxSize) {
-            m_PutSem.TryWait();
-            m_PutSem.Post();
-        }
+    // Make sure there's room, but don't actually change any state
+    CMutexGuard guard(m_Mutex);
+    if (x_WaitForPredicate(&CBlockingQueue::x_PutSemPred, m_PutSem, guard,
+                           timeout_sec, timeout_nsec)) {
+        m_PutSem.Post(); // signal that the room still exists
     } else {
         NCBI_THROW(CBlockingQueueException, eTimedOut,
-                   "CBlockingQueue<>::WaitForRoom: timed out");        
+                   "CBlockingQueue<>::WaitForRoom: timed out");
     }
 }
 
@@ -697,15 +686,13 @@ template <typename TRequest>
 void CBlockingQueue<TRequest>::WaitForHunger(unsigned int timeout_sec,
                                              unsigned int timeout_nsec) const
 {
-    if (m_HungerSem.TryWait(timeout_sec, timeout_nsec)) {
-        CMutexGuard guard(m_Mutex);
-        if (m_HungerCnt > 0) {
-            m_HungerSem.TryWait(); // ensure it's still down, a la WaitForRoom
-            m_HungerSem.Post();
-        }
+    CMutexGuard guard(m_Mutex);
+    if (x_WaitForPredicate(&CBlockingQueue::x_HungerSemPred, m_HungerSem, guard,
+                           timeout_sec, timeout_nsec)) {
+        m_HungerSem.Post();
     } else {
         NCBI_THROW(CBlockingQueueException, eTimedOut,
-                   "CBlockingQueue<>::WaitForHunger: timed out");        
+                   "CBlockingQueue<>::WaitForHunger: timed out");
     }
 }
 
@@ -723,26 +710,15 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
         _VERIFY(++m_HungerCnt);
         m_HungerSem.TryWait();
         m_HungerSem.Post();
-        if (timeout_sec >= (unsigned long)kMax_Long) {
-            timeout_sec = kMax_Long;
-        }
-        CTimeSpan span(min((long)timeout_sec,
-                           kMax_Long - (long)(timeout_nsec / 1000000000UL)),
-                       timeout_nsec);
-        while (span.GetSign() == ePositive  &&  q.empty()) {
-            CTime start(CTime::eCurrent, CTime::eGmt);
-            // Temporarily release the mutex while waiting, to avoid deadlock.
-            guard.Release();
-            m_GetSem.TryWait(span.GetCompleteSeconds(),
-                             span.GetNanoSecondsAfterSecond());
-            guard.Guard(m_Mutex);
-            span -= CurrentTime(CTime::eGmt) - start;
-        }
-        // One way or another, we're no longer waiting...
+
+        bool ok = x_WaitForPredicate(&CBlockingQueue::x_GetSemPred, m_GetSem,
+                                     guard, timeout_sec, timeout_nsec);
+
         if (--m_HungerCnt == 0) {
             m_HungerSem.TryWait();
         }
-        if (q.empty()) {
+
+        if ( !ok ) {
             NCBI_THROW(CBlockingQueueException, eTimedOut,
                        "CBlockingQueue<>::Get[Handle]: timed out");
         }
@@ -835,6 +811,35 @@ void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
     handle->x_SetStatus(CQueueItem::eWithdrawn);
 }
 
+template <typename TRequest>
+bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
+                                                  CSemaphore& sem,
+                                                  CMutexGuard& guard,
+                                                  unsigned int timeout_sec,
+                                                  unsigned int timeout_nsec)
+    const
+{
+    const TRealQueue& q = const_cast<const TRealQueue&>(m_Queue);
+    if ( !(this->*pred)(q) ) {
+        if (timeout_sec >= (unsigned long)kMax_Long) {
+            timeout_sec = kMax_Long;
+        }
+        CTimeSpan span(min((long)timeout_sec,
+                           kMax_Long - (long)(timeout_nsec / 1000000000UL)),
+                       timeout_nsec);
+        while (span.GetSign() == ePositive  &&  !(this->*pred)(q) ) {
+            CTime start(CTime::eCurrent, CTime::eGmt);
+            // Temporarily release the mutex while waiting, to avoid deadlock.
+            guard.Release();
+            sem.TryWait(span.GetCompleteSeconds(),
+                        span.GetNanoSecondsAfterSecond());
+            guard.Guard(m_Mutex);
+            span -= CurrentTime(CTime::eGmt) - start;
+        }
+    }
+    sem.TryWait();
+    return (this->*pred)(q);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //   CThreadInPool<>::
@@ -1052,6 +1057,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2006/06/26 16:01:32  ucko
+* Factor CBlockingQueue<>'s race-proof waiting logic into a new
+* x_WaitForPredicate method, and use it from WaitForRoom and WaitForHunger
+* (to avoid false positives) rather than just from Put and GetHandle.
+*
 * Revision 1.46  2006/06/23 19:35:16  ucko
 * Streamline logic in GetHandle(), and add another sanity check.
 *
