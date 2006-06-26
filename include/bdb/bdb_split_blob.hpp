@@ -262,6 +262,8 @@ public:
     /// Associate with the environment. Should be called before opening.
     void SetEnv(CBDB_Env& env) { m_Env = &env; }
 
+    CBDB_Env* GetEnv(void) const { return m_Env; }
+
 
     // ---------------------------------------------------------------
     // Data manipulation interface
@@ -733,6 +735,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/26 12:34:39  dicuccio
+ * Expose environment through GetEnv()
+ *
  * Revision 1.8  2006/05/09 20:18:33  kuznets
  * fixed bug in loading persistent demux state
  *
