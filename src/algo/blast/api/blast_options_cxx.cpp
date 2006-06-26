@@ -490,7 +490,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
         return;
 
     case eBlastOpt_InclusionThreshold:
-        x_SetParam("i-thresh", v);
+        x_SetParam("InclusionThreshold", v);
         return;
         
     default:
@@ -1946,6 +1946,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.84  2006/06/26 19:55:53  camacho
+* Use blast4 style names for inclusion threshold
+*
 * Revision 1.83  2006/06/23 14:15:37  camacho
 * Added support for setting inclusion threshold in remote options
 *
