@@ -146,6 +146,9 @@ void CAgpconvertApplication::Init(void)
     arg_desc->AddOptionalKey("cn", "clone",
                              "Clone (for BioSource.subtype)",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("cl", "clone_lib",
+                             "Clone library (for BioSource.subtype)",
+                             CArgDescriptions::eString);
     arg_desc->AddOptionalKey("sc", "source_comment",
                              "Source comment (for BioSource.subtype = other)",
                              CArgDescriptions::eString);
@@ -381,7 +384,7 @@ int CAgpconvertApplication::Run(void)
         ent_templ.SetSeq().SetDescr().Set().push_back(title_desc);
     }
     if (args["nt"] || args["on"] || args["sn"] || args["cm"]
-        || args["cn"] || args["sc"]) {
+        || args["cn"] || args["cl"] || args["sc"]) {
         // consistency checks
         ITERATE (CSeq_descr::Tdata, desc,
                  ent_templ.GetSeq().GetDescr().Get()) {
@@ -392,7 +395,7 @@ int CAgpconvertApplication::Run(void)
         }
         if (args["chromosomes"]) {
             throw runtime_error("-chromosomes cannot be given with "
-                                "-nt, -on, -sn, -cm, -cn, or -sc");
+                                "-nt, -on, -sn, -cm, -cn, -cl, or -sc");
         }
 
         // build a BioSource desc and add it to template
@@ -408,6 +411,12 @@ int CAgpconvertApplication::Run(void)
             sub_source = new CSubSource;
             sub_source->SetSubtype(CSubSource::eSubtype_clone);
             sub_source->SetName(args["cn"].AsString());
+            source_desc->SetSource().SetSubtype().push_back(sub_source);
+        }
+        if (args["cl"]) {
+            sub_source = new CSubSource;
+            sub_source->SetSubtype(CSubSource::eSubtype_clone_lib);
+            sub_source->SetName(args["cl"].AsString());
             source_desc->SetSource().SetSubtype().push_back(sub_source);
         }
         if (args["sc"]) {
@@ -712,6 +721,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/06/26 15:44:42  jcherry
+ * Added -cl option for clone lib subsource
+ *
  * Revision 1.15  2006/06/12 14:47:42  jcherry
  * Changed behavior of -chromosomes: do nothing in cases where there is
  * no mapping for an id (rather than adding empty chromosome), don't clear
