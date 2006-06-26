@@ -259,23 +259,30 @@ void CGridThreadContext::ReturnJob()
                 m_Reporter->GetStatus(m_JobContext->GetJobKey(), 
                                       &ret_code, 
                                       &output);
-            if (status == CNetScheduleClient::eJobNotFound || 
-                status == CNetScheduleClient::eFailed ||
-                status == CNetScheduleClient::eDone)  {
-                m_JobContext->GetWorkerNode()
-                    .x_NotifyJobWatcher(*m_JobContext,
-                                        IWorkerNodeJobWatcher::eJobLost);
-
-            } else if (status == CNetScheduleClient::eCanceled) {
-                m_JobContext->GetWorkerNode()
-                    .x_NotifyJobWatcher(*m_JobContext,
-                                        IWorkerNodeJobWatcher::eJobCanceled);
-            } else {
+            IWorkerNodeJobWatcher::EEvent event = IWorkerNodeJobWatcher::eJobReturned;
+            switch(status) {
+            case CNetScheduleClient::eJobNotFound:
+                event = IWorkerNodeJobWatcher::eJobLost;
+                break;
+            case CNetScheduleClient::eFailed:
+                event = IWorkerNodeJobWatcher::eJobFailed;
+                break;
+            case CNetScheduleClient::eDone:
+                event = IWorkerNodeJobWatcher::eJobSucceed;
+                break;
+            case CNetScheduleClient::eCanceled:
+                event = IWorkerNodeJobWatcher::eJobCanceled;
+                break;
+            case CNetScheduleClient::eRunning:
                 m_Reporter->ReturnJob(m_JobContext->GetJobKey());
-                m_JobContext->GetWorkerNode()
-                    .x_NotifyJobWatcher(*m_JobContext,
-                                        IWorkerNodeJobWatcher::eJobReturned);
+                break;
+                //            case CNetScheduleClient::eReturned:
+                //            case CNetScheduleClient::ePending:
+            default:
+                break;
             }
+            m_JobContext->GetWorkerNode()
+                .x_NotifyJobWatcher(*m_JobContext, event);
             return;
         }
     }
@@ -316,10 +323,7 @@ bool CGridThreadContext::IsJobCanceled()
                 m_Reporter->GetStatus(m_JobContext->GetJobKey(), 
                                       &ret_code, 
                                       &output);
-            if (status == CNetScheduleClient::eJobNotFound || 
-                status == CNetScheduleClient::eCanceled || 
-                status == CNetScheduleClient::eFailed ||
-                status == CNetScheduleClient::eDone)
+            if (status != CNetScheduleClient::eRunning)
                 return true;
         }
     }
@@ -383,6 +387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.25  2006/06/26 14:04:06  didenko
+ * Fixed checking job cancelation algorithm
+ *
  * Revision 6.24  2006/06/22 13:52:36  didenko
  * Returned back a temporary fix for CStdPoolOfThreads
  * Added check_status_period configuration paramter
