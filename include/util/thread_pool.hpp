@@ -274,9 +274,12 @@ private:
 
     typedef bool (CBlockingQueue::*TQueuePredicate)(const TRealQueue& q) const;
 
-    bool x_GetSemPred(const TRealQueue& q) const { return !q.empty(); }
-    bool x_PutSemPred(const TRealQueue& q) const { return q.size()<m_MaxSize; }
-    bool x_HungerSemPred(const TRealQueue&) const { return m_HungerCnt > 0; }
+    bool x_GetSemPred(const TRealQueue& q) const
+        { return !q.empty(); }
+    bool x_PutSemPred(const TRealQueue& q) const
+        { return q.size() < m_MaxSize; }
+    bool x_HungerSemPred(const TRealQueue& q) const
+        { return m_HungerCnt > q.size(); }
 
     bool x_WaitForPredicate(TQueuePredicate pred, CSemaphore& sem,
                             CMutexGuard& guard, unsigned int timeout_sec,
@@ -714,7 +717,7 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
         bool ok = x_WaitForPredicate(&CBlockingQueue::x_GetSemPred, m_GetSem,
                                      guard, timeout_sec, timeout_nsec);
 
-        if (--m_HungerCnt == 0) {
+        if (--m_HungerCnt <= q.size()) {
             m_HungerSem.TryWait();
         }
 
@@ -1057,6 +1060,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2006/06/26 20:09:28  ucko
+* CBlockingQueue<>: compare m_HungerCnt to q.size() rather than 0, as
+* there are (brief) periods when both are positive.
+*
 * Revision 1.48  2006/06/26 16:31:40  ucko
 * Correct x_HungerSemPred's definition.
 *
