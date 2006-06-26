@@ -419,6 +419,8 @@ private:
 
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
+    bool x_ReverseRangeOrder(void) const;
+
     CHeapScope        m_Scope;
     EMergeFlags       m_MergeFlag;
     EGapFlags         m_GapFlag;
@@ -436,9 +438,9 @@ private:
     mutable TRangesById m_MappedLocs;
     CRef<CSeq_loc>      m_Dst_loc;
     TDstStrandMap       m_DstRanges;
-    // True if mapped ranges order should be reversed
-    // (e.g. when mapping from plus to minus strand).
-    bool                m_ReverseRangeOrder;
+    // Mapping source and destination orientation
+    bool                m_ReverseSrc;
+    bool                m_ReverseDst;
 };
 
 
@@ -583,6 +585,18 @@ CSeq_loc_Mapper& CSeq_loc_Mapper::TruncateNonmappingRanges(void)
 }
 
 
+inline
+bool CSeq_loc_Mapper::x_ReverseRangeOrder(void) const
+{
+    if (m_MergeFlag == eMergeContained  || m_MergeFlag == eMergeAll) {
+        // Sorting discards the original order, no need to check
+        // m_ReverseSrc
+        return m_ReverseDst;
+    }
+    return m_ReverseSrc != m_ReverseDst;
+}
+
+
 /* @} */
 
 
@@ -592,6 +606,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/06/26 16:56:41  grichenk
+* Fixed order of intervals in mapped locations.
+* Filter duplicate mappings.
+*
 * Revision 1.33  2006/05/17 20:06:57  dicuccio
 * Added optional flags to CSeq_loc_Mapper for interpretation of alignments:
 * optionally consider each block of a dense-seg alignment by its total ranges

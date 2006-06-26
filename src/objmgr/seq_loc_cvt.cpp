@@ -1271,9 +1271,13 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
     }
     if ( revert_order ) {
         sort(cvts.begin(), cvts.end(), FSortConversionsReverse());
+        cvts.erase(unique(cvts.begin(), cvts.end(), FSortConversionsReverse()),
+            cvts.end());
     }
     else {
         sort(cvts.begin(), cvts.end(), FSortConversions());
+        cvts.erase(unique(cvts.begin(), cvts.end(), FSortConversions()),
+            cvts.end());
     }
 
     CRef<CSeq_interval> last_int;
@@ -1630,6 +1634,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2006/06/26 16:56:42  grichenk
+* Fixed order of intervals in mapped locations.
+* Filter duplicate mappings.
+*
 * Revision 1.56  2006/03/28 22:14:42  vakatov
 * Heed warning, kill unuser var
 *
