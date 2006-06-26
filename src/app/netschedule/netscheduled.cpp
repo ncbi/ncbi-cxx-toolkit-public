@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.11.1  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.11.2  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2935,6 +2935,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2006/06/26 13:46:01  kuznets
+ * Fixed job expiration and restart mechanism
+ *
  * Revision 1.90  2006/06/19 16:15:49  kuznets
  * fixed crash when working with affinity
  *

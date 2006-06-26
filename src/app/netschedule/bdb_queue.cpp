@@ -1058,6 +1058,12 @@ void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB&      db,
     out << NS_PFNAME("timeout: ") << (unsigned)db.timeout << fsp;
     out << NS_PFNAME("run_timeout: ") << (unsigned)db.run_timeout << fsp;
 
+    time_t exp_time = 
+        x_ComputeExpirationTime((unsigned)db.time_run, 
+                                (unsigned)db.run_timeout);
+    NS_PRINT_TIME(NS_PFNAME("time_run_expire: "), exp_time);
+
+
     unsigned subm_addr = db.subm_addr;
     out << NS_PFNAME("subm_addr: ") 
         << (subm_addr ? CSocketAPI::gethostbyaddr(subm_addr) : kEmptyStr) << fsp;
@@ -1798,7 +1804,7 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
                                worker_node,
                                done_job_id, &need_update,
                                m_LQueue.aff_map_lock);
-    bool done_rec_updated;
+    bool done_rec_updated=false;
     bool use_db_mutex;
 
     // When working with the same database file concurrently there is
@@ -2148,6 +2154,11 @@ void CQueueDataBase::CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
 
 void CQueueDataBase::CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
 {
+    unsigned q_time_descr = 20;
+    unsigned run_timeout;
+    unsigned time_run;
+    unsigned old_run_timeout;
+
     CNetScheduleClient::EJobStatus st = GetStatus(job_id);
     if (st != CNetScheduleClient::eRunning) {
         return;
@@ -2176,33 +2187,37 @@ void CQueueDataBase::CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
 
     int status = db.status;
 
-    unsigned time_run = db.time_run;
-    unsigned run_timeout = db.run_timeout;
+    time_run = db.time_run;
+    run_timeout = db.run_timeout;
+    if (run_timeout == 0) {
+        run_timeout = m_LQueue.run_timeout;
+    }
+    old_run_timeout = run_timeout;
 
     // check if current timeout is enought and job requires no prolongation
-    if (time_run + run_timeout > curr) {
-        unsigned delta = curr - (time_run + run_timeout);
-        if (tm < delta / 5)
-            return;
+    time_t safe_exp_time = 
+        curr + std::max((unsigned)m_LQueue.run_timeout, 2*tm) + q_time_descr;
+    if (time_run + run_timeout > safe_exp_time) {
+        return;
     }
 
-    exp_time = x_ComputeExpirationTime(time_run, run_timeout);
-
-    run_timeout += tm;
     if (time_run == 0) {
         time_run = curr;
         db.time_run = curr;
     }
-    
-    while (time_run + run_timeout <= curr) {
-        run_timeout += tm;
+
+    while (time_run + run_timeout <= safe_exp_time) {
+        run_timeout += std::max((unsigned)m_LQueue.run_timeout, tm);;
     }
     db.run_timeout = run_timeout;
 
     cur.Update();
+
     }}
 
     trans.Commit();
+    exp_time = x_ComputeExpirationTime(time_run, run_timeout);
+
 
     {{
         CJobTimeLine& tl = *m_LQueue.run_time_line;
@@ -2221,9 +2236,9 @@ void CQueueDataBase::CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
         msg += " new_expiration_time=";
         msg += tmp_t.AsString();
         msg += " job_timeout(sec)=";
-        msg += NStr::IntToString(tm);
+        msg += NStr::IntToString(run_timeout);
         msg += " job_timeout(minutes)=";
-        msg += NStr::IntToString(tm/60);
+        msg += NStr::IntToString(run_timeout/60);
 
         m_LQueue.monitor.SendString(msg);
     }
@@ -2234,7 +2249,6 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
 {
     _ASSERT(job_id);
 
-//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::eReturned);
@@ -3302,7 +3316,12 @@ void CQueueDataBase::CQueue::ClearAffinityIdx()
         m_LQueue.aff_idx.aff_id = aff_id;
         /*EBDB_ErrCode ret = */
             m_LQueue.aff_idx.ReadVectorOr(&bvect);
+        unsigned old_count = bvect.count();
         bvect.set_range(0, first_job_id-1, false);
+        unsigned new_count = bvect.count();
+        if (new_count == old_count) {
+            continue;
+        }
         bvect.optimize();
         m_LQueue.aff_idx.aff_id = aff_id;
         if (bvect.any()) {
@@ -3549,16 +3568,16 @@ void CQueueDataBase::CQueue::CheckExecutionTimeout()
         tl.EnumerateObjects(&bv, curr_slot);
     }}
     CJobTimeLine::TObjVector::enumerator en(bv.first());
-    for (;en.valid(); ++en) {
+    for ( ;en.valid(); ++en) {
         unsigned job_id = *en;
-        unsigned exp_time = CheckExecutionTimeout(job_id, curr_slot);
+        unsigned exp_time = CheckExecutionTimeout(job_id, curr);
 
         // job may need to moved in the timeline to some future slot
         
         if (exp_time) {
             CWriteLockGuard guard(m_LQueue.rtl_lock);
             unsigned job_slot = tl.TimeLineSlot(exp_time);
-            if (job_slot <= curr_slot) {
+            while (job_slot <= curr_slot) {
                 ++job_slot;
             }
             tl.AddObjectToSlot(job_slot, job_id);
@@ -3605,10 +3624,11 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
     }
 
     time_run = db.time_run;
+    _ASSERT(time_run);
     run_timeout = db.run_timeout;
 
     exp_time = x_ComputeExpirationTime(time_run, run_timeout);
-    if (!(curr_time < exp_time)) { 
+    if (curr_time < exp_time) { 
         return exp_time;
     }
     db.status = (int) CNetScheduleClient::ePending;
@@ -3621,8 +3641,7 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
     trans.Commit();
 
     m_LQueue.status_tracker.SetStatus(job_id, CNetScheduleClient::eReturned);
-
-    if (m_LQueue.monitor.IsMonitorActive()) {
+    //if (m_LQueue.monitor.IsMonitorActive()) {
         CTime tm(CTime::eCurrent);
         string msg = tm.AsString();
         msg += " CQueue::CheckExecutionTimeout: Job rescheduled id=";
@@ -3641,9 +3660,10 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
         msg += NStr::IntToString(run_timeout);
         msg += " run_timeout(minutes)=";
         msg += NStr::IntToString(run_timeout/60);
-
-        m_LQueue.monitor.SendString(msg);
-    }
+ERR_POST(msg);
+cerr << msg << endl;
+     //   m_LQueue.monitor.SendString(msg);
+    //}
 
     return 0;
 }
@@ -3786,6 +3806,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2006/06/26 13:46:01  kuznets
+ * Fixed job expiration and restart mechanism
+ *
  * Revision 1.83  2006/06/19 16:15:49  kuznets
  * fixed crash when working with affinity
  *

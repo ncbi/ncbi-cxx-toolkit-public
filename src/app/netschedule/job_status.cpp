@@ -309,12 +309,14 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
             x_SetClearStatusNoLock(job_id, status, old_status);
             break;
         }
-        old_status = IsStatusNoLock(job_id, 
+        old_status = IsStatusNoLock(job_id,                                 
                                     CNetScheduleClient::eReturned,
-                                    CNetScheduleClient::eDone);
+                                    CNetScheduleClient::eDone,
+                                    CNetScheduleClient::ePending);
         if ((int)old_status >= 0) {
             break;
         }
+        old_status = GetStatusNoLock(job_id);
         ReportInvalidStatus(job_id, status, old_status);
         break;
 
@@ -361,23 +363,10 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
         if (IsCancelCode(old_status)) {
             break;
         }
-
-/*
-        old_status = IsStatusNoLock(job_id, 
-                                    CNetScheduleClient::eCanceled,
-                                    CNetScheduleClient::eFailed);
-        if (IsCancelCode(old_status)) {
+        old_status = GetStatusNoLock(job_id);
+        if (old_status == CNetScheduleClient::eDone) {
             break;
         }
-        old_status = IsStatusNoLock(job_id,
-                                    CNetScheduleClient::eRunning,
-                                    CNetScheduleClient::ePending,
-                                    CNetScheduleClient::eReturned);
-        if ((int)old_status >= 0) {
-            x_SetClearStatusNoLock(job_id, status, old_status);
-            break;
-        }
-*/
         ReportInvalidStatus(job_id, status, old_status);
         break;    
         
@@ -883,6 +872,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/06/26 13:46:01  kuznets
+ * Fixed job expiration and restart mechanism
+ *
  * Revision 1.29  2006/06/07 13:00:01  kuznets
  * Implemented command to get status summary based on affinity token
  *
