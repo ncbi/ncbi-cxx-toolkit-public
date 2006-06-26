@@ -958,7 +958,9 @@ template <typename TRequest>
 inline
 bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
 {
-    if (m_Delta.Get() < 0) {
+    if (m_Queue.IsFull()) {
+        return false; // temporary blockage
+    } else if (m_Delta.Get() < 0) {
         return true;
     } else if (m_ThreadCount.Get() < m_MaxThreads) {
         return true;
@@ -1060,6 +1062,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2006/06/26 20:23:36  ucko
+* CPoolOfThreads<>::HasImmediateRoom: if the queue is full, return false
+* regarldess of other indications.
+*
 * Revision 1.49  2006/06/26 20:09:28  ucko
 * CBlockingQueue<>: compare m_HungerCnt to q.size() rather than 0, as
 * there are (brief) periods when both are positive.
