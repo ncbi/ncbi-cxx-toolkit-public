@@ -276,7 +276,7 @@ private:
 
     bool x_GetSemPred(const TRealQueue& q) const { return !q.empty(); }
     bool x_PutSemPred(const TRealQueue& q) const { return q.size()<m_MaxSize; }
-    bool x_HungerSemPred(const TRealQueue& q) const { return q.empty(); }
+    bool x_HungerSemPred(const TRealQueue&) const { return m_HungerCnt > 0; }
 
     bool x_WaitForPredicate(TQueuePredicate pred, CSemaphore& sem,
                             CMutexGuard& guard, unsigned int timeout_sec,
@@ -1057,6 +1057,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2006/06/26 16:31:40  ucko
+* Correct x_HungerSemPred's definition.
+*
 * Revision 1.47  2006/06/26 16:01:32  ucko
 * Factor CBlockingQueue<>'s race-proof waiting logic into a new
 * x_WaitForPredicate method, and use it from WaitForRoom and WaitForHunger
