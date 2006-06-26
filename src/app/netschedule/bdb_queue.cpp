@@ -3641,7 +3641,8 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
     trans.Commit();
 
     m_LQueue.status_tracker.SetStatus(job_id, CNetScheduleClient::eReturned);
-    //if (m_LQueue.monitor.IsMonitorActive()) {
+
+    {{
         CTime tm(CTime::eCurrent);
         string msg = tm.AsString();
         msg += " CQueue::CheckExecutionTimeout: Job rescheduled id=";
@@ -3660,10 +3661,12 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
         msg += NStr::IntToString(run_timeout);
         msg += " run_timeout(minutes)=";
         msg += NStr::IntToString(run_timeout/60);
-ERR_POST(msg);
-cerr << msg << endl;
-     //   m_LQueue.monitor.SendString(msg);
-    //}
+        ERR_POST(msg);
+
+    if (m_LQueue.monitor.IsMonitorActive()) {
+       m_LQueue.monitor.SendString(msg);
+    }
+    }}
 
     return 0;
 }
@@ -3806,6 +3809,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2006/06/26 13:51:21  kuznets
+ * minor cleaning
+ *
  * Revision 1.84  2006/06/26 13:46:01  kuznets
  * Fixed job expiration and restart mechanism
  *
