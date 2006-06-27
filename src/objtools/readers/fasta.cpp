@@ -37,7 +37,6 @@
 #include "fasta_aln_builder.hpp"
 #include <objtools/readers/reader_exception.hpp>
 
-#include <corelib/ncbi_param.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <util/format_guess.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -1403,6 +1402,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2006/06/27 19:04:17  ucko
+* Move #include <corelib/ncbi_param.hpp> to fasta.hpp.
+*
 * Revision 1.29  2006/06/27 18:37:58  ucko
 * Optionally implement ReadFasta as a wrapper around CFastaReader, as
 * controlled by a NCBI_PARAM (READ_FASTA, USE_NEW_IMPLEMENTATION), still
