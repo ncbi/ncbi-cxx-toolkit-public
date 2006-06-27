@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2006/06/27 18:04:43  gouriano
+* When generating schema, use type namespace, not a hardcoded one
+*
 * Revision 1.42  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *
@@ -308,16 +311,28 @@ void CFileModules::PrintXMLSchemaModular(void) const
 void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
 {
     string nsName("http://www.ncbi.nlm.nih.gov");
+    if (!m_Modules.empty()) {
+        const CDataTypeModule::TDefinitions& defs = 
+            m_Modules.front()->GetDefinitions();
+        if (!defs.empty()) {
+            const string& ns = defs.front().second->GetNamespaceName();
+            if (!ns.empty()) {
+                nsName = ns;
+            }
+        }
+    }
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     if ( const CArgValue& px_ns = args["xmlns"] ) {
         nsName = px_ns.AsString();
     }
     out << "<?xml version=\"1.0\" ?>\n"
         << "<xs:schema\n"
-        << "  xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-        << "  xmlns=\"" << nsName << "\"\n"
-        << "  targetNamespace=\"" << nsName << "\"\n"
-        << "  elementFormDefault=\"qualified\"\n"
+        << "  xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n";
+    if (!nsName.empty()) {
+        out << "  xmlns=\"" << nsName << "\"\n"
+            << "  targetNamespace=\"" << nsName << "\"\n";
+    }
+    out << "  elementFormDefault=\"qualified\"\n"
         << "  attributeFormDefault=\"unqualified\">\n\n";
     PrintXMLRefInfo(out);
 }
