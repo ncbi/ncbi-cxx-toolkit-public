@@ -158,6 +158,14 @@ public:
         }
     }
 
+    static TCoord s_GetOverlap(TCoord L1, TCoord R1, TCoord L2, TCoord R2)
+    {
+        const TCoord minmax = min(R1, R2);
+        const TCoord maxmin = max(L1, L2);
+        const  int n = minmax - maxmin + 1;
+        return n > 0? n: 0;
+    }
+    
     // Multiple greedy reconciliation algorithm
 
     static void s_RunGreedy(typename THitRefs::iterator hri_beg, 
@@ -165,7 +173,8 @@ public:
                             THitRefs* phits_new,
                             TCoord min_hit_len = 100,
                             double min_hit_idty = .9,
-                            size_t margin = 1) {
+                            TCoord margin = 1,
+                            TCoord retain_overlap = 0) {
 
         if(hri_beg > hri_end) {
             NCBI_THROW(CAlgoAlignUtilException, eInternal, 
@@ -219,6 +228,7 @@ public:
                 const Uint1 where = ii->m_Point/2;
                 THitRef* hitrefptr = ii->m_Ptr;
                 if((*hitrefptr)->GetId(where)->CompareOrdered(*id) != 0) {
+                    // new id => reset
                     open_hits.clear();
                     open_hits.insert(THitEndInfo(hitrefptr,where));
                     id = (*hitrefptr)->GetId(where);
@@ -228,9 +238,11 @@ public:
                     typename TOpenHits::iterator iis 
                         = open_hits.find(THitEndInfo(hitrefptr,where));
                     if(iis == iise) {
+                        // new open
                         open_hits.insert(THitEndInfo(hitrefptr,where));
                     }
                     else {
+                        // hit closed => check for hot fogs
                         open_hits.erase(iis);
                         const float curscore = (*hitrefptr)->GetScore();
                         ITERATE(typename TOpenHits, iis2, open_hits) {
@@ -253,55 +265,6 @@ public:
                     }
                 }
             }
-
-            /*
-            typedef const THitEnd* THitEndPtr;
-            typedef list<THitEndPtr> TMarkers;
-            TMarkers mks;
-            typename THit::TId id;
-            id = (*(hit_ends.begin()->m_Ptr))->GetId(hit_ends.begin()->m_Point/2);
-            ITERATE(typename THitEnds, ii, hit_ends) {
-            
-                THitEndPtr cur = &(*ii);
-                const Uint1 where = ii->m_Point/2;
-                THitRef* hitrefptr = ii->m_Ptr;
-                if((*hitrefptr)->GetId(where)->CompareOrdered(*id) != 0) {
-                    mks.clear();
-                    mks.push_back(cur);
-                    id = (*hitrefptr)->GetId(where);
-                }
-                else if(ii->m_X == (*hitrefptr)->GetMin(where)) {
-                    mks.push_back(cur);
-                }
-                else {
-                    const float curscore = (*hitrefptr)->GetScore();
-                    typename TMarkers::iterator ii_del = mks.end();
-                    NON_CONST_ITERATE(typename TMarkers, ii, mks) {
-                        const THitEnd& he = **ii;
-                        if(he.m_Ptr == hitrefptr) {
-                            ii_del = ii;
-                        }
-                        else if (he.m_X > cur->m_X) {
-                            break;
-                        }
-                        else {
-                            const float s = (*he.m_Ptr)->GetScore();
-                            if(s < curscore){
-                                THitEnd hm;
-                                hm.m_Point = he.m_Point;
-                                hm.m_Ptr = he.m_Ptr;
-                                hm.m_X = ((*hitrefptr)->GetMin(where) 
-                                          + (*hitrefptr)->GetMax(where))/2;
-                                hit_mids.insert(hm);
-                            }
-                        }
-                    }
-                    if(ii_del != mks.end()) {
-                        mks.erase(ii_del);
-                    }
-                }
-            }
-            */
 
             hit_ends.insert(hit_mids.begin(), hit_mids.end());
 
@@ -344,9 +307,10 @@ public:
                     }
                     else {
                         const typename THit::TCoord a = 0, 
-                            b = numeric_limits<typename THit::TCoord>::max();
-                        he[point].m_X = (point % 2 == 0) && hc->GetStrand(point / 2)?
-                            a: b;
+                            b = numeric_limits<typename THit::TCoord>::max() / 2;
+                        const bool is_start = point % 2 == 0;
+                        const bool is_plus  = hc->GetStrand(point / 2);
+                        he[point].m_X =  (is_start ^ is_plus)? b: a;
                     }
                 }
 
@@ -387,11 +351,13 @@ public:
                         const bool self        = he.m_Ptr == &hc;
 
                         if(alive && !self) {
-
+                            
                             THitRef hit_new;
                             int newpos 
-                                = sx_Cleave(*he.m_Ptr, he.m_Point/2, cmin, cmax, 
-                                            min_hit_len, min_hit_idty, & hit_new);
+                                = sx_Cleave(*he.m_Ptr, he.m_Point/2, 
+                                            cmin, cmax, min_hit_len, 
+                                            min_hit_idty, & hit_new,
+                                            retain_overlap);
 
                             if(newpos <= -2) { // eliminate
                                 del[hitrefidx] = skip[hitrefidx] = true;
@@ -429,6 +395,7 @@ public:
                                     Uint1 point = he.m_Point;
                                     Uint1 where = point / 2;
 
+                                    // only two new ends to add
                                     THitEnd he2;
                                     he2.m_Point = point;
                                     he2.m_Ptr = ptr;
@@ -460,6 +427,7 @@ public:
             }
         }
 
+        // execute any pending deletions
         typename THitRefs::iterator all_beg = all.begin(), ii = all_beg;
         const size_t dim = all.size();
         for(size_t i = 0; i < dim; ++i, ++ii) {
@@ -468,6 +436,8 @@ public:
             }
         }
 
+        // copy hits to the results vector until the results are full or
+        // there are no more hits to copy
         typename THitRefs::iterator idst = hri_beg, isrc = all_beg, 
             isrc_end = all.end();
         while(isrc != isrc_end && idst != hri_end) {
@@ -477,10 +447,12 @@ public:
             ++isrc;
         }
 
+        // nullify any slack hits in the results
         while(idst != hri_end) {
             idst++ -> Reset(NULL);
         }
 
+        // if there are hits remaining, write them as new
         phits_new->resize(0);
         while(isrc != isrc_end) {
             phits_new->push_back(*isrc++);
@@ -528,7 +500,8 @@ protected:
     static int sx_Cleave(THitRef& h, Uint1 where, 
                          TCoord cmin, TCoord cmax, 
                          TCoord min_hit_len, double& min_idty,
-                         THitRef* pnew_hit) 
+                         THitRef* pnew_hit,
+                         TCoord retain_overlap) 
     {
         int rv = -1;
         pnew_hit->Reset(NULL);
@@ -536,11 +509,18 @@ protected:
         try {
             TCoord lmin = h->GetMin(where), lmax = h->GetMax(where);
 
-            int ldif = cmin - lmin, rdif = lmax - cmax;
+            if(retain_overlap > 0) {
+                const TCoord overlap = s_GetOverlap(lmin, lmax, cmin, cmax);
+                if(overlap >= retain_overlap) {
+                    return -1;
+                }
+            }
 
             if(cmin <= lmin && lmax <= cmax) {
                 return -2;
             }
+
+            int ldif = cmin - lmin, rdif = lmax - cmax;
 
             if(ldif > int(min_hit_len) && rdif > int(min_hit_len)) {
                 
@@ -598,6 +578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/06/27 14:25:00  kapustin
+ * Introduce retain_overlap (min overlap to retain) parameter
+ *
  * Revision 1.11  2006/06/01 19:51:50  kapustin
  * Introduce coordinate margin to control RAM/speed balance
  *

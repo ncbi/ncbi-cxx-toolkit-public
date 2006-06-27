@@ -69,6 +69,10 @@ void CAppHitFilter::Init()
     argdescr->AddDefaultKey("min_len", "min_len", 
                             "Minimal input hit length",
                             CArgDescriptions::eInteger, "500");
+    
+    argdescr->AddDefaultKey("retain_overlap", "retain_overlap", 
+                            "Min overlap to retain in kilobases (0=OFF)",
+                            CArgDescriptions::eInteger, "0");
 
     argdescr->AddDefaultKey("fmt_in", "fmt_in", "Input format",
                             CArgDescriptions::eString, g_m8);
@@ -155,10 +159,11 @@ void CAppHitFilter::x_LoadIDs(CNcbiIstream& istr)
 void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
 {
     const CArgs& args = GetArgs();
-    const string fmt_in = args["fmt_in"].AsString();
-    const string fmt_out = args["fmt_out"].AsString();
-    const THit::TCoord min_len = args["min_len"].AsInteger();
-    const double min_idty = args["min_idty"].AsDouble();
+
+    const string        fmt_in       = args["fmt_in"].AsString();
+    const string        fmt_out      = args["fmt_out"].AsString();
+    const THit::TCoord  min_len      = args["min_len"].AsInteger();
+    const double        min_idty     = args["min_idty"].AsDouble();
 
     CNcbiIstream& istr = args["file_in"]? args["file_in"].AsInputFile(): cin;
 
@@ -238,7 +243,6 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
         ITERATE(THitRefs, ii, hitrefs) {
             
             const THit& h = **ii;
-            //cerr << h << endl;
 
             CRef<CDense_seg> ds (new CDense_seg);
             const ENa_strand query_strand = h.GetQueryStrand()? eNa_strand_plus: 
@@ -309,10 +313,11 @@ bool s_PHitRefScore(const CAppHitFilter::THitRef& lhs,
 int CAppHitFilter::Run()
 {    
     const CArgs& args = GetArgs();
-    const string fmt_in = args["fmt_in"].AsString();
-    const string fmt_out = args["fmt_out"].AsString();
-    const THit::TCoord min_len = args["min_len"].AsInteger();
-    const double min_idty = args["min_idty"].AsDouble();
+    const string fmt_in                   = args["fmt_in"].AsString();
+    const string fmt_out                  = args["fmt_out"].AsString();
+    const THit::TCoord min_len            = args["min_len"].AsInteger();
+    const double min_idty                 = args["min_idty"].AsDouble();
+    const THit::TCoord retain_overlap     = 1024 * args["retain_overlap"].AsInteger();
 
     if((fmt_out == g_AsnTxt || fmt_out == g_AsnBin) &&
        (fmt_in != g_AsnTxt && fmt_in != g_AsnBin)) 
@@ -362,7 +367,8 @@ int CAppHitFilter::Run()
         THitRefs hits_new;
         CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, 
                                       &hits_new, min_len, 
-                                      min_idty, margin);
+                                      min_idty, margin,
+                                      retain_overlap);
         sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
         THitRefs::iterator ii_hi0 = ii_hi;
         ii_hi = remove_if(ii_beg, ii_hi, CHitFilter<THit>::s_PNullRef);
@@ -441,8 +447,6 @@ void CAppHitFilter::x_LoadConstraints(CNcbiIstream& istr, THitRefs& all)
         if(hit->GetLength() > maxlen) {
             maxlen = hit->GetLength();
         }
-
-        // cerr << *hit << endl;
     }
 
     float score_factor = 0.25 / maxlen;
@@ -473,6 +477,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/27 14:25:21  kapustin
+ * Introduce retain_overlap (min overlap to retain) parameter
+ *
  * Revision 1.12  2006/06/01 19:51:36  kapustin
  * Introduce coordinate margin argument to control RAM/speed balance
  *
