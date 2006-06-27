@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/06/27 17:57:44  gouriano
+* Corrected C++ code generation to preserve local elements
+*
 * Revision 1.30  2006/06/19 17:33:33  gouriano
 * Redesigned generation of XML schema
 *
@@ -381,6 +384,12 @@ public:
     static bool GetEnforcedStdXml(void) {
         return sm_EnforcedStdXml;
     }
+    static void SetXmlSourceSpec(bool set = true) {
+        sm_XmlSourceSpec = set;
+    }
+    static bool GetXmlSourceSpec(void) {
+        return sm_XmlSourceSpec;
+    }
 
     virtual const char* GetDEFKeyword(void) const;
     const string& GetMemberName(void) const
@@ -431,6 +440,7 @@ private:
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);
     static bool sm_EnforcedStdXml;
+    static bool sm_XmlSourceSpec;
     static set<string> sm_SavedNames;
 };
 
