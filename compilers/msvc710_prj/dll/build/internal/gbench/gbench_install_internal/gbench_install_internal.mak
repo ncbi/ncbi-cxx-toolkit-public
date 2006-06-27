@@ -73,7 +73,8 @@ THIRDPARTYLIB = ..\..\..\..\..\..\..\..\lib\$(INTDIR)
 #
 INTERNAL_PLUGINS = \
         proteus \
-        radar
+        radar \
+        contig
 
 #
 #
@@ -126,8 +127,19 @@ radar :
     @if exist $(SRCDIR)\internal\gbench\plugins\radar\plugin\radar-config.asn copy $(SRCDIR)\internal\gbench\plugins\radar\plugin\radar-config.asn $(GBENCH)\extra\radar\radar-config.asn
     @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\radar
 
+contig :
+    @echo Installing Contig...
+    @if not exist $(GBENCH)\extra\contig mkdir $(GBENCH)\extra\contig
+    @if exist $(DLLBIN)\dload_contig.dll copy $(DLLBIN)\dload_contig.dll $(GBENCH)\extra\contig\dload_contig.dll
+    @if exist $(DLLBIN)\dload_contig.pdb copy $(DLLBIN)\dload_contig.pdb $(GBENCH)\extra\contig\dload_contig.pdb
+    @if exist $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn copy $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn $(GBENCH)\extra\contig\contig-config.asn
+    @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\contig
+
 #################################################################
 # $Log$
+# Revision 1.2  2006/06/27 15:48:29  jcherry
+# MAGIC  Added contig plugins
+#
 # Revision 1.1  2006/03/15 15:28:36  dicuccio
 # MAGIC: moved from source tree to compiler tree
 #
