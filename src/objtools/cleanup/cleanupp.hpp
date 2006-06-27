@@ -166,6 +166,38 @@ private:
     bool BasicCleanup(CProt_ref& rna, const CGb_qual& gb_qual);
     bool BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual);
 
+    // cleaning up Seq_feat parts.
+    void x_CleanupExcept_text(string& except_text);
+    void x_CleanupRna(CSeq_feat& feat);
+    void x_AddReplaceQual(CSeq_feat& feat, const string& str);
+    void x_CombineSplitQual(string& val, string& new_val);
+
+    // Gb_qual cleanup.
+    void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);
+    void x_CleanupConsSplice(CGb_qual& gbq);
+    void x_CleanupRptUnit(CGb_qual& gbq);
+
+    // Dbtag cleanup.
+    void x_TagCleanup(CObject_id& tag);
+    void x_DbCleanup(string& db);
+    
+    // pub axuiliary functions.
+    void x_FlattenPubEquiv(CPub_equiv& pe);
+
+    // CName_std cleanup 
+    void x_FixEtAl(CName_std& name);
+    void x_FixInitials(CName_std& name);
+    void x_ExtractSuffixFromInitials(CName_std& name);
+    void x_FixSuffix(CName_std& name);
+
+    void x_OrgModToSubtype(CBioSource& bs);
+    void x_SubtypeCleanup(CBioSource& bs);
+    void x_ModToOrgMod(COrg_ref& oref);
+    // cleanup strings in User objects and fields
+    void x_CleanupUserString(string& str);
+
+    bool x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str);
+
     // Extended Cleanup
     void x_MolInfoUpdate(CBioseq& bs);
     void x_MolInfoUpdate(CBioseq_set& bss);
@@ -203,38 +235,12 @@ private:
     void x_ConvertFullLenPubFeatureToDescriptor (CBioseq& bs);
     void x_ConvertFullLenPubFeatureToDescriptor (CBioseq_set& bss);
 
-    
-    // cleaning up Seq_feat parts.
-    void x_CleanupExcept_text(string& except_text);
-    void x_CleanupRna(CSeq_feat& feat);
-    void x_AddReplaceQual(CSeq_feat& feat, const string& str);
-    void x_CombineSplitQual(string& val, string& new_val);
+    void x_CorrectExceptText (string& except_text);
+    void x_CorrectExceptText( CSeq_feat& feat);
+    void x_CorrectExceptText (CSeq_annot& sa);
+    void x_CorrectExceptText (CBioseq& bs);
+    void x_CorrectExceptText (CBioseq_set& bss);
 
-    // Gb_qual cleanup.
-    void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);
-    void x_CleanupConsSplice(CGb_qual& gbq);
-    void x_CleanupRptUnit(CGb_qual& gbq);
-
-    // Dbtag cleanup.
-    void x_TagCleanup(CObject_id& tag);
-    void x_DbCleanup(string& db);
-    
-    // pub axuiliary functions.
-    void x_FlattenPubEquiv(CPub_equiv& pe);
-
-    // CName_std cleanup 
-    void x_FixEtAl(CName_std& name);
-    void x_FixInitials(CName_std& name);
-    void x_ExtractSuffixFromInitials(CName_std& name);
-    void x_FixSuffix(CName_std& name);
-
-    void x_OrgModToSubtype(CBioSource& bs);
-    void x_SubtypeCleanup(CBioSource& bs);
-    void x_ModToOrgMod(COrg_ref& oref);
-    // cleanup strings in User objects and fields
-    void x_CleanupUserString(string& str);
-
-    bool x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str);
 
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
@@ -256,6 +262,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2006/06/27 14:30:59  bollin
+ * added step for correcting exception text to ExtendedCleanup
+ *
  * Revision 1.17  2006/06/27 13:18:47  bollin
  * added steps for converting full length pubs and sources to descriptors to
  * Extended Cleanup

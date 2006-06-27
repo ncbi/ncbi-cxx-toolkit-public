@@ -364,6 +364,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
     x_RemoveMultipleTitles(bss);
     x_MergeMultipleDates(bss);
     
+    x_CorrectExceptText(bss);
+    
     x_CleanGenbankBlockStrings(bss);
 
     x_MolInfoUpdate(bss);
@@ -388,6 +390,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
     x_RemoveMultipleTitles(bs);
     x_MergeMultipleDates(bs);
 
+    x_CorrectExceptText(bs);
+    
     x_CleanGenbankBlockStrings(bs);
     
     x_MolInfoUpdate(bs);
@@ -1313,6 +1317,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2006/06/27 14:30:59  bollin
+ * added step for correcting exception text to ExtendedCleanup
+ *
  * Revision 1.16  2006/06/27 13:18:47  bollin
  * added steps for converting full length pubs and sources to descriptors to
  * Extended Cleanup

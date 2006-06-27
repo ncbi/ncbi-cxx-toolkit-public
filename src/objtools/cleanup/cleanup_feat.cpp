@@ -672,6 +672,72 @@ void CCleanup_imp::BasicCleanup(CImp_feat& imf)
 }
 
 
+// Extended Cleanup methods
+
+// changes "reasons cited in publication" in feature exception text
+// to "reasons given in citation"
+void CCleanup_imp::x_CorrectExceptText (string& except_text)
+{
+    if (NStr::Equal(except_text, "reasons cited in publication")) {
+        except_text = "reasons given in citation";
+    }
+}
+
+
+void CCleanup_imp::x_CorrectExceptText(CSeq_feat& feat)
+{
+    if (feat.IsSetExcept_text()) {
+        x_CorrectExceptText(feat.SetExcept_text());
+    }    
+}
+
+
+void CCleanup_imp::x_CorrectExceptText (CSeq_annot& sa)
+{
+    if (sa.IsSetData()  &&  sa.GetData().IsFtable()) {
+        NON_CONST_ITERATE (list<CRef<CSeq_feat> >, feat, sa.SetData().SetFtable()) {
+            x_CorrectExceptText (**feat);
+        }
+    }
+}
+
+
+void CCleanup_imp::x_CorrectExceptText (CBioseq& bs)
+{
+    if (bs.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
+            x_CorrectExceptText(**it);
+        }
+    }
+}
+
+
+void CCleanup_imp::x_CorrectExceptText (CBioseq_set& bss)
+{
+    if (bss.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
+            x_CorrectExceptText(**it);
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_CorrectExceptText(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_CorrectExceptText(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }    
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -681,6 +747,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/06/27 14:30:59  bollin
+ * added step for correcting exception text to ExtendedCleanup
+ *
  * Revision 1.10  2006/05/17 18:18:08  ucko
  * Fix compilation error introduced in previous revision -- don't compare
  * iterators to NULL, as it is neither necessary nor portable to do so.
