@@ -37,6 +37,7 @@
 #include "fasta_aln_builder.hpp"
 #include <objtools/readers/reader_exception.hpp>
 
+#include <corelib/ncbi_param.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <util/format_guess.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -71,10 +72,15 @@
 
 #include <ctype.h>
 
-// #define REPLACE_OLD_INTERFACE 1
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+NCBI_PARAM_DEF(bool, READ_FASTA, USE_NEW_IMPLEMENTATION, false);
+
+static
+CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
+                                 int* counter,
+                                 vector<CConstRef<CSeq_loc> >* lcv);
 
 template <typename TStack>
 class CTempPusher
@@ -782,8 +788,6 @@ CRef<CSeq_id> CSeqIdGenerator::GenerateID(void) const
 }
 
 
-#ifdef REPLACE_OLD_INTERFACE
-
 class CCounterManager
 {
 public:
@@ -801,13 +805,26 @@ private:
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                            int* counter, vector<CConstRef<CSeq_loc> >* lcv)
 {
-    CStreamLineReader lr(in);
-    CFastaReader      reader(lr, flags);
-    CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
-    if (lcv) {
-        reader.SaveMasks(reinterpret_cast<CFastaReader::TMasks*>(lcv));
+    typedef NCBI_PARAM_TYPE(READ_FASTA, USE_NEW_IMPLEMENTATION) TParam_NewImpl;
+
+    TParam_NewImpl new_impl;
+
+    if (new_impl.Get()) {
+        CStreamLineReader lr(in);
+        CFastaReader      reader(lr, flags);
+        CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
+        if (lcv) {
+            reader.SaveMasks(reinterpret_cast<CFastaReader::TMasks*>(lcv));
+        }
+        return reader.ReadSet();
+    } else {
+        return s_ReadFasta_OLD(in, flags, counter, lcv);
     }
-    return reader.ReadSet();
+}
+
+
+IFastaEntryScan::~IFastaEntryScan()
+{
 }
 
 
@@ -902,7 +919,8 @@ void ScanFastaFile(IFastaEntryScan* scanner,
     }
 }
 
-#else
+
+/// Everything below this point is specific to the old implementation.
 
 static SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
 {
@@ -1175,8 +1193,10 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
 }
 
 
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
-                           int* counter, vector<CConstRef<CSeq_loc> >* lcv)
+static
+CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
+                                 int* counter,
+                                 vector<CConstRef<CSeq_loc> >* lcv)
 {
     if ( !in ) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -1376,95 +1396,6 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
 }
 
 
-void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
-{
-    _ASSERT(fasta_map);
-
-    fasta_map->file_map.resize(0);
-
-    if (!input.is_open()) 
-        return;
-
-    while (!input.eof()) {
-        SFastaFileMap::SFastaEntry  fasta_entry;
-        fasta_entry.stream_offset = input.tellg() - CT_POS_TYPE(0);
-
-        CRef<CSeq_entry> se;
-        se = ReadFasta(input, 
-                       fReadFasta_AssumeNuc | 
-                       fReadFasta_AllSeqIds |
-                       fReadFasta_OneSeq    |
-                       fReadFasta_NoSeqData);
-
-        if (!se->IsSeq()) 
-            continue;
-
-        const CSeq_entry::TSeq& bioseq = se->GetSeq();
-        const CSeq_id* sid = bioseq.GetFirstId();
-        fasta_entry.seq_id = sid->AsFastaString();
-
-        fasta_entry.all_seq_ids.resize(0);
-        if (bioseq.CanGetId()) {
-            const CBioseq::TId& seq_ids = bioseq.GetId();
-            string id_str;
-            ITERATE(CBioseq::TId, it, seq_ids) {
-                const CBioseq::TId::value_type& vt = *it;
-                id_str = vt->AsFastaString();
-                fasta_entry.all_seq_ids.push_back(id_str);
-            }
-        }
-
-        if (bioseq.CanGetDescr()) {
-            const CSeq_descr& d = bioseq.GetDescr();
-            if (d.CanGet()) {
-                const CSeq_descr_Base::Tdata& data = d.Get();
-                if (!data.empty()) {
-                    CSeq_descr_Base::Tdata::const_iterator it = 
-                                                      data.begin();
-                    if (it != data.end()) {
-                        CRef<CSeqdesc> ref_desc = *it;
-                        ref_desc->GetLabel(&fasta_entry.description, 
-                                           CSeqdesc::eContent);
-                    }                                
-                }
-            }
-        }
-        fasta_map->file_map.push_back(fasta_entry);
-        
-
-    } // while
-
-}
-
-
-void ScanFastaFile(IFastaEntryScan* scanner, 
-                   CNcbiIfstream&   input,
-                   TReadFastaFlags  fread_flags)
-{
-    if (!input.is_open()) 
-        return;
-
-    while (!input.eof()) {
-        CNcbiStreampos pos = input.tellg();
-
-        CRef<CSeq_entry> se(ReadFasta(input, fread_flags));
-
-        if (!se->IsSeq()) 
-            continue;
-        scanner->EntryFound(se, pos);
-
-    }
-}
-
-#endif
-
-IFastaEntryScan::~IFastaEntryScan()
-{
-}
-
-
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -1472,6 +1403,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/06/27 18:37:58  ucko
+* Optionally implement ReadFasta as a wrapper around CFastaReader, as
+* controlled by a NCBI_PARAM (READ_FASTA, USE_NEW_IMPLEMENTATION), still
+* defaulting to false for now.
+* Unconditionally switch to CFastaReader-based versions of
+* ReadFastaFileMap and ScanFastaFile.
+*
 * Revision 1.28  2006/04/13 17:25:18  ucko
 * Replace isblank with isspace, as Windows only has the latter.
 *
