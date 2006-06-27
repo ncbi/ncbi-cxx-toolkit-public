@@ -6283,7 +6283,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " } ,\n",
     " {                                -- NCBIstdaa\n",
     " code ncbistdaa ,\n",
-    " num 28 ,                     -- continuous 0-27\n",
+    " num 26 ,                     -- continuous 0-27\n",
     " one-letter TRUE ,            -- all one letter codes\n",
     " table {\n",
     " { symbol \"-\", name \"Gap\" } ,                -- 0\n",
@@ -6311,9 +6311,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " { symbol \"Y\", name \"Tyrosine\"},             -- 22\n",
     " { symbol \"Z\", name \"Glu or Gln\" },          -- 23\n",
     " { symbol \"U\", name \"Selenocysteine\"},       -- 24 \n",
-    " { symbol \"*\", name \"Termination\" },         -- 25\n",
-    " { symbol \"O\", name \"Pyrrolysine\" },         -- 26\n",
-    " { symbol \"J\", name \"Leu or Ile\" }           -- 27\n",
+    " { symbol \"*\", name \"Termination\" }          -- 25\n",
     " }                            -- end of table            \n",
     " } ,\n",
     " {                                -- NCBI2na\n",
@@ -6609,12 +6607,12 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 7,\n",
     " 8,\n",
     " 9,\n",
-    " 27,  -- J - was 255\n",
+    " 255,  -- J\n",
     " 10,\n",
     " 11,\n",
     " 12,\n",
     " 13,\n",
-    " 26,  -- O - was 255\n",
+    " 255,  -- O\n",
     " 14,\n",
     " 15,\n",
     " 16,\n",
@@ -6665,12 +6663,12 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 7,\n",
     " 8,\n",
     " 9,\n",
-    " 27,  -- J - was 255\n",
+    " 255,  -- J\n",
     " 10,\n",
     " 11,\n",
     " 12,\n",
     " 13,\n",
-    " 26,  -- O - was 255\n",
+    " 255,  -- O\n",
     " 14,\n",
     " 15,\n",
     " 16,\n",
@@ -6686,7 +6684,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " {\n",
     " from ncbistdaa ,\n",
     " to ncbieaa ,\n",
-    " num 28 ,\n",
+    " num 26 ,\n",
     " table {\n",
     " 45 ,  --   \"-\"\n",
     " 65 ,    -- they map directly with holes for O and J\n",
@@ -6713,14 +6711,12 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 89,\n",
     " 90,\n",
     " 85,	 -- U\n",
-    " 42,  -- *\n",
-    " 79,	 -- O - new\n",
-    " 74}  -- J - new\n",
+    " 42}  -- *\n",
     " } ,\n",
     " {\n",
     " from ncbistdaa ,\n",
     " to iupacaa ,\n",
-    " num 28 ,\n",
+    " num 26 ,\n",
     " table {\n",
     " 255 ,  --   \"-\"\n",
     " 65 ,    -- they map directly with holes for O and J\n",
@@ -6747,9 +6743,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 89,\n",
     " 90,\n",
     " 85,  -- U - was 88\n",
-    " 255, -- *\n",
-    " 79,	 -- O - new\n",
-    " 74}  -- J - new\n",
+    " 255} -- *\n",
     " } \n",
     " }\n",
     "-- end of seq-code-set -- }", // make sure '}' is last symbol of ASN text
@@ -6763,6 +6757,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2006/06/27 18:13:53  ucko
+ * Restore the previous version of ncbistdaa (sans J and O) per the BLAST
+ * group's request.
+ *
  * Revision 6.27  2006/05/10 18:03:48  dondosha
  * Added function ConvertWithBlastAmbig to convert Seq-data to ncbi2na, plus a
  * vector of ambiguities in BLAST database format.
