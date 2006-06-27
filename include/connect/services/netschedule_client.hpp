@@ -190,13 +190,18 @@ public:
     ///    Output (cout) (in most cases file name)
     /// @param err
     ///    Error (cerr) (file name)
+    /// @param job_mask
+    ///     Job mask
+    /// @param job_mask
+    ///     Job mask
     /// @return job key
     virtual
     string SubmitJob(const string& input, 
                      const string& progress_msg   = kEmptyStr,
                      const string& affinity_token = kEmptyStr,
                      const string& out            = kEmptyStr,
-                     const string& err            = kEmptyStr);
+                     const string& err            = kEmptyStr,
+                     unsigned      job_mask       = 0);
 
 
     /// Job description for batch submission
@@ -305,6 +310,8 @@ public:
     ///     Job output (file name in most cases)
     /// @param jerr
     ///     Job error (file name in most cases)
+    /// @param job_mask
+    ///     Job mask
     /// @return
     ///     TRUE if job has been returned from the queue.
     ///     FALSE means queue is empty or for some reason scheduler
@@ -315,11 +322,12 @@ public:
     /// @sa WaitJob
     ///
     virtual
-    bool GetJob(string* job_key, 
-                string* input, 
+    bool GetJob(string*   job_key, 
+                string*   input, 
                 unsigned short udp_port = 0,
-                string* jout = 0,
-                string* jerr = 0);
+                string*   jout = 0,
+                string*   jerr = 0,
+                unsigned* job_mask = 0);
 
     /// Notification wait mode
     enum EWaitMode {
@@ -371,7 +379,8 @@ public:
                  unsigned short udp_port,
                  EWaitMode      wait_mode = eWaitNotification,
                  string*        jout = 0,
-                 string*        jerr = 0);
+                 string*        jerr = 0,
+                 unsigned*      job_mask = 0);
 
 
     /// Wait for queue notification message 
@@ -414,7 +423,8 @@ public:
                          string*       new_job_key, 
                          string*       new_input,
                          string*       jout = 0,
-                         string*       jerr = 0);
+                         string*       jerr = 0,
+                         unsigned*     job_mask = 0);
 
     /// Put job interim (progress) message
     /// 
@@ -669,6 +679,7 @@ protected:
                              string*        input, 
                              string*        jout,
                              string*        jerr,
+                             unsigned*      job_mask,
                              const string&  response);
 
     void WaitQueueNotification(unsigned       wait_time,
@@ -684,7 +695,8 @@ protected:
                           unsigned   wait_time,
                           unsigned short udp_port,
                           string*    jout = 0,
-                          string*    jerr = 0);
+                          string*    jerr = 0,
+                          unsigned*  job_mask = 0);
 
     /// Try to read ENDF from the socket to check if connection is still alive
     ///
@@ -780,7 +792,8 @@ public:
                      const string& progress_msg = kEmptyStr,
                      const string& affinity_token = kEmptyStr,
                      const string& out            = kEmptyStr,
-                     const string& err            = kEmptyStr);
+                     const string& err            = kEmptyStr,
+                     unsigned      job_mask       = 0);
 
     virtual
     void SubmitJobBatch(SJobBatch& subm);
@@ -790,7 +803,8 @@ public:
                 string*        input, 
                 unsigned short udp_port = 0,
                 string*        jout = 0,
-                string*        jerr = 0);
+                string*        jerr = 0,
+                unsigned*      job_mask = 0);
 
     bool WaitJob(string*        job_key, 
                  string*        input, 
@@ -798,7 +812,8 @@ public:
                  unsigned short udp_port,
                  EWaitMode      wait_mode = eWaitNotification,
                  string*        jout = 0,
-                 string*        jerr = 0);
+                 string*        jerr = 0,
+                 unsigned*      job_mask = 0);
 
 
     virtual
@@ -848,14 +863,16 @@ private:
                      string* input, 
                      unsigned short udp_port,
                      string*  jout,
-                     string*  jerr);
+                     string*  jerr,
+                     unsigned* job_mask);
     bool x_GetJobWaitNotify(SServiceAddress& sa,
                             string*    job_key, 
                             string*    input, 
                             unsigned   wait_time,
                             unsigned short udp_port,
                             string*    jout,
-                            string*    jerr);
+                            string*    jerr,
+                            unsigned*  job_mask);
 private:
     CNetScheduleClient_LB(const CNetScheduleClient_LB&);
     CNetScheduleClient_LB& operator=(const CNetScheduleClient_LB&);
@@ -976,6 +993,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/06/27 15:40:56  kuznets
+ * Added job mask
+ *
  * Revision 1.57  2006/06/07 12:58:39  kuznets
  * +StatusSnapshot() method
  *

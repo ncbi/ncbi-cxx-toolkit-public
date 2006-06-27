@@ -261,7 +261,8 @@ string CNetScheduleClient_LB::SubmitJob(const string& input,
                                         const string& progress_msg,
                                         const string& affinity_token,
                                         const string& out,
-                                        const string& err)
+                                        const string& err,
+                                        unsigned      mask)
 {
     ++m_Requests;
     // try to submit this job even if server does not take it
@@ -269,7 +270,7 @@ string CNetScheduleClient_LB::SubmitJob(const string& input,
     for (unsigned retry = 0; retry < max_retry; ++retry) {
         try {
             return TParent::SubmitJob(
-                input, progress_msg, affinity_token, out, err);
+                input, progress_msg, affinity_token, out, err, mask);
         } 
         catch (CNetScheduleException& ex) {
             CNetScheduleException::TErrCode ec = ex.GetErrCode();
@@ -303,7 +304,8 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                                    string* input, 
                                    unsigned short udp_port,
                                    string*        jout,
-                                   string*        jerr)
+                                   string*        jerr,
+                                   unsigned*      job_mask)
 {
     time_t curr = time(0);
     if (NeedRebalance(curr)) {
@@ -344,7 +346,8 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                 }
                 try {
                     bool job_received = 
-                        x_TryGetJob(sa, job_key, input, udp_port, jout, jerr);
+                        x_TryGetJob(sa, job_key, 
+                                    input, udp_port, jout, jerr, job_mask);
                     if (job_received) {
                         return job_received;
                     }
@@ -371,7 +374,8 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                 }
                 try {
                     bool job_received = 
-                        x_TryGetJob(sa, job_key, input, udp_port, jout, jerr);
+                        x_TryGetJob(sa, job_key, input, udp_port, 
+                                    jout, jerr, job_mask);
                     if (job_received) {
                         return job_received;
                     }
@@ -400,7 +404,8 @@ bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
                                         string*          input, 
                                         unsigned short   udp_port,
                                         string*          jout,
-                                        string*          jerr)
+                                        string*          jerr,
+                                        unsigned*        job_mask)
 {
     EIO_Status st = Connect(sa.host, sa.port);
     if (st != eIO_Success) {
@@ -412,7 +417,7 @@ bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
 
     CJS_BoolGuard bg(&m_StickToHost);
     bool job_received = 
-        TParent::GetJob(job_key, input, udp_port, jout, jerr);
+        TParent::GetJob(job_key, input, udp_port, jout, jerr, job_mask);
     return job_received;
 }
 
@@ -424,7 +429,8 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                                     unsigned short udp_port,
                                     EWaitMode      wait_mode,
                                     string*        jout,
-                                    string*        jerr)
+                                    string*        jerr,
+                                    unsigned*      job_mask)
 {
     time_t curr = time(0);
     if (NeedRebalance(curr)) {
@@ -463,7 +469,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                     bool job_received = 
                         x_GetJobWaitNotify(sa, 
                             job_key, input, notification_time, udp_port, 
-                            jout, jerr);
+                            jout, jerr, job_mask);
                     if (job_received) {
                         return job_received;
                     }
@@ -492,7 +498,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                     bool job_received = 
                         x_GetJobWaitNotify(sa, 
                             job_key, input, notification_time, udp_port,
-                            jout, jerr);
+                            jout, jerr, job_mask);
                     if (job_received) {
                         return job_received;
                     }
@@ -519,7 +525,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
 
     WaitQueueNotification(wait_time, udp_port);
 
-    return GetJob(job_key, input, udp_port, jout, jerr);
+    return GetJob(job_key, input, udp_port, jout, jerr, job_mask);
 }
 
 
@@ -566,7 +572,8 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
                                                unsigned   wait_time,
                                                unsigned short udp_port,
                                                string* jout,
-                                               string* jerr)
+                                               string* jerr,
+                                               unsigned* job_mask)
 {
     EIO_Status st = Connect(sa.host, sa.port);
     if (st != eIO_Success) {
@@ -579,7 +586,7 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
     CJS_BoolGuard bg(&m_StickToHost);
     bool job_received = 
         TParent::GetJobWaitNotify(job_key, input, wait_time, udp_port, 
-                                  jout, jerr);
+                                  jout, jerr, job_mask);
     return job_received;
 }
 
@@ -738,6 +745,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/06/27 15:42:32  kuznets
+ * Added job mask
+ *
  * Revision 1.25  2006/06/15 15:10:43  didenko
  * Improved streams error handling
  *
