@@ -60,8 +60,11 @@ protected:
     bool DefineElementType(DTDElement& node);
     bool DefineAttributeType(DTDAttribute& att);
 
-    void ParseHeader();
+    void ParseHeader(void);
     void ParseInclude(void);
+    TToken GetRawAttributeSet(void);
+    bool GetAttribute(const string& att);
+
     string ParseElementContent(DTDElement* owner, int& emb);
     void ParseContent(DTDElement& node);
     void ParseDocumentation(void);
@@ -100,6 +103,8 @@ protected:
     string m_Value;
     string m_ValuePrefix;
 
+    map<string,string> m_RawAttributes;
+
     map<string,string> m_PrefixToNamespace;
     map<string,string> m_NamespaceToPrefix;
     map<string,DTDAttribute> m_MapAttribute;
@@ -121,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2006/06/27 17:58:24  gouriano
+ * Parse attributes as SET
+ *
  * Revision 1.4  2006/06/05 15:33:32  gouriano
  * Implemented local elements when parsing XML schema
  *

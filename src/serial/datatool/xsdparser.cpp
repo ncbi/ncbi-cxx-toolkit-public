@@ -45,6 +45,7 @@ BEGIN_NCBI_SCOPE
 XSDParser::XSDParser(XSDLexer& lexer)
     : DTDParser(lexer)
 {
+    m_SrcType = eSchema;
 }
 
 XSDParser::~XSDParser(void)
@@ -286,73 +287,97 @@ void XSDParser::ParseInclude(void)
     ParseHeader();
 }
 
+TToken XSDParser::GetRawAttributeSet(void)
+{
+    m_RawAttributes.clear();
+    TToken tok;
+    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
+        m_RawAttributes[m_Attribute] = m_Value;
+    }
+    return tok;
+}
+
+bool XSDParser::GetAttribute(const string& att)
+{
+    if (m_RawAttributes.find(att) != m_RawAttributes.end()) {
+        m_Attribute = att;
+        m_Value = m_RawAttributes[att];
+        return true;
+    }
+    m_Attribute.erase();
+    m_Value.erase();
+    return false;
+}
+
+
 string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
 {
     TToken tok;
-    string name;
+    string name, value;
     bool ref=false, named_type=false;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("ref")) {
-            name = m_Value;
-            ref=true;
 
-        } else if (IsAttribute("name")) {
-            ref=false;
-            name = m_Value;
-            if (owner) {
-                name = owner->GetName();
-                name += "__emb#__";
-                name += NStr::IntToString(emb++);
-                m_MapElement[name].SetEmbedded();
-                m_MapElement[name].SetNamed();
-            }
-            m_MapElement[name].SetName(m_Value);
+    tok = GetRawAttributeSet();
 
-        } else if (IsAttribute("type")) {
-            if (!DefineElementType(m_MapElement[name])) {
-                m_MapElement[name].SetTypeName(m_Value);
-                named_type = true;
+    if (GetAttribute("ref")) {
+        name = m_Value;
+        ref=true;
+    }
+    if (GetAttribute("name")) {
+        ref=false;
+        name = m_Value;
+        if (owner) {
+            name = owner->GetName();
+            name += "__emb#__";
+            name += NStr::IntToString(emb++);
+            m_MapElement[name].SetEmbedded();
+            m_MapElement[name].SetNamed();
+        }
+        m_MapElement[name].SetName(m_Value);
+    }
+    if (GetAttribute("type")) {
+        if (!DefineElementType(m_MapElement[name])) {
+            m_MapElement[name].SetTypeName(m_Value);
+            named_type = true;
+        }
+    }
+    if (GetAttribute("minOccurs")) {
+        if (!owner || name.empty()) {
+            ParseError("Unexpected attribute");
+        }
+        int m = NStr::StringToInt(m_Value);
+        DTDElement::EOccurrence occNow, occNew;
+        occNew = occNow = owner->GetOccurrence(name);
+        if (m == 0) {
+            if (occNow == DTDElement::eOne) {
+                occNew = DTDElement::eZeroOrOne;
+            } else if (occNow == DTDElement::eOneOrMore) {
+                occNew = DTDElement::eZeroOrMore;
             }
-
-        } else if (IsAttribute("minOccurs")) {
-            if (!owner || name.empty()) {
-                ParseError("Unexpected attribute");
+        } else if (m != 1) {
+            ParseError("Unsupported attribute");
+        }
+        if (occNow != occNew) {
+            owner->SetOccurrence(name, occNew);
+        }
+    }
+    if (GetAttribute("maxOccurs")) {
+        if (!owner || name.empty()) {
+            ParseError("Unexpected attribute");
+        }
+        int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
+        DTDElement::EOccurrence occNow, occNew;
+        occNew = occNow = owner->GetOccurrence(name);
+        if (m == -1) {
+            if (occNow == DTDElement::eOne) {
+                occNew = DTDElement::eOneOrMore;
+            } else if (occNow == DTDElement::eZeroOrOne) {
+                occNew = DTDElement::eZeroOrMore;
             }
-            int m = NStr::StringToInt(m_Value);
-            DTDElement::EOccurrence occNow, occNew;
-            occNew = occNow = owner->GetOccurrence(name);
-            if (m == 0) {
-                if (occNow == DTDElement::eOne) {
-                    occNew = DTDElement::eZeroOrOne;
-                } else if (occNow == DTDElement::eOneOrMore) {
-                    occNew = DTDElement::eZeroOrMore;
-                }
-            } else if (m != 1) {
-                ParseError("Unsupported attribute");
-            }
-            if (occNow != occNew) {
-                owner->SetOccurrence(name, occNew);
-            }
-            
-        } else if (IsAttribute("maxOccurs")) {
-            if (!owner || name.empty()) {
-                ParseError("Unexpected attribute");
-            }
-            int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
-            DTDElement::EOccurrence occNow, occNew;
-            occNew = occNow = owner->GetOccurrence(name);
-            if (m == -1) {
-                if (occNow == DTDElement::eOne) {
-                    occNew = DTDElement::eOneOrMore;
-                } else if (occNow == DTDElement::eZeroOrOne) {
-                    occNew = DTDElement::eZeroOrMore;
-                }
-            } else if (m != 1) {
-                ParseError("Unsupported attribute");
-            }
-            if (occNow != occNew) {
-                owner->SetOccurrence(name, occNew);
-            }
+        } else if (m != 1) {
+            ParseError("Unsupported attribute");
+        }
+        if (occNow != occNew) {
+            owner->SetOccurrence(name, occNew);
         }
     }
     if (tok != K_CLOSING && tok != K_ENDOFTAG) {
@@ -444,9 +469,7 @@ void XSDParser::ParseContent(DTDElement& node)
 
 void XSDParser::ParseDocumentation(void)
 {
-    TToken tok;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
-        ;
+    TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
         XSDLexer& l = dynamic_cast<XSDLexer&>(Lexer());
         while (l.ProcessDocumentation())
@@ -460,41 +483,40 @@ void XSDParser::ParseDocumentation(void)
 
 void XSDParser::ParseContainer(DTDElement& node)
 {
-    TToken tok;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("minOccurs")) {
-            int m = NStr::StringToInt(m_Value);
-            DTDElement::EOccurrence occNow, occNew;
-            occNew = occNow = node.GetOccurrence();
-            if (m == 0) {
-                if (occNow == DTDElement::eOne) {
-                    occNew = DTDElement::eZeroOrOne;
-                } else if (occNow == DTDElement::eOneOrMore) {
-                    occNew = DTDElement::eZeroOrMore;
-                }
-            } else if (m != 1) {
-                ParseError("Unsupported attribute");
+    TToken tok = GetRawAttributeSet();
+
+    if (GetAttribute("minOccurs")) {
+        int m = NStr::StringToInt(m_Value);
+        DTDElement::EOccurrence occNow, occNew;
+        occNew = occNow = node.GetOccurrence();
+        if (m == 0) {
+            if (occNow == DTDElement::eOne) {
+                occNew = DTDElement::eZeroOrOne;
+            } else if (occNow == DTDElement::eOneOrMore) {
+                occNew = DTDElement::eZeroOrMore;
             }
-            if (occNow != occNew) {
-                node.SetOccurrence(occNew);
+        } else if (m != 1) {
+            ParseError("Unsupported attribute");
+        }
+        if (occNow != occNew) {
+            node.SetOccurrence(occNew);
+        }
+    }
+    if (GetAttribute("maxOccurs")) {
+        int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
+        DTDElement::EOccurrence occNow, occNew;
+        occNew = occNow = node.GetOccurrence();
+        if (m == -1) {
+            if (occNow == DTDElement::eOne) {
+                occNew = DTDElement::eOneOrMore;
+            } else if (occNow == DTDElement::eZeroOrOne) {
+                occNew = DTDElement::eZeroOrMore;
             }
-            
-        } else if (IsAttribute("maxOccurs")) {
-            int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
-            DTDElement::EOccurrence occNow, occNew;
-            occNew = occNow = node.GetOccurrence();
-            if (m == -1) {
-                if (occNow == DTDElement::eOne) {
-                    occNew = DTDElement::eOneOrMore;
-                } else if (occNow == DTDElement::eZeroOrOne) {
-                    occNew = DTDElement::eZeroOrMore;
-                }
-            } else if (m != 1) {
-                ParseError("Unsupported attribute");
-            }
-            if (occNow != occNew) {
-                node.SetOccurrence(occNew);
-            }
+        } else if (m != 1) {
+            ParseError("Unsupported attribute");
+        }
+        if (occNow != occNew) {
+            node.SetOccurrence(occNew);
         }
     }
     if (tok == K_CLOSING) {
@@ -504,9 +526,7 @@ void XSDParser::ParseContainer(DTDElement& node)
 
 void XSDParser::ParseComplexType(DTDElement& node)
 {
-    TToken tok;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
-        ;
+    TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
         ParseContent(node);
     }
@@ -514,9 +534,7 @@ void XSDParser::ParseComplexType(DTDElement& node)
 
 void XSDParser::ParseSimpleContent(DTDElement& node)
 {
-    TToken tok;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
-        ;
+    TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
         ParseContent(node);
     }
@@ -524,12 +542,10 @@ void XSDParser::ParseSimpleContent(DTDElement& node)
 
 void XSDParser::ParseExtension(DTDElement& node)
 {
-    TToken tok;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("base")) {
-            if (!DefineElementType(node)) {
-                node.SetTypeName(m_Value);
-            }
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("base")) {
+        if (!DefineElementType(node)) {
+            node.SetTypeName(m_Value);
         }
     }
     if (tok == K_CLOSING) {
@@ -539,12 +555,10 @@ void XSDParser::ParseExtension(DTDElement& node)
 
 void XSDParser::ParseRestriction(DTDElement& node)
 {
-    TToken tok;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("base")) {
-            if (!DefineElementType(node)) {
-                node.SetTypeName(m_Value);
-            }
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("base")) {
+        if (!DefineElementType(node)) {
+            node.SetTypeName(m_Value);
         }
     }
     if (tok == K_CLOSING) {
@@ -554,26 +568,28 @@ void XSDParser::ParseRestriction(DTDElement& node)
 
 void XSDParser::ParseAttribute(DTDElement& node)
 {
-    TToken tok;
     DTDAttribute att;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("ref")) {
-            att.SetName(m_Value);
-        } else if (IsAttribute("name")) {
-            att.SetName(m_Value);
-        } else if (IsAttribute("type")) {
-            if (!DefineAttributeType(att)) {
-                att.SetTypeName(m_Value);
-            }
-        } else if (IsAttribute("use")) {
-            if (IsValue("required")) {
-                att.SetValueType(DTDAttribute::eRequired);
-            } else if (IsValue("optional")) {
-                att.SetValueType(DTDAttribute::eImplied);
-            }
-        } else if (IsAttribute("default")) {
-            att.SetValue(m_Value);
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("ref")) {
+        att.SetName(m_Value);
+    }
+    if (GetAttribute("name")) {
+        att.SetName(m_Value);
+    }
+    if (GetAttribute("type")) {
+        if (!DefineAttributeType(att)) {
+            att.SetTypeName(m_Value);
         }
+    }
+    if (GetAttribute("use")) {
+        if (IsValue("required")) {
+            att.SetValueType(DTDAttribute::eRequired);
+        } else if (IsValue("optional")) {
+            att.SetValueType(DTDAttribute::eImplied);
+        }
+    }
+    if (GetAttribute("default")) {
+        att.SetValue(m_Value);
     }
     if (tok == K_CLOSING) {
         ParseContent(att);
@@ -583,21 +599,18 @@ void XSDParser::ParseAttribute(DTDElement& node)
 
 string XSDParser::ParseAttributeContent()
 {
-    TToken tok;
+    TToken tok = GetRawAttributeSet();
     string name;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("ref")) {
-            name = m_Value;
-
-        } else if (IsAttribute("name")) {
-            name = m_Value;
-            m_MapAttribute[name].SetName(name);
-
-        } else if (IsAttribute("type")) {
-            if (!DefineAttributeType(m_MapAttribute[name])) {
-                m_MapAttribute[name].SetTypeName(m_Value);
-            }
-
+    if (GetAttribute("ref")) {
+        name = m_Value;
+    }
+    if (GetAttribute("name")) {
+        name = m_Value;
+        m_MapAttribute[name].SetName(name);
+    }
+    if (GetAttribute("type")) {
+        if (!DefineAttributeType(m_MapAttribute[name])) {
+            m_MapAttribute[name].SetTypeName(m_Value);
         }
     }
     if (tok == K_CLOSING) {
@@ -623,8 +636,7 @@ void XSDParser::ParseContent(DTDAttribute& att)
             ParseDocumentation();
             break;
         default:
-            for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
-                ;
+            tok = GetRawAttributeSet();
             if (tok == K_CLOSING) {
                 ParseContent(att);
             }
@@ -635,12 +647,10 @@ void XSDParser::ParseContent(DTDAttribute& att)
 
 void XSDParser::ParseRestriction(DTDAttribute& att)
 {
-    TToken tok;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("base")) {
-            if (!DefineAttributeType(att)) {
-                att.SetTypeName(m_Value);
-            }
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("base")) {
+        if (!DefineAttributeType(att)) {
+            att.SetTypeName(m_Value);
         }
     }
     if (tok == K_CLOSING) {
@@ -650,12 +660,10 @@ void XSDParser::ParseRestriction(DTDAttribute& att)
 
 void XSDParser::ParseEnumeration(DTDAttribute& att)
 {
-    TToken tok;
+    TToken tok = GetRawAttributeSet();
     att.SetType(DTDAttribute::eEnum);
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        if (IsAttribute("value")) {
-            att.AddEnumValue(m_Value);
-        }
+    if (GetAttribute("value")) {
+        att.AddEnumValue(m_Value);
     }
     if (tok == K_CLOSING) {
         ParseContent(att);
@@ -829,6 +837,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2006/06/27 18:00:57  gouriano
+ * Parse attributes as SET
+ *
  * Revision 1.6  2006/06/19 17:34:40  gouriano
  * Corrected parsing of simpleContent
  *
