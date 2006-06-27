@@ -238,6 +238,8 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
                            int* counter = 0,
                            vector<CConstRef<CSeq_loc> >* lcv = 0);
 
+NCBI_PARAM_DECL(bool, READ_FASTA, USE_NEW_IMPLEMENTATION);
+
 
 //////////////////////////////////////////////////////////////////
 //
@@ -332,6 +334,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/06/27 18:36:08  ucko
+* Optionally implement ReadFasta as a wrapper around CFastaReader, as
+* controlled by a NCBI_PARAM (READ_FASTA, USE_NEW_IMPLEMENTATION).
+*
 * Revision 1.11  2006/04/13 14:44:00  ucko
 * Add a new class-based FASTA reader, but leave the existing reader
 * alone for now.
