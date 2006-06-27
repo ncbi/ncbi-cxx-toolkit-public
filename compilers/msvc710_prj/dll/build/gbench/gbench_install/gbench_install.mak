@@ -148,8 +148,9 @@ PLUGINS = \
         $(GBENCH)\plugins\view_validator.dll
 
 INTERNAL_PLUGINS = \
-        ncbi_gbench_internal
-        
+        ncbi_gbench_internal \
+        ncbi_gbench_contig
+
 #
 # Resource files
 #
@@ -309,6 +310,14 @@ ncbi_gbench_internal :
     @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-macos-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-macos-config.asn $(GBENCH)\extra\ncbi\ncbi-macos-config.asn
     @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\ncbi
 
+ncbi_gbench_contig :
+    @echo Installing NCBI contig editing plugin...
+    @if not exist $(GBENCH)\extra\contig mkdir $(GBENCH)\extra\contig
+    @if exist $(DLLBIN)\ncbi_gbench_contig.dll copy $(DLLBIN)\ncbi_gbench_contig.dll $(GBENCH)\extra\contig\ncbi_gbench_contig.dll
+    @if exist $(DLLBIN)\ncbi_gbench_contig.pdb copy $(DLLBIN)\ncbi_gbench_contig.pdb $(GBENCH)\extra\contig\ncbi_gbench_contig.pdb
+    @if exist $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn copy $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn $(GBENCH)\extra\contig\contig-config.asn
+    @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\contig
+
 ###############################################################
 #
 # Target: Copy the resources
@@ -339,6 +348,9 @@ $(GBENCH)/plugins/plugin-cache : $(PLUGINS) $(GBENCH)\bin\gbench_plugin_scan.exe
 
 ###############################################################
 # $Log$
+# Revision 1.3  2006/06/27 17:59:00  dicuccio
+# MAGIC added installation for ncbi_gbench_contig
+#
 # Revision 1.2  2006/04/27 12:26:43  dicuccio
 # MAGIC: install algo_submit
 #
