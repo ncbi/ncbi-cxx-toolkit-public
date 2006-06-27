@@ -64,6 +64,11 @@ public:
     DTDParser( DTDLexer& lexer);
     virtual ~DTDParser(void);
 
+    enum ESrcType {
+        eDTD,
+        eSchema
+    };
+        
     AutoPtr<CFileModules> Modules(const string& fileName);
 
 protected:
@@ -130,6 +135,7 @@ protected:
     stack<string>          m_StackPath;
     list<string>           m_StackLexerName;
     string                 m_IdentifierText;
+    ESrcType  m_SrcType;
 };
 
 END_NCBI_SCOPE
@@ -140,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2006/06/27 17:56:50  gouriano
+ * Corrected schema generation to preserve local elements
+ *
  * Revision 1.10  2006/05/03 14:37:38  gouriano
  * Added parsing attribute definition and include
  *
