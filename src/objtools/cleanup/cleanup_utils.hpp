@@ -37,6 +37,15 @@
 #include <algorithm>
 
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Affil.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/biblio/Imprint.hpp>
+#include <objects/general/Date.hpp>
+#include <objects/general/Person_id.hpp>
+#include <objects/general/Name_std.hpp>
+
 #include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -203,6 +212,8 @@ CRef<CSeq_loc> ReadLocFromText(string text, const CSeq_id *id, CScope *scope);
 // for finding the correct amino acid letter given an abbreviation
 char ValidAminoAcid (string abbrev);
 
+// for matching equivalent cit-sub publications
+bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -212,6 +223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/06/27 18:43:02  bollin
+* added step for merging equivalent cit-sub publications to ExtendedCleanup
+*
 * Revision 1.5  2006/06/21 17:21:28  bollin
 * added cleanup of GenbankBlock descriptor strings to ExtendedCleanup
 *

@@ -241,6 +241,10 @@ private:
     void x_CorrectExceptText (CBioseq& bs);
     void x_CorrectExceptText (CBioseq_set& bss);
 
+    void x_MergeEquivalentCitSubs (CSeq_descr& sdr);
+    void x_MergeEquivalentCitSubs (CBioseq& bs);
+    void x_MergeEquivalentCitSubs (CBioseq_set& bss);
+
 
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
@@ -262,6 +266,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2006/06/27 18:43:02  bollin
+ * added step for merging equivalent cit-sub publications to ExtendedCleanup
+ *
  * Revision 1.18  2006/06/27 14:30:59  bollin
  * added step for correcting exception text to ExtendedCleanup
  *

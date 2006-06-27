@@ -608,6 +608,138 @@ char ValidAminoAcid (string abbrev)
 }
 
 
+bool AuthListsMatch(const CAuth_list::TNames& list1, const CAuth_list::TNames& list2, bool all_authors_match)
+{
+    if (list1.Which() != list2.Which()) {
+        return false;
+    } else if (list1.Which() == CAuth_list::TNames::e_Std) {
+        if (all_authors_match) {
+            if (list1.GetStd().size() != list2.GetStd().size()) {
+                return false;
+            } else {
+                for ( CAuth_list::TNames::TStd::const_iterator it1 = (list1.GetStd()).begin(), 
+                                                               it1_end = (list1.GetStd()).end(),
+                                                               it2 = (list2.GetStd()).begin(),
+                                                               it2_end = list2.GetStd().end();
+                      it1 != it1_end && it2 != it2_end;
+                      ++it1, ++it2) {
+                    // each name must match, in order
+                    string name1, name2;
+                    name1.erase();
+                    name2.erase();
+                    (*it1)->GetName().GetLabel(&name1, CPerson_id::eGenbank);
+                    (*it2)->GetName().GetLabel(&name2, CPerson_id::eGenbank);
+                    if (!NStr::Equal(name1, name2)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        } else {
+            // first name must match
+            string name1, name2;
+            name1.erase();
+            name2.erase();
+            list1.GetStd().front()->GetName().GetLabel(&name1, CPerson_id::eGenbank);
+            list2.GetStd().front()->GetName().GetLabel(&name1, CPerson_id::eGenbank);
+            return NStr::Equal(name1, name2);
+        }
+    } else if (list1.Which() == CAuth_list::TNames::e_Ml) {
+        if (all_authors_match) {
+            if (list1.GetMl().size() != list2.GetMl().size()) {
+                return false;
+            } else {
+                for ( CAuth_list::TNames::TMl::const_iterator it1 = (list1.GetMl()).begin(), 
+                                                               it1_end = (list1.GetMl()).end(),
+                                                               it2 = (list2.GetMl()).begin(),
+                                                               it2_end = list2.GetMl().end();
+                      it1 != it1_end && it2 != it2_end;
+                      ++it1, ++it2) {
+                    // each name must match, in order
+                    if (!NStr::Equal((*it1), (*it2))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        } else {
+            // first name must match
+            return NStr::Equal(list1.GetMl().front(), list2.GetMl().front());
+        }
+        
+    } else if (list1.Which() == CAuth_list::TNames::e_Str) {
+        if (all_authors_match) {
+            if (list1.GetStr().size() != list2.GetStr().size()) {
+                return false;
+            } else {
+                for ( CAuth_list::TNames::TStr::const_iterator it1 = (list1.GetStr()).begin(), 
+                                                               it1_end = (list1.GetStr()).end(),
+                                                               it2 = (list2.GetStr()).begin(),
+                                                               it2_end = list2.GetStr().end();
+                      it1 != it1_end && it2 != it2_end;
+                      ++it1, ++it2) {
+                    // each name must match, in order
+                    if (!NStr::Equal((*it1), (*it2))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        } else {
+            // first name must match
+            return NStr::Equal(list1.GetStr().front(), list2.GetStr().front());
+        }
+    } else {
+        return false;
+    } 
+}
+
+
+bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2)
+{
+    // dates must match
+    if (sub1.CanGetDate()) {
+        if (sub2.CanGetDate()) {
+            if (sub1.GetDate().Compare(sub2.GetDate()) != CDate::eCompare_same) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    } else if (sub2.CanGetDate()) {
+        return false;
+    }
+    
+    // descriptions must match
+    if (sub1.CanGetDescr() && sub2.CanGetDescr()) {
+        if (!NStr::Equal(sub1.GetDescr(), sub2.GetDescr())) {
+            return false;
+        }
+    } else if (sub1.CanGetDescr() || sub2.CanGetDescr()) {
+        // one has a description, the other does not
+        return false;
+    }
+    
+    // author lists must be set and must match
+    // affiliations must be set and must match
+    if (! sub1.CanGetAuthors() 
+        || ! sub2.CanGetAuthors()
+        || ! sub1.GetAuthors().CanGetNames()
+        || ! sub2.GetAuthors().CanGetNames()
+        || ! sub1.GetAuthors().CanGetAffil()
+        || ! sub2.GetAuthors().CanGetAffil()) {
+        return false;
+    } else if (!AuthListsMatch (sub1.GetAuthors().GetNames(), sub2.GetAuthors().GetNames(), true)) {
+        return false;
+    } else if (!sub1.GetAuthors().GetAffil().Equals(sub2.GetAuthors().GetAffil())) {
+        return false;
+    } else {
+        return true;
+    }
+    
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -616,6 +748,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/06/27 18:43:02  bollin
+* added step for merging equivalent cit-sub publications to ExtendedCleanup
+*
 * Revision 1.4  2006/06/21 17:21:28  bollin
 * added cleanup of GenbankBlock descriptor strings to ExtendedCleanup
 *

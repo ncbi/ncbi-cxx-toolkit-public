@@ -50,6 +50,9 @@
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
 
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanup_utils.hpp"
 
@@ -433,6 +436,95 @@ void CCleanup_imp::BasicCleanup(CAuthor& au, bool fix_initials)
 }
 
 
+// ExtendedCleanup methods
+// remove additional equivalent CitSub descriptors
+// Was MergeEquivalentCitSubs in C Toolkit
+
+static bool s_IsCitSubPub(const CPubdesc& pd)
+{
+    if (pd.IsSetPub() && pd.GetPub().Get().size() == 1 && pd.GetPub().Get().front()->Which() == CPub::e_Sub) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void CCleanup_imp::x_MergeEquivalentCitSubs (CSeq_descr& sdr)
+{
+    CSeq_descr::Tdata& current_list = sdr.Set();
+    CSeq_descr::Tdata new_list;    
+    
+    new_list.clear();
+ 
+    while (current_list.size() > 0) {
+        CRef< CSeqdesc > sd = current_list.back();
+        current_list.pop_back();
+        if ((*sd).Which() == CSeqdesc::e_Pub && s_IsCitSubPub ((*sd).GetPub())) {
+            bool found_match = false;
+            for (CSeq_descr::Tdata::iterator it = sdr.Set().begin();
+                 it != sdr.Set().end() && ! found_match; ++it) {
+                if ((**it).Which() == CSeqdesc::e_Pub 
+                    && s_IsCitSubPub((**it).GetPub())
+                    && CitSubsMatch((**it).GetPub().GetPub().Get().front()->GetSub(),
+                                    (*sd).GetPub().GetPub().Get().front()->GetSub())) {
+                    found_match = true;
+                }
+            }
+            if (!found_match) {
+               new_list.push_front(sd);
+            }
+        } else {
+            new_list.push_front(sd);
+        }
+    }
+    
+    while (new_list.size() > 0) {
+        CRef< CSeqdesc > sd = new_list.front();
+        new_list.pop_front();
+        current_list.push_back (sd);
+    }
+}
+
+
+void CCleanup_imp::x_MergeEquivalentCitSubs(CBioseq& bs)
+{
+    if (bs.IsSetDescr()) {
+        x_MergeEquivalentCitSubs(bs.SetDescr());
+        if (bs.SetDescr().Set().empty()) {
+            bs.ResetDescr();
+        }
+    }
+}
+
+
+void CCleanup_imp::x_MergeEquivalentCitSubs(CBioseq_set& bss)
+{
+    if (bss.IsSetDescr()) {
+        x_MergeEquivalentCitSubs(bss.SetDescr());
+        if (bss.SetDescr().Set().empty()) {
+            bss.ResetDescr();
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_MergeEquivalentCitSubs(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_MergeEquivalentCitSubs(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -440,6 +532,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/06/27 18:43:02  bollin
+ * added step for merging equivalent cit-sub publications to ExtendedCleanup
+ *
  * Revision 1.2  2006/03/29 16:35:02  rsmith
  * Move BasicCleanup(CPubdesc) from cleanpp.cpp to here.
  *

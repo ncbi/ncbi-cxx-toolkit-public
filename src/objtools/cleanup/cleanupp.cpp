@@ -365,6 +365,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
     x_MergeMultipleDates(bss);
     
     x_CorrectExceptText(bss);
+    x_MergeEquivalentCitSubs(bss);
     
     x_CleanGenbankBlockStrings(bss);
 
@@ -391,6 +392,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
     x_MergeMultipleDates(bs);
 
     x_CorrectExceptText(bs);
+    x_MergeEquivalentCitSubs(bs);
     
     x_CleanGenbankBlockStrings(bs);
     
@@ -1317,6 +1319,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2006/06/27 18:43:02  bollin
+ * added step for merging equivalent cit-sub publications to ExtendedCleanup
+ *
  * Revision 1.17  2006/06/27 14:30:59  bollin
  * added step for correcting exception text to ExtendedCleanup
  *
