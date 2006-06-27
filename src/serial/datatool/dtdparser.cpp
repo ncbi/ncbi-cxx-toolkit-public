@@ -60,6 +60,7 @@ DTDParser::DTDParser(DTDLexer& lexer)
     : AbstractParser(lexer)
 {
     m_StackLexer.push(&lexer);
+    m_SrcType = eDTD;
 }
 
 DTDParser::~DTDParser(void)
@@ -714,10 +715,13 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
         }
         DTDElement::EType type = i->second.GetType();
 
-        if (((type == DTDElement::eSequence) ||
-            (type == DTDElement::eChoice) ||
-            i->second.HasAttributes()) &&
-            !i->second.IsEmbedded())
+        bool generate = true;
+        if (m_SrcType == eDTD) {
+            generate = ( (type == DTDElement::eSequence) ||
+                         (type == DTDElement::eChoice) ||
+                         i->second.HasAttributes());
+        }
+        if (generate && !i->second.IsEmbedded())
         {
             ModuleType(module, i->second);
         }
@@ -773,10 +777,16 @@ CDataType* DTDParser::x_Type(
                  node.GetType() == DTDElement::eChoice);
     bool attrib = !ignoreAttrib && node.HasAttributes();
     bool ref = fromInside && !node.IsEmbedded();
+    bool keep_global;
 
-    if ((cont && uniseq && (attrib ||
+    keep_global = (cont && uniseq && (attrib ||
         (node.IsEmbedded() && !node.IsNamed() && fromInside))) ||
-        (!cont && attrib)) {
+        (!cont && attrib);
+    if (m_SrcType != eDTD) {
+        keep_global = keep_global || ref;
+    }
+
+    if (keep_global) {
         if (ref) {
             type = new CReferenceDataType(node.GetName());
         } else {
@@ -864,10 +874,40 @@ CDataType* DTDParser::TypesBlock(
             ParseError(i->c_str(),"definition");
         }
         DTDElement::EOccurrence occ = node.GetOccurrence(*i);
-        if (refNode.IsEmbedded() && !refNode.IsNamed()) {
+        if (refNode.IsEmbedded()) {
             occ = refNode.GetOccurrence();
         }
         AutoPtr<CDataType> type(Type(refNode, occ, true));
+        if (refNode.IsEmbedded() && refNode.IsNamed()) {
+            bool optional = false, uniseq = false, uniseq2 = false;
+            uniseq = (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
+            optional = (occ == DTDElement::eZeroOrOne || occ == DTDElement::eZeroOrMore);
+            occ = node.GetOccurrence(*i);
+            uniseq2 = (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
+            if (uniseq) {
+
+                string refname(refNode.GetName());
+                if (uniseq2) {
+                    refname.insert(0,"E");
+                }
+                AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
+                AutoPtr<CDataMember> member(new CDataMember(refname, type));
+                if (optional) {
+                    member->SetOptional();
+                }
+                member->SetNotag();
+                member->SetNoPrefix();
+                container->AddMember(member);
+                type.reset(container.release());
+            }
+            if (uniseq2) {
+
+                CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
+                uniType->SetNonEmpty( occ == DTDElement::eOneOrMore);
+                type.reset(uniType);
+
+            }
+        }
         AutoPtr<CDataMember> member(new CDataMember(refNode.GetName(), type));
         if ((occ == DTDElement::eZeroOrOne) ||
             (occ == DTDElement::eZeroOrMore)) {
@@ -1186,6 +1226,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.31  2006/06/27 18:01:42  gouriano
+ * Preserve local elements defined in XML schema
+ *
  * Revision 1.30  2006/06/05 15:33:14  gouriano
  * Implemented local elements when parsing XML schema
  *

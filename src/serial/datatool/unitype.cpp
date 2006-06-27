@@ -121,29 +121,67 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
         }
         out << "/>";
     } else {
-        string asnk("SEQUENCE");
         string xsdk("sequence");
-        bool isMixed = false;
-        if (typeContainer) {
-            asnk = typeContainer->GetASNKeyword();
-            ITERATE ( CDataMemberContainerType::TMembers, i, typeContainer->GetMembers() ) {
-                if (i->get()->Notag()) {
-                    const CStringDataType* str =
-                        dynamic_cast<const CStringDataType*>(i->get()->GetType());
-                    if (str != 0) {
-                        isMixed = true;
-                        break;
+        if (!contents_only) {
+            string asnk("SEQUENCE");
+            bool isMixed = false;
+            bool isSimpleSeq = false;
+            bool isOptional = false;
+            if (typeContainer) {
+                asnk = typeContainer->GetASNKeyword();
+                ITERATE ( CDataMemberContainerType::TMembers, i, typeContainer->GetMembers() ) {
+                    if (i->get()->Notag()) {
+                        const CStringDataType* str =
+                            dynamic_cast<const CStringDataType*>(i->get()->GetType());
+                        if (str != 0) {
+                            isMixed = true;
+                            break;
+                        }
+                    }
+                }
+                if (typeContainer->GetMembers().size() == 1) {
+                    CDataMemberContainerType::TMembers::const_iterator i = 
+                        typeContainer->GetMembers().begin();
+                    const CUniSequenceDataType* typeSeq =
+                        dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType());
+                    isSimpleSeq = (typeSeq != 0);
+                    if (isSimpleSeq) {
+                        const CDataMember *mem = typeSeq->GetDataMember();
+                        if (mem) {
+                            const CDataMemberContainerType* data =
+                                dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
+                            if (data) {
+                                asnk = data->GetASNKeyword();
+                                ITERATE ( CDataMemberContainerType::TMembers, m, data->GetMembers() ) {
+                                    if (m->get()->Notag()) {
+                                        const CStringDataType* str =
+                                            dynamic_cast<const CStringDataType*>(m->get()->GetType());
+                                        if (str != 0) {
+                                            isMixed = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (mem->Notag()) {
+                                isOptional = mem->Optional();
+                            } else {
+                                isSimpleSeq = false;
+                            }
+                        }
                     }
                 }
             }
-        }
-        if(NStr::CompareCase(asnk,"CHOICE")==0) {
-            xsdk = "choice";
-        }
-        if (!contents_only) {
+            if(NStr::CompareCase(asnk,"CHOICE")==0) {
+                xsdk = "choice";
+            }
+
             string tmp = "<xs:element name=\"" + tag + "\"";
-            if (GetDataMember() && GetDataMember()->Optional()) {
-                tmp += " minOccurs=\"0\"";
+            if (GetDataMember()) {
+                if (GetDataMember()->Optional()) {
+                    tmp += " minOccurs=\"0\"";
+                }
+                tmp += " maxOccurs=\"unbounded\"";
             }
             PrintASNNewLine(out, indent++) << tmp << ">";
             PrintASNNewLine(out, indent++) << "<xs:complexType";
@@ -152,10 +190,18 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             }
             out << ">";
             PrintASNNewLine(out, indent++) << "<xs:" << xsdk;
-            if (!IsNonEmpty()) {
-                out << " minOccurs=\"0\"";
+            if (!GetDataMember()) {
+                if (!IsNonEmpty()) {
+                    out << " minOccurs=\"0\"";
+                }
+                out << " maxOccurs=\"unbounded\"";
+            } else if (isSimpleSeq) {
+                if (isOptional) {
+                    out << " minOccurs=\"0\"";
+                }
+                out << " maxOccurs=\"unbounded\"";
             }
-            out << " maxOccurs=\"unbounded\">";
+            out << ">";
         }
         typeElem->PrintXMLSchema(out,indent,true);
         if (!contents_only) {
@@ -387,6 +433,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.42  2006/06/27 18:01:42  gouriano
+* Preserve local elements defined in XML schema
+*
 * Revision 1.41  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *

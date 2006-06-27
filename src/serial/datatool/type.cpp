@@ -51,6 +51,7 @@ BEGIN_NCBI_SCOPE
 
 
 bool CDataType::sm_EnforcedStdXml = false;
+bool CDataType::sm_XmlSourceSpec = false;
 set<string> CDataType::sm_SavedNames;
 
 
@@ -342,10 +343,27 @@ string CDataType::XmlTagName(void) const
 
 const string& CDataType::GlobalName(void) const
 {
-    if ( !GetParentType() )
+    if ( !GetParentType() ) {
         return m_MemberName;
-    else
+    } else {
+        const CDataMember* m = GetDataMember();
+        if (!m) {
+            const CUniSequenceDataType* seq = 
+                dynamic_cast<const CUniSequenceDataType*>(GetParentType());
+            if (seq) {
+                m = seq->GetDataMember();
+            }
+        }
+        if (m && m->NoPrefix() && !m->Attlist() && !m->Notag()) {
+            m = GetParentType()->GetDataMember();
+            if (!m) {
+                return GetDataMember()->GetName();
+            } else if (m->NoPrefix() && !m->Attlist()) {
+                return m->GetName();
+            }
+        }
         return NcbiEmptyString;
+    }
 }
 
 string CDataType::GetKeyPrefix(void) const
@@ -532,8 +550,8 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
             dynamic_cast<const CUniSequenceDataType*>(this);
         if (uniseq) {
             nonempty = uniseq->IsNonEmpty();
-            noprefix = uniseq->IsNoPrefix();
         }
+        noprefix = GetXmlSourceSpec();
         code->AddMember(dType, GetTag(), nonempty, noprefix);
         SetParentClassTo(*code);
         code->SetNamespaceName( GetNamespaceName());
@@ -687,6 +705,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.87  2006/06/27 18:01:42  gouriano
+* Preserve local elements defined in XML schema
+*
 * Revision 1.86  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *

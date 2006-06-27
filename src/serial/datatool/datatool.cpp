@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,6,0) );
+    SetVersion( CVersionInfo(1,6,2) );
 }
 
 void CDataTool::Init(void)
@@ -619,6 +619,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
                     DTDLexer lexer(fName,name);
                     DTDParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
+                    CDataType::SetXmlSourceSpec(true);
                 }
                 break;
             case SourceFile::eXSD:
@@ -626,6 +627,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
                     XSDLexer lexer(fName,name);
                     XSDParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
+                    CDataType::SetXmlSourceSpec(true);
                 }
                 break;
             }
@@ -648,6 +650,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.98  2006/06/27 18:01:42  gouriano
+* Preserve local elements defined in XML schema
+*
 * Revision 1.97  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *

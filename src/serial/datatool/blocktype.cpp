@@ -158,7 +158,8 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                 }
             }
         }
-        if (hasAttlist && GetMembers().size()==2) {
+        if (hasAttlist && GetMembers().size()==2 ||
+            !hasAttlist && GetMembers().size()==1) {
             ITERATE ( TMembers, i, GetMembers() ) {
                 if (i->get()->Attlist()) {
                     continue;
@@ -804,6 +805,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.67  2006/06/27 18:01:42  gouriano
+* Preserve local elements defined in XML schema
+*
 * Revision 1.66  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *
