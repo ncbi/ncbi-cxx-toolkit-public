@@ -128,6 +128,10 @@ const unsigned char kMaskD        = 0x08;
 // Evaluate dynamic programming matrix. Create transcript.
 CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 {
+    // redefine TScore as a floating-point type for this procedure only
+    typedef float TScore;
+    const TScore cds_penalty_extra = -1e-3;
+
     TScore V = 0;
 
     const size_t N1 = data->m_len1 + 1;
@@ -203,6 +207,13 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
     size_t i, j = 0, k0;
     unsigned char ci;
+
+    size_t cds_start = m_cds_start, cds_stop = m_cds_stop;
+    if(cds_start < cds_stop) {
+        cds_start -= data->m_offset1;
+        cds_stop -= data->m_offset1;
+    }
+
     for(i = 0;  i < N1;  ++i, j = 0) {
        
         V = i > 0? (V0 += wsleft2) : 0;
@@ -240,6 +251,11 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
         jAllDonors[g_topidx][tl] = j;
         vAllDonors[g_topidx][tl] = V_max = V;
         }}
+
+        if(cds_start <= i && i < cds_stop) {
+            ws1 += cds_penalty_extra;
+            ws2 += cds_penalty_extra;
+        }
 
         for (j = 1; j < N2; ++j, ++k) {
             			
@@ -402,7 +418,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
         throw;
     }
     
-    return V;
+    return CNWAligner::TScore(V);
 }
 
 
@@ -656,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/27 15:16:58  kapustin
+ * Extra penalty for in-cds gap extensions
+ *
  * Revision 1.23  2006/04/19 14:49:31  kapustin
  * Eliminate acceptor checks until min intron length is reached
  *

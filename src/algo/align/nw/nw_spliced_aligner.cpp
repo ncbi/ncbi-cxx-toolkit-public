@@ -41,7 +41,8 @@ BEGIN_NCBI_SCOPE
 
 
 CSplicedAligner::CSplicedAligner():
-    m_IntronMinSize(GetDefaultIntronMinSize())
+    m_IntronMinSize(GetDefaultIntronMinSize()),
+    m_cds_start(0), m_cds_stop(0)
 {
     SetEndSpaceFree(true, true, false, false);
 }
@@ -98,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/27 15:16:58  kapustin
+ * Extra penalty for in-cds gap extensions
+ *
  * Revision 1.12  2005/07/26 16:43:29  kapustin
  * Move MakePattern() to CNWAligner
  *

@@ -159,6 +159,10 @@ CNWAligner::TScore CSplicedAligner32::GetDefaultWi(unsigned char splice_type)
 // Evaluate dynamic programming matrix. Create transcript.
 CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
 {
+    // redefine TScore as a floating-point type for this procedure only
+    typedef float TScore;
+    const TScore cds_penalty_extra = -1e-3;
+
     const size_t N1 = data->m_len1 + 1;
     const size_t N2 = data->m_len2 + 1;
 
@@ -227,6 +231,12 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
     }
     k = 0;
 
+    size_t cds_start = m_cds_start, cds_stop = m_cds_stop;
+    if(cds_start < cds_stop) {
+        cds_start -= data->m_offset1;
+        cds_stop -= data->m_offset1;
+    }
+
     size_t i, j = 0, k0;
     unsigned char ci;
     for(i = 0;  i < N1;  ++i, j = 0) {
@@ -265,6 +275,11 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
                 }
                 ++(jTail[st]);
             }
+        }
+
+        if(cds_start <= i && i < cds_stop) {
+            ws1 += cds_penalty_extra;
+            ws2 += cds_penalty_extra;
         }
 
         for (j = 1; j < N2; ++j, ++k) {
@@ -412,7 +427,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
       throw;
     }
     
-    return V;
+    return CNWAligner::TScore(V);
 }
 
 
@@ -663,6 +678,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/06/27 15:16:58  kapustin
+ * Extra penalty for in-cds gap extensions
+ *
  * Revision 1.22  2005/04/04 16:34:13  kapustin
  * Specify precise type of diags in raw alignment transcripts where feasible
  *
