@@ -28,17 +28,22 @@
 *
 * Authors:  Aaron Ucko, NCBI
 *
-* File Description:
-*   Reader for FASTA-format sequences.  (The writer is CFastaOStream, in
-*   <objmgr/util/sequence.hpp>.)
-*
 */
 
+/// @file fasta.hpp
+/// Interfaces for reading and scanning FASTA-format sequences.
+
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <util/line_reader.hpp>
 #include <objects/seq/Bioseq.hpp>
 // #include <objects/seqset/Seq_entry.hpp>
 #include <stack>
+
+/** @addtogroup Miscellaneous
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -50,6 +55,13 @@ class CSeq_loc;
 
 class CSeqIdGenerator;
 
+/// Base class for reading FASTA sequences.
+///
+/// This class should suffice as for typical usage, but its
+/// implementation has been broken up into virtual functions, allowing
+/// for a wide range of specialized subclasses.
+///
+/// @sa CFastaOstream
 class NCBI_XOBJREAD_EXPORT CFastaReader {
 public:
     /// Note on fAllSeqIds: some databases (notably nr) have merged
@@ -73,12 +85,15 @@ public:
     CFastaReader(ILineReader& reader, TFlags flags = 0);
     virtual ~CFastaReader(void);
 
-    /// If this method encounters a segmented set, it will return the
-    /// whole thing.
+    /// Read a single effective sequence, which may turn out to be a
+    /// segmented set.
     virtual CRef<CSeq_entry> ReadOneSeq(void);
 
+    /// Read multiple sequences (by default, as many as are available.)
     CRef<CSeq_entry> ReadSet(int max_seqs = kMax_Int);
 
+    /// Read as many sequences as are available, and interpret them as
+    /// an alignment, with hyphens marking relative deletions.
     /// @param reference_row
     ///   0-based; the special value -1 yields a full (pseudo-?)N-way alignment.
     CRef<CSeq_entry> ReadAlignedSet(int reference_row);
@@ -230,9 +245,9 @@ enum EReadFastaFlags {
 typedef CFastaReader::TFlags TReadFastaFlags;
 
 
-// keeps going until EOF or parse error (-> CParseException) unless
-// fReadFasta_OneSeq is set
-// see also CFastaOstream in <objmgr/util/sequence.hpp> (-lxobjutil)
+/// Traditional interface for reading FASTA files.  The
+/// USE_NEW_IMPLEMENTATION parameter governs whether to use
+/// CFastaReader or the traditional implementation.
 NCBI_XOBJREAD_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
                            int* counter = 0,
@@ -330,10 +345,16 @@ TSeqPos CFastaReader::GetCurrentPos(EPosType pos_type)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/06/27 19:03:55  ucko
+* #include <corelib/ncbi_param.hpp> here, not in fasta.cpp!
+* DOXYGENize existing comments, and add some new ones.
+*
 * Revision 1.12  2006/06/27 18:36:08  ucko
 * Optionally implement ReadFasta as a wrapper around CFastaReader, as
 * controlled by a NCBI_PARAM (READ_FASTA, USE_NEW_IMPLEMENTATION).
