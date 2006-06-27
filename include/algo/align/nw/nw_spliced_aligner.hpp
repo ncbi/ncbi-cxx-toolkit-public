@@ -52,6 +52,11 @@ public:
     void   SetWi(unsigned char splice_type, TScore value);
     TScore GetWi(unsigned char splice_type);
 
+    void SetCDS(size_t cds_start, size_t cds_stop) {
+        m_cds_start = cds_start;
+        m_cds_stop = cds_stop;
+    }
+
     void SetIntronMinSize(size_t s) {
         m_IntronMinSize  = s;
     }
@@ -69,12 +74,13 @@ public:
 protected:
 
     CSplicedAligner();
+
     CSplicedAligner( const char* seq1, size_t len1,
                      const char* seq2, size_t len2);
     CSplicedAligner(const string& seq1, const string& seq2);
 
     size_t  m_IntronMinSize;
-
+    size_t  m_cds_start, m_cds_stop;
     virtual TScore* x_GetSpliceScores() = 0;
   
 };
@@ -87,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/27 15:14:06  kapustin
+ * +m_cds_*
+ *
  * Revision 1.12  2005/07/26 16:43:22  kapustin
  * Move MakePattern() to CNWAligner
  *

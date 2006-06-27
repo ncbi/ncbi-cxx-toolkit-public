@@ -222,11 +222,17 @@ protected:
     };
     vector<SAlnMapElem> m_alnmap;
 
+    typedef pair<size_t,size_t> TCDS;
+    typedef map<string,TCDS> TStrIdToCDS;
+    TStrIdToCDS m_CdsMap;
+
     // query sequence
     vector<char> m_mrna;
     bool         m_strand;
     size_t       m_polya_start;
     bool         m_nopolya;
+    size_t       m_cds_start;
+    size_t       m_cds_stop;
 
     // genomic sequence
     vector<char> m_genomic;
@@ -272,6 +278,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2006/06/27 15:18:16  kapustin
+ * +m_cds_*
+ *
  * Revision 1.37  2006/05/22 16:00:08  kapustin
  * Pass max extent as an argument to x_GetGenomicExtent()
  *
