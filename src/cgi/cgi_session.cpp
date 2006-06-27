@@ -94,7 +94,7 @@ void CCgiSession::ModifyId(const string& new_session_id)
     if (m_Status == eImplNotSet)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
                    "The session implemetatin is not set");
-    if (m_Status != eLoaded || m_Status != eNew)
+    if (m_Status != eLoaded && m_Status != eNew)
         NCBI_THROW(CCgiSessionException, eSessionId,
                    "The Session must be load.");
     m_Impl->ModifySessionId(new_session_id);
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/06/27 20:08:27  golikov
+ * condition fix
+ *
  * Revision 1.9  2006/06/27 18:52:33  didenko
  * Added methods which allow modifing the session id
  *
