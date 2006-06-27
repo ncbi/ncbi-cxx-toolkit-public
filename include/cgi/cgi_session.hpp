@@ -100,6 +100,10 @@ public:
     /// The previously loaded session (if any) will be closed.
     void SetId(const string& session_id);
 
+    /// Modify session ID. 
+    /// The session must be loaded before calling this method.
+    void ModifyId(const string& new_session_id);
+
     /// Load the session.
     /// @throw CCgiSessionException if session ID is not set and it
     ///        can not be retrieved from CGI request too.
@@ -233,6 +237,10 @@ public:
     /// @return ID of the new session
     virtual string CreateNewSession() = 0;
 
+    /// Modify session id. 
+    /// Change Id of the current session.
+    virtual void ModifySessionId(const string& new_id) = 0;
+
     /// Load the session
     /// @param[in]
     ///  ID of the session
@@ -331,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/06/27 18:52:33  didenko
+ * Added methods which allow modifing the session id
+ *
  * Revision 1.7  2006/06/12 18:44:34  didenko
  * Fixed cgi sessionid logging
  *

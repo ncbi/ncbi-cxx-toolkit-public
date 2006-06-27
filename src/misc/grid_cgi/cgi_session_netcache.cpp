@@ -81,6 +81,12 @@ string CCgiSession_NetCache::CreateNewSession()
     return m_SessionId;
 }
 
+void CCgiSession_NetCache::ModifySessionId(const string& new_id)
+{
+    NCBI_THROW(CCgiSessionException, eImplNotSet,
+               "This method is not implemented for NetCache service.");
+}
+
 
 bool CCgiSession_NetCache::LoadSession(const string& sessionid)
 {
@@ -217,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/27 18:52:33  didenko
+ * Added methods which allow modifing the session id
+ *
  * Revision 1.10  2006/03/28 17:01:13  didenko
  * - CCgiSessionNCException
  * Throw en exception when a requested attribute is not found in the session

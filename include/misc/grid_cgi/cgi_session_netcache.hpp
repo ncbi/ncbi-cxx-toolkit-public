@@ -81,6 +81,10 @@ public:
     /// @return ID of the new session
     virtual string CreateNewSession();
 
+    /// Modify session id. 
+    /// Change Id of the current session.
+    virtual void ModifySessionId(const string& new_id);
+
     /// Load the session
     /// @param[in] sesseionid
     ///  ID of the session
@@ -161,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/06/27 18:52:33  didenko
+ * Added methods which allow modifing the session id
+ *
  * Revision 1.9  2006/03/28 17:01:13  didenko
  * - CCgiSessionNCException
  * Throw en exception when a requested attribute is not found in the session

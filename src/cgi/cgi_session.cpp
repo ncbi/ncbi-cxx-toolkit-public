@@ -87,6 +87,21 @@ void CCgiSession::SetId(const string& id)
     GetDiagContext().SetProperty("session_id", m_SessionId);
 }
 
+void CCgiSession::ModifyId(const string& new_session_id)
+{
+    if (m_SessionId == new_session_id)
+        return;
+    if (m_Status == eImplNotSet)
+        NCBI_THROW(CCgiSessionException, eImplNotSet,
+                   "The session implemetatin is not set");
+    if (m_Status != eLoaded || m_Status != eNew)
+        NCBI_THROW(CCgiSessionException, eSessionId,
+                   "The Session must be load.");
+    m_Impl->ModifySessionId(new_session_id);
+    m_SessionId = new_session_id;
+    GetDiagContext().SetProperty("session_id", m_SessionId);
+}
+
 void CCgiSession::Load()
 {
     if (m_Status == eLoaded || m_Status == eNew)
@@ -225,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/27 18:52:33  didenko
+ * Added methods which allow modifing the session id
+ *
  * Revision 1.8  2006/06/12 18:44:34  didenko
  * Fixed cgi sessionid logging
  *
