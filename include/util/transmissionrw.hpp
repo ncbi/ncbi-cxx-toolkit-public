@@ -39,6 +39,7 @@
 
 #include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
+#include <corelib/ncbidbg.hpp> // for _ASSERT
 
 
 BEGIN_NCBI_SCOPE
@@ -136,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/06/27 18:53:42  didenko
+ * Added missing include ncbidiag for _ASSERT
+ *
  * Revision 1.5  2006/03/27 15:23:01  didenko
  * Added an option which tells CTransmissionWriter to send the EOF
  * packet when it is destructed.
