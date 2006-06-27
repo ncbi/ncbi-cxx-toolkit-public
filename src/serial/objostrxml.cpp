@@ -655,7 +655,11 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
                 was_open = true;
             }
         }
-        WriteEncodedChar(is);
+        if (*is != '>' && *is != '<') {
+            WriteEncodedChar(is);
+        } else {
+            m_Output.PutChar(*is);
+        }
         if (*is == '<') {
             if (*(is+1) == '/') {
                 m_Output.PutChar(*(++is));
@@ -1438,6 +1442,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2006/06/27 17:59:01  gouriano
+* Corrected writing of AnyContent objects
+*
 * Revision 1.92  2006/01/19 18:21:57  gouriano
 * Added possibility to save bit string data in compressed format
 *
