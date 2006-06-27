@@ -195,6 +195,15 @@ private:
     void x_MergeAdjacentAnnots (CBioseq& bs);
     void x_MergeAdjacentAnnots (CBioseq_set& bss);
     
+    void x_ConvertFullLenFeatureToDescriptor(CSeq_annot& sa, CSeqFeatData::E_Choice choice);
+    void x_ConvertFullLenSourceFeatureToDescriptor(CSeq_annot& sa);
+    void x_ConvertFullLenSourceFeatureToDescriptor (CBioseq& bs);
+    void x_ConvertFullLenSourceFeatureToDescriptor (CBioseq_set& bss);
+    void x_ConvertFullLenPubFeatureToDescriptor(CSeq_annot& sa);
+    void x_ConvertFullLenPubFeatureToDescriptor (CBioseq& bs);
+    void x_ConvertFullLenPubFeatureToDescriptor (CBioseq_set& bss);
+
+    
     // cleaning up Seq_feat parts.
     void x_CleanupExcept_text(string& except_text);
     void x_CleanupRna(CSeq_feat& feat);
@@ -235,6 +244,7 @@ private:
     Uint4                   m_Options;
     ECleanupMode            m_Mode;
     CRef<CScope>            m_Scope;
+    
 };
 
 
@@ -246,6 +256,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2006/06/27 13:18:47  bollin
+ * added steps for converting full length pubs and sources to descriptors to
+ * Extended Cleanup
+ *
  * Revision 1.16  2006/06/22 18:16:01  bollin
  * added step to merge adjacent Seq-Annots to ExtendedCleanup
  *
