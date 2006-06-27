@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.11.2  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.12.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -133,6 +133,7 @@ struct SJS_Request
     unsigned int       job_return_code;
     unsigned int       port;
     unsigned int       timeout;
+    unsigned int       job_mask;
 
     string             err_msg;
 
@@ -141,7 +142,7 @@ struct SJS_Request
         input[0] = output[0] = progress_msg[0] = affinity_token[0] 
                                                = cout[0] = cerr[0] = 0;
         job_key_str.erase(); err_msg.erase();
-        jcount = job_id = job_return_code = port = timeout = 0;
+        jcount = job_id = job_return_code = port = timeout = job_mask = 0;
     }
 };
 
@@ -406,7 +407,8 @@ private:
     void x_MakeGetAnswer(const char* key_buf, 
                          SThreadData& tdata,
                          const char*  jout,
-                         const char*  jerr);
+                         const char*  jerr,
+                         unsigned     job_mask);
 
     void x_CreateLog();
 
@@ -980,7 +982,8 @@ void CNetScheduleServer::ProcessSubmit(CSocket&                sock,
                      req.progress_msg,
                      req.affinity_token,
                      req.cout,
-                     req.cerr);
+                     req.cerr,
+                     req.job_mask);
 
     char buf[1024];
     sprintf(buf, NETSCHEDULE_JOBMASK, 
@@ -1386,7 +1389,8 @@ void CNetScheduleServer::ProcessMPut(CSocket&                sock,
 void CNetScheduleServer::x_MakeGetAnswer(const char*   key_buf,
                                          SThreadData&  tdata,
                                          const char*   jout,
-                                         const char*   jerr)
+                                         const char*   jerr,
+                                         unsigned      job_mask)
 {
     _ASSERT(jout);
     _ASSERT(jerr);
@@ -1401,6 +1405,8 @@ void CNetScheduleServer::x_MakeGetAnswer(const char*   key_buf,
     tdata.answer.append(" \"");
     tdata.answer.append(jerr);
     tdata.answer.append("\"");
+    tdata.answer.append(" ");
+    tdata.answer.append(NStr::UIntToString(job_mask));
 }
 
 
@@ -1414,10 +1420,11 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
     queue.GetJob(key_buf,
                  tdata.peer_addr, &job_id, req.input, req.cout, req.cerr, 
                  m_Host, GetPort(),
-                 tdata.auth);
+                 tdata.auth, 
+                 &req.job_mask);
 
     if (job_id) {
-        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr);
+        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr, req.job_mask);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
     } else {
         WriteMsg(sock, "OK:", "");
@@ -1462,10 +1469,11 @@ CNetScheduleServer::ProcessJobExchange(CSocket&                sock,
                           req.input, req.cout, req.cerr,
                           m_Host, GetPort(),
                           false /*don't change the timeline*/,
-                          tdata.auth);
+                          tdata.auth,
+                          &req.job_mask);
 
     if (job_id) {
-        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr);
+        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr, req.job_mask);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
     } else {
         WriteMsg(sock, "OK:", "");
@@ -1499,9 +1507,9 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
                  tdata.peer_addr, &job_id, 
                  req.input, req.cout, req.cerr,
                  m_Host, GetPort(),
-                 tdata.auth);
+                 tdata.auth, &req.job_mask);
     if (job_id) {
-        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr);
+        x_MakeGetAnswer(key_buf, tdata, req.cout, req.cerr, req.job_mask);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
         return;
     }
@@ -1970,7 +1978,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     //
     // 1. SUBMIT "NCID_01_1..." ["Progress msg"] [udp_port notif_wait] 
     //           [aff="Affinity token"] 
-    //           [out="out_file_name"] [err="err_file_name"]
+    //           [out="out_file_name"] [err="err_file_name"] [msk=value]
     // 2. CANCEL JSID_01_1
     // 3. STATUS JSID_01_1
     // 4. GET udp_port
@@ -2135,6 +2143,15 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                     *ptr++ = *s;
                 }
                 *ptr = 0;
+            }
+
+            // optional job msk parameter
+            if (strncmp(s, "msk=", 4) == 0) {
+                s += 4;
+                if (!isdigit(*s)) {
+                    NS_RETURN_ERROR("Misformed SUBMIT request")
+                }
+                req->job_mask = atoi(s);
             }
 
             return;
@@ -2935,6 +2952,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2006/06/27 15:39:42  kuznets
+ * Added int mask to jobs to carry flags(like exclusive)
+ *
  * Revision 1.91  2006/06/26 13:46:01  kuznets
  * Fixed job expiration and restart mechanism
  *

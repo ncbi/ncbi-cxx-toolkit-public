@@ -96,6 +96,7 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        time_lb_first_eval;  ///< First LB evaluation time
     /// Affinity token id (refers to the affinity dictionary DB)
     CBDB_FieldUint4        aff_id;
+    CBDB_FieldUint4        mask;
 
 
     CBDB_FieldString       input;           ///< Input data
@@ -135,6 +136,7 @@ struct SQueueDB : public CBDB_File
         BindData("ret_code",           &ret_code);
         BindData("time_lb_first_eval", &time_lb_first_eval);
         BindData("aff_id", &aff_id);
+        BindData("mask",   &mask);
 
         BindData("input",  &input,  kNetScheduleMaxDataSize);
         BindData("output", &output, kNetScheduleMaxDataSize);
@@ -415,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/06/27 15:39:42  kuznets
+ * Added int mask to jobs to carry flags(like exclusive)
+ *
  * Revision 1.2  2006/04/17 15:46:54  kuznets
  * Added option to remove job when it is done (similar to LSF)
  *

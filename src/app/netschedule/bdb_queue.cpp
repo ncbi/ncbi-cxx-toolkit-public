@@ -1099,6 +1099,7 @@ void CQueueDataBase::CQueue::x_PrintJobDbStat(SQueueDB&      db,
         out << NS_PFNAME("aff_token: ") << "'" << token << "'" << fsp;
     }
     out << NS_PFNAME("aff_id: ") << aff_id << fsp;
+    out << NS_PFNAME("mask: ") << (unsigned) db.mask << fsp;
 
     out << NS_PFNAME("input: ")        << "'" <<(string) db.input       << "'" << fsp;
     out << NS_PFNAME("output: ")       << "'" <<(string) db.output       << "'" << fsp;
@@ -1269,7 +1270,8 @@ CQueueDataBase::CQueue::Submit(const char*   input,
                                const char*   progress_msg,
                                const char*   affinity_token,
                                const char*   jout,
-                               const char*   jerr)
+                               const char*   jerr,
+                               unsigned      mask)
 {
     unsigned int job_id = m_Db.GetNextId();
 
@@ -1291,7 +1293,8 @@ CQueueDataBase::CQueue::Submit(const char*   input,
 	db.SetTransaction(&trans);
 
     x_AssignSubmitRec(
-        job_id, input, host_addr, port, wait_timeout, progress_msg, aff_id, jout, jerr);
+        job_id, input, host_addr, port, wait_timeout, 
+        progress_msg, aff_id, jout, jerr, mask);
 
     db.Insert();
 
@@ -1369,7 +1372,8 @@ CQueueDataBase::CQueue::SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
             it->input, host_addr, port, wait_timeout, 0/*progress_msg*/, 
             it->affinity_id,
             0, // cout
-            0  // cerr
+            0, // cerr
+            0  // mask
             );
         ++job_id_cnt;
         db.Insert();
@@ -1406,7 +1410,8 @@ CQueueDataBase::CQueue::x_AssignSubmitRec(unsigned      job_id,
                                           const char*   progress_msg,
                                           unsigned      aff_id,
                                           const char*   jout,
-                                          const char*   jerr)
+                                          const char*   jerr, 
+                                          unsigned      mask)
 {
     SQueueDB& db = m_LQueue.db;
 
@@ -1433,6 +1438,7 @@ CQueueDataBase::CQueue::x_AssignSubmitRec(unsigned      job_id,
     db.ret_code = 0;
     db.time_lb_first_eval = 0;
     db.aff_id = aff_id;
+    db.mask = mask;
 
     if (input) {
         db.input = input;
@@ -1789,10 +1795,12 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
                                         const string&  host,
                                         unsigned       port,
                                         bool           update_tl,
-                                        const string&  client_name)
+                                        const string&  client_name,
+                                        unsigned*      job_mask)
 {
     _ASSERT(job_id);
     _ASSERT(input);
+    _ASSERT(job_mask);
 
     unsigned dead_locks = 0;       // dead lock counter
 
@@ -1859,7 +1867,8 @@ repeat_transaction:
                     x_UpdateDB_GetJobNoLock(*pqdb, curr, cur, trans,
                                          worker_node, pending_job_id, input,
                                          jout, jerr,
-                                         &job_aff_id);
+                                         &job_aff_id,
+                                         job_mask);
                 switch (upd_status) {
                 case eGetJobUpdate_JobFailed:
                     m_LQueue.status_tracker.ChangeStatus(*job_id, 
@@ -2305,9 +2314,12 @@ void CQueueDataBase::CQueue::GetJobLB(unsigned int   worker_node,
                                       unsigned int*  job_id, 
                                       char*          input,
                                       char*          jout,
-                                      char*          jerr)
+                                      char*          jerr,
+                                      unsigned*      job_mask)
 {
     _ASSERT(worker_node && input);
+    _ASSERT(job_mask);
+
     unsigned get_attempts = 0;
     unsigned fetch_attempts = 0;
     const unsigned kMaxGetAttempts = 100;
@@ -2445,6 +2457,7 @@ fetch_db:
         if (timeout == 0) {
             timeout = m_LQueue.timeout;
         }
+        *job_mask = db.mask;
 
         _ASSERT(timeout);
 
@@ -2736,10 +2749,11 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
                                     char*          input,
                                     char*          jout,
                                     char*          jerr,
-                                    const string&  client_name)
+                                    const string&  client_name,
+                                    unsigned*      job_mask)
 {
     if (m_LQueue.lb_flag) {
-        GetJobLB(worker_node, job_id, input, jout, jerr);
+        GetJobLB(worker_node, job_id, input, jout, jerr, job_mask);
         return;
     }
 
@@ -2788,7 +2802,7 @@ get_job_id:
         upd_status = 
             x_UpdateDB_GetJobNoLock(db, curr, cur, trans, 
                                     worker_node, *job_id, input, jout, jerr, 
-                                    &job_aff_id);
+                                    &job_aff_id, job_mask);
         }}
         trans.Commit();
 
@@ -2865,7 +2879,8 @@ CQueueDataBase::CQueue::x_UpdateDB_GetJobNoLock(
                                             char*                input,
                                             char*                jout,
                                             char*                jerr,
-                                            unsigned*            aff_id)
+                                            unsigned*            aff_id,
+                                            unsigned*            job_mask)
 {
     const unsigned kMaxGetAttempts = 100;
 
@@ -2911,6 +2926,7 @@ CQueueDataBase::CQueue::x_UpdateDB_GetJobNoLock(
         }
 
         unsigned run_counter = db.run_counter;
+        *job_mask = db.mask;
 
         db.status = (int) CNetScheduleClient::eRunning;
         db.time_run = curr;
@@ -3006,9 +3022,10 @@ void CQueueDataBase::CQueue::GetJob(char*          key_buf,
                                     char*          jerr,
                                     const string&  host,
                                     unsigned       port,
-                                    const string&  client_name)
+                                    const string&  client_name,
+                                    unsigned*      job_mask)
 {
-    GetJob(worker_node, job_id, input, jout, jerr, client_name);
+    GetJob(worker_node, job_id, input, jout, jerr, client_name, job_mask);
     if (*job_id) {
         sprintf(key_buf, NETSCHEDULE_JOBMASK, *job_id, host.c_str(), port);
     }
@@ -3809,6 +3826,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2006/06/27 15:39:42  kuznets
+ * Added int mask to jobs to carry flags(like exclusive)
+ *
  * Revision 1.85  2006/06/26 13:51:21  kuznets
  * minor cleaning
  *

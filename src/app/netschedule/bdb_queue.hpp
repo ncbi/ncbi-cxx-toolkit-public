@@ -155,7 +155,8 @@ public:
                             const char*   progress_msg = 0,
                             const char*   affinity_token = 0,
                             const char*   jout = 0,
-                            const char*   jerr = 0);
+                            const char*   jerr = 0,
+                            unsigned      mask = 0);
 
         /// Submit job batch
         /// @return 
@@ -188,7 +189,8 @@ public:
                              const string&  host,
                              unsigned       port,
                              bool           update_tl,
-                             const string&  client_name);
+                             const string&  client_name,
+                             unsigned*      job_mask);
 
 
         void PutProgressMessage(unsigned int  job_id,
@@ -204,7 +206,8 @@ public:
                       unsigned int*  job_id, 
                       char*          input,
                       char*          jout,
-                      char*          jerr
+                      char*          jerr,
+                      unsigned*      job_mask
                       );
 
         void GetJob(unsigned int   worker_node,
@@ -212,7 +215,8 @@ public:
                     char*          input,
                     char*          jout,
                     char*          jerr,
-                    const string&  client_name);
+                    const string&  client_name,
+                    unsigned*      job_mask);
 
         // Get job and generate key
         void GetJob(char* key_buf, 
@@ -223,7 +227,8 @@ public:
                     char*          jerr,
                     const string&  host,
                     unsigned       port,
-                    const string&  client_name);
+                    const string&  client_name,
+                    unsigned*      job_mask);
         void ReturnJob(unsigned int job_id);
 
 
@@ -433,7 +438,8 @@ public:
                                const char*   progress_msg,
                                unsigned      aff_id,
                                const char*   jout,
-                               const char*   jerr);
+                               const char*   jerr,
+                               unsigned      mask);
 
         /// Info on how to notify job submitter
         struct SSubmitNotifInfo
@@ -472,7 +478,8 @@ public:
                                     char*                input,
                                     char*                jout,
                                     char*                jerr,
-                                    unsigned*            aff_id);
+                                    unsigned*            aff_id,
+                                    unsigned*            job_mask);
 
         SQueueDB*        x_GetLocalDb();
         CBDB_FileCursor* x_GetLocalCursor(CBDB_Transaction& trans);
@@ -563,6 +570,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/06/27 15:39:42  kuznets
+ * Added int mask to jobs to carry flags(like exclusive)
+ *
  * Revision 1.50  2006/06/07 13:00:01  kuznets
  * Implemented command to get status summary based on affinity token
  *
