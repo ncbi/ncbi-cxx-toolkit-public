@@ -66,7 +66,7 @@ public:
         m_intron_max = intr_max;
     }
 
-    static TCoord GetDefaultMaxIntron(void) {
+    static TCoord s_GetDefaultMaxIntron(void) {
         return 750000;
     }
     
@@ -293,7 +293,7 @@ CCompartmentFinder<THit>::CCompartmentFinder(
     typename THitRefs::const_iterator start,
     typename THitRefs::const_iterator finish ):
 
-    m_intron_max(GetDefaultMaxIntron()),
+    m_intron_max(s_GetDefaultMaxIntron()),
     m_penalty(GetDefaultPenalty()),
     m_MinMatches(1),
     m_MinSingletonMatches(1),
@@ -674,6 +674,8 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
 {
     const TCoord kMax_TCoord = numeric_limits<TCoord>::max();
 
+    const TCoord max_intron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
+
     // separate strands for CompartmentFinder
     typename THitRefs::iterator ib = istart, ie = ifinish, ii = ib, 
         iplus_beg = ie;
@@ -714,6 +716,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         finder.SetPenalty(comp_penalty);
         finder.SetMinMatches(min_matches);
         finder.SetMinSingletonMatches(min_singleton_matches);
+        finder.SetMaxIntron(max_intron);
         finder.Run();
         
         // un-flip
@@ -736,6 +739,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         finder.SetPenalty(comp_penalty);
         finder.SetMinMatches(min_matches);
         finder.SetMinSingletonMatches(min_singleton_matches);
+        finder.SetMaxIntron(max_intron);
         finder.Run();
         x_Copy2Pending(finder);
     }}
@@ -803,6 +807,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/27 14:23:58  kapustin
+ * Cosmetics
+ *
  * Revision 1.8  2006/04/12 16:28:25  kapustin
  * Use intron penalities only when discirminating between extension candidates
  *
