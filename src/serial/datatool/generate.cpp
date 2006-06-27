@@ -646,6 +646,9 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
             }
             isfound = true;
             if ( !out.get()  ||  !out->is_open() ) {
+                if (isdigit((unsigned int)current_module[0])) {
+                    current_module.insert(current_module.begin(),'x');
+                }
                 filename = Path(path, current_module + "_module.hpp");
                 out.reset(new CDelayedOfstream(filename.c_str()));
                 if (!out->is_open()) {
@@ -707,6 +710,9 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
             }
             isfound = true;
             if ( !out.get()  ||  !out->is_open()) {
+                if (isdigit((unsigned int)current_module[0])) {
+                    current_module.insert(current_module.begin(),'x');
+                }
                 filename = Path(path, current_module + "_module.cpp");
                 string module_inc =
                     CDirEntry::ConcatPath( CDirEntry( code->GetUserHPPName() ).GetDir(),
@@ -1039,6 +1045,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2006/06/27 18:03:41  gouriano
+* Corrected generation of class registration code
+*
 * Revision 1.66  2005/12/20 13:58:57  gouriano
 * Replaced list::merge by more appropriate list::insert
 *
