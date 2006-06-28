@@ -377,6 +377,13 @@ BlastHSPList* Blast_HSPListFree(BlastHSPList* hsp_list);
 NCBI_XBLAST_EXPORT
 BlastHSPList* Blast_HSPListNew(Int4 hsp_max);
 
+/** Returns true if the BlastHSPList contains no HSPs
+ * @param hsp_list list of HSPs to examine [in]
+ */
+NCBI_XBLAST_EXPORT
+Boolean
+Blast_HSPList_IsEmpty(const BlastHSPList* hsp_list);
+
 /** Saves HSP information into a BlastHSPList structure
  * @param hsp_list Structure holding all HSPs with full gapped alignment 
  *        information [in] [out]
@@ -600,6 +607,12 @@ Int2 Blast_HitListHSPListsFree(BlastHitList* hitlist);
 NCBI_XBLAST_EXPORT
 Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
 
+/** Purges a BlastHitList of NULL HSP lists.
+ * @param hit_list BLAST hit list to purge. [in] [out]
+ */
+NCBI_XBLAST_EXPORT
+Int2 
+Blast_HitListPurgeNullHSPLists(BlastHitList* hit_list);
 /********************************************************************************
           HSPResults API.
 ********************************************************************************/

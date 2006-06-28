@@ -1369,6 +1369,12 @@ BlastHSPList* Blast_HSPListNew(Int4 hsp_max)
    return hsp_list;
 }
 
+Boolean
+Blast_HSPList_IsEmpty(const BlastHSPList* hsp_list)
+{
+    return (hsp_list && hsp_list->hspcnt == 0) ? TRUE : FALSE;
+}
+
 /** This is a copy of a static function from ncbimisc.c.
  * Turns array into a heap with respect to a given comparison function.
  */
@@ -2671,11 +2677,8 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
    return 0;
 }
 
-/** Purges a BlastHitList of NULL HSP lists.
- * @param hit_list BLAST hit list to purge. [in] [out]
- */
-static Int2 
-s_BlastHitListPurgeNullHSPLists(BlastHitList* hit_list)
+Int2 
+Blast_HitListPurgeNullHSPLists(BlastHitList* hit_list)
 {
    Int4 index, index1; /* loop indices. */
    Int4 hsplist_count; /* total number of HSPList's to iterate over. */
@@ -2909,7 +2912,7 @@ Int2 Blast_HSPResultsPerformCulling(BlastHSPResults *results,
              Blast_HSPListSortByScore(hitlist->hsplist_array[j]);
          }
       }
-      s_BlastHitListPurgeNullHSPLists(hitlist);
+      Blast_HitListPurgeNullHSPLists(hitlist);
    }
 
    tree = Blast_IntervalTreeFree(tree);
