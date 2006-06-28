@@ -447,7 +447,7 @@ void Blast_HSPListPHIGetBitScores(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
 */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list, 
-                               BlastHitSavingOptions* hit_options);
+                               const BlastHitSavingOptions* hit_options);
 
 /** Cleans out the NULLed out HSP's from the HSP array that
  * is part of the BlastHSPList.

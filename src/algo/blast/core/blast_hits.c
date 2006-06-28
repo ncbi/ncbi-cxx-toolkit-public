@@ -1681,7 +1681,7 @@ Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp,
 }
 
 Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list, 
-        BlastHitSavingOptions* hit_options)
+        const BlastHitSavingOptions* hit_options)
 {
    BlastHSP* hsp;
    BlastHSP** hsp_array;
