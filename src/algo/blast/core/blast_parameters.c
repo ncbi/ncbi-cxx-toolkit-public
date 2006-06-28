@@ -648,7 +648,8 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters)
 Int2
 BlastHitSavingParametersNew(EBlastProgramType program_number, 
    const BlastHitSavingOptions* options, 
-   BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+   const BlastScoreBlk* sbp, 
+   const BlastQueryInfo* query_info, 
    Int4 avg_subj_length,
    BlastHitSavingParameters* *parameters)
 {
@@ -743,7 +744,7 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
 
 Int2
 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
-   BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+   const BlastScoreBlk* sbp, const BlastQueryInfo* query_info, 
    Int4 avg_subject_length, BlastHitSavingParameters* params)
 {
    BlastHitSavingOptions* options;
@@ -941,6 +942,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2006/06/28 15:55:02  camacho
+ * Enforce const-ness
+ *
  * Revision 1.18  2006/05/24 17:18:35  madden
  * Fix integer overflow in BlastInitialWordParametersUpdate
  *

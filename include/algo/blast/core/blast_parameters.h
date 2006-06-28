@@ -357,7 +357,8 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
 NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingParametersNew(EBlastProgramType program_number, 
         const BlastHitSavingOptions* options, 
-        BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+        const BlastScoreBlk* sbp, 
+        const BlastQueryInfo* query_info, 
         Int4 avg_subject_length,
         BlastHitSavingParameters* *parameters);
 
@@ -373,7 +374,7 @@ Int2 BlastHitSavingParametersNew(EBlastProgramType program_number,
  */
 NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
-        BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+        const BlastScoreBlk* sbp, const BlastQueryInfo* query_info, 
         Int4 avg_subject_length,
         BlastHitSavingParameters* parameters);
 
