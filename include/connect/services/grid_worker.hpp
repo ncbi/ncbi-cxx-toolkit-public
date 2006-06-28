@@ -295,11 +295,13 @@ private:
                           const string&      job_key,
                           const string&      job_input,
                           unsigned int       job_nubmer,
-                          bool               log_requested);
+                          bool               log_requested,
+                          CNetScheduleClient::TJobMask jmask);
 
     void Reset(const string& job_key,
                const string& job_input,
-               unsigned int  job_nubmer);
+               unsigned int  job_nubmer,
+               CNetScheduleClient::TJobMask jmask);
 
     CGridWorkerNode&     m_WorkerNode;
     string               m_JobKey;
@@ -616,7 +618,8 @@ private:
     set<SHost> m_Masters;
     set<unsigned int> m_AdminHosts;
 
-    bool x_GetNextJob(string& job_key, string& input);
+    bool x_GetNextJob(string& job_key, string& input, 
+                      CNetScheduleClient::TJobMask& jmask);
 
     friend class CWNJobsWatcher;
     friend class CWorkerNodeRequest;
@@ -641,6 +644,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/06/28 16:01:42  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.47  2006/06/22 13:52:35  didenko
  * Returned back a temporary fix for CStdPoolOfThreads
  * Added check_status_period configuration paramter

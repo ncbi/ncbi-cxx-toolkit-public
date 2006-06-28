@@ -110,7 +110,8 @@ CNcbiOstream& CGridJobSubmitter::GetOStream()
     //    return m_GridClient.GetStorage().CreateOStream(m_Input);
 }
 
-string CGridJobSubmitter::Submit(const string& affinity)
+string CGridJobSubmitter::Submit(const string& affinity,
+                                 CNetScheduleClient::TJobMask mask)
 {
     m_WStream.reset();
     string progress_msg_key;
@@ -118,7 +119,10 @@ string CGridJobSubmitter::Submit(const string& affinity)
         progress_msg_key = m_GridClient.GetStorage().CreateEmptyBlob();
     string job_key = m_GridClient.GetNSClient().SubmitJob(m_Input,
                                                           progress_msg_key,
-                                                          affinity);
+                                                          affinity, 
+                                                          kEmptyStr,
+                                                          kEmptyStr,
+                                                          mask);
     m_Input.erase();
 
     if (m_UseProgress)
@@ -197,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/06/28 16:01:56  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.12  2006/06/19 19:41:06  didenko
  * Spelling fix
  *

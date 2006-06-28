@@ -47,14 +47,16 @@ public:
 
     virtual  bool GetJob(string* job_key, 
                          string* input, 
-                         unsigned short udp_port) = 0;
+                         unsigned short udp_port,
+                         CNetScheduleClient::TJobMask* job_mask = 0) = 0;
     
     virtual bool WaitJob(string*        job_key, 
                          string*        input, 
                          unsigned       wait_time,
                          unsigned short udp_port,
                          CNetScheduleClient::EWaitMode wait_mode = 
-                         CNetScheduleClient::eNoWaitNotification) = 0;
+                         CNetScheduleClient::eNoWaitNotification,
+                         CNetScheduleClient::TJobMask* job_mask = 0) = 0;
 
     virtual void PutResult(const string& job_key, 
                            int           ret_code, 
@@ -65,7 +67,8 @@ public:
                                  int           done_ret_code, 
                                  const string& done_output,
                                  string*       new_job_key, 
-                                 string*       new_input) = 0;
+                                 string*       new_input,
+                                 CNetScheduleClient::TJobMask* job_mask = 0) = 0;
 
     virtual void PutProgressMsg(const string& job_key, 
                                 const string& progress_msg) = 0;
@@ -115,14 +118,16 @@ public:
 
     virtual  bool GetJob(string* job_key, 
                          string* input, 
-                         unsigned short udp_port);
+                         unsigned short udp_port,
+                         CNetScheduleClient::TJobMask* job_mask = 0);
 
     virtual bool WaitJob(string*        job_key, 
                          string*        input, 
                          unsigned       wait_time,
                          unsigned short udp_port,
                          CNetScheduleClient::EWaitMode wait_mode = 
-                         CNetScheduleClient::eNoWaitNotification);
+                         CNetScheduleClient::eNoWaitNotification,
+                         CNetScheduleClient::TJobMask* job_mask = 0);
 
     virtual void PutResult(const string& job_key, 
                            int           ret_code, 
@@ -133,7 +138,8 @@ public:
                                  int           done_ret_code, 
                                  const string& done_output,
                                  string*       new_job_key, 
-                                 string*       new_input);
+                                 string*       new_input,
+                                 CNetScheduleClient::TJobMask* job_mask = 0);
 
     virtual void PutProgressMsg(const string& job_key, 
                                 const string& progress_msg);
@@ -175,8 +181,8 @@ private:
 class NCBI_XCONNECT_EXPORT CNSCWrapperExclusive : public INSCWrapper
 {
 public:
-    CNSCWrapperExclusive(CNetScheduleClient* ns_client) 
-        : m_NSClient(ns_client) {}
+    CNSCWrapperExclusive(CNetScheduleClient* ns_client, CFastMutex& mutex) 
+        : m_NSClient(ns_client), m_Mutex(mutex) {}
 
     virtual ~CNSCWrapperExclusive();
 
@@ -189,14 +195,16 @@ public:
 
     virtual  bool GetJob(string* job_key, 
                          string* input, 
-                         unsigned short udp_port);
+                         unsigned short udp_port,
+                         CNetScheduleClient::TJobMask* job_mask = 0);
 
     virtual bool WaitJob(string*        job_key, 
                          string*        input, 
                          unsigned       wait_time,
                          unsigned short udp_port,
                          CNetScheduleClient::EWaitMode wait_mode = 
-                         CNetScheduleClient::eNoWaitNotification);
+                         CNetScheduleClient::eNoWaitNotification,
+                         CNetScheduleClient::TJobMask* job_mask = 0);
 
 
     virtual void PutResult(const string& job_key, 
@@ -208,7 +216,8 @@ public:
                                  int           done_ret_code, 
                                  const string& done_output,
                                  string*       new_job_key, 
-                                 string*       new_input);
+                                 string*       new_input,
+                                 CNetScheduleClient::TJobMask* job_mask = 0);
 
     virtual void PutProgressMsg(const string& job_key, 
                                 const string& progress_msg);
@@ -241,6 +250,8 @@ public:
 private:
 
     auto_ptr<CNetScheduleClient> m_NSClient;
+    mutable CFastMutex& m_Mutex;
+
 };
 
 END_NCBI_SCOPE
@@ -250,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/06/28 16:01:42  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.4  2006/05/22 18:11:43  didenko
  * Added an option to fail a job if a remote app returns non zore code
  *

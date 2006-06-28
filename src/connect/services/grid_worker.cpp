@@ -75,11 +75,12 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              const string&    job_key,
                                              const string&    job_input,
                                              unsigned int     job_number,
-                                             bool             log_requested)
+                                             bool             log_requested,
+                                             CNetScheduleClient::TJobMask jmask)
     : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
       m_JobCommitted(eNotCommitted), m_LogRequested(log_requested), 
       m_JobNumber(job_number), m_ThreadContext(NULL), 
-      m_ExclusiveJob(false)
+      m_ExclusiveJob(jmask & CNetScheduleClient::eExclusiveJob)
 {
 }
 
@@ -141,7 +142,8 @@ CWorkerNodeJobContext::GetShutdownLevel(void) const
 
 void CWorkerNodeJobContext::Reset(const string& job_key,
                                   const string& job_input,
-                                  unsigned int  job_number)
+                                  unsigned int  job_number,
+                                  CNetScheduleClient::TJobMask jmask)
 {
     m_JobKey = job_key;
     m_JobInput = job_input;
@@ -151,7 +153,7 @@ void CWorkerNodeJobContext::Reset(const string& job_key,
     m_ProgressMsgKey = "";
     m_JobCommitted = eNotCommitted;
     m_InputBlobSize = 0;
-    m_ExclusiveJob = false;
+    m_ExclusiveJob = jmask & CNetScheduleClient::eExclusiveJob;
 }
 
 void CWorkerNodeJobContext::RequestExclusiveMode()
@@ -222,6 +224,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
     do {
         more_jobs = false;
         string new_job_key, new_job_input;
+        CNetScheduleClient::TJobMask jmask;
     try {
         CRef<IWorkerNodeJob> job(thr_context.GetJob());         
         int ret_code = 0;
@@ -246,7 +249,8 @@ static void s_RunJob(CGridThreadContext& thr_context)
                 if (thr_context.IsJobCommitted()) {
                     more_jobs = thr_context.PutResult(ret_code, 
                                                       new_job_key,
-                                                      new_job_input);
+                                                      new_job_input,
+                                                      jmask);
                 }
                 else {
                     thr_context.ReturnJob();
@@ -282,7 +286,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
     CWorkerNodeJobContext& job_context = thr_context.GetJobContext();
     thr_context.Reset();
     if (more_jobs)
-        thr_context.SetJobContext(job_context, new_job_key, new_job_input);
+        thr_context.SetJobContext(job_context, new_job_key, new_job_input, jmask);
     } while (more_jobs);
 
 
@@ -351,6 +355,7 @@ void CGridWorkerNode::Start()
     string    job_key;
     string    input;
     bool      job_exists = false;
+    CNetScheduleClient::TJobMask jmask;
 
     while (1) {
         if (CGridGlobals::GetInstance().
@@ -370,7 +375,7 @@ void CGridWorkerNode::Start()
                 }
             }
 
-            job_exists = x_GetNextJob(job_key, input);
+            job_exists = x_GetNextJob(job_key, input, jmask);
 
             if (job_exists) {
                 if (CGridGlobals::GetInstance().
@@ -384,7 +389,8 @@ void CGridWorkerNode::Start()
                                                           job_key, 
                                                           input, 
                                                           job_number,
-                                                          m_LogRequested));
+                                                          m_LogRequested,
+                                                          jmask));
                 if (m_MaxThreads > 1 ) {
                     CRef<CStdRequest> job_req(
                                     new CWorkerNodeRequest(job_context));
@@ -452,7 +458,8 @@ string CGridWorkerNode::GetConnectionInfo() const
     return m_NSReadClient->GetConnectionInfo();    
 }
 
-bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
+bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input, 
+                                   CNetScheduleClient::TJobMask& jmask)
 {
     bool job_exists = false;
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
@@ -475,7 +482,8 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
                     job_exists = 
                         m_NSReadClient->WaitJob(&job_key, &input,
                                                 m_NSTimeout, m_UdpPort,
-                                                CNetScheduleClient::eNoWaitNotification);
+                                                CNetScheduleClient::eNoWaitNotification,
+                                                &jmask);
                     if (job_exists && m_OnHold) {
                         x_ReturnJob(job_key);
                         return false;
@@ -489,7 +497,7 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
                         return false;                    
                     if (job_exists)
                         job_exists = 
-                            m_NSReadClient->GetJob(&job_key, &input, m_UdpPort);
+                            m_NSReadClient->GetJob(&job_key, &input, m_UdpPort, &jmask);
 
                     if (job_exists && m_OnHold) {
                         x_ReturnJob(job_key);
@@ -503,6 +511,18 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
                 CFastMutexGuard guard(m_HoldMutex);
                 m_HoldSem.TryWait(0,1);
                 }
+            }
+            catch (CGridGlobalsException& ex) {
+                if (ex.GetErrCode() != 
+                    CGridGlobalsException::eExclusiveModeIsAlreadySet) 
+                    throw;            
+                if(m_LogRequested) {
+                    LOG_POST("Job " << job_key 
+                             << " has been returned back to the queue because it " 
+                             << "requested an Exclusive Mode but another job is "
+                             << "already have the exclusive status.");
+                }
+                x_ReturnJob(job_key);
             }
             catch (CNetServiceException& ex) {
                 if (ex.GetErrCode() != CNetServiceException::eTimeout) 
@@ -698,7 +718,8 @@ INSCWrapper* CGridWorkerNode::CreateClient()
         auto_ptr<CNetScheduleClient> 
             ns_client(m_NSClientFactory.CreateInstance());
         ns_client->SetProgramVersion(m_JobFactory.GetJobVersion());
-        ret.reset(new CNSCWrapperExclusive(ns_client.release()));
+        ret.reset(new CNSCWrapperExclusive(ns_client.release(), 
+                                           m_SharedClientMutex));
     }
     return ret.release();
 }
@@ -709,6 +730,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/06/28 16:01:56  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.55  2006/06/22 15:02:16  didenko
  * Commented out the temporary fix again.
  *

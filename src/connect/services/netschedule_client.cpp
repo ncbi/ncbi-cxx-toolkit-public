@@ -323,7 +323,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
         m_Tmp.append("\"");
     }
 
-    if (job_mask) {
+    if (job_mask != eEmptyMask) {
         m_Tmp.append(" msk=");
         m_Tmp.append(NStr::UIntToString(job_mask));
     } else {
@@ -850,7 +850,7 @@ bool CNetScheduleClient::GetJob(string*        job_key,
                                 unsigned short udp_port,
                                 string*        jout,
                                 string*        jerr,
-                                unsigned*      job_mask)
+                                TJobMask*      job_mask)
 {
     _ASSERT(job_key);
     _ASSERT(input);
@@ -883,7 +883,7 @@ bool CNetScheduleClient::GetJob(string*        job_key,
         return false;
     }
 
-    unsigned j_mask = 0;
+    TJobMask j_mask = eEmptyMask;
     if (jout != 0 && jerr != 0) {
         ParseGetJobResponse(job_key, input, jout, jerr, &j_mask, m_Tmp);
     } else {
@@ -909,7 +909,7 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
                                           unsigned short udp_port,
                                           string*    jout,
                                           string*    jerr,
-                                          unsigned*  job_mask)
+                                          TJobMask*  job_mask)
 {
     _ASSERT(job_key);
     _ASSERT(input);
@@ -938,7 +938,7 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
     }}
 
     TrimPrefix(&m_Tmp);
-    unsigned j_mask = 0;
+    TJobMask j_mask = eEmptyMask;
     if (!m_Tmp.empty()) {
         if (jout != 0 && jerr != 0) {
             ParseGetJobResponse(job_key, input, jout, jerr, &j_mask, m_Tmp);
@@ -968,7 +968,7 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
                                  EWaitMode      wait_mode,
                                  string*        jout,
                                  string*        jerr,
-                                 unsigned*      job_mask)
+                                 TJobMask*      job_mask)
 {
     bool job_received = 
         GetJobWaitNotify(job_key, input, wait_time, udp_port, 
@@ -1083,7 +1083,7 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
                                              string*        input,
                                              string*        jout,
                                              string*        jerr,
-                                             unsigned*      job_mask,
+                                             TJobMask*      job_mask,
                                              const string&  response)
 {
     // Server message format:
@@ -1215,7 +1215,7 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
                                          string*       new_input,
                                          string*       jout,
                                          string*       jerr,
-                                         unsigned*     job_mask)
+                                         TJobMask*     job_mask)
 {
     if (done_job_key.empty()) {
         return GetJob(new_job_key, new_input, 
@@ -1254,7 +1254,7 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
         return false;
     }
 
-    unsigned j_mask = 0;
+    TJobMask j_mask = eEmptyMask;
     if (jout != 0 && jerr != 0) {
         ParseGetJobResponse(new_job_key, new_input, jout, jerr, &j_mask, 
                             m_Tmp);
@@ -1899,6 +1899,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/06/28 16:01:56  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.61  2006/06/27 15:42:32  kuznets
  * Added job mask
  *

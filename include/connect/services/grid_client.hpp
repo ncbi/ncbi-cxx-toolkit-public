@@ -77,7 +77,8 @@ public:
     /// Submit a job to the queue
     ///
     /// @return a job key
-    string Submit(const string& affinity = "");
+    string Submit(const string& affinity = "", 
+                  CNetScheduleClient::TJobMask mask = CNetScheduleClient::eEmptyMask);
 
 private:
     /// Only CGridClient can create an instnce of this class
@@ -262,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/06/28 16:01:42  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.11  2006/06/19 19:41:05  didenko
  * Spelling fix
  *

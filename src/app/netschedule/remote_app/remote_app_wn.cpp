@@ -74,8 +74,6 @@ public:
             tmp_path += CDirEntry::GetPathSeparator() + context.GetJobKey();
 
         m_Request.Receive(context.GetIStream());
-        if (m_Request.IsExclusiveModeRequested())
-            context.RequestExclusiveMode();
 
         if (context.IsLogRequested()) {
             if (!m_Request.GetInBlobIdOrData().empty())
@@ -239,6 +237,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/06/28 16:01:49  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.21  2006/06/22 19:33:14  didenko
  * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
  *

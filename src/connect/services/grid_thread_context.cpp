@@ -56,10 +56,11 @@ CGridThreadContext::CGridThreadContext(CGridWorkerNode& node, long check_status_
 
 void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context,
                                        const string& new_job_key, 
-                                       const string& new_job_input)
+                                       const string& new_job_input,
+                                       CNetScheduleClient::TJobMask jmask)
 {
     job_context.Reset(new_job_key, new_job_input, 
-                      CGridGlobals::GetInstance().GetNewJobNumber());
+                      CGridGlobals::GetInstance().GetNewJobNumber(), jmask);
     SetJobContext(job_context);
 }
 
@@ -210,7 +211,8 @@ void CGridThreadContext::JobDelayExpiration(unsigned time_to_run)
 /// @internal
 bool CGridThreadContext::PutResult(int ret_code, 
                                    string& new_job_key,
-                                   string& new_job_input)
+                                   string& new_job_input,
+                                   CNetScheduleClient::TJobMask& jmask)
 {
     _ASSERT(m_JobContext);
     if ( m_JobContext->GetCommitStatus() != CWorkerNodeJobContext::eDone ) {
@@ -235,7 +237,8 @@ bool CGridThreadContext::PutResult(int ret_code,
                                                 ret_code,
                                                 m_JobContext->GetJobOutput(),
                                                 &new_job_key, 
-                                                &new_job_input);
+                                                &new_job_input,
+                                                &jmask);
             }
         }
     }
@@ -387,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.26  2006/06/28 16:01:56  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 6.25  2006/06/26 14:04:06  didenko
  * Fixed checking job cancelation algorithm
  *

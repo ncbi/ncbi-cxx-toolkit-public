@@ -433,11 +433,12 @@ void CRemoteAppRequest::Send(CNcbiOstream& os)
     m_Impl->Serialize(os);    
 }
 
+/*
 void CRemoteAppRequest::RequestExclusiveMode() 
 {
     m_Impl->SetExclusiveMode(true);
 }
-
+*/
 CNcbiOstream& CRemoteAppRequest::GetStdIn()
 {
     return m_Impl->GetStdInForWrite();
@@ -493,11 +494,12 @@ const string& CRemoteAppRequest_Executer::GetStdErrFileName() const
 { 
     return m_Impl->GetStdErrFileName();
 }
+/*
 bool CRemoteAppRequest_Executer::IsExclusiveModeRequested() const
 {
     return m_Impl->IsExclusiveMode();
 }
-
+*/
 EStdOutErrStorageType CRemoteAppRequest_Executer::GetStdOutErrStorageType() const
 { 
     return m_Impl->GetStdOutErrStorageType(); 
@@ -729,6 +731,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2006/06/28 16:01:57  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 6.13  2006/06/21 17:49:11  ucko
  * CBlobStreamHelper::GetIStream: broaden the catch statement for
  * compatibility with GCC 2.95, which lacks IOS_BASE::failure.

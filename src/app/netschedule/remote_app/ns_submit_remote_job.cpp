@@ -221,6 +221,7 @@ int CNSSubmitRemoveJobApp::Run(void)
 
     CBlobStorageFactory factory(reg);
     CRemoteAppRequest request(factory);
+    CNetScheduleClient::TJobMask jmask = CNetScheduleClient::eEmptyMask;
 
     if (args["args"]) {
         string cmd = args["args"].AsString();
@@ -253,13 +254,13 @@ int CNSSubmitRemoveJobApp::Run(void)
             request.SetAppRunTimeout(rt);
         }
         if (args["exclusive"]) {
-            request.RequestExclusiveMode();
+            jmask |= CNetScheduleClient::eExclusiveJob;
         }
 
 
         CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
         request.Send(job_submitter.GetOStream());
-        string job_key = job_submitter.Submit(affinity);
+        string job_key = job_submitter.Submit(affinity, jmask);
         if (out)
             *out << job_key << NcbiEndl;
         return 0;
@@ -299,17 +300,18 @@ int CNSSubmitRemoveJobApp::Run(void)
                 unsigned int rt = NStr::StringToUInt(srt);
                 request.SetAppRunTimeout(rt);
             }
+            CNetScheduleClient::TJobMask jmask = CNetScheduleClient::eEmptyMask;
             srt = s_FindParam(line, "exclusive=\"");
             if (!srt.empty()) {
                 if(NStr::CompareNocase(srt, "yes") == 0 ||
                    NStr::CompareNocase(srt, "true") == 0 ||
                    srt == "1" )
-                    request.RequestExclusiveMode();
+                    jmask |= CNetScheduleClient::eExclusiveJob;
             }
             
             CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
             request.Send(job_submitter.GetOStream());
-            string job_key = job_submitter.Submit(affinity);
+            string job_key = job_submitter.Submit(affinity, jmask);
             if (out)
                 *out << job_key << NcbiEndl;
         }
@@ -329,6 +331,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/06/28 16:01:49  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.7  2006/06/21 20:24:40  didenko
  * fixed exlucive parameter parsing
  *

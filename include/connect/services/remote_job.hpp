@@ -67,7 +67,7 @@ public:
     void SetCmdLine(const string& cmd);
 
     void SetAppRunTimeout(unsigned int sec);
-    void RequestExclusiveMode();
+    //    void RequestExclusiveMode();
     
     /// Transfer a file to an application executer side.
     /// It only makes sense to transfer a file if its name also mentioned in
@@ -108,7 +108,7 @@ public:
     const string& GetCmdLine() const;
 
     unsigned int GetAppRunTimeout() const;
-    bool IsExclusiveModeRequested() const;
+    //    bool IsExclusiveModeRequested() const;
     const string& GetWorkingDir() const;
     const string& GetInBlobIdOrData() const;
 
@@ -211,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/28 16:01:42  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.8  2006/06/19 19:41:05  didenko
  * Spelling fix
  *

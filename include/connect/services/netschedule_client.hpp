@@ -177,6 +177,14 @@ public:
         eLastStatus         ///< Fake status (do not use)
     };
 
+    /// Job masks
+    ///
+    enum EJobMask {
+        eEmptyMask    = 0x0,
+        eExclusiveJob = 0x1  ///< Exlcusive job
+    };
+    typedef unsigned TJobMask;
+
     /// Submit job to server
     ///
     /// @param input
@@ -201,7 +209,7 @@ public:
                      const string& affinity_token = kEmptyStr,
                      const string& out            = kEmptyStr,
                      const string& err            = kEmptyStr,
-                     unsigned      job_mask       = 0);
+                     TJobMask      job_mask       = eEmptyMask);
 
 
     /// Job description for batch submission
@@ -327,7 +335,7 @@ public:
                 unsigned short udp_port = 0,
                 string*   jout = 0,
                 string*   jerr = 0,
-                unsigned* job_mask = 0);
+                TJobMask* job_mask = 0);
 
     /// Notification wait mode
     enum EWaitMode {
@@ -380,7 +388,7 @@ public:
                  EWaitMode      wait_mode = eWaitNotification,
                  string*        jout = 0,
                  string*        jerr = 0,
-                 unsigned*      job_mask = 0);
+                 TJobMask*      job_mask = 0);
 
 
     /// Wait for queue notification message 
@@ -424,7 +432,7 @@ public:
                          string*       new_input,
                          string*       jout = 0,
                          string*       jerr = 0,
-                         unsigned*     job_mask = 0);
+                         TJobMask*     job_mask = 0);
 
     /// Put job interim (progress) message
     /// 
@@ -679,7 +687,7 @@ protected:
                              string*        input, 
                              string*        jout,
                              string*        jerr,
-                             unsigned*      job_mask,
+                             TJobMask*      job_mask,
                              const string&  response);
 
     void WaitQueueNotification(unsigned       wait_time,
@@ -696,7 +704,7 @@ protected:
                           unsigned short udp_port,
                           string*    jout = 0,
                           string*    jerr = 0,
-                          unsigned*  job_mask = 0);
+                          TJobMask*  job_mask = 0);
 
     /// Try to read ENDF from the socket to check if connection is still alive
     ///
@@ -793,7 +801,7 @@ public:
                      const string& affinity_token = kEmptyStr,
                      const string& out            = kEmptyStr,
                      const string& err            = kEmptyStr,
-                     unsigned      job_mask       = 0);
+                     TJobMask      job_mask       = eEmptyMask);
 
     virtual
     void SubmitJobBatch(SJobBatch& subm);
@@ -804,7 +812,7 @@ public:
                 unsigned short udp_port = 0,
                 string*        jout = 0,
                 string*        jerr = 0,
-                unsigned*      job_mask = 0);
+                TJobMask*      job_mask = 0);
 
     bool WaitJob(string*        job_key, 
                  string*        input, 
@@ -813,7 +821,7 @@ public:
                  EWaitMode      wait_mode = eWaitNotification,
                  string*        jout = 0,
                  string*        jerr = 0,
-                 unsigned*      job_mask = 0);
+                 TJobMask*      job_mask = 0);
 
 
     virtual
@@ -864,7 +872,7 @@ private:
                      unsigned short udp_port,
                      string*  jout,
                      string*  jerr,
-                     unsigned* job_mask);
+                     TJobMask* job_mask);
     bool x_GetJobWaitNotify(SServiceAddress& sa,
                             string*    job_key, 
                             string*    input, 
@@ -872,7 +880,7 @@ private:
                             unsigned short udp_port,
                             string*    jout,
                             string*    jerr,
-                            unsigned*  job_mask);
+                            TJobMask*  job_mask);
 private:
     CNetScheduleClient_LB(const CNetScheduleClient_LB&);
     CNetScheduleClient_LB& operator=(const CNetScheduleClient_LB&);
@@ -993,6 +1001,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/06/28 16:01:42  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 1.58  2006/06/27 15:40:56  kuznets
  * Added job mask
  *

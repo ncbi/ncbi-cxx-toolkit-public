@@ -54,7 +54,8 @@ public:
     void SetJobContext(CWorkerNodeJobContext& job_context);
     void SetJobContext(CWorkerNodeJobContext& job_context,
                        const string& new_job_key, 
-                       const string& new_job_input);
+                       const string& new_job_input,
+                       CNetScheduleClient::TJobMask jmask);
     void CloseStreams();
     void Reset();
 
@@ -66,7 +67,8 @@ public:
     void JobDelayExpiration(unsigned runtime_inc);
 
     bool IsJobCommitted() const;
-    bool PutResult(int ret_code, string& new_job_key, string& new_job_input);
+    bool PutResult(int ret_code, string& new_job_key, string& new_job_input,
+                   CNetScheduleClient::TJobMask& jmask);
     void ReturnJob();
     void PutFailure(const string& msg, int ret_code = 0);
     bool IsJobCanceled();
@@ -96,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2006/06/28 16:01:56  didenko
+ * Redone job's exlusivity processing
+ *
  * Revision 6.12  2006/06/22 13:52:36  didenko
  * Returned back a temporary fix for CStdPoolOfThreads
  * Added check_status_period configuration paramter
