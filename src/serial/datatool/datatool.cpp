@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,6,2) );
+    SetVersion( CVersionInfo(1,6,3) );
 }
 
 void CDataTool::Init(void)
@@ -650,6 +650,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.99  2006/06/28 19:04:29  gouriano
+* Corrected schema generation for ASN containers
+*
 * Revision 1.98  2006/06/27 18:01:42  gouriano
 * Preserve local elements defined in XML schema
 *

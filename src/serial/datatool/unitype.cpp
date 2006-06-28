@@ -121,6 +121,8 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
         }
         out << "/>";
     } else {
+        bool asn_container = false;
+        list<string> opentag, closetag;
         string xsdk("sequence");
         if (!contents_only) {
             string asnk("SEQUENCE");
@@ -175,39 +177,61 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             if(NStr::CompareCase(asnk,"CHOICE")==0) {
                 xsdk = "choice";
             }
-
             string tmp = "<xs:element name=\"" + tag + "\"";
             if (GetDataMember()) {
                 if (GetDataMember()->Optional()) {
                     tmp += " minOccurs=\"0\"";
                 }
-                tmp += " maxOccurs=\"unbounded\"";
-            }
-            PrintASNNewLine(out, indent++) << tmp << ">";
-            PrintASNNewLine(out, indent++) << "<xs:complexType";
-            if (isMixed) {
-                out << " mixed=\"true\"";
-            }
-            out << ">";
-            PrintASNNewLine(out, indent++) << "<xs:" << xsdk;
-            if (!GetDataMember()) {
-                if (!IsNonEmpty()) {
-                    out << " minOccurs=\"0\"";
+                if (GetXmlSourceSpec()) {
+                    tmp += " maxOccurs=\"unbounded\"";
                 }
-                out << " maxOccurs=\"unbounded\"";
+            }
+            opentag.push_back(tmp + ">");
+            closetag.push_front("</xs:element>");
+
+            if (typeContainer && !GetXmlSourceSpec() && !GetEnforcedStdXml()) {
+                asn_container = true;
+                opentag.push_back("<xs:complexType>");
+                closetag.push_front("</xs:complexType>");
+                opentag.push_back("<xs:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">");
+                closetag.push_front("</xs:sequence>");
+                opentag.push_back("<xs:element name=\"" + userType + "\">");
+                closetag.push_front("</xs:element>");
+            }
+            tmp = "<xs:complexType";
+            if (isMixed) {
+                tmp += " mixed=\"true\"";
+            }
+            opentag.push_back(tmp + ">");
+            closetag.push_front("</xs:complexType>");
+
+            tmp = "<xs:" + xsdk;
+            if (!GetXmlSourceSpec()) {
+                if (!asn_container) {
+                    tmp += " minOccurs=\"0\" maxOccurs=\"unbounded\"";
+                }
+            } else if (!GetDataMember()) {
+                if (!IsNonEmpty()) {
+                    tmp += " minOccurs=\"0\"";
+                }
+                tmp += " maxOccurs=\"unbounded\"";
             } else if (isSimpleSeq) {
                 if (isOptional) {
-                    out << " minOccurs=\"0\"";
+                    tmp += " minOccurs=\"0\"";
                 }
-                out << " maxOccurs=\"unbounded\"";
+                tmp += " maxOccurs=\"unbounded\"";
             }
-            out << ">";
+            opentag.push_back(tmp + ">");
+            closetag.push_front("</xs:" + xsdk + ">");
+            ITERATE ( list<string>, s, opentag ) {
+                PrintASNNewLine(out, indent++) << *s;
+            }
         }
         typeElem->PrintXMLSchema(out,indent,true);
         if (!contents_only) {
-            PrintASNNewLine(out, --indent) << "</xs:" << xsdk << ">";
-            PrintASNNewLine(out, --indent) << "</xs:complexType>";
-            PrintASNNewLine(out, --indent) << "</xs:element>";
+            ITERATE ( list<string>, s, closetag ) {
+                PrintASNNewLine(out, --indent) << *s;
+            }
         }
     }
 }
@@ -433,6 +457,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.43  2006/06/28 19:04:29  gouriano
+* Corrected schema generation for ASN containers
+*
 * Revision 1.42  2006/06/27 18:01:42  gouriano
 * Preserve local elements defined in XML schema
 *
