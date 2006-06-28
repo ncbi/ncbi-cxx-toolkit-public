@@ -130,7 +130,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 {
     // redefine TScore as a floating-point type for this procedure only
     typedef float TScore;
-    const TScore cds_penalty_extra = -1e-3;
+    const TScore cds_penalty_extra = -2e-6;
 
     TScore V = 0;
 
@@ -672,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/06/28 15:56:52  kapustin
+ * Use smaller extra penalties to avoid eccetric term stuff
+ *
  * Revision 1.24  2006/06/27 15:16:58  kapustin
  * Extra penalty for in-cds gap extensions
  *
