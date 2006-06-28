@@ -241,6 +241,11 @@ private:
     void x_CorrectExceptText (CBioseq& bs);
     void x_CorrectExceptText (CBioseq_set& bss);
 
+    void x_MoveDbxrefs( CSeq_feat& feat);
+    void x_MoveDbxrefs (CSeq_annot& sa);
+    void x_MoveDbxrefs (CBioseq& bs);
+    void x_MoveDbxrefs (CBioseq_set& bss);
+
     void x_MergeEquivalentCitSubs (CSeq_descr& sdr);
     void x_MergeEquivalentCitSubs (CBioseq& bs);
     void x_MergeEquivalentCitSubs (CBioseq_set& bss);
@@ -271,6 +276,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2006/06/28 15:23:03  bollin
+ * added step to move db_xref GenBank Qualifiers to real dbxrefs to Extended Cleanup
+ *
  * Revision 1.20  2006/06/28 13:22:39  bollin
  * added step to merge duplicate biosources to ExtendedCleanup
  *

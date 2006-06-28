@@ -370,6 +370,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
     
     x_CleanGenbankBlockStrings(bss);
 
+    x_MoveDbxrefs(bss);
+    x_MergeDuplicateBioSources(bss);
+
     x_MolInfoUpdate(bss);
     x_RemoveEmptyGenbankDesc(bss);
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
@@ -398,6 +401,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
     
     x_CleanGenbankBlockStrings(bs);
     
+    x_MoveDbxrefs(bs);
+    x_MergeDuplicateBioSources(bs);
+
     x_MolInfoUpdate(bs);
     x_RemoveEmptyGenbankDesc(bs);
     x_ConvertFullLenSourceFeatureToDescriptor(bs);
@@ -414,6 +420,11 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot& sa)
     x_ConvertFullLenSourceFeatureToDescriptor(sa);
     x_ConvertFullLenPubFeatureToDescriptor(sa);    
     x_RemoveEmptyFeatures(sa);
+    
+    x_CorrectExceptText(sa);
+    
+    x_MoveDbxrefs(sa);
+    
     BasicCleanup (sa);
 }
 
@@ -1321,6 +1332,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2006/06/28 15:23:03  bollin
+ * added step to move db_xref GenBank Qualifiers to real dbxrefs to Extended Cleanup
+ *
  * Revision 1.19  2006/06/28 13:22:39  bollin
  * added step to merge duplicate biosources to ExtendedCleanup
  *

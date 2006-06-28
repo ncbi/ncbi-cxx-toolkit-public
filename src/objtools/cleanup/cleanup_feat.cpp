@@ -739,6 +739,93 @@ void CCleanup_imp::x_CorrectExceptText (CBioseq_set& bss)
 }
 
 
+// move GenBank qualifiers named "db_xref" on a feature to real dbxrefs
+// Was SeqEntryMoveDbxrefs in C Toolkit
+void CCleanup_imp::x_MoveDbxrefs(CSeq_feat& feat)
+{
+    if (feat.CanGetQual()) {
+        CSeq_feat::TQual& current_list = feat.SetQual();
+        CSeq_feat::TQual new_list;
+        new_list.clear();
+        
+        ITERATE (CSeq_feat::TQual, it, current_list) {            
+            if ((*it)->CanGetQual() && NStr::Equal((*it)->GetQual(), "db_xref")) {
+                CRef<CDbtag> tag(new CDbtag());
+                string qval = (*it)->GetVal();
+                unsigned int pos = NStr::Find (qval, ":");
+                if (pos == NCBI_NS_STD::string::npos) {
+                    tag->SetDb("?");
+                    tag->SetTag().Select(CObject_id::e_Str);
+                    tag->SetTag().SetStr(qval);
+                } else {
+                    tag->SetDb(qval.substr(0, pos));
+                    tag->SetTag().Select(CObject_id::e_Str);
+                    tag->SetTag().SetStr(qval.substr(pos));
+                }
+                feat.SetDbxref().push_back(tag);
+            } else {
+                new_list.push_back (*it);
+            }
+        }
+        current_list.clear();
+
+        ITERATE (CSeq_feat::TQual, it, new_list) {
+            current_list.push_back(*it);
+        }
+        if (current_list.size() == 0) {
+            feat.ResetQual();
+        }        
+    }
+}
+
+
+void CCleanup_imp::x_MoveDbxrefs (CSeq_annot& sa)
+{
+    if (sa.IsSetData()  &&  sa.GetData().IsFtable()) {
+        NON_CONST_ITERATE (list<CRef<CSeq_feat> >, feat, sa.SetData().SetFtable()) {
+            x_MoveDbxrefs (**feat);
+        }
+    }
+}
+
+
+void CCleanup_imp::x_MoveDbxrefs (CBioseq& bs)
+{
+    if (bs.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
+            x_MoveDbxrefs(**it);
+        }
+    }
+}
+
+
+void CCleanup_imp::x_MoveDbxrefs (CBioseq_set& bss)
+{
+    if (bss.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
+            x_MoveDbxrefs(**it);
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_MoveDbxrefs(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_MoveDbxrefs(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }    
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -747,6 +834,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/06/28 15:23:03  bollin
+ * added step to move db_xref GenBank Qualifiers to real dbxrefs to Extended Cleanup
+ *
  * Revision 1.11  2006/06/27 14:30:59  bollin
  * added step for correcting exception text to ExtendedCleanup
  *
