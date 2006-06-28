@@ -405,7 +405,7 @@ NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
                              BlastHSPList* hsp_list,
                              Boolean gapped_calculation, 
-                             BlastScoreBlk* sbp, double gap_decay_rate,
+                             const BlastScoreBlk* sbp, double gap_decay_rate,
                              double scaling_factor);
 
 /** Calculate e-values for a PHI BLAST HSP list.
@@ -539,7 +539,9 @@ void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset);
  * @param gapped_calculation not an ungapped alignment [in]
  * @param sbp used for round_down Boolean
  */
-void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list, Boolean gapped_calculation, BlastScoreBlk* sbp);
+void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list, 
+                                        Boolean gapped_calculation, 
+                                        const BlastScoreBlk* sbp);
 
 /** Check if HSP list is sorted by score.
  * @param hsp_list The list to check [in]

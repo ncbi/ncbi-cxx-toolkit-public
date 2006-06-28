@@ -417,8 +417,8 @@ s_LinkHSPStructReset(LinkHSPStruct* lhsp)
  */
 static Int2
 s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, Int4 subject_length,
-   BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
+   const BlastQueryInfo* query_info, Int4 subject_length,
+   const BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
 {
 	LinkHSPStruct* H,* H2,* best[2],* first_hsp,* last_hsp,** hp_frame_start;
@@ -1120,7 +1120,7 @@ typedef struct BlastLinkedHSPSet {
  */
 static double 
 s_SumHSPEvalue(EBlastProgramType program_number, 
-   BlastQueryInfo* query_info, Int4 subject_length, 
+   const BlastQueryInfo* query_info, Int4 subject_length, 
    const BlastLinkHSPParameters* link_hsp_params, 
    BlastLinkedHSPSet* head_hsp, BlastLinkedHSPSet* new_hsp, double* sum_score)
 {
@@ -1637,7 +1637,7 @@ s_LinkedHSPSetArrayIndexQueryEnds(BlastLinkedHSPSet** hsp_array, Int4 hspcnt,
  */
 static Int2
 s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, Int4 subject_length, BlastScoreBlk* sbp, 
+   const BlastQueryInfo* query_info, Int4 subject_length, const BlastScoreBlk* sbp, 
    const BlastLinkHSPParameters* link_hsp_params, Boolean gapped_calculation)
 {
    BlastHSP** hsp_array;
@@ -1783,8 +1783,8 @@ s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
 /* see description in link_hsps.h */
 Int2 
 BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, Int4 subject_length,
-   BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
+   const BlastQueryInfo* query_info, Int4 subject_length,
+   const BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
 {
     Int4 index;

@@ -1558,7 +1558,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
 Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
                              BlastHSPList* hsp_list, 
                              Boolean gapped_calculation, 
-                             BlastScoreBlk* sbp, double gap_decay_rate,
+                             const BlastScoreBlk* sbp, double gap_decay_rate,
                              double scaling_factor)
 {
    BlastHSP* hsp;
@@ -2277,7 +2277,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
    }
 
    /* Merge the two HSP lists for successive chunks of the subject sequence.
-      First Put all HSPs that intersect the overlap region at the front of 
+      First put all HSPs that intersect the overlap region at the front of 
       the respective HSP arrays. */
    hspcnt1 = hspcnt2 = 0;
 
@@ -2422,7 +2422,9 @@ void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset)
    }
 }
 
-void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list, Boolean gapped_calculation, BlastScoreBlk* sbp)
+void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list, 
+                                        Boolean gapped_calculation, 
+                                        const BlastScoreBlk* sbp)
 {
     int index;
     

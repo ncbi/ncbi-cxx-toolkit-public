@@ -51,8 +51,8 @@ extern "C" {
  */
 Int2 
 BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
-   BlastQueryInfo* query_info, Int4 subject_length, 
-   BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
+   const BlastQueryInfo* query_info, Int4 subject_length, 
+   const BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation);
 
 #ifdef __cplusplus
