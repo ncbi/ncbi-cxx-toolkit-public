@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2006/06/28 19:03:36  gouriano
+* Print type comments when generating schema
+*
 * Revision 1.46  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *
@@ -323,6 +326,7 @@ void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
 
     ITERATE ( TDefinitions, i, m_Definitions ) {
         out << "\n";
+        i->second->PrintXMLSchemaTypeComments(out, 0);
         i->second->PrintXMLSchema(out,0);
     }
 
