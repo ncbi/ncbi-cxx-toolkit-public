@@ -916,9 +916,32 @@ string CCgiApplication::GetLogFileName(EDiagFileType file_type) const
 }
 
 
+const char* kToolkitRcPath = "/etc/toolkitrc";
+const char* kWebDirToPort = "Web_dir_to_port";
+
 string CCgiApplication::GetDefaultLogPath(void) const
 {
     string log_path = "/log/";
+
+    string exe_path = GetProgramExecutablePath();
+    CNcbiIfstream is(kToolkitRcPath, ios::binary);
+    CNcbiRegistry reg(is);
+    list<string> entries;
+    reg.EnumerateEntries(kWebDirToPort, &entries);
+    size_t min_pos = exe_path.length();
+    string web_dir;
+    // Find the first dir name corresponding to one of the entries
+    ITERATE(list<string>, it, entries) {
+        size_t pos = exe_path.find("/" + *it + "/");
+        if (pos < min_pos) {
+            min_pos = pos;
+            web_dir = *it;
+        }
+    }
+    if ( !web_dir.empty() ) {
+        return log_path + reg.GetString(kWebDirToPort, web_dir, kEmptyStr);
+    }
+    // Could not find a valid web-dir entry, use port or 'srv'
     const char* port = ::getenv("SERVER_PORT");
     return port ? log_path + string(port) : log_path + "srv";
 }
@@ -1099,6 +1122,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.78  2006/06/28 19:54:29  grichenk
+* Use /etc/toolkitrc to map dir to port
+*
 * Revision 1.77  2006/06/14 22:20:34  vakatov
 * Removed extraneous eTransient flag in a call to GetConfig().Set()
 *
