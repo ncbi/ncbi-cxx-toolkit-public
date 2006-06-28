@@ -245,6 +245,11 @@ private:
     void x_MergeEquivalentCitSubs (CBioseq& bs);
     void x_MergeEquivalentCitSubs (CBioseq_set& bss);
 
+    void x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_src);
+    void x_MergeDuplicateBioSources (CSeq_descr& sdr);
+    void x_MergeDuplicateBioSources (CBioseq& bs);
+    void x_MergeDuplicateBioSources (CBioseq_set& bss);
+
 
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
@@ -266,6 +271,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2006/06/28 13:22:39  bollin
+ * added step to merge duplicate biosources to ExtendedCleanup
+ *
  * Revision 1.19  2006/06/27 18:43:02  bollin
  * added step for merging equivalent cit-sub publications to ExtendedCleanup
  *

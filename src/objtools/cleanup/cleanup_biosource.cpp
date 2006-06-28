@@ -39,6 +39,11 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <set>
 
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+
+#include <objects/general/Dbtag.hpp>
+
 #include "cleanupp.hpp"
 
 
@@ -267,6 +272,183 @@ void CCleanup_imp::BasicCleanup(CSubSource& ss)
 }
 
 
+// ExtendedCleanup methods
+// combine BioSource descriptors
+// Was MergeDupBioSources in C Toolkit
+void CCleanup_imp::x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_src)
+{
+    // merge genome
+    if ((!src.CanGetGenome() || src.GetGenome() == CBioSource::eGenome_unknown)
+        && add_src.CanGetGenome()) {
+        src.SetGenome(add_src.GetGenome());
+    }
+    // merge origin
+    if ((!src.CanGetOrigin() || src.GetOrigin() == CBioSource::eOrigin_unknown)
+        && add_src.CanGetOrigin()) {
+        src.SetOrigin(add_src.GetOrigin());
+    }
+    // merge focus
+    if ((!src.CanGetIs_focus() || !src.IsSetIs_focus())
+        && add_src.CanGetIs_focus()
+        && add_src.IsSetIs_focus()) {
+        src.SetIs_focus();
+    }
+    // merge subtypes
+    if (add_src.CanGetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, add_src.GetSubtype()) {
+            src.SetSubtype().push_back(*it);
+        }
+        add_src.ResetSubtype();
+    }
+    // merge in OrgRef
+    if (add_src.CanGetOrg() && src.CanGetOrg()) {
+        // merge modifiers
+        if (add_src.GetOrg().CanGetMod()) {
+            ITERATE (COrg_ref::TMod, it, add_src.GetOrg().GetMod()) {
+                src.SetOrg().SetMod().push_back(*it);
+            }
+            add_src.SetOrg().ResetMod();
+        }
+        // merge db
+        if (add_src.GetOrg().CanGetDb()) {
+            ITERATE (COrg_ref::TDb, it, add_src.GetOrg().GetDb()) {
+                src.SetOrg().SetDb().push_back(*it);
+            }
+            add_src.SetOrg().ResetDb();
+        }
+        // merge syn
+        if (add_src.GetOrg().CanGetSyn()) {
+            ITERATE (COrg_ref::TSyn, it, add_src.GetOrg().GetSyn()) {
+                src.SetOrg().SetSyn().push_back(*it);
+            }
+            add_src.SetOrg().ResetSyn();
+        }
+        // merge in orgname
+        if (add_src.GetOrg().CanGetOrgname()) {
+            if (!src.GetOrg().CanGetOrgname()) {
+                src.SetOrg().ResetOrgname();
+            }
+            if (add_src.GetOrg().GetOrgname().CanGetMod()) {
+                // merge mod
+                ITERATE (COrgName::TMod, it, add_src.GetOrg().GetOrgname().GetMod()) {
+                    src.SetOrg().SetOrgname().SetMod().push_back(*it);
+                }
+                add_src.SetOrg().SetOrgname().ResetMod();
+            }
+            
+            // merge gcode
+            if (add_src.GetOrg().GetOrgname().CanGetGcode()
+                && (!src.GetOrg().GetOrgname().CanGetGcode()
+                    || src.GetOrg().GetOrgname().GetGcode() == 0)) {
+                src.SetOrg().SetOrgname().SetGcode(add_src.GetOrg().GetOrgname().GetGcode());
+            }
+            // merge mgcode
+            if (add_src.GetOrg().GetOrgname().CanGetMgcode()
+                && (!src.GetOrg().GetOrgname().CanGetMgcode()
+                    || src.GetOrg().GetOrgname().GetMgcode() == 0)) {
+                src.SetOrg().SetOrgname().SetMgcode(add_src.GetOrg().GetOrgname().GetMgcode());
+            }
+            // merge lineage
+            if (add_src.GetOrg().GetOrgname().CanGetLineage()
+                && !NStr::IsBlank(add_src.GetOrg().GetOrgname().GetLineage())
+                && (!src.GetOrg().GetOrgname().CanGetLineage()
+                    || NStr::IsBlank(src.GetOrg().GetOrgname().GetLineage()))) {
+                src.SetOrg().SetOrgname().SetLineage(add_src.GetOrg().GetOrgname().GetLineage());
+            }
+            // merge div
+            if (add_src.GetOrg().GetOrgname().CanGetDiv()
+                && !NStr::IsBlank(add_src.GetOrg().GetOrgname().GetDiv())
+                && (!src.GetOrg().GetOrgname().CanGetDiv()
+                    || NStr::IsBlank(src.GetOrg().GetOrgname().GetDiv()))) {
+                src.SetOrg().SetOrgname().SetDiv(add_src.GetOrg().GetOrgname().GetDiv());
+            }
+        }
+    }    
+}
+
+
+void CCleanup_imp::x_MergeDuplicateBioSources (CSeq_descr& sdr)
+{
+    CSeq_descr::Tdata& current_list = sdr.Set();
+    CSeq_descr::Tdata new_list;    
+    
+    new_list.clear();
+ 
+    while (current_list.size() > 0) {
+        CRef< CSeqdesc > sd = current_list.back();
+        current_list.pop_back();
+        if ((*sd).Which() == CSeqdesc::e_Source 
+             && (*sd).GetSource().CanGetOrg()
+             && (*sd).GetSource().GetOrg().CanGetTaxname()
+             && !NStr::IsBlank((*sd).GetSource().GetOrg().GetTaxname())) {
+            bool found_match = false;
+            for (CSeq_descr::Tdata::iterator it = sdr.Set().begin();
+                 it != sdr.Set().end() && ! found_match; ++it) {
+                if ((**it).Which() == CSeqdesc::e_Source
+                    && (**it).GetSource().CanGetOrg()
+                    && (**it).GetSource().GetOrg().CanGetTaxname()
+                    && NStr::Equal((*sd).GetSource().GetOrg().GetTaxname(),
+                                   (**it).GetSource().GetOrg().GetTaxname())) {
+                    // add information from sd to **it     
+                    x_MergeDuplicateBioSources ((**it).SetSource(), (*sd).SetSource());                                   
+                    found_match = true;
+                }
+            }
+            if (!found_match) {
+               new_list.push_front(sd);
+            }
+        } else {
+            new_list.push_front(sd);
+        }
+    }
+    
+    while (new_list.size() > 0) {
+        CRef< CSeqdesc > sd = new_list.front();
+        new_list.pop_front();
+        current_list.push_back (sd);
+    }
+}
+
+
+void CCleanup_imp::x_MergeDuplicateBioSources(CBioseq& bs)
+{
+    if (bs.IsSetDescr()) {
+        x_MergeDuplicateBioSources(bs.SetDescr());
+        if (bs.SetDescr().Set().empty()) {
+            bs.ResetDescr();
+        }
+    }
+}
+
+
+void CCleanup_imp::x_MergeDuplicateBioSources(CBioseq_set& bss)
+{
+    if (bss.IsSetDescr()) {
+        x_MergeDuplicateBioSources(bss.SetDescr());
+        if (bss.SetDescr().Set().empty()) {
+            bss.ResetDescr();
+        }
+    }
+    if (bss.IsSetSeq_set()) {
+        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            switch (se.Which()) {
+                case CSeq_entry::e_Seq:
+                    x_MergeDuplicateBioSources(se.SetSeq());
+                    break;
+                case CSeq_entry::e_Set:
+                    x_MergeDuplicateBioSources(se.SetSet());
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -275,6 +457,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/06/28 13:22:39  bollin
+ * added step to merge duplicate biosources to ExtendedCleanup
+ *
  * Revision 1.2  2006/03/23 18:30:56  rsmith
  * cosmetic and comment changes.
  *
