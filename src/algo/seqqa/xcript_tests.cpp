@@ -520,8 +520,24 @@ static void s_PrematureStopCodon(const CSeq_id& id, const CSeqTestContext* ctx,
     CSeqVector vec(feat_iter->GetLocation(), ctx->GetScope());
     vec.SetIupacCoding();
 
+    TSeqPos start_translating;
+    switch (feat_iter->GetData().GetCdregion().GetFrame()) {
+    case CCdregion::eFrame_not_set:
+    case CCdregion::eFrame_one:
+        start_translating = 0;
+        break;
+    case CCdregion::eFrame_two:
+        start_translating = 1;
+        break;
+    case CCdregion::eFrame_three:
+        start_translating = 2;
+        break;
+    default:
+        _ASSERT(false);
+    }
+
     bool premature_stop_found = false;
-    for (TSeqPos i = 0;  i < vec.size() - 3;  i += 3) {
+    for (TSeqPos i = start_translating;  i < vec.size() - 3;  i += 3) {
         if (tbl.IsOrfStop(tbl.SetCodonState(vec[i], vec[i + 1],
                                             vec[i + 2]))) {
             if (!premature_stop_found) {
@@ -908,6 +924,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/06/29 19:38:12  jcherry
+ * Take annotated frame into account when looking for premature stop codon.
+ *
  * Revision 1.23  2006/04/12 15:11:38  jcherry
  * Fix for Kozak strength for starts at very 3' end
  *
