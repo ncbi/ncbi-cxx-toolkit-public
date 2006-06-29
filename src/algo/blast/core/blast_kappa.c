@@ -112,11 +112,10 @@ s_HSPListNormalizeScores(BlastHSPList * hsp_list,
  *
  * @param hsp_list           the hitlist whose E-values need to be adjusted
  * @param comp_p_value      P-value from sequence composition
- * @param search            is the structure with all the information about
- *                          the search
- * @param matching_sequence_length length of database sequence
- * @param dblen_eff         effective database length
- * @param length_adjustment  length_adjustment for E-values
+ * @param seqSrc            a source of sequence data
+ * @param subject_length    length of database sequence
+ * @param query_context     info about this query context; needed when
+ *                          multiple queries are being used
  * @param LambdaRatio       the ratio between the observed value of Lambda
  *                          and the predicted value of lambda (used to print
  *                          diagnostics)
@@ -364,9 +363,12 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
  * @param *pbestScore      best (highest) score in the list
  * @param *pbestEvalue     best (lowest) evalue in the list
  * @param hsp_list         the list
+ * @param seqSrc            a source of sequence data
  * @param subject_length   length of the subject sequence
  * @param program_number   the type of BLAST search being performed
  * @param queryInfo        information about the queries
+ * @param query_index      the index of the query corresponding to 
+ *                         the HSPs in hsp_list
  * @param sbp              the score block for this search
  * @param hitParams        parameters used to assign evalues and
  *                         decide whether to save hits.
