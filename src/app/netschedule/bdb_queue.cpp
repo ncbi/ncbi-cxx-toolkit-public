@@ -1134,18 +1134,44 @@ CQueueDataBase::CQueue::x_PrintShortJobDbStat(SQueueDB&     db,
 
 
 void 
-CQueueDataBase::CQueue::PrintJobDbStat(unsigned job_id, CNcbiOstream & out)
+CQueueDataBase::CQueue::PrintJobDbStat(unsigned job_id, 
+                                       CNcbiOstream & out,
+                                       CNetScheduleClient::EJobStatus status)
 {
-    SQueueDB& db = m_LQueue.db;
-    CFastMutexGuard guard(m_LQueue.lock);
-    db.SetTransaction(0);
-    db.id = job_id;
-    if (db.Fetch() == eBDB_Ok) {
-        x_PrintJobDbStat(db, out);
+    if (status == CNetScheduleClient::eJobNotFound) {
+        SQueueDB& db = m_LQueue.db;
+        CFastMutexGuard guard(m_LQueue.lock);
+        db.SetTransaction(0);
+        db.id = job_id;
+        if (db.Fetch() == eBDB_Ok) {
+            x_PrintJobDbStat(db, out);
+        } else {
+            out << "Job not found id=" << job_id;
+        }
+        out << "\n";
     } else {
-        out << "Job not found id=" << job_id;
+        CNetScheduler_JobStatusTracker::TBVector bv;
+        m_LQueue.status_tracker.StatusSnapshot(status, &bv);
+        SQueueDB& db = m_LQueue.db;
+
+        CNetScheduler_JobStatusTracker::TBVector::enumerator en(bv.first());
+        for (;en.valid(); ++en) {
+            unsigned id = *en;
+            {{
+            CFastMutexGuard guard(m_LQueue.lock);
+	        db.SetTransaction(0);
+            
+            db.id = id;
+
+            if (db.Fetch() == eBDB_Ok) {
+                x_PrintJobDbStat(db, out);
+            }
+            }}
+            
+        } // for
+        out << "\n";
+
     }
-    out << "\n";
 }
 
 void CQueueDataBase::CQueue::PrintJobStatusMatrix(CNcbiOstream & out)
@@ -3826,6 +3852,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2006/06/29 21:09:33  kuznets
+ * Added queue dump by status(pending, running, etc)
+ *
  * Revision 1.86  2006/06/27 15:39:42  kuznets
  * Added int mask to jobs to carry flags(like exclusive)
  *

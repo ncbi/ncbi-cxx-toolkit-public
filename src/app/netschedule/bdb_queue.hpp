@@ -353,7 +353,11 @@ public:
                         const string& host,
                         unsigned      port);
 
-        void PrintJobDbStat(unsigned job_id, CNcbiOstream & out);
+        /// Queue dump
+        void PrintJobDbStat(unsigned job_id, 
+                            CNcbiOstream & out,
+                            CNetScheduleClient::EJobStatus status 
+                                        = CNetScheduleClient::eJobNotFound);
         /// Dump all job records
         void PrintAllJobDbStat(CNcbiOstream & out);
 
@@ -570,6 +574,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/06/29 21:09:33  kuznets
+ * Added queue dump by status(pending, running, etc)
+ *
  * Revision 1.51  2006/06/27 15:39:42  kuznets
  * Added int mask to jobs to carry flags(like exclusive)
  *

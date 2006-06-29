@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.12.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.12.1  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1661,23 +1661,52 @@ void CNetScheduleServer::ProcessDump(CSocket&                sock,
         queue.PrintAllJobDbStat(ios);
         ios << "OK:END";
     } else {
-        unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+        try {
+            unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
 
-        CNetScheduleClient::EJobStatus status = queue.GetStatus(job_id);
-        
-        string st_str = CNetScheduleClient::StatusToString(status);
-        st_str = "[Job status matrix]:" + st_str;
-        WriteMsg(sock, "OK:", st_str.c_str());
+            CNetScheduleClient::EJobStatus status = queue.GetStatus(job_id);
+            
+            string st_str = CNetScheduleClient::StatusToString(status);
+            st_str = "[Job status matrix]:" + st_str;
+            WriteMsg(sock, "OK:", st_str.c_str());
 
-        SOCK sk = sock.GetSOCK();
-        sock.SetOwnership(eNoOwnership);
-        sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+            SOCK sk = sock.GetSOCK();
+            sock.SetOwnership(eNoOwnership);
+            sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
 
-        CConn_SocketStream ios(sk);
+            CConn_SocketStream ios(sk);
 
-        ios << "OK:[Job DB]:\n";
-        queue.PrintJobDbStat(job_id, ios);
-        ios << "OK:END";
+            ios << "OK:[Job DB]:\n";
+            queue.PrintJobDbStat(job_id, ios);
+            ios << "OK:END";
+        } 
+        catch (CException& ex)
+        {
+            // dump by status
+            CNetScheduleClient::EJobStatus 
+                job_status = CNetScheduleClient::StringToStatus(req.job_key_str);
+
+            if (job_status == CNetScheduleClient::eJobNotFound) {
+                string err_msg = "Status unknown: " + req.job_key_str;
+                WriteMsg(sock, "ERR:", err_msg.c_str());
+                return;
+            }
+
+            SOCK sk = sock.GetSOCK();
+            sock.SetOwnership(eNoOwnership);
+            sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+
+            CConn_SocketStream ios(sk);  // sock is being passed and used exclusively
+
+/*
+            queue.PrintQueue(ios, 
+                            job_status,
+                            m_Host,
+                            GetPort());
+*/
+            ios << "OK:END";
+
+        }
     }
 }
 
@@ -2952,6 +2981,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2006/06/29 21:09:33  kuznets
+ * Added queue dump by status(pending, running, etc)
+ *
  * Revision 1.92  2006/06/27 15:39:42  kuznets
  * Added int mask to jobs to carry flags(like exclusive)
  *
