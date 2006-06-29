@@ -101,6 +101,9 @@ public:
     CNcbiOstream& WriteHeader(void) const;
     CNcbiOstream& WriteHeader(CNcbiOstream& os) const;
 
+    void SetTrackingCookie(const string& name, const string& value,
+                           const string& domain, const string& path,
+                           const CTime& exp_time = CTime());
 protected:
     static const string sm_ContentTypeName;     // Content type header name
     static const string sm_LocationName;        // Location header name
@@ -122,6 +125,7 @@ protected:
 
 private:
     const CCgiSession* m_Session;
+    auto_ptr<CCgiCookie> m_TrackingCookie;
 
 public:
     void x_SetSession(const CCgiSession& session);
@@ -211,6 +215,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2006/06/29 14:32:43  didenko
+ * Added tracking cookie
+ *
  * Revision 1.20  2005/12/19 16:55:04  didenko
  * Improved CGI Session implementation
  *

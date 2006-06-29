@@ -525,9 +525,11 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 client = req.GetProperty(eCgi_RemoteAddr);
             }
             GetDiagContext().SetProperty("client_ip", client);
-            GetDiagContext().SetProperty("session_id",
-                                         req.GetSession(CCgiRequest::eDontLoad)
-                                               .RetrieveSessionId());
+            //            GetDiagContext().SetProperty("session_id",
+            //                                         req.GetSession(CCgiRequest::eDontLoad)
+            //                                               .RetrieveSessionId());
+            GetDiagContext().SetProperty("session_id", m_Context->RetrieveTrackingId());
+
 
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
@@ -565,6 +567,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 GetDiagContext().PrintRequestStop();
             }
             GetDiagContext().SetProperty("client_ip", kEmptyStr);
+            //            GetDiagContext().SetProperty("session_id", kEmptyStr);
             GetDiagContext().SetProperty("session_id", kEmptyStr);
             break;
         }
@@ -1122,6 +1125,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.79  2006/06/29 14:32:43  didenko
+* Added tracking cookie
+*
 * Revision 1.78  2006/06/28 19:54:29  grichenk
 * Use /etc/toolkitrc to map dir to port
 *

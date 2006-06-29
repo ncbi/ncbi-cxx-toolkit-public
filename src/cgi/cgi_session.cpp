@@ -52,7 +52,7 @@ CCgiSession::CCgiSession(const CCgiRequest& request,
 {
     if (impl_owner == eTakeOwnership)
         m_ImplGuard.reset(m_Impl);
-    m_Status = m_Impl ? eNotLoaded : eImplNotSet;
+    m_Status = eNotLoaded;
 }
 
 CCgiSession::~CCgiSession()
@@ -84,14 +84,14 @@ void CCgiSession::SetId(const string& id)
         m_Status = eNotLoaded;
     }
     m_SessionId = id;
-    GetDiagContext().SetProperty("session_id", m_SessionId);
+    //GetDiagContext().SetProperty("session_id", m_SessionId);
 }
 
 void CCgiSession::ModifyId(const string& new_session_id)
 {
     if (m_SessionId == new_session_id)
         return;
-    if (m_Status == eImplNotSet)
+    if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
                    "The session implemetatin is not set");
     if (m_Status != eLoaded && m_Status != eNew)
@@ -99,14 +99,14 @@ void CCgiSession::ModifyId(const string& new_session_id)
                    "The Session must be load.");
     m_Impl->ModifySessionId(new_session_id);
     m_SessionId = new_session_id;
-    GetDiagContext().SetProperty("session_id", m_SessionId);
+    //GetDiagContext().SetProperty("session_id", m_SessionId);
 }
 
 void CCgiSession::Load()
 {
     if (m_Status == eLoaded || m_Status == eNew)
         return;
-    if (m_Status == eImplNotSet)
+    if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
                    "The session implemetatin is not set");
     if (m_Status == eDeleted)
@@ -121,11 +121,11 @@ void CCgiSession::CreateNewSession()
 {
     if (m_Status == eLoaded || m_Status == eNew)
         m_Impl->Reset();
-    if (m_Status == eImplNotSet)
+    if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
                    "The session implemetatin is not set");
     m_SessionId = m_Impl->CreateNewSession();
-    GetDiagContext().SetProperty("session_id", m_SessionId);
+    //GetDiagContext().SetProperty("session_id", m_SessionId);
     m_Status = eNew;
 }
 
@@ -175,7 +175,7 @@ void CCgiSession::DeleteSession()
     }
     Load();
     m_Impl->DeleteSession();
-    GetDiagContext().SetProperty("session_id", kEmptyStr);;
+    //GetDiagContext().SetProperty("session_id", kEmptyStr);;
     m_Status = eDeleted;
 }
 
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/29 14:32:43  didenko
+ * Added tracking cookie
+ *
  * Revision 1.10  2006/06/27 20:08:27  golikov
  * condition fix
  *

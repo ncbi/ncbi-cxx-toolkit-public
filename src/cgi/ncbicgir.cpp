@@ -192,6 +192,9 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
             const_cast<CCgiResponse*>(this)->Cookies().Add(*scookie);
         }
     }
+    if (m_TrackingCookie.get()) {
+        const_cast<CCgiResponse*>(this)->Cookies().Add(*m_TrackingCookie);
+    }
     
     // Cookies (if any)
     if ( !Cookies().Empty() ) {
@@ -216,12 +219,24 @@ void CCgiResponse::Flush(void) const
     out() << NcbiFlush;
 }
 
+void CCgiResponse::SetTrackingCookie(const string& name, const string& value,
+                                     const string& domain, const string& path,
+                                     const CTime& exp_time)
+{
+    m_TrackingCookie.reset(new CCgiCookie(name,value,domain,path));
+    if (!exp_time.IsEmpty())
+        m_TrackingCookie->SetExpTime(exp_time);
+}
+
 END_NCBI_SCOPE
 
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2006/06/29 14:32:43  didenko
+* Added tracking cookie
+*
 * Revision 1.25  2005/12/19 16:55:04  didenko
 * Improved CGI Session implementation
 *

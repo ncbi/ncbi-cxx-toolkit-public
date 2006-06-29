@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_util.hpp>
@@ -97,6 +98,10 @@ CNcbiOstream& CCtxMsgString::Write(CNcbiOstream& os) const
 //  CCgiContext::
 //
 
+const string kDefaultTrackingIdName = "ncbi_trackingid";
+const string kDefaultTrackingCookieDomain = ".ncbi.nlm.nih.gov";
+const string kDefaultTrackingCookiePath = "/";
+
 CCgiContext::CCgiContext(CCgiApplication&        app,
                          const CNcbiArguments*   args,
                          const CNcbiEnvironment* env,
@@ -146,6 +151,20 @@ void CCgiContext::x_InitSession()
 
     m_Request->x_SetSession(*m_Session);
     m_Response.x_SetSession(*m_Session);
+    bool enable_tracking = m_App.GetConfig().
+        GetBool("CGI", "EnableTracking", true, 0, CNcbiRegistry::eReturn);
+    if(enable_tracking) {
+        string track_cookie_name = m_App.GetConfig().
+            GetString("CGI", "TrackingCookieName", kDefaultTrackingIdName);
+        string track_cookie_domain = m_App.GetConfig().
+            GetString("CGI", "TrackingCookieDomain", kDefaultTrackingCookieDomain);
+        string track_cookie_path = m_App.GetConfig().
+            GetString("CGI", "TrackingCookiePath", kDefaultTrackingCookiePath);
+        string track_cookie_value = RetrieveTrackingId();
+        m_Response.SetTrackingCookie(track_cookie_name, track_cookie_value,
+                                     track_cookie_domain, track_cookie_path);
+    }
+
 }
 
 CCgiContext::~CCgiContext(void)
@@ -317,6 +336,26 @@ CCgiContext::GetStreamStatus(STimeout* timeout) const
 #endif
 }
 
+string CCgiContext::RetrieveTrackingId() const
+{
+    bool enable_tracking = m_App.GetConfig().
+        GetBool("CGI", "EnableTracking", true, 0, CNcbiRegistry::eReturn);
+    if(!enable_tracking) 
+        return "";
+
+    string track_cookie_name = m_App.GetConfig().
+        GetString("CGI", "TrackingCookieName", kDefaultTrackingIdName);
+    const CCgiCookies& cookies = m_Request->GetCookies();
+    const CCgiCookie* cookie = cookies.Find(track_cookie_name, kEmptyStr, kEmptyStr); 
+    
+    if (cookie) {
+        return cookie->GetValue();
+    } else {
+        CDiagContext& dcontext = GetDiagContext();
+        return dcontext.GetStringUID();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -324,6 +363,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.49  2006/06/29 14:32:43  didenko
+* Added tracking cookie
+*
 * Revision 1.48  2006/06/08 15:58:10  didenko
 * Added possibility to set an expiration date for a session cookie
 *

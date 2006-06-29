@@ -214,6 +214,7 @@ public:
     TStreamStatus GetStreamStatus(STimeout* timeout) const;
     TStreamStatus GetStreamStatus(void) const; // supplies {0,0}
 
+    string RetrieveTrackingId() const;
 private:
     CCgiServerContext& x_GetServerContext(void) const;
     void x_InitSession();
@@ -412,6 +413,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.36  2006/06/29 14:32:43  didenko
+* Added tracking cookie
+*
 * Revision 1.35  2006/06/08 15:58:10  didenko
 * Added possibility to set an expiration date for a session cookie
 *
