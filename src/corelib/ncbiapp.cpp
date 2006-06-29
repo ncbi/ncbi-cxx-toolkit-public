@@ -408,7 +408,8 @@ int CNcbiApplication::AppMain
             // IsSetOldPostFormat() uses the registry and should not be
             // called before LoadConfig().
             if ( !CDiagContext::IsSetOldPostFormat() ) {
-                GetDiagContext().SetProperty("app_name", appname);
+                GetDiagContext().SetProperty(
+                    CDiagContext::kProperty_AppName, appname);
             }
 
             // Setup the standard features from the config file.
@@ -1162,7 +1163,7 @@ void CNcbiApplication::AppStart(void)
 
 void CNcbiApplication::AppStop(int exit_code)
 {
-    GetDiagContext().SetProperty("exit_code",
+    GetDiagContext().SetProperty(CDiagContext::kProperty_ExitCode,
         NStr::IntToString(exit_code));
 }
 
@@ -1180,6 +1181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.125  2006/06/29 16:02:21  grichenk
+ * Added constants for setting CDiagContext properties.
+ *
  * Revision 1.124  2006/06/09 15:46:06  ucko
  * Add a protected SetExitCode method that can be used to force AppMain
  * to return a specified value, either unconditionally or only on

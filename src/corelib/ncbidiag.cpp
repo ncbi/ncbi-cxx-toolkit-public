@@ -270,6 +270,7 @@ CDiagContext::CDiagContext(void)
 
 CDiagContext::~CDiagContext(void)
 {
+    delete m_StopWatch;
 }
 
 
@@ -377,27 +378,29 @@ void CDiagContext::PrintRequestStop(void) const
 }
 
 
-const char* kProperty_HostName    = "host";
-const char* kProperty_HostIP      = "host_ip_addr";
-const char* kProperty_ClientIP    = "client_ip";
-const char* kProperty_SessionID   = "session_id";
-const char* kProperty_AppName     = "app_name";
-const char* kProperty_ExitSig     = "exit_signal";
-const char* kProperty_ExitCode    = "exit_code";
-const char* kProperty_ReqStatus   = "request_status";
-const char* kProperty_ReqTime     = "request_time";
-const char* kProperty_BytesRd     = "bytes_rd";
-const char* kProperty_BytesWr     = "bytes_wr";
+const char* CDiagContext::kProperty_UserName    = "user";
+const char* CDiagContext::kProperty_HostName    = "host";
+const char* CDiagContext::kProperty_HostIP      = "host_ip_addr";
+const char* CDiagContext::kProperty_ClientIP    = "client_ip";
+const char* CDiagContext::kProperty_SessionID   = "session_id";
+const char* CDiagContext::kProperty_AppName     = "app_name";
+const char* CDiagContext::kProperty_ExitSig     = "exit_signal";
+const char* CDiagContext::kProperty_ExitCode    = "exit_code";
+const char* CDiagContext::kProperty_ReqStatus   = "request_status";
+const char* CDiagContext::kProperty_ReqTime     = "request_time";
+const char* CDiagContext::kProperty_BytesRd     = "bytes_rd";
+const char* CDiagContext::kProperty_BytesWr     = "bytes_wr";
 
 
 static string s_GetHost(void)
 {
     // Check context properties
-    string ret = GetDiagContext().GetProperty(kProperty_HostName);
+    string ret = GetDiagContext().GetProperty(
+        CDiagContext::kProperty_HostName);
     if ( !ret.empty() )
         return ret;
 
-    ret = GetDiagContext().GetProperty(kProperty_HostIP);
+    ret = GetDiagContext().GetProperty(CDiagContext::kProperty_HostIP);
     if ( !ret.empty() )
         return ret;
 
@@ -527,13 +530,13 @@ void CDiagContext::SetOldPostFormat(bool value)
 
 void CDiagContext::SetUsername(const string& username)
 {
-    SetProperty("username", username);
+    SetProperty(kProperty_UserName, username);
 }
 
 
 void CDiagContext::SetHostname(const string& hostname)
 {
-    SetProperty("hostname", hostname);
+    SetProperty(kProperty_HostName, hostname);
 }
 
 
@@ -2803,6 +2806,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.122  2006/06/29 16:02:21  grichenk
+ * Added constants for setting CDiagContext properties.
+ *
  * Revision 1.121  2006/06/19 20:24:32  grichenk
  * Changed time format to Y/M/D:h:m:s.
  *

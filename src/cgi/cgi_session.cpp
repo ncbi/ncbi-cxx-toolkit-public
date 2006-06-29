@@ -84,7 +84,8 @@ void CCgiSession::SetId(const string& id)
         m_Status = eNotLoaded;
     }
     m_SessionId = id;
-    //GetDiagContext().SetProperty("session_id", m_SessionId);
+    //GetDiagContext().SetProperty(
+    //    CDiagContext::kProperty_SessionID, m_SessionId);
 }
 
 void CCgiSession::ModifyId(const string& new_session_id)
@@ -99,7 +100,8 @@ void CCgiSession::ModifyId(const string& new_session_id)
                    "The Session must be load.");
     m_Impl->ModifySessionId(new_session_id);
     m_SessionId = new_session_id;
-    //GetDiagContext().SetProperty("session_id", m_SessionId);
+    //GetDiagContext().SetProperty(
+    //    CDiagContext::kProperty_SessionID, m_SessionId);
 }
 
 void CCgiSession::Load()
@@ -125,7 +127,8 @@ void CCgiSession::CreateNewSession()
         NCBI_THROW(CCgiSessionException, eImplNotSet,
                    "The session implemetatin is not set");
     m_SessionId = m_Impl->CreateNewSession();
-    //GetDiagContext().SetProperty("session_id", m_SessionId);
+    //GetDiagContext().SetProperty(
+    //    CDiagContext::kProperty_SessionID, m_SessionId);
     m_Status = eNew;
 }
 
@@ -175,7 +178,8 @@ void CCgiSession::DeleteSession()
     }
     Load();
     m_Impl->DeleteSession();
-    //GetDiagContext().SetProperty("session_id", kEmptyStr);;
+    //GetDiagContext().SetProperty(
+    //    CDiagContext::kProperty_SessionID, kEmptyStr);;
     m_Status = eDeleted;
 }
 
@@ -240,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/06/29 16:02:21  grichenk
+ * Added constants for setting CDiagContext properties.
+ *
  * Revision 1.11  2006/06/29 14:32:43  didenko
  * Added tracking cookie
  *

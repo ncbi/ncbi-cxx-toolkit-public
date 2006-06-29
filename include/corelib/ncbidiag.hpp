@@ -438,12 +438,34 @@ public:
     /// Forced dump of all set properties.
     void PrintProperties(void) const;
 
-    /// Print start message. If the following values are set as properties,
-    /// they will be dumped before the message:
+    static const char* kProperty_UserName;
+    static const char* kProperty_HostName;
+    static const char* kProperty_HostIP;
+    static const char* kProperty_ClientIP;
+    static const char* kProperty_SessionID;
+    static const char* kProperty_AppName;
+    static const char* kProperty_ExitSig;
+    static const char* kProperty_ExitCode;
+    static const char* kProperty_ReqStatus;
+    static const char* kProperty_ReqTime;
+    static const char* kProperty_BytesRd;
+    static const char* kProperty_BytesWr;
+
+    /// Print start/stop etc. message. If the following values are set as
+    /// properties, they will be dumped before the message:
     ///   host | host_ip_addr
     ///   client_ip
     ///   session_id
     ///   app_name
+    /// All messages have the following prefix:
+    ///   PID/TID/ITER UID TIME HOST CLIENT SESSION_ID APP_NAME
+    /// Depending on its type, a message can be prefixed with the following
+    /// properties if they are set:
+    ///   start
+    ///   stop [SIG] [EXIT_CODE] ELAPSED_TIME
+    ///   extra
+    ///   request-start
+    ///   request-stop [STATUS] [REQ_ELAPSED_TIME] [BYTES_RD] [BYTES_WR]
     void PrintStart(const string& message) const;
     /// Print exit message.
     void PrintStop(void) const;
@@ -1535,6 +1557,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.109  2006/06/29 16:02:20  grichenk
+ * Added constants for setting CDiagContext properties.
+ *
  * Revision 1.108  2006/06/06 16:44:07  grichenk
  * Added SetDoubleDiagHandler().
  * Added Severity().

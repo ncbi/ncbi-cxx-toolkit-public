@@ -524,12 +524,13 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             if ( client.empty() ) {
                 client = req.GetProperty(eCgi_RemoteAddr);
             }
-            GetDiagContext().SetProperty("client_ip", client);
-            //            GetDiagContext().SetProperty("session_id",
-            //                                         req.GetSession(CCgiRequest::eDontLoad)
-            //                                               .RetrieveSessionId());
-            GetDiagContext().SetProperty("session_id", m_Context->RetrieveTrackingId());
-
+            GetDiagContext().SetProperty(
+                CDiagContext::kProperty_ClientIP, client);
+            //GetDiagContext().SetProperty(CDiagContext::kProperty_SessionID,
+            //                             req.GetSession(CCgiRequest::eDontLoad)
+            //                                   .RetrieveSessionId());
+            GetDiagContext().SetProperty(CDiagContext::kProperty_SessionID,
+                m_Context->RetrieveTrackingId());
 
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
@@ -544,31 +545,32 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
     case eError:
     case eException:
         {
-            GetDiagContext().SetProperty("request_status",
+            GetDiagContext().SetProperty(CDiagContext::kProperty_ReqStatus,
                 NStr::IntToString(m_HTTPStatus));
             if ( m_InputStream.get() ) {
                 if ( m_InputStream->eof() ) {
                     m_InputStream->clear();
                 }
-                GetDiagContext().SetProperty("bytes_rd",
+                GetDiagContext().SetProperty(CDiagContext::kProperty_BytesRd,
                     NStr::IntToString(m_InputStream->tellg()));
             }
             if ( m_OutputStream.get() ) {
-                GetDiagContext().SetProperty("bytes_wr",
+                GetDiagContext().SetProperty(CDiagContext::kProperty_BytesWr,
                     NStr::IntToString(m_OutputStream->tellp()));
             }
             break;
         }
     case eEndRequest:
         {
-            GetDiagContext().SetProperty("request_time",
+            GetDiagContext().SetProperty(CDiagContext::kProperty_ReqTime,
                 m_RequestTimer.AsString());
             if ( !CDiagContext::IsSetOldPostFormat() ) {
                 GetDiagContext().PrintRequestStop();
             }
-            GetDiagContext().SetProperty("client_ip", kEmptyStr);
-            //            GetDiagContext().SetProperty("session_id", kEmptyStr);
-            GetDiagContext().SetProperty("session_id", kEmptyStr);
+            GetDiagContext().SetProperty(
+                CDiagContext::kProperty_ClientIP, kEmptyStr);
+            GetDiagContext().SetProperty(
+                CDiagContext::kProperty_SessionID, kEmptyStr);
             break;
         }
     case eExit:
@@ -897,7 +899,7 @@ void CCgiApplication::AppStart(void)
 
 void CCgiApplication::AppStop(int exit_code)
 {
-    GetDiagContext().SetProperty("exit_code",
+    GetDiagContext().SetProperty(CDiagContext::kProperty_ExitCode,
         NStr::IntToString(exit_code));
 }
 
@@ -1125,6 +1127,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.80  2006/06/29 16:02:21  grichenk
+* Added constants for setting CDiagContext properties.
+*
 * Revision 1.79  2006/06/29 14:32:43  didenko
 * Added tracking cookie
 *

@@ -509,9 +509,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             if (x_result != 0)
                 (*result)++;
             FCGX_SetExitStatus(x_result, pfout);
-            GetDiagContext().SetProperty("bytes_rd",
+            GetDiagContext().SetProperty(CDiagContext::kProperty_BytesRd,
                                          NStr::IntToString(ibuf.GetCount()));
-            GetDiagContext().SetProperty("bytes_wr",
+            GetDiagContext().SetProperty(CDiagContext::kProperty_BytesWr,
                                          NStr::IntToString(obuf.GetCount()));
             x_OnEvent(x_result == 0 ? eSuccess : eError, x_result);
         }
@@ -629,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.62  2006/06/29 16:02:21  grichenk
+ * Added constants for setting CDiagContext properties.
+ *
  * Revision 1.61  2006/05/31 22:17:12  ucko
  * s_ShouldRestart: if restart_reason is already set, don't continue to
  * check for (or log) circumstances calling for a restart.
