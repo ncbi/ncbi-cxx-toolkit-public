@@ -1345,6 +1345,8 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
         }
         }
         break;
+    default:
+        break;
 
     } // switch
 
@@ -2981,6 +2983,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2006/06/29 21:24:45  kuznets
+ * cosmetics
+ *
  * Revision 1.93  2006/06/29 21:09:33  kuznets
  * Added queue dump by status(pending, running, etc)
  *
