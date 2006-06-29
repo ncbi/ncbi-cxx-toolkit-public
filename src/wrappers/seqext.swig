@@ -221,6 +221,7 @@ objmgr/util/weight.hpp
 objmgr/util/seq_loc_util.hpp
 
 objtools/cleanup/cleanup.hpp
+objtools/cleanup/cleanup_change.hpp
 
 objtools/edit/edit_exception.hpp
 objtools/edit/promote.hpp
@@ -331,6 +332,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/06/29 18:06:03  jcherry
+ * Added objtools/cleanup/cleanup_change.hpp
+ *
  * Revision 1.16  2006/04/27 22:13:51  jcherry
  * Added objtools/readers/rm_reader.hpp (RepeatMasker output reader)
  *
