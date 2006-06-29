@@ -43,14 +43,17 @@ extern "C" {
 
 /* Some characters in the NCBIstdaa alphabet, including ambiguity
    characters, selenocysteine and the stop character. */
-enum { eGapChar = 0, eBchar = 2, eDchar = 4, eEchar = 5, eNchar = 13,
-       eQchar = 15, eXchar = 21, eZchar = 23, eSelenocysteine = 24,
-       eStopChar = 25};
+enum { eGapChar = 0, eBchar = 2,  eDchar = 4,  eEchar = 5, eIchar = 9,
+       eLchar = 11,  eNchar = 13, eQchar = 15, eXchar = 21,
+       eZchar = 23,  eSelenocysteine = 24, eStopChar = 25,
+       eOchar = 26,  eJchar = 27};
 
 /**
- * Represents the composition of an amino-acid sequence */
+ * Represents the composition of an amino-acid sequence, in the ncbistdaa
+ * alphabet. */
 typedef struct Blast_AminoAcidComposition {
-    double prob[COMPO_PROTEIN_ALPHABET];   /**< probabilities of each amino acid */
+    /** probabilities of each amino acid */
+    double prob[COMPO_LARGEST_ALPHABET];
     int numTrueAminoAcids;   /**< number of true amino acids in the sequence,
                                   omitting nonstandard amino acids */
 } Blast_AminoAcidComposition;
@@ -66,6 +69,7 @@ typedef struct Blast_AminoAcidComposition {
  */
 NCBI_XBLAST_EXPORT
 void Blast_ReadAaComposition(Blast_AminoAcidComposition * composition,
+                             int alphsize,
                              const Uint1 * sequence, int length);
 
 
@@ -77,6 +81,8 @@ typedef struct Blast_MatrixInfo {
                                     scores */
     int      rows;             /**< the number of rows in the scoring
                                     matrix. */
+    int      cols;             /**< the number of columns in the scoring
+                                    matrix, i.e. the alphabet size. */
     int      positionBased;    /**< is the matrix position-based */
     double   ungappedLambda;   /**< ungapped Lambda value for this matrix
                                     in standard context */
@@ -91,7 +97,7 @@ typedef struct Blast_MatrixInfo {
  *  @param positionBased  is this matrix position-based?
  */
 NCBI_XBLAST_EXPORT
-Blast_MatrixInfo * Blast_MatrixInfoNew(int rows, int positionBased);
+Blast_MatrixInfo * Blast_MatrixInfoNew(int rows, int cols, int positionBased);
 
 
 /** Free memory associated with a Blast_MatrixInfo object */
@@ -227,6 +233,7 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
  */
 NCBI_XBLAST_EXPORT
 int Blast_CompositionMatrixAdj(int ** matrix,
+                               int alphsize,
                                EMatrixAdjustRule matrix_adjust_rule,
                                int length1, int length2,
                                const double *probArray1,
@@ -287,11 +294,13 @@ Blast_AdjustScores(Int4 ** matrix,
  * score frequencies.
  *
  * @param matrix       the preallocated matrix
+ * @param size         size of the matrix
  * @param freq         a set of score frequencies
  * @param Lambda       the desired scale of the matrix
  */
 NCBI_XBLAST_EXPORT
-void Blast_Int4MatrixFromFreq(Int4 **matrix, double ** freq, double Lambda);
+void Blast_Int4MatrixFromFreq(Int4 **matrix, int size, 
+                              double ** freq, double Lambda);
 
 
 /**
@@ -377,22 +386,22 @@ void Blast_CalcFreqRatios(double ** ratios, int alphsize,
 /**
  * Find the weighted average of a set of observed probabilities with a
  * set of "background" probabilities.  All array parameters have
- * length COMPO_NUM_TRUE_AA.
+ * length COMPO_NUM_TRUE_AA (i.e. 20).
  *
- * @param probs                   on entry, observed probabilities; on
+ * @param probs20                 on entry, observed probabilities; on
  *                                exit, weighted average probabilities.
  * @param number_of_observations  the number of characters used to
  *                                form the observed_freq array
- * @param background_probs        the probability of characters in a
+ * @param background_probs20      the probability of characters in a
  *                                standard sequence.
  * @param pseudocounts            the number of "standard" characters
  *                                to be added to form the weighted
  *                                average.
  */
 NCBI_XBLAST_EXPORT
-void Blast_ApplyPseudocounts(double * probs,
+void Blast_ApplyPseudocounts(double * probs20,
                              int number_of_observations,
-                             const double * background_probs,
+                             const double * background_probs20,
                              int pseudocounts);
 
 /**

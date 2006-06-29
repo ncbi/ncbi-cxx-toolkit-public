@@ -791,6 +791,7 @@ s_WindowsFromAligns(BlastCompo_Alignment * alignments,
  */
 static void
 s_GetSubjectComposition(Blast_AminoAcidComposition * subject_composition,
+                        int alphsize,
                         BlastCompo_SequenceData * subject,
                         BlastCompo_SequenceRange * subject_range,
                         BlastCompo_Alignment * align)
@@ -824,8 +825,8 @@ s_GetSubjectComposition(Blast_AminoAcidComposition * subject_composition,
         Blast_GetCompositionRange(&left, &right, subject_data, length,
                                   start, finish);
     }
-    Blast_ReadAaComposition(subject_composition, &subject_data[left],
-                            right - left);
+    Blast_ReadAaComposition(subject_composition, alphsize, 
+                            &subject_data[left], right - left);
 }
 
 
@@ -950,7 +951,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                    double Lambda,
                    BlastCompo_MatchingSequence * matchingSeq,
                    int ccat_query_length, BlastCompo_QueryInfo query_info[],
-                   int numQueries, int ** matrix,
+                   int numQueries, int ** matrix, int alphsize,
                    Blast_CompositionWorkspace * NRrecord,
                    double *pvalueForThisPair,
                    int compositionTestIndex,
@@ -1019,7 +1020,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                     (subject_is_translated || hsp_index == 0)) {
                     Blast_AminoAcidComposition subject_composition;
                     s_GetSubjectComposition(&subject_composition,
-                                            &subject,
+                                            alphsize, &subject,
                                             &window->subject_range,
                                             in_align);
                     adjust_search_failed =
@@ -1091,7 +1092,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                 BlastCompo_MatchingSequence * matchingSeq,
                                 BlastCompo_QueryInfo query_info[],
                                 int numQueries,
-                                int ** matrix,
+                                int ** matrix, int alphsize,
                                 Blast_CompositionWorkspace * NRrecord,
                                 Blast_ForbiddenRanges * forbidden,
                                 BlastCompo_Heap * significantMatches,
@@ -1162,9 +1163,9 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
          * composition of the highest scoring alignment in window */
         if (compo_adjust_mode != eNoCompositionBasedStats) {
             Blast_AminoAcidComposition subject_composition;
-            s_GetSubjectComposition(&subject_composition,
-                                        &subject, &window->subject_range,
-                                        window->align);
+            s_GetSubjectComposition(&subject_composition, alphsize,
+                                    &subject, &window->subject_range,
+                                    window->align);
             adjust_search_failed =
                 Blast_AdjustScores(matrix,
                                    query_composition, query->length,
