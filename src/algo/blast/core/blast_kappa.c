@@ -394,7 +394,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
     int status = 0;
     *pbestEvalue = DBL_MAX;
     *pbestScore  = 0;
-    if (hitParams->link_hsp_params) {
+    if (hitParams->options->do_sum_stats) {
         status = BLAST_LinkHsps(program_number, hsp_list, queryInfo,
                                 subject_length, sbp,
                                 hitParams->link_hsp_params, TRUE);
@@ -1607,8 +1607,7 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
         self->ungappedLambda = sbp->kbp_ideal->Lambda / scale_factor;
         status = s_GetStartFreqRatios(self->startFreqRatios, matrixName);
         if (status == 0) {
-            Blast_Int4MatrixFromFreq(self->startMatrix, self->cols,
-                                     self->startFreqRatios,
+            Blast_Int4MatrixFromFreq(self->startMatrix, self->startFreqRatios,
                                      self->ungappedLambda);
         }
     }
@@ -1648,7 +1647,7 @@ s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info)
             query_info->seq.data = &query_data[query_info->origin];
             query_info->seq.length = query_context->query_length;
 
-            Blast_ReadAaComposition(&query_info->composition, BLASTAA_SIZE,
+            Blast_ReadAaComposition(&query_info->composition,
                                     query_info->seq.data,
                                     query_info->seq.length);
         }
@@ -1736,11 +1735,12 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     /* is this a positiion-based search */
     Boolean positionBased = (Boolean) (context->sbp->psi_matrix != NULL);
     /* will BLAST_LinkHsps be called to assign e-values */
-    Boolean do_link_hsps = (Boolean) (hitParams->link_hsp_params != NULL);
+    Boolean do_link_hsps = (hitParams->options->do_sum_stats);
     ECompoAdjustModes compo_adjust_mode =
         (ECompoAdjustModes) extendParams->options->compositionBasedStats;
     
     if (do_link_hsps) {
+        ASSERT(hitParams->link_hsp_params != NULL);
         cutoff_s =
             (int) (hitParams->cutoff_score * context->localScalingFactor);
     } else {
@@ -1749,7 +1749,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     }
     cutoff_e = hitParams->options->expect_value;
     rows = positionBased ? queryInfo->max_length : BLASTAA_SIZE;
-    scaledMatrixInfo = Blast_MatrixInfoNew(rows, BLASTAA_SIZE, positionBased);
+    scaledMatrixInfo = Blast_MatrixInfoNew(rows, positionBased);
     status = s_MatrixInfoInit(scaledMatrixInfo, queryBlk, context->sbp,
                               context->localScalingFactor,
                               context->scoringParams->options->matrix);
@@ -2039,8 +2039,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                                 thisMatch->hspcnt,
                                                 kbp->Lambda, kbp->logK,
                                                 &matchingSeq, query_info,
-                                                numQueries,
-                                                matrix, BLASTAA_SIZE,
+                                                numQueries, matrix,
                                                 NRrecord, &forbidden,
                                                 redoneMatches,
                                                 &pvalueForThisPair,
@@ -2052,8 +2051,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                    incoming_aligns, thisMatch->hspcnt,
                                    kbp->Lambda, &matchingSeq,
                                    queryInfo->max_length, query_info,
-                                   numQueries, matrix, BLASTAA_SIZE,
-                                   NRrecord, &pvalueForThisPair,
+                                   numQueries, matrix, NRrecord,
+                                   &pvalueForThisPair,
                                    compositionTestIndex,
                                    &LambdaRatio);
         }

@@ -992,19 +992,13 @@ CBlastOptionsLocal::SetMinDiagSeparation(int d)
 inline bool
 CBlastOptionsLocal::GetSumStatisticsMode() const
 {
-    if (m_HitSaveOpts->do_sum_stats == eSumStatsTrue)
-        return true;
-    else 
-        return false;
+    return m_HitSaveOpts->do_sum_stats ? true : false;
 }
 
 inline void
 CBlastOptionsLocal::SetSumStatisticsMode(bool m)
 {
-    if (m)
-        m_HitSaveOpts->do_sum_stats = eSumStatsTrue;
-    else
-        m_HitSaveOpts->do_sum_stats = eSumStatsFalse;
+    m_HitSaveOpts->do_sum_stats = m;
 }
 
 inline int

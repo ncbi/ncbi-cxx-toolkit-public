@@ -656,7 +656,6 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    Boolean gapped_calculation = TRUE;
    Int2 status = 0;
    BlastHitSavingParameters* params;
-   Boolean do_sum_stats = FALSE;
 
    /* If parameters pointer is NULL, there is nothing to fill, 
       so don't do anything */
@@ -671,22 +670,7 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    if (!sbp->kbp_gap)
       gapped_calculation = FALSE;
 
-   /* If sum statistics use is forced by the options, 
-      set it in the paramters */
-   if (options->do_sum_stats == eSumStatsTrue) {
-      do_sum_stats = TRUE;
-   } else if (options->do_sum_stats == eSumStatsNotSet) {
-      /* By default, sum statistics is used for all translated searches 
-       * (except RPS BLAST), and for all ungapped searches.
-       */
-      if (!gapped_calculation ||  
-          (program_number == eBlastTypeBlastx) ||
-          (program_number == eBlastTypeTblastn) ||
-          (program_number == eBlastTypeTblastx))
-         do_sum_stats = TRUE;
-   }
-  
-   if (do_sum_stats && gapped_calculation && avg_subj_length <= 0)
+   if (options->do_sum_stats && gapped_calculation && avg_subj_length <= 0)
        return 1;
        
 
@@ -701,7 +685,7 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    params->options = (BlastHitSavingOptions *) options;
 
 
-   if (do_sum_stats) {
+   if (options->do_sum_stats) {
       BlastLinkHSPParametersNew(program_number, gapped_calculation,
                                 &params->link_hsp_params);
 
@@ -751,13 +735,9 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
    Blast_KarlinBlk** kbp_array;
    double scale_factor = sbp->scale_factor;
    Boolean gapped_calculation = TRUE;
-   Boolean do_sum_stats = FALSE;
 
    ASSERT(params);
    ASSERT(query_info);
-
-   if (params->link_hsp_params)
-        do_sum_stats = TRUE;
 
    options = params->options;
 
@@ -814,7 +794,8 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
       params->cutoff_score = cutoff_score_max;
 
       /* If using sum statistics, use a modified cutoff score */
-      if (do_sum_stats && gapped_calculation) {
+      if (params->options->do_sum_stats && gapped_calculation) {
+         ASSERT(params->link_hsp_params);
 
          double evalue_hsp = 1.0;
          Int4 concat_qlen =
@@ -942,6 +923,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2006/06/29 16:23:08  camacho
+ * Changed BlastHitSavingOptions::do_sum_stats to boolean so that it is the primary way to check if sum statistics should be performed
+ *
  * Revision 1.19  2006/06/28 15:55:02  camacho
  * Enforce const-ness
  *

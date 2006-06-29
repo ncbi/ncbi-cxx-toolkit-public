@@ -287,16 +287,6 @@ typedef struct BlastExtensionOptions {
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastExtensionOptions;
 
-/** Should sum statistics be performed? If not set, the engine decides this
- * question based on the program and gapped calculation option.
- */
-typedef enum ESumStatsMode {
-   eSumStatsNotSet = 0, /**< Let the engine decide, based on the program and 
-                           gapped calculation option. */
-   eSumStatsFalse, /**< Do not use sum statistics. */
-   eSumStatsTrue   /**< Use sum statistics. */
-} ESumStatsMode;
-
 /** Options used when evaluating and saving hits
  *  These include: 
  *  a. Restrictions on the number of hits to be saved;
@@ -322,9 +312,9 @@ typedef struct BlastHitSavingOptions {
 
    /********************************************************************/
    /* Merge all these in a structure for clarity? */
-   /* applicable to all, except blastn */
-   ESumStatsMode do_sum_stats; /**< Force sum statistics to be used to combine 
-                                  HSPs */
+   Boolean do_sum_stats; /**< Force sum statistics to be used to combine HSPs,
+                          TRUE by default for all ungapped searches and translated
+                          gapped searches (except RPS-BLAST) */
    Int4 longest_intron; /**< The longest distance between HSPs allowed for
                            combining via sum statistics with uneven gaps */
    /********************************************************************/
@@ -797,10 +787,12 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
 /** Allocate memory for BlastHitSavingOptions.
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
+ * @param gapped_calculation is this search gapped? [in]
 */
 NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingOptionsNew(EBlastProgramType program, 
-        BlastHitSavingOptions* *options);
+        BlastHitSavingOptions** options,
+        Boolean gapped_calculation);
 
 /** Allocate memory for BlastHitSavingOptions.
  * @param options The options [in] [out]

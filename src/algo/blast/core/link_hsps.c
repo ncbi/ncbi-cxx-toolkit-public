@@ -1792,6 +1792,8 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
     if (!hsp_list || hsp_list->hspcnt == 0)
         return 0;
 
+    ASSERT(link_hsp_params);
+
     /* Remove any information on number of linked HSPs from previous
        linking. */
     for (index = 0; index < hsp_list->hspcnt; ++index)

@@ -1022,7 +1022,8 @@ BlastHitSavingOptionsFree(BlastHitSavingOptions* options)
 
 
 Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number, 
-        BlastHitSavingOptions* *options)
+        BlastHitSavingOptions** options,
+        Boolean gapped_calculation)
 {
    *options = (BlastHitSavingOptions*) calloc(1, sizeof(BlastHitSavingOptions));
    
@@ -1032,6 +1033,18 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
    (*options)->hitlist_size = BLAST_HITLIST_SIZE;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
    (*options)->program_number = program_number;
+
+   /* By default, sum statistics is used for all translated searches 
+    * (except RPS BLAST), and for all ungapped searches.
+    */
+   if (!gapped_calculation ||  
+      (program_number == eBlastTypeBlastx) ||
+      (program_number == eBlastTypeTblastn) ||
+      (program_number == eBlastTypeTblastx)) {
+       (*options)->do_sum_stats = TRUE;
+   } else {
+       (*options)->do_sum_stats = FALSE;
+   }
 
    return 0;
 
@@ -1208,10 +1221,11 @@ Int2 BLAST_InitDefaultOptions(EBlastProgramType program_number,
    if ((status = BlastExtensionOptionsNew(program_number, ext_options)))
       return status;
 
-   if ((status=BlastHitSavingOptionsNew(program_number, hit_options)))
+   if ((status=BlastScoringOptionsNew(program_number, score_options)))
       return status;
 
-   if ((status=BlastScoringOptionsNew(program_number, score_options)))
+   if ((status=BlastHitSavingOptionsNew(program_number, hit_options,
+                                        (*score_options)->gapped_calculation)))
       return status;
 
    if ((status=BlastEffectiveLengthsOptionsNew(eff_len_options)))
@@ -1299,6 +1313,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.185  2006/06/29 16:23:08  camacho
+ * Changed BlastHitSavingOptions::do_sum_stats to boolean so that it is the primary way to check if sum statistics should be performed
+ *
  * Revision 1.184  2006/05/18 16:17:00  papadopo
  * allow multiple search spaces to be set in BlastEffectiveLengthsOptions
  *
