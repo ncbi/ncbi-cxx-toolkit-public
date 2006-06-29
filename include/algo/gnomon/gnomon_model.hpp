@@ -217,13 +217,17 @@ public:
         return (m_cds_limits.NotEmpty() && m_cds_limits.GetFrom() > Limits().GetFrom()+2 && 
                 m_cds_limits.GetTo() < Limits().GetTo()-2 && Continious()); 
     }
-    bool CompleteCds() const   // start, stop and upstream 5' stop present 
+    bool CompleteCds() const   // start, stop and upstream 5' stop present or start confirmed by protein alignment 
     {
-        if(m_max_cds_limits.Empty() || !Continious()) return false;
-        else if(Strand() == ePlus && m_max_cds_limits.GetFrom() > Limits().GetFrom() && m_cds_limits.GetTo() < Limits().GetTo()-2) return true;
-        else if(Strand() == eMinus && m_cds_limits.GetFrom() > Limits().GetFrom()+2 && m_max_cds_limits.GetTo() < Limits().GetTo()) return true;
+        if(!FullCds()) return false;
+        else if(ConfirmedStart()) return true; 
+        else if(Strand() == ePlus && m_max_cds_limits.GetFrom() > Limits().GetFrom()) return true;
+        else if(Strand() == eMinus && m_max_cds_limits.GetTo() < Limits().GetTo()) return true;
         else return false;  
     }
+
+    void ClearStatus() { m_status = 0; }
+
     bool OpenCds() const { return m_status & eOpen; }  // "optimal" CDS is not internal
     void SetOpenCds(bool op) { if(op) m_status |= eOpen; else m_status &= ~eOpen; }
     bool PStop() const { return (m_status & ePStop) != 0; }  // has premature stop(s)
@@ -403,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/06/29 19:19:22  souvorov
+ * Confirmed start implementation
+ *
  * Revision 1.19  2006/05/11 19:25:44  souvorov
  * ConfirmedStart added
  *

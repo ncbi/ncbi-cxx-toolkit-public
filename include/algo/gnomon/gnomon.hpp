@@ -72,7 +72,7 @@ public:
     static double GetChanceOfIntronLongerThan(int l);
 
     // calculate gnomon score for a gene model
-    void GetScore(CAlignVec& model, bool uselims = false) const;
+    void GetScore(CAlignVec& model, bool uselims = false, bool allowopen = true) const;
 
     // run gnomon. return score
     double Run(bool repeats = true, bool leftwall = true, bool rightwall = true, double mpp = 10); // pure ab initio
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/06/29 19:19:22  souvorov
+ * Confirmed start implementation
+ *
  * Revision 1.8  2006/03/06 15:53:23  souvorov
  * Changes needed for ChanceOfIntronLongerThan(int l)
  *

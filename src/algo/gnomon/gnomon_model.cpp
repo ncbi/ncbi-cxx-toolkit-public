@@ -80,6 +80,7 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
     TSignedSeqRange lim = (cdsonly ? RealCdsLimits() : Limits());
     int len = (cdsonly ? CdsLen() : AlignLen());
     mrna.clear();
+
     mrna.reserve(len);
     if(mrnamap != 0)
     {
@@ -329,10 +330,8 @@ void CAlignVec::Init()
 void CAlignExon::Extend(const CAlignExon& e)
 {
     m_limits.CombineWith(e.m_limits);
-    if (GetFrom() == e.GetFrom())
-        m_fsplice = e.m_fsplice;
-    if (GetTo() == e.GetTo())
-        m_ssplice = e.m_ssplice;
+    m_fsplice = m_fsplice || e.m_fsplice;
+    m_ssplice = m_ssplice || e.m_ssplice;
 }
 
 void CAlignVec::Extend(const CAlignVec& a)
@@ -459,14 +458,15 @@ CNcbiIstream& operator>>(CNcbiIstream& s, CAlignVec& a)
     
     TSignedSeqRange cds_limits;
     bool open_cds = false;
-    if(typenm == "CDS" || typenm == "OpenCDS")
-    {
+    bool confirmed_start = false;
+    if(typenm == "CDS" || typenm == "ConfCDS" || typenm == "OpenCDS") {
         if(typenm == "OpenCDS") open_cds = true;
-	TSignedSeqPos x;
+        if(typenm == "ConfCDS") confirmed_start = true;
+        TSignedSeqPos x;
         if(!(s >> x)) return InputError(s,pos);
-	cds_limits.SetFrom(x);
+        cds_limits.SetFrom(x);
         if(!(s >> x)) return InputError(s,pos);
-	cds_limits.SetTo(x);
+        cds_limits.SetTo(x);
         s >> typenm;
     }
     
@@ -496,6 +496,7 @@ CNcbiIstream& operator>>(CNcbiIstream& s, CAlignVec& a)
     a.SetCdsLimits(cds_limits);
     a.SetMaxCdsLimits(max_cds_limits);
     a.SetOpenCds(open_cds);
+    a.SetConfirmedStart(confirmed_start);
     
     string line;
     if(!getline(s,line)) return InputError(s,pos);
@@ -577,6 +578,7 @@ CNcbiOstream& operator<<(CNcbiOstream& s, const CAlignVec& a)
     if(a.CdsLimits().NotEmpty())
     {
         if(a.OpenCds()) s << "Open";
+        if(a.ConfirmedStart()) s << "Conf";
         s << "CDS " << a.CdsLimits().GetFrom() << ' ' << a.CdsLimits().GetTo() << ' ';
     }
     
@@ -750,6 +752,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/06/29 19:23:09  souvorov
+ * Confirmed start implementation
+ *
  * Revision 1.10  2006/05/11 19:24:57  souvorov
  * Cosmetical edit
  *
