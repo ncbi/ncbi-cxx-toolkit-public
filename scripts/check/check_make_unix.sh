@@ -411,6 +411,7 @@ RunTest() {
                               -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
                               -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/' \\
                               -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/'\`
+               rm -f \$x_log
 
                # Analize check tool output
                case "\$tool_lo" in
