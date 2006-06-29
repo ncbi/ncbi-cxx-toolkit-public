@@ -240,10 +240,17 @@
 // Public data with private assignment operator
 %ignore ncbi::objects::CStandaloneRequestResult::m_MutexPool;
 
+// struct created by NCBI_PARAM_DECL(bool, READ_FASTA, USE_NEW_IMPLEMENTATION);
+// sm_ParamDescription contains const members
+%ignore *::SNcbiParamDesc_READ_FASTA_USE_NEW_IMPLEMENTATION::sm_ParamDescription;
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/06/29 18:06:51  jcherry
+ * %ignore SNcbiParamDesc_READ_FASTA_USE_NEW_IMPLEMENTATION::sm_ParamDescription
+ *
  * Revision 1.9  2006/06/12 14:53:57  jcherry
  * %ignore some CTreeNode methods
  *
