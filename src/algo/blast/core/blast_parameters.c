@@ -795,7 +795,6 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
 
       /* If using sum statistics, use a modified cutoff score */
       if (params->options->do_sum_stats && gapped_calculation) {
-         ASSERT(params->link_hsp_params);
 
          double evalue_hsp = 1.0;
          Int4 concat_qlen =
@@ -804,6 +803,8 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
          Int4 avg_qlen = concat_qlen / (query_info->last_context + 1);
          Int8 searchsp = (Int8) MIN(avg_qlen, avg_subject_length) * 
                                 (Int8)avg_subject_length;
+
+         ASSERT(params->link_hsp_params);
 
          for (context = query_info->first_context;
                              context <= query_info->last_context; ++context) {
@@ -923,6 +924,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2006/06/29 17:49:49  camacho
+ * Move assertion after declarations
+ *
  * Revision 1.20  2006/06/29 16:23:08  camacho
  * Changed BlastHitSavingOptions::do_sum_stats to boolean so that it is the primary way to check if sum statistics should be performed
  *
