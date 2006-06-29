@@ -426,6 +426,7 @@ Blast_FreqRatioToScore(double ** matrix, int rows, int cols, double Lambda)
  *
  * @param outputLetterProbs   the ARND letter probabilities [out]
  * @param inputLetterProbs    the NCBIstdaa letter probabilities [in]
+ * @param alphsize            the size of the alphabet
  */
 static void
 s_GatherLetterProbs(double * outputLetterProbs,
@@ -446,6 +447,7 @@ s_GatherLetterProbs(double * outputLetterProbs,
  * probabilities for nonstandard characters to zero.
  *
  * @param std_probs   the NCBIstdaa letter probabilities [out]
+ * @param alphsize    size of the NCBIstdaa alphabet [in]
  * @param probs       the ARND letter probabilities [in]
  */
 static void
@@ -469,6 +471,7 @@ s_UnpackLetterProbs(double std_probs[], int alphsize, const double probs[])
  *                  On entry, values for the standard amino acids must
  *                  be set; on exit, values for the two-character
  *                  ambiguities will also be set.
+ * @param alphsize  the size of the alphabet
  */
 static void
 s_SetPairAmbigProbsToSum(double probs[], int alphsize)
@@ -546,6 +549,7 @@ Blast_EntropyOldFreqNewContext(double * entropy,
  * not X).
  *
  * @param StdFreq      frequencies in the NCBIstdaa alphabet [output]
+ * @param StdAlphsize  the size of the NCBIstdaa alphabet [input]
  * @param freq         frequencies in the ARND alphabet [input]
  */
 static void
@@ -607,6 +611,7 @@ s_TrueAaToStdTargetFreqs(double ** StdFreq, int StdAlphsize, double ** freq)
  * Calculate the average score of a row or column of a matrix.
  *
  * @param M            a vector of scores
+ * @param alphsize     the size of the alphabet
  * @param incM         stride between elements of M; used to pass a column
  *                     of a score matrix to this routine by setting incM
  *                     to the number of elements in a column.
@@ -631,6 +636,7 @@ s_CalcAvgScore(double * M, int alphsize, int incM, const double probs[])
  * Calculate values for the X ambiguity score, give an vector of scores and
  * a set of character probabilities.
  * @param M            a vector of scores
+ * @param alphsize     the size of the alphabet
  * @param incM         stride between elements of M; used to pass a column
  *                     of a score matrix to this routine by setting incM
  *                     to the number of elements in a column.
@@ -649,6 +655,7 @@ s_CalcXScore(double * M, int alphsize, int incM, const double probs[])
  * X, U (Selenocystiene) and O (pyrrolysine) characters.
  *
  * @param M             a scoring matrix
+ * @param alphsize      the size of the alphabet
  * @param row_probs     character frequencies for the sequence corresponding
  *                      to the rows of M.
  * @param col_probs     character frequencies for the sequence corresponding
@@ -716,6 +723,7 @@ static long Nint(double x)
  * @param floatScoreMatrix   the matrix of floating point valued
  *                           scores [in]
  * @param rows               the number of rows of the matrices.
+ * @param cols               the number of columns in matrix.
  */
 static void
 s_RoundScoreMatrix(int **matrix, int rows, int cols,    
@@ -742,6 +750,7 @@ s_RoundScoreMatrix(int **matrix, int rows, int cols,
  * characters in the NCBIstdaa amino acid alphabet.
  *
  * @param Matrix        the newly computed matrix
+ * @param Alphsize      the size of the NCBIstdaa alphabet
  * @param target_freq   target frequencies for true amino acids (20x20)
  * @param StartMatrix   a matrix containing values for the stop character
  * @param row_prob      probabilities of true amino acids in the sequence
@@ -834,6 +843,7 @@ static void s_GetScoreRange(int * obs_min, int * obs_max,
  *                          the probability for score *obs_min.
  * @param matrix            a amino-acid substitution matrix (not
  *                          position-specific)
+ * @param alphsize          the size of the alphabet
  * @param subjectProbArray  is an array containing the probability of
  *                          occurrence of each residue in the subject
  * @param queryProbArray    is an array containing the probability of
@@ -891,6 +901,7 @@ s_GetMatrixScoreProbs(double **scoreProb, int * obs_min, int * obs_max,
  *                          the probability for score *obs_min.
  * @param matrix            a position-specific amino-acid substitution matrix.
  * @param rows              the number of rows in matrix.
+ * @param cols              the number of columns in matrix.
  * @param subjectProbArray  is an array containing the probability of
  *                          occurrence of each residue in the subject
  * @return 0 on success, -1 on out-of-memory
@@ -1007,6 +1018,7 @@ normal_return:
  *
  * @param matrix       the newly computed matrix [output]
  * @param rows         number of positions (rows) in the PSSM
+ * @param cols         the number of columns in the PSSM; the alphabet size
  * @param freq_ratios  frequency ratios defining the PSSM
  * @param start_matrix an existing PSSM; used to set values for the
  *                     stop character.
@@ -1047,6 +1059,7 @@ s_ScalePSSM(int **matrix, int rows, int cols, double ** freq_ratios,
  * at a given scale Lambda.
  *
  * @param matrix       the newly computed matrix [output]
+ * @param alphsize     the alphabet size
  * @param freq_ratios  frequency ratios defining the PSSM
  * @param start_matrix an existing matrix; used to set values for the
  *                     stop character.

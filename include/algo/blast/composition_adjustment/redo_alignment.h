@@ -365,6 +365,7 @@ void Blast_RedoAlignParamsFree(Blast_RedoAlignParams ** pparams);
  * @param query_info       information about all queries
  * @param numQueries       the number of queries
  * @param matrix           the scoring matrix
+ * @param alphsize         the size of the alphabet
  * @param NRrecord         a workspace used to adjust the composition.
  * @param forbidden        a workspace used to hold forbidden ranges
  *                         for the Smith-Waterman algorithm.
@@ -417,6 +418,7 @@ int Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
  * @param query_info       information about all queries
  * @param numQueries       the number of queries
  * @param matrix           the scoring matrix
+ * @param alphsize         the size of the alphabet
  * @param NRrecord         a workspace used to adjust the composition.
  * @param pvalueThisPair   the compositional p-value for this pair of sequences
  * @param compositionTestIndex   index of the test function used to decide

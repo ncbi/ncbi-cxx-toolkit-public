@@ -783,6 +783,7 @@ s_WindowsFromAligns(BlastCompo_Alignment * alignments,
  * Compute the amino acid composition of the subject region.
  *
  * @param subject_composition  the computed composition.
+ * @param alphsize             the size of the alphabet
  * @param subject              subject sequence data
  * @param subject_range        the range of the given subject data in
  *                             the complete subject sequence

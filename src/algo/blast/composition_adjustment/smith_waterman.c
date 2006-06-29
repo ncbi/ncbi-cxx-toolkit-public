@@ -40,8 +40,8 @@ static char const rcsid[] =
 /** A structure used internally by the Smith-Waterman algorithm to
  * represent gaps */
 typedef struct SwGapInfo {
-    int noGap;
-    int gapExists;
+    int noGap;         /**< score if opening a gap */
+    int gapExists;     /**< score if continuing a gap */
 } SwGapInfo;
 
 

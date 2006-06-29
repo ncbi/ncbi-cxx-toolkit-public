@@ -64,6 +64,7 @@ typedef struct Blast_AminoAcidComposition {
  * ambiguity characters and other nonstandard characters.
  *
  * @param composition      the computed composition
+ * @param alphsize         the size of the alphabet
  * @param sequence         a sequence of amino acids
  * @param length           length of the sequence
  */
@@ -91,9 +92,11 @@ typedef struct Blast_MatrixInfo {
 
 /** Create a Blast_MatrixInfo object
  *
- *  @param rows        the number of rows in the matrix, should be
- *                     COMPO_PROTEIN_ALPHABET unless the matrix is position
- *                     based, in which case it is the query length
+ *  @param rows        the number of rows in the matrix, should be equal
+ *                     to the size of the alphabet unless the matrix is
+ *                     position based, in which case it is the query length
+ *  @param cols        the number of columns in the matrix; the size of the
+ *                     alphabet
  *  @param positionBased  is this matrix position-based?
  */
 NCBI_XBLAST_EXPORT
@@ -208,6 +211,7 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
  * to optimize a score matrix to a given set of letter frequencies.
  *
  * @param matrix       the newly computed matrix [out]
+ * @param alphsize     the size of the alphabet [in]
  * @param matrix_adjust_rule    the rule to use when computing the matrix;
  *                              affects how the relative entropy is
  *                              constrained
