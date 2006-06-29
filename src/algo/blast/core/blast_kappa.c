@@ -1607,7 +1607,8 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
         self->ungappedLambda = sbp->kbp_ideal->Lambda / scale_factor;
         status = s_GetStartFreqRatios(self->startFreqRatios, matrixName);
         if (status == 0) {
-            Blast_Int4MatrixFromFreq(self->startMatrix, self->startFreqRatios,
+            Blast_Int4MatrixFromFreq(self->startMatrix, self->cols,
+                                     self->startFreqRatios,
                                      self->ungappedLambda);
         }
     }
@@ -1647,7 +1648,7 @@ s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info)
             query_info->seq.data = &query_data[query_info->origin];
             query_info->seq.length = query_context->query_length;
 
-            Blast_ReadAaComposition(&query_info->composition,
+            Blast_ReadAaComposition(&query_info->composition, BLASTAA_SIZE,
                                     query_info->seq.data,
                                     query_info->seq.length);
         }
@@ -1748,7 +1749,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     }
     cutoff_e = hitParams->options->expect_value;
     rows = positionBased ? queryInfo->max_length : BLASTAA_SIZE;
-    scaledMatrixInfo = Blast_MatrixInfoNew(rows, positionBased);
+    scaledMatrixInfo = Blast_MatrixInfoNew(rows, BLASTAA_SIZE, positionBased);
     status = s_MatrixInfoInit(scaledMatrixInfo, queryBlk, context->sbp,
                               context->localScalingFactor,
                               context->scoringParams->options->matrix);
@@ -2038,7 +2039,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                                 thisMatch->hspcnt,
                                                 kbp->Lambda, kbp->logK,
                                                 &matchingSeq, query_info,
-                                                numQueries, matrix,
+                                                numQueries,
+                                                matrix, BLASTAA_SIZE,
                                                 NRrecord, &forbidden,
                                                 redoneMatches,
                                                 &pvalueForThisPair,
@@ -2050,8 +2052,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                    incoming_aligns, thisMatch->hspcnt,
                                    kbp->Lambda, &matchingSeq,
                                    queryInfo->max_length, query_info,
-                                   numQueries, matrix, NRrecord,
-                                   &pvalueForThisPair,
+                                   numQueries, matrix, BLASTAA_SIZE,
+                                   NRrecord, &pvalueForThisPair,
                                    compositionTestIndex,
                                    &LambdaRatio);
         }
