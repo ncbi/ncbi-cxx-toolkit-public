@@ -706,6 +706,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             switch (pfx[1]) {
             case 'A':                     return eAcc_gb_patent;
             case 'B': case 'C':           return eAcc_gb_est;
+            case 'D':                     return eAcc_gb_gss;
             default:                      return eAcc_unreserved_nuc;
             }
 
@@ -1594,6 +1595,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.131  2006/06/29 15:05:37  ucko
+ * IdentifyAccession: ED -> eAcc_gb_gss
+ *
  * Revision 6.130  2006/06/20 21:02:48  ucko
  * IdentifyAccession: EMBL has specifically assigned CU to genome
  * projects; also correct the comment for unassigned DDBJ Dx prefixes.
