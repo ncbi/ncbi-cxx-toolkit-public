@@ -127,6 +127,12 @@ void CAgpconvertApplication::Init(void)
                              "Directory for output files "
                              "(defaults to current directory)",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("ofs", "ofs",
+                             "Output filename suffix "
+                             "(default is \".ent\" for Seq-entry "
+                             "or \".sqn\" for Seq-submit",
+                             CArgDescriptions::eString);
+
 
     arg_desc->AddOptionalKey("dl", "definition_line",
                              "Definition line (title descriptor)",
@@ -667,13 +673,25 @@ int CAgpconvertApplication::Run(void)
             string testval_type_flag;
             if (!output_seq_submit) {
                 // write a Seq-entry
-                outfpath = CDirEntry::MakePath(outdir, id_str, "ent");
+                string suffix;
+                if (!args["ofs"]) {
+                    suffix = "ent";
+                } else {
+                    suffix = args["ofs"].AsString();
+                }
+                outfpath = CDirEntry::MakePath(outdir, id_str, suffix);
                 testval_type_flag = "-e";
                 CNcbiOfstream ostr(outfpath.c_str());
                 ostr << MSerial_AsnText << new_entry;
             } else {
                 // write a Seq-submit
-                outfpath = CDirEntry::MakePath(outdir, id_str, "sqn");
+                string suffix;
+                if (!args["ofs"]) {
+                    suffix = "sqn";
+                } else {
+                    suffix = args["ofs"].AsString();
+                }
+                outfpath = CDirEntry::MakePath(outdir, id_str, suffix);
                 testval_type_flag = "-s";
                 CSeq_submit new_submit;
                 new_submit.Assign(*submit_templ);
@@ -721,6 +739,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/06/29 20:28:41  jcherry
+ * Added -ofs for specifying output filename suffix
+ *
  * Revision 1.16  2006/06/26 15:44:42  jcherry
  * Added -cl option for clone lib subsource
  *
