@@ -329,10 +329,6 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                 m_notinexon[eMinus][2][pnt] = pnt;
 
                 m_notinintron[ePlus][pnt] = pnt;
-                m_notinintron[ePlus][pnt] = pnt;
-                m_notinintron[ePlus][pnt] = pnt;
-                m_notinintron[eMinus][pnt] = pnt;
-                m_notinintron[eMinus][pnt] = pnt;
                 m_notinintron[eMinus][pnt] = pnt;
             }
             continue;
@@ -356,6 +352,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
 
 
         CAlignVec algn(origalign.Strand(),origalign.ID(),origalign.Type());
+        algn.SetConfirmedStart(origalign.ConfirmedStart());
 
         for(unsigned int k = 0; k < origalign.size(); ++k)
         {
@@ -440,6 +437,24 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                     if(frame != ff && !algn[i-1].m_ssplice) m_notinexon[strand][frame][right] = right;
                 }
             }
+        }
+
+        if(algn.ConfirmedStart()) {
+            int pnt;
+            if(algn.Strand() == ePlus) {
+                pnt = algn.CdsLimits().GetFrom()-1;
+            } else {
+                pnt = algn.CdsLimits().GetTo()+1;
+            }
+            m_notinexon[ePlus][0][pnt] = pnt;
+            m_notinexon[ePlus][1][pnt] = pnt;
+            m_notinexon[ePlus][2][pnt] = pnt;
+            m_notinexon[eMinus][0][pnt] = pnt;
+            m_notinexon[eMinus][1][pnt] = pnt;
+            m_notinexon[eMinus][2][pnt] = pnt;
+            
+            m_notinintron[ePlus][pnt] = pnt;
+            m_notinintron[eMinus][pnt] = pnt;
         }
 
         if(it->MaxCdsLimits().NotEmpty())
@@ -1110,7 +1125,27 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
     
 }
 
-void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
+namespace {
+    EResidue atg[3] = { enA, enT, enG };
+    EResidue taa[3] = { enT, enA, enA };
+    EResidue tag[3] = { enT, enA, enG };
+    EResidue tga[3] = { enT, enG, enA };
+    EResidue ag[2] = { enA, enG };
+}    
+
+bool SafeOpenEnd(const CEResidueVec& seq_strand, int start, int shift) {
+    int cds_start = start+shift;
+    for(int k = cds_start-2; k >= 0; k -= 1) {
+        if(k < start-1 && equal(ag,ag+2,&seq_strand[k])) return true;   // splice must be outside of alignment
+        if((cds_start-k)%3 != 0) continue;
+        if(equal(atg,atg+3,&seq_strand[k])) return true;
+        if(equal(taa,taa+3,&seq_strand[k]) || equal(tag,tag+3,&seq_strand[k]) || equal(tga,tga+3,&seq_strand[k])) return false;
+    }
+
+    return false;
+}
+
+void CGnomonEngine::GetScore(CAlignVec& model, bool uselims, bool allowopen) const
 {
     const CTerminal& acceptor    = *m_data->m_acceptor;
     const CTerminal& donor       = *m_data->m_donor;
@@ -1125,9 +1160,9 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
     const vector<CAlignExon>& exons = model;
 
     const CDoubleStrandSeq& ds = m_data->m_ds;
-    CEResidueVec cds, cds_extra;
+    CEResidueVec cds;
     TIVec cdsmap;
-    model.GetSequence(ds[ePlus], cds, &cdsmap);
+    model.GetSequence(ds[ePlus], cds, &cdsmap);   // due to historical reasons cds here is actually the whole mRNA
 
     int lim_start = -1;
     int lim_stop = -1;
@@ -1144,120 +1179,62 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
         }
     }
     
-    if(strand == ePlus)
-    {
-        for(int k = exons.front().GetFrom()-2; k < int(exons.front().GetFrom())+2; ++k)
-        {
-            if(k >= 0) cds_extra.push_back(ds[strand][k]);
-        }
-    }
-    else
-    {
-        std::swap(lim_start,lim_stop);
-        for(int k = exons.back().GetTo()+2; k > int(exons.back().GetTo())-2; --k)
-        {
-            if(k < len) cds_extra.push_back(ds[strand][len-1-k]);
-        }
-    }
+    if(strand == eMinus) std::swap(lim_start,lim_stop);
 
     TIVec starts[3], stops[3];
-    EResidue atg[3] = { enA, enT, enG };
-    EResidue taa[3] = { enT, enA, enA };
-    EResidue tag[3] = { enT, enA, enG };
-    EResidue tga[3] = { enT, enG, enA };
-    EResidue ag[2] = { enA, enG };
-    
-    if(model.Type() == CAlignVec::eProt)
-    {
-        starts[0].push_back(0);
-        if((model.CdsLimits().NotEmpty() && model.Strand() == ePlus && model.CdsLimits().GetTo() != model.MaxCdsLimits().GetTo()) ||
-           (model.CdsLimits().NotEmpty() && model.Strand() == eMinus && model.CdsLimits().GetFrom() != model.MaxCdsLimits().GetFrom())) 
-        {
-            stops[0].push_back(cds.size()-3);
-        }
-        else
-        {
-            stops[0].push_back(cds.size());
-        }
-        
-        for(int i = starts[0].back(); i <= stops[0].back()-3; i += 3)
-        {
-            if(equal(taa,taa+3,&cds[i]) || equal(tag,tag+3,&cds[i]) || equal(tga,tga+3,&cds[i]))
-            {
-                model.SetPStop( true );
-            }
+
+    if(uselims) {
+        for(int i = lim_start; i <= lim_stop-2; i += 3) {
+            if(equal(taa,taa+3,&cds[i]) || equal(tag,tag+3,&cds[i]) || equal(tga,tga+3,&cds[i])) model.SetPStop( true );
         }
     }
-    else
-    {
-        if(uselims)
-        {
-            for(int i = lim_start; i <= lim_stop-2; i += 3)
-            {
-                if(equal(taa,taa+3,&cds[i]) || equal(tag,tag+3,&cds[i]) || equal(tga,tga+3,&cds[i]))
-                {
-                    model.SetPStop( true );
-                }
-            }
-        }
+
+    int lim_frame = lim_start%3;
+    int cds_start = (strand == ePlus) ? cdsmap[0] : len-1-cdsmap[0];
+    const CEResidueVec& seq_strand = ds[strand];
+
+    if(allowopen && !equal(atg,atg+3,&cds[0]) && (!uselims || lim_frame == 0) && SafeOpenEnd(seq_strand,cds_start,0)) starts[0].push_back(0);  // those with atg will be included in the below loop
+    if(allowopen && !equal(atg,atg+3,&cds[1]) && (!uselims || lim_frame == 1) && SafeOpenEnd(seq_strand,cds_start,1)) starts[1].push_back(1);
+    if(allowopen && !equal(atg,atg+3,&cds[2]) && (!uselims || lim_frame == 2) && SafeOpenEnd(seq_strand,cds_start,2)) starts[2].push_back(2);
     
-        if(!equal(taa,taa+3,&cds[0]) && !equal(tag,tag+3,&cds[0]) && !equal(tga,tga+3,&cds[0]))
-        {
-            starts[0].push_back(0);
-        }
-        
-        int k = cds_extra.size()-4;
-        if(k < 0 || (!equal(taa,taa+3,&cds_extra[k]) && !equal(tag,tag+3,&cds_extra[k]) && !equal(tga,tga+3,&cds_extra[k])))
-        {
-            starts[1].push_back(0);
-        }
-        k = cds_extra.size()-3;
-        if(k < 0 || (!equal(taa,taa+3,&cds_extra[k]) && !equal(tag,tag+3,&cds_extra[k]) && !equal(tga,tga+3,&cds_extra[k])))
-        {
-            starts[2].push_back(0);
-        }
-
-        CEResidueVec::iterator pos;
-        pos = search(cds.begin(),cds.end(),atg,atg+3);
-        while(pos != cds.end())
-        {
-            int l = pos-cds.begin();
-            int frame = l%3;
-            if(l != 0) starts[frame].push_back(l);
-            pos = search(pos+1,cds.end(),atg,atg+3);
-        }
-
-        pos = search(cds.begin(),cds.end(),taa,taa+3);
-        while(pos != cds.end())
-        {
-            int l = pos-cds.begin();
-            int frame = l%3;
-            if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);
-            pos = search(pos+1,cds.end(),taa,taa+3);
-        }
-        pos = search(cds.begin(),cds.end(),tag,tag+3);
-        while(pos != cds.end())
-        {
-            int l = pos-cds.begin();
-            int frame = l%3;
-            if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);
-            pos = search(pos+1,cds.end(),tag,tag+3);
-        }
-        pos = search(cds.begin(),cds.end(),tga,tga+3);
-        while(pos != cds.end())
-        {
-            int l = pos-cds.begin();
-            int frame = l%3;
-            if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);
-            pos = search(pos+1,cds.end(),tga,tga+3);
-        }
-        sort(stops[0].begin(),stops[0].end());
-        sort(stops[1].begin(),stops[1].end());
-        sort(stops[2].begin(),stops[2].end());
-        stops[0].push_back(cds.size());
-        stops[1].push_back(cds.size());
-        stops[2].push_back(cds.size());
+    CEResidueVec::iterator pos;
+    pos = search(cds.begin(),cds.end(),atg,atg+3);
+    while(pos != cds.end()) {
+        int l = pos-cds.begin();
+        int frame = l%3;
+        if(!uselims || (frame == lim_frame && l <= lim_start)) starts[frame].push_back(l); // with uselims only earlier starts should be considered
+        pos = search(pos+1,cds.end(),atg,atg+3);
     }
+
+
+    pos = search(cds.begin(),cds.end(),taa,taa+3);
+    while(pos != cds.end()) {
+        int l = pos-cds.begin();
+        int frame = l%3;
+        if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);   // if uselims stops in CDS are ignored
+        pos = search(pos+1,cds.end(),taa,taa+3);
+    }
+    pos = search(cds.begin(),cds.end(),tag,tag+3);
+    while(pos != cds.end()) {
+        int l = pos-cds.begin();
+        int frame = l%3;
+        if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);
+        pos = search(pos+1,cds.end(),tag,tag+3);
+    }
+    pos = search(cds.begin(),cds.end(),tga,tga+3);
+    while(pos != cds.end()) {
+        int l = pos-cds.begin();
+        int frame = l%3;
+        if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);
+        pos = search(pos+1,cds.end(),tga,tga+3);
+    }
+    sort(stops[0].begin(),stops[0].end());    // three types of stops come independently in different order
+    sort(stops[1].begin(),stops[1].end());
+    sort(stops[2].begin(),stops[2].end());
+    stops[cds.size()%3].push_back(cds.size());
+    stops[(cds.size()-1)%3].push_back(cds.size()-1);
+    stops[(cds.size()-2)%3].push_back(cds.size()-2);
+    
     
     TDVec splicescr(cds.size(),0);
     
@@ -1391,51 +1368,35 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
     }
     model.SetScore(BadScore());
 
-    for(int frame = 0; frame < 3; ++frame)
-    {
-        for(int i = (int)starts[frame].size()-1; i >= 0; --i)
-        {
+    for(int frame = 0; frame < 3; ++frame) {
+        for(int i = (int)starts[frame].size()-1; i >= 0; --i) {
             int start = starts[frame][i];
-            if(start == 0) start += frame;     // codon boundary
             
+            if(model.ConfirmedStart() && start != lim_start-3) continue;
+
             TIVec::iterator it_stop = lower_bound(stops[frame].begin(),stops[frame].end(),start);
             int stop = *it_stop-1;
-            if(stop == (int)cds.size()-1)
-            {
-                switch((stop-frame)%3)
-                {
-                    case 0: stop -= 1; break;  // codon boundary
-                    case 1: stop -= 2; break;  // codon boundary
-                    case 2: break;
-                }
-            }
 
+            if(uselims && stop < lim_stop) continue;
             if(stop-start+1 < 75) continue;
             
             double s = cdrscr[frame][stop]-cdrscr[frame][start+2];
             
             double stt_score = BadScore();
-            if(start >= stt.Left()+2)    // 5 extra bases for ncdr
-            {
+            if(start >= stt.Left()+2) {   // 5 extra bases for ncdr
                 int pnt = start+2;
                 stt_score = stt.Score(cds,pnt);
-                if(stt_score != BadScore())
-                {
-                    for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k)
-                    {
+                if(stt_score != BadScore()) {
+                    for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
                         double sn = ncdr.Score(cds,k);
                         if(sn != BadScore()) stt_score -= sn;
                     }
                 }
-            }
-            else
-            {
+            } else {
                 int pnt = (strand == ePlus) ? cdsmap[start]+2 : len-1-cdsmap[start]+2;
                 stt_score = stt.Score(ds[strand],pnt);
-                if(stt_score != BadScore())
-                {
-                    for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k)
-                    {
+                if(stt_score != BadScore()) {
+                    for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
                         double sn = ncdr.Score(ds[strand],k);
                         if(sn != BadScore()) stt_score -= sn;
                     }
@@ -1444,70 +1405,50 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
             if(stt_score != BadScore()) s += stt_score;
             
             double stp_score = stp.Score(cds,stop);
-            if(stp_score != BadScore()) 
-            {
-                 for(int k = stop-stp.Left()+1; k <= stop+stp.Right(); ++k)
-                 {
-                     double sn = ncdr.Score(cds,k);
-                     if(sn != BadScore()) stp_score -= sn;
-                 }
-                 s += stp_score;
+            if(stp_score != BadScore()) {
+                for(int k = stop-stp.Left()+1; k <= stop+stp.Right(); ++k) {
+                    double sn = ncdr.Score(cds,k);
+                    if(sn != BadScore()) stp_score -= sn;
+                }
+                s += stp_score;
             }
             
-            
-            if(s > model.Score())
-            {
+            if(s > model.Score()) {
                 bool opencds = false;
-                if(!equal(atg,atg+3,&cds[start])) 
-                {
-                    bool found_stop = false;
-                    const CEResidueVec& seq_strand = ds[strand];
-                    int cds_start = (strand == ePlus) ? cdsmap[start] : len-1-cdsmap[start];
-
-                    for(int k = cds_start-3; k >= 0; k -= 3)
-                    {
-                        if(equal(atg,atg+3,&seq_strand[k])) break;
-                        if(equal(ag,ag+2,&seq_strand[k])) break;
-                        if(k+1 < cds_start-1 && equal(ag,ag+2,&seq_strand[k+1])) break;
-                        if(k+2 < cds_start-1 && equal(ag,ag+2,&seq_strand[k+2])) break;
-                        if(equal(taa,taa+3,&seq_strand[k]) || 
-                           equal(tag,tag+3,&seq_strand[k]) || 
-                           equal(tga,tga+3,&seq_strand[k]))
-                        {
-                            found_stop = true;
-                            break;
-                        }
-                    }
-                    if(found_stop) continue;
-                
+                if(!equal(atg,atg+3,&cds[start])) {
                     opencds = true;
-                    if(starts[frame].size() > 1)
-                    {
+                    if(starts[frame].size() > 1) {
                         int new_start = starts[frame][1];
                         int newlen = stop-new_start+1;
-                        if(newlen > 75 && (!uselims || new_start+3 <= lim_start)) start = new_start;
+                        if(newlen > 75) start = new_start;
                     }
                 }
                 
                 if(equal(atg,atg+3,&cds[start])) start += 3;
-                if(uselims && (start > lim_start || stop < lim_stop || (start-lim_start)%3 != 0)) continue;
             
                 model.SetOpenCds(opencds);
                 
                 int upstream_stop = -1;
                 if(it_stop != stops[frame].begin()) upstream_stop = *(--it_stop);
-                int utr_start = *lower_bound(starts[frame].begin(),starts[frame].end(),upstream_stop);
+                int utr_start = *lower_bound(starts[frame].begin(),starts[frame].end(),upstream_stop+1);
+                if(utr_start < 3) utr_start = 0;
                 int utr_stop = min((int)cds.size()-1,stop+3);
                 
-                if(strand == ePlus) model.SetMaxCdsLimits(TSignedSeqRange(cdsmap[utr_start],cdsmap[utr_stop]));
-                else                model.SetMaxCdsLimits(TSignedSeqRange(cdsmap[utr_stop],cdsmap[utr_start]));
+                if(strand == ePlus) {
+                    model.SetMaxCdsLimits(TSignedSeqRange(cdsmap[utr_start],cdsmap[utr_stop]));
+                } else {
+                    model.SetMaxCdsLimits(TSignedSeqRange(cdsmap[utr_stop],cdsmap[utr_start]));
+                }
 
                 model.SetScore(s);
                 
                 while(cdsmap[start] < 0 && start < (int)cds.size()-1) ++start;  // in case they point to deletion  
                 while(cdsmap[stop] < 0 && stop > 0) --stop; 
-                if(strand == ePlus) model.SetCdsLimits(TSignedSeqRange(cdsmap[start],cdsmap[stop]));
-                else                model.SetCdsLimits(TSignedSeqRange(cdsmap[stop],cdsmap[start]));
+                if(strand == ePlus) {
+                    model.SetCdsLimits(TSignedSeqRange(cdsmap[start],cdsmap[stop]));
+                } else {
+                    model.SetCdsLimits(TSignedSeqRange(cdsmap[stop],cdsmap[start]));
+                }
             }
         }
     }
@@ -1520,6 +1461,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2006/06/29 19:25:50  souvorov
+ * Confirmed start and SafeOpenEnd implementation
+ *
  * Revision 1.10  2006/05/11 19:23:07  souvorov
  * Bug in detection of internal stops
  *
