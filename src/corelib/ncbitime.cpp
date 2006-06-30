@@ -1835,8 +1835,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
                 diff += CTimeSpan(0, 0, 0, 0, kMicroSecondsPerSecond/2000000);
                 break;
             default:
-                // nanoseconds -- nothing to do
-		;
+                ; // nanoseconds -- nothing to do
         }
     }
 
@@ -1853,12 +1852,18 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
     span[3] = SItem(diff.x_Hour()  , "hour",   "0 hours");
     span[4] = SItem(diff.x_Minute(), "minute", "0 minutes");
     span[5] = SItem(diff.x_Second(), "second", "0 seconds");
-    if ( nanoseconds % 1000000 == 0 ) {
-        span[6] = SItem(nanoseconds / 1000000, "millisecond","0 milliseconds");
-    } else if ( nanoseconds % 1000 == 0 ) {
-        span[6] = SItem(nanoseconds / 1000, "microsecond", "0 microseconds");
-    } else {
-        span[6] = SItem(nanoseconds, "nanosecond", "0 nanoseconds");
+    switch (precision) {
+        case eSSP_Millisecond:
+            span[6] = SItem(nanoseconds / 1000000, "millisecond","0 milliseconds");
+            break;
+        case eSSP_Microsecond:
+            span[6] = SItem(nanoseconds / 1000, "microsecond", "0 microseconds");
+            break;
+        case eSSP_Nanosecond:
+            span[6] = SItem(nanoseconds, "nanosecond", "0 nanoseconds");
+            break;
+        default:
+            ; // other not nanoseconds based precisions
     }
 
     // Result string
@@ -1871,7 +1876,8 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
         long val = span[i].value;
         if ( !val ) {
             if ( result.empty() ) {
-                if (current_precision == precision) {
+                if (current_precision == precision  &&
+                    current_precision != eSSP_Precision1) {
                     break;
                 }
                 if ( is_named_precision ) {
@@ -2165,6 +2171,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/06/30 14:57:01  ivanov
+ * CTimeSpan::AsSmartString() -- fixed processing of nanoseconds-based and
+ * eSSP_Precision1 precision levels.
+ *
  * Revision 1.75  2006/06/06 19:08:20  ivanov
  * CTime:: Use new type TSeconds in some methods for time representation
  *
