@@ -1309,12 +1309,32 @@ public:
     ///   Format specifier used to convert value returned by Elapsed()
     ///   to string.
     /// @sa
-    ///   CTimeSpan::AsString, GetFormat, SetFormat
+    ///   CTimeSpan::AsString, Elapsed, GetFormat, SetFormat
     string AsString(const string& fmt = kEmptyStr) const;
 
     /// Return stopwatch time as string using the format returned
     /// by GetFormat().
     operator string(void) const;
+
+    /// Transform elapsed time to "smart" string.
+    ///
+    /// For more details see CTimeSpan::AsSmartString().
+    /// @param precision
+    ///   Enum value describing how many parts of time span should be
+    ///   returned.
+    /// @param rounding
+    ///   Rounding mode.
+    /// @param zero_mode
+    ///   Mode to print or skip zero parts of time span.
+    /// @return
+    ///   A string representation of elapsed time span.
+    /// @sa
+    ///   CTimeSpan::AsSmartString, AsString, Elapsed
+    string AsSmartString(
+        CTimeSpan::ESmartStringPrecision precision = CTimeSpan::eSSP_Nanosecond,
+        ERound                           rounding  = eTrunc,
+        CTimeSpan::ESmartStringZeroMode  zero_mode = CTimeSpan::eSSZ_Default)
+        const;
 
 protected:
     /// Get current time mark.
@@ -2014,8 +2034,22 @@ double CStopWatch::Restart()
     return elapsed;
 }
 
+
 inline 
-CStopWatch::operator string(void) const { return AsString(); }
+CStopWatch::operator string(void) const 
+{ 
+    return AsString();
+}
+
+
+string CStopWatch::AsSmartString(
+    CTimeSpan::ESmartStringPrecision precision,
+    ERound                           rounding,
+    CTimeSpan::ESmartStringZeroMode  zero_mode)
+    const
+{
+    return CTimeSpan(Elapsed()).AsSmartString(precision, rounding, zero_mode);
+}
 
 
 END_NCBI_SCOPE
@@ -2024,6 +2058,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/06/30 14:04:59  ivanov
+ * + CStopWatch::AsSmartString
+ *
  * Revision 1.60  2006/06/06 19:08:12  ivanov
  * CTime:: Use new type TSeconds in some methods for time representation
  *
