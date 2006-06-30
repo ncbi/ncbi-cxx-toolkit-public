@@ -170,6 +170,8 @@ public:
                                                      CScope* scope);
     static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                                                     ENa_strand strand);
+    virtual CConstRef<CSeqMap> CloneFor(const CBioseq& seq) const;
+
     // copy map for editing
     CSeqMap(const CSeqMap& sm);
 

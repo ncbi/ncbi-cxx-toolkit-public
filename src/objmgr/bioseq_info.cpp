@@ -237,7 +237,7 @@ void CBioseq_Info::x_SetObject(const CBioseq_Info& info,
     }
     m_Id = info.m_Id;
     if ( info.m_SeqMap ) {
-        m_SeqMap = new CSeqMap(*info.m_SeqMap);
+        m_SeqMap = info.m_SeqMap->CloneFor(*m_Object);
     }
     if ( info.IsSetAnnot() ) {
         x_SetAnnot(info, copy_map);
@@ -1127,6 +1127,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/06/30 15:04:47  vasilche
+* Fixed attaching of Seq-data to edited bioseq.
+*
 * Revision 1.35  2006/01/25 18:59:04  didenko
 * Redisgned bio objects edit facility
 *

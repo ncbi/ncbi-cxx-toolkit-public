@@ -615,6 +615,68 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(const CBioseq& seq)
 }
 
 
+CConstRef<CSeqMap> CSeqMap::CloneFor(const CBioseq& seq) const
+{
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CRef<CSeqMap> ret;
+    const CSeq_inst& inst = seq.GetInst();
+    if ( inst.IsSetSeq_data() ) {
+        ret.Reset(new CSeqMap_Seq_data(inst));
+    }
+    else if ( inst.IsSetExt() ) {
+        const CSeq_ext& ext = inst.GetExt();
+        switch (ext.Which()) {
+        case CSeq_ext::e_Seg:
+            ret.Reset(new CSeqMap_Seq_locs(ext.GetSeg(),
+                                           ext.GetSeg().Get()));
+            break;
+        case CSeq_ext::e_Ref:
+            ret.Reset(new CSeqMap(ext.GetRef()));
+            break;
+        case CSeq_ext::e_Delta:
+            ret.Reset(new CSeqMap_Delta_seqs(ext.GetDelta()));
+            break;
+        case CSeq_ext::e_Map:
+            //### Not implemented
+            NCBI_THROW(CSeqMapException, eUnimplemented,
+                       "CSeq_ext::e_Map -- not implemented");
+        default:
+            //### Not implemented
+            NCBI_THROW(CSeqMapException, eUnimplemented,
+                       "CSeq_ext::??? -- not implemented");
+        }
+    }
+    else if ( inst.GetRepr() == CSeq_inst::eRepr_virtual ) {
+        // Virtual sequence -- no data, no segments
+        // The total sequence is gap
+        ret.Reset(new CSeqMap(inst.GetLength()));
+    }
+    else if ( inst.GetRepr() != CSeq_inst::eRepr_not_set && 
+              inst.IsSetLength() && inst.GetLength() != 0 ) {
+        // split seq-data
+        ret.Reset(new CSeqMap_Seq_data(inst));
+    }
+    else {
+        if ( inst.GetRepr() != CSeq_inst::eRepr_not_set ) {
+            NCBI_THROW(CSeqMapException, eDataError,
+                       "CSeq_inst.repr of sequence without data "
+                       "should be not_set");
+        }
+        if ( inst.IsSetLength() && inst.GetLength() != 0 ) {
+            NCBI_THROW(CSeqMapException, eDataError,
+                       "CSeq_inst.length of sequence without data "
+                       "should be 0");
+        }
+        ret.Reset(new CSeqMap(TSeqPos(0)));
+    }
+    const_cast<CSeqMap&>(*ret).m_Mol = inst.GetMol();
+    if ( inst.IsSetLength() ) {
+        const_cast<CSeqMap&>(*ret).m_SeqLength = inst.GetLength();
+    }
+    return ret;
+}
+
+
 CConstRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
                                                    CScope* scope)
 {
