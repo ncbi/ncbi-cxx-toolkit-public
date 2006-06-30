@@ -2042,6 +2042,7 @@ CStopWatch::operator string(void) const
 }
 
 
+inline
 string CStopWatch::AsSmartString(
     CTimeSpan::ESmartStringPrecision precision,
     ERound                           rounding,
@@ -2058,6 +2059,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/06/30 14:34:20  ivanov
+ * Added inline to CStopWatch::AsSmartString
+ *
  * Revision 1.61  2006/06/30 14:04:59  ivanov
  * + CStopWatch::AsSmartString
  *
