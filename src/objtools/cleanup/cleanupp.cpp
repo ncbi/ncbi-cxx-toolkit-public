@@ -355,7 +355,7 @@ void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
 
 void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 {
-    x_RecurseForDescriptors(bss, x_RemoveEmptyGenbankDesc);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
 #if 0
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
     x_ConvertFullLenPubFeatureToDescriptor(bss);    
@@ -363,26 +363,26 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_MergeAdjacentAnnots(bss);
 #endif
     
-    x_RecurseForDescriptors(bss, x_RemoveMultipleTitles);
-    x_RecurseForDescriptors(bss, x_MergeMultipleDates);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
 #if 0    
     x_CorrectExceptText(bss);
 #endif    
-    x_RecurseForDescriptors(bss, x_MergeEquivalentCitSubs);
-    x_RecurseForDescriptors(bss, x_MergeDuplicateBioSources);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeEquivalentCitSubs);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     
     RenormalizeNucProtSets(bss);
     
-    x_RecurseForDescriptors(bss, x_CleanGenbankBlockStrings);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
 
 #if 0
     x_MoveDbxrefs(bss);
 #endif
-    x_RecurseForDescriptors(bss, x_MergeDuplicateBioSources);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
 
-    x_RecurseForDescriptors(bss, x_MolInfoUpdate);
-    x_RecurseForDescriptors(bss, x_RemoveEmptyGenbankDesc);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
 #if 0    
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
     x_ConvertFullLenPubFeatureToDescriptor(bss);    
@@ -396,32 +396,32 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 
 void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 {
-    x_RecurseForDescriptors(bsh, x_RemoveEmptyGenbankDesc);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
 #if 0
     x_ConvertFullLenSourceFeatureToDescriptor(bs);
     x_ConvertFullLenPubFeatureToDescriptor(bs);    
     x_RemoveEmptyFeatures(bs); 
     x_MergeAdjacentAnnots(bs);
 #endif    
-    x_RecurseForDescriptors(bsh, x_RemoveMultipleTitles);
-    x_RecurseForDescriptors(bsh, x_MergeMultipleDates);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
 #if 0
     x_CorrectExceptText(bs);
 #endif
     
-    x_RecurseForDescriptors(bsh, x_MergeEquivalentCitSubs);
-    x_RecurseForDescriptors(bsh, x_MergeDuplicateBioSources);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeEquivalentCitSubs);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     
-    x_RecurseForDescriptors(bsh, x_CleanGenbankBlockStrings);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
 
 #if 0    
     x_MoveDbxrefs(bs);
 #endif
-    x_RecurseForDescriptors(bsh, x_MergeDuplicateBioSources);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
 
-    x_RecurseForDescriptors(bsh, x_MolInfoUpdate);
-    x_RecurseForDescriptors(bsh, x_RemoveEmptyGenbankDesc);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
 #if 0    
     x_ConvertFullLenSourceFeatureToDescriptor(bs);
     x_ConvertFullLenPubFeatureToDescriptor(bs);    
@@ -446,7 +446,7 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
 }
 
 
-void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, void (CCleanup_imp::*pmf)(CSeq_descr& sdr))
+void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor pmf)
 {
     if (bs.IsSetDescr()) {
         CBioseq_EditHandle eh = bs.GetEditHandle();    
@@ -455,7 +455,7 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, void (CCleanup_im
 }
 
 
-void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, void (CCleanup_imp::*pmf)(CSeq_descr& sdr))
+void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescriptor pmf)
 {
     if (bss.IsSetDescr()) {
         CBioseq_set_EditHandle eh = bss.GetEditHandle();
@@ -1232,6 +1232,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2006/07/03 14:51:11  bollin
+ * corrected compiler errors
+ *
  * Revision 1.21  2006/07/03 12:33:48  bollin
  * use edit handles instead of operating directly on the data
  * added step to renormalize nuc-prot sets to ExtendedCleanup

@@ -201,8 +201,9 @@ private:
     bool x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str);
 
     // Extended Cleanup
-    void x_RecurseForDescriptors (CBioseq_Handle bs, void (CCleanup_imp::*pmf)(CSeq_descr& sdr));
-    void x_RecurseForDescriptors (CBioseq_set_Handle bs, void (CCleanup_imp::*pmf)(CSeq_descr& sdr));
+    typedef void (CCleanup_imp::*RecurseDescriptor)(CSeq_descr& sdr);
+    void x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor);
+    void x_RecurseForDescriptors (CBioseq_set_Handle bs, RecurseDescriptor);
     
     void x_MolInfoUpdate(CSeq_descr& sdr);
     
@@ -271,6 +272,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2006/07/03 14:51:11  bollin
+ * corrected compiler errors
+ *
  * Revision 1.22  2006/07/03 12:33:48  bollin
  * use edit handles instead of operating directly on the data
  * added step to renormalize nuc-prot sets to ExtendedCleanup
