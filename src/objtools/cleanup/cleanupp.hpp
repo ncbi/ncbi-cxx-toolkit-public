@@ -219,9 +219,8 @@ private:
     
     void x_MergeMultipleDates (CSeq_descr& sdr);
     
-    void x_MergeAdjacentAnnots (list< CRef< CSeq_annot > >& annot_list);
-    void x_MergeAdjacentAnnots (CBioseq& bs);
-    void x_MergeAdjacentAnnots (CBioseq_set& bss);
+    void x_MergeAdjacentAnnots (CBioseq_Handle bs);
+    void x_MergeAdjacentAnnots (CBioseq_set_Handle bss);
     
     void x_ConvertFullLenFeatureToDescriptor(CSeq_annot& sa, CSeqFeatData::E_Choice choice);
     void x_ConvertFullLenSourceFeatureToDescriptor(CSeq_annot& sa);
@@ -272,6 +271,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2006/07/03 15:27:38  bollin
+ * rewrote x_MergeAddjacentAnnots to use edit handles
+ *
  * Revision 1.23  2006/07/03 14:51:11  bollin
  * corrected compiler errors
  *

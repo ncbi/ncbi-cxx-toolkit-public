@@ -41,6 +41,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Pubdesc.hpp>
+#include <objects/seq/Annot_descr.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/seqblock/GB_block.hpp>
@@ -52,6 +53,7 @@
 #include <objects/general/Date.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/feat_ci.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanupp.hpp"
@@ -360,8 +362,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
     x_ConvertFullLenPubFeatureToDescriptor(bss);    
     x_RemoveEmptyFeatures(bss);
-    x_MergeAdjacentAnnots(bss);
 #endif
+    x_MergeAdjacentAnnots(bss);
     
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
@@ -387,9 +389,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
     x_ConvertFullLenPubFeatureToDescriptor(bss);    
     x_RemoveEmptyFeatures(bss);
-    x_MergeAdjacentAnnots(bss);
-    BasicCleanup(bss);
 #endif
+    x_MergeAdjacentAnnots(bss);
 }
 
 
@@ -400,9 +401,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 #if 0
     x_ConvertFullLenSourceFeatureToDescriptor(bs);
     x_ConvertFullLenPubFeatureToDescriptor(bs);    
-    x_RemoveEmptyFeatures(bs); 
-    x_MergeAdjacentAnnots(bs);
+    x_RemoveEmptyFeatures(bsh); 
 #endif    
+    x_MergeAdjacentAnnots(bsh);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
@@ -426,8 +427,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_ConvertFullLenSourceFeatureToDescriptor(bs);
     x_ConvertFullLenPubFeatureToDescriptor(bs);    
     x_RemoveEmptyFeatures(bs);
-    x_MergeAdjacentAnnots(bs);    
 #endif    
+    x_MergeAdjacentAnnots(bsh);    
 }
 
 
@@ -975,79 +976,113 @@ void CCleanup_imp::x_RemoveEmptyFeatures (CBioseq_set& bss)
 
 // combine CSeq_annot objects if two adjacent objects in the list are both
 // feature table annotations, both have no id, no name, no db, and no description
-void CCleanup_imp::x_MergeAdjacentAnnots (list< CRef< CSeq_annot > >& annot_list)
+// Was MergeAdjacentAnnotsCallback in C Toolkit
+
+void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_Handle bs)
 {
-    list< CRef< CSeq_annot > > new_list;
+    CBioseq_EditHandle bseh = bs.GetEditHandle();
     
-    new_list.clear();
-    
-    while (annot_list.size() > 0) {
-        CRef<CSeq_annot> sa = annot_list.front();
-        annot_list.pop_front();
-        if (new_list.size() == 0 
-            || ! (*sa).CanGetData()
-            || ! (*sa).GetData().IsFtable()
-            || (*sa).IsSetId()
-            || (*sa).IsSetName()
-            || (*sa).IsSetDb()
-            || (*sa).IsSetDesc()
-            || ! new_list.back()->CanGetData()
-            || ! new_list.back()->GetData().IsFtable()
-            || new_list.back()->IsSetId()
-            || new_list.back()->IsSetName()
-            || new_list.back()->IsSetDb()
-            || new_list.back()->IsSetDesc()) {
-            new_list.push_back (sa);
-        } else {
-            // add features from this annot to the previous one
-            CSeq_annot::C_Data::TFtable& ftable = new_list.back()->SetData().SetFtable();
-            CSeq_annot::C_Data::TFtable& new_table = (*sa).SetData().SetFtable();
-            while (new_table.size() > 0) {
-                CRef< CSeq_feat > sf = new_table.front();
-                new_table.pop_front();
-                ftable.push_back(sf);
+    // combine adjacent annotations
+    vector<CSeq_annot_EditHandle> sah; // copy annot handles to not to break iterator while moving
+    CSeq_annot_EditHandle prev;
+    bool prev_can_merge = false;
+    CSeq_annot_CI annot_it(bseh.GetSeq_entry_Handle(), CSeq_annot_CI::eSearch_entry);
+    for(; annot_it; ++annot_it) {
+        if ((*annot_it).IsFtable()
+            && (! (*annot_it).Seq_annot_CanGetId() 
+                || (*annot_it).Seq_annot_GetId().size() == 0)
+            && (! (*annot_it).Seq_annot_CanGetName() 
+                || NStr::IsBlank((*annot_it).Seq_annot_GetName()))
+            && (! (*annot_it).Seq_annot_CanGetDb()
+                || (*annot_it).Seq_annot_GetDb() == 0)
+            && (! (*annot_it).Seq_annot_CanGetDesc()
+                || (*annot_it).Seq_annot_GetDesc().Get().size() == 0)) {
+            if (prev_can_merge) {
+                // merge features from annot_it into prev
+                CFeat_CI feat_ci((*annot_it));
+                while (feat_ci) {
+                    prev.AddFeat(feat_ci->GetOriginalFeature());
+                    ++feat_ci;
+                }
+                // add annot_it to list of annotations to remove
+                sah.push_back((*annot_it).GetEditHandle());
+            } else {
+                prev = (*annot_it).GetEditHandle();
             }
+            prev_can_merge = true;
+        } else {
+            prev_can_merge = false;
         }
     }
+    // move annots from one place to another without copying their contents
+    ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
+        (*it).Remove();
+    }
+   
+}
+
+
+void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_set_Handle bs)
+{
+    CBioseq_set_EditHandle bseh = bs.GetEditHandle();
     
-    while (new_list.size() > 0) {
-        CRef<CSeq_annot> sa = new_list.front();
-        new_list.pop_front();
-        annot_list.push_back(sa);
+    // combine adjacent annotations
+    vector<CSeq_annot_EditHandle> sah; // copy annot handles to not to break iterator while moving
+    CSeq_annot_EditHandle prev;
+    bool prev_can_merge = false;
+    CSeq_annot_CI annot_it(bseh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for(; annot_it; ++annot_it) {
+        if ((*annot_it).IsFtable()
+            && (! (*annot_it).Seq_annot_CanGetId() 
+                || (*annot_it).Seq_annot_GetId().size() == 0)
+            && (! (*annot_it).Seq_annot_CanGetName() 
+                || NStr::IsBlank((*annot_it).Seq_annot_GetName()))
+            && (! (*annot_it).Seq_annot_CanGetDb()
+                || (*annot_it).Seq_annot_GetDb() == 0)
+            && (! (*annot_it).Seq_annot_CanGetDesc()
+                || (*annot_it).Seq_annot_GetDesc().Get().size() == 0)) {
+            if (prev_can_merge) {
+                // merge features from annot_it into prev
+                CFeat_CI feat_ci((*annot_it));
+                while (feat_ci) {
+                    prev.AddFeat(feat_ci->GetOriginalFeature());
+                    ++feat_ci;
+                }
+                // add annot_it to list of annotations to remove
+                sah.push_back((*annot_it).GetEditHandle());
+            } else {
+                prev = (*annot_it).GetEditHandle();
+            }
+            prev_can_merge = true;
+        } else {
+            prev_can_merge = false;
+        }
     }
-}
-
-
-void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq& bs)
-{
-    if (bs.IsSetAnnot()) {
-        x_MergeAdjacentAnnots(bs.SetAnnot());
+    // move annots from one place to another without copying their contents
+    ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
+        (*it).Remove();
     }
-}
 
-
-void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_set& bss)
-{
-    if (bss.IsSetAnnot()) {
-        x_MergeAdjacentAnnots(bss.SetAnnot());
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
+    // now operate on members of set
+    if (bs.GetCompleteBioseq_set()->IsSetSeq_set()) {
+       CConstRef<CBioseq_set> b = bs.GetCompleteBioseq_set();
+       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+       
+       ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            switch ((**it).Which()) {
                 case CSeq_entry::e_Seq:
-                    x_MergeAdjacentAnnots(se.SetSeq());
+                    x_MergeAdjacentAnnots(m_Scope->GetBioseqHandle((**it).GetSeq()));
                     break;
                 case CSeq_entry::e_Set:
-                    x_MergeAdjacentAnnots(se.SetSet());
+                    x_MergeAdjacentAnnots(m_Scope->GetBioseq_setHandle((**it).GetSet()));
                     break;
                 case CSeq_entry::e_not_set:
                 default:
                     break;
             }
         }
-    }    
+    }
+   
 }
 
 
@@ -1232,6 +1267,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2006/07/03 15:27:38  bollin
+ * rewrote x_MergeAddjacentAnnots to use edit handles
+ *
  * Revision 1.22  2006/07/03 14:51:11  bollin
  * corrected compiler errors
  *
