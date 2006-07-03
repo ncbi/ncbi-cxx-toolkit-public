@@ -51,6 +51,7 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/general/Date.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanupp.hpp"
@@ -312,21 +313,19 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
 }
 
 // Extended Cleanup Methods
-void CCleanup_imp::ExtendedCleanup(CSeq_entry& se)
+void CCleanup_imp::ExtendedCleanup(CSeq_entry_Handle seh)
 {    
-    Setup(se);
-    switch (se.Which()) {
+    switch (seh.Which()) {
         case CSeq_entry::e_Seq:
-            ExtendedCleanup(se.SetSeq());
+            ExtendedCleanup(seh.GetSeq());
             break;
         case CSeq_entry::e_Set:
-            ExtendedCleanup(se.SetSet());
+            ExtendedCleanup(seh.GetSet());
             break;
         case CSeq_entry::e_not_set:
         default:
             break;
     }
-    Finish(se);
 }
 
 
@@ -337,12 +336,13 @@ void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
     switch (ss.GetData().Which()) {
         case CSeq_submit::TData::e_Entrys:
             NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, ss.SetData().SetEntrys()) {
-                ExtendedCleanup(**it);
+                CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle((**it));
+                ExtendedCleanup(seh);
             }
             break;
         case CSeq_submit::TData::e_Annots:
             NON_CONST_ITERATE(CSeq_submit::TData::TAnnots, it, ss.SetData().SetAnnots()) {
-                ExtendedCleanup(**it);
+                ExtendedCleanup(m_Scope->GetSeq_annotHandle(**it));
             }
             break;
         case CSeq_submit::TData::e_Delete:
@@ -353,70 +353,87 @@ void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
 }
 
 
-void CCleanup_imp::ExtendedCleanup(CBioseq_set& bss)
+void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 {
-    BasicCleanup(bss);
-    x_RemoveEmptyGenbankDesc(bss);
+    x_RecurseForDescriptors(bss, x_RemoveEmptyGenbankDesc);
+#if 0
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
     x_ConvertFullLenPubFeatureToDescriptor(bss);    
     x_RemoveEmptyFeatures(bss);
     x_MergeAdjacentAnnots(bss);
-    x_RemoveMultipleTitles(bss);
-    x_MergeMultipleDates(bss);
+#endif
     
+    x_RecurseForDescriptors(bss, x_RemoveMultipleTitles);
+    x_RecurseForDescriptors(bss, x_MergeMultipleDates);
+
+#if 0    
     x_CorrectExceptText(bss);
-    x_MergeEquivalentCitSubs(bss);
-    x_MergeDuplicateBioSources(bss);
+#endif    
+    x_RecurseForDescriptors(bss, x_MergeEquivalentCitSubs);
+    x_RecurseForDescriptors(bss, x_MergeDuplicateBioSources);
     
-    x_CleanGenbankBlockStrings(bss);
+    RenormalizeNucProtSets(bss);
+    
+    x_RecurseForDescriptors(bss, x_CleanGenbankBlockStrings);
 
+#if 0
     x_MoveDbxrefs(bss);
-    x_MergeDuplicateBioSources(bss);
+#endif
+    x_RecurseForDescriptors(bss, x_MergeDuplicateBioSources);
 
-    x_MolInfoUpdate(bss);
-    x_RemoveEmptyGenbankDesc(bss);
+    x_RecurseForDescriptors(bss, x_MolInfoUpdate);
+    x_RecurseForDescriptors(bss, x_RemoveEmptyGenbankDesc);
+#if 0    
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
     x_ConvertFullLenPubFeatureToDescriptor(bss);    
     x_RemoveEmptyFeatures(bss);
     x_MergeAdjacentAnnots(bss);
     BasicCleanup(bss);
-
+#endif
 }
 
 
-void CCleanup_imp::ExtendedCleanup(CBioseq& bs)
+
+void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 {
-    BasicCleanup (bs);
-    x_RemoveEmptyGenbankDesc(bs);
+    x_RecurseForDescriptors(bsh, x_RemoveEmptyGenbankDesc);
+#if 0
     x_ConvertFullLenSourceFeatureToDescriptor(bs);
     x_ConvertFullLenPubFeatureToDescriptor(bs);    
     x_RemoveEmptyFeatures(bs); 
-    x_MergeAdjacentAnnots(bs);   
-    x_RemoveMultipleTitles(bs);
-    x_MergeMultipleDates(bs);
+    x_MergeAdjacentAnnots(bs);
+#endif    
+    x_RecurseForDescriptors(bsh, x_RemoveMultipleTitles);
+    x_RecurseForDescriptors(bsh, x_MergeMultipleDates);
 
+#if 0
     x_CorrectExceptText(bs);
-    x_MergeEquivalentCitSubs(bs);
-    x_MergeDuplicateBioSources(bs);
+#endif
     
-    x_CleanGenbankBlockStrings(bs);
+    x_RecurseForDescriptors(bsh, x_MergeEquivalentCitSubs);
+    x_RecurseForDescriptors(bsh, x_MergeDuplicateBioSources);
     
-    x_MoveDbxrefs(bs);
-    x_MergeDuplicateBioSources(bs);
+    x_RecurseForDescriptors(bsh, x_CleanGenbankBlockStrings);
 
-    x_MolInfoUpdate(bs);
-    x_RemoveEmptyGenbankDesc(bs);
+#if 0    
+    x_MoveDbxrefs(bs);
+#endif
+    x_RecurseForDescriptors(bsh, x_MergeDuplicateBioSources);
+
+    x_RecurseForDescriptors(bsh, x_MolInfoUpdate);
+    x_RecurseForDescriptors(bsh, x_RemoveEmptyGenbankDesc);
+#if 0    
     x_ConvertFullLenSourceFeatureToDescriptor(bs);
     x_ConvertFullLenPubFeatureToDescriptor(bs);    
     x_RemoveEmptyFeatures(bs);
     x_MergeAdjacentAnnots(bs);    
-    BasicCleanup (bs);
+#endif    
 }
 
 
-void CCleanup_imp::ExtendedCleanup(CSeq_annot& sa)
+void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
 {
-    BasicCleanup (sa);
+#if 0
     x_ConvertFullLenSourceFeatureToDescriptor(sa);
     x_ConvertFullLenPubFeatureToDescriptor(sa);    
     x_RemoveEmptyFeatures(sa);
@@ -425,7 +442,48 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot& sa)
     
     x_MoveDbxrefs(sa);
     
-    BasicCleanup (sa);
+#endif
+}
+
+
+void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, void (CCleanup_imp::*pmf)(CSeq_descr& sdr))
+{
+    if (bs.IsSetDescr()) {
+        CBioseq_EditHandle eh = bs.GetEditHandle();    
+        (this->*pmf)(eh.SetDescr());
+    }
+}
+
+
+void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, void (CCleanup_imp::*pmf)(CSeq_descr& sdr))
+{
+    if (bss.IsSetDescr()) {
+        CBioseq_set_EditHandle eh = bss.GetEditHandle();
+        (this->*pmf)(eh.SetDescr());
+        if (eh.SetDescr().Set().empty()) {
+            eh.ResetDescr();
+        }
+    }
+
+    if (bss.GetCompleteBioseq_set()->IsSetSeq_set()) {
+       CBioseq_set_EditHandle eh = bss.GetEditHandle();
+       CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+       
+       ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            switch ((**it).Which()) {
+                case CSeq_entry::e_Seq:
+                    x_RecurseForDescriptors(m_Scope->GetBioseqHandle((**it).GetSeq()), pmf);
+                    break;
+                case CSeq_entry::e_Set:
+                    x_RecurseForDescriptors(m_Scope->GetBioseq_setHandle((**it).GetSet()), pmf);
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
 }
 
 
@@ -567,40 +625,6 @@ void CCleanup_imp::x_MolInfoUpdate(CSeq_descr& sdr)
 }
 
 
-void CCleanup_imp::x_MolInfoUpdate(CBioseq& bs)
-{
-    if (bs.IsSetDescr()) {
-        x_MolInfoUpdate(bs.SetDescr());
-    }
-}
-
-
-void CCleanup_imp::x_MolInfoUpdate(CBioseq_set& bss)
-{
-    if (bss.IsSetDescr()) {
-        x_MolInfoUpdate(bss.SetDescr());
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_MolInfoUpdate(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_MolInfoUpdate(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
-    }
-
-}
-
-
 bool IsEmpty (CGB_block& block) 
 {
     if ((!block.CanGetExtra_accessions() || block.GetExtra_accessions().size() == 0)
@@ -715,45 +739,6 @@ void CCleanup_imp::x_RemoveEmptyGenbankDesc(CSeq_descr& sdr)
 }
 
 
-void CCleanup_imp::x_RemoveEmptyGenbankDesc(CBioseq& bs)
-{
-    if (bs.IsSetDescr()) {
-        x_RemoveEmptyGenbankDesc(bs.SetDescr());
-        if (bs.SetDescr().Set().empty()) {
-            bs.ResetDescr();
-        }
-    }
-}
-
-
-void CCleanup_imp::x_RemoveEmptyGenbankDesc(CBioseq_set& bss)
-{
-    if (bss.IsSetDescr()) {
-        x_RemoveEmptyGenbankDesc(bss.SetDescr());
-        if (bss.SetDescr().Set().empty()) {
-            bss.ResetDescr();
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_RemoveEmptyGenbankDesc(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_RemoveEmptyGenbankDesc(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
-    }
-}
-
-
 // was EntryCheckGBBlock in C Toolkit
 // cleans strings for the GenBankBlock, removes descriptor if block is now empty
 void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr)
@@ -843,45 +828,6 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr)
 }
 
 
-void CCleanup_imp::x_CleanGenbankBlockStrings(CBioseq& bs)
-{
-    if (bs.IsSetDescr()) {
-        x_CleanGenbankBlockStrings(bs.SetDescr());
-        if (bs.SetDescr().Set().empty()) {
-            bs.ResetDescr();
-        }
-    }
-}
-
-
-void CCleanup_imp::x_CleanGenbankBlockStrings(CBioseq_set& bss)
-{
-    if (bss.IsSetDescr()) {
-        x_CleanGenbankBlockStrings(bss.SetDescr());
-        if (bss.SetDescr().Set().empty()) {
-            bss.ResetDescr();
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_CleanGenbankBlockStrings(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_CleanGenbankBlockStrings(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
-    }
-}
-
-
 // removes all title descriptors except the last one
 // Was RemoveMultipleTitles in C Toolkit
 void CCleanup_imp::x_RemoveMultipleTitles (CSeq_descr& sdr)
@@ -909,45 +855,6 @@ void CCleanup_imp::x_RemoveMultipleTitles (CSeq_descr& sdr)
         CRef< CSeqdesc > sd = new_list.front();
         new_list.pop_front();
         current_list.push_back (sd);
-    }
-}
-
-
-void CCleanup_imp::x_RemoveMultipleTitles(CBioseq& bs)
-{
-    if (bs.IsSetDescr()) {
-        x_RemoveMultipleTitles(bs.SetDescr());
-        if (bs.SetDescr().Set().empty()) {
-            bs.ResetDescr();
-        }
-    }
-}
-
-
-void CCleanup_imp::x_RemoveMultipleTitles(CBioseq_set& bss)
-{
-    if (bss.IsSetDescr()) {
-        x_RemoveMultipleTitles(bss.SetDescr());
-        if (bss.SetDescr().Set().empty()) {
-            bss.ResetDescr();
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_RemoveMultipleTitles(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_RemoveMultipleTitles(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
     }
 }
 
@@ -1003,45 +910,6 @@ void CCleanup_imp::x_MergeMultipleDates (CSeq_descr& sdr)
         current_list.push_back (sd);
     }
 }
-
-void CCleanup_imp::x_MergeMultipleDates(CBioseq& bs)
-{
-    if (bs.IsSetDescr()) {
-        x_MergeMultipleDates(bs.SetDescr());
-        if (bs.SetDescr().Set().empty()) {
-            bs.ResetDescr();
-        }
-    }
-}
-
-
-void CCleanup_imp::x_MergeMultipleDates(CBioseq_set& bss)
-{
-    if (bss.IsSetDescr()) {
-        x_MergeMultipleDates(bss.SetDescr());
-        if (bss.SetDescr().Set().empty()) {
-            bss.ResetDescr();
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_MergeMultipleDates(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_MergeMultipleDates(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
-    }
-}
-
 
 // removes or converts empty features
 void CCleanup_imp::x_RemoveEmptyFeatures (CSeq_annot& sa)
@@ -1325,6 +1193,38 @@ void CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor (CBioseq_set& bss)
 }
 
 
+void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
+{
+    CConstRef<CBioseq_set> b = bsh.GetCompleteBioseq_set();
+    if (bsh.CanGetClass() && b->IsSetSeq_set()) {
+        unsigned int bclass = bsh.GetClass();
+
+        list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+
+        if (bclass == CBioseq_set::eClass_genbank
+            || bclass == CBioseq_set::eClass_mut_set
+            || bclass == CBioseq_set::eClass_pop_set
+            || bclass == CBioseq_set::eClass_phy_set
+            || bclass == CBioseq_set::eClass_eco_set
+            || bclass == CBioseq_set::eClass_wgs_set
+            || bclass == CBioseq_set::eClass_gen_prod_set) {
+       
+            ITERATE (list< CRef< CSeq_entry > >, it, set) {
+                if ((**it).Which()) {
+                    RenormalizeNucProtSets (m_Scope->GetBioseq_setHandle((**it).GetSet()));
+                }
+            }
+        } else if (bclass == CBioseq_set::eClass_nuc_prot && set.size() == 1) {
+            // collapse nuc-prot set
+            CBioseq_set_EditHandle bseh = bsh.GetEditHandle();
+            
+            bseh.GetParentEntry().CollapseSet();
+            x_RemoveMultipleTitles(bseh.SetDescr());
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -1332,6 +1232,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2006/07/03 12:33:48  bollin
+ * use edit handles instead of operating directly on the data
+ * added step to renormalize nuc-prot sets to ExtendedCleanup
+ *
  * Revision 1.20  2006/06/28 15:23:03  bollin
  * added step to move db_xref GenBank Qualifiers to real dbxrefs to Extended Cleanup
  *

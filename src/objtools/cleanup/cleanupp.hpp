@@ -114,11 +114,13 @@ public:
     void BasicCleanup(CSeq_feat& sf);
     
     //Extended Cleanup
-    void ExtendedCleanup(CSeq_entry& se);
+    void ExtendedCleanup(CSeq_entry_Handle seh);
     void ExtendedCleanup(CSeq_submit& ss);
-    void ExtendedCleanup(CBioseq& bs);
-    void ExtendedCleanup(CBioseq_set& bss);
-    void ExtendedCleanup(CSeq_annot& sa);
+    void ExtendedCleanup(CBioseq_Handle bsh);
+    void ExtendedCleanup(CBioseq_set_Handle bss);
+    void ExtendedCleanup(CSeq_annot_Handle sa);
+    
+    void RenormalizeNucProtSets (CBioseq_set_Handle bsh);
 
 private:
     void Setup(const CSeq_entry& se);
@@ -199,29 +201,22 @@ private:
     bool x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str);
 
     // Extended Cleanup
-    void x_MolInfoUpdate(CBioseq& bs);
-    void x_MolInfoUpdate(CBioseq_set& bss);
+    void x_RecurseForDescriptors (CBioseq_Handle bs, void (CCleanup_imp::*pmf)(CSeq_descr& sdr));
+    void x_RecurseForDescriptors (CBioseq_set_Handle bs, void (CCleanup_imp::*pmf)(CSeq_descr& sdr));
+    
     void x_MolInfoUpdate(CSeq_descr& sdr);
     
     void x_RemoveEmptyGenbankDesc(CSeq_descr& sdr);
-    void x_RemoveEmptyGenbankDesc(CBioseq& bs);
-    void x_RemoveEmptyGenbankDesc(CBioseq_set& bss);
 
     void x_CleanGenbankBlockStrings (CSeq_descr& sdr);
-    void x_CleanGenbankBlockStrings (CBioseq& bs);
-    void x_CleanGenbankBlockStrings (CBioseq_set& bss);
     
     void x_RemoveEmptyFeatures (CSeq_annot& sa);
     void x_RemoveEmptyFeatures (CBioseq& bs);
     void x_RemoveEmptyFeatures (CBioseq_set& bss);
     
     void x_RemoveMultipleTitles (CSeq_descr& sdr);
-    void x_RemoveMultipleTitles(CBioseq& bs);
-    void x_RemoveMultipleTitles(CBioseq_set& bss);
     
     void x_MergeMultipleDates (CSeq_descr& sdr);
-    void x_MergeMultipleDates(CBioseq& bs);
-    void x_MergeMultipleDates(CBioseq_set& bss);
     
     void x_MergeAdjacentAnnots (list< CRef< CSeq_annot > >& annot_list);
     void x_MergeAdjacentAnnots (CBioseq& bs);
@@ -276,6 +271,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2006/07/03 12:33:48  bollin
+ * use edit handles instead of operating directly on the data
+ * added step to renormalize nuc-prot sets to ExtendedCleanup
+ *
  * Revision 1.21  2006/06/28 15:23:03  bollin
  * added step to move db_xref GenBank Qualifiers to real dbxrefs to Extended Cleanup
  *
