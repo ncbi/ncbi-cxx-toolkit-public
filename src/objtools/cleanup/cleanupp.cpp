@@ -358,9 +358,9 @@ void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
 void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 {
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-#if 0
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
     x_ConvertFullLenPubFeatureToDescriptor(bss);    
+#if 0
     x_RemoveEmptyFeatures(bss);
 #endif
     x_MergeAdjacentAnnots(bss);
@@ -385,9 +385,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-#if 0    
     x_ConvertFullLenSourceFeatureToDescriptor(bss);
     x_ConvertFullLenPubFeatureToDescriptor(bss);    
+#if 0    
     x_RemoveEmptyFeatures(bss);
 #endif
     x_MergeAdjacentAnnots(bss);
@@ -398,9 +398,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 {
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
+    x_ConvertFullLenSourceFeatureToDescriptor(bsh);
+    x_ConvertFullLenPubFeatureToDescriptor(bsh);    
 #if 0
-    x_ConvertFullLenSourceFeatureToDescriptor(bs);
-    x_ConvertFullLenPubFeatureToDescriptor(bs);    
     x_RemoveEmptyFeatures(bsh); 
 #endif    
     x_MergeAdjacentAnnots(bsh);
@@ -423,9 +423,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
+    x_ConvertFullLenSourceFeatureToDescriptor(bsh);
+    x_ConvertFullLenPubFeatureToDescriptor(bsh);    
 #if 0    
-    x_ConvertFullLenSourceFeatureToDescriptor(bs);
-    x_ConvertFullLenPubFeatureToDescriptor(bs);    
     x_RemoveEmptyFeatures(bs);
 #endif    
     x_MergeAdjacentAnnots(bsh);    
@@ -1089,145 +1089,133 @@ void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_set_Handle bs)
 // If the feature location is exactly the entire length of the Bioseq that the feature is 
 // located on, convert the feature to a descriptor on the same Bioseq.
 // Was ConvertFullLenSourceFeatToDesc in C Toolkit
-void CCleanup_imp::x_ConvertFullLenFeatureToDescriptor(CSeq_annot& sa, CSeqFeatData::E_Choice choice)
+void CCleanup_imp::x_ConvertFullLenFeatureToDescriptor (CBioseq_set_Handle bs, CSeqFeatData::E_Choice choice)
 {
-    if (choice != CSeqFeatData::e_Biosrc && choice != CSeqFeatData::e_Pub) {
-        return;
-    }
-    if (sa.IsSetData()  &&  sa.GetData().IsFtable()) {
-        CSeq_annot::C_Data::TFtable& ftable = sa.SetData().SetFtable();
-        CSeq_annot::C_Data::TFtable new_table;
-        new_table.clear();
-        
-        while (ftable.size() > 0) {
-            CRef< CSeq_feat > sf = ftable.front();
-            ftable.pop_front();
-            
-            if ((*sf).CanGetData() && (*sf).SetData().Which() == choice) {
-                // Create a location that covers the entire sequence and do
-                // a comparison.  Can't just check for the location type 
-                // of the feature to be "whole" because an interval could
-                // start at 0 and end at the end of the Bioseq.
-                CRef<CSeq_loc> loc(new CSeq_loc);
-                loc->SetWhole().Assign(*((*sf).GetLocation().GetId()));
-                if (sequence::Compare(*loc, (*sf).GetLocation(), m_Scope) == sequence::eSame) {
-                    CBioseq_Handle bh = m_Scope->GetBioseqHandle((*sf).GetLocation());                
-                    CRef<CSeqdesc> desc(new CSeqdesc);
+    CBioseq_set_EditHandle bseh = bs.GetEditHandle();
+    
+    CSeq_annot_CI annot_it(bseh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for(; annot_it; ++annot_it) {
+        if ((*annot_it).IsFtable()) {
+            CFeat_CI feat_ci((*annot_it));
+            while (feat_ci) {
+                const CSeq_feat& cf = feat_ci->GetOriginalFeature();
+                if (cf.CanGetData() && cf.GetData().Which()  == choice) {
+                    // Create a location that covers the entire sequence and do
+                    // a comparison.  Can't just check for the location type 
+                    // of the feature to be "whole" because an interval could
+                    // start at 0 and end at the end of the Bioseq.
+                    CRef<CSeq_loc> loc(new CSeq_loc);
+                    loc->SetWhole().Assign(*(cf.GetLocation().GetId()));
+                    if (sequence::Compare(*loc, cf.GetLocation(), m_Scope) == sequence::eSame) {
+                        CBioseq_Handle bh = m_Scope->GetBioseqHandle(cf.GetLocation());                
+                        CRef<CSeqdesc> desc(new CSeqdesc);
                 
-                    if (choice == CSeqFeatData::e_Biosrc) {
-                        desc->Select(CSeqdesc::e_Source);
-                        desc->SetSource((*sf).SetData().SetBiosrc());
-                    } else if (choice == CSeqFeatData::e_Pub) {
-                        desc->Select(CSeqdesc::e_Pub);
-                        desc->SetPub((*sf).SetData().SetPub());
+                        if (choice == CSeqFeatData::e_Biosrc) {
+                            desc->Select(CSeqdesc::e_Source);
+                            desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));
+                        } else if (choice == CSeqFeatData::e_Pub) {
+                            desc->Select(CSeqdesc::e_Pub);
+                            desc->SetPub(const_cast< CPubdesc& >(cf.GetData().GetPub()));
+                        }
+                
+                        CBioseq_EditHandle eh = bh.GetEditHandle();
+                        eh.AddSeqdesc(*desc);
+                        (*feat_ci).GetSeq_feat_Handle().Remove();
                     }
-                    (*sf).SetData().Reset();
-                
-                    CBioseq_EditHandle eh = bh.GetEditHandle();
-                    eh.AddSeqdesc(*desc);
-                } else {
-                    new_table.push_back (sf);
                 }
-            } else {
-                new_table.push_back (sf);
+                ++feat_ci;                
             }
         }
-        while (new_table.size() > 0) {
-            CRef< CSeq_feat > sf = new_table.front();
-            new_table.pop_front();
-            ftable.push_back (sf);
-        }           
     }
 
-}
-
-
-void CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor(CSeq_annot& sa)
-{
-    x_ConvertFullLenFeatureToDescriptor(sa, CSeqFeatData::e_Biosrc);
-}
-
-
-void CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor (CBioseq& bs)
-{
-    if (bs.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
-            x_ConvertFullLenSourceFeatureToDescriptor(**it);
-        }
-    }
-}
-
-
-void CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor (CBioseq_set& bss)
-{
-    if (bss.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
-            x_ConvertFullLenSourceFeatureToDescriptor(**it);
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
+    // now operate on members of set
+    if (bs.GetCompleteBioseq_set()->IsSetSeq_set()) {
+       CConstRef<CBioseq_set> b = bs.GetCompleteBioseq_set();
+       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+       
+       ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            switch ((**it).Which()) {
                 case CSeq_entry::e_Seq:
-                    x_ConvertFullLenSourceFeatureToDescriptor(se.SetSeq());
+                    x_ConvertFullLenFeatureToDescriptor(m_Scope->GetBioseqHandle((**it).GetSeq()), choice);
                     break;
                 case CSeq_entry::e_Set:
-                    x_ConvertFullLenSourceFeatureToDescriptor(se.SetSet());
+                    x_ConvertFullLenFeatureToDescriptor(m_Scope->GetBioseq_setHandle((**it).GetSet()), choice);
                     break;
                 case CSeq_entry::e_not_set:
                 default:
                     break;
             }
         }
-    }    
-}
-
-
-void CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor(CSeq_annot& sa)
-{
-    x_ConvertFullLenFeatureToDescriptor(sa, CSeqFeatData::e_Pub);
-}
-
-
-void CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor (CBioseq& bs)
-{
-    if (bs.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
-            x_ConvertFullLenPubFeatureToDescriptor(**it);
-        }
     }
 }
 
 
-void CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor (CBioseq_set& bss)
+void CCleanup_imp::x_ConvertFullLenFeatureToDescriptor (CBioseq_Handle bs, CSeqFeatData::E_Choice choice)
 {
-    if (bss.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
-            x_ConvertFullLenPubFeatureToDescriptor(**it);
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_ConvertFullLenPubFeatureToDescriptor(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_ConvertFullLenPubFeatureToDescriptor(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
+    CBioseq_EditHandle bseh = bs.GetEditHandle();
+    
+    CSeq_annot_CI annot_it(bseh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for(; annot_it; ++annot_it) {
+        if ((*annot_it).IsFtable()) {
+            CFeat_CI feat_ci((*annot_it));
+            while (feat_ci) {
+                const CSeq_feat& cf = feat_ci->GetOriginalFeature();
+                if (cf.CanGetData() && cf.GetData().Which()  == choice) {
+                    // Create a location that covers the entire sequence and do
+                    // a comparison.  Can't just check for the location type 
+                    // of the feature to be "whole" because an interval could
+                    // start at 0 and end at the end of the Bioseq.
+                    CRef<CSeq_loc> loc(new CSeq_loc);
+                    loc->SetWhole().Assign(*(cf.GetLocation().GetId()));
+                    if (sequence::Compare(*loc, cf.GetLocation(), m_Scope) == sequence::eSame) {
+                        CBioseq_Handle bh = m_Scope->GetBioseqHandle(cf.GetLocation());                
+                        CRef<CSeqdesc> desc(new CSeqdesc);
+                
+                        if (choice == CSeqFeatData::e_Biosrc) {
+                            desc->Select(CSeqdesc::e_Source);
+                            desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));
+                        } else if (choice == CSeqFeatData::e_Pub) {
+                            desc->Select(CSeqdesc::e_Pub);
+                            desc->SetPub(const_cast< CPubdesc& >(cf.GetData().GetPub()));
+                        }
+                
+                        CBioseq_EditHandle eh = bh.GetEditHandle();
+                        eh.AddSeqdesc(*desc);
+                        (*feat_ci).GetSeq_feat_Handle().Remove();
+                    }
+                }
+                ++feat_ci;                
             }
         }
-    }    
+    }
 }
 
 
+void CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor (CBioseq_Handle bs)
+{
+    x_ConvertFullLenFeatureToDescriptor(bs, CSeqFeatData::e_Biosrc);
+}
+
+
+void CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor (CBioseq_set_Handle bss)
+{
+    x_ConvertFullLenFeatureToDescriptor(bss, CSeqFeatData::e_Biosrc);
+}
+
+
+void CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor (CBioseq_Handle bs)
+{
+    x_ConvertFullLenFeatureToDescriptor(bs, CSeqFeatData::e_Pub);
+}
+
+
+void CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor (CBioseq_set_Handle bss)
+{
+    x_ConvertFullLenFeatureToDescriptor(bss, CSeqFeatData::e_Pub);
+}
+
+
+// collapse nuc-prot sets with only one seq-entry
 void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
 {
     CConstRef<CBioseq_set> b = bsh.GetCompleteBioseq_set();
@@ -1267,6 +1255,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2006/07/03 17:02:32  bollin
+ * converted steps for ExtendedCleanup that convert full length pub and source
+ * features to descriptors to use edit handles
+ *
  * Revision 1.23  2006/07/03 15:27:38  bollin
  * rewrote x_MergeAddjacentAnnots to use edit handles
  *
