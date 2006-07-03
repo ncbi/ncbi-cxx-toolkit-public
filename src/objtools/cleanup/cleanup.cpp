@@ -142,7 +142,7 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry& se)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(0));
     CCleanup_imp clean_i(changes, m_Scope, 0);
-    clean_i.ExtendedCleanup(se);
+    clean_i.ExtendedCleanup(m_Scope->GetSeq_entryHandle(se));
     
     return changes;
 }
@@ -161,7 +161,7 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_annot& sa)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(0));
     CCleanup_imp clean_i(changes, m_Scope, 0);
-    clean_i.ExtendedCleanup(sa);
+    clean_i.ExtendedCleanup(m_Scope->GetSeq_annotHandle(sa));
     return changes;
 }
 
@@ -273,6 +273,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/07/03 12:34:38  bollin
+* use handles instead of operating directly on the data for extended cleanup
+*
 * Revision 1.13  2006/06/23 17:27:43  bollin
 * fixed ExtendedCleanup functions to use new constructor for CCleanupChange
 *
