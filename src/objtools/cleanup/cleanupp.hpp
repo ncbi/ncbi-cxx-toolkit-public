@@ -211,9 +211,9 @@ private:
 
     void x_CleanGenbankBlockStrings (CSeq_descr& sdr);
     
-    void x_RemoveEmptyFeatures (CSeq_annot& sa);
-    void x_RemoveEmptyFeatures (CBioseq& bs);
-    void x_RemoveEmptyFeatures (CBioseq_set& bss);
+    void x_RemoveEmptyFeatures (CBioseq_Handle bs);
+    void x_RemoveEmptyFeatures (CBioseq_set_Handle bss);
+    void x_RemoveEmptyFeatures (CSeq_annot_Handle sa);
     
     void x_RemoveMultipleTitles (CSeq_descr& sdr);
     
@@ -222,12 +222,15 @@ private:
     void x_MergeAdjacentAnnots (CBioseq_Handle bs);
     void x_MergeAdjacentAnnots (CBioseq_set_Handle bss);
     
+    void x_ConvertFullLenFeatureToDescriptor (CSeq_annot_Handle sa, CSeqFeatData::E_Choice choice);
     void x_ConvertFullLenFeatureToDescriptor (CBioseq_set_Handle bs, CSeqFeatData::E_Choice choice);
     void x_ConvertFullLenFeatureToDescriptor (CBioseq_Handle bs, CSeqFeatData::E_Choice choice);    
     void x_ConvertFullLenSourceFeatureToDescriptor (CBioseq_Handle bs);
     void x_ConvertFullLenSourceFeatureToDescriptor (CBioseq_set_Handle bss);
+    void x_ConvertFullLenSourceFeatureToDescriptor (CSeq_annot_Handle sah);
     void x_ConvertFullLenPubFeatureToDescriptor (CBioseq_Handle bs);
     void x_ConvertFullLenPubFeatureToDescriptor (CBioseq_set_Handle bss);
+    void x_ConvertFullLenPubFeatureToDescriptor (CSeq_annot_Handle sah);
 
     void x_CorrectExceptText (string& except_text);
     void x_CorrectExceptText( CSeq_feat& feat);
@@ -270,6 +273,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2006/07/03 17:48:04  bollin
+ * changed RemoveEmptyFeatures method to use edit handles
+ *
  * Revision 1.25  2006/07/03 17:02:32  bollin
  * converted steps for ExtendedCleanup that convert full length pub and source
  * features to descriptors to use edit handles
