@@ -48,6 +48,7 @@
 #include <objects/general/User_field.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <vector>
+#include <objmgr/feat_ci.hpp>
 
 #include "cleanupp.hpp"
 
@@ -692,50 +693,18 @@ void CCleanup_imp::x_CorrectExceptText(CSeq_feat& feat)
 }
 
 
-void CCleanup_imp::x_CorrectExceptText (CSeq_annot& sa)
+void CCleanup_imp::x_CorrectExceptText (CSeq_annot_Handle sa)
 {
-    if (sa.IsSetData()  &&  sa.GetData().IsFtable()) {
-        NON_CONST_ITERATE (list<CRef<CSeq_feat> >, feat, sa.SetData().SetFtable()) {
-            x_CorrectExceptText (**feat);
-        }
-    }
-}
-
-
-void CCleanup_imp::x_CorrectExceptText (CBioseq& bs)
-{
-    if (bs.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
-            x_CorrectExceptText(**it);
-        }
-    }
-}
-
-
-void CCleanup_imp::x_CorrectExceptText (CBioseq_set& bss)
-{
-    if (bss.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
-            x_CorrectExceptText(**it);
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_CorrectExceptText(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_CorrectExceptText(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
+    if (sa.IsFtable()) {
+        CFeat_CI feat_ci(sa);
+        while (feat_ci) {
+            if (feat_ci->IsSetExcept_text()) {
+                x_CorrectExceptText(const_cast<CSeq_feat &> (feat_ci->GetOriginalFeature()));
             }
+            ++feat_ci;                
         }
-    }    
+    }
+
 }
 
 
@@ -779,50 +748,16 @@ void CCleanup_imp::x_MoveDbxrefs(CSeq_feat& feat)
 }
 
 
-void CCleanup_imp::x_MoveDbxrefs (CSeq_annot& sa)
+void CCleanup_imp::x_MoveDbxrefs (CSeq_annot_Handle sa)
 {
-    if (sa.IsSetData()  &&  sa.GetData().IsFtable()) {
-        NON_CONST_ITERATE (list<CRef<CSeq_feat> >, feat, sa.SetData().SetFtable()) {
-            x_MoveDbxrefs (**feat);
+    if (sa.IsFtable()) {
+        CFeat_CI feat_ci(sa);
+        while (feat_ci) {
+            x_MoveDbxrefs(const_cast<CSeq_feat &> (feat_ci->GetOriginalFeature()));
+            ++feat_ci;                
         }
     }
-}
 
-
-void CCleanup_imp::x_MoveDbxrefs (CBioseq& bs)
-{
-    if (bs.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
-            x_MoveDbxrefs(**it);
-        }
-    }
-}
-
-
-void CCleanup_imp::x_MoveDbxrefs (CBioseq_set& bss)
-{
-    if (bss.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
-            x_MoveDbxrefs(**it);
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_MoveDbxrefs(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_MoveDbxrefs(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
-    }    
 }
 
 
@@ -834,6 +769,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/07/03 18:45:00  bollin
+ * changed methods in ExtendedCleanup for correcting exception text and moving
+ * dbxrefs to use edit handles
+ *
  * Revision 1.12  2006/06/28 15:23:03  bollin
  * added step to move db_xref GenBank Qualifiers to real dbxrefs to Extended Cleanup
  *

@@ -204,6 +204,10 @@ private:
     typedef void (CCleanup_imp::*RecurseDescriptor)(CSeq_descr& sdr);
     void x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor);
     void x_RecurseForDescriptors (CBioseq_set_Handle bs, RecurseDescriptor);
+
+    typedef void (CCleanup_imp::*RecurseSeqAnnot)(CSeq_annot_Handle sah);
+    void x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot);
+    void x_RecurseForSeqAnnots (CBioseq_set_Handle bs, RecurseSeqAnnot);
     
     void x_MolInfoUpdate(CSeq_descr& sdr);
     
@@ -211,8 +215,6 @@ private:
 
     void x_CleanGenbankBlockStrings (CSeq_descr& sdr);
     
-    void x_RemoveEmptyFeatures (CBioseq_Handle bs);
-    void x_RemoveEmptyFeatures (CBioseq_set_Handle bss);
     void x_RemoveEmptyFeatures (CSeq_annot_Handle sa);
     
     void x_RemoveMultipleTitles (CSeq_descr& sdr);
@@ -223,25 +225,15 @@ private:
     void x_MergeAdjacentAnnots (CBioseq_set_Handle bss);
     
     void x_ConvertFullLenFeatureToDescriptor (CSeq_annot_Handle sa, CSeqFeatData::E_Choice choice);
-    void x_ConvertFullLenFeatureToDescriptor (CBioseq_set_Handle bs, CSeqFeatData::E_Choice choice);
-    void x_ConvertFullLenFeatureToDescriptor (CBioseq_Handle bs, CSeqFeatData::E_Choice choice);    
-    void x_ConvertFullLenSourceFeatureToDescriptor (CBioseq_Handle bs);
-    void x_ConvertFullLenSourceFeatureToDescriptor (CBioseq_set_Handle bss);
     void x_ConvertFullLenSourceFeatureToDescriptor (CSeq_annot_Handle sah);
-    void x_ConvertFullLenPubFeatureToDescriptor (CBioseq_Handle bs);
-    void x_ConvertFullLenPubFeatureToDescriptor (CBioseq_set_Handle bss);
     void x_ConvertFullLenPubFeatureToDescriptor (CSeq_annot_Handle sah);
 
     void x_CorrectExceptText (string& except_text);
     void x_CorrectExceptText( CSeq_feat& feat);
-    void x_CorrectExceptText (CSeq_annot& sa);
-    void x_CorrectExceptText (CBioseq& bs);
-    void x_CorrectExceptText (CBioseq_set& bss);
+    void x_CorrectExceptText (CSeq_annot_Handle sa);
 
     void x_MoveDbxrefs( CSeq_feat& feat);
-    void x_MoveDbxrefs (CSeq_annot& sa);
-    void x_MoveDbxrefs (CBioseq& bs);
-    void x_MoveDbxrefs (CBioseq_set& bss);
+    void x_MoveDbxrefs (CSeq_annot_Handle sa);
 
     void x_MergeEquivalentCitSubs (CSeq_descr& sdr);
     void x_MergeEquivalentCitSubs (CBioseq& bs);
@@ -273,6 +265,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2006/07/03 18:45:00  bollin
+ * changed methods in ExtendedCleanup for correcting exception text and moving
+ * dbxrefs to use edit handles
+ *
  * Revision 1.26  2006/07/03 17:48:04  bollin
  * changed RemoveEmptyFeatures method to use edit handles
  *
