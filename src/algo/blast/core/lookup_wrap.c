@@ -140,7 +140,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
 
            /* if the alphabet size from the RPS database is too
               small, convert unsupported characters to 'X' */
-           lookup = (BlastRPSLookupTable* *)(lookup_wrap->lut);
+           lookup = (BlastRPSLookupTable*)(lookup_wrap->lut);
            alphabet_size = lookup->alphabet_size;
            if (alphabet_size < BLASTAA_SIZE) {
                Uint1 *sequence = query->sequence;
