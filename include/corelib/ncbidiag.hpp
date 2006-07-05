@@ -106,7 +106,7 @@ private:
     mutable string m_FunctName;
 };
 
-const char* NCBI_XNCBI_EXPORT g_DiagUnknownFunction(void);
+NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 
 /// Get current function name.
 /// Defined inside of either a method or a function body only.
@@ -1558,6 +1558,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.112  2006/07/05 22:24:07  ssikorsk
+ * Minor typo fix
+ *
  * Revision 1.111  2006/07/05 21:55:25  ssikorsk
  * UNK_FUNCTION -> g_DiagUnknownFunction
  *
