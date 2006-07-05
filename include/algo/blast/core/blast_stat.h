@@ -567,13 +567,13 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
  * @param rps_query_seq the query sequence [in]
  * @param db_seq_length Length of the database sequence [in]
  * @param posMatrix matrix (actual) values to be used [in]
- * @param matrix_name Name of the score matrix underlying the RPS search [in]
+ * @param sbp Structure with score matrix parameters [in][out]
  * @return rescaled pssm 
  */
 NCBI_XBLAST_EXPORT
 Int4 ** RPSRescalePssm(double scalingFactor, Int4 rps_query_length, 
                    const Uint1 * rps_query_seq, Int4 db_seq_length, 
-                   Int4 **posMatrix, const char *matrix_name);
+                   Int4 **posMatrix, BlastScoreBlk *sbp);
 
 
 /** 
