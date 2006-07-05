@@ -80,7 +80,7 @@ extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 
 #define BLAST2NA_SIZE 4     /**< Size of compressed nucleic acid alphabet */
 #define BLASTNA_SIZE 16     /**< Size of nucleic acid alphabet */
-#define BLASTAA_SIZE 26     /**< Size of aminoacid alphabet */
+#define BLASTAA_SIZE 28     /**< Size of aminoacid alphabet */
 
 
 #define BLASTNA_SEQ_CODE 99 /**< Identifies the blastna alphabet, for use in 
@@ -103,6 +103,9 @@ extern const Uint1 kNuclSentinel;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/07/05 15:42:22  papadopo
+ * change the amino acid alphabet size from 26 to 28
+ *
  * Revision 1.9  2006/04/28 20:43:41  camacho
  * Remove C++-style comments
  *
