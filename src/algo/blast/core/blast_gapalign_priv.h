@@ -116,8 +116,10 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
  * structure.
  * @param sbp BlastScoreBlk structure to modify [in|out]
  * @param rps_pssm PSSMs in RPS-BLAST database to use [in]
+ * @param alphabet_size Elements in one pssm row [in]
  */
-void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm);
+void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm,
+                        Int4 alphabet_size);
 
 /** Remove the artificially built SPsiBlastScoreMatrix structure allocated by
  * RPSPsiMatrixAttach
@@ -134,6 +136,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/07/05 15:25:07  papadopo
+ * change signature of RPSPsiMatrixAttach
+ *
  * Revision 1.13  2006/05/24 18:25:57  papadopo
  * remove MB_HSP_CONTAINED
  *

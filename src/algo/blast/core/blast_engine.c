@@ -730,7 +730,8 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
       use with RPS blast. */
 
    gap_align->positionBased = TRUE;
-   RPSPsiMatrixAttach(gap_align->sbp, lookup->rps_pssm);
+   RPSPsiMatrixAttach(gap_align->sbp, lookup->rps_pssm,
+                      lookup->alphabet_size);
 
    /* determine the total number of residues in the db.
       This figure must also include one trailing NULL for
