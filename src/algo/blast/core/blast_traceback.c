@@ -887,7 +887,6 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    BlastScoreBlk* sbp;
    Int4 **rpsblast_pssms = NULL;
    Int4 db_seq_start;
-   Int4 alphabet_size;
    EBlastEncoding encoding;
    BlastSeqSrcGetSeqArg seq_arg;
    BlastQueryInfo* one_query_info = NULL;
