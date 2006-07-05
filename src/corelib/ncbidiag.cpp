@@ -2798,9 +2798,9 @@ bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code,
     return true;
 }
 
-const char* UNK_FUNCTION(void)
+const char* g_DiagUnknownFunction(void)
 {
-    return "UnknownFunction";
+    return "UNK_FUNCTION";
 }
 
 
@@ -2811,6 +2811,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.124  2006/07/05 21:55:07  ssikorsk
+ * UNK_FUNCTION -> g_DiagUnknownFunction
+ *
  * Revision 1.123  2006/07/05 21:29:04  ssikorsk
  * Added UNK_FUNCTION()
  *

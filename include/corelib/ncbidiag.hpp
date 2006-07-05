@@ -106,7 +106,7 @@ private:
     mutable string m_FunctName;
 };
 
-const char* NCBI_XNCBI_EXPORT UNK_FUNCTION(void);
+const char* NCBI_XNCBI_EXPORT g_DiagUnknownFunction(void);
 
 /// Get current function name.
 /// Defined inside of either a method or a function body only.
@@ -129,10 +129,10 @@ const char* NCBI_XNCBI_EXPORT UNK_FUNCTION(void);
 #  elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
 #    define NCBI_CURRENT_FUNCTION __func__
 #  else
-#    define NCBI_CURRENT_FUNCTION UNK_FUNCTION
+#    define NCBI_CURRENT_FUNCTION g_DiagUnknownFunction()
 #  endif
 #else
-#  define NCBI_CURRENT_FUNCTION UNK_FUNCTION
+#  define NCBI_CURRENT_FUNCTION g_DiagUnknownFunction()
 #endif
 
 
@@ -1558,6 +1558,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.111  2006/07/05 21:55:25  ssikorsk
+ * UNK_FUNCTION -> g_DiagUnknownFunction
+ *
  * Revision 1.110  2006/07/05 21:28:50  ssikorsk
  * Added UNK_FUNCTION()
  *
