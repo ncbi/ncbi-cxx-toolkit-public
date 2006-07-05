@@ -134,11 +134,19 @@ Int2 RPSLookupTableNew(const BlastRPSInfo *info,
    /* Fill in the lookup table information. */
 
    lookup_header = info->lookup_header;
-   if (lookup_header->magic_number != RPS_MAGIC_NUM)
+   if (lookup_header->magic_number != RPS_MAGIC_NUM &&
+       lookup_header->magic_number != RPS_MAGIC_NUM_28)
       return -1;
 
+   /* set the alphabet size. Use hardwired numbers, since we
+      cannot rely on #define'd constants matching up to the sizes
+      implicit in disk files */
+   if (lookup_header->magic_number == RPS_MAGIC_NUM)
+      lookup->alphabet_size = 26;
+   else
+      lookup->alphabet_size = 28;
+
    lookup->wordsize = BLAST_WORDSIZE_PROT;
-   lookup->alphabet_size = BLASTAA_SIZE;
    lookup->charsize = ilog2(lookup->alphabet_size) + 1;
    lookup->backbone_size = 1 << (lookup->wordsize * lookup->charsize);
    lookup->mask = lookup->backbone_size - 1;
@@ -163,7 +171,8 @@ Int2 RPSLookupTableNew(const BlastRPSInfo *info,
    /* Fill in the PSSM information */
 
    profile_header = info->profile_header;
-   if (profile_header->magic_number != RPS_MAGIC_NUM)
+   if (profile_header->magic_number != RPS_MAGIC_NUM &&
+       profile_header->magic_number != RPS_MAGIC_NUM_28)
       return -2;
 
    lookup->rps_seq_offsets = profile_header->start_offsets;
