@@ -46,6 +46,7 @@ static char const rcsid[] =
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/phi_lookup.h>
 #include <algo/blast/core/blast_rps.h>
+#include <algo/blast/core/blast_encoding.h>
 
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
@@ -131,9 +132,26 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
            break;
        }
    case RPS_LOOKUP_TABLE:
-      status = RPSLookupTableNew(rps_info, (BlastRPSLookupTable* *)(&lookup_wrap->lut));
-      break;
-      
+       {
+           BlastRPSLookupTable *lookup;
+           Int4 alphabet_size;
+           RPSLookupTableNew(rps_info, (BlastRPSLookupTable* *)
+                                        (&lookup_wrap->lut));
+
+           /* if the alphabet size from the RPS database is too
+              small, convert unsupported characters to 'X' */
+           lookup = (BlastRPSLookupTable* *)(lookup_wrap->lut);
+           alphabet_size = lookup->alphabet_size;
+           if (alphabet_size < BLASTAA_SIZE) {
+               Uint1 *sequence = query->sequence;
+               Int4 i;
+               for (i = 0; i < query->length; i++) {
+                   if (sequence[i] >= alphabet_size)
+                       sequence[i] = AMINOACID_TO_NCBISTDAA['X'];
+               }
+           }
+           break;
+       }
    default:
       {
          /* FIXME - emit error condition here */
