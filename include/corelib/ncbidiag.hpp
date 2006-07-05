@@ -129,10 +129,10 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 #  elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
 #    define NCBI_CURRENT_FUNCTION __func__
 #  else
-#    define NCBI_CURRENT_FUNCTION g_DiagUnknownFunction()
+#    define NCBI_CURRENT_FUNCTION NCBI_NS_NCBI::g_DiagUnknownFunction()
 #  endif
 #else
-#  define NCBI_CURRENT_FUNCTION g_DiagUnknownFunction()
+#  define NCBI_CURRENT_FUNCTION NCBI_NS_NCBI::g_DiagUnknownFunction()
 #endif
 
 
@@ -1558,6 +1558,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.113  2006/07/05 22:35:42  ssikorsk
+ * Qualify NCBI namespace for g_DiagUnknownFunction() in NCBI_CURRENT_FUNCTION
+ *
  * Revision 1.112  2006/07/05 22:24:07  ssikorsk
  * Minor typo fix
  *
