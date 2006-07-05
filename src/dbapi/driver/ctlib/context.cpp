@@ -35,6 +35,7 @@
 
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbi_param.hpp>
 
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
@@ -887,6 +888,36 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 }
 
 
+NCBI_PARAM_DECL(int, ctlib, TDS_VERSION);
+NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION, 110, eParam_NoThread, 
+                  CTLIB_TDS_VERSION);
+typedef NCBI_PARAM_TYPE(ctlib, TDS_VERSION) TCtlibTdsVersion;
+
+int GetCtlibTdsVersion(void)
+{
+    int version = CS_VERSION_110;
+
+    switch(TCtlibTdsVersion::GetDefault()) {
+    case 100:
+        version = CS_VERSION_100;
+        break;
+    case 110:
+        version = CS_VERSION_110;
+        break;
+#ifdef CS_VERSION_120
+    case 120:
+        version = CS_VERSION_120;
+        break;
+#endif
+#ifdef CS_VERSION_125
+    case 125:
+        version = CS_VERSION_125;
+        break;
+#endif
+    };
+
+    return version;
+}
 
 ///////////////////////////////////////////////////////////////////////
 // Driver manager related functions
@@ -895,7 +926,7 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
 {
     bool reuse_context= true;
-    CS_INT version= CS_VERSION_110;
+    CS_INT version = CS_VERSION_110;
 
     if ( attr ) {
         map<string,string>::const_iterator citer = attr->find("reuse_context");
@@ -921,11 +952,10 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
             version = CS_VERSION_125;
 #endif
         } else {
-            char* e;
-            long v= strtol(vers.c_str(), &e, 10);
-            if ( v > 0 && (e == 0 || (!isalpha((unsigned char)(*e)))) ) version= v;
+            version = GetCtlibTdsVersion();
         }
     }
+
     CTLibContext* cntx= new CTLibContext(reuse_context, version);
     if ( cntx && attr ) {
         string page_size;
@@ -1038,6 +1068,8 @@ CDbapiCtlibCF2::CreateInstance(
                     } else if ( value == 125 ) {
                         db_version = CS_VERSION_125;
 #endif
+                    } else {
+                        db_version = GetCtlibTdsVersion();
                     }
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
@@ -1047,6 +1079,8 @@ CDbapiCtlibCF2::CreateInstance(
                     host_name = v.value;
                 }
             }
+        } else {
+            db_version = GetCtlibTdsVersion();
         }
 
         // Create a driver ...
@@ -1111,6 +1145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2006/07/05 16:08:09  ssikorsk
+ * Revamp code to use GetCtlibTdsVersion function.
+ *
  * Revision 1.80  2006/06/07 22:19:37  ssikorsk
  * Context finalization improvements.
  *
