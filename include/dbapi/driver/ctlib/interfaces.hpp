@@ -59,7 +59,7 @@ class CTL_CursorResult;
 class CTLibContextRegistry;
 
 
-int GetCtlibTdsVersion(void);
+int NCBI_DBAPIDRIVER_CTLIB_EXPORT GetCtlibTdsVersion(void);
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -782,6 +782,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/07/05 18:04:10  ssikorsk
+ * Added NCBI_DBAPIDRIVER_CTLIB_EXPORT to the GetCtlibTdsVersion declaration.
+ *
  * Revision 1.35  2006/07/05 16:06:24  ssikorsk
  * Added function GetCtlibTdsVersion().
  *
