@@ -1043,11 +1043,11 @@ void
 Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
                       const BlastSeqLoc* mask_loc, Boolean reverse, Int4 offset)
 {
+    const Uint1 kMaskingLetter = is_na ? kNuclMask : kProtMask;
     ASSERT(buffer);
     for (; mask_loc; mask_loc = mask_loc->next) {
 
         Int4 index, start, stop;
-        const Uint1 kMaskingLetter = is_na ? kNuclMask : kProtMask;
         
         if (reverse) {
             start = length - 1 - mask_loc->ssr->right;
