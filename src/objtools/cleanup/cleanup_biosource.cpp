@@ -449,6 +449,72 @@ void CCleanup_imp::x_MergeDuplicateBioSources(CBioseq_set& bss)
 }
 
 
+void CCleanup_imp::x_CleanOrgNameStrings(COrgName &on)
+{
+    if (on.CanGetAttrib()) {
+        CleanVisString(on.SetAttrib());
+    }
+    if (on.CanGetLineage()) {
+        CleanVisString(on.SetLineage());
+    }
+    if (on.CanGetDiv()) {
+        CleanVisString(on.SetDiv());
+    }
+    if (on.CanGetMod()) {
+        NON_CONST_ITERATE(COrgName::TMod, modI, on.SetMod()) {
+            CleanVisString ((*modI)->SetSubname());
+        }
+    }
+}
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (COrg_ref &or)
+{
+    CleanVisString (or.SetTaxname());
+    CleanVisString (or.SetCommon());
+    if (or.CanGetMod()) {
+        CleanVisStringList (or.SetMod());
+    }
+    if (or.CanGetSyn()) {
+        CleanVisStringList (or.SetSyn());
+    }
+    if (or.CanGetOrgname()) {
+        x_CleanOrgNameStrings(or.SetOrgname());
+    }
+}
+
+
+void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
+{
+    if (bs.IsSetSubtype()) {
+        CBioSource::TSubtype& subtypes = bs.SetSubtype();
+        CBioSource::TSubtype tmp;
+        tmp.clear();
+        NON_CONST_ITERATE (CBioSource::TSubtype, it, subtypes) {
+            CleanVisString((*it)->SetAttrib());
+            int subtype = (*it)->GetSubtype();
+            if (subtype != CSubSource::eSubtype_germline
+                && subtype != CSubSource::eSubtype_rearranged
+                && subtype != CSubSource::eSubtype_transgenic
+                && subtype != CSubSource::eSubtype_environmental_sample) {
+                CleanVisString((*it)->SetName());
+                if (!NStr::IsBlank((*it)->GetName())) {
+                    tmp.push_back(*it);
+                }
+            } else {
+                tmp.push_back(*it);
+            }            
+        }
+        if (subtypes.size() > tmp.size()) {
+            subtypes.clear();
+            NON_CONST_ITERATE (CBioSource::TSubtype, it, tmp) {
+                subtypes.push_back(*it);
+            }            
+        }
+    }    
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -457,6 +523,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/07/05 16:43:34  bollin
+ * added step to ExtendedCleanup to clean features and descriptors
+ * and remove empty feature table seq-annots
+ *
  * Revision 1.3  2006/06/28 13:22:39  bollin
  * added step to merge duplicate biosources to ExtendedCleanup
  *

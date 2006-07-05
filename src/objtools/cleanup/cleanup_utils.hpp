@@ -45,6 +45,10 @@
 #include <objects/general/Date.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/biblio/Cit_gen.hpp>
 
 #include <objmgr/scope.hpp>
 
@@ -69,6 +73,10 @@ void CleanString(string& str);
 // and redundant semicolons and extra spaces after semicolons
 void CleanVisString(string& str);
 void CleanVisStringList ( list< string >& str_list);
+
+bool OnlyPunctuation (string str);
+
+bool IsOnlinePub(const CPubdesc& pd);
 
 /// remove all spaces from a string
 void RemoveSpaces(string& str);
@@ -116,6 +124,14 @@ if ((o).IsSet##x()) { \
         } \
 }
 
+#define EXTENDED_CLEAN_STRING_MEMBER(o, x) \
+if ((o).IsSet##x()) { \
+    CleanVisString((o).Set##x()); \
+        if (NStr::IsBlank((o).Get##x())) { \
+            (o).Reset##x(); \
+        } \
+}
+
 #define CLEAN_STRING_CHOICE(o, x) \
         CleanString((o).Set##x()); \
         if (NStr::IsBlank((o).Get##x())) { \
@@ -125,6 +141,14 @@ if ((o).IsSet##x()) { \
 #define CLEAN_STRING_LIST(o, x) \
     if ((o).IsSet##x()) { \
         CleanStringContainer((o).Set##x()); \
+        if ((o).Get##x().empty()) { \
+            (o).Reset##x(); \
+        } \
+    }
+
+#define EXTENDED_CLEAN_STRING_LIST(o, x) \
+    if ((o).IsSet##x()) { \
+        CleanVisStringList((o).Set##x()); \
         if ((o).Get##x().empty()) { \
             (o).Reset##x(); \
         } \
@@ -223,6 +247,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/07/05 16:43:34  bollin
+* added step to ExtendedCleanup to clean features and descriptors
+* and remove empty feature table seq-annots
+*
 * Revision 1.6  2006/06/27 18:43:02  bollin
 * added step for merging equivalent cit-sub publications to ExtendedCleanup
 *

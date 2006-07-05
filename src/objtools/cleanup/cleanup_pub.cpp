@@ -64,23 +64,6 @@ BEGIN_SCOPE(objects)
 
 // CPubdesc cleanup
 
-static bool s_IsOnlinePub(const CPubdesc& pd)
-{
-    if (pd.IsSetPub()) {
-        ITERATE (CPubdesc::TPub::Tdata, it, pd.GetPub().Get()) {
-            if ((*it)->IsGen()) {
-                const CCit_gen& gen = (*it)->GetGen();
-                if (gen.IsSetCit()  &&
-                    NStr::StartsWith(gen.GetCit(), "Online Publication", NStr::eNocase)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
-
 void CCleanup_imp::BasicCleanup(CPubdesc& pd)
 {
     if (pd.IsSetPub()) {
@@ -89,7 +72,7 @@ void CCleanup_imp::BasicCleanup(CPubdesc& pd)
     
     CLEAN_STRING_MEMBER(pd, Name);
     
-    if (s_IsOnlinePub(pd)) {
+    if (IsOnlinePub(pd)) {
         TRUNCATE_SPACES(pd, Comment);
     } else {
         CLEAN_STRING_MEMBER(pd, Comment);
@@ -525,6 +508,76 @@ void CCleanup_imp::x_MergeEquivalentCitSubs(CBioseq_set& bss)
 }
 
 
+#if 0
+// Looks for publications that appear on each component of a /* move identical pubs in pop/phy/mut compone
+// Was MovPopPhyMutPubs in C Toolkit
+void CCleanup_imp::x_MoveComponentPubs(CBioseq_set& bss)
+{
+    unsigned int bsclass = bss.GetClass();
+
+    if (bsclass == CBioseq_set::eClass_mut_set
+        || bsclass == CBioseq_set::eClass_pop_set
+        || bsclass == CBioseq_set::eClass_pop_set
+        || bsclass == CBioseq_set::eClass_phy_set
+        || bsclass == CBioseq_set::eClass_eco_set
+        || bsclass == CBioseq_set::eClass_wgs_set) {
+        // look for identical pubs from each component
+                feat.GetData().GetPub().GetPub().GetLabel(&tlabel); 
+
+    }
+
+    // now recurse to lower level sets
+    if (bss.IsSetSeq_set()) {
+        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+            CSeq_entry& se = **it;
+            if (se.Which() == CSeq_entry::e_Set) {
+                x_MoveComponentPubs (se.SetSet());
+            }
+        }
+    }
+
+static void MovePopPhyMutPubsProc (SeqEntryPtr sep, Pointer data, Int4 index, Int2 indent)
+
+{
+	BioseqSetPtr 	bssp;
+    ValNodePtr    	v, pub, vv, next;
+	PubdescPtr		pdp, pdpv;
+
+  if (sep == NULL) return;
+  if (! IS_Bioseq_set (sep)) return;
+  bssp = (BioseqSetPtr) sep->data.ptrvalue;
+  if (bssp == NULL) return;
+  if ((bssp->_class < BioseqseqSet_class_mut_set ||
+      bssp->_class > BioseqseqSet_class_eco_set) &&
+      bssp->_class != BioseqseqSet_class_wgs_set) return;
+  pub = CheckSegsForPopPhyMut (bssp->seq_set);
+  if (pub == NULL) return;
+/* check if pub is already on the set descr */
+	for(v=bssp->descr; v != NULL; v = v->next) {
+		if (v->choice != Seq_descr_pub)
+			continue;
+		for (vv = pub; vv; vv = next) {
+			next = vv->next;
+			pdp = vv->data.ptrvalue;
+			pdpv = v->data.ptrvalue;
+			if (PubLabelMatchEx (pdp->pub, pdpv->pub) == 0) {
+				PubdescFree(pdp);
+				pub = remove_node(pub, vv);
+			}
+		}
+	}
+	
+	bssp->descr = tie_next(bssp->descr, pub);
+}
+#endif
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (CPubdesc& pd)
+{
+    EXTENDED_CLEAN_STRING_MEMBER (pd, Comment);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -532,6 +585,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/07/05 16:43:34  bollin
+ * added step to ExtendedCleanup to clean features and descriptors
+ * and remove empty feature table seq-annots
+ *
  * Revision 1.3  2006/06/27 18:43:02  bollin
  * added step for merging equivalent cit-sub publications to ExtendedCleanup
  *

@@ -213,6 +213,7 @@ private:
     
     void x_RemoveEmptyGenbankDesc(CSeq_descr& sdr);
 
+    void x_CleanGenbankBlockStrings (CGB_block& block);
     void x_CleanGenbankBlockStrings (CSeq_descr& sdr);
     
     void x_RemoveEmptyFeatures (CSeq_annot_Handle sa);
@@ -220,6 +221,11 @@ private:
     void x_RemoveMultipleTitles (CSeq_descr& sdr);
     
     void x_MergeMultipleDates (CSeq_descr& sdr);
+
+    void x_ExtendedCleanStrings (CSeqdesc &sd);
+    void x_ExtendedCleanStrings (COrg_ref &or);
+    void x_CleanOrgNameStrings (COrgName &on);
+    void x_ExtendedCleanSubSourceList (CBioSource &bs);
     
     void x_MergeAdjacentAnnots (CBioseq_Handle bs);
     void x_MergeAdjacentAnnots (CBioseq_set_Handle bss);
@@ -234,6 +240,18 @@ private:
 
     void x_MoveDbxrefs( CSeq_feat& feat);
     void x_MoveDbxrefs (CSeq_annot_Handle sa);
+    
+    void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
+    void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
+    
+    void x_ExtendedCleanStrings (CSeq_descr& sdr);
+    void x_ExtendedCleanStrings (CSeq_annot_Handle sah);
+    void x_ExtendedCleanStrings (CSeq_feat& feat);
+    void x_ExtendedCleanStrings (CGene_ref& gene_ref);
+    void x_ExtendedCleanStrings (CProt_ref& prot_ref);
+    void x_ExtendedCleanStrings (CRNA_ref& rna_ref);
+    void x_ExtendedCleanStrings (CPubdesc& pd);
+    void x_ExtendedCleanStrings (CImp_feat& imf);
 
     void x_MergeEquivalentCitSubs (CSeq_descr& sdr);
     void x_MergeEquivalentCitSubs (CBioseq& bs);
@@ -265,6 +283,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2006/07/05 16:43:34  bollin
+ * added step to ExtendedCleanup to clean features and descriptors
+ * and remove empty feature table seq-annots
+ *
  * Revision 1.27  2006/07/03 18:45:00  bollin
  * changed methods in ExtendedCleanup for correcting exception text and moving
  * dbxrefs to use edit handles

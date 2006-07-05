@@ -44,6 +44,7 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/biblio/Cit_gen.hpp>
 #include <serial/iterator.hpp>
@@ -56,6 +57,7 @@
 #include <objmgr/feat_ci.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
+#include "../format/utils.hpp"
 #include "cleanupp.hpp"
 #include "cleanup_utils.hpp"
 
@@ -369,6 +371,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CorrectExceptText);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeEquivalentCitSubs);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+    RemoveEmptyFeaturesDescriptorsAndAnnots(bss);
     
     RenormalizeNucProtSets(bss);
     
@@ -401,6 +404,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeEquivalentCitSubs);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+    RemoveEmptyFeaturesDescriptorsAndAnnots(bsh);
     
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
 
@@ -767,6 +771,76 @@ void CCleanup_imp::x_RemoveEmptyGenbankDesc(CSeq_descr& sdr)
 
 // was EntryCheckGBBlock in C Toolkit
 // cleans strings for the GenBankBlock, removes descriptor if block is now empty
+void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
+{
+    // clean extra accessions
+    if (block.CanGetExtra_accessions()) {
+        CleanVisStringList(block.SetExtra_accessions());
+        if (block.GetExtra_accessions().size() == 0) {
+            block.ResetExtra_accessions();
+        }
+    }
+                
+    // clean keywords
+    if (block.CanGetKeywords()) {
+        CleanVisStringList(block.SetKeywords());
+        if (block.GetKeywords().size() == 0) {
+            block.ResetKeywords();
+        }
+    }
+                
+    // clean source
+    if (block.CanGetSource()) {
+        string source = block.GetSource();
+        CleanVisString (source);
+        if (NStr::IsBlank (source)) {
+            block.ResetSource();
+        } else {
+            block.SetSource (source);
+        }
+    }
+    // clean origin
+    if (block.CanGetOrigin()) {
+        string origin = block.GetOrigin();
+        CleanVisString (origin);
+        if (NStr::IsBlank (origin)) {
+            block.ResetOrigin();
+        } else {
+            block.SetOrigin(origin);
+        }
+    }
+    //clean date
+    if (block.CanGetDate()) {
+        string date = block.GetDate();
+        CleanVisString (date);
+        if (NStr::IsBlank (date)) {
+            block.ResetDate();
+        } else {
+            block.SetDate(date);
+        }
+    }
+    //clean div
+    if (block.CanGetDiv()) {
+        string div = block.GetDiv();
+        CleanVisString (div);
+        if (NStr::IsBlank (div)) {
+            block.ResetDiv();
+        } else {
+            block.SetDiv(div);
+        }
+    }
+    //clean taxonomy
+    if (block.CanGetTaxonomy()) {
+        string tax = block.GetTaxonomy();
+        if (NStr::IsBlank (tax)) {
+            block.ResetTaxonomy();
+        } else {
+            block.SetTaxonomy(tax);
+        }
+    }
+}
+
+
 void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr)
 {
     bool found = true;
@@ -775,75 +849,9 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr)
         found = false;
         NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
             if ((*it)->Which() == CSeqdesc::e_Genbank) {
-                CGB_block& block = (*it)->SetGenbank();
+                x_CleanGenbankBlockStrings((*it)->SetGenbank());
                 
-                // clean extra accessions
-                if (block.CanGetExtra_accessions()) {
-                    CleanVisStringList(block.SetExtra_accessions());
-                    if (block.GetExtra_accessions().size() == 0) {
-                        block.ResetExtra_accessions();
-                    }
-                }
-                
-                // clean keywords
-                if (block.CanGetKeywords()) {
-                    CleanVisStringList(block.SetKeywords());
-                    if (block.GetKeywords().size() == 0) {
-                        block.ResetKeywords();
-                    }
-                }
-                
-                // clean source
-                if (block.CanGetSource()) {
-                    string source = block.GetSource();
-                    CleanVisString (source);
-                    if (NStr::IsBlank (source)) {
-                        block.ResetSource();
-                    } else {
-                        block.SetSource (source);
-                    }
-                }
-                // clean origin
-                if (block.CanGetOrigin()) {
-                    string origin = block.GetOrigin();
-                    CleanVisString (origin);
-                    if (NStr::IsBlank (origin)) {
-                        block.ResetOrigin();
-                    } else {
-                        block.SetOrigin(origin);
-                    }
-                }
-                //clean date
-                if (block.CanGetDate()) {
-                    string date = block.GetDate();
-                    CleanVisString (date);
-                    if (NStr::IsBlank (date)) {
-                        block.ResetDate();
-                    } else {
-                        block.SetDate(date);
-                    }
-                }
-                //clean div
-                if (block.CanGetDiv()) {
-                    string div = block.GetDiv();
-                    CleanVisString (div);
-                    if (NStr::IsBlank (div)) {
-                        block.ResetDiv();
-                    } else {
-                        block.SetDiv(div);
-                    }
-                }
-                //clean taxonomy
-                if (block.CanGetTaxonomy()) {
-                    string tax = block.GetTaxonomy();
-                    if (NStr::IsBlank (tax)) {
-                        block.ResetTaxonomy();
-                    } else {
-                        block.SetTaxonomy(tax);
-                    }
-                }
-                
-                if (IsEmpty(block)) {
+                if (IsEmpty((*it)->SetGenbank())) {
                     sdr.Set().erase(it);
                     found = true;
                     break;
@@ -882,6 +890,172 @@ void CCleanup_imp::x_RemoveMultipleTitles (CSeq_descr& sdr)
         new_list.pop_front();
         current_list.push_back (sd);
     }
+}
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (CSeqdesc& sd)
+{  
+    switch (sd.Which()) {
+        case CSeqdesc::e_Mol_type:
+        case CSeqdesc::e_Method:
+        case CSeqdesc::e_Modif:
+        case CSeqdesc::e_Num:
+        case CSeqdesc::e_Maploc:
+        case CSeqdesc::e_Pir:
+        case CSeqdesc::e_User:
+        case CSeqdesc::e_Sp:
+        case CSeqdesc::e_Dbxref:
+        case CSeqdesc::e_Embl:
+        case CSeqdesc::e_Create_date:
+        case CSeqdesc::e_Update_date:
+        case CSeqdesc::e_Prf:
+        case CSeqdesc::e_Pdb:
+        case CSeqdesc::e_Het:
+        case CSeqdesc::e_Molinfo:
+            // nothing to clean
+            return;
+            break;
+        case CSeqdesc::e_Name:
+            CleanVisString(sd.SetName());
+            break;
+        case CSeqdesc::e_Title:
+            CleanVisString(sd.SetTitle());
+            break;
+        case CSeqdesc::e_Org:
+            x_ExtendedCleanStrings (sd.SetOrg());
+            break;
+        case CSeqdesc::e_Genbank:
+            x_CleanGenbankBlockStrings(sd.SetGenbank());
+            break;
+        case CSeqdesc::e_Region:
+            CleanVisString(sd.SetRegion());
+            break;
+        case CSeqdesc::e_Comment:
+            TrimSpacesAndJunkFromEnds(sd.SetComment(), true);
+            if (OnlyPunctuation (sd.SetComment())) {
+                sd.SetComment("");
+            }
+            break;
+        case CSeqdesc::e_Pub:
+            if (IsOnlinePub(sd.GetPub())) {
+                NStr::TruncateSpacesInPlace (sd.SetPub().SetComment(), NStr::eTrunc_Both);
+            } else {
+                CleanVisString(sd.SetPub().SetComment());
+            }
+            if (NStr::IsBlank(sd.GetPub().GetComment())) {
+                sd.SetPub().ResetComment();
+            }
+            break;
+        case CSeqdesc::e_Source:
+            x_ExtendedCleanSubSourceList (sd.SetSource());
+            if (sd.SetSource().CanGetOrg()) {
+                x_ExtendedCleanStrings (sd.SetSource().SetOrg());
+            }
+            break;
+        default:
+            break;                     
+    }
+    
+}
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (CSeq_descr& sdr)
+{
+    CSeq_descr::Tdata& current_list = sdr.Set();
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        x_ExtendedCleanStrings(**it);
+        // NOTE: At this point in the C Toolkit, we check for empty
+        // descriptors and remove them.
+        // We need a definition for "emptiness" for each of the
+        // descriptor types.
+    }
+}
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (CSeq_annot_Handle sah)
+{
+    if (sah.IsFtable()) {
+        CFeat_CI feat_ci(sah);
+        while (feat_ci) {
+            x_ExtendedCleanStrings (const_cast< CSeq_feat& > (feat_ci->GetOriginalFeature()));
+            // NOTE: At this point in the C Toolkit, we check for empty features and remove them.
+            // We need a definition for "emptiness" for each of the feature types.
+            ++feat_ci;
+        }
+    }        
+}
+
+// Was GetRidOfEmptyFeatsDescCallback in the C Toolkit
+void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs)
+{
+    CBioseq_EditHandle bseh = bs.GetEditHandle();
+    
+    // combine adjacent annotations
+    vector<CSeq_annot_EditHandle> sah; // copy annot handles to not to break iterator while moving
+    CSeq_annot_CI annot_it(bseh.GetSeq_entry_Handle(), CSeq_annot_CI::eSearch_entry);
+    for(; annot_it; ++annot_it) {
+        x_ExtendedCleanStrings (*annot_it);
+        if ((*annot_it).IsFtable()) {
+            CFeat_CI feat_ci((*annot_it));
+            if (!feat_ci) {
+                // add annot_it to list of annotations to remove
+                sah.push_back((*annot_it).GetEditHandle());
+            }
+        }
+    }
+    // move annots from one place to another without copying their contents
+    ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
+        (*it).Remove();
+    }
+    
+    x_ExtendedCleanStrings (bseh.SetDescr());
+    
+}
+
+
+void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs)
+{
+    CBioseq_set_EditHandle bseh = bs.GetEditHandle();
+    
+    // combine adjacent annotations
+    vector<CSeq_annot_EditHandle> sah; // copy annot handles to not to break iterator while moving
+    CSeq_annot_CI annot_it(bseh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for(; annot_it; ++annot_it) {
+        x_ExtendedCleanStrings (*annot_it);
+        if ((*annot_it).IsFtable()) {
+            CFeat_CI feat_ci((*annot_it));
+            if (!feat_ci) {
+                // add annot_it to list of annotations to remove
+                sah.push_back((*annot_it).GetEditHandle());
+            }
+        }
+    }
+    // move annots from one place to another without copying their contents
+    ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
+        (*it).Remove();
+    }
+    
+    x_ExtendedCleanStrings (bseh.SetDescr());
+
+    if (bs.GetCompleteBioseq_set()->IsSetSeq_set()) {
+       CConstRef<CBioseq_set> b = bs.GetCompleteBioseq_set();
+       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+       
+       ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            switch ((**it).Which()) {
+                case CSeq_entry::e_Seq:
+                    RemoveEmptyFeaturesDescriptorsAndAnnots(m_Scope->GetBioseqHandle((**it).GetSeq()));
+                    break;
+                case CSeq_entry::e_Set:
+                    RemoveEmptyFeaturesDescriptorsAndAnnots(m_Scope->GetBioseq_setHandle((**it).GetSet()));
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+
 }
 
 
@@ -1155,6 +1329,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2006/07/05 16:43:34  bollin
+ * added step to ExtendedCleanup to clean features and descriptors
+ * and remove empty feature table seq-annots
+ *
  * Revision 1.26  2006/07/03 18:45:00  bollin
  * changed methods in ExtendedCleanup for correcting exception text and moving
  * dbxrefs to use edit handles

@@ -40,6 +40,9 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <util/static_map.hpp>
 
 #include <objects/seqfeat/RNA_ref.hpp>
@@ -761,6 +764,110 @@ void CCleanup_imp::x_MoveDbxrefs (CSeq_annot_Handle sa)
 }
 
 
+void CCleanup_imp::x_ExtendedCleanStrings (CGene_ref& gene_ref)
+{
+    EXTENDED_CLEAN_STRING_MEMBER (gene_ref, Locus);
+    EXTENDED_CLEAN_STRING_MEMBER (gene_ref, Allele);
+    EXTENDED_CLEAN_STRING_MEMBER (gene_ref, Desc);
+    EXTENDED_CLEAN_STRING_MEMBER (gene_ref, Maploc);
+    EXTENDED_CLEAN_STRING_MEMBER (gene_ref, Locus_tag);
+    EXTENDED_CLEAN_STRING_LIST (gene_ref, Syn);
+    if (gene_ref.CanGetSyn()) {
+        CleanVisStringList (gene_ref.SetSyn());
+        if (gene_ref.GetSyn().size() == 0) {
+            gene_ref.ResetSyn();
+        }
+    }
+}
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (CProt_ref& prot_ref)
+{
+    EXTENDED_CLEAN_STRING_MEMBER (prot_ref, Desc);
+    EXTENDED_CLEAN_STRING_LIST (prot_ref, Name);
+    EXTENDED_CLEAN_STRING_LIST (prot_ref, Ec);
+    EXTENDED_CLEAN_STRING_LIST (prot_ref, Activity);
+}
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (CRNA_ref& rr)
+{
+    if (rr.IsSetExt() && rr.GetExt().IsName()) {
+        CleanVisString (rr.SetExt().SetName());
+        if (NStr::IsBlank(rr.GetExt().GetName())) {
+            rr.ResetExt();
+        }
+    }
+}
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (CImp_feat& imf)
+{
+    EXTENDED_CLEAN_STRING_MEMBER (imf, Key);
+    EXTENDED_CLEAN_STRING_MEMBER (imf, Loc);
+    EXTENDED_CLEAN_STRING_MEMBER (imf, Descr);
+}
+
+
+void CCleanup_imp::x_ExtendedCleanStrings (CSeq_feat& feat)
+{
+    EXTENDED_CLEAN_STRING_MEMBER (feat, Comment);
+    EXTENDED_CLEAN_STRING_MEMBER (feat, Title);
+
+    switch (feat.GetData().Which()) {
+        case CSeqFeatData::e_Bond:
+        case CSeqFeatData::e_Site:
+        case CSeqFeatData::e_Psec_str:
+        case CSeqFeatData::e_Comment:
+        case CSeqFeatData::e_Cdregion:
+        case CSeqFeatData::e_Seq:
+        case CSeqFeatData::e_Rsite:
+        case CSeqFeatData::e_User:
+        case CSeqFeatData::e_Txinit:
+        case CSeqFeatData::e_Num:
+        case CSeqFeatData::e_Non_std_residue:
+        case CSeqFeatData::e_Het:
+            // nothing to do
+            break;
+        case CSeqFeatData::e_Gene:
+            x_ExtendedCleanStrings (feat.SetData().SetGene());
+            break;
+        case CSeqFeatData::e_Org:
+            x_ExtendedCleanStrings (feat.SetData().SetOrg());
+            break;
+        case CSeqFeatData::e_Prot:
+            x_ExtendedCleanStrings (feat.SetData().SetProt());
+            break;
+        case CSeqFeatData::e_Rna:
+            x_ExtendedCleanStrings (feat.SetData().SetRna());
+            break;
+        case CSeqFeatData::e_Pub:
+            x_ExtendedCleanStrings (feat.SetData().SetPub());
+            break;
+        case CSeqFeatData::e_Imp:
+            x_ExtendedCleanStrings (feat.SetData().SetImp());
+            break;
+        case CSeqFeatData::e_Region:
+        {
+            string &region = feat.SetData().SetRegion();
+            CleanVisString(region);
+            if (region.empty()) {
+                feat.SetData().SetComment();
+            }
+        }
+            break;
+        case CSeqFeatData::e_Biosrc:
+            x_ExtendedCleanSubSourceList(feat.SetData().SetBiosrc());
+            if (feat.GetData().GetBiosrc().CanGetOrg()) {
+                x_ExtendedCleanStrings(feat.SetData().SetBiosrc().SetOrg());
+            }
+            break;
+        default:
+            break;
+    }  
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -769,6 +876,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/07/05 16:43:34  bollin
+ * added step to ExtendedCleanup to clean features and descriptors
+ * and remove empty feature table seq-annots
+ *
  * Revision 1.13  2006/07/03 18:45:00  bollin
  * changed methods in ExtendedCleanup for correcting exception text and moving
  * dbxrefs to use edit handles

@@ -138,6 +138,36 @@ void CleanVisStringList ( list< string >& str_list)
 }
 
 
+bool OnlyPunctuation (string str)
+{
+    bool found_other = false;
+    for (unsigned int offset = 0; offset < str.length() && ! found_other; offset++) {
+        if (str[offset] > ' ' && str[offset] != '.' && str[offset] != ','
+            && str[offset] != '~' && str[offset] != ';') {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool IsOnlinePub(const CPubdesc& pd)
+{
+    if (pd.IsSetPub()) {
+        ITERATE (CPubdesc::TPub::Tdata, it, pd.GetPub().Get()) {
+            if ((*it)->IsGen()) {
+                const CCit_gen& gen = (*it)->GetGen();
+                if (gen.IsSetCit()  &&
+                    NStr::StartsWith(gen.GetCit(), "Online Publication", NStr::eNocase)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
 void RemoveSpaces(string& str)
 {
     if (str.empty()) {
@@ -748,6 +778,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/07/05 16:43:34  bollin
+* added step to ExtendedCleanup to clean features and descriptors
+* and remove empty feature table seq-annots
+*
 * Revision 1.5  2006/06/27 18:43:02  bollin
 * added step for merging equivalent cit-sub publications to ExtendedCleanup
 *
