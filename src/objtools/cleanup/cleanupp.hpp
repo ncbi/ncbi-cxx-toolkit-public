@@ -222,10 +222,10 @@ private:
     
     void x_MergeMultipleDates (CSeq_descr& sdr);
 
-    void x_ExtendedCleanStrings (CSeqdesc &sd);
-    void x_ExtendedCleanStrings (COrg_ref &or);
-    void x_CleanOrgNameStrings (COrgName &on);
-    void x_ExtendedCleanSubSourceList (CBioSource &bs);
+    void x_ExtendedCleanStrings (CSeqdesc& sd);
+    void x_ExtendedCleanStrings (COrg_ref& org);
+    void x_CleanOrgNameStrings (COrgName& on);
+    void x_ExtendedCleanSubSourceList (CBioSource& bs);
     
     void x_MergeAdjacentAnnots (CBioseq_Handle bs);
     void x_MergeAdjacentAnnots (CBioseq_set_Handle bss);
@@ -283,6 +283,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2006/07/05 17:26:11  bollin
+ * cleared compiler error
+ *
  * Revision 1.28  2006/07/05 16:43:34  bollin
  * added step to ExtendedCleanup to clean features and descriptors
  * and remove empty feature table seq-annots

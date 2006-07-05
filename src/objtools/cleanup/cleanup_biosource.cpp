@@ -468,18 +468,18 @@ void CCleanup_imp::x_CleanOrgNameStrings(COrgName &on)
 }
 
 
-void CCleanup_imp::x_ExtendedCleanStrings (COrg_ref &or)
+void CCleanup_imp::x_ExtendedCleanStrings (COrg_ref &org)
 {
-    CleanVisString (or.SetTaxname());
-    CleanVisString (or.SetCommon());
-    if (or.CanGetMod()) {
-        CleanVisStringList (or.SetMod());
+    CleanVisString (org.SetTaxname());
+    CleanVisString (org.SetCommon());
+    if (org.CanGetMod()) {
+        CleanVisStringList (org.SetMod());
     }
-    if (or.CanGetSyn()) {
-        CleanVisStringList (or.SetSyn());
+    if (org.CanGetSyn()) {
+        CleanVisStringList (org.SetSyn());
     }
-    if (or.CanGetOrgname()) {
-        x_CleanOrgNameStrings(or.SetOrgname());
+    if (org.CanGetOrgname()) {
+        x_CleanOrgNameStrings(org.SetOrgname());
     }
 }
 
@@ -523,6 +523,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/07/05 17:26:11  bollin
+ * cleared compiler error
+ *
  * Revision 1.4  2006/07/05 16:43:34  bollin
  * added step to ExtendedCleanup to clean features and descriptors
  * and remove empty feature table seq-annots
