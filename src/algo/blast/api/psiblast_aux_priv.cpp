@@ -113,7 +113,6 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     // Assign the matrix scores/frequency ratios
     const size_t kQueryLength = pssm->GetPssm().GetNumColumns();
     score_blk->psi_matrix = SPsiBlastScoreMatrixNew(kQueryLength);
-    _ASSERT((int)score_blk->alphabet_size == (int)pssm->GetPssm().GetNumRows());
 
     // Get the scores
     bool missing_scores = false;
@@ -195,10 +194,9 @@ CScorematPssmConverter::GetScores(CConstRef<objects::CPssmWithParameters>
            (size_t)pssm.GetNumRows()*pssm_asn->GetPssm().GetNumColumns());
 
     auto_ptr< CNcbiMatrix<int> > retval
-        (new CNcbiMatrix<int>(pssm.GetNumRows(), 
+        (new CNcbiMatrix<int>(BLASTAA_SIZE,
                               pssm.GetNumColumns(), 
                               BLAST_SCORE_MIN));
-    _ASSERT(retval->GetRows() == (size_t)BLASTAA_SIZE);
 
     CPssmFinalData::TScores::const_iterator itr =
         pssm.GetFinalData().GetScores().begin();
@@ -238,26 +236,26 @@ CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters>
            (size_t)pssm.GetNumRows()*pssm_asn->GetPssm().GetNumColumns());
 
     auto_ptr< CNcbiMatrix<double> > retval
-        (new CNcbiMatrix<double>(pssm.GetNumRows(),
-                                 pssm.GetNumColumns()));
-    _ASSERT(retval->GetRows() == (size_t)BLASTAA_SIZE);
+        (new CNcbiMatrix<double>(BLASTAA_SIZE, pssm.GetNumColumns(), 0.0));
 
     CPssmIntermediateData::TFreqRatios::const_iterator itr =
         pssm.GetIntermediateData().GetFreqRatios().begin();
     if (pssm.GetByRow() == true) {
-        for (TSeqPos r = 0; r < retval->GetRows(); r++) {
-            for (TSeqPos c = 0; c < retval->GetCols(); c++) {
+        for (int r = 0; r < pssm.GetNumRows(); r++) {
+            for (int c = 0; c < pssm.GetNumColumns(); c++) {
                 (*retval)(r, c) = *itr++;
             }
         }
+
     } else {
-        for (TSeqPos c = 0; c < retval->GetCols(); c++) {
-            for (TSeqPos r = 0; r < retval->GetRows(); r++) {
+        for (int c = 0; c < pssm.GetNumColumns(); c++) {
+            for (int r = 0; r < pssm.GetNumRows(); r++) {
                 (*retval)(r, c) = *itr++;
             }
         }
     }
     _ASSERT(itr == pssm.GetIntermediateData().GetFreqRatios().end());
+
     return retval.release();
 }
 
@@ -283,6 +281,37 @@ PsiBlastAddAncilliaryPssmData(CPssmWithParameters& pssm,
     pssm.SetParams().SetRpsdbparams().SetGapExtend(gap_extend);
 }
 
+/** After creating the PSSM from frequency ratios, adjust the frequency ratios
+ * matrix to match the dimensions of the score matrix 
+ * @param pssm matrix to adjust [in|out]
+ */
+static void
+s_AdjustFrequencyRatiosMatrixToMatchScoreMatrix(objects::CPssmWithParameters&
+                                                pssm)
+{
+    _ASSERT(pssm.GetPssm().GetNumRows() < BLASTAA_SIZE);
+    if (pssm.GetPssm().CanGetFinalData()) {
+        _ASSERT(pssm.GetPssm().GetFinalData().GetScores().size() ==
+                (size_t)BLASTAA_SIZE*pssm.GetPssm().GetNumColumns());
+    }
+
+    const size_t diff = (size_t)BLASTAA_SIZE - pssm.GetPssm().GetNumRows();
+    CPssmIntermediateData::TFreqRatios& freq_ratios =
+        pssm.SetPssm().SetIntermediateData().SetFreqRatios();
+
+    if (pssm.GetPssm().GetByRow() == true) {
+        freq_ratios.resize(pssm.GetPssm().GetNumColumns() * BLASTAA_SIZE, 0.0);
+    } else {
+        CPssmIntermediateData::TFreqRatios::iterator itr = freq_ratios.begin();
+        for (int c = 0; c < pssm.GetPssm().GetNumColumns(); c++) {
+            advance(itr, pssm.GetPssm().GetNumRows());
+            freq_ratios.insert(itr, diff, 0.0);
+        }
+    }
+
+    pssm.SetPssm().SetNumRows() = BLASTAA_SIZE;
+}
+
 void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts)
 {
@@ -303,6 +332,11 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
     CPssmEngine pssm_engine(&pssm_engine_input);
     CRef<CPssmWithParameters> pssm_with_scores(pssm_engine.Run());
 
+    if (pssm->GetPssm().GetNumRows() !=
+        pssm_with_scores->GetPssm().GetNumRows()) {
+        _ASSERT(pssm_with_scores->GetPssm().GetNumRows() == BLASTAA_SIZE);
+        s_AdjustFrequencyRatiosMatrixToMatchScoreMatrix(*pssm);
+    }
     pssm->SetPssm().SetFinalData().SetScores() =
         pssm_with_scores->GetPssm().GetFinalData().GetScores();
     pssm->SetPssm().SetFinalData().SetLambda() =
