@@ -2798,6 +2798,11 @@ bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code,
     return true;
 }
 
+const char* UNK_FUNCTION(void)
+{
+    return "UnknownFunction";
+}
+
 
 END_NCBI_SCOPE
 
@@ -2806,6 +2811,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.123  2006/07/05 21:29:04  ssikorsk
+ * Added UNK_FUNCTION()
+ *
  * Revision 1.122  2006/06/29 16:02:21  grichenk
  * Added constants for setting CDiagContext properties.
  *

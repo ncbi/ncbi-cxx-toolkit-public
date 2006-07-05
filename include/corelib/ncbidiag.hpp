@@ -106,6 +106,7 @@ private:
     mutable string m_FunctName;
 };
 
+const char* NCBI_XNCBI_EXPORT UNK_FUNCTION(void);
 
 /// Get current function name.
 /// Defined inside of either a method or a function body only.
@@ -128,10 +129,10 @@ private:
 #  elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
 #    define NCBI_CURRENT_FUNCTION __func__
 #  else
-#    define NCBI_CURRENT_FUNCTION NULL
+#    define NCBI_CURRENT_FUNCTION UNK_FUNCTION
 #  endif
 #else
-#  define NCBI_CURRENT_FUNCTION NULL
+#  define NCBI_CURRENT_FUNCTION UNK_FUNCTION
 #endif
 
 
@@ -1557,6 +1558,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.110  2006/07/05 21:28:50  ssikorsk
+ * Added UNK_FUNCTION()
+ *
  * Revision 1.109  2006/06/29 16:02:20  grichenk
  * Added constants for setting CDiagContext properties.
  *
