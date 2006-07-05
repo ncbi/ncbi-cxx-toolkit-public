@@ -59,6 +59,8 @@ class CTL_CursorResult;
 class CTLibContextRegistry;
 
 
+int GetCtlibTdsVersion(void);
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTLibContext::
@@ -69,7 +71,8 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public I_DriverContext
     friend class CDB_Connection;
 
 public:
-    CTLibContext(bool reuse_context = true, CS_INT version = CS_VERSION_110);
+    CTLibContext(bool reuse_context = true, 
+                 CS_INT version = GetCtlibTdsVersion());
     virtual ~CTLibContext(void);
 
 public:
@@ -779,6 +782,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/07/05 16:06:24  ssikorsk
+ * Added function GetCtlibTdsVersion().
+ *
  * Revision 1.34  2006/06/05 20:59:40  ssikorsk
  * Moved method Release from CTL_Connection to I_Connection.
  *
