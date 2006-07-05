@@ -188,7 +188,9 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
                             " a defline or comment",
                             StreamPosition());
             }
-        } else if ( !TestFlag(fNoSeqData) ) {
+        } else if (TestFlag(fNoSeqData)) {
+            ++GetLineReader();
+        } else {
             ParseDataLine(*++GetLineReader());
         }
     }
@@ -903,7 +905,7 @@ void ScanFastaFile(IFastaEntryScan* scanner,
     CStreamLineReader lr(input);
     CFastaReader      reader(lr, fread_flags);
 
-    for (;;) {
+    while ( !lr.AtEOF() ) {
         try {
             CNcbiStreampos   pos = lr.GetPosition();
             CRef<CSeq_entry> se  = reader.ReadOneSeq();
@@ -1402,6 +1404,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2006/07/05 19:37:14  ucko
+* Avoid infinite loops when scanning input files.
+*
 * Revision 1.30  2006/06/27 19:04:17  ucko
 * Move #include <corelib/ncbi_param.hpp> to fasta.hpp.
 *
