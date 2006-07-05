@@ -227,7 +227,8 @@ void CDbBlast::x_Blast_RPSInfoInit(BlastRPSInfo **ppinfo,
        lut_mmap.reset(new CMemoryFile(dbpath[0] + ".loo"));
 
        info->lookup_header = (BlastRPSLookupFileHeader *)lut_mmap->GetPtr();
-       if (info->lookup_header->magic_number != RPS_MAGIC_NUM) {
+       if (info->lookup_header->magic_number != RPS_MAGIC_NUM &&
+           info->lookup_header->magic_number != RPS_MAGIC_NUM_28) {
            NCBI_THROW(CBlastException, eRpsInit,
                        "RPS BLAST lookup file is either corrupt or "
                        "constructed for an incompatible architecture");
@@ -236,7 +237,8 @@ void CDbBlast::x_Blast_RPSInfoInit(BlastRPSInfo **ppinfo,
        pssm_mmap.reset(new CMemoryFile(dbpath[0] + ".rps"));
 
        info->profile_header = (BlastRPSProfileHeader *)pssm_mmap->GetPtr();
-       if (info->profile_header->magic_number != RPS_MAGIC_NUM) {
+       if (info->profile_header->magic_number != RPS_MAGIC_NUM &&
+           info->profile_header->magic_number != RPS_MAGIC_NUM_28) {
            NCBI_THROW(CBlastException, eRpsInit,
                        "RPS BLAST profile file is either corrupt or "
                        "constructed for an incompatible architecture");
@@ -790,6 +792,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.94  2006/07/05 15:19:31  papadopo
+ * allow for 26- or 28-letter alphabets in RPS databases
+ *
  * Revision 1.93  2006/06/15 17:40:21  papadopo
  * PartialRun -> RunWithoutSeqalignGeneration
  *

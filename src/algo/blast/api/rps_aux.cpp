@@ -295,7 +295,8 @@ CRpsLookupTblFile::CRpsLookupTblFile(const string& filename_no_extn)
     : CRpsMmappedFile(filename_no_extn + kExtension)
 {
     m_Data = (BlastRPSLookupFileHeader*) m_MmappedFile->GetPtr();
-    if (m_Data->magic_number != RPS_MAGIC_NUM) {
+    if (m_Data->magic_number != RPS_MAGIC_NUM &&
+        m_Data->magic_number != RPS_MAGIC_NUM_28) {
         m_Data = NULL;
         NCBI_THROW(CBlastException, eRpsInit,
                "RPS BLAST profile file (" + filename_no_extn + kExtension + 
@@ -341,7 +342,8 @@ CRpsPssmFile::CRpsPssmFile(const string& filename_no_extn)
     : CRpsMmappedFile(filename_no_extn + kExtension)
 {
     m_Data = (BlastRPSProfileHeader*) m_MmappedFile->GetPtr();
-    if (m_Data->magic_number != RPS_MAGIC_NUM) {
+    if (m_Data->magic_number != RPS_MAGIC_NUM &&
+        m_Data->magic_number != RPS_MAGIC_NUM_28) {
         m_Data = NULL;
         NCBI_THROW(CBlastException, eRpsInit,
                "RPS BLAST profile file (" + filename_no_extn + kExtension + 
