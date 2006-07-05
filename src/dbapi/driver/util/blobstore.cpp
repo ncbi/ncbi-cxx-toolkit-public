@@ -197,35 +197,33 @@ CBlobRetriever::CBlobRetriever(I_DriverContext* pCntxt,
 bool CBlobRetriever::Dump(ostream& s, ECompressMethod cm)
 {
     if(m_IsGood) {
-        CBlobReader* bReader= new CBlobReader(m_Res);
-        CRStream* iStream= new CRStream(bReader);
-        CCompressionStreamProcessor* zProc;
+        auto_ptr<CBlobReader> bReader(new CBlobReader(m_Res));
+        auto_ptr<CRStream> iStream(new CRStream(bReader.get()));
+        auto_ptr<CCompressionStreamProcessor> zProc;
 
         switch(cm) {
         case eZLib:
-            zProc= new CCompressionStreamProcessor((CZipDecompressor*)(new CZipDecompressor),
-                                                   CCompressionStreamProcessor::eDelete);
+            zProc.reset(new CCompressionStreamProcessor((CZipDecompressor*)(new CZipDecompressor),
+                                                        CCompressionStreamProcessor::eDelete));
             break;
         case eBZLib:
-            zProc=  new CCompressionStreamProcessor((CBZip2Decompressor*)(new CBZip2Decompressor),
-                                                    CCompressionStreamProcessor::eDelete);
+            zProc.reset(new CCompressionStreamProcessor((CBZip2Decompressor*)(new CBZip2Decompressor),
+                                                        CCompressionStreamProcessor::eDelete));
             break;
         default:
-            zProc= 0;
+            zProc.reset();
         }
-        if(zProc) {
-            CCompressionIStream* zStream= new CCompressionIStream(*iStream, zProc);
+
+        if(zProc.get()) {
+            auto_ptr<CCompressionIStream> zStream(new CCompressionIStream(*iStream, zProc.get()));
             s << zStream->rdbuf();
-            delete zStream;
-            delete zProc;
         }
         else {
             s << iStream->rdbuf();
         }
-        delete iStream;
-        delete bReader;
 
-        m_IsGood= m_Res->Fetch();
+        m_IsGood = m_Res->Fetch();
+
         return true;
     }
     return false;
@@ -261,36 +259,34 @@ CBlobLoader::CBlobLoader(I_DriverContext* pCntxt,
 bool CBlobLoader::Load(istream& s, ECompressMethod cm, size_t image_limit, bool log_it)
 {
     if(m_IsGood && m_dMaker->Init(m_Conn)) {
-        CBlobWriter* bWriter= new CBlobWriter(m_Conn, m_dMaker, image_limit, log_it);
-        CWStream* oStream= new CWStream(bWriter);
-        CCompressionStreamProcessor* zProc;
+        auto_ptr<CBlobWriter> bWriter(new CBlobWriter(m_Conn, m_dMaker, image_limit, log_it));
+        auto_ptr<CWStream> oStream(new CWStream(bWriter.get()));
+        auto_ptr<CCompressionStreamProcessor> zProc;
 
         switch(cm) {
         case eZLib:
-            zProc= new CCompressionStreamProcessor((CZipCompressor*)(new CZipCompressor),
-                                                   CCompressionStreamProcessor::eDelete);
+            zProc.reset(new CCompressionStreamProcessor((CZipCompressor*)(new CZipCompressor),
+                                                        CCompressionStreamProcessor::eDelete));
             break;
         case eBZLib:
-            zProc=  new CCompressionStreamProcessor((CBZip2Compressor*)(new CBZip2Compressor),
-                                                    CCompressionStreamProcessor::eDelete);
+            zProc.reset(new CCompressionStreamProcessor((CBZip2Compressor*)(new CBZip2Compressor),
+                                                        CCompressionStreamProcessor::eDelete));
             break;
         default:
-            zProc= 0;
+            zProc.reset();
         }
-        if(zProc) {
-            CCompressionOStream* zStream= new CCompressionOStream(*oStream, zProc);
+
+        if(zProc.get()) {
+            auto_ptr<CCompressionOStream> zStream(new CCompressionOStream(*oStream, zProc.get()));
             *zStream << s.rdbuf();
-            delete zStream;
-            delete zProc;
         }
         else {
             *oStream << s.rdbuf();
         }
-        delete oStream;
-        delete bWriter;
 
         return m_dMaker->Fini();
     }
+
     return false;
 
 }
@@ -446,12 +442,11 @@ CBlobStoreBase::ReadTableDescr()
         m_BlobColumn = NULL;
     }
 
-    CDB_Connection* con = GetConn();
+    auto_ptr<CDB_Connection> con(GetConn());
 
     /* derive information regarding the table */
-    CDB_LangCmd* lcmd= con->LangCmd("select * from "+m_Table+" where 1=0");
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from "+m_Table+" where 1=0"));
     if(!lcmd->Send()) {
-        ReleaseConn(con);
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
     }
 
@@ -495,8 +490,6 @@ CBlobStoreBase::ReadTableDescr()
         }
         delete r;
     }
-    delete lcmd;
-    ReleaseConn(con);
 
     if((m_NofBC < 1) || m_KeyColName.empty()) {
         DATABASE_DRIVER_ERROR( "Table "+m_Table+" cannot be used for BlobStore", 1000040 );
@@ -542,18 +535,17 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
 {
     string s("set TEXTSIZE ");
     s += NStr::UIntToString(textSize);
-    CDB_LangCmd* lcmd = pConn->LangCmd(s.c_str(), 0);
+    auto_ptr<CDB_LangCmd> lcmd(pConn->LangCmd(s.c_str(), 0));
 
     if(!lcmd->Send())
     {
-        delete lcmd;
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000035 );
     }
 
     while(lcmd->HasMoreResults())
     {
-        CDB_Result* r= lcmd->Result();
-        if(!r) continue;
+        auto_ptr<CDB_Result> r(lcmd->Result());
+        if(!r.get()) continue;
         if(r->ResultType() == eDB_StatusResult)
         {
             while(r->Fetch())
@@ -562,15 +554,13 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
                 r->GetItem(&status);
                 if(status.Value() != 0)
                 {
-                    delete r;
-                    delete lcmd;
                     DATABASE_DRIVER_ERROR( "Wrong status", 1000036 );
                 }
             }
         }
-        else
+        else {
             while(r->Fetch());
-        delete r;
+        }
     }
 }
 
@@ -594,66 +584,55 @@ void CBlobStoreBase::GenReadQuery()
 
 bool CBlobStoreBase::Exists(const string& blob_id)
 {
-    CDB_Connection* con = GetConn();
+    auto_ptr<CDB_Connection> con(GetConn());
 
     /* check the key */
-    CDB_LangCmd* lcmd = con->LangCmd("if EXISTS(select * from "+m_Table+" where "+
-                                     m_KeyColName+"='"+blob_id+"') select 1");
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("if EXISTS(select * from "+m_Table+" where "+
+                               m_KeyColName+"='"+blob_id+"') select 1"));
     if(!lcmd->Send()) {
-        delete lcmd;
-        ReleaseConn(con);
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
     }
 
-    bool re= false;
+    bool re = false;
 
     while(lcmd->HasMoreResults()) {
-        CDB_Result* r= lcmd->Result();
-        if(!r) continue;
+        auto_ptr<CDB_Result> r(lcmd->Result());
+        if(!r.get()) continue;
         if(r->ResultType() == eDB_RowResult) {
             while(r->Fetch())
                 re= true;
         }
-        delete r;
     }
-    delete lcmd;
-    ReleaseConn(con);
+
     return re;
 }
 
 void CBlobStoreBase::Delete(const string& blob_id)
 {
-    CDB_Connection* con = GetConn();
+    auto_ptr<CDB_Connection> con(GetConn());
 
     /* check the key */
-    CDB_LangCmd* lcmd= con->LangCmd("delete "+m_Table+" where "+
-                                    m_KeyColName+"='"+blob_id+"'");
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("delete "+m_Table+" where "+
+                               m_KeyColName+"='"+blob_id+"'"));
     if(!lcmd->Send()) {
-        delete lcmd;
-        ReleaseConn(con);
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
     }
 
     lcmd->DumpResults();
-
-    delete lcmd;
-    ReleaseConn(con);
 }
 
 istream* CBlobStoreBase::OpenForRead(const string& blob_id)
 {
-    CDB_Connection* con = GetConn();
+    auto_ptr<CDB_Connection> con(GetConn());
 
     if(m_ReadQuery.empty())
         GenReadQuery();
 
-    CDB_LangCmd* lcmd= con->LangCmd(m_ReadQuery, 1);
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(m_ReadQuery, 1));
     CDB_VarChar blob_key(blob_id);
     lcmd->BindParam("@blob_id", &blob_key);
 
     if(!lcmd->Send()) {
-        delete lcmd;
-        ReleaseConn(con);
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
     }
 
@@ -666,65 +645,68 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id)
         }
         if(r->Fetch()) {
             // creating a stream
-            CBlobReader* bReader= new CBlobReader(r, lcmd, ReleaseConn(0) ? con : 0);
-            CRStream* iStream= new CRStream(bReader, 0, 0, CRWStreambuf::fOwnReader);
-            CCompressionStreamProcessor* zProc;
+            CBlobReader* bReader = new CBlobReader(r, lcmd.get(), ReleaseConn(0) ? con.get() : 0);
+            auto_ptr<CRStream> iStream(new CRStream(bReader, 0, 0, CRWStreambuf::fOwnReader));
+            auto_ptr<CCompressionStreamProcessor> zProc;
+
             switch(m_Cm) {
 
             case eZLib:
-                zProc= new CCompressionStreamProcessor((CZipDecompressor*)(new CZipDecompressor),
-                                                       CCompressionStreamProcessor::eDelete);
+                zProc.reset(new CCompressionStreamProcessor((CZipDecompressor*)(new CZipDecompressor),
+                                                             CCompressionStreamProcessor::eDelete));
                 break;
             case eBZLib:
-                zProc=  new CCompressionStreamProcessor((CBZip2Decompressor*)(new CBZip2Decompressor),
-                                                        CCompressionStreamProcessor::eDelete);
+                zProc.reset(new CCompressionStreamProcessor((CBZip2Decompressor*)(new CBZip2Decompressor),
+                                                             CCompressionStreamProcessor::eDelete));
                 break;
             default:
-                return iStream;
+                return iStream.release();
             }
-            CCompressionIStream* zStream= new CCompressionIStream(*iStream, zProc,
+
+            CCompressionIStream* zStream= new CCompressionIStream(*iStream.release(), zProc.release(),
                                                                   CCompressionStream::fOwnAll);
 
             return zStream;
         }
     }
-    delete lcmd;
-    ReleaseConn(con);
+
     return 0;
 }
 
 ostream* CBlobStoreBase::OpenForWrite(const string& blob_id)
 {
-    CDB_Connection* con = GetConn();
+    auto_ptr<CDB_Connection> con(GetConn());
 
     CSimpleBlobStore* sbs= new CSimpleBlobStore(m_Table, m_KeyColName, m_NumColName, m_BlobColumn,
                                                 m_IsText);
     sbs->SetKey(blob_id);
     // CBlobLoader* bload= new CBlobLoader(my_context, server_name, user_name, passwd, &sbs);
-    if(sbs->Init(con)) {
-        CBlobWriter* bWriter= new CBlobWriter(con, sbs, m_Limit,
+    if(sbs->Init(con.get())) {
+        con.release();
+        CBlobWriter* bWriter= new CBlobWriter(con.get(), sbs, m_Limit,
                                               CBlobWriter::fOwnDescr |
                                               (m_LogIt? CBlobWriter::fLogBlobs : 0) |
                                               (ReleaseConn(0) ? CBlobWriter::fOwnCon : 0));
-        CWStream* oStream= new CWStream(bWriter, 0, 0,  CRWStreambuf::fOwnWriter);
-        CCompressionStreamProcessor* zProc;
+        auto_ptr<CWStream> oStream(new CWStream(bWriter, 0, 0,  CRWStreambuf::fOwnWriter));
+        auto_ptr<CCompressionStreamProcessor> zProc;
 
         switch(m_Cm) {
         case eZLib:
-            zProc= new CCompressionStreamProcessor((CZipCompressor*)(new CZipCompressor),
-                                                   CCompressionStreamProcessor::eDelete);
+            zProc.reset(new CCompressionStreamProcessor((CZipCompressor*)(new CZipCompressor),
+                                                        CCompressionStreamProcessor::eDelete));
             break;
         case eBZLib:
-            zProc=  new CCompressionStreamProcessor((CBZip2Compressor*)(new CBZip2Compressor),
-                                                    CCompressionStreamProcessor::eDelete);
+            zProc.reset(new CCompressionStreamProcessor((CBZip2Compressor*)(new CBZip2Compressor),
+                                                        CCompressionStreamProcessor::eDelete));
             break;
         default:
-            return oStream;
+            return oStream.release();
         }
-        CCompressionOStream* zStream= new CCompressionOStream(*oStream, zProc, CCompressionStream::fOwnAll);
+
+        CCompressionOStream* zStream= new CCompressionOStream(*oStream.release(), zProc.release(), CCompressionStream::fOwnAll);
         return zStream;
     }
-    ReleaseConn(con);
+
     return 0;
 }
 
