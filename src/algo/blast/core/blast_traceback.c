@@ -747,7 +747,8 @@ s_BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
    }
 }
 
-void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm)
+void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm,
+                        Int4 alphabet_size)
 {
     ASSERT(sbp);
 
@@ -762,8 +763,9 @@ void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm)
         calloc(1, sizeof(SBlastScoreMatrix));
     ASSERT(sbp->psi_matrix->pssm);
 
-    /* The only data field that RPS-BLAST really needs */
+    /* The only data fields that RPS-BLAST really needs */
     sbp->psi_matrix->pssm->data = rps_pssm;
+    sbp->psi_matrix->pssm->nrows = alphabet_size;
 }
 
 void RPSPsiMatrixDetach(BlastScoreBlk* sbp)
@@ -779,6 +781,7 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp)
  * @param concat_db_info BlastQueryInfo structure to fill. [out]
  * @param gap_align Gapped alignment structure to modify [in] [out]
  * @param rps_info RPS BLAST information structure [in]
+ * @param alphabet_size Size of the alphabet assumed by the RPS disk files [out]
  */
 static Int2 
 s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info, 
@@ -791,6 +794,7 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
    Int4* pssm_start;
    BlastRPSProfileHeader *profile_header;
    Int4 index;
+   Int4 alphabet_size;
 
    if (!rps_info)
       return -1;
@@ -799,6 +803,12 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
 
    profile_header = rps_info->profile_header;
    num_profiles = profile_header->num_profiles;
+
+   /* force the alphabet size to match up to the on-disk format */
+   if (profile_header->magic_number == RPS_MAGIC_NUM)
+      alphabet_size = 26;
+   else
+      alphabet_size = 28;
 
    /* Construct an auxiliary BlastQueryInfo structure for the concatenated
       database. */
@@ -812,11 +822,11 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
 
    for (index = 0; index < num_pssm_rows + 1; index++) {
       rps_pssm[index] = pssm_start;
-      pssm_start += BLASTAA_SIZE;
+      pssm_start += alphabet_size;
    }
 
    gap_align->positionBased = TRUE;
-   RPSPsiMatrixAttach(gap_align->sbp, rps_pssm);
+   RPSPsiMatrixAttach(gap_align->sbp, rps_pssm, alphabet_size);
 
    return 0;
 }
@@ -877,6 +887,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    BlastScoreBlk* sbp;
    Int4 **rpsblast_pssms = NULL;
    Int4 db_seq_start;
+   Int4 alphabet_size;
    EBlastEncoding encoding;
    BlastSeqSrcGetSeqArg seq_arg;
    BlastQueryInfo* one_query_info = NULL;
@@ -944,8 +955,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
             RPSRescalePssm(score_params->scale_factor,
                            one_query->length, one_query->sequence, 
                            seq_arg.seq->length,
-                           rpsblast_pssms + db_seq_start,
-                           sbp->name);
+                           rpsblast_pssms + db_seq_start, sbp);
          /* The composition of the query could have caused this one
             subject sequence to produce a bad PSSM. This should
             not be a fatal error, so just go on to the next subject
