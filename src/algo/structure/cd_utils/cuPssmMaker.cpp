@@ -423,7 +423,8 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 		for (char row = 0; row < 26; row++)
 		{
 			char c2 =  ColumnResidueProfile::getEaaCode(row);
-			scores.push_back(sm.GetScore(c1, c2));
+			int score = m_config.scalingFactor * sm.GetScore(c1, c2);
+			scores.push_back(score);
 			if (freqs)
 				freqs->push_back(0.0);
 		}
@@ -431,6 +432,8 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 	pssm.SetFinalData().SetLambda(0.267);
 	pssm.SetFinalData().SetKappa(0.0447);
 	pssm.SetFinalData().SetH(0.140);
+	if (m_config.scalingFactor > 1)
+		pssm.SetFinalData().SetScalingFactor((int)m_config.scalingFactor);
 	return pssmPara;
 }
 
@@ -544,6 +547,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/07/05 15:50:43  cliu
+ * Bug fix with consensus replacement and default PSSM
+ *
  * Revision 1.14  2006/05/11 19:40:56  cliu
  * add freqRatios in deafult Pssm if requested.
  *

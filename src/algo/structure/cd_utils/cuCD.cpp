@@ -647,7 +647,7 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
 	guideBmp.reverse();
 	*guideIt = guideBmp.toSeqAlign();
 	// if there's a master3d
-	if (cd->IsSetMaster3d()) {
+	if (cd->IsSetMaster3d() && resetFields) {
 	 // get rid of it
 		cd->SetMaster3d().clear();
 	}
@@ -657,6 +657,7 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
 		if (SeqID->IsPdb()) {
 		// make it the master3d
 		// (the ref-counter for SeqID should have been incremented in GetSeqID)
+		cd->SetMaster3d().clear();
 		cd->SetMaster3d().push_back(SeqID);
 		}
 	}
@@ -905,6 +906,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2006/07/05 15:50:43  cliu
+ * Bug fix with consensus replacement and default PSSM
+ *
  * Revision 1.18  2006/06/22 02:32:08  cliu
  * reset fields in remaster function
  *
