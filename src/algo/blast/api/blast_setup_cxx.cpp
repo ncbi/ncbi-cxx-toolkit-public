@@ -760,8 +760,7 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     for (i = 0; i < sv.size(); i++) {
         // Change unsupported residues to X
         if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U'] ||
-            sv[i] == AMINOACID_TO_NCBISTDAA[(int)'O'] ||
-            sv[i] == AMINOACID_TO_NCBISTDAA[(int)'J']) {
+            sv[i] == AMINOACID_TO_NCBISTDAA[(int)'O']) {
             replaced_residues.push_back(i);
             *buf_var++ = AMINOACID_TO_NCBISTDAA[(int)'X'];
         } else if (!s_IsValidResidue(sv[i])) {
@@ -1572,6 +1571,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.123  2006/07/05 15:18:36  papadopo
+ * allow the core to see 'J' characters in query sequences
+ *
  * Revision 1.122  2006/06/14 15:58:54  camacho
  * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
  *
