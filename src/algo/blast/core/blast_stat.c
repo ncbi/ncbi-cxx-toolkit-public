@@ -1036,7 +1036,7 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
     long lineno = 0;
     double  xscore;
     register int  index1, index2;
-    int x_index, u_index;
+    int x_index, u_index, o_index, j_index;
     const char kCommentChar = '#';
     const char* kTokenStr = " \t\n\r";
     
@@ -1148,13 +1148,19 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
         return 2;
     }
     
-    /* Use the X scores for selenocysteines; if this is not done
-       then U will never align to a non-gap residue */
+    /* Use the X scores for the more exotic ncbistdaa characters; 
+       if this is not done then they will never align to non-gap residues */
     x_index = AMINOACID_TO_NCBISTDAA['X'];
     u_index = AMINOACID_TO_NCBISTDAA['U'];
+    o_index = AMINOACID_TO_NCBISTDAA['O'];
+    j_index = AMINOACID_TO_NCBISTDAA['J'];
     for (index1 = 0; index1 < sbp->alphabet_size; index1++) {
         matrix[u_index][index1] = matrix[x_index][index1];
         matrix[index1][u_index] = matrix[index1][x_index];
+        matrix[o_index][index1] = matrix[x_index][index1];
+        matrix[index1][o_index] = matrix[index1][x_index];
+        matrix[j_index][index1] = matrix[x_index][index1];
+        matrix[index1][j_index] = matrix[index1][x_index];
     }
 
     return 0;
@@ -1238,7 +1244,7 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     SNCBIPackedScoreMatrix* psm;
     Int4** matrix = NULL;
     int i, j;   /* loop indices */
-    int x_index, u_index;
+    int x_index, u_index, o_index, j_index;
 
     ASSERT(sbp);
     ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
@@ -1261,10 +1267,14 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
 
     for (i = 0; i < sbp->alphabet_size; i++) {
         for (j = 0; j < sbp->alphabet_size; j++) {
-            /* skip selenocysteine and gap */
+            /* skip special characters */
             if (i == AMINOACID_TO_NCBISTDAA['U'] || 
+                i == AMINOACID_TO_NCBISTDAA['O'] ||
+                i == AMINOACID_TO_NCBISTDAA['J'] ||
                 i == AMINOACID_TO_NCBISTDAA['-'] ||
                 j == AMINOACID_TO_NCBISTDAA['U'] || 
+                j == AMINOACID_TO_NCBISTDAA['O'] || 
+                j == AMINOACID_TO_NCBISTDAA['J'] ||
                 j == AMINOACID_TO_NCBISTDAA['-']) {
                 continue;
             }
@@ -1273,13 +1283,19 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
         }
     }
 
-    /* Use the X scores for selenocysteines; if this is not done
-       then U will never align to a non-gap residue */
+    /* Use the X scores for the more exotic ncbistdaa characters; 
+       if this is not done then they will never align to non-gap residues */
     x_index = AMINOACID_TO_NCBISTDAA['X'];
     u_index = AMINOACID_TO_NCBISTDAA['U'];
+    o_index = AMINOACID_TO_NCBISTDAA['O'];
+    j_index = AMINOACID_TO_NCBISTDAA['J'];
     for (i = 0; i < sbp->alphabet_size; i++) {
         matrix[u_index][i] = matrix[x_index][i];
         matrix[i][u_index] = matrix[i][x_index];
+        matrix[o_index][i] = matrix[x_index][i];
+        matrix[i][o_index] = matrix[i][x_index];
+        matrix[j_index][i] = matrix[x_index][i];
+        matrix[i][j_index] = matrix[i][x_index];
     }
 
     return status;
@@ -4198,7 +4214,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
 Int4 **
 RPSRescalePssm(double scalingFactor, Int4 rps_query_length, 
                const Uint1* rps_query_seq, Int4 db_seq_length, 
-               Int4 **posMatrix, const char *matrix_name)
+               Int4 **posMatrix, BlastScoreBlk *sbp)
 {
     double *scoreArray;         /*array of score probabilities*/
     double *resProb;            /*array of probabilities for each residue*/
@@ -4210,6 +4226,7 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
     double finalLambda;
     double temp;               /*intermediate variable for adjusting matrix*/
     Int4 index, inner_index; 
+    Int4 alphabet_size;
 
     resProb = (double *)malloc(BLASTAA_SIZE * sizeof(double));
     scoreArray = (double *)malloc(BLAST_SCORE_RANGE_MAX * sizeof(double));
@@ -4220,7 +4237,7 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
     RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray, 
                  return_sfp, BLAST_SCORE_RANGE_MAX);
 
-    initialUngappedLambda = RPSfindUngappedLambda(matrix_name);
+    initialUngappedLambda = RPSfindUngappedLambda(sbp->name);
     ASSERT(initialUngappedLambda > 0.0);
     scaledInitialUngappedLambda = initialUngappedLambda / scalingFactor;
     correctUngappedLambda = Blast_KarlinLambdaNR(return_sfp, 
@@ -4233,12 +4250,17 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
 
     finalLambda = correctUngappedLambda/scaledInitialUngappedLambda;
 
+    /* note that the final score matrix returned has an
+       alphabet size of BLASTAA_SIZE, even if the initial
+       PSSM has a smaller alphabet*/
     returnMatrix = (Int4 **)_PSIAllocateMatrix(db_seq_length,
                                                BLASTAA_SIZE,
                                                sizeof(Int4));
 
+    alphabet_size = sbp->psi_matrix->pssm->nrows;
+
     for (index = 0; index < db_seq_length; index++) {
-        for (inner_index = 0; inner_index < BLASTAA_SIZE; inner_index++) {
+        for (inner_index = 0; inner_index < alphabet_size; inner_index++) {
             if (posMatrix[index][inner_index] <= BLAST_SCORE_MIN || 
                 inner_index == AMINOACID_TO_NCBISTDAA['X']) {
                 returnMatrix[index][inner_index] = 
@@ -4248,6 +4270,9 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
                temp = ((double)(posMatrix[index][inner_index])) * finalLambda;
                returnMatrix[index][inner_index] = BLAST_Nint(temp);
            }
+        }
+        for (; inner_index < BLASTAA_SIZE; inner_index++) {
+           returnMatrix[index][inner_index] = BLAST_SCORE_MIN;
         }
     }
 
@@ -4385,6 +4410,13 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.146  2006/07/05 15:33:35  papadopo
+ * 1. Copy the 'X' columns in score matrices into the columns
+ *    for 'U', 'O', 'J'
+ * 2. When rebuilding RPS database profiles to account for the
+ *    composition of the query, allow for the returned score matrix
+ *    to have an alphabet size different from the input score matrix
+ *
  * Revision 1.145  2006/06/08 15:36:37  madden
  * In Blast_ScoreBlkMatrixFill check that matrix was found, or return -1
  *
