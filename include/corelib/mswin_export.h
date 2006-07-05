@@ -238,6 +238,14 @@
 #  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library filestorage (IBlobStorage)
+ */
+#ifdef NCBI_BLOBSTORAGE_FILE_EXPORTS
+#  define NCBI_BLOBSTORAGE_FILE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_BLOBSTORAGE_FILE_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library biblo
  */
 #ifdef NCBI_BIBLIO_EXPORTS
@@ -1104,6 +1112,7 @@
 #  define NCBI_BLASTXML_EXPORT
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT
+#  define NCBI_BLOBSTORAGE_FILE_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CLEANUP_EXPORT
 #  define NCBI_CN3D_EXPORT
@@ -1229,6 +1238,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.116  2006/07/05 19:07:32  didenko
+ * + NCBI_BLOBSTORAGE_FILE_EXPORT
+ *
  * Revision 1.115  2006/06/06 19:52:35  ssikorsk
  * + NCBI_DBAPIDRIVER_SQLITE3_EXPORT
  *
