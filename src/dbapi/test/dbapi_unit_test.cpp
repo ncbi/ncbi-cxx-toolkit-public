@@ -4131,7 +4131,7 @@ CTestArguments::SetDatabaseParameters(void)
 {
     if ( m_TDSVersion.empty() ) {
         if ( GetDriverName() == "ctlib" ) {
-            m_DatabaseParameters["version"] = "125";
+            // m_DatabaseParameters["version"] = "125";
         } else if ( GetDriverName() == "dblib"  &&
                     GetServerType() == eSybase ) {
             // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
@@ -4180,6 +4180,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.80  2006/07/05 16:12:02  ssikorsk
+ * Disable explicit ctlib TDS version setup.
+ *
  * Revision 1.79  2006/06/22 18:44:10  ssikorsk
  * Added testing of SetLogStream to Test_UserErrorHandler.
  *
