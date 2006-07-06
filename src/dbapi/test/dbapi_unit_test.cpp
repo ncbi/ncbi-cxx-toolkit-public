@@ -162,8 +162,10 @@ CDBAPIUnitTest::TestInit(void)
 
 #ifdef USE_STATICALLY_LINKED_DRIVERS
 
+#ifdef HAVE_SYBASE
         DBAPI_RegisterDriver_CTLIB();
         DBAPI_RegisterDriver_DBLIB();
+#endif
         DBAPI_RegisterDriver_FTDS();
 
 #endif
@@ -4053,10 +4055,14 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
-#else
+#elif defined(HAVE_SYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
+#else
+#define DEF_SERVER    "MS_DEV1"
+#define DEF_DRIVER    "ftds"
+#define ALL_DRIVERS   "ftds", "ftds63", "gateway"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -4180,6 +4186,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.81  2006/07/06 20:48:44  ucko
+ * Don't assume Sybase is always available on Unix.
+ *
  * Revision 1.80  2006/07/05 16:12:02  ssikorsk
  * Disable explicit ctlib TDS version setup.
  *
