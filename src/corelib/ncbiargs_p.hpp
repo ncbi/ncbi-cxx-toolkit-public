@@ -415,9 +415,41 @@ public:
 };
 
 
+// Special case - arg synonym. Can be used e.g. to create short and
+// long argument names.
+
+class CArgDesc_Alias : public CArgDesc
+{
+public:
+    // Create an argument alias.
+    // alias is a new name for the existing argument, arg_name is
+    // its original name. Any search functions will return the original
+    // argument rather than the alias.
+    CArgDesc_Alias(const string& alias, const string& arg_name);
+    virtual ~CArgDesc_Alias(void);
+
+    const string& GetAliasedName(void) const;
+
+    // Dummy methods - to make the class not abstract
+    virtual string GetUsageSynopsis(bool name_only) const;
+    virtual string GetUsageCommentAttr(void) const;
+    virtual CArgValue* ProcessArgument(const string& value) const;
+    virtual CArgValue* ProcessDefault(void) const;
+
+private:
+    string m_ArgName;
+};
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/07/06 20:06:37  grichenk
+ * Added argument aliases.
+ * Allow '=' as value separator.
+ * Allow to omit separator for single-char names.
+ * Allow '-' in names.
+ *
  * Revision 1.10  2006/02/27 19:58:12  grichenk
  * Fixed warnings
  *
