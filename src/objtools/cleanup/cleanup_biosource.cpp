@@ -470,8 +470,8 @@ void CCleanup_imp::x_CleanOrgNameStrings(COrgName &on)
 
 void CCleanup_imp::x_ExtendedCleanStrings (COrg_ref &org)
 {
-    CleanVisString (org.SetTaxname());
-    CleanVisString (org.SetCommon());
+    EXTENDED_CLEAN_STRING_MEMBER(org, Taxname);
+    EXTENDED_CLEAN_STRING_MEMBER(org, Common);
     if (org.CanGetMod()) {
         CleanVisStringList (org.SetMod());
     }
@@ -491,7 +491,9 @@ void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
         CBioSource::TSubtype tmp;
         tmp.clear();
         NON_CONST_ITERATE (CBioSource::TSubtype, it, subtypes) {
-            CleanVisString((*it)->SetAttrib());
+            if ((*it)->CanGetAttrib()) {
+                CleanVisString((*it)->SetAttrib());
+            }
             int subtype = (*it)->GetSubtype();
             if (subtype != CSubSource::eSubtype_germline
                 && subtype != CSubSource::eSubtype_rearranged
@@ -523,6 +525,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/07/06 15:10:52  bollin
+ * avoid setting empty values
+ *
  * Revision 1.5  2006/07/05 17:26:11  bollin
  * cleared compiler error
  *
