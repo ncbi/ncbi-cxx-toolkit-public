@@ -185,6 +185,10 @@ tds_gethostbyname_r(const char *servername, struct hostent *result, char *buffer
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_INET;
+#ifdef AI_CANONNAME
+        hints.ai_flags |= AI_CANONNAME;
+#endif
+
 	ai_errno = getaddrinfo(servername, 0, &hints, &out);
 	if (ai_errno == 0  &&  out) {
 		*h_errnop = s_make_hostent(result, buffer, buflen, out);
