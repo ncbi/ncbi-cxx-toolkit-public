@@ -54,12 +54,11 @@ extern "C" {
  *  still possible to find alignments that are shorter and/or have less
  *  identity than what is specified here. The returned word size is
  *  just a choice that makes it unlikely that ungapped blast will 
- *  miss alignments that exceed *both* minimums. 
+ *  miss alignments that exceed *both* minimums. The algorithm used 
+ *  is described in
  *
  *  <PRE>
- *  The algorithm used is described in
- *
- *  Valer Gotea, Vamsi Veeramachaneni, and Wojciech Makaowski
+ *  Valer Gotea, Vamsi Veeramachaneni, and Wojciech Makalowski
  *  "Mastering seeds for genomic size nucleotide BLAST searches"
  *  Nucleic Acids Research, 2003, Vol 31, No. 23, pp 6935-6941
  *  </PRE>
