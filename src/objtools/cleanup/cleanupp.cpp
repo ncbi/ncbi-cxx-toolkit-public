@@ -937,13 +937,15 @@ void CCleanup_imp::x_ExtendedCleanStrings (CSeqdesc& sd)
             }
             break;
         case CSeqdesc::e_Pub:
-            if (IsOnlinePub(sd.GetPub())) {
-                NStr::TruncateSpacesInPlace (sd.SetPub().SetComment(), NStr::eTrunc_Both);
-            } else {
-                CleanVisString(sd.SetPub().SetComment());
-            }
-            if (NStr::IsBlank(sd.GetPub().GetComment())) {
-                sd.SetPub().ResetComment();
+            if (sd.GetPub().CanGetComment()) {
+                if (IsOnlinePub(sd.GetPub())) {
+                    NStr::TruncateSpacesInPlace (sd.SetPub().SetComment(), NStr::eTrunc_Both);
+                } else {
+                    CleanVisString(sd.SetPub().SetComment());
+                }
+                if (NStr::IsBlank(sd.GetPub().GetComment())) {
+                    sd.SetPub().ResetComment();
+                }
             }
             break;
         case CSeqdesc::e_Source:
@@ -1329,6 +1331,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2006/07/06 15:16:04  bollin
+ * do not create unassigned publication comments
+ *
  * Revision 1.27  2006/07/05 16:43:34  bollin
  * added step to ExtendedCleanup to clean features and descriptors
  * and remove empty feature table seq-annots
