@@ -344,11 +344,11 @@ PssmMaker::~PssmMaker()
 
 CRef<CPssmWithParameters> PssmMaker::make()
 {
+	m_conMaker = new ConsensusMaker(m_cd, m_config.inclusionThreshold);
 	if (m_config.unalignedSegThreshold >= 0)
 	{
 		m_conMaker->skipUnalignedSeg(m_config.unalignedSegThreshold);
 	}
-	m_conMaker = new ConsensusMaker(m_cd, m_config.inclusionThreshold);
 	m_pssmInput = new CdPssmInput (m_conMaker->getResidueProfiles(), m_config,m_useConsensus);
 	if (!m_useConsensus)
 		for(int i = 0 ; i < m_pssmInput->GetQueryLength(); i++)
@@ -547,6 +547,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/07/06 16:28:08  cliu
+ * fix a bug with skipping unaligned consensus region
+ *
  * Revision 1.15  2006/07/05 15:50:43  cliu
  * Bug fix with consensus replacement and default PSSM
  *
