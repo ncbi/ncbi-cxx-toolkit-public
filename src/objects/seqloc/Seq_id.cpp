@@ -705,7 +705,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'E':
             switch (pfx[1]) {
             case 'A':                     return eAcc_gb_patent;
-            case 'B': case 'C':           return eAcc_gb_est;
+            case 'B': case 'C': case 'E': return eAcc_gb_est;
             case 'D':                     return eAcc_gb_gss;
             default:                      return eAcc_unreserved_nuc;
             }
@@ -1595,6 +1595,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.132  2006/07/06 14:06:33  ucko
+ * IdentifyAccession: EE -> eAcc_gb_est
+ *
  * Revision 6.131  2006/06/29 15:05:37  ucko
  * IdentifyAccession: ED -> eAcc_gb_gss
  *
