@@ -1158,9 +1158,9 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
             }
             HitSet->SetNumber(Peaks->GetNumber());
             HitSet->SetIds() = Peaks->GetName();
-            HitSet->SetSettingid() = GetSettings()->GetSettingid();
             SetResponse()->SetHitsets().push_back(HitSet);
         }
+        HitSet->SetSettingid() = GetSettings()->GetSettingid();
 
         // if there weren't enough peaks to do a search, note in error status
         if (Peaks->GetError() == eMSHitError_notenuffpeaks) {
