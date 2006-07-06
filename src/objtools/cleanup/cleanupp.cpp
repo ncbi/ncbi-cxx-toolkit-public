@@ -1309,7 +1309,7 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
             || bclass == CBioseq_set::eClass_gen_prod_set) {
        
             ITERATE (list< CRef< CSeq_entry > >, it, set) {
-                if ((**it).Which() == CSeq_entry::e_Seq) {
+                if ((**it).Which() == CSeq_entry::e_Set) {
                     RenormalizeNucProtSets (m_Scope->GetBioseq_setHandle((**it).GetSet()));
                 }
             }
@@ -1331,6 +1331,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2006/07/06 17:28:48  bollin
+ * corrected bug in RenormalizeNucProtSets
+ *
  * Revision 1.29  2006/07/06 17:16:37  bollin
  * fixed bug in RenormalizeNucProtSets
  *
