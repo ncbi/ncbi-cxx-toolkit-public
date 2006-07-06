@@ -128,16 +128,17 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_Open
 
 /* Get the next server meta-address, optionally accompanied by host
  * environment, specified in LBSMD configuration file on that host.
- * Return 0 if no more servers were found for the service requested
+ * Return 0 if no more servers have been found for the service requested
  * (the pointer to 'host_info' remains untouched in this case).
- * Only when completing successfully, i.e. returning non-NULL info,
- * this function can also provide host information as follows: if
+ * Only when completing successfully, i.e. returning a non-NULL info,
+ * this function can also provide the host information as follows: if
  * 'host_info' parameter is passed as a non-NULL pointer, then a copy of the
  * host information is allocated, and the pointer is stored at *host_info.
  * Using this information, various host parameters like load, host
  * environment, number of CPUs can be retrieved (see ncbi_host_info.h).
- * Resulting DNS server info (only if coming out first) may contain 0
- * in the host field to donote that the name is known but is currently down. 
+ * Resulting DNS server info (only if coming out for the first time) may
+ * contain 0 in the host field to denote that the name is known but
+ * is currently down.
  * NOTE:  Application program should NOT destroy the returned server info:
  *        it will be freed automatically upon iterator destruction.
  *        On the other hand, returned host information has to be
@@ -188,13 +189,13 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfo
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Penalize
 (SERV_ITER            iter,          /* handle obtained via 'SERV_Open*' call*/
- double               fine           /* fine in a range [0=min..100=max] (%%)*/
+ double               fine           /* fine from range [0=min..100=max] (%%)*/
  );
 
 
 /* Reset the iterator to the state as if it has just been opened.
  * CAUTION:  All pointers to server descriptors (SSERV_Info*), if any
- * previously obtained with this iterator, get invalidated by this call.
+ * previously obtained via this iterator, are rendered invalid by this call.
  */
 extern NCBI_XCONNECT_EXPORT void SERV_Reset
 (SERV_ITER            iter           /* handle obtained via 'SERV_Open*' call*/
@@ -219,6 +220,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2006/07/06 18:48:40  lavr
+ * Some fixes in comments
+ *
  * Revision 6.48  2006/06/07 20:23:07  lavr
  * Bump up minor client version number to 220 (full now is 6.220)
  *
