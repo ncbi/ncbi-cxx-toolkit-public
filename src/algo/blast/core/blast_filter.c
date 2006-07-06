@@ -1069,6 +1069,20 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
 }
 
 void
+Blast_MaskUnsupportedAA(BLAST_SequenceBlk* seq, Uint1 min_invalid)
+{
+    Uint1 *sequence = seq->sequence;
+    Int4 length = seq->length;
+    Int4 i;
+
+    for (i = 0; i < length; i++) {
+        if (sequence[i] >= min_invalid) {
+            sequence[i] = kProtMask;
+        }
+    }
+}
+
+void
 BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, 
                      const BlastQueryInfo* query_info, 
                      const BlastMaskLoc *filter_maskloc, 

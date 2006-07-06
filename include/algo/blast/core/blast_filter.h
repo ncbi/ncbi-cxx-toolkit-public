@@ -242,6 +242,20 @@ void
 Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na, 
     const BlastSeqLoc* mask_loc, Boolean reverse, Int4 offset);
 
+/** Mask protein letters that are currently unsupported. This routine
+ *  is used to make the core ignore letters within protein sequences
+ *  that cannot (yet) be correctly handled
+ * @param seq Protein sequence to be masked (ncbistdaa format required).
+ *            Letters whose numerical value exceeds a cutoff are
+ *            converted into kProtMask values [in|out]
+ * @param min_invalid The first ncbistdaa value that is considered invalid.
+ *            All sequence letters with numerical value >= this number
+ *            are masked [in]
+ */
+NCBI_XBLAST_EXPORT
+void
+Blast_MaskUnsupportedAA(BLAST_SequenceBlk* seq, Uint1 min_invalid);
+
 /** Masks the sequence given a BlastMaskLoc
  * @param query_blk sequence to be filtered [in]
  * @param query_info info on sequence to be filtered [in]
