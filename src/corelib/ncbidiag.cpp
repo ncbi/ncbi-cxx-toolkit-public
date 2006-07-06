@@ -288,14 +288,52 @@ CDiagContext::TUID CDiagContext::GetUID(void) const
 
 string CDiagContext::GetStringUID(TUID uid) const
 {
-    char buf[14];
+    char buf[18];
     if (uid == 0) {
         uid = GetUID();
     }
-    int time = int(uid >> 16);
-    int pid = int(uid & 0xFFFF);
-    sprintf(buf, "%08X%04X", time, pid);
+    int hi = int((uid >> 32) & 0xFFFFFFFF);
+    int lo = int(uid & 0xFFFFFFFF);
+    sprintf(buf, "%08X%08X", hi, lo);
     return string(buf);
+}
+
+
+static string s_GetHost(void)
+{
+    // Check context properties
+    string ret = GetDiagContext().GetProperty(
+        CDiagContext::kProperty_HostName);
+    if ( !ret.empty() )
+        return ret;
+
+    ret = GetDiagContext().GetProperty(CDiagContext::kProperty_HostIP);
+    if ( !ret.empty() )
+        return ret;
+
+#if defined(NCBI_OS_UNIX)
+    // UNIX - use uname()
+    {{
+        struct utsname buf;
+        if (uname(&buf) == 0)
+            return string(buf.nodename);
+    }}
+#endif
+
+#if defined(NCBI_OS_MSWIN)
+    // MSWIN - use COMPUTERNAME
+    const char* compname = ::getenv("COMPUTERNAME");
+    if ( compname  &&  *compname )
+        return compname;
+#endif
+
+    // Server env. - use SERVER_ADDR
+    const char* servaddr = ::getenv("SERVER_ADDR");
+    if ( servaddr  &&  *servaddr )
+        return servaddr;
+
+    // Can not get hostname
+    return "UNK_HOST";
 }
 
 
@@ -303,8 +341,12 @@ void CDiagContext::x_CreateUID(void) const
 {
     Int8 pid = CProcess::GetCurrentPid();
     time_t t = time(0);
-    // just a stub, must be rewritten
-    m_UID = ((pid & 0xFFFF) << 32) + (t & 0xFFFFFFFF);
+    string host = s_GetHost();
+    unsigned long h = 201;
+    ITERATE(string, s, host) {
+        h = (h*15 + *s) & 0xFFFF;
+    }
+    m_UID = (h << 48) + ((pid & 0xFFFF) << 32) + ((t & 0xFFFFFFF) << 4);
 }
 
 
@@ -390,44 +432,6 @@ const char* CDiagContext::kProperty_ReqStatus   = "request_status";
 const char* CDiagContext::kProperty_ReqTime     = "request_time";
 const char* CDiagContext::kProperty_BytesRd     = "bytes_rd";
 const char* CDiagContext::kProperty_BytesWr     = "bytes_wr";
-
-
-static string s_GetHost(void)
-{
-    // Check context properties
-    string ret = GetDiagContext().GetProperty(
-        CDiagContext::kProperty_HostName);
-    if ( !ret.empty() )
-        return ret;
-
-    ret = GetDiagContext().GetProperty(CDiagContext::kProperty_HostIP);
-    if ( !ret.empty() )
-        return ret;
-
-#if defined(NCBI_OS_UNIX)
-    // UNIX - use uname()
-    {{
-        struct utsname buf;
-        if (uname(&buf) == 0)
-            return string(buf.nodename);
-    }}
-#endif
-
-#if defined(NCBI_OS_MSWIN)
-    // MSWIN - use COMPUTERNAME
-    const char* compname = ::getenv("COMPUTERNAME");
-    if ( compname  &&  *compname )
-        return compname;
-#endif
-
-    // Server env. - use SERVER_ADDR
-    const char* servaddr = ::getenv("SERVER_ADDR");
-    if ( servaddr  &&  *servaddr )
-        return servaddr;
-
-    // Can not get hostname
-    return "UNK_HOST";
-}
 
 
 const char* kDiagTimeFormat = "Y/M/D:h:m:s";
@@ -981,7 +985,7 @@ SDiagMessage::SDiagMessage(const string& message)
     m_Data = new SDiagMessageData;
     // UID
     if (message[0] == '@') {
-        static const size_t kUID_Length = 12;
+        static const size_t kUID_Length = 16;
         if (len > kUID_Length + 1  &&
             message[kUID_Length + 1] == '#') {
             // Ignore diag-context properties
@@ -2811,6 +2815,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.125  2006/07/06 18:43:39  grichenk
+ * Extended UID using hashed host name.
+ *
  * Revision 1.124  2006/07/05 21:55:07  ssikorsk
  * UNK_FUNCTION -> g_DiagUnknownFunction
  *
