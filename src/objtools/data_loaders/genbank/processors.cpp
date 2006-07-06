@@ -1673,6 +1673,7 @@ bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id)
     case eSubSat_SNP_graph:
     case eSubSat_MGC:
     case eSubSat_tRNA:
+    case eSubSat_STS:
         return blob_id.GetSat() == eSat_ANNOT;
     case eSubSat_CDD:
         return blob_id.GetSat() == eSat_ANNOT_CDD;
@@ -1724,31 +1725,40 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     CAnnotName name;
     SAnnotTypeSelector type;
     string db_name;
-    if ( blob_id.GetSubSat() == eSubSat_SNP ) {
+    switch ( blob_id.GetSubSat() ) {
+    case eSubSat_SNP:
         blob->SetName("SNP");
         name.SetNamed("SNP");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_variation);
         db_name = "Annot:SNP";
-    }
-    else if ( blob_id.GetSubSat() == eSubSat_CDD ) {
+        break;
+    case eSubSat_CDD:
         name.SetNamed("CDDSearch");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_region);
         db_name = "Annot:CDD";
-    }
-    else if ( blob_id.GetSubSat() == eSubSat_SNP_graph ) {
+        break;
+    case eSubSat_SNP_graph:
         blob->SetName("SNP");
         name.SetNamed("SNP");
         type.SetAnnotType(CSeq_annot::C_Data::e_Graph);
         db_name = "Annot:SNP graph";
-    }
-    else if ( blob_id.GetSubSat() == eSubSat_MGC ) {
+        break;
+    case eSubSat_MGC:
         type.SetFeatSubtype(CSeqFeatData::eSubtype_misc_difference);
         db_name = "Annot:MGC";
-    }
-    else if ( blob_id.GetSubSat() == eSubSat_tRNA ) {
+        break;
+    case eSubSat_tRNA:
         name.SetNamed("tRNA");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_tRNA);
         db_name = "Annot:tRNA";
+        break;
+    case eSubSat_STS:
+        type.SetFeatSubtype(CSeqFeatData::eSubtype_STS);
+        db_name = "Annot:STS";
+        break;
+    default:
+        _ASSERT(0 && "unknown annot type");
+        break;
     }
     _ASSERT(!db_name.empty());
 
