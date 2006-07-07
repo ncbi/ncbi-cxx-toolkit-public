@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.17 2005/09/22 11:22:55 ivanov Exp $
+# $Id: ignore.lst,v 1.18 2006/07/07 18:38:22 ivanov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -22,6 +22,11 @@ connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release--sparc-sun-sol
 connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT--sparc-sun-solaris2.10
 connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release64--sparc-sun-solaris2.10
 connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT64--sparc-sun-solaris2.10
+
+; No run on Cygwin
+connect/test/test_ncbi_socket GCC_344-ReleaseMT--i386-pc-win32
+app/asn2asn/asn2asn GCC_344-ReleaseMT--i386-pc-win32
+
 
 ; OBJMGR
 
