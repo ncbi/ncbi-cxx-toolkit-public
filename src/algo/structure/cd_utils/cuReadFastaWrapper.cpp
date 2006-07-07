@@ -86,15 +86,21 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
         if (m_cacheRawFasta) m_rawFastaString = m_activeFastaString;
 
         //  temporarily turn off warning messages (in case of '.' in *.a2m files)
-        SetDiagPostLevel(eDiag_Error);  
+         EDiagSev originalDiagSev = SetDiagPostLevel(eDiag_Error);  
 
         iStream.seekg(0);  
-        m_seqEntry = ReadFasta(iStream, m_readFastaFlags);
+		try{
+            m_seqEntry = ReadFasta(iStream, m_readFastaFlags);
+		} catch (...) {
+            result = false;
+            m_seqEntry.Reset();
+        }
+
         if (m_seqEntry.Empty()) {
             result = false;
             m_error = "Read Error:  empty seq entry.\n";
         }
-        SetDiagPostLevel(eDiag_Info);
+        SetDiagPostLevel(originalDiagSev);
     }
 
     return result;
@@ -106,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/07 16:54:46  lanczyck
+ * use a try/catch around ReadFasta; modify diagnostic level altering code
+ *
  * Revision 1.1  2006/03/29 15:44:07  lanczyck
  * add files for fasta->cd converter; change Makefile accordingly
  *
