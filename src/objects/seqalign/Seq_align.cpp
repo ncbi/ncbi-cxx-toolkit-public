@@ -631,6 +631,18 @@ CSeq_align::CreateTranslatedDensegFromNADenseg() const
 }
 
 
+/// Strict weak ordering for pairs (by first)
+/// Used by CreateDensegFromDisc
+template <typename T, typename Pred = less<TSeqPos> >
+struct ds_cmp : public binary_function<T, T, bool> {
+    bool operator()(const T& x, const T& y) { 
+        return m_Pred(x.first, y.first); 
+    }
+private:
+    Pred m_Pred;
+};
+
+
 CRef<CSeq_align> 
 CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
 {
@@ -650,9 +662,38 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
     new_ds.SetDim(0);
     new_ds.SetNumseg(0);
 
-    /// First pass: determine dim & numseg
+
+    /// Order the discontinuous densegs
+    typedef pair<TSeqPos, const CDense_seg *> TPosDsPair;
+    typedef vector<TPosDsPair> TDsVec;
+    TDsVec ds_vec;
+    ds_vec.reserve(GetSegs().GetDisc().Get().size());
+    int strand = -1;
     ITERATE (CSeq_align_set::Tdata, sa_i, GetSegs().GetDisc().Get()) {
         const CDense_seg& ds = (*sa_i)->GetSegs().GetDenseg();
+        ds_vec.push_back(make_pair<TSeqPos, const CDense_seg *>(ds.GetSeqStart(0), &ds));
+        if (strand < 0) {
+            strand = ds.GetStrands()[0];
+        } else {
+            if (strand != ds.GetStrands()[0]) {
+                NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                           "CreateDensegFromDisc(): "
+                           "Inconsistent strands!");
+            }
+        }
+    }
+    if (strand != eNa_strand_minus) {
+        sort(ds_vec.begin(), ds_vec.end(),
+             ds_cmp<TPosDsPair>());
+    } else {
+        sort(ds_vec.begin(), ds_vec.end(),
+             ds_cmp<TPosDsPair, greater<TSeqPos> >());
+    }
+
+
+    /// First pass: determine dim & numseg
+    ITERATE(TDsVec, ds_i, ds_vec) {
+        const CDense_seg& ds = *ds_i->second;
 
         /// Numseg
         new_ds.SetNumseg() += ds.GetNumseg();
@@ -669,9 +710,14 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
         /// Strands?
         if ( !ds.GetStrands().empty() ) {
             if (tmp_strands.empty()) {
-                tmp_strands = ds.GetStrands();
+                tmp_strands.resize(ds.GetDim());
+                copy(ds.GetStrands().begin(),
+                     ds.GetStrands().begin() + ds.GetDim(),
+                     tmp_strands.begin());
             } else {
-                if (tmp_strands != ds.GetStrands()) {
+                if ( !equal(tmp_strands.begin(),
+                            tmp_strands.end(),
+                            ds.GetStrands().begin()) ) {
                     NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
                                "CreateDensegFromDisc(): "
                                "All disc dense-segs need to have the same strands!");
@@ -697,8 +743,8 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
     CDense_seg::TNumseg new_seg = 0;
     int                 new_starts_i = 0;
 
-    ITERATE (CSeq_align_set::Tdata, sa_i, GetSegs().GetDisc().Get()) {
-        const CDense_seg& ds = (*sa_i)->GetSegs().GetDenseg();
+    ITERATE(TDsVec, ds_i, ds_vec) {
+        const CDense_seg& ds = *ds_i->second;
         
         _ASSERT(ds.GetStarts().size() == ds.GetNumseg() * ds.GetDim());
         _ASSERT(new_ds.GetDim() == ds.GetDim());
@@ -835,6 +881,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2006/07/07 14:25:03  todorov
+* 1) Support for unordered disc densegs in CreateDensegFromDisc.
+* 2) Better strands support in CreateDensegFromDisc.
+*
 * Revision 1.23  2006/06/06 22:42:54  todorov
 * Added OffsetRow method.
 * Marked RemapToLoc for deprecation.
