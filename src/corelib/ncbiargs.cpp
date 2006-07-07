@@ -1065,50 +1065,6 @@ string CArgDesc_KeyDef::GetUsageSynopsis(bool name_only) const
 }
 
 
-///////////////////////////////////////////////////////
-//  CArgDesc_Alias::
-
-CArgDesc_Alias::CArgDesc_Alias(const string& alias,
-                               const string& arg_name)
-    : CArgDesc(alias, kEmptyStr),
-      m_ArgName(arg_name)
-{
-}
-
-
-CArgDesc_Alias::~CArgDesc_Alias(void)
-{
-}
-
-
-const string& CArgDesc_Alias::GetAliasedName(void) const
-{
-    return m_ArgName;
-}
-
-
-string CArgDesc_Alias::GetUsageSynopsis(bool name_only) const
-{
-    return kEmptyStr;
-}
-
-
-string CArgDesc_Alias::GetUsageCommentAttr(void) const
-{
-    return kEmptyStr;
-}
-
-    
-CArgValue* CArgDesc_Alias::ProcessArgument(const string& value) const
-{
-    return new CArg_NoValue(GetName());
-}
-
-
-CArgValue* CArgDesc_Alias::ProcessDefault(void) const
-{
-    return new CArg_NoValue(GetName());
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1141,12 +1097,6 @@ inline bool s_IsOptional(const CArgDesc& arg)
 inline bool s_IsFlag(const CArgDesc& arg)
 {
     return (dynamic_cast<const CArgDesc_Flag*> (&arg) != 0);
-}
-
-
-inline bool s_IsAlias(const CArgDesc& arg)
-{
-    return (dynamic_cast<const CArgDesc_Alias*> (&arg) != 0);
 }
 
 
@@ -1564,16 +1514,6 @@ void CArgDescriptions::AddExtra
 }
 
 
-void CArgDescriptions::AddAlias(const string& alias,
-                                const string& arg_name)
-{
-    auto_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name));
-
-    x_AddDesc(*arg);
-    arg.release();
-}
-
-
 void CArgDescriptions::SetConstraint(const string&      name, 
                                      CArgAllow*         constraint,
                                      EConstraintNegate  negate)
@@ -1674,30 +1614,12 @@ private:
 
 CArgDescriptions::TArgsCI CArgDescriptions::x_Find(const string& name) const
 {
-    CArgDescriptions::TArgsCI arg =
-        m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
-    if ( arg != m_Args.end() ) {
-        const CArgDesc_Alias* al =
-            dynamic_cast<const CArgDesc_Alias*>(arg->get());
-        if ( al ) {
-            return x_Find(al->GetAliasedName());
-        }
-    }
-    return arg;
+    return m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
 }
 
 CArgDescriptions::TArgsI CArgDescriptions::x_Find(const string& name)
 {
-    CArgDescriptions::TArgsI arg =
-        m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
-    if ( arg != m_Args.end() ) {
-        const CArgDesc_Alias* al =
-            dynamic_cast<const CArgDesc_Alias*>(arg->get());
-        if ( al ) {
-            return x_Find(al->GetAliasedName());
-        }
-    }
-    return arg;
+    return m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
 }
 
 
@@ -1733,18 +1655,9 @@ void CArgDescriptions::x_PreCheck(void) const
         }
     }
 
-    // Check for the validity of default values.
-    // Also check for conflict between no-separator and regular names
+    // Check for the validity of default values
     for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
         CArgDesc& arg = **it;
-
-        const string& name = arg.GetName();
-        if (name.length() > 1  &&  m_NoSeparator.find(name[0]) != NPOS) {
-            NCBI_THROW(CArgException, eInvalidArg,
-                string("'") + name[0] +
-                "' argument allowed to contain no separator conflicts with '" +
-                name + "' argument");
-        }
 
         if (dynamic_cast<CArgDescDefault*> (&arg) == 0) {
             continue;
@@ -1803,19 +1716,8 @@ bool CArgDescriptions::x_CreateArg
         if ((arg1.length() > 1)  &&  arg1[0] == '-') {
             // Extract name of flag or key
             name = arg1.substr(1);
-            // Check for '=' in the arg1
-            size_t eq = name.find('=');
-            if (eq != NPOS) {
-                name = name.substr(0, eq);
-            }
             if ( !VerifyName(name) ) {
-                // Try to find the name in no-separator arguments
-                if (m_NoSeparator.find(name[0]) != NPOS) {
-                    name = name.substr(0, 1);
-                }
-                else {
-                    *n_plain = 0;  // pos.args started
-                }
+                *n_plain = 0;  // pos.args started
             }
         } else {
             *n_plain = 0;  // pos.args started
@@ -1863,74 +1765,44 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
         *new_value = 0;
 
     bool arg2_used = false;
-    bool no_separator = false;
-
     // Get arg. description
     TArgsCI it = x_Find(name);
-    if (it == m_Args.end()  &&  m_NoSeparator.find(name[0]) != NPOS) {
-        it = x_Find(name.substr(0, 1));
-        _ASSERT(it != m_Args.end());
-        no_separator = true;
-    }
     if (it == m_Args.end()) {
         if ( name.empty() ) {
             NCBI_THROW(CArgException,eInvalidArg,
-                    "Unexpected extra argument, at position # " +
-                    NStr::UIntToString(n_plain));
+                       "Unexpected extra argument, at position # " +
+                       NStr::UIntToString(n_plain));
         } else {
             NCBI_THROW(CArgException,eInvalidArg,
-                    "Unknown argument: \"" + name + "\"");
+                       "Unknown argument: \"" + name + "\"");
         }
     }
     _ASSERT(*it);
 
     const CArgDesc& arg = **it;
 
-    // Check value separated by '='
-    string arg_val;
-    bool eq_separator = (arg1[name.length() + 1] == '=');
-    if ( !eq_separator ) {
-        no_separator |= (arg.GetFlags() & fOptionalSeparator) != 0  &&
-            name.length() == 1  &&  arg1.length() > 2;
-    }
-
     // Get argument value
-    const string* value = 0;
-    if ( !eq_separator  &&  !no_separator ) {
-        if ( s_IsKey(arg) ) {
-            // <key> <value> arg  -- advance from the arg.name to the arg.value
-            if ( !have_arg2  &&  !value ) {
+    const string* value;
+    if ( s_IsKey(arg) ) {
+        // <key> <value> arg  -- advance from the arg.name to the arg.value
+        if ( !have_arg2 ) {
 
-                // if update specified we try to add default value
-                //  (mandatory throws an exception out of the ProcessDefault())
-                if (update) {
-                    CRef<CArgValue> arg_value(arg.ProcessDefault());
-                    // Add the value to "args"
-                    args.Add(arg_value, update);
-                    return arg2_used;
-                }
-
-                NCBI_THROW(CArgException,eNoValue,s_ArgExptMsg(arg1,
-                    "Value is missing", kEmptyStr));
+            // if update specified we try to add default value
+            //  (mandatory throws an exception out of the ProcessDefault())
+            if (update) {
+                CRef<CArgValue> arg_value(arg.ProcessDefault());
+                // Add the value to "args"
+                args.Add(arg_value, update);
+                return arg2_used;
             }
-            value = &arg2;
-            arg2_used = true;
-        } else {
-            value = &arg1;
+
+            NCBI_THROW(CArgException,eNoValue,s_ArgExptMsg(arg1,
+                "Value is missing", kEmptyStr));
         }
-    }
-    else {
-        if ( no_separator ) {
-            arg_val = arg1.substr(2);
-        }
-        else {
-            arg_val = arg1.substr(name.length() + 2);
-        }
-        if ( !s_IsKey(arg) ) {
-            NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(arg1,
-                "Value not required", arg_val));
-        }
-        value = &arg_val;
+        value = &arg2;
+        arg2_used = true;
+    } else {
+        value = &arg1;
     }
 
     CArgValue* av = 0;
@@ -2066,12 +1938,6 @@ void CArgDescriptions::SetUsageContext
 }
 
 
-inline bool s_IsArgNameChar(char c)
-{
-    return isalnum(c)  ||  c == '_'  ||  c == '-';
-}
-
-
 bool CArgDescriptions::VerifyName(const string& name, bool extended)
 {
     if ( name.empty() )
@@ -2085,15 +1951,8 @@ bool CArgDescriptions::VerifyName(const string& name, bool extended)
             }
         }
     } else {
-        if (name[0] == '-') {
-            // Prohibit names like '-' or '--foo'.
-            // The second char must be present and may not be '-'.
-            if (name.length() == 1  ||  name[1] == '-') {
-                return false;
-            }
-        }
         for ( ;  it != name.end();  ++it) {
-            if ( !s_IsArgNameChar((unsigned char)(*it)) )
+            if (!isalnum((unsigned char)(*it))  &&  *it != '_')
                 return false;
         }
     }
@@ -2113,13 +1972,7 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
 
     arg.SetGroup(m_CurrentGroup);
 
-    if ( s_IsAlias(arg) ) {
-        const CArgDesc_Alias* alias =
-            dynamic_cast<const CArgDesc_Alias*>(&arg);
-        _ASSERT(alias);
-        m_AliasArgs.insert(
-            TAliasArgs::value_type(alias->GetAliasedName(), name));
-    } else if (s_IsKey(arg)  ||  s_IsFlag(arg)) {
+    if (s_IsKey(arg)  ||  s_IsFlag(arg)) {
         _ASSERT(find(m_KeyFlagArgs.begin(), m_KeyFlagArgs.end(), name)
                 == m_KeyFlagArgs.end());
         m_KeyFlagArgs.push_back(name);
@@ -2136,12 +1989,6 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
             }
             m_PosArgs.insert(it, name);
         }
-    }
-    
-    if ((arg.GetFlags() & fOptionalSeparator) != 0  &&
-        name.length() == 1  &&
-        s_IsKey(arg)) {
-        m_NoSeparator += arg.GetName();
     }
 
     arg.SetErrorHandler(m_ErrorHandler.GetPointerOrNull());
@@ -2168,30 +2015,17 @@ static void s_PrintCommentBody(list<string>& arr, const string& s,
 
 
 static void s_PrintComment(list<string>& arr, const CArgDesc& arg,
-                           SIZE_TYPE width,
-                           const CArgDescriptions::TAliasArgs& aliases)
+                           SIZE_TYPE width)
 {
     string intro = ' ' + arg.GetUsageSynopsis(true/*name_only*/);
 
     // Print type (and value constraint, if any)
     string attr = arg.GetUsageCommentAttr();
     if ( !attr.empty() ) {
-        attr = " <" + attr + '>';
+        intro += " <";
+        intro += attr;
+        intro += '>';
     }
-
-    // Add aliases for non-positional arguments
-    if ( !s_IsPositional(arg) ) {
-        CArgDescriptions::TAliasArgs::const_iterator alias =
-            aliases.lower_bound(arg.GetName());
-        CArgDescriptions::TAliasArgs::const_iterator alias_end =
-            aliases.upper_bound(arg.GetName());
-        while (alias != alias_end) {
-            intro += ", -" + alias->second;
-            alias++;
-        }
-    }
-
-    intro += attr;
 
     // Wrap intro if necessary...
     {{
@@ -2347,7 +2181,7 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
             if (s_IsOptional(**it)  ||  s_IsFlag(**it)) {
                 continue;
             }
-            s_PrintComment(req, **it, m_UsageWidth, m_AliasArgs);
+            s_PrintComment(req, **it, m_UsageWidth);
         }
         // Collect optional args
         for (size_t grp = 0;  grp < m_ArgGroups.size();  ++grp) {
@@ -2360,7 +2194,7 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
                     continue;
                 }
                 if ((*it)->GetGroup() == grp) {
-                    s_PrintComment(opt, **it, m_UsageWidth, m_AliasArgs);
+                    s_PrintComment(opt, **it, m_UsageWidth);
                 }
             }
             opt.push_back(kEmptyStr);
@@ -2702,6 +2536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/07/07 16:53:10  ivanov
+ * Rollback to R1.66 (by Denis Vakatov request)
+ *
  * Revision 1.67  2006/07/06 20:06:37  grichenk
  * Added argument aliases.
  * Allow '=' as value separator.
