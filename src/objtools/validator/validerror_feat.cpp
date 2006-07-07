@@ -599,15 +599,15 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 {
     ++m_NumGenes;
 
-    if ( (gene.CanGetLocus()      &&  gene.GetLocus().empty())   &&
-         (gene.CanGetAllele()     &&  gene.GetAllele().empty())  &&
-         (gene.CanGetDesc()       &&  gene.GetDesc().empty())    &&
-         (gene.CanGetMaploc()     &&  gene.GetMaploc().empty())  &&
-         (gene.CanGetDb()         &&  gene.GetDb().empty())      &&
-         (gene.CanGetSyn()        &&  gene.GetSyn().empty())     &&
-         (gene.CanGetLocus_tag()  &&  gene.GetLocus_tag().empty()) ) {
+    if ( (! gene.IsSetLocus()      ||  gene.GetLocus().empty())   &&
+         (! gene.IsSetAllele()     ||  gene.GetAllele().empty())  &&
+         (! gene.IsSetDesc()       ||  gene.GetDesc().empty())    &&
+         (! gene.IsSetMaploc()     ||  gene.GetMaploc().empty())  &&
+         (! gene.IsSetDb()         ||  gene.GetDb().empty())      &&
+         (! gene.IsSetSyn()        ||  gene.GetSyn().empty())     &&
+         (! gene.IsSetLocus_tag()  ||  gene.GetLocus_tag().empty()) ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneRefHasNoData,
-            "There is a gene feature where all fields are empty", feat);
+                "There is a gene feature where all fields are empty", feat);
     }
     if ( gene.CanGetLocus()  &&  !gene.GetLocus().empty() ) {
         ITERATE (string, it, gene.GetLocus() ) {
@@ -3051,6 +3051,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2006/07/07 17:39:12  rsmith
+* fix check of empty Gene-ref
+*
 * Revision 1.78  2006/01/24 16:21:03  rsmith
 * Validate Seq-annot handles not bare Seq-annots.
 * Get Seq entry handle one time and use it more.
