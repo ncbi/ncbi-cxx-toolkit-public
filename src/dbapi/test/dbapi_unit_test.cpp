@@ -162,7 +162,7 @@ CDBAPIUnitTest::TestInit(void)
 
 #ifdef USE_STATICALLY_LINKED_DRIVERS
 
-#ifdef HAVE_SYBASE
+#ifdef HAVE_LIBSYBASE
         DBAPI_RegisterDriver_CTLIB();
         DBAPI_RegisterDriver_DBLIB();
 #endif
@@ -4055,7 +4055,7 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
-#elif defined(HAVE_SYBASE)
+#elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
@@ -4186,6 +4186,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.82  2006/07/07 13:49:21  ucko
+ * s/HAVE_SYBASE/HAVE_LIBSYBASE/
+ *
  * Revision 1.81  2006/07/06 20:48:44  ucko
  * Don't assume Sybase is always available on Unix.
  *
