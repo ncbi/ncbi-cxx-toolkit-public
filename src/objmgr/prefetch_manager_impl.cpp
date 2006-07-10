@@ -237,6 +237,11 @@ CPrefetchToken CPrefetchManager_Impl::AddAction(TPriority priority,
                                                 IPrefetchAction* action,
                                                 IPrefetchListener* listener)
 {
+    CMutexGuard guard0(GetMutex());
+    if ( m_CanceledAll ) {
+        NCBI_THROW(CPrefetchCanceled, eCanceled,
+                   "prefetch manager is canceled");
+    }
     CMutexGuard guard(m_StateMutex->GetData());
     CPrefetchToken token(AcceptRequest(CPrefetchRequest(m_StateMutex,
                                                         action,
