@@ -126,11 +126,20 @@ public:
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
 
+    CBioseq_Handle GetObjectHandle(const CBioseq& bioseq);
+    CBioseq_set_Handle GetObjectHandle(const CBioseq_set& seqset);
+    CSeq_entry_Handle GetObjectHandle(const CSeq_entry& entry);
+    CSeq_annot_Handle GetObjectHandle(const CSeq_annot& annot);
+
     CBioseq_EditHandle GetBioseqEditHandle(const CBioseq& bioseq);
     CSeq_entry_EditHandle GetSeq_entryEditHandle(const CSeq_entry& entry);
     CSeq_annot_EditHandle GetSeq_annotEditHandle(const CSeq_annot& annot);
     CBioseq_set_EditHandle GetBioseq_setEditHandle(const CBioseq_set& seqset);
 
+    CBioseq_EditHandle GetObjectEditHandle(const CBioseq& bioseq);
+    CBioseq_set_EditHandle GetObjectEditHandle(const CBioseq_set& seqset);
+    CSeq_entry_EditHandle GetObjectEditHandle(const CSeq_entry& entry);
+    CSeq_annot_EditHandle GetObjectEditHandle(const CSeq_annot& annot);
 
     /// Get bioseq handle for sequence withing one TSE
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
@@ -304,6 +313,62 @@ CScope_Impl& CScope::GetImpl(void)
     return *m_Impl;
 }
 
+
+inline
+CBioseq_Handle CScope::GetObjectHandle(const CBioseq& obj)
+{
+    return GetBioseqHandle(obj);
+}
+
+
+inline
+CBioseq_set_Handle CScope::GetObjectHandle(const CBioseq_set& obj)
+{
+    return GetBioseq_setHandle(obj);
+}
+
+
+inline
+CSeq_entry_Handle CScope::GetObjectHandle(const CSeq_entry& obj)
+{
+    return GetSeq_entryHandle(obj);
+}
+
+
+inline
+CSeq_annot_Handle CScope::GetObjectHandle(const CSeq_annot& obj)
+{
+    return GetSeq_annotHandle(obj);
+}
+
+
+inline
+CBioseq_EditHandle CScope::GetObjectEditHandle(const CBioseq& obj)
+{
+    return GetBioseqEditHandle(obj);
+}
+
+
+inline
+CBioseq_set_EditHandle CScope::GetObjectEditHandle(const CBioseq_set& obj)
+{
+    return GetBioseq_setEditHandle(obj);
+}
+
+
+inline
+CSeq_entry_EditHandle CScope::GetObjectEditHandle(const CSeq_entry& obj)
+{
+    return GetSeq_entryEditHandle(obj);
+}
+
+
+inline
+CSeq_annot_EditHandle CScope::GetObjectEditHandle(const CSeq_annot& obj)
+{
+    return GetSeq_annotEditHandle(obj);
+}
+
 /* @} */
 
 
@@ -313,6 +378,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2006/07/10 18:08:13  vasilche
+* Added overloaded CScope::GetObjectHandle() & CScope::GetObjectEditHandle().
+*
 * Revision 1.91  2006/06/05 13:42:05  vasilche
 * Added CScope::GetObjectManager().
 *
