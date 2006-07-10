@@ -315,7 +315,8 @@ int NStr::StringToNumeric(const string& str)
     return (int) value;
 }
 
-#define S2N_CONVERT_ERROR(conv, errcode, force_errno, delta)                \
+
+#define S2N_CONVERT_ERROR(to_type, msg, base, errcode, force_errno, delta)  \
         if (flags & NStr::fConvErr_NoThrow)  {                              \
             if ( force_errno )                                              \
                 errno = 0;                                                  \
@@ -324,27 +325,48 @@ int NStr::StringToNumeric(const string& str)
             /* ignore previosly converted value -- always return zero */    \
             return 0;                                                       \
         } else {                                                            \
-            NCBI_THROW2(CStringException, eConvert,                         \
-                        "Cannot convert string to " #conv                   \
-                        " - invalid characters", delta);                    \
+            string s = string("Cannot convert string ") +                   \
+                       "'" + string(str) + "' to " #to_type;                \
+            if ( !string(msg).empty() ) {                                   \
+                s += ", " + string(msg);                                    \
+            } else {                                                        \
+                s += " (";                                                  \
+                if (base) {                                                 \
+                    s += "base = " + NStr::IntToString(base) + ", ";        \
+                }                                                           \
+                s += "flags = " + NStr::IntToString(flags) + ")";           \
+            }                                                               \
+            NCBI_THROW2(CStringException, eConvert, s, delta);              \
         }                                                                   \
 
-#define CHECK_ENDPTR(conv)                                                  \
+#define S2N_CONVERT_ERROR_INVAL(to_type)                                    \
+    S2N_CONVERT_ERROR(to_type, kEmptyStr, 0, EINVAL, true, pos)
+
+#define S2N_CONVERT_ERROR_INVAL2(to_type, base)                             \
+    S2N_CONVERT_ERROR(to_type, kEmptyStr, base, EINVAL, true, pos)
+
+#define S2N_CONVERT_ERROR_RADIX(to_type, msg)                               \
+    S2N_CONVERT_ERROR(to_type, msg, 0, EINVAL, true, pos)
+
+#define S2N_CONVERT_ERROR_OVERFLOW(to_type)                                 \
+    S2N_CONVERT_ERROR(to_type, "overflow", base, ERANGE, true, pos)
+
+#define CHECK_ENDPTR(to_type)                                               \
     if ( str[pos] ) {                                                       \
-        S2N_CONVERT_ERROR(conv, EINVAL, true, pos);                         \
+        S2N_CONVERT_ERROR(to_type, kEmptyStr, base, EINVAL, true, pos);     \
     }
 
-#define CHECK_RANGE(nmin, nmax, conv)                                      \
+#define CHECK_RANGE(nmin, nmax, to_type)                                    \
     if ( errno  ||  value < nmin  ||  value > nmax ) {                      \
-        S2N_CONVERT_ERROR(conv, ERANGE, false, 0);                          \
+        S2N_CONVERT_ERROR(to_type, "overflow", base, ERANGE, false, 0);     \
     }
 
-#define CHECK_RANGE_U(nmax, conv)                                      \
-    if ( errno  ||  value > nmax ) {                      \
-        S2N_CONVERT_ERROR(conv, ERANGE, false, 0);                          \
+#define CHECK_RANGE_U(nmax, to_type)                                        \
+    if ( errno  ||  value > nmax ) {                                        \
+        S2N_CONVERT_ERROR(to_type, "overflow", base, ERANGE, false, 0);     \
     }
 
-#define CHECK_COMMAS                                                       \
+#define CHECK_COMMAS                                                        \
     /* Check on possible commas */                                          \
     if (flags & NStr::fAllowCommas) {                                       \
         if (ch == ',') {                                                    \
@@ -364,7 +386,6 @@ int NStr::StringToNumeric(const string& str)
             }                                                               \
         }                                                                   \
     }
-
 
 
 int NStr::StringToInt(const CTempString& str, TStringToNumFlags flags,int base)
@@ -513,15 +534,14 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
         break;
     default:
         if (flags & fMandatorySign) {
-            S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+            S2N_CONVERT_ERROR_INVAL(Int8);
         }
         break;
     }
     // Check radix base
     if ( !s_CheckRadix(str, pos, base) ) {
-        string msg = "Int8 - bad numeric base '" +
-                     NStr::IntToString(base) + "'";
-        S2N_CONVERT_ERROR(msg, EINVAL, true, pos);
+        S2N_CONVERT_ERROR_RADIX(Int8, "bad numeric base '" + 
+                                NStr::IntToString(base)+ "'");
     }
 
     // Begin conversion
@@ -546,7 +566,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
         }
         // Overflow check
         if ( n > limdiv  ||  (n == limdiv  &&  delta > limoff) ) {
-            S2N_CONVERT_ERROR(Int8, ERANGE, true, pos);
+            S2N_CONVERT_ERROR_OVERFLOW(Int8);
         }
         n *= base;
         n += delta;
@@ -555,7 +575,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
 
     // Last checks
     if ( !pos  || ((comma >= 0)  &&  (comma != 3)) ) {
-        S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+        S2N_CONVERT_ERROR_INVAL2(Int8, base);
     }
     // Skip allowed trailing symbols
     if (flags & fAllowTrailingSymbols) {
@@ -589,14 +609,13 @@ NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
         pos++;
     } else {
         if (flags & fMandatorySign) {
-            S2N_CONVERT_ERROR(Uint8, EINVAL, true, pos);
+            S2N_CONVERT_ERROR_INVAL(Uint8);
         }
     }
     // Check radix base
     if ( !s_CheckRadix(str, pos, base) ) {
-        string msg = "Uint8 - bad numeric base '" +
-                     NStr::IntToString(base) + "'";
-        S2N_CONVERT_ERROR(msg, EINVAL, true, pos);
+        S2N_CONVERT_ERROR_RADIX(Uint8, "bad numeric base '" +
+                                NStr::IntToString(base) + "'");
     }
 
     // Begin conversion
@@ -621,7 +640,7 @@ NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
         }
         // Overflow check
         if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
-            S2N_CONVERT_ERROR(Uint8, ERANGE, true, pos);
+            S2N_CONVERT_ERROR_OVERFLOW(Uint8);
         }
         n *= base;
         n += delta;
@@ -630,7 +649,7 @@ NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
 
     // Last checks
     if ( !pos  || ((comma >= 0)  &&  (comma != 3)) ) {
-        S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+        S2N_CONVERT_ERROR_INVAL2(Uint8, base);
     }
     // Skip allowed trailing symbols
     if (flags & fAllowTrailingSymbols) {
@@ -649,7 +668,7 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
     _ASSERT(flags == 0  ||  flags > 32);
 
     // Current position in the string
-    size_t pos = 0;
+    size_t pos  = 0;
 
     // Skip allowed leading symbols
     if (flags & fAllowLeadingSymbols) {
@@ -664,7 +683,7 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
         case '+':
             break;
         default:
-            S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+            S2N_CONVERT_ERROR_INVAL(double);
             break;
         }
     }
@@ -673,7 +692,7 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
     if (!(flags & fAllowLeadingSymbols)) {
         char c = str[pos];
         if ( !isdigit((unsigned int)c)  &&  c != '.'  &&  c != '-'  &&  c != '+') {
-            S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+            S2N_CONVERT_ERROR_INVAL(double);
         }
     }
 
@@ -685,7 +704,8 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
     errno = 0;
     double n = strtod(begptr, &endptr);
     if ( errno  ||  !endptr  ||  endptr == begptr ) {
-        S2N_CONVERT_ERROR(double, EINVAL, false, s_DiffPtr(endptr, begptr));
+        S2N_CONVERT_ERROR(double, kEmptyStr, 0, EINVAL, false,
+                          s_DiffPtr(endptr, begptr) + pos);
     }
     if ( *(endptr - 1) != '.'  &&  *endptr == '.' ) {
         // Only a single dot at the end of line is allowed
@@ -701,7 +721,7 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
                        fAllowTrailingSpaces);
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
     }
-
+    int base = 0; // dummy variable for error reporting macro
     CHECK_ENDPTR(double);
     return n;
 }
@@ -746,12 +766,11 @@ static Uint8 s_DataSizeConvertQual(const CTempString&      str,
         break;
     default:
         // error -- the "qual" points to the last unprocessed symbol
-        string msg = "DataSize - bad suffix";
-        S2N_CONVERT_ERROR(msg, EINVAL, true, pos);
+        S2N_CONVERT_ERROR_INVAL(DataSize);
     }
     if ( err ) {
-        string msg = "DataSize - overflow";
-        S2N_CONVERT_ERROR(msg, ERANGE, true, pos);
+        int base = 10;
+        S2N_CONVERT_ERROR_OVERFLOW(DataSize);
     }
 
     ch = str[pos];
@@ -788,14 +807,13 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
             flags &= ~fMandatorySign;
         } else {
             if (flags & fMandatorySign) {
-                S2N_CONVERT_ERROR(DataSize, EINVAL, true, pos);
+                S2N_CONVERT_ERROR_INVAL(DataSize);
             }
         }
         // Check radix base
         if ( !s_CheckRadix(str, pos, base) ) {
-            string msg = "DataSize - bad numeric base '" +
-                         NStr::IntToString(base) + "'";
-            S2N_CONVERT_ERROR(msg, EINVAL, true, pos);
+            S2N_CONVERT_ERROR_RADIX(DataSize, "bad numeric base '" +
+                                    NStr::IntToString(base) + "'");
         }
     }}
 
@@ -808,6 +826,12 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
         }
         ch = str[++pos];
     }
+    // If string is empty, just use whole remaining string for conversion
+    // (for correct error reporting)
+    if (pos-numpos == 0) {
+        pos = str.length();
+    }
+
     // Convert to number
     Uint8 n = StringToUInt8(CTempString(str.data(), numpos, pos-numpos),
                             flags, base);
@@ -2461,6 +2485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.178  2006/07/10 15:02:38  ivanov
+ * Improved StringToXxx exception messages
+ *
  * Revision 1.177  2006/04/19 18:38:40  ivanov
  * Added additional optional parameter to Split(), Tokenize() and
  * TokenizePattern() to get tokens' positions in source string
