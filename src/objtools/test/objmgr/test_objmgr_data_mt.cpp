@@ -347,7 +347,6 @@ bool CTestOM::Thread_Run(int idx)
                                 << " features: " << feats.size();
                         }
 
-#if NCBI_DEVELOPMENT_VER >= 20060627
                         // verify result
                         SetValue(m_Feat0Map, key, feats);
 
@@ -358,7 +357,6 @@ bool CTestOM::Thread_Run(int idx)
                         }
                         _ASSERT(annots.size() == annots2.size());
                         _ASSERT(annots == annots2);
-#endif
                     }
                     else if ( idx%4 == 1 ) {
                         CFeat_CI it;
@@ -379,7 +377,6 @@ bool CTestOM::Thread_Run(int idx)
                                 << " features: " << feats.size();
                         }
 
-#if NCBI_DEVELOPMENT_VER >= 20060627
                         // verify result
                         SetValue(m_Feat1Map, key, feats);
 
@@ -390,7 +387,6 @@ bool CTestOM::Thread_Run(int idx)
                         }
                         _ASSERT(annots.size() == annots2.size());
                         _ASSERT(annots == annots2);
-#endif
                     }
                     else {
                         CFeat_CI feat_it(handle.GetTopLevelEntry(), sel);
@@ -404,7 +400,6 @@ bool CTestOM::Thread_Run(int idx)
                                 << " features: " << feats.size();
                         }
 
-#if NCBI_DEVELOPMENT_VER >= 20060627
                         _ASSERT(annot_it.size() == annots.size());
                         set<CSeq_annot_Handle> annots2;
                         for ( ; annot_it; ++annot_it ) {
@@ -412,7 +407,6 @@ bool CTestOM::Thread_Run(int idx)
                         }
                         _ASSERT(annots.size() == annots2.size());
                         _ASSERT(annots == annots2);
-#endif
                     }
                 }
                 if ( m_verbose ) {
@@ -613,6 +607,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2006/07/10 20:26:40  vasilche
+* Removed conditional compilation.
+*
 * Revision 1.19  2006/06/23 21:31:21  vasilche
 * Temporarily disable some tests until GenBank data will be fixed.
 *

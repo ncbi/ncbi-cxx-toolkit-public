@@ -460,7 +460,6 @@ bool CTestOM::Thread_Run(int idx)
                         // verify result
                         SetValue(m_Feat0Map, sih, feats);
 
-#if NCBI_DEVELOPMENT_VER >= 20060627
                         _ASSERT(annot_it.size() == annots.size());
                         set<CSeq_annot_Handle> annots2;
                         if ( m_edit_handles ) {
@@ -474,7 +473,6 @@ bool CTestOM::Thread_Run(int idx)
                         }
                         _ASSERT(annots.size() == annots2.size());
                         _ASSERT(annots == annots2);
-#endif
                     }
                     else if ( idx%4 == 1 ) {
                         CSeq_loc loc;
@@ -750,6 +748,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2006/07/10 20:26:40  vasilche
+* Removed conditional compilation.
+*
 * Revision 1.26  2006/06/23 21:31:21  vasilche
 * Temporarily disable some tests until GenBank data will be fixed.
 *
