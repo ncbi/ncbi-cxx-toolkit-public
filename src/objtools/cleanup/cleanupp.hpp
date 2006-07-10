@@ -241,6 +241,9 @@ private:
     void x_MoveDbxrefs( CSeq_feat& feat);
     void x_MoveDbxrefs (CSeq_annot_Handle sa);
     
+    bool x_CheckCodingRegionEnds (CSeq_feat& feat);
+    void x_CheckCodingRegionEnds (CSeq_annot_Handle sah);
+    
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
     
@@ -283,6 +286,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2006/07/10 19:01:57  bollin
+ * added step to extend coding region to cover missing portion of a stop codon,
+ * will also adjust the location of the overlapping gene if necessary.
+ *
  * Revision 1.29  2006/07/05 17:26:11  bollin
  * cleared compiler error
  *

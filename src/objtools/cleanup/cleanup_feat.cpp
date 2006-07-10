@@ -46,12 +46,15 @@
 #include <util/static_map.hpp>
 
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <vector>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include "cleanupp.hpp"
 
@@ -801,14 +804,6 @@ void CCleanup_imp::x_ExtendedCleanStrings (CRNA_ref& rr)
 }
 
 
-void CCleanup_imp::x_ExtendedCleanStrings (CImp_feat& imf)
-{
-    EXTENDED_CLEAN_STRING_MEMBER (imf, Key);
-    EXTENDED_CLEAN_STRING_MEMBER (imf, Loc);
-    EXTENDED_CLEAN_STRING_MEMBER (imf, Descr);
-}
-
-
 void CCleanup_imp::x_ExtendedCleanStrings (CSeq_feat& feat)
 {
     EXTENDED_CLEAN_STRING_MEMBER (feat, Comment);
@@ -852,6 +847,7 @@ void CCleanup_imp::x_ExtendedCleanStrings (CSeq_feat& feat)
             string &region = feat.SetData().SetRegion();
             CleanVisString(region);
             if (region.empty()) {
+                feat.ResetData();
                 feat.SetData().SetComment();
             }
         }
@@ -868,6 +864,243 @@ void CCleanup_imp::x_ExtendedCleanStrings (CSeq_feat& feat)
 }
 
 
+void CCleanup_imp::x_ExtendedCleanStrings (CImp_feat& imf)
+{
+    EXTENDED_CLEAN_STRING_MEMBER (imf, Key);
+    EXTENDED_CLEAN_STRING_MEMBER (imf, Loc);
+    EXTENDED_CLEAN_STRING_MEMBER (imf, Descr);
+}
+
+
+CSeq_feat_Handle GetSeq_feat_Handle(CScope& scope, const CSeq_feat& feat)
+{
+    SAnnotSelector sel(feat.GetData().GetSubtype());
+    sel.SetResolveAll().SetNoMapping().SetSortOrder(sel.eSortOrder_None);
+    for (CFeat_CI mf(scope, feat.GetLocation(), sel); mf; ++mf) {
+        if (mf->GetOriginalFeature().Equals(feat)) {
+            return mf->GetSeq_feat_Handle();
+        }
+    }
+    return CSeq_feat_Handle();
+}
+
+
+// Was CdEndCheck in C Toolkit
+// Attempts to adjust the length of a coding region so that it will translate to
+// the specified product
+// returns true if 
+bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
+{
+    if (!orig_feat.IsSetData() 
+        || orig_feat.GetData().Which() != CSeqFeatData::e_Cdregion
+        || !orig_feat.CanGetProduct()) {
+        return false;
+    }
+    
+    CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+            
+    if (ofh.GetSeq_feat().IsNull()) {
+        return false;
+    }
+    
+    CRef<CSeq_feat> feat(new CSeq_feat);
+    feat->Assign(orig_feat);
+    
+    const CCdregion& crp = feat->GetData().GetCdregion();    
+
+    unsigned int feat_len = sequence::GetLength(feat->GetLocation(), m_Scope);
+    unsigned int frame_adjusted_len = feat_len;
+    if (crp.CanGetFrame()) {
+        if (crp.GetFrame() == 2) {
+            frame_adjusted_len -= 1;
+        } else if (crp.GetFrame() == 3) {
+            frame_adjusted_len -= 2;
+        }
+    }
+    
+    unsigned int remainder = frame_adjusted_len % 3;
+    unsigned int translation_len = frame_adjusted_len / 3;
+    CBioseq_Handle product;
+    
+    try {
+        product = m_Scope->GetBioseqHandle(feat->GetProduct());
+    } catch (...) {
+        return false;
+    }
+    
+    if (product.GetBioseqLength() + 1 == translation_len && remainder == 0) {
+        return false;
+    }
+
+    if (crp.CanGetCode_break()) {
+        ITERATE (list< CRef< CCode_break > >, it, crp.GetCode_break()) {
+            int pos1 = INT_MAX;
+            int pos2 = -10;
+            int pos = 0;
+        
+            for(CSeq_loc_CI loc_it((*it)->GetLoc()); loc_it; ++loc_it) {
+                pos = sequence::LocationOffset(feat->GetLocation(), loc_it.GetSeq_loc(), 
+                                               sequence::eOffset_FromStart, m_Scope);
+                if (pos < pos1) {
+                    pos1 = pos;
+                }
+                
+                pos = sequence::LocationOffset(feat->GetLocation(), loc_it.GetSeq_loc(),
+                                               sequence::eOffset_FromEnd, m_Scope);
+                if (pos > pos2)
+                    pos2 = pos;
+            }
+        
+            pos = pos2 - pos1;
+            if (pos >= 0 && pos <= 1 && pos2 == feat_len - 1) {
+                return false;
+            }
+        }
+
+    }
+    
+    // create a copy of the feature location called new_location
+    CRef<CSeq_loc> new_location(new CSeq_loc);
+    new_location->Assign(feat->GetLocation());
+    
+    // adjust the last piece of new_location to be the right length to
+    // generate the desired protein length
+    CSeq_loc_CI loc_it(*new_location);
+    CSeq_loc_CI last_it = loc_it;
+    
+    while (loc_it) {
+        last_it = loc_it;
+        ++loc_it;
+    }
+    
+    if (!last_it || !last_it.GetSeq_loc().IsInt()) {
+        return false;
+    }
+    
+    CBioseq_Handle last_seq = m_Scope->GetBioseqHandle(last_it.GetSeq_loc());
+    
+	switch (remainder)
+	{
+		case 0:
+			remainder = 3;
+			break;
+		case 1:
+			remainder = 2;
+			break;
+		case 2:
+			remainder = 1;
+			break;
+	}
+
+    TSeqPos old_from = last_it.GetRange().GetFrom();
+	TSeqPos old_to = last_it.GetRange().GetTo();
+
+    if (last_it.GetStrand() == eNa_strand_minus) {
+		if (old_from < remainder) {
+			return false;
+		} else if (last_it.GetFuzzFrom() != NULL) {
+		    return false;
+		} else {
+		    (const_cast <CSeq_loc& > (last_it.GetSeq_loc())).SetInt().SetFrom (old_from - remainder);
+		}
+	}
+	else
+	{
+	    if (old_to >= last_seq.GetBioseqLength() - remainder) {
+	        return false;
+	    } else if (last_it.GetFuzzTo() != NULL) {
+	        return false;
+	    } else {
+		    (const_cast <CSeq_loc& > (last_it.GetSeq_loc())).SetInt().SetTo (old_to + remainder);
+	    }
+	}
+
+    // get new protein sequence by translating the coding region
+    CBioseq_Handle nuc_bsh = m_Scope->GetBioseqHandle(feat->GetLocation());
+    string data;
+    CCdregion_translate::TranslateCdregion(data, nuc_bsh,
+                                           *new_location,
+                                           crp,
+                                           true,
+                                           true);
+
+    // if the translation is the wrong length, give up
+	if (data.length() != (frame_adjusted_len + remainder) / 3) {
+	    return false;
+	}
+
+    // if the translation doesn't end with stop codon, give up
+    if (!NStr::Equal(data.substr(data.length() - 1), "*")) {
+        return false;
+    }
+    
+    // get existing protein data
+    string prot_buffer;
+    prot_buffer.clear();
+    product.GetSeqVector(CBioseq_Handle::eCoding_Iupac).GetSeqData(0, product.GetBioseqLength() - 1, prot_buffer);
+    // if the translation doesn't match the existing protein, give up
+    if (!NStr::Equal(data.substr(0, data.length() - 2), prot_buffer)) {
+        return false;
+    }
+
+    // fix location for overlapping gene
+    const CGene_ref* grp = feat->GetGeneXref();
+    if (grp == NULL) { // NOTE - in C Toolkit also do this if grp is not suppressed
+        CConstRef<CSeq_feat> cr = sequence::GetOverlappingGene(feat->GetLocation(), *m_Scope);
+        if (!cr.IsNull()) {        
+            CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, *cr);
+            
+            if (!fh.GetSeq_feat().IsNull()) {
+                CRef<CSeq_feat> gene_feat(new CSeq_feat);
+            
+                gene_feat->Assign(*cr);
+                sequence::ECompare loc_compare = sequence::Compare(*new_location, gene_feat->GetLocation(), m_Scope);
+
+                if (loc_compare != sequence::eContained && loc_compare != sequence::eSame) {
+                    CSeq_loc& gene_loc = gene_feat->SetLocation();
+            
+                    CSeq_loc_CI tmp(gene_loc);
+                    bool has_nulls = false;
+                    while (tmp && !has_nulls) {
+                        if (tmp.GetSeq_loc().IsNull()) {
+                            has_nulls = true;
+                        }
+                        ++tmp;
+                    }
+                    CRef<CSeq_loc> new_gene_loc = sequence::Seq_loc_Add(gene_loc, *new_location, 
+                                                        CSeq_loc::fMerge_SingleRange, m_Scope);
+                                                
+                    new_gene_loc->SetPartialStart (new_location->IsPartialStart(eExtreme_Biological) | gene_loc.IsPartialStart(eExtreme_Biological), eExtreme_Biological);
+                    new_gene_loc->SetPartialStop (new_location->IsPartialStop(eExtreme_Biological) | gene_loc.IsPartialStop(eExtreme_Biological), eExtreme_Biological);
+                    // Note - C version pushes gene location to segset parts         
+  
+                    gene_feat->SetLocation (*new_gene_loc);          
+                    fh.Replace(*gene_feat);
+                }        
+            }
+		}
+	}
+	
+    // fix location of coding region
+    feat->SetLocation(*new_location);
+    
+    ofh.Replace(*feat);
+    return true;
+}
+
+
+void CCleanup_imp::x_CheckCodingRegionEnds (CSeq_annot_Handle sa)
+{
+    if (sa.IsFtable()) {
+        CFeat_CI feat_ci(sa);
+        while (feat_ci) {
+            x_CheckCodingRegionEnds(const_cast<CSeq_feat &> (feat_ci->GetOriginalFeature()));
+            ++feat_ci;                
+        }
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -876,6 +1109,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/07/10 19:01:57  bollin
+ * added step to extend coding region to cover missing portion of a stop codon,
+ * will also adjust the location of the overlapping gene if necessary.
+ *
  * Revision 1.14  2006/07/05 16:43:34  bollin
  * added step to ExtendedCleanup to clean features and descriptors
  * and remove empty feature table seq-annots

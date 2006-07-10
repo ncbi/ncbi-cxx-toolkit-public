@@ -386,6 +386,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     x_MergeAdjacentAnnots(bss);
+    
+    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
 }
 
 
@@ -416,7 +418,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
-    x_MergeAdjacentAnnots(bsh);    
+    x_MergeAdjacentAnnots(bsh);
+    
+    x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);        
 }
 
 
@@ -430,6 +434,7 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
     
     x_MoveDbxrefs(sa);
     
+    x_CheckCodingRegionEnds(sa);
 }
 
 
@@ -1331,6 +1336,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2006/07/10 19:01:57  bollin
+ * added step to extend coding region to cover missing portion of a stop codon,
+ * will also adjust the location of the overlapping gene if necessary.
+ *
  * Revision 1.30  2006/07/06 17:28:48  bollin
  * corrected bug in RenormalizeNucProtSets
  *
