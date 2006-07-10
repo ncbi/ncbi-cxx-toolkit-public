@@ -1414,7 +1414,6 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                              const SPHIQueryInfo    * pattern_info)
 {
     TSeqAlignVector retval;
-    CRef<CSeq_align_set> wrap_list(new CSeq_align_set());
 
     /* Split results into an array of BlastHSPResults structures corresponding
        to different pattern occurrences. */
@@ -1443,21 +1442,13 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                                               true,
                                               false));
                 
-                // Wrap this Seq-align-set in a discontinuous Seq-align and 
-                // attach it to the final Seq-align-set.
-                CRef<CSeq_align> wrap_align(new CSeq_align());
-                wrap_align->SetType(CSeq_align::eType_partial);
-                wrap_align->SetDim(2); // Always a pairwise alignment
-                wrap_align->SetSegs().SetDisc(*seq_aligns);
-                wrap_list->Set().push_back(wrap_align);
+                retval.push_back(seq_aligns);
+
             }
         }
         sfree(phi_results);
     }
     
-    // Put the final Seq-align-set into the vector
-    retval.push_back(wrap_list);
-
     return retval;
 }
 
@@ -1690,6 +1681,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2006/07/10 17:26:06  madden
+* PhiBlastResults2SeqAlign_OMF produces non-discontinous SeqAlign
+*
 * Revision 1.72  2006/06/14 15:58:54  camacho
 * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
 *
