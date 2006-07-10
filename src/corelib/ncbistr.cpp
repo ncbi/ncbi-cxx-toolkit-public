@@ -316,7 +316,7 @@ int NStr::StringToNumeric(const string& str)
 }
 
 
-#define S2N_CONVERT_ERROR(to_type, msg, base, errcode, force_errno, delta)  \
+#define S2N_CONVERT_ERROR(to_type, msg, errcode, force_errno, delta)        \
         if (flags & NStr::fConvErr_NoThrow)  {                              \
             if ( force_errno )                                              \
                 errno = 0;                                                  \
@@ -325,45 +325,42 @@ int NStr::StringToNumeric(const string& str)
             /* ignore previosly converted value -- always return zero */    \
             return 0;                                                       \
         } else {                                                            \
-            string s = string("Cannot convert string ") +                   \
-                       "'" + string(str) + "' to " #to_type;                \
-            if ( !string(msg).empty() ) {                                   \
-                s += ", " + string(msg);                                    \
-            } else {                                                        \
-                s += " (";                                                  \
-                if (base) {                                                 \
-                    s += "base = " + NStr::IntToString(base) + ", ";        \
-                }                                                           \
-                s += "flags = " + NStr::IntToString(flags) + ")";           \
+            CTempString str_tmp(str);                                       \
+            CTempString msg_tmp(msg);                                       \
+            string s;                                                       \
+            s.reserve(str_tmp.length() + msg_tmp.length() + 50);            \
+            s += "Cannot convert string '";                                 \
+            s += str;                                                       \
+            s += "' to " #to_type;                                          \
+            if ( !msg_tmp.empty() ) {                                       \
+                s += ", ";                                                  \
+                s += msg;                                                   \
             }                                                               \
             NCBI_THROW2(CStringException, eConvert, s, delta);              \
         }                                                                   \
 
 #define S2N_CONVERT_ERROR_INVAL(to_type)                                    \
-    S2N_CONVERT_ERROR(to_type, kEmptyStr, 0, EINVAL, true, pos)
-
-#define S2N_CONVERT_ERROR_INVAL2(to_type, base)                             \
-    S2N_CONVERT_ERROR(to_type, kEmptyStr, base, EINVAL, true, pos)
+    S2N_CONVERT_ERROR(to_type, kEmptyStr, EINVAL, true, pos)
 
 #define S2N_CONVERT_ERROR_RADIX(to_type, msg)                               \
-    S2N_CONVERT_ERROR(to_type, msg, 0, EINVAL, true, pos)
+    S2N_CONVERT_ERROR(to_type, msg, EINVAL, true, pos)
 
 #define S2N_CONVERT_ERROR_OVERFLOW(to_type)                                 \
-    S2N_CONVERT_ERROR(to_type, "overflow", base, ERANGE, true, pos)
+    S2N_CONVERT_ERROR(to_type, "overflow",ERANGE, true, pos)
 
 #define CHECK_ENDPTR(to_type)                                               \
     if ( str[pos] ) {                                                       \
-        S2N_CONVERT_ERROR(to_type, kEmptyStr, base, EINVAL, true, pos);     \
+        S2N_CONVERT_ERROR(to_type, kEmptyStr, EINVAL, true, pos);           \
     }
 
 #define CHECK_RANGE(nmin, nmax, to_type)                                    \
     if ( errno  ||  value < nmin  ||  value > nmax ) {                      \
-        S2N_CONVERT_ERROR(to_type, "overflow", base, ERANGE, false, 0);     \
+        S2N_CONVERT_ERROR(to_type, "overflow", ERANGE, false, 0);           \
     }
 
 #define CHECK_RANGE_U(nmax, to_type)                                        \
     if ( errno  ||  value > nmax ) {                                        \
-        S2N_CONVERT_ERROR(to_type, "overflow", base, ERANGE, false, 0);     \
+        S2N_CONVERT_ERROR(to_type, "overflow", ERANGE, false, 0);           \
     }
 
 #define CHECK_COMMAS                                                        \
@@ -575,7 +572,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
 
     // Last checks
     if ( !pos  || ((comma >= 0)  &&  (comma != 3)) ) {
-        S2N_CONVERT_ERROR_INVAL2(Int8, base);
+        S2N_CONVERT_ERROR_INVAL(Int8);
     }
     // Skip allowed trailing symbols
     if (flags & fAllowTrailingSymbols) {
@@ -649,7 +646,7 @@ NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
 
     // Last checks
     if ( !pos  || ((comma >= 0)  &&  (comma != 3)) ) {
-        S2N_CONVERT_ERROR_INVAL2(Uint8, base);
+        S2N_CONVERT_ERROR_INVAL(Uint8);
     }
     // Skip allowed trailing symbols
     if (flags & fAllowTrailingSymbols) {
@@ -704,7 +701,7 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
     errno = 0;
     double n = strtod(begptr, &endptr);
     if ( errno  ||  !endptr  ||  endptr == begptr ) {
-        S2N_CONVERT_ERROR(double, kEmptyStr, 0, EINVAL, false,
+        S2N_CONVERT_ERROR(double, kEmptyStr, EINVAL, false,
                           s_DiffPtr(endptr, begptr) + pos);
     }
     if ( *(endptr - 1) != '.'  &&  *endptr == '.' ) {
@@ -721,7 +718,6 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
                        fAllowTrailingSpaces);
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
     }
-    int base = 0; // dummy variable for error reporting macro
     CHECK_ENDPTR(double);
     return n;
 }
@@ -766,10 +762,9 @@ static Uint8 s_DataSizeConvertQual(const CTempString&      str,
         break;
     default:
         // error -- the "qual" points to the last unprocessed symbol
-        S2N_CONVERT_ERROR_INVAL(DataSize);
+        S2N_CONVERT_ERROR_INVAL(Uint8);
     }
     if ( err ) {
-        int base = 10;
         S2N_CONVERT_ERROR_OVERFLOW(DataSize);
     }
 
@@ -807,12 +802,12 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
             flags &= ~fMandatorySign;
         } else {
             if (flags & fMandatorySign) {
-                S2N_CONVERT_ERROR_INVAL(DataSize);
+                S2N_CONVERT_ERROR_INVAL(Uint8);
             }
         }
         // Check radix base
         if ( !s_CheckRadix(str, pos, base) ) {
-            S2N_CONVERT_ERROR_RADIX(DataSize, "bad numeric base '" +
+            S2N_CONVERT_ERROR_RADIX(Uint8, "bad numeric base '" +
                                     NStr::IntToString(base) + "'");
         }
     }}
@@ -850,7 +845,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
                        fAllowTrailingSpaces);
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
     }
-    CHECK_ENDPTR(DataSize);
+    CHECK_ENDPTR(Uint8);
     return n;
 }
 
@@ -2485,6 +2480,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.179  2006/07/10 19:26:23  ivanov
+ * Tune S2N_CONVERT_ERROR macro for a better performance
+ *
  * Revision 1.178  2006/07/10 15:02:38  ivanov
  * Improved StringToXxx exception messages
  *
