@@ -342,7 +342,7 @@ void CDiagContext::x_CreateUID(void) const
     Int8 pid = CProcess::GetCurrentPid();
     time_t t = time(0);
     string host = s_GetHost();
-    unsigned long h = 201;
+    TUID h = 201;
     ITERATE(string, s, host) {
         h = (h*15 + *s) & 0xFFFF;
     }
@@ -2815,6 +2815,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.126  2006/07/10 20:23:04  grichenk
+ * unsigned long changed to TUID
+ *
  * Revision 1.125  2006/07/06 18:43:39  grichenk
  * Extended UID using hashed host name.
  *
