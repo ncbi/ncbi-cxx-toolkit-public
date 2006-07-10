@@ -1397,9 +1397,14 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                 MSerial_AsnText << *pent << NcbiEndl;
         }
         CSeq_entry_EditHandle eeh = eh.GetEditHandle();
+        _ASSERT(eeh);
+        CConstRef<CSeq_entry> eent = eeh.GetCompleteObject();
+        _ASSERT(eent);
+        _ASSERT(eent == ent);
         eeh.Remove();
         _ASSERT(!eeh);
         _ASSERT(eeh.IsRemoved());
+        _ASSERT(!pent || eent == eeh.GetCompleteObject());
         _ASSERT(!handle);
         //handle = scope.GetBioseqHandle(id);
         if ( trace && pent ) {
@@ -1476,6 +1481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2006/07/10 16:09:59  vasilche
+* Test GetCompleteObject() on removed Seq-entry.
+*
 * Revision 1.67  2005/10/18 15:38:54  vasilche
 * Check restoring handles to inner objects.
 *
