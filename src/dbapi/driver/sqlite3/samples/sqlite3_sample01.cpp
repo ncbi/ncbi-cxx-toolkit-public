@@ -157,7 +157,7 @@ CDemoeApp::Run(void)
 
             int_value = 2;
             str_value = "Brand new value";
-            float_value = 3.4;
+            float_value = float(3.4);
             text_value.Append(str_const);
             blob_value.Append(buff.get(), nBlobSize);
 
@@ -254,6 +254,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/11 14:23:13  ssikorsk
+ * 3.4 -> float(3.4) for VC sake.
+ *
  * Revision 1.1  2006/06/12 20:31:34  ssikorsk
  * Initial version
  *
