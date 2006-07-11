@@ -225,7 +225,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    const BlastInitialWordOptions* word_options, 
    const BlastHitSavingParameters* hit_params, 
    const LookupTableWrap* lookup_wrap,
-   BlastScoreBlk* sbp, 
+   const BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    Uint4 subject_length,
    BlastInitialWordParameters* *parameters);
@@ -244,7 +244,7 @@ NCBI_XBLAST_EXPORT
 Int2
 BlastInitialWordParametersUpdate(EBlastProgramType program_number, 
    const BlastHitSavingParameters* hit_params, 
-   BlastScoreBlk* sbp, 
+   const BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, Uint4 subject_length,
    BlastInitialWordParameters* parameters);
 
@@ -392,7 +392,7 @@ Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number,
 NCBI_XBLAST_EXPORT
 void
 CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
-   BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
+   const BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
    const BlastInitialWordParameters* word_params,
    Int8 db_length, Int4 subject_length);
 

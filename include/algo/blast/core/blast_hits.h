@@ -441,7 +441,8 @@ void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp,
  */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list, 
-                               Boolean gapped_calculation, BlastScoreBlk* sbp);
+                               Boolean gapped_calculation, 
+                               const BlastScoreBlk* sbp);
 
 /** Calculate bit scores from raw scores in an HSP list for a PHI BLAST search.
  * @param hsp_list List of HSPs [in] [out]

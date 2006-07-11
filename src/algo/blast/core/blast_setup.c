@@ -736,7 +736,7 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
                     Uint4 subject_length,
                     const BlastScoringOptions* scoring_options,
                     BlastQueryInfo* query_info, 
-                    BlastScoreBlk* sbp, 
+                    const BlastScoreBlk* sbp, 
                     BlastHitSavingParameters* hit_params,
                     BlastInitialWordParameters* word_params,
                     BlastEffectiveLengthsParameters* eff_len_params)

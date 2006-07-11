@@ -1629,7 +1629,8 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
 }
 
 Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list, 
-                               Boolean gapped_calculation, BlastScoreBlk* sbp)
+                               Boolean gapped_calculation, 
+                               const BlastScoreBlk* sbp)
 {
    BlastHSP* hsp;
    Blast_KarlinBlk** kbp;

@@ -159,7 +159,7 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
     Uint4 subject_length,
     const BlastScoringOptions* scoring_options,
     BlastQueryInfo* query_info, 
-    BlastScoreBlk* sbp, 
+    const BlastScoreBlk* sbp, 
     BlastHitSavingParameters* hit_params,
     BlastInitialWordParameters* word_params,
     BlastEffectiveLengthsParameters* eff_len_params);
@@ -236,6 +236,9 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
 /*
  *
 * $Log$
+* Revision 1.60  2006/07/11 22:30:59  camacho
+* Add const where possible
+*
 * Revision 1.59  2006/06/06 15:15:05  madden
 * Doxygen fix
 *
