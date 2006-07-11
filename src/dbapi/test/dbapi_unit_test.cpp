@@ -1094,7 +1094,6 @@ CDBAPIUnitTest::Test_LOB(void)
 void
 CDBAPIUnitTest::Test_BulkInsertBlob(void)
 {
-    static char clob_value[] = "1234567890";
     string sql;
     enum { record_num = 100 };
 
@@ -4186,6 +4185,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.83  2006/07/11 14:22:29  ssikorsk
+ * Deleted unused variable.
+ *
  * Revision 1.82  2006/07/07 13:49:21  ucko
  * s/HAVE_SYBASE/HAVE_LIBSYBASE/
  *
