@@ -1036,7 +1036,6 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
     
     // get existing protein data
     string prot_buffer;
-    prot_buffer.clear();
     product.GetSeqVector(CBioseq_Handle::eCoding_Iupac).GetSeqData(0, product.GetBioseqLength() - 1, prot_buffer);
     // if the translation doesn't match the existing protein, give up
     if (!NStr::Equal(data.substr(0, data.length() - 2), prot_buffer)) {
@@ -1109,6 +1108,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/07/11 14:19:30  ucko
+ * Don't bother clear()ing newly allocated strings, particularly given
+ * that GCC 2.95 only accepts erase() anyway.
+ *
  * Revision 1.15  2006/07/10 19:01:57  bollin
  * added step to extend coding region to cover missing portion of a stop codon,
  * will also adjust the location of the overlapping gene if necessary.
