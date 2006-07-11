@@ -93,6 +93,7 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
          CArgDescriptions::eString);
     arg_desc.SetConstraint
         ("k", new CArgAllow_String(CArgAllow_Symbols::eAlnum));
+    arg_desc.AddAlias("-key", "k");
 
     arg_desc.AddOptionalKey
         ("ko", "OptionalKey",
@@ -109,6 +110,11 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
          CArgDescriptions::eString, "a");
     arg_desc.SetConstraint
         ("one_symbol", new CArgAllow_Symbols(" aB\tCd"));
+
+    arg_desc.AddOptionalPositional
+        ("notakey",
+         "This is an optional plain (named positional) argument",
+         CArgDescriptions::eString);
 }
 
 static void s_RunTest0(const CArgs& args, ostream& os)
@@ -533,6 +539,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.25  2006/07/11 19:06:50  grichenk
+ * Added test for aliases and separators.
+ *
  * Revision 6.24  2006/01/09 17:16:29  vakatov
  * CArgAllow_Strings += case-insensitivity (optional)
  *
