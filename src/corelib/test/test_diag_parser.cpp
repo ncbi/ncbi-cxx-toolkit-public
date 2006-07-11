@@ -132,54 +132,64 @@ bool CmpStr(const char* val1, const string& val2)
 
 void CDiagParserApp::x_CheckMessage(TDiagPostFlags flags)
 {
-    char buffer[4096] = "";
-    ostrstream str(buffer, 4096, ios::out);
-    SetDiagStream(&str);
     SetDiagPostAllFlags(flags);
     SetFastCGIIteration(m_Count + 1);
 
+    CDiagCompileInfo info;
+    string result;
+    auto_ptr<SDiagMessage> msg;
     CTime post_time(CTime::eCurrent);
-    CDiagCompileInfo info = DIAG_COMPILE_INFO;
-    ERR_POST_EX(123, 45, "Error post message " + NStr::IntToString(++m_Count));
+    try {
+        char buffer[4096] = "";
+        ostrstream str(buffer, 4096, ios::out);
+        SetDiagStream(&str);
 
-    string result(str.str(), str.pcount());
-    SDiagMessage msg(result);
+        info = DIAG_COMPILE_INFO;
+        ERR_POST_EX(123, 45, "Error post message " + NStr::IntToString(++m_Count));
+
+        result = string(str.str(), str.pcount());
+        msg.reset(new SDiagMessage(result));
+    }
+    catch (...) {
+        SetDiagStream(&NcbiCout);
+        throw;
+    }
     SetDiagStream(&NcbiCout);
 
     if ((flags & eDPF_File) != 0) {
-        _ASSERT(CmpStr(msg.m_File, info.GetFile()));
+        _ASSERT(CmpStr(msg->m_File, info.GetFile()));
     }
     else {
-        _ASSERT(!msg.m_File);
+        _ASSERT(!msg->m_File);
     }
 
     if ((flags & eDPF_Line) != 0) {
-        _ASSERT(msg.m_Line == size_t(info.GetLine() + 1));
+        _ASSERT(msg->m_Line == size_t(info.GetLine() + 1));
     }
     else {
-        _ASSERT(!msg.m_Line);
+        _ASSERT(!msg->m_Line);
     }
 
     if ((flags & eDPF_Severity) != 0) {
-        _ASSERT(msg.m_Severity == eDiag_Error);
+        _ASSERT(msg->m_Severity == eDiag_Error);
     }
     else {
-        _ASSERT(msg.m_Severity == eDiagSevMin);
+        _ASSERT(msg->m_Severity == eDiagSevMin);
     }
 
     if ((flags & eDPF_ErrorID) != 0) {
-        _ASSERT(CmpStr(msg.m_Module, info.GetModule()));
-        _ASSERT(msg.m_ErrCode == 123);
-        _ASSERT(msg.m_ErrSubCode == 45);
+        _ASSERT(CmpStr(msg->m_Module, info.GetModule()));
+        _ASSERT(msg->m_ErrCode == 123);
+        _ASSERT(msg->m_ErrSubCode == 45);
     }
     else {
-        _ASSERT(!msg.m_Module);
-        _ASSERT(msg.m_ErrCode == 0);
-        _ASSERT(msg.m_ErrSubCode == 0);
+        _ASSERT(!msg->m_Module);
+        _ASSERT(msg->m_ErrCode == 0);
+        _ASSERT(msg->m_ErrSubCode == 0);
     }
 
     if ((flags & eDPF_DateTime) != 0) {
-        _ASSERT(msg.GetTime() >= post_time);
+        _ASSERT(msg->GetTime() >= post_time);
     }
 
     if ((flags & eDPF_ErrCodeMessage) != 0) {
@@ -187,50 +197,50 @@ void CDiagParserApp::x_CheckMessage(TDiagPostFlags flags)
     }
 
     if ((flags & eDPF_Location) != 0) {
-        _ASSERT(CmpStr(msg.m_Class, info.GetClass()));
-        _ASSERT(CmpStr(msg.m_Function, info.GetFunction()));
+        _ASSERT(CmpStr(msg->m_Class, info.GetClass()));
+        _ASSERT(CmpStr(msg->m_Function, info.GetFunction()));
     }
     else {
-        _ASSERT(!msg.m_Class);
-        _ASSERT(!msg.m_Function);
+        _ASSERT(!msg->m_Class);
+        _ASSERT(!msg->m_Function);
     }
 
     if ((flags & eDPF_PID) != 0) {
         if ((flags & eDPF_TID) != 0) {
-            _ASSERT(CThread::TID(msg.m_TID) == CThread::GetSelf());
+            _ASSERT(CThread::TID(msg->m_TID) == CThread::GetSelf());
         }
         else {
-            _ASSERT(msg.m_TID == 0);
+            _ASSERT(msg->m_TID == 0);
         }
     }
     else {
-        _ASSERT(msg.m_PID == 0);
+        _ASSERT(msg->m_PID == 0);
     }
 
     if ((flags & eDPF_SerialNo) != 0) {
-        _ASSERT(msg.m_ProcPost == m_Count);
+        _ASSERT(msg->m_ProcPost == m_Count);
         if ((flags & eDPF_SerialNo_Thread) != 0) {
-            _ASSERT(msg.m_ThrPost == m_Count);
+            _ASSERT(msg->m_ThrPost == m_Count);
         }
         else {
-            _ASSERT(msg.m_ThrPost == 0);
+            _ASSERT(msg->m_ThrPost == 0);
         }
     }
     else {
     }
 
     if ((flags & eDPF_Iteration) != 0) {
-        _ASSERT(msg.m_Iteration == m_Count);
+        _ASSERT(msg->m_Iteration == m_Count);
     }
     else {
-        _ASSERT(msg.m_Iteration == 0);
+        _ASSERT(msg->m_Iteration == 0);
     }
 
     if ((flags & eDPF_UID) != 0) {
-        _ASSERT(msg.GetUID() == GetDiagContext().GetUID());
+        _ASSERT(msg->GetUID() == GetDiagContext().GetUID());
     }
     else {
-        _ASSERT(msg.GetUID() == 0);
+        _ASSERT(msg->GetUID() == 0);
     }
 }
 
@@ -255,6 +265,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/11 16:39:50  grichenk
+ * Reset DiagStream on exceptions
+ *
  * Revision 1.2  2006/05/01 18:45:28  grichenk
  * Fixed warnings
  *
