@@ -138,7 +138,23 @@ void SeqDB_CombinePath(const CSeqDB_Substring & one,
         return;
     }
     
+    bool only_two = false;
+    
     if (one.Empty() || two[0] == delim) {
+        only_two = true;
+    }
+
+    // Drive letter test for CP/M derived systems
+    if (delim == '\\'   &&
+        two.Size() > 3  &&
+        isalpha(two[0]) &&
+        two[1] == ':'   &&
+        two[2] == '\\') {
+        
+        only_two = true;
+    }
+    
+    if (only_two) {
         outp.reserve(two.Size() + extn_amt);
         two.GetString(outp);
         
