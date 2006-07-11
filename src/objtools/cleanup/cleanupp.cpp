@@ -365,6 +365,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     x_MergeAdjacentAnnots(bss);
     
+    x_ExtendSingleGeneOnmRNA(bss);
+    
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
@@ -399,6 +401,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
     x_MergeAdjacentAnnots(bsh);
+    
+    x_ExtendSingleGeneOnmRNA(bsh);
+    
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
@@ -1336,6 +1341,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2006/07/11 14:38:28  bollin
+ * aadded a step to ExtendedCleanup to extend the only gene found on the only
+ * mRNA sequence in the set where there are zero or one coding region features
+ * in the set so that the gene covers the entire mRNA sequence
+ *
  * Revision 1.31  2006/07/10 19:01:57  bollin
  * added step to extend coding region to cover missing portion of a stop codon,
  * will also adjust the location of the overlapping gene if necessary.

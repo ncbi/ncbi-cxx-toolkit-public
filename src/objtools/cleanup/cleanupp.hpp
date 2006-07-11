@@ -244,6 +244,9 @@ private:
     bool x_CheckCodingRegionEnds (CSeq_feat& feat);
     void x_CheckCodingRegionEnds (CSeq_annot_Handle sah);
     
+    void x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh);
+    void x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh);
+
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
     
@@ -286,6 +289,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2006/07/11 14:38:28  bollin
+ * aadded a step to ExtendedCleanup to extend the only gene found on the only
+ * mRNA sequence in the set where there are zero or one coding region features
+ * in the set so that the gene covers the entire mRNA sequence
+ *
  * Revision 1.30  2006/07/10 19:01:57  bollin
  * added step to extend coding region to cover missing portion of a stop codon,
  * will also adjust the location of the overlapping gene if necessary.
