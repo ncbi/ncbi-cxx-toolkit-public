@@ -66,6 +66,14 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
                              const BlastScoringOptions* scoring_options,
                              SBlastHitsParameters* *retval);
 
+/** Make a deep copy of the SBlastHitsParameters structure passed in
+ * @param hit_params source hit parameters structure [in]
+ * @return NULL if out of memory, otherwise deep copy of first argument
+ */
+NCBI_XBLAST_EXPORT
+SBlastHitsParameters* 
+SBlastHitsParametersDup(const SBlastHitsParameters* hit_params);
+
 /** Deallocated SBlastHitsParameters.
  * @param param object to be freed.
  * @return NULL pointer.

@@ -74,6 +74,20 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
        return 0;
 }
 
+SBlastHitsParameters* 
+SBlastHitsParametersDup(const SBlastHitsParameters* hit_params)
+{
+    SBlastHitsParameters* retval = (SBlastHitsParameters*)
+        malloc(sizeof(SBlastHitsParameters));
+
+    if ( !retval ) {
+        return NULL;
+    }
+
+    memcpy((void*)retval, (void*) hit_params, sizeof(SBlastHitsParameters));
+    return retval;
+}
+
 NCBI_XBLAST_EXPORT
 SBlastHitsParameters* SBlastHitsParametersFree(SBlastHitsParameters* param)
 {
