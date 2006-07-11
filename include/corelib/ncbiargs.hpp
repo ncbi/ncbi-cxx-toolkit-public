@@ -448,6 +448,22 @@ public:
 
     EArgSetType GetArgsType() const { return m_ArgsType; }
 
+    /// Processing of positional arguments.
+    /// In strict mode any value starting with '-' is treated as a key/flag
+    /// unless any positional arguments have already been found (e.g. after
+    /// '--' argument). In loose mode any argument is treated as positional
+    /// if it can not be processed as a valid key or flag.
+    enum EArgPositionalMode {
+        ePositionalMode_Strict,  ///< Strict mode (default)
+        ePositionalMode_Loose    ///< Loose mode
+    };
+
+    /// Select mode for processing positional arguments.
+    void SetPositionalMode(EArgPositionalMode positional_mode)
+        { m_PositionalMode = positional_mode; }
+
+    EArgPositionalMode GetPositionalMode() const { return m_PositionalMode; }
+
     /// Available argument types.
     enum EType {
         eString = 0, ///< An arbitrary string
@@ -492,7 +508,15 @@ public:
         fIgnoreInvalidValue = (1 << 4),
         /// Post warning when an invalid value is ignored (no effect
         /// if fIgnoreInvalidValue is not set).
-        fWarnOnInvalidValue = (1 << 5)
+        fWarnOnInvalidValue = (1 << 5),
+
+        /// Allow to ignore separator between the argument's name and value.
+        /// Usual ' ' or '=' separators can still be used with the argument.
+        /// The following restrictions apply to a no-separator argument:
+        ///   - the argument must be a key (including optional or default);
+        ///   - the argument's name must be a single char;
+        ///   - no other argument's name can start with the same char.
+        fOptionalSeparator = (1 << 6)
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 
@@ -661,6 +685,16 @@ public:
                   TFlags        flags = 0    ///< Optional file flags
                  );
 
+    /// Add argument alias. The alias can be used in the command line instead
+    /// of the original argument. Accessing argument value by its alias is
+    /// not allowed (will be reported as an unknown argument). The alias will
+    /// be printed in USAGE after the original argument name.
+    /// @param alias
+    ///    New alias for a real argument.
+    /// @param arg_name
+    ///    The real argument's name.
+    void AddAlias(const string& alias, const string& arg_name);
+
     /// Flag to invert constraint logically
     enum EConstraintNegate {
         eConstraintInvert,  ///< Logical NOT
@@ -737,8 +771,10 @@ public:
 
     /// Verify if argument "name" is spelled correctly.
     ///
-    /// Argument name can contain only  alphanumeric characters and
-    /// underscore ('_'), or be empty.
+    /// Argument name can contain only alphanumeric characters, dashes ('-')
+    /// and underscore ('_'), or be empty. If the leading dash is present,
+    /// it must be followed by a non-dash char ('-' or '--foo' are not valid
+    /// names).
     static bool VerifyName(const string& name, bool extended = false);
 
 private:
@@ -750,14 +786,16 @@ private:
     typedef vector<string>            TArgGroups;   ///< Argument groups
 
 private:
-    EArgSetType  m_ArgsType;  ///< Type of arguments
-    TArgs        m_Args;      ///< Assoc.map of arguments' name/descr
-    TPosArgs     m_PosArgs;   ///< Pos. args, ordered by position in cmd.-line
-    TKeyFlagArgs m_KeyFlagArgs; ///< Key/flag args, in order of insertion
-    unsigned     m_nExtra;    ///> # of mandatory extra args
-    unsigned     m_nExtraOpt; ///< # of optional  extra args
+    EArgSetType  m_ArgsType;     ///< Type of arguments
+    TArgs        m_Args;         ///< Assoc.map of arguments' name/descr
+    TPosArgs     m_PosArgs;    ///< Pos. args, ordered by position in cmd.-line
+    TKeyFlagArgs m_KeyFlagArgs;  ///< Key/flag args, in order of insertion
+    string       m_NoSeparator;  ///< Arguments allowed to use no separator
+    unsigned     m_nExtra;       ///> # of mandatory extra args
+    unsigned     m_nExtraOpt;    ///< # of optional  extra args
     TArgGroups   m_ArgGroups;    ///< Argument groups
     size_t       m_CurrentGroup; ///< Currently selected group (0 = no group)
+    EArgPositionalMode m_PositionalMode; ///< Processing of positional args
 
     // Extra USAGE info
     string    m_UsageName;         ///< Program name
@@ -790,6 +828,10 @@ private:
     /// Helper method for checking if auto help requested and throw
     /// CArgHelpException if help requested.
     void x_CheckAutoHelp(const string& arg) const;
+
+    void x_PrintComment(list<string>&   arr,
+                        const CArgDesc& arg,
+                        SIZE_TYPE       width) const;
 
     /// Process arguments.
     ///
@@ -1295,8 +1337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.54  2006/07/07 16:52:54  ivanov
- * Rollback to R1.52 (by Denis Vakatov request)
+ * Revision 1.55  2006/07/11 19:05:29  grichenk
+ * Fixed problem in arguments parser.
+ * Added flag for strict processing of positional arguments.
  *
  * Revision 1.53  2006/07/06 20:06:37  grichenk
  * Added argument aliases.
