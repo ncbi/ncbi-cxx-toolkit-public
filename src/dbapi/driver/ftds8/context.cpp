@@ -362,21 +362,27 @@ CTDSContext::x_Close(bool delete_conn)
     if (g_pTDSContext) {
         CFastMutexGuard mg(m_Mtx);
         if (g_pTDSContext) {
+
+            // Unregister first 
+            g_pTDSContext = NULL;
+            x_RemoveFromRegistry();
+
             if (x_SafeToFinalize()) {
                 // close all connections first
-                if (delete_conn) {
-                    DeleteAllConn();
-                } else {
-                    CloseAllConn();
+                try {
+                    if (delete_conn) {
+                        DeleteAllConn();
+                    } else {
+                        CloseAllConn();
+                    }
                 }
+                NCBI_CATCH_ALL( kEmptyStr );
 
+                // Finalize client library even if we cannot close connections.
                 dbloginfree(m_Login);
                 CheckFunctCall();
                 dbexit();
                 CheckFunctCall();
-
-                g_pTDSContext = NULL;
-                x_RemoveFromRegistry();
             }
 
 #if defined(NCBI_OS_MSWIN)
@@ -871,6 +877,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/07/11 14:24:42  ssikorsk
+ * Made method x_Close more exception safe.
+ *
  * Revision 1.75  2006/06/07 22:19:54  ssikorsk
  * Context finalization improvements.
  *

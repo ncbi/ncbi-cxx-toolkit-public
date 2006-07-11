@@ -431,13 +431,20 @@ CDBLibContext::x_Close(bool delete_conn)
     if (g_pContext) {
         CFastMutexGuard mg(m_Mtx);
         if (g_pContext) {
+
+            g_pContext = NULL;
+            x_RemoveFromRegistry();
+
             if (x_SafeToFinalize()) {
                 // close all connections first
-                if (delete_conn) {
-                    DeleteAllConn();
-                } else {
-                    CloseAllConn();
+                try {
+                    if (delete_conn) {
+                        DeleteAllConn();
+                    } else {
+                        CloseAllConn();
+                    }
                 }
+                NCBI_CATCH_ALL( kEmptyStr );
 
 #ifdef MS_DBLIB_IN_USE
                 dbfreelogin(m_Login);
@@ -457,9 +464,6 @@ CDBLibContext::x_Close(bool delete_conn)
                     "Sybase client has been used to connect to a MS SQL Server." )
 #endif
             }
-
-            g_pContext = NULL;
-            x_RemoveFromRegistry();
 
 #if defined(NCBI_OS_MSWIN) && defined(FTDS_IN_USE)
             WSACleanup();
@@ -1310,6 +1314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2006/07/11 14:24:41  ssikorsk
+ * Made method x_Close more exception safe.
+ *
  * Revision 1.84  2006/06/07 22:19:46  ssikorsk
  * Context finalization improvements.
  *
