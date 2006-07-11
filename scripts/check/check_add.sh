@@ -53,7 +53,7 @@ if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then
    # Check ignore list
    x_use_ignore_list=`echo $x_use_ignore_list | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
    if test "$x_use_ignore_list"=='Y' ; then
-      x_signature=`echo $x_signature | sed 's/-[0-9a-z.]*$//'`
+      x_signature=`echo $x_signature | sed 's/-[^-]*$//'`
       root_dir=`echo "$x_srcdir" | sed 's%/src/.*$%%'`
       ignore_list="$root_dir/src/check/ignore.lst"
       if grep "^ *$x_srcdir_rel/$x_app *$x_signature" $ignore_list > /dev/null 2>&1; then
