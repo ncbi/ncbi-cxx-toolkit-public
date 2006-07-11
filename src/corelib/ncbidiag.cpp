@@ -998,7 +998,7 @@ SDiagMessage::SDiagMessage(const string& message)
         if (p == kUID_Length + 1) {
             try {
                 m_Data->m_UID =
-                    NStr::StringToInt8(message.substr(1, p - 1), 0, 16);
+                    NStr::StringToUInt8(message.substr(1, p - 1), 0, 16);
                 pos = p + 1;
             }
             catch (CStringException) {
@@ -2815,8 +2815,8 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
- * Revision 1.126  2006/07/10 20:23:04  grichenk
- * unsigned long changed to TUID
+ * Revision 1.127  2006/07/11 16:35:04  grichenk
+ * Use StringToUInt8() to parse UID.
  *
  * Revision 1.125  2006/07/06 18:43:39  grichenk
  * Extended UID using hashed host name.
