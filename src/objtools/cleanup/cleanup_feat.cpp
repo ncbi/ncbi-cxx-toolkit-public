@@ -1173,64 +1173,10 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
 
 
 void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh)
-{
-    // only perform this operation if the set contains one and only one mRNA sequence,
-    // one and only one gene, and zero or one coding regions.
-
-    int num_mRNA = 0;
-    CBioseq_Handle first_mRNA;
-    
-    for (CBioseq_CI bioseq_ci(bssh); bioseq_ci && num_mRNA < 2; ++bioseq_ci) {
-        if (s_IsmRNA(*bioseq_ci)) {
-            num_mRNA++;
-            if (num_mRNA == 1) {
-                first_mRNA = m_Scope->GetBioseqHandle(bioseq_ci->GetId().front());
-            }
-        }
+{    
+    for (CBioseq_CI bioseq_ci(bssh); bioseq_ci; ++bioseq_ci) {
+        x_ExtendSingleGeneOnmRNA(*bioseq_ci);
     }
-    
-    if (num_mRNA != 1) {
-        return;
-    }
-    
-    int num_genes = 0;
-    int num_cdss = 0;
-    
-    CFeat_CI gene_it;
-    
-    for (CFeat_CI feat_ci(bssh.GetParentEntry()); feat_ci && num_genes < 2 && num_cdss < 2; ++feat_ci) {
-        if (feat_ci->GetFeatType() == CSeqFeatData::e_Gene) {
-            num_genes ++;
-            if (num_genes == 1) {
-                gene_it = feat_ci;
-            }
-        } else if (feat_ci->GetFeatType() == CSeqFeatData::e_Cdregion) {
-            num_cdss++;
-        }
-    }
-    
-    if (num_genes == 1 && num_cdss < 2) {
-        CBioseq_Handle gene_bsh = m_Scope->GetBioseqHandle(gene_it->GetLocation());
-        if (gene_bsh == first_mRNA) {
-            CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, gene_it->GetOriginalFeature());
-        
-            if (!fh.GetSeq_feat().IsNull()) {
-                CRef<CSeq_feat> new_gene(new CSeq_feat);
-                new_gene->Assign(gene_it->GetOriginalFeature());
-                CRef<CSeq_loc> new_loc(new CSeq_loc);
-        
-                CRef<CSeq_id> new_id(new CSeq_id);
-                new_id->Assign(*(new_gene->GetLocation().GetId()));
-                new_loc->SetInt().SetId(*new_id);
-                new_loc->SetInt().SetFrom(0);
-                new_loc->SetInt().SetTo(gene_bsh.GetBioseqLength() - 1);
-                new_loc->SetInt().SetStrand(new_gene->GetLocation().GetStrand());
-                new_gene->SetLocation(*new_loc);
-            
-                fh.Replace(*new_gene);
-            }
-        }
-    }  
 }
 
 
@@ -1242,6 +1188,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2006/07/12 14:22:52  bollin
+ * changed x_ExtendSingleGeneOnmRNA to match changes in C Toolkit
+ *
  * Revision 1.17  2006/07/11 14:38:28  bollin
  * aadded a step to ExtendedCleanup to extend the only gene found on the only
  * mRNA sequence in the set where there are zero or one coding region features
