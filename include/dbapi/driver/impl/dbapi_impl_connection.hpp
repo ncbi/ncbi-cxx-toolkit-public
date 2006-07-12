@@ -33,6 +33,7 @@
  *
  */
 
+#include <dbapi/driver/public.hpp> // Necessary for MIPS.
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 
@@ -259,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/12 19:10:43  ssikorsk
+ * + #include <dbapi/driver/public.hpp> (Necessary for MIPS).
+ *
  * Revision 1.2  2006/07/12 18:55:28  ssikorsk
  * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
  *
