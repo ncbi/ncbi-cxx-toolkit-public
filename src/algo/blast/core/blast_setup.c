@@ -670,6 +670,37 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    return 0;
 }
 
+void
+BLAST_GetSubjectTotals(const BlastSeqSrc* seqsrc,
+                       Int8* total_length,
+                       Int4* num_seqs)
+{
+    ASSERT(total_length && num_seqs);
+
+    *total_length = -1;
+    *num_seqs = -1;
+
+    if ( !seqsrc )  {
+        return;
+    }
+
+    *total_length = BlastSeqSrcGetTotLen(seqsrc);
+
+    if (*total_length > 0) {
+        *num_seqs = BlastSeqSrcGetNumSeqs(seqsrc);
+    } else {
+        /* Not a database search; each subject sequence is considered
+           individually */
+        Int4 oid = 0;  /* Get length of first sequence. */
+        if ( (*total_length = BlastSeqSrcGetSeqLen(seqsrc, (void*) &oid)) < 0) {
+            *total_length = -1;
+            *num_seqs = -1;
+            return;
+        }
+        *num_seqs = 1;
+    }
+}
+
 Int2 
 BLAST_GapAlignSetUp(EBlastProgramType program_number,
     const BlastSeqSrc* seq_src,
@@ -690,18 +721,7 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
    Int8 total_length;
    Int4 num_seqs;
 
-   total_length = BlastSeqSrcGetTotLen(seq_src);
-   
-   if (total_length > 0) {
-      num_seqs = BlastSeqSrcGetNumSeqs(seq_src);
-   } else {
-      /* Not a database search; each subject sequence is considered
-         individually */
-      Int4 oid=0;  /* Get length of first sequence. */
-      if ((total_length=BlastSeqSrcGetSeqLen(seq_src, (void*) &oid)) < 0)
-          return -1;
-      num_seqs = 1;
-   }
+   BLAST_GetSubjectTotals(seq_src, &total_length, &num_seqs);
 
    /* Initialize the effective length parameters with real values of
       database length and number of sequences */

@@ -228,6 +228,15 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
                         const BlastSeqLoc          * lookup_segments,
                         BlastQueryInfo             * query_info);
 
+/** Auxiliary function to retrieve the subject's number of sequences and total
+ * length. 
+ * @note In the case of a Blast2Sequences search, this function assumes a
+ * single sequence and returns the length of the first sequence only
+ */
+void
+BLAST_GetSubjectTotals(const BlastSeqSrc* seqsrc,
+                       Int8* total_length,
+                       Int4* num_seqs);
 #ifdef __cplusplus
 }
 #endif
@@ -236,6 +245,9 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
 /*
  *
 * $Log$
+* Revision 1.61  2006/07/12 23:03:24  camacho
+* + BLAST_GetSubjectTotals
+*
 * Revision 1.60  2006/07/11 22:30:59  camacho
 * Add const where possible
 *
