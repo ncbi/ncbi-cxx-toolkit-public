@@ -406,7 +406,13 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 	else
 		emt = eBlosum62;
 	ScoreMatrix sm(emt);
-	const string& consensus = m_conMaker->getConsensus();
+	string consensus;
+	if(m_useConsensus)
+		consensus = m_conMaker->getConsensus();
+	else
+	{
+		NcbistdaaToNcbieaaString(m_trunctMaster, &consensus);
+	}
 	CRef<CPssmWithParameters> pssmPara(new CPssmWithParameters);
 	CPssm& pssm = pssmPara->SetPssm();
 	pssm.SetNumColumns(consensus.size());
@@ -547,6 +553,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2006/07/12 18:07:32  cliu
+ * fix a bug with making default PSSM with consensus-mastered CD
+ *
  * Revision 1.16  2006/07/06 16:28:08  cliu
  * fix a bug with skipping unaligned consensus region
  *
