@@ -53,10 +53,19 @@ public: \
 }
 
 
-
 DECLARE_PROT_PROD_TEST(ProteinLength);
 DECLARE_PROT_PROD_TEST(Cdd);
-DECLARE_PROT_PROD_TEST(EntrezNeighbors);
+
+// Entrez neighbors test only works when a gi can be found,
+// so it overrides CanTest and therefore can't be declared using macro
+class NCBI_XALGOSEQQA_EXPORT
+CTestProtProd_EntrezNeighbors : public CTestProtProd
+{
+public:
+    bool CanTest(const CSerialObject& obj, const CSeqTestContext* ctx) const;
+    CRef<objects::CSeq_test_result_set> RunTest(const CSerialObject& obj,
+                                                const CSeqTestContext* ctx);
+};
 
 
 END_NCBI_SCOPE
@@ -65,6 +74,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 13:58:45  jcherry
+ * Run Entrez neigbors test only if the is is resolvable to a gi
+ * (required for Entrez query)
+ *
  * Revision 1.1  2004/10/06 19:58:35  jcherry
  * Initial version
  *

@@ -157,6 +157,26 @@ int s_GetTaxId(const CBioseq_Handle& hand)
 }
 
 
+bool CTestProtProd_EntrezNeighbors::CanTest(const CSerialObject& obj,
+                                            const CSeqTestContext* ctx) const
+{
+    // Does it pass the base class criteria?
+    if (!CTestProtProd::CanTest(obj, ctx)) {
+        return false;
+    }
+    // If so, it must be a CSeq_id.  Is it resolvable to a gi?
+    const CSeq_id* id = dynamic_cast<const CSeq_id*>(&obj);
+    CBioseq_Handle hand = ctx->GetScope().GetBioseqHandle(*id);
+    try {
+        sequence::GetId(hand, sequence::eGetId_ForceGi).GetGi();
+    }
+    catch (std::exception& e) {
+        return false;
+    }
+    return true;
+}
+
+
 CRef<CSeq_test_result_set>
 CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
                                        const CSeqTestContext* ctx)
@@ -236,6 +256,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/07/12 13:58:46  jcherry
+ * Run Entrez neigbors test only if the is is resolvable to a gi
+ * (required for Entrez query)
+ *
  * Revision 1.5  2005/12/05 15:13:08  jcherry
  * Speed-up for entrez neighbors
  *
