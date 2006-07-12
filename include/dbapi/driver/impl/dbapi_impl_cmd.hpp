@@ -128,16 +128,10 @@ protected:
     /// Set cmd parameter with name "name" to the object pointed by "value"
     virtual bool SetParam(const string& name, CDB_Object* param_ptr) = 0;
 
-    void DetachInterface(void)
-    {
-        m_Interface.DetachInterface();
-    }
+    void DetachInterface(void);
 
 private:
-    void AttachTo(CDB_LangCmd* interface)
-    {
-        m_Interface = interface;
-    }
+    void AttachTo(CDB_LangCmd* interface);
 
     CInterfaceHook<CDB_LangCmd> m_Interface;
 };
@@ -164,16 +158,10 @@ protected:
     /// Set the "recompile before execute" flag for the stored proc
     virtual void SetRecompile(bool recompile = true) = 0;
 
-    void DetachInterface(void)
-    {
-        m_Interface.DetachInterface();
-    }
+    void DetachInterface(void);
 
 private:
-    void AttachTo(CDB_RPCCmd* interface)
-    {
-        m_Interface = interface;
-    }
+    void AttachTo(CDB_RPCCmd* interface);
 
     CInterfaceHook<CDB_RPCCmd> m_Interface;
 };
@@ -206,16 +194,10 @@ protected:
     /// the table
     virtual bool CompleteBCP(void) = 0;
 
-    void DetachInterface(void)
-    {
-        m_Interface.DetachInterface();
-    }
+    void DetachInterface(void);
 
 private:
-    void AttachTo(CDB_BCPInCmd* interface)
-    {
-        m_Interface = interface;
-    }
+    void AttachTo(CDB_BCPInCmd* interface);
 
     CInterfaceHook<CDB_BCPInCmd> m_Interface;
 };
@@ -261,16 +243,10 @@ protected:
     /// Return FALSE if the cursor is closed already (or not opened yet)
     virtual bool Close(void) = 0;
 
-    void DetachInterface(void)
-    {
-        m_Interface.DetachInterface();
-    }
+    void DetachInterface(void);
 
 private:
-    void AttachTo(CDB_CursorCmd* interface)
-    {
-        m_Interface = interface;
-    }
+    void AttachTo(CDB_CursorCmd* interface);
 
     CInterfaceHook<CDB_CursorCmd> m_Interface;
 };
@@ -291,16 +267,10 @@ protected:
     virtual size_t SendChunk(const void* pChunk, size_t nofBytes) = 0;
     virtual bool Cancel(void) = 0;
 
-    void DetachInterface(void)
-    {
-        m_Interface.DetachInterface();
-    }
+    void DetachInterface(void);
 
 private:
-    void AttachTo(CDB_SendDataCmd* interface)
-    {
-        m_Interface = interface;
-    }
+    void AttachTo(CDB_SendDataCmd* interface);
 
     CInterfaceHook<CDB_SendDataCmd> m_Interface;
 };
@@ -314,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/12 18:55:28  ssikorsk
+ * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
+ *
  * Revision 1.2  2006/07/12 17:09:53  ssikorsk
  * Added NCBI_DBAPIDRIVER_EXPORT to CCommand.
  *

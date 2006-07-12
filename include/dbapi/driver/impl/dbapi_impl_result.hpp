@@ -103,10 +103,7 @@ public:
     /// Skip result item
     virtual bool SkipItem(void) = 0;
 
-    void AttachTo(CDB_Result* interface)
-    {
-        m_Interface = interface;
-    }
+    void AttachTo(CDB_Result* interface);
 
 private:
     void Release(void)
@@ -115,10 +112,7 @@ private:
         DetachInterface();
     }
 
-    void DetachInterface(void)
-    {
-        m_Interface.DetachInterface();
-    }
+    void DetachInterface(void);
 
     CInterfaceHook<CDB_Result> m_Interface;
 };
@@ -131,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 18:55:28  ssikorsk
+ * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
+ *
  * Revision 1.1  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

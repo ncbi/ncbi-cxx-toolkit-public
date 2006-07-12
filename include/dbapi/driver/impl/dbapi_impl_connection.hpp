@@ -189,14 +189,8 @@ protected:
 
 
     //
-    void AttachTo(CDB_Connection* interface)
-    {
-        m_Interface = interface;
-    }
-    void ReleaseInterface(void)
-    {
-        m_Interface = NULL;
-    }
+    void AttachTo(CDB_Connection* interface);
+    void ReleaseInterface(void);
 
     //
     void DetachResultProcessor(void);
@@ -265,6 +259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 18:55:28  ssikorsk
+ * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
+ *
  * Revision 1.1  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
