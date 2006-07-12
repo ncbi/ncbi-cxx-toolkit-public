@@ -34,6 +34,8 @@
 
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(impl)
@@ -365,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 20:35:22  ucko
+ * #include <algorithm> for find()
+ *
  * Revision 1.1  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

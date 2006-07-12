@@ -33,6 +33,8 @@
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
 
+#include <algorithm>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -209,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/12 20:35:22  ucko
+ * #include <algorithm> for find()
+ *
  * Revision 1.2  2006/07/12 18:55:53  ssikorsk
  * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
  *
