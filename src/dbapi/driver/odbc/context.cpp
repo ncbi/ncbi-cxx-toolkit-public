@@ -371,7 +371,7 @@ bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
 }
 
 
-I_Connection*
+impl::CConnection*
 CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
 {
     CFastMutexGuard mg(m_Mtx);
@@ -389,15 +389,15 @@ CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
-    CODBC_Connection* t_con = new CODBC_Connection(this,
+    CODBC_Connection* t_con = new CODBC_Connection(*this,
                                                    con,
                                                    conn_attr.reusable,
                                                    conn_attr.pool_name);
-    t_con->SeServerName(conn_attr.srv_name);
+    t_con->SetServerName(conn_attr.srv_name);
     t_con->SetUserName(conn_attr.user_name);
     t_con->SetPassword(conn_attr.passwd);
-    t_con->m_BCPable     = (conn_attr.mode & fBcpIn) != 0;
-    t_con->m_SecureLogin = (conn_attr.mode & fPasswordEncrypted) != 0;
+    t_con->SetBCPable((conn_attr.mode & fBcpIn) != 0);
+    t_con->SetSecureLogin((conn_attr.mode & fPasswordEncrypted) != 0);
 
     return t_con;
 }
@@ -818,6 +818,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/07/12 17:11:11  ssikorsk
+ * Fixed compilation isssues.
+ *
  * Revision 1.55  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

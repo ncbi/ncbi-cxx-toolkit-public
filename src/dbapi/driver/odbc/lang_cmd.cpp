@@ -297,8 +297,8 @@ void CODBC_LangCmd::DumpResults()
         if(dbres) {
             m_RowCount = 0;
 
-            if(GetConnection().m_ResProc) {
-                GetConnection().m_ResProc->ProcessResult(*dbres);
+            if(GetConnection().GetResultProcessor()) {
+                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch());
@@ -550,6 +550,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/07/12 17:11:11  ssikorsk
+ * Fixed compilation isssues.
+ *
  * Revision 1.27  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

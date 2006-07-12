@@ -96,7 +96,7 @@ CDB_Result* CODBC_CursorCmd::Open()
     // buff = "open " + m_Name;
 
     try {
-        auto_ptr<I_LangCmd> stmt(GetConnection().xLangCmd("open " + m_Name));
+        auto_ptr<impl::CLangCmd> stmt(GetConnection().xLangCmd("open " + m_Name));
 
         stmt->Send();
         stmt->DumpResults();
@@ -340,6 +340,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/07/12 17:11:11  ssikorsk
+ * Fixed compilation isssues.
+ *
  * Revision 1.19  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

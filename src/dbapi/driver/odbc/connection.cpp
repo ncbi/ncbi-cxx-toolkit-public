@@ -56,7 +56,7 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                                    const string& pool_name) :
     impl::CConnection(cntx, false, reusable, pool_name),
     m_Link(conn),
-    m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx->GetReporter())
+    m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx.GetReporter())
 {
     m_Reporter.SetHandlerStack(&GetMsgHandlers());
 }
@@ -105,7 +105,7 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
 #ifdef NCBI_OS_UNIX
     return 0; // not implemented
 #else
-    if ( !m_BCPable ) {
+    if ( !IsBCPable() ) {
         string err_message = "No bcp on this connection" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410003 );
     }
@@ -194,10 +194,10 @@ bool CODBC_Connection::Refresh()
 I_DriverContext::TConnectionMode CODBC_Connection::ConnectMode() const
 {
     I_DriverContext::TConnectionMode mode = 0;
-    if ( m_BCPable ) {
+    if ( IsBCPable() ) {
         mode |= I_DriverContext::fBcpIn;
     }
-    if ( m_SecureLogin ) {
+    if ( HasSecureLogin() ) {
         mode |= I_DriverContext::fPasswordEncrypted;
     }
     return mode;
@@ -580,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/07/12 17:11:11  ssikorsk
+ * Fixed compilation isssues.
+ *
  * Revision 1.31  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
