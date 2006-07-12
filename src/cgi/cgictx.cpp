@@ -336,6 +336,19 @@ CCgiContext::GetStreamStatus(STimeout* timeout) const
 #endif
 }
 
+static inline bool s_CheckCookieForTID(const CCgiCookie* cookie, string& tid)
+{
+    if (cookie) {
+        string part1, part2;
+        NStr::SplitInTwo(cookie->GetValue(), "@", part1, part2);
+        if (NStr::EndsWith(part2, "SID") ) {
+            tid = part2;
+            return true;
+        }
+    }
+    return false;
+}
+
 string CCgiContext::RetrieveTrackingId() const
 {
     bool enable_tracking = m_App.GetConfig().
@@ -343,17 +356,27 @@ string CCgiContext::RetrieveTrackingId() const
     if(!enable_tracking) 
         return "";
 
+    const CCgiCookies& cookies = m_Request->GetCookies();
+
+    string tid;
+    const CCgiCookie* cookie = cookies.Find("WebCubbyUser");
+    if( s_CheckCookieForTID(cookie, tid) )
+        return tid;
+    cookie = cookies.Find("WebEnv");
+    if( s_CheckCookieForTID(cookie, tid) )
+        return tid;
+
     string track_cookie_name = m_App.GetConfig().
         GetString("CGI", "TrackingCookieName", kDefaultTrackingIdName);
-    const CCgiCookies& cookies = m_Request->GetCookies();
-    const CCgiCookie* cookie = cookies.Find(track_cookie_name, kEmptyStr, kEmptyStr); 
+    cookie = cookies.Find(track_cookie_name, kEmptyStr, kEmptyStr); 
     
-    if (cookie) {
+    if (cookie) 
         return cookie->GetValue();
-    } else {
-        CDiagContext& dcontext = GetDiagContext();
-        return dcontext.GetStringUID();
-    }
+
+    CDiagContext& dcontext = GetDiagContext();
+    return dcontext.GetStringUID() + 
+        NStr::IntToString(m_App.GetFCgiIteration()) + "SID";
+
 }
 
 
@@ -363,6 +386,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.50  2006/07/12 19:05:59  didenko
+* Added checking of WebCubbyUser and WebEnv cookies for tracking id
+*
 * Revision 1.49  2006/06/29 14:32:43  didenko
 * Added tracking cookie
 *
