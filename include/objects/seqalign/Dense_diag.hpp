@@ -67,6 +67,9 @@ public:
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop (TDim row) const;
 
+    /// Offset row's coords
+    void OffsetRow(TDim row, TSeqPos offset);
+
 private:
     // Prohibit copy constructor and assignment operator
     CDense_diag(const CDense_diag& value);
@@ -121,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/07/12 21:26:02  todorov
+* Added OffsetRow.
+*
 * Revision 1.1  2005/07/06 19:06:06  todorov
 * Added GetSeq{Start,Stop,Range} methods
 *
