@@ -1270,6 +1270,16 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     _ASSERT(count == seq_feat_cnt);
     _ASSERT(annot_set.size() == feat_annots_cnt);
+
+    ITERATE ( set<CSeq_annot_Handle>, annot_it, annot_set ) {
+        int expected_count =
+            annot_it->GetCompleteObject()->GetData().GetFtable().size();
+        count = 0;
+        for ( CSeq_annot_ftable_CI feat_it(*annot_it); feat_it; ++feat_it ) {
+            ++count;
+        }
+        _ASSERT(count == expected_count);
+    }
     CHECK_END("get annot set");
 
     CHECK_WRAP();
@@ -1302,6 +1312,16 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     _ASSERT(count == seq_featrg_cnt);
     _ASSERT(annot_set.size() == featrg_annots_cnt);
+
+    ITERATE ( set<CSeq_annot_Handle>, annot_it, annot_set ) {
+        int expected_count =
+            annot_it->GetCompleteObject()->GetData().GetFtable().size();
+        count = 0;
+        for ( CSeq_annot_ftable_CI feat_it(*annot_it); feat_it; ++feat_it ) {
+            ++count;
+        }
+        _ASSERT(count == expected_count);
+    }
     CHECK_END("get annot set");
 
     CHECK_WRAP();
@@ -1481,6 +1501,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2006/07/12 16:17:32  vasilche
+* Added CSeq_annot_ftable_CI.
+*
 * Revision 1.68  2006/07/10 16:09:59  vasilche
 * Test GetCompleteObject() on removed Seq-entry.
 *

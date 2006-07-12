@@ -137,6 +137,7 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     bool empty(void) const;
+    size_t size(void) const;
     const_iterator begin(void) const;
     const_iterator end(void) const;
 
@@ -145,6 +146,7 @@ public:
     int GetGi(void) const;
     const CSeq_id& GetSeq_id(void) const;
 
+    size_t GetSize(void) const;
     const SSNP_Info& GetInfo(size_t index) const;
     size_t GetIndex(const SSNP_Info& info) const;
 
@@ -194,6 +196,13 @@ inline
 bool CSeq_annot_SNP_Info::empty(void) const
 {
     return m_SNP_Set.empty();
+}
+
+
+inline
+size_t CSeq_annot_SNP_Info::size(void) const
+{
+    return m_SNP_Set.size();
 }
 
 
@@ -306,6 +315,13 @@ void CSeq_annot_SNP_Info::x_AddSNP(const SSNP_Info& snp_info)
 
 
 inline
+size_t CSeq_annot_SNP_Info::GetSize(void) const
+{
+    return m_SNP_Set.size();
+}
+
+
+inline
 const SSNP_Info& CSeq_annot_SNP_Info::GetInfo(size_t index) const
 {
     _ASSERT(index < m_SNP_Set.size());
@@ -327,6 +343,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/07/12 16:17:31  vasilche
+* Added CSeq_annot_ftable_CI.
+*
 * Revision 1.21  2006/03/16 20:32:39  vasilche
 * Updated SNP table parser to accept quality code.
 *

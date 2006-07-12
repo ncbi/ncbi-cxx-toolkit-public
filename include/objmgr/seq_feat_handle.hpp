@@ -55,6 +55,7 @@ BEGIN_SCOPE(objects)
 
 class CSeq_annot_Handle;
 class CMappedFeat;
+class CSeq_annot_ftable_CI;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -202,6 +203,7 @@ private:
     friend class CSeq_annot_Add_EditCommand<CSeq_feat_Handle>;
     friend class CSeq_annot_Replace_EditCommand<CSeq_feat_Handle>;
     friend class CSeq_annot_Remove_EditCommand<CSeq_feat_Handle>;
+    friend class CSeq_annot_ftable_CI;
 
     /// Remove the feature from Seq-annot
     void x_RealRemove(void) const;
@@ -542,6 +544,87 @@ CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_annot_ftable_CI
+
+class NCBI_XOBJMGR_EXPORT CSeq_annot_ftable_CI
+{
+public:
+    enum EFlags {
+        fIncludeTable    = 1<<0,
+        fOnlyTable       = 1<<1
+    };
+    typedef int TFlags;
+
+    CSeq_annot_ftable_CI(void);
+    explicit CSeq_annot_ftable_CI(const CSeq_annot_Handle& annot,
+                                  TFlags flags = 0);
+
+    CScope& GetScope(void) const;
+    const CSeq_annot_Handle& GetAnnot(void) const;
+
+    DECLARE_OPERATOR_BOOL(m_Feat);
+
+    const CSeq_feat_Handle& operator*(void) const;
+    const CSeq_feat_Handle* operator->(void) const;
+
+    CSeq_annot_ftable_CI& operator++(void);
+
+protected:
+    bool x_IsValid(void) const;
+    bool x_IsExcluded(void) const;
+    void x_Step(void);
+    void x_Reset(void);
+    void x_Settle(void);
+
+private:
+    CSeq_feat_Handle  m_Feat;
+    TFlags            m_Flags;
+};
+
+
+inline
+CSeq_annot_ftable_CI::CSeq_annot_ftable_CI(void)
+{
+}
+
+
+inline
+const CSeq_annot_Handle& CSeq_annot_ftable_CI::GetAnnot(void) const
+{
+    return m_Feat.GetAnnot();
+}
+
+
+inline
+CScope& CSeq_annot_ftable_CI::GetScope(void) const
+{
+    return GetAnnot().GetScope();
+}
+
+
+inline
+const CSeq_feat_Handle& CSeq_annot_ftable_CI::operator*(void) const
+{
+    return m_Feat;
+}
+
+
+inline
+const CSeq_feat_Handle* CSeq_annot_ftable_CI::operator->(void) const
+{
+    return &m_Feat;
+}
+
+
+inline
+CSeq_annot_ftable_CI& CSeq_annot_ftable_CI::operator++(void)
+{
+    x_Step();
+    x_Settle();
+    return *this;
+}
+
 /* @} */
 
 END_SCOPE(objects)
@@ -550,6 +633,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/07/12 16:17:30  vasilche
+* Added CSeq_annot_ftable_CI.
+*
 * Revision 1.18  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

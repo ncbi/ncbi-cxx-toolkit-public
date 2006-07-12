@@ -44,6 +44,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CScope;
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_feat_Handle
+
 
 CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                                    TIndex index)
@@ -242,12 +247,118 @@ void CSeq_feat_Handle::x_RealReplace(const CSeq_feat& new_feat) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_annot_ftable_CI
+
+CSeq_annot_ftable_CI::CSeq_annot_ftable_CI(const CSeq_annot_Handle& annot,
+                                           TFlags flags)
+    : m_Flags(flags)
+{
+    if ( !annot.IsFtable() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_annot_ftable_CI: annot is not ftable");
+    }
+    m_Feat.m_Annot = annot;
+    if ( m_Flags & fOnlyTable ) {
+        // only table features requested
+        if ( GetAnnot().x_GetInfo().x_HasSNP_annot_Info() ) {
+            // start with table features
+            m_Feat.m_AnnotIndex = -1;
+        }
+        else {
+            // no requested features
+            x_Reset();
+            return;
+        }
+    }
+    else {
+        // start with plain features
+        m_Feat.m_AnnotIndex = 0;
+    }
+    // find by flags
+    x_Settle();
+}
+
+
+bool CSeq_annot_ftable_CI::x_IsValid(void) const
+{
+    if ( !GetAnnot() ) {
+        // null iterator
+        return false;
+    }
+    CSeq_feat_Handle::TIndex index = m_Feat.m_AnnotIndex;
+    if ( index == m_Feat.eNull ) {
+        // end of features
+        return false;
+    }
+    if ( index >= 0 ) {
+        // scanning plain features
+        CSeq_feat_Handle::TIndex count =
+            GetAnnot().x_GetInfo().GetAnnotObjectInfos().size();
+        return index < count || GetAnnot().x_GetInfo().x_HasSNP_annot_Info();
+    }
+    else {
+        // scanning table features
+        CSeq_feat_Handle::TIndex count =
+            GetAnnot().x_GetInfo().x_GetSNP_annot_Info().size();
+        index = -1 - index;
+        return index < count;
+    }
+}
+
+
+void CSeq_annot_ftable_CI::x_Step(void)
+{
+    _ASSERT(m_Feat.m_AnnotIndex != m_Feat.eNull);
+    if ( m_Feat.IsPlainFeat() ) {
+        // scanning plain features
+        CSeq_feat_Handle::TIndex count =
+            GetAnnot().x_GetInfo().GetAnnotObjectInfos().size();
+        if ( ++m_Feat.m_AnnotIndex == count ) {
+            // no more plain features
+            if ( (m_Flags & fIncludeTable) &&
+                 GetAnnot().x_GetInfo().x_HasSNP_annot_Info() ) {
+                // switch to table
+                m_Feat.m_AnnotIndex = -1;
+            }
+        }
+    }
+    else {
+        --m_Feat.m_AnnotIndex;
+    }
+}
+
+
+void CSeq_annot_ftable_CI::x_Reset(void)
+{
+    // mark end of features
+    m_Feat.m_AnnotIndex = m_Feat.eNull;
+}
+
+
+void CSeq_annot_ftable_CI::x_Settle(void)
+{
+    while ( x_IsValid() ) {
+        if ( m_Feat.IsRemoved() ) {
+            x_Step();
+        }
+        else {
+            return;
+        }
+    }
+    x_Reset();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/07/12 16:17:31  vasilche
+ * Added CSeq_annot_ftable_CI.
+ *
  * Revision 1.14  2005/11/15 19:22:08  didenko
  * Added transactions and edit commands support
  *
