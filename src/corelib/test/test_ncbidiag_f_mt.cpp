@@ -348,8 +348,11 @@ void CTestDiagApp::x_PrintMessages(int         test_number,
     
     // one level exception
     try {
-        throw NCBI_EXCEPTION(CException, eUnknown, "exception")
-            .SetModule(module).SetClass(nclass).SetFunction(function);
+        NCBI_EXCEPTION_VAR(expt, CException, eUnknown, "exception");
+        expt.SetModule(module);
+        expt.SetClass(nclass);
+        expt.SetFunction(function);
+        NCBI_EXCEPTION_THROW(expt);
     }
     catch (const  CException& ex) {
         NCBI_REPORT_EXCEPTION(x_MakeMessage(exceptmsg, 
@@ -360,13 +363,18 @@ void CTestDiagApp::x_PrintMessages(int         test_number,
     // two level exceptions
     try {
         try {
-            throw NCBI_EXCEPTION(CException, eUnknown, "exception1")
-                .SetModule(module).SetClass(nclass).SetFunction(function);
+            NCBI_EXCEPTION_VAR(expt, CException, eUnknown, "exception1");
+            expt.SetModule(module);
+            expt.SetClass(nclass);
+            expt.SetFunction(function);
+            NCBI_EXCEPTION_THROW(expt);
         }
         catch (const  CException& ex) {
-            throw NCBI_EXCEPTION_EX(ex, CException, eUnknown, "exception2")
-                .SetModule(module).SetClass(nclass).SetFunction(function);
-
+            NCBI_EXCEPTION_VAR_EX(e2, &ex, CException, eUnknown, "exception2");
+            e2.SetModule(module);
+            e2.SetClass(nclass);
+            e2.SetFunction(function);
+            NCBI_EXCEPTION_THROW(e2);
         }
     }
     catch (const  CException& ex) {
@@ -499,6 +507,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/07/12 16:17:04  grichenk
+ * Added NCBI_EXCEPTION_VAR_EX.
+ * SetClass, SetFunction and SetModule return void.
+ *
  * Revision 1.6  2005/04/26 19:04:14  ssikorsk
  * Fixed DIAG_FILTER bugs in parsing of string-based expressions and evaluation of
  * string-based filters.

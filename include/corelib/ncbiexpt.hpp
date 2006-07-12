@@ -425,10 +425,16 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /////////////////////////////////////////////////////////////////////////////
 // CException: useful macros
 
+/// Create an exception instance to be thrown later, given the exception
+/// class, previous exception pointer, error code and message string.
+#define NCBI_EXCEPTION_VAR_EX(name, prev_exception_ptr,              \
+                              exception_class, err_code, message)    \
+    exception_class name(DIAG_COMPILE_INFO,                          \
+        prev_exception_ptr, exception_class::err_code, (message))
+
 /// Create an instance of the exception to be thrown later.
 #define NCBI_EXCEPTION_VAR(name, exception_class, err_code, message) \
-    exception_class name(DIAG_COMPILE_INFO, 0,                       \
-    exception_class::err_code, (message) )
+    NCBI_EXCEPTION_VAR_EX(name, 0, exception_class, err_code, message)
 
 /// Throw an existing exception object
 #define NCBI_EXCEPTION_THROW(exception_var) \
@@ -451,13 +457,12 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Generic macro to make an exception, given the exception class,
 /// previous exception , error code and message string.
 #define NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)\
-    exception_class(DIAG_COMPILE_INFO,                                       \
-        &(prev_exception), exception_class::err_code, (message))
+    NCBI_EXCEPTION_VAR_EX(NCBI_EXCEPTION_EMPTY_NAME, &(prev_exception),      \
+    exception_class, err_code, message)
 
 /// Generic macro to re-throw an exception.
 #define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
-    throw exception_class(DIAG_COMPILE_INFO, \
-        &(prev_exception), exception_class::err_code, (message))
+    throw NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)
 
 /// Generic macro to re-throw the same exception.
 #define NCBI_RETHROW_SAME(prev_exception, message)              \
@@ -583,22 +588,19 @@ public:
     const string& GetFile(void) const { return m_File; }
 
     /// Set module name used for reporting.
-    CException& SetModule(const string& module)
-    { m_Module = module;  return *this; }
+    void SetModule(const string& module) { m_Module = module; }
 
     /// Get module name used for reporting.
     const string& GetModule(void) const { return m_Module; }
 
     /// Set class name used for reporting.
-    CException& SetClass(const string& nclass)
-    { m_Class = nclass;  return *this; }
+    void SetClass(const string& nclass) { m_Class = nclass; }
 
     /// Get class name used for reporting.
     const string& GetClass(void) const { return m_Class; }
 
     /// Set function name used for reporting.
-    CException& SetFunction(const string& function)
-    { m_Function = function;  return *this; }
+    void SetFunction(const string& function) { m_Function = function; }
 
     /// Get function name used for reporting.
     const string& GetFunction(void) const { return m_Function; }
@@ -1150,6 +1152,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/07/12 16:17:04  grichenk
+ * Added NCBI_EXCEPTION_VAR_EX.
+ * SetClass, SetFunction and SetModule return void.
+ *
  * Revision 1.69  2006/01/27 13:21:15  gouriano
  * Added SetSeverity to NCBI_RETHROW_SAME macro
  *
