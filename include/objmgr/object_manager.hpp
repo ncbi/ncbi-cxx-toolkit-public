@@ -37,6 +37,11 @@
 *           provides them to Scopes when needed
 */
 
+/// @file object_manager.hpp
+/// The Object manager core.
+///
+/// Handles data loaders, provides them to CScope objects.
+
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/plugin_manager.hpp>
@@ -79,9 +84,12 @@ class CSeq_id_Mapper;
 template<class TLoader>
 struct SRegisterLoaderInfo
 {
-    /// Get pointer to the loader (just created or pre-extisting).
+    /// Get pointer to the loader. The loader can be just created or
+    /// already registered in the object manager. NULL if the operation
+    /// failed.
     TLoader* GetLoader(void) const { return m_Loader; }
-    /// Return true if the loader was just created.
+    /// Return true if the loader was just created, false if already
+    /// registered or if the operation failed.
     bool     IsCreated(void) const { return m_Created; }
 
 private:
@@ -107,45 +115,63 @@ public:
 ///
 ///  CObjectManager --
 ///
-///  Core Class for ObjectManager Library
+/// Core Class for ObjectManager Library.
+/// Handles data loaders, provides them to scopes.
 
 class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
 public:
-    /// Return the existing object manager or create one
+    /// Return the existing object manager or create one.
+    /// If the result is not stored in a CRef, the object can be
+    /// destroyed at any moment and the next call is not guaranteed
+    /// to return the same pointer.
     static CRef<CObjectManager> GetInstance(void);
     virtual ~CObjectManager(void);
 
 public:
     typedef CRef<CDataSource> TDataSourceLock;
-    typedef int TPriority;
 
 // configuration functions
 // this data is always available to scopes -
 // by name - in case of data loader
 // or by address - in case of Seq_entry
 
-    /// Whether to put data loader or TSE to the default group or not
+    /// Flag defining if the data loader is included in the "default" group.
+    /// Default data loaders can be added to a scope using
+    /// CScope::AddDefaults().
+    /// @sa
+    ///   CScope::AddDefaults()
     enum EIsDefault {
         eDefault,
         eNonDefault
     };
 
+    typedef int TPriority;
+    /// Default data source priority.
     enum EPriority {
         kPriority_NotSet = -1
     };
 
-    /// Add data loader using plugin manager
+    /// Add data loader using plugin manager.
+    /// @param params
+    ///   Param tree containing the data loader settings.
+    /// @param driver_name
+    ///   Name of the driver to be used as the data loader.
+    /// @return
+    ///   The new data loader created by the plugin manager.
     CDataLoader* RegisterDataLoader(TPluginManagerParamTree* params = 0,
                                     const string& driver_name = kEmptyStr);
 
-    /// Try to find data loader by name
+    /// Try to find a registered data loader by name.
+    /// Return NULL if the name is not registered.
     CDataLoader* FindDataLoader(const string& loader_name) const;
 
-    /// Get names of all registered loaders.
     typedef vector<string> TRegisteredNames;
+    /// Get names of all registered data loaders.
+    /// @param names
+    ///   A vector of strings to be filled with the known names.
     void GetRegisteredNames(TRegisteredNames& names);
-    /// Update loader's options
+    /// Update loader's default-ness and priority.
     void SetLoaderOptions(const string& loader_name,
                           EIsDefault    is_default,
                           TPriority     priority = kPriority_NotSet);
@@ -235,6 +261,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2006/07/12 19:55:58  grichenk
+* More doxygen comments
+*
 * Revision 1.33  2005/06/22 14:13:23  vasilche
 * Removed obsolete methods.
 * Register only shared Seq-entries.
