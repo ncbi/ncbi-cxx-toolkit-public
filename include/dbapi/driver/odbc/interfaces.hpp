@@ -32,7 +32,11 @@
  *
  */
 
-#include <dbapi/driver/public.hpp>
+#include <dbapi/driver/public.hpp> // Kept for compatibility reasons ...
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 #ifdef NCBI_OS_MSWIN
 #include <windows.h>
@@ -104,7 +108,7 @@ private:
 //  CODBCContext::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public impl::CDriverContext
 {
     friend class CDB_Connection;
 
@@ -172,7 +176,7 @@ private:
 //  CODBC_Connection::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public impl::CConnection
 {
     friend class CStatementBase;
     friend class CODBCContext;
@@ -184,7 +188,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public I_Connection
     friend class CODBC_SendDataCmd;
 
 protected:
-    CODBC_Connection(CODBCContext* cntx,
+    CODBC_Connection(CODBCContext& cntx,
                      SQLHDBC conn,
                      bool reusable,
                      const string& pool_name);
@@ -212,14 +216,7 @@ protected:
     virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
                           bool log_it = true);
     virtual bool Refresh(void);
-    virtual const string& ServerName(void) const;
-    virtual const string& UserName(void)   const;
-    virtual const string& Password(void)   const;
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
-    virtual bool IsReusable(void) const;
-    virtual const string& PoolName(void) const;
-    virtual I_DriverContext* Context(void) const;
-    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
 
     void ODBC_SetTimeout(SQLULEN nof_secs);
     void ODBC_SetTextImageSize(SQLULEN nof_bytes);
@@ -253,18 +250,9 @@ protected:
 private:
     bool x_SendData(CStatementBase& stmt, CDB_Stream& stream);
 
-    SQLHDBC                 m_Link;
+    SQLHDBC         m_Link;
 
-    CODBCContext*           m_Context;
-    string                  m_Server;
-    string                  m_User;
-    string                  m_Passwd;
-    string                  m_Pool;
-    CODBC_Reporter          m_Reporter;
-    bool                    m_Reusable;
-    bool                    m_BCPable;
-    bool                    m_SecureLogin;
-    CDB_ResultProcessor*    m_ResProc;
+    CODBC_Reporter  m_Reporter;
 };
 
 
@@ -334,7 +322,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd :
     public CStatementBase,
-    public I_LangCmd
+    public impl::CLangCmd
 {
     friend class CODBC_Connection;
     friend class CODBC_CursorCmd;
@@ -361,7 +349,6 @@ protected:
     virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
-    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     bool x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* indicator);
@@ -384,7 +371,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd :
     public CStatementBase,
-    public I_RPCCmd
+    public impl::CRPCCmd
 {
     friend class CODBC_Connection;
 
@@ -409,7 +396,6 @@ protected:
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
     virtual void SetRecompile(bool recompile = true);
-    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     bool x_AssignParams(string& cmd, string& q_exec, string& q_select,
@@ -423,7 +409,7 @@ private:
     bool              m_Recompile;
     bool              m_HasStatus;
     bool              m_hasResults;
-    I_Result*         m_Res;
+    impl::CResult*   m_Res;
     SQLLEN            m_RowCount;
 };
 
@@ -435,7 +421,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd :
     public CStatementBase,
-    public I_CursorCmd
+    public impl::CCursorCmd
 {
     friend class CODBC_Connection;
 
@@ -457,7 +443,6 @@ protected:
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool Close(void);
-    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     bool x_AssignParams(bool just_declare = false);
@@ -471,7 +456,7 @@ private:
     bool            m_IsOpen;
     bool            m_IsDeclared;
     bool            m_HasFailed;
-    I_Result*       m_Res;
+    impl::CResult* m_Res;
     int             m_RowCount;
 };
 
@@ -486,7 +471,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd :
     public CStatementBase,
-    public I_BCPInCmd
+    public impl::CBCPInCmd
 {
     friend class CODBC_Connection;
 
@@ -503,7 +488,6 @@ protected:
     virtual bool CompleteBatch(void);
     virtual bool Cancel(void);
     virtual bool CompleteBCP(void);
-    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     bool x_AssignParams(void* p);
@@ -525,7 +509,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd :
     public CStatementBase,
-    public I_SendDataCmd
+    public impl::CSendDataCmd
 {
     friend class CODBC_Connection;
 
@@ -538,7 +522,6 @@ protected:
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
-    NCBI_DEPRECATED virtual void   Release(void);
     virtual bool   Cancel(void);
 
 
@@ -555,7 +538,7 @@ private:
 //  CODBC_RowResult::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public impl::CResult
 {
     friend class CODBC_LangCmd;
     friend class CODBC_RPCCmd;
@@ -667,7 +650,7 @@ protected:
     virtual EDB_ResType ResultType(void) const;
 };
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorResult : public I_Result
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorResult : public impl::CResult
 {
     friend class CODBC_CursorCmd;
 
@@ -742,6 +725,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/07/12 16:28:49  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.32  2006/06/05 21:01:34  ssikorsk
  * Moved method Release from CODBC_Connection to I_Connection.
  *

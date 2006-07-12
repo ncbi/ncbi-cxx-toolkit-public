@@ -33,7 +33,11 @@
  *
  */
 
-#include <dbapi/driver/public.hpp>
+#include <dbapi/driver/public.hpp> // Kept for compatibility reasons ...
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -56,7 +60,7 @@ class CMySQL_LangCmd;
 //  CMySQLContext::
 //
 
-class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQLContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQLContext : public impl::CDriverContext
 {
     friend class CMySQL_Connection;
 
@@ -69,7 +73,7 @@ public:
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
-    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
     virtual bool IsAbleTo(ECapability cpb) const;
 };
@@ -81,12 +85,12 @@ public:
 //  CMySQL_Connection::
 //
 
-class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_Connection : public impl::CConnection
 {
     friend class CMySQLContext;
 
 protected:
-    CMySQL_Connection(CMySQLContext* cntx,
+    CMySQL_Connection(CMySQLContext& cntx,
                       const string&  srv_name,
                       const string&  user_name,
                       const string&  passwd);
@@ -116,14 +120,7 @@ protected:
                           bool log_it = true);
 
     virtual bool Refresh();
-    virtual const string& ServerName() const;
-    virtual const string& UserName()   const;
-    virtual const string& Password()   const;
     virtual I_DriverContext::TConnectionMode ConnectMode() const;
-    virtual bool IsReusable() const;
-    virtual const string& PoolName() const;
-    virtual I_DriverContext* Context() const;
-    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -142,9 +139,7 @@ private:
     friend class CMySQL_LangCmd;
     friend class CMySQL_RowResult;
 
-    CMySQLContext* m_Context;
     MYSQL          m_MySQL;
-    CDB_ResultProcessor* m_ResProc;
     bool m_IsOpen;
 };
 
@@ -155,7 +150,7 @@ private:
 //  CMySQL_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_LangCmd : public impl::CLangCmd
 {
     friend class CMySQL_Connection;
 
@@ -180,7 +175,6 @@ protected:
     virtual bool        HasFailed() const;
     virtual int         RowCount() const;
     virtual void        DumpResults();
-    NCBI_DEPRECATED virtual void        Release();
     int                 LastInsertId() const;
 
 public:
@@ -219,7 +213,7 @@ struct SMySQL_ColDescr
 //  CMySQL_RowResult::
 //
 
-class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_RowResult : public impl::CResult
 {
     friend class CMySQL_LangCmd;
 
@@ -277,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/07/12 16:28:49  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.23  2006/06/05 21:01:10  ssikorsk
  * Moved method Release from CMySQL_Connection to I_Connection.
  *

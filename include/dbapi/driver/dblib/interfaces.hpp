@@ -32,9 +32,13 @@
  *
  */
 
-#include <dbapi/driver/public.hpp>
+#include <dbapi/driver/public.hpp> // Kept for compatibility reasons ...
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/util/parameters.hpp>
-#include <dbapi/driver/util/handle_stack.hpp>
+// #include <dbapi/driver/util/handle_stack.hpp>
 
 #include <corelib/ncbi_safe_static.hpp>
 
@@ -157,7 +161,7 @@ const unsigned int kTDSMaxNameLen = kDBLibMaxNameLen;
 
 class CDblibContextRegistry;
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBLibContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBLibContext : public impl::CDriverContext
 {
     friend class CDB_Connection;
 
@@ -192,14 +196,6 @@ public:
     virtual bool DBLIB_SetMaxNofConns(int n);
 
 public:
-#ifdef FTDS_IN_USE
-    // Function name keept same as with ftds.
-    unsigned int TDS_GetTimeout(void) {
-        return m_Timeout;
-    }
-#endif
-
-public:
     static  int  DBLIB_dberr_handler(DBPROCESS*    dblink,   int     severity,
                                      int           dberr,    int     oserr,
                                      const string& dberrstr,
@@ -215,11 +211,11 @@ public:
     CDBLibContext* GetContext(void) const;
 
 public:
-    bool ConnectedToMSSQLServer(void) const;
+    virtual bool ConnectedToMSSQLServer(void) const;
     int GetTDSVersion(void) const;
 
 protected:
-    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
 private:
     short                  m_PacketSize;
@@ -257,7 +253,7 @@ private:
 ///  CDBL_Connection::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_Connection : public impl::CConnection
 {
     friend class CDBLibContext;
     friend class CDB_Connection;
@@ -270,7 +266,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_Connection : public I_Connection
     friend class CDBL_SendDataCmd;
 
 protected:
-    CDBL_Connection(CDBLibContext* cntx, DBPROCESS* con,
+    CDBL_Connection(CDBLibContext& cntx, DBPROCESS* con,
                     bool reusable, const string& pool_name);
     virtual ~CDBL_Connection(void);
 
@@ -296,14 +292,7 @@ protected:
     virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
                           bool log_it = true);
     virtual bool Refresh(void);
-    virtual const string& ServerName(void) const;
-    virtual const string& UserName(void)   const;
-    virtual const string& Password(void)   const;
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
-    virtual bool IsReusable(void) const;
-    virtual const string& PoolName(void) const;
-    virtual I_DriverContext* Context(void) const;
-    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
 
     /// abort the connection
     /// Attention: it is not recommended to use this method unless you absolutely have to.
@@ -340,15 +329,6 @@ private:
 #endif
 
     DBPROCESS*              m_Link;
-    CDBLibContext*          m_Context;
-    string                  m_Server;
-    string                  m_User;
-    string                  m_Passwd;
-    string                  m_Pool;
-    bool                    m_Reusable;
-    bool                    m_BCPAble;
-    bool                    m_SecureLogin;
-    CDB_ResultProcessor*    m_ResProc;
 };
 
 
@@ -402,7 +382,7 @@ private:
 ///  CDBL_LangCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : CDBL_Cmd, public I_LangCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : CDBL_Cmd, public impl::CLangCmd
 {
     friend class CDBL_Connection;
 
@@ -424,11 +404,10 @@ protected:
     virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
-    NCBI_DEPRECATED virtual void Release(void);
 
 private:
-    I_Result* GetResultSet(void) const;
-    void SetResultSet(I_Result* res);
+    impl::CResult* GetResultSet(void) const;
+    void SetResultSet(impl::CResult* res);
     void ClearResultSet(void);
 
 private:
@@ -438,7 +417,7 @@ private:
     CDB_Params       m_Params;
     bool             m_WasSent;
     bool             m_HasFailed;
-    I_Result*        m_Res;
+    impl::CResult*  m_Res;
     int              m_RowCount;
     unsigned int     m_Status;
 };
@@ -450,7 +429,7 @@ private:
 ///  CTL_RPCCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : CDBL_Cmd, public I_RPCCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : CDBL_Cmd, public impl::CRPCCmd
 {
     friend class CDBL_Connection;
 
@@ -474,11 +453,10 @@ protected:
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
     virtual void SetRecompile(bool recompile = true);
-    NCBI_DEPRECATED virtual void Release(void);
 
 private:
-    I_Result* GetResultSet(void) const;
-    void SetResultSet(I_Result* res);
+    impl::CResult* GetResultSet(void) const;
+    void SetResultSet(impl::CResult* res);
     void ClearResultSet(void);
 
 private:
@@ -495,7 +473,7 @@ private:
     bool             m_WasSent;
     bool             m_HasFailed;
     bool             m_Recompile;
-    I_Result*        m_Res;
+    impl::CResult*  m_Res;
     int              m_RowCount;
     unsigned int     m_Status;
 };
@@ -507,7 +485,7 @@ private:
 ///  CDBL_CursorCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd : CDBL_Cmd, public I_CursorCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd : CDBL_Cmd, public impl::CCursorCmd
 {
     friend class CDBL_Connection;
 
@@ -528,7 +506,6 @@ protected:
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool Close(void);
-    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     CDBL_CursorResult* GetResultSet(void) const;
@@ -557,7 +534,7 @@ private:
 ///  CDBL_BCPInCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : CDBL_Cmd, public I_BCPInCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : CDBL_Cmd, public impl::CBCPInCmd
 {
     friend class CDBL_Connection;
 
@@ -572,7 +549,6 @@ protected:
     virtual bool CompleteBatch(void);
     virtual bool Cancel(void);
     virtual bool CompleteBCP(void);
-    NCBI_DEPRECATED virtual void Release(void);
 
 private:
     bool x_AssignParams(void* pb);
@@ -591,7 +567,7 @@ private:
 ///  CDBL_SendDataCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd : CDBL_Cmd, public I_SendDataCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd : CDBL_Cmd, public impl::CSendDataCmd
 {
     friend class CDBL_Connection;
 
@@ -601,7 +577,6 @@ protected:
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
-    NCBI_DEPRECATED virtual void   Release(void);
     virtual bool   Cancel(void);
 
 private:
@@ -695,7 +670,7 @@ private:
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult :
 public CDBL_Result,
-public I_Result
+public impl::CResult
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -740,7 +715,7 @@ protected:
 ///  CDBL_BlobResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BlobResult : CDBL_Result, public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BlobResult : CDBL_Result, public impl::CResult
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -842,7 +817,7 @@ protected:
 ///  CDBL_StatusResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_StatusResult : CDBL_Result, public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_StatusResult : CDBL_Result, public impl::CResult
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -879,7 +854,7 @@ protected:
 ///  CDBL_CursorResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorResult : CDBL_Result, public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorResult : CDBL_Result, public impl::CResult
 {
     friend class CDBL_CursorCmd;
 
@@ -981,65 +956,8 @@ protected:
 };
 
 
-/////////////////////////////////////////////////////////////////////////////
-#if defined(MS_DBLIB_IN_USE)
-
-extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_MSDBLIB_DriverName;
-
-extern "C"
-{
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-NCBI_EntryPoint_xdbapi_msdblib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-} // extern C
-
-#elif defined(FTDS_IN_USE)
-
-// Uncomment a line below if you want to simulate a previous ftds driver logic.
-// #define FTDS_LOGIC
-
-extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_FTDS_DriverName;
-
-extern "C"
-{
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-NCBI_EntryPoint_xdbapi_ftds(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-NCBI_EntryPoint_xdbapi_ftds63(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-} // extern C
-
-#else
-
-extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_DBLIB_DriverName;
-
-extern "C"
-{
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-NCBI_EntryPoint_xdbapi_dblib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-} // extern C
-
-#endif
-
 inline
-I_Result*
+impl::CResult*
 CDBL_LangCmd::GetResultSet(void) const
 {
     return m_Res;
@@ -1047,7 +965,7 @@ CDBL_LangCmd::GetResultSet(void) const
 
 inline
 void
-CDBL_LangCmd::SetResultSet(I_Result* res)
+CDBL_LangCmd::SetResultSet(impl::CResult* res)
 {
     m_Res = res;
 }
@@ -1124,7 +1042,7 @@ CDBL_CursorResult::FetchAllResultSet(void)
 }
 
 inline
-I_Result*
+impl::CResult*
 CDBL_RPCCmd::GetResultSet(void) const
 {
     return m_Res;
@@ -1132,7 +1050,7 @@ CDBL_RPCCmd::GetResultSet(void) const
 
 inline
 void
-CDBL_RPCCmd::SetResultSet(I_Result* res)
+CDBL_RPCCmd::SetResultSet(impl::CResult* res)
 {
     m_Res = res;
 }
@@ -1156,6 +1074,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/07/12 16:28:48  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.46  2006/06/05 21:00:03  ssikorsk
  * Moved method Release from CDBL_Connection to I_Connection.
  *

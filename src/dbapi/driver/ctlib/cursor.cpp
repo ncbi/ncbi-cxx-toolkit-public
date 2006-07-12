@@ -184,7 +184,7 @@ CDB_Result* CTL_CursorCmd::Open()
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 122016 );
         case CS_CURSOR_RESULT:
-            MakeCursorResult();
+            SetResult(MakeCursorResult());
             break;
         default:
             continue;
@@ -371,9 +371,9 @@ void
 CTL_CursorCmd::CloseForever(void)
 {
     if (x_GetSybaseCmd()) {
-        if ( m_BR ) {
-            *m_BR = 0;
-        }
+
+        // ????
+        DetachInterface();
 
         Close();
 
@@ -429,16 +429,8 @@ CTL_CursorCmd::CloseForever(void)
 }
 
 
-void CTL_CursorCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CDB_Result*
-CTL_CursorCmd::CreateResult(I_Result& result)
+CTL_CursorCmd::CreateResult(impl::CResult& result)
 {
     return Create_Result(result);
 }
@@ -447,9 +439,7 @@ CTL_CursorCmd::CreateResult(I_Result& result)
 CTL_CursorCmd::~CTL_CursorCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         DropCmd(*this);
 
@@ -489,6 +479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.21  2006/06/19 19:11:44  ssikorsk
  * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
  *

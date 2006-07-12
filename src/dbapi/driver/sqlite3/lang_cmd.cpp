@@ -165,7 +165,7 @@ CDB_Result *CSL3_LangCmd::Result()
 
     m_HasMoreResults = false;
 
-    return Create_Result(static_cast<I_Result&>(*m_Res));
+    return Create_Result(static_cast<impl::CResult&>(*m_Res));
 }
 
 
@@ -180,8 +180,8 @@ void CSL3_LangCmd::DumpResults()
     while(m_HasMoreResults) {
         dbres= Result();
         if(dbres) {
-            if(m_Connect->m_ResProc) {
-                m_Connect->m_ResProc->ProcessResult(*dbres);
+            if(m_Connect->GetResultProcessor()) {
+                m_Connect->GetResultProcessor()->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch());
@@ -197,20 +197,11 @@ bool CSL3_LangCmd::HasFailed() const
     return sqlite3_errcode(m_Connect->m_SQLite3) != SQLITE_OK;
 }
 
-void CSL3_LangCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
 
 CSL3_LangCmd::~CSL3_LangCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -407,6 +398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.1  2006/06/12 20:30:51  ssikorsk
  * Initial version
  *

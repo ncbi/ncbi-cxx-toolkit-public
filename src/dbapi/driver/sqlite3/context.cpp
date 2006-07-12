@@ -79,10 +79,10 @@ bool CSL3Context::SetMaxTextImageSize(size_t /*nof_bytes*/)
 }
 
 
-I_Connection*
+impl::CConnection*
 CSL3Context::MakeIConnection(const SConnAttr& conn_attr)
 {
-    return new CSL3_Connection(this, conn_attr.srv_name, conn_attr.user_name,
+    return new CSL3_Connection(*this, conn_attr.srv_name, conn_attr.user_name,
                                  conn_attr.passwd);
 }
 
@@ -145,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.2  2006/06/12 21:25:19  ssikorsk
  * Fixed registration of a driver.
  *

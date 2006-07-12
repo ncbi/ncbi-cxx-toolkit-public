@@ -355,20 +355,10 @@ void CODBC_RPCCmd::SetRecompile(bool recompile)
 }
 
 
-void CODBC_RPCCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CODBC_RPCCmd::~CODBC_RPCCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -601,6 +591,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.25  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

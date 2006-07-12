@@ -320,20 +320,10 @@ int CODBC_LangCmd::RowCount() const
 }
 
 
-void CODBC_LangCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CODBC_LangCmd::~CODBC_LangCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -560,6 +550,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.26  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

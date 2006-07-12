@@ -43,14 +43,24 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 6, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 7, 0, 0);
+
+
+BEGIN_SCOPE(impl)
+
+class CDriverContext;
+class CConnection;
+class CCommand;
+
+END_SCOPE(impl)
+
+
+template <class I> class CInterfaceHook;
+
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
 public:
-    ///
-    virtual void Release(void);
-
     // Check out if connection is alive (this function doesn't ping the server,
     // it just checks the status of connection which was set by the last
     // i/o operation)
@@ -134,16 +144,23 @@ public:
     virtual bool Close(void);
 
 private:
-    I_Connection* m_Connect;
+    impl::CConnection* m_ConnImpl;
 
-    // The constructor should be called by "I_DriverContext" only!
-    friend class I_DriverContext;
-    CDB_Connection(I_Connection* c);
+    CDB_Connection(impl::CConnection* c);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_Connection();
     CDB_Connection& operator= (const CDB_Connection&);
     CDB_Connection(const CDB_Connection&);
+
+    void ReleaseImpl(void)
+    {
+        m_ConnImpl = NULL;;
+    }
+
+    // The constructor should be called by "I_DriverContext" only!
+    friend class impl::CDriverContext;
+    friend class CInterfaceHook<CDB_Connection>;
 };
 
 
@@ -206,27 +223,35 @@ public:
     virtual ~CDB_Result();
 
 private:
-    I_Result* GetIResultPtr(void) const
+    impl::CResult* GetIResultPtr(void) const
     {
-        return m_IRes;
+        return m_ResImpl;
     }
-    I_Result& GetIResult(void) const
+    impl::CResult& GetIResult(void) const
     {
-        _ASSERT(m_IRes);
-        return *m_IRes;
+        _ASSERT(m_ResImpl);
+        return *m_ResImpl;
+    }
+
+    void ReleaseImpl(void)
+    {
+        m_ResImpl = NULL;;
     }
 
 private:
-    I_Result* const m_IRes;
+    impl::CResult* m_ResImpl;
 
-    // The constructor should be called by "I_***Cmd" only!
-    friend class CDB_BaseEnt;
-    CDB_Result(I_Result* r);
+    CDB_Result(impl::CResult* r);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_Result& operator= (const CDB_Result&);
     CDB_Result(const CDB_Result&);
-    CDB_Result();
+    CDB_Result(void);
+
+    // The constructor should be called by "I_***Cmd" only!
+    friend class impl::CConnection;
+    friend class impl::CCommand;
+    friend class CInterfaceHook<CDB_Result>;
 };
 
 
@@ -272,16 +297,23 @@ public:
     virtual ~CDB_LangCmd();
 
 private:
-    I_LangCmd* m_Cmd;
+    impl::CLangCmd* m_CmdImpl;
 
-    // The constructor should be called by "I_Connection" only!
-    friend class I_Connection;
-    CDB_LangCmd(I_LangCmd* cmd);
+    CDB_LangCmd(impl::CLangCmd* cmd);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_LangCmd& operator= (const CDB_LangCmd&);
     CDB_LangCmd(const CDB_LangCmd&);
     CDB_LangCmd();
+
+    void ReleaseImpl(void)
+    {
+        m_CmdImpl = NULL;;
+    }
+
+    // The constructor should be called by "I_Connection" only!
+    friend class impl::CConnection;
+    friend class CInterfaceHook<CDB_LangCmd>;
 };
 
 
@@ -334,16 +366,23 @@ public:
     virtual ~CDB_RPCCmd();
 
 private:
-    I_RPCCmd* m_Cmd;
+    impl::CRPCCmd* m_CmdImpl;
 
-    // The constructor should be called by "I_Connection" only!
-    friend class I_Connection;
-    CDB_RPCCmd(I_RPCCmd* rpc);
+    CDB_RPCCmd(impl::CRPCCmd* rpc);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_RPCCmd& operator= (const CDB_RPCCmd&);
     CDB_RPCCmd(const CDB_RPCCmd&);
     CDB_RPCCmd();
+
+    void ReleaseImpl(void)
+    {
+        m_CmdImpl = NULL;;
+    }
+
+    // The constructor should be called by "I_Connection" only!
+    friend class impl::CConnection;
+    friend class CInterfaceHook<CDB_RPCCmd>;
 };
 
 
@@ -372,16 +411,23 @@ public:
     virtual ~CDB_BCPInCmd();
 
 private:
-    I_BCPInCmd* m_Cmd;
+    impl::CBCPInCmd* m_CmdImpl;
 
-    // The constructor should be called by "I_Connection" only!
-    friend class I_Connection;
-    CDB_BCPInCmd(I_BCPInCmd* bcp);
+    CDB_BCPInCmd(impl::CBCPInCmd* bcp);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_BCPInCmd& operator= (const CDB_BCPInCmd&);
     CDB_BCPInCmd(const CDB_BCPInCmd&);
     CDB_BCPInCmd();
+
+    void ReleaseImpl(void)
+    {
+        m_CmdImpl = NULL;;
+    }
+
+    // The constructor should be called by "I_Connection" only!
+    friend class impl::CConnection;
+    friend class CInterfaceHook<CDB_BCPInCmd>;
 };
 
 
@@ -422,16 +468,23 @@ public:
     virtual ~CDB_CursorCmd();
 
 private:
-    I_CursorCmd* m_Cmd;
+    impl::CCursorCmd* m_CmdImpl;
 
-    // The constructor should be called by "I_Connection" only!
-    friend class I_Connection;
-    CDB_CursorCmd(I_CursorCmd* cur);
+    CDB_CursorCmd(impl::CCursorCmd* cur);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_CursorCmd& operator= (const CDB_CursorCmd&);
     CDB_CursorCmd(const CDB_CursorCmd&);
     CDB_CursorCmd();
+
+    void ReleaseImpl(void)
+    {
+        m_CmdImpl = NULL;;
+    }
+
+    // The constructor should be called by "I_Connection" only!
+    friend class impl::CConnection;
+    friend class CInterfaceHook<CDB_CursorCmd>;
 };
 
 
@@ -448,16 +501,23 @@ public:
     virtual ~CDB_SendDataCmd();
 
 private:
-    I_SendDataCmd* m_Cmd;
+    impl::CSendDataCmd* m_CmdImpl;
 
-    // The constructor should be called by "I_Connection" only!
-    friend class I_Connection;
-    CDB_SendDataCmd(I_SendDataCmd* c);
+    CDB_SendDataCmd(impl::CSendDataCmd* c);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_SendDataCmd& operator= (const CDB_SendDataCmd&);
     CDB_SendDataCmd(const CDB_CursorCmd&);
     CDB_SendDataCmd();
+
+    void ReleaseImpl(void)
+    {
+        m_CmdImpl = NULL;;
+    }
+
+    // The constructor should be called by "I_Connection" only!
+    friend class impl::CConnection;
+    friend class CInterfaceHook<CDB_SendDataCmd>;
 };
 
 
@@ -488,7 +548,7 @@ protected:
 
 
 
-class NCBI_DBAPIDRIVER_EXPORT CDB_ResultProcessor : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT CDB_ResultProcessor
 {
 public:
     CDB_ResultProcessor(CDB_Connection* c);
@@ -504,8 +564,14 @@ private:
     CDB_ResultProcessor& operator= (const CDB_ResultProcessor&);
     CDB_ResultProcessor(const CDB_ResultProcessor&);
 
-    CDB_ResultProcessor* m_Prev;
+    void ReleaseConn(void);
+    void SetConn(CDB_Connection* c);
+
     CDB_Connection*      m_Con;
+    CDB_ResultProcessor* m_Prev;
+    CDB_ResultProcessor* m_Next;
+
+    friend class impl::CConnection;
 };
 
 
@@ -518,6 +584,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/07/12 16:28:48  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.26  2006/06/05 20:58:45  ssikorsk
  * Added method Release to CDB_Connection.
  *

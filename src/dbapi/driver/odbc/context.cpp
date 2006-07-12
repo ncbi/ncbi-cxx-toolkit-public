@@ -393,9 +393,9 @@ CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
                                                    con,
                                                    conn_attr.reusable,
                                                    conn_attr.pool_name);
-    t_con->m_Server      = conn_attr.srv_name;
-    t_con->m_User        = conn_attr.user_name;
-    t_con->m_Passwd      = conn_attr.passwd;
+    t_con->SeServerName(conn_attr.srv_name);
+    t_con->SetUserName(conn_attr.user_name);
+    t_con->SetPassword(conn_attr.passwd);
     t_con->m_BCPable     = (conn_attr.mode & fBcpIn) != 0;
     t_con->m_SecureLogin = (conn_attr.mode & fPasswordEncrypted) != 0;
 
@@ -818,6 +818,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.54  2006/06/08 14:19:59  ssikorsk
  * Fixed a compilation problem.
  *

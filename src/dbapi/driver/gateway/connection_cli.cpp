@@ -326,6 +326,7 @@ const string& CGW_Connection::ServerName() const
   vars->m_Server = p?p:"";
   return vars->m_Server;
 }
+
 const string& CGW_Connection::UserName()   const
 {
   char buf[1024];
@@ -335,6 +336,7 @@ const string& CGW_Connection::UserName()   const
   vars->m_User =  p?p:"";
   return vars->m_User;
 }
+
 const string& CGW_Connection::Password()   const
 {
   char buf[1024];
@@ -344,6 +346,7 @@ const string& CGW_Connection::Password()   const
   vars->m_Password =  p?p:"";
   return vars->m_Password;
 }
+
 const string& CGW_Connection::PoolName()   const
 {
   char buf[1024];
@@ -353,20 +356,6 @@ const string& CGW_Connection::PoolName()   const
   vars->m_PoolName =  p?p:"";
   return vars->m_PoolName;
 }
-
-/*
-void CGW_Connection::DropCmd(CDB_BaseEnt& cmd)
-{
-  CGW_Base* p = dynamic_cast<CGW_Base*>(&cmd);
-  if(p==NULL) {
-    cerr << "Error: dynamic_cast<CGW_Base*> returns NULL\n";
-    return;
-  }
-
-  comprot_void("GWLib:Connection:DropCmd",p->remoteObj);
-  // << also delete local proxy object?? >>
-}
-*/
 
 void C_GWLib_Result_ReadItem::exec(IGate* pGate)
 {

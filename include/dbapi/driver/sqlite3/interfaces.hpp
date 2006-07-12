@@ -33,7 +33,11 @@
  *
  */
 
-#include <dbapi/driver/public.hpp>
+#include <dbapi/driver/public.hpp> // Kept for compatibility reasons ...
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 
 #include <sqlite3.h>
@@ -52,7 +56,7 @@ class CSL3_RowResult;
 //  CSL3Context::
 //
 
-class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3Context : public I_DriverContext
+class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3Context : public impl::CDriverContext
 {
     friend class CSL3_Connection;
 
@@ -65,7 +69,7 @@ public:
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
-    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
     virtual bool IsAbleTo(ECapability cpb) const;
 };
@@ -77,12 +81,12 @@ public:
 //  CSL3_Connection::
 //
 
-class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_Connection : public impl::CConnection
 {
     friend class CSL3Context;
 
 protected:
-    CSL3_Connection(CSL3Context*  cntx,
+    CSL3_Connection(CSL3Context&  cntx,
                     const string& srv_name,
                     const string& user_name,
                     const string& passwd);
@@ -112,14 +116,7 @@ protected:
                           bool log_it = true);
 
     virtual bool Refresh();
-    virtual const string& ServerName() const;
-    virtual const string& UserName()   const;
-    virtual const string& Password()   const;
     virtual I_DriverContext::TConnectionMode ConnectMode() const;
-    virtual bool IsReusable() const;
-    virtual const string& PoolName() const;
-    virtual I_DriverContext* Context() const;
-    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -140,11 +137,8 @@ private:
     friend class CSL3_LangCmd;
     friend class CSL3_RowResult;
 
-    CSL3Context*            m_Context;
-    sqlite3*                m_SQLite3;
-    CDB_ResultProcessor*    m_ResProc;
-    bool                    m_IsOpen;
-    string                  m_ServerName;
+    sqlite3*    m_SQLite3;
+    bool        m_IsOpen;
 };
 
 
@@ -154,7 +148,7 @@ private:
 //  CSL3_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_LangCmd : public impl::CLangCmd
 {
     friend class CSL3_Connection;
 
@@ -196,7 +190,6 @@ protected:
     virtual bool        HasFailed() const;
     virtual int         RowCount() const;
     virtual void        DumpResults();
-    virtual void        Release();
     long long int       LastInsertId() const;
 
 private:
@@ -224,7 +217,7 @@ private:
 //  CSL3_RowResult::
 //
 
-class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_RowResult : public impl::CResult
 {
     friend class CSL3_LangCmd;
 
@@ -268,20 +261,6 @@ private:
     bool                m_FetchDone;
 };
 
-/////////////////////////////////////////////////////////////////////////////
-extern NCBI_DBAPIDRIVER_SQLITE3_EXPORT const string kDBAPI_SQLite3_DriverName;
-
-extern "C"
-{
-
-NCBI_DBAPIDRIVER_SQLITE3_EXPORT
-void
-NCBI_EntryPoint_xdbapi_sqlite3(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-} // extern C
-
 
 END_NCBI_SCOPE
 
@@ -293,6 +272,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/12 16:28:49  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.2  2006/06/13 14:22:33  ucko
  * Add a proper file-scope forward declaration of CSL3_RowResult.
  *

@@ -36,16 +36,12 @@
 
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/util/handle_stack.hpp>
-#include <dbapi/driver/util/pointer_pot.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #endif
 
 #include <map>
-#include <list>
-#include <deque>
 
 
 /** @addtogroup DbInterfaces
@@ -80,6 +76,16 @@ class CDB_ResultProcessor;
 
 class IConnValidator;
 
+BEGIN_SCOPE(impl)
+
+class CResult;
+class CLangCmd;
+class CRPCCmd;
+class CBCPInCmd;
+class CCursorCmd;
+class CSendDataCmd;
+
+END_SCOPE(impl)
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -125,37 +131,6 @@ enum EDB_ResType {
 };
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-///
-///  CDB_BaseEnt::
-///
-/// Base class for most interface classes.
-/// It keeps a double-reference to itself, and resets this reference
-/// (used by others to access this object) on the object destruction.
-///
-
-class NCBI_DBAPIDRIVER_EXPORT CDB_BaseEnt
-{
-public:
-    CDB_BaseEnt(void);
-    virtual ~CDB_BaseEnt(void);
-
-public:
-    void Acquire(CDB_BaseEnt** br) {
-        m_BR = br;
-    }
-    virtual void Release(void);
-
-protected:
-    CDB_BaseEnt** m_BR;  // double-reference to itself
-
-    // To allow "I_***Cmd" to create CDB_Result
-    static CDB_Result* Create_Result(I_Result& result);
-};
-
-
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  I_BaseCmd::
@@ -163,7 +138,7 @@ protected:
 /// Abstract base class for most "command" interface classes.
 ///
 
-class NCBI_DBAPIDRIVER_EXPORT I_BaseCmd : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_BaseCmd
 {
 public:
     I_BaseCmd(void);
@@ -213,8 +188,6 @@ public:
 
 class NCBI_DBAPIDRIVER_EXPORT I_LangCmd : public I_BaseCmd
 {
-    friend class CDB_LangCmd;
-
 public:
     I_LangCmd(void);
     virtual ~I_LangCmd(void);
@@ -234,8 +207,6 @@ protected:
 
 class NCBI_DBAPIDRIVER_EXPORT I_RPCCmd : public I_BaseCmd
 {
-    friend class CDB_RPCCmd;
-
 public:
     I_RPCCmd(void);
     virtual ~I_RPCCmd(void);
@@ -255,10 +226,8 @@ protected:
 
 
 
-class NCBI_DBAPIDRIVER_EXPORT I_BCPInCmd : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_BCPInCmd
 {
-    friend class CDB_BCPInCmd;
-
 public:
     I_BCPInCmd(void);
     virtual ~I_BCPInCmd(void);
@@ -284,10 +253,8 @@ protected:
 
 
 
-class NCBI_DBAPIDRIVER_EXPORT I_CursorCmd : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_CursorCmd
 {
-    friend class CDB_CursorCmd;
-
 public:
     I_CursorCmd(void);
     virtual ~I_CursorCmd(void);
@@ -326,10 +293,8 @@ protected:
 
 
 
-class NCBI_DBAPIDRIVER_EXPORT I_SendDataCmd : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_SendDataCmd
 {
-    friend class CDB_SendDataCmd;
-
 public:
     I_SendDataCmd(void);
     virtual ~I_SendDataCmd(void);
@@ -348,10 +313,8 @@ protected:
 ///  I_Result::
 ///
 
-class NCBI_DBAPIDRIVER_EXPORT I_Result : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_Result
 {
-    friend class CDB_Result;
-
 public:
     I_Result(void);
     virtual ~I_Result(void);
@@ -486,7 +449,7 @@ public:
      const string&   passwd,
      TConnectionMode mode,
      bool            reusable  = false,
-     const string&   pool_name = kEmptyStr);
+     const string&   pool_name = kEmptyStr) = 0;
 
     /// Create new connection to specified server (within this context).
     /// It is your responsibility to delete the returned connection object.
@@ -509,37 +472,36 @@ public:
     /// mode = fDoNotConnect. In this case NULL will be returned.
     /// If you did not provide either a pool name or a server name then NULL will
     /// be returned.
-    CDB_Connection* ConnectValidated
+    virtual CDB_Connection* ConnectValidated
     (const string&   srv_name,
      const string&   user_name,
      const string&   passwd,
      IConnValidator& validator,
      TConnectionMode mode      = 0,
      bool            reusable  = false,
-     const string&   pool_name = kEmptyStr
-     );
+     const string&   pool_name = kEmptyStr) = 0;
 
     /// Return number of currently open connections in this context.
     /// If "srv_name" is not NULL, then return # of conn. open to that server.
     virtual unsigned int NofConnections(const string& srv_name  = kEmptyStr,
                                         const string& pool_name = kEmptyStr)
-        const;
+        const = 0;
 
     /// Add message handler "h" to process 'context-wide' (not bound
     /// to any particular connection) error messages.
-    void PushCntxMsgHandler(CDB_UserHandler* h,
-                            EOwnership ownership = eNoOwnership);
+    virtual void PushCntxMsgHandler(CDB_UserHandler* h,
+                            EOwnership ownership = eNoOwnership) = 0;
 
     /// Remove message handler "h" and all handlers above it in the stack
-    void PopCntxMsgHandler(CDB_UserHandler* h);
+    virtual void PopCntxMsgHandler(CDB_UserHandler* h) = 0;
 
     /// Add `per-connection' err.message handler "h" to the stack of default
     /// handlers which are inherited by all newly created connections.
-    void PushDefConnMsgHandler(CDB_UserHandler* h,
-                               EOwnership ownership = eNoOwnership);
+    virtual void PushDefConnMsgHandler(CDB_UserHandler* h,
+                               EOwnership ownership = eNoOwnership) = 0;
 
     /// Remove `per-connection' mess. handler "h" and all above it in the stack.
-    void PopDefConnMsgHandler(CDB_UserHandler* h);
+    virtual void PopDefConnMsgHandler(CDB_UserHandler* h) = 0;
 
     /// Report if the driver supports this functionality
     enum ECapability {
@@ -550,8 +512,8 @@ public:
     virtual bool IsAbleTo(ECapability cpb) const = 0;
 
     /// close reusable deleted connections for specified server and/or pool
-    void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
-                                const string& pool_name = kEmptyStr);
+    virtual void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
+                                const string& pool_name = kEmptyStr) = 0;
 
     /// app_name defines the application name that a connection will use when
     /// connecting to a server.
@@ -562,24 +524,7 @@ public:
     const string& GetHostName(void) const;
 
 protected:
-    typedef list<I_Connection*> TConnPool;
-
-    // To allow children of I_DriverContext to create CDB_Connection
-    CDB_Connection* Create_Connection(I_Connection& connection);
-    CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr);
-    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr) = 0;
-    void CloseAllConn(void);
-    void DeleteAllConn(void);
-
-    /// Used connections
-    TConnPool m_NotInUse;
-    /// Unused(reserve) connections
-    TConnPool m_InUse;
-
-    /// Stack of `per-context' err.message handlers
-    CDBHandlerStack m_CntxHandlers;
-    /// Stacks of `per-connection' err.message handlers
-    CDBHandlerStack m_ConnHandlers;
+    virtual CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr) = 0;
 
     mutable CFastMutex m_Mtx;
 
@@ -587,14 +532,9 @@ protected:
     unsigned int    m_Timeout;
 
 private:
-    /// Return unused connection "conn" to the driver context for future
-    /// reuse (if "conn_reusable" is TRUE) or utilization
-    void x_Recycle(I_Connection* conn, bool conn_reusable);
-
     string          m_AppName;
     string          m_HostName;
 
-    friend class CDB_Connection;
     friend class IDBConnectionFactory;
 };
 
@@ -603,17 +543,11 @@ private:
 ///  I_Connection::
 ///
 
-class NCBI_DBAPIDRIVER_EXPORT I_Connection : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_Connection
 {
-    friend class I_DriverContext;
-    friend class CDB_Connection;
-
 public:
     I_Connection(void);
     virtual ~I_Connection(void);
-
-    ///
-    virtual void Release(void);
 
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,
@@ -675,20 +609,12 @@ protected:
 
     /// Put the message handler into message handler stack
     virtual void PushMsgHandler(CDB_UserHandler* h,
-                                EOwnership ownership = eNoOwnership);
+                                EOwnership ownership = eNoOwnership) = 0;
 
     /// Remove the message handler (and all above it) from the stack
-    virtual void PopMsgHandler(CDB_UserHandler* h);
+    virtual void PopMsgHandler(CDB_UserHandler* h) = 0;
 
-    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp)=0;
-
-    /// These methods to allow the children of I_Connection to create
-    /// various command-objects
-    CDB_LangCmd*     Create_LangCmd     (I_LangCmd&     lang_cmd    );
-    CDB_RPCCmd*      Create_RPCCmd      (I_RPCCmd&      rpc_cmd     );
-    CDB_BCPInCmd*    Create_BCPInCmd    (I_BCPInCmd&    bcpin_cmd   );
-    CDB_CursorCmd*   Create_CursorCmd   (I_CursorCmd&   cursor_cmd  );
-    CDB_SendDataCmd* Create_SendDataCmd (I_SendDataCmd& senddata_cmd);
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp) = 0;
 
     /// abort the connection
     /// Attention: it is not recommended to use this method unless you absolutely have to.
@@ -703,22 +629,6 @@ protected:
     ///          false - if not
     virtual bool Close(void) = 0;
 
-protected:
-    const CDBHandlerStack& GetMsgHandlers(void) const
-    {
-        return m_MsgHandlers;
-    }
-    CDBHandlerStack& GetMsgHandlers(void)
-    {
-        return m_MsgHandlers;
-    }
-
-    void DropCmd(CDB_BaseEnt& cmd);
-    void DeleteAllCommands(void);
-
-private:
-    CDBHandlerStack     m_MsgHandlers;
-    deque<CDB_BaseEnt*> m_CMDs;
 };
 
 
@@ -747,6 +657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/07/12 16:28:48  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.50  2006/06/23 14:55:26  ucko
  * Declare C_ITDescriptorGuard's constructor with NCBI_DEPRECATED_CTOR
  * to ensure proper compilation with some versions of GCC (3.1.x - 3.3.x).

@@ -80,9 +80,7 @@ static bool for_update_of(const string& q)
 
 CDB_Result* CTDS_CursorCmd::Open()
 {
-    _ASSERT(GetConnection().m_Context);
-
-    const bool connected_to_MSSQLServer = GetConnection().m_Context->ConnectedToMSSQLServer();
+    const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
 
     // need to close it first
     Close();
@@ -147,7 +145,8 @@ CDB_Result* CTDS_CursorCmd::Open()
 
     m_LCmd = GetConnection().LangCmd(buff);
     m_Res = new CTDS_CursorResult(GetConnection(), m_LCmd);
-    return Create_Result(*m_Res);
+
+    return Create_Result(*GetResultSet());
 }
 
 
@@ -351,20 +350,10 @@ bool CTDS_CursorCmd::Close()
 }
 
 
-void CTDS_CursorCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CTDS_CursorCmd::~CTDS_CursorCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -537,6 +526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.24  2006/06/19 19:11:44  ssikorsk
  * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
  *

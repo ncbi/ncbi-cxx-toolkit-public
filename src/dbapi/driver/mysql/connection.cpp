@@ -37,11 +37,11 @@
 BEGIN_NCBI_SCOPE
 
 
-CMySQL_Connection::CMySQL_Connection(CMySQLContext* cntx,
+CMySQL_Connection::CMySQL_Connection(CMySQLContext& cntx,
                                      const string&  srv_name,
                                      const string&  user_name,
                                      const string&  passwd) :
-    m_Context(cntx),
+    impl::CConnection(cntx),
     m_IsOpen(false)
 {
     if ( !mysql_init(&m_MySQL) ) {
@@ -109,53 +109,11 @@ bool CMySQL_Connection::Refresh()
 }
 
 
-const string& CMySQL_Connection::ServerName() const
-{
-    return kEmptyStr;
-}
-
-
-const string& CMySQL_Connection::UserName() const
-{
-    return kEmptyStr;
-}
-
-
-const string& CMySQL_Connection::Password() const
-{
-    return kEmptyStr;
-}
-
-
 I_DriverContext::TConnectionMode CMySQL_Connection::ConnectMode() const
 {
     return 0;
 }
 
-
-bool CMySQL_Connection::IsReusable() const
-{
-    return false;
-}
-
-
-const string& CMySQL_Connection::PoolName() const
-{
-    return kEmptyStr;
-}
-
-
-I_DriverContext* CMySQL_Connection::Context() const
-{
-    return m_Context;
-}
-
-CDB_ResultProcessor* CMySQL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
-{
-    CDB_ResultProcessor* r= m_ResProc;
-    m_ResProc= rp;
-    return r;
-}
 
 CDB_LangCmd* CMySQL_Connection::LangCmd(const string& lang_query,
                                         unsigned int  nof_parms)
@@ -214,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.13  2006/06/05 21:06:58  ssikorsk
  * Deleted CMySQL_Connection::Release;
  * Replaced "m_BR = 0" with "CDB_BaseEnt::Release()";

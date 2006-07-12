@@ -30,11 +30,9 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <dbapi/driver/interfaces.hpp>
-#include <dbapi/driver/public.hpp>
-#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
-#include <algorithm>
+#include <dbapi/driver/interfaces.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -59,32 +57,6 @@ C_ITDescriptorGuard::~C_ITDescriptorGuard(void)
 I_ITDescriptor::~I_ITDescriptor(void)
 {
     return;
-}
-
-
-////////////////////////////////////////////////////////////////////////////
-//  CDB_BaseEnt::
-//
-
-CDB_BaseEnt::CDB_BaseEnt(void)
-{
-    m_BR = 0;
-}
-
-void CDB_BaseEnt::Release(void)
-{
-    m_BR = 0;
-}
-
-CDB_BaseEnt::~CDB_BaseEnt(void)
-{
-    if (m_BR)
-        *m_BR = 0;
-}
-
-CDB_Result* CDB_BaseEnt::Create_Result(I_Result& result)
-{
-    return new CDB_Result(&result);
 }
 
 
@@ -184,124 +156,12 @@ I_DriverContext::I_DriverContext(void) :
     m_LoginTimeout(0),
     m_Timeout(0)
 {
-    PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault(), eTakeOwnership );
-    PushDefConnMsgHandler ( &CDB_UserHandler::GetDefault(), eTakeOwnership );
+    return;
 }
 
 I_DriverContext::~I_DriverContext(void)
 {
     return;
-}
-
-void I_DriverContext::PushCntxMsgHandler(CDB_UserHandler* h,
-                                         EOwnership ownership)
-{
-    CFastMutexGuard mg(m_Mtx);
-    m_CntxHandlers.Push(h, ownership);
-}
-
-void I_DriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
-{
-    CFastMutexGuard mg(m_Mtx);
-    m_CntxHandlers.Pop(h);
-}
-
-void I_DriverContext::PushDefConnMsgHandler(CDB_UserHandler* h,
-                                            EOwnership ownership)
-{
-    CFastMutexGuard mg(m_Mtx);
-    m_ConnHandlers.Push(h, ownership);
-}
-
-void I_DriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
-{
-    CFastMutexGuard mg(m_Mtx);
-    m_ConnHandlers.Pop(h);
-
-    // Remove this handler from all connections
-    TConnPool::value_type con = NULL;
-    ITERATE(TConnPool, it, m_NotInUse) {
-        con = *it;
-        con->PopMsgHandler(h);
-    }
-
-    ITERATE(TConnPool, it, m_InUse) {
-        con = *it;
-        con->PopMsgHandler(h);
-    }
-}
-
-void I_DriverContext::x_Recycle(I_Connection* conn, bool conn_reusable)
-{
-    CFastMutexGuard mg(m_Mtx);
-
-    TConnPool::iterator it = find(m_InUse.begin(), m_InUse.end(), conn);
-
-    if (it != m_InUse.end()) {
-        m_InUse.erase(it);
-    }
-
-    if ( conn_reusable ) {
-        m_NotInUse.push_back(conn);
-    } else {
-        delete conn;
-    }
-}
-
-void I_DriverContext::CloseUnusedConnections(const string&   srv_name,
-                                             const string&   pool_name)
-{
-    CFastMutexGuard mg(m_Mtx);
-
-    TConnPool::value_type con;
-
-    // close all connections first
-    NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
-        con = *it;
-
-        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
-        if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
-
-        it = --m_NotInUse.erase(it);
-        delete con;
-    }
-}
-
-unsigned int I_DriverContext::NofConnections(const string& srv_name,
-                                          const string& pool_name) const
-{
-    CFastMutexGuard mg(m_Mtx);
-
-    if ( srv_name.empty() && pool_name.empty()) {
-        return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
-    }
-
-    int n = 0;
-    TConnPool::value_type con;
-
-    ITERATE(TConnPool, it, m_NotInUse) {
-        con = *it;
-        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
-        if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
-        ++n;
-    }
-
-    ITERATE(TConnPool, it, m_InUse) {
-        con = *it;
-        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
-        if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
-        ++n;
-    }
-
-    return n;
-}
-
-CDB_Connection* I_DriverContext::Create_Connection(I_Connection& connection)
-{
-    connection.m_MsgHandlers = m_ConnHandlers;
-    m_InUse.push_back(&connection);
-
-    return new CDB_Connection(&connection);
 }
 
 void
@@ -328,227 +188,6 @@ I_DriverContext::GetHostName(void) const
     return m_HostName;
 }
 
-CDB_Connection*
-I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
-{
-    if (conn_attr.reusable && !m_NotInUse.empty()) {
-        // try to get a connection from the pot
-        if (!conn_attr.pool_name.empty()) {
-            // use a pool name
-            NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
-                I_Connection* t_con(*it);
-
-                // There is no pool name check here. We assume that a connection
-                // pool contains connections with appropriate server names only.
-                if (conn_attr.pool_name.compare(t_con->PoolName()) == 0) {
-                    it = --m_NotInUse.erase(it);
-                    if(t_con->Refresh()) {
-                        return Create_Connection(*t_con);
-                    }
-                    else {
-                        delete t_con;
-                    }
-                }
-            }
-        }
-        else {
-
-            if ( conn_attr.srv_name.empty() ) {
-                return NULL;
-            }
-
-            // try to use a server name
-            NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
-                I_Connection* t_con(*it);
-
-                if (conn_attr.srv_name.compare(t_con->ServerName()) == 0) {
-                    it = --m_NotInUse.erase(it);
-                    if(t_con->Refresh()) {
-                        return Create_Connection(*t_con);
-                    }
-                    else {
-                        delete t_con;
-                    }
-                }
-            }
-        }
-    }
-
-    if ((conn_attr.mode & fDoNotConnect) != 0) {
-        return NULL;
-    }
-
-    // Precondition check.
-    if (conn_attr.srv_name.empty() ||
-        conn_attr.user_name.empty() ||
-        conn_attr.passwd.empty()) {
-        string err_msg("Insufficient info/credentials to connect.");
-
-        if (conn_attr.srv_name.empty()) {
-            err_msg += " Server name has not been set.";
-        }
-        if (conn_attr.user_name.empty()) {
-            err_msg += " User name has not been set.";
-        }
-        if (conn_attr.passwd.empty()) {
-            err_msg += " Password has not been set.";
-        }
-
-        DATABASE_DRIVER_ERROR( err_msg, 200010 );
-    }
-
-    I_Connection* t_con = MakeIConnection(conn_attr);
-
-    return Create_Connection(*t_con);
-}
-
-void
-I_DriverContext::CloseAllConn(void)
-{
-    // close all connections first
-    ITERATE(TConnPool, it, m_NotInUse) {
-        delete *it;
-    }
-    m_NotInUse.clear();
-
-    ITERATE(TConnPool, it, m_InUse) {
-        (*it)->Close();
-    }
-}
-
-void
-I_DriverContext::DeleteAllConn(void)
-{
-    // close all connections first
-    ITERATE(TConnPool, it, m_NotInUse) {
-        delete *it;
-    }
-    m_NotInUse.clear();
-
-    ITERATE(TConnPool, it, m_InUse) {
-        delete *it;
-    }
-    m_InUse.clear();
-}
-
-CDB_Connection*
-I_DriverContext::Connect(const string&   srv_name,
-                         const string&   user_name,
-                         const string&   passwd,
-                         TConnectionMode mode,
-                         bool            reusable,
-                         const string&   pool_name)
-{
-    SConnAttr conn_attr;
-
-    conn_attr.srv_name = srv_name;
-    conn_attr.user_name = user_name;
-    conn_attr.passwd = passwd;
-    conn_attr.mode = mode;
-    conn_attr.reusable = reusable;
-    conn_attr.pool_name = pool_name;
-
-    CDB_Connection* t_con =
-        CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
-            *this,
-            conn_attr);
-
-    if((!t_con && (mode & fDoNotConnect) != 0)) {
-        return NULL;
-    }
-
-    if (!t_con) {
-        string err;
-
-        err += "Cannot connect to the server '" + srv_name;
-        err += "' as user '" + user_name + "'";
-        DATABASE_DRIVER_ERROR( err, 100011 );
-    }
-
-    // return Create_Connection(*t_con);
-    return t_con;
-}
-
-CDB_Connection*
-I_DriverContext::ConnectValidated(const string&   srv_name,
-                                  const string&   user_name,
-                                  const string&   passwd,
-                                  IConnValidator& validator,
-                                  TConnectionMode mode,
-                                  bool            reusable,
-                                  const string&   pool_name)
-{
-    SConnAttr conn_attr;
-
-    conn_attr.srv_name = srv_name;
-    conn_attr.user_name = user_name;
-    conn_attr.passwd = passwd;
-    conn_attr.mode = mode;
-    conn_attr.reusable = reusable;
-    conn_attr.pool_name = pool_name;
-
-    validator.DoNotDeleteThisObject();
-    CDB_Connection* t_con =
-        CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
-            *this,
-            conn_attr,
-            &validator);
-
-    if((!t_con && (mode & fDoNotConnect) != 0)) {
-        return NULL;
-    }
-
-    if (!t_con) {
-        string err;
-
-        err += "Cannot connect to the server '" + srv_name;
-        err += "' as user '" + user_name + "'";
-        DATABASE_DRIVER_ERROR( err, 100011 );
-    }
-
-    return t_con;
-}
-
-////////////////////////////////////////////////////////////////////////////
-//  I_Connection::
-//
-
-CDB_LangCmd* I_Connection::Create_LangCmd(I_LangCmd&lang_cmd)
-{
-    m_CMDs.push_back(&lang_cmd);
-
-    return new CDB_LangCmd(&lang_cmd);
-}
-
-CDB_RPCCmd* I_Connection::Create_RPCCmd(I_RPCCmd&rpc_cmd)
-{
-    m_CMDs.push_back(&rpc_cmd);
-
-    return new CDB_RPCCmd(&rpc_cmd);
-}
-
-CDB_BCPInCmd* I_Connection::Create_BCPInCmd(I_BCPInCmd& bcpin_cmd)
-{
-    m_CMDs.push_back(&bcpin_cmd);
-
-    return new CDB_BCPInCmd(&bcpin_cmd);
-}
-
-CDB_CursorCmd* I_Connection::Create_CursorCmd(I_CursorCmd& cursor_cmd)
-{
-    m_CMDs.push_back(&cursor_cmd);
-
-    return new CDB_CursorCmd(&cursor_cmd);
-}
-
-CDB_SendDataCmd* I_Connection::Create_SendDataCmd(I_SendDataCmd& senddata_cmd)
-{
-    m_CMDs.push_back(&senddata_cmd);
-
-    return new CDB_SendDataCmd(&senddata_cmd);
-}
-
-
 I_Connection::I_Connection(void)
 {
 }
@@ -558,43 +197,6 @@ I_Connection::~I_Connection(void)
     return;
 }
 
-
-void I_Connection::PushMsgHandler(CDB_UserHandler* h,
-                                    EOwnership ownership)
-{
-    m_MsgHandlers.Push(h, ownership);
-}
-
-
-void I_Connection::PopMsgHandler(CDB_UserHandler* h)
-{
-    m_MsgHandlers.Pop(h);
-}
-
-void I_Connection::DropCmd(CDB_BaseEnt& cmd)
-{
-    deque<CDB_BaseEnt*>::iterator it = find(m_CMDs.begin(), m_CMDs.end(), &cmd);
-
-    if (it != m_CMDs.end()) {
-        m_CMDs.erase(it);
-    }
-}
-
-void I_Connection::DeleteAllCommands(void)
-{
-    while (!m_CMDs.empty()) {
-        // Destructor will remove an entity from a container ...
-        delete m_CMDs.back();
-    }
-}
-
-void I_Connection::Release(void)
-{
-    CDB_BaseEnt::Release();
-
-    // close all commands first
-    DeleteAllCommands();
-}
 
 ////////////////////////////////////////////////////////////////////////////
 //  I_DriverMgr::
@@ -617,6 +219,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.29  2006/06/22 18:42:11  ssikorsk
  * In I_DriverContext::I_DriverContext register default message handler
  * with eTakeOwnership.

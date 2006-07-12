@@ -166,7 +166,7 @@ protected:
     {
         return m_DatabaseParameters;
     }
-    
+
     bool UseSvcMapper(void) const
     {
         return m_UseSvcMapper;
@@ -179,7 +179,7 @@ private:
 
 private:
     auto_ptr<I_DriverContext> m_DriverContext;
-    auto_ptr<CDB_Connection> n_Connection;
+    auto_ptr<CDB_Connection> m_Connection;
     string m_TableUID;
     EUseSampleDatabase m_UseSampleDatabase;
 
@@ -215,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.7  2006/05/15 19:48:30  ssikorsk
  * Added class CDbapiSampleErrHandler.
  *

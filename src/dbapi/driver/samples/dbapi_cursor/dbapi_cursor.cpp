@@ -100,7 +100,7 @@ CDbapiCursorApp::CreateTable (const string& table_name)
         auto_ptr<CDB_Result> r(lcmd->Result());
     }
 
-    lcmd.release();
+    lcmd.reset();
 
     auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(table_name, 5));
 
@@ -200,6 +200,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.9  2006/02/24 19:36:13  ssikorsk
  * Added #include <test/test_assert.h> for test-suite sake
  *

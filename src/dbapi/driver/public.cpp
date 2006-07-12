@@ -31,6 +31,9 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/public.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/impl/dbapi_impl_result.hpp>
+#include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -40,24 +43,19 @@ BEGIN_NCBI_SCOPE
 //  CCDB_Connection::
 //
 
-CDB_Connection::CDB_Connection(I_Connection* c)
+CDB_Connection::CDB_Connection(impl::CConnection* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid connection provided", 200001 );
 
-    m_Connect = c;
-    m_Connect->SetResultProcessor(0); // to clean up the result processor if any
-    m_Connect->Acquire((CDB_BaseEnt**) &m_Connect);
+    m_ConnImpl = c;
+    m_ConnImpl->AttachTo(this);
+    m_ConnImpl->SetResultProcessor(0); // to clean up the result processor if any
 }
 
-
-void CDB_Connection::Release(void)
-{
-    CDB_BaseEnt::Release();
-}
 
 bool CDB_Connection::IsAlive()
 {
-    return (m_Connect == 0) ? false : m_Connect->IsAlive();
+    return (m_ConnImpl == 0) ? false : m_ConnImpl->IsAlive();
 }
 
 #define CHECK_CONNECTION( conn ) \
@@ -66,23 +64,22 @@ bool CDB_Connection::IsAlive()
 CDB_LangCmd* CDB_Connection::LangCmd(const string& lang_query,
                                      unsigned int  nof_params)
 {
-
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->LangCmd(lang_query, nof_params);
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->LangCmd(lang_query, nof_params);
 }
 
 CDB_RPCCmd* CDB_Connection::RPC(const string& rpc_name,
                                 unsigned int  nof_args)
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->RPC(rpc_name, nof_args);
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->RPC(rpc_name, nof_args);
 }
 
 CDB_BCPInCmd* CDB_Connection::BCPIn(const string& table_name,
                                     unsigned int  nof_columns)
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->BCPIn(table_name, nof_columns);
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->BCPIn(table_name, nof_columns);
 }
 
 CDB_CursorCmd* CDB_Connection::Cursor(const string& cursor_name,
@@ -90,102 +87,102 @@ CDB_CursorCmd* CDB_Connection::Cursor(const string& cursor_name,
                                       unsigned int  nof_params,
                                       unsigned int  batch_size)
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->Cursor(cursor_name, query, nof_params, batch_size);
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->Cursor(cursor_name, query, nof_params, batch_size);
 }
 
 CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_ITDescriptor& desc,
                                              size_t data_size, bool log_it)
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->SendDataCmd(desc, data_size, log_it);
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->SendDataCmd(desc, data_size, log_it);
 }
 
 bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it)
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->SendData(desc, txt, log_it);
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->SendData(desc, txt, log_it);
 }
 
 bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it)
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->SendData(desc, img, log_it);
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->SendData(desc, img, log_it);
 }
 
 bool CDB_Connection::Refresh()
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->Refresh();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->Refresh();
 }
 
 const string& CDB_Connection::ServerName() const
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->ServerName();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->ServerName();
 }
 
 const string& CDB_Connection::UserName() const
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->UserName();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->UserName();
 }
 
 const string& CDB_Connection::Password() const
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->Password();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->Password();
 }
 
 I_DriverContext::TConnectionMode  CDB_Connection::ConnectMode() const
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->ConnectMode();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->ConnectMode();
 }
 
 bool CDB_Connection::IsReusable() const
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->IsReusable();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->IsReusable();
 }
 
 const string& CDB_Connection::PoolName() const
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->PoolName();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->PoolName();
 }
 
 I_DriverContext* CDB_Connection::Context() const
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->Context();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->Context();
 }
 
 void CDB_Connection::PushMsgHandler(CDB_UserHandler* h,
                                     EOwnership ownership)
 {
-    CHECK_CONNECTION(m_Connect);
-    m_Connect->PushMsgHandler(h, ownership);
+    CHECK_CONNECTION(m_ConnImpl);
+    m_ConnImpl->PushMsgHandler(h, ownership);
 }
 
 void CDB_Connection::PopMsgHandler(CDB_UserHandler* h)
 {
-    CHECK_CONNECTION(m_Connect);
-    m_Connect->PopMsgHandler(h);
+    CHECK_CONNECTION(m_ConnImpl);
+    m_ConnImpl->PopMsgHandler(h);
 }
 
 CDB_ResultProcessor*
 CDB_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
 {
-    return m_Connect? m_Connect->SetResultProcessor(rp) : 0;
+    return m_ConnImpl? m_ConnImpl->SetResultProcessor(rp) : NULL;
 }
 
 CDB_Connection::~CDB_Connection()
 {
     try {
-        if ( m_Connect ) {
-            m_Connect->Release();
-            Context()->x_Recycle(m_Connect, m_Connect->IsReusable());
+        if ( m_ConnImpl ) {
+            m_ConnImpl->Release();
+            m_ConnImpl = NULL;
         }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
@@ -194,26 +191,26 @@ CDB_Connection::~CDB_Connection()
 
 bool CDB_Connection::Abort()
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->Abort();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->Abort();
 }
 
 bool CDB_Connection::Close(void)
 {
-    CHECK_CONNECTION(m_Connect);
-    return m_Connect->Close();
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->Close();
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //  CDB_Result::
 //
 
-CDB_Result::CDB_Result(I_Result* r) :
-    m_IRes(r)
+CDB_Result::CDB_Result(impl::CResult* r) :
+    m_ResImpl(r)
 {
-    CHECK_DRIVER_ERROR( !m_IRes, "No valid result provided", 200004 );
+    CHECK_DRIVER_ERROR( !m_ResImpl, "No valid result provided", 200004 );
 
-    GetIResult().Acquire((CDB_BaseEnt**) &m_IRes);
+    m_ResImpl->AttachTo(this);
 }
 
 
@@ -253,8 +250,10 @@ EDB_Type CDB_Result::ItemDataType(unsigned int item_num) const
 
 bool CDB_Result::Fetch()
 {
+    // An exception should be thrown from this place. We cannot omit this exception
+    // because it is expected by ftds and ftds63 drivers in CursorResult::Fetch.
     CHECK_RESULT( GetIResultPtr() );
-//     if ( !GetResultSet() ) {
+//     if ( !GetIResultPtr() ) {
 //         return false;
 //     }
     return GetIResult().Fetch();
@@ -313,12 +312,12 @@ CDB_Result::~CDB_Result()
 //  CDB_LangCmd::
 //
 
-CDB_LangCmd::CDB_LangCmd(I_LangCmd* c)
+CDB_LangCmd::CDB_LangCmd(impl::CLangCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200004 );
 
-    m_Cmd = c;
-    m_Cmd->Acquire((CDB_BaseEnt**) &m_Cmd);
+    m_CmdImpl = c;
+    m_CmdImpl->AttachTo(this);
 }
 
 
@@ -328,81 +327,81 @@ CDB_LangCmd::CDB_LangCmd(I_LangCmd* c)
 
 bool CDB_LangCmd::More(const string& query_text)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->More(query_text);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->More(query_text);
 }
 
 bool CDB_LangCmd::BindParam(const string& param_name, CDB_Object* pVal)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->BindParam(param_name, pVal);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->BindParam(param_name, pVal);
 }
 
 bool CDB_LangCmd::SetParam(const string& param_name, CDB_Object* pVal)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->SetParam(param_name, pVal);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->SetParam(param_name, pVal);
 }
 
 bool CDB_LangCmd::Send()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Send();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Send();
 }
 
 bool CDB_LangCmd::WasSent() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->WasSent();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->WasSent();
 }
 
 bool CDB_LangCmd::Cancel()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Cancel();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Cancel();
 }
 
 bool CDB_LangCmd::WasCanceled() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->WasCanceled();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->WasCanceled();
 }
 
 CDB_Result* CDB_LangCmd::Result()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Result();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Result();
 }
 
 bool CDB_LangCmd::HasMoreResults() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->HasMoreResults();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->HasMoreResults();
 }
 
 bool CDB_LangCmd::HasFailed() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->HasFailed();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->HasFailed();
 }
 
 int CDB_LangCmd::RowCount() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->RowCount();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->RowCount();
 }
 
 void CDB_LangCmd::DumpResults()
 {
-    CHECK_COMMAND( m_Cmd );
-    m_Cmd->DumpResults();
+    CHECK_COMMAND( m_CmdImpl );
+    m_CmdImpl->DumpResults();
 }
 
 CDB_LangCmd::~CDB_LangCmd()
 {
     try {
-        if ( m_Cmd ) {
-            m_Cmd->Release();
+        if ( m_CmdImpl ) {
+            m_CmdImpl->Release();
         }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
@@ -414,94 +413,94 @@ CDB_LangCmd::~CDB_LangCmd()
 //  CDB_RPCCmd::
 //
 
-CDB_RPCCmd::CDB_RPCCmd(I_RPCCmd* c)
+CDB_RPCCmd::CDB_RPCCmd(impl::CRPCCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200006 );
-    m_Cmd = c;
-    m_Cmd->Acquire((CDB_BaseEnt**) &m_Cmd);
+    m_CmdImpl = c;
+    m_CmdImpl->AttachTo(this);
 }
 
 
 bool CDB_RPCCmd::BindParam(const string& param_name, CDB_Object* pVal,
                            bool out_param)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->BindParam(param_name, pVal, out_param);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->BindParam(param_name, pVal, out_param);
 }
 
 bool CDB_RPCCmd::SetParam(const string& param_name, CDB_Object* pVal,
                           bool out_param)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->SetParam(param_name, pVal, out_param);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->SetParam(param_name, pVal, out_param);
 }
 
 bool CDB_RPCCmd::Send()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Send();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Send();
 }
 
 bool CDB_RPCCmd::WasSent() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->WasSent();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->WasSent();
 }
 
 bool CDB_RPCCmd::Cancel()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Cancel();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Cancel();
 }
 
 bool CDB_RPCCmd::WasCanceled() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->WasCanceled();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->WasCanceled();
 }
 
 CDB_Result* CDB_RPCCmd::Result()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Result();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Result();
 }
 
 bool CDB_RPCCmd::HasMoreResults() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->HasMoreResults();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->HasMoreResults();
 }
 
 bool CDB_RPCCmd::HasFailed() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->HasFailed();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->HasFailed();
 }
 
 int CDB_RPCCmd::RowCount() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->RowCount();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->RowCount();
 }
 
 void CDB_RPCCmd::DumpResults()
 {
-    CHECK_COMMAND( m_Cmd );
-    m_Cmd->DumpResults();
+    CHECK_COMMAND( m_CmdImpl );
+    m_CmdImpl->DumpResults();
 }
 
 void CDB_RPCCmd::SetRecompile(bool recompile)
 {
-    CHECK_COMMAND( m_Cmd );
-    m_Cmd->SetRecompile(recompile);
+    CHECK_COMMAND( m_CmdImpl );
+    m_CmdImpl->SetRecompile(recompile);
 }
 
 
 CDB_RPCCmd::~CDB_RPCCmd()
 {
     try {
-        if ( m_Cmd ) {
-            m_Cmd->Release();
+        if ( m_CmdImpl ) {
+            m_CmdImpl->Release();
         }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
@@ -513,51 +512,51 @@ CDB_RPCCmd::~CDB_RPCCmd()
 //  CDB_BCPInCmd::
 //
 
-CDB_BCPInCmd::CDB_BCPInCmd(I_BCPInCmd* c)
+CDB_BCPInCmd::CDB_BCPInCmd(impl::CBCPInCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200007 );
 
-    m_Cmd = c;
-    m_Cmd->Acquire((CDB_BaseEnt**) &m_Cmd);
+    m_CmdImpl = c;
+    m_CmdImpl->AttachTo(this);
 }
 
 
 bool CDB_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Bind(column_num, pVal);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Bind(column_num, pVal);
 }
 
 bool CDB_BCPInCmd::SendRow()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->SendRow();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->SendRow();
 }
 
 bool CDB_BCPInCmd::Cancel()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Cancel();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Cancel();
 }
 
 bool CDB_BCPInCmd::CompleteBatch()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->CompleteBatch();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->CompleteBatch();
 }
 
 bool CDB_BCPInCmd::CompleteBCP()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->CompleteBCP();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->CompleteBCP();
 }
 
 
 CDB_BCPInCmd::~CDB_BCPInCmd()
 {
     try {
-        if ( m_Cmd ) {
-            m_Cmd->Release();
+        if ( m_CmdImpl ) {
+            m_CmdImpl->Release();
         }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
@@ -569,71 +568,71 @@ CDB_BCPInCmd::~CDB_BCPInCmd()
 //  CDB_CursorCmd::
 //
 
-CDB_CursorCmd::CDB_CursorCmd(I_CursorCmd* c)
+CDB_CursorCmd::CDB_CursorCmd(impl::CCursorCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200006 );
-    m_Cmd = c;
-    m_Cmd->Acquire((CDB_BaseEnt**) &m_Cmd);
+    m_CmdImpl = c;
+    m_CmdImpl->AttachTo(this);
 }
 
 
 bool CDB_CursorCmd::BindParam(const string& param_name, CDB_Object* pVal)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->BindParam(param_name, pVal);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->BindParam(param_name, pVal);
 }
 
 
 CDB_Result* CDB_CursorCmd::Open()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Open();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Open();
 }
 
 bool CDB_CursorCmd::Update(const string& table_name, const string& upd_query)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Update(table_name, upd_query);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Update(table_name, upd_query);
 }
 
 bool CDB_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, bool log_it)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->UpdateTextImage(item_num, data, log_it);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->UpdateTextImage(item_num, data, log_it);
 }
 
 CDB_SendDataCmd* CDB_CursorCmd::SendDataCmd(unsigned int item_num,
                                             size_t size, bool log_it)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->SendDataCmd(item_num, size, log_it);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->SendDataCmd(item_num, size, log_it);
 }
 
 
 bool CDB_CursorCmd::Delete(const string& table_name)
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Delete(table_name);
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Delete(table_name);
 }
 
 int CDB_CursorCmd::RowCount() const
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->RowCount();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->RowCount();
 }
 
 bool CDB_CursorCmd::Close()
 {
-    CHECK_COMMAND( m_Cmd );
-    return m_Cmd->Close();
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Close();
 }
 
 
 CDB_CursorCmd::~CDB_CursorCmd()
 {
     try {
-        if ( m_Cmd ) {
-            m_Cmd->Release();
+        if ( m_CmdImpl ) {
+            m_CmdImpl->Release();
         }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
@@ -645,35 +644,35 @@ CDB_CursorCmd::~CDB_CursorCmd()
 //  CDB_SendDataCmd::
 //
 
-CDB_SendDataCmd::CDB_SendDataCmd(I_SendDataCmd* c)
+CDB_SendDataCmd::CDB_SendDataCmd(impl::CSendDataCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200006 );
 
-    m_Cmd = c;
-    m_Cmd->Acquire((CDB_BaseEnt**) &m_Cmd);
+    m_CmdImpl = c;
+    m_CmdImpl->AttachTo(this);
 }
 
 
 size_t CDB_SendDataCmd::SendChunk(const void* pChunk, size_t nofBytes)
 {
-    CHECK_DRIVER_WARNING( !m_Cmd, "This command cannot be used anymore", 200005 );
+    CHECK_DRIVER_WARNING( !m_CmdImpl, "This command cannot be used anymore", 200005 );
 
-    return m_Cmd->SendChunk(pChunk, nofBytes);
+    return m_CmdImpl->SendChunk(pChunk, nofBytes);
 }
 
 
 bool CDB_SendDataCmd::Cancel(void)
 {
-    CHECK_DRIVER_WARNING( !m_Cmd, "This command cannot be used anymore", 200005 );
+    CHECK_DRIVER_WARNING( !m_CmdImpl, "This command cannot be used anymore", 200005 );
 
-    return m_Cmd->Cancel();
+    return m_CmdImpl->Cancel();
 }
 
 CDB_SendDataCmd::~CDB_SendDataCmd()
 {
     try {
-        if ( m_Cmd ) {
-            m_Cmd->Release();
+        if ( m_CmdImpl ) {
+            m_CmdImpl->Release();
         }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
@@ -700,14 +699,12 @@ CDB_ITDescriptor::~CDB_ITDescriptor()
 //  CDB_ResultProcessor::
 //
 
-CDB_ResultProcessor::CDB_ResultProcessor(CDB_Connection* c)
+CDB_ResultProcessor::CDB_ResultProcessor(CDB_Connection* c) :
+    m_Con(NULL),
+    m_Prev(NULL),
+    m_Next(NULL)
 {
-    m_Con = c;
-    if ( m_Con ) {
-        m_Prev = m_Con->SetResultProcessor(this);
-        if(m_Prev) m_Prev->Acquire((CDB_BaseEnt**)(&m_Prev));
-        m_Con->Acquire((CDB_BaseEnt**)(&m_Con));
-    }
+    SetConn(c);
 }
 
 void CDB_ResultProcessor::ProcessResult(CDB_Result& res)
@@ -722,16 +719,43 @@ CDB_ResultProcessor::~CDB_ResultProcessor()
     try {
         if ( m_Con ) {
             m_Con->SetResultProcessor(m_Prev);
-            if(m_Prev) m_Con->Acquire((CDB_BaseEnt**)(&m_Prev->m_Con));
-            else m_Con->Release();
         }
-        else if(m_Prev) m_Prev->m_Con= 0;
 
-        if(m_Prev) m_Prev->Release();
+        if(m_Prev) {
+            m_Prev->m_Next = m_Next;
+        }
+
+        if(m_Next) {
+            m_Next->m_Prev = m_Prev;
+        }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
+void CDB_ResultProcessor::SetConn(CDB_Connection* c)
+{
+    // Clear previously used connection ...
+    if ( m_Con ) {
+        m_Con->SetResultProcessor(NULL);
+    }
+
+    m_Con = c;
+
+    if ( m_Con ) {
+        _ASSERT(m_Prev == NULL);
+        m_Prev = m_Con->SetResultProcessor(this);
+
+        if (m_Prev) {
+            _ASSERT(m_Prev->m_Next == NULL);
+            m_Prev->m_Next = this;
+        }
+    }
+}
+
+void CDB_ResultProcessor::ReleaseConn(void)
+{
+    m_Con = NULL;
+}
 
 END_NCBI_SCOPE
 
@@ -740,6 +764,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.27  2006/06/05 21:03:02  ssikorsk
  * Implemented CDB_Connection::Release.
  *

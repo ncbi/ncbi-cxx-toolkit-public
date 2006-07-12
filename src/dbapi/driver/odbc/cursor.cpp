@@ -320,20 +320,10 @@ bool CODBC_CursorCmd::Close()
 }
 
 
-void CODBC_CursorCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CODBC_CursorCmd::~CODBC_CursorCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -350,6 +340,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.18  2006/06/19 19:11:44  ssikorsk
  * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
  *

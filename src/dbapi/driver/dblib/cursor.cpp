@@ -82,9 +82,7 @@ static bool for_update_of(const string& q)
 
 CDB_Result* CDBL_CursorCmd::Open()
 {
-    _ASSERT(GetConnection().m_Context);
-
-    const bool connected_to_MSSQLServer = GetConnection().m_Context->ConnectedToMSSQLServer();
+    const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
 
     // We need to close it first
     Close();
@@ -148,8 +146,10 @@ CDB_Result* CDBL_CursorCmd::Open()
     buff = "fetch " + m_Name;
 
     m_LCmd = GetConnection().LangCmd(buff);
+
     SetResultSet( new CDBL_CursorResult(GetConnection(), m_LCmd) );
-    return Create_Result( *GetResultSet() );
+
+    return Create_Result(*GetResultSet());
 }
 
 
@@ -218,6 +218,10 @@ bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 //                     continue;
 //             }
         }
+
+        // m_Res may not be deleted here. Checked.
+//         delete m_Res;
+//         m_Res = NULL;
 #endif
         return GetConnection().x_SendData(*desc, data, log_it);
     }
@@ -249,8 +253,6 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
     if (!m_IsOpen)
         return false;
 
-    CDB_LangCmd* cmd = 0;
-
     try {
         while(m_LCmd->HasMoreResults()) {
             auto_ptr<CDB_Result> r(m_LCmd->Result());
@@ -263,7 +265,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
         }
 
         string buff = "delete " + table_name + " where current of " + m_Name;
-        cmd = GetConnection().LangCmd(buff);
+        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
 #if 0
@@ -275,10 +277,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
             }
         }
 #endif
-        delete cmd;
     } catch ( const CDB_Exception& e ) {
-        if (cmd)
-            delete cmd;
         DATABASE_DRIVER_ERROR_EX( e, "update failed", 222004 );
     }
 
@@ -299,16 +298,18 @@ bool CDBL_CursorCmd::Close()
 
     ClearResultSet();
 
-    if (m_LCmd)
+    if (m_LCmd) {
         delete m_LCmd;
+        m_LCmd = NULL;
+    }
 
     if (m_IsOpen) {
         string buff = "close " + m_Name;
-        m_LCmd = 0;
         try {
-            m_LCmd = GetConnection().LangCmd(buff);
-            m_LCmd->Send();
-            m_LCmd->DumpResults();
+            auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+
+            cmd->Send();
+            cmd->DumpResults();
 #if 0
             while(m_LCmd->HasMoreResults()) {
                 auto_ptr<CDB_Result> r(m_LCmd->Result());
@@ -318,21 +319,16 @@ bool CDBL_CursorCmd::Close()
                 }
             }
 #endif
-            delete m_LCmd;
         } catch ( const CDB_Exception& e ) {
-            if (m_LCmd)
-                delete m_LCmd;
-            m_LCmd = 0;
             DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor", 222003 );
         }
 
         m_IsOpen = false;
-        m_LCmd = 0;
     }
 
     if (m_IsDeclared) {
         string buff;
-        const bool connected_to_MSSQLServer = GetConnection().m_Context->ConnectedToMSSQLServer();
+        const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
 
         if ( connected_to_MSSQLServer ) {
             buff = "deallocate " + m_Name;
@@ -340,11 +336,11 @@ bool CDBL_CursorCmd::Close()
             buff = "deallocate cursor " + m_Name;
         }
 
-        m_LCmd = 0;
         try {
-            m_LCmd = GetConnection().LangCmd(buff);
-            m_LCmd->Send();
-            m_LCmd->DumpResults();
+            auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+
+            cmd->Send();
+            cmd->DumpResults();
 #if 0
             while(m_LCmd->HasMoreResults()) {
                 auto_ptr<CDB_Result> r(m_LCmd->Result());
@@ -354,36 +350,21 @@ bool CDBL_CursorCmd::Close()
                 }
             }
 #endif
-            delete m_LCmd;
         } catch ( const CDB_Exception& e) {
-            if (m_LCmd)
-                delete m_LCmd;
-            m_LCmd = 0;
             DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor", 222003 );
         }
 
         m_IsDeclared = false;
-        m_LCmd = 0;
     }
 
     return true;
 }
 
 
-void CDBL_CursorCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CDBL_CursorCmd::~CDBL_CursorCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -556,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.28  2006/06/19 19:11:44  ssikorsk
  * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
  *

@@ -51,17 +51,12 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 
-CDBL_Connection::CDBL_Connection(CDBLibContext* cntx,
+CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
                                  DBPROCESS* con,
                                  bool reusable,
                                  const string& pool_name) :
-    m_Link(con),
-    m_Context(cntx),
-    m_Pool(pool_name),
-    m_Reusable(reusable),
-    m_BCPAble(false),
-    m_SecureLogin(false),
-    m_ResProc(0)
+    impl::CConnection(cntx, false, reusable, pool_name),
+    m_Link(con)
 {
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
@@ -92,7 +87,7 @@ CDB_RPCCmd* CDBL_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 CDB_BCPInCmd* CDBL_Connection::BCPIn(const string& tab_name,
                                      unsigned int nof_cols)
 {
-    CHECK_DRIVER_ERROR( !m_BCPAble, "No bcp on this connection", 210003 );
+    CHECK_DRIVER_ERROR( !IsBCPable(), "No bcp on this connection", 210003 );
     CDBL_BCPInCmd* bcmd = new CDBL_BCPInCmd(this, GetDBLibConnection(), tab_name, nof_cols);
     return Create_BCPInCmd(*bcmd);
 }
@@ -179,61 +174,17 @@ bool CDBL_Connection::Refresh()
 }
 
 
-const string& CDBL_Connection::ServerName() const
-{
-    return m_Server;
-}
-
-
-const string& CDBL_Connection::UserName() const
-{
-    return m_User;
-}
-
-
-const string& CDBL_Connection::Password() const
-{
-    return m_Passwd;
-}
-
-
 I_DriverContext::TConnectionMode CDBL_Connection::ConnectMode() const
 {
     I_DriverContext::TConnectionMode mode = 0;
-    if ( m_BCPAble ) {
+    if ( IsBCPable() ) {
         mode |= I_DriverContext::fBcpIn;
     }
-    if ( m_SecureLogin ) {
+    if ( HasSecureLogin() ) {
         mode |= I_DriverContext::fPasswordEncrypted;
     }
     return mode;
 }
-
-bool CDBL_Connection::IsReusable() const
-{
-    return m_Reusable;
-}
-
-
-const string& CDBL_Connection::PoolName() const
-{
-    return m_Pool;
-}
-
-
-I_DriverContext* CDBL_Connection::Context() const
-{
-    return const_cast<CDBLibContext*> (m_Context);
-}
-
-
-CDB_ResultProcessor* CDBL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
-{
-    CDB_ResultProcessor* r= m_ResProc;
-    m_ResProc= rp;
-    return r;
-}
-
 
 CDBL_Connection::~CDBL_Connection()
 {
@@ -401,17 +352,17 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
 {
     unsigned int x_Status= 0x1;
     CDB_Result* dbres;
-    I_Result* res= 0;
+    impl::CResult* res= 0;
 
     while ((x_Status & 0x1) != 0) {
 #if !defined(FTDS_LOGIC)
         if ((x_Status & 0x20) != 0) { // check for return parameters from exec
             x_Status ^= 0x20;
             int n;
-            if (m_ResProc && (n = Check(dbnumrets(pLink))) > 0) {
+            if (GetResultProcessor() && (n = Check(dbnumrets(pLink))) > 0) {
                 res = new CDBL_ParamResult(*this, pLink, n);
                 dbres= Create_Result(*res);
-                m_ResProc->ProcessResult(*dbres);
+                GetResultProcessor()->ProcessResult(*dbres);
                 delete dbres;
                 delete res;
             }
@@ -420,10 +371,10 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
 
         if ((x_Status & 0x40) != 0) { // check for ret status
             x_Status ^= 0x40;
-            if (m_ResProc && Check(dbhasretstat(pLink))) {
+            if (GetResultProcessor() && Check(dbhasretstat(pLink))) {
                 res = new CDBL_StatusResult(*this, pLink);
                 dbres= Create_Result(*res);
-                m_ResProc->ProcessResult(*dbres);
+                GetResultProcessor()->ProcessResult(*dbres);
                 delete dbres;
                 delete res;
             }
@@ -432,8 +383,8 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
         if ((x_Status & 0x10) != 0) { // we do have a compute result
             res = new CDBL_ComputeResult(*this, pLink, &x_Status);
             dbres= Create_Result(*res);
-            if(m_ResProc) {
-                m_ResProc->ProcessResult(*dbres);
+            if(GetResultProcessor()) {
+                GetResultProcessor()->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch())
@@ -449,7 +400,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             x_Status |= 0x60;
 #endif
             if (DBCMDROW(pLink) == SUCCEED) { // we could get rows in result
-                if(!m_ResProc) {
+                if(!GetResultProcessor()) {
                     while(1) {
                         switch(Check(dbnextrow(pLink))) {
                         case NO_MORE_ROWS:
@@ -466,7 +417,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                 res = new CTDS_RowResult(*this, pLink, &x_Status);
                 if(res) {
                     dbres= Create_Result(*res);
-                    m_ResProc->ProcessResult(*dbres);
+                    GetResultProcessor()->ProcessResult(*dbres);
                     delete dbres;
                     delete res;
                 }
@@ -474,7 +425,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                     res = new CTDS_ComputeResult(*this, pLink, &x_Status);
                     if(res) {
                         dbres= Create_Result(*res);
-                        m_ResProc->ProcessResult(*dbres);
+                        GetResultProcessor()->ProcessResult(*dbres);
                         delete dbres;
                         delete res;
                     }
@@ -494,7 +445,7 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                 if (!res)
                     res = new CDBL_RowResult(*this, pLink, &x_Status);
                 dbres= Create_Result(*res);
-                m_ResProc->ProcessResult(*dbres);
+                GetResultProcessor()->ProcessResult(*dbres);
                 delete dbres;
                 delete res;
             } else {
@@ -629,20 +580,11 @@ bool CDBL_SendDataCmd::Cancel(void)
     return false;
 }
 
-void CDBL_SendDataCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
 
 CDBL_SendDataCmd::~CDBL_SendDataCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -659,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.36  2006/06/19 19:11:44  ssikorsk
  * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
  *

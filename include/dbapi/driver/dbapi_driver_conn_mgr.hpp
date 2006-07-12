@@ -39,6 +39,13 @@
 BEGIN_NCBI_SCOPE
 
 
+BEGIN_SCOPE(impl)
+
+class CDriverContext;
+
+END_SCOPE(impl)
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declaration
 
@@ -54,9 +61,9 @@ class NCBI_DBAPIDRIVER_EXPORT IConnValidator : public CObject
 {
 public:
     enum EConnStatus {eValidConn, eInvalidConn};
-    
+
     virtual ~IConnValidator(void);
-    
+
     virtual EConnStatus Validate(CDB_Connection& conn) = 0;
 };
 
@@ -73,24 +80,24 @@ public:
 
     /// Configure connection policy using registry.
     virtual void Configure(const IRegistry* registry = NULL) = 0;
-    
+
 protected:
-    /// Create new connection object for the given context 
+    /// Create new connection object for the given context
     /// and connection attributes.
     virtual CDB_Connection* MakeDBConnection
     (I_DriverContext&                  ctx,
      const I_DriverContext::SConnAttr& conn_attr,
      IConnValidator* validator = NULL) = 0;
-    
+
     /// Helper method to provide access to a protected method in I_DriverContext
     /// for child classses.
     static CDB_Connection* CtxMakeConnection
     (I_DriverContext&                  ctx,
      const I_DriverContext::SConnAttr& conn_attr);
-    
-private:    
+
+private:
     // Friends
-    friend class I_DriverContext;
+    friend class impl::CDriverContext;
 };
 
 
@@ -103,25 +110,25 @@ class NCBI_DBAPIDRIVER_EXPORT CDbapiConnMgr
 public:
     /// Get access to the class instance.
     static CDbapiConnMgr& Instance(void);
-    
+
     /// Set up a connection factory.
     void SetConnectionFactory(IDBConnectionFactory* factory)
     {
         m_ConnectFactory.Reset(factory);
     }
-    
+
     /// Retrieve a connection factory.
     CRef<IDBConnectionFactory> GetConnectionFactory(void) const
     {
         return m_ConnectFactory;
     }
-    
+
 private:
     CDbapiConnMgr(void);
     ~CDbapiConnMgr(void);
-    
+
     CRef<IDBConnectionFactory> m_ConnectFactory;
-    
+
     // Friends
     friend class CSafeStaticPtr<CDbapiConnMgr>;
 };
@@ -129,7 +136,7 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 inline
-CDB_Connection* 
+CDB_Connection*
 IDBConnectionFactory::CtxMakeConnection
 (I_DriverContext&                  ctx,
  const I_DriverContext::SConnAttr& conn_attr)
@@ -144,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/12 16:28:48  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.2  2006/01/23 13:21:45  ssikorsk
  * Added interface IConnValidator;
  * Renamed IDBCannectionFactory::MakeConnection to MakeDBConnection;

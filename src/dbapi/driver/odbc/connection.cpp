@@ -50,17 +50,13 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
 static bool ODBC_xSendDataGetId(CStatementBase& stmt,
                                 SQLPOINTER* id);
 
-CODBC_Connection::CODBC_Connection(CODBCContext* cntx,
+CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                                    SQLHDBC conn,
                                    bool reusable,
                                    const string& pool_name) :
-m_Link(conn),
-m_Context(cntx),
-m_Pool(pool_name),
-m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx->GetReporter()),
-m_Reusable(reusable),
-m_BCPable(false),
-m_SecureLogin(false)
+    impl::CConnection(cntx, false, reusable, pool_name),
+    m_Link(conn),
+    m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx->GetReporter())
 {
     m_Reporter.SetHandlerStack(&GetMsgHandlers());
 }
@@ -195,24 +191,6 @@ bool CODBC_Connection::Refresh()
 }
 
 
-const string& CODBC_Connection::ServerName() const
-{
-    return m_Server;
-}
-
-
-const string& CODBC_Connection::UserName() const
-{
-    return m_User;
-}
-
-
-const string& CODBC_Connection::Password() const
-{
-    return m_Passwd;
-}
-
-
 I_DriverContext::TConnectionMode CODBC_Connection::ConnectMode() const
 {
     I_DriverContext::TConnectionMode mode = 0;
@@ -225,31 +203,6 @@ I_DriverContext::TConnectionMode CODBC_Connection::ConnectMode() const
     return mode;
 }
 
-
-bool CODBC_Connection::IsReusable() const
-{
-    return m_Reusable;
-}
-
-
-const string& CODBC_Connection::PoolName() const
-{
-    return m_Pool;
-}
-
-
-I_DriverContext* CODBC_Connection::Context() const
-{
-    return const_cast<CODBCContext*> (m_Context);
-}
-
-
-CDB_ResultProcessor* CODBC_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
-{
-    CDB_ResultProcessor* r= m_ResProc;
-    m_ResProc= rp;
-    return r;
-}
 
 CODBC_Connection::~CODBC_Connection()
 {
@@ -600,20 +553,10 @@ bool CODBC_SendDataCmd::Cancel(void)
     return false;
 }
 
-void CODBC_SendDataCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CODBC_SendDataCmd::~CODBC_SendDataCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -637,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.30  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

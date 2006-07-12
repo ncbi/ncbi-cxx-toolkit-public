@@ -30,8 +30,10 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/driver/public.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -75,8 +77,8 @@ void CTL_Cmd::DropSybaseCmd(void)
 bool
 CTL_Cmd::ProcessResultInternal(CDB_Result& res)
 {
-    if(GetConnection().m_ResProc) {
-        GetConnection().m_ResProc->ProcessResult(res);
+    if(GetConnection().GetResultProcessor()) {
+        GetConnection().GetResultProcessor()->ProcessResult(res);
         return true;
     }
 
@@ -131,9 +133,9 @@ bool
 CTL_Cmd::Cancel(void)
 {
     if ( m_WasSent ) {
-        if ( m_Res ) {
+        if ( HaveResult() ) {
             // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
-            ((CTL_RowResult*)m_Res)->m_EOR= true;
+            ((CTL_RowResult*)m_Res)->m_EOR = true;
 
             DeleteResult();
         }
@@ -427,16 +429,16 @@ CDB_Result* CTL_Cmd::MakeResult(void)
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 120016 );
         case CS_ROW_RESULT:
-            MakeRowResult();
+            SetResult(MakeRowResult());
             break;
         case CS_PARAM_RESULT:
-            MakeParamResult();
+            SetResult(MakeParamResult());
             break;
         case CS_COMPUTE_RESULT:
-            MakeComputeResult();
+            SetResult(MakeComputeResult());
             break;
         case CS_STATUS_RESULT:
-            MakeStatusResult();
+            SetResult(MakeStatusResult());
             break;
         case CS_COMPUTEFMT_RESULT:
             DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 120017 );
@@ -592,15 +594,8 @@ int CTL_LangCmd::RowCount() const
 }
 
 
-void CTL_LangCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
 CDB_Result*
-CTL_LangCmd::CreateResult(I_Result& result)
+CTL_LangCmd::CreateResult(impl::CResult& result)
 {
     return Create_Result(result);
 }
@@ -608,10 +603,6 @@ CTL_LangCmd::CreateResult(I_Result& result)
 CTL_LangCmd::~CTL_LangCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
-
         DropCmd(*this);
 
         Close();
@@ -623,9 +614,8 @@ CTL_LangCmd::~CTL_LangCmd()
 void
 CTL_LangCmd::Close(void)
 {
-    if ( m_BR ) {
-        *m_BR = 0;
-    }
+    // ????
+    DetachInterface();
 
     Cancel();
 
@@ -669,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.20  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

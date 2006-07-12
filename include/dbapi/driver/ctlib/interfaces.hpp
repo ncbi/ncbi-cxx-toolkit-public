@@ -32,7 +32,11 @@
  *
  */
 
-#include <dbapi/driver/public.hpp>
+#include <dbapi/driver/public.hpp> // Kept for compatibility reasons ...
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 
 #include <corelib/ncbi_safe_static.hpp>
@@ -42,6 +46,8 @@
 
 
 BEGIN_NCBI_SCOPE
+
+class CDB_ITDescriptor;
 
 class CTLibContext;
 class CTL_Connection;
@@ -66,12 +72,12 @@ int NCBI_DBAPIDRIVER_CTLIB_EXPORT GetCtlibTdsVersion(void);
 //  CTLibContext::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public impl::CDriverContext
 {
     friend class CDB_Connection;
 
 public:
-    CTLibContext(bool reuse_context = true, 
+    CTLibContext(bool reuse_context = true,
                  CS_INT version = GetCtlibTdsVersion());
     virtual ~CTLibContext(void);
 
@@ -110,7 +116,7 @@ public:
                                      CS_SERVERMSG* msg);
 
 protected:
-    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
 private:
     CS_CONTEXT* m_Context;
@@ -141,14 +147,14 @@ private:
 //  CTL_Connection::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
 {
     friend class CTLibContext;
     friend class CDB_Connection;
     friend class CTL_Cmd;
 
 protected:
-    CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
+    CTL_Connection(CTLibContext& cntx, CS_CONNECTION* con,
                    bool reusable, const string& pool_name);
     virtual ~CTL_Connection(void);
 
@@ -177,14 +183,7 @@ protected:
     virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
                           bool log_it = true);
     virtual bool Refresh(void);
-    virtual const string& ServerName(void) const;
-    virtual const string& UserName(void)   const;
-    virtual const string& Password(void)   const;
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
-    virtual bool IsReusable(void) const;
-    virtual const string& PoolName(void) const;
-    virtual I_DriverContext* Context(void) const;
-    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -207,15 +206,6 @@ private:
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
 
     CS_CONNECTION*      m_Link;
-    CTLibContext*       m_Context;
-    string              m_Server;
-    string              m_User;
-    string              m_Passwd;
-    string              m_Pool;
-    bool                m_Reusable;
-    bool                m_BCPable;
-    bool                m_SecureLogin;
-    CDB_ResultProcessor* m_ResProc;
 };
 
 
@@ -236,29 +226,15 @@ protected:
     inline CS_COMMAND* x_GetSybaseCmd(void) const;
     inline void SetSybaseCmd(CS_COMMAND* cmd);
     inline CS_RETCODE Check(CS_RETCODE rc);
-    inline void DropCmd(CDB_BaseEnt& cmd);
+    inline void DropCmd(impl::CCommand& cmd);
     inline bool x_SendData(I_ITDescriptor& desc,
                            CDB_Stream& img,
                            bool log_it = true);
     inline CDB_SendDataCmd* ConnSendDataCmd (I_ITDescriptor& desc,
                                              size_t          data_size,
                                              bool            log_it = true);
-    inline bool HaveResult(void) const;
-    inline CTL_RowResult& GetResult(void);
-    inline void DeleteResult(void);
-
-    CDB_Result* MakeResult(void);
-
-    inline void MakeCursorResult(void);
-    inline void MakeRowResult(void);
-    inline void MakeParamResult(void);
-    inline void MakeComputeResult(void);
-    inline void MakeStatusResult(void);
 
     void DropSybaseCmd(void);
-    inline bool ProcessResultInternal(CS_INT res_type);
-    bool ProcessResultInternal(CDB_Result& res);
-    bool ProcessResults(void);
     bool Cancel(void);
     bool AssignCmdParam(CDB_Object&   param,
                         const string& param_name,
@@ -268,8 +244,28 @@ protected:
                         );
     void GetRowCount(int* cnt);
 
-    virtual CDB_Result* CreateResult(I_Result& result) = 0;
+protected:
+    // Result-related ...
+    inline bool HaveResult(void) const;
+    inline CTL_RowResult& GetResult(void);
+    inline void DeleteResult(void);
+    virtual CDB_Result* CreateResult(impl::CResult& result) = 0;
     inline CDB_Result* CreateResult(void);
+    CDB_Result* MakeResult(void);
+
+    void SetResult(CTL_RowResult* result)
+    {
+        m_Res = result;
+    }
+    inline CTL_RowResult* MakeCursorResult(void);
+    inline CTL_RowResult* MakeRowResult(void);
+    inline CTL_RowResult* MakeParamResult(void);
+    inline CTL_RowResult* MakeComputeResult(void);
+    inline CTL_RowResult* MakeStatusResult(void);
+
+    inline bool ProcessResultInternal(CS_INT res_type);
+    bool ProcessResultInternal(CDB_Result& res);
+    bool ProcessResults(void);
 
 protected:
     bool            m_HasFailed;
@@ -287,7 +283,7 @@ private:
 //  CTL_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : CTL_Cmd, public I_LangCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : CTL_Cmd, public impl::CLangCmd
 {
     friend class CTL_Connection;
 
@@ -313,8 +309,7 @@ protected:
     virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
-    NCBI_DEPRECATED virtual void Release(void);
-    virtual CDB_Result* CreateResult(I_Result& result);
+    virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(void);
@@ -331,7 +326,7 @@ private:
 //  CTL_RPCCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : CTL_Cmd, public I_RPCCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : CTL_Cmd, public impl::CRPCCmd
 {
     friend class CTL_Connection;
 
@@ -357,8 +352,7 @@ protected:
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
     virtual void SetRecompile(bool recompile = true);
-    NCBI_DEPRECATED virtual void Release(void);
-    virtual CDB_Result* CreateResult(I_Result& result);
+    virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(void);
@@ -376,7 +370,7 @@ private:
 //  CTL_CursorCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd : CTL_Cmd, public I_CursorCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd : CTL_Cmd, public impl::CCursorCmd
 {
     friend class CTL_Connection;
 
@@ -399,8 +393,7 @@ protected:
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool Close(void);
-    NCBI_DEPRECATED virtual void Release(void);
-    virtual CDB_Result* CreateResult(I_Result& result);
+    virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(bool just_declare = false);
@@ -422,7 +415,7 @@ private:
 //  CTL_BCPInCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd : CTL_Cmd, public I_BCPInCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd : CTL_Cmd, public impl::CBCPInCmd
 {
     friend class CTL_Connection;
 
@@ -439,8 +432,7 @@ protected:
     virtual bool CompleteBatch(void);
     virtual bool Cancel(void);
     virtual bool CompleteBCP(void);
-    NCBI_DEPRECATED virtual void Release(void);
-    virtual CDB_Result* CreateResult(I_Result& result);
+    virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(void);
@@ -466,7 +458,7 @@ private:
 //  CTL_SendDataCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : CTL_Cmd, public I_SendDataCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : CTL_Cmd, public impl::CSendDataCmd
 {
     friend class CTL_Connection;
 
@@ -479,8 +471,7 @@ protected:
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
-    NCBI_DEPRECATED virtual void   Release(void);
-    virtual CDB_Result* CreateResult(I_Result& result);
+    virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     size_t          m_Bytes2go;
@@ -493,7 +484,7 @@ private:
 //  CTL_RowResult::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RowResult : public impl::CResult
 {
     friend class CTL_Connection;
     friend class CTL_Cmd;
@@ -651,7 +642,7 @@ CS_RETCODE CTL_Cmd::Check(CS_RETCODE rc)
 }
 
 inline
-void CTL_Cmd::DropCmd(CDB_BaseEnt& cmd)
+void CTL_Cmd::DropCmd(impl::CCommand& cmd)
 {
     GetConnection().DropCmd(cmd);
 }
@@ -686,7 +677,7 @@ CTL_RowResult& CTL_Cmd::GetResult(void)
 inline
 CDB_Result* CTL_Cmd::CreateResult(void)
 {
-    return CreateResult(static_cast<I_Result&>(*m_Res));
+    return CreateResult(static_cast<impl::CResult&>(*m_Res));
 }
 
 inline
@@ -703,33 +694,33 @@ bool CTL_Cmd::ProcessResultInternal(CS_INT res_type)
 }
 
 inline
-void CTL_Cmd::MakeCursorResult(void)
+CTL_RowResult* CTL_Cmd::MakeCursorResult(void)
 {
-    m_Res = new CTL_CursorResult(x_GetSybaseCmd(), GetConnection());
+    return new CTL_CursorResult(x_GetSybaseCmd(), GetConnection());
 }
 
 inline
-void CTL_Cmd::MakeRowResult(void)
+CTL_RowResult* CTL_Cmd::MakeRowResult(void)
 {
-    m_Res = new CTL_RowResult(x_GetSybaseCmd(), GetConnection());
+    return new CTL_RowResult(x_GetSybaseCmd(), GetConnection());
 }
 
 inline
-void CTL_Cmd::MakeParamResult(void)
+CTL_RowResult* CTL_Cmd::MakeParamResult(void)
 {
-    m_Res = new CTL_ParamResult(x_GetSybaseCmd(), GetConnection());
+    return new CTL_ParamResult(x_GetSybaseCmd(), GetConnection());
 }
 
 inline
-void CTL_Cmd::MakeComputeResult(void)
+CTL_RowResult* CTL_Cmd::MakeComputeResult(void)
 {
-    m_Res = new CTL_ComputeResult(x_GetSybaseCmd(), GetConnection());
+    return new CTL_ComputeResult(x_GetSybaseCmd(), GetConnection());
 }
 
 inline
-void CTL_Cmd::MakeStatusResult(void)
+CTL_RowResult* CTL_Cmd::MakeStatusResult(void)
 {
-    m_Res = new CTL_StatusResult(x_GetSybaseCmd(), GetConnection());
+    return new CTL_StatusResult(x_GetSybaseCmd(), GetConnection());
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -756,22 +747,6 @@ protected:
 };
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-extern NCBI_DBAPIDRIVER_CTLIB_EXPORT const string kDBAPI_CTLIB_DriverName;
-
-extern "C"
-{
-
-NCBI_DBAPIDRIVER_CTLIB_EXPORT
-void
-NCBI_EntryPoint_xdbapi_ctlib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-} // extern C
-
-
 END_NCBI_SCOPE
 
 
@@ -782,6 +757,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/07/12 16:28:48  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.36  2006/07/05 18:04:10  ssikorsk
  * Added NCBI_DBAPIDRIVER_CTLIB_EXPORT to the GetCtlibTdsVersion declaration.
  *

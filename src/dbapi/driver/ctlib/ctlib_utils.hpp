@@ -39,6 +39,21 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
+extern NCBI_DBAPIDRIVER_CTLIB_EXPORT const string kDBAPI_CTLIB_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
+void
+NCBI_EntryPoint_xdbapi_ctlib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C
+
+
+/////////////////////////////////////////////////////////////////////////////
 // Singleton
 
 CDBExceptionStorage& GetCTLExceptionStorage(void);
@@ -52,6 +67,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.1  2006/05/11 18:02:57  ssikorsk
  * Added GetCTLExceptionStorage function
  *

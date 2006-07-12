@@ -363,7 +363,7 @@ void CDBLibContext::SetClientCharset(const char* charset) const
 #endif
 }
 
-I_Connection*
+impl::CConnection*
 CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {
     CFastMutexGuard mg(m_Mtx);
@@ -388,16 +388,16 @@ CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
 #endif
 
     CDBL_Connection* t_con = NULL;
-    t_con = new CDBL_Connection(this,
+    t_con = new CDBL_Connection(*this,
                                 dbcon,
                                 conn_attr.reusable,
                                 conn_attr.pool_name);
 
-    t_con->m_Server      = conn_attr.srv_name;
-    t_con->m_User        = conn_attr.user_name;
-    t_con->m_Passwd      = conn_attr.passwd;
-    t_con->m_BCPAble     = (conn_attr.mode & fBcpIn) != 0;
-    t_con->m_SecureLogin = (conn_attr.mode & fPasswordEncrypted) != 0;
+    t_con->SetServerName(conn_attr.srv_name);
+    t_con->SetUserName(conn_attr.user_name);
+    t_con->SetPassword(conn_attr.passwd);
+    t_con->SetBCPable((conn_attr.mode & fBcpIn) != 0);
+    t_con->SetSecureLogin((conn_attr.mode & fPasswordEncrypted) != 0);
 
     return t_con;
 }
@@ -526,8 +526,8 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
 
     if ( link ) {
-        server_name = link->m_Server;
-        user_name = link->m_User;
+        server_name = link->ServerName();
+        user_name = link->UserName();
     }
 
     switch (dberr) {
@@ -646,8 +646,8 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         reinterpret_cast<CDBL_Connection*>(dbgetuserdata(dblink)) : 0;
 
     if ( link ) {
-        server_name = link->m_Server;
-        user_name = link->m_User;
+        server_name = link->ServerName();
+        user_name = link->UserName();
     } else {
         server_name = srvname;
     }
@@ -1314,6 +1314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.85  2006/07/11 14:24:41  ssikorsk
  * Made method x_Close more exception safe.
  *

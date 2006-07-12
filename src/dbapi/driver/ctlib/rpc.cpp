@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
+#include <dbapi/driver/public.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -179,16 +180,8 @@ void CTL_RPCCmd::SetRecompile(bool recompile)
 }
 
 
-void CTL_RPCCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CDB_Result*
-CTL_RPCCmd::CreateResult(I_Result& result)
+CTL_RPCCmd::CreateResult(impl::CResult& result)
 {
     return Create_Result(result);
 }
@@ -197,9 +190,7 @@ CTL_RPCCmd::CreateResult(I_Result& result)
 CTL_RPCCmd::~CTL_RPCCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         DropCmd(*this);
 
@@ -213,9 +204,9 @@ void
 CTL_RPCCmd::Close(void)
 {
     if (x_GetSybaseCmd()) {
-        if ( m_BR ) {
-            *m_BR = 0;
-        }
+
+        // ????
+        DetachInterface();
 
         Cancel();
 
@@ -261,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.20  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

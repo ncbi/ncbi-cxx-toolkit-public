@@ -38,6 +38,22 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+extern NCBI_DBAPIDRIVER_SQLITE3_EXPORT const string kDBAPI_SQLite3_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_SQLITE3_EXPORT
+void
+NCBI_EntryPoint_xdbapi_sqlite3(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C
+
+
+/////////////////////////////////////////////////////////////////////////////
 int CheckSQLite3(sqlite3* h_native, CDBHandlerStack& h_stack, int rc);
 
 END_NCBI_SCOPE
@@ -48,6 +64,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.1  2006/06/12 20:30:51  ssikorsk
  * Initial version
  *

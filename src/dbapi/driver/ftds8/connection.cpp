@@ -50,17 +50,12 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 
-CTDS_Connection::CTDS_Connection(CTDSContext* cntx,
+CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
                                  DBPROCESS* con,
                                  bool reusable,
                                  const string& pool_name) :
-    m_Link(con),
-    m_Context(cntx),
-    m_Pool(pool_name),
-    m_Reusable(reusable),
-    m_BCPAble(false),
-    m_SecureLogin(false),
-    m_ResProc(0)
+    impl::CConnection(cntx, false, reusable, pool_name),
+    m_Link(con)
 {
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
@@ -91,7 +86,7 @@ CDB_RPCCmd* CTDS_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& tab_name,
                                      unsigned int nof_cols)
 {
-    if (!m_BCPAble) {
+    if (!IsBCPable()) {
         DATABASE_DRIVER_ERROR( "No bcp on this connection", 210003 );
     }
     CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(this, GetDBLibConnection(), tab_name, nof_cols);
@@ -176,59 +171,16 @@ bool CTDS_Connection::Refresh()
 }
 
 
-const string& CTDS_Connection::ServerName() const
-{
-    return m_Server;
-}
-
-
-const string& CTDS_Connection::UserName() const
-{
-    return m_User;
-}
-
-
-const string& CTDS_Connection::Password() const
-{
-    return m_Passwd;
-}
-
-
 I_DriverContext::TConnectionMode CTDS_Connection::ConnectMode() const
 {
     I_DriverContext::TConnectionMode mode = 0;
-    if ( m_BCPAble ) {
+    if ( IsBCPable() ) {
         mode |= I_DriverContext::fBcpIn;
     }
-    if ( m_SecureLogin ) {
+    if ( HasSecureLogin() ) {
         mode |= I_DriverContext::fPasswordEncrypted;
     }
     return mode;
-}
-
-bool CTDS_Connection::IsReusable() const
-{
-    return m_Reusable;
-}
-
-
-const string& CTDS_Connection::PoolName() const
-{
-    return m_Pool;
-}
-
-
-I_DriverContext* CTDS_Connection::Context() const
-{
-    return const_cast<CTDSContext*> (m_Context);
-}
-
-
-CDB_ResultProcessor* CTDS_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
-{
-    CDB_ResultProcessor* r= m_ResProc;
-    m_ResProc= rp;
-    return r;
 }
 
 
@@ -389,13 +341,13 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
 {
     unsigned int x_Status= 0x1;
     CDB_Result* dbres;
-    I_Result* res= 0;
+    impl::CResult* res= 0;
 
     while ((x_Status & 0x1) != 0) {
         switch (Check(dbresults(pLink))) {
         case SUCCEED:
             if (DBCMDROW(pLink) == SUCCEED) { // we may get rows in this result
-                if(!m_ResProc) {
+                if(!GetResultProcessor()) {
                     for(;;) {
                         switch(Check(dbnextrow(pLink))) {
                         case NO_MORE_ROWS:
@@ -410,7 +362,7 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
                 res = new CTDS_RowResult(*this, pLink, &x_Status);
                 if(res) {
                     dbres= Create_Result(*res);
-                    m_ResProc->ProcessResult(*dbres);
+                    GetResultProcessor()->ProcessResult(*dbres);
                     delete dbres;
                     delete res;
                 }
@@ -418,7 +370,7 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
                     res = new CTDS_ComputeResult(*this, pLink, &x_Status);
                     if(res) {
                         dbres= Create_Result(*res);
-                        m_ResProc->ProcessResult(*dbres);
+                        GetResultProcessor()->ProcessResult(*dbres);
                         delete dbres;
                         delete res;
                     }
@@ -437,26 +389,26 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
 
     // we've done with the row results at this point
     // let's look at return parameters and ret status
-    if (m_ResProc && x_Status == 2) {
+    if (GetResultProcessor() && x_Status == 2) {
         x_Status = 4;
         int n = Check(dbnumrets(pLink));
         if (n > 0) {
             res = new CTDS_ParamResult(*this, pLink, n);
             if(res) {
                 dbres= Create_Result(*res);
-                m_ResProc->ProcessResult(*dbres);
+                GetResultProcessor()->ProcessResult(*dbres);
                 delete dbres;
                 delete res;
             }
         }
     }
 
-    if (m_ResProc && x_Status == 4) {
+    if (GetResultProcessor() && x_Status == 4) {
         if (Check(dbhasretstat(pLink))) {
             res = new CTDS_StatusResult(*this, pLink);
             if(res) {
                 dbres= Create_Result(*res);
-                m_ResProc->ProcessResult(*dbres);
+                GetResultProcessor()->ProcessResult(*dbres);
                 delete dbres;
                 delete res;
             }
@@ -467,7 +419,7 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
 
 void CTDS_Connection::TDS_SetTimeout(void)
 {
-    GetDBLibConnection()->tds_socket->timeout= (TDS_INT)(m_Context->TDS_GetTimeout());
+    GetDBLibConnection()->tds_socket->timeout= (TDS_INT)(Context()->GetTimeout());
 }
 
 RETCODE CTDS_Connection::Check(RETCODE rc)
@@ -548,20 +500,10 @@ bool CTDS_SendDataCmd::Cancel(void)
     return false;
 }
 
-void CTDS_SendDataCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CTDS_SendDataCmd::~CTDS_SendDataCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -578,6 +520,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.29  2006/06/19 19:11:44  ssikorsk
  * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
  *

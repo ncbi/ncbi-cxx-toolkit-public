@@ -129,10 +129,10 @@ public:
     int ErrCode(void) const { return GetDBErrCode();                   }
     const string& Message(void) const { return GetMsg();               }
     const string& OriginatedFrom() const { return GetModule();         }
-    
+
     void SetServerName(const string& name) { m_ServerName = name;      }
     const string& GetServerName(void) const { return m_ServerName;     }
-    
+
     void SetUserName(const string& name) { m_UserName = name;          }
     const string& GetUserName(void) const { return m_UserName;         }
 
@@ -149,10 +149,10 @@ public:
                   const string& message,
                   EDiagSev severity,
                   int db_err_code)
-        : CException(info, 
-                     prev_exception, 
-                     CException::eInvalid, 
-                     message, 
+        : CException(info,
+                     prev_exception,
+                     CException::eInvalid,
+                     message,
                      severity )
         , m_DBErrCode(db_err_code)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_Exception, CException);
@@ -164,7 +164,7 @@ protected:
     void x_StartOfWhat(ostream& out) const;
     void x_EndOfWhat  (ostream& out) const;
     virtual void x_Assign(const CException& src);
-    
+
 private:
     string m_ServerName;
     string m_UserName;
@@ -329,8 +329,8 @@ public:
     // REsult is not owned by CDB_MultiEx
     CDB_Exception*    Pop(void);
 
-    unsigned int NofExceptions() const { 
-        return static_cast<unsigned int>( m_Bag->GetData().size() );    
+    unsigned int NofExceptions() const {
+        return static_cast<unsigned int>( m_Bag->GetData().size() );
     }
     unsigned int Capacity()      const { return m_NofRooms;                 }
 
@@ -343,7 +343,7 @@ protected:
     virtual void x_Assign(const CException& src);
 
 private:
-    // We use "deque" instead of "stack" here we need to iterate over all 
+    // We use "deque" instead of "stack" here we need to iterate over all
     // recors in the container.
     typedef deque<AutoPtr<const CDB_Exception> > TExceptionStack;
 
@@ -372,20 +372,20 @@ public:
     /// Exception container type
     /// @sa HandleAll()
     typedef deque<CDB_Exception*> TExceptions;
-    
+
     /// Handle all of the exceptions resulting from a native API call.
     /// @param exceptions
     ///   List of exceptions
     /// @return
     ///   TRUE if the exceptions are handled -- in this case, HandleIt() methods
     ///   will *NOT* be called.
-    /// @sa HandleIt() 
+    /// @sa HandleIt()
     virtual bool HandleAll(const TExceptions& exceptions);
-    
+
     /// Handle the exceptions resulting from a native API call, one-by-one.
     /// @return
     ///   TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
-    /// @sa HandleAll() 
+    /// @sa HandleAll()
     virtual bool HandleIt(CDB_Exception* ex) = 0;
 
     // Get current global "last-resort" error handler.
@@ -481,16 +481,16 @@ typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 
 #define CHECK_DRIVER_ERROR( failed, message, err_code ) \
     if ( ( failed ) ) { DATABASE_DRIVER_ERROR( message, err_code ); }
-    
+
 #define CHECK_DRIVER_WARNING( failed, message, err_code ) \
     if ( ( failed ) ) { DATABASE_DRIVER_WARNING( message, err_code ); }
-    
+
 #define CHECK_DRIVER_FATAL( failed, message, err_code ) \
     if ( ( failed ) ) { DATABASE_DRIVER_FATAL( message, err_code ); }
-    
+
 #define CHECK_DRIVER_INFO( failed, message, err_code ) \
     if ( ( failed ) ) { DATABASE_DRIVER_INFO( message, err_code ); }
-    
+
 END_NCBI_SCOPE
 
 
@@ -500,6 +500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/07/12 16:28:48  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.27  2006/05/30 18:44:18  ssikorsk
  * Added server and user names to the CDB_Exception class.
  *

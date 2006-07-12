@@ -524,11 +524,11 @@ CDbapiSampleApp::CreateTable (const string& table_name)
 CDB_Connection&
 CDbapiSampleApp::GetConnection(void)
 {
-    if ( !n_Connection.get() ) {
-        n_Connection.reset(CreateConnection());
+    if ( !m_Connection.get() ) {
+        m_Connection.reset(CreateConnection());
     }
 
-    return *n_Connection;
+    return *m_Connection;
 }
 
 
@@ -564,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.22  2006/05/15 19:48:38  ssikorsk
  * Added class CDbapiSampleErrHandler.
  *

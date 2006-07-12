@@ -119,8 +119,8 @@ void CMySQL_LangCmd::DumpResults()
     while(m_HasResults) {
         dbres= Result();
         if(dbres) {
-            if(m_Connect->m_ResProc) {
-                m_Connect->m_ResProc->ProcessResult(*dbres);
+            if(m_Connect->GetResultProcessor()) {
+                m_Connect->GetResultProcessor()->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch());
@@ -138,20 +138,10 @@ bool CMySQL_LangCmd::HasFailed() const
     return true;
 }
 
-void CMySQL_LangCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CMySQL_LangCmd::~CMySQL_LangCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -183,6 +173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.16  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

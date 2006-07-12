@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
+#include <dbapi/driver/util/handle_stack.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -43,7 +44,7 @@ struct SNoLock
 
 struct SUnLock
 {
-    void operator() (CDB_UserHandler::TExceptions& resource) const 
+    void operator() (CDB_UserHandler::TExceptions& resource) const
     {
         NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, resource) {
             delete *it;
@@ -52,7 +53,6 @@ struct SUnLock
         resource.clear();
     }
 };
-    
 
 /////////////////////////////////////////////////////////////////////////////
 CDBExceptionStorage::CDBExceptionStorage(void)
@@ -64,26 +64,26 @@ CDBExceptionStorage::~CDBExceptionStorage(void) throw()
     try {
         NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
             delete *it;
-        }    
+        }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
-    
+
 void CDBExceptionStorage::Accept(CDB_Exception const& e)
 {
     CFastMutexGuard mg(m_Mutex);
-    
+
     m_Exceptions.push_back(e.Clone());
 }
 
 void CDBExceptionStorage::Handle(CDBHandlerStack& handler)
 {
     typedef CGuard<CDB_UserHandler::TExceptions, SNoLock, SUnLock> TGuard;
-    
+
     if (!m_Exceptions.empty()) {
         CFastMutexGuard mg(m_Mutex);
         TGuard guard(m_Exceptions);
-        
+
         if (!handler.HandleExceptions(m_Exceptions)) {
             NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
                 handler.PostMsg(*it);
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.2  2006/06/02 19:26:38  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *

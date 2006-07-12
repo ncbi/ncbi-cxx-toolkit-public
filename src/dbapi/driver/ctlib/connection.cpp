@@ -51,13 +51,11 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 ////////////////////////////////////////////////////////////////////////////
-CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
-                               bool reusable, const string& pool_name)
+CTL_Connection::CTL_Connection(CTLibContext& cntx, CS_CONNECTION* con,
+                               bool reusable, const string& pool_name) :
+    impl::CConnection(cntx, false, reusable, pool_name)
 {
     m_Link     = con;
-    m_Context  = cntx;
-    m_Reusable = reusable;
-    m_Pool     = pool_name;
 
     CTL_Connection* link = this;
     Check(ct_con_props(x_GetSybaseConn(), CS_SET, CS_USERDATA,
@@ -70,17 +68,20 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
     Check(ct_con_props(x_GetSybaseConn(), CS_GET, CS_SERVERNAME,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen));
     if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
-    m_Server.append(buf, (size_t) outlen);
+
+    SetServerName(string(buf, (size_t) outlen));
 
     Check(ct_con_props(x_GetSybaseConn(), CS_GET, CS_USERNAME,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen));
     if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
-    m_User.append(buf, (size_t) outlen);
+
+    SetUserName(string(buf, (size_t) outlen));
 
     Check(ct_con_props(x_GetSybaseConn(), CS_GET, CS_PASSWORD,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen));
     if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
-    m_Passwd.append(buf, (size_t) outlen);
+
+    SetPassword(string(buf, (size_t) outlen));
 
     CS_BOOL flag;
     Check(ct_con_props(x_GetSybaseConn(),
@@ -89,7 +90,8 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
                        &flag,
                        CS_UNUSED,
                        &outlen));
-    m_BCPable = (flag == CS_TRUE);
+
+    SetBCPable(flag == CS_TRUE);
 
     Check(ct_con_props(x_GetSybaseConn(),
                        CS_GET,
@@ -97,9 +99,8 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
                        &flag,
                        CS_UNUSED,
                        &outlen));
-    m_SecureLogin = (flag == CS_TRUE);
 
-    m_ResProc= 0;
+    SetSecureLogin(flag == CS_TRUE);
 }
 
 
@@ -170,7 +171,7 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
 CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
                                     unsigned int  nof_columns)
 {
-    CHECK_DRIVER_ERROR( !m_BCPable, "No bcp on this connection", 110003 );
+    CHECK_DRIVER_ERROR( !IsBCPable(), "No bcp on this connection", 110003 );
 
     CS_BLKDESC* cmd;
     if (blk_alloc(x_GetSybaseConn(), BLK_VERSION_100, &cmd) != CS_SUCCEED) {
@@ -280,60 +281,16 @@ bool CTL_Connection::Refresh()
 }
 
 
-const string& CTL_Connection::ServerName() const
-{
-    return m_Server;
-}
-
-
-const string& CTL_Connection::UserName() const
-{
-    return m_User;
-}
-
-
-const string& CTL_Connection::Password() const
-{
-    return m_Passwd;
-}
-
-
 I_DriverContext::TConnectionMode CTL_Connection::ConnectMode() const
 {
     I_DriverContext::TConnectionMode mode = 0;
-    if ( m_BCPable ) {
+    if ( IsBCPable() ) {
         mode |= I_DriverContext::fBcpIn;
     }
-    if ( m_SecureLogin ) {
+    if ( HasSecureLogin() ) {
         mode |= I_DriverContext::fPasswordEncrypted;
     }
     return mode;
-}
-
-
-bool CTL_Connection::IsReusable() const
-{
-    return m_Reusable;
-}
-
-
-const string& CTL_Connection::PoolName() const
-{
-    return m_Pool;
-}
-
-
-I_DriverContext* CTL_Connection::Context() const
-{
-    return const_cast<CTLibContext*> (m_Context);
-}
-
-
-CDB_ResultProcessor* CTL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
-{
-    CDB_ResultProcessor* r= m_ResProc;
-    m_ResProc= rp;
-    return r;
 }
 
 
@@ -542,8 +499,8 @@ bool CTL_Connection::Close(void)
 bool
 CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 {
-    if(m_ResProc) {
-        auto_ptr<I_Result> res;
+    if(GetResultProcessor()) {
+        auto_ptr<impl::CResult> res;
         switch (res_type) {
         case CS_ROW_RESULT:
             res.reset(new CTL_RowResult(cmd, *this));
@@ -561,7 +518,7 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 
         if(res.get()) {
             auto_ptr<CDB_Result> dbres(Create_Result(*res));
-            m_ResProc->ProcessResult(*dbres);
+            GetResultProcessor()->ProcessResult(*dbres);
             return true;
         }
     }
@@ -669,16 +626,8 @@ bool CTL_SendDataCmd::Cancel(void)
     return false;
 }
 
-void CTL_SendDataCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CDB_Result*
-CTL_SendDataCmd::CreateResult(I_Result& result)
+CTL_SendDataCmd::CreateResult(impl::CResult& result)
 {
     return Create_Result(result);
 }
@@ -687,9 +636,7 @@ CTL_SendDataCmd::CreateResult(I_Result& result)
 CTL_SendDataCmd::~CTL_SendDataCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         Cancel();
 
@@ -708,8 +655,8 @@ CTL_SendDataCmd::Close(void)
         if ( m_Bytes2go )
             Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
 
-        if ( m_BR )
-            *m_BR = 0;
+        // ????
+        DetachInterface();
 
         Check(ct_cmd_drop(x_GetSybaseCmd()));
 
@@ -724,6 +671,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.37  2006/06/19 19:11:44  ssikorsk
  * Replace C_ITDescriptorGuard with auto_ptr<I_ITDescriptor>
  *

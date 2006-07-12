@@ -34,181 +34,181 @@
 #include <dbapi/driver/public.hpp>
 #include <corelib/ncbiapp.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 
 ///////////////////////////////////////////////////////////////////////////////
-CDBConnectionFactory::CDBConnectionFactory(IDBServiceMapper* svc_mapper, 
+CDBConnectionFactory::CDBConnectionFactory(IDBServiceMapper* svc_mapper,
                                            const IRegistry* registry,
-                                           EDefaultMapping def_mapping) : 
+                                           EDefaultMapping def_mapping) :
 m_MaxNumOfConnAttempts( 1 ),
 m_MaxNumOfServerAlternatives( 32 ),
 m_MaxNumOfDispatches( 0 ),
 m_ConnectionTimeout( 0 ),
 m_LoginTimeout( 0 )
 {
-    CHECK_DRIVER_ERROR(!svc_mapper && def_mapping != eUseDefaultMapper, 
+    CHECK_DRIVER_ERROR(!svc_mapper && def_mapping != eUseDefaultMapper,
                        "Database service name to server name mapper was not "
-                       "defined properly.", 
+                       "defined properly.",
                        0);
-    
+
     if (def_mapping == eUseDefaultMapper) {
         CDBServiceMapperCoR* mapper = new CDBServiceMapperCoR();
-        
+
         mapper->Push(CRef<IDBServiceMapper>(new CDBDefaultServiceMapper()));
         mapper->Push(CRef<IDBServiceMapper>(svc_mapper));
-        
+
         m_DBServiceMapper.reset(mapper);
     } else {
         m_DBServiceMapper.reset(svc_mapper);
     }
-    
-    ConfigureFromRegistry(registry); 
+
+    ConfigureFromRegistry(registry);
 }
 
 CDBConnectionFactory::~CDBConnectionFactory(void)
 {
 }
 
-void 
+void
 CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
 {
     const string section_name("DB_CONNECTION_FACTORY");
-    
+
     // Get current registry ...
     if (!registry) {
         registry = &CNcbiApplication::Instance()->GetConfig();
     }
-    
+
     _ASSERT(registry);
-    
-    m_MaxNumOfConnAttempts = 
+
+    m_MaxNumOfConnAttempts =
         registry->GetInt(section_name, "MAX_CONN_ATTEMPTS", 1);
-    m_MaxNumOfServerAlternatives = 
+    m_MaxNumOfServerAlternatives =
         registry->GetInt(section_name, "MAX_SERVER_ALTERNATIVES", 32);
-    m_MaxNumOfDispatches = 
+    m_MaxNumOfDispatches =
         registry->GetInt(section_name, "MAX_DISPATCHES", 0);
-    m_ConnectionTimeout = 
+    m_ConnectionTimeout =
         registry->GetInt(section_name, "CONNECTION_TIMEOUT", 0);
-    m_LoginTimeout = 
+    m_LoginTimeout =
         registry->GetInt(section_name, "LOGIN_TIMEOUT", 0);
 }
 
-void 
+void
 CDBConnectionFactory::Configure(const IRegistry* registry)
 {
-    CFastMutexGuard mg(m_Mtx); 
-    
-    ConfigureFromRegistry(registry); 
+    CFastMutexGuard mg(m_Mtx);
+
+    ConfigureFromRegistry(registry);
 }
 
-void 
+void
 CDBConnectionFactory::SetMaxNumOfConnAttempts(unsigned int max_num)
 {
-    CFastMutexGuard mg(m_Mtx); 
-     
+    CFastMutexGuard mg(m_Mtx);
+
     m_MaxNumOfConnAttempts = max_num;
 }
 
-void 
+void
 CDBConnectionFactory::SetMaxNumOfServerAlternatives(unsigned int max_num)
 {
-    CFastMutexGuard mg(m_Mtx); 
-     
+    CFastMutexGuard mg(m_Mtx);
+
     m_MaxNumOfServerAlternatives = max_num;
 }
 
-void 
+void
 CDBConnectionFactory::SetMaxNumOfDispatches(unsigned int max_num)
 {
-    CFastMutexGuard mg(m_Mtx); 
-     
+    CFastMutexGuard mg(m_Mtx);
+
     m_MaxNumOfDispatches = max_num;
 }
 
-void 
+void
 CDBConnectionFactory::SetConnectionTimeout(unsigned int timeout)
 {
-    CFastMutexGuard mg(m_Mtx); 
-     
+    CFastMutexGuard mg(m_Mtx);
+
     m_ConnectionTimeout = timeout;
 }
 
-void 
+void
 CDBConnectionFactory::SetLoginTimeout(unsigned int timeout)
 {
-    CFastMutexGuard mg(m_Mtx); 
-     
+    CFastMutexGuard mg(m_Mtx);
+
     m_LoginTimeout = timeout;
 }
 
-unsigned int 
+unsigned int
 CDBConnectionFactory::CalculateConnectionTimeout
 (const I_DriverContext& ctx) const
 {
-    return (GetConnectionTimeout() ? 
-            GetConnectionTimeout() : 
+    return (GetConnectionTimeout() ?
+            GetConnectionTimeout() :
             ctx.GetTimeout());
 }
 
-unsigned int 
+unsigned int
 CDBConnectionFactory::CalculateLoginTimeout(const I_DriverContext& ctx) const
 {
     unsigned int timeout = 3;
-    
+
     if (GetLoginTimeout()) {
         timeout = GetLoginTimeout();
     } else if (ctx.GetLoginTimeout()) {
         timeout = ctx.GetLoginTimeout();
     }
-    
+
     return timeout;
 }
 
-CDB_Connection* 
+CDB_Connection*
 CDBConnectionFactory::MakeDBConnection(
     I_DriverContext& ctx,
     const I_DriverContext::SConnAttr& conn_attr,
     IConnValidator* validator)
 {
-    CFastMutexGuard mg(m_Mtx); 
-     
+    CFastMutexGuard mg(m_Mtx);
+
     CDB_Connection* t_con = NULL;
     TSvrRef dsp_srv = GetDispatchedServer(conn_attr.srv_name);
-    
+
     // Set timeouts ...
     ctx.SetTimeout(CalculateConnectionTimeout(ctx));
     ctx.SetLoginTimeout(CalculateLoginTimeout(ctx));
-    
+
     if ( dsp_srv.Empty() ) {
-        // We are here either because server name was never dispatched or 
+        // We are here either because server name was never dispatched or
         // because a named coonnection pool has been used before.
         // Dispatch server name ...
-        
+
         t_con = DispatchServerName(ctx, conn_attr, validator);
     } else {
         // Server name is already dispatched ...
-        
+
         // We probably need to redispatch it ...
-        if (GetMaxNumOfDispatches() && 
+        if (GetMaxNumOfDispatches() &&
             GetNumOfDispatches(conn_attr.srv_name) >= GetMaxNumOfDispatches() ) {
-            
+
             // We definitely need to redispatch it ...
             m_DispatchNumMap[conn_attr.srv_name] = 0;
             t_con = DispatchServerName(ctx, conn_attr, validator);
         } else {
             // We do not need to redispatch it ...
-            
+
             // Try to connect.
             try {
                 I_DriverContext::SConnAttr cur_conn_attr(conn_attr);
 
                 cur_conn_attr.srv_name = dsp_srv->GetName();
-                
-                // MakeValidConnection may return NULL here because a newly 
+
+                // MakeValidConnection may return NULL here because a newly
                 // create connection may not pass validation.
                 t_con = MakeValidConnection(ctx, cur_conn_attr, validator);
-                
+
             } catch(const CDB_Exception&) {
                 // Ignore exceptions. We still can redispatch ...
             }
@@ -234,7 +234,7 @@ CDBConnectionFactory::DispatchServerName(
 {
     CDB_Connection* t_con = NULL;
     I_DriverContext::SConnAttr curr_conn_attr(conn_attr);
-    
+
     // Try to connect up to a given number of alternative servers ...
     unsigned int alternatives = GetMaxNumOfServerAlternatives();
     for ( ; !t_con && alternatives > 0; --alternatives ) {
@@ -244,7 +244,7 @@ CDBConnectionFactory::DispatchServerName(
         // This is possible when somebody uses a named connection pool.
         // In this case we even won't try to map it.
         if (!conn_attr.srv_name.empty()) {
-            dsp_srv = 
+            dsp_srv =
                 m_DBServiceMapper->GetServer(conn_attr.srv_name);
 
             if (dsp_srv.Empty()) {
@@ -256,7 +256,7 @@ CDBConnectionFactory::DispatchServerName(
         }
 
         curr_conn_attr.srv_name = dsp_srv->GetName();
-        
+
         // Try to connect up to a given number of attempts ...
         unsigned int attepmpts = GetMaxNumOfConnAttempts();
         for ( ; !t_con && attepmpts > 0; --attepmpts ) {
@@ -276,20 +276,20 @@ CDBConnectionFactory::DispatchServerName(
             SetDispatchedServer(conn_attr.srv_name, dsp_srv);
         }
     }
-    
+
     return t_con;
 }
 
-CDB_Connection* 
+CDB_Connection*
 CDBConnectionFactory::MakeValidConnection(
     I_DriverContext& ctx,
     const I_DriverContext::SConnAttr& conn_attr,
     IConnValidator* validator) const
 {
     auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, conn_attr));
-    
-    if (conn.get() && 
-        validator && 
+
+    if (conn.get() &&
+        validator &&
         validator->Validate(*conn) == IConnValidator::eInvalidConn) {
         return NULL;
     }
@@ -303,21 +303,21 @@ CDBConnectionFactory::GetDispatchedServer(const string& service_name)
     return m_DispatchedSet[service_name];
 }
 
-void 
-CDBConnectionFactory::SetDispatchedServer(const string& service_name, 
+void
+CDBConnectionFactory::SetDispatchedServer(const string& service_name,
                                           const TSvrRef& server)
 {
     m_DispatchedSet[service_name] = server;
 }
 
-unsigned int 
+unsigned int
 CDBConnectionFactory::GetNumOfDispatches(const string& service_name)
 {
     return m_DispatchNumMap[service_name];
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-CDBGiveUpFactory::CDBGiveUpFactory(IDBServiceMapper* svc_mapper, 
+CDBGiveUpFactory::CDBGiveUpFactory(IDBServiceMapper* svc_mapper,
                                    const IRegistry* registry,
                                    EDefaultMapping def_mapping)
 : CDBConnectionFactory(svc_mapper, registry, def_mapping)
@@ -331,8 +331,8 @@ CDBGiveUpFactory::~CDBGiveUpFactory(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-CDBRedispatchFactory::CDBRedispatchFactory(IDBServiceMapper* svc_mapper, 
-                                           const IRegistry* registry, 
+CDBRedispatchFactory::CDBRedispatchFactory(IDBServiceMapper* svc_mapper,
+                                           const IRegistry* registry,
                                            EDefaultMapping def_mapping)
 : CDBConnectionFactory(svc_mapper, registry, def_mapping)
 {
@@ -353,7 +353,7 @@ CConnValidatorCoR::~CConnValidatorCoR(void)
 {
 }
 
-IConnValidator::EConnStatus 
+IConnValidator::EConnStatus
 CConnValidatorCoR::Validate(CDB_Connection& conn)
 {
     NON_CONST_ITERATE(TValidators, vr_it, m_Validators) {
@@ -364,53 +364,53 @@ CConnValidatorCoR::Validate(CDB_Connection& conn)
     return eValidConn;
 }
 
-void 
+void
 CConnValidatorCoR::Push(const CRef<IConnValidator>& validator)
 {
     if (validator.NotNull()) {
-        CFastMutexGuard mg(m_Mtx); 
+        CFastMutexGuard mg(m_Mtx);
 
         m_Validators.push_back(validator);
     }
 }
 
-void 
+void
 CConnValidatorCoR::Pop(void)
 {
-    CFastMutexGuard mg(m_Mtx); 
+    CFastMutexGuard mg(m_Mtx);
 
     m_Validators.pop_back();
 }
 
-CRef<IConnValidator> 
+CRef<IConnValidator>
 CConnValidatorCoR::Top(void) const
 {
-    CFastMutexGuard mg(m_Mtx); 
+    CFastMutexGuard mg(m_Mtx);
 
     return m_Validators.back();
 }
 
-bool 
+bool
 CConnValidatorCoR::Empty(void) const
 {
-    CFastMutexGuard mg(m_Mtx); 
+    CFastMutexGuard mg(m_Mtx);
 
     return m_Validators.empty();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-CTrivialConnValidator::CTrivialConnValidator(const string& db_name, 
-                                             int attr) : 
+CTrivialConnValidator::CTrivialConnValidator(const string& db_name,
+                                             int attr) :
 m_DBName(db_name),
 m_Attr(attr)
 {
 }
 
-CTrivialConnValidator::~CTrivialConnValidator(void) 
+CTrivialConnValidator::~CTrivialConnValidator(void)
 {
 }
 
-IConnValidator::EConnStatus 
+IConnValidator::EConnStatus
 CTrivialConnValidator::Validate(CDB_Connection& conn)
 {
     try {
@@ -420,13 +420,13 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
             set_cmd->Send();
             set_cmd->DumpResults();
         }
-        
+
         if (m_Attr & eCheckSysobjects) {
             auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
             set_cmd->Send();
             set_cmd->DumpResults();
         }
-        
+
         // Go back to the original (master) database ...
         if (m_Attr & eRestoreDefaultDB) {
             auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
@@ -442,11 +442,15 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
     return eValidConn;
 }
 
+END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.8  2006/05/18 18:45:58  ssikorsk
  * Added const to parameters of CalculateConnectionTimeout and CalculateLoginTimeout.
  *

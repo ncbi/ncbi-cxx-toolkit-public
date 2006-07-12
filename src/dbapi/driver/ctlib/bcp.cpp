@@ -396,16 +396,8 @@ bool CTL_BCPInCmd::CompleteBCP()
 }
 
 
-void CTL_BCPInCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CDB_Result*
-CTL_BCPInCmd::CreateResult(I_Result& result)
+CTL_BCPInCmd::CreateResult(impl::CResult& result)
 {
     return Create_Result(result);
 }
@@ -414,9 +406,7 @@ CTL_BCPInCmd::CreateResult(I_Result& result)
 CTL_BCPInCmd::~CTL_BCPInCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         DropCmd(*this);
 
@@ -429,9 +419,8 @@ void
 CTL_BCPInCmd::Close(void)
 {
     if (x_GetSybaseCmd()) {
-        if ( m_BR ) {
-            *m_BR = 0;
-        }
+        // ????
+        DetachInterface();
 
         Cancel();
 
@@ -451,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.21  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

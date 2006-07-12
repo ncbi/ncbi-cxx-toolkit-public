@@ -179,6 +179,7 @@ CDB_Result* CDBL_LangCmd::Result()
     if ((m_Status & 0x10) != 0) { // we do have a compute result
         SetResultSet( new CDBL_ComputeResult(GetConnection(), GetCmd(), &m_Status) );
         m_RowCount= 1;
+
         return Create_Result(*GetResultSet());
     }
 
@@ -190,6 +191,7 @@ CDB_Result* CDBL_LangCmd::Result()
             if ((n = Check(dbnumrets(GetCmd()))) > 0) {
                 SetResultSet( new CDBL_ParamResult(GetConnection(), GetCmd(), n) );
                 m_RowCount= 1;
+
                 return Create_Result(*GetResultSet());
             }
         }
@@ -199,7 +201,8 @@ CDB_Result* CDBL_LangCmd::Result()
             if (Check(dbhasretstat(GetCmd()))) {
                 SetResultSet( new CDBL_StatusResult(GetConnection(), GetCmd()) );
                 m_RowCount= 1;
-                return Create_Result( *GetResultSet() );
+
+                return Create_Result(*GetResultSet());
             }
         }
 #endif
@@ -222,7 +225,9 @@ CDB_Result* CDBL_LangCmd::Result()
                 if ( !GetResultSet() ) {
                     SetResultSet( new CDBL_RowResult(GetConnection(), GetCmd(), &m_Status) );
                 }
+
                 m_RowCount= -1;
+
                 return Create_Result(*GetResultSet());
             } else {
                 m_RowCount = DBCOUNT(GetCmd());
@@ -247,6 +252,7 @@ CDB_Result* CDBL_LangCmd::Result()
         if (n > 0) {
             SetResultSet( new CTDS_ParamResult(GetConnection(), GetCmd(), n) );
             m_RowCount = 1;
+
             return Create_Result(*GetResultSet());
         }
     }
@@ -256,6 +262,7 @@ CDB_Result* CDBL_LangCmd::Result()
         if (Check(dbhasretstat(GetCmd()))) {
             SetResultSet( new CTDS_StatusResult(GetConnection(), GetCmd()) );
             m_RowCount = 1;
+
             return Create_Result(*GetResultSet());
         }
     }
@@ -277,8 +284,8 @@ void CDBL_LangCmd::DumpResults()
         auto_ptr<CDB_Result> dbres( Result() );
 
         if( dbres.get() ) {
-            if(GetConnection().m_ResProc) {
-                GetConnection().m_ResProc->ProcessResult(*dbres);
+            if(GetConnection().GetResultProcessor()) {
+                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch())
@@ -300,20 +307,10 @@ int CDBL_LangCmd::RowCount() const
 }
 
 
-void CDBL_LangCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CDBL_LangCmd::~CDBL_LangCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -545,6 +542,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.28  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

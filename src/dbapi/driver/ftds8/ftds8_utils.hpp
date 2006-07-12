@@ -38,6 +38,29 @@
 BEGIN_NCBI_SCOPE
 
 
+// Uncomment a line below if you want to simulate a previous ftds driver logic.
+// #define FTDS_LOGIC
+
+extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_FTDS_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
+void
+NCBI_EntryPoint_xdbapi_ftds(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
+void
+NCBI_EntryPoint_xdbapi_ftds63(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Singleton
 
@@ -52,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.1  2006/05/11 18:04:00  ssikorsk
  * Added GetFTDS8ExceptionStorage function
  *

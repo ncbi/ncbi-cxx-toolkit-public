@@ -33,8 +33,11 @@
  *
  */
 
-#include <dbapi/driver/interfaces.hpp>
-#include <dbapi/driver/public.hpp>
+#include <dbapi/driver/public.hpp> // Kept for compatibility reasons ...
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
 
 #include <dbapi/driver/gateway/comprot_cli.hpp>
@@ -76,7 +79,7 @@ protected:
   CRLObjPairs* getBoundObjects(CRLObjPairs** ppVector); // Allocate vector on first request
 };
 
-class CGWContext : public I_DriverContext
+class CGWContext : public impl::CDriverContext
 {
   int remoteObj;
 
@@ -132,7 +135,7 @@ struct SConnectionVars
   string m_Server, m_User, m_Password, m_PoolName;
 };
 
-class CGW_Connection : public I_Connection, CGW_Base
+class CGW_Connection : public impl::CConnection, CGW_Base
 {
   friend class CGWContext;
   friend class CGW_CursorCmd;
@@ -208,8 +211,6 @@ protected:
   virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it = true);
   virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt, bool log_it = true);
 
-  virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp) { return NULL; }
-
   virtual void PushMsgHandler(CDB_UserHandler* /*h*/,
                               EOwnership ownership = eNoOwnership);
   // virtual void Release() {}
@@ -225,7 +226,7 @@ protected:
 };
 
 
-class CGW_BaseCmd : public I_BaseCmd, public CGW_Base
+class CGW_BaseCmd : public impl::CBaseCmd, public CGW_Base
 {
 protected:
   CRLObjPairs* boundObjects;
@@ -274,7 +275,7 @@ public:
   }
 };
 
-class CGW_LangCmd : public I_LangCmd, CGW_BaseCmd
+class CGW_LangCmd : public impl::CLangCmd, CGW_BaseCmd
 {
   friend class CGW_Connection;
 
@@ -341,7 +342,7 @@ protected:
 };
 
 
-class CGW_RPCCmd : public I_RPCCmd, CGW_BaseCmd
+class CGW_RPCCmd : public impl::CRPCCmd, CGW_BaseCmd
 {
   friend class CGW_Connection;
 
@@ -409,7 +410,7 @@ protected:
   }
 };
 
-class CGW_BCPInCmd : public I_BCPInCmd, CGW_Base
+class CGW_BCPInCmd : public impl::CBCPInCmd, CGW_Base
 {
   friend class CGW_Connection;
 
@@ -449,7 +450,7 @@ protected:
 
 };
 
-class CGW_CursorCmd : public I_CursorCmd, CGW_Base
+class CGW_CursorCmd : public impl::CCursorCmd, CGW_Base
 {
   friend class CGW_Connection;
 
@@ -509,7 +510,7 @@ protected:
   virtual bool Close(void);
 };
 
-class CGW_SendDataCmd : public I_SendDataCmd, CGW_Base
+class CGW_SendDataCmd : public impl::CSendDataCmd, CGW_Base
 {
   friend class CGW_Connection;
   friend class CGW_CursorCmd;
@@ -553,7 +554,7 @@ public:
   }
 };
 
-class CGW_Result : public I_Result, CGW_Base
+class CGW_Result : public impl::CResult, CGW_Base
 {
 public:
 
@@ -659,6 +660,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/07/12 16:28:48  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.11  2006/06/05 14:40:10  ssikorsk
  * Moved method PopMsgHandler into I_Connection.
  *

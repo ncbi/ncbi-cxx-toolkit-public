@@ -227,8 +227,8 @@ void CTDS_RPCCmd::DumpResults()
     while(m_WasSent) {
         dbres= Result();
         if(dbres) {
-            if(GetConnection().m_ResProc) {
-                GetConnection().m_ResProc->ProcessResult(*dbres);
+            if(GetConnection().GetResultProcessor()) {
+                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch());
@@ -256,20 +256,10 @@ void CTDS_RPCCmd::SetRecompile(bool recompile)
 }
 
 
-void CTDS_RPCCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CTDS_RPCCmd::~CTDS_RPCCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -547,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.22  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

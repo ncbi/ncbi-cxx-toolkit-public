@@ -371,14 +371,14 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 //
 
 
-CTDS_RowResult::CTDS_RowResult(CDBL_Connection& conn, 
+CTDS_RowResult::CTDS_RowResult(CDBL_Connection& conn,
                                DBPROCESS* cmd,
-                               unsigned int* res_status, 
-                               bool need_init) : 
-    CDBL_Result(conn, cmd), 
-    m_CurrItem(-1), 
+                               unsigned int* res_status,
+                               bool need_init) :
+    CDBL_Result(conn, cmd),
+    m_CurrItem(-1),
     m_EOR(false),
-    m_ResStatus(res_status), 
+    m_ResStatus(res_status),
     m_Offset(0)
 {
     if (!need_init)
@@ -662,8 +662,8 @@ CTDS_RowResult::~CTDS_RowResult()
 
 
 CTDS_BlobResult::CTDS_BlobResult(CDBL_Connection& conn, DBPROCESS* cmd) :
-    CDBL_Result(conn, cmd), 
-    m_CurrItem(-1), 
+    CDBL_Result(conn, cmd),
+    m_CurrItem(-1),
     m_EOR(false)
 {
     m_CmdNum = DBCURCMD(cmd);
@@ -930,8 +930,8 @@ CTDS_BlobResult::~CTDS_BlobResult()
 //  CTDS_ParamResult::
 //
 
-CTDS_ParamResult::CTDS_ParamResult(CDBL_Connection& conn, 
-                                   DBPROCESS* cmd, 
+CTDS_ParamResult::CTDS_ParamResult(CDBL_Connection& conn,
+                                   DBPROCESS* cmd,
                                    int nof_params) :
     CTDS_RowResult(conn, cmd, 0, false)
 {
@@ -1082,7 +1082,7 @@ CTDS_ParamResult::~CTDS_ParamResult()
 //  CTL_ComputeResult::
 //
 
-CTDS_ComputeResult::CTDS_ComputeResult(CDBL_Connection& conn, 
+CTDS_ComputeResult::CTDS_ComputeResult(CDBL_Connection& conn,
                                        DBPROCESS* cmd,
                                        unsigned int* res_stat) :
     CTDS_RowResult(conn, cmd, res_stat, false)
@@ -1143,7 +1143,7 @@ CTDS_ComputeResult::~CTDS_ComputeResult()
 
 CTDS_StatusResult::CTDS_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd) :
     CDBL_Result(conn, cmd),
-    m_Offset(0), 
+    m_Offset(0),
     m_1stFetch(true)
 {
     m_Val = Check(dbretstatus(cmd));
@@ -1275,8 +1275,9 @@ CTDS_CursorResult::CTDS_CursorResult(CDBL_Connection& conn, CDB_LangCmd* cmd) :
                 return;
             }
             if (m_Res) {
-                while (m_Res->Fetch())
+                while (m_Res->Fetch()) {
                     continue;
+                }
                 delete m_Res;
                 m_Res = 0;
             }
@@ -1319,12 +1320,14 @@ EDB_Type CTDS_CursorResult::ItemDataType(unsigned int item_num) const
 
 bool CTDS_CursorResult::Fetch()
 {
-    if (!m_Res)
+    if (!m_Res) {
         return false;
+    }
 
     try {
-        if (m_Res->Fetch())
+        if (m_Res->Fetch()) {
             return true;
+        }
     }
     catch (CDB_ClientEx& ex) {
         if (ex.GetDBErrCode() == 200003) {
@@ -1337,9 +1340,11 @@ bool CTDS_CursorResult::Fetch()
     // try to get next cursor result
     try {
         // finish this command
-        if (m_Res)
+        if (m_Res) {
             delete m_Res;
-        
+            m_Res = NULL;
+        }
+
         while (GetCmd().HasMoreResults()) {
             auto_ptr<CDB_Result> res( GetCmd().Result() );
             if (res.get()) {
@@ -1355,10 +1360,12 @@ bool CTDS_CursorResult::Fetch()
                 return m_Res->Fetch();
             }
             if (m_Res) {
-                while (m_Res->Fetch())
+                while (m_Res->Fetch()) {
                     continue;
+                }
+
                 delete m_Res;
-                m_Res = 0;
+                m_Res = NULL;
             }
         }
     } catch ( const CDB_Exception& e ) {
@@ -1392,8 +1399,11 @@ size_t CTDS_CursorResult::ReadItem(void* buffer, size_t buffer_size,
     if (m_Res) {
         return m_Res->ReadItem(buffer, buffer_size, is_null);
     }
-    if (is_null)
+
+    if (is_null) {
         *is_null = true;
+    }
+
     return 0;
 }
 
@@ -1426,7 +1436,7 @@ CTDS_CursorResult::~CTDS_CursorResult()
 //
 
 CTDS_ITDescriptor::CTDS_ITDescriptor(CDBL_Connection& conn,
-                                     DBPROCESS* dblink, 
+                                     DBPROCESS* dblink,
                                      int col_num) :
     CDBL_Result(conn, dblink)
 {
@@ -1448,7 +1458,7 @@ CTDS_ITDescriptor::CTDS_ITDescriptor(CDBL_Connection& conn,
 }
 
 
-CTDS_ITDescriptor::CTDS_ITDescriptor(CDBL_Connection& conn, 
+CTDS_ITDescriptor::CTDS_ITDescriptor(CDBL_Connection& conn,
                                      DBPROCESS* dblink,
                                      const CDB_ITDescriptor& inp_d) :
 CDBL_Result(conn, dblink)
@@ -1516,7 +1526,7 @@ EDB_Type CTDS_Result::GetDataType(int n)
 }
 
 CDB_Object* CTDS_Result::GetItemInternal(int item_no,
-                            SDBL_ColDescr* fmt, 
+                            SDBL_ColDescr* fmt,
                             CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
@@ -1642,7 +1652,7 @@ EDB_Type CTDS_Result::RetGetDataType(int n)
 }
 
 CDB_Object* CTDS_Result::RetGetItem(int item_no,
-                       SDBL_ColDescr* fmt, 
+                       SDBL_ColDescr* fmt,
                        CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
@@ -1676,9 +1686,9 @@ EDB_Type CTDS_Result::AltGetDataType(int id, int n)
     return eDB_UnsupportedType;
 }
 
-CDB_Object* CTDS_Result::AltGetItem(int id, 
+CDB_Object* CTDS_Result::AltGetItem(int id,
                        int item_no,
-                       SDBL_ColDescr* fmt, 
+                       SDBL_ColDescr* fmt,
                        CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
@@ -1699,6 +1709,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.26  2006/05/04 20:12:47  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

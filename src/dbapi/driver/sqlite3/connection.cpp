@@ -40,15 +40,15 @@
 
 BEGIN_NCBI_SCOPE
 
-CSL3_Connection::CSL3_Connection(CSL3Context*  cntx,
+CSL3_Connection::CSL3_Connection(CSL3Context&  cntx,
                                  const string& srv_name,
-                                 const string& user_name,
-                                 const string& passwd) :
-    m_Context(cntx),
+                                 const string&,
+                                 const string&) :
+    impl::CConnection(cntx),
     m_SQLite3(NULL),
-    m_IsOpen(false),
-    m_ServerName(srv_name)
+    m_IsOpen(false)
 {
+    SetServerName(srv_name);
     Check(sqlite3_open(srv_name.c_str(), &m_SQLite3));
 
     m_IsOpen = true;
@@ -105,53 +105,11 @@ bool CSL3_Connection::Refresh()
 }
 
 
-const string& CSL3_Connection::ServerName() const
-{
-    return m_ServerName;
-}
-
-
-const string& CSL3_Connection::UserName() const
-{
-    return kEmptyStr;
-}
-
-
-const string& CSL3_Connection::Password() const
-{
-    return kEmptyStr;
-}
-
-
 I_DriverContext::TConnectionMode CSL3_Connection::ConnectMode() const
 {
     return 0;
 }
 
-
-bool CSL3_Connection::IsReusable() const
-{
-    return true;
-}
-
-
-const string& CSL3_Connection::PoolName() const
-{
-    return kEmptyStr;
-}
-
-
-I_DriverContext* CSL3_Connection::Context() const
-{
-    return m_Context;
-}
-
-CDB_ResultProcessor* CSL3_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
-{
-    CDB_ResultProcessor* r = m_ResProc;
-    m_ResProc = rp;
-    return r;
-}
 
 CDB_LangCmd* CSL3_Connection::LangCmd(const string& lang_query,
                                         unsigned int  nof_parms)
@@ -213,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.1  2006/06/12 20:30:51  ssikorsk
  * Initial version
  *

@@ -307,7 +307,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
             return item_buff;
         }
 
-        return d_ptr ? new CDB_LongBinary((size_t) d_len, (const void*) d_ptr, 
+        return d_ptr ? new CDB_LongBinary((size_t) d_len, (const void*) d_ptr,
                                           (size_t) d_len)
             : new CDB_LongBinary();
     }
@@ -345,14 +345,14 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 //
 
 
-CDBL_RowResult::CDBL_RowResult(CDBL_Connection& conn, 
+CDBL_RowResult::CDBL_RowResult(CDBL_Connection& conn,
                                DBPROCESS* cmd,
-                               unsigned int* res_status, 
+                               unsigned int* res_status,
                                bool need_init) :
-    CDBL_Result(conn, cmd), 
-    m_CurrItem(-1), 
+    CDBL_Result(conn, cmd),
+    m_CurrItem(-1),
     m_EOR(false),
-    m_ResStatus(res_status), 
+    m_ResStatus(res_status),
     m_Offset(0)
 {
     if (!need_init)
@@ -446,7 +446,7 @@ CDB_Object* CDBL_RowResult::GetItem(CDB_Object* item_buff)
         return 0;
     }
     CDB_Object* r = GetItemInternal(m_CurrItem + 1,
-                                    &m_ColFmt[m_CurrItem], 
+                                    &m_ColFmt[m_CurrItem],
                                     item_buff);
     ++m_CurrItem;
     m_Offset = 0;
@@ -531,8 +531,8 @@ CDBL_RowResult::~CDBL_RowResult()
 
 
 CDBL_BlobResult::CDBL_BlobResult(CDBL_Connection& conn, DBPROCESS* cmd) :
-    CDBL_Result(conn, cmd), 
-    m_CurrItem(-1), 
+    CDBL_Result(conn, cmd),
+    m_CurrItem(-1),
     m_EOR(false)
 {
     m_CmdNum = DBCURCMD(cmd);
@@ -646,7 +646,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
     if(m_BytesInBuffer == 0) {
         return item_buff;
     }
-        
+
 
     STATUS s;
     while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0)
@@ -669,7 +669,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
 size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
                                  bool* is_null)
 {
-    if(m_BytesInBuffer == 0) 
+    if(m_BytesInBuffer == 0)
         m_CurrItem= 1;
 
     if (m_CurrItem != 0) {
@@ -691,7 +691,7 @@ size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         }
         memcpy(buffer, m_Buff + m_ReadedBytes, l);
     }
-        
+
     STATUS s = Check(dbreadtext(GetCmd(), (void*)((char*)buffer + l), (DBINT)(buffer_size-l)));
     switch (s) {
     case NO_MORE_ROWS:
@@ -757,8 +757,8 @@ CDBL_BlobResult::~CDBL_BlobResult()
 //  CDBL_ParamResult::
 //
 
-CDBL_ParamResult::CDBL_ParamResult(CDBL_Connection& conn, 
-                                   DBPROCESS* cmd, 
+CDBL_ParamResult::CDBL_ParamResult(CDBL_Connection& conn,
+                                   DBPROCESS* cmd,
                                    int nof_params) :
     CDBL_RowResult(conn, cmd, 0, false)
 {
@@ -802,7 +802,7 @@ CDB_Object* CDBL_ParamResult::GetItem(CDB_Object* item_buff)
     }
 
     CDB_Object* r = RetGetItem(m_CurrItem + 1,
-                               &m_ColFmt[m_CurrItem], 
+                               &m_ColFmt[m_CurrItem],
                                item_buff);
     ++m_CurrItem;
     m_Offset = 0;
@@ -869,7 +869,7 @@ CDBL_ParamResult::~CDBL_ParamResult()
 //  CTL_ComputeResult::
 //
 
-CDBL_ComputeResult::CDBL_ComputeResult(CDBL_Connection& conn, 
+CDBL_ComputeResult::CDBL_ComputeResult(CDBL_Connection& conn,
                                        DBPROCESS* cmd,
                                        unsigned int* res_stat) :
     CDBL_RowResult(conn, cmd, res_stat, false)
@@ -939,9 +939,9 @@ CDB_Object* CDBL_ComputeResult::GetItem(CDB_Object* item_buff)
     if ((unsigned int) m_CurrItem >= m_NofCols) {
         return 0;
     }
-    CDB_Object* r = AltGetItem(m_ComputeId, 
+    CDB_Object* r = AltGetItem(m_ComputeId,
                                m_CurrItem + 1,
-                               &m_ColFmt[m_CurrItem], 
+                               &m_ColFmt[m_CurrItem],
                                item_buff);
     ++m_CurrItem;
     m_Offset = 0;
@@ -1012,8 +1012,8 @@ CDBL_ComputeResult::~CDBL_ComputeResult()
 
 
 CDBL_StatusResult::CDBL_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd) :
-    CDBL_Result(conn, cmd), 
-    m_Offset(0), 
+    CDBL_Result(conn, cmd),
+    m_Offset(0),
     m_1stFetch(true)
 {
     m_Val = Check(dbretstatus(cmd));
@@ -1131,7 +1131,7 @@ CDBL_StatusResult::~CDBL_StatusResult()
 //  CTL_CursorResult::
 //
 
-CDBL_CursorResult::CDBL_CursorResult(CDBL_Connection& conn, CDB_LangCmd* cmd) : 
+CDBL_CursorResult::CDBL_CursorResult(CDBL_Connection& conn, CDB_LangCmd* cmd) :
     CDBL_Result(conn, NULL),
     m_Cmd(cmd),
     m_Res(0)
@@ -1209,8 +1209,9 @@ bool CDBL_CursorResult::Fetch()
 //         ClearResultSet();
         if ( m_Res ) {
             delete m_Res;
+            m_Res = NULL;
         }
-        
+
         while (m_Cmd->HasMoreResults()) {
             DumpResultSet();
         }
@@ -1287,8 +1288,8 @@ CDBL_CursorResult::~CDBL_CursorResult()
 //  CDBL_ITDescriptor::
 //
 
-CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn, 
-                                     DBPROCESS* dblink, 
+CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn,
+                                     DBPROCESS* dblink,
                                      int col_num) :
 CDBL_Result(conn, dblink)
 {
@@ -1311,22 +1312,22 @@ CDBL_Result(conn, dblink)
     } else {
         m_ObjName.erase();
     }
-    
+
 #else
 
     // !!! This is a hack !!!
     // dbcolname returns char*
     DBCOLINFO* col_info = (DBCOLINFO*) Check(dbcolname(GetCmd(), col_num));
 
-    CHECK_DRIVER_ERROR( 
-        col_info == 0, 
-        "Cannot get the DBCOLINFO*", 
+    CHECK_DRIVER_ERROR(
+        col_info == 0,
+        "Cannot get the DBCOLINFO*",
         280000 );
 
     if (!x_MakeObjName(col_info)) {
         m_ObjName.erase();
     }
-    
+
 #endif
 
     DBBINARY* p = Check(dbtxptr(GetCmd(), col_num));
@@ -1344,15 +1345,15 @@ CDBL_Result(conn, dblink)
         m_TimeStamp_is_NULL = true;
 }
 
-CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn, 
-                                     DBPROCESS* dblink, 
+CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn,
+                                     DBPROCESS* dblink,
                                      const CDB_ITDescriptor& inp_d) :
 CDBL_Result(conn, dblink)
 {
     m_ObjName= inp_d.TableName();
     m_ObjName+= ".";
     m_ObjName+= inp_d.ColumnName();
-    
+
 
     DBBINARY* p = Check(dbtxptr(GetCmd(), 1));
     if (p) {
@@ -1407,7 +1408,7 @@ bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
 EDB_Type CDBL_Result::GetDataType(int n)
 {
     switch (Check(dbcoltype(GetCmd(), n))) {
-    case SYBBINARY:    return (Check(dbcollen(GetCmd(), n)) > 255) ? eDB_LongBinary : 
+    case SYBBINARY:    return (Check(dbcollen(GetCmd(), n)) > 255) ? eDB_LongBinary :
                                                          eDB_VarBinary;
 #if 0
     case SYBBITN:
@@ -1447,9 +1448,9 @@ EDB_Type CDBL_Result::GetDataType(int n)
 }
 
 // Aux. for CDBL_RowResult::GetItem()
-CDB_Object* 
+CDB_Object*
 CDBL_Result::GetItemInternal(int item_no,
-                             SDBL_ColDescr* fmt, 
+                             SDBL_ColDescr* fmt,
                              CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
@@ -1558,10 +1559,10 @@ CDBL_Result::GetItemInternal(int item_no,
 EDB_Type CDBL_Result::RetGetDataType(int n)
 {
     switch (Check(dbrettype(GetCmd(), n))) {
-    case SYBBINARY:    return (Check(dbretlen(GetCmd(), n)) > 255)? eDB_LongBinary : 
+    case SYBBINARY:    return (Check(dbretlen(GetCmd(), n)) > 255)? eDB_LongBinary :
                                                         eDB_VarBinary;
     case SYBBIT:       return eDB_Bit;
-    case SYBCHAR:      return (Check(dbretlen(GetCmd(), n)) > 255)? eDB_LongChar : 
+    case SYBCHAR:      return (Check(dbretlen(GetCmd(), n)) > 255)? eDB_LongChar :
                                                         eDB_VarChar;
     case SYBDATETIME:  return eDB_DateTime;
     case SYBDATETIME4: return eDB_SmallDateTime;
@@ -1580,7 +1581,7 @@ EDB_Type CDBL_Result::RetGetDataType(int n)
 
 // Aux. for CDBL_ParamResult::GetItem()
 CDB_Object* CDBL_Result::RetGetItem(int item_no,
-                                    SDBL_ColDescr* fmt, 
+                                    SDBL_ColDescr* fmt,
                                     CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
@@ -1598,10 +1599,10 @@ CDB_Object* CDBL_Result::RetGetItem(int item_no,
 EDB_Type CDBL_Result::AltGetDataType(int id, int n)
 {
     switch (Check(dbalttype(GetCmd(), id, n))) {
-    case SYBBINARY:    return (Check(dbaltlen(GetCmd(), id, n)) > 255)? eDB_LongBinary : 
+    case SYBBINARY:    return (Check(dbaltlen(GetCmd(), id, n)) > 255)? eDB_LongBinary :
                                                         eDB_VarBinary;
     case SYBBIT:       return eDB_Bit;
-    case SYBCHAR:      return (Check(dbaltlen(GetCmd(), id, n)) > 255)? eDB_LongChar : 
+    case SYBCHAR:      return (Check(dbaltlen(GetCmd(), id, n)) > 255)? eDB_LongChar :
                                                         eDB_VarChar;
     case SYBDATETIME:  return eDB_DateTime;
     case SYBDATETIME4: return eDB_SmallDateTime;
@@ -1619,9 +1620,9 @@ EDB_Type CDBL_Result::AltGetDataType(int id, int n)
 
 
 // Aux. for CDBL_ComputeResult::GetItem()
-CDB_Object* CDBL_Result::AltGetItem(int id, 
+CDB_Object* CDBL_Result::AltGetItem(int id,
                                     int item_no,
-                                    SDBL_ColDescr* fmt, 
+                                    SDBL_ColDescr* fmt,
                                     CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
@@ -1644,6 +1645,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.36  2006/05/04 20:12:17  ssikorsk
  * Implemented classs CDBL_Cmd, CDBL_Result and CDBLExceptions;
  * Surrounded each native dblib call with Check;

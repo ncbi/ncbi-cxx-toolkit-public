@@ -171,7 +171,8 @@ CDB_Result* CTDS_LangCmd::Result()
     if ((m_Status & 0x10) != 0) { // we do have a compute result
         m_Res = new CTDS_ComputeResult(GetConnection(), GetCmd(), &m_Status);
         m_RowCount= 1;
-        return Create_Result(*m_Res);
+
+        return Create_Result(*GetResultSet());
     }
 
     while ((m_Status & 0x1) != 0) {
@@ -180,7 +181,8 @@ CDB_Result* CTDS_LangCmd::Result()
             if (DBCMDROW(GetCmd()) == SUCCEED) { // we may get rows in this result
                 m_Res = new CTDS_RowResult(GetConnection(), GetCmd(), &m_Status);
                 m_RowCount = -1;
-                return Create_Result(*m_Res);
+
+                return Create_Result(*GetResultSet());
             } else {
                 m_RowCount = DBCOUNT(GetCmd());
                 continue;
@@ -203,7 +205,8 @@ CDB_Result* CTDS_LangCmd::Result()
         if (n > 0) {
             m_Res = new CTDS_ParamResult(GetConnection(), GetCmd(), n);
             m_RowCount = 1;
-            return Create_Result(*m_Res);
+
+            return Create_Result(*GetResultSet());
         }
     }
 
@@ -212,12 +215,14 @@ CDB_Result* CTDS_LangCmd::Result()
         if (Check(dbhasretstat(GetCmd()))) {
             m_Res = new CTDS_StatusResult(GetConnection(), GetCmd());
             m_RowCount = 1;
-            return Create_Result(*m_Res);
+
+            return Create_Result(*GetResultSet());
         }
     }
 
     m_WasSent = false;
-    return 0;
+
+    return NULL;
 }
 
 bool CTDS_LangCmd::HasMoreResults() const
@@ -231,8 +236,8 @@ void CTDS_LangCmd::DumpResults()
     while(m_WasSent) {
         dbres= Result();
         if(dbres) {
-            if(GetConnection().m_ResProc) {
-                GetConnection().m_ResProc->ProcessResult(*dbres);
+            if(GetConnection().GetResultProcessor()) {
+                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch());
@@ -254,20 +259,10 @@ int CTDS_LangCmd::RowCount() const
 }
 
 
-void CTDS_LangCmd::Release()
-{
-    CDB_BaseEnt::Release();
-
-    delete this;
-}
-
-
 CTDS_LangCmd::~CTDS_LangCmd()
 {
     try {
-        if (m_BR) {
-            *m_BR = 0;
-        }
+        DetachInterface();
 
         GetConnection().DropCmd(*this);
 
@@ -497,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/07/12 16:29:31  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.23  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *

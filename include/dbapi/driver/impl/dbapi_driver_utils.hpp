@@ -40,23 +40,66 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
+class CDBHandlerStack;
+
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDBExceptionStorage
 {
 private:
     friend class CSafeStaticPtr<CDBExceptionStorage>;
-    
+
     CDBExceptionStorage(void);
     ~CDBExceptionStorage(void) throw();
-    
+
 public:
     void Accept(const CDB_Exception& e);
     void Handle(CDBHandlerStack& handler);
-    
+
 private:
     CFastMutex                      m_Mutex;
     CDB_UserHandler::TExceptions    m_Exceptions;
 };
 
+template <class I>
+class CInterfaceHook
+{
+public:
+    CInterfaceHook(I* interface = NULL) :
+        m_Interface(NULL)
+    {
+        AttachTo(interface);
+    }
+    ~CInterfaceHook(void)
+    {
+        DetachInterface();
+    }
+
+    CInterfaceHook& operator=(I* interface)
+    {
+        AttachTo(interface);
+        return *this;
+    }
+
+public:
+    void AttachTo(I* interface)
+    {
+        DetachInterface();
+        m_Interface = interface;
+    }
+    void DetachInterface(void)
+    {
+        if (m_Interface) {
+            m_Interface->ReleaseImpl();
+            m_Interface = NULL;
+        }
+    }
+
+private:
+    CInterfaceHook(const CInterfaceHook&);
+    CInterfaceHook& operator=(const CInterfaceHook&);
+
+    I* m_Interface;
+};
 
 END_NCBI_SCOPE
 
@@ -66,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 16:28:48  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.1  2006/05/11 17:53:25  ssikorsk
  * Added CDBExceptionStorage class
  *

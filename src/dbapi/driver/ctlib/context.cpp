@@ -41,6 +41,7 @@
 #include <dbapi/driver/driver_mgr.hpp>
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
+#include <dbapi/driver/util/pointer_pot.hpp>
 
 #include <algorithm>
 
@@ -369,7 +370,7 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 }
 
 
-I_Connection*
+impl::CConnection*
 CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {
     CS_CONNECTION* con = x_ConnectToServer(conn_attr.srv_name,
@@ -385,7 +386,7 @@ CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
-    CTL_Connection* t_con = new CTL_Connection(this,
+    CTL_Connection* t_con = new CTL_Connection(*this,
                                                con,
                                                conn_attr.reusable,
                                                conn_attr.pool_name);
@@ -559,8 +560,8 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                      (void*) &link,
                      (CS_INT) sizeof(link),
                      &outlen ) == CS_SUCCEED  &&  link != 0) {
-        server_name = link->m_Server;
-        user_name = link->m_User;
+        server_name = link->ServerName();
+        user_name = link->UserName();
     }
     else if (cs_config(context,
                        CS_GET,
@@ -707,8 +708,8 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                    (void*) &link, (CS_INT) sizeof(link),
                                    &outlen) == CS_SUCCEED  &&
         link != 0) {
-        server_name = link->m_Server;
-        user_name = link->m_User;
+        server_name = link->ServerName();
+        user_name = link->UserName();
     }
     else if (cs_config(context, CS_GET,
                        CS_USERDATA,
@@ -889,7 +890,7 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 
 
 NCBI_PARAM_DECL(int, ctlib, TDS_VERSION);
-NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION, 110, eParam_NoThread, 
+NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION, 110, eParam_NoThread,
                   CTLIB_TDS_VERSION);
 typedef NCBI_PARAM_TYPE(ctlib, TDS_VERSION) TCtlibTdsVersion;
 
@@ -1145,6 +1146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2006/07/12 16:29:30  ssikorsk
+ * Separated interface and implementation of CDB classes.
+ *
  * Revision 1.81  2006/07/05 16:08:09  ssikorsk
  * Revamp code to use GetCtlibTdsVersion function.
  *
