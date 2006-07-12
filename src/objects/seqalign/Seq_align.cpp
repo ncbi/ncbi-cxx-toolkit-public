@@ -815,6 +815,11 @@ void CSeq_align::OffsetRow(TDim row,
     _ASSERT(offset > 0);
 
     switch (SetSegs().Which()) {
+    case TSegs::e_Dendiag:
+        NON_CONST_ITERATE(TSegs::TDendiag, dendiag_it, SetSegs().SetDendiag()) {
+            (*dendiag_it)->OffsetRow(row, offset);
+        }
+        break;
     case TSegs::e_Denseg:
         SetSegs().SetDenseg().OffsetRow(row, offset);
         break;
@@ -881,6 +886,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2006/07/12 21:24:07  todorov
+* Added support for Dense-diag in OffsetRow.
+*
 * Revision 1.24  2006/07/07 14:25:03  todorov
 * 1) Support for unordered disc densegs in CreateDensegFromDisc.
 * 2) Better strands support in CreateDensegFromDisc.
