@@ -177,6 +177,20 @@ void CSeqTestManager::RegisterTest(const CTypeInfo* info,
 }
 
 
+void CSeqTestManager::UnRegisterTest(const CTypeInfo* info,
+                                     CSeqTest* test)
+{
+    pair<TTests::iterator, TTests::iterator> iter_pair =
+        m_Tests.equal_range(info);
+    for ( ;  iter_pair.first != iter_pair.second;  ++iter_pair.first) {
+        TTests::iterator iter = iter_pair.first;
+        if (typeid(*iter->second) == typeid(*test)) {
+            m_Tests.erase(iter);
+        }
+    }
+}
+
+
 CRef<CSeq_test_result_set>
 CSeqTestManager::RunTests(const CSerialObject& obj,
                           const CSeqTestContext* ctx)
@@ -233,6 +247,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/07/12 16:08:55  jcherry
+ * Added CSeqTestManager::UnRegisterTest
+ *
  * Revision 1.12  2006/04/12 19:38:58  jcherry
  * Added biomol tests for all Seq-id's
  *

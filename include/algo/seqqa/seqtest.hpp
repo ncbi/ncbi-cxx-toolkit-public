@@ -145,6 +145,15 @@ public:
     /// Register a test to be run for a given object sub-type
     void RegisterTest(const CTypeInfo* info, CSeqTest* test);
 
+    /// "Un-register" a test for a given object sub-type.
+    ///
+    /// This is useful in conjunction with RegisterStandardTests
+    /// for excluding particular standard tests.
+    /// This undoes, for this object type, all registrations
+    /// of CSeqTest objects of the same subclass as parameter "test"
+    /// (usually there is at most one).
+    void UnRegisterTest(const CTypeInfo* info, CSeqTest* test);
+
     /// Run tests for a given serial object
     virtual CRef<objects::CSeq_test_result_set>
         RunTests(const CSerialObject& obj,
@@ -177,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 16:08:54  jcherry
+ * Added CSeqTestManager::UnRegisterTest
+ *
  * Revision 1.1  2004/10/06 19:58:35  jcherry
  * Initial version
  *
