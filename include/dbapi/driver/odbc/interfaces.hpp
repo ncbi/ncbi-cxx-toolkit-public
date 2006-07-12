@@ -37,7 +37,9 @@
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
 #include <dbapi/driver/impl/dbapi_impl_result.hpp>
+#include <dbapi/driver/util/pointer_pot.hpp>
 #include <dbapi/driver/util/parameters.hpp>
+
 #ifdef NCBI_OS_MSWIN
 #include <windows.h>
 #endif
@@ -144,7 +146,7 @@ public:
     }
 
 protected:
-    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
 private:
     SQLHENV         m_Context;
@@ -725,6 +727,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/07/12 17:10:40  ssikorsk
+ * Fixed return type of MakeIConnection.
+ *
  * Revision 1.33  2006/07/12 16:28:49  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
