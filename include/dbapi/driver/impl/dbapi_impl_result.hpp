@@ -37,6 +37,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDB_Result;
+
 BEGIN_SCOPE(impl)
 
 /////////////////////////////////////////////////////////////////////////////
@@ -46,7 +48,7 @@ BEGIN_SCOPE(impl)
 
 class NCBI_DBAPIDRIVER_EXPORT CResult
 {
-    friend class CDB_Result; // Because of Release().
+    friend class ncbi::CDB_Result; // Because of Release().
 
 public:
     CResult(void);
@@ -125,6 +127,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/12 19:15:17  ucko
+ * Disambiguate friend declarations, and add corresponding top-level
+ * predeclarations, for the sake of GCC 4.x.
+ *
  * Revision 1.2  2006/07/12 18:55:28  ssikorsk
  * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
  *

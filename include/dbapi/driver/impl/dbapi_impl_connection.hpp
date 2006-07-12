@@ -39,6 +39,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDB_Connection;
+
 BEGIN_SCOPE(impl)
 
 ////////////////////////////////////////////////////////////////////////////
@@ -58,7 +60,7 @@ class CCommand;
 class NCBI_DBAPIDRIVER_EXPORT CConnection
 {
     friend class impl::CDriverContext;
-    friend class CDB_Connection; // Because of AttachTo
+    friend class ncbi::CDB_Connection; // Because of AttachTo
 
 public:
     CConnection(CDriverContext& dc,
@@ -260,6 +262,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/12 19:15:17  ucko
+ * Disambiguate friend declarations, and add corresponding top-level
+ * predeclarations, for the sake of GCC 4.x.
+ *
  * Revision 1.3  2006/07/12 19:10:43  ssikorsk
  * + #include <dbapi/driver/public.hpp> (Necessary for MIPS).
  *

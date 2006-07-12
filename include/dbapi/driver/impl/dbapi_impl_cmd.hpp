@@ -37,6 +37,12 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDB_LangCmd;
+class CDB_RPCCmd;
+class CDB_BCPInCmd;
+class CDB_CursorCmd;
+class CDB_SendDataCmd;
+
 BEGIN_SCOPE(impl)
 
 class NCBI_DBAPIDRIVER_EXPORT CCommand
@@ -112,7 +118,7 @@ public:
 
 class NCBI_DBAPIDRIVER_EXPORT CLangCmd : public CBaseCmd
 {
-    friend class CDB_LangCmd; // Because of AttachTo
+    friend class ncbi::CDB_LangCmd; // Because of AttachTo
 
 public:
     CLangCmd(void);
@@ -140,7 +146,7 @@ private:
 
 class NCBI_DBAPIDRIVER_EXPORT CRPCCmd : public CBaseCmd
 {
-    friend class CDB_RPCCmd; // Because of AttachTo
+    friend class ncbi::CDB_RPCCmd; // Because of AttachTo
 
 public:
     CRPCCmd(void);
@@ -170,7 +176,7 @@ private:
 
 class NCBI_DBAPIDRIVER_EXPORT CBCPInCmd : public CCommand
 {
-    friend class CDB_BCPInCmd; // Because of AttachTo
+    friend class ncbi::CDB_BCPInCmd; // Because of AttachTo
 
 public:
     CBCPInCmd(void);
@@ -206,7 +212,7 @@ private:
 
 class NCBI_DBAPIDRIVER_EXPORT CCursorCmd : public CCommand
 {
-    friend class CDB_CursorCmd; // Because of AttachTo
+    friend class ncbi::CDB_CursorCmd; // Because of AttachTo
 
 public:
     CCursorCmd(void);
@@ -255,7 +261,7 @@ private:
 
 class NCBI_DBAPIDRIVER_EXPORT CSendDataCmd : public CCommand
 {
-    friend class CDB_SendDataCmd; // Because of AttachTo
+    friend class ncbi::CDB_SendDataCmd; // Because of AttachTo
 
 public:
     CSendDataCmd(void);
@@ -284,6 +290,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/12 19:15:17  ucko
+ * Disambiguate friend declarations, and add corresponding top-level
+ * predeclarations, for the sake of GCC 4.x.
+ *
  * Revision 1.3  2006/07/12 18:55:28  ssikorsk
  * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
  *
