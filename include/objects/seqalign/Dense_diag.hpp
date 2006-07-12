@@ -62,7 +62,11 @@ public:
     // destructor
     ~CDense_diag(void);
 
-    // GetSeqRange
+    /// Validators
+    TDim    CheckNumRows(void)                   const;
+    void    Validate    ()                       const;
+
+    /// GetSeqRange
     CRange<TSeqPos> GetSeqRange(TDim row) const;
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop (TDim row) const;
@@ -112,6 +116,19 @@ CRange<TSeqPos> CDense_diag::GetSeqRange(TDim row) const
 }
 
 
+inline
+CDense_diag::TDim CDense_diag::CheckNumRows() const
+{
+    const size_t& dim = GetDim();
+    if (dim != GetIds().size()  ||  dim != GetStarts().size()) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_diag::CheckNumRows()"
+                   " dim is not consistent with ids.size & starts.size");
+    }
+    return dim;
+}
+
+
 /////////////////// end of CDense_diag inline methods
 
 
@@ -124,6 +141,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/07/12 23:03:24  todorov
+* Added CheckNumRows() and Validate() methods.
+*
 * Revision 1.2  2006/07/12 21:26:02  todorov
 * Added OffsetRow.
 *
