@@ -33,7 +33,6 @@
  *
  */
 
-#include <dbapi/driver/public.hpp> // Necessary for MIPS.
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 
@@ -262,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/07/12 19:42:54  ssikorsk
+ * - #include <dbapi/driver/public.hpp> Forward declaration of CDB_Connection is enough.
+ *
  * Revision 1.4  2006/07/12 19:15:17  ucko
  * Disambiguate friend declarations, and add corresponding top-level
  * predeclarations, for the sake of GCC 4.x.
