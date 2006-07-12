@@ -54,21 +54,20 @@ BEGIN_SCOPE(blast)
 /// Forward declaration
 class ILocalQueryData; 
 
-/// Get GIs for a protein sequence.
+/// Get GIs for a sequence in a redundant database.
 ///
-/// The program is checked - if this type of search uses protein
-/// databases for subject sequences, this function returns a list of
-/// GIs corresponding to the specified OID, otherwise it returns an
-/// empty list.
+/// This function returns a list of GIs corresponding to the specified
+/// OID.  This allows a GI list to be built for those GIs found by a
+/// search and included in the associated database; the returned GIs
+/// will be filtered by any OID and GI list filtering that is applied
+/// to the database (if any).
 ///
 /// @param sisrc Source of sequence information. [in]
-/// @param prog Program value for this search.   [in]
 /// @param oid OID for which to retrieve GIs.    [in]
 /// @param gis GIs found for the specified oid.  [out]
-void GetProteinSequenceGis(const IBlastSeqInfoSrc & sisrc,
-                           EBlastProgramType        prog,
-                           int                      oid,
-                           vector<int>            & gis);
+void GetFilteredRedundantGis(const IBlastSeqInfoSrc & sisrc,
+                             int                      oid,
+                             vector<int>            & gis);
 
 /// Remaps Seq-align offsets relative to the query Seq-loc. 
 /// Since the query strands were already taken into account when CSeq_align 
@@ -147,6 +146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2006/07/12 15:02:40  bealer
+* - Produce the filtered GI list for both nucleotide and protein.
+*
 * Revision 1.34  2006/03/07 16:35:27  bealer
 * - Add "use_this_gi" scores for protein searches with Entrez queries.
 *

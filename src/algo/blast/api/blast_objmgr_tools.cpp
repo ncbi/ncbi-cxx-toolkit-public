@@ -419,7 +419,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
         CRef<CSeq_align> hit_align;
         
         vector<int> gi_list;
-        GetProteinSequenceGis(*seqinfo_src, prog, hsp_list->oid, gi_list);
+        GetFilteredRedundantGis(*seqinfo_src, hsp_list->oid, gi_list);
         
         if (is_gapped) {
             hit_align =
@@ -711,6 +711,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2006/07/12 15:02:40  bealer
+* - Produce the filtered GI list for both nucleotide and protein.
+*
 * Revision 1.72  2006/06/14 15:58:54  camacho
 * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
 *

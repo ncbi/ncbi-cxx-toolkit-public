@@ -79,16 +79,11 @@ GetSequenceLengthAndId(const IBlastSeqInfoSrc * seqinfo_src,
     return;
 }
 
-void GetProteinSequenceGis(const IBlastSeqInfoSrc & seqinfo_src,
-                           EBlastProgramType        prog,
-                           int                      oid,
-                           vector<int>            & gis)
+void GetFilteredRedundantGis(const IBlastSeqInfoSrc & seqinfo_src,
+                             int                      oid,
+                             vector<int>            & gis)
 {
     gis.resize(0);
-    
-    if (! Blast_SubjectIsProtein(prog)) {
-        return;
-    }
     
     if (! seqinfo_src.HasGiList()) {
         return;
@@ -1378,7 +1373,7 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         CRef<CSeq_align> hit_align;
         
         // Get GIs for entrez query restriction.
-        GetProteinSequenceGis(*seqinfo_src, prog, hsp_list->oid, gi_list);
+        GetFilteredRedundantGis(*seqinfo_src, hsp_list->oid, gi_list);
         
         if (is_gapped) {
             hit_align =
@@ -1516,7 +1511,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             TSeqPos query_length = query_data.GetSeqLength(qindex); 
             
             vector<int> gi_list;
-            GetProteinSequenceGis(seqinfo_src, prog, hsp_list->oid, gi_list);
+            GetFilteredRedundantGis(seqinfo_src, hsp_list->oid, gi_list);
             
             if (is_gapped) {
                 hit_align =
@@ -1681,6 +1676,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2006/07/12 15:02:40  bealer
+* - Produce the filtered GI list for both nucleotide and protein.
+*
 * Revision 1.73  2006/07/10 17:26:06  madden
 * PhiBlastResults2SeqAlign_OMF produces non-discontinous SeqAlign
 *
