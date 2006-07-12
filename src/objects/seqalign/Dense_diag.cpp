@@ -52,6 +52,20 @@ CDense_diag::~CDense_diag(void)
 }
 
 
+void CDense_diag::Validate() const
+{
+    const size_t& numrows = CheckNumRows();
+
+    const CDense_diag::TStrands& strands = GetStrands();
+
+    if ( !GetStrands().empty()  &&  
+         GetStrands().size() != CheckNumRows()) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "strands.size inconsistent with dim");
+    }
+}
+
+
 void CDense_diag::OffsetRow(TDim row,
                            TSeqPos offset)
 {
@@ -59,10 +73,7 @@ void CDense_diag::OffsetRow(TDim row,
 
     _ASSERT(offset > 0);
     
-    if (GetDim() != GetStarts().size()) {
-        NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                   "CDense_seg::OffsetRow: GetDim() != GetStarts().size().");
-    }
+    CheckNumRows();
     if (row >= GetDim()) {
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
                    "CDense_seg::OffsetRow: row > dim");
@@ -82,6 +93,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/07/12 23:02:52  todorov
+* 1) Added a Validate() method.
+* 2) Use the newly added CheckNumRows() in OffsetRow()
+*
 * Revision 1.1  2006/07/12 21:25:35  todorov
 * Added OffsetRow method.
 *
