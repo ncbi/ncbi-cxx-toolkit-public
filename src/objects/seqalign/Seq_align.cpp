@@ -244,7 +244,7 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeq_id() currently does not handle "
                    "this type of alignment.");
-    }
+   }
     NCBI_THROW(CSeqalignException, eInvalidRowNumber,
                "CSeq_align::GetSeq_id(): "
                "can not get seq-id for the row requested.");
@@ -298,8 +298,18 @@ bool CSeq_align::GetNamedScore(const string &id, double &score) const
 void CSeq_align::Validate(bool full_test) const
 {
     switch (GetSegs().Which()) {
+    case TSegs::e_Dendiag:
+        ITERATE(TSegs::TDendiag, dendiag_it, GetSegs().GetDendiag()) {
+            (*dendiag_it)->Validate();
+        }
+        break;
     case C_Segs::e_Denseg:
         GetSegs().GetDenseg().Validate(full_test);
+        break;
+    case C_Segs::e_Disc:
+        ITERATE(CSeq_align_set::Tdata, seq_align_it, GetSegs().GetDisc().Get()) {
+            (*seq_align_it)->Validate(full_test);
+        }
         break;
     case C_Segs::e_Std:
         CheckNumRows();
@@ -835,7 +845,8 @@ void CSeq_align::OffsetRow(TDim row,
         break;
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
-                   "CSeq_align::OffsetRow only supports Dense-seg and Std-seg alignments.");
+                   "CSeq_align::OffsetRow() currently does not handle "
+                   "this type of alignment");
     }
 }
 
@@ -886,6 +897,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2006/07/12 23:01:44  todorov
+* Added support for Dendiag and Disc alignments in Validate()
+*
 * Revision 1.25  2006/07/12 21:24:07  todorov
 * Added support for Dense-diag in OffsetRow.
 *
