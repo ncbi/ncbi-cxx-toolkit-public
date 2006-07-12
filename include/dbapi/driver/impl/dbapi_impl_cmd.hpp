@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(impl)
 
-class CCommand
+class NCBI_DBAPIDRIVER_EXPORT CCommand
 {
 public:
     virtual ~CCommand(void)
@@ -314,6 +314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/12 17:09:53  ssikorsk
+ * Added NCBI_DBAPIDRIVER_EXPORT to CCommand.
+ *
  * Revision 1.1  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
