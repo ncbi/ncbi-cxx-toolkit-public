@@ -229,6 +229,9 @@ CTDSContext::CTDSContext(DBINT version) :
 
     g_pTDSContext = this;
     m_Login = Check(dblogin());
+
+    m_Registry = &CDblibContextRegistry::Instance();
+    x_AddToRegistry();
 }
 
 void
@@ -877,6 +880,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2006/07/13 19:57:22  ssikorsk
+ * Register CTDSContext with CTDSContextRegistry.
+ *
  * Revision 1.77  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
