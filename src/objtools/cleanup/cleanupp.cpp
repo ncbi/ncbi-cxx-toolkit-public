@@ -121,6 +121,14 @@ void CCleanup_imp::Finish(CSeq_entry& se)
 }
 
 
+void CCleanup_imp::ChangeMade(CCleanupChange::EChanges e)
+{
+    if (m_Changes) {
+        m_Changes->SetChanged(e);
+    }
+}
+
+
 void CCleanup_imp::BasicCleanup(CSeq_entry& se)
 {
     Setup(se);
@@ -224,12 +232,14 @@ void CCleanup_imp::BasicCleanup(CSeq_descr& sdr)
 
 
 
-static void s_SeqDescCommentCleanup( CSeqdesc::TComment& comment )
+static bool s_SeqDescCommentCleanup( CSeqdesc::TComment& comment )
 {
     //  Remove trailing periods:
     if ( ! comment.empty() && (comment[ comment.size() -1 ] == '.') ) {
         comment = comment.substr( 0, comment.size() -1 );
+        return true;
     }
+    return false;
 };
 
 
@@ -252,7 +262,9 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
             BasicCleanup(sd.SetOrg() );
             break;
         case CSeqdesc::e_Comment:
-            s_SeqDescCommentCleanup( sd.SetComment() );
+            if (s_SeqDescCommentCleanup( sd.SetComment() ) ) {
+                ChangeMade(CCleanupChange::eTrimSpaces);
+            }
             break;
         case CSeqdesc::e_Num:
             break;
@@ -312,6 +324,7 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
         const CGB_block::TOrigin& origin = gbb.GetOrigin();
         if ( ! origin.empty() && ! NStr::EndsWith(origin, ".")) {
             gbb.SetOrigin() += '.';
+            ChangeMade(CCleanupChange::eChangeOther);
         }
     }
 }
@@ -1341,6 +1354,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2006/07/13 17:10:56  rsmith
+ * report if changes made
+ *
  * Revision 1.32  2006/07/11 14:38:28  bollin
  * aadded a step to ExtendedCleanup to extend the only gene found on the only
  * mRNA sequence in the set where there are zero or one coding region features

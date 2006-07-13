@@ -36,6 +36,8 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objmgr/scope.hpp>
+#include <objtools/cleanup/cleanup_change.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -80,7 +82,6 @@ class COrgName;
 class COrgMod;
 class CSubSource;
 
-class CCleanupChange;
 
 /// right now a slightly different cleanup is performed for EMBL/DDBJ and
 /// SwissProt records. All other types are handled as GenBank records.
@@ -125,6 +126,8 @@ public:
 private:
     void Setup(const CSeq_entry& se);
     void Finish(CSeq_entry& se);
+    
+    void ChangeMade(CCleanupChange::EChanges e);
 
     // Cleanup other sub-objects.
     void BasicCleanup(CSeq_descr& sdr);
@@ -177,7 +180,7 @@ private:
     // Gb_qual cleanup.
     void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);
     void x_CleanupConsSplice(CGb_qual& gbq);
-    void x_CleanupRptUnit(CGb_qual& gbq);
+    bool x_CleanupRptUnit(CGb_qual& gbq);
 
     // Dbtag cleanup.
     void x_TagCleanup(CObject_id& tag);
@@ -289,6 +292,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2006/07/13 17:10:57  rsmith
+ * report if changes made
+ *
  * Revision 1.31  2006/07/11 14:38:28  bollin
  * aadded a step to ExtendedCleanup to extend the only gene found on the only
  * mRNA sequence in the set where there are zero or one coding region features
