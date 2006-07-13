@@ -94,10 +94,10 @@ void CCgiSession::ModifyId(const string& new_session_id)
         return;
     if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
-                   "The session implemetatin is not set");
+                   "The session implementation is not set");
     if (m_Status != eLoaded && m_Status != eNew)
         NCBI_THROW(CCgiSessionException, eSessionId,
-                   "The Session must be load.");
+                   "The session must be loaded");
     m_Impl->ModifySessionId(new_session_id);
     m_SessionId = new_session_id;
     //GetDiagContext().SetProperty(
@@ -110,10 +110,10 @@ void CCgiSession::Load()
         return;
     if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
-                   "The session implemetatin is not set");
+                   "The session implementation is not set");
     if (m_Status == eDeleted)
         NCBI_THROW(CCgiSessionException, eDeleted,
-                   "Can not load deleted session");
+                   "Cannot load deleted session");
     if (m_Impl->LoadSession(GetId()))
         m_Status = eLoaded;
     else m_Status = eNotLoaded;
@@ -125,7 +125,7 @@ void CCgiSession::CreateNewSession()
         m_Impl->Reset();
     if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
-                   "The session implemetatin is not set");
+                   "The session implementation is not set");
     m_SessionId = m_Impl->CreateNewSession();
     //GetDiagContext().SetProperty(
     //    CDiagContext::kProperty_SessionID, m_SessionId);
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/07/13 19:50:05  golikov
+ * err msg text typos
+ *
  * Revision 1.12  2006/06/29 16:02:21  grichenk
  * Added constants for setting CDiagContext properties.
  *
