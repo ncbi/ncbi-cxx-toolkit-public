@@ -84,7 +84,9 @@ CGridJobSubmitter::CGridJobSubmitter(CGridClient& grid_client,
                                    bool use_progress,
                                    bool use_embedded_storage)
     : m_GridClient(grid_client), m_UseProgress(use_progress), 
-      m_UseEmbeddedStorage(use_embedded_storage)
+      m_UseEmbeddedStorage(use_embedded_storage),
+      m_JobMask(CNetScheduleClient::eEmptyMask)
+    
 {
 }
 
@@ -95,6 +97,11 @@ void CGridJobSubmitter::SetJobInput(const string& input)
 {
     m_Input = input;
 }
+void CGridJobSubmitter::SetJobMask(CNetScheduleClient::TJobMask mask)
+{
+    m_JobMask = mask;
+}
+
 CNcbiOstream& CGridJobSubmitter::GetOStream()
 {
     size_t max_data_size = m_UseEmbeddedStorage ? kNetScheduleMaxDataSize : 0;
@@ -110,8 +117,7 @@ CNcbiOstream& CGridJobSubmitter::GetOStream()
     //    return m_GridClient.GetStorage().CreateOStream(m_Input);
 }
 
-string CGridJobSubmitter::Submit(const string& affinity,
-                                 CNetScheduleClient::TJobMask mask)
+string CGridJobSubmitter::Submit(const string& affinity)
 {
     m_WStream.reset();
     string progress_msg_key;
@@ -122,7 +128,7 @@ string CGridJobSubmitter::Submit(const string& affinity,
                                                           affinity, 
                                                           kEmptyStr,
                                                           kEmptyStr,
-                                                          mask);
+                                                          m_JobMask);
     m_Input.erase();
 
     if (m_UseProgress)
@@ -201,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/07/13 14:27:26  didenko
+ * Added access to the job's mask for grid's clients/wnodes
+ *
  * Revision 1.13  2006/06/28 16:01:56  didenko
  * Redone job's exlusivity processing
  *

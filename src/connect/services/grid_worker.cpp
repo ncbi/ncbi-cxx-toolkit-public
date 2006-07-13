@@ -80,7 +80,8 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
     : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
       m_JobCommitted(eNotCommitted), m_LogRequested(log_requested), 
       m_JobNumber(job_number), m_ThreadContext(NULL), 
-      m_ExclusiveJob(jmask & CNetScheduleClient::eExclusiveJob)
+      m_ExclusiveJob(jmask & CNetScheduleClient::eExclusiveJob),
+      m_Mask(jmask)
 {
 }
 
@@ -154,6 +155,7 @@ void CWorkerNodeJobContext::Reset(const string& job_key,
     m_JobCommitted = eNotCommitted;
     m_InputBlobSize = 0;
     m_ExclusiveJob = jmask & CNetScheduleClient::eExclusiveJob;
+    m_Mask = jmask;
 }
 
 void CWorkerNodeJobContext::RequestExclusiveMode()
@@ -730,6 +732,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/07/13 14:27:26  didenko
+ * Added access to the job's mask for grid's clients/wnodes
+ *
  * Revision 1.56  2006/06/28 16:01:56  didenko
  * Redone job's exlusivity processing
  *

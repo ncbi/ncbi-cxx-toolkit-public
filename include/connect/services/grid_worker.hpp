@@ -267,6 +267,9 @@ public:
     void RequestExclusiveMode();
 
     const string& GetJobOutput() const { return m_JobOutput; }
+    
+    CNetScheduleClient::TJobMask GetJobMask() const { return m_Mask; }
+
 
 private:    
     enum ECommitStatus {
@@ -315,6 +318,8 @@ private:
     CGridThreadContext*  m_ThreadContext;
     bool                 m_ExclusiveJob;
     string               m_ErrMsg;
+    CNetScheduleClient::TJobMask m_Mask;
+
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -644,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/07/13 14:27:26  didenko
+ * Added access to the job's mask for grid's clients/wnodes
+ *
  * Revision 1.48  2006/06/28 16:01:42  didenko
  * Redone job's exlusivity processing
  *

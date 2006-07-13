@@ -74,11 +74,14 @@ public:
     ///
     CNcbiOstream& GetOStream();
 
+    /// Set a job mask
+    ///
+    void SetJobMask(CNetScheduleClient::TJobMask mask);
+
     /// Submit a job to the queue
     ///
     /// @return a job key
-    string Submit(const string& affinity = "", 
-                  CNetScheduleClient::TJobMask mask = CNetScheduleClient::eEmptyMask);
+    string Submit(const string& affinity = "");
 
 private:
     /// Only CGridClient can create an instnce of this class
@@ -90,6 +93,7 @@ private:
     bool         m_UseProgress;
     bool         m_UseEmbeddedStorage;
     auto_ptr<CNcbiOstream> m_WStream;
+    CNetScheduleClient::TJobMask m_JobMask;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -263,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/07/13 14:27:26  didenko
+ * Added access to the job's mask for grid's clients/wnodes
+ *
  * Revision 1.12  2006/06/28 16:01:42  didenko
  * Redone job's exlusivity processing
  *
