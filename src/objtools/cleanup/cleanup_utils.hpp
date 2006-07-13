@@ -38,18 +38,6 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/Dbtag.hpp>
-#include <objects/biblio/Cit_sub.hpp>
-#include <objects/biblio/Auth_list.hpp>
-#include <objects/biblio/Affil.hpp>
-#include <objects/biblio/Author.hpp>
-#include <objects/biblio/Imprint.hpp>
-#include <objects/general/Date.hpp>
-#include <objects/general/Person_id.hpp>
-#include <objects/general/Name_std.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/pub/Pub_equiv.hpp>
-#include <objects/pub/Pub.hpp>
-#include <objects/biblio/Cit_gen.hpp>
 
 #include <objmgr/scope.hpp>
 
@@ -57,6 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CCit_sub;
+class CPubdesc;
 
 /// Cleaning functions may return true if they have changed something.
 /// false if no change was needed.
@@ -296,6 +285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/07/13 19:16:19  rsmith
+* eliminate unnecessary includes
+*
 * Revision 1.8  2006/07/13 17:08:34  rsmith
 * report if changes made. Dbtag comparisons.
 *
