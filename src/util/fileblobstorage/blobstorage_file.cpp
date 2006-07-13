@@ -134,7 +134,6 @@ CNcbiOstream& CBlobStorage_File::CreateOStream(string& key,
                        eWriter, "Writer couldn't create an ouput stream.");
     string dir, base, ext;
     CDirEntry::SplitPath(fpath, &dir, &base, &ext);
-    _ASSERT( dir == m_StorageDir);
     key = base;
     if (!ext.empty())
         key += '.' + ext;
@@ -161,6 +160,11 @@ void CBlobStorage_File::Reset()
 {
     m_IStream.reset();
     m_OStream.reset();
+}
+
+void CBlobStorage_File::DeleteStorage()
+{
+    CDir(m_StorageDir).Remove();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -226,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/13 14:40:35  didenko
+ * Added DeleteStorage method
+ *
  * Revision 1.1  2006/07/05 19:10:48  didenko
  * Added an implementation of IBlobStorage interface based on files
  *
