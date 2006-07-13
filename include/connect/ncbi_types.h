@@ -36,7 +36,7 @@
  *    struct STimeout
  *
  * Switch:
- *    ESwitch         (on/off/default)
+ *    ESwitch    (on/off/default)
  *
  * Fixed-size size_t and time_t equivalents:
  *    TNCBI_Size
@@ -65,8 +65,8 @@ extern "C" {
 /** Timeout structure
  */
 typedef struct {
-    unsigned int sec;  /** seconds (truncated to the platf.-dep. max. limit) */
-    unsigned int usec; /** microseconds (always truncated by mod. 1,000,000) */
+    unsigned int sec;  /**< seconds (truncated to the platf.-dep. max. limit)*/
+    unsigned int usec; /**< microseconds (always truncated by mod. 1,000,000)*/
 } STimeout;
 
 #define kDefaultTimeout  ((const STimeout*)(-1))
@@ -101,6 +101,9 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2006/07/13 18:24:05  lavr
+ * Fix per-member doxygenization
+ *
  * Revision 6.12  2006/07/13 16:05:42  lavr
  * Doxygenized
  *
