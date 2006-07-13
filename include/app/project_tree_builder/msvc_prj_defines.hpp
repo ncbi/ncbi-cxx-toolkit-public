@@ -53,12 +53,16 @@
 
 
 #define MSVC_REG_SECTION            "msvc"
+#define UNIX_REG_SECTION            "unix"
 #define MSVC_SOLUTION_HEADER_LINE   \
                 "Microsoft Visual Studio Solution File, Format Version "
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/07/13 15:13:50  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.10  2006/02/22 17:32:44  gouriano
  * Get ready for 64 bits platform
  *

@@ -309,6 +309,8 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 
 
 //-----------------------------------------------------------------------------
+#if NCBI_COMPILER_MSVC
+
 #if _MSC_VER >= 1400
 CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
     CMsvc7RegSettings::eMsvc800;
@@ -329,14 +331,30 @@ CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
 string CMsvc7RegSettings::sm_MsvcPlatformName = "Win32";
 #endif
 
+#else // NCBI_COMPILER_MSVC
+
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
+    CMsvc7RegSettings::eMsvcNone;
+string CMsvc7RegSettings::sm_MsvcVersionName = "none";
+
+CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
+    CMsvc7RegSettings::eUnix;
+string CMsvc7RegSettings::sm_MsvcPlatformName = "Unix";
+
+#endif // NCBI_COMPILER_MSVC
+
 
 string CMsvc7RegSettings::GetMsvcSection(void)
 {
-    string s = string(MSVC_REG_SECTION) + GetMsvcVersionName();
-    if (GetMsvcPlatform() != eMsvcWin32) {
-        s += "." + GetMsvcPlatformName();
+    if (GetMsvcPlatform() == eUnix) {
+        return UNIX_REG_SECTION;
+    } else {
+        string s = string(MSVC_REG_SECTION) + GetMsvcVersionName();
+        if (GetMsvcPlatform() != eMsvcWin32) {
+            s += "." + GetMsvcPlatformName();
+        }
+        return s;
     }
-    return s;
 }
 
 CMsvc7RegSettings::CMsvc7RegSettings(void)
@@ -347,17 +365,19 @@ string CMsvc7RegSettings::GetProjectFileFormatVersion(void) const
 {
     if (GetMsvcVersion() == eMsvc710) {
         return "7.10";
-    } else {
+    } else if (GetMsvcVersion() == eMsvc800) {
         return "8.00";
     }
+    return "";
 }
 string CMsvc7RegSettings::GetSolutionFileFormatVersion(void) const
 {
     if (GetMsvcVersion() == eMsvc710) {
         return "8.00";
-    } else {
+    } else if (GetMsvcVersion() == eMsvc800) {
         return "9.00";
     }
+    return "";
 }
 
 
@@ -1136,6 +1156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/07/13 15:13:29  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.51  2006/05/08 15:54:36  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and

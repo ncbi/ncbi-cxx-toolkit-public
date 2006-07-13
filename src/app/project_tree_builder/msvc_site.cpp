@@ -44,19 +44,40 @@ BEGIN_NCBI_SCOPE
 CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
     :m_Registry(registry)
 {
-    // Provided requests
-    string str = m_Registry.Get("Configure", "ProvidedRequests");
-    list<string> provided;
-    NStr::Split(str, LIST_SEPARATOR, provided);
-    m_ProvidedThing.insert(provided.begin(),provided.end());
-    GetStandardFeatures(provided);
-    m_ProvidedThing.insert(provided.begin(),provided.end());
+    string str;
 
-    // Not provided requests
-    str = m_Registry.Get("Configure", "NotProvidedRequests");
-    list<string> not_provided;
-    NStr::Split(str, LIST_SEPARATOR, not_provided);
-    m_NotProvidedThing.insert(not_provided.begin(),not_provided.end());
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+        // MSWin
+        // Provided requests
+        str = m_Registry.Get("Configure", "ProvidedRequests");
+        list<string> provided;
+        NStr::Split(str, LIST_SEPARATOR, provided);
+        m_ProvidedThing.insert(provided.begin(),provided.end());
+
+        GetStandardFeatures(provided);
+        m_ProvidedThing.insert(provided.begin(),provided.end());
+
+        // Not provided requests
+        str = m_Registry.Get("Configure", "NotProvidedRequests");
+        list<string> not_provided;
+        NStr::Split(str, LIST_SEPARATOR, not_provided);
+        m_NotProvidedThing.insert(not_provided.begin(),not_provided.end());
+    } else {
+        // unix
+        CDir status_dir(GetApp().m_StatusDir);
+        CDir::TEntries files = status_dir.GetEntries("*.enabled");
+        ITERATE(CDir::TEntries, f, files) {
+            string name = (*f)->GetBase();
+            if (name[0] == '-') {
+                name = name.substr(1);
+                m_NotProvidedThing.insert(name);
+                cout << "not provided: " << name << endl;
+            } else {
+                m_ProvidedThing.insert(name);
+                cout << "provided: " << name << endl;
+            }
+        }
+    }
 
     // Lib choices
     str = m_Registry.Get("Configure", "LibChoices");
@@ -91,7 +112,9 @@ bool CMsvcSite::IsProvided(const string& thing) const
         return true;
     }
 
-    bool res = IsDescribed(thing);
+    bool res = 
+        CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone ?
+            IsDescribed(thing) : false;
     if ( res) {
         list<string> components;
         GetComponents(thing, &components);
@@ -145,9 +168,9 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
         raw_macro = data.substr(start,end-start+1);
         if (CSymResolver::IsDefine(raw_macro)) {
             macro = CSymResolver::StripDefine(raw_macro);
-            definition = m_Registry.Get("Configure", macro);
+            definition = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(), macro);
             if (definition.empty()) {
-                definition = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(), macro);
+                definition = m_Registry.Get("Configure", macro);
             }
             if (definition.empty() && preserve_unresolved) {
                 // preserve unresolved macros
@@ -255,19 +278,21 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
  :m_LibId    (lib),
   m_3PartyLib(lib_3party)
 {
-    m_Choice = e3PartyLib;
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+        m_Choice = e3PartyLib;
+        ITERATE(list<SConfigInfo>, p, GetApp().GetRegSettings().m_ConfigInfo) {
+            const SConfigInfo& config = *p;
+            SLibInfo lib_info;
+            site.GetLibInfo(m_3PartyLib, config, &lib_info);
 
-    ITERATE(list<SConfigInfo>, p, GetApp().GetRegSettings().m_ConfigInfo) {
+            if ( !CMsvcSite::IsLibOk(lib_info) ) {
 
-        const SConfigInfo& config = *p;
-        SLibInfo lib_info;
-        site.GetLibInfo(m_3PartyLib, config, &lib_info);
-
-        if ( !CMsvcSite::IsLibOk(lib_info) ) {
-
-            m_Choice = eLib;
-            break;
+                m_Choice = eLib;
+                break;
+            }
         }
+    } else {
+        m_Choice = site.IsProvided(lib_3party) ? e3PartyLib : eLib;
     }
 }
 
@@ -505,20 +530,27 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
         bool res = false;
         ITERATE(list<string>, p, components) {
             const string& component = *p;
-            ITERATE(list<SConfigInfo>, n, configs) {
-                const SConfigInfo& config = *n;
-                SLibInfo lib_info;
-                GetLibInfo(component, config, &lib_info);
-                if ( IsLibOk(lib_info) ) {
-                    res = true;
-                } else {
-                    if (!lib_info.IsEmpty()) {
-                        LOG_POST(Warning << "Macro " << macro
-                            << " cannot be resolved for "
-                            << component << "|" << config.m_Name);
+            if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+                ITERATE(list<SConfigInfo>, n, configs) {
+                    const SConfigInfo& config = *n;
+                    SLibInfo lib_info;
+                    GetLibInfo(component, config, &lib_info);
+                    if ( IsLibOk(lib_info) ) {
+                        res = true;
+                    } else {
+                        if (!lib_info.IsEmpty()) {
+                            LOG_POST(Warning << "Macro " << macro
+                                << " cannot be resolved for "
+                                << component << "|" << config.m_Name);
+                        }
+//                      res = false;
+//                      break;
                     }
-//                    res = false;
-//                    break;
+                }
+            } else {
+                res = IsProvided(component);
+                if (!res) {
+                    break;
                 }
             }
         }
@@ -535,6 +567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/07/13 15:13:29  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.38  2006/05/08 15:54:36  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and

@@ -62,8 +62,10 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
                                 "/build $(ConfigurationName) "\
                                 "/project $(InputName) "\
                                 "\"$(SolutionPath)\"\n";
-    } else {
+    } else if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc800) {
         m_CustomBuildCommand += "msbuild \"$(SolutionPath)\" /t:\"$(InputName)\" /p:Configuration=$(ConfigurationName)";
+    } else {
+        NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported MSVC version");
     }
     CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
 }
@@ -218,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/07/13 15:13:29  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.20  2006/02/03 15:31:30  gouriano
  * Corrections for MSVC 2005 express
  *

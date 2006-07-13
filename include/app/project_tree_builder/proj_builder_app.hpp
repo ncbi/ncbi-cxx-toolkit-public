@@ -109,6 +109,7 @@ public:
     string m_Root;
     string m_Subtree;
     string m_Solution;
+    string m_StatusDir;
     bool   m_Dll;
     bool m_BuildPtb;
     bool m_AddMissingLibs;
@@ -159,6 +160,8 @@ public:
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
+    void    GenerateMsvcProjects(CProjectItemsTree& projects_tree);
+    void    GenerateUnixProjects(CProjectItemsTree& projects_tree);
     void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs);
     bool    ConfirmConfiguration(void);
 };
@@ -221,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/07/13 15:13:51  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.26  2006/01/04 13:45:16  gouriano
  * Corrected analyzing build configurations for DLL build
  *

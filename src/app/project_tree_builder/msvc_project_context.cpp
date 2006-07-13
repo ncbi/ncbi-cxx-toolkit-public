@@ -205,34 +205,36 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     m_ProjectIncludeDirs = project.m_IncludeDirs;
 
     // LIBS from Makefiles
-    // m_ProjectLibs = project.m_Libs3Party;
-    list<string> installed_3party;
-    GetApp().GetSite().GetThirdPartyLibsToInstall(&installed_3party);
+    if (!project.m_Libs3Party.empty()) {
+        // m_ProjectLibs = project.m_Libs3Party;
+        list<string> installed_3party;
+        GetApp().GetSite().GetThirdPartyLibsToInstall(&installed_3party);
 
-    ITERATE(list<string>, p, project.m_Libs3Party) {
-        const string& lib_id = *p;
-        if ( GetApp().GetSite().IsLibWithChoice(lib_id) ) {
-            if ( GetApp().GetSite().GetChoiceForLib(lib_id) == CMsvcSite::eLib )
+        ITERATE(list<string>, p, project.m_Libs3Party) {
+            const string& lib_id = *p;
+            if ( GetApp().GetSite().IsLibWithChoice(lib_id) ) {
+                if ( GetApp().GetSite().GetChoiceForLib(lib_id) == CMsvcSite::eLib )
+                    m_ProjectLibs.push_back(lib_id);
+            } else {
                 m_ProjectLibs.push_back(lib_id);
-        } else {
-            m_ProjectLibs.push_back(lib_id);
-        }
-
-        ITERATE(list<string>, i, installed_3party) {
-            const string& component = *i;
-            bool lib_ok = true;
-            ITERATE(list<SConfigInfo>, j, GetApp().GetRegSettings().m_ConfigInfo) {
-                const SConfigInfo& config = *j;
-                SLibInfo lib_info;
-                GetApp().GetSite().GetLibInfo(component, config, &lib_info);
-                if (find( lib_info.m_Macro.begin(), lib_info.m_Macro.end(), lib_id) ==
-                          lib_info.m_Macro.end()) {
-                    lib_ok = false;
-                    break;
-                }
             }
-            if (lib_ok) {
-                m_Requires.push_back(component);
+
+            ITERATE(list<string>, i, installed_3party) {
+                const string& component = *i;
+                bool lib_ok = true;
+                ITERATE(list<SConfigInfo>, j, GetApp().GetRegSettings().m_ConfigInfo) {
+                    const SConfigInfo& config = *j;
+                    SLibInfo lib_info;
+                    GetApp().GetSite().GetLibInfo(component, config, &lib_info);
+                    if (find( lib_info.m_Macro.begin(), lib_info.m_Macro.end(), lib_id) ==
+                            lib_info.m_Macro.end()) {
+                        lib_ok = false;
+                        break;
+                    }
+                }
+                if (lib_ok) {
+                    m_Requires.push_back(component);
+                }
             }
         }
     }
@@ -1082,6 +1084,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/07/13 15:13:29  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.59  2006/05/17 14:28:12  gouriano
  * Added include/internal
  *

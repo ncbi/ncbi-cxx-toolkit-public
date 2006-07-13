@@ -126,6 +126,10 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     
     InitializeFrom(site);
     site.ProcessMacros(configs);
+
+    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone) {
+        return;
+    }
     
     const CBuildType static_build(false);
     const CBuildType dll_build(true);
@@ -309,6 +313,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/07/13 15:13:29  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.21  2004/12/20 15:21:32  gouriano
  * Changed diagnostic output
  *

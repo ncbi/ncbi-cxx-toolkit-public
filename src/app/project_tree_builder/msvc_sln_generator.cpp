@@ -178,10 +178,12 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     ofs << "Global" << endl;
 	
     // Write all configurations
-    if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+    if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc800) {
         ofs << '\t' << "GlobalSection(SolutionConfigurationPlatforms) = preSolution" << endl;
-    } else {
+    } else if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
         ofs << '\t' << "GlobalSection(SolutionConfiguration) = preSolution" << endl;
+    } else {
+        NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported MSVC version");
     }
     ITERATE(list<SConfigInfo>, p, m_Configs) {
         string config = (*p).m_Name;
@@ -575,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/07/13 15:13:29  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.33  2006/02/23 15:46:56  gouriano
  * Changed the order of project guid
  *

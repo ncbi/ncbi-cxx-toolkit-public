@@ -227,7 +227,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,1,2) );
+    SetVersion( CVersionInfo(1,2,0) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -378,9 +378,7 @@ int CProjBulderApp::Run(void)
     CCyclicDepends::FindCycles(projects_tree.m_Projects, &cycles);
     s_ReportDependenciesStatus(cycles,projects_tree.m_Projects);
 
-
     // MSVC specific part:
-    
     LOG_POST(Info << "*** Checking requirements ***");
     // Exclude some projects from build:
 #ifdef COMBINED_EXCLUDE
@@ -405,242 +403,229 @@ int CProjBulderApp::Run(void)
 #endif
     {{
         // Project requires are not provided
-
         EraseIf(projects_tree.m_Projects, PIsExcludedByRequires());
-
     }}
 
-    const list<SConfigInfo>* configurations = 0;
-    LOG_POST(Info << "*** Generating MSVC projects ***");
-    bool skip_config = !GetEnvironment().Get(s_ptb_skipconfig).empty();
-    if (GetBuildType().GetType() == CBuildType::eStatic) {
-        
-        // Static build
-        LOG_POST(Info << "Static build");
-        string str_log("Configurations: ");
-        configurations = &GetRegSettings().m_ConfigInfo;
-        ITERATE(list<SConfigInfo>, p , GetRegSettings().m_ConfigInfo) {
-            str_log += p->m_Name + " ";
-        }
-        LOG_POST(Info << str_log);
-        
-        // Projects
-        if ( m_AddMissingLibs ) {
-            m_CurrentBuildTree = &projects_tree;
-        }
-        CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
-        NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-            prj_gen.Generate(p->second);
-        }
-
-        //Utility projects dir
-        string utility_projects_dir = CDirEntry(m_Solution).GetDir();
-        utility_projects_dir = 
-            CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
-        utility_projects_dir = 
-            CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
-        // MasterProject
-        CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
-                                                   GetRegSettings().m_ConfigInfo,
-                                                   utility_projects_dir);
-        if (!skip_config) {
-            master_prj_gen.SaveProject();
-        }
-
-        // ConfigureProject
-        string output_dir = GetProjectTreeInfo().m_Compilers;
-        output_dir = CDirEntry::ConcatPath(output_dir, 
-                                           GetRegSettings().m_CompilersSubdir);
-        output_dir = CDirEntry::ConcatPath(output_dir, 
-                                           GetBuildType().GetTypeStr());
-        output_dir = CDirEntry::ConcatPath(output_dir, "bin");
-        output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
-        CMsvcConfigureProjectGenerator configure_generator
-                                              (output_dir,
-                                               GetRegSettings().m_ConfigInfo,
-                                               false,
-                                               utility_projects_dir,
-                                               GetProjectTreeInfo().m_Root,
-                                               m_Subtree,
-                                               m_Solution,
-                                               m_BuildPtb);
-        if (!skip_config) {
-            configure_generator.SaveProject(false);
-            configure_generator.SaveProject(true);
-        }
-
-        // INDEX dummy project
-        CVisualStudioProject index_xmlprj;
-        CreateUtilityProject(" INDEX, see here: ", 
-                             GetRegSettings().m_ConfigInfo, 
-                             &index_xmlprj);
-        string index_prj_path = 
-            CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
-        index_prj_path += MSVC_PROJECT_FILE_EXT;
-        if (!skip_config) {
-            SaveIfNewer(index_prj_path, index_xmlprj);
-        }
-        //
-
-        // BuildAll utility project
-        CVisualStudioProject build_all_xmlprj;
-        CreateUtilityProject("-BUILD-ALL-", 
-                             GetRegSettings().m_ConfigInfo, 
-                             &build_all_xmlprj);
-        string build_all_prj_path = 
-            CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
-        build_all_prj_path += MSVC_PROJECT_FILE_EXT;
-        SaveIfNewer(build_all_prj_path, build_all_xmlprj);
-
-        // AsnAll utility project
-        CVisualStudioProject asn_all_xmlprj;
-        CreateUtilityProject("-DATASPEC-ALL-", 
-                             GetRegSettings().m_ConfigInfo, 
-                             &asn_all_xmlprj);
-        string asn_all_prj_path = 
-            CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
-        asn_all_prj_path += MSVC_PROJECT_FILE_EXT;
-        SaveIfNewer(asn_all_prj_path, asn_all_xmlprj);
-
-        // Solution
-        CMsvcSolutionGenerator sln_gen(GetRegSettings().m_ConfigInfo);
-        ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-            sln_gen.AddProject(p->second);
-        }
-        if (!skip_config) {
-            sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
-            sln_gen.AddConfigureProject (configure_generator.GetPath(false),
-                                         configure_generator.GetVisualStudioProject(false));
-            sln_gen.AddConfigureProject (configure_generator.GetPath(true),
-                                         configure_generator.GetVisualStudioProject(true));
-            sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
-            sln_gen.AddAsnAllProject(asn_all_prj_path, asn_all_xmlprj);
-        }
-        sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
-        sln_gen.SaveSolution(m_Solution);
-    }
-
-    list<SConfigInfo> dll_configs;
-    if (GetBuildType().GetType() == CBuildType::eDll) {
-
-        //Dll build
-        LOG_POST(Info << "DLL build");
-
-        GetDllsInfo().GetBuildConfigs(&dll_configs);
-        configurations = &dll_configs;
-
-        string str_log("Configurations: ");
-        ITERATE(list<SConfigInfo>, p , dll_configs) {
-            str_log += p->m_Name + " ";
-        }
-        LOG_POST(Info << str_log);
-
+    CProjectItemsTree dll_projects_tree;
+    bool dll = (GetBuildType().GetType() == CBuildType::eDll);
+    if (dll) {
         LOG_POST(Info << "Assembling DLLs:");
-        CProjectItemsTree dll_projects_tree;
         CreateDllBuildTree(projects_tree, &dll_projects_tree);
-
-        // Projects
-        if ( m_AddMissingLibs ) {
-            m_CurrentBuildTree = &dll_projects_tree;
-        }
-        CMsvcProjectGenerator prj_gen(dll_configs);
-        NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
-            prj_gen.Generate(p->second);
-        }
-
-        //Utility projects dir
-        string utility_projects_dir = CDirEntry(m_Solution).GetDir();
-        utility_projects_dir = 
-            CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
-        utility_projects_dir = 
-            CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
-
-        // MasterProject
-        CMsvcMasterProjectGenerator master_prj_gen(dll_projects_tree,
-                                                   dll_configs,
-                                                   utility_projects_dir);
-        if (!skip_config) {
-            master_prj_gen.SaveProject();
-        }
-
-        // ConfigureProject
-        string output_dir = GetProjectTreeInfo().m_Compilers;
-        output_dir = CDirEntry::ConcatPath(output_dir, 
-                                           GetRegSettings().m_CompilersSubdir);
-        output_dir = CDirEntry::ConcatPath(output_dir, 
-            m_BuildPtb ? "static" : GetBuildType().GetTypeStr());
-        output_dir = CDirEntry::ConcatPath(output_dir, "bin");
-        output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
-        CMsvcConfigureProjectGenerator configure_generator
-                              (output_dir,
-                               dll_configs,
-                               true,
-                               utility_projects_dir,
-                               GetProjectTreeInfo().m_Root,
-                               m_Subtree,
-                               m_Solution,
-                               m_BuildPtb);
-        if (!skip_config) {
-            configure_generator.SaveProject(false);
-            configure_generator.SaveProject(true);
-        }
-
-        // INDEX dummy project
-        CVisualStudioProject index_xmlprj;
-        CreateUtilityProject(" INDEX, see here: ", 
-                             dll_configs, 
-                             &index_xmlprj);
-        string index_prj_path = 
-            CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
-        index_prj_path += MSVC_PROJECT_FILE_EXT;
-        if (!skip_config) {
-            SaveIfNewer(index_prj_path, index_xmlprj);
-        }
-        //
-
-        // BuildAll utility project
-        CVisualStudioProject build_all_xmlprj;
-        CreateUtilityProject("-BUILD-ALL-", 
-                             dll_configs, 
-                             &build_all_xmlprj);
-        string build_all_prj_path = 
-            CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
-        build_all_prj_path += MSVC_PROJECT_FILE_EXT;
-        SaveIfNewer(build_all_prj_path, build_all_xmlprj);
-
-        // AsnAll utility project
-        CVisualStudioProject asn_all_xmlprj;
-        CreateUtilityProject("-DATASPEC-ALL-", 
-                             GetRegSettings().m_ConfigInfo, 
-                             &asn_all_xmlprj);
-        string asn_all_prj_path = 
-            CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
-        asn_all_prj_path += MSVC_PROJECT_FILE_EXT;
-        SaveIfNewer(asn_all_prj_path, asn_all_xmlprj);
-
-        // Solution
-        CMsvcSolutionGenerator sln_gen(dll_configs);
-        ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
-            sln_gen.AddProject(p->second);
-        }
-        if (!skip_config) {
-            sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
-            sln_gen.AddConfigureProject (configure_generator.GetPath(false),
-                                         configure_generator.GetVisualStudioProject(false));
-            sln_gen.AddConfigureProject (configure_generator.GetPath(true),
-                                         configure_generator.GetVisualStudioProject(true));
-            sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
-            sln_gen.AddAsnAllProject(asn_all_prj_path, asn_all_xmlprj);
-        }
-        sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
-        sln_gen.SaveSolution(m_Solution);
     }
+    CProjectItemsTree& prj_tree = dll ? dll_projects_tree : projects_tree;
 
-    CreateFeaturesAndPackagesFiles(configurations);
-
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+        GenerateMsvcProjects(prj_tree);
+    } else {
+        GenerateUnixProjects(prj_tree);
+    }
     //
     LOG_POST(Info << "Finished at "+ CTime(CTime::eCurrent).AsString());
     return 0;
+}
+
+void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
+{
+    LOG_POST(Info << "*** Generating MSVC projects ***");
+
+    bool dll = (GetBuildType().GetType() == CBuildType::eDll);
+    list<SConfigInfo> dll_configs;
+    const list<SConfigInfo>* configurations = 0;
+    bool skip_config = !GetEnvironment().Get(s_ptb_skipconfig).empty();
+
+    if (dll) {
+        LOG_POST(Info << "DLL build");
+        GetDllsInfo().GetBuildConfigs(&dll_configs);
+        configurations = &dll_configs;
+    } else {
+        LOG_POST(Info << "Static build");
+        configurations = &GetRegSettings().m_ConfigInfo;
+    }
+    string str_log("Configurations: ");
+    ITERATE(list<SConfigInfo>, p , *configurations) {
+        str_log += p->m_Name + " ";
+    }
+    LOG_POST(Info << str_log);
+
+    if ( m_AddMissingLibs ) {
+        m_CurrentBuildTree = &projects_tree;
+    }
+    // Projects
+    CMsvcProjectGenerator prj_gen(*configurations);
+    NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+        prj_gen.Generate(p->second);
+    }
+
+    //Utility projects dir
+    string utility_projects_dir = CDirEntry(m_Solution).GetDir();
+    utility_projects_dir = 
+        CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
+    utility_projects_dir = 
+        CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
+
+    // MasterProject
+    CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
+                                               *configurations,
+                                               utility_projects_dir);
+    if (!skip_config) {
+        master_prj_gen.SaveProject();
+    }
+
+    // ConfigureProject
+    string output_dir = GetProjectTreeInfo().m_Compilers;
+    output_dir = CDirEntry::ConcatPath(output_dir, 
+                                        GetRegSettings().m_CompilersSubdir);
+    output_dir = CDirEntry::ConcatPath(output_dir, 
+        (m_BuildPtb && dll) ? "static" : GetBuildType().GetTypeStr());
+    output_dir = CDirEntry::ConcatPath(output_dir, "bin");
+    output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
+    CMsvcConfigureProjectGenerator configure_generator(
+                                            output_dir,
+                                            *configurations,
+                                            dll,
+                                            utility_projects_dir,
+                                            GetProjectTreeInfo().m_Root,
+                                            m_Subtree,
+                                            m_Solution,
+                                            m_BuildPtb);
+    if (!skip_config) {
+        configure_generator.SaveProject(false);
+        configure_generator.SaveProject(true);
+    }
+
+    // INDEX dummy project
+    CVisualStudioProject index_xmlprj;
+    CreateUtilityProject(" INDEX, see here: ", *configurations, &index_xmlprj);
+    string index_prj_path = 
+        CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
+    index_prj_path += MSVC_PROJECT_FILE_EXT;
+    if (!skip_config) {
+        SaveIfNewer(index_prj_path, index_xmlprj);
+    }
+
+    // BuildAll utility project
+    CVisualStudioProject build_all_xmlprj;
+    CreateUtilityProject("-BUILD-ALL-", *configurations, &build_all_xmlprj);
+    string build_all_prj_path = 
+        CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
+    build_all_prj_path += MSVC_PROJECT_FILE_EXT;
+    SaveIfNewer(build_all_prj_path, build_all_xmlprj);
+
+    // AsnAll utility project
+    CVisualStudioProject asn_all_xmlprj;
+    CreateUtilityProject("-DATASPEC-ALL-", *configurations, &asn_all_xmlprj);
+    string asn_all_prj_path = 
+        CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
+    asn_all_prj_path += MSVC_PROJECT_FILE_EXT;
+    SaveIfNewer(asn_all_prj_path, asn_all_xmlprj);
+
+    // Solution
+    CMsvcSolutionGenerator sln_gen(*configurations);
+    ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+        sln_gen.AddProject(p->second);
+    }
+    if (!skip_config) {
+        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
+        sln_gen.AddConfigureProject (configure_generator.GetPath(false),
+                                        configure_generator.GetVisualStudioProject(false));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(true),
+                                        configure_generator.GetVisualStudioProject(true));
+        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+        sln_gen.AddAsnAllProject(asn_all_prj_path, asn_all_xmlprj);
+    }
+    sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
+    sln_gen.SaveSolution(m_Solution);
+
+    CreateFeaturesAndPackagesFiles(configurations);
+}
+
+void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
+{
+    CNcbiOfstream ofs(m_Solution.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+    ofs << "# This file was generated by PROJECT_TREE_BUILDER" << endl;
+    ofs << "# on " << CTime(CTime::eCurrent).AsString() << endl << endl;
+    ofs << "mk = make -j 3" << endl;
+    ofs << "prg = make purge" << endl << endl;
+    if (ofs.is_open()) {
+        ofs << "all_projects =";
+        ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+            if (p->first.Type() != CProjKey::eMsvc) {
+                ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
+            }
+        }
+        ofs << endl << endl;
+        ofs << "all :" << " $(all_projects)";
+        ofs << endl << endl;
+
+        ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+
+            string target, target_app, target_lib;
+            list<string> dependencies;
+            target = CreateProjectName(p->first);
+            target_app = target_lib = "\"\"";
+            if (p->first.Type() == CProjKey::eApp) {
+                target_app = p->second.m_Name;
+            } else if (p->first.Type() == CProjKey::eLib) {
+                target_lib = p->second.m_Name;
+            } else {
+                target_lib = p->second.m_Name;
+            }
+            dependencies.clear();
+            // exclude MSVC projects
+            if (p->first.Type() == CProjKey::eMsvc) {
+                continue;
+            }
+
+            ITERATE(list<CProjKey>, i, p->second.m_Depends) {
+
+                const CProjKey& id = *i;
+                // exclude 3rd party libs
+                if ( GetSite().IsLibWithChoice(id.Id()) ) {
+                    if ( GetSite().GetChoiceForLib(id.Id()) == CMsvcSite::e3PartyLib ) {
+                        continue;
+                    }
+                }
+                // exclude missing projects
+                CProjectItemsTree::TProjects::const_iterator n = projects_tree.m_Projects.find(id);
+                if (n == projects_tree.m_Projects.end()) {
+                    // also check user projects
+//                    CProjKey id_alt(CProjKey::eMsvc,id.Id());
+//                    n = projects_tree.m_Projects.find(id_alt);
+//                    if (n == projects_tree.m_Projects.end()) {
+                        LOG_POST(Warning << "Project " + 
+                                p->first.Id() + " depends on missing project " + id.Id());
+                        continue;
+//                    }
+                }
+                dependencies.push_back(CreateProjectName(id));
+            }
+            string rel_path = CDirEntry::CreateRelativePath(GetProjectTreeInfo().m_Src,
+                                                            p->second.m_MsvcProjectMakefileDir);
+//                                                            p->second.m_SourcesBaseDir);
+                                                            
+#if NCBI_COMPILER_MSVC
+            rel_path = NStr::Replace(rel_path,"\\","/");
+#endif
+
+            ofs << target << " :";
+            ITERATE(list<string>, d, dependencies) {
+                ofs << " " << *d;
+            }
+            ofs << endl << "\tcd " << rel_path << "; $(mk)"
+                << " APP_PROJ=" << target_app
+                << " LIB_PROJ=" << target_lib
+                << endl << endl;
+
+            ofs << target << ".purge" << " :";
+            ITERATE(list<string>, d, dependencies) {
+                ofs << " " << *d << ".purge";
+            }
+            ofs << endl << "\tcd " << rel_path << "; $(prg)"
+                << " APP_PROJ=" << target_app
+                << " LIB_PROJ=" << target_lib
+                << endl << endl;
+        }
+    }
 }
 
 
@@ -730,6 +715,9 @@ void CProjBulderApp::ParseArguments(void)
     // Solution
     m_Solution = CDirEntry::NormalizePath(args["solution"].AsString());
     LOG_POST(Info << "Solution: " << m_Solution);
+    m_StatusDir = 
+        CDirEntry::NormalizePath( CDirEntry::ConcatPath( CDirEntry::ConcatPath( 
+            CDirEntry(m_Solution).GetDir(),".."),"status"));
     m_BuildPtb = !((bool)args["nobuildptb"]);
     m_BuildPtb = m_BuildPtb &&
         CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710;
@@ -1177,6 +1165,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2006/07/13 15:13:29  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.76  2006/05/16 19:44:25  gouriano
  * Removed bogus 'mswin' feature
  *

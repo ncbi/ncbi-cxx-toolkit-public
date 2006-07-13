@@ -173,11 +173,13 @@ class CMsvc7RegSettings
 public:
     enum EMsvcVersion {
         eMsvc710 = 0,
-        eMsvc800
+        eMsvc800,
+        eMsvcNone
     };
     enum EMsvcPlatform {
         eMsvcWin32 = 0,
-        eMsvcX64
+        eMsvcX64,
+        eUnix
     };
 
     CMsvc7RegSettings(void);
@@ -508,6 +510,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/07/13 15:13:51  gouriano
+ * Made it work on UNIX - to generate combined makefile
+ *
  * Revision 1.33  2006/03/21 18:02:23  gouriano
  * Optimization
  *
