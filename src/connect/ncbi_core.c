@@ -64,7 +64,7 @@ extern const char* IO_StatusStr(EIO_Status status)
 
 /* Check the validity of the MT locker */
 #define MT_LOCK_VALID \
-    assert(lk->ref_count  &&  lk->magic_number == s_MT_LOCK_magic_number)
+    assert(lk->ref_count  &&  lk->magic_number == kMT_LOCK_magic_number)
 
 
 /* MT locker data and callbacks */
@@ -75,7 +75,7 @@ struct MT_LOCK_tag {
   FMT_LOCK_Cleanup cleanup;      /* cleanup function */
   unsigned int     magic_number; /* used internally to make sure it's init'd */
 };
-static const unsigned int s_MT_LOCK_magic_number = 0x7A96283F;
+static const unsigned int kMT_LOCK_magic_number = 0x7A96283F;
 
 
 extern MT_LOCK MT_LOCK_Create
@@ -85,12 +85,13 @@ extern MT_LOCK MT_LOCK_Create
 {
     MT_LOCK lk = (struct MT_LOCK_tag*) malloc(sizeof(struct MT_LOCK_tag));
 
-    lk->ref_count = 1;
-    lk->user_data = user_data;
-    lk->handler   = handler;
-    lk->cleanup   = cleanup;
-    lk->magic_number = s_MT_LOCK_magic_number;
-
+    if (lk) {
+        lk->ref_count    = 1;
+        lk->user_data    = user_data;
+        lk->handler      = handler;
+        lk->cleanup      = cleanup;
+        lk->magic_number = kMT_LOCK_magic_number;
+    }
     return lk;
 }
 
@@ -105,24 +106,24 @@ extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk)
 
 extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
 {
-    if ( !lk )
-        return 0;
-    MT_LOCK_VALID;
+    if (lk) {
+        MT_LOCK_VALID;
 
-    if ( --lk->ref_count )
-        return lk;
+        if ( !--lk->ref_count ) {
+            if ( lk->handler ) {  /* weak extra protection */
+                verify(lk->handler(lk->user_data, eMT_Lock));
+                verify(lk->handler(lk->user_data, eMT_Unlock));
+            }
 
-    if ( lk->handler ) {  /* weak extra protection */
-        verify(lk->handler(lk->user_data, eMT_Lock));
-        verify(lk->handler(lk->user_data, eMT_Unlock));
+            if ( lk->cleanup )
+                lk->cleanup(lk->user_data);
+
+            lk->magic_number++;
+            free(lk);
+            lk = 0;
+        }
     }
-
-    if ( lk->cleanup )
-        lk->cleanup(lk->user_data);
-
-    lk->magic_number++;
-    free(lk);
-    return 0;
+    return lk;
 }
 
 
@@ -131,8 +132,7 @@ extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
     MT_LOCK_VALID;
     if ( lk->handler )
         return lk->handler(lk->user_data, how);
-
-    return -1 /* rightful non-doing */;
+    return -1/* rightful non-doing */;
 }
 
 
@@ -149,7 +149,7 @@ extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
 
 /* Check the validity of the logger */
 #define LOG_VALID \
-    assert(lg->ref_count  &&  lg->magic_number == s_LOG_magic_number)
+    assert(lg->ref_count  &&  lg->magic_number == kLOG_magic_number)
 
 
 /* Logger data and callbacks */
@@ -161,7 +161,7 @@ struct LOG_tag {
     MT_LOCK      mt_lock;
     unsigned int magic_number;  /* used internally, to make sure it's init'd */
 };
-static const unsigned int s_LOG_magic_number = 0x3FB97156;
+static const unsigned int kLOG_magic_number = 0x3FB97156;
 
 
 extern const char* LOG_LevelStr(ELOG_Level level)
@@ -186,13 +186,14 @@ extern LOG LOG_Create
 {
     LOG lg = (struct LOG_tag*) malloc(sizeof(struct LOG_tag));
 
-    lg->ref_count = 1;
-    lg->user_data = user_data;
-    lg->handler   = handler;
-    lg->cleanup   = cleanup;
-    lg->mt_lock   = mt_lock;
-    lg->magic_number = s_LOG_magic_number;
-
+    if (lg) {
+        lg->ref_count    = 1;
+        lg->user_data    = user_data;
+        lg->handler      = handler;
+        lg->cleanup      = cleanup;
+        lg->mt_lock      = mt_lock;
+        lg->magic_number = kLOG_magic_number;
+    }
     return lg;
 }
 
@@ -231,26 +232,26 @@ extern LOG LOG_AddRef(LOG lg)
 
 extern LOG LOG_Delete(LOG lg)
 {
-    if ( !lg )
-        return 0;
+    if ( lg ) {
+        LOG_LOCK_WRITE;
+        LOG_VALID;
 
-    LOG_LOCK_WRITE;
-    LOG_VALID;
+        if ( lg->ref_count > 1) {
+            lg->ref_count--;
+            LOG_UNLOCK;
+            return lg;
+        }
 
-    if (lg->ref_count > 1) {
-        lg->ref_count--;
         LOG_UNLOCK;
-        return lg;
+
+        LOG_Reset(lg, 0, 0, 0);
+        lg->ref_count--;
+        lg->magic_number++;
+
+        if ( lg->mt_lock )
+            MT_LOCK_Delete(lg->mt_lock);
+        free(lg);
     }
-
-    LOG_UNLOCK;
-
-    LOG_Reset(lg, 0, 0, 0);
-    lg->ref_count--;
-    lg->magic_number++;
-    if ( lg->mt_lock )
-        MT_LOCK_Delete(lg->mt_lock);
-    free(lg);
     return 0;
 }
 
@@ -311,7 +312,7 @@ extern void LOG_WriteInternal
 
 /* Check the validity of the registry */
 #define REG_VALID \
-    assert(rg->ref_count  &&  rg->magic_number == s_REG_magic_number)
+    assert(rg->ref_count  &&  rg->magic_number == kREG_magic_number)
 
 
 /* Logger data and callbacks */
@@ -324,7 +325,7 @@ struct REG_tag {
     MT_LOCK      mt_lock;
     unsigned int magic_number;  /* used internally, to make sure it's init'd */
 };
-static const unsigned int s_REG_magic_number = 0xA921BC08;
+static const unsigned int kREG_magic_number = 0xA921BC08;
 
 
 extern REG REG_Create
@@ -336,14 +337,15 @@ extern REG REG_Create
 {
     REG rg = (struct REG_tag*) malloc(sizeof(struct REG_tag));
 
-    rg->ref_count = 1;
-    rg->user_data = user_data;
-    rg->get       = get;
-    rg->set       = set;
-    rg->cleanup   = cleanup;
-    rg->mt_lock   = mt_lock;
-    rg->magic_number = s_REG_magic_number;
-
+    if (rg) {
+        rg->ref_count    = 1;
+        rg->user_data    = user_data;
+        rg->get          = get;
+        rg->set          = set;
+        rg->cleanup      = cleanup;
+        rg->mt_lock      = mt_lock;
+        rg->magic_number = kREG_magic_number;
+    }
     return rg;
 }
 
@@ -385,27 +387,26 @@ extern REG REG_AddRef(REG rg)
 
 extern REG REG_Delete(REG rg)
 {
-    if ( !rg )
-        return 0;
+    if ( rg ) {
+        REG_LOCK_WRITE;
+        REG_VALID;
 
-    REG_LOCK_WRITE;
-    REG_VALID;
+        if (rg->ref_count > 1) {
+            rg->ref_count--;
+            REG_UNLOCK;
+            return rg;
+        }
 
-    if (rg->ref_count > 1) {
-        rg->ref_count--;
         REG_UNLOCK;
-        return rg;
+
+        REG_Reset(rg, 0, 0, 0, 0, 1/*true*/);
+        rg->ref_count--;
+        rg->magic_number++;
+
+        if ( rg->mt_lock )
+            MT_LOCK_Delete(rg->mt_lock);
+        free(rg);
     }
-
-    REG_UNLOCK;
-
-    REG_Reset(rg, 0, 0, 0, 0, 1/*true*/);
-    rg->ref_count--;
-    rg->magic_number++;
-    if ( rg->mt_lock )
-        MT_LOCK_Delete(rg->mt_lock);
-    free(rg);
-
     return 0;
 }
 
@@ -461,6 +462,9 @@ extern void REG_Set
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2006/07/13 21:01:04  lavr
+ * Formatting and changing constants to have "k" prefix
+ *
  * Revision 6.16  2006/04/20 13:58:46  lavr
  * Wrap registry retrievals
  *
