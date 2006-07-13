@@ -148,52 +148,48 @@ void CCleanup_imp::x_OrgModToSubtype(CBioSource& bs)
 }
 
 
-struct SSubSourceRemove
+// remove those with no name unless it has a subtype that doesn't need a name.
+static bool s_SubSourceRemove(const CRef<CSubSource>& s1)
 {
-    // remove those with no name unless it has a subtype that doesn't need a name.
-    bool operator()(const CRef<CSubSource>& s1) {
-        return  ! s1->IsSetName()  &&  ! s_NoNameSubtype(s1->GetSubtype());
-    }
-};
+    return  ! s1->IsSetName()  &&  ! s_NoNameSubtype(s1->GetSubtype());
+}
 
 
-struct SSubsourceCompare
+// is st1 < st2
+static bool s_SubsourceCompare(const CRef<CSubSource>& st1,
+                               const CRef<CSubSource>& st2)
 {
-    // is st1 < st2
-    bool operator()(const CRef<CSubSource>& st1, const CRef<CSubSource>& st2) {
-        if (st1->GetSubtype() < st2->GetSubtype()) {
-            return true;
-        } else if (st1->GetSubtype() == st2->GetSubtype()) {
-            if ( st1->IsSetName()  &&  st2->IsSetName()) {
-                if (NStr::CompareNocase(st1->GetName(), st2->GetName()) < 0) {
-                    return true;
-                }
-            } else if ( ! st1->IsSetName()  &&  st2->IsSetName()) {
+    if (st1->GetSubtype() < st2->GetSubtype()) {
+        return true;
+    } else if (st1->GetSubtype() == st2->GetSubtype()) {
+        if ( st1->IsSetName()  &&  st2->IsSetName()) {
+            if (NStr::CompareNocase(st1->GetName(), st2->GetName()) < 0) {
                 return true;
             }
+        } else if ( ! st1->IsSetName()  &&  st2->IsSetName()) {
+            return true;
         }
-        return false;
     }
-};
+    return false;
+}
 
 
-struct SSubsourceEqual
+// Two SubSource's are equal and duplicates if:
+// they have the same subtype
+// and the same name (or don't require a name).
+static bool s_SubsourceEqual(const CRef<CSubSource>& st1,
+                             const CRef<CSubSource>& st2)
 {
-    // Two SubSource's are equal and duplicates if:
-    // they have the same subtype
-    // and the same name (or don't require a name).
-    bool operator()(const CRef<CSubSource>& st1, const CRef<CSubSource>& st2) {
-        if ( st1->GetSubtype() == st2->GetSubtype() ) {
-            if ( s_NoNameSubtype(st2->GetSubtype())  ||  
-                ( ! st1->IsSetName()  &&  ! st2->IsSetName() ) ||
-                ( st1->IsSetName()  &&  st2->IsSetName()  &&
-                 NStr::CompareNocase(st1->GetName(), st2->GetName()) == 0) ) {
-                return true;
-            }            
-        }
-        return false;
+    if ( st1->GetSubtype() == st2->GetSubtype() ) {
+        if ( s_NoNameSubtype(st2->GetSubtype())  ||  
+             ( ! st1->IsSetName()  &&  ! st2->IsSetName() ) ||
+             ( st1->IsSetName()  &&  st2->IsSetName()  &&
+               NStr::CompareNocase(st1->GetName(), st2->GetName()) == 0) ) {
+            return true;
+        }            
     }
-};
+    return false;
+}
 
 /*
     Strip all parentheses and commas from the
@@ -246,7 +242,7 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
     }
     
     // remove those with no name unless it has a subtype that doesn't need a name.
-    subtypes.remove_if(SSubSourceRemove());
+    subtypes.remove_if(s_SubSourceRemove);
     
     // merge any duplicate fwd_primer_seq and rev_primer_seq.
     // and any duplicate fwd_primer_name and rev_primer_name.
@@ -306,8 +302,8 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
     
     // sort and remove duplicates.
     // Do not sort before merging primer_seq's above.
-    subtypes.sort(SSubsourceCompare());
-    subtypes.unique(SSubsourceEqual());    
+    subtypes.sort(s_SubsourceCompare);
+    subtypes.unique(s_SubsourceEqual);    
 }
 
 
@@ -405,55 +401,51 @@ void CCleanup_imp::x_ModToOrgMod(COrg_ref& oref)
 }
 
 
-struct SOrgModCompareNameFirst
+// is om1 < om2
+// sort by subname first because of how we check equality below.
+static bool s_OrgModCompareNameFirst(const CRef<COrgMod>& om1,
+                                     const CRef<COrgMod>& om2)
 {
-    // is om1 < om2
-    // sort by subname first because of how we check equality below.
-    bool operator()(const CRef<COrgMod>& om1, const CRef<COrgMod>& om2) {
-        if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) < 0) {
-             return true;
-        }
-        if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) == 0  &&
-            om1->GetSubtype() < om2->GetSubtype() ) {
-            return true;
-        }
-        return false;
+    if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) < 0) {
+        return true;
     }
-};
+    if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) == 0  &&
+        om1->GetSubtype() < om2->GetSubtype() ) {
+        return true;
+    }
+    return false;
+}
 
 
-struct SOrgModEqual
+// Two OrgMod's are equal and duplicates if:
+// they have the same subname and same subtype
+// or one has subtype 'other'.
+static bool s_OrgModEqual(const CRef<COrgMod>& om1, const CRef<COrgMod>& om2)
 {
-    // Two OrgMod's are equal and duplicates if:
-    // they have the same subname and same subtype
-    // or one has subtype 'other'.
-    bool operator()(const CRef<COrgMod>& om1, const CRef<COrgMod>& om2) {
-        if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) == 0  &&
-            (om1->GetSubtype() == om2->GetSubtype() ||
-             om2->GetSubtype() == COrgMod::eSubtype_other)) {
-            return true;
-        }
-        return false;
+    if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) == 0  &&
+        (om1->GetSubtype() == om2->GetSubtype() ||
+         om2->GetSubtype() == COrgMod::eSubtype_other)) {
+        return true;
     }
-};
+    return false;
+}
 
 
 
-struct SOrgModCompareSubtypeFirst
+// is om1 < om2
+// to sort subtypes together.
+static bool s_OrgModCompareSubtypeFirst(const CRef<COrgMod>& om1,
+                                        const CRef<COrgMod>& om2)
 {
-    // is om1 < om2
-    // to sort subtypes together.
-    bool operator()(const CRef<COrgMod>& om1, const CRef<COrgMod>& om2) {
-        if (om1->GetSubtype() < om2->GetSubtype()) {
-            return true;
-        }
-        if (om1->GetSubtype() == om2->GetSubtype()  &&
-            NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) < 0 ) {
-            return true;
-        }
-        return false;
+    if (om1->GetSubtype() < om2->GetSubtype()) {
+        return true;
     }
-};
+    if (om1->GetSubtype() == om2->GetSubtype()  &&
+        NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) < 0 ) {
+        return true;
+    }
+    return false;
+}
 
 void CCleanup_imp::BasicCleanup(COrgName& on)
 {
@@ -474,9 +466,9 @@ void CCleanup_imp::BasicCleanup(COrgName& on)
         
         // if type of COrgName::TMod is changed from 'list' 
         // these will need to be changed.
-        mods.sort(SOrgModCompareNameFirst());
-        mods.unique(SOrgModEqual());
-        mods.sort(SOrgModCompareSubtypeFirst());
+        mods.sort(s_OrgModCompareNameFirst);
+        mods.unique(s_OrgModEqual);
+        mods.sort(s_OrgModCompareSubtypeFirst);
     }
 }
 
@@ -748,6 +740,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/07/13 19:31:15  ucko
+ * Pass remove_if(), sort(), and unique() functions rather than predicate
+ * objects, which are overkill and break on WorkShop.
+ *
  * Revision 1.7  2006/07/13 17:12:12  rsmith
  * Bring up to date with C BSEC.
  *
