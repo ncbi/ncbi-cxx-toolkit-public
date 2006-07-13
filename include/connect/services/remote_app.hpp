@@ -169,7 +169,10 @@ inline CNcbiIstream& ReadStrWithLen(CNcbiIstream& is, string& str)
     return is;
 }
 
+NCBI_XCONNECT_EXPORT
 void TokenizeCmdLine(const string& cmdline, vector<string>& args);
+
+NCBI_XCONNECT_EXPORT
 string JoinCmdLine(const vector<string>& args);
 
 END_NCBI_SCOPE
@@ -177,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/13 15:25:18  didenko
+ * Added missing  NCBI_XCONNECT_EXPORT
+ *
  * Revision 1.1  2006/07/13 14:32:38  didenko
  * Modified the implemention of remote application's request and result classes
  *
