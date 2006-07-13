@@ -259,8 +259,9 @@ int CNSSubmitRemoveJobApp::Run(void)
 
 
         CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
-        request.Send(job_submitter.GetOStream());
-        string job_key = job_submitter.Submit(affinity, jmask);
+        job_submitter.SetJobMask(jmask);
+        request.Send(job_submitter.GetOStream());        
+        string job_key = job_submitter.Submit(affinity);
         if (out)
             *out << job_key << NcbiEndl;
         return 0;
@@ -311,7 +312,8 @@ int CNSSubmitRemoveJobApp::Run(void)
             
             CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
             request.Send(job_submitter.GetOStream());
-            string job_key = job_submitter.Submit(affinity, jmask);
+            job_submitter.SetJobMask(jmask);
+            string job_key = job_submitter.Submit(affinity);
             if (out)
                 *out << job_key << NcbiEndl;
         }
@@ -331,6 +333,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/07/13 14:37:23  didenko
+ * Made it compile with the new job's maks implemetaion
+ *
  * Revision 1.8  2006/06/28 16:01:49  didenko
  * Redone job's exlusivity processing
  *
