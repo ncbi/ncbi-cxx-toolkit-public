@@ -199,7 +199,7 @@ void x_TrimParensAndCommas(string& str)
 {
     SIZE_TYPE st = str.find_first_not_of("(),");
     if (st == NPOS){
-        str.clear();
+        str.erase();
     } else if (st > 0) {
         str.erase(0, st);
     }
@@ -740,6 +740,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/07/13 22:16:13  ucko
+ * x_TrimParensAndCommas: call string::erase rather than string::clear
+ * for compatibility with GCC 2.95.
+ *
  * Revision 1.8  2006/07/13 19:31:15  ucko
  * Pass remove_if(), sort(), and unique() functions rather than predicate
  * objects, which are overkill and break on WorkShop.
