@@ -181,7 +181,8 @@ public:
     ///
     enum EJobMask {
         eEmptyMask    = 0x0,
-        eExclusiveJob = 0x1  ///< Exlcusive job
+        eExclusiveJob = 0x1,  ///< Exlcusive job
+        eUsersMask    = (1 << 16) ///< User's masks start from here
     };
     typedef unsigned TJobMask;
 
@@ -1001,6 +1002,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/07/13 14:24:39  didenko
+ * Added eUsersMaks enum value
+ *
  * Revision 1.59  2006/06/28 16:01:42  didenko
  * Redone job's exlusivity processing
  *
