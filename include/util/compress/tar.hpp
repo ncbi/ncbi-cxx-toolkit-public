@@ -206,8 +206,8 @@ struct SHeader;
 /// (Throws exceptions on most errors.)
 /// Note that if a stream constructor was used then CTar can only perform
 /// one pass over the archive.  This means that only one full action will
-/// succeed (and it the action was to update the archive, it has to
-/// be explicitly followed by Close().  Before next action, you should
+/// succeed (and it the action was to update (e.g. append) the archive, it
+/// has to be explicitly followed by Close().  Before next action, you should
 /// explicitly reset the stream position to the beginning of the archive
 /// for read/update operations or to end of archive for append operations.
 
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/07/13 17:54:28  lavr
+ * Correction in stream use of CTar
+ *
  * Revision 1.22  2006/03/03 18:24:24  lavr
  * Document Update() finely
  *
