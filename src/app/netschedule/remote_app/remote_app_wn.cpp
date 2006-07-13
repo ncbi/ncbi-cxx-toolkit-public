@@ -37,7 +37,8 @@
 #include <corelib/ncbiexec.hpp>
 
 #include <connect/services/grid_worker_app.hpp>
-#include <connect/services/remote_job.hpp>
+#include <connect/services/remote_app_mb.hpp>
+#include <connect/services/remote_app_sb.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -46,7 +47,15 @@
 
 USING_NCBI_SCOPE;
 
-    
+
+static void s_SetParam(const CRemoteAppRequestMB_Executer& request,
+                       CRemoteAppResultMB_Executer& result)
+{
+    result.SetStdOutErrFileNames(request.GetStdOutFileName(),
+                                 request.GetStdErrFileName(),
+                                 request.GetStdOutErrStorageType());
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 /// NetSchedule sample job
@@ -54,7 +63,6 @@ USING_NCBI_SCOPE;
 /// Job reads an array of doubles, sorts it and returns data back
 /// to the client as a BLOB.
 ///
-
 class CRemoteAppJob : public IWorkerNodeJob
 {
 public:
@@ -73,73 +81,43 @@ public:
         if (!tmp_path.empty())
             tmp_path += CDirEntry::GetPathSeparator() + context.GetJobKey();
 
-        m_Request.Receive(context.GetIStream());
+        IRemoteAppRequest_Executer* request = &m_RequestMB;
+        IRemoteAppResult_Executer* result = &m_ResultMB;
+
+        bool is_sb = context.GetJobMask() & CRemoteAppRequestSB::kSingleBlobMask;
+        if (is_sb) {
+            request =  &m_RequestSB;
+            result = &m_ResultSB;
+        }
+
+        request->Receive(context.GetIStream());
+
+        if (!is_sb) 
+            s_SetParam(m_RequestMB, m_ResultMB);
 
         if (context.IsLogRequested()) {
-            if (!m_Request.GetInBlobIdOrData().empty())
-                LOG_POST( context.GetJobKey()
-                          << " Input data: " << m_Request.GetInBlobIdOrData());
-            LOG_POST( context.GetJobKey()
-                  << " Running : " << m_Params.GetAppPath() << " " << m_Request.GetCmdLine());
+            request->Log(context.GetJobKey());
         }
 
         vector<string> args;
-        //args.push_back(m_Request.GetCmdLine());
-        //NStr::Tokenize(m_Request.GetCmdLine(), " ", args);
-        const string& cmdline = m_Request.GetCmdLine();
-        if (!cmdline.empty()) {
-            string arg;
-            for(SIZE_TYPE i = 0; i < cmdline.size(); ) {
-                if (cmdline[i] == ' ') {
-                    if( !arg.empty() ) {
-                        args.push_back(arg);
-                        arg.erase();
-                    }
-                    i++;
-                    continue;
-                }
-                if (cmdline[i] == '\'' || cmdline[i] == '"') {
-                    /*                    if( !arg.empty() ) {
-                        args.push_back(arg);
-                        arg.erase();
-                        }*/
-                    char quote = cmdline[i];
-                    while( ++i < cmdline.size() && cmdline[i] != quote )
-                        arg += cmdline[i];
-
-                    args.push_back(arg);
-                    arg.erase();
-                    ++i;
-                    continue;
-                }
-                arg += cmdline[i++];                
-            }
-            if( !arg.empty() ) 
-                args.push_back(arg);
-        }
+        TokenizeCmdLine(request->GetCmdLine(), args);
         
-        
-        m_Result.SetStdOutErrFileNames(m_Request.GetStdOutFileName(),
-                                       m_Request.GetStdErrFileName(),
-                                       m_Request.GetStdOutErrStorageType());
-        unsigned int app_running_time = m_Request.GetAppRunTimeout();
-
-            
+          
         int ret = -1;
         bool canceled = ExecRemoteApp(m_Params.GetAppPath(), 
                                       args, 
-                                      m_Request.GetStdIn(), 
-                                      m_Result.GetStdOut(), 
-                                      m_Result.GetStdErr(),
+                                      request->GetStdIn(), 
+                                      result->GetStdOut(), 
+                                      result->GetStdErr(),
                                       ret,
                                       context,
                                       m_Params.GetMaxAppRunningTime(),
-                                      app_running_time,
+                                      request->GetAppRunTimeout(),
                                       m_Params.GetKeepAlivePeriod(),
                                       tmp_path);
 
-        m_Result.SetRetCode(ret); 
-        m_Result.Send(context.GetOStream());
+        result->SetRetCode(ret); 
+        result->Send(context.GetOStream());
 
         string stat = " is canceled.";
         if (!canceled) {
@@ -161,33 +139,28 @@ public:
         if (context.IsLogRequested()) {
             LOG_POST( CTime(CTime::eCurrent).AsString() 
                       << ": Job " << context.GetJobKey() << stat << " ExitCode: " << ret);
-            if (!m_Request.GetStdOutFileName().empty())
-                LOG_POST( context.GetJobKey()
-                          << " StdOutFile: " << m_Request.GetStdOutFileName());
-            if (!m_Request.GetStdErrFileName().empty())
-                LOG_POST( context.GetJobKey()
-                          << " StdErrFile: " << m_Request.GetStdErrFileName());
-            if (!m_Result.GetOutBlobIdOrData().empty())
-                LOG_POST( context.GetJobKey()
-                          << " Out data: " << m_Result.GetOutBlobIdOrData());
-            if (!m_Result.GetErrBlobIdOrData().empty())
-                LOG_POST( context.GetJobKey()
-                          << " Err data: " << m_Result.GetErrBlobIdOrData());
+            result->Log(context.GetJobKey());
         }
-        m_Request.Reset();
-        m_Result.Reset();
+        request->Reset();
+        result->Reset();
         return ret;
     }
 private:
 
+    static void x_PrepareArgs(const string& cmdline, vector<string>& args);
+
     CBlobStorageFactory m_Factory;
-    CRemoteAppRequest_Executer m_Request;
-    CRemoteAppResult_Executer  m_Result;
+    CRemoteAppRequestMB_Executer m_RequestMB;
+    CRemoteAppResultMB_Executer  m_ResultMB;
+    CRemoteAppRequestSB_Executer m_RequestSB;
+    CRemoteAppResultSB_Executer  m_ResultSB;
     CRemoteAppParams m_Params;
 };
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
-    : m_Factory(context.GetConfig()), m_Request(m_Factory), m_Result(m_Factory)
+    : m_Factory(context.GetConfig()), 
+      m_RequestMB(m_Factory), m_ResultMB(m_Factory),
+      m_RequestSB(m_Factory), m_ResultSB(m_Factory)
 {
     const IRegistry& reg = context.GetConfig();
     m_Params.Load("remote_app", reg);
@@ -237,6 +210,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/07/13 14:38:54  didenko
+ * Added support for running an application using remote_app_dispatcher utility
+ *
  * Revision 1.22  2006/06/28 16:01:49  didenko
  * Redone job's exlusivity processing
  *
