@@ -35,8 +35,14 @@
 #include "cleanup_utils.hpp"
 
 #include <objmgr/util/seq_loc_util.hpp>
-
-
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Affil.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/biblio/Imprint.hpp>
+#include <objects/general/Date.hpp>
+#include <objects/general/Person_id.hpp>
+#include <objects/general/Name_std.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -44,33 +50,44 @@ BEGIN_SCOPE(objects)
 
 using namespace sequence;
 
-void CleanString(string& str)
+bool CleanString(string& str)
 {
+    size_t orig_slen = str.size();
     NStr::TruncateSpacesInPlace(str, NStr::eTrunc_Begin);
-    while (!str.empty()) {
+    size_t slen = 0;
+    while (!str.empty()  &&  slen != str.size()) {
+        slen = str.size();
         NStr::TruncateSpacesInPlace(str, NStr::eTrunc_End);
-        if (str[str.length() - 1] == ';') {
-            bool remove = true;
-            size_t semicolon = str.length() - 1;
-            size_t amp = str.find_last_of('&');
-            if (amp != NPOS) {
-                remove = false;
-                for (size_t i = amp + 1; i < semicolon; ++i) {
-                    if (isspace((unsigned char) str[i])) {
-                        remove = true;
-                        break;
-                    }
+        RemoveTrailingSemicolon(str);
+    }
+    if (orig_slen != str.size()) {
+        return true;
+    }
+    return false;
+}
+
+
+bool RemoveTrailingSemicolon(string& str)
+{
+    if (str[str.length() - 1] == ';') {
+        bool remove = true;
+        size_t semicolon = str.length() - 1;
+        size_t amp = str.find_last_of('&');
+        if (amp != NPOS) {
+            remove = false;
+            for (size_t i = amp + 1; i < semicolon; ++i) {
+                if (isspace((unsigned char) str[i])) {
+                    remove = true;
+                    break;
                 }
             }
-            if (remove) {
-                str.resize(semicolon);
-            } else {
-                break;
-            }
-        } else {
-            break;
+        }
+        if (remove) {
+            str.resize(semicolon);
+            return true;
         }
     }
+    return false;
 }
 
 
@@ -168,10 +185,10 @@ bool IsOnlinePub(const CPubdesc& pd)
 }
 
 
-void RemoveSpaces(string& str)
+bool RemoveSpaces(string& str)
 {
     if (str.empty()) {
-        return;
+        return false;
     }
 
     size_t next = 0;
@@ -183,7 +200,9 @@ void RemoveSpaces(string& str)
     }
     if (next < str.length()) {
         str.resize(next);
+        return true;
     }
+    return false;
 }
 
 
@@ -778,6 +797,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/07/13 17:08:34  rsmith
+* report if changes made. Dbtag comparisons.
+*
 * Revision 1.6  2006/07/05 16:43:34  bollin
 * added step to ExtendedCleanup to clean features and descriptors
 * and remove empty feature table seq-annots

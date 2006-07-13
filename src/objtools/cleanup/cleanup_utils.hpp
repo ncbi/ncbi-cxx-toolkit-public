@@ -37,6 +37,7 @@
 #include <algorithm>
 
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Affil.hpp>
@@ -55,19 +56,34 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CCit_sub;
+
+/// Cleaning functions may return true if they have changed something.
+/// false if no change was needed.
 
 /// convert double quotes to single quotes
 inline 
-void ConvertDoubleQuotes(string& str)
+bool ConvertDoubleQuotes(string& str)
 {
+    bool changed = false;
     if (!str.empty()) {
-        replace(str.begin(), str.end(), '\"', '\'');
+        NON_CONST_ITERATE(string, c_it, str) {
+            if (*c_it == '\"') {
+                *c_it = '\'';
+                changed = true;
+            }
+        }
     }
+    return changed;
 }
 
 
 /// truncate spaces and semicolons
-void CleanString(string& str);
+bool CleanString(string& str);
+
+/// remove a trailing semicolon, 
+/// if it is not preceded by an ampersand
+bool RemoveTrailingSemicolon(string& str);
 
 // truncate trailing and leading spaces, trailing semicolons,
 // and redundant semicolons and extra spaces after semicolons
@@ -79,21 +95,26 @@ bool OnlyPunctuation (string str);
 bool IsOnlinePub(const CPubdesc& pd);
 
 /// remove all spaces from a string
-void RemoveSpaces(string& str);
+bool RemoveSpaces(string& str);
 
 /// clean a container of strings, remove blanks and repeats.
 template<typename C>
-void CleanStringContainer(C& str_cont)
+bool CleanStringContainer(C& str_cont)
 {
+    bool changed = false;
     typename C::iterator it = str_cont.begin();
     while (it != str_cont.end()) {
-        CleanString(*it);
+        if (CleanString(*it)) {
+            changed = true;
+        }
         if (NStr::IsBlank(*it)) {
             it = str_cont.erase(it);
+            changed = true;
         } else {
             ++it;
         }
     }
+    return changed;
 }
 
 
@@ -113,16 +134,20 @@ void CleanStringContainer(C& str_cont)
 
 #define CONVERT_QUOTES(x) \
     if (IsSet##x()) { \
-        ConvertDoubleQuotes(Set##x()); \
+        if (ConvertDoubleQuotes(Set##x()) ) { \
+            ChangeMade(CCleanupChange::eCleanDoubleQuotes); \
+        } \
     }
 
 #define CLEAN_STRING_MEMBER(o, x) \
-if ((o).IsSet##x()) { \
-    CleanString((o).Set##x()); \
+    if ((o).IsSet##x()) { \
+        if (CleanString((o).Set##x()) ) { \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
+        } \
         if (NStr::IsBlank((o).Get##x())) { \
             (o).Reset##x(); \
         } \
-}
+    }
 
 #define EXTENDED_CLEAN_STRING_MEMBER(o, x) \
 if ((o).IsSet##x()) { \
@@ -133,14 +158,18 @@ if ((o).IsSet##x()) { \
 }
 
 #define CLEAN_STRING_CHOICE(o, x) \
-        CleanString((o).Set##x()); \
+        if (CleanString((o).Set##x()) ) { \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
+        } \
         if (NStr::IsBlank((o).Get##x())) { \
             (o).Reset(); \
         }
 
 #define CLEAN_STRING_LIST(o, x) \
     if ((o).IsSet##x()) { \
-        CleanStringContainer((o).Set##x()); \
+        if (CleanStringContainer((o).Set##x()) ) { \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
+        } \
         if ((o).Get##x().empty()) { \
             (o).Reset##x(); \
         } \
@@ -157,7 +186,9 @@ if ((o).IsSet##x()) { \
 /// clean a string member 'x' of an internal object 'o'
 #define CLEAN_INTERNAL_STRING(o, x) \
     if (o.IsSet##x()) { \
-        CleanString(o.Set##x()); \
+        if ( CleanString(o.Set##x()) ) { \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
+        } \
         if (NStr::IsBlank(o.Get##x())) { \
             o.Reset##x(); \
         } \
@@ -239,6 +270,24 @@ char ValidAminoAcid (string abbrev);
 // for matching equivalent cit-sub publications
 bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2);
 
+struct SDbtagCompare
+{
+    // is dbt1 < dbt2
+    bool operator()(const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2) {
+        return dbt1->Compare(*dbt2) < 0;
+    }
+};
+
+
+struct SDbtagEqual
+{
+    // is dbt1 < dbt2
+    bool operator()(const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2) {
+        return dbt1->Compare(*dbt2) == 0;
+    }
+};
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -247,6 +296,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/07/13 17:08:34  rsmith
+* report if changes made. Dbtag comparisons.
+*
 * Revision 1.7  2006/07/05 16:43:34  bollin
 * added step to ExtendedCleanup to clean features and descriptors
 * and remove empty feature table seq-annots
