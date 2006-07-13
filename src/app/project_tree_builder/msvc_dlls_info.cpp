@@ -410,6 +410,7 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
     dll->m_NcbiCLibs.sort();
     dll->m_NcbiCLibs.unique();
 
+    dll->m_MakeType = max(lib.m_MakeType, dll->m_MakeType);
     if (dll->m_MsvcProjectMakefileDir == lib.m_MsvcProjectMakefileDir) {
         return;
     }
@@ -596,6 +597,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/07/13 18:01:28  gouriano
+ * Exclude 'excluded' projects on UNIX
+ *
  * Revision 1.34  2006/01/24 14:54:38  gouriano
  * Generate GUID for DLL projects
  *

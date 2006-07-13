@@ -549,9 +549,15 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     if (ofs.is_open()) {
         ofs << "all_projects =";
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-            if (p->first.Type() != CProjKey::eMsvc) {
-                ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
+            if (p->second.m_MakeType == eMakeType_Excluded ||
+                p->second.m_MakeType == eMakeType_ExcludedByReq) {
+                LOG_POST(Info << "For reference only: " << CreateProjectName(p->first));
+                continue;
             }
+            if (p->first.Type() == CProjKey::eMsvc) {
+                continue;
+            }
+            ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
         }
         ofs << endl << endl;
         ofs << "all :" << " $(all_projects)";
@@ -1165,6 +1171,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2006/07/13 18:01:28  gouriano
+ * Exclude 'excluded' projects on UNIX
+ *
  * Revision 1.77  2006/07/13 15:13:29  gouriano
  * Made it work on UNIX - to generate combined makefile
  *
