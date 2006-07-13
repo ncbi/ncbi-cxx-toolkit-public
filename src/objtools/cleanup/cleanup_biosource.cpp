@@ -37,6 +37,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
+#include <corelib/ncbistr.hpp>
 #include <set>
 
 #include <objects/seq/Seq_descr.hpp>
@@ -68,6 +69,17 @@ void CCleanup_imp::BasicCleanup(CBioSource& bs)
 }
 
 
+static bool s_NoNameSubtype(CSubSource::TSubtype val)
+{
+    if (val == CSubSource::eSubtype_germline    ||
+        val == CSubSource::eSubtype_rearranged  ||
+        val == CSubSource::eSubtype_transgenic  ||
+        val == CSubSource::eSubtype_environmental_sample) {
+        return true;
+    }
+    return false;
+}
+
 static CSubSource* s_StringToSubSource(const string& str)
 {
     size_t pos = str.find('=');
@@ -84,10 +96,7 @@ static CSubSource* s_StringToSubSource(const string& str)
         }
         NStr::TruncateSpacesInPlace(name);
         
-        if (val == CSubSource::eSubtype_germline    ||
-            val == CSubSource::eSubtype_rearranged  ||
-            val == CSubSource::eSubtype_transgenic  ||
-            val == CSubSource::eSubtype_environmental_sample) {
+        if (s_NoNameSubtype(val) ) {
             if (NStr::IsBlank(name)) {
                 name = " ";
             }
@@ -139,35 +148,166 @@ void CCleanup_imp::x_OrgModToSubtype(CBioSource& bs)
 }
 
 
-struct SSubsourceCompare
+struct SSubSourceRemove
 {
-    bool operator()(const CRef<CSubSource>& s1, const CRef<CSubSource>& s2) {
-        return s1->IsSetSubtype()  &&  s2->IsSetSubtype()  &&
-        s1->GetSubtype() < s2->GetSubtype();
+    // remove those with no name unless it has a subtype that doesn't need a name.
+    bool operator()(const CRef<CSubSource>& s1) {
+        return  ! s1->IsSetName()  &&  ! s_NoNameSubtype(s1->GetSubtype());
     }
 };
 
+
+struct SSubsourceCompare
+{
+    // is st1 < st2
+    bool operator()(const CRef<CSubSource>& st1, const CRef<CSubSource>& st2) {
+        if (st1->GetSubtype() < st2->GetSubtype()) {
+            return true;
+        } else if (st1->GetSubtype() == st2->GetSubtype()) {
+            if ( st1->IsSetName()  &&  st2->IsSetName()) {
+                if (NStr::CompareNocase(st1->GetName(), st2->GetName()) < 0) {
+                    return true;
+                }
+            } else if ( ! st1->IsSetName()  &&  st2->IsSetName()) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
+
+struct SSubsourceEqual
+{
+    // Two SubSource's are equal and duplicates if:
+    // they have the same subtype
+    // and the same name (or don't require a name).
+    bool operator()(const CRef<CSubSource>& st1, const CRef<CSubSource>& st2) {
+        if ( st1->GetSubtype() == st2->GetSubtype() ) {
+            if ( s_NoNameSubtype(st2->GetSubtype())  ||  
+                ( ! st1->IsSetName()  &&  ! st2->IsSetName() ) ||
+                ( st1->IsSetName()  &&  st2->IsSetName()  &&
+                 NStr::CompareNocase(st1->GetName(), st2->GetName()) == 0) ) {
+                return true;
+            }            
+        }
+        return false;
+    }
+};
+
+/*
+    Strip all parentheses and commas from the
+    beginning and end of the string.
+*/
+void x_TrimParensAndCommas(string& str)
+{
+    SIZE_TYPE st = str.find_first_not_of("(),");
+    if (st == NPOS){
+        str.clear();
+    } else if (st > 0) {
+        str.erase(0, st);
+    }
+    
+    SIZE_TYPE en = str.find_last_not_of(",()");
+    if (en < str.size() - 1) {
+        str.erase(en + 1);
+    }
+}
+
+
+void x_CombinePrimerStrings(string& orig_seq, const string& new_seq)
+{
+    if (new_seq.empty()) {
+        return;
+    }
+    if (orig_seq.empty()) {
+        orig_seq = new_seq;
+        return;
+    }
+    string new_seq_trim(new_seq);
+    x_TrimParensAndCommas(new_seq_trim);
+    if ( orig_seq.find(new_seq_trim) != NPOS ) {
+        return;
+    }
+    x_TrimParensAndCommas(orig_seq);
+    orig_seq = '(' + orig_seq + ',' + new_seq_trim + ')';
+}
 
 void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
 {
     _ASSERT(bs.IsSetSubtype());
     
-    typedef multiset<CRef<CSubSource>, SSubsourceCompare> TSorter;
-    
     CBioSource::TSubtype& subtypes = bs.SetSubtype();
-    TSorter   tmp;
     
     NON_CONST_ITERATE (CBioSource::TSubtype, it, subtypes) {
         if (*it) {
             BasicCleanup(**it);
-            tmp.insert(*it);
         }
     }
     
-    subtypes.clear();
-    ITERATE (TSorter, it, tmp) {
-        subtypes.push_back(*it);
+    // remove those with no name unless it has a subtype that doesn't need a name.
+    subtypes.remove_if(SSubSourceRemove());
+    
+    // merge any duplicate fwd_primer_seq and rev_primer_seq.
+    // and any duplicate fwd_primer_name and rev_primer_name.
+    // these are iterators pointing to the subtype into which we will merge others.
+    CBioSource::TSubtype::iterator fwd_primer_seq = subtypes.end();
+    CBioSource::TSubtype::iterator rev_primer_seq = subtypes.end();
+    CBioSource::TSubtype::iterator fwd_primer_name = subtypes.end();
+    CBioSource::TSubtype::iterator rev_primer_name = subtypes.end();
+    CBioSource::TSubtype::iterator it = subtypes.begin();
+    while (it != subtypes.end()) {
+        if (*it) {
+            CSubSource& ss = **it;
+            if ( ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_seq  || 
+                 ss.GetSubtype() == CSubSource::eSubtype_rev_primer_seq ) {
+                NStr::ToUpper(ss.SetName());
+                ss.SetName(NStr::Replace(ss.GetName(), " ", kEmptyStr));
+                if (ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_seq) {
+                    if (fwd_primer_seq == subtypes.end() ) {
+                        fwd_primer_seq = it;
+                    } else {
+                        x_CombinePrimerStrings((*fwd_primer_seq)->SetName(), ss.GetName());
+                        it = subtypes.erase(it);
+                        continue;
+                    }
+                } else if (ss.GetSubtype() == CSubSource::eSubtype_rev_primer_seq) {
+                    if (rev_primer_seq == subtypes.end() ) {
+                        rev_primer_seq = it;
+                    } else {
+                        x_CombinePrimerStrings((*rev_primer_seq)->SetName(), ss.GetName());
+                        it = subtypes.erase(it);
+                        continue;
+                    }
+                }
+            } else if ( ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_name  || 
+                        ss.GetSubtype() == CSubSource::eSubtype_rev_primer_name ) {
+                if (ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_name) {
+                    if (fwd_primer_name == subtypes.end() ) {
+                        fwd_primer_name = it;
+                    } else {
+                        x_CombinePrimerStrings((*fwd_primer_name)->SetName(), ss.GetName());
+                        it = subtypes.erase(it);
+                        continue;
+                    }
+                } else if (ss.GetSubtype() == CSubSource::eSubtype_rev_primer_name) {
+                    if (rev_primer_name == subtypes.end() ) {
+                        rev_primer_name = it;
+                    } else {
+                        x_CombinePrimerStrings((*rev_primer_name)->SetName(), ss.GetName());
+                        it = subtypes.erase(it);
+                        continue;
+                    }
+                }
+            }
+        }
+        ++it;
     }
+    
+    // sort and remove duplicates.
+    // Do not sort before merging primer_seq's above.
+    subtypes.sort(SSubsourceCompare());
+    subtypes.unique(SSubsourceEqual());    
 }
 
 
@@ -185,7 +325,27 @@ void CCleanup_imp::BasicCleanup(COrg_ref& oref)
         BasicCleanup(oref.SetOrgname());
     }
     
-    // !! To do: cleanup dbxref (sort, unique)
+    if (oref.IsSetDb()) {
+        COrg_ref::TDb& dbxref = oref.SetDb();
+        
+        // dbxrefs cleanup
+        COrg_ref::TDb::iterator it = dbxref.begin();
+        while (it != dbxref.end()) {
+            if (it->Empty()) {
+                it = dbxref.erase(it);
+                continue;
+            }
+            BasicCleanup(**it);
+            
+            ++it;
+        }
+        
+        // sort/unique db_xrefs
+        stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
+        it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
+        dbxref.erase(it, dbxref.end());
+    }
+    
 }
 
 
@@ -245,15 +405,78 @@ void CCleanup_imp::x_ModToOrgMod(COrg_ref& oref)
 }
 
 
+struct SOrgModCompareNameFirst
+{
+    // is om1 < om2
+    // sort by subname first because of how we check equality below.
+    bool operator()(const CRef<COrgMod>& om1, const CRef<COrgMod>& om2) {
+        if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) < 0) {
+             return true;
+        }
+        if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) == 0  &&
+            om1->GetSubtype() < om2->GetSubtype() ) {
+            return true;
+        }
+        return false;
+    }
+};
+
+
+struct SOrgModEqual
+{
+    // Two OrgMod's are equal and duplicates if:
+    // they have the same subname and same subtype
+    // or one has subtype 'other'.
+    bool operator()(const CRef<COrgMod>& om1, const CRef<COrgMod>& om2) {
+        if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) == 0  &&
+            (om1->GetSubtype() == om2->GetSubtype() ||
+             om2->GetSubtype() == COrgMod::eSubtype_other)) {
+            return true;
+        }
+        return false;
+    }
+};
+
+
+
+struct SOrgModCompareSubtypeFirst
+{
+    // is om1 < om2
+    // to sort subtypes together.
+    bool operator()(const CRef<COrgMod>& om1, const CRef<COrgMod>& om2) {
+        if (om1->GetSubtype() < om2->GetSubtype()) {
+            return true;
+        }
+        if (om1->GetSubtype() == om2->GetSubtype()  &&
+            NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) < 0 ) {
+            return true;
+        }
+        return false;
+    }
+};
+
 void CCleanup_imp::BasicCleanup(COrgName& on)
 {
     CLEAN_STRING_MEMBER(on, Attrib);
     CLEAN_STRING_MEMBER(on, Lineage);
     CLEAN_STRING_MEMBER(on, Div);
     if (on.IsSetMod()) {
-        NON_CONST_ITERATE (COrgName::TMod, it, on.SetMod()) {
+        COrgName::TMod& mods = on.SetMod();
+        COrgName::TMod::iterator it = mods.begin();
+        while (it != mods.end() ) {
             BasicCleanup(**it);
+            if ((*it)->GetSubname().empty()) {
+                it = mods.erase(it);
+            } else {
+                ++it;
+            }
         }
+        
+        // if type of COrgName::TMod is changed from 'list' 
+        // these will need to be changed.
+        mods.sort(SOrgModCompareNameFirst());
+        mods.unique(SOrgModEqual());
+        mods.sort(SOrgModCompareSubtypeFirst());
     }
 }
 
@@ -525,6 +748,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/07/13 17:12:12  rsmith
+ * Bring up to date with C BSEC.
+ *
  * Revision 1.6  2006/07/06 15:10:52  bollin
  * avoid setting empty values
  *

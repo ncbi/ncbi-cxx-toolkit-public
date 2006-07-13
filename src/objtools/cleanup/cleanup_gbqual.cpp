@@ -414,12 +414,20 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
                 NStr::ToLower(val);
             }
         }
+        if ( ! NStr::IsBlank(val) &&  val.find_first_not_of("ACGTUacgtu") == NPOS) {
+            NStr::ToLower(val);
+            string val_no_u = NStr::Replace(val, "u", "t");
+            if (val_no_u != val) {
+                gb_qual.SetVal(val_no_u);
+            }
+        }
     }
-
+    
     if (NStr::EqualNocase(qual, "partial")) {
         feat.SetPartial();
         return true;  // mark qual for deletion
     } else if (NStr::EqualNocase(qual, "evidence")) {
+    /*
         if (NStr::EqualNocase(val, "experimental")) {
             if (!feat.IsSetExp_ev()  ||  feat.GetExp_ev() != CSeq_feat::eExp_ev_not_experimental) {
                 feat.SetExp_ev(CSeq_feat::eExp_ev_experimental);
@@ -427,6 +435,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
         } else if (NStr::EqualNocase(val, "not_experimental")) {
             feat.SetExp_ev(CSeq_feat::eExp_ev_not_experimental);
         }
+    */
         return true;  // mark qual for deletion
     } else if (NStr::EqualNocase(qual, "exception")) {
         feat.SetExcept(true);
@@ -436,7 +445,9 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
             }
         }
         return true;  // mark qual for deletion
-    } else if (NStr::EqualNocase(qual, "note")) {
+    } else if (NStr::EqualNocase(qual, "note")  ||
+               NStr::EqualNocase(qual, "notes")  ||
+               NStr::EqualNocase(qual, "comment")) {
         if (!feat.IsSetComment()) {
             feat.SetComment(val);
         } else {
@@ -516,8 +527,17 @@ void CCleanup_imp::BasicCleanup(CGb_qual& gbq)
     
     if (NStr::EqualNocase(gbq.GetQual(), "cons_splice")) {
         x_CleanupConsSplice(gbq);
-    } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit")) {
-        x_CleanupRptUnit(gbq);
+    } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit")  ||
+               NStr::EqualNocase(gbq.GetQual(), "rpt_unit_range")  ||
+               NStr::EqualNocase(gbq.GetQual(), "rpt_unit_seq")) {
+        bool range_qual = x_CleanupRptUnit(gbq);
+        if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit")) {
+            if (range_qual) {
+                gbq.SetQual("rpt_unit_range");
+            } else {
+                gbq.SetQual("rpt_unit_seq");
+            }
+        }
     }
 }
 
@@ -541,13 +561,17 @@ void CCleanup_imp::x_CleanupConsSplice(CGb_qual& gbq)
 }
 
 
-void CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
+// return true if the val indicates this a range qualifier "[0-9]+..[0-9]+"
+
+bool CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
 {
     CGb_qual::TVal& val = gbq.SetVal();
     
     if (NStr::IsBlank(val)) {
-        return;
+        return false;
     }
+    bool    digits1, sep, digits2;
+    digits1 = sep = digits2 = false;
     string s;
     string::const_iterator it = val.begin();
     string::const_iterator end = val.end();
@@ -560,18 +584,21 @@ void CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
         }
         while (it != end  &&  isdigit((unsigned char)(*it))) {
             s += *it++;
+            digits1 = true;
         }
         if (it != end  &&  (*it == '.'  ||  *it == '-')) {
             while (it != end  &&  (*it == '.'  ||  *it == '-')) {
                 ++it;
             }
             s += "..";
+            sep = true;
         }
         while (it != end  &&  isspace((unsigned char)(*it))) {
             ++it;
         }
         while (it != end  &&  isdigit((unsigned char)(*it))) {
             s += *it++;
+            digits2 = true;
         }
         while (it != end  &&  isspace((unsigned char)(*it))) {
             ++it;
@@ -581,11 +608,12 @@ void CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
             if (c != '('  &&  c != ')'  &&  c != ','  &&  c != '.'  &&
                 !isspace((unsigned char) c)  &&  !isdigit((unsigned char) c)) {
                 NStr::ToLower(val);
-                return;
+                return false;
             }
         }
     }
     val = s;
+    return  (digits1 && sep && digits2);
 }
 
 
@@ -597,6 +625,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/07/13 17:12:12  rsmith
+ * Bring up to date with C BSEC.
+ *
  * Revision 1.5  2006/05/17 17:39:36  bollin
  * added parsing and cleanup of anticodon qualifiers on tRNA features and
  * transl_except qualifiers on coding region features

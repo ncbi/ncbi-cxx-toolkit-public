@@ -40,6 +40,9 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/pub/Pub_set.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/biblio/Cit_gen.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
@@ -395,8 +398,12 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
     case CSeqFeatData::e_Region:
         {            
             string &region = data.SetRegion();
-            CleanString(region);
-            ConvertDoubleQuotes(region);
+            if (CleanString(region)) {
+                ChangeMade(CCleanupChange::eTrimSpaces);
+            }
+            if (ConvertDoubleQuotes(region)) {
+                ChangeMade(CCleanupChange::eCleanDoubleQuotes);
+            }
             if (region.empty()) {
                 feat.SetData().SetComment();
             }
@@ -449,23 +456,6 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
 // === Seq-feat.dbxref
 
 
-struct SDbtagCompare
-{
-    // is dbt1 < dbt2
-    bool operator()(const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2) {
-        return dbt1->Compare(*dbt2) < 0;
-    }
-};
-
-
-struct SDbtagEqual
-{
-    // is dbt1 < dbt2
-    bool operator()(const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2) {
-        return dbt1->Compare(*dbt2) == 0;
-    }
-};
-
 
 struct SGb_QualCompare
 {
@@ -481,6 +471,26 @@ struct SGb_QualEqual
     // is q1 == q2
     bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
         return (q1->Compare(*q2) == 0);
+    }
+};
+
+
+typedef pair<string, CRef<CPub> >   TCit;
+struct TCitSort {
+    bool operator ()(const TCit& c1, const TCit& c2) {
+        return ( c1.first < c2.first ) &&  // labels match.
+            CitGenTitlesMatch(*c1.second, *c2.second);
+    }
+    bool CitGenTitlesMatch(const CPub& p1, const CPub& p2) {
+        if ( ! p1.IsGen()  || ! p2.IsGen() ) {
+            return true;
+        }
+        const CCit_gen& g1 = p1.GetGen();
+        const CCit_gen& g2 = p2.GetGen();
+        if ( ! g1.IsSetTitle()  ||  ! g2.IsSetTitle() ) {
+            return true;
+        }
+        return g1.GetTitle() == g2.GetTitle();
     }
 };
 
@@ -550,7 +560,33 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         CSeq_feat::TQual::iterator erase_it = unique(quals.begin(), quals.end(), SGb_QualEqual());
         quals.erase(erase_it, quals.end());
     }
+    if (f.IsSetCit()) {
+        CPub_set& ps = f.SetCit();
+
+        // The Pub-set should always be pub. Ignore if not.
+        if (ps.IsPub()) {
+            // sort and unique by putting everything into a set
+            // indexed by a label generated for each CPub.
+            typedef set<TCit, TCitSort> TCitSet;
+            TCitSet cit_set;
+            bool dup_rejected = false;
+            ITERATE (CPub_set::TPub, cit_it, ps.GetPub()) {
+                string label;
+                (*cit_it)->GetLabel(&label, CPub::eBoth, true);
+                dup_rejected |= cit_set.insert( TCit(label, *cit_it) ).second;
+            }
+            // now put everything left back into the feature's citation list.
+            ps.SetPub().clear();
+            ITERATE (TCitSet, citset_it, cit_set) {
+                ps.SetPub().push_back(citset_it->second);
+            }
+            if (dup_rejected) {
+                // report that we deleted a duplicate citation.
+            }
+        }
+    }
 }
+
 
 // ==========================================================================
 //                             end of Seq_feat cleanup section
@@ -635,7 +671,7 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
                             }}
                             case CRNA_ref::eType_tRNA:
                             {{
-                                // !!!
+                                // !!! parse tRNA string. lines 6791:6827, api/sqnutil1.c
                                 break;
                             }}
                             case CRNA_ref::eType_other:
@@ -658,6 +694,7 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
                 }
                 break;
             case CRNA_ref::TExt::e_TRNA:
+                // CleanupTrna (SeqFeatPtr sfp, tRNAPtr trp), line 3117, api/sqnutil1.c
                 break;
             default:
                 break;
@@ -678,6 +715,8 @@ void CCleanup_imp::BasicCleanup(CImp_feat& imf)
         const CImp_feat::TKey& key = imf.GetKey();
         if (key == "allele"  ||  key == "mutation") {
             imf.SetKey("variation");
+        } else if (NStr::EqualNocase(key, "import")) {
+            imf.SetKey("misc_feature");
         }
     }
 }
@@ -1188,6 +1227,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2006/07/13 17:12:12  rsmith
+ * Bring up to date with C BSEC.
+ *
  * Revision 1.18  2006/07/12 14:22:52  bollin
  * changed x_ExtendSingleGeneOnmRNA to match changes in C Toolkit
  *

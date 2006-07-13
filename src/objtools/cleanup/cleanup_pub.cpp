@@ -176,6 +176,17 @@ void CCleanup_imp::BasicCleanup(CCit_gen& cg, bool fix_initials)
     }
     
     //!!! TO DO: serial
+    /*
+     if (stripSerial) {
+         cgp->serial_number = -1;
+     }
+     
+     compare labels before and after doing the above.
+     if label changed : (sqnutil1.c, 6156)
+     ValNodeCopyStr (publist, 1, buf1);
+     ValNodeCopyStr (publist, 2, buf2);
+
+     */
 }
 
 
@@ -203,6 +214,21 @@ void CCleanup_imp::BasicCleanup(CCit_sub& cs, bool fix_initials)
     }
     if (authors  &&  authors->IsSetAffil()) {
         //!!! TO DO
+        CCit_sub::TAuthors::TAffil& affil = authors->SetAffil();
+        if (affil.IsStr()) {
+            string str = affil.SetStr();
+            if (NStr::StartsWith(str, "to the ", NStr::eNocase) &&
+                str.size() >= 34 &&
+                NStr::StartsWith(str.substr(24), " databases", NStr::eNocase) ) {
+                if (str[35] == '.') {
+                    str = str.substr(35);
+                } else {
+                    str = str.substr(34);
+                }
+                affil.SetStr(str);
+                BasicCleanup(affil);
+            }
+        }
     }
 }
 
@@ -585,6 +611,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/07/13 17:12:12  rsmith
+ * Bring up to date with C BSEC.
+ *
  * Revision 1.4  2006/07/05 16:43:34  bollin
  * added step to ExtendedCleanup to clean features and descriptors
  * and remove empty feature table seq-annots
