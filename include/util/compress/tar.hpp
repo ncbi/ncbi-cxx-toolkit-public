@@ -598,8 +598,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/07/13 17:57:10  lavr
+ * Fix previous change log entry
+ *
  * Revision 1.23  2006/07/13 17:54:28  lavr
- * Correction in stream use of CTar
+ * Documentation clarification about the use of CTar on top of a stream
  *
  * Revision 1.22  2006/03/03 18:24:24  lavr
  * Document Update() finely
