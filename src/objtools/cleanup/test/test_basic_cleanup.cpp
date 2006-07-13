@@ -107,6 +107,7 @@ private:
     auto_ptr<CObjectOStream> m_Out;
     unsigned int m_Options;
     bool m_Continue;
+    bool m_NoCleanup;
 
     size_t m_Level;
     size_t m_Reported;
@@ -114,7 +115,7 @@ private:
 
 
 CTest_cleanupApplication::CTest_cleanupApplication(void) :
-    m_In(0), m_Options(0), m_Continue(false), m_Level(0),
+    m_In(0), m_Options(0), m_Continue(false), m_NoCleanup(false), m_Level(0),
     m_Reported(0)
 {
 }
@@ -138,6 +139,7 @@ void CTest_cleanupApplication::Init(void)
     arg_desc->AddFlag("t", "Input is Seq-set (NCBI Release file)");
     arg_desc->AddFlag("b", "Input is in binary format");
     arg_desc->AddFlag("c", "Continue on ASN.1 error");
+    arg_desc->AddFlag("n", "Don't do cleanup. Just read and write file");
 
     arg_desc->AddOptionalKey(
         "x", "OutFile", "Output file for error messages",
@@ -218,7 +220,10 @@ void CTest_cleanupApplication::ReadClassMember
 
                 // BasicCleanup Seq-entry
                 CCleanup cleanup;
-                CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(*se, m_Options);
+                CConstRef<CCleanupChange> changes;
+                if ( ! m_NoCleanup) {
+                    changes = cleanup.BasicCleanup(*se, m_Options);
+                }
                 if ( changes->ChangeCount() > 0 ) {
                     m_Reported += PrintChanges(changes, GetArgs());
                 }
@@ -272,7 +277,10 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
 
     // BasicCleanup Seq-entry
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(*se, m_Options);
+    CConstRef<CCleanupChange> changes;
+    if ( ! m_NoCleanup) {
+        changes = cleanup.BasicCleanup(*se, m_Options);
+    }
     *m_Out << (*se);
     return changes;
 }
@@ -287,7 +295,10 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
 
     // Validae Seq-submit
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(*ss, m_Options);
+    CConstRef<CCleanupChange> changes;
+    if ( ! m_NoCleanup) {
+        changes = cleanup.BasicCleanup(*ss, m_Options);
+    }
     *m_Out << (*ss);
     return changes;
 }
@@ -302,7 +313,10 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
 
     // Validae Seq-annot
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(*sa, m_Options);    
+    CConstRef<CCleanupChange> changes;
+    if ( ! m_NoCleanup) {
+        changes = cleanup.BasicCleanup(*sa, m_Options);
+    }
     *m_Out << (*sa);
     return changes;
 }
@@ -310,6 +324,8 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
 
 void CTest_cleanupApplication::Setup(const CArgs& args)
 {
+    if (args["n"])
+        m_NoCleanup = true;
     SetupCleanupOptions(args);
 }
 
@@ -390,6 +406,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/07/13 17:11:28  rsmith
+ * change reporting changed.
+ *
  * Revision 1.2  2006/06/23 18:02:32  rsmith
  * new CCleanupChange class
  *
