@@ -4393,24 +4393,26 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         addr.sin_len = sizeof(addr);
 #  endif /*HAVE_SIN_LEN*/
         if ((x_errno = getnameinfo((struct sockaddr*) &addr, sizeof(addr),
-                                   name, namelen, 0, 0, 0)) == 0) {
-            return name;
-        } else {
-            if (s_Log == eOn) {
+                                   name, namelen, 0, 0, 0)) != 0) {
+            if (SOCK_ntoa(host, name, namelen) != 0) {
+                name[0] = '\0';
+                name = 0;
+            }
+            if (!name  &&  s_Log == eOn) {
                 char addr[16];
+                if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+                    strcpy(addr, "<unknown>");
                 if (x_errno == EAI_SYSTEM)
                     x_errno = SOCK_ERRNO;
                 else
                     x_errno += EAI_BASE;
-                if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
-                    strcpy(addr, "<unknown>");
                 CORE_LOGF_ERRNO_EX(eLOG_Warning,x_errno,SOCK_STRERROR(x_errno),
                                    ("[SOCK_gethostbyaddr]  Failed "
                                     "getnameinfo(%s)", addr));
             }
-            name[0] = '\0';
-            return 0;
         }
+        return name;
+
 #else /* use some variant of gethostbyaddr */
         struct hostent* he;
 #  if defined(HAVE_GETHOSTBYADDR_R)
@@ -4558,6 +4560,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.189  2006/07/13 17:59:26  lavr
+ * SOCK_gethostbyaddr() to upcall SOCK_ntoa() as the last resort
+ *
  * Revision 6.188  2006/04/27 18:37:26  lavr
  * Formatting by Anna Lavrentieva on Take Your Child To Work Day at NIH
  *
