@@ -664,6 +664,9 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
 
     CRef<CSeq_align> new_sa(new CSeq_align);
     new_sa->SetType(eType_not_set);
+    if (IsSetScore()) {
+        new_sa->SetScore() = GetScore();
+    }
 
     CDense_seg& new_ds = new_sa->SetSegs().SetDenseg();
 
@@ -897,6 +900,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2006/07/13 20:34:55  todorov
+* CreateDensegFromDisc() now copies the scores too.
+*
 * Revision 1.26  2006/07/12 23:01:44  todorov
 * Added support for Dendiag and Disc alignments in Validate()
 *
