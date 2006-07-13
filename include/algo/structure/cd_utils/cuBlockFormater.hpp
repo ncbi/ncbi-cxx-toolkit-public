@@ -63,6 +63,10 @@ private:
 	CRef< CSeq_align > m_refSeqAlign;
 	vector<int> m_goodRows;
 	vector<int> m_badRows;
+
+	//assume seqAlign.master and guide are on the same seq-loc
+	// and guide is a subset of seqAlign.master
+	CRef< CSeq_align >formatOneRow(const BlockModel& guide, CRef< CSeq_align > seqAlign);
 };
 
 END_SCOPE(cd_utils)
@@ -74,6 +78,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/07/13 20:55:41  cliu
+ * format existing alignments
+ *
  * Revision 1.2  2006/06/13 13:04:04  cliu
  * fix the compiling error on lynux
  *

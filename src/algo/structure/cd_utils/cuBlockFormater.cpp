@@ -149,17 +149,31 @@ void BlockFormater::formatBlocksForQualifiedRows(list< CRef< CSeq_align > > & se
 	if (m_intersector == 0)
 		return;
 	cd_utils::BlockModel* finalBM = m_intersector->getIntersectedAlignment();
+	//format what's already in seqAlignList
+	list< CRef< CSeq_align > >::iterator lit = seqAlignList.begin();
+	for (; lit != seqAlignList.end(); lit++)
+	{
+		(*lit) = formatOneRow(*finalBM, *lit);
+	}
 	for (int i = 0; i < m_goodRows.size(); i++)
 	{
-		BlockModelPair bmp(m_seqAlignVec[m_goodRows[i]]);
-		pair<cd_utils::DeltaBlockModel*, bool> delta = (*finalBM) - bmp.getMaster();
-		cd_utils::BlockModel& slave = bmp.getSlave();
-		pair<cd_utils::BlockModel*, bool> sum = slave + (*delta.first);
-		seqAlignList.push_back(sum.first->toSeqAlign(*finalBM));
-		delete delta.first;
-		delete sum.first;
+		seqAlignList.push_back(formatOneRow(*finalBM, m_seqAlignVec[m_goodRows[i]]));
 	}
 	delete finalBM;
+}
+
+//assume seqAlign.master and guide are on the same seq-loc
+// and guide is a subset of seqAlign.master
+CRef< CSeq_align > BlockFormater::formatOneRow(const BlockModel& guide, CRef< CSeq_align > seqAlign)
+{
+	BlockModelPair bmp(seqAlign);
+	pair<cd_utils::DeltaBlockModel*, bool> delta = guide - bmp.getMaster();
+	cd_utils::BlockModel& slave = bmp.getSlave();
+	pair<cd_utils::BlockModel*, bool> sum = slave + (*delta.first);
+	CRef< CSeq_align > result = sum.first->toSeqAlign(guide);
+	delete delta.first;
+	delete sum.first;
+	return result;
 }
 
 END_SCOPE(cd_utils)
@@ -169,6 +183,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/07/13 20:56:05  cliu
+ * format existing alignments
+ *
  * Revision 1.2  2006/06/13 13:02:35  cliu
  * add BlockFormater with the bug fix.
  *
