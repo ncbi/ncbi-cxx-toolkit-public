@@ -336,6 +336,8 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
     m_LoginTimeout = nof_secs;
     CS_INT t_out = (CS_INT) GetLoginTimeout();
+    t_out = (t_out == 0 ? CS_NO_LIMIT : t_out);
+
     return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
                            CS_LOGIN_TIMEOUT,
@@ -349,6 +351,8 @@ bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
     m_Timeout = nof_secs;
     CS_INT t_out = (CS_INT) GetTimeout();
+    t_out = (t_out == 0 ? CS_NO_LIMIT : t_out);
+
     return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
                            CS_TIMEOUT,
@@ -1146,6 +1150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2006/07/13 16:08:12  ssikorsk
+ * Timeout == 0 --> CS_NO_LIMIT.
+ *
  * Revision 1.82  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
