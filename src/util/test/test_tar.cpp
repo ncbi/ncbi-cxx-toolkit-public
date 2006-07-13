@@ -171,7 +171,7 @@ int CTest::Run(void)
         action == fUpdate  ||  action == fUpdateExistingOnly) {
         size_t n = args.GetNExtra();
         if (n == 0) {
-            NCBI_THROW(CArgException, eInvalidArg, "Must specify filename(s)");
+            NCBI_THROW(CArgException, eInvalidArg, "Must specify file(s)");
         }
         for (size_t i = 1;  i <= n;  i++) {
             const string& name   = args[i].AsString();
@@ -242,6 +242,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/07/13 18:00:55  lavr
+ * Throw "Must specify file(s)" instead of ambigous "filename(s)" [cf. usage]
+ *
  * Revision 1.8  2006/03/03 18:34:14  lavr
  * Mark non-standard options so
  *
