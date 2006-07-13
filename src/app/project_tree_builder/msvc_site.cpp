@@ -71,10 +71,8 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
             if (name[0] == '-') {
                 name = name.substr(1);
                 m_NotProvidedThing.insert(name);
-                cout << "not provided: " << name << endl;
             } else {
                 m_ProvidedThing.insert(name);
-                cout << "provided: " << name << endl;
             }
         }
     }
@@ -567,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/07/13 15:41:08  gouriano
+ * Removed debug printouts
+ *
  * Revision 1.39  2006/07/13 15:13:29  gouriano
  * Made it work on UNIX - to generate combined makefile
  *
