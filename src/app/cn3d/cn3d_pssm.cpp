@@ -250,11 +250,11 @@ void PSSMWrapper::UnpackMatrix(ncbi::cd_utils::PssmMaker& pm)
     if ((int)pm.getConsensus().size() != pssm->GetPssm().GetNumColumns())
         PTHROW("Consensus sequence does not match PSSM size");
     TRACEMSG("master length: " << multiple->GetMaster()->Length() << ", consensus length: " << pm.getConsensus().size());
-    cd_utils::BlockModelPair bmp(pm.getGuideAlignment());   // consensus is slave
+    cd_utils::BlockModelPair bmp(pm.getGuideAlignment());   // consensus is dependent
     consensus2master.resize(pm.getConsensus().size());
     for (i=0; i<pm.getConsensus().size(); ++i)
         consensus2master[i] = bmp.mapToMaster(i);
-    bmp.reverse();  // so that master is consensus, slave is multiple's master
+    bmp.reverse();  // so that master is consensus, dependent is multiple's master
     master2consensus.resize(multiple->GetMaster()->Length());
     for (i=0; i<multiple->GetMaster()->Length(); ++i)
         master2consensus[i] = bmp.mapToMaster(i);
@@ -346,6 +346,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.23  2006/05/31 19:20:32  thiessen
 * output pssms with only freq ratios; use scaling factor of 1 for internal scoring matrix
 *

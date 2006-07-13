@@ -115,7 +115,7 @@ public:
     typedef std::vector < DisplayLists > FrameMap;
     FrameMap frameMap;
 
-    // to map display list -> slave transform
+    // to map display list -> dependent transform
     typedef std::map < unsigned int, const Matrix * const * > TransformMap;
     TransformMap transformMap;
 
@@ -213,7 +213,7 @@ public:
     // for manipulating structure alignment features
     void InitStructureAlignments(int masterMMDBID);
     void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature,
-        int masterDomainID, int slaveDomainID);
+        int masterDomainID, int dependentDomainID);
     void RemoveStructureAlignments(void);
 
     bool MonitorAlignments(void) const;
@@ -285,11 +285,11 @@ public:
 
     // set transform based on rigid body fit of given coordinates
     void RealignStructure(int nCoords,
-        const Vector * const *masterCoords, const Vector * const *slaveCoords,
-        const double *weights, int slaveRow);
+        const Vector * const *masterCoords, const Vector * const *dependentCoords,
+        const double *weights, int dependentRow);
 
     bool IsMaster(void) const { return isMaster; }
-    bool IsSlave(void) const { return !isMaster; }
+    bool IsDependent(void) const { return !isMaster; }
     int NDomains(void) const { return domainMap.size(); }
 };
 
@@ -300,6 +300,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.83  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
@@ -469,7 +472,7 @@ END_SCOPE(Cn3D)
 * create Seq-annot from BlockMultipleAlignment
 *
 * Revision 1.27  2000/11/02 16:48:24  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.26  2000/10/04 17:40:47  thiessen
 * rearrange STL #includes

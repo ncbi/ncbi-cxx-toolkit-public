@@ -257,6 +257,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.46  2004/08/13 18:26:45  thiessen
 * continue with Mac GL optimization, as well as adding local GLU quadric equivalents (disk, cylinder, sphere)
 *
@@ -330,7 +333,7 @@ END_SCOPE(Cn3D)
 * show/hide system installed
 *
 * Revision 1.22  2000/11/02 16:48:22  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.21  2000/10/04 17:40:46  thiessen
 * rearrange STL #includes

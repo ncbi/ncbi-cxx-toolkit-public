@@ -108,7 +108,7 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
     // then add a constraint to keep it there
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
         m, me = multipleABlocks.end(), p, pe = pairwiseABlocks.end();
-    const Block::Range *multipleRangeMaster, *pairwiseRangeMaster, *pairwiseRangeSlave;
+    const Block::Range *multipleRangeMaster, *pairwiseRangeMaster, *pairwiseRangeDependent;
     int i;
     for (i=0, m=multipleABlocks.begin(); m!=me; ++i, ++m) {
         multipleRangeMaster = (*m)->GetRangeOfRow(0);
@@ -116,8 +116,8 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
             pairwiseRangeMaster = (*p)->GetRangeOfRow(0);
             if (pairwiseRangeMaster->from <= multipleRangeMaster->from &&
                     pairwiseRangeMaster->to >= multipleRangeMaster->to) {
-                pairwiseRangeSlave = (*p)->GetRangeOfRow(1);
-                blockInfo->freezeBlocks[i] = pairwiseRangeSlave->from +
+                pairwiseRangeDependent = (*p)->GetRangeOfRow(1);
+                blockInfo->freezeBlocks[i] = pairwiseRangeDependent->from +
                     (multipleRangeMaster->from - pairwiseRangeMaster->from);
                 break;
             }
@@ -287,14 +287,14 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         if (nAln > 1)
             progress->SetValue(a);
 
-        // slave sequence info
+        // dependent sequence info
         dpQuery = (*s)->GetSequenceOfRow(1);
         int startQueryPosition =
-            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < (int)dpQuery->Length()) ?
-                (*s)->alignSlaveFrom : 0;
+            ((*s)->alignDependentFrom >= 0 && (*s)->alignDependentFrom < (int)dpQuery->Length()) ?
+                (*s)->alignDependentFrom : 0;
         int endQueryPosition =
-            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < (int)dpQuery->Length()) ?
-                (*s)->alignSlaveTo : dpQuery->Length() - 1;
+            ((*s)->alignDependentTo >= 0 && (*s)->alignDependentTo < (int)dpQuery->Length()) ?
+                (*s)->alignDependentTo : dpQuery->Length() - 1;
         TRACEMSG("query region: " << (startQueryPosition+1) << " to " << (endQueryPosition+1));
 
         // set frozen blocks
@@ -540,6 +540,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.43  2006/03/21 19:36:50  thiessen
 * add new merge-after-all option to block aligner
 *

@@ -537,6 +537,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2006/07/13 22:33:50  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.43  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
@@ -622,7 +625,7 @@ END_SCOPE(Cn3D)
 * add show/hide rows; unpack sec. struc. and domain features
 *
 * Revision 1.15  2000/11/02 16:56:01  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.14  2000/09/14 14:55:34  thiessen
 * add row reordering; misc fixes

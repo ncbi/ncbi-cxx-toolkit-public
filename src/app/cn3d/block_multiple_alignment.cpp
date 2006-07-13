@@ -59,7 +59,7 @@ BEGIN_SCOPE(Cn3D)
 BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, AlignmentManager *alnMgr) :
     alignmentManager(alnMgr), sequences(sequenceList), conservationColorer(NULL),
     pssm(NULL), showGeometryViolations(false),
-    alignMasterFrom(-1), alignMasterTo(-1), alignSlaveFrom(-1), alignSlaveTo(-1)
+    alignMasterFrom(-1), alignMasterTo(-1), alignDependentFrom(-1), alignDependentTo(-1)
 {
     InitCache();
     rowDoubles.resize(sequenceList->size(), 0.0);
@@ -108,8 +108,8 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     copy->updateOrigin = updateOrigin;
     copy->alignMasterFrom = alignMasterFrom;
     copy->alignMasterTo = alignMasterTo;
-    copy->alignSlaveFrom = alignSlaveFrom;
-    copy->alignSlaveTo = alignSlaveTo;
+    copy->alignDependentFrom = alignDependentFrom;
+    copy->alignDependentTo = alignDependentTo;
     return copy;
 }
 
@@ -566,7 +566,7 @@ int BlockMultipleAlignment::GetFirstAlignedBlockPosition(void) const
         return -1;
 }
 
-int BlockMultipleAlignment::GetAlignedSlaveIndex(unsigned int masterSeqIndex, unsigned int slaveRow) const
+int BlockMultipleAlignment::GetAlignedDependentIndex(unsigned int masterSeqIndex, unsigned int dependentRow) const
 {
     const UngappedAlignedBlock
         *aBlock = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(0, masterSeqIndex));
@@ -574,8 +574,8 @@ int BlockMultipleAlignment::GetAlignedSlaveIndex(unsigned int masterSeqIndex, un
 
     const Block::Range
         *masterRange = aBlock->GetRangeOfRow(0),
-        *slaveRange = aBlock->GetRangeOfRow(slaveRow);
-    return (slaveRange->from + masterSeqIndex - masterRange->from);
+        *dependentRange = aBlock->GetRangeOfRow(dependentRow);
+    return (dependentRange->from + masterSeqIndex - masterRange->from);
 }
 
 void BlockMultipleAlignment::SelectedRange(unsigned int row, unsigned int alnIndexFrom, unsigned int alnIndexTo,
@@ -1369,19 +1369,19 @@ unsigned int BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlo
 }
 
 bool BlockMultipleAlignment::ExtractRows(
-    const vector < unsigned int >& slavesToRemove, AlignmentList *pairwiseAlignments)
+    const vector < unsigned int >& dependentsToRemove, AlignmentList *pairwiseAlignments)
 {
-    if (slavesToRemove.size() == 0) return false;
+    if (dependentsToRemove.size() == 0) return false;
 
-    // make a bool list of rows to remove, also checking to make sure slave list items are in range
+    // make a bool list of rows to remove, also checking to make sure dependent list items are in range
     unsigned int i;
     vector < bool > removeRows(NRows(), false);
-    for (i=0; i<slavesToRemove.size(); ++i) {
-        if (slavesToRemove[i] > 0 && slavesToRemove[i] < NRows()) {
-            removeRows[slavesToRemove[i]] = true;
+    for (i=0; i<dependentsToRemove.size(); ++i) {
+        if (dependentsToRemove[i] > 0 && dependentsToRemove[i] < NRows()) {
+            removeRows[dependentsToRemove[i]] = true;
         } else {
             ERRORMSG("BlockMultipleAlignment::ExtractRows() - can't extract row "
-                << slavesToRemove[i]);
+                << dependentsToRemove[i]);
             return false;
         }
     }
@@ -1394,16 +1394,16 @@ bool BlockMultipleAlignment::ExtractRows(
         GetUngappedAlignedBlocks(&uaBlocks);
         UngappedAlignedBlockList::const_iterator u, ue = uaBlocks.end();
 
-        for (i=0; i<slavesToRemove.size(); ++i) {
+        for (i=0; i<dependentsToRemove.size(); ++i) {
 
             // redraw molecule associated with removed row
-            const Molecule *molecule = GetSequenceOfRow(slavesToRemove[i])->molecule;
+            const Molecule *molecule = GetSequenceOfRow(dependentsToRemove[i])->molecule;
             if (molecule) GlobalMessenger()->PostRedrawMolecule(molecule);
 
             // create new pairwise alignment from each removed row
             SequenceList *newSeqs = new SequenceList(2);
             (*newSeqs)[0] = (*sequences)[0];
-            (*newSeqs)[1] = (*sequences)[slavesToRemove[i]];
+            (*newSeqs)[1] = (*sequences)[dependentsToRemove[i]];
             BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs, alignmentManager);
             for (u=uaBlocks.begin(); u!=ue; ++u) {
                 // only copy blocks that aren't flagged to be realigned
@@ -1411,7 +1411,7 @@ bool BlockMultipleAlignment::ExtractRows(
                     UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
                     const Block::Range *range = (*u)->GetRangeOfRow(0);
                     newABlock->SetRangeOfRow(0, range->from, range->to);
-                    range = (*u)->GetRangeOfRow(slavesToRemove[i]);
+                    range = (*u)->GetRangeOfRow(dependentsToRemove[i]);
                     newABlock->SetRangeOfRow(1, range->from, range->to);
                     newABlock->width = range->to - range->from + 1;
                     newAlignment->AddAlignedBlockAtEnd(newABlock);
@@ -1428,16 +1428,16 @@ bool BlockMultipleAlignment::ExtractRows(
                 int excess = 0;
                 if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
                     WARNINGMSG("Can't get footprint excess residues from registry");
-                newAlignment->alignSlaveFrom =
-                    uaBlocks.front()->GetRangeOfRow(slavesToRemove[i])->from - excess;
-                if (newAlignment->alignSlaveFrom < 0)
-                    newAlignment->alignSlaveFrom = 0;
-                newAlignment->alignSlaveTo =
-                    uaBlocks.back()->GetRangeOfRow(slavesToRemove[i])->to + excess;
-                if (newAlignment->alignSlaveTo >= (int)((*newSeqs)[1]->Length()))
-                    newAlignment->alignSlaveTo = (*newSeqs)[1]->Length() - 1;
+                newAlignment->alignDependentFrom =
+                    uaBlocks.front()->GetRangeOfRow(dependentsToRemove[i])->from - excess;
+                if (newAlignment->alignDependentFrom < 0)
+                    newAlignment->alignDependentFrom = 0;
+                newAlignment->alignDependentTo =
+                    uaBlocks.back()->GetRangeOfRow(dependentsToRemove[i])->to + excess;
+                if (newAlignment->alignDependentTo >= (int)((*newSeqs)[1]->Length()))
+                    newAlignment->alignDependentTo = (*newSeqs)[1]->Length() - 1;
                 TRACEMSG((*newSeqs)[1]->identifier->ToString() << " aligned from "
-                    << newAlignment->alignSlaveFrom << " to " << newAlignment->alignSlaveTo);
+                    << newAlignment->alignDependentFrom << " to " << newAlignment->alignDependentTo);
             }
 
             pairwiseAlignments->push_back(newAlignment);
@@ -1447,16 +1447,16 @@ bool BlockMultipleAlignment::ExtractRows(
 
     // remove sequences
     TRACEMSG("deleting sequences");
-    VectorRemoveElements(*sequences, removeRows, slavesToRemove.size());
-    VectorRemoveElements(rowDoubles, removeRows, slavesToRemove.size());
-    VectorRemoveElements(rowStrings, removeRows, slavesToRemove.size());
-    VectorRemoveElements(geometryViolations, removeRows, slavesToRemove.size());
+    VectorRemoveElements(*sequences, removeRows, dependentsToRemove.size());
+    VectorRemoveElements(rowDoubles, removeRows, dependentsToRemove.size());
+    VectorRemoveElements(rowStrings, removeRows, dependentsToRemove.size());
+    VectorRemoveElements(geometryViolations, removeRows, dependentsToRemove.size());
 
     // delete row from all blocks, removing any zero-width blocks
     TRACEMSG("deleting alignment rows from blocks");
     BlockList::const_iterator b = blocks.begin(), br, be = blocks.end();
     while (b != be) {
-        (*b)->DeleteRows(removeRows, slavesToRemove.size());
+        (*b)->DeleteRows(removeRows, dependentsToRemove.size());
         if ((*b)->width == 0) {
             br = b;
             ++b;
@@ -1502,7 +1502,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
         if (nb == nbe) return false;    // no corresponding block found
     }
 
-    // add slave sequences from new alignment; also copy other row-associated info
+    // add dependent sequences from new alignment; also copy other row-associated info
     unsigned int i, nNewRows = newAlignment->sequences->size() - 1;
     sequences->resize(sequences->size() + nNewRows);
     rowDoubles.resize(rowDoubles.size() + nNewRows);
@@ -1591,9 +1591,9 @@ unsigned int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
 }
 
 CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
-    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, unsigned int slaveRow)
+    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, unsigned int dependentRow)
 {
-    if (!multiple || slaveRow >= multiple->NRows()) {
+    if (!multiple || dependentRow >= multiple->NRows()) {
         ERRORMSG("CreatePairwiseSeqAlignFromMultipleRow() - bad parameters");
         return NULL;
     }
@@ -1623,10 +1623,10 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
         } else
             denDiag->SetStarts().push_back(0);
 
-        // slave row
-        denDiag->SetIds().back().Reset(multiple->GetSequenceOfRow(slaveRow)->CreateSeqId());
+        // dependent row
+        denDiag->SetIds().back().Reset(multiple->GetSequenceOfRow(dependentRow)->CreateSeqId());
         if (blocks.size() > 0) {
-            range = (*b)->GetRangeOfRow(slaveRow);
+            range = (*b)->GetRangeOfRow(dependentRow);
             denDiag->SetStarts().push_back(range->from);
         } else
             denDiag->SetStarts().push_back(0);
@@ -1693,8 +1693,8 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(unsigned int f
 
         // highlight aligned residue in each row
         for (unsigned int row=0; row<NRows(); ++row) {
-            unsigned int slaveIndex = block->GetRangeOfRow(row)->from + blockOffset;
-            GlobalMessenger()->AddHighlights(GetSequenceOfRow(row), slaveIndex, slaveIndex);
+            unsigned int dependentIndex = block->GetRangeOfRow(row)->from + blockOffset;
+            GlobalMessenger()->AddHighlights(GetSequenceOfRow(row), dependentIndex, dependentIndex);
         }
     }
 
@@ -1915,6 +1915,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2006/07/13 22:33:50  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.80  2005/11/28 21:14:38  thiessen
 * add block and row selection mechanism to refiner
 *

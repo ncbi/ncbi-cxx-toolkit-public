@@ -118,7 +118,7 @@ private:
     BiostrucList pendingStructures;
     typedef struct {
         ncbi::CRef < ncbi::objects::CBiostruc_feature > structureAlignment;
-        int masterDomainID, slaveDomainID;
+        int masterDomainID, dependentDomainID;
     } StructureAlignmentInfo;
     typedef std::list < StructureAlignmentInfo > PendingStructureAlignments;
     PendingStructureAlignments pendingStructureAlignments;
@@ -136,6 +136,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.28  2006/05/31 19:21:32  thiessen
 * add sort by pssm score
 *

@@ -144,6 +144,9 @@ private:
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.23  2005/10/25 17:41:35  thiessen
 * fix flicker in alignment display; add progress meter and misc fixes to refiner
 *
@@ -175,7 +178,7 @@ private:
 * more workarounds for namespace/#define conflicts
 *
 * Revision 1.13  2000/11/02 16:48:23  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.12  2000/10/16 20:02:17  thiessen
 * working block creation

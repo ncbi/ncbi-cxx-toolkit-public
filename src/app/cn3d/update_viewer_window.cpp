@@ -354,8 +354,8 @@ void UpdateViewerWindow::OnSetRegion(wxCommandEvent& event)
     else if (event.GetId() == MID_RESET_REGIONS) {
 		UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
         for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; ++a) {
-            (*a)->alignSlaveFrom = -1;
-            (*a)->alignSlaveTo = -1;
+            (*a)->alignDependentFrom = -1;
+            (*a)->alignDependentTo = -1;
         }
     }
 }
@@ -657,6 +657,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.67  2006/05/31 19:21:32  thiessen
 * add sort by pssm score
 *

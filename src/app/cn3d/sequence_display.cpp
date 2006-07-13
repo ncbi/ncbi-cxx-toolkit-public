@@ -493,9 +493,9 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 }
 
                 if (sequenceWindow->DoRealignRow()) {
-                    vector < unsigned int > selectedSlaves(1);
-                    selectedSlaves[0] = selectedRow->row;
-                    sequenceWindow->sequenceViewer->alignmentManager->RealignSlaveSequences(alignment, selectedSlaves);
+                    vector < unsigned int > selectedDependents(1);
+                    selectedDependents[0] = selectedRow->row;
+                    sequenceWindow->sequenceViewer->alignmentManager->RealignDependentSequences(alignment, selectedDependents);
                     if (!controlDown) sequenceWindow->RealignRowOff();
                     return false;
                 }
@@ -606,19 +606,19 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 return false;
             }
 
-            // set region (on slave sequence)
+            // set region (on dependent sequence)
             if (updateWindow->DoSetRegion()) {
                 // dialog uses 1-based sequence locations
                 RegionDialog dialog(updateWindow,
-                    alignment->GetSequenceOfRow(1), alignment->alignSlaveFrom + 1, alignment->alignSlaveTo + 1);
+                    alignment->GetSequenceOfRow(1), alignment->alignDependentFrom + 1, alignment->alignDependentTo + 1);
                 if (dialog.ShowModal() == wxOK) {
                     int from, to;
                     if (!dialog.GetValues(&from, &to)) {
                         ERRORMSG("RegionDialog returned OK, but values invalid");
                     } else {
-                        TRACEMSG("set region (slave): " << from << " to " << to);
-                        alignment->alignSlaveFrom = from - 1;
-                        alignment->alignSlaveTo = to - 1;
+                        TRACEMSG("set region (dependent): " << from << " to " << to);
+                        alignment->alignDependentFrom = from - 1;
+                        alignment->alignDependentTo = to - 1;
                     }
                     if (!controlDown) updateWindow->SetRegionOff();
                 }
@@ -930,15 +930,15 @@ void SequenceDisplay::GetSequences(const BlockMultipleAlignment *forAlignment, S
 }
 
 void SequenceDisplay::GetRowOrder(
-    const BlockMultipleAlignment *forAlignment, vector < unsigned int > *slaveRowOrder) const
+    const BlockMultipleAlignment *forAlignment, vector < unsigned int > *dependentRowOrder) const
 {
-    slaveRowOrder->clear();
+    dependentRowOrder->clear();
     for (unsigned int row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow && alnRow->alignment == forAlignment)
-            slaveRowOrder->push_back(alnRow->row);
+            dependentRowOrder->push_back(alnRow->row);
     }
-    if (slaveRowOrder->size() != forAlignment->NRows() || slaveRowOrder->front() != 0)
+    if (dependentRowOrder->size() != forAlignment->NRows() || dependentRowOrder->front() != 0)
         ERRORMSG("SequenceDisplay::GetRowOrder() - row order vector problem");
 }
 
@@ -1069,30 +1069,30 @@ void SequenceDisplay::SortRows(void)
         return;
     }
 
-    // to simplify sorting, construct list of slave rows only
-    vector < DisplayRowFromAlignment * > slaves;
+    // to simplify sorting, construct list of dependent rows only
+    vector < DisplayRowFromAlignment * > dependents;
     unsigned int row;
     for (row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow && alnRow->row > 0)
-            slaves.push_back(alnRow);
+            dependents.push_back(alnRow);
     }
 
     // do the sort
-    stable_sort(slaves.begin(), slaves.end(), rowComparisonFunction);
+    stable_sort(dependents.begin(), dependents.end(), rowComparisonFunction);
     rowComparisonFunction = NULL;
 
     // recreate the row list with new order
     RowVector newRows(rows.size());
-    unsigned int nSlaves = 0;
+    unsigned int nDependents = 0;
     for (row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow && alnRow->row > 0)
-            newRows[row] = slaves[nSlaves++];   // put sorted slaves in place
+            newRows[row] = dependents[nDependents++];   // put sorted dependents in place
         else
             newRows[row] = rows[row];           // leave other rows in original order
     }
-    if (nSlaves == slaves.size())   // sanity check
+    if (nDependents == dependents.size())   // sanity check
         rows = newRows;
     else
         ERRORMSG("SequenceDisplay::SortRows() - internal inconsistency");
@@ -1323,6 +1323,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.85  2005/11/17 22:25:43  thiessen
 * remove more spurious uint-compared-to-zero
 *

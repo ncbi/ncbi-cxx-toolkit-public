@@ -207,7 +207,7 @@ public:
     void GetProteinSequences(SequenceList *seqs) const;
 
     // fills the vector with the current row ordering for the given alignment
-    void GetRowOrder(const BlockMultipleAlignment *forAlignment, std::vector < unsigned int > *slaveRowOrder) const;
+    void GetRowOrder(const BlockMultipleAlignment *forAlignment, std::vector < unsigned int > *dependentRowOrder) const;
 
     // to inform the display that new rows have been added to or removed from the multiple
     void RowsAdded(unsigned int nRowsAddedToMultiple, BlockMultipleAlignment *multiple, int where = -1);
@@ -302,6 +302,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.31  2005/11/17 22:25:43  thiessen
 * remove more spurious uint-compared-to-zero
 *

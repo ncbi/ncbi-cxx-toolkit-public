@@ -174,8 +174,8 @@ public:
     // if in an aligned block, give block column and width of that position; otherwise, -1
     void GetAlignedBlockPosition(unsigned int alignmentIndex, int *blockColumn, int *blockWidth) const;
 
-    // get seqIndex of slave aligned to the given master seqIndex; -1 if master residue unaligned
-    int GetAlignedSlaveIndex(unsigned int masterSeqIndex, unsigned int slaveRow) const;
+    // get seqIndex of dependent aligned to the given master seqIndex; -1 if master residue unaligned
+    int GetAlignedDependentIndex(unsigned int masterSeqIndex, unsigned int dependentRow) const;
 
     // returns true if any boundary shift actually occurred
     bool MoveBlockBoundary(unsigned int columnFrom, unsigned int columnTo);
@@ -217,12 +217,12 @@ public:
     bool ClearMarks(void);  // remove all block flags
     void GetMarkedBlockNumbers(std::vector < unsigned int > *alignedBlockNumbers) const;
 
-    // this function does two things: it extracts from a multiple alignment all slave rows listed for
-    // removal; and if pairwiseAlignments!=NULL, for each slave removed creates a new BlockMultipleAlignment
-    // that contains the alignment of just that slave with the master, as it was in the original multiple
-    // (i.e., not according to the corresponding pre-IBM MasterSlaveAlignment)
+    // this function does two things: it extracts from a multiple alignment all dependent rows listed for
+    // removal; and if pairwiseAlignments!=NULL, for each dependent removed creates a new BlockMultipleAlignment
+    // that contains the alignment of just that dependent with the master, as it was in the original multiple
+    // (i.e., not according to the corresponding pre-IBM MasterDependentAlignment)
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
-    bool ExtractRows(const std::vector < unsigned int >& slavesToRemove, AlignmentList *pairwiseAlignments);
+    bool ExtractRows(const std::vector < unsigned int >& dependentsToRemove, AlignmentList *pairwiseAlignments);
 
     // merge in the contents of the given alignment (assuming same master, compatible block structure),
     // addings its rows to the end of this alignment; returns true if merge successful. Does not change
@@ -320,13 +320,13 @@ public:
 
     // kludge for now for storing allowed alignment regions, e.g. when demoted from multiple.
     // (only two ranges for now, since this is used only with pairwise alignments)
-    int alignMasterFrom, alignMasterTo, alignSlaveFrom, alignSlaveTo;
+    int alignMasterFrom, alignMasterTo, alignDependentFrom, alignDependentTo;
 };
 
 
 // static function to create Seq-aligns out of multiple
 ncbi::objects::CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
-    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, unsigned int slaveRow);
+    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, unsigned int dependentRow);
 
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these
@@ -436,6 +436,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2006/07/13 22:33:50  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.56  2005/11/28 21:14:38  thiessen
 * add block and row selection mechanism to refiner
 *

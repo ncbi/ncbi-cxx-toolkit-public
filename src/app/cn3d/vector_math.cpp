@@ -303,16 +303,16 @@ void RigidBodyFit(
 } // end RigidBodyFit()
 
 double ComputeRMSD(int nCoords, const Vector * const *masterCoords,
-    const Vector * const *slaveCoords, const Matrix *transformSlaveToMaster)
+    const Vector * const *dependentCoords, const Matrix *transformDependentToMaster)
 {
     Vector x;
     double rmsd = 0.0;
     int n = 0;
     for (int c=0; c<nCoords; ++c) {
-        if (!slaveCoords[c] || !masterCoords[c]) continue;
-        x = *(slaveCoords[c]);
-        if (transformSlaveToMaster)
-            ApplyTransformation(&x, *transformSlaveToMaster);
+        if (!dependentCoords[c] || !masterCoords[c]) continue;
+        x = *(dependentCoords[c]);
+        if (transformDependentToMaster)
+            ApplyTransformation(&x, *transformDependentToMaster);
         rmsd += (*(masterCoords[c]) - x).lengthSquared();
         ++n;
     }
@@ -329,6 +329,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.11  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

@@ -51,7 +51,7 @@ BEGIN_SCOPE(Cn3D)
 
 class Sequence;
 class Molecule;
-class MasterSlaveAlignment;
+class MasterDependentAlignment;
 class MoleculeIdentifier;
 
 class SequenceSet : public StructureBase
@@ -109,6 +109,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.36  2006/05/30 21:41:21  thiessen
 * add pattern search within selection
 *

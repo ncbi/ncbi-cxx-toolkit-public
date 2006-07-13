@@ -203,6 +203,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.32  2006/05/30 21:41:21  thiessen
 * add pattern search within selection
 *
@@ -276,7 +279,7 @@ END_SCOPE(Cn3D)
 * add show/hide rows; unpack sec. struc. and domain features
 *
 * Revision 1.8  2000/11/02 16:48:22  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.7  2000/10/19 12:40:21  thiessen
 * avoid multiple sequence redraws with scroll set

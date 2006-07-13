@@ -132,8 +132,8 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet,
                     return;
                 }
 
-                const MasterSlaveAlignment *alignment =
-                    new MasterSlaveAlignment(NULL, master, s->GetObject());
+                const MasterDependentAlignment *alignment =
+                    new MasterDependentAlignment(NULL, master, s->GetObject());
                 pairwise.front() = alignment;
                 BlockMultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(pairwise);
                 multiple->updateOrigin = *u;    // to keep track of which Update-align this came from
@@ -171,12 +171,12 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet
         return;
     }
 
-    // all slaves start out visible
-    slavesVisible.resize(alignmentSet->alignments.size());
-    for (unsigned int i=0; i<slavesVisible.size(); ++i)
-        slavesVisible[i] = true;
+    // all dependents start out visible
+    dependentsVisible.resize(alignmentSet->alignments.size());
+    for (unsigned int i=0; i<dependentsVisible.size(); ++i)
+        dependentsVisible[i] = true;
 
-    NewMultipleWithRows(slavesVisible);
+    NewMultipleWithRows(dependentsVisible);
     originalMultiple = GetCurrentMultipleAlignment()->Clone();
     originalRowOrder.resize(originalMultiple->NRows());
     for (unsigned int r=0; r<originalMultiple->NRows(); ++r)
@@ -274,22 +274,22 @@ const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(voi
     return ((currentAlignments.size() > 0) ? currentAlignments.front() : NULL);
 }
 
-static bool AlignedToAllSlaves(int masterResidue,
+static bool AlignedToAllDependents(int masterResidue,
     const AlignmentManager::PairwiseAlignmentList& alignments)
 {
     AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; ++a) {
-        if ((*a)->masterToSlave[masterResidue] == -1) return false;
+        if ((*a)->masterToDependent[masterResidue] == -1) return false;
     }
     return true;
 }
 
-static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
+static bool NoDependentInsertionsBetween(int masterFrom, int masterTo,
     const AlignmentManager::PairwiseAlignmentList& alignments)
 {
     AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; ++a) {
-        if (((*a)->masterToSlave[masterTo] - (*a)->masterToSlave[masterFrom]) != (masterTo - masterFrom))
+        if (((*a)->masterToDependent[masterTo] - (*a)->masterToDependent[masterFrom]) != (masterTo - masterFrom))
             return false;
     }
     return true;
@@ -311,13 +311,13 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
 {
     PairwiseAlignmentList::const_iterator a, ae = alignments.end();
 
-    // create sequence list; fill with sequences of master + slaves
+    // create sequence list; fill with sequences of master + dependents
     BlockMultipleAlignment::SequenceList
         *sequenceList = new BlockMultipleAlignment::SequenceList(alignments.size() + 1);
     BlockMultipleAlignment::SequenceList::iterator s = sequenceList->begin();
     *(s++) = alignments.front()->master;
     for (a=alignments.begin(); a!=ae; ++a) {
-        *(s++) = (*a)->slave;
+        *(s++) = (*a)->dependent;
         if ((*a)->master != sequenceList->front()) {
             ERRORMSG("AlignmentManager::CreateMultipleFromPairwiseWithIBM() -\n"
                 << "all pairwise alignments must have the same master sequence");
@@ -327,8 +327,8 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
     BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList, this);
 
     // each block is a continuous region on the master, over which each master
-    // residue is aligned to a residue of each slave, and where there are no
-    // insertions relative to the master in any of the slaves
+    // residue is aligned to a residue of each dependent, and where there are no
+    // insertions relative to the master in any of the dependents
     int masterFrom = 0, masterTo;
     unsigned int row;
     UngappedAlignedBlock *newBlock;
@@ -336,23 +336,23 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
     while (masterFrom < (int)multipleAlignment->GetMaster()->Length()) {
 
         // look for first all-aligned residue
-        if (!AlignedToAllSlaves(masterFrom, alignments)) {
+        if (!AlignedToAllDependents(masterFrom, alignments)) {
             ++masterFrom;
             continue;
         }
 
         // find all next continuous all-aligned residues, but checking for
-        // block boundaries from the original master-slave pairs, so that
+        // block boundaries from the original master-dependent pairs, so that
         // blocks don't get merged
         for (masterTo=masterFrom+1;
                 masterTo < (int)multipleAlignment->GetMaster()->Length() &&
-                AlignedToAllSlaves(masterTo, alignments) &&
-                NoSlaveInsertionsBetween(masterFrom, masterTo, alignments) &&
+                AlignedToAllDependents(masterTo, alignments) &&
+                NoDependentInsertionsBetween(masterFrom, masterTo, alignments) &&
                 NoBlockBoundariesBetween(masterFrom, masterTo, alignments);
              ++masterTo) ;
         --masterTo; // after loop, masterTo = first residue past block
 
-        // create new block with ranges from master and all slaves
+        // create new block with ranges from master and all dependents
         newBlock = new UngappedAlignedBlock(multipleAlignment);
         newBlock->SetRangeOfRow(0, masterFrom, masterTo);
         newBlock->width = masterTo - masterFrom + 1;
@@ -360,9 +360,9 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
         //TESTMSG("masterFrom " << masterFrom+1 << ", masterTo " << masterTo+1);
         for (a=alignments.begin(), row=1; a!=ae; ++a, ++row) {
             newBlock->SetRangeOfRow(row,
-                (*a)->masterToSlave[masterFrom],
-                (*a)->masterToSlave[masterTo]);
-            //TESTMSG("slave->from " << b->from+1 << ", slave->to " << b->to+1);
+                (*a)->masterToDependent[masterFrom],
+                (*a)->masterToDependent[masterTo]);
+            //TESTMSG("dependent->from " << b->from+1 << ", dependent->to " << b->to+1);
         }
 
         // copy new block into alignment
@@ -403,7 +403,7 @@ static int GetAlignedResidueIndexes(
     return highlighted;
 }
 
-void AlignmentManager::RealignAllSlaveStructures(bool highlightedOnly) const
+void AlignmentManager::RealignAllDependentStructures(bool highlightedOnly) const
 {
     const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
     if (!multiple) return;
@@ -414,32 +414,32 @@ void AlignmentManager::RealignAllSlaveStructures(bool highlightedOnly) const
     for (b=blocks.begin(); b!=be; ++b)
         nResidues += (*b)->width;
     if (nResidues == 0) {
-        WARNINGMSG("Can't realign slaves with no aligned residues!");
+        WARNINGMSG("Can't realign dependents with no aligned residues!");
         return;
     }
 
-    const Sequence *masterSeq = multiple->GetSequenceOfRow(0), *slaveSeq;
-    const Molecule *masterMol, *slaveMol;
+    const Sequence *masterSeq = multiple->GetSequenceOfRow(0), *dependentSeq;
+    const Molecule *masterMol, *dependentMol;
     if (!masterSeq || !(masterMol = masterSeq->molecule)) {
-        WARNINGMSG("Can't realign slaves to non-structured master!");
+        WARNINGMSG("Can't realign dependents to non-structured master!");
         return;
     }
 
-    int *masterSeqIndexes = new int[nResidues], *slaveSeqIndexes = new int[nResidues];
+    int *masterSeqIndexes = new int[nResidues], *dependentSeqIndexes = new int[nResidues];
     b = blocks.begin();
     int nHighlightedAligned = GetAlignedResidueIndexes(b, be, 0, masterSeqIndexes, highlightedOnly, multiple);
     if ((highlightedOnly ? nHighlightedAligned : nResidues) < 3) {
-        WARNINGMSG("Can't realign slaves using < 3 residues!");
+        WARNINGMSG("Can't realign dependents using < 3 residues!");
         delete[] masterSeqIndexes;
-        delete[] slaveSeqIndexes;
+        delete[] dependentSeqIndexes;
         return;
     }
 
     double *weights = new double[nResidues];
-    const StructureObject *slaveObj;
+    const StructureObject *dependentObj;
 
     typedef const Vector * CVP;
-    CVP *masterCoords = new CVP[nResidues], *slaveCoords = new CVP[nResidues];
+    CVP *masterCoords = new CVP[nResidues], *dependentCoords = new CVP[nResidues];
     if (!masterMol->GetAlphaCoords(nResidues, masterSeqIndexes, masterCoords)) {
         WARNINGMSG("Can't get master alpha coords");
     } else if (masterSeq->GetOrSetMMDBLink() == MoleculeIdentifier::VALUE_NOT_SET) {
@@ -450,22 +450,22 @@ void AlignmentManager::RealignAllSlaveStructures(bool highlightedOnly) const
 
         unsigned int nStructureAlignments = 0;
         for (unsigned int i=1; i<multiple->NRows(); ++i) {
-            slaveSeq = multiple->GetSequenceOfRow(i);
-            if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
+            dependentSeq = multiple->GetSequenceOfRow(i);
+            if (!dependentSeq || !(dependentMol = dependentSeq->molecule)) continue;
 
             b = blocks.begin();
-            GetAlignedResidueIndexes(b, be, i, slaveSeqIndexes);
-            if (slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords) < 3) {
-                ERRORMSG("can't realign slave " << slaveSeq->identifier->pdbID << ", not enough coordinates in aligned region");
+            GetAlignedResidueIndexes(b, be, i, dependentSeqIndexes);
+            if (dependentMol->GetAlphaCoords(nResidues, dependentSeqIndexes, dependentCoords) < 3) {
+                ERRORMSG("can't realign dependent " << dependentSeq->identifier->pdbID << ", not enough coordinates in aligned region");
                 continue;
             }
 
-            if (!slaveMol->GetParentOfType(&slaveObj)) continue;
+            if (!dependentMol->GetParentOfType(&dependentObj)) continue;
 
             // if any Vector* is NULL, make sure that weight is 0 so the pointer won't be accessed
             int nWeighted = 0;
             for (int j=0; j<nResidues; ++j) {
-                if (!masterCoords[j] || !slaveCoords[j] || (highlightedOnly && masterSeqIndexes[j] < 0)) {
+                if (!masterCoords[j] || !dependentCoords[j] || (highlightedOnly && masterSeqIndexes[j] < 0)) {
                     weights[j] = 0.0;
                } else {
                     weights[j] = 1.0; // for now, just use flat weighting
@@ -473,13 +473,13 @@ void AlignmentManager::RealignAllSlaveStructures(bool highlightedOnly) const
                }
             }
             if (nWeighted < 3) {
-                WARNINGMSG("Can't realign slave #" << (i+1) << " using < 3 residues!");
+                WARNINGMSG("Can't realign dependent #" << (i+1) << " using < 3 residues!");
                 continue;
             }
 
-            INFOMSG("realigning slave " << slaveSeq->identifier->pdbID << " against master " << masterSeq->identifier->pdbID
+            INFOMSG("realigning dependent " << dependentSeq->identifier->pdbID << " against master " << masterSeq->identifier->pdbID
                 << " using coordinates of " << nWeighted << " residues");
-            (const_cast<StructureObject*>(slaveObj))->RealignStructure(nResidues, masterCoords, slaveCoords, weights, i);
+            (const_cast<StructureObject*>(dependentObj))->RealignStructure(nResidues, masterCoords, dependentCoords, weights, i);
             ++nStructureAlignments;
         }
 
@@ -488,43 +488,43 @@ void AlignmentManager::RealignAllSlaveStructures(bool highlightedOnly) const
     }
 
     delete[] masterSeqIndexes;
-    delete[] slaveSeqIndexes;
+    delete[] dependentSeqIndexes;
     delete[] masterCoords;
-    delete[] slaveCoords;
+    delete[] dependentCoords;
     delete[] weights;
     return;
 }
 
-void AlignmentManager::GetAlignmentSetSlaveSequences(vector < const Sequence * > *sequences) const
+void AlignmentManager::GetAlignmentSetDependentSequences(vector < const Sequence * > *sequences) const
 {
     sequences->resize(alignmentSet->alignments.size());
 
     AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
     int i = 0;
     for (a=alignmentSet->alignments.begin(); a!=ae; ++a, ++i) {
-        (*sequences)[i] = (*a)->slave;
+        (*sequences)[i] = (*a)->dependent;
     }
 }
 
-void AlignmentManager::GetAlignmentSetSlaveVisibilities(vector < bool > *visibilities) const
+void AlignmentManager::GetAlignmentSetDependentVisibilities(vector < bool > *visibilities) const
 {
-    if (slavesVisible.size() != alignmentSet->alignments.size()) // can happen if row is added/deleted
-        slavesVisible.resize(alignmentSet->alignments.size(), true);
+    if (dependentsVisible.size() != alignmentSet->alignments.size()) // can happen if row is added/deleted
+        dependentsVisible.resize(alignmentSet->alignments.size(), true);
 
     // copy visibility list
-    *visibilities = slavesVisible;
+    *visibilities = dependentsVisible;
 }
 
 void AlignmentManager::ShowHideCallbackFunction(const vector < bool >& itemsEnabled)
 {
-    if (itemsEnabled.size() != slavesVisible.size() ||
+    if (itemsEnabled.size() != dependentsVisible.size() ||
         itemsEnabled.size() != alignmentSet->alignments.size()) {
         ERRORMSG("AlignmentManager::ShowHideCallbackFunction() - wrong size list");
         return;
     }
 
-    slavesVisible = itemsEnabled;
-    NewMultipleWithRows(slavesVisible);
+    dependentsVisible = itemsEnabled;
+    NewMultipleWithRows(dependentsVisible);
 
     AlignmentSet::AlignmentList::const_iterator
         a = alignmentSet->alignments.begin(), ae = alignmentSet->alignments.end();
@@ -538,10 +538,10 @@ void AlignmentManager::ShowHideCallbackFunction(const vector < bool >& itemsEnab
         GlobalMessenger()->PostRedrawMolecule((*a)->master->molecule);
     }
     for (int i=0; a!=ae; ++a, ++i) {
-        if ((*a)->slave->molecule) {
-            if ((*a)->slave->molecule->GetParentOfType(&object))
-                object->parentSet->showHideManager->Show(object, slavesVisible[i]);
-            GlobalMessenger()->PostRedrawMolecule((*a)->slave->molecule);
+        if ((*a)->dependent->molecule) {
+            if ((*a)->dependent->molecule->GetParentOfType(&object))
+                object->parentSet->showHideManager->Show(object, dependentsVisible[i]);
+            GlobalMessenger()->PostRedrawMolecule((*a)->dependent->molecule);
         }
     }
 
@@ -613,22 +613,22 @@ void AlignmentManager::ShowUpdateWindow(void) const
     updateViewer->CreateUpdateWindow();
 }
 
-void AlignmentManager::RealignSlaveSequences(
-    BlockMultipleAlignment *multiple, const vector < unsigned int >& slavesToRealign)
+void AlignmentManager::RealignDependentSequences(
+    BlockMultipleAlignment *multiple, const vector < unsigned int >& dependentsToRealign)
 {
     if (!multiple || sequenceViewer->GetCurrentAlignments().size() == 0 ||
             multiple != sequenceViewer->GetCurrentAlignments().front()) {
-        ERRORMSG("AlignmentManager::RealignSlaveSequences() - wrong multiple alignment");
+        ERRORMSG("AlignmentManager::RealignDependentSequences() - wrong multiple alignment");
         return;
     }
-    if (slavesToRealign.size() == 0) return;
+    if (dependentsToRealign.size() == 0) return;
 
-    // create alignments for each master/slave pair, then update displays
+    // create alignments for each master/dependent pair, then update displays
     UpdateViewer::AlignmentList alignments;
     TRACEMSG("extracting rows");
-    if (multiple->ExtractRows(slavesToRealign, &alignments)) {
+    if (multiple->ExtractRows(dependentsToRealign, &alignments)) {
         TRACEMSG("recreating display");
-        sequenceViewer->GetCurrentDisplay()->RowsRemoved(slavesToRealign, multiple);
+        sequenceViewer->GetCurrentDisplay()->RowsRemoved(dependentsToRealign, multiple);
         TRACEMSG("adding to update window");
         SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
         updateViewer->AddAlignments(alignments);
@@ -824,7 +824,7 @@ void AlignmentManager::GetUpdateSequences(list < const Sequence * > *updateSeque
     if (currentUpdates.size() == 0) return;
     ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
     for (u=currentUpdates.begin(); u!=ue; ++u)
-        updateSequences->push_back((*u)->GetSequenceOfRow(1));  // assume update aln has just one slave...
+        updateSequences->push_back((*u)->GetSequenceOfRow(1));  // assume update aln has just one dependent...
 }
 
 bool AlignmentManager::GetStructureProteins(vector < const Sequence * > *chains) const
@@ -1235,7 +1235,7 @@ void AlignmentManager::RefineAlignment(void)
                 }
                 CSeq_annot::C_Data::TAlign::const_iterator l, le = (*a)->GetData().GetAlign().end();
                 for (l=(*a)->GetData().GetAlign().begin(); l!=le; ++l)
-                    pairs.push_back(new MasterSlaveAlignment(NULL, multiple->GetMaster(), **l));
+                    pairs.push_back(new MasterDependentAlignment(NULL, multiple->GetMaster(), **l));
             }
             auto_ptr < BlockMultipleAlignment > refined(CreateMultipleFromPairwiseWithIBM(pairs));
             DELETE_ALL_AND_CLEAR(pairs, PairwiseAlignmentList);
@@ -1262,6 +1262,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2006/07/13 22:33:50  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.109  2006/04/06 21:42:39  lanczyck
 * make sure a non-null refined alignment is available before trying to use it
 *
@@ -1527,7 +1530,7 @@ END_SCOPE(Cn3D)
 * fix memory problem with alignment cloning
 *
 * Revision 1.21  2000/11/02 16:56:00  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.20  2000/10/17 14:35:06  thiessen
 * added row shift - editor basically complete

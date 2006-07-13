@@ -48,7 +48,7 @@
 
 BEGIN_SCOPE(Cn3D)
 
-class MasterSlaveAlignment;
+class MasterDependentAlignment;
 class Sequence;
 class BlockMultipleAlignment;
 
@@ -63,10 +63,10 @@ public:
     static AlignmentSet * CreateFromMultiple(StructureBase *parent,
         const BlockMultipleAlignment *multiple, const std::vector < unsigned int >& rowOrder);
 
-    typedef std::list < const MasterSlaveAlignment * > AlignmentList;
+    typedef std::list < const MasterDependentAlignment * > AlignmentList;
     AlignmentList alignments;
 
-    // pointer to the master sequence for each pairwise master/slave alignment in this set
+    // pointer to the master sequence for each pairwise master/dependent alignment in this set
     const Sequence *master;
 
     bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
@@ -75,21 +75,21 @@ public:
     SeqAnnotList *newAsnAlignmentData;
 };
 
-class MasterSlaveAlignment : public StructureBase
+class MasterDependentAlignment : public StructureBase
 {
 public:
-    MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence,
+    MasterDependentAlignment(StructureBase *parent, const Sequence *masterSequence,
         const ncbi::objects::CSeq_align& seqAlign);
 
     // pointers to the sequences in this pairwise alignment
-    const Sequence *master, *slave;
+    const Sequence *master, *dependent;
 
-    // this vector maps slave residues onto the master - e.g., masterToSlave[10] = 5
-    // means that residue #10 in the master is aligned to residue #5 of the slave.
-    // Residues are numbered from zero. masterToSlave[n] = -1 means that master
+    // this vector maps dependent residues onto the master - e.g., masterToDependent[10] = 5
+    // means that residue #10 in the master is aligned to residue #5 of the dependent.
+    // Residues are numbered from zero. masterToDependent[n] = -1 means that master
     // residue n is unaligned.
     typedef std::vector < int > ResidueVector;
-    ResidueVector masterToSlave;
+    ResidueVector masterToDependent;
 
     // this vector contains the original block structure of the Seq-align, so that
     // the IBM algorithm can avoid merging blocks (primarily for CDD's).
@@ -105,6 +105,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/07/13 22:33:50  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.17  2005/10/19 17:28:17  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
@@ -139,7 +142,7 @@ END_SCOPE(Cn3D)
 * create Seq-annot from BlockMultipleAlignment
 *
 * Revision 1.6  2000/11/02 16:48:22  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.5  2000/10/04 17:40:44  thiessen
 * rearrange STL #includes

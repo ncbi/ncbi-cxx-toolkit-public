@@ -795,7 +795,7 @@ SequenceViewerWidget_TitleArea::SequenceViewerWidget_TitleArea(
         const wxPoint& pos,
         const wxSize& size) :
     wxWindow(parent, id, pos, size, wxNO_3D),
-    sequenceArea(NULL), alignment(NULL), highlightedTitleRow(-1), titleFont(NULL), 
+    sequenceArea(NULL), alignment(NULL), highlightedTitleRow(-1), titleFont(NULL),
     cellHeight(0), maxTitleWidth(20)
 {
     currentBackgroundColor = *wxWHITE;
@@ -1125,6 +1125,9 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.46  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
@@ -1216,7 +1219,7 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 * load structures from cdd's
 *
 * Revision 1.16  2000/11/02 16:56:02  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.15  2000/10/16 20:03:07  thiessen
 * working block creation

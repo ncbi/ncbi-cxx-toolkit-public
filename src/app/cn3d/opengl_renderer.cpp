@@ -1066,12 +1066,12 @@ void OpenGLRenderer::AddTransparentSpheresForList(unsigned int list)
     SpherePtrList::reverse_iterator sph = transparentSpheresToRender.rbegin();
 
     SphereList::const_iterator i, ie=sphereList.end();
-    const Matrix *slaveTransform;
+    const Matrix *dependentTransform;
     for (i=sphereList.begin(); i!=ie; ++i, ++sph) {
         sph->siteGL = i->site;
-        slaveTransform = *(structureSet->transformMap[list]);
-        if (slaveTransform)
-            ApplyTransformation(&(sph->siteGL), *slaveTransform);               // slave->master transform
+        dependentTransform = *(structureSet->transformMap[list]);
+        if (dependentTransform)
+            ApplyTransformation(&(sph->siteGL), *dependentTransform);               // dependent->master transform
         ApplyTransformation(&(sph->siteGL), view);                              // current view transform
         sph->distanceFromCamera = (Vector(0,0,cameraDistance) - sph->siteGL).length() - i->radius;
         sph->ptr = &(*i);
@@ -1943,6 +1943,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.87  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
@@ -2121,7 +2124,7 @@ END_SCOPE(Cn3D)
 * add show/hide rows; unpack sec. struc. and domain features
 *
 * Revision 1.28  2000/11/02 16:56:02  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.27  2000/09/11 01:46:15  thiessen
 * working messenger for sequence<->structure window communication

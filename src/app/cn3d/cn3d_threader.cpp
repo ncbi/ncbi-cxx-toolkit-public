@@ -228,18 +228,18 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
 Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
         const BlockMultipleAlignment *pairwise, int terminalCutoff)
 {
-    const Sequence *slaveSeq = pairwise->GetSequenceOfRow(1);
+    const Sequence *dependentSeq = pairwise->GetSequenceOfRow(1);
     BlockMultipleAlignment::UngappedAlignedBlockList multipleABlocks, pairwiseABlocks;
     multiple->GetUngappedAlignedBlocks(&multipleABlocks);
     pairwise->GetUngappedAlignedBlocks(&pairwiseABlocks);
 
     // query has # constraints = # blocks in multiple alignment
-    Qry_Seq *qrySeq = NewQrySeq(slaveSeq->Length(), multipleABlocks.size());
+    Qry_Seq *qrySeq = NewQrySeq(dependentSeq->Length(), multipleABlocks.size());
 
     // fill in residue numbers
     unsigned int i;
-    for (i=0; i<slaveSeq->Length(); ++i)
-        qrySeq->sq[i] = LookupThreaderResidueNumberFromCharacterAbbrev(slaveSeq->sequenceString[i]);
+    for (i=0; i<dependentSeq->Length(); ++i)
+        qrySeq->sq[i] = LookupThreaderResidueNumberFromCharacterAbbrev(dependentSeq->sequenceString[i]);
 
     // if a block in the multiple is contained in the pairwise (looking at master coords),
     // then add a constraint to keep it there
@@ -255,7 +255,7 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
                 // offset of master residue at center of multiple block
                 int offset = masterCenter - pairwiseRange->from;
                 pairwiseRange = (*p)->GetRangeOfRow(1);
-                // slave residue in pairwise aligned to master residue at center of multiple block
+                // dependent residue in pairwise aligned to master residue at center of multiple block
                 qrySeq->sac.mn[i] = qrySeq->sac.mx[i] = pairwiseRange->from + offset;
                 break;
             }
@@ -267,8 +267,8 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
     // aligned region set upon demotion
     if (terminalCutoff >= 0) {
         if (qrySeq->sac.mn[0] == -1) {
-            if (pairwise->alignSlaveFrom >= 0) {
-                qrySeq->sac.mn[0] = pairwise->alignSlaveFrom - terminalCutoff;
+            if (pairwise->alignDependentFrom >= 0) {
+                qrySeq->sac.mn[0] = pairwise->alignDependentFrom - terminalCutoff;
             } else if (pairwiseABlocks.size() > 0) {
                 const Block::Range *nextQryBlock = pairwiseABlocks.front()->GetRangeOfRow(1);
                 qrySeq->sac.mn[0] = nextQryBlock->from - 1 - terminalCutoff;
@@ -277,8 +277,8 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
             INFOMSG("new N-terminal block constrained to query loc >= " << qrySeq->sac.mn[0] + 1);
         }
         if (qrySeq->sac.mx[multipleABlocks.size() - 1] == -1) {
-            if (pairwise->alignSlaveTo >= 0) {
-                qrySeq->sac.mx[multipleABlocks.size() - 1] = pairwise->alignSlaveTo + terminalCutoff;
+            if (pairwise->alignDependentTo >= 0) {
+                qrySeq->sac.mx[multipleABlocks.size() - 1] = pairwise->alignDependentTo + terminalCutoff;
             } else if (pairwiseABlocks.size() > 0) {
                 const Block::Range *prevQryBlock = pairwiseABlocks.back()->GetRangeOfRow(1);
                 qrySeq->sac.mx[multipleABlocks.size() - 1] = prevQryBlock->to + 1 + terminalCutoff;
@@ -1001,15 +1001,15 @@ static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBl
 {
     double score = 0.0;
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks.end();
-    const Block::Range *masterRange, *slaveRange;
+    const Block::Range *masterRange, *dependentRange;
     unsigned int i;
 
     for (b=aBlocks.begin(); b!=be; ++b) {
         masterRange = (*b)->GetRangeOfRow(0);
-        slaveRange = (*b)->GetRangeOfRow(row);
+        dependentRange = (*b)->GetRangeOfRow(row);
         for (i=0; i<(*b)->width; ++i)
-            if (residueNumbers[slaveRange->from + i] >= 0)
-                score += seqMtf->ww[masterRange->from + i][residueNumbers[slaveRange->from + i]];
+            if (residueNumbers[dependentRange->from + i] >= 0)
+                score += seqMtf->ww[masterRange->from + i][residueNumbers[dependentRange->from + i]];
     }
 
 //    TESTMSG("PSSM score for row " << row << ": " << score);
@@ -1023,11 +1023,11 @@ static double CalculateContactScore(const BlockMultipleAlignment *multiple,
     int seqIndex1, seqIndex2, resNum1, resNum2, dist, i;
 
     // for each res-res contact, convert seqIndexes of master into corresponding seqIndexes
-    // of slave if they're aligned; add contact energies if so
+    // of dependent if they're aligned; add contact energies if so
     for (i=0; i<fldMtf->rrc.n; ++i) {
-        seqIndex1 = multiple->GetAlignedSlaveIndex(fldMtf->rrc.r1[i], row);
+        seqIndex1 = multiple->GetAlignedDependentIndex(fldMtf->rrc.r1[i], row);
         if (seqIndex1 < 0) continue;
-        seqIndex2 = multiple->GetAlignedSlaveIndex(fldMtf->rrc.r2[i], row);
+        seqIndex2 = multiple->GetAlignedDependentIndex(fldMtf->rrc.r2[i], row);
         if (seqIndex2 < 0) continue;
 
         resNum1 = residueNumbers[seqIndex1];
@@ -1038,9 +1038,9 @@ static double CalculateContactScore(const BlockMultipleAlignment *multiple,
         score += rcxPtl->rre[dist][resNum1][resNum2] + rcxPtl->re[dist][resNum1] + rcxPtl->re[dist][resNum2];
     }
 
-    // ditto for res-pep contacts - except only one slave residue to look up; 2nd is always peptide group
+    // ditto for res-pep contacts - except only one dependent residue to look up; 2nd is always peptide group
     for (i=0; i<fldMtf->rpc.n; ++i) {
-        seqIndex1 = multiple->GetAlignedSlaveIndex(fldMtf->rpc.r1[i], row);
+        seqIndex1 = multiple->GetAlignedDependentIndex(fldMtf->rpc.r1[i], row);
         if (seqIndex1 < 0) continue;
 
         // peptides are only counted if both contributing master residues are aligned
@@ -1215,6 +1215,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.56  2006/01/05 15:51:14  thiessen
 * show GV based on minimum loops on all structures
 *

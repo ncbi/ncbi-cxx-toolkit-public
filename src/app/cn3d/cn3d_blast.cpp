@@ -108,18 +108,18 @@ static CRef < TruncatedSequence > CreateTruncatedSequence(const BlockMultipleAli
         }
     }
 
-    // slave sequence
+    // dependent sequence
     else {
 
         ts->originalFullSequence = pair->GetSequenceOfRow(1);
 
-        // use alignSlaveTo/From if present and reasonable
-        if (pair->alignSlaveFrom >= 0 && pair->alignSlaveFrom < (int)ts->originalFullSequence->Length() &&
-            pair->alignSlaveTo >= 0 && pair->alignSlaveTo < (int)ts->originalFullSequence->Length() &&
-            pair->alignSlaveFrom <= pair->alignSlaveTo)
+        // use alignDependentTo/From if present and reasonable
+        if (pair->alignDependentFrom >= 0 && pair->alignDependentFrom < (int)ts->originalFullSequence->Length() &&
+            pair->alignDependentTo >= 0 && pair->alignDependentTo < (int)ts->originalFullSequence->Length() &&
+            pair->alignDependentFrom <= pair->alignDependentTo)
         {
-            ts->fromIndex = pair->alignSlaveFrom;
-            ts->toIndex = pair->alignSlaveTo;
+            ts->fromIndex = pair->alignDependentFrom;
+            ts->toIndex = pair->alignDependentTo;
         }
 
         // otherwise, just use the whole sequence
@@ -181,7 +181,7 @@ static inline bool SeqIdMatchesMaster(const CSeq_id& sid, bool usePSSM)
         return IsLocalID(sid, -1);
 }
 
-static void MapBlockFromConsensusToMaster(int consensusStart, int slaveStart, int length,
+static void MapBlockFromConsensusToMaster(int consensusStart, int dependentStart, int length,
     BlockMultipleAlignment *newAlignment, const BlockMultipleAlignment *multiple)
 {
     // get mapping of each position of consensus -> master on this block
@@ -197,7 +197,7 @@ static void MapBlockFromConsensusToMaster(int consensusStart, int slaveStart, in
         if (!subBlock && masterLoc[i] >= 0) {
             subBlock = new UngappedAlignedBlock(newAlignment);
             subBlock->SetRangeOfRow(0, masterLoc[i], masterLoc[i]);
-            subBlock->SetRangeOfRow(1, slaveStart + i, slaveStart + i);
+            subBlock->SetRangeOfRow(1, dependentStart + i, dependentStart + i);
             subBlock->width = 1;
         }
 
@@ -336,7 +336,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
             (*seqs)[0] = master;
             (*seqs)[1] = subjectTSs[localID]->originalFullSequence;
-            string slaveTitle = subjectTSs[localID]->originalFullSequence->identifier->ToString();
+            string dependentTitle = subjectTSs[localID]->originalFullSequence->identifier->ToString();
             auto_ptr < BlockMultipleAlignment > newAlignment(
                 new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
             newAlignment->SetRowDouble(0, kMax_Double);
@@ -347,7 +347,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                 ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment not in expected format (disc)");
             } else if (!(*r)->IsSetDim() && (*r)->GetSegs().GetDisc().Get().size() == 0) {
                 WARNINGMSG("BLAST did not find a significant alignment for "
-                    << slaveTitle << " with " << (usePSSM ? string("PSSM") : master->identifier->ToString()));
+                    << dependentTitle << " with " << (usePSSM ? string("PSSM") : master->identifier->ToString()));
             } else {
 
                 // unpack Seq-align; use first one, which assumes blast returns the highest scoring alignment first
@@ -370,17 +370,17 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                         CDense_seg::TStarts::const_iterator s = ds.GetStarts().begin();
                         CDense_seg::TLens::const_iterator l, le = ds.GetLens().end();
                         for (l=ds.GetLens().begin(); l!=le; ++l) {
-                            int masterStart = *(s++), slaveStart = *(s++);
-                            if (masterStart >= 0 && slaveStart >= 0) {  // skip gaps
-                                slaveStart += subjectTSs[localID]->fromIndex;
+                            int masterStart = *(s++), dependentStart = *(s++);
+                            if (masterStart >= 0 && dependentStart >= 0) {  // skip gaps
+                                dependentStart += subjectTSs[localID]->fromIndex;
 
                                 if (usePSSM) {
-                                    MapBlockFromConsensusToMaster(masterStart, slaveStart, *l, newAlignment.get(), multiple);
+                                    MapBlockFromConsensusToMaster(masterStart, dependentStart, *l, newAlignment.get(), multiple);
                                 } else {
                                     masterStart += masterTS->fromIndex;
                                     UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment.get());
                                     newBlock->SetRangeOfRow(0, masterStart, masterStart + (*l) - 1);
-                                    newBlock->SetRangeOfRow(1, slaveStart, slaveStart + (*l) - 1);
+                                    newBlock->SetRangeOfRow(1, dependentStart, dependentStart + (*l) - 1);
                                     newBlock->width = *l;
                                     newAlignment->AddAlignedBlockAtEnd(newBlock);
                                 }
@@ -394,10 +394,10 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 
                 // unpack score
                 if (!sa.IsSetScore() || sa.GetScore().size() == 0) {
-                    WARNINGMSG("BLAST did not return an alignment score for " << slaveTitle);
+                    WARNINGMSG("BLAST did not return an alignment score for " << dependentTitle);
                 } else {
                     CNcbiOstrstream oss;
-                    oss << "BLAST result scores for " << slaveTitle << " vs. "
+                    oss << "BLAST result scores for " << dependentTitle << " vs. "
                         << (usePSSM ? string("PSSM") : master->identifier->ToString()) << ':';
 
                     bool haveE = false;
@@ -430,7 +430,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 
                     INFOMSG((string) CNcbiOstrstreamToString(oss));
                     if (!haveE)
-                        WARNINGMSG("BLAST did not return an E-value for " << slaveTitle);
+                        WARNINGMSG("BLAST did not return an E-value for " << dependentTitle);
                 }
             }
 
@@ -473,13 +473,13 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         (*seqs)[1] = multiple->GetSequenceOfRow(row);
         BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(seqs, multiple->GetMaster()->parentSet->alignmentManager);
         const Block::Range *range = uaBlocks.front()->GetRangeOfRow(row);
-        newAlignment->alignSlaveFrom = range->from - extension;
-        if (newAlignment->alignSlaveFrom < 0)
-            newAlignment->alignSlaveFrom = 0;
+        newAlignment->alignDependentFrom = range->from - extension;
+        if (newAlignment->alignDependentFrom < 0)
+            newAlignment->alignDependentFrom = 0;
         range = uaBlocks.back()->GetRangeOfRow(row);
-        newAlignment->alignSlaveTo = range->to + extension;
-        if (newAlignment->alignSlaveTo >= (int)multiple->GetSequenceOfRow(row)->Length())
-            newAlignment->alignSlaveTo = multiple->GetSequenceOfRow(row)->Length() - 1;
+        newAlignment->alignDependentTo = range->to + extension;
+        if (newAlignment->alignDependentTo >= (int)multiple->GetSequenceOfRow(row)->Length())
+            newAlignment->alignDependentTo = multiple->GetSequenceOfRow(row)->Length() - 1;
         rowPairs.push_back(newAlignment);
     }
     AlignmentList results;
@@ -547,6 +547,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.48  2006/04/25 16:49:50  thiessen
 * adjust for blast scoring changes
 *

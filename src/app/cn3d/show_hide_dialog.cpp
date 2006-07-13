@@ -50,7 +50,7 @@ BEGIN_EVENT_TABLE(ShowHideDialog, wxDialog)
     EVT_CLOSE                  (ShowHideDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
-#define MIN_SIZE 200,300
+#define MIN_SIZE 250,300
 #define B_WIDTH 50
 #define MARGIN 10
 
@@ -208,6 +208,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.16  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

@@ -232,7 +232,7 @@ bool StructureSet::MatchSequenceToMoleculeInObject(const Sequence *seq,
                 CBioseq& bioseqMod = const_cast<CBioseq&>(seq->bioseqASN.GetObject());
                 seq = new Sequence(seqSetMod, bioseqMod);
                 seqSetMod->sequences.push_back(seq);
-                // update Sequence handle, which should be a handle to a MasterSlaveAlignment slave,
+                // update Sequence handle, which should be a handle to a MasterDependentAlignment dependent,
                 // so that this new Sequence* is correctly loaded into the BlockMultipleAlignment
                 if (seqHandle) *seqHandle = seq;
             }
@@ -252,19 +252,19 @@ static void SetStructureRowFlags(const AlignmentSet *alignmentSet, unsigned int 
     vector < string > titles;
     vector < unsigned int > rows;
 
-    // find slave rows with associated structure
+    // find dependent rows with associated structure
     AlignmentSet::AlignmentList::const_iterator l, le = alignmentSet->alignments.end();
     unsigned int row;
     for (l=alignmentSet->alignments.begin(), row=0; l!=le; ++l, ++row) {
-        if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
-            titles.push_back((*l)->slave->identifier->ToString());
+        if ((*l)->dependent->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
+            titles.push_back((*l)->dependent->identifier->ToString());
             rows.push_back(row);
         }
     }
 
     if (*structureLimit - 1 >= titles.size()) return;
 
-    // let user select which slaves to load
+    // let user select which dependents to load
     wxString *items = new wxString[titles.size()];
     vector < bool > itemsOn(titles.size(), false);
     for (row=0; row<titles.size(); ++row) {
@@ -422,14 +422,14 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
         return;
     }
 
-    // IFF there's a master structure, then also load slave structures and cross-match sequences
+    // IFF there's a master structure, then also load dependent structures and cross-match sequences
     if (objects.size() == 1 && structureLimit > 1) {
         ASNDataManager::BiostrucList::const_iterator b, be;
         if (dataManager->GetStructureList()) be = dataManager->GetStructureList()->end();
         int row;
-        vector < bool > loadedStructureForSlaveRow(alignmentSet->alignments.size(), false);
+        vector < bool > loadedStructureForDependentRow(alignmentSet->alignments.size(), false);
 
-        // first, load each remaining slave structure, and for each one, find the first slave
+        // first, load each remaining dependent structure, and for each one, find the first dependent
         // sequence that matches it (and that doesn't already have structure)
         AlignmentSet::AlignmentList::const_iterator l, le = alignmentSet->alignments.end();
         if (dataManager->GetStructureList()) {
@@ -444,40 +444,40 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
                         *(dataManager->GetStructureAlignments()), master->identifier->mmdbID);
                 usedStructures[b->GetPointer()] = true;
 
-                // find matching unstructured slave sequence
+                // find matching unstructured dependent sequence
                 for (l=alignmentSet->alignments.begin(), row=0; l!=le; ++l, ++row) {
-                    if (loadedStructureForSlaveRow[row]) continue;
-                    if (MatchSequenceToMoleculeInObject((*l)->slave, object,
-                            &((const_cast<MasterSlaveAlignment*>(*l))->slave))) {
-                        loadedStructureForSlaveRow[row] = true;
+                    if (loadedStructureForDependentRow[row]) continue;
+                    if (MatchSequenceToMoleculeInObject((*l)->dependent, object,
+                            &((const_cast<MasterDependentAlignment*>(*l))->dependent))) {
+                        loadedStructureForDependentRow[row] = true;
                         break;
                     }
                 }
                 if (l == le)
                     ERRORMSG("Warning: Structure " << object->pdbID
-                        << " doesn't have a matching slave sequence in the multiple alignment");
+                        << " doesn't have a matching dependent sequence in the multiple alignment");
             }
         }
 
-        // now loop through slave rows of the alignment; if the slave
+        // now loop through dependent rows of the alignment; if the dependent
         // sequence has an MMDB ID but no structure yet, then load it.
         if (objects.size() < structureLimit && (dataManager->IsCDD() || dataManager->IsGeneralMime())) {
 
             // for CDD's, ask user which structures to load if structureLimit is low
             if (dataManager->IsCDD())
-                SetStructureRowFlags(alignmentSet, &structureLimit, &loadedStructureForSlaveRow);
+                SetStructureRowFlags(alignmentSet, &structureLimit, &loadedStructureForDependentRow);
 
             for (l=alignmentSet->alignments.begin(), row=0; l!=le && objects.size()<structureLimit; ++l, ++row) {
 
-                if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
-                    !loadedStructureForSlaveRow[row]) {
+                if ((*l)->dependent->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
+                    !loadedStructureForDependentRow[row]) {
 
                     // first check the biostruc list to see if this structure is present already
                     CRef < CBiostruc > biostruc;
                     if (dataManager->GetStructureList()) {
                         for (b=dataManager->GetStructureList()->begin(); b!=be ; ++b) {
                             if ((*b)->GetId().front()->IsMmdb_id() &&
-                                (*b)->GetId().front()->GetMmdb_id().Get() == (*l)->slave->identifier->mmdbID) {
+                                (*b)->GetId().front()->GetMmdb_id().Get() == (*l)->dependent->identifier->mmdbID) {
                                 biostruc = *b;
                                 break;
                             }
@@ -487,10 +487,10 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
                     // if not in list, load Biostruc via HTTP/cache
                     if (biostruc.Empty()) {
                         wxString id;
-                        id.Printf("%i", (*l)->slave->identifier->mmdbID);
+                        id.Printf("%i", (*l)->dependent->identifier->mmdbID);
                         if (!LoadStructureViaCache(id.c_str(),
                                 dataManager->GetBiostrucModelType(), biostruc, NULL)) {
-                            ERRORMSG("Failed to load MMDB #" << (*l)->slave->identifier->mmdbID);
+                            ERRORMSG("Failed to load MMDB #" << (*l)->dependent->identifier->mmdbID);
                             continue;
                         }
                     }
@@ -501,11 +501,11 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
                     if (dataManager->GetStructureAlignments())
                         object->SetTransformToMaster(
                             *(dataManager->GetStructureAlignments()), master->identifier->mmdbID);
-                    if (!MatchSequenceToMoleculeInObject((*l)->slave, object,
-                            &((const_cast<MasterSlaveAlignment*>(*l))->slave)))
+                    if (!MatchSequenceToMoleculeInObject((*l)->dependent, object,
+                            &((const_cast<MasterDependentAlignment*>(*l))->dependent)))
                         ERRORMSG("Failed to match any molecule in structure " << object->pdbID
-                            << " with sequence " << (*l)->slave->identifier->ToString());
-                    loadedStructureForSlaveRow[row] = true;
+                            << " with sequence " << (*l)->dependent->identifier->ToString());
+                    loadedStructureForDependentRow[row] = true;
                 }
             }
         }
@@ -643,7 +643,7 @@ void StructureSet::InitStructureAlignments(int masterMMDBID)
 }
 
 void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
-    int masterDomainID, int slaveDomainID)
+    int masterDomainID, int dependentDomainID)
 {
     CBiostruc_annot_set *structureAlignments = dataManager->GetStructureAlignments();
     if (!structureAlignments) {
@@ -659,14 +659,14 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
     else if ((*currentMasterDomainID % 100) != (masterDomainID % 100))
         *currentMasterDomainID = (*currentMasterDomainID / 100) * 100;
 
-    // check to see if this slave domain already has an alignment; if so, increment alignment #
+    // check to see if this dependent domain already has an alignment; if so, increment alignment #
     CBiostruc_feature_set::TFeatures::const_iterator
         f, fe = structureAlignments->GetFeatures().front().GetObject().GetFeatures().end();
     for (f=structureAlignments->GetFeatures().front().GetObject().GetFeatures().begin(); f!=fe; ++f) {
-        if ((f->GetObject().GetId().Get() / 10) == (slaveDomainID / 10))
-            ++slaveDomainID;
+        if ((f->GetObject().GetId().Get() / 10) == (dependentDomainID / 10))
+            ++dependentDomainID;
     }
-    CBiostruc_feature_id id(slaveDomainID);
+    CBiostruc_feature_id id(dependentDomainID);
     feature->SetId(id);
 
     CRef<CBiostruc_feature> featureRef(feature);
@@ -818,7 +818,7 @@ void StructureSet::SetCenter(const Vector *given)
                 AtomSet::AtomMap::const_iterator a, ae=(*c)->atomSet->atomMap.end();
                 for (a=(*c)->atomSet->atomMap.begin(); a!=ae; ++a) {
                     Vector site(a->second.front()->site);
-                    if ((*o)->IsSlave() && (*o)->transformToMaster)
+                    if ((*o)->IsDependent() && (*o)->transformToMaster)
                         ApplyTransformation(&site, *((*o)->transformToMaster));
                     if (i==0) {
                         siteSum += site;
@@ -939,7 +939,7 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);    // don't actually know which alternate...
     Vector pickedAtomCoord = object->coordSets.front()->atomSet->
         GetAtom(AtomPntr(molecule->id, residue->id, atomID)) ->site;
-    if (object->IsSlave() && object->transformToMaster)
+    if (object->IsDependent() && object->transformToMaster)
         ApplyTransformation(&pickedAtomCoord, *(object->transformToMaster));
 
     // print out distance to previous picked atom
@@ -1212,7 +1212,7 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
         }
     }
 
-    WARNINGMSG("Can't get structure alignment for slave " << pdbID
+    WARNINGMSG("Can't get structure alignment for dependent " << pdbID
         << " with master " << masterMMDBID << ";\nwill likely require manual realignment");
     return false;
 }
@@ -1233,27 +1233,27 @@ static void AddDomain(int *domain, const Molecule *molecule, const Block::Range 
 }
 
 void StructureObject::RealignStructure(int nCoords,
-    const Vector * const *masterCoords, const Vector * const *slaveCoords,
-    const double *weights, int slaveRow)
+    const Vector * const *masterCoords, const Vector * const *dependentCoords,
+    const double *weights, int dependentRow)
 {
-    Vector masterCOM, slaveCOM; // centers of mass for master, slave
-    Matrix slaveRotation;       // rotation to align slave with master
+    Vector masterCOM, dependentCOM; // centers of mass for master, dependent
+    Matrix dependentRotation;       // rotation to align dependent with master
     if (!transformToMaster) transformToMaster = new Matrix();
 
     // do the fit
-    RigidBodyFit(nCoords, masterCoords, slaveCoords, weights, masterCOM, slaveCOM, slaveRotation);
+    RigidBodyFit(nCoords, masterCoords, dependentCoords, weights, masterCOM, dependentCOM, dependentRotation);
 
     // apply the resulting transform elements from the fit to this object's transform Matrix
     Matrix single, combined;
-    SetTranslationMatrix(&single, -slaveCOM);
-    ComposeInto(transformToMaster, slaveRotation, single);
+    SetTranslationMatrix(&single, -dependentCOM);
+    ComposeInto(transformToMaster, dependentRotation, single);
     combined = *transformToMaster;
     SetTranslationMatrix(&single, masterCOM);
     ComposeInto(transformToMaster, single, combined);
 
     // print out RMSD
     INFOMSG("RMSD of alpha coordinates used to align master structure and " << pdbID << ": "
-        << setprecision(3) << ComputeRMSD(nCoords, masterCoords, slaveCoords, transformToMaster) << setprecision(6) << " A");
+        << setprecision(3) << ComputeRMSD(nCoords, masterCoords, dependentCoords, transformToMaster) << setprecision(6) << " A");
 
     // create a new Biostruc-feature that contains this alignment
     CBiostruc_feature *feature = new CBiostruc_feature();
@@ -1267,62 +1267,62 @@ void StructureObject::RealignStructure(int nCoords,
     graphAlignment->SetDimension(2);
     CMmdb_id
         *masterMID = new CMmdb_id(parentSet->objects.front()->mmdbID),
-        *slaveMID = new CMmdb_id(mmdbID);
+        *dependentMID = new CMmdb_id(mmdbID);
     CBiostruc_id
         *masterBID = new CBiostruc_id(),
-        *slaveBID = new CBiostruc_id();
+        *dependentBID = new CBiostruc_id();
     masterBID->SetMmdb_id(*masterMID);
-    slaveBID->SetMmdb_id(*slaveMID);
+    dependentBID->SetMmdb_id(*dependentMID);
     graphAlignment->SetBiostruc_ids().resize(2);
     graphAlignment->SetBiostruc_ids().front().Reset(masterBID);
-    graphAlignment->SetBiostruc_ids().back().Reset(slaveBID);
+    graphAlignment->SetBiostruc_ids().back().Reset(dependentBID);
     graphAlignment->SetAlignment().resize(2);
 
     // fill out sequence alignment intervals, tracking domains in alignment
     const BlockMultipleAlignment *multiple = parentSet->alignmentManager->GetCurrentMultipleAlignment();
-    int masterDomain = NO_DOMAIN, slaveDomain = NO_DOMAIN;
+    int masterDomain = NO_DOMAIN, dependentDomain = NO_DOMAIN;
     const Molecule
         *masterMolecule = multiple->GetSequenceOfRow(0)->molecule,
-        *slaveMolecule = multiple->GetSequenceOfRow(slaveRow)->molecule;
+        *dependentMolecule = multiple->GetSequenceOfRow(dependentRow)->molecule;
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     multiple->GetUngappedAlignedBlocks(&blocks);
     if (blocks.size() > 0) {
         CChem_graph_pntrs
             *masterCGPs = new CChem_graph_pntrs(),
-            *slaveCGPs = new CChem_graph_pntrs();
+            *dependentCGPs = new CChem_graph_pntrs();
         graphAlignment->SetAlignment().front().Reset(masterCGPs);
-        graphAlignment->SetAlignment().back().Reset(slaveCGPs);
+        graphAlignment->SetAlignment().back().Reset(dependentCGPs);
         CResidue_pntrs
             *masterRPs = new CResidue_pntrs(),
-            *slaveRPs = new CResidue_pntrs();
+            *dependentRPs = new CResidue_pntrs();
         masterCGPs->SetResidues(*masterRPs);
-        slaveCGPs->SetResidues(*slaveRPs);
+        dependentCGPs->SetResidues(*dependentRPs);
 
         masterRPs->SetInterval().resize(blocks.size());
-        slaveRPs->SetInterval().resize(blocks.size());
+        dependentRPs->SetInterval().resize(blocks.size());
         BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
         CResidue_pntrs::TInterval::iterator
             mi = masterRPs->SetInterval().begin(),
-            si = slaveRPs->SetInterval().begin();
+            si = dependentRPs->SetInterval().begin();
         for (b=blocks.begin(); b!=be; ++b, ++mi, ++si) {
             CResidue_interval_pntr
                 *masterRIP = new CResidue_interval_pntr(),
-                *slaveRIP = new CResidue_interval_pntr();
+                *dependentRIP = new CResidue_interval_pntr();
             mi->Reset(masterRIP);
-            si->Reset(slaveRIP);
+            si->Reset(dependentRIP);
 
             masterRIP->SetMolecule_id().Set(masterMolecule->id);
-            slaveRIP->SetMolecule_id().Set(slaveMolecule->id);
+            dependentRIP->SetMolecule_id().Set(dependentMolecule->id);
 
             const Block::Range *range = (*b)->GetRangeOfRow(0);
             masterRIP->SetFrom().Set(range->from + 1); // +1 to convert seqLoc to residueID
             masterRIP->SetTo().Set(range->to + 1);
             AddDomain(&masterDomain, masterMolecule, range);
 
-            range = (*b)->GetRangeOfRow(slaveRow);
-            slaveRIP->SetFrom().Set(range->from + 1);
-            slaveRIP->SetTo().Set(range->to + 1);
-            AddDomain(&slaveDomain, slaveMolecule, range);
+            range = (*b)->GetRangeOfRow(dependentRow);
+            dependentRIP->SetFrom().Set(range->from + 1);
+            dependentRIP->SetTo().Set(range->to + 1);
+            AddDomain(&dependentDomain, dependentMolecule, range);
         }
     }
 
@@ -1337,27 +1337,27 @@ void StructureObject::RealignStructure(int nCoords,
         CMove *move = new CMove();
         m->Reset(move);
         static const int scaleFactor = 100000;
-        if (i == 0) {   // translate slave so its COM is at origin
+        if (i == 0) {   // translate dependent so its COM is at origin
             CTrans_matrix *trans = new CTrans_matrix();
             move->SetTranslate(*trans);
             trans->SetScale_factor(scaleFactor);
-            trans->SetTran_1((int)(-(slaveCOM.x * scaleFactor)));
-            trans->SetTran_2((int)(-(slaveCOM.y * scaleFactor)));
-            trans->SetTran_3((int)(-(slaveCOM.z * scaleFactor)));
+            trans->SetTran_1((int)(-(dependentCOM.x * scaleFactor)));
+            trans->SetTran_2((int)(-(dependentCOM.y * scaleFactor)));
+            trans->SetTran_3((int)(-(dependentCOM.z * scaleFactor)));
         } else if (i == 1) {
             CRot_matrix *rot = new CRot_matrix();
             move->SetRotate(*rot);
             rot->SetScale_factor(scaleFactor);
-            rot->SetRot_11((int)(slaveRotation[0] * scaleFactor));
-            rot->SetRot_12((int)(slaveRotation[4] * scaleFactor));
-            rot->SetRot_13((int)(slaveRotation[8] * scaleFactor));
-            rot->SetRot_21((int)(slaveRotation[1] * scaleFactor));
-            rot->SetRot_22((int)(slaveRotation[5] * scaleFactor));
-            rot->SetRot_23((int)(slaveRotation[9] * scaleFactor));
-            rot->SetRot_31((int)(slaveRotation[2] * scaleFactor));
-            rot->SetRot_32((int)(slaveRotation[6] * scaleFactor));
-            rot->SetRot_33((int)(slaveRotation[10] * scaleFactor));
-        } else if (i == 2) {    // translate slave so its COM is at COM of master
+            rot->SetRot_11((int)(dependentRotation[0] * scaleFactor));
+            rot->SetRot_12((int)(dependentRotation[4] * scaleFactor));
+            rot->SetRot_13((int)(dependentRotation[8] * scaleFactor));
+            rot->SetRot_21((int)(dependentRotation[1] * scaleFactor));
+            rot->SetRot_22((int)(dependentRotation[5] * scaleFactor));
+            rot->SetRot_23((int)(dependentRotation[9] * scaleFactor));
+            rot->SetRot_31((int)(dependentRotation[2] * scaleFactor));
+            rot->SetRot_32((int)(dependentRotation[6] * scaleFactor));
+            rot->SetRot_33((int)(dependentRotation[10] * scaleFactor));
+        } else if (i == 2) {    // translate dependent so its COM is at COM of master
             CTrans_matrix *trans = new CTrans_matrix();
             move->SetTranslate(*trans);
             trans->SetScale_factor(scaleFactor);
@@ -1370,19 +1370,19 @@ void StructureObject::RealignStructure(int nCoords,
     // store the new alignment in the Biostruc-annot-set,
     // setting the feature id depending on the aligned domain(s)
     if (masterDomain == NO_DOMAIN) masterDomain = 0;    // can happen if single domain chain
-    if (slaveDomain == NO_DOMAIN) slaveDomain = 0;
+    if (dependentDomain == NO_DOMAIN) dependentDomain = 0;
     const StructureObject *masterObject;
     if (!masterMolecule->GetParentOfType(&masterObject)) return;
     int
         masterDomainID = masterObject->mmdbID*10000 + masterMolecule->id*100 + masterDomain,
-        slaveDomainID = mmdbID*100000 + slaveMolecule->id*1000 + slaveDomain*10 + 1;
-    parentSet->AddStructureAlignment(feature, masterDomainID, slaveDomainID);
+        dependentDomainID = mmdbID*100000 + dependentMolecule->id*1000 + dependentDomain*10 + 1;
+    parentSet->AddStructureAlignment(feature, masterDomainID, dependentDomainID);
 
     // for backward-compatibility with Cn3D 3.5, need name to encode chain/domain
     CNcbiOstrstream oss;
     oss << masterMolecule->identifier->pdbID << ((char) masterMolecule->identifier->pdbChain) << masterDomain << ' '
-        << slaveMolecule->identifier->pdbID << ((char) slaveMolecule->identifier->pdbChain) << slaveDomain << ' '
-        << "Structure alignment of slave " << multiple->GetSequenceOfRow(slaveRow)->identifier->ToString()
+        << dependentMolecule->identifier->pdbID << ((char) dependentMolecule->identifier->pdbChain) << dependentDomain << ' '
+        << "Structure alignment of dependent " << multiple->GetSequenceOfRow(dependentRow)->identifier->ToString()
         << " with master " << multiple->GetSequenceOfRow(0)->identifier->ToString()
         << ", as computed by Cn3D";
     feature->SetName((string) CNcbiOstrstreamToString(oss));
@@ -1474,6 +1474,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.152  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.151  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
@@ -1834,7 +1837,7 @@ END_SCOPE(Cn3D)
 * create Seq-annot from BlockMultipleAlignment
 *
 * Revision 1.32  2000/11/02 16:56:03  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.31  2000/09/20 22:22:29  thiessen
 * working conservation coloring; split and center unaligned justification

@@ -52,7 +52,7 @@ BEGIN_SCOPE(Cn3D)
 class Sequence;
 class SequenceSet;
 class AlignmentSet;
-class MasterSlaveAlignment;
+class MasterDependentAlignment;
 class SequenceViewer;
 class Messenger;
 class BlockMultipleAlignment;
@@ -82,7 +82,7 @@ public:
 
     // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).
-    typedef std::list < const MasterSlaveAlignment * > PairwiseAlignmentList;
+    typedef std::list < const MasterDependentAlignment * > PairwiseAlignmentList;
     BlockMultipleAlignment *
         CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList& alignments);
 
@@ -90,13 +90,13 @@ public:
     void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
         const std::vector < unsigned int >& rowOrder);
 
-    // recomputes structure alignments for all slave structures in the current
+    // recomputes structure alignments for all dependent structures in the current
     // sequence alignment; uses only highlighted aligned residues (on master) if highlightedOnly == true
-    void RealignAllSlaveStructures(bool highlightedOnly) const;
+    void RealignAllDependentStructures(bool highlightedOnly) const;
 
-    // stuff relating to show/hide of alignment rows (slaves)
-    void GetAlignmentSetSlaveSequences(std::vector < const Sequence * > *sequences) const;
-    void GetAlignmentSetSlaveVisibilities(std::vector < bool > *visibilities) const;
+    // stuff relating to show/hide of alignment rows (dependents)
+    void GetAlignmentSetDependentSequences(std::vector < const Sequence * > *sequences) const;
+    void GetAlignmentSetDependentVisibilities(std::vector < bool > *visibilities) const;
     void ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled);
     void NewMultipleWithRows(const std::vector < bool >& visibilities);
 
@@ -112,7 +112,7 @@ public:
         unsigned int seqIndex, StyleSettings::eColorScheme colorScheme) const;
 
     // sequence alignment algorithm functions
-    void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < unsigned int >& slavesToRealign);
+    void RealignDependentSequences(BlockMultipleAlignment *multiple, const std::vector < unsigned int >& dependentsToRealign);
     void ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single);
     void ThreadAllUpdates(const ThreaderOptions& options);
     void BlockAlignAllUpdates(void);
@@ -133,7 +133,7 @@ public:
     // get a list of chain sequences when we're viewing a single structure
     bool GetStructureProteins(std::vector < const Sequence * > *chains) const;
 
-    // get a list of (slave) sequences present in the updates
+    // get a list of (dependent) sequences present in the updates
     unsigned int NUpdates(void) const;
     void GetUpdateSequences(std::list < const Sequence * > *updateSequences) const;
 
@@ -154,7 +154,7 @@ private:
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
 
-    mutable std::vector < bool > slavesVisible;
+    mutable std::vector < bool > dependentsVisible;
 
     // viewer for the current alignment - will own the current alignment (if any)
     SequenceViewer *sequenceViewer;
@@ -174,6 +174,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2006/07/13 22:33:50  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.56  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
@@ -289,7 +292,7 @@ END_SCOPE(Cn3D)
 * fix memory problem with alignment cloning
 *
 * Revision 1.18  2000/11/02 16:48:22  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.17  2000/10/17 14:34:18  thiessen
 * added row shift - editor basically complete

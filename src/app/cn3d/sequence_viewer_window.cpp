@@ -270,16 +270,16 @@ bool SequenceViewerWindow::SaveDialog(bool prompt, bool canCancel)
 
 void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
 {
-    vector < const Sequence * > slaveSequences;
-    sequenceViewer->alignmentManager->GetAlignmentSetSlaveSequences(&slaveSequences);
-    wxString *titleStrs = new wxString[slaveSequences.size()];
-    for (unsigned int i=0; i<slaveSequences.size(); ++i)
-        titleStrs[i] = slaveSequences[i]->identifier->ToString().c_str();
+    vector < const Sequence * > dependentSequences;
+    sequenceViewer->alignmentManager->GetAlignmentSetDependentSequences(&dependentSequences);
+    wxString *titleStrs = new wxString[dependentSequences.size()];
+    for (unsigned int i=0; i<dependentSequences.size(); ++i)
+        titleStrs[i] = dependentSequences[i]->identifier->ToString().c_str();
 
     vector < bool > visibilities;
-    sequenceViewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
+    sequenceViewer->alignmentManager->GetAlignmentSetDependentVisibilities(&visibilities);
 
-    wxString title = "Show/Hide Slaves of ";
+    wxString title = "Show/Hide Dependents of ";
     title.Append(sequenceViewer->alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->identifier->ToString().c_str());
     ShowHideDialog dialog(
         titleStrs, &visibilities, sequenceViewer->alignmentManager, true,
@@ -291,7 +291,7 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
 bool SequenceViewerWindow::QueryShowAllRows(void)
 {
     vector < bool > visibilities;
-    sequenceViewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
+    sequenceViewer->alignmentManager->GetAlignmentSetDependentVisibilities(&visibilities);
 
     unsigned int i;
     for (i=0; i<visibilities.size(); ++i) if (!visibilities[i]) break;
@@ -335,23 +335,23 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     }
     BlockMultipleAlignment *alignment = sequenceViewer->GetCurrentAlignments().front();
 
-    // get slave rows to realign (in display order)
+    // get dependent rows to realign (in display order)
     SequenceDisplay::SequenceList sequences;
     sequenceViewer->GetCurrentDisplay()->GetSequences(alignment, &sequences);
-    vector < bool > selectedSlaves(sequences.size() - 1, false);
+    vector < bool > selectedDependents(sequences.size() - 1, false);
     unsigned int i;
 
     // selection dialog
     if (event.GetId() == MID_REALIGN_ROWS) {
-        // get titles of current slave display rows (*not* rows from the AlignmentSet!)
+        // get titles of current dependent display rows (*not* rows from the AlignmentSet!)
         wxString *titleStrs = new wxString[sequences.size() - 1];
         for (i=1; i<sequences.size(); ++i)  // assuming master is first sequence
             titleStrs[i - 1] = sequences[i]->identifier->ToString().c_str();
 
-        wxString title = "Realign Slaves of ";
+        wxString title = "Realign Dependents of ";
         title.Append(alignment->GetMaster()->identifier->ToString().c_str());
         ShowHideDialog dialog(
-            titleStrs, &selectedSlaves,
+            titleStrs, &selectedDependents,
             NULL,   // no "apply" button or callback
             true, this, -1, title, wxPoint(200, 100));
         dialog.ShowModal();
@@ -361,19 +361,19 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     else if (event.GetId() == MID_REALIGN_HLIT_ROWS) {
         for (i=1; i<sequences.size(); ++i)  // assuming master is first sequence
             if (GlobalMessenger()->IsHighlightedAnywhere(sequences[i]->identifier))
-                selectedSlaves[i - 1] = true;
+                selectedDependents[i - 1] = true;
     }
 
-    // make list of slave rows to be realigned
-    vector < unsigned int > rowOrder, realignSlaves;
+    // make list of dependent rows to be realigned
+    vector < unsigned int > rowOrder, realignDependents;
     sequenceViewer->GetCurrentDisplay()->GetRowOrder(alignment, &rowOrder);
-    for (i=0; i<selectedSlaves.size(); ++i)
-        if (selectedSlaves[i])
-            realignSlaves.push_back(rowOrder[i + 1]);
+    for (i=0; i<selectedDependents.size(); ++i)
+        if (selectedDependents[i])
+            realignDependents.push_back(rowOrder[i + 1]);
 
     // do the realignment
-    if (realignSlaves.size() > 0)
-        sequenceViewer->alignmentManager->RealignSlaveSequences(alignment, realignSlaves);
+    if (realignDependents.size() > 0)
+        sequenceViewer->alignmentManager->RealignDependentSequences(alignment, realignDependents);
 }
 
 #define MASTER_HAS_STRUCTURE \
@@ -599,6 +599,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.64  2006/05/30 19:14:38  thiessen
 * add realign rows w/ highlights
 *

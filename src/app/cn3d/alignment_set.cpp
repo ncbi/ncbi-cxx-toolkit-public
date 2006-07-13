@@ -67,7 +67,7 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const Sequence *masterSequence
     CSeq_annot::C_Data::TAlign::const_iterator
         a, ae = seqAnnots.front()->GetData().GetAlign().end();
     for (a=seqAnnots.front()->GetData().GetAlign().begin(); a!=ae; ++a)
-        alignments.push_back(new MasterSlaveAlignment(this, master, **a));
+        alignments.push_back(new MasterDependentAlignment(this, master, **a));
     TRACEMSG("number of alignments: " << alignments.size());
 }
 
@@ -87,7 +87,7 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
         return NULL;
     }
 
-    // create a single Seq-annot, with 'align' data that holds one Seq-align per slave
+    // create a single Seq-annot, with 'align' data that holds one Seq-align per dependent
     auto_ptr<SeqAnnotList> newAsnAlignmentData(new SeqAnnotList(1));
     CSeq_annot *seqAnnot = new CSeq_annot();
     newAsnAlignmentData->back().Reset(seqAnnot);
@@ -126,17 +126,17 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
 }
 
 
-///// MasterSlaveAlignment methods /////
+///// MasterDependentAlignment methods /////
 
-MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence,
+MasterDependentAlignment::MasterDependentAlignment(StructureBase *parent, const Sequence *masterSequence,
     const ncbi::objects::CSeq_align& seqAlign) :
-    StructureBase(parent), master(masterSequence), slave(NULL)
+    StructureBase(parent), master(masterSequence), dependent(NULL)
 {
     // resize alignment and block vector
-    masterToSlave.resize(master->Length(), -1);
+    masterToDependent.resize(master->Length(), -1);
     blockStructure.resize(master->Length(), -1);
 
-    // find slave sequence for this alignment, and order (master or slave first)
+    // find dependent sequence for this alignment, and order (master or dependent first)
     const CSeq_id& frontSeqId = seqAlign.GetSegs().IsDendiag() ?
         seqAlign.GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
         seqAlign.GetSegs().GetDenseg().GetIds().front().GetObject();
@@ -158,16 +158,16 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         }
     }
     if (s == se) {
-        ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - couldn't find matching sequences; "
+        ERRORMSG("MasterDependentAlignment::MasterDependentAlignment() - couldn't find matching sequences; "
             << "both " << frontSeqId.AsFastaString() << " and "
             << backSeqId.AsFastaString() << " must be in the sequence list for this file!");
         return;
     } else {
-        slave = *s;
+        dependent = *s;
     }
 
     unsigned int i, blockNum = 0;
-    int masterRes, slaveRes;
+    int masterRes, dependentRes;
 
     // unpack dendiag alignment
     if (seqAlign.GetSegs().IsDendiag()) {
@@ -177,19 +177,19 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
             const CDense_diag& block = d->GetObject();
 
             if (block.GetDim() != 2 || block.GetIds().size() != 2 || block.GetStarts().size() != 2) {
-                ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                ERRORMSG("MasterDependentAlignment::MasterDependentAlignment() - \n"
                     "incorrect dendiag block dimensions");
                 return;
             }
 
-            // make sure identities of master and slave sequences match in each block
+            // make sure identities of master and dependent sequences match in each block
             if ((masterFirst &&
                     (!master->identifier->MatchesSeqId(block.GetIds().front().GetObject()) ||
-                     !slave->identifier->MatchesSeqId(block.GetIds().back().GetObject()))) ||
+                     !dependent->identifier->MatchesSeqId(block.GetIds().back().GetObject()))) ||
                 (!masterFirst &&
                     (!master->identifier->MatchesSeqId(block.GetIds().back().GetObject()) ||
-                     !slave->identifier->MatchesSeqId(block.GetIds().front().GetObject())))) {
-                ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - "
+                     !dependent->identifier->MatchesSeqId(block.GetIds().front().GetObject())))) {
+                ERRORMSG("MasterDependentAlignment::MasterDependentAlignment() - "
                     "mismatched Seq-id in dendiag block");
                 return;
             }
@@ -198,16 +198,16 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
             for (i=0; i<block.GetLen(); ++i) {
                 if (masterFirst) {
                     masterRes = block.GetStarts().front() + i;
-                    slaveRes = block.GetStarts().back() + i;
+                    dependentRes = block.GetStarts().back() + i;
                 } else {
                     masterRes = block.GetStarts().back() + i;
-                    slaveRes = block.GetStarts().front() + i;
+                    dependentRes = block.GetStarts().front() + i;
                 }
-                if (masterRes < 0 || masterRes >= (int)master->Length() || slaveRes < 0 || slaveRes >= (int)slave->Length()) {
-                    ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - seqloc in dendiag block > length of sequence!");
+                if (masterRes < 0 || masterRes >= (int)master->Length() || dependentRes < 0 || dependentRes >= (int)dependent->Length()) {
+                    ERRORMSG("MasterDependentAlignment::MasterDependentAlignment() - seqloc in dendiag block > length of sequence!");
                     return;
                 }
-                masterToSlave[masterRes] = slaveRes;
+                masterToDependent[masterRes] = dependentRes;
                 blockStructure[masterRes] = blockNum;
             }
         }
@@ -222,19 +222,19 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
             block.GetIds().size() != 2 ||
             (int)block.GetStarts().size() != 2 * block.GetNumseg() ||
             (int)block.GetLens().size() != block.GetNumseg()) {
-            ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+            ERRORMSG("MasterDependentAlignment::MasterDependentAlignment() - \n"
                 "incorrect denseg block dimension");
             return;
         }
 
-        // make sure identities of master and slave sequences match in each block
+        // make sure identities of master and dependent sequences match in each block
         if ((masterFirst &&
                 (!master->identifier->MatchesSeqId(block.GetIds().front().GetObject()) ||
-                 !slave->identifier->MatchesSeqId(block.GetIds().back().GetObject()))) ||
+                 !dependent->identifier->MatchesSeqId(block.GetIds().back().GetObject()))) ||
             (!masterFirst &&
                 (!master->identifier->MatchesSeqId(block.GetIds().back().GetObject()) ||
-                 !slave->identifier->MatchesSeqId(block.GetIds().front().GetObject())))) {
-            ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                 !dependent->identifier->MatchesSeqId(block.GetIds().front().GetObject())))) {
+            ERRORMSG("MasterDependentAlignment::MasterDependentAlignment() - \n"
                 "mismatched Seq-id in denseg block");
             return;
         }
@@ -245,20 +245,20 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         for (lens=block.GetLens().begin(); lens!=le; ++lens) {
             if (masterFirst) {
                 masterRes = *(starts++);
-                slaveRes = *(starts++);
+                dependentRes = *(starts++);
             } else {
-                slaveRes = *(starts++);
+                dependentRes = *(starts++);
                 masterRes = *(starts++);
             }
-            if (masterRes != -1 && slaveRes != -1) { // skip gaps
+            if (masterRes != -1 && dependentRes != -1) { // skip gaps
                 if ((masterRes + *lens - 1) >= master->Length() ||
-                    (slaveRes + *lens - 1) >= slave->Length()) {
-                    ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                    (dependentRes + *lens - 1) >= dependent->Length()) {
+                    ERRORMSG("MasterDependentAlignment::MasterDependentAlignment() - \n"
                         "seqloc in denseg block > length of sequence!");
                     return;
                 }
                 for (i=0; i<*lens; ++i) {
-                    masterToSlave[masterRes + i] = slaveRes + i;
+                    masterToDependent[masterRes + i] = dependentRes + i;
                     blockStructure[masterRes + i] = blockNum;
                 }
                 ++blockNum; // a "block" of a denseg is an aligned (non-gap) segment
@@ -266,7 +266,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         }
     }
 
-    //TESTMSG("got alignment for slave gi " << slave->identifier->gi);
+    //TESTMSG("got alignment for dependent gi " << dependent->identifier->gi);
 }
 
 END_SCOPE(Cn3D)
@@ -275,6 +275,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/07/13 22:33:50  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.34  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
@@ -357,7 +360,7 @@ END_SCOPE(Cn3D)
 * create Seq-annot from BlockMultipleAlignment
 *
 * Revision 1.7  2000/11/02 16:56:01  thiessen
-* working editor undo; dynamic slave transforms
+* working editor undo; dynamic dependent transforms
 *
 * Revision 1.6  2000/09/20 22:22:26  thiessen
 * working conservation coloring; split and center unaligned justification

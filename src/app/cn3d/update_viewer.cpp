@@ -363,11 +363,11 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
     }
 }
 
-static BlockMultipleAlignment * MakeEmptyAlignment(const Sequence *master, const Sequence *slave)
+static BlockMultipleAlignment * MakeEmptyAlignment(const Sequence *master, const Sequence *dependent)
 {
     BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
     (*seqs)[0] = master;
-    (*seqs)[1] = slave;
+    (*seqs)[1] = dependent;
     BlockMultipleAlignment *newAlignment =
         new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager);
     if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndColors(false)) {
@@ -447,7 +447,7 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
     for (s=newSequences.begin(); s!=se; ++s) {
         if ((*s)->identifier->pdbID.size() == 0) {
             WARNINGMSG("UpdateViewer::GetVASTAlignments() - "
-                "can't be called with non-MMDB slave " << (*s)->identifier->ToString());
+                "can't be called with non-MMDB dependent " << (*s)->identifier->ToString());
             BlockMultipleAlignment *newAlignment = MakeEmptyAlignment(master, *s);
             if (newAlignment) newAlignments->push_back(newAlignment);
             continue;
@@ -552,7 +552,7 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
                     structureAlignment.SetFeatures().front()->SetFeatures().front();
                 structureAlignments->back().masterDomainID =
                     structureAlignment.GetFeatures().front()->GetId().Get();
-                structureAlignments->back().slaveDomainID =
+                structureAlignments->back().dependentDomainID =
                     structureAlignment.GetFeatures().front()->GetFeatures().front()->GetId().Get();
             } else
                 throw "No structure alignment in VAST data blob";
@@ -861,7 +861,7 @@ void UpdateViewer::SavePendingStructures(void)
     while (pendingStructureAlignments.size() > 0) {
         sSet->AddStructureAlignment(pendingStructureAlignments.front().structureAlignment.GetPointer(),
             pendingStructureAlignments.front().masterDomainID,
-            pendingStructureAlignments.front().slaveDomainID);
+            pendingStructureAlignments.front().dependentDomainID);
         pendingStructureAlignments.pop_front();
     }
 }
@@ -879,7 +879,7 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
     for (a=GetCurrentAlignments().begin(); a!=ae; ++a) {
         if (*a != alignment) continue;
 
-        // run BLAST between master and first slave (should be only one slave...)
+        // run BLAST between master and first dependent (should be only one dependent...)
         BLASTer::AlignmentList toRealign;
         toRealign.push_back(alignment);
         BLASTer::AlignmentList newAlignments;
@@ -910,20 +910,20 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
 //    (*viewerWindow)->ScrollToColumn(GetCurrentDisplay()->GetStartingColumn());
 }
 
-static void MapSlaveToMaster(const BlockMultipleAlignment *alignment,
-    int slaveRow, vector < int > *slave2master)
+static void MapDependentToMaster(const BlockMultipleAlignment *alignment,
+    int dependentRow, vector < int > *dependent2master)
 {
-    slave2master->clear();
-    slave2master->resize(alignment->GetSequenceOfRow(slaveRow)->Length(), -1);
+    dependent2master->clear();
+    dependent2master->resize(alignment->GetSequenceOfRow(dependentRow)->Length(), -1);
     BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
     alignment->GetUngappedAlignedBlocks(&uaBlocks);
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = uaBlocks.end();
     for (b=uaBlocks.begin(); b!=be; ++b) {
         const Block::Range
             *masterRange = (*b)->GetRangeOfRow(0),
-            *slaveRange = (*b)->GetRangeOfRow(slaveRow);
+            *dependentRange = (*b)->GetRangeOfRow(dependentRow);
         for (unsigned int i=0; i<(*b)->width; ++i)
-            (*slave2master)[slaveRange->from + i] = masterRange->from + i;
+            (*dependent2master)[dependentRange->from + i] = masterRange->from + i;
     }
 }
 
@@ -960,10 +960,10 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
     // if the best match is the multiple's master, then just use that alignment
     if (bestRow == 0) return bestMatchFromMultiple->Clone();
 
-    // otherwise, use best match as a guide alignment to align the slave with the multiple's master
-    vector < int > import2slave, slave2master;
-    MapSlaveToMaster(bestMatchFromMultiple, 1, &import2slave);
-    MapSlaveToMaster(multiple, bestRow, &slave2master);
+    // otherwise, use best match as a guide alignment to align the dependent with the multiple's master
+    vector < int > import2dependent, dependent2master;
+    MapDependentToMaster(bestMatchFromMultiple, 1, &import2dependent);
+    MapDependentToMaster(multiple, bestRow, &dependent2master);
 
     const Sequence *importSeq = bestMatchFromMultiple->GetSequenceOfRow(1);
     BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
@@ -973,12 +973,12 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
         new BlockMultipleAlignment(seqs, importSeq->parentSet->alignmentManager);
 
     // create maximally sized blocks
-    int masterStart=-1, importStart, importLoc, slaveLoc, masterLoc, len=0;
+    int masterStart=-1, importStart, importLoc, dependentLoc, masterLoc, len=0;
     for (importStart=-1, importLoc=0; importLoc<=(int)importSeq->Length(); ++importLoc) {
 
-        // map import -> slave -> master
-        slaveLoc = (importLoc < (int)importSeq->Length()) ? import2slave[importLoc] : -1;
-        masterLoc = (slaveLoc >= 0) ? slave2master[slaveLoc] : -1;
+        // map import -> dependent -> master
+        dependentLoc = (importLoc < (int)importSeq->Length()) ? import2dependent[importLoc] : -1;
+        masterLoc = (dependentLoc >= 0) ? dependent2master[dependentLoc] : -1;
 
         // if we're currently inside a block..
         if (importStart >= 0) {
@@ -1040,7 +1040,7 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
         if (*a == update) break;
     if (a == GetCurrentAlignments().end()) return;
 
-    // do BLAST-2-sequences between update slave and each sequence from the multiple
+    // do BLAST-2-sequences between update dependent and each sequence from the multiple
     BLASTer::AlignmentList newAlignments;
     for (unsigned int row=0; row<multiple->NRows(); ++row) {
         BLASTer::AlignmentList toRealign;
@@ -1060,8 +1060,8 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
             newAlignment->alignMasterTo = uaBlocks.back()->GetRangeOfRow(row)->to + excess;
             if (newAlignment->alignMasterTo >= ((int)((*seqs)[0]->Length())))
                 newAlignment->alignMasterTo = (*seqs)[0]->Length() - 1;
-            newAlignment->alignSlaveFrom = update->alignSlaveFrom;
-            newAlignment->alignSlaveTo = update->alignSlaveTo;
+            newAlignment->alignDependentFrom = update->alignDependentFrom;
+            newAlignment->alignDependentTo = update->alignDependentTo;
             toRealign.push_back(newAlignment);
         } else {
             ERRORMSG("error finalizing alignment");
@@ -1104,7 +1104,7 @@ typedef bool (*CompareUpdates)(BlockMultipleAlignment *a, BlockMultipleAlignment
 static bool CompareUpdatesByIdentifier(BlockMultipleAlignment *a, BlockMultipleAlignment *b)
 {
     return MoleculeIdentifier::CompareIdentifiers(
-        a->GetSequenceOfRow(1)->identifier, // sort by first slave row
+        a->GetSequenceOfRow(1)->identifier, // sort by first dependent row
         b->GetSequenceOfRow(1)->identifier);
 }
 
@@ -1197,6 +1197,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.86  2006/05/31 19:21:32  thiessen
 * add sort by pssm score
 *

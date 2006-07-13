@@ -80,9 +80,9 @@ public:
     static const unsigned int SCALING_FACTOR;
     static const std::string ThreaderResidues;
 
-    // create new BlockMultipleAlignments from the given multiple and master/slave pairs; returns
+    // create new BlockMultipleAlignments from the given multiple and master/dependent pairs; returns
     // true if threading successful. If so, depending on options, nRowsAddedToMultiple will be
-    // merged into the multiple, and newAlignments will contain all un-merged master/slave pairs
+    // merged into the multiple, and newAlignments will contain all un-merged master/dependent pairs
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
     bool Realign(const ThreaderOptions& options, BlockMultipleAlignment *masterMultiple,
         const AlignmentList *originalAlignments, AlignmentList *newAlignments,
@@ -144,6 +144,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.23  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *

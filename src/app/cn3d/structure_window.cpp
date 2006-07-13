@@ -1112,7 +1112,7 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
             break;
 
         case MID_CDD_REJECT_SEQ: {
-            // make a list of slave sequences
+            // make a list of dependent sequences
             SeqAndDescrList seqsDescrs;
             const MoleculeIdentifier *master =
                 glCanvas->structureSet->alignmentManager->
@@ -1280,7 +1280,7 @@ void StructureWindow::OnAlignStructures(wxCommandEvent& event)
             highlightedOnly = (answer == wxYES);
         }
 
-        glCanvas->structureSet->alignmentManager->RealignAllSlaveStructures(highlightedOnly);
+        glCanvas->structureSet->alignmentManager->RealignAllDependentStructures(highlightedOnly);
         glCanvas->SetCurrent();
         glCanvas->Refresh(false);
     }
@@ -1700,6 +1700,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.51  2006/05/30 22:22:13  thiessen
 * toggle chain instead of selecting chain only
 *

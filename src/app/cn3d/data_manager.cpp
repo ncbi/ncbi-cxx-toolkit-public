@@ -579,7 +579,7 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     // update the asn sequences, keeping only those used in the multiple alignment and updates
     seqEntryList->clear();
     map < const MoleculeIdentifier *, bool > usedSeqs;
-    int nStructuredSlaves = 0;
+    int nStructuredDependents = 0;
 
 // macro to add the sequence to the list if not already present
 #define CONDITIONAL_ADD_SEQENTRY(seq) do { \
@@ -592,11 +592,11 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
 
     // always add master first
     CONDITIONAL_ADD_SEQENTRY(alignmentSet->master);
-    // add from alignmentSet slaves
+    // add from alignmentSet dependents
     AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
     for (a=alignmentSet->alignments.begin(); a!=ae; ++a) {
-        CONDITIONAL_ADD_SEQENTRY((*a)->slave);
-        if ((*a)->slave->molecule) ++nStructuredSlaves;
+        CONDITIONAL_ADD_SEQENTRY((*a)->dependent);
+        if ((*a)->dependent->molecule) ++nStructuredDependents;
     }
 
     // add from updates
@@ -606,8 +606,8 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
 
     SetDataChanged(StructureSet::eSequenceData);
 
-    // warn user if # structured slaves != # structure alignments
-//    if (structureAlignments && nStructuredSlaves !=
+    // warn user if # structured dependents != # structure alignments
+//    if (structureAlignments && nStructuredDependents !=
 //            structureAlignments->GetFeatures().front().GetObject().GetFeatures().size())
 //        ERRORMSG("Warning: Structure alignment list does not contain one alignment per "
 //            "structured sequence!\nYou should recompute structure alignments before saving "
@@ -1016,6 +1016,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.34  2006/06/26 20:31:02  thiessen
 * tweak locally assigned accessions when converting mime to cdd
 *

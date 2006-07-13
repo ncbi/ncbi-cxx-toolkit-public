@@ -220,7 +220,7 @@ void RigidBodyFit(
 
 // RMSD calculator
 double ComputeRMSD(int nCoords, const Vector * const *masterCoords,
-    const Vector * const *slaveCoords, const Matrix *transformSlaveToMaster);
+    const Vector * const *dependentCoords, const Matrix *transformDependentToMaster);
 
 END_SCOPE(Cn3D)
 
@@ -229,6 +229,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/07/13 22:33:51  thiessen
+* change all 'slave' -> 'dependent'
+*
 * Revision 1.17  2005/11/17 22:25:43  thiessen
 * remove more spurious uint-compared-to-zero
 *
