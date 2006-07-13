@@ -667,7 +667,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
     string       current;         // to resolve next
     int          link_depth = 0;
 
-    // Delete trailing slash for all pathes except similar to 'd:\'
+    // Delete trailing slash for all paths except similar to 'd:\'
 #  ifdef DISK_SEPARATOR
     if ( path.find(DISK_SEPARATOR) == NPOS ) {
         current = DeleteTrailingPathSeparator(path);
@@ -4068,6 +4068,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.145  2006/07/13 04:03:13  lavr
+ * Typo fix: pathes -> paths
+ *
  * Revision 1.144  2006/05/03 20:05:25  ivanov
  * Get rid of warnings on MSVC 8 64-bit
  *
@@ -4200,7 +4203,7 @@ END_NCBI_SCOPE
  * s_CopyAttrs(): do not check result of get/set owner on MS Windows.
  *
  * Revision 1.109  2005/06/13 14:57:38  ivanov
- * CDirEntry::NormalizePath() -- fixed conversion of relative pathes
+ * CDirEntry::NormalizePath() -- fixed conversion of relative paths
  * representing current directory
  *
  * Revision 1.108  2005/06/10 20:44:39  lavr
