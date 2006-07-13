@@ -466,20 +466,13 @@ CTar::~CTar()
 {
     // Close stream(s)
     Close();
-    if (m_FileStream) {
-        delete m_FileStream;
-        m_FileStream = 0;
-    }
+    delete m_FileStream;
 
     // Delete owned file name masks
     UnsetMask();
 
     // Delete buffer
-    if (m_BufPtr) {
-        delete[] m_BufPtr;
-        m_BufPtr = 0;
-    }
-    m_Buffer = 0;
+    delete[] m_BufPtr;
 }
 
 
@@ -707,7 +700,7 @@ const char* CTar::x_ReadArchive(size_t& n)
 }
 
 
-// All partial internal block writes are _not_ block-aligned.
+// All partial internal (i.e. in-buffer) block writes are _not_ block-aligned.
 void CTar::x_WriteArchive(size_t nwrite, const char* src)
 {
     if (!nwrite) {
@@ -1119,23 +1112,28 @@ void CTar::x_Backspace(EAction action, size_t blocks)
 
     if (pos > (CT_POS_TYPE)(gap)) {
         // NB: pos > 0 here
-        pos += (CT_OFF_TYPE)(m_BufferSize - 1);
-        rec  = pos / m_BufferSize;
-        rec -= 1;
-        if (m_BufferPos < gap) {
-            size_t n = gap / m_BufferSize;        // Full records in the gap
-            gap %= m_BufferSize;                  // Remaining gap size
-            pos -= (CT_OFF_TYPE)(n);              // Backup this many records
-            m_FileStream->seekg(rec * m_BufferSize);
+        pos -= 1;
+        rec = pos / m_BufferSize;
+        if (!m_BufferPos)
+            m_BufferPos = m_BufferSize;
+        if (gap > m_BufferPos) {
+            gap -= m_BufferPos;
+            size_t n = gap / m_BufferSize;
+            rec -= (CT_OFF_TYPE)(n);          // Backup this many records
+            gap %= m_BufferSize;              // Gap size remaining
             m_BufferPos = 0;
-            n = kBlockSize;
-            x_ReadArchive(n);                     // Refetch the record
-            m_BufferPos = m_BufferSize - gap;
+            if (gap) {
+                rec -= 1;                     // Compensation for partial rec.
+                m_FileStream->seekg(rec * m_BufferSize);
+                n = kBlockSize;
+                x_ReadArchive(n);             // Refetch the record
+                m_BufferPos = m_BufferSize - gap;
+            }
         } else {
-            m_BufferPos -= gap;                   // Entirely within buffer
+            m_BufferPos -= gap;               // Entirely within this buffer
         }
     } else {
-        m_BufferPos = 0;
+        m_BufferPos = 0;                      // File had nothing but the gap
     }
 
     m_FileStream->seekp(rec * m_BufferSize);  // Always set put position here
@@ -1473,19 +1471,17 @@ string CTar::x_ToArchiveName(const string& path) const
     }
     _ASSERT(!retval.empty());
 
-    // Check on '..'
-    if (retval.find("..") != NPOS) {
-        NCBI_THROW(CTarException, eBadName, "Entry name contains '..'");
-    }
+    SIZE_TYPE pos = 0;
 
+#ifdef NCBI_OS_MSWIN
     // Convert to Unix format with forward slashes
     retval = NStr::Replace(retval, "\\", "/");
 
-    SIZE_TYPE pos = 0;
     // Remove disk name if present
     if (isalpha((unsigned char) retval[0])  &&  retval.find(":") == 1) {
         pos = 2;
     }
+#endif // NCBI_OS_MSWIN
 
     // Remove leading and trailing slashes
     while (pos < retval.length()  &&  retval[pos] == '/') {
@@ -1500,6 +1496,13 @@ string CTar::x_ToArchiveName(const string& path) const
             --pos;
         }
         retval.erase(pos + 1);
+    }
+
+    // Check on '..'
+    if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
+        NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
+        NCBI_THROW(CTarException,
+                   eBadName, "Entry name contains '..' (parent) directory");
     }
 
     return retval;
@@ -1672,6 +1675,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/07/13 15:11:06  lavr
+ * Bug fixes in x_Backspace() [proper pos] and x_ToArchiveName() [.. handling]
+ *
  * Revision 1.41  2006/04/20 18:51:07  ivanov
  * Get rid of warnings on 64-bit Sun Workshop compiler
  *
