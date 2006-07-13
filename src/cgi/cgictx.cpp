@@ -373,11 +373,10 @@ string CCgiContext::RetrieveTrackingId() const
     if (cookie) 
         return cookie->GetValue();
 
-    CDiagContext& dcontext = GetDiagContext();
-    char buf[100];
-    sprintf(buf, "%s_%04dSID", dcontext.GetStringUID().c_str(), m_App.GetFCgiIteration());
-    return string(buf);
-
+    CNcbiOstrstream oss;
+    oss << GetDiagContext().GetStringUID() << '_' << setw(4) << setfill('0')
+        << m_App.GetFCgiIteration() << "SID";
+    return CNcbiOstrstreamToString(oss);
 }
 
 
@@ -387,6 +386,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.52  2006/07/13 19:23:19  ucko
+* RetrieveTrackingId: don't use sprintf, which might not even have been declared.
+*
 * Revision 1.51  2006/07/13 15:52:08  didenko
 * Changed the format of the a value of the tracking_id cookie
 *
