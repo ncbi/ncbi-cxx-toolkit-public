@@ -943,6 +943,15 @@ void CNetCacheSock_RW::SetBlobSize(size_t blob_size)
 }
 */
 
+ERW_Result CNetCacheSock_RW::PendingCount(size_t* count)
+{
+    if ( m_BlobSizeControl && m_BlobBytesToRead == 0) {
+        *count = 0;
+        return eRW_Success;
+    } 
+    return TParent::PendingCount(count);       
+}
+
 ERW_Result CNetCacheSock_RW::Read(void*   buf,
                                   size_t  count,
                                   size_t* bytes_read)
@@ -1186,6 +1195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/07/13 14:23:27  didenko
+ * Added CNetCacheSock_RW::PendingCount method
+ *
  * Revision 1.68  2006/06/15 15:10:43  didenko
  * Improved streams error handling
  *

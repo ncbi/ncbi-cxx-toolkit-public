@@ -570,6 +570,9 @@ public:
                             size_t  count,
                             size_t* bytes_read = 0);
 
+    virtual ERW_Result PendingCount(size_t* count);
+
+
     void FinishTransmission();
 private:
     CNetCacheSock_RW(const CNetCacheSock_RW&);
@@ -640,6 +643,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/07/13 14:23:27  didenko
+ * Added CNetCacheSock_RW::PendingCount method
+ *
  * Revision 1.57  2006/05/01 16:36:18  vasilche
  * Fixed error in netcache communication protocol.
  *
