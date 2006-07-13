@@ -191,9 +191,9 @@ SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info)
         s_MakeFrom(info->from, sizeof(info->from));
         info->header          = 0;
         info->body_size       = 0;
-        info->mx_host         = MX_HOST;
-        info->mx_port         = MX_PORT;
-        info->mx_timeout.sec  = MX_TIMEOUT;
+        info->mx_host         = "mailgw.ncbi.nlm.nih.gov";
+        info->mx_port         = 25;
+        info->mx_timeout.sec  = 120;
         info->mx_timeout.usec = 0;
         info->mx_options      = 0;
     }
@@ -513,6 +513,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2006/07/13 17:58:05  lavr
+ * SendMailInfo_Init() to use direct values in initialization of mx_...
+ *
  * Revision 6.29  2006/06/15 19:52:40  lavr
  * Compatibility support in SSendMailInfo::mx_options
  *
