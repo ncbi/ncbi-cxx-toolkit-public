@@ -1065,8 +1065,10 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
       options->expect_value = evalue;
    if (min_diag_separation)
       options->min_diag_separation = min_diag_separation;
-   if(!is_gapped)
-     options->hsp_num_max = kUngappedHSPNumMax;
+   if(!is_gapped) {
+      options->hsp_num_max = kUngappedHSPNumMax;
+      options->do_sum_stats = TRUE;
+   }
    options->culling_limit = culling_limit;
 
    return 0;
@@ -1313,6 +1315,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.186  2006/07/13 15:11:18  papadopo
+ * turn on sum statistics in BLAST_FillHitSavingOptions when an ungapped search is specified
+ *
  * Revision 1.185  2006/06/29 16:23:08  camacho
  * Changed BlastHitSavingOptions::do_sum_stats to boolean so that it is the primary way to check if sum statistics should be performed
  *
