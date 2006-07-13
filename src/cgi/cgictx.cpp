@@ -374,8 +374,9 @@ string CCgiContext::RetrieveTrackingId() const
         return cookie->GetValue();
 
     CDiagContext& dcontext = GetDiagContext();
-    return dcontext.GetStringUID() + 
-        NStr::IntToString(m_App.GetFCgiIteration()) + "SID";
+    char buf[100];
+    sprintf(buf, "%s_%04dSID", dcontext.GetStringUID().c_str(), m_App.GetFCgiIteration());
+    return string(buf);
 
 }
 
@@ -386,6 +387,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.51  2006/07/13 15:52:08  didenko
+* Changed the format of the a value of the tracking_id cookie
+*
 * Revision 1.50  2006/07/12 19:05:59  didenko
 * Added checking of WebCubbyUser and WebEnv cookies for tracking id
 *
