@@ -605,10 +605,8 @@ string CSocketAPI::ntoa(unsigned int host)
 string CSocketAPI::gethostbyaddr(unsigned int host)
 {
     char hostname[256];
-    if ( !SOCK_gethostbyaddr(host, hostname, sizeof(hostname))  &&
-         SOCK_ntoa(host, hostname, sizeof(hostname)) != 0) {
+    if (!SOCK_gethostbyaddr(host, hostname, sizeof(hostname)))
         *hostname = 0;
-    }
     return string(hostname);
 }
 
@@ -670,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2006/07/13 17:58:36  lavr
+ * Fix CSocketAPI::gethostbyaddr() not to upcall SOCK_ntoa()
+ *
  * Revision 6.32  2006/01/18 03:38:17  lavr
  * Prevent copying STimeout structs into themselves [where can occur]
  *
