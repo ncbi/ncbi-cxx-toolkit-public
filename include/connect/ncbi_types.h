@@ -28,17 +28,17 @@
  *
  * Author:  Anton Lavrentiev
  *
+ * @file
  * File Description:
  *   Special types for core library.
  *
- *********************************
  * Timeout:
  *    struct STimeout
  *
  * Switch:
  *    ESwitch         (on/off/default)
  *
- * Fixed-size size_t and time_t equivalents
+ * Fixed-size size_t and time_t equivalents:
  *    TNCBI_Size
  *    TNCBI_Time
  *       these two we need to use when mixing 32/64 bit programs
@@ -62,18 +62,18 @@ extern "C" {
 #endif
 
 
-/* Timeout structure
+/** Timeout structure
  */
 typedef struct {
-    unsigned int sec;  /* seconds (truncated to the platf.-dep. max. limit) */
-    unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
+    unsigned int sec;  /** seconds (truncated to the platf.-dep. max. limit) */
+    unsigned int usec; /** microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
 
 #define kDefaultTimeout  ((const STimeout*)(-1))
 #define kInfiniteTimeout ((const STimeout*)( 0))
 
 
-/* Aux. enum to set/unset/default various features
+/** Aux. enum to set/unset/default various features
  */
 typedef enum {
     eOff = 0,
@@ -82,7 +82,7 @@ typedef enum {
 } ESwitch;
 
 
-/* Fixed size analogs of size_t and time_t (mainly for IPC)
+/** Fixed size analogs of size_t and time_t (mainly for IPC)
  */
 typedef unsigned int TNCBI_Size;
 typedef unsigned int TNCBI_Time;
@@ -101,6 +101,9 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2006/07/13 16:05:42  lavr
+ * Doxygenized
+ *
  * Revision 6.11  2006/03/04 17:01:14  lavr
  * Clean away dead #if 0 branch
  *
