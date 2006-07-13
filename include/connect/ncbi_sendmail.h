@@ -47,23 +47,17 @@ extern "C" {
 #endif
 
 
-/* Default values for the structure below */
-#define MX_HOST         "mailgw.ncbi.nlm.nih.gov"
-#define MX_PORT         25
-#define MX_TIMEOUT      120
-
-
 /* Options apply to various fields of SSendMailInfo structure, below */
 typedef enum {
     fSendMail_NoMxHeader       = (1 << 0), /* Don't add standard mail header,
-                                            * just use provided by user      */
+                                            * just use what user provided    */
     fSendMail_StripNonFQDNHost = (1 << 8)  /* Strip host part in "from" field
                                             * if it does not look like an FQDN
-                                            * (that is, has no at least two
+                                            * (i.e. doesn't have at least two
                                             * domain name labels separated by a
                                             * dot); leave only username part */
 } ESendMailOptions;
-typedef unsigned int TSendMailOptions;  /* Bitwise OR of ESendMailOption */
+typedef unsigned int TSendMailOptions;     /* Bitwise OR of ESendMailOption  */
 
 
 /* Define optional parameters for communication with sendmail
@@ -75,11 +69,10 @@ typedef struct {
     char             from[1024];    /* Originator address                    */
     const char*      header;        /* Custom header fields ('\n'-separated) */
     size_t           body_size;     /* Message body size (if specified)      */
-    const char*      mx_host;       /* Host to contact sendmail at           */
-    short            mx_port;       /* Port to contact sendmail at           */
+    const char*      mx_host;       /* Host to contact an MTA at             */
+    short            mx_port;       /* Port to contact an MTA at             */
     STimeout         mx_timeout;    /* Timeout for all network transactions  */
     TSendMailOptions mx_options;    /* From the above                        */
-#define mx_no_header mx_options     /* compatibility */
 } SSendMailInfo;
 
 
@@ -97,7 +90,7 @@ typedef struct {
  *
  * NOTE about MX header:
  * A message header is automatically prepended to a message that has the
- * fSendMail_NoMxHeader flag cleared in "mx_options (default).  Otherwise,
+ * fSendMail_NoMxHeader flag cleared in "mx_options" (default).  Otherwise,
  * only "header" part (if any) is sent to the MTA (mail tranfser agent), and
  * the rest of the header and the message body is passed "as is" following it.
  * Message header separator and proper message formatting is then
@@ -112,8 +105,9 @@ typedef struct {
  *          otherwise) and host in the form: username@hostname; may be later
  *          reset by the application to "" for sending no-return messages
  *          (aka MAILER-DAEMON messages);
- *   'mx_*' filled out in accordance with corresponding macros defined above;
- *          application may choose different values afterwards.
+ *   'mx_*' filled out in accordance with some hard-coded defaults, which are
+ *          very NCBI-specific; an outside application is likely to choose and
+ *          use different values (at least for mx_host).
  * Return value equals the argument passed in.
  * Note: This call is the only valid way to properly init SSendMailInfo.
  */
@@ -127,8 +121,11 @@ extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_Init
  * equally as empty subjects), and message body 'body' (may be NULL/empty,
  * if not empty, lines are separated by '\n', must be '\0'-terminated).
  * Return value 0 means success; otherwise descriptive error message
- * gets returned. Communicaiton parameters for connection with sendmail
+ * gets returned.  Communicaiton parameters for connection with sendmail
  * are set using default values as described in SendMailInfo_Init().
+ * NOTE:  Use of this call in out-of-house applications is discouraged as
+ *        it is likely to fail since MTA communication parameters set
+ *        to their defaults (which are NCBI-specific) may not be suitable.
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
 (const char*          to,
@@ -140,8 +137,14 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
  * all additional parameters of the message and the communication via
  * argument 'info'. In case of 'info' == NULL, the call is completely
  * equivalent to CORE_SendMail().
- * NB: Body is not neccessarily '\0'-terminated if "info" contains non-default
- * (non-zero) message body size (see SSendMailInfo::body_size above).
+ * NB: Body is not neccessarily '\0'-terminated if 'info->body_size' specifies
+ * non-zero message body size (see SSendMailInfo::body_size above).
+ *
+ * NOTE: Body can have additional header part if fSendMail_NoMxHeader is
+ *       set in 'info->mx_options'.  Even if no additional headers are
+ *       supplied, the body must provide the proper header / message text
+ *       delimiter (an empty line), which will not be automatically inserted
+ *       in the no-header (aka "as-is") mode.
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 (const char*          to,
@@ -162,6 +165,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2006/07/13 17:54:01  lavr
+ * Remove macros: MX_HOST, MX_PORT, MX_TIMEOUT, and mx_no_header
+ *
  * Revision 6.19  2006/06/15 19:52:26  lavr
  * Compatibility support in SSendMailInfo::mx_options
  *
