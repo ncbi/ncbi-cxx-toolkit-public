@@ -102,6 +102,11 @@ static bool IsSameTypeInfo( const CSerialObject& obj1,
 %template(CAliasBase_int) ncbi::CAliasBase<int>;
 %template(CStdAliasBase_int) ncbi::CStdAliasBase<int>;
 
+// Since the introduction of NCBI_EXCEPTION_VAR_EX, instances of NCBI_THROW
+// in headers make SWIG preprocessor choke, so #define it to nothing.
+%include corelib/ncbiexpt.hpp
+#undef NCBI_THROW
+#define NCBI_THROW(foo, bar, baz)
 
 %%
 
@@ -358,6 +363,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/07/14 14:14:42  jcherry
+ * Work-around for strange problem involving NCBI_EXCEPTION_VAR_EX
+ *
  * Revision 1.17  2006/06/12 14:01:14  jcherry
  * Added header
  *
