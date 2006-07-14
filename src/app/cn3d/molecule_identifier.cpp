@@ -274,12 +274,16 @@ bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
             return false;
     }
 
-    if (sid.IsLocal() && sid.GetLocal().IsStr())
-        return (sid.GetLocal().GetStr() == accession || (accession.size() == 0 &&
+    if (sid.IsLocal()) {
+        if (sid.GetLocal().IsStr())
+            return (sid.GetLocal().GetStr() == accession || (accession.size() == 0 &&
                     // special case where local accession is actually a PDB identifier + extra stuff
                     sid.GetLocal().GetStr().size() >= 7 && sid.GetLocal().GetStr()[4] == ' ' &&
                     sid.GetLocal().GetStr()[6] == ' ' && isalpha((unsigned char) sid.GetLocal().GetStr()[5]) &&
                     sid.GetLocal().GetStr().substr(0, 4) == pdbID && sid.GetLocal().GetStr()[5] == pdbChain));
+        else
+            return (NStr::IntToString(sid.GetLocal().GetId()) == accession);
+    }
 
     if (sid.IsGenbank() && sid.GetGenbank().IsSetAccession())
         return (sid.GetGenbank().GetAccession() == accession);
@@ -343,6 +347,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/07/14 21:05:19  thiessen
+* handle local integer ids
+*
 * Revision 1.21  2005/10/28 15:42:34  thiessen
 * more graceful handling of same accession multiple gi version conflict
 *
