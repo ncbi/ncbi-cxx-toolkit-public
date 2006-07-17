@@ -2560,62 +2560,6 @@ string CDisplaySeqalign::x_GetSegs(int row) const
 }
 
 
-///transforms a string so that it becomes safe to be used as part of URL
-///the function converts characters with special meaning (such as
-///semicolon -- protocol separator) to escaped hexadecimal (%xx)
-///@param src: the input url
-///@return: the safe url
-///
-static string s_MakeURLSafe(char* src){
-    static char HEXDIGS[] = "0123456789ABCDEF";
-    char* buf;
-    size_t len;
-    char* p;
-    char c;
-    string url = NcbiEmptyString;
-    
-    if (src){
-        /* first pass to calculate required buffer size */
-        for (p = src, len = 0; (c = *(p++)) != '\0'; ) {
-            switch (c) {
-            default:
-                if (c < '0' || (c > '9' && c < 'A') ||
-                    (c > 'Z' && c < 'a') || c > 'z') {
-                    len += 3;
-                    break;
-                }
-            case '-': case '_': case '.': case '!': case '~':
-            case '*': case '\'': case '(': case ')':
-                ++len;
-            }
-        }
-        buf = new char[len + 1];
-        /* second pass -- conversion */
-        for (p = buf; (c = *(src++)) != '\0'; ) {
-            switch (c) {
-            default:
-                if (c < '0' || (c > '9' && c < 'A') ||
-                    (c > 'Z' && c < 'a') || c > 'z') {
-                    *(p++) = '%';
-                    *(p++) = HEXDIGS[(c >> 4) & 0xf];
-                    *(p++) = HEXDIGS[c & 0xf];
-                    break;
-                }
-            case '-': case '_': case '.': case '!': case '~':
-            case '*': case '\'': case '(': case ')':
-                *(p++) = c;
-            }
-        }
-        *p = '\0';
-        url = buf;
-        delete [] buf;
-    }
-    return url;
-}
-
-
-
-
 string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids, 
                                           int row,
                                           const string& alternative_url,
@@ -2623,122 +2567,26 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
 {
     string link = NcbiEmptyString;  
     string toolUrl= m_Reg->Get(m_BlastType, "TOOL_URL");
-    string passwd = m_Reg->Get(m_BlastType, "PASSWD");
-    bool nodb_path =  false;
-    CRef<CSeq_id> idGeneral = s_GetSeqIdByType(ids, CSeq_id::e_General);
-    CRef<CSeq_id> idOther = s_GetSeqIdByType(ids, CSeq_id::e_Other);
-    const CRef<CSeq_id> idAccession = FindBestChoice(ids, CSeq_id::WorstRank);
     string segs = x_GetSegs(row);
-    int gi = s_GetGiForSeqIdList(ids);
-    if(!idGeneral.Empty() 
-       && idGeneral->AsFastaString().find("gnl|BL_ORD_ID") != string::npos){
-        /* We do need to make security protected link to BLAST gnl */
-        return NcbiEmptyString;
-    }
+    string url_with_parameters = NcbiEmptyString;
+
     if(alternative_url != NcbiEmptyString){ 
         toolUrl = alternative_url;
     }
-    /* dumpgnl.cgi need to use path  */
-    if (toolUrl.find("dumpgnl.cgi") ==string::npos){
-        nodb_path = true;
-    }  
-    int length = (int)m_DbName.size();
-    string str;
-    char  *chptr, *dbtmp;
-    Char tmpbuff[256];
-    char* dbname = new char[sizeof(char)*length + 2];
-    strcpy(dbname, m_DbName.c_str());
-    if(nodb_path) {
-        int i, j;
-        dbtmp = new char[sizeof(char)*length + 2]; /* aditional space and NULL */
-        memset(dbtmp, '\0', sizeof(char)*length + 2);
-        for(i = 0; i < length; i++) { 
-            if(i > 0) {
-                strcat(dbtmp, " ");  //space between db
-            }      
-            if(isspace((unsigned char) dbname[i]) || dbname[i] == ',') {/* Rolling spaces */
-                continue;
-            }
-            j = 0;
-            while (!isspace((unsigned char) dbname[i]) && j < 256  && i < length) { 
-                tmpbuff[j] = dbname[i];
-                j++; i++;
-                if(dbname[i] == ',') { /* Comma is valid delimiter */
-                    break;
-                }
-            }
-            tmpbuff[j] = '\0';
-            if((chptr = strrchr(tmpbuff, '/')) != NULL) { 
-                strcat(dbtmp, (char*)(chptr+1));
-            } else {
-                strcat(dbtmp, tmpbuff);
-            }
-               
-        }
-    } else {
-        dbtmp = dbname;
-    }
-    
-    const CSeq_id* bestid = NULL;
-    if (idGeneral.Empty()){
-        bestid = idOther;
-        if (idOther.Empty()){
-            bestid = idAccession;
-        }
-    } else {
-        bestid = idGeneral;
-    }
-    /*
-     * Need to protect start and stop positions
-     * to avoid web users sending us hand-made URLs
-     * to retrive full sequences
-     */
-    char gnl[256];
-    if (bestid && bestid->Which() !=  CSeq_id::e_Gi){
-        strcpy(gnl, bestid->AsFastaString().c_str());
+    url_with_parameters = CBlastFormatUtil::BuildUserUrl(ids, taxid, toolUrl, m_DbName,
+                                                         m_IsDbNa, m_Rid, m_QueryNumber);
+    if (url_with_parameters != NcbiEmptyString) {
         
-    } else {
-        gnl[0] = '\0';
-    }
-    
-    str = s_MakeURLSafe(dbtmp == NULL ? (char*) "nr" : dbtmp);
-    link +=  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
-        ("<a " + kClassInfo + " " + "href=\"") : "<a href=\"";
-    if (toolUrl.find("?") == string::npos){
-        link += toolUrl + "?" + "db=" + str + "&na=" + (m_IsDbNa? "1" : "0");
-    } else {
-        if (toolUrl.find("=") != string::npos) {
-            toolUrl += "&";
+        link +=  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
+            ("<a " + kClassInfo + " " + "href=\"") : "<a href=\"";
+        
+        link += url_with_parameters; 
+        
+        if (toolUrl.find("dumpgnl.cgi") !=string::npos) {
+            link += "&segs=" + segs;
         }
-        link += toolUrl + "db=" + str + "&na=" + (m_IsDbNa? "1" : "0");
+        link += "\">";
     }
-    
-    if (gnl[0] != '\0'){
-        str = s_MakeURLSafe(gnl);
-        link += "&gnl=";
-        link += str;
-    }
-    if (gi > 0){
-        link += "&gi=" + NStr::IntToString(gi);
-    }
-    if(taxid > 0){
-        link += "&taxid=" + NStr::IntToString(taxid);
-    }
-    if (m_Rid != NcbiEmptyString){
-        link += "&RID=" + m_Rid;
-    }
-    
-    if ( m_QueryNumber > 0){
-        link += "&QUERY_NUMBER=" + NStr::IntToString(m_QueryNumber);
-    }
-    if (toolUrl.find("dumpgnl.cgi") !=string::npos) {
-        link += "&segs=" + segs;
-    }
-    link += "\">";
-    if(nodb_path){
-        delete [] dbtmp;
-    }
-    delete [] dbname;
     return link;
 }
 
@@ -3152,6 +3000,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.121  2006/07/17 14:52:49  jianye
+*consolidate custom url functions
+*
 *Revision 1.120  2006/05/12 17:33:15  jianye
 *encode html string
 *

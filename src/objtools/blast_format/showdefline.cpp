@@ -162,113 +162,16 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
             }
         }
     } else { //need to use user_url 
-        bool nodb_path =  false;
-        CConstRef<CSeq_id> id_general = GetSeq_idByType(ids,
-                                                        CSeq_id::e_General);
-        CConstRef<CSeq_id> id_other = GetSeq_idByType(ids, CSeq_id::e_Other);       
-        if(!id_general.Empty() && 
-           id_general->AsFastaString().find("gnl|BL_ORD_ID") != string::npos){ 
-            /* We do need to make security protected link to BLAST gnl */
-            return NcbiEmptyString;
+
+        string url_with_parameters = CBlastFormatUtil::BuildUserUrl(ids, taxid, user_url,
+                                                                    db_name,
+                                                                    is_db_na, rid,
+                                                                    query_number);
+        if (url_with_parameters != NcbiEmptyString) {
+            url_link += "<a href=\"";
+            url_link += url_with_parameters;
+            url_link += "\">";
         }
-        
-        /* dumpgnl.cgi need to use path  */
-        if (user_url.find("dumpgnl.cgi") ==string::npos){
-            nodb_path = true;
-        }  
-        size_t length = db_name.size();
-        string actual_db;
-        char  *chptr, *dbtmp;
-        Char tmpbuff[256];
-        char* dbname = new char[sizeof(char)*length + 2];
-        strcpy(dbname, db_name.c_str());
-        if(nodb_path) {
-            size_t i, j;
-            /* aditional space and NULL */
-            dbtmp = new char[sizeof(char)*length + 2]; 
-            
-            memset(dbtmp, '\0', sizeof(char)*length + 2);
-            for(i = 0; i < length; i++) {    
-                /* Rolling spaces */
-                if(isspace((unsigned char) dbname[i]) || dbname[i] == ',') {
-                    continue;
-                }
-                j = 0;
-                while (!isspace((unsigned char) dbname[i]) && j < 256  && i < length) { 
-                    tmpbuff[j] = dbname[i];
-                    j++; i++;
-                    if(dbname[i] == ',') { /* Comma is valid delimiter */
-                        break;
-                    }
-                }
-                tmpbuff[j] = '\0';
-                if((chptr = strrchr(tmpbuff, '/')) != NULL) { 
-                    strcat(dbtmp, (char*)(chptr+1));
-                } else {
-                    strcat(dbtmp, tmpbuff);
-                }
-                strcat(dbtmp, " ");            
-            }
-        } else {
-            dbtmp = dbname;
-        }
-        actual_db = dbtmp ? dbtmp : "nr";
-        actual_db = NStr::TruncateSpaces(actual_db);
-        url_link += "<a href=\"";
-        if (user_url.find("?") == string::npos){
-            url_link += user_url + "?" + "db=" + actual_db + "&na=" + 
-                (is_db_na? "1" : "0");
-        } else {
-            if (user_url.find("=") != string::npos) {
-                user_url += "&";
-            }
-            url_link += user_url + "db=" + actual_db + "&na=" + 
-                (is_db_na? "1" : "0");
-        }
-        const CSeq_id* bestid = NULL;
-        if (id_general.Empty()){
-            bestid = id_other;
-            if (id_other.Empty()){
-                bestid = wid;
-            }
-        } else {
-            bestid = id_general;
-        }
-        
-        char gnl[256];
-        if (bestid && bestid->Which() !=  CSeq_id::e_Gi){
-            strcpy(gnl, bestid->AsFastaString().c_str());
-        } else {
-            gnl[0] = '\0';
-        }
-        
-        if (gnl[0] != '\0'){
-            url_link += "&";
-            url_link += "gnl=";
-            url_link += gnl;
-           
-        }
-        if (gi > 0){
-            url_link += "&";
-            url_link += "gi=" + NStr::IntToString(gi);
-        }
-        if(taxid > 0){
-            url_link += "&";
-            url_link += "taxid=" + NStr::IntToString(taxid);
-        }
-        if (rid != NcbiEmptyString){
-            url_link += "&";
-            url_link += "RID=" + rid;
-        }        
-        if ( query_number > 0){
-            url_link += "&";
-            url_link += "QUERY_NUMBER=" + NStr::IntToString(query_number);
-        }
-        url_link += "\">";
-        if(nodb_path){
-            delete [] dbtmp;
-        }
-        delete [] dbname;
     }
     return url_link;
 }
@@ -928,6 +831,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.29  2006/07/17 14:52:49  jianye
+*consolidate custom url functions
+*
 *Revision 1.28  2006/05/15 16:19:05  zaretska
 *Moved s_GetLinkout() function from shodefline.cpp to blastfmtutil.cpp
 *
