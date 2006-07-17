@@ -39,6 +39,23 @@
 extern "C" {
 #endif
 
+/** Low level function to perform dynamic programming gapped extension 
+ * with traceback.
+ * @param A The query sequence [in]
+ * @param B The subject sequence [in]
+ * @param M Maximal extension length in query [in]
+ * @param N Maximal extension length in subject [in]
+ * @param a_offset Resulting starting offset in query [out]
+ * @param b_offset Resulting starting offset in subject [out]
+ * @param edit_block Structure to hold traceback generated [out]
+ * @param gap_align Structure holding various information and allocated 
+ *        memory for the gapped alignment [in]
+ * @param score_params Parameters related to scoring [in]
+ * @param query_offset The starting offset in query [in]
+ * @param reversed Has the sequence been reversed? Used for psi-blast [in]
+ * @param reverse_sequence Do reverse the sequence [in]
+ * @return The best alignment score found.
+*/
 Int4
 ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         Int4* b_offset, GapPrelimEditBlock *edit_block, 
@@ -108,7 +125,7 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
 
 /** Are the two HSPs within a given number of diagonals from each other? */
 #define MB_HSP_CLOSE(q1, q2, s1, s2, c) \
-(ABS((q1-s1) - (q2-s2)) < c)
+(ABS(((q1)-(s1)) - ((q2)-(s2))) < c)
 
 /** Modify a BlastScoreBlk structure so that it can be used in RPS-BLAST. This
  * involves allocating a SPsiBlastScoreMatrix structure so that the PSSMs 
@@ -136,6 +153,10 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/07/17 16:02:56  papadopo
+ * 1. Add doxygen block from blast_gapalign.c
+ * 2. Guard macro parameters with parentheses
+ *
  * Revision 1.14  2006/07/05 15:25:07  papadopo
  * change signature of RPSPsiMatrixAttach
  *
