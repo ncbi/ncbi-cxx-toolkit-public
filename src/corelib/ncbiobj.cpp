@@ -432,11 +432,11 @@ void CObject::RemoveLastReference(void) const
     if ( ObjectStateCanBeDeleted(count) ) {
         // last reference to heap object -> delete it
         if ( ObjectStateUnreferenced(count) ) {
-            if ( count == eInitCounterInHeap ) {
+            if ( count == TCount(eInitCounterInHeap) ) {
                 delete this;
             }
             else {
-                _ASSERT(count == eInitCounterInPool);
+                _ASSERT(count == TCount(eInitCounterInPool));
                 CObjectMemoryPool::Delete(this);
             }
             return;
@@ -534,7 +534,7 @@ void CObject::DoDeleteThisObject(void)
             eCheckBits = eStateBitsValid | eStateBitsHeapSignature
         };
 
-        if ( (count & eCheckBits) == eCheckBits ) {
+        if ( (count & eCheckBits) == TCount(eCheckBits) ) {
             if ( !(count & eStateBitsInHeap) ) {
                 // set 'in heap' flag
                 m_Counter.Add(eStateBitsInHeap);
@@ -906,6 +906,10 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/07/17 14:17:27  ucko
+ * RemoveLastReference, DoDeleteThisObject: Ensure that both sides of ==
+ * have the same signedness to ensure correct behavior under VisualAge.
+ *
  * Revision 1.55  2006/02/21 14:38:59  vasilche
  * Implemented templates CIRef and CIConstRef.
  *
