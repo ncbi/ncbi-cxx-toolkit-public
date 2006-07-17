@@ -55,7 +55,8 @@ static Int4 s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
 static Int2 s_BlastProtGappedAlignment(EBlastProgramType program, 
    BLAST_SequenceBlk* query_in, BLAST_SequenceBlk* subject_in,
    BlastGapAlignStruct* gap_align,
-   const BlastScoringParameters* score_params, BlastInitHSP* init_hsp);
+   const BlastScoringParameters* score_params, 
+   BlastInitHSP* init_hsp, Boolean restricted_alignment);
 
 /** Lower bound for scores. Divide by two to prevent underflows. */
 #define MININT INT4_MIN/2
@@ -351,23 +352,6 @@ enum {
     SCRIPT_EXTEND_GAP_B  = 0x40, /**< continue a gap in B */
 };
 
-/** Low level function to perform dynamic programming gapped extension 
- * with traceback.
- * @param A The query sequence [in]
- * @param B The subject sequence [in]
- * @param M Maximal extension length in query [in]
- * @param N Maximal extension length in subject [in]
- * @param a_offset Resulting starting offset in query [out]
- * @param b_offset Resulting starting offset in subject [out]
- * @param edit_block Structure to hold traceback generated [out]
- * @param gap_align Structure holding various information and allocated 
- *        memory for the gapped alignment [in]
- * @param score_params Parameters related to scoring [in]
- * @param query_offset The starting offset in query [in]
- * @param reversed Has the sequence been reversed? Used for psi-blast [in]
- * @param reverse_sequence Do reverse the sequence [in]
- * @return The best alignment score found.
-*/
 Int4
 ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset, 
 	Int4* b_offset, GapPrelimEditBlock *edit_block, 
@@ -715,24 +699,6 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
     return best_score;
 }
 
-/** Low level function to perform gapped extension in one direction with 
- * or without traceback.
- * @param A The query sequence [in]
- * @param B The subject sequence [in]
- * @param M Maximal extension length in query [in]
- * @param N Maximal extension length in subject [in]
- * @param a_offset Resulting starting offset in query [out]
- * @param b_offset Resulting starting offset in subject [out]
- * @param score_only Only find the score, without saving traceback [in]
- * @param edit_block Structure to hold generated traceback [out]
- * @param gap_align Structure holding various information and allocated 
- *        memory for the gapped alignment [in]
- * @param score_params Parameters related to scoring [in]
- * @param query_offset The starting offset in query [in]
- * @param reversed Has the sequence been reversed? Used for psi-blast [in]
- * @param reverse_sequence Do reverse the sequence [in]
- * @return The best alignment score found.
- */
 Int4 
 Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
    Int4* a_offset, Int4* b_offset, Boolean score_only, 
@@ -941,6 +907,344 @@ Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                test; initialize extra bookkeeping structures until
                the X dropoff test fails or we run out of letters in B. 
                The next inner loop will have larger bounds */
+
+            while (score_gap_row >= (best_score - x_dropoff) && b_size <= N) {
+                score_array[b_size].best = score_gap_row;
+                score_array[b_size].best_gap = score_gap_row - gap_open_extend;
+                score_gap_row -= gap_extend;
+                b_size++;
+            }
+        }
+
+        if (b_size <= N) {
+            score_array[b_size].best = MININT;
+            score_array[b_size].best_gap = MININT;
+            b_size++;
+        }
+    }
+    
+    return best_score;
+}
+
+/** For restricted gapped alignment, gaps may only start once in
+    this many sequence offsets */
+#define RESTRICT_SIZE 10
+
+/** Low level function to perform score-only gapped extension 
+ *  in one direction. Gaps in one sequence or the other are only
+ *  allowed to start at sequence offsets that are a multiple of
+ *  RESTRICT_SIZE from the alignment start point. For more details see
+ * <PRE>
+ * Michael Cameron, Hugh E. Williams, Adam Cannane, "Improved 
+ * Gapped Alignment in BLAST". IEEE/ACM Transactions on Computational
+ * Biology and Bioinformatics, vol 1 #3 (2004) pp 116-129
+ * </PRE>
+ * @param A The query sequence [in]
+ * @param B The subject sequence [in]
+ * @param M Maximal extension length in query [in]
+ * @param N Maximal extension length in subject [in]
+ * @param a_offset Resulting starting offset in query [out]
+ * @param b_offset Resulting starting offset in subject [out]
+ * @param gap_align Structure holding various information and allocated 
+ *        memory for the gapped alignment [in]
+ * @param score_params Parameters related to scoring [in]
+ * @param query_offset The starting offset in query [in]
+ * @param reverse_sequence Do reverse the sequence [in]
+ * @return The best alignment score found.
+ */
+Int4 
+s_RestrictedGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
+   Int4* a_offset, Int4* b_offset,
+   BlastGapAlignStruct* gap_align, 
+   const BlastScoringParameters* score_params, 
+   Int4 query_offset, Boolean reverse_sequence)
+{
+    /* see Blast_SemiGappedAlign for general details */
+
+    Int4 i;
+    Int4 a_index;
+    Int4 b_index, b_size, first_b_index, last_b_index, b_increment;
+    Uint1* b_ptr;
+    Int4 b_gap;
+  
+    BlastGapDP* score_array;
+
+    Int4 gap_open;
+    Int4 gap_extend;
+    Int4 gap_open_extend;
+    Int4 x_dropoff;
+  
+    Int4** matrix = NULL;
+    Int4** pssm = NULL;
+    Int4* matrix_row = NULL;
+  
+    Int4 score;
+    Int4 score_gap_row;
+    Int4 score_gap_col;
+    Int4 next_score;
+    Int4 best_score;
+    Int4 num_extra_cells;
+  
+    matrix = gap_align->sbp->matrix->data;
+    if (gap_align->positionBased) {
+        pssm = gap_align->sbp->psi_matrix->pssm->data;
+    }
+    *a_offset = 0;
+    *b_offset = 0;
+    gap_open = score_params->gap_open;
+    gap_extend = score_params->gap_extend;
+    gap_open_extend = gap_open + gap_extend;
+    x_dropoff = gap_align->gap_x_dropoff;
+  
+    if (x_dropoff < gap_open_extend)
+        x_dropoff = gap_open_extend;
+  
+    if(N <= 0 || M <= 0) 
+        return 0;
+  
+    if (gap_extend > 0)
+        num_extra_cells = x_dropoff / gap_extend + 3;
+    else
+        num_extra_cells = N + 3;
+
+    if (num_extra_cells > gap_align->dp_mem_alloc) {
+        gap_align->dp_mem_alloc = MAX(num_extra_cells + 100,
+                                      2 * gap_align->dp_mem_alloc);
+        sfree(gap_align->dp_mem);
+        gap_align->dp_mem = (BlastGapDP *)malloc(gap_align->dp_mem_alloc *
+                                                  sizeof(BlastGapDP));
+    }
+
+    score_array = gap_align->dp_mem;
+    score = -gap_open_extend;
+    score_array[0].best = 0;
+    score_array[0].best_gap = -gap_open_extend;
+  
+    for (i = 1; i <= N; i++) {
+        if (score < -x_dropoff) 
+            break;
+
+        score_array[i].best = score;
+        score_array[i].best_gap = score - gap_open_extend; 
+        score -= gap_extend;
+    }
+  
+    b_size = i;
+    best_score = 0;
+    first_b_index = 0;
+    b_gap = 0;
+    if (reverse_sequence)
+        b_increment = -1;
+    else
+        b_increment = 1;
+  
+    for (a_index = 1; a_index <= M; a_index++) {
+
+        if (!(gap_align->positionBased)) {
+            if(reverse_sequence)
+                matrix_row = matrix[ A[ M - a_index ] ];
+            else
+                matrix_row = matrix[ A[ a_index ] ];
+        }
+        else {
+            if(reverse_sequence)
+                matrix_row = pssm[M - a_index];
+            else 
+                matrix_row = pssm[a_index + query_offset];
+        }
+
+        if(reverse_sequence)
+            b_ptr = &B[N - first_b_index];
+        else
+            b_ptr = &B[first_b_index];
+
+        score = MININT;
+        score_gap_row = MININT;
+        last_b_index = first_b_index;
+
+        /* The double loop that computes the alignment is essentially
+           unchanged from that of Blast_SemiGappedAlign. The only
+           real difference is that a gap in A or B is not allowed to 
+           start unless the offset of the gap is divisible by 
+           RESTRICT_SIZE. This allows the ordinary dynamic programming
+           recurrence relations to be simplified */
+
+        if (a_index % RESTRICT_SIZE != 0) {
+
+            /* a gap will never start in A; do not bother checking
+               or updating score_gap_row */
+
+            for (b_index = first_b_index; b_index < b_size; b_index++) {
+    
+                b_ptr += b_increment;
+                next_score = score_array[b_index].best + matrix_row[ *b_ptr ];
+
+                if (b_index != b_gap) {
+
+                    /* the majority of cases fall here; a gap
+                       may not start in either A or B */
+
+                    if (best_score - score > x_dropoff) {
+                        score_array[b_index].best = MININT;
+                        if (b_index == first_b_index)
+                            first_b_index++;
+                    }
+                    else {
+                        last_b_index = b_index;
+                        if (score > best_score) {
+                            best_score = score;
+                            *a_offset = a_index;
+                            *b_offset = b_index;
+                        }
+                        score_array[b_index].best = score;
+                    }
+                }
+                else {
+
+                    /* a gap may start in B. Update b_gap, the
+                       offset when this will next happen, and
+                       compute the two-term recurrence */
+
+                    b_gap += RESTRICT_SIZE;
+                    score_gap_col = score_array[b_index].best_gap;
+    
+                    if (score < score_gap_col)
+                        score = score_gap_col;
+        
+                    if (best_score - score > x_dropoff) {
+                        score_array[b_index].best = MININT;
+                        if (b_index == first_b_index)
+                            first_b_index++;
+                    }
+                    else {
+                        last_b_index = b_index;
+                        if (score > best_score) {
+                            best_score = score;
+                            *a_offset = a_index;
+                            *b_offset = b_index;
+                        }
+        
+                        score_gap_col -= gap_extend;
+                        score_array[b_index].best_gap = 
+                                   MAX(score - gap_open_extend, score_gap_col);
+                        score_array[b_index].best = score;
+                    }
+                }
+                score = next_score;
+            }
+
+            score_gap_row = score;
+        }
+        else {
+
+            /* gap may start in A */
+
+            for (b_index = first_b_index; b_index < b_size; b_index++) {
+    
+                b_ptr += b_increment;
+                next_score = score_array[b_index].best + matrix_row[ *b_ptr ];
+
+                if (b_index != b_gap) {
+
+                    /* gap may not start in B. Compute
+                       the resulting two-term recurrence */
+
+                    if (score < score_gap_row)
+                        score = score_gap_row;
+        
+                    if (best_score - score > x_dropoff) {
+                        score_array[b_index].best = MININT;
+                        if (b_index == first_b_index)
+                            first_b_index++;
+                    }
+                    else {
+                        last_b_index = b_index;
+                        if (score > best_score) {
+                            best_score = score;
+                            *a_offset = a_index;
+                            *b_offset = b_index;
+                        }
+        
+                        score_gap_row -= gap_extend;
+                        score_gap_row = MAX(score - gap_open_extend, 
+                                            score_gap_row);
+                        score_array[b_index].best = score;
+                    }
+                }
+                else {
+    
+                    /* the ordinary case: a gap may start in A
+                       or B and the full three-term recurrence
+                       must be computed. This happens once every
+                       RESTRICT_SIZE*RESTRICT_SIZE cells */
+
+                    b_gap += RESTRICT_SIZE;
+                    score_gap_col = score_array[b_index].best_gap;
+    
+                    if (score < score_gap_col)
+                        score = score_gap_col;
+                    if (score < score_gap_row)
+                        score = score_gap_row;
+        
+                    if (best_score - score > x_dropoff) {
+                        score_array[b_index].best = MININT;
+                        if (b_index == first_b_index)
+                            first_b_index++;
+                    }
+                    else {
+                        last_b_index = b_index;
+                        if (score > best_score) {
+                            best_score = score;
+                            *a_offset = a_index;
+                            *b_offset = b_index;
+                        }
+        
+                        score_gap_row -= gap_extend;
+                        score_gap_col -= gap_extend;
+                        score_array[b_index].best_gap = 
+                                 MAX(score - gap_open_extend, score_gap_col);
+                        score_gap_row = MAX(score - gap_open_extend, 
+                                            score_gap_row);
+                        score_array[b_index].best = score;
+                    }
+                }
+                score = next_score;
+            }
+        }
+
+        if (first_b_index == b_size)
+            break;
+
+        /* compute the first offset of the next row where a
+           gap in B may start */
+
+        b_index = first_b_index % RESTRICT_SIZE;
+        b_gap = first_b_index;
+        if (b_index > 0)
+            b_gap += RESTRICT_SIZE - b_index;
+
+        if (last_b_index + num_extra_cells + 3 >= gap_align->dp_mem_alloc) {
+
+            gap_align->dp_mem_alloc = MAX(last_b_index + num_extra_cells + 100,
+                                          2 * gap_align->dp_mem_alloc);
+            score_array = (BlastGapDP *)realloc(score_array,
+                                               gap_align->dp_mem_alloc *
+                                               sizeof(BlastGapDP));
+            gap_align->dp_mem = score_array;
+        }
+
+        if (last_b_index < b_size - 1) {
+            b_size = last_b_index + 1;
+        }
+        else {
+            /* The inner loop finished without failing the X-dropoff
+               test; initialize extra bookkeeping structures until
+               the X dropoff test fails or we run out of letters in B. 
+               The next inner loop will have larger bounds.
+
+               Note that if gaps in A are not allowed for this row, then
+               score_gap_row is -infinity and the loop below will not 
+               extend the region to explore */
 
             while (score_gap_row >= (best_score - x_dropoff) && b_size <= N) {
                 score_array[b_size].best = score_gap_row;
@@ -2456,7 +2760,6 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
 
     score_array = gap_align->dp_mem;
     score = -gap_open_extend;
-    score = -gap_open_extend;
     score_array[0].best = 0;
     score_array[0].best_gap = -gap_open_extend;
   
@@ -2673,7 +2976,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    BlastInitHSP* init_hsp_array;
    Int4 q_start, s_start, q_end, s_end;
    Boolean is_prot;
+   Boolean restricted_alignment = FALSE;
    Boolean is_greedy;
+   Int4 max_offset;
    Int2 status = 0;
    BlastHSPList* hsp_list = NULL;
    const BlastHitSavingOptions* hit_options = hit_params->options;
@@ -2695,6 +3000,21 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    is_prot = (program_number != eBlastTypeBlastn &&
               program_number != eBlastTypePhiBlastn);
    is_greedy = (ext_params->options->ePrelimGapExt != eDynProgExt);
+
+   /* turn on approximate gapped alignment if 1) the search 
+      specifies it, and 2) the first, highest-scoring ungapped 
+      alignment in init_hitlist scores below a reduced cutoff.
+      The second condition is used to avoid computing approximate
+      alignments that experiment shows are likely to be thrown
+      away and recomputed optimally */
+
+   if (hit_params->restricted_align && !score_params->options->is_ooframe) {
+      init_hsp = init_hitlist->init_hsp_array;
+      if (init_hsp->ungapped_data &&
+          init_hsp->ungapped_data->score < hit_params->restricted_cutoff) {
+          restricted_alignment = TRUE;
+      }
+   }
 
    if (program_number == eBlastTypeRpsTblastn || 
        program_number == eBlastTypeRpsBlast) {
@@ -2772,7 +3092,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
          }
  
          if(is_prot && !score_params->options->is_ooframe) {
-            Int4 offset =
+            max_offset = 
                BlastGetStartForGappedAlignment(query_tmp.sequence, 
                   subject->sequence, gap_align->sbp,
                   init_hsp->ungapped_data->q_start,
@@ -2780,13 +3100,41 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                   init_hsp->ungapped_data->s_start,
                   init_hsp->ungapped_data->length);
             init_hsp->offsets.qs_offsets.s_off += 
-                offset - init_hsp->offsets.qs_offsets.q_off;
-            init_hsp->offsets.qs_offsets.q_off = offset;
+                max_offset - init_hsp->offsets.qs_offsets.q_off;
+            init_hsp->offsets.qs_offsets.q_off = max_offset;
          }
 
          if (is_prot) {
-            status =  s_BlastProtGappedAlignment(program_number, &query_tmp, 
-                         subject, gap_align, score_params, init_hsp);
+            status = s_BlastProtGappedAlignment(program_number, &query_tmp, 
+                                                subject, gap_align, 
+                                                score_params, init_hsp, 
+                                                restricted_alignment);
+            if (restricted_alignment &&
+                gap_align->score < hit_params->cutoff_score &&
+                gap_align->score >= hit_params->restricted_cutoff) {
+
+                /* the alignment score is inconclusive; it may really be
+                   low-scoring, or the approximate gapped alignment
+                   could be highly suboptimal. Recomputing the alignment
+                   would resolve the ambiguity, but when the final list of
+                   HSPs contains a mix of approximate and exact gapped
+                   alignments it's possible for a highly suboptimal 
+                   alignment to make it to the traceback phase, where
+                   its start point is reused. We sidestep this problem
+                   by throwing away all the previously computed gapped
+                   alignments and recomputing them exactly. */
+
+                Int4 index2;
+                restricted_alignment = FALSE;
+                Blast_IntervalTreeReset(tree);
+                for (index2 = 0; index2 < hsp_list->hspcnt; index2++) {
+                   hsp_list->hsp_array[index2] = 
+                             Blast_HSPFree(hsp_list->hsp_array[index2]);
+                }
+                hsp_list->hspcnt = 0;
+                index = -1;   /* restart the loop over ungapped alignments */
+                continue;
+            }
          } else if (is_greedy) {
             status = BLAST_GreedyGappedAlignment(
                          query_tmp.sequence, subject->sequence, 
@@ -2834,8 +3182,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                  query_frame = query_info->contexts[context].frame;
              }
 
-             Blast_HSPInit(gap_align->query_start, gap_align->query_stop, 
-                           gap_align->subject_start, gap_align->subject_stop,
+             Blast_HSPInit(gap_align->query_start, 
+                           gap_align->query_stop, gap_align->subject_start, 
+                           gap_align->subject_stop, 
                            init_hsp->offsets.qs_offsets.q_off, 
                            init_hsp->offsets.qs_offsets.s_off, context, 
                            query_frame, subject->frame, gap_align->score, 
@@ -2950,12 +3299,15 @@ AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr,
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_params Parameters related to scoring [in]
  * @param init_hsp The initial HSP information [in]
+ * @param restricted_alignment If true and search is not out-of-frame, 
+ *              use a faster approximate gapped alignment algorithm [in]
  */
 static Int2 
 s_BlastProtGappedAlignment(EBlastProgramType program, 
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    BlastGapAlignStruct* gap_align,
-   const BlastScoringParameters* score_params, BlastInitHSP* init_hsp)
+   const BlastScoringParameters* score_params, BlastInitHSP* init_hsp,
+   Boolean restricted_alignment)
 {
    Boolean found_start, found_end;
    Int4 q_length=0, s_length=0, score_right, score_left;
@@ -3012,17 +3364,24 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
                  &private_q_start, &private_s_start, TRUE, NULL, 
                  gap_align, score_params, q_length, TRUE, switch_seq);
       } else {
-         score_left = 
-             Blast_SemiGappedAlign(query, subject+subject_shift, q_length, s_length,
+         if (restricted_alignment) {
+            score_left = s_RestrictedGappedAlign(query, subject+subject_shift, 
+                                   q_length, s_length,
+                                   &private_q_start, &private_s_start,
+                                   gap_align, score_params, 
+                                   init_hsp->offsets.qs_offsets.q_off, TRUE);
+         }
+         else {
+            score_left = Blast_SemiGappedAlign(query, subject+subject_shift, 
+                                   q_length, s_length,
                                    &private_q_start, &private_s_start, TRUE, 
                                    NULL, gap_align, score_params, 
                                    init_hsp->offsets.qs_offsets.q_off, 
                                    FALSE, TRUE);
+         }
       }
-        
       gap_align->query_start = q_length - private_q_start;
       gap_align->subject_start = s_length - private_s_start + subject_shift;
-      
    }
 
    score_right = 0;
@@ -3038,8 +3397,20 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
          gap_align->query_stop += q_length;
          gap_align->subject_stop += s_length + subject_shift;
       } else {
-         score_right = 
-             Blast_SemiGappedAlign(query+init_hsp->offsets.qs_offsets.q_off, 
+         if (restricted_alignment) {
+            score_right = s_RestrictedGappedAlign(
+                                   query+init_hsp->offsets.qs_offsets.q_off, 
+                                   subject+init_hsp->offsets.qs_offsets.s_off, 
+                                   query_length-q_length, 
+                                   subject_length-s_length, 
+                                   &(gap_align->query_stop), 
+                                   &(gap_align->subject_stop), 
+                                   gap_align, score_params, 
+                                   init_hsp->offsets.qs_offsets.q_off, FALSE);
+         }
+         else {
+            score_right = Blast_SemiGappedAlign(
+                                   query+init_hsp->offsets.qs_offsets.q_off, 
                                    subject+init_hsp->offsets.qs_offsets.s_off, 
                                    query_length-q_length, 
                                    subject_length-s_length, 
@@ -3048,6 +3419,7 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
                                    TRUE, NULL, gap_align, score_params, 
                                    init_hsp->offsets.qs_offsets.q_off, FALSE, 
                                    FALSE);
+         }
          /* Make end offsets point to the byte after the end of the 
             alignment */
          gap_align->query_stop += init_hsp->offsets.qs_offsets.q_off + 1;
