@@ -522,9 +522,17 @@ public:
     virtual void OnStatusChange(EStatus /* old */, EStatus /* new */) {}
 };
 
+
 EMPTY_TEMPLATE
+inline
 void CBlockingQueue<CRef<CStdRequest> >::CQueueItem::x_SetStatus
-(EStatus new_status);
+(EStatus new_status)
+{
+    EStatus old_status = GetStatus();
+    CQueueItemBase::x_SetStatus(new_status);
+    m_Request->OnStatusChange(old_status, new_status);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1062,6 +1070,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2006/07/17 14:27:05  ucko
+* Inline CBlockingQueue<CRef<CStdRequest> >::CQueueItem::x_SetStatus's
+* definition for the sake of IBM's VisualAge compiler.
+*
 * Revision 1.50  2006/06/26 20:23:36  ucko
 * CPoolOfThreads<>::HasImmediateRoom: if the queue is full, return false
 * regarldess of other indications.

@@ -37,16 +37,6 @@
 BEGIN_NCBI_SCOPE
 
 
-EMPTY_TEMPLATE
-void CBlockingQueue<CRef<CStdRequest> >::CQueueItem::x_SetStatus
-(EStatus new_status)
-{
-    EStatus old_status = GetStatus();
-    CQueueItemBase::x_SetStatus(new_status);
-    m_Request->OnStatusChange(old_status, new_status);
-}
-
-
 class CFatalRequest : public CStdRequest
 {
 protected:
@@ -124,6 +114,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/07/17 14:27:13  ucko
+* Inline CBlockingQueue<CRef<CStdRequest> >::CQueueItem::x_SetStatus's
+* definition for the sake of IBM's VisualAge compiler.
+*
 * Revision 1.10  2006/02/09 20:16:18  ucko
 * Supply status change notifications to CStdRequest-derived objects.
 *
