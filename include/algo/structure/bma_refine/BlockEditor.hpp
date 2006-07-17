@@ -44,11 +44,12 @@
 #include <algo/structure/bma_refine/BlockBoundaryAlgorithm.hpp>
 //#include <algo/structure/bma_refine/ColumnScorer.hpp>
 
-class struct_util::AlignmentUtility;
-
-//class struct_util::BlockMultipleAlignment;
-//class struct_util::UngappedAlignedBlock;
-//class struct_util::Block;
+BEGIN_SCOPE(struct_util)
+class AlignmentUtility;
+//class BlockMultipleAlignment;
+//class UngappedAlignedBlock;
+//class Block;
+END_SCOPE(struct_util)
 
 //USING_SCOPE(struct_util);
 BEGIN_SCOPE(align_refine)
@@ -150,6 +151,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/07/17 14:36:39  ucko
+* Place forward declarations within BEGIN_/END_SCOPE blocks per VisualAge.
+*
 * Revision 1.2  2005/11/23 01:01:14  lanczyck
 * freeze specified blocks in both LOO and BE phases;
 * add support for a callback for a progress meter

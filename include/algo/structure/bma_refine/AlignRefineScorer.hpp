@@ -41,7 +41,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
-class struct_util::AlignmentUtility;
+BEGIN_SCOPE(struct_util)
+class AlignmentUtility;
+END_SCOPE(struct_util)
 
 BEGIN_SCOPE(align_refine)
 
@@ -99,6 +101,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/07/17 14:36:39  ucko
+* Place forward declarations within BEGIN_/END_SCOPE blocks per VisualAge.
+*
 * Revision 1.1  2005/06/28 13:45:25  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *
