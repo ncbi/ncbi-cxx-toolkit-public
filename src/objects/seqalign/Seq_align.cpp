@@ -670,8 +670,6 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
 
     CDense_seg& new_ds = new_sa->SetSegs().SetDenseg();
 
-    CDense_seg::TStrands tmp_strands;
-
     new_ds.SetDim(0);
     new_ds.SetNumseg(0);
 
@@ -722,14 +720,12 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
 
         /// Strands?
         if ( !ds.GetStrands().empty() ) {
-            if (tmp_strands.empty()) {
-                tmp_strands.resize(ds.GetDim());
-                copy(ds.GetStrands().begin(),
-                     ds.GetStrands().begin() + ds.GetDim(),
-                     tmp_strands.begin());
+            if (new_ds.GetStrands().empty()) {
+                new_ds.SetStrands().assign(ds.GetStrands().begin(),
+                                           ds.GetStrands().begin() + ds.GetDim());
             } else {
-                if ( !equal(tmp_strands.begin(),
-                            tmp_strands.end(),
+                if ( !equal(new_ds.GetStrands().begin(),
+                            new_ds.GetStrands().end(),
                             ds.GetStrands().begin()) ) {
                     NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
                                "CreateDensegFromDisc(): "
@@ -741,12 +737,15 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
     
     new_ds.SetStarts().resize(new_ds.GetDim() * new_ds.GetNumseg());
     new_ds.SetLens().resize(new_ds.GetNumseg());
-    if ( !tmp_strands.empty() ) {
-        new_ds.SetStrands().resize(new_ds.GetDim() * new_ds.GetNumseg());
-        for (CDense_seg::TNumseg seg = 0;  seg < new_ds.GetNumseg();  ++seg) {
-            for (CDense_seg::TDim row = 0;  row < new_ds.GetDim();  ++row) {
-                new_ds.SetStrands()[seg * new_ds.GetDim() + row] = tmp_strands[row];
-            }
+    if ( !new_ds.GetStrands().empty() ) {
+        /// Multiply the strands by the number of segments.
+        new_ds.SetStrands().reserve(new_ds.GetDim() * new_ds.GetNumseg());
+        for (CDense_seg::TNumseg seg = 0; 
+             seg < new_ds.GetNumseg() - 1;
+             ++seg) {
+            new_ds.SetStrands().insert(new_ds.SetStrands().end(),
+                                       new_ds.GetStrands().begin(), 
+                                       new_ds.GetStrands().begin() + new_ds.GetDim());
         }
     }
     
@@ -900,6 +899,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/07/17 15:49:26  todorov
+* Simplified and optimized building the strands in CreateDensegFromDisc.
+*
 * Revision 1.27  2006/07/13 20:34:55  todorov
 * CreateDensegFromDisc() now copies the scores too.
 *
