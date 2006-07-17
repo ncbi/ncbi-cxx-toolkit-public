@@ -154,7 +154,19 @@ typedef struct BlastHitSavingParameters {
    BlastLinkHSPParameters* link_hsp_params; /**< Parameters for linking HSPs
                                                with sum statistics; linking 
                                                is not done if NULL. */
+   Boolean restricted_align; /**< TRUE if approximate score-only gapped
+                                  alignment is used */
+   Int4 restricted_cutoff; /**< Raw cutoff score used to keep hits computed
+                                from approximate score-only gapped alignment */
 } BlastHitSavingParameters;
+
+/** Because approximate gapped alignment adds extra overhead,
+ *  it should be avoided if there is no performance benefit
+ *  to using it. To be benficial, most score-only gapped alignments
+ *  should be the restricted kind, and we can only assure that
+ *  if the e-value cutoff is not too generous
+ */
+#define RESTRICTED_ALIGNMENT_WORST_EVALUE 10.0
 
 /** Scoring parameters block
  *  Contains scoring-related information that is actually used
