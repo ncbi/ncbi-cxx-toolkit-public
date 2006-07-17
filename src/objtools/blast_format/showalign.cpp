@@ -154,7 +154,7 @@ type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
 static string k_GetTreeViewForm =  "<FORM  method=\"post\" \
 action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&dbname=%s&queryID=%s&distmode=on\" \
 name=\"tree%s%d\" target=\"trv%s\"> \
-<input type=button value=\"Tree View\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
+<input type=button value=\"Distance tree of results\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
 <input type=\"hidden\" name=\"sequenceSet\" value=\"\"><input type=\"hidden\" name=\"screenWidth\" value=\"\"></form>";
 
 
@@ -3000,6 +3000,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.122  2006/07/17 20:01:50  zaretska
+*Changed 'Tree view' button text on 'Distance tree of results'
+*
 *Revision 1.121  2006/07/17 14:52:49  jianye
 *consolidate custom url functions
 *
