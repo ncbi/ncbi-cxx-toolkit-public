@@ -2612,42 +2612,39 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    BLAST_SequenceBlk* subject_blk, BlastGapAlignStruct* gap_align, 
    const BlastScoringParameters* score_params, BlastInitHSP* init_hsp)
 {
-   Boolean found_start, found_end;
-   Int4 q_length=0, s_length=0, score_right, score_left, 
-      private_q_start, private_s_start;
+   Int4 q_length, s_length; 
+   Int4 private_q_start, private_s_start;
+   Int4 score_right = 0, score_left = 0;
    Uint1 offset_adjustment;
-   Uint1* query,* subject;
-   
-   found_start = FALSE;
-   found_end = FALSE;
+   Uint1* query = query_blk->sequence;
+   Uint1* subject = subject_blk->sequence;
 
-   query = query_blk->sequence;
-   subject = subject_blk->sequence;
-   score_left = 0;
    /* If subject offset is not at the start of a full byte, 
       s_BlastAlignPackedNucl won't work, so shift the alignment start
-      to the left */
-   offset_adjustment = 
-       COMPRESSION_RATIO - 
-       (init_hsp->offsets.qs_offsets.s_off % COMPRESSION_RATIO);
+      to the next multiple of 4 subject letters. Note that the 
+      shift amount is always nonzero, so a left extension always happens 
+      (and has a few presumed exact matches to start with). In the case 
+      of the smallest ungapped alignment (4 nucleotides), this can 
+      conceivably put the start point at the end of one sequence */
+
+   offset_adjustment = COMPRESSION_RATIO - 
+            (init_hsp->offsets.qs_offsets.s_off % COMPRESSION_RATIO);
    q_length = init_hsp->offsets.qs_offsets.q_off + offset_adjustment;
    s_length = init_hsp->offsets.qs_offsets.s_off + offset_adjustment;
-   if (q_length != 0 && s_length != 0) {
-      found_start = TRUE;
-      score_left = s_BlastAlignPackedNucl(query, subject, q_length, s_length, 
+
+   /* perform extension to left */
+   score_left = s_BlastAlignPackedNucl(query, subject, q_length, s_length, 
                       &private_q_start, &private_s_start, gap_align, 
                       score_params, TRUE);
-      if (score_left < 0) 
-         return -1;
-      gap_align->query_start = q_length - private_q_start;
-      gap_align->subject_start = s_length - private_s_start;
-   }
+   if (score_left < 0) 
+      return -1;
+   gap_align->query_start = q_length - private_q_start;
+   gap_align->subject_start = s_length - private_s_start;
 
-   score_right = 0;
+   /* perform extension to right */
    if (q_length < query_blk->length && 
        s_length < subject_blk->length)
    {
-      found_end = TRUE;
       score_right = s_BlastAlignPackedNucl(query+q_length-1, 
          subject+(s_length+3)/COMPRESSION_RATIO - 1, 
          query_blk->length-q_length, 
@@ -2658,16 +2655,9 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
       gap_align->query_stop += q_length;
       gap_align->subject_stop += s_length;
    }
-
-   if (found_start == FALSE) {
-      /* Start never found */
-      gap_align->query_start = init_hsp->offsets.qs_offsets.q_off;
-      gap_align->subject_start = init_hsp->offsets.qs_offsets.s_off;
-   }
-
-   if (found_end == FALSE) {
-      gap_align->query_stop = init_hsp->offsets.qs_offsets.q_off - 1;
-      gap_align->subject_stop = init_hsp->offsets.qs_offsets.s_off - 1;
+   else {
+      gap_align->query_stop = q_length - 1;
+      gap_align->subject_stop = s_length - 1;
    }
 
    gap_align->score = score_right+score_left;
