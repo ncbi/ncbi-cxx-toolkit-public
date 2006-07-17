@@ -326,7 +326,50 @@ public:
     ///@param id: the seqid
     ///@return: the frame
     ///
-    static int GetFrame (int start, ENa_strand strand, const CBioseq_Handle& handle); 	
+    static int GetFrame (int start, ENa_strand strand, const CBioseq_Handle& handle); 
+
+    ///return the comparison result: 1st >= 2nd => true, false otherwise
+    ///@param info1
+    ///@param info2
+    ///@return: the result
+    ///
+    static bool SortHitByTotalScoreDescending(CRef<CSeq_align_set> const& info1,
+                                    CRef<CSeq_align_set> const& info2);
+
+    ///group hsp's with the same id togeter
+    ///@param target: the result list
+    ///@param source: the source list
+    ///
+    static void HspListToHitList(list< CRef<CSeq_align_set> >& target,
+                                 const CSeq_align_set& source); 
+
+    ///extract all nested hsp's into a list
+    ///@param source: the source list
+    ///@return the list of hsp's
+    ///
+    static CRef<CSeq_align_set> HitListToHspList(list< CRef<CSeq_align_set> >& source);
+
+    ///return the custom url (such as mapview)
+    ///@param ids: the id list
+    ///@param taxid
+    ///@param user_url: the custom url
+    ///@param database
+    ///@param db_is_na:  is db nucleotide?
+    ///@param rid: blast rid
+    ///@param query_number: the blast query number.
+    ///
+    static string BuildUserUrl(const CBioseq::TId& ids, int taxid, string user_url,
+                               string database, bool db_is_na, string rid,
+                               int query_number);
+    
+    ///transforms a string so that it becomes safe to be used as part of URL
+    ///the function converts characters with special meaning (such as
+    ///semicolon -- protocol separator) to escaped hexadecimal (%xx)
+    ///@param src: the input url
+    ///@return: the safe url
+    ///
+    static string MakeURLSafe(char* src);
+
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.
@@ -348,6 +391,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.23  2006/07/17 14:50:42  jianye
+adding sorting seqalign functions
+
 Revision 1.22  2006/05/15 16:19:39  zaretska
 Moved s_GetLinkout() function from shodefline.cpp to blastfmtutil.cpp
 

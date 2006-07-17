@@ -765,4 +765,234 @@ CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows,
     }
 }
 
+
+bool CBlastFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const& info1,
+                                           CRef<CSeq_align_set> const& info2)
+{
+    int score1,  score2, sum_n, num_ident;
+    double bits, evalue;
+    list<int> use_this_gi;
+    double total_bits1 = 0, total_bits2 = 0;
+    
+    ITERATE(CSeq_align_set::Tdata, iter, info1->Get()) { 
+        CBlastFormatUtil::GetAlnScores(**iter, score1, bits, evalue,
+                                       sum_n, num_ident, use_this_gi);
+        total_bits1 += bits;
+    }
+    
+    ITERATE(CSeq_align_set::Tdata, iter, info2->Get()) { 
+        CBlastFormatUtil::GetAlnScores(**iter, score2, bits, evalue,
+                                       sum_n, num_ident, use_this_gi);
+        total_bits2 += bits;
+    }   
+   
+  
+    return total_bits1 >= total_bits2;
+        
+}
+
+
+void CBlastFormatUtil::HspListToHitList(list< CRef<CSeq_align_set> >& target,
+                                        const CSeq_align_set& source) 
+{
+    CConstRef<CSeq_id> previous_id;
+    CRef<CSeq_align_set> temp;
+
+    ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
+        const CSeq_id& cur_id = (*iter)->GetSeq_id(1);
+        if(previous_id.Empty()) {
+            temp =  new CSeq_align_set;
+            temp->Set().push_back(*iter);
+            target.push_back(temp);
+        } else if (cur_id.Match(*previous_id)){
+            temp->Set().push_back(*iter);
+           
+        } else {
+            temp =  new CSeq_align_set;
+            temp->Set().push_back(*iter);
+            target.push_back(temp);
+        }
+        previous_id = &cur_id;
+    }
+    
+}
+
+CRef<CSeq_align_set>
+CBlastFormatUtil::HitListToHspList(list< CRef<CSeq_align_set> >& source)
+{
+    CRef<CSeq_align_set> align_set (new CSeq_align_set);
+    CConstRef<CSeq_id> previous_id;
+    CRef<CSeq_align_set> temp;
+    // list<CRef<CSeq_align_set> >::iterator iter;
+
+    for (list<CRef<CSeq_align_set> >::iterator iter = source.begin(); iter != source.end(); iter ++) {
+        ITERATE(CSeq_align_set::Tdata, iter2, (*iter)->Get()) { 
+            align_set->Set().push_back(*iter2);          
+        } 
+    }
+    return align_set;
+}
+
+
+string CBlastFormatUtil::MakeURLSafe(char* src) {
+    static char HEXDIGS[] = "0123456789ABCDEF";
+    char* buf;
+    size_t len;
+    char* p;
+    char c;
+    string url = NcbiEmptyString;
+    
+    if (src){
+        /* first pass to calculate required buffer size */
+        for (p = src, len = 0; (c = *(p++)) != '\0'; ) {
+            switch (c) {
+            default:
+                if (c < '0' || (c > '9' && c < 'A') ||
+                    (c > 'Z' && c < 'a') || c > 'z') {
+                    len += 3;
+                    break;
+                }
+            case '-': case '_': case '.': case '!': case '~':
+            case '*': case '\'': case '(': case ')':
+                ++len;
+            }
+        }
+        buf = new char[len + 1];
+        /* second pass -- conversion */
+        for (p = buf; (c = *(src++)) != '\0'; ) {
+            switch (c) {
+            default:
+                if (c < '0' || (c > '9' && c < 'A') ||
+                    (c > 'Z' && c < 'a') || c > 'z') {
+                    *(p++) = '%';
+                    *(p++) = HEXDIGS[(c >> 4) & 0xf];
+                    *(p++) = HEXDIGS[c & 0xf];
+                    break;
+                }
+            case '-': case '_': case '.': case '!': case '~':
+            case '*': case '\'': case '(': case ')':
+                *(p++) = c;
+            }
+        }
+        *p = '\0';
+        url = buf;
+        delete [] buf;
+    }
+    return url;
+}
+
+
+string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid, 
+                                      string user_url, string database,
+                                      bool db_is_na, string rid, int query_number) {
+                                      
+    string link = NcbiEmptyString;  
+    CConstRef<CSeq_id> id_general = GetSeq_idByType(ids, CSeq_id::e_General);
+    CConstRef<CSeq_id> id_other = GetSeq_idByType(ids, CSeq_id::e_Other);
+    const CRef<CSeq_id> id_accession = FindBestChoice(ids, CSeq_id::WorstRank);
+
+    int gi = FindGi(ids);
+    if(!id_general.Empty() 
+       && id_general->AsFastaString().find("gnl|BL_ORD_ID") != string::npos){
+        /* We do need to make security protected link to BLAST gnl */
+        return NcbiEmptyString;
+    }
+    bool nodb_path =  false;
+    /* dumpgnl.cgi need to use path  */
+    if (user_url.find("dumpgnl.cgi") ==string::npos){
+        nodb_path = true;
+    }  
+    int length = (int)database.size();
+    string str;
+    char  *chptr, *dbtmp;
+    char tmpbuff[256];
+    char* dbname = new char[sizeof(char)*length + 2];
+    strcpy(dbname, database.c_str());
+    if(nodb_path) {
+        int i, j;
+        dbtmp = new char[sizeof(char)*length + 2]; /* aditional space and NULL */
+        memset(dbtmp, '\0', sizeof(char)*length + 2);
+        for(i = 0; i < length; i++) { 
+            if(i > 0) {
+                strcat(dbtmp, " ");  //space between db
+            }      
+            if(isspace((unsigned char) dbname[i]) || dbname[i] == ',') {/* Rolling spaces */
+                continue;
+            }
+            j = 0;
+            while (!isspace((unsigned char) dbname[i]) && j < 256  && i < length) { 
+                tmpbuff[j] = dbname[i];
+                j++; i++;
+                if(dbname[i] == ',') { /* Comma is valid delimiter */
+                    break;
+                }
+            }
+            tmpbuff[j] = '\0';
+            if((chptr = strrchr(tmpbuff, '/')) != NULL) { 
+                strcat(dbtmp, (char*)(chptr+1));
+            } else {
+                strcat(dbtmp, tmpbuff);
+            }
+               
+        }
+    } else {
+        dbtmp = dbname;
+    }
+    
+    const CSeq_id* bestid = NULL;
+    if (id_general.Empty()){
+        bestid = id_other;
+        if (id_other.Empty()){
+            bestid = id_accession;
+        }
+    } else {
+        bestid = id_general;
+    }
+
+    char gnl[256];
+    if (bestid && bestid->Which() !=  CSeq_id::e_Gi){
+        strcpy(gnl, bestid->AsFastaString().c_str());
+        
+    } else {
+        gnl[0] = '\0';
+    }
+    
+    str = MakeURLSafe(dbtmp == NULL ? (char*) "nr" : dbtmp);
+
+    if (user_url.find("?") == string::npos){
+        link += user_url + "?" + "db=" + str + "&na=" + (db_is_na? "1" : "0");
+    } else {
+        if (user_url.find("=") != string::npos) {
+            user_url += "&";
+        }
+        link += user_url + "db=" + str + "&na=" + (db_is_na? "1" : "0");
+    }
+    
+    if (gnl[0] != '\0'){
+        str = MakeURLSafe(gnl);
+        link += "&gnl=";
+        link += str;
+    }
+    if (gi > 0){
+        link += "&gi=" + NStr::IntToString(gi);
+        link += "&term=" + NStr::IntToString(gi) + MakeURLSafe("[gi]");
+    }
+    if(taxid > 0){
+        link += "&taxid=" + NStr::IntToString(taxid);
+    }
+    if (rid != NcbiEmptyString){
+        link += "&RID=" + rid;
+    }
+    
+    if (query_number > 0){
+        link += "&QUERY_NUMBER=" + NStr::IntToString(query_number);
+    }
+   
+    if(nodb_path){
+        delete [] dbtmp;
+    }
+    delete [] dbname;
+    return link;
+}
+
 END_NCBI_SCOPE
