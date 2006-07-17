@@ -207,62 +207,9 @@ P_lambda_table[LAMBDA_BIN_TOTAL] =
     };
 
 
-/**
- * This function is a trivial test of whether to use unified
- * p-values. If this test is used, then unified p-values are always
- * invoked. The parameters are present so that all tests have the same
- * parameter set, but they are not used in this test function
- *
- * @param Len_query length of query
- * @param Len_match length of the matching sequence
- */
-static int
-Length_Test_Zero(int Len_query, int Len_match)
-{
-    /* Cast to void to suppress compiler warnings of unused parameters */
-    (void) Len_query;
-    (void) Len_match;
-
-    return TRUE;
-}
-
-
-/**
- * This function is an alternate test of whether to use unified
- * p-values.
- *
- * @param length_query length of query
- * @param length_match length of the matching sequence
- */
-static int
-Length_Test_One(int length_query, int length_match)
-{
-    int length_larger, length_smaller;    /* two sequence lengths, sorted */
-    double length_ratio;                  /* ratio of the length of the
-                                             larger sequence to the length
-                                             of the smaller. */
-    if (length_query > length_match) {
-        length_larger = length_query;
-        length_smaller = length_match;
-    } else {
-        length_larger = length_match;
-        length_smaller = length_query;
-    }
-    length_ratio = ((double) length_larger) / ((double) length_smaller);
-
-    return (length_ratio < 3) && (length_smaller > LENGTH_MIN) &&
-        (length_larger < LENGTH_MAX);
-}
-
-
-/**
- * Computes a composition p-value based on lambda.
- *
- * @param lambda       statistical parameter lambda for the two sequences
- * @return             the p-value.
- */
-static double
-Comp_Dist_P_Value(double lambda)
+/* Documented in unified_pvalues.h */
+double
+Blast_CompositionPvalue(double lambda)
 {
     /* Let initialUScore be lambda, scaled and shifted to fit the
      * bins of P_lambda_table. */
@@ -313,40 +260,5 @@ Blast_Overall_P_Value(double p_comp,
          * NaN), in which case we return the nonsense value so as not
          * to hide the error */
         return product;
-    }
-}
-
-
-/** The number of different tests of the length of the sequences that
-    may be used to decide whether or not to use compositional p-values */
-#define NUM_LENGTH_TESTS 2
-/**
- * Type of a function used to decide whether to compute a compositional
- * p-value in the Blast_CompositionPvalue function */
-typedef int (*Composition_p_Test) (int, int);
-
-
-/* Documented in unified_pvalues.h */
-double
-Blast_CompositionPvalue(int length1,
-                        int length2,
-                        double lambda,
-                        int function_index)
-{
-    Composition_p_Test Cond_func[NUM_LENGTH_TESTS] =
-        { Length_Test_Zero, Length_Test_One };
-
-    int compute_pvalue;     /* should we compute a compositional p-value? */
-
-    if ((function_index < 0) || (function_index >= NUM_LENGTH_TESTS)) {
-        fprintf(stderr, "\nUnrecognized length test index %d, exiting .... \n",
-                function_index);
-        return -1.0;
-    }
-    compute_pvalue = Cond_func[function_index] (length1, length2);
-    if (compute_pvalue) {
-        return Comp_Dist_P_Value(lambda);
-    } else {
-        return -1.0;
     }
 }

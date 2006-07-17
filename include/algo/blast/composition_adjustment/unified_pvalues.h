@@ -50,19 +50,11 @@ extern "C" {
 /**
  * Conditionally compute a compositional p-value.
  *
- * @param length1 length of the first sequence
- * @param length2 length of the second sequence
  * @param lambda statistical parameter lambda estimated for this pair
- * @param function_index index of test to decide whether to report
- *         a composition p_value.
- *
- * @return the p-value, or -1 if the p-value should not be used.
+ * @return the p-value
  */
 NCBI_XBLAST_EXPORT
-double Blast_CompositionPvalue(int length1,
-                               int length2,
-                               double lambda,
-                               int function_index);
+double Blast_CompositionPvalue(double lambda);
 
 /**
  * This function implements the method of Fisher, R. C. Elston (1991)
