@@ -174,7 +174,7 @@ struct SCmdCreator
         holder.Reset(new CSeqEdit_Cmd(handle.GetTSE_Handle().
                                       GetBlobId().ToString()));
         TCommand& cmd = TTypeChooser::GetCommand(*holder);
-        cmd.SetId(*s_Convert(handle.GetBioObjectId()));
+        cmd.SetId(*objects::s_Convert(handle.GetBioObjectId()));
         return cmd;
     }
     template<typename THandle>
@@ -185,7 +185,7 @@ struct SCmdCreator
         holder.Reset(new CSeqEdit_Cmd(handle.GetTSE_Handle().
                                       GetBlobId().ToString()));
         TCommand& cmd = TTypeChooser::GetCommand(*holder);
-        cmd.SetId(*s_Convert(id));
+        cmd.SetId(*objects::s_Convert(id));
         return cmd;
     }
 
@@ -917,7 +917,7 @@ void s_AddAnnot(const CSeq_annot_Handle& handle, const T& value,
     CSeqEdit_Cmd_AddAnnot& c = 
         SAnnotCmdPreparer<CSeqEdit_Cmd::e_Add_annot>::PrepareCmd(handle,cmd);
 
-    s_SetSearchParam(c, value, handle);
+    objects::s_SetSearchParam(c, value, handle);
 
     T& nc_value = const_cast<T&>(value);
     AnnotObjTrait<T>::Set(c.SetData(), nc_value);
@@ -1026,6 +1026,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/17 14:33:30  ucko
+ * Fully qualify calls from templates to static functions to fix
+ * compilation under VisualAge.
+ *
  * Revision 1.2  2006/05/01 16:56:45  didenko
  * Attach SeqEntry edit command revamp
  *
