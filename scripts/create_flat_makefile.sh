@@ -83,8 +83,6 @@ test -f "$ptbini" || Usage "$ptbini not found"
 
 cd $builddir
 if test "$buildptb" = "yes"; then
-  ptb="./app/project_tree_builder/project_tree_builder"
-  test -f "$ptb" || Usage "$builddir/$ptb not found"
   ptbdep="corelib util serial serial/datatool app/project_tree_builder"
   for dep in $ptbdep; do
     test -d "$dep" || Usage "$builddir/$dep not found"
@@ -99,6 +97,8 @@ if test "$buildptb" = "yes"; then
     COMMON_Exec cd $dep
     COMMON_Exec make
   done
+  ptb="./app/project_tree_builder/project_tree_builder"
+  test -f "$ptb" || Usage "$builddir/$ptb not found"
 else
   ptb="$NCBI/c++/Release/bin/project_tree_builder"
   test -f "$ptb" || Usage "$ptb not found"
