@@ -155,7 +155,7 @@ const CBioseq_Handle* CBioseq_CI::operator-> (void) const
 inline
 CScope& CBioseq_CI::GetScope(void) const
 {
-    return m_Scope;
+    return m_Scope.GetScope();
 }
 
 
@@ -168,6 +168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2006/07/17 14:30:58  ucko
+* GetScope: explicitly invoke CHeapScope::GetScope
+*
 * Revision 1.22  2005/04/12 18:15:16  grichenk
 * Skip bioseq-sets not containing the requested types
 *
