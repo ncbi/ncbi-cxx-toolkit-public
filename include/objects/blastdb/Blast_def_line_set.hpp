@@ -61,7 +61,7 @@ public:
 
     /// Sort the deflines according to the toolkit established ranking of
     /// Seq-ids
-    void SortBySeqIdRank(void);
+    void SortBySeqIdRank(bool is_protein);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/07/17 20:58:08  camacho
+* Added boolean argument for molecule type to SortBySeqIdRank
+*
 * Revision 1.1  2006/06/05 15:14:50  camacho
 * + SortBySeqIdRank
 *

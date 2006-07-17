@@ -125,19 +125,27 @@ bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
     return rv;
 }
 
-/// Ranking function for Blast-def-lines
+/// Ranking function for protein Blast-def-lines
 inline
-bool s_DeflineCompareWrapper(const CRef<CBlast_def_line>& d1, 
-                             const CRef<CBlast_def_line>& d2)
+bool s_DeflineCompareAA(const CRef<CBlast_def_line>& d1, 
+                        const CRef<CBlast_def_line>& d2)
 {
-    return s_DeflineCompare(d1, d2, CSeq_id::WorstRank);
+    return s_DeflineCompare(d1, d2, CSeq_id::FastaAARank);
+}
+
+/// Ranking function for nucleotide Blast-def-lines
+inline
+bool s_DeflineCompareNA(const CRef<CBlast_def_line>& d1, 
+                        const CRef<CBlast_def_line>& d2)
+{
+    return s_DeflineCompare(d1, d2, CSeq_id::FastaNARank);
 }
 
 void
-CBlast_def_line_set::SortBySeqIdRank(void)
+CBlast_def_line_set::SortBySeqIdRank(bool is_protein)
 {
     if (CanGet()) {
-        Set().sort(s_DeflineCompareWrapper);
+        Set().sort(is_protein ? s_DeflineCompareAA : s_DeflineCompareNA);
     }
 }
 
@@ -150,6 +158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/07/17 20:57:55  camacho
+* Added boolean argument for molecule type to SortBySeqIdRank
+*
 * Revision 1.2  2006/06/06 15:23:12  camacho
 * Replace CSeq_id::BestRank for CSeq_id::WorstRank
 *
