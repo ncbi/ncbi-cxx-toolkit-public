@@ -228,7 +228,7 @@ property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data", inc:{"ali
 property seqalign_ext : {name:"seqalign_ext", path:"gui:widgets:aln_data", inc:{"seqalign_ext__.cpp", "seqalign_ext___.cpp"}, asn1:true, asn1Name:"seqalign_ext"}
 property w_seq_graphic : {name:"w_seq_graphic", path:"gui:widgets:seq_graphic"}
 property w_seq_text : {name:"w_seq_text", path:"gui:widgets:seq_text"}
-property w_hit_matrix : {name:"w_hit_matrix", path:"gui:widgets:hit_matrix"}
+property w_hit_matrix : {name:"w_hit_matrix", path:"gui:widgets:hit_matrix", exc:{"hit_clustering.cpp"}}
 property w_aln_crossaln : {name:"w_aln_crossaln", path:"gui:widgets:aln_crossaln"}
 property w_aln_multi : {name:"w_aln_multi", path:"gui:widgets:aln_multiple"}
 property w_aln_table : {name:"w_aln_table", path:"gui:widgets:aln_table"}
@@ -440,6 +440,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2006/07/17 17:41:16  lebedev
+ * Libraries updated
+ *
  * Revision 1.104  2006/07/06 13:51:13  lebedev
  * Libraries definitions updated
  *
