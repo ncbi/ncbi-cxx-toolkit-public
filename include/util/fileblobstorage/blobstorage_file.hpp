@@ -61,13 +61,13 @@ public:
     /// Get a blob content as a string
     ///
     /// @param[in] blob_key
-    ///    Blob key to read
+    ///    Blob key to read from
     virtual string        GetBlobAsString(const string& data_id);
 
     /// Get an input stream to a blob
     ///
     /// @param[in] blob_key
-    ///    Blob key to read
+    ///    Blob key to read from
     /// @param[out] blob_size
     ///    if blob_size if not NULL the size of a blob is retured
     /// @param[in] lock_mode
@@ -78,15 +78,15 @@ public:
 
     /// Get an output stream to a blob
     ///
-    /// @param[in,out] blob_key
-    ///    Blob key to read. If a blob with a given key does not exist
-    ///    an key of a newly create blob will be assigned to blob_key
-    /// @param[in] lock_mode
+    /// @param blob_key
+    ///    Blob key to write to. If a blob with a given key does not exist
+    ///    a new blob will be created and its key will be assigned to blob_key
+    /// @param lock_mode
     ///    Blob locking mode
     virtual CNcbiOstream& CreateOStream(string& data_id,
                                         ELockMode lock_mode = eLockNoWait);
 
-    /// Create an new blob
+    /// Create a new empty blob
     /// 
     /// @return 
     ///     Newly create blob key
@@ -95,15 +95,15 @@ public:
     /// Delete a blob
     ///
     /// @param[in] blob_key
-    ///    Blob key to read
+    ///    Blob key to delete
     virtual void DeleteBlob(const string& data_id);
     
     /// Close all streams and connections.
     virtual void Reset();
 
 
-    /// Delete all storage data
-    void DeleteStorage();
+    /// Delete the storage with all its data
+    virtual void DeleteStorage();
 
 private:
     auto_ptr<CNcbiIstream>    m_IStream;
@@ -136,6 +136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/17 17:56:26  didenko
+ * + DeleteStorage method
+ *
  * Revision 1.2  2006/07/13 14:40:35  didenko
  * Added DeleteStorage method
  *

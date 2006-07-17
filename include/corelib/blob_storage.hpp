@@ -56,22 +56,21 @@ public:
     virtual ~IBlobStorage();
 
     /// Check if a given string is a valid key.
-    /// The implementaion should not check if a blob with a given key
-    /// exists in the storage (and does not do any connection to the 
-    /// storgae) it just checks the str structure.
+    /// The implementaion should not make any connection to the storage,
+    /// it just checks the str structure.
     virtual bool IsKeyValid(const string& str) = 0;
 
 
     /// Get a blob content as a string
     ///
     /// @param blob_key
-    ///    Blob key to read
+    ///    Blob key to read from
     virtual string        GetBlobAsString(const string& blob_key) = 0;
 
     /// Get an input stream to a blob
     ///
     /// @param blob_key
-    ///    Blob key to read
+    ///    Blob key to read from
     /// @param blob_size
     ///    if blob_size if not NULL the size of a blob is retured
     /// @param lock_mode
@@ -83,14 +82,14 @@ public:
     /// Get an output stream to a blob
     ///
     /// @param blob_key
-    ///    Blob key to read. If a blob with a given key does not exist
-    ///    an key of a newly create blob will be assigned to blob_key
+    ///    Blob key to write to. If a blob with a given key does not exist
+    ///    a new blob will be created and its key will be assigned to blob_key
     /// @param lock_mode
     ///    Blob locking mode
     virtual CNcbiOstream& CreateOStream(string& blob_key, 
                                         ELockMode lock_mode = eLockNoWait) = 0;
 
-    /// Create an new blob
+    /// Create a new empty blob
     /// 
     /// @return 
     ///     Newly create blob key
@@ -99,16 +98,21 @@ public:
     /// Delete a blob
     ///
     /// @param blob_key
-    ///    Blob key to read
+    ///    Blob key to delete
     virtual void DeleteBlob(const string& data_id) = 0;
 
-    /// Reset a stroge
+    /// Reset this object's data
     ///
     /// @note
     ///    The implementatioin of this method should close 
     ///    all opened streams and connections
     virtual void Reset() = 0;
 
+    /// Delete the storage with all its data.
+    ///
+    /// @note The default implementaion just throws 
+    ///       "eNotImplemented" exception.
+    virtual void DeleteStorage(void);
 };
 
 
@@ -186,23 +190,25 @@ class CBlobStorageException : public CException
 {
 public:
     enum EErrCode {
-        eReader,       ///< A problem arised while reading from a stroage
-        eWriter,       ///< A problem arised while writting to a stroage
-        eBlocked,      ///< A blob is blocked by another reader/writer
-        eBlobNotFound, ///< A blob is not found
-        eBusy          ///< An instance of storage is busy
+        eReader,        ///< A problem arised while reading from a stroage
+        eWriter,        ///< A problem arised while writting to a stroage
+        eBlocked,       ///< A blob is blocked by another reader/writer
+        eBlobNotFound,  ///< A blob is not found
+        eBusy,          ///< An instance of storage is busy
+        eNotImplemented ///< An operation is not implemented
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
-        case eReader:       return "eReaderError";
-        case eWriter:       return "eWriterError";
-        case eBlocked:      return "eBlocked";
-        case eBlobNotFound: return "eBlobNotFound";
-        case eBusy:         return "eBusy";
-        default:            return CException::GetErrCodeString();
+        case eReader:         return "eReaderError";
+        case eWriter:         return "eWriterError";
+        case eBlocked:        return "eBlocked";
+        case eBlobNotFound:   return "eBlobNotFound";
+        case eBusy:           return "eBusy";
+        case eNotImplemented: return "eNotImplemented";
+        default:              return CException::GetErrCodeString();
         }
     }
 
@@ -269,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/07/17 17:56:26  didenko
+ * + DeleteStorage method
+ *
  * Revision 1.6  2006/05/02 18:00:24  ivanov
  * Get rid of unused variables warnings
  *
