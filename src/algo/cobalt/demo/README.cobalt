@@ -1,0 +1,197 @@
+ABSTRACT
+
+    COBALT (COnstraint-Based ALignment Tool) is an algorithm for
+    simultaneously aligning multiple protein sequences. The tool
+    blends pairwise alignments from multiple distinct sources
+    with more conventional alignment techniques to produce a final
+    multiple alignment
+
+    The COBALT algorithm is described in 
+    
+    Papadopoulos J, Agarwala R, "COBALT: COnstraint-Based ALignment
+    Tool for Multiple Protein Sequences", submitted for publication.
+    
+    Please cite this paper in any publication that uses COBALT.
+
+    COBALT is written as a library within the NCBI C++ Toolkit. A linux
+    binary that calls this library, along with the auxiliary data files used
+    in our experiments, is available at
+
+    ftp://ftp.ncbi.nlm.nih.gov/pub/agarwala/cobalt/
+
+
+SYNOPSIS
+
+    The complete list of command line options for the implementation
+    of COBALT described here is
+    
+  cobalt.linux [-h] [-help] -i infile [-p patternfile] [-db database] 
+               [-b blockfile] [-f freqfile] [-seqalign file] 
+               [-c constraintfile] [-evalue evalue] [-evalue2 evalue2] 
+               [-g0 penalty] [-e0 penalty] [-g1 penalty] [-e1 penalty] 
+               [-ccc conserved_cutoff] [-dfb domain_res_boost] 
+               [-ffb filler_res_boost] [-norps norps] [-v verbose] 
+               [-iter iterate] [-matrix matrix] [-pseudo pseudocount]
+
+
+DESCRIPTION
+
+    The 'cobalt' program reads in a collection of FASTA-formatted protein
+    sequences and (optionally) a collection of pairwise constraint sources.
+    The binary computes a simultaneous alignment of the sequences that
+    respects a (possibly empty) subset of the complete list of pairwise
+    constraints. The aligned sequences are printed to the standard output
+    in mFASTA or 'FASTA with gaps' format, with the aligned sequences
+    occurring in the same order as they were originally provided.
+
+    There are many options available for fine-grained control of the
+    alignment process; each has a default that we have found to work well
+    in practice. At a minimum, an input text file must be specified,
+    containing the sequences to be aligned. Alignment quality will improve
+    on average if sources of pairwise constraints are also specified.
+    The rest of the options are either for debugging or experimental
+    purposes, and thus should prbably not be changed.
+    
+    The options are described below.
+
+
+INPUT/OUTPUT ARGUMENTS
+
+    -i infile    type: file name
+
+    The input textfile containing the list of protein sequences to be
+    aligned, in FASTA format
+
+    -v verbose   type: T/F  default F
+
+    If set to true, prints large amount of intermediate state as the
+    multiple alignment is computed. This is primarily useful for debugging
+    purposes
+
+    -seqalign alignfile   type: file name
+
+    In addition to printing the aligned sequences to the standard output,
+    print the alignment to alignfile as an ASN.1 Seq-align object
+
+
+CONSTRAINT SOURCE ARGUMENTS
+
+    -p patternfile   type: file name
+
+    Text file listing regular expressions, one per line. These are in the
+    PROSITE style, and the current list (file 'patterns' in the cobalt 
+    distribution) is from release 19.0 of PROSITE with the shortest patterns 
+    removed. Each input protein sequence is scanned for hits to any of the 
+    patterns in patternfile. If no pattern file is specified, pattern 
+    matching is skipped
+
+    -db database     type: database prefix
+
+    The name of an RPS blast database against which all input protein
+    sequences are searched. For the cobalt distribution this is 'cdd'.
+
+    -b blockfile    type: file name
+
+    Text file with the offsets of conserved blocks within each conserved
+    domain present in the RPS database. For the cobalt distribution this
+    file is 'cdd.blocks'. This file must correspond to the RPS database
+    that is specified.
+
+    -f freqfile    type: file name
+
+    Text file with the residue frequencies for each conserved domain present
+    in the RPS database. For the cobalt distribution this file is 'cdd.freq'. 
+    This file must correspond to the RPS database that is specified. Note
+    that specifying -db and -b but not -f will cause cobalt to perform the
+    RPS search but to skip applying the residue frequencies to any RPS
+    matches.
+    
+    -norps norps   type: T/F  default F
+
+    Do not perform RPS searches; ignore the -db, -b and -f flags
+
+    -c constraintfile    type: filename
+
+    Text file with manually specified pairwise constraints between the input
+    protein sequences. These constraints are guaranteed to occur in the
+    final alignment. Constraints occur one per line, and consist of six
+    integers separated by whitespace:
+
+    seq1_index seq1_start seq1_end seq2_index seq2_start seq2_end
+
+    seq1_index and seq2_index give the protein sequences being constrained 
+    (for N input sequences, these are numbers between 0 and N-1). seq1_start
+    and seq1_end (viz. seq2_start and seq2_end) give the starting and ending
+    offset of the constraint on the unaligned sequence. These offsets are
+    also zero-based.
+
+
+SCORING ARGUMENTS
+
+    -matrix matrix     type: string  default: BLOSUM62
+
+    Specifies the protein scoring matrix to be used in the alignment.
+    Supported choices are BLOSUM45, BLOSUM62, BLOSUM80, PAM30, PAM70
+    and PAM250. Note that the constraint-building phase that involves
+    blast will always use BLOSUM62.
+
+    -g0 penalty      type: integer  default: 5
+
+    The penalty for opening an initial/terminal gap
+
+    -e0 penalty      type: integer  default: 1
+
+    The penalty for extending an initial/terminal gap
+
+    -g1 penalty      type: integer  default: 11
+
+    The penalty for opening an internal gap
+
+    -e1 penalty      type: integer  default: 1
+
+    The penalty for extending an internal gap
+
+
+MISCELLANEOUS ARGUMENTS
+
+    -evalue evalue    type: float    default: 0.01
+
+    The maximum expect value of RPS BLAST matches that are used in
+    the alignment process
+
+    -evalue2 evalue    type: float    default: 0.01
+
+    The maximum expect value of BLASTP matches that are used in
+    the alignment process
+
+    -dfb upweight     type: float    default: 0.5
+
+    When assigning RPS residue frequencies to an input protein sequence,
+    upweight the frequency of the actual letter at each sequence position
+    by this amount (0..1). Setting this to 1 will effectively turn off
+    that assignment of residue frequencies
+
+    -ffb upweight     type: float    default: 1.0
+
+    For each sequence position that is not covered by an RPS BLAST alignment,
+    upweight the frequency of the actual letter at that sequence position
+    by this amount (0..1) in addition to its background frequency contribution. 
+    Setting this to 1 will ignore background residue frequencies
+
+    -iter iterate   type: T/F     default: T
+
+    Allow the initial multiple alignment to be recomputed with updated
+    information
+
+    -ccc conserved_cutoff     type: float    default: 0.67
+
+    Once an initial alignment has been computed, columns within that
+    alignment must score higher than this number to be considered conserved.
+    This value will depend on the scoring matrix
+
+    -pseudo pseudocount     type: float    default: 2.0
+
+    Factor that controls how tightly column scores depend on the distribution
+    of letters in the column. Larger numbers reduce the dependence, making
+    'spikes' in column score less likely. The default seems to work well 
+    for both a few divergent sequences and many similar sequences
