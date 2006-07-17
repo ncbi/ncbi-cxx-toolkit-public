@@ -830,6 +830,17 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
       params->cutoff_score =  params->cutoff_score_max = s_PhiBlastCutoffScore(5*options->expect_value, query_info, sbp);
    }
 
+   /* if there is a performance benfit to doing so, perform
+      approximate score-only gapped alignment. While this can
+      in principle apply to any search, only blastp has been
+      carefully analyzed */
+
+   if (program_number == eBlastTypeBlastp && gapped_calculation &&
+       options->expect_value <= RESTRICTED_ALIGNMENT_WORST_EVALUE) {
+       params->restricted_align = TRUE;
+       params->restricted_cutoff = (Int4)(0.68 * params->cutoff_score);
+   }
+
    ASSERT(params->cutoff_score_max >= params->cutoff_score);
 
    return 0;
@@ -925,6 +936,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2006/07/17 15:59:20  papadopo
+ * add initialization for approximate gapped alignment (blastp only)
+ *
  * Revision 1.22  2006/07/11 22:26:14  camacho
  * Add const where possible
  *
