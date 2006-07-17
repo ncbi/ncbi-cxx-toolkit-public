@@ -41,6 +41,7 @@
 #include <map>
 #include <vector>
 
+#include <objmgr/split/place_id.hpp>
 #include <objmgr/split/size.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -60,7 +61,6 @@ class CBioseq_SplitInfo;
 struct SAnnotPiece;
 struct SIdAnnotPieces;
 class CAnnotPieces;
-class CPlaceId;
 
 struct SChunkInfo
 {
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/07/17 14:31:49  ucko
+* Pull in place_id.hpp, as a simple predeclaration isn't enough for VisualAge.
+*
 * Revision 1.9  2005/06/13 15:44:53  grichenk
 * Implemented splitting of assembly. Added splitting of seqdesc objects
 * into multiple chunks.
