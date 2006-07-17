@@ -58,8 +58,8 @@ void CDense_diag::Validate() const
 
     const CDense_diag::TStrands& strands = GetStrands();
 
-    if ( !GetStrands().empty()  &&  
-         GetStrands().size() != CheckNumRows()) {
+    if ( !strands.empty()  &&  
+         strands.size() != numrows) {
         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                    "strands.size inconsistent with dim");
     }
@@ -93,6 +93,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/07/17 15:47:59  todorov
+* Using strands and numrows vars.
+*
 * Revision 1.2  2006/07/12 23:02:52  todorov
 * 1) Added a Validate() method.
 * 2) Use the newly added CheckNumRows() in OffsetRow()
