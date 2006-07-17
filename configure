@@ -3992,8 +3992,7 @@ fi
 
 #### Detect IBM VisualAge compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
-   # Crude, but there doesn't seem to be a better alternative
-   vac_ver="`$real_CC 2>&1 | grep 'AIX Compiler.*Version'`"
+   vac_ver="`$real_CC -qversion 2>&1`"
    case "$vac_ver" in
       *AIX* ) VAC="yes" ;;
    esac
@@ -4039,7 +4038,7 @@ elif test "$VAC" = "yes" ; then
    compiler_ver="$vac_ver"
    compiler="VisualAge"
    ncbi_compiler="VISUALAGE"
-   ncbi_compiler_ver="`echo $vac_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
+   ncbi_compiler_ver="`echo $vac_ver | sed 's%.*[Vv]ersion:* 0*\([0-9.]*\).*%\1%'`"
 elif test "$CCC" = "yes" ; then
    compiler_ver="$ccc_ver"
    compiler=Compaq
@@ -4429,8 +4428,10 @@ case "$host_os:$compiler" in
    ;;
 
  *:VisualAge)
-   CFLAGS="-qlanglvl=stdc99 $CFLAGS"
-   CXXFLAGS="-qrtti=all $CXXFLAGS"
+   # 1506-1108 (I) The use of keyword '__attribute__' is non-portable.
+   CFLAGS="-qlanglvl=stdc99 -qsuppress=1506-1108 $CFLAGS"
+   # 1540-1663 (W) Incorrect assignment of a restrict qualified pointer.
+   CXXFLAGS="-qrtti=all -qsuppress=1540-1663 $CXXFLAGS"
    DEPFLAGS="-E -M"
    DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
    ;;
@@ -16131,6 +16132,13 @@ _ACEOF
 ;;
 esac
 
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
 
 echo "$as_me:$LINENO: checking whether the preprocessor supports C99-style variadic macros" >&5
 echo $ECHO_N "checking whether the preprocessor supports C99-style variadic macros... $ECHO_C" >&6
@@ -16152,8 +16160,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } >/dev/null; then
   if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
   else
     ac_cpp_err=
   fi
@@ -16200,8 +16208,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } >/dev/null; then
   if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
   else
     ac_cpp_err=
   fi
@@ -16228,13 +16236,24 @@ _ACEOF
 
 fi
 
-# Older versions of GCC accept __attribute__((__deprecated__)) but warn
-# that they don't understand it, which doesn't do us much good.
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+# Avoid using unsupported (and noisily ignored) attributes.
 case "$compiler:$compiler_version" in
    GCC:2* | GCC:3[01]* )
       ncbi_cv_c_deprecation_syntax=none
+      ncbi_cv_c_forceinline=inline
+      ;;
+   VisualAge:* )
+      ncbi_cv_c_forceinline=inline
       ;;
 esac
+
 echo "$as_me:$LINENO: checking syntax for marking deprecated functions" >&5
 echo $ECHO_N "checking syntax for marking deprecated functions... $ECHO_C" >&6
 if test "${ncbi_cv_c_deprecation_syntax+set}" = set; then

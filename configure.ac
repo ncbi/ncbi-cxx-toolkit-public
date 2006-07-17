@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.425 2006/06/16 19:59:36 ucko Exp $
+#  $Id: configure.ac,v 1.426 2006/07/17 14:12:49 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -507,8 +507,7 @@ fi
 
 #### Detect IBM VisualAge compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
-   # Crude, but there doesn't seem to be a better alternative
-   vac_ver="`$real_CC 2>&1 | grep 'AIX Compiler.*Version'`"
+   vac_ver="`$real_CC -qversion 2>&1`"
    case "$vac_ver" in
       *AIX* ) VAC="yes" ;;
    esac
@@ -555,7 +554,7 @@ elif test "$VAC" = "yes" ; then
    compiler_ver="$vac_ver"
    compiler="VisualAge"
    ncbi_compiler="VISUALAGE"
-   ncbi_compiler_ver="`echo $vac_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
+   ncbi_compiler_ver="`echo $vac_ver | sed 's%.*[Vv]ersion:* 0*\([0-9.]*\).*%\1%'`"
 elif test "$CCC" = "yes" ; then
    compiler_ver="$ccc_ver"
    compiler=Compaq
@@ -832,8 +831,10 @@ case "$host_os:$compiler" in
    ;;
 
  *:VisualAge)
-   CFLAGS="-qlanglvl=stdc99 $CFLAGS"
-   CXXFLAGS="-qrtti=all $CXXFLAGS"
+   # 1506-1108 (I) The use of keyword '__attribute__' is non-portable.
+   CFLAGS="-qlanglvl=stdc99 -qsuppress=1506-1108 $CFLAGS"
+   # 1540-1663 (W) Incorrect assignment of a restrict qualified pointer.
+   CXXFLAGS="-qrtti=all -qsuppress=1540-1663 $CXXFLAGS"
    DEPFLAGS="-E -M"
    DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
    ;;
@@ -2492,6 +2493,7 @@ case "$ncbi_cv_sys_stack_dir" in
  down) AC_DEFINE(STACK_GROWS_DOWN, 1, [Define to 1 if the stack grows down.]);;
 esac
 
+AC_LANG_PUSH(C)
 
 AC_CACHE_CHECK([whether the preprocessor supports C99-style variadic macros],
    ncbi_cv_cpp_std_varargs,
@@ -2519,13 +2521,19 @@ if test "$ncbi_cv_cpp_gnu_varargs" = yes; then
       [Define to 1 if the preprocessor supports GNU-style variadic macros.])
 fi
 
-# Older versions of GCC accept __attribute__((__deprecated__)) but warn
-# that they don't understand it, which doesn't do us much good.
+AC_LANG_POP(C)
+
+# Avoid using unsupported (and noisily ignored) attributes.
 case "$compiler:$compiler_version" in
    GCC:2* | GCC:3[[01]]* )
       ncbi_cv_c_deprecation_syntax=none
+      ncbi_cv_c_forceinline=inline
+      ;;
+   VisualAge:* )
+      ncbi_cv_c_forceinline=inline
       ;;
 esac
+
 AC_CACHE_CHECK([syntax for marking deprecated functions],
    ncbi_cv_c_deprecation_syntax,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(
