@@ -65,7 +65,7 @@ static int alphaConvert[COMPO_LARGEST_ALPHABET] =
 static const int kCompositionMargin = 20;
 
 /** iteration limit for Newton's method for computing Lambda */
-static const double kLambdaIterationLimit = 100;
+static const int kLambdaIterationLimit = 100;
 /** bound on error for estimating lambda */
 static const double kLambdaErrorTolerance = 0.0000001;
 /** bound on the difference between the expected value of
@@ -901,14 +901,13 @@ s_GetMatrixScoreProbs(double **scoreProb, int * obs_min, int * obs_max,
  *                          the probability for score *obs_min.
  * @param matrix            a position-specific amino-acid substitution matrix.
  * @param rows              the number of rows in matrix.
- * @param cols              the number of columns in matrix.
  * @param subjectProbArray  is an array containing the probability of
  *                          occurrence of each residue in the subject
  * @return 0 on success, -1 on out-of-memory
  */
 static int
 s_GetPssmScoreProbs(double ** scoreProb, int * obs_min, int * obs_max,
-                    int **matrix, int rows, int cols,
+                    int **matrix, int rows,
                     const double *subjectProbArray)
 {
     int aa;            /* index of an amino-acid in the 20 letter
@@ -1120,7 +1119,7 @@ Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
     if (ss->positionBased) {
         out_of_memory =
             s_GetPssmScoreProbs(&scoreArray, &obs_min, &obs_max,
-                                ss->startMatrix, ss->rows, ss->cols, resProb);
+                                ss->startMatrix, ss->rows, resProb);
     } else {
         out_of_memory =
             s_GetMatrixScoreProbs(&scoreArray, &obs_min, &obs_max,
@@ -1510,11 +1509,8 @@ Blast_AdjustScores(Int4 ** matrix,
             lambdaForPair = COMPO_MIN_LAMBDA;
         }
         /*use lengths of query and subject not counting X's */
-        *pvalueForThisPair =
-            Blast_CompositionPvalue(query_composition->numTrueAminoAcids,
-                                    subject_composition->numTrueAminoAcids,
-                                    lambdaForPair,
-                                    compositionTestIndex - 1);
+        *pvalueForThisPair = Blast_CompositionPvalue(lambdaForPair);
+
         Nlm_DenseMatrixFree(&scores);
     }
 
