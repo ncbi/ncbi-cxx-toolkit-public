@@ -97,6 +97,7 @@ if test "$buildptb" = "yes"; then
     COMMON_Exec cd $dep
     COMMON_Exec make
   done
+  cd $builddir
   ptb="./app/project_tree_builder/project_tree_builder"
   test -f "$ptb" || Usage "$builddir/$ptb not found"
 else
