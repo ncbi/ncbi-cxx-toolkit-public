@@ -2,7 +2,7 @@
 
 APP = netschedule_client_sample
 SRC = netschedule_client_sample
-LIB = xconnserv xconnect xutil xncbi
+LIB = xconnserv xthrserv xconnect xutil xncbi
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

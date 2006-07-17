@@ -12,10 +12,10 @@ SRC = grid_cgi_sample
 
 ### BEGIN COPIED SETTINGS
 ## Use these two lines for normal CGI.
-LIB = xgridcgi ncbi_xblobstorage_netcache xconnserv xcgi xhtml xconnect xutil xncbi
+LIB = xgridcgi ncbi_xblobstorage_netcache xconnserv xthrserv xcgi xhtml xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ## Use these two lines for FastCGI.  (No other changes needed!)
-# LIB = xgridcgi xconnserv xfcgi xhtml xconnect xutil xncbi
+# LIB = xgridcgi ncbi_xblobstorage_netcache xconnserv xthrserv xfcgi xhtml xconnect xutil xncbi
 # LIBS = $(FASTCGI_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
 

@@ -3,7 +3,7 @@ SRC = blast_app blast_input blast_tabular
 LIB = xblastformat xblast composition_adjustment \
       seqdb xnetblastcli xnetblast xalgodustmask \
       ncbi_xloader_blastdb scoremat blastdb xalnmgr \
-      xobjsimple xobjutil xobjread connect tables $(OBJMGR_LIBS)
+      xobjsimple xobjutil xobjread creaders connect tables $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)

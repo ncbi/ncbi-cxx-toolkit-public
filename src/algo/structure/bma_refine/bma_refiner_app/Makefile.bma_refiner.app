@@ -18,9 +18,9 @@ LIB =   xbma_refiner \
         cn3d \
         mmdb \
         id1cli id1 \
-        xconnect $(SOBJMGR_LDEP)
-
-#        $(OBJMGR_LIBS)
+        xalgodustmask xobjread creaders \
+        xobjsimple xobjutil \
+        $(OBJMGR_LIBS)
 
 CXXFLAGS   = $(FAST_CXXFLAGS)
 

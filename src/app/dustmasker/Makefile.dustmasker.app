@@ -5,7 +5,7 @@ ASN_DEP = seq
 APP = dustmasker
 SRC = main dust_mask_app
 
-LIB = xalgodustmask xobjread xobjutil $(OBJMGR_LIBS:%=%$(STATIC))
+LIB = xalgodustmask xobjread creaders xobjutil $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
