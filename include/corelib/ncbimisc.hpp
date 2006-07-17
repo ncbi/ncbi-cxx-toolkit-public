@@ -223,7 +223,11 @@ public:
 
     void Swap(pair_base_member<first_type, second_type>& p)
         {
-            swap(first(), p.first());
+            if (static_cast<void*>(&first()) != static_cast<void*>(&second())) {
+                // work around an IBM compiler bug which causes it to perform
+                // a spurious 1-byte swap, yielding mixed-up values.
+                swap(first(), p.first());
+            }
             swap(second(), p.second());
         }
 
@@ -888,10 +892,11 @@ ssize_t CRawPointer::Sub(const void* first, const void* second)
 ///
 /// The correct syntax for this varies from compiler to compiler:
 /// older versions of GCC (prior to 3.4) require NCBI_DEPRECATED to
-/// follow any relevant constructor declarations, but Microsoft Visual
-/// Studio 2005 requires it to precede any relevant declarations,
-/// whether or not they are for constructors.
-#ifdef NCBI_COMPILER_MSVC
+/// follow any relevant constructor declarations, but some other
+/// compilers (Microsoft Visual Studio 2005, IBM Visual Age / XL)
+/// require it to precede any relevant declarations, whether or not
+/// they are for constructors.
+#if defined(NCBI_COMPILER_MSVC) || defined(NCBI_COMPILER_VISUALAGE)
 #  define NCBI_DEPRECATED_CTOR(decl) NCBI_DEPRECATED decl
 #else
 #  define NCBI_DEPRECATED_CTOR(decl) decl NCBI_DEPRECATED
@@ -943,6 +948,11 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2006/07/17 14:24:17  ucko
+ * * pair_base_member::Swap: don't swap the first() elements if they take
+ *   up no room, as it should be a no-op but VisualAge gets it wrong.
+ * * NCBI_DEPRECATED_CTOR: Use MSVC-style ordering for NCBI_COMPILER_VISUALAGE.
+ *
  * Revision 1.96  2006/06/20 18:03:19  vakatov
  * Unconditionally #undef the old non-conformant min() and max() macros
  *
