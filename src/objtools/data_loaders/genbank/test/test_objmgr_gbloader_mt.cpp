@@ -181,6 +181,10 @@ int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
   return 0;
 }
 
+const char* const kGlobalOMTags[] = { "local ", "global" };
+const char* const kGlobalScopeTags[]
+    = {"auto      ", "per thread", "global    " };
+
 int CTestApplication::Run()
 {
   unsigned timing[4/*threads*/][2/*om*/][3/*scope*/];
@@ -205,8 +209,9 @@ int CTestApplication::Run()
       for(unsigned global_scope=0;global_scope<=(thr==1U?1U:(global_om==0U?1U:2U)); ++global_scope)
         {
           unsigned mode = (global_om<<2) + global_scope ;
-          LOG_POST("TEST: threads:" << thr << ", om=" << (global_om?"global":"local ") <<
-                   ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")));
+          LOG_POST("TEST: threads:" << thr <<
+                   ", om=" << kGlobalOMTags[global_om] <<
+                   ", scope=" << kGlobalScopeTags[global_scope]);
           time_t start=time(0);
           Test(mode,thr);
           timing[thr-1][global_om][global_scope] = time(0)-start ;
@@ -220,8 +225,9 @@ int CTestApplication::Run()
         {
           if(timing[thr][global_om][global_scope]==0) continue;
           if(timing[thr][global_om][global_scope]>0)
-          LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
-                   ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")) <<
+          LOG_POST("TEST: threads:" << (thr + 1) <<
+                   ", om=" << kGlobalOMTags[global_om] <<
+                   ", scope=" << kGlobalScopeTags[global_scope] <<
                    " ==>> " << timing[thr][global_om][global_scope] << " sec");
         }
   
@@ -250,6 +256,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/07/17 14:38:47  ucko
+* Simplify output logic with the help of some constant arrays, to avoid
+* hitting internal compiler errors when building with VisualAge.
+*
 * Revision 1.6  2005/09/07 19:15:38  vasilche
 * Exclude from test invalid gi 1.
 *
