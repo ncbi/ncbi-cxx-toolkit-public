@@ -409,6 +409,12 @@ void SMakeProjectT::AnalyzeMakeIn
         info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second,
             makein_contents.GetMakeType())); 
     }
+    p = makein_contents.m_Contents.find("SCHEMA_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second,
+            makein_contents.GetMakeType())); 
+    }
 
     p = makein_contents.m_Contents.find("MSVC_PROJ");
     if (p != makein_contents.m_Contents.end()) {
@@ -1342,7 +1348,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 }
             }
         }
-        string libproj[] = {"LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ","ASN_PROJ","DTD_PROJ",""};
+        string libproj[] = {"LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ",
+                            "ASN_PROJ","DTD_PROJ","SCHEMA_PROJ",""};
         EMakeFileType libtype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential,
             eMakeType_Undefined, eMakeType_Undefined};
         for (j=0; !libproj[j].empty(); ++j) {
@@ -1644,6 +1651,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/07/17 15:26:58  gouriano
+ * Added SCHEMA_PROJ
+ *
  * Revision 1.37  2006/06/05 16:14:52  gouriano
  * Added support of XML schema
  *
