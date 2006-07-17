@@ -65,25 +65,40 @@ int CRADispatcherClientSampleApp::Run(void)
 
     IRegistry& reg = GetConfig();
 
-    CConn_ServiceStream conn("remote_app_dispatcher");
+    // create a connection point to the service
+    CConn_ServiceStream conn("RemoteAppGateway");
 
+    // create a factory for a data cache
     CBlobStorageFactory factory(reg);
 
+    // create a request 
     CRemoteAppRequestSB request(factory);
 
-    request.SetAppName("app1");
-    CNcbiOstream& os = request.GetStdIn();
-        
-    os << "Request data" << endl;
+    // prepare a request data
+    request.SetAppName("glimmer");
 
-    request.SetCmdLine("-a sss -f1=/tmp/dddd.f1 -f=\"/tmp/ddd d.f\"");
-    request.AddFileForTransfer("/tmp/dddd.f1");
-    request.AddFileForTransfer("/tmp/ddd d.f");
-    request.AddFileForTransfer("/tmp/ddd");
+    /* 
+    // a command line can be set if needed
+    request.SetCmdLine(...);
+    */
 
+    string inp_fname = "inp.fast";
+    ifstream inp(inp_fname.c_str());
+    if (!inp.good()) {
+        cerr << "Could not read \"" << inp_fname << "\" file with input FASTA sequence.\n";
+        return 1;
+    }
+    CNcbiOstream& os = request.GetStdIn();       
+    os << inp.rdbuf();
+
+    // create a client for the remote application dispatcher
     CRADispatcherClient rad_client(factory, conn);
+
+    // submit a new job
     rad_client.StartJob(request);
 
+    // wait until the job is ready
+    // if the job is finished with error an exception will be thrown
     CRADispatcherClient::EJobState st;
     do {
         st = rad_client.GetJobState();
@@ -91,6 +106,7 @@ int CRADispatcherClientSampleApp::Run(void)
 
     } while( st != CRADispatcherClient::eReady );
 
+    // get the job's result
     CRemoteAppResultSB& result = rad_client.GetResult();
 
     NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
@@ -101,7 +117,13 @@ int CRADispatcherClientSampleApp::Run(void)
     NcbiCout << result.GetStdErr().rdbuf();
     NcbiCout.clear();
     NcbiCout << NcbiEndl << "----------------------" <<  NcbiEndl;
+
+    // clean up the cache
+    auto_ptr<IBlobStorage> storage(factory.CreateInstance());
+    storage->DeleteStorage();
+
     return 0;
+
 }
 
 
@@ -114,6 +136,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/17 17:59:00  didenko
+ * + Comments
+ *
  * Revision 1.1  2006/07/13 14:44:05  didenko
  * Added the example for CRADispatcherClient
  *
