@@ -221,6 +221,11 @@ NCBI_USING_NAMESPACE_STD;
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #endif
 
+#ifdef NCBI_COMPILER_VISUALAGE
+#  define NO_STD_IDENTITY
+#  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
+#endif
+
 #ifdef _DEBUG
 #  define _STLP_DEBUG_UNINITIALIZED
 // uninitialized value filler
@@ -461,6 +466,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/07/17 14:25:35  ucko
+ * Add configuration-dependent defines for VisualAge (the same as for MSVC, FWIW)
+ *
  * Revision 1.11  2005/07/22 14:13:07  ucko
  * Fix for ICC 8.0, whose predefined symbols are the same in -cxxlib-gcc
  * and -cxxlib-icc mode, by adding a check for an include guard from a
