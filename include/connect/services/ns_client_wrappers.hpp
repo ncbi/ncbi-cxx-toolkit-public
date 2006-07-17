@@ -173,7 +173,7 @@ public:
 private:
 
     CNetScheduleClient& m_NSClient;
-    mutable CFastMutex& m_Mutex;
+    CFastMutex&         m_Mutex;
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -250,7 +250,7 @@ public:
 private:
 
     auto_ptr<CNetScheduleClient> m_NSClient;
-    mutable CFastMutex& m_Mutex;
+    CFastMutex&                  m_Mutex;
 
 };
 
@@ -261,6 +261,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/07/17 14:28:27  ucko
+ * Don't declare references (to CFastMutex) to be mutable, as they can't
+ * be repointed anyway.
+ *
  * Revision 1.5  2006/06/28 16:01:42  didenko
  * Redone job's exlusivity processing
  *
