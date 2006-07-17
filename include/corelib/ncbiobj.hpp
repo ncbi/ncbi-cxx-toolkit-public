@@ -376,14 +376,14 @@ bool CObject::ObjectStateReferenced(TCount count)
 inline
 bool CObject::ObjectStateUnreferenced(TCount count)
 {
-    return (count & ~eStateBitsInHeapMask) == eCounterValid;
+    return (count & ~eStateBitsInHeapMask) == TCount(eCounterValid);
 }
 
 
 inline
 bool CObject::ObjectStateReferencedOnlyOnce(TCount count)
 {
-    return (count & ~eStateBitsInHeapMask) == eCounterValidRef1;
+    return (count & ~eStateBitsInHeapMask) == TCount(eCounterValidRef1);
 }
 
 
@@ -1952,6 +1952,11 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/07/17 14:15:54  ucko
+ * ObjectStateUnreferenced, ObjectStateReferencedOnlyOnce: Ensure that
+ * both sides of == have the same signedness to avoid false negatives
+ * under VisualAge.
+ *
  * Revision 1.69  2006/02/24 15:22:58  vasilche
  * Fixed order of locking and unlocking in CRef assignment.
  *
