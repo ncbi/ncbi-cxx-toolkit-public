@@ -344,8 +344,8 @@ RunTest() {
          # Run test under all specified check tools   
          for tool in \$NCBI_CHECK_TOOLS; do
 
-            tool_lo=\`echo \$tool | tr '[:upper:]' '[:lower:]'\`
-            tool_up=\`echo \$tool | tr '[:lower:]' '[:upper:]'\`
+            tool_lo=\`echo \$tool | tr '[A-Z]' '[a-z]'\`
+            tool_up=\`echo \$tool | tr '[a-z]' '[A-Z]'\`
             NCBI_CHECK_TOOL=\`eval echo "\$"NCBI_CHECK_\${tool_up}""\`
       
             if [ \$tool_lo = "regular" ] ; then
