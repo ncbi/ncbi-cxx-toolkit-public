@@ -42,9 +42,11 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <algo/align/nw/nw_band_aligner.hpp>
 #include <algo/align/nw/align_exception.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
+#include <algo/dustmask/symdust.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -742,11 +744,160 @@ CContigAssembly::CAlnStats::CAlnStats(const objects::CDense_seg& ds,
 }
 
 
+struct SDovetails {
+    TSeqPos head;
+    TSeqPos aligned;
+    TSeqPos tail;
+};
+
+
+static void s_GetDovetails(const CAlnVec& vec, vector<SDovetails>& dts)
+{
+    SDovetails dt;
+    for (int j = 0;  j < vec.GetNumRows();  ++j) {
+        TSeqPos start = vec.GetSeqStart(j);
+        TSeqPos stop  = vec.GetSeqStop(j);
+        dt.head       = start;
+        dt.tail       = stop;
+        dt.aligned    = stop - start + 1;
+
+        TSeqPos length = vec.GetBioseqHandle(j).GetBioseqLength();
+        dt.tail = length - stop - 1;
+
+        LOG_POST(Info << "dovetails: " << dt.head << ", " << dt.tail
+                 << "  align: " << start << "-" << stop
+                 << "  seq: " << length);
+
+        dts.push_back(dt);
+    }
+}
+
+
+void CContigAssembly::GatherAlignStats(const CAlnVec& vec,
+                                       SAlignStats& align_stats)
+{
+    ///
+    /// gap metrics
+    ///
+
+    align_stats.total_length = 0;
+    align_stats.aligned_length = 0;
+    align_stats.gap_count = 0;
+    align_stats.gaps.clear();
+    align_stats.is_simple.clear();
+
+    vector<CRef<CSeq_loc> > dust_locs;
+
+    if (vec.GetNumSegs() > 1) {
+        // run dust to classify gaps as simple sequence or not
+        CSymDustMasker masker;
+        for (int row = 0;  row < vec.GetNumRows();  ++row) {
+            CSeqVector seq_vec = vec.GetBioseqHandle(row).GetSeqVector();
+            seq_vec.SetIupacCoding();
+            CSeq_id id("lcl|dummy");
+            CRef<CPacked_seqint> res = masker.GetMaskedInts(id, seq_vec);
+            CRef<CSeq_loc> loc(new CSeq_loc);
+            loc->SetPacked_int(*res);
+            dust_locs.push_back(loc);
+        }
+    }
+
+    int gap_simple = -1;  // -1 = not checked, 0 = no, 1 = yes
+    bool simple = false;
+    for (int i = 0;  i < vec.GetNumSegs();  ++i) {
+        align_stats.total_length += vec.GetLen(i);
+        bool is_gap = false;
+        for (int j = 0;  j < vec.GetNumRows();  ++j) {
+            if (vec.GetStart(j, i) == -1) {
+                simple = false;
+                unsigned int other_row = (j + 1) % 2;
+                TSeqPos start = vec.GetStart(other_row, i);
+                TSeqPos stop = start + vec.GetLen(i);
+                string seq;
+                vec.GetBioseqHandle(other_row)
+                    .GetSeqVector(CBioseq_Handle::eCoding_Iupac,
+                                    CBioseq_Handle::eStrand_Plus)
+                    .GetSeqData(start, stop, seq);
+
+                CSeq_loc gap_loc;
+                gap_loc.SetInt().SetId().Set("lcl|dummy");
+                gap_loc.SetInt().SetFrom(vec.GetStart(other_row, i));
+                gap_loc.SetInt().SetTo(vec.GetStop(other_row, i));
+                sequence::ECompare cmp_res
+                    = sequence::Compare(gap_loc, *dust_locs[other_row],
+                                        &vec.GetScope());
+                simple = cmp_res == sequence::eContained
+                    || cmp_res == sequence::eSame;
+                
+                if (simple) {
+                    gap_simple = 1;
+                } else if (gap_simple == -1) {
+                    gap_simple = 0;
+                }
+
+                is_gap = true;
+            }
+        }
+
+        if (!is_gap) {
+            align_stats.aligned_length += vec.GetLen(i);
+        } else {
+            align_stats.gap_count += 1;
+            align_stats.gaps.push_back(vec.GetLen(i));
+            align_stats.is_simple.push_back(simple);
+        }
+    }
+
+    ///
+    /// identity computation
+    ///
+
+    unsigned int identities = 0;
+    for (int i = 0;  i < vec.GetNumSegs();  ++i) {
+        string s1;
+        vec.GetSegSeqString(s1, 0, i);
+        for (int j = 1;  j < vec.GetNumRows();  ++j) {
+            string s2;
+            vec.GetSegSeqString(s2, j, i);
+
+            for (unsigned int k = 0;  k < min(s1.size(), s2.size());  ++k) {
+                identities += (s1[k] == s2[k]);
+            }
+        }
+    }
+
+    align_stats.mismatches = align_stats.aligned_length - identities;
+    align_stats.pct_identity =
+        100.0 * double(identities) / double(align_stats.aligned_length);
+
+    ///
+    /// overhangs / dovetails
+    ///
+
+    vector<SDovetails> dovetails;
+    s_GetDovetails(vec, dovetails);
+
+    if (vec.StrandSign(0) == vec.StrandSign(1)) {
+        align_stats.max_dovetail =
+                max(min(dovetails[0].head, dovetails[1].head),
+                    min(dovetails[0].tail, dovetails[1].tail));
+    } else {
+        align_stats.max_dovetail =
+                max(min(dovetails[0].head, dovetails[1].tail),
+                    min(dovetails[0].tail, dovetails[1].head));
+    }
+
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/07/17 14:14:43  jcherry
+ * Added calculation of fancy new alignment statistics
+ *
  * Revision 1.9  2006/03/29 14:46:43  jcherry
  * Avoid compiler warning
  *

@@ -40,6 +40,7 @@ class CSeq_align;
 class CSeq_align_set;
 class CDense_seg;
 class CScope;
+class CAlnVec;
 END_objects_SCOPE
 
 
@@ -137,6 +138,46 @@ public:
                             unsigned int slop, objects::CScope& scope);
     static double FracIdent(const objects::CDense_seg& ds,
                             objects::CScope& scope);
+
+    /// Alignment characterization
+
+    struct SAlignStats {
+        SAlignStats()
+                : total_length(0),
+                aligned_length(0),
+                gap_count(0),
+                mismatches(0),
+                pct_identity(0),
+                max_dovetail(0)
+        {
+        }
+
+        /// total covered length of the alignment, including gaps
+        TSeqPos total_length;
+
+        /// total number of bases included in the alignment
+        TSeqPos aligned_length;
+
+        /// count of total number of gaps
+        TSeqPos gap_count;
+
+        /// number of mismatched bases
+        TSeqPos mismatches;
+
+        /// % identity (varies from 0 to 100)
+        double pct_identity;
+
+        /// dovetails
+        TSeqPos max_dovetail;
+
+        /// the set of gap lengths for this alignment
+        vector<TSeqPos> gaps;
+
+        /// for each gap, whether is consists of "simple sequence"
+        vector<bool> is_simple;
+    };
+    static void GatherAlignStats(const objects::CAlnVec& vec,
+                                 SAlignStats& align_stats);
 };
 
 
@@ -152,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/07/17 14:14:43  jcherry
+ * Added calculation of fancy new alignment statistics
+ *
  * Revision 1.5  2005/10/05 19:06:19  jcherry
  * Added export specifier.  Removed a method declaration.
  *
