@@ -11,6 +11,8 @@ const char g_msg_InvalidTranscriptSymbol[] = "Invalid transcript symbol";
 
 const char g_msg_InvalidBacktraceData[] = "Invalid backtrace data";
 
+const char g_msg_UnexpectedTermIndex[] = "Unexpected term index";
+
 const char g_msg_InvalidAddress[] = "Invalid address specified";
 
 const char g_msg_InvalidSequenceChars[] = 
@@ -38,6 +40,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.5  2006/07/18 19:29:47  kapustin
+ * Add/edit messages
+ *
  * Revision 1.4  2005/07/26 16:43:29  kapustin
  * Move MakePattern() to CNWAligner
  *
