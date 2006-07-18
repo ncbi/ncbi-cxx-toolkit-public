@@ -46,7 +46,8 @@ done
 EXECS="
  gbench_monitor
  gbench_feedback_agent
- gbench_plugin_scan"
+ gbench_plugin_scan
+ gbench_cache_agent"
 for exe in $EXECS; do
 	echo Patching: $exe
 	for j in `otool -L $exe | awk '/(netopt)|(sw)|(Users)/ {print $1}'`; do
