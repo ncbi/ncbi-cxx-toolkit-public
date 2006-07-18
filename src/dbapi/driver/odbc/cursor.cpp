@@ -49,8 +49,6 @@ CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection* conn,
 , m_CursCmd(conn, "declare " + cursor_name + " cursor for " + query, nof_params)
 , m_Name(cursor_name)
 , m_LCmd(NULL)
-, m_IsOpen(false)
-, m_IsDeclared(false)
 , m_Res(0)
 {
 }
@@ -94,7 +92,7 @@ CDB_Result* CODBC_CursorCmd::Open()
     // buff = "open " + m_Name;
 
     try {
-        auto_ptr<impl::CLangCmd> stmt(GetConnection().xLangCmd("open " + m_Name));
+        auto_ptr<impl::CBaseCmd> stmt(GetConnection().xLangCmd("open " + m_Name));
 
         stmt->Send();
         stmt->DumpResults();
@@ -338,6 +336,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/07/18 16:37:05  ssikorsk
+ * Fixed compilation issues.
+ *
  * Revision 1.21  2006/07/18 15:47:59  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

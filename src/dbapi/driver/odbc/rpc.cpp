@@ -86,7 +86,7 @@ bool CODBC_RPCCmd::Send()
         }
     }
 
-   if(m_Recompile) main_exec_query+= " with recompile";
+   if(NeedToRecompile()) main_exec_query+= " with recompile";
 
    q_str+= main_exec_query + ";\nselect STpROCrETURNsTATUS=@STpROCrETURNsTATUS";
    if(!param_result_query.empty()) {
@@ -564,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/07/18 16:37:21  ssikorsk
+ * Fixed compilation issues.
+ *
  * Revision 1.28  2006/07/18 15:47:59  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
