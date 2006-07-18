@@ -79,8 +79,7 @@ class IConnValidator;
 BEGIN_SCOPE(impl)
 
 class CResult;
-class CLangCmd;
-class CRPCCmd;
+class CBaseCmd;
 class CBCPInCmd;
 class CCursorCmd;
 class CSendDataCmd;
@@ -148,11 +147,13 @@ public:
 public:
     /// Send command to the server
     virtual bool Send(void) = 0;
-    virtual bool WasSent(void) const = 0;
+    /// Implementation-specific.
+    NCBI_DEPRECATED virtual bool WasSent(void) const = 0;
 
     /// Cancel the command execution
     virtual bool Cancel(void) = 0;
-    virtual bool WasCanceled(void) const = 0;
+    /// Implementation-specific.
+    NCBI_DEPRECATED virtual bool WasCanceled(void) const = 0;
 
     /// Get result set
     virtual CDB_Result* Result(void) = 0;
@@ -221,7 +222,8 @@ protected:
                           bool out_param = false) = 0;
 
     /// Set the "recompile before execute" flag for the stored proc
-    virtual void SetRecompile(bool recompile = true) = 0;
+    /// Implementation-specific.
+    NCBI_DEPRECATED virtual void SetRecompile(bool recompile = true) = 0;
 };
 
 
@@ -657,6 +659,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/07/18 15:39:32  ssikorsk
+ * Deprecated methods WasSent() and WasCanceled() of class I_BaseCmd.
+ * These methods belong to implementation, but interface.
+ *
  * Revision 1.51  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
