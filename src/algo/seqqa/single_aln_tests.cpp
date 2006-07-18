@@ -41,6 +41,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -48,6 +49,7 @@
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -107,12 +109,36 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     TSeqPos cds_from;
     TSeqPos cds_to;
     CAlnVec::TSignedRange cds_range;
+    const CSeq_id& genomic_id = disc.front()->GetSeq_id(1);
+    CBioseq_Handle genomic_hand = scope.GetBioseqHandle(genomic_id);
     if (has_cds) {
-        const CSeq_loc& loc = it->GetLocation();
-        cds_from = sequence::GetStart(loc, 0);
-        cds_to   = sequence::GetStop(loc, 0);
+        const CSeq_loc& cds_loc = it->GetLocation();
+        cds_from = sequence::GetStart(cds_loc, 0);
+        cds_to   = sequence::GetStop(cds_loc, 0);
         cds_range.SetFrom(static_cast<TSignedSeqPos>(cds_from));
         cds_range.SetTo(static_cast<TSignedSeqPos>(cds_to));
+
+        // Assess whether differences between transcript and genome
+        // would affect the protein produced
+        CSeq_loc_Mapper mapper(*aln, 1, &scope);
+        CRef<CSeq_loc> genomic_cds_loc = mapper.Map(cds_loc);
+        const CGenetic_code* code = 0;
+        if (it->GetOriginalFeature().GetData().GetCdregion().CanGetCode()) {
+            code = &it->GetOriginalFeature().GetData().GetCdregion().GetCode();
+        }
+        string xcript_prot, genomic_prot;
+        CSeqTranslator::Translate(cds_loc, xcript_hand,
+                                  xcript_prot, code);
+        CSeqTranslator::Translate(*genomic_cds_loc, genomic_hand,
+                                  genomic_prot, code);
+        // Say that they "can make same prot" iff the translations
+        // are the same AND do not contain ambiguities
+        bool can_make_same_prot =
+            xcript_prot == genomic_prot &&
+            xcript_prot.find_first_not_of("ACDEFGHIKLMNPQRSTVWY*") == NPOS;
+                                  // no need to check genomic (it's equal)
+        result->SetOutput_data()
+            .AddField("can_make_same_prot", can_make_same_prot);
     }
 
 
@@ -445,8 +471,6 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
 
     const CSeq_align& first_exon = *disc.front();
     const CSeq_align& last_exon = *disc.back();
-    const CSeq_id& genomic_id = first_exon.GetSeq_id(1);
-    CBioseq_Handle genomic_hand = scope.GetBioseqHandle(genomic_id);
     bool is_minus = s_GetSeqStrand(first_exon, 1) == eNa_strand_minus;
 
     // Distance from alignment limits to genomic sequence
@@ -579,6 +603,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/07/18 19:18:52  jcherry
+ * Added "can_make_same_prot" result
+ *
  * Revision 1.18  2006/02/13 16:51:47  jcherry
  * Added ambiguous match tests, changed "worst exon" tests accordingly,
  * and added explicit indel count
