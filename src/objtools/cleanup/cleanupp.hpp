@@ -205,8 +205,13 @@ private:
 
     // Extended Cleanup
     typedef void (CCleanup_imp::*RecurseDescriptor)(CSeq_descr& sdr);
-    void x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor);
-    void x_RecurseForDescriptors (CBioseq_set_Handle bs, RecurseDescriptor);
+    void x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor pmf);
+    void x_RecurseForDescriptors (CBioseq_set_Handle bs, RecurseDescriptor pmf);
+    
+    typedef bool (CCleanup_imp::*IsMergeCandidate)(const CSeqdesc& sd);
+    typedef bool (CCleanup_imp::*Merge)(CSeqdesc& sd1, CSeqdesc& sd2);
+    void x_RecurseDescriptorsForMerge (CBioseq_Handle bs, IsMergeCandidate is_can, Merge do_merge);
+    void x_RecurseDescriptorsForMerge (CBioseq_set_Handle bs, IsMergeCandidate is_can, Merge do_merge);
 
     typedef void (CCleanup_imp::*RecurseSeqAnnot)(CSeq_annot_Handle sah);
     void x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot);
@@ -262,15 +267,12 @@ private:
     void x_ExtendedCleanStrings (CPubdesc& pd);
     void x_ExtendedCleanStrings (CImp_feat& imf);
 
-    void x_MergeEquivalentCitSubs (CSeq_descr& sdr);
-    void x_MergeEquivalentCitSubs (CBioseq& bs);
-    void x_MergeEquivalentCitSubs (CBioseq_set& bss);
+    bool x_IsCitSubPub(const CSeqdesc& sd);
+    bool x_CitSubsMatch(CSeqdesc& sd1, CSeqdesc& sd2);
 
     void x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_src);
-    void x_MergeDuplicateBioSources (CSeq_descr& sdr);
-    void x_MergeDuplicateBioSources (CBioseq& bs);
-    void x_MergeDuplicateBioSources (CBioseq_set& bss);
-
+    bool x_IsMergeableBioSource(const CSeqdesc& sd);    
+    bool x_MergeDuplicateBioSources(CSeqdesc& sd1, CSeqdesc& sd2);
 
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
@@ -292,6 +294,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2006/07/18 16:43:43  bollin
+ * added x_RecurseDescriptorsForMerge and changed the ExtendedCleanup functions
+ * for merging duplicate BioSources and equivalent CitSubs to use the new function
+ *
  * Revision 1.32  2006/07/13 17:10:57  rsmith
  * report if changes made
  *

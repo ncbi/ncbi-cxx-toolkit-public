@@ -582,85 +582,30 @@ void CCleanup_imp::x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_
 }
 
 
-void CCleanup_imp::x_MergeDuplicateBioSources (CSeq_descr& sdr)
+bool CCleanup_imp::x_IsMergeableBioSource(const CSeqdesc& sd)
 {
-    CSeq_descr::Tdata& current_list = sdr.Set();
-    CSeq_descr::Tdata new_list;    
-    
-    new_list.clear();
- 
-    while (current_list.size() > 0) {
-        CRef< CSeqdesc > sd = current_list.back();
-        current_list.pop_back();
-        if ((*sd).Which() == CSeqdesc::e_Source 
-             && (*sd).GetSource().CanGetOrg()
-             && (*sd).GetSource().GetOrg().CanGetTaxname()
-             && !NStr::IsBlank((*sd).GetSource().GetOrg().GetTaxname())) {
-            bool found_match = false;
-            for (CSeq_descr::Tdata::iterator it = sdr.Set().begin();
-                 it != sdr.Set().end() && ! found_match; ++it) {
-                if ((**it).Which() == CSeqdesc::e_Source
-                    && (**it).GetSource().CanGetOrg()
-                    && (**it).GetSource().GetOrg().CanGetTaxname()
-                    && NStr::Equal((*sd).GetSource().GetOrg().GetTaxname(),
-                                   (**it).GetSource().GetOrg().GetTaxname())) {
-                    // add information from sd to **it     
-                    x_MergeDuplicateBioSources ((**it).SetSource(), (*sd).SetSource());                                   
-                    found_match = true;
-                }
-            }
-            if (!found_match) {
-               new_list.push_front(sd);
-            }
-        } else {
-            new_list.push_front(sd);
-        }
-    }
-    
-    while (new_list.size() > 0) {
-        CRef< CSeqdesc > sd = new_list.front();
-        new_list.pop_front();
-        current_list.push_back (sd);
+    if (sd.Which() == CSeqdesc::e_Source 
+        && sd.GetSource().CanGetOrg()
+        && sd.GetSource().GetOrg().CanGetTaxname()
+        && !NStr::IsBlank(sd.GetSource().GetOrg().GetTaxname())) {
+        return true;
+    } else {
+        return false;
     }
 }
 
 
-void CCleanup_imp::x_MergeDuplicateBioSources(CBioseq& bs)
+bool CCleanup_imp::x_MergeDuplicateBioSources(CSeqdesc& sd1, CSeqdesc& sd2)
 {
-    if (bs.IsSetDescr()) {
-        x_MergeDuplicateBioSources(bs.SetDescr());
-        if (bs.SetDescr().Set().empty()) {
-            bs.ResetDescr();
-        }
-    }
-}
-
-
-void CCleanup_imp::x_MergeDuplicateBioSources(CBioseq_set& bss)
-{
-    if (bss.IsSetDescr()) {
-        x_MergeDuplicateBioSources(bss.SetDescr());
-        if (bss.SetDescr().Set().empty()) {
-            bss.ResetDescr();
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_MergeDuplicateBioSources(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_MergeDuplicateBioSources(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
-    }
+    if (x_IsMergeableBioSource(sd1) && x_IsMergeableBioSource(sd2)
+        && NStr::Equal(sd1.GetSource().GetOrg().GetTaxname(),
+                       sd2.GetSource().GetOrg().GetTaxname())) {
+        // add information from sd1 to sd2     
+        x_MergeDuplicateBioSources (sd1.SetSource(), sd2.SetSource());    
+        return true;
+    } else {
+        return false;
+    }                               
 }
 
 
@@ -740,6 +685,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/07/18 16:43:43  bollin
+ * added x_RecurseDescriptorsForMerge and changed the ExtendedCleanup functions
+ * for merging duplicate BioSources and equivalent CitSubs to use the new function
+ *
  * Revision 1.9  2006/07/13 22:16:13  ucko
  * x_TrimParensAndCommas: call string::erase rather than string::clear
  * for compatibility with GCC 2.95.

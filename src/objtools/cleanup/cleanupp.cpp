@@ -384,8 +384,10 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CorrectExceptText);
-    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeEquivalentCitSubs);
-    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+    x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
+                                      &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
+    x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     RemoveEmptyFeaturesDescriptorsAndAnnots(bss);
     
     RenormalizeNucProtSets(bss);
@@ -393,7 +395,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
 
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
-    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+    x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
 
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
@@ -422,14 +425,17 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CorrectExceptText);
     
-    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeEquivalentCitSubs);
-    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+    x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
+                                      &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
+    x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     RemoveEmptyFeaturesDescriptorsAndAnnots(bsh);
     
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
 
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
-    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+    x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
 
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
@@ -487,6 +493,97 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescr
                     break;
                 case CSeq_entry::e_Set:
                     x_RecurseForDescriptors(m_Scope->GetBioseq_setHandle((**it).GetSet()), pmf);
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
+void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_Handle bh, IsMergeCandidate is_can, Merge do_merge)
+{
+    CSeq_descr::Tdata remove_list;    
+
+    CBioseq_EditHandle edith = m_Scope->GetEditHandle(bh);
+     
+    remove_list.clear();
+
+    for (CSeq_descr::Tdata::iterator it1 = edith.SetDescr().Set().begin();
+        it1 != edith.SetDescr().Set().end(); ++it1) { 
+        CRef< CSeqdesc > sd = *it1;
+        if ((this->*is_can)(*sd)) {
+            bool found_match = false;
+            CSeq_descr::Tdata::iterator it2 = it1;
+            it2++;
+            while (it2 != edith.SetDescr().Set().end() && !found_match) {
+                if ((this->*is_can)(**it2)) {
+                    if ((this->*do_merge)(**it2, *sd)) {
+                        found_match = true;
+                    }
+                }
+                ++it2;
+            }
+            if (found_match) {
+               remove_list.push_front(sd);
+            }
+        }
+    }
+    
+    for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+        it1 != remove_list.end(); ++it1) { 
+        edith.RemoveSeqdesc(**it1);
+    }
+}
+
+
+void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_set_Handle bh, IsMergeCandidate is_can, Merge do_merge)
+{
+    CSeq_descr::Tdata remove_list;    
+
+    CBioseq_set_EditHandle edith = m_Scope->GetEditHandle(bh);
+     
+    remove_list.clear();
+
+    for (CSeq_descr::Tdata::iterator it1 = edith.SetDescr().Set().begin();
+        it1 != edith.SetDescr().Set().end(); ++it1) { 
+        CRef< CSeqdesc > sd = *it1;
+        if ((this->*is_can)(*sd)) {
+            bool found_match = false;
+            CSeq_descr::Tdata::iterator it2 = it1;
+            it2++;
+            while (it2 != edith.SetDescr().Set().end() && !found_match) {
+                if ((this->*is_can)(**it2)) {
+                    if (do_merge == NULL || (this->*do_merge)(**it2, *sd)) {
+                        found_match = true;
+                    }
+                }
+                ++it2;
+            }
+            if (found_match) {
+               remove_list.push_front(sd);
+            }
+        }
+    }
+    
+    for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+        it1 != remove_list.end(); ++it1) { 
+        edith.RemoveSeqdesc(**it1);
+    }
+    
+    if (bh.GetCompleteBioseq_set()->IsSetSeq_set()) {
+       CConstRef<CBioseq_set> b = bh.GetCompleteBioseq_set();
+       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+       
+       ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            switch ((**it).Which()) {
+                case CSeq_entry::e_Seq:
+                    x_RecurseDescriptorsForMerge(m_Scope->GetBioseqHandle((**it).GetSeq()), is_can, do_merge);
+                    break;
+                case CSeq_entry::e_Set:
+                    x_RecurseDescriptorsForMerge(m_Scope->GetBioseq_setHandle((**it).GetSet()), is_can, do_merge);
                     break;
                 case CSeq_entry::e_not_set:
                 default:
@@ -1354,6 +1451,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2006/07/18 16:43:43  bollin
+ * added x_RecurseDescriptorsForMerge and changed the ExtendedCleanup functions
+ * for merging duplicate BioSources and equivalent CitSubs to use the new function
+ *
  * Revision 1.33  2006/07/13 17:10:56  rsmith
  * report if changes made
  *

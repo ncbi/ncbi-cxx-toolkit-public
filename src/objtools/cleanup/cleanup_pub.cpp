@@ -458,78 +458,25 @@ static bool s_IsCitSubPub(const CPubdesc& pd)
     }
 }
 
-void CCleanup_imp::x_MergeEquivalentCitSubs (CSeq_descr& sdr)
+
+bool CCleanup_imp::x_IsCitSubPub(const CSeqdesc& sd)
 {
-    CSeq_descr::Tdata& current_list = sdr.Set();
-    CSeq_descr::Tdata new_list;    
-    
-    new_list.clear();
- 
-    while (current_list.size() > 0) {
-        CRef< CSeqdesc > sd = current_list.back();
-        current_list.pop_back();
-        if ((*sd).Which() == CSeqdesc::e_Pub && s_IsCitSubPub ((*sd).GetPub())) {
-            bool found_match = false;
-            for (CSeq_descr::Tdata::iterator it = sdr.Set().begin();
-                 it != sdr.Set().end() && ! found_match; ++it) {
-                if ((**it).Which() == CSeqdesc::e_Pub 
-                    && s_IsCitSubPub((**it).GetPub())
-                    && CitSubsMatch((**it).GetPub().GetPub().Get().front()->GetSub(),
-                                    (*sd).GetPub().GetPub().Get().front()->GetSub())) {
-                    found_match = true;
-                }
-            }
-            if (!found_match) {
-               new_list.push_front(sd);
-            }
-        } else {
-            new_list.push_front(sd);
-        }
-    }
-    
-    while (new_list.size() > 0) {
-        CRef< CSeqdesc > sd = new_list.front();
-        new_list.pop_front();
-        current_list.push_back (sd);
+    if (sd.Which() == CSeqdesc::e_Pub && s_IsCitSubPub (sd.GetPub())) {
+        return true;
+    } else {
+        return false;
     }
 }
 
 
-void CCleanup_imp::x_MergeEquivalentCitSubs(CBioseq& bs)
+bool CCleanup_imp::x_CitSubsMatch(CSeqdesc& sd1, CSeqdesc& sd2)
 {
-    if (bs.IsSetDescr()) {
-        x_MergeEquivalentCitSubs(bs.SetDescr());
-        if (bs.SetDescr().Set().empty()) {
-            bs.ResetDescr();
-        }
-    }
-}
-
-
-void CCleanup_imp::x_MergeEquivalentCitSubs(CBioseq_set& bss)
-{
-    if (bss.IsSetDescr()) {
-        x_MergeEquivalentCitSubs(bss.SetDescr());
-        if (bss.SetDescr().Set().empty()) {
-            bss.ResetDescr();
-        }
-    }
-    if (bss.IsSetSeq_set()) {
-        // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    x_MergeEquivalentCitSubs(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    x_MergeEquivalentCitSubs(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
+    if (x_IsCitSubPub(sd1) && x_IsCitSubPub(sd2)
+        && CitSubsMatch(sd1.GetPub().GetPub().Get().front()->GetSub(),
+                        sd2.GetPub().GetPub().Get().front()->GetSub())) {
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -611,6 +558,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/07/18 16:43:43  bollin
+ * added x_RecurseDescriptorsForMerge and changed the ExtendedCleanup functions
+ * for merging duplicate BioSources and equivalent CitSubs to use the new function
+ *
  * Revision 1.5  2006/07/13 17:12:12  rsmith
  * Bring up to date with C BSEC.
  *
