@@ -55,12 +55,6 @@ CSL3_BCPInCmd::~CSL3_BCPInCmd(void)
 }
 
 
-bool CSL3_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
-{
-    return CBaseCmd::Bind(column_num - 1, pVal);
-}
-
-
 bool CSL3_BCPInCmd::CommitBCPTrans(void)
 {
     try {
@@ -127,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/18 16:01:52  ssikorsk
+ * Deleted CSL3_BCPInCmd::Bind.
+ *
  * Revision 1.1  2006/07/18 15:42:11  ssikorsk
  * Implemented BCPInCmd.
  *

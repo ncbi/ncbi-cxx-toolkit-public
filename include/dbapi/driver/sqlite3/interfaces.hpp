@@ -225,9 +225,6 @@ protected:
                   unsigned int     nof_params);
     virtual ~CSL3_BCPInCmd(void);
 
-public:
-    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
-
 protected:
     // BCP stuff ...
     virtual bool CommitBCPTrans(void);
@@ -300,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/07/18 16:01:40  ssikorsk
+ * Deleted CSL3_BCPInCmd::Bind.
+ *
  * Revision 1.4  2006/07/18 15:41:17  ssikorsk
  * Implemented BCPInCmd.
  *
