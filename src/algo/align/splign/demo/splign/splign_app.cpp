@@ -65,10 +65,10 @@ BEGIN_NCBI_SCOPE
 static const char kQuality_high[] = "high";
 static const char kQuality_low[] = "low";
 
-static const char kStrandPlus[] = "plus";
-static const char kStrandMinus[] = "minus";
-static const char kStrandBoth[] = "both";
-static const char kStrandAuto[] = "auto";
+static const char kDirSense[]     = "sense";
+static const char kDirAntisense[] = "antisense";
+static const char kDirBoth[]      = "both";
+static const char kDirAuto[]      = "auto";
 
 void CSplignApp::Init()
 {
@@ -167,8 +167,10 @@ void CSplignApp::Init()
     argdescr->AddFlag("cross", "Cross-species mode");
 
     argdescr->AddDefaultKey
-        ("strand", "strand", "Spliced sequence's strand.",
-         CArgDescriptions::eString, kStrandPlus);
+        ("direction", 
+         "direction", 
+         "Query direction", 
+         CArgDescriptions::eString, kDirSense);
     
     argdescr->AddFlag ("noendgaps",
                        "Skip detection of unaligning regions at the ends.",
@@ -266,11 +268,11 @@ void CSplignApp::Init()
          CArgDescriptions::eInteger,
          NStr::IntToString(CSplicedAligner16::GetDefaultWi(3)).c_str());
     
-    CArgAllow_Strings* constrain_strand = new CArgAllow_Strings;
-    constrain_strand->Allow(kStrandPlus)->Allow(kStrandMinus)
-        ->Allow(kStrandBoth)->Allow(kStrandAuto);
+    CArgAllow_Strings* constrain_direction = new CArgAllow_Strings;
+    constrain_direction->Allow(kDirSense)->Allow(kDirAntisense)
+        ->Allow(kDirBoth)->Allow(kDirAuto);
     
-    argdescr->SetConstraint("strand", constrain_strand);
+    argdescr->SetConstraint("direction", constrain_direction);
     
     CArgAllow* constrain01 = new CArgAllow_Doubles(0,1);
     argdescr->SetConstraint("min_compartment_idty", constrain01);
@@ -471,6 +473,7 @@ CSplignApp::x_SetupBlastOptions(bool cross)
 
         const CArgs& args = GetArgs();
         blast_opt.SetWordSize(args["W"].AsInteger());
+        blast_opt.SetFilterString("m");
         blast_opt.SetMaskAtHash(true);
         blast_opt.SetGapXDropoff(1);
         blast_opt.SetGapXDropoffFinal(1);
@@ -518,7 +521,6 @@ void CSplignApp::x_GetDbBlastHits(CSeqDB& seqdb,
     USING_SCOPE(objects);
     USING_SCOPE(blast);
 
-    // run blast and print ASN output
     CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(&seqdb));
     CDbBlast blast (queries, seq_src, *m_BlastOptionsHandle);
     TSeqAlignVector sav = blast.Run();
@@ -533,7 +535,7 @@ void CSplignApp::x_GetDbBlastHits(CSeqDB& seqdb,
 
                     THitRef hitref (new CBlastTabular(**sa_iter, false));
                     phitrefs->push_back(hitref);
-
+                    
                     CSplign::THit::TId id (hitref->GetSubjId());
                     int oid = -1;
                     seqdb.SeqidToOid(*id, oid);
@@ -1025,24 +1027,24 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
     
     m_Formatter->SetSeqIds(query, subj);
     
-    const string strand = args["strand"].AsString();
+    const string strand = args["direction"].AsString();
     CSplign::TResults splign_results;
 
-    if(strand == kStrandPlus) {
+    if(strand == kDirSense) {
 
         m_Splign->SetStrand(true);
         m_Splign->Run(&hitrefs);
         const CSplign::TResults& results = m_Splign->GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
     }
-    else if(strand == kStrandMinus) {
+    else if(strand == kDirAntisense) {
             
         m_Splign->SetStrand(false);
         m_Splign->Run(&hitrefs);
         const CSplign::TResults& results = m_Splign->GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
     }
-    else if(strand == kStrandBoth) {
+    else if(strand == kDirBoth) {
         
         THitRefs hits0 (hitrefs.begin(), hitrefs.end());
         static size_t mid = 1;
@@ -1182,6 +1184,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/07/18 19:42:11  kapustin
+ * Use more common terminology to designate query alignment direction
+ *
  * Revision 1.68  2006/05/22 15:52:22  kapustin
  * Engage new FASTA reader in the pairwise mode
  *
