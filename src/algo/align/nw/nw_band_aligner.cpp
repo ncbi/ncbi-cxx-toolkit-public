@@ -39,7 +39,6 @@
 #include <algo/align/nw/align_exception.hpp>
 #include <algo/align/nw/nw_band_aligner.hpp>
 
-
 BEGIN_NCBI_SCOPE
 
 CBandAligner::CBandAligner( const char* seq1, size_t len1,
@@ -159,6 +158,8 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     TScore E, G, n0;
     unsigned char tracer = 0;
 
+    m_TermK = kMax_UInt;
+
     size_t i, j;
     for(i = 1;  i < N1 && !m_terminate;  ++i) {
         
@@ -253,7 +254,10 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                 break;
             }
         }
-       
+
+        if(i + 1 == N1 && i + m_band + 1 >= n2) {
+            m_TermK = k - 1;
+        }
     }
 
 //#define NWB_DUMP_DPM
@@ -268,10 +272,14 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     cerr << dec;
 #endif
 
+    if(m_TermK == kMax_UInt && !m_terminate) {
+        NCBI_THROW(CAlgoAlignException, eInternal, g_msg_UnexpectedTermIndex);
+    }
+
     if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, data);
     }
-
+    
     return V;
 }
 
@@ -285,24 +293,22 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
     data->m_transcript.clear();
     data->m_transcript.reserve(N1 + N2);
 
-    size_t k = N1*N2 - 1, k_end = m_band + 1;
+    size_t k = m_TermK, k_end = m_band + 1;
 
     size_t i1 = data->m_offset1 + data->m_len1 - 1;
     size_t i2 = data->m_offset2 + data->m_len2 - 1;
 
-    while(backtrace[k] == kVoid) {
-        --k;
-        --i2;
-    }
-
     while (k != k_end) {
+
+        const size_t kOverflow = 0xFFFFFF00, kMax = 0xFFFFFFFF;
+        if(i1 > kOverflow && i1 != kMax || i2 > kOverflow && i2 != kMax) {
+            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidBacktraceData);
+        }
 
         unsigned char Key = backtrace[k];
 
         if(Key == kVoid) {
-
-            NCBI_THROW(CAlgoAlignException, eInternal,
-                       g_msg_InvalidBacktraceData);
+            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidBacktraceData);
         }
 
         if (Key & kMaskD) {
@@ -378,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/07/18 19:29:38  kapustin
+ * Fix backtrace index problem
+ *
  * Revision 1.7  2005/04/14 18:57:22  kapustin
  * Allow end-space free mode
  *
@@ -394,7 +403,9 @@ END_NCBI_SCOPE
  * Move to algo/align/nw
  *
  * Revision 1.2  2004/11/29 14:37:15  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. 
+ * x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters 
+ * to specify starting coordinates.
  *
  * Revision 1.1  2004/09/16 19:27:43  kapustin
  * Initial revision
