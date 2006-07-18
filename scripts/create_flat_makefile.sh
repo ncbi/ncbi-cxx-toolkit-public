@@ -12,6 +12,7 @@ solution="Makefile.flat"
 logfile="Flat.configuration_log"
 #-----------------------------------------------------------------------------
 
+initial_dir=`pwd`
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
@@ -41,9 +42,12 @@ EOF
 # analyze script arguments
 
 builddir=""
-test $# -lt 1 && Usage "Mandatory arguments missing"
-builddir="$1/build"
-srcdir="$1/.."
+test $# -lt 1 && Usage "Mandatory argument is missing"
+cd $initial_dir
+cd $1
+a1=`pwd`
+builddir="$a1/build"
+srcdir="$a1/.."
 projectlist="src"
 buildptb="no"
 shift
