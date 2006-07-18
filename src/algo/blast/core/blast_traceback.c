@@ -781,7 +781,6 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp)
  * @param concat_db_info BlastQueryInfo structure to fill. [out]
  * @param gap_align Gapped alignment structure to modify [in] [out]
  * @param rps_info RPS BLAST information structure [in]
- * @param alphabet_size Size of the alphabet assumed by the RPS disk files [out]
  */
 static Int2 
 s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info, 

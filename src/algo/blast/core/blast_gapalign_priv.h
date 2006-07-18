@@ -50,7 +50,7 @@ extern "C" {
  * @param edit_block Structure to hold traceback generated [out]
  * @param gap_align Structure holding various information and allocated 
  *        memory for the gapped alignment [in]
- * @param score_params Parameters related to scoring [in]
+ * @param scoringParams Parameters related to scoring [in]
  * @param query_offset The starting offset in query [in]
  * @param reversed Has the sequence been reversed? Used for psi-blast [in]
  * @param reverse_sequence Do reverse the sequence [in]
@@ -153,6 +153,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/07/18 14:41:36  papadopo
+ * doxygen fixes
+ *
  * Revision 1.15  2006/07/17 16:02:56  papadopo
  * 1. Add doxygen block from blast_gapalign.c
  * 2. Guard macro parameters with parentheses
