@@ -124,11 +124,11 @@ CRemoteBlast & CRemoteSeqSearch::x_RemoteBlast()
                        "Empty queries object specified.");
         }
         
-        if (! sll.empty()) {
-            m_RemoteBlast->SetQueries(sll);
-        } else {
-            _ASSERT(bss.NotEmpty());
+        if (bss.NotEmpty()) {
             m_RemoteBlast->SetQueries(bss);
+        } else {
+            _ASSERT(! sll.empty());
+            m_RemoteBlast->SetQueries(sll);
         }
     }
     
