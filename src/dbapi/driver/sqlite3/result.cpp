@@ -267,8 +267,8 @@ CDB_Object* CSL3_RowResult::GetItem(CDB_Object* item_buf)
 
             //
             case eDB_Float:
-                *(static_cast<CDB_Float*>(item_buf)) =
-                    sqlite3_column_double(x_GetSQLite3stmt(), m_CurrItem);
+                *(static_cast<CDB_Float*>(item_buf)) = static_cast<float>(
+                    sqlite3_column_double(x_GetSQLite3stmt(), m_CurrItem));
                 break;
             case eDB_Double:
                 *(static_cast<CDB_Double*>(item_buf)) =
@@ -283,11 +283,13 @@ CDB_Object* CSL3_RowResult::GetItem(CDB_Object* item_buf)
             //
             case eDB_DateTime:
                 *(static_cast<CDB_DateTime*>(item_buf)) = CTime(
-                    sqlite3_column_int64(x_GetSQLite3stmt(), m_CurrItem));
+                    static_cast<time_t>(
+                        sqlite3_column_int(x_GetSQLite3stmt(), m_CurrItem)));
                 break;
             case eDB_SmallDateTime:
                 *(static_cast<CDB_SmallDateTime*>(item_buf)) = CTime(
-                    sqlite3_column_int64(x_GetSQLite3stmt(), m_CurrItem));
+                    static_cast<time_t>(
+                        sqlite3_column_int(x_GetSQLite3stmt(), m_CurrItem)));
 
             //
             case eDB_UnsupportedType:
@@ -359,6 +361,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/18 16:36:08  ssikorsk
+ * Added more static_cast.
+ *
  * Revision 1.1  2006/06/12 20:30:51  ssikorsk
  * Initial version
  *
