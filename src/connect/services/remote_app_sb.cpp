@@ -82,7 +82,7 @@ class CRemoteAppRequestSB_Impl : public IRemoteAppRequest_Impl
 public:
     explicit CRemoteAppRequestSB_Impl(IBlobStorage* storage)  
         : IRemoteAppRequest_Impl(storage), 
-          m_EmptyStream("",0)
+          m_EmptyStream((const char*)"",0)
     {
         m_EmptyStream.setstate(IOS_BASE::eofbit);
     }
@@ -301,7 +301,7 @@ class CRemoteAppResultSB_Impl : public IRemoteAppResult_Impl
 public:
     CRemoteAppResultSB_Impl(IBlobStorage* out_cache, IBlobStorage* err_cache)
         : IRemoteAppResult_Impl(out_cache, err_cache),
-          m_EmptyStream("",0)
+          m_EmptyStream((const char*)"",0)
     {
         m_EmptyStream.setstate(IOS_BASE::eofbit);
     }
@@ -437,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/18 19:43:34  didenko
+ * Fixed compilation error on MSVC 8
+ *
  * Revision 1.1  2006/07/13 14:32:39  didenko
  * Modified the implemention of remote application's request and result classes
  *
