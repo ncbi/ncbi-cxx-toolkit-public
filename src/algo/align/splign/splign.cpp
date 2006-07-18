@@ -38,15 +38,20 @@
 
 #include <algo/align/util/hit_comparator.hpp>
 #include <algo/align/util/compartment_finder.hpp>
+#include <algo/align/nw/nw_band_aligner.hpp>
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/nw/nw_formatter.hpp>
 #include <algo/align/nw/align_exception.hpp>
 #include <algo/align/splign/splign.hpp>
 
+#include <algo/sequence/orf.hpp>
+
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+
+#include <objects/seqloc/Seq_interval.hpp>
 
 #include <deque>
 #include <math.h>
@@ -61,7 +66,7 @@ BEGIN_NCBI_SCOPE
 // m_max_genomic_ext. For shorter ends use k * query_len^(1/kPower)
 
 static const Uint4 kNonCoveredEndThreshold = 55;
-static const Uint1 kPower = 3;
+static const double kPower = 3;
 
 // (2) - post-processing
 // exons shorter than kMinTermExonSize with identity lower than
@@ -78,6 +83,7 @@ CSplign::CSplign( void )
     m_endgaps = true;
     m_strand = true;
     m_nopolya = false;
+    m_cds_start = m_cds_stop = 0;
     m_model_id = 0;
     m_MaxCompsPerQuery = 0;
     m_MinPatternHitLength = 10;
@@ -338,7 +344,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     }
 
     vector<size_t> pattern0;
-    vector<bool> imperfect;
+    vector<pair<bool,double> > imperfect;
     for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
 
         const THitRef& h = (*phitrefs)[i];
@@ -347,9 +353,9 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             pattern0.push_back(h->GetQueryMax());
             pattern0.push_back(h->GetSubjMin());
             pattern0.push_back(h->GetSubjMax());
-            bool imprf = h->GetIdentity() < 1.00 ||
-                h->GetQuerySpan() != h->GetSubjSpan();
-            imperfect.push_back(imprf);
+            const double idty = h->GetIdentity();
+            const bool imprf = idty < 1.00 || h->GetQuerySpan() != h->GetSubjSpan();
+            imperfect.push_back(pair<bool,double>(imprf, idty));
         }
     }
 
@@ -420,21 +426,24 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
         
         // build the alignment map
-        CNWAligner nwa;
+        CBandAligner nwa;
         for(size_t i = 0; i < dim; i += 4) {    
             
             size_t L1, R1, L2, R2;
             size_t max_seg_size = 0;
 
-            bool imprf = imperfect[i/4];
+            bool imprf = imperfect[i/4].first;
             if(imprf) {                
 
-                nwa.SetSequences(Seq1 + pattern0[i],
-                                 pattern0[i+1] - pattern0[i] + 1,
-                                 Seq2 + pattern0[i+2],
-                                 pattern0[i+3] - pattern0[i+2] + 1,
+                const size_t len1 = pattern0[i+1] - pattern0[i] + 1;
+                const size_t len2 = pattern0[i+3] - pattern0[i+2] + 1;
+                const size_t maxlen = max(len1, len2);
+                const size_t band = (1 - imperfect[i/4].second) * maxlen + 2;
+                nwa.SetBand(band);
+                nwa.SetSequences(Seq1 + pattern0[i],   len1,
+                                 Seq2 + pattern0[i+2], len2,
                                  false);
-                nwa.Run();                
+                nwa.Run();
                 max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
             }
             else {
@@ -559,6 +568,43 @@ void CSplign::Run(THitRefs* phitrefs)
             reverse (m_mrna.begin(), m_mrna.end());
             transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
         }
+
+        // find and cache max ORF when in sense direction
+        if(m_strand) {
+
+            TStrIdToCDS::const_iterator ie = m_CdsMap.end();
+            const string strid = id_query->AsFastaString();
+            TStrIdToCDS::const_iterator ii = m_CdsMap.find(strid);
+            if(ii == ie) {
+            
+                USING_SCOPE(objects);
+                vector<CRef<CSeq_loc> > orfs;
+                vector<string> start_codon;
+                start_codon.push_back("ATG");
+                COrf::FindOrfs(m_mrna, orfs, 150, 1, start_codon);
+                TSeqPos max_len = 0;
+                TSeqPos max_from = 0;
+                TSeqPos max_to = 0;
+                ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
+                    TSeqPos len = sequence::GetLength(**orf, NULL);
+                    if ((*orf)->GetInt().GetStrand() != eNa_strand_minus) {
+                        if (len > max_len) {
+                            max_len = len;
+                            max_from = (*orf)->GetInt().GetFrom();
+                            max_to = (*orf)->GetInt().GetTo();
+                        }
+                    }
+                }
+
+                TCDS cds (m_cds_start = max_from, m_cds_stop = max_to);
+                m_CdsMap[strid] = cds;
+            }
+            else {
+                m_cds_start = ii->second.first;
+                m_cds_stop = ii->second.second;
+            }
+        }
+
     }
 
     // compartments share the space between them
@@ -673,7 +719,7 @@ size_t CSplign::x_TestPolyA(void)
 // POST: A set of segments packed into the aligned compartment.
 
 CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
-    THitRefs* phitrefs, size_t range_left, size_t range_right )
+    THitRefs* phitrefs, size_t range_left, size_t range_right)
 {    
     SAlignedCompartment rv;
 
@@ -787,7 +833,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         // shift hits so that they originate from zero
 
         NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
-            (*ii)->Shift( -qmin, -smin);
+            (*ii)->Shift(-qmin, -smin);
         }  
     
         x_SetPattern(phitrefs);
@@ -994,6 +1040,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
             // setup esf
             m_aligner->SetEndSpaceFree(true, true, true, true);
+
+            m_aligner->SetCDS(m_cds_start, m_cds_stop);
             
             // align
             m_aligner->Run();
@@ -1847,6 +1895,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/07/18 19:36:58  kapustin
+ * Retrieve longest ORF information when in sense direction. Use band-limited NW for best diag extraction.
+ *
  * Revision 1.57  2006/06/05 12:52:23  kapustin
  * Screen off final alignments with overall identity below the threshold
  *
