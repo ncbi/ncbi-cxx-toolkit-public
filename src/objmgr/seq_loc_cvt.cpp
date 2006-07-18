@@ -1208,8 +1208,7 @@ bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
 
 
 namespace {
-
-    struct FSortConversions
+    struct FConversions_Less
     {
         bool operator()(const CSeq_loc_Conversion& cvt1,
                         const CSeq_loc_Conversion& cvt2) const
@@ -1229,7 +1228,7 @@ namespace {
             }
     };
 
-    struct FSortConversionsReverse
+    struct FConversions_ReverseLess
     {
         bool operator()(const CSeq_loc_Conversion& cvt1,
                         const CSeq_loc_Conversion& cvt2) const
@@ -1249,6 +1248,20 @@ namespace {
             }
     };
 
+    struct FConversions_Equal
+    {
+        bool operator()(const CSeq_loc_Conversion& cvt1,
+                        const CSeq_loc_Conversion& cvt2) const
+            {
+                return cvt1.GetSrc_from() == cvt2.GetSrc_from()  &&
+                    cvt1.GetSrc_to() == cvt2.GetSrc_to();
+            }
+        bool operator()(const CRef<CSeq_loc_Conversion>& cvt1,
+                        const CRef<CSeq_loc_Conversion>& cvt2) const
+            {
+                return (*this)(*cvt1, *cvt2);
+            }
+    };
 }
 
 
@@ -1270,16 +1283,15 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
         cvts.push_back(mit->second);
     }
     if ( revert_order ) {
-        sort(cvts.begin(), cvts.end(), FSortConversionsReverse());
-        cvts.erase(unique(cvts.begin(), cvts.end(), FSortConversionsReverse()),
+        sort(cvts.begin(), cvts.end(), FConversions_ReverseLess());
+        cvts.erase(unique(cvts.begin(), cvts.end(), FConversions_Equal()),
             cvts.end());
     }
     else {
-        sort(cvts.begin(), cvts.end(), FSortConversions());
-        cvts.erase(unique(cvts.begin(), cvts.end(), FSortConversions()),
+        sort(cvts.begin(), cvts.end(), FConversions_Less());
+        cvts.erase(unique(cvts.begin(), cvts.end(), FConversions_Equal()),
             cvts.end());
     }
-
     CRef<CSeq_interval> last_int;
     TSeqPos last_to = kInvalidSeqPos;
     NON_CONST_ITERATE ( TConversions, it, cvts ) {
@@ -1634,6 +1646,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2006/07/18 20:22:37  grichenk
+* Fixed another mapping bug
+*
 * Revision 1.57  2006/06/26 16:56:42  grichenk
 * Fixed order of intervals in mapped locations.
 * Filter duplicate mappings.
