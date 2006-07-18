@@ -132,10 +132,10 @@ CDemoeApp::Run(void)
 
             auto_ptr<CDB_BCPInCmd> cmd(con->BCPIn("BulkSample", 4));
 
-            cmd->Bind(1, &value1);
-            cmd->Bind(2, &value2);
-            cmd->Bind(3, &value3);
-            cmd->Bind(4, &value4);
+            cmd->Bind(0, &value1);
+            cmd->Bind(1, &value2);
+            cmd->Bind(2, &value3);
+            cmd->Bind(3, &value4);
 
             for(int i = 0; i < 10; ++i ) {
                 value1 = i;
@@ -194,6 +194,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/18 16:03:44  ssikorsk
+ * BCPIn::Bind has starting index 0.
+ *
  * Revision 1.1  2006/07/18 15:47:42  ssikorsk
  * Initial version of a BCPIn demo-application for sqlite3.
  *
