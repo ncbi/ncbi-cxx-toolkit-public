@@ -78,6 +78,9 @@ protected:
     // band width
     size_t   m_band;
 
+    // terminal backtrace index
+    size_t  m_TermK;
+
     // core dynamic programming
     virtual TScore x_Align (CNWAligner::SAlignInOut* data);
 
@@ -99,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/07/18 19:34:17  kapustin
+ * Save terminal backtrace index in a member
+ *
  * Revision 1.6  2005/04/04 16:32:23  kapustin
  * Distinguish matches from mismatches in raw transcripts
  *
