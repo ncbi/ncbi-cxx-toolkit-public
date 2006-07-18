@@ -278,8 +278,13 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
         }
 
         if(cds_start <= i && i < cds_stop) {
-            ws1 += cds_penalty_extra;
-            ws2 += cds_penalty_extra;
+
+            if(i != 0 || ! bFreeGapLeft1) {
+                ws1 += cds_penalty_extra;
+            }
+            if(j != 0 || ! bFreeGapLeft2) {
+                ws2 += cds_penalty_extra;
+            }
         }
 
         for (j = 1; j < N2; ++j, ++k) {
@@ -678,8 +683,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/07/18 19:33:39  kapustin
+ * Tweak the way in-cds extras are assigned
+ *
  * Revision 1.24  2006/06/28 15:56:52  kapustin
- * Use smaller extra penalties to avoid eccetric term stuff
+ * Use smaller extra penalties to avoid eccentric term stuff
  *
  * Revision 1.23  2006/06/27 15:16:58  kapustin
  * Extra penalty for in-cds gap extensions
@@ -697,7 +705,9 @@ END_NCBI_SCOPE
  * Move to algo/align/nw
  *
  * Revision 1.18  2004/11/29 14:37:15  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. 
+ * x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters 
+ * to specify starting coordinates.
  *
  * Revision 1.17  2004/08/31 16:17:21  papadopo
  * make SAlignInOut work with sequence offsets rather than char pointers
@@ -724,7 +734,8 @@ END_NCBI_SCOPE
  * Get rid of some WS and GCC complains
  *
  * Revision 1.8  2003/10/27 21:00:17  kapustin
- * Set intron penalty defaults differently for 16- and 32-bit versions according to the expected quality of sequences those variants are supposed to be used with.
+ * Set intron penalty defaults differently for 16- and 32-bit versions according 
+ * to the expected quality of sequences those variants are supposed to be used with.
  *
  * Revision 1.7  2003/10/14 19:31:52  kapustin
  * Use one flag for all gap types

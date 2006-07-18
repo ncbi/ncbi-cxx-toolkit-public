@@ -31,7 +31,6 @@
 *
 */
 
-
 #include <ncbi_pch.hpp>
 #include "messages.hpp"
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
@@ -145,7 +144,6 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     vector<Uint1> stl_bm_ext (N1*N2, 0);
     Uint2* NCBI_RESTRICT backtrace_matrix = &stl_bm[0];
     Uint1* NCBI_RESTRICT backtrace_matrix_ext = &stl_bm_ext[0];
-    TScore* pV = rowV - 1;
 
     const char* NCBI_RESTRICT seq1 = m_Seq1 + data->m_offset1 - 1;
     const char* NCBI_RESTRICT seq2 = m_Seq2 + data->m_offset2 - 1;
@@ -177,7 +175,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     TScore* vAllDonors_d[splice_type_count_16];
 	
     size_t  jTail_d[splice_type_count_16];
-	size_t  jHead_d[splice_type_count_16];
+    size_t  jHead_d[splice_type_count_16];
     TScore  vBestDonor_d[splice_type_count_16];
     size_t  jBestDonor_d[splice_type_count_16];
 	
@@ -205,6 +203,8 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     }
     k = 0;
 
+    TScore* pV = rowV - 1;
+
     size_t i, j = 0, k0;
     unsigned char ci;
 
@@ -228,16 +228,12 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
             jBestDonor[st] = kMax_UInt;
         }
 
-        if(i == N1 - 1 && bFreeGapRight1) {
-        	wg1 = ws1 = 0;
-        }
-
         TScore wg2 = m_Wg, ws2 = m_Ws;
             
         // detect donor candidate
         if (N2 > 2) {
             unsigned short v1 = (seq2[1] << 8) | seq2[2];
-	        for(unsigned char st = 0; st < g_topidx; ++st) {
+            for(unsigned char st = 0; st < g_topidx; ++st) {
                 if (v1 == g_nwspl_donor_16[st]) {
                     size_t tl = jTail[st]++;
                     jAllDonors[st][tl] = j;
@@ -253,8 +249,17 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
         }}
 
         if(cds_start <= i && i < cds_stop) {
-            ws1 += cds_penalty_extra;
-            ws2 += cds_penalty_extra;
+
+            if(i != 0 || ! bFreeGapLeft1) {
+                ws1 += cds_penalty_extra;
+            }
+            if(j != 0 || ! bFreeGapLeft2) {
+                ws2 += cds_penalty_extra;
+            }
+        }
+
+        if(i == N1 - 1 && bFreeGapRight1) {
+            wg1 = ws1 = 0;
         }
 
         for (j = 1; j < N2; ++j, ++k) {
@@ -306,7 +311,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
             // find out if there are new donors (loop unroll)
             {{
-            #define NW_NDON_EVAL(st_idx) \
+#define NW_NDON_EVAL(st_idx) \
                 { \
                 size_t jt = jTail[st_idx]; \
                 size_t jh = jHead[st_idx]; \
@@ -324,7 +329,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
             NW_NDON_EVAL(1)
             NW_NDON_EVAL(2)
             NW_NDON_EVAL(3)
-            #undef NW_NDON_EVAL
+#undef NW_NDON_EVAL
             }}
                 
             // check splice signal
@@ -378,7 +383,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
             // detect donor candidate
             if(j < N2 - 2) {
                 unsigned short v1 = (seq2[j+1] << 8) | seq2[j+2];
-                #define NW_DON_EVAL(st_idx) \
+#define NW_DON_EVAL(st_idx) \
                     if( (v1 == g_nwspl_donor_16[st_idx]) &&  \
                         (V > vBestDonor[st_idx])){  \
                         size_t tl = jTail[st_idx]++; \
@@ -389,7 +394,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
                 NW_DON_EVAL(0)
                 NW_DON_EVAL(1)
                 NW_DON_EVAL(2)
-                #undef NW_DON_EVAL
+#undef NW_DON_EVAL
             }
             
             // detect new best value
@@ -672,8 +677,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/07/18 19:33:39  kapustin
+ * Tweak the way in-cds extras are assigned
+ *
  * Revision 1.25  2006/06/28 15:56:52  kapustin
- * Use smaller extra penalties to avoid eccetric term stuff
+ * Use smaller extra penalties to avoid eccentric term stuff
  *
  * Revision 1.24  2006/06/27 15:16:58  kapustin
  * Extra penalty for in-cds gap extensions
@@ -700,7 +708,9 @@ END_NCBI_SCOPE
  * File header update
  *
  * Revision 1.16  2004/11/29 14:37:15  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. 
+ * x_ScoreByTanscript renamed to ScoreFromTranscript with two additional 
+ * parameters to specify starting coordinates.
  *
  * Revision 1.15  2004/08/31 16:17:21  papadopo
  * make SAlignInOut work with sequence offsets rather than char pointers
