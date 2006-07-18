@@ -83,7 +83,13 @@ public:
 
 class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_Connection : public impl::CConnection
 {
-    friend class CSL3Context;
+public:
+    sqlite3* GetSQLite3(void) const
+    {
+        _ASSERT(m_SQLite3);
+        return m_SQLite3;
+    }
+    int Check(int rc);
 
 protected:
     CSL3_Connection(CSL3Context&  cntx,
@@ -132,13 +138,12 @@ protected:
     virtual bool Close(void);
 
 private:
-    int Check(int rc);
+    sqlite3*    m_SQLite3;
+
+    bool        m_IsOpen;
 
     friend class CSL3_LangCmd;
-    friend class CSL3_RowResult;
-
-    sqlite3*    m_SQLite3;
-    bool        m_IsOpen;
+    friend class CSL3Context;
 };
 
 
@@ -148,7 +153,7 @@ private:
 //  CSL3_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_LangCmd : public impl::CLangCmd
+class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_LangCmd : public impl::CBaseCmd
 {
     friend class CSL3_Connection;
 
@@ -163,6 +168,11 @@ public:
         _ASSERT(m_Connect);
         return *m_Connect;
     }
+    const CSL3_Connection& GetConnection(void) const
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
     int Check(int rc)
     {
         return GetConnection().Check(rc);
@@ -170,27 +180,22 @@ public:
 
 
 protected:
-    CSL3_LangCmd(CSL3_Connection*   conn,
-                   const string&    lang_query,
-                   unsigned int     nof_params);
-    virtual ~CSL3_LangCmd();
+    CSL3_LangCmd(CSL3_Connection* conn,
+                 const string&    lang_query,
+                 unsigned int     nof_params);
+    virtual ~CSL3_LangCmd(void);
 
 protected:
-    virtual bool        More(const string& query_text);
-    virtual bool        BindParam(const string& param_name,
-                                  CDB_Object*   param_ptr);
-    virtual bool        SetParam(const string& param_name,
-                                 CDB_Object*   param_ptr);
-    virtual bool        Send();
-    virtual bool        WasSent() const;
-    virtual bool        Cancel();
-    virtual bool        WasCanceled() const;
-    virtual CDB_Result* Result();
-    virtual bool        HasMoreResults() const;
-    virtual bool        HasFailed() const;
-    virtual int         RowCount() const;
-    virtual void        DumpResults();
-    long long int       LastInsertId() const;
+    virtual bool        Send(void);
+    virtual bool        WasSent(void) const;
+    virtual bool        Cancel(void);
+    virtual bool        WasCanceled(void) const;
+    virtual CDB_Result* Result(void);
+    virtual bool        HasMoreResults(void) const;
+    virtual bool        HasFailed(void) const;
+    virtual int         RowCount(void) const;
+    virtual void        DumpResults(void);
+    long long int       LastInsertId(void) const;
 
 private:
     bool x_AssignParams(void);
@@ -199,8 +204,6 @@ private:
 
 
     CSL3_Connection*    m_Connect;
-    string              m_Query;
-    CDB_Params          m_Params;
     bool                m_HasMoreResults;
     bool                m_WasSent;
     int                 m_RowCount;
@@ -208,6 +211,31 @@ private:
     sqlite3_stmt*       m_SQLite3stmt;
     CSL3_RowResult*     m_Res;
     int                 m_RC;
+};
+
+
+
+class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_BCPInCmd : public CSL3_LangCmd
+{
+    friend class CSL3_Connection;
+
+protected:
+    CSL3_BCPInCmd(CSL3_Connection* conn,
+                  const string&    table_name,
+                  unsigned int     nof_params);
+    virtual ~CSL3_BCPInCmd(void);
+
+public:
+    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
+
+protected:
+    // BCP stuff ...
+    virtual bool CommitBCPTrans(void);
+    virtual bool EndBCP(void);
+
+private:
+    void ExecuteSQL(const string& sql);
+    static string MakePlaceholders(size_t num);
 };
 
 
@@ -272,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/18 15:41:17  ssikorsk
+ * Implemented BCPInCmd.
+ *
  * Revision 1.3  2006/07/12 16:28:49  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
