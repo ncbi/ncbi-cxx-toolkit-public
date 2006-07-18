@@ -45,36 +45,15 @@ BEGIN_NCBI_SCOPE
 
 CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection* conn,
                            const string& proc_name,
-                           unsigned int nof_params)
-: CStatementBase(*conn)
-, m_Query(proc_name)
-, m_Params(nof_params)
-, m_WasSent(false)
-, m_HasFailed(false)
-, m_Recompile(false)
-, m_Res(0)
-, m_RowCount(-1)
+                           unsigned int nof_params) :
+    CStatementBase(*conn),
+    impl::CBaseCmd(proc_name, nof_params),
+    m_Res(0)
 {
     string extra_msg = "Procedure Name: " + proc_name;
     SetDiagnosticInfo( extra_msg );
 
     return;
-}
-
-
-bool CODBC_RPCCmd::BindParam(const string& param_name,
-                            CDB_Object* param_ptr, bool out_param)
-{
-    return m_Params.BindParam(CDB_Params::kNoParamNumber, param_name,
-                              param_ptr, out_param);
-}
-
-
-bool CODBC_RPCCmd::SetParam(const string& param_name,
-                           CDB_Object* param_ptr, bool out_param)
-{
-    return m_Params.SetParam(CDB_Params::kNoParamNumber, param_name,
-                             param_ptr, out_param);
 }
 
 
@@ -349,12 +328,6 @@ int CODBC_RPCCmd::RowCount() const
 }
 
 
-void CODBC_RPCCmd::SetRecompile(bool recompile)
-{
-    m_Recompile = recompile;
-}
-
-
 CODBC_RPCCmd::~CODBC_RPCCmd()
 {
     try {
@@ -591,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/07/18 15:47:59  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.27  2006/07/12 17:11:11  ssikorsk
  * Fixed compilation isssues.
  *

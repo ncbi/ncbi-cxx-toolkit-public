@@ -39,12 +39,13 @@
 
 BEGIN_NCBI_SCOPE
 
+
+///////////////////////////////////////////////////////////////////////////////
 CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection* conn,
                            const string&    lang_query,
                            unsigned int     nof_params) :
+    impl::CBaseCmd(lang_query, nof_params),
     m_Connect(conn),
-    m_Query(lang_query),
-    m_Params(nof_params),
     m_HasMoreResults(false),
     m_WasSent(false),
     m_RowCount(0),
@@ -52,35 +53,6 @@ CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection* conn,
     m_Res(NULL),
     m_RC(SQLITE_ERROR)
 {
-}
-
-
-bool CSL3_LangCmd::More(const string& query_text)
-{
-    m_Query += query_text;
-    return true;
-}
-
-
-bool CSL3_LangCmd::BindParam(const string& param_name,
-                               CDB_Object* param_ptr)
-{
-    return m_Params.BindParam(
-        CDB_Params::kNoParamNumber,
-        param_name,
-        param_ptr);
-
-}
-
-
-bool CSL3_LangCmd::SetParam(const string& param_name,
-                              CDB_Object* param_ptr)
-{
-    return m_Params.SetParam(
-        CDB_Params::kNoParamNumber,
-        param_name,
-        param_ptr);
-
 }
 
 
@@ -92,7 +64,7 @@ bool CSL3_LangCmd::Send()
 
     // m_HasFailed = false;
 
-    int rc = Check(sqlite3_prepare(GetConnection().m_SQLite3,
+    int rc = Check(sqlite3_prepare(GetConnection().GetSQLite3(),
                                    m_Query.c_str(),
                                    m_Query.size(),
                                    &m_SQLite3stmt,
@@ -109,7 +81,7 @@ bool CSL3_LangCmd::Send()
     m_RC = sqlite3_step(m_SQLite3stmt);
     switch (m_RC) {
     case SQLITE_DONE:
-        m_RowCount = sqlite3_total_changes(m_Connect->m_SQLite3);
+        m_RowCount = sqlite3_total_changes(m_Connect->GetSQLite3());
         m_HasMoreResults = false;
         break;
     case SQLITE_ROW:
@@ -194,7 +166,7 @@ void CSL3_LangCmd::DumpResults()
 
 bool CSL3_LangCmd::HasFailed() const
 {
-    return sqlite3_errcode(m_Connect->m_SQLite3) != SQLITE_OK;
+    return sqlite3_errcode(m_Connect->GetSQLite3()) != SQLITE_OK;
 }
 
 
@@ -212,7 +184,7 @@ CSL3_LangCmd::~CSL3_LangCmd()
 
 long long int CSL3_LangCmd::LastInsertId() const
 {
-    return sqlite3_last_insert_rowid(this->m_Connect->m_SQLite3);
+    return sqlite3_last_insert_rowid(this->m_Connect->GetSQLite3());
 }
 
 int CSL3_LangCmd::RowCount() const
@@ -393,11 +365,16 @@ bool CSL3_LangCmd::AssignCmdParam(CDB_Object&   param,
 }
 
 
+
 END_NCBI_SCOPE
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/18 15:47:59  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.2  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

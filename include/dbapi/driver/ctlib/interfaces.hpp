@@ -37,7 +37,6 @@
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
 #include <dbapi/driver/impl/dbapi_impl_result.hpp>
-#include <dbapi/driver/util/parameters.hpp>
 
 #include <corelib/ncbi_safe_static.hpp>
 
@@ -283,7 +282,7 @@ private:
 //  CTL_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : CTL_Cmd, public impl::CLangCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : CTL_Cmd, public impl::CBaseCmd
 {
     friend class CTL_Connection;
 
@@ -297,9 +296,6 @@ protected:
     void Close(void);
 
 protected:
-    virtual bool More(const string& query_text);
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
     virtual bool Send(void);
     virtual bool WasSent(void) const;
     virtual bool Cancel(void);
@@ -313,10 +309,6 @@ protected:
 
 private:
     bool x_AssignParams(void);
-
-private:
-    string          m_Query;
-    CDB_Params      m_Params;
 };
 
 
@@ -326,7 +318,7 @@ private:
 //  CTL_RPCCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : CTL_Cmd, public impl::CRPCCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : CTL_Cmd, public impl::CBaseCmd
 {
     friend class CTL_Connection;
 
@@ -338,10 +330,6 @@ protected:
     void Close(void);
 
 protected:
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
-                           bool out_param = false);
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
-                          bool out_param = false);
     virtual bool Send(void);
     virtual bool WasSent(void) const;
     virtual bool Cancel(void);
@@ -351,16 +339,10 @@ protected:
     virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
-    virtual void SetRecompile(bool recompile = true);
     virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(void);
-
-private:
-    string          m_Query;
-    CDB_Params      m_Params;
-    bool            m_Recompile;
 };
 
 
@@ -404,7 +386,6 @@ private:
     string            m_Query;
     CDB_Params        m_Params;
     unsigned int      m_FetchSize;
-    bool              m_IsOpen;
     bool              m_Used;
 };
 
@@ -415,7 +396,7 @@ private:
 //  CTL_BCPInCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd : CTL_Cmd, public impl::CBCPInCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd : CTL_Cmd, public impl::CBaseCmd
 {
     friend class CTL_Connection;
 
@@ -428,11 +409,15 @@ protected:
 
 protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
-    virtual bool SendRow(void);
-    virtual bool CompleteBatch(void);
+    virtual bool Send(void);
+    virtual bool WasSent(void) const;
+    virtual bool CommitBCPTrans(void);
     virtual bool Cancel(void);
-    virtual bool CompleteBCP(void);
+    virtual bool WasCanceled(void) const;
+    virtual bool EndBCP(void);
     virtual CDB_Result* CreateResult(impl::CResult& result);
+    virtual bool HasFailed(void) const;
+    virtual int RowCount(void) const;
 
 private:
     bool x_AssignParams(void);
@@ -440,15 +425,15 @@ private:
 
 private:
     CS_BLKDESC*     m_Cmd;
-    string          m_Query;
-    CDB_Params      m_Params;
 
     struct SBcpBind {
         CS_INT      datalen;
         CS_SMALLINT indicator;
         char        buffer[sizeof(CS_NUMERIC)];
     };
-    SBcpBind*       m_Bind;
+
+    SBcpBind*   m_Bind;
+    int         m_RowCount;
 };
 
 
@@ -472,9 +457,6 @@ protected:
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
     virtual CDB_Result* CreateResult(impl::CResult& result);
-
-private:
-    size_t          m_Bytes2go;
 };
 
 
@@ -757,6 +739,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/07/18 15:46:00  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.37  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

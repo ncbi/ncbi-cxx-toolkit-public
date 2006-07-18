@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = connection context lang_cmd result sqlite3_utils
+SRC = connection context lang_cmd bcp result sqlite3_utils
 LIB = ncbi_xdbapi_sqlite3
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SQLITE3_INCLUDE)

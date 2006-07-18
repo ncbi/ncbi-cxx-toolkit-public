@@ -451,11 +451,12 @@ void CTDS_Connection::CheckFunctCall(void)
 //
 
 
-CTDS_SendDataCmd::CTDS_SendDataCmd(CTDS_Connection* conn, DBPROCESS* cmd,
-                                   size_t nof_bytes)
-: CDBL_Cmd( conn, cmd )
+CTDS_SendDataCmd::CTDS_SendDataCmd(CTDS_Connection* conn,
+                                   DBPROCESS* cmd,
+                                   size_t nof_bytes) :
+    CDBL_Cmd( conn, cmd ),
+    impl::CSendDataCmd(nof_bytes)
 {
-    m_Bytes2go = nof_bytes;
 }
 
 
@@ -500,6 +501,7 @@ bool CTDS_SendDataCmd::Cancel(void)
     return false;
 }
 
+
 CTDS_SendDataCmd::~CTDS_SendDataCmd()
 {
     try {
@@ -520,6 +522,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.30  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

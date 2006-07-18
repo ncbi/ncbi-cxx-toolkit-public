@@ -90,11 +90,12 @@ CSL3Context::MakeIConnection(const SConnAttr& conn_attr)
 ///////////////////////////////////////////////////////////////////////
 // DriverManager related functions
 //
-
-static I_DriverContext* SQLite3_CreateContext(const map<string,string>* /*attr*/)
+/*
+static I_DriverContext* SQLite3_CreateContext(const map<string,string>* attr)
 {
     return new CSL3Context();
 }
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 const string kDBAPI_SQLite3_DriverName("sqlite3");
@@ -145,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/18 15:47:59  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.3  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

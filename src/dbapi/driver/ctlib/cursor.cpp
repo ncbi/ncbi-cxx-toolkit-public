@@ -44,16 +44,13 @@ BEGIN_NCBI_SCOPE
 CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                              const string& cursor_name, const string& query,
                              unsigned int nof_params, unsigned int fetch_size) :
-CTL_Cmd(conn, cmd),
-m_Name(cursor_name),
-m_Query(query),
-m_Params(nof_params),
-m_FetchSize(fetch_size)
+    CTL_Cmd(conn, cmd),
+    m_Name(cursor_name),
+    m_Query(query),
+    m_Params(nof_params),
+    m_FetchSize(fetch_size)
 {
-    m_IsOpen      = false;
-    m_HasFailed   = false;
     m_Used        = false;
-    m_RowCount    = -1;
 }
 
 
@@ -479,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.22  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

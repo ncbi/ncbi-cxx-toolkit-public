@@ -112,24 +112,26 @@ I_DriverContext::TConnectionMode CSL3_Connection::ConnectMode() const
 
 
 CDB_LangCmd* CSL3_Connection::LangCmd(const string& lang_query,
-                                        unsigned int  nof_parms)
+                                      unsigned int  nof_parms)
 {
-    CSL3_LangCmd* lcmd = new CSL3_LangCmd(this, lang_query, nof_parms);
-    return Create_LangCmd(*lcmd);
+    CSL3_LangCmd* cmd = new CSL3_LangCmd(this, lang_query, nof_parms);
+    return Create_LangCmd(*cmd);
 }
 
 
-CDB_RPCCmd *CSL3_Connection::RPC(const string& /*rpc_name*/,
-                                   unsigned int  /*nof_args*/)
+CDB_RPCCmd *CSL3_Connection::RPC(const string& rpc_name,
+                                 unsigned int  nof_args)
 {
-    return NULL;
+    CSL3_LangCmd* cmd = new CSL3_LangCmd(this, rpc_name, nof_args);
+    return Create_RPCCmd(*cmd);
 }
 
 
-CDB_BCPInCmd* CSL3_Connection::BCPIn(const string& /*table_name*/,
-                                       unsigned int  /*nof_columns*/)
+CDB_BCPInCmd* CSL3_Connection::BCPIn(const string& table_name,
+                                     unsigned int  nof_columns)
 {
-    return NULL;
+    CSL3_BCPInCmd* cmd = new CSL3_BCPInCmd(this, table_name, nof_columns);
+    return Create_BCPInCmd(*cmd);
 }
 
 
@@ -171,6 +173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/18 15:47:59  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.2  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

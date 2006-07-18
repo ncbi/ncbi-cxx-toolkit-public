@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 7, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 8, 0, 0);
 
 
 BEGIN_SCOPE(impl)
@@ -270,11 +270,13 @@ public:
 
     // Send command to the server
     virtual bool Send();
-    virtual bool WasSent() const;
+    /// Implementation-specific.
+    NCBI_DEPRECATED virtual bool WasSent() const;
 
     // Cancel the command execution
     virtual bool Cancel();
-    virtual bool WasCanceled() const;
+    /// Implementation-specific.
+    NCBI_DEPRECATED virtual bool WasCanceled() const;
 
     // Get result set
     virtual CDB_Result* Result();
@@ -297,9 +299,9 @@ public:
     virtual ~CDB_LangCmd();
 
 private:
-    impl::CLangCmd* m_CmdImpl;
+    impl::CBaseCmd* m_CmdImpl;
 
-    CDB_LangCmd(impl::CLangCmd* cmd);
+    CDB_LangCmd(impl::CBaseCmd* cmd);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_LangCmd& operator= (const CDB_LangCmd&);
@@ -332,11 +334,13 @@ public:
 
     // Send command to the server
     virtual bool Send();
-    virtual bool WasSent() const;
+    /// Implementation-specific.
+    NCBI_DEPRECATED virtual bool WasSent() const;
 
     // Cancel the command execution
     virtual bool Cancel();
-    virtual bool WasCanceled() const;
+    /// Implementation-specific.
+    NCBI_DEPRECATED virtual bool WasCanceled() const;
 
     // Get result set.
     // Return NULL if no more results left to read.
@@ -360,15 +364,16 @@ public:
     virtual void DumpResults();
 
     // Set the "recompile before execute" flag for the stored proc
-    virtual void SetRecompile(bool recompile = true);
+    /// Implementation-specific.
+    NCBI_DEPRECATED virtual void SetRecompile(bool recompile = true);
 
     // Destructor
     virtual ~CDB_RPCCmd();
 
 private:
-    impl::CRPCCmd* m_CmdImpl;
+    impl::CBaseCmd* m_CmdImpl;
 
-    CDB_RPCCmd(impl::CRPCCmd* rpc);
+    CDB_RPCCmd(impl::CBaseCmd* rpc);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_RPCCmd& operator= (const CDB_RPCCmd&);
@@ -411,9 +416,9 @@ public:
     virtual ~CDB_BCPInCmd();
 
 private:
-    impl::CBCPInCmd* m_CmdImpl;
+    impl::CBaseCmd* m_CmdImpl;
 
-    CDB_BCPInCmd(impl::CBCPInCmd* bcp);
+    CDB_BCPInCmd(impl::CBaseCmd* bcp);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_BCPInCmd& operator= (const CDB_BCPInCmd&);
@@ -584,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/07/18 15:46:00  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.27  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

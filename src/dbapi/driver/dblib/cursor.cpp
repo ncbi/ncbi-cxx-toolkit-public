@@ -51,11 +51,7 @@ CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection* conn, DBPROCESS* cmd,
     m_LCmd(0),
     m_Query(query),
     m_Params(nof_params),
-    m_IsOpen(false),
-    m_HasFailed(false),
-    m_IsDeclared(false),
-    m_Res(0),
-    m_RowCount(-1)
+    m_Res(0)
 {
 }
 
@@ -537,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.29  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

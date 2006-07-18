@@ -312,7 +312,7 @@ CDB_Result::~CDB_Result()
 //  CDB_LangCmd::
 //
 
-CDB_LangCmd::CDB_LangCmd(impl::CLangCmd* c)
+CDB_LangCmd::CDB_LangCmd(impl::CBaseCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200004 );
 
@@ -413,7 +413,7 @@ CDB_LangCmd::~CDB_LangCmd()
 //  CDB_RPCCmd::
 //
 
-CDB_RPCCmd::CDB_RPCCmd(impl::CRPCCmd* c)
+CDB_RPCCmd::CDB_RPCCmd(impl::CBaseCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200006 );
     m_CmdImpl = c;
@@ -512,7 +512,7 @@ CDB_RPCCmd::~CDB_RPCCmd()
 //  CDB_BCPInCmd::
 //
 
-CDB_BCPInCmd::CDB_BCPInCmd(impl::CBCPInCmd* c)
+CDB_BCPInCmd::CDB_BCPInCmd(impl::CBaseCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200007 );
 
@@ -530,7 +530,7 @@ bool CDB_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 bool CDB_BCPInCmd::SendRow()
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->SendRow();
+    return m_CmdImpl->Send();
 }
 
 bool CDB_BCPInCmd::Cancel()
@@ -542,13 +542,13 @@ bool CDB_BCPInCmd::Cancel()
 bool CDB_BCPInCmd::CompleteBatch()
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->CompleteBatch();
+    return m_CmdImpl->CommitBCPTrans();
 }
 
 bool CDB_BCPInCmd::CompleteBCP()
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->CompleteBCP();
+    return m_CmdImpl->EndBCP();
 }
 
 
@@ -764,6 +764,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.28  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

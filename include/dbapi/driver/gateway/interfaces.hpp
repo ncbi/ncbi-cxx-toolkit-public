@@ -275,12 +275,13 @@ public:
   }
 };
 
-class CGW_LangCmd : public impl::CLangCmd, CGW_BaseCmd
+class CGW_LangCmd : public impl::CBaseCmd, CGW_BaseCmd
 {
   friend class CGW_Connection;
 
 protected:
-    CGW_LangCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    CGW_LangCmd(CGW_Connection* con_arg, int remoteObj_arg) :
+        impl::CBaseCmd(kEmptyStr, 0)
     {
       con       = con_arg;
       remoteObj = remoteObj_arg;
@@ -294,8 +295,10 @@ protected:
     return comprot_bool1("GWLib:LangCmd:More", remoteObj, query_text.c_str() );
   }
 
-  virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
-  virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
+  virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
+                         bool out_param = false);
+  virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
+                        bool out_param = false);
 
   virtual bool Send(void)
   {
@@ -342,12 +345,13 @@ protected:
 };
 
 
-class CGW_RPCCmd : public impl::CRPCCmd, CGW_BaseCmd
+class CGW_RPCCmd : public impl::CBaseCmd, CGW_BaseCmd
 {
   friend class CGW_Connection;
 
 protected:
-    CGW_RPCCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    CGW_RPCCmd(CGW_Connection* con_arg, int remoteObj_arg) :
+        impl::CBaseCmd(kEmptyStr, 0)
     {
       con       = con_arg;
       remoteObj = remoteObj_arg;
@@ -410,12 +414,13 @@ protected:
   }
 };
 
-class CGW_BCPInCmd : public impl::CBCPInCmd, CGW_Base
+class CGW_BCPInCmd : public impl::CBaseCmd, CGW_Base
 {
   friend class CGW_Connection;
 
 protected:
-    CGW_BCPInCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    CGW_BCPInCmd(CGW_Connection* con_arg, int remoteObj_arg) :
+        impl::CBaseCmd(kEmptyStr, 0)
     {
       con       = con_arg;
       remoteObj = remoteObj_arg;
@@ -432,21 +437,31 @@ protected:
   virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
 
   // Send row to the server
-  virtual bool SendRow(void);
+  virtual bool Send(void);
 
   // Complete batch -- to store all rows transferred so far in this batch
   // into the table
-  virtual bool CompleteBatch(void)
+  virtual bool CommitBCPTrans(void)
   {
     return comprot_bool( "GWLib:BCPInCmd:CompleteBatch", remoteObj );
   }
 
   // Cancel the BCP command
   virtual bool Cancel(void);
+  virtual bool WasCanceled(void) const;
 
   // Complete the BCP and store all rows transferred in last batch
   // into the table
-  virtual bool CompleteBCP(void);
+  virtual bool EndBCP(void);
+
+  virtual bool HasFailed(void) const
+  {
+      return false;
+  }
+  virtual int RowCount(void) const
+  {
+      return 0;
+  }
 
 };
 
@@ -516,7 +531,8 @@ class CGW_SendDataCmd : public impl::CSendDataCmd, CGW_Base
   friend class CGW_CursorCmd;
 
 protected:
-    CGW_SendDataCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    CGW_SendDataCmd(CGW_Connection* con_arg, int remoteObj_arg) :
+        impl::CSendDataCmd(0),
     {
       con       = con_arg;
       remoteObj = remoteObj_arg;
@@ -660,6 +676,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/07/18 15:46:00  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.12  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

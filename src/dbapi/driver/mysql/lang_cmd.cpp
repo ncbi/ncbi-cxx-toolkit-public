@@ -39,32 +39,11 @@ BEGIN_NCBI_SCOPE
 
 CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection* conn,
                                const string&      lang_query,
-                               unsigned int       /*nof_params*/)
-    : m_Connect(conn),
-      m_Query(lang_query),
-      m_HasResults(false)
+                               unsigned int       nof_params) :
+    impl::CBaseCmd(lang_query, nof_params),
+    m_Connect(conn),
+    m_HasResults(false)
 {
-}
-
-
-bool CMySQL_LangCmd::More(const string& query_text)
-{
-    m_Query += query_text;
-    return true;
-}
-
-
-bool CMySQL_LangCmd::BindParam(const string& /*param_name*/,
-                               CDB_Object*   /*param_ptr*/)
-{
-    return false;
-}
-
-
-bool CMySQL_LangCmd::SetParam(const string& /*param_name*/,
-                              CDB_Object*   /*param_ptr*/)
-{
-    return false;
 }
 
 
@@ -173,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.17  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

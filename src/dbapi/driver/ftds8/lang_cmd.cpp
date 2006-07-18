@@ -45,36 +45,11 @@ CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection* conn, DBPROCESS* cmd,
                            const string& lang_query,
                            unsigned int nof_params) :
     CDBL_Cmd( conn, cmd ),
-    m_Query(lang_query),
-    m_Params(nof_params)
+    impl::CBaseCmd(lang_query, nof_params)
 {
 
-    m_WasSent   =  false;
-    m_HasFailed =  false;
     m_Res       =  0;
-    m_RowCount  = -1;
     m_Status    =  0;
-}
-
-
-bool CTDS_LangCmd::More(const string& query_text)
-{
-    m_Query.append(query_text);
-    return true;
-}
-
-
-bool CTDS_LangCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
-{
-    return
-        m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
-}
-
-
-bool CTDS_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
-{
-    return
-        m_Params.SetParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
 }
 
 
@@ -492,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.24  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

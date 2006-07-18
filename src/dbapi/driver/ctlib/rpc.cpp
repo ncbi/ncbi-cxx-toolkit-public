@@ -44,30 +44,9 @@ BEGIN_NCBI_SCOPE
 
 CTL_RPCCmd::CTL_RPCCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                        const string& proc_name, unsigned int nof_params) :
-CTL_Cmd(conn, cmd),
-m_Query(proc_name),
-m_Params(nof_params)
+    CTL_Cmd(conn, cmd),
+    impl::CBaseCmd(proc_name, nof_params)
 {
-    m_WasSent     = false;
-    m_HasFailed   = false;
-    m_Recompile   = false;
-    m_RowCount    = -1;
-}
-
-
-bool CTL_RPCCmd::BindParam(const string& param_name, CDB_Object* param_ptr,
-                           bool out_param)
-{
-    return m_Params.BindParam(CDB_Params::kNoParamNumber, param_name,
-                              param_ptr, out_param);
-}
-
-
-bool CTL_RPCCmd::SetParam(const string& param_name, CDB_Object* param_ptr,
-                          bool out_param)
-{
-    return m_Params.SetParam(CDB_Params::kNoParamNumber, param_name,
-                             param_ptr, out_param);
 }
 
 
@@ -79,7 +58,7 @@ bool CTL_RPCCmd::Send()
 
     switch ( Check(ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
                         const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
-                        m_Recompile ? CS_RECOMPILE : CS_UNUSED)) ) {
+                              NeedToRecompile() ? CS_RECOMPILE : CS_UNUSED)) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
@@ -174,12 +153,6 @@ int CTL_RPCCmd::RowCount() const
 }
 
 
-void CTL_RPCCmd::SetRecompile(bool recompile)
-{
-    m_Recompile = recompile;
-}
-
-
 CDB_Result*
 CTL_RPCCmd::CreateResult(impl::CResult& result)
 {
@@ -252,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.21  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

@@ -536,9 +536,9 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection* conn,
                                  CS_COMMAND* cmd,
                                  size_t nof_bytes) :
-CTL_Cmd(conn, cmd)
+    CTL_Cmd(conn, cmd),
+    impl::CSendDataCmd(nof_bytes)
 {
-    m_Bytes2go = nof_bytes;
 }
 
 
@@ -626,6 +626,7 @@ bool CTL_SendDataCmd::Cancel(void)
     return false;
 }
 
+
 CDB_Result*
 CTL_SendDataCmd::CreateResult(impl::CResult& result)
 {
@@ -671,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.38  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

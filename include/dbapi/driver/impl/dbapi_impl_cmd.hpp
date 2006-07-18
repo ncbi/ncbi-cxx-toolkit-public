@@ -34,6 +34,7 @@
 
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
+#include <dbapi/driver/util/parameters.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -54,7 +55,7 @@ public:
 
     void Release(void)
     {
-        // Temporarily solution ...
+        // Temporary solution ...
         delete this;
     }
 
@@ -70,8 +71,12 @@ public:
 
 class NCBI_DBAPIDRIVER_EXPORT CBaseCmd : public CCommand
 {
+    friend class ncbi::CDB_LangCmd; // Because of AttachTo
+    friend class ncbi::CDB_RPCCmd;  // Because of AttachTo
+    friend class ncbi::CDB_BCPInCmd; // Because of AttachTo
+
 public:
-    CBaseCmd(void);
+    CBaseCmd(const string& query, unsigned int nof_params);
     // Destructor
     virtual ~CBaseCmd(void);
 
@@ -85,8 +90,8 @@ public:
     virtual bool WasCanceled(void) const = 0;
 
     /// Get result set
-    virtual CDB_Result* Result(void) = 0;
-    virtual bool HasMoreResults(void) const = 0;
+    virtual CDB_Result* Result(void);
+    virtual bool HasMoreResults(void) const;
 
     // Check if command has failed
     virtual bool HasFailed(void) const = 0;
@@ -99,115 +104,63 @@ public:
     /// Dump the results of the command
     /// if result processor is installed for this connection, it will be called for
     /// each result set
-    virtual void DumpResults(void)= 0;
+    virtual void DumpResults(void);
+
+    /// Binding
+    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
+    virtual bool BindParam(const string& name, CDB_Object* param_ptr,
+                           bool out_param = false);
+
+    /// Setting
+    virtual bool SetParam(const string& name, CDB_Object* param_ptr,
+                          bool out_param = false);
+
+    /// Add more text to the language command
+    virtual bool More(const string& query_text);
+
+
+    /// Complete batch -- to store all rows transferred by far in this batch
+    /// into the table
+    virtual bool CommitBCPTrans(void);
+
+    /// Complete the BCP and store all rows transferred in last batch into
+    /// the table
+    virtual bool EndBCP(void);
+
+protected:
+    void DetachInterface(void);
+
+    /// Set the "recompile before execute" flag for the stored proc
+    virtual void SetRecompile(bool recompile = true);
+    bool NeedToRecompile(void) const
+    {
+        return m_Recompile;
+    }
+
+protected:
+    string      m_Query;
+    CDB_Params  m_Params;
+
+private:
+    void AttachTo(CDB_LangCmd* interface);
+    void AttachTo(CDB_RPCCmd* interface);
+    void AttachTo(CDB_BCPInCmd* interface);
+
+    CInterfaceHook<CDB_LangCmd>  m_InterfaceLang;
+    CInterfaceHook<CDB_RPCCmd>   m_InterfaceRPC;
+    CInterfaceHook<CDB_BCPInCmd> m_InterfaceBCPIn;
+    bool                         m_Recompile; // Temporary. Should be deleted.
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-///  CLangCmd::
-///  CRPCCmd::
-///  CBCPInCmd::
 ///  CCursorCmd::
 ///  CSendDataCmd::
 ///
 /// "Command" interface classes.
 ///
-
-
-class NCBI_DBAPIDRIVER_EXPORT CLangCmd : public CBaseCmd
-{
-    friend class ncbi::CDB_LangCmd; // Because of AttachTo
-
-public:
-    CLangCmd(void);
-    virtual ~CLangCmd(void);
-
-protected:
-    /// Add more text to the language command
-    virtual bool More(const string& query_text) = 0;
-
-    /// Bind cmd parameter with name "name" to the object pointed by "value"
-    virtual bool BindParam(const string& name, CDB_Object* param_ptr) = 0;
-
-    /// Set cmd parameter with name "name" to the object pointed by "value"
-    virtual bool SetParam(const string& name, CDB_Object* param_ptr) = 0;
-
-    void DetachInterface(void);
-
-private:
-    void AttachTo(CDB_LangCmd* interface);
-
-    CInterfaceHook<CDB_LangCmd> m_Interface;
-};
-
-
-
-class NCBI_DBAPIDRIVER_EXPORT CRPCCmd : public CBaseCmd
-{
-    friend class ncbi::CDB_RPCCmd; // Because of AttachTo
-
-public:
-    CRPCCmd(void);
-    virtual ~CRPCCmd(void);
-
-protected:
-    /// Binding
-    virtual bool BindParam(const string& name, CDB_Object* param_ptr,
-                           bool out_param = false) = 0;
-
-    /// Setting
-    virtual bool SetParam(const string& name, CDB_Object* param_ptr,
-                          bool out_param = false) = 0;
-
-    /// Set the "recompile before execute" flag for the stored proc
-    virtual void SetRecompile(bool recompile = true) = 0;
-
-    void DetachInterface(void);
-
-private:
-    void AttachTo(CDB_RPCCmd* interface);
-
-    CInterfaceHook<CDB_RPCCmd> m_Interface;
-};
-
-
-
-class NCBI_DBAPIDRIVER_EXPORT CBCPInCmd : public CCommand
-{
-    friend class ncbi::CDB_BCPInCmd; // Because of AttachTo
-
-public:
-    CBCPInCmd(void);
-    virtual ~CBCPInCmd(void);
-
-protected:
-    /// Binding
-    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr) = 0;
-
-    /// Send row to the server
-    virtual bool SendRow(void) = 0;
-
-    /// Complete batch -- to store all rows transferred by far in this batch
-    /// into the table
-    virtual bool CompleteBatch(void) = 0;
-
-    /// Cancel the BCP command
-    virtual bool Cancel(void) = 0;
-
-    /// Complete the BCP and store all rows transferred in last batch into
-    /// the table
-    virtual bool CompleteBCP(void) = 0;
-
-    void DetachInterface(void);
-
-private:
-    void AttachTo(CDB_BCPInCmd* interface);
-
-    CInterfaceHook<CDB_BCPInCmd> m_Interface;
-};
-
 
 
 class NCBI_DBAPIDRIVER_EXPORT CCursorCmd : public CCommand
@@ -251,6 +204,11 @@ protected:
 
     void DetachInterface(void);
 
+protected:
+    bool m_IsOpen;
+    bool m_IsDeclared;
+    // bool m_HasFailed;
+
 private:
     void AttachTo(CDB_CursorCmd* interface);
 
@@ -264,16 +222,19 @@ class NCBI_DBAPIDRIVER_EXPORT CSendDataCmd : public CCommand
     friend class ncbi::CDB_SendDataCmd; // Because of AttachTo
 
 public:
-    CSendDataCmd(void);
+    CSendDataCmd(size_t nof_bytes);
     virtual ~CSendDataCmd(void);
 
 protected:
     /// Send chunk of data to the server.
     /// Return number of bytes actually transferred to server.
-    virtual size_t SendChunk(const void* pChunk, size_t nofBytes) = 0;
+    virtual size_t  SendChunk(const void* pChunk, size_t nofBytes) = 0;
     virtual bool Cancel(void) = 0;
 
-    void DetachInterface(void);
+    void            DetachInterface(void);
+
+protected:
+    size_t  m_Bytes2go;
 
 private:
     void AttachTo(CDB_SendDataCmd* interface);
@@ -290,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/07/18 15:46:00  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.4  2006/07/12 19:15:17  ucko
  * Disambiguate friend declarations, and add corresponding top-level
  * predeclarations, for the sake of GCC 4.x.

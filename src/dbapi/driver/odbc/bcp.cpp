@@ -51,14 +51,12 @@ BEGIN_NCBI_SCOPE
 CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
                                SQLHDBC          cmd,
                                const string&    table_name,
-                               unsigned int     nof_columns)
-: CStatementBase(*conn)
-, m_Cmd(cmd)
-, m_Params(nof_columns)
-, m_WasSent(false)
-, m_HasFailed(false)
-, m_HasTextImage(false)
-, m_WasBound(false)
+                               unsigned int     nof_columns) :
+    CStatementBase(*conn),
+    impl::CBaseCmd(table_name, nof_columns),
+    m_Cmd(cmd),
+    m_HasTextImage(false),
+    m_WasBound(false)
 {
     string extra_msg = "Table Name: " + table_name;
     SetDiagnosticInfo( extra_msg );
@@ -68,6 +66,8 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
         string err_message = "bcp_init failed" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 423001 );
     }
+
+    ++m_RowCount;
 }
 
 
@@ -329,7 +329,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
 }
 
 
-bool CODBC_BCPInCmd::SendRow()
+bool CODBC_BCPInCmd::Send(void)
 {
     char param_buff[2048]; // maximal row size, assured of buffer overruns
 
@@ -390,6 +390,12 @@ bool CODBC_BCPInCmd::SendRow()
 }
 
 
+bool CODBC_BCPInCmd::WasSent(void) const
+{
+    return m_WasSent;
+}
+
+
 bool CODBC_BCPInCmd::Cancel()
 {
     if (m_WasSent) {
@@ -402,7 +408,13 @@ bool CODBC_BCPInCmd::Cancel()
 }
 
 
-bool CODBC_BCPInCmd::CompleteBatch()
+bool CODBC_BCPInCmd::WasCanceled(void) const
+{
+    return !m_WasSent;
+}
+
+
+bool CODBC_BCPInCmd::CommitBCPTrans(void)
 {
     if(m_WasSent) {
         Int4 outrow = bcp_batch(m_Cmd);
@@ -416,7 +428,7 @@ bool CODBC_BCPInCmd::CompleteBatch()
 }
 
 
-bool CODBC_BCPInCmd::CompleteBCP()
+bool CODBC_BCPInCmd::EndBCP(void)
 {
     if(m_WasSent) {
         Int4 outrow = bcp_done(m_Cmd);
@@ -430,6 +442,17 @@ bool CODBC_BCPInCmd::CompleteBCP()
     return false;
 }
 
+
+bool CODBC_BCPInCmd::HasFailed(void) const
+{
+    return m_HasFailed;
+}
+
+
+int CODBC_BCPInCmd::RowCount(void) const
+{
+    return m_RowCount;
+}
 
 CODBC_BCPInCmd::~CODBC_BCPInCmd()
 {
@@ -451,6 +474,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/07/18 15:47:59  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.18  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

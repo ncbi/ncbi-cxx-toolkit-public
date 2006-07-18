@@ -41,7 +41,10 @@ CDB_Result* CCommand::Create_Result(CResult& result)
 }
 
 ///////////////////////////////////////////////////////////////////////////
-CBaseCmd::CBaseCmd(void)
+CBaseCmd::CBaseCmd(const string& query, unsigned int nof_params) :
+    m_Query(query),
+    m_Params(nof_params),
+    m_Recompile(false)
 {
 }
 
@@ -50,69 +53,100 @@ CBaseCmd::~CBaseCmd(void)
     return;
 }
 
-///////////////////////////////////////////////////////////////////////////
-CLangCmd::CLangCmd(void)
+
+CDB_Result* CBaseCmd::Result(void)
 {
+    return NULL;
 }
 
-CLangCmd::~CLangCmd(void)
+
+bool CBaseCmd::HasMoreResults(void) const
 {
-    return;
+    return false;
 }
 
-void CLangCmd::DetachInterface(void)
-{
-    m_Interface.DetachInterface();
-}
-
-void CLangCmd::AttachTo(CDB_LangCmd* interface)
-{
-    m_Interface = interface;
-}
-
-///////////////////////////////////////////////////////////////////////////
-CRPCCmd::CRPCCmd(void)
-{
-}
-
-CRPCCmd::~CRPCCmd(void)
+void CBaseCmd::DumpResults(void)
 {
     return;
 }
 
-void CRPCCmd::DetachInterface(void)
+
+bool CBaseCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 {
-    m_Interface.DetachInterface();
+    return m_Params.BindParam(column_num, kEmptyStr, pVal);
 }
 
-void CRPCCmd::AttachTo(CDB_RPCCmd* interface)
+
+bool CBaseCmd::BindParam(const string& param_name, CDB_Object* param_ptr,
+                         bool out_param)
 {
-    m_Interface = interface;
+    return m_Params.BindParam(CDB_Params::kNoParamNumber, param_name,
+                              param_ptr, out_param);
+}
+
+
+bool CBaseCmd::SetParam(const string& param_name, CDB_Object* param_ptr,
+                        bool out_param)
+{
+    return m_Params.SetParam(CDB_Params::kNoParamNumber, param_name,
+                             param_ptr, out_param);
+}
+
+
+bool CBaseCmd::More(const string& query_text)
+{
+    m_Query.append(query_text);
+    return true;
+}
+
+
+bool CBaseCmd::CommitBCPTrans(void)
+{
+    return false;
+}
+
+
+bool CBaseCmd::EndBCP(void)
+{
+    return false;
+}
+
+
+void CBaseCmd::SetRecompile(bool recompile)
+{
+    m_Recompile = recompile;
+}
+
+
+void CBaseCmd::DetachInterface(void)
+{
+    m_InterfaceLang.DetachInterface();
+    m_InterfaceRPC.DetachInterface();
+    m_InterfaceBCPIn.DetachInterface();
+}
+
+
+void CBaseCmd::AttachTo(CDB_LangCmd* interface)
+{
+    m_InterfaceLang = interface;
+}
+
+
+void CBaseCmd::AttachTo(CDB_RPCCmd* interface)
+{
+    m_InterfaceRPC = interface;
+}
+
+void CBaseCmd::AttachTo(CDB_BCPInCmd* interface)
+{
+    m_InterfaceBCPIn = interface;
 }
 
 ///////////////////////////////////////////////////////////////////////////
-CBCPInCmd::CBCPInCmd(void)
-{
-    return;
-}
-
-CBCPInCmd::~CBCPInCmd(void)
-{
-    return;
-}
-
-void CBCPInCmd::DetachInterface(void)
-{
-    m_Interface.DetachInterface();
-}
-
-void CBCPInCmd::AttachTo(CDB_BCPInCmd* interface)
-{
-    m_Interface = interface;
-}
-
-///////////////////////////////////////////////////////////////////////////
-CCursorCmd::CCursorCmd(void)
+CCursorCmd::CCursorCmd(void) :
+m_IsOpen(false),
+m_IsDeclared(false)
+// m_HasFailed(false)
 {
 }
 
@@ -132,7 +166,8 @@ void CCursorCmd::AttachTo(CDB_CursorCmd* interface)
 }
 
 ///////////////////////////////////////////////////////////////////////////
-CSendDataCmd::CSendDataCmd(void)
+CSendDataCmd::CSendDataCmd(size_t nof_bytes) :
+m_Bytes2go(nof_bytes)
 {
 }
 
@@ -159,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.2  2006/07/12 18:55:53  ssikorsk
  * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
  *

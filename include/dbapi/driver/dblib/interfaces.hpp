@@ -344,8 +344,11 @@ public:
     CDBL_Cmd(CDBL_Connection* conn,
              DBPROCESS*       cmd
              ) :
-    m_Connect(conn),
-    m_Cmd(cmd)
+        m_HasFailed(false),
+        m_WasSent(false),
+        m_RowCount(-1),
+        m_Connect(conn),
+        m_Cmd(cmd)
     {
     }
     ~CDBL_Cmd(void)
@@ -372,6 +375,11 @@ public:
         GetConnection().CheckFunctCall();
     }
 
+protected:
+    bool             m_HasFailed;
+    bool             m_WasSent;
+    int              m_RowCount;
+
 private:
     CDBL_Connection* m_Connect;
     DBPROCESS*       m_Cmd;
@@ -382,7 +390,7 @@ private:
 ///  CDBL_LangCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : CDBL_Cmd, public impl::CLangCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : CDBL_Cmd, public impl::CBaseCmd
 {
     friend class CDBL_Connection;
 
@@ -392,9 +400,6 @@ protected:
     virtual ~CDBL_LangCmd(void);
 
 protected:
-    virtual bool More(const string& query_text);
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
     virtual bool Send(void);
     virtual bool WasSent(void) const;
     virtual bool Cancel(void);
@@ -413,12 +418,7 @@ private:
 private:
     bool x_AssignParams(void);
 
-    string           m_Query;
-    CDB_Params       m_Params;
-    bool             m_WasSent;
-    bool             m_HasFailed;
-    impl::CResult*  m_Res;
-    int              m_RowCount;
+    impl::CResult*   m_Res;
     unsigned int     m_Status;
 };
 
@@ -429,7 +429,7 @@ private:
 ///  CTL_RPCCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : CDBL_Cmd, public impl::CRPCCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : CDBL_Cmd, public impl::CBaseCmd
 {
     friend class CDBL_Connection;
 
@@ -439,10 +439,6 @@ protected:
     ~CDBL_RPCCmd(void);
 
 protected:
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
-                           bool out_param = false);
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
-                          bool out_param = false);
     virtual bool Send(void);
     virtual bool WasSent(void) const;
     virtual bool Cancel(void);
@@ -452,7 +448,6 @@ protected:
     virtual bool HasFailed(void) const ;
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
-    virtual void SetRecompile(bool recompile = true);
 
 private:
     impl::CResult* GetResultSet(void) const;
@@ -468,13 +463,7 @@ private:
     bool x_AssignParams(void);
 #endif
 
-    string           m_Query;
-    CDB_Params       m_Params;
-    bool             m_WasSent;
-    bool             m_HasFailed;
-    bool             m_Recompile;
-    impl::CResult*  m_Res;
-    int              m_RowCount;
+    impl::CResult*   m_Res;
     unsigned int     m_Status;
 };
 
@@ -520,11 +509,7 @@ private:
     CDB_LangCmd*       m_LCmd;
     string             m_Query;
     CDB_Params         m_Params;
-    bool               m_IsOpen;
-    bool               m_HasFailed;
-    bool               m_IsDeclared;
     CDBL_CursorResult* m_Res;
-    int                m_RowCount;
 };
 
 
@@ -534,7 +519,7 @@ private:
 ///  CDBL_BCPInCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : CDBL_Cmd, public impl::CBCPInCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : CDBL_Cmd, public impl::CBaseCmd
 {
     friend class CDBL_Connection;
 
@@ -545,19 +530,20 @@ protected:
 
 protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
-    virtual bool SendRow(void);
-    virtual bool CompleteBatch(void);
+    virtual bool Send(void);
+    virtual bool WasSent(void) const;
+    virtual bool CommitBCPTrans(void);
     virtual bool Cancel(void);
-    virtual bool CompleteBCP(void);
+    virtual bool WasCanceled(void) const;
+    virtual bool EndBCP(void);
+    virtual bool HasFailed(void) const;
+    virtual int RowCount(void) const;
 
 private:
     bool x_AssignParams(void* pb);
 
-    CDB_Params       m_Params;
-    bool             m_WasSent;
-    bool             m_HasFailed;
-    bool             m_HasTextImage;
-    bool             m_WasBound;
+    bool m_HasTextImage;
+    bool m_WasBound;
 };
 
 
@@ -578,9 +564,6 @@ protected:
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
     virtual bool   Cancel(void);
-
-private:
-    size_t           m_Bytes2go;
 };
 
 
@@ -1074,6 +1057,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/07/18 15:46:00  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.47  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

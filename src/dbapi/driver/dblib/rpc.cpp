@@ -45,34 +45,13 @@ BEGIN_NCBI_SCOPE
 //
 
 CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* conn, DBPROCESS* cmd,
-                         const string& proc_name, unsigned int nof_params)
-: CDBL_Cmd( conn, cmd )
-, m_Query(proc_name)
-, m_Params(nof_params)
-, m_WasSent(false)
-, m_HasFailed(false)
-, m_Recompile(false)
-, m_Res(0)
-, m_RowCount(-1)
-, m_Status(0)
+                         const string& proc_name, unsigned int nof_params) :
+    CDBL_Cmd( conn, cmd ),
+    impl::CBaseCmd(proc_name, nof_params),
+    m_Res(0),
+    m_Status(0)
 {
     return;
-}
-
-
-bool CDBL_RPCCmd::BindParam(const string& param_name,
-                            CDB_Object* param_ptr, bool out_param)
-{
-    return m_Params.BindParam(CDB_Params::kNoParamNumber, param_name,
-                              param_ptr, out_param);
-}
-
-
-bool CDBL_RPCCmd::SetParam(const string& param_name,
-                           CDB_Object* param_ptr, bool out_param)
-{
-    return m_Params.SetParam(CDB_Params::kNoParamNumber, param_name,
-                             param_ptr, out_param);
 }
 
 
@@ -92,7 +71,7 @@ bool CDBL_RPCCmd::Send()
     m_HasFailed = false;
 
     if (Check(dbrpcinit(GetCmd(), (char*) m_Query.c_str(),
-                  m_Recompile ? DBRPCRECOMPILE : 0)) != SUCCEED) {
+                  NeedToRecompile() ? DBRPCRECOMPILE : 0)) != SUCCEED) {
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "dbrpcinit failed", 221001 );
     }
@@ -268,12 +247,6 @@ int CDBL_RPCCmd::RowCount() const
 }
 
 
-void CDBL_RPCCmd::SetRecompile(bool recompile)
-{
-    m_Recompile = recompile;
-}
-
-
 CDBL_RPCCmd::~CDBL_RPCCmd()
 {
     try {
@@ -443,6 +416,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.28  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

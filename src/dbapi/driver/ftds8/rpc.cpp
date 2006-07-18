@@ -45,32 +45,11 @@ BEGIN_NCBI_SCOPE
 CTDS_RPCCmd::CTDS_RPCCmd(CTDS_Connection* conn, DBPROCESS* cmd,
                          const string& proc_name, unsigned int nof_params) :
     CDBL_Cmd( conn, cmd ),
-    m_Query(proc_name),
-    m_Params(nof_params),
-    m_WasSent(false),
-    m_HasFailed(false),
-    m_Recompile(false),
+    impl::CBaseCmd(proc_name, nof_params),
     m_Res(0),
-    m_RowCount(-1),
     m_Status(0)
 {
     return;
-}
-
-
-bool CTDS_RPCCmd::BindParam(const string& param_name,
-                            CDB_Object* param_ptr, bool out_param)
-{
-    return m_Params.BindParam(CDB_Params::kNoParamNumber, param_name,
-                              param_ptr, out_param);
-}
-
-
-bool CTDS_RPCCmd::SetParam(const string& param_name,
-                           CDB_Object* param_ptr, bool out_param)
-{
-    return m_Params.SetParam(CDB_Params::kNoParamNumber, param_name,
-                             param_ptr, out_param);
 }
 
 
@@ -247,12 +226,6 @@ bool CTDS_RPCCmd::HasFailed() const
 int CTDS_RPCCmd::RowCount() const
 {
     return (m_RowCount < 0)? DBCOUNT(GetCmd()) : m_RowCount;
-}
-
-
-void CTDS_RPCCmd::SetRecompile(bool recompile)
-{
-    m_Recompile = recompile;
 }
 
 
@@ -537,6 +510,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.23  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

@@ -44,21 +44,21 @@ BEGIN_SCOPE(impl)
 //  CConnection::
 //
 
-CDB_LangCmd* CConnection::Create_LangCmd(CLangCmd&lang_cmd)
+CDB_LangCmd* CConnection::Create_LangCmd(CBaseCmd& lang_cmd)
 {
     m_CMDs.push_back(&lang_cmd);
 
     return new CDB_LangCmd(&lang_cmd);
 }
 
-CDB_RPCCmd* CConnection::Create_RPCCmd(CRPCCmd&rpc_cmd)
+CDB_RPCCmd* CConnection::Create_RPCCmd(CBaseCmd& rpc_cmd)
 {
     m_CMDs.push_back(&rpc_cmd);
 
     return new CDB_RPCCmd(&rpc_cmd);
 }
 
-CDB_BCPInCmd* CConnection::Create_BCPInCmd(CBCPInCmd& bcpin_cmd)
+CDB_BCPInCmd* CConnection::Create_BCPInCmd(CBaseCmd& bcpin_cmd)
 {
     m_CMDs.push_back(&bcpin_cmd);
 
@@ -211,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.3  2006/07/12 20:35:22  ucko
  * #include <algorithm> for find()
  *

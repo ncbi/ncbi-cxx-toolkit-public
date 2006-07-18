@@ -50,10 +50,8 @@ CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection* conn,
 , m_Name(cursor_name)
 , m_LCmd(NULL)
 , m_IsOpen(false)
-, m_HasFailed(false)
 , m_IsDeclared(false)
 , m_Res(0)
-, m_RowCount(-1)
 {
 }
 
@@ -340,6 +338,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/07/18 15:47:59  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.20  2006/07/12 17:11:11  ssikorsk
  * Fixed compilation isssues.
  *

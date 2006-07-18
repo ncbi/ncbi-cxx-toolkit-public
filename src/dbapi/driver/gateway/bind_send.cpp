@@ -148,6 +148,13 @@ bool CGW_BCPInCmd::Cancel()
   return comprot_bool( "GWLib:BCPInCmd:Cancel", remoteObj );
 }
 
+
+bool CGW_BCPInCmd::WasCanceled(void) const
+{
+    return false;
+}
+
+
 bool CGW_BaseCmd::Cancel()
 {
   if(boundObjects) {
@@ -157,7 +164,8 @@ bool CGW_BaseCmd::Cancel()
 }
 
 
-bool CGW_LangCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
+bool CGW_LangCmd::BindParam(const string& param_name, CDB_Object* param_ptr,
+                            bool /*out_param*/)
 {
   IGate* pGate = conn->getProtocol();
   pGate->set_RPC_call( "GWLib:LangCmd:BindParam" );
@@ -165,7 +173,8 @@ bool CGW_LangCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
   return xBind(pGate, param_ptr, &boundObjects);
 }
 
-bool CGW_RPCCmd::BindParam(const string& param_name, CDB_Object* param_ptr, bool out_param)
+bool CGW_RPCCmd::BindParam(const string& param_name, CDB_Object* param_ptr, bool out_param,
+                           bool /*out_param*/)
 {
   IGate* pGate = conn->getProtocol();
   int i = out_param;
@@ -203,12 +212,12 @@ bool CGW_BCPInCmd::Bind(unsigned int column_num, CDB_Object* localObj)
   return xBind(pGate, localObj, &boundObjects);
 }
 
-bool CGW_BCPInCmd::SendRow()
+bool CGW_BCPInCmd::Send(void)
 {
   return xSend("GWLib:BCPInCmd:SendRow", boundObjects);
 }
 
-bool CGW_BCPInCmd::CompleteBCP()
+bool CGW_BCPInCmd::EndBCP(void)
 {
   if(boundObjects) {
     boundObjects->deleteRemoteObjects();
@@ -292,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.2  2004/05/17 21:14:35  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

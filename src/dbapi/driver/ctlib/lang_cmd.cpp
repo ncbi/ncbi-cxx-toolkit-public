@@ -45,12 +45,12 @@ BEGIN_NCBI_SCOPE
 
 CTL_Cmd::CTL_Cmd(CTL_Connection* conn,
                  CS_COMMAND* cmd) :
-m_HasFailed(false),
-m_WasSent(false),
-m_RowCount(0),
-m_Connect(conn),
-m_Cmd(cmd),
-m_Res(NULL)
+    m_HasFailed(false),
+    m_WasSent(false),
+    m_RowCount(-1),
+    m_Connect(conn),
+    m_Cmd(cmd),
+    m_Res(NULL)
 {
 }
 
@@ -461,32 +461,9 @@ CDB_Result* CTL_Cmd::MakeResult(void)
 
 CTL_LangCmd::CTL_LangCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                          const string& lang_query, unsigned int nof_params) :
-CTL_Cmd(conn, cmd),
-m_Query(lang_query),
-m_Params(nof_params)
+    CTL_Cmd(conn, cmd),
+    impl::CBaseCmd(lang_query, nof_params)
 {
-    m_RowCount    = -1;
-}
-
-
-bool CTL_LangCmd::More(const string& query_text)
-{
-    m_Query.append(query_text);
-    return true;
-}
-
-
-bool CTL_LangCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
-{
-    return
-        m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
-}
-
-
-bool CTL_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
-{
-    return
-        m_Params.SetParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
 }
 
 
@@ -659,6 +636,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.21  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

@@ -48,12 +48,8 @@ CODBC_LangCmd::CODBC_LangCmd(
     unsigned int nof_params
     ) :
     CStatementBase(*conn),
-    m_Query(lang_query),
-    m_Params(nof_params),
-    m_Res(NULL),
-    m_RowCount(-1),
-    m_WasSent(false),
-    m_HasFailed(false)
+    impl::CBaseCmd(lang_query, nof_params),
+    m_Res(NULL)
 {
     _ASSERT( conn );
 
@@ -64,27 +60,6 @@ CODBC_LangCmd::CODBC_LangCmd(
 */
     // string extra_msg = "SQL Command: \"" + lang_query + "\"";
     // m_Reporter.SetExtraMsg( extra_msg );
-}
-
-
-bool CODBC_LangCmd::More(const string& query_text)
-{
-    m_Query.append(query_text);
-    return true;
-}
-
-
-bool CODBC_LangCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
-{
-    return
-        m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
-}
-
-
-bool CODBC_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
-{
-    return
-        m_Params.SetParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
 }
 
 
@@ -550,6 +525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/07/18 15:47:59  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.28  2006/07/12 17:11:11  ssikorsk
  * Fixed compilation isssues.
  *

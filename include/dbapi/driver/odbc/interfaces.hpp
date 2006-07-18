@@ -311,6 +311,11 @@ public:
         return CheckRC( SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS) );
     }
 
+protected:
+    SQLLEN  m_RowCount;
+    bool    m_WasSent;
+    bool    m_HasFailed;
+
 private:
     CODBC_Connection* m_ConnectPtr;
     SQLHSTMT m_Cmd;
@@ -324,7 +329,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd :
     public CStatementBase,
-    public impl::CLangCmd
+    public impl::CBaseCmd
 {
     friend class CODBC_Connection;
     friend class CODBC_CursorCmd;
@@ -339,9 +344,6 @@ protected:
     virtual ~CODBC_LangCmd(void);
 
 protected:
-    virtual bool More(const string& query_text);
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
     virtual bool Send(void);
     virtual bool WasSent(void) const;
     virtual bool Cancel(void);
@@ -356,13 +358,8 @@ private:
     bool x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* indicator);
     bool xCheck4MoreResults(void);
 
-    string            m_Query;
-    CDB_Params        m_Params;
     CODBC_RowResult*  m_Res;
-    SQLLEN            m_RowCount;
     bool              m_hasResults;
-    bool              m_WasSent;
-    bool              m_HasFailed;
 };
 
 
@@ -373,7 +370,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd :
     public CStatementBase,
-    public impl::CRPCCmd
+    public impl::CBaseCmd
 {
     friend class CODBC_Connection;
 
@@ -384,10 +381,6 @@ protected:
     virtual ~CODBC_RPCCmd(void);
 
 protected:
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
-                           bool out_param = false);
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
-                          bool out_param = false);
     virtual bool Send(void);
     virtual bool WasSent(void) const;
     virtual bool Cancel(void);
@@ -397,22 +390,15 @@ protected:
     virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
-    virtual void SetRecompile(bool recompile = true);
 
 private:
     bool x_AssignParams(string& cmd, string& q_exec, string& q_select,
         CMemPot& bind_guard, SQLLEN* indicator);
     bool xCheck4MoreResults(void);
 
-    string            m_Query;
-    CDB_Params        m_Params;
-    bool              m_WasSent;
-    bool              m_HasFailed;
-    bool              m_Recompile;
     bool              m_HasStatus;
     bool              m_hasResults;
-    impl::CResult*   m_Res;
-    SQLLEN            m_RowCount;
+    impl::CResult*    m_Res;
 };
 
 
@@ -455,11 +441,7 @@ private:
 
     string          m_Name;
     unsigned int    m_FetchSize;
-    bool            m_IsOpen;
-    bool            m_IsDeclared;
-    bool            m_HasFailed;
-    impl::CResult* m_Res;
-    int             m_RowCount;
+    impl::CResult*  m_Res;
 };
 
 
@@ -473,7 +455,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd :
     public CStatementBase,
-    public impl::CBCPInCmd
+    public impl::CBaseCmd
 {
     friend class CODBC_Connection;
 
@@ -486,21 +468,21 @@ protected:
 
 protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
-    virtual bool SendRow(void);
-    virtual bool CompleteBatch(void);
+    virtual bool Send(void);
+    virtual bool WasSent(void) const;
+    virtual bool CommitBCPTrans(void);
     virtual bool Cancel(void);
-    virtual bool CompleteBCP(void);
+    virtual bool WasCanceled(void) const;
+    virtual bool EndBCP(void);
+    virtual bool HasFailed(void) const;
+    virtual int  RowCount(void) const;
 
 private:
     bool x_AssignParams(void* p);
 
-    SQLHDBC         m_Cmd;
-    string          m_Query;
-    CDB_Params      m_Params;
-    bool            m_WasSent;
-    bool            m_HasFailed;
-    bool            m_WasBound;
-    bool            m_HasTextImage;
+    SQLHDBC m_Cmd;
+    bool    m_WasBound;
+    bool    m_HasTextImage;
 };
 
 
@@ -530,7 +512,6 @@ protected:
 private:
     void xCancel(void);
 
-    size_t  m_Bytes2go;
     SQLLEN  m_ParamPH;
 };
 
@@ -727,6 +708,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/07/18 15:46:00  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.34  2006/07/12 17:10:40  ssikorsk
  * Fixed return type of MakeIConnection.
  *

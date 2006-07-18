@@ -415,9 +415,12 @@ void CODBC_Connection::ODBC_SetTextImageSize(SQLULEN nof_bytes) {}
 
 
 /////////////////////////////////////////////////////////////////////////////
-CStatementBase::CStatementBase(CODBC_Connection& conn)
-: m_ConnectPtr(&conn)
-, m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
+CStatementBase::CStatementBase(CODBC_Connection& conn) :
+    m_RowCount(-1),
+    m_WasSent(false),
+    m_HasFailed(false),
+    m_ConnectPtr(&conn),
+    m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
 {
     SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_STMT, conn.m_Link, &m_Cmd);
 
@@ -468,9 +471,9 @@ CStatementBase::CheckRC(int rc) const
 CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
                                      CDB_ITDescriptor& descr,
                                      size_t nof_bytes,
-                                     bool logit)
-: CStatementBase(*conn)
-, m_Bytes2go(nof_bytes)
+                                     bool logit) :
+    CStatementBase(*conn),
+    impl::CSendDataCmd(nof_bytes)
 {
     SQLPOINTER p = (SQLPOINTER)1;
     if((!ODBC_xSendDataPrepare(*this, descr, (SQLINTEGER)nof_bytes,
@@ -580,6 +583,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/07/18 15:47:59  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.32  2006/07/12 17:11:11  ssikorsk
  * Fixed compilation isssues.
  *

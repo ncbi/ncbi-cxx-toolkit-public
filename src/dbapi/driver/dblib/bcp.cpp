@@ -50,17 +50,16 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection* conn,
                              const string&    table_name,
                              unsigned int     nof_columns) :
     CDBL_Cmd( conn, cmd ),
-    m_Params(nof_columns),
-    m_WasSent(false),
-    m_HasFailed(false),
+    impl::CBaseCmd(table_name, nof_columns),
     m_HasTextImage(false),
     m_WasBound(false)
 {
     if (Check(bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN)) != SUCCEED) {
         DATABASE_DRIVER_ERROR( "bcp_init failed", 223001 );
     }
-}
 
+    ++m_RowCount;
+}
 
 bool CDBL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 {
@@ -388,7 +387,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
 }
 
 
-bool CDBL_BCPInCmd::SendRow()
+bool CDBL_BCPInCmd::Send(void)
 {
     char param_buff[2048]; // maximal row size, assured of buffer overruns
 
@@ -437,7 +436,15 @@ bool CDBL_BCPInCmd::SendRow()
         }
     }
 
+    ++m_RowCount;
+
     return true;
+}
+
+
+bool CDBL_BCPInCmd::WasSent(void) const
+{
+    return m_WasSent;
 }
 
 
@@ -453,7 +460,13 @@ bool CDBL_BCPInCmd::Cancel()
 }
 
 
-bool CDBL_BCPInCmd::CompleteBatch()
+bool CDBL_BCPInCmd::WasCanceled(void) const
+{
+    return !m_WasSent;
+}
+
+
+bool CDBL_BCPInCmd::CommitBCPTrans(void)
 {
     if(m_WasSent) {
         DBINT outrow = Check(bcp_batch(GetCmd()));
@@ -467,7 +480,7 @@ bool CDBL_BCPInCmd::CompleteBatch()
 }
 
 
-bool CDBL_BCPInCmd::CompleteBCP()
+bool CDBL_BCPInCmd::EndBCP(void)
 {
     if(m_WasSent) {
         DBINT outrow = Check(bcp_done(GetCmd()));
@@ -479,6 +492,18 @@ bool CDBL_BCPInCmd::CompleteBCP()
         return outrow > 0;
     }
     return false;
+}
+
+
+bool CDBL_BCPInCmd::HasFailed(void) const
+{
+    return m_HasFailed;
+}
+
+
+int CDBL_BCPInCmd::RowCount(void) const
+{
+    return m_RowCount;
 }
 
 
@@ -502,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.26  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

@@ -49,14 +49,12 @@ CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
                            const string& table_name,
                            unsigned int nof_columns) :
     CTL_Cmd(conn, NULL),
-    m_Query(table_name),
-    m_Params(nof_columns)
+    impl::CBaseCmd(table_name, nof_columns),
+    m_RowCount(0)
 {
     m_Cmd        = cmd;
-    m_HasFailed  = false;
     m_Bind       = new SBcpBind[nof_columns];
 }
-
 
 bool CTL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 {
@@ -265,7 +263,7 @@ bool CTL_BCPInCmd::x_AssignParams()
 }
 
 
-bool CTL_BCPInCmd::SendRow()
+bool CTL_BCPInCmd::Send(void)
 {
     unsigned int i;
     CS_INT       datalen = 0;
@@ -334,6 +332,7 @@ bool CTL_BCPInCmd::SendRow()
         }
     }
     case CS_SUCCEED:
+        ++m_RowCount;
         return true;
     default:
         m_HasFailed = true;
@@ -341,6 +340,12 @@ bool CTL_BCPInCmd::SendRow()
     }
 
     return false;
+}
+
+
+bool CTL_BCPInCmd::WasSent(void) const
+{
+    return m_WasSent;
 }
 
 
@@ -353,7 +358,51 @@ bool CTL_BCPInCmd::Cancel()
     CS_INT outrow = 0;
 
     switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow)) ) {
-    case CS_SUCCEED: m_WasSent= false; return true;
+    case CS_SUCCEED:
+        m_WasSent = false;
+        return true;
+    case CS_FAIL:
+        m_HasFailed = true;
+        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
+    default:
+        m_WasSent = false;
+        return false;
+    }
+}
+
+bool CTL_BCPInCmd::WasCanceled(void) const
+{
+    return !m_WasSent;
+}
+
+bool CTL_BCPInCmd::CommitBCPTrans(void)
+{
+    if(!m_WasSent) return false;
+
+    CS_INT outrow = 0;
+
+    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_BATCH, &outrow)) ) {
+    case CS_SUCCEED:
+        return (outrow > 0);
+    case CS_FAIL:
+        m_HasFailed = true;
+        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
+    default:
+        return false;
+    }
+}
+
+
+bool CTL_BCPInCmd::EndBCP(void)
+{
+    if(!m_WasSent) return false;
+
+    CS_INT outrow = 0;
+
+    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_ALL, &outrow)) ) {
+    case CS_SUCCEED:
+        m_WasSent = false;
+        return (outrow > 0);
     case CS_FAIL:
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
@@ -364,42 +413,22 @@ bool CTL_BCPInCmd::Cancel()
 }
 
 
-bool CTL_BCPInCmd::CompleteBatch()
-{
-    if(!m_WasSent) return false;
-
-    CS_INT outrow = 0;
-
-    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_BATCH, &outrow)) ) {
-    case CS_SUCCEED: return (outrow > 0);
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
-    default: return false;
-    }
-}
-
-
-bool CTL_BCPInCmd::CompleteBCP()
-{
-    if(!m_WasSent) return false;
-
-    CS_INT outrow = 0;
-
-    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_ALL, &outrow)) ) {
-    case CS_SUCCEED: m_WasSent= false; return (outrow > 0);
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
-    default: m_WasSent= false; return false;
-    }
-}
-
-
 CDB_Result*
 CTL_BCPInCmd::CreateResult(impl::CResult& result)
 {
     return Create_Result(result);
+}
+
+
+bool CTL_BCPInCmd::HasFailed(void) const
+{
+    return m_HasFailed;
+}
+
+
+int CTL_BCPInCmd::RowCount(void) const
+{
+    return m_RowCount;
 }
 
 
@@ -414,6 +443,7 @@ CTL_BCPInCmd::~CTL_BCPInCmd()
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
+
 
 void
 CTL_BCPInCmd::Close(void)
@@ -440,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.22  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

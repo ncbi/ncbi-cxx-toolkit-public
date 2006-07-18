@@ -150,7 +150,7 @@ private:
 //  CMySQL_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_LangCmd : public impl::CLangCmd
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_LangCmd : public impl::CBaseCmd
 {
     friend class CMySQL_Connection;
 
@@ -161,11 +161,6 @@ protected:
     virtual ~CMySQL_LangCmd();
 
 protected:
-    virtual bool        More(const string& query_text);
-    virtual bool        BindParam(const string& param_name,
-                                  CDB_Object*   param_ptr);
-    virtual bool        SetParam(const string& param_name,
-                                 CDB_Object*   param_ptr);
     virtual bool        Send();
     virtual bool        WasSent() const;
     virtual bool        Cancel();
@@ -188,7 +183,6 @@ private:
     }
 
     CMySQL_Connection* m_Connect;
-    string             m_Query;
     bool               m_HasResults;
 };
 
@@ -271,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/07/18 15:46:00  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.24  2006/07/12 16:28:49  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

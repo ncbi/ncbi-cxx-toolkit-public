@@ -48,15 +48,15 @@ CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* conn,
                              const string&    table_name,
                              unsigned int     nof_columns) :
     CDBL_Cmd( conn, cmd ),
-    m_Params(nof_columns),
-    m_WasSent(false),
-    m_HasFailed(false),
+    impl::CBaseCmd(table_name, nof_columns),
     m_HasTextImage(false),
     m_WasBound(false)
 {
     if (Check(bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN)) != SUCCEED) {
         DATABASE_DRIVER_ERROR( "bcp_init failed", 223001 );
     }
+
+    ++m_RowCount;
 }
 
 
@@ -359,7 +359,7 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
 }
 
 
-bool CTDS_BCPInCmd::SendRow()
+bool CTDS_BCPInCmd::Send(void)
 {
     char param_buff[2048]; // maximal row size, assured of buffer overruns
 
@@ -412,7 +412,15 @@ bool CTDS_BCPInCmd::SendRow()
         }
     }
 
+    ++ m_RowCount;
+
     return true;
+}
+
+
+bool CTDS_BCPInCmd::WasSent(void) const
+{
+    return m_WasSent;
 }
 
 
@@ -428,7 +436,13 @@ bool CTDS_BCPInCmd::Cancel()
 }
 
 
-bool CTDS_BCPInCmd::CompleteBatch()
+bool CTDS_BCPInCmd::WasCanceled(void) const
+{
+    return !m_WasSent;
+}
+
+
+bool CTDS_BCPInCmd::CommitBCPTrans(void)
 {
     if(m_WasSent) {
         DBINT outrow = Check(bcp_batch(GetCmd()));
@@ -442,7 +456,7 @@ bool CTDS_BCPInCmd::CompleteBatch()
 }
 
 
-bool CTDS_BCPInCmd::CompleteBCP()
+bool CTDS_BCPInCmd::EndBCP(void)
 {
     if(m_WasSent) {
         DBINT outrow = Check(bcp_done(GetCmd()));
@@ -454,6 +468,18 @@ bool CTDS_BCPInCmd::CompleteBCP()
         return outrow > 0;
     }
     return false;
+}
+
+
+bool CTDS_BCPInCmd::HasFailed(void) const
+{
+    return m_HasFailed;
+}
+
+
+int CTDS_BCPInCmd::RowCount(void) const
+{
+    return m_RowCount;
 }
 
 
@@ -477,6 +503,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/07/18 15:47:58  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.19  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

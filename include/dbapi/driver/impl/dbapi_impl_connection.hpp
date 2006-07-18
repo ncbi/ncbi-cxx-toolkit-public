@@ -70,6 +70,11 @@ public:
                 );
     virtual ~CConnection(void);
 
+    CDB_ResultProcessor* GetResultProcessor(void) const
+    {
+        return m_ResProc;
+    }
+
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
@@ -136,16 +141,12 @@ protected:
     virtual void PopMsgHandler(CDB_UserHandler* h);
 
     CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
-    CDB_ResultProcessor* GetResultProcessor(void) const
-    {
-        return m_ResProc;
-    }
 
     /// These methods to allow the children of CConnection to create
     /// various command-objects
-    CDB_LangCmd*     Create_LangCmd     (CLangCmd&     lang_cmd    );
-    CDB_RPCCmd*      Create_RPCCmd      (CRPCCmd&      rpc_cmd     );
-    CDB_BCPInCmd*    Create_BCPInCmd    (CBCPInCmd&    bcpin_cmd   );
+    CDB_LangCmd*     Create_LangCmd     (CBaseCmd&     lang_cmd    );
+    CDB_RPCCmd*      Create_RPCCmd      (CBaseCmd&     rpc_cmd     );
+    CDB_BCPInCmd*    Create_BCPInCmd    (CBaseCmd&     bcpin_cmd   );
     CDB_CursorCmd*   Create_CursorCmd   (CCursorCmd&   cursor_cmd  );
     CDB_SendDataCmd* Create_SendDataCmd (CSendDataCmd& senddata_cmd);
 
@@ -261,6 +262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/07/18 15:46:00  ssikorsk
+ * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
+ *
  * Revision 1.5  2006/07/12 19:42:54  ssikorsk
  * - #include <dbapi/driver/public.hpp> Forward declaration of CDB_Connection is enough.
  *
