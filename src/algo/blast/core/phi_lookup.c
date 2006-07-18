@@ -131,12 +131,19 @@ s_InitDNAPattern(SPHIPatternSearchBlk *pattern_blk)
   }
 }
 
-/** Expands pattern. @todo FIXME: what exactly does it do?
+/** Determine the length of the pattern after it has been expanded
+ * for efficient searching. The expansion process concatenates all
+ * the patterns formed by enumerating every combination of variable-
+ * size regions. For example, A-x(2,5)-B-C expands to a concatenation
+ * of patterns of length 5, 6, 7 and 8. If the sum of concatenated 
+ * pattern lengths exceeds PHI_MAX_PATTERN_LENGTH, the pattern is
+ * treated as very long.
  * @param inputPatternMasked Masked input pattern [in]
  * @param inputPattern Input pattern [in]
  * @param length Length of inputPattern [in]
  * @param maxLength Limit on how long inputPattern can get [in]
- * @return the final length of the pattern or -1 if too long.
+ * @return the length of the expanded pattern, or -1 if the pattern
+ *        is treated as very long
  */
 static Int4 
 s_ExpandPattern(Int4 *inputPatternMasked, Uint1 *inputPattern, 
