@@ -95,7 +95,23 @@ void CSL3_BCPInCmd::ExecuteSQL(const string& sql)
                           &sql_tail
                           ));
 
-    Check(sqlite3_step(stmt));
+    int rc = sqlite3_step(stmt);
+    switch (rc) {
+    case SQLITE_DONE:
+    case SQLITE_ROW:
+        break;
+    case SQLITE_BUSY:
+    case SQLITE_ERROR:
+    case SQLITE_MISUSE:
+        Check(sqlite3_finalize(stmt));
+        CHECK_DRIVER_ERROR(rc != SQLITE_OK,
+                           "Failed to execute a statement",
+                           100000);
+        break;
+    default:
+        Check(sqlite3_finalize(stmt));
+        DATABASE_DRIVER_ERROR("Invalid return code.", 100000);
+    }
 
     Check(sqlite3_finalize(stmt));
 }
@@ -121,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/18 16:58:56  ssikorsk
+ * Improved method CSL3_BCPInCmd::ExecuteSQL.
+ *
  * Revision 1.2  2006/07/18 16:01:52  ssikorsk
  * Deleted CSL3_BCPInCmd::Bind.
  *
