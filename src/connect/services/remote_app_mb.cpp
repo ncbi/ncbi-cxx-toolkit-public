@@ -323,6 +323,7 @@ void CRemoteAppRequestMB_Impl::Deserialize(CNcbiIstream& is)
 void CRemoteAppRequestMB_Impl::Reset()
 {
     IRemoteAppRequest_Impl::Reset();
+    m_StdIn->Reset();
     m_InBlobIdOrData = "";
     m_StdInDataSize = 0;
     m_ExlusiveMode = false;
@@ -666,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/07/18 19:46:00  didenko
+ * Fixed bug in the Reset method of request class
+ *
  * Revision 1.1  2006/07/13 14:32:39  didenko
  * Modified the implemention of remote application's request and result classes
  *
