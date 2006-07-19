@@ -975,9 +975,13 @@ void CNetSchedule_GenerateJobKey(string*        key,
 
 /// @internal
 const unsigned int kNetScheduleMaxDataSize = 512;
+/// @internal
+const unsigned int kNetScheduleMaxDBDataSize = kNetScheduleMaxDataSize * 4;
 
 /// @internal
 const unsigned int kNetScheduleMaxErrSize = 1024;
+/// @internal
+const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
 
 /// @internal
 extern NCBI_XCONNECT_EXPORT const char* kNetScheduleDriverName;
@@ -1002,6 +1006,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/07/19 15:54:39  kuznets
+ * Added database size constants
+ *
  * Revision 1.60  2006/07/13 14:24:39  didenko
  * Added eUsersMaks enum value
  *
