@@ -360,6 +360,15 @@ void CTestDiagApp::x_PrintMessages(int         test_number,
                                             TCase(test_number, 1)), ex);
     }
 
+
+#if defined(NCBI_COMPILER_WORKSHOP)
+# if NCBI_COMPILER_VERSION == 530 || NCBI_COMPILER_VERSION == 550
+    DEFINE_STATIC_FAST_MUTEX(s_ThrowMutex);
+    CFastMutexGuard guard(s_ThrowMutex);
+# endif
+#endif
+
+
     // two level exceptions
     try {
         try {
@@ -507,6 +516,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/07/19 18:42:50  grichenk
+ * Protect try-throw-catch with mutex on solaris.
+ *
  * Revision 1.7  2006/07/12 16:17:04  grichenk
  * Added NCBI_EXCEPTION_VAR_EX.
  * SetClass, SetFunction and SetModule return void.
