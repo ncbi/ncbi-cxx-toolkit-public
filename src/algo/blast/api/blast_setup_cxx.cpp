@@ -1512,6 +1512,7 @@ bool CBlastQueryFilteredFrames::QueryHasMultipleFrames() const
     case eBlastTypeBlastp:
     case eBlastTypeTblastn:
     case eBlastTypeRpsBlast:
+    case eBlastTypePhiBlastp:
     case eBlastTypePsiBlast:
         return false;
         
@@ -1571,6 +1572,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.124  2006/07/19 13:28:34  madden
+ * Phiblast added to CBlastQueryFilteredFrames::QueryHasMultipleFrames
+ *
  * Revision 1.123  2006/07/05 15:18:36  papadopo
  * allow the core to see 'J' characters in query sequences
  *
