@@ -93,7 +93,8 @@ void CDiagRangeCollection::x_Diff(const TAlnRng& rng,
 {
     TAlnRngColl::PRangeLess<TAlnRng> p;
 
-    r_it = std::lower_bound(r_it, end(), rng.GetFirstFrom(), p);
+    r_it = std::lower_bound(r_it, end(), rng.GetFirstFrom(), p); /* NCBI_FAKE_WARNING: WorkShop */
+
     if (r_it == end()) {
         result.insert(rng);
         return;
@@ -149,7 +150,7 @@ void CDiagRangeCollection::x_DiffSecond(const TAlnRng& rng,
     PItLess p;
 
     m_Extender.UpdateIndex();
-    r_it = std::lower_bound(r_it, m_Extender.end(), rng.GetSecondFrom(), p);
+    r_it = std::lower_bound(r_it, m_Extender.end(), rng.GetSecondFrom(), p); /* NCBI_FAKE_WARNING: WorkShop */
     if (r_it == m_Extender.end()) {
         result.insert(rng);
         return;
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/07/19 16:12:20  ivanov
+* Mark fake WorkShop warnings using NCBI_FAKE_WARNING
+*
 * Revision 1.3  2006/02/23 14:50:58  dicuccio
 * Qualify lower_bound with std:: to match API shift
 *
