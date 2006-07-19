@@ -363,6 +363,8 @@ void CTestDiagApp::x_PrintMessages(int         test_number,
 
 #if defined(NCBI_COMPILER_WORKSHOP)
 # if NCBI_COMPILER_VERSION == 530 || NCBI_COMPILER_VERSION == 550
+    // Workshop 5.3 and 5.5 have MT-unsafe throw. To avoid test failures
+    // use mutex.
     DEFINE_STATIC_FAST_MUTEX(s_ThrowMutex);
     CFastMutexGuard guard(s_ThrowMutex);
 # endif
@@ -516,6 +518,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/07/19 18:44:41  grichenk
+ * Added comment
+ *
  * Revision 1.8  2006/07/19 18:42:50  grichenk
  * Protect try-throw-catch with mutex on solaris.
  *
