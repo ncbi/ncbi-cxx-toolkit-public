@@ -164,6 +164,7 @@ typedef struct SPHIPatternSearchBlk {
                                             requires multiple words. */
     Int4 num_patterns_db; /**< Number of patterns actually found during the 
                                             database search. */
+    char* pattern; /**< Pattern used, saved here for error reporting. */
 } SPHIPatternSearchBlk;
 
     
