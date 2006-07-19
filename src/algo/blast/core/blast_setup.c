@@ -820,9 +820,11 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
                         const SPHIPatternSearchBlk * pattern_blk,
                         const BLAST_SequenceBlk    * query,
                         const BlastSeqLoc          * lookup_segments,
-                        BlastQueryInfo             * query_info)
+                        BlastQueryInfo             * query_info,
+                        Blast_Message** blast_message)
 {
     const Boolean kIsNa = (program == eBlastTypePhiBlastn);
+    Int4 num_patterns = 0;
     
     ASSERT(Blast_ProgramIsPhiBlast(program));
     ASSERT(query_info && pattern_blk);
@@ -830,9 +832,20 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
     query_info->pattern_info = SPHIQueryInfoNew();
     
     /* If pattern is not found in query, return failure status. */
-    if (!PHIGetPatternOccurrences(pattern_blk, query, lookup_segments, kIsNa,
-                                  query_info->pattern_info))
-        return -1;
+    num_patterns = PHIGetPatternOccurrences(pattern_blk, query, lookup_segments, kIsNa,
+                                  query_info->pattern_info);
+    if (num_patterns == 0)
+    {
+       char buffer[512]; 
+       sprintf(buffer, "The pattern %s was not found in the query.", pattern_blk->pattern);
+       if (blast_message)
+           Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, buffer);
+       return -1;
+    }
+    else if (num_patterns < 0)
+    {
+       return -1;
+    }
     
     /* Save pattern probability, because it needs to be passed back to
        formatting stage, where lookup table will not be available. */

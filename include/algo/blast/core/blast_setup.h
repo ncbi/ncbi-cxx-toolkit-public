@@ -219,6 +219,7 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
  * @param lookup_segments Locations on query sequence to find pattern on [in]
  * @param query_info Query information structure, where pattern occurrences
  *                   will be saved. [in][out]
+ * @param blast_message will be filled in if pattern not found on query [in][out]
  * @return Status, 0 on success, -1 on error.
  */
 Int2 
@@ -226,7 +227,8 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
                         const SPHIPatternSearchBlk * pattern_blk,
                         const BLAST_SequenceBlk    * query,
                         const BlastSeqLoc          * lookup_segments,
-                        BlastQueryInfo             * query_info);
+                        BlastQueryInfo             * query_info,
+                        Blast_Message** blast_message);
 
 /** Auxiliary function to retrieve the subject's number of sequences and total
  * length. 
@@ -245,6 +247,9 @@ BLAST_GetSubjectTotals(const BlastSeqSrc* seqsrc,
 /*
  *
 * $Log$
+* Revision 1.62  2006/07/19 13:19:04  madden
+* Blast_SetPHIPatternInfo takes a new Blast_Message parameter
+*
 * Revision 1.61  2006/07/12 23:03:24  camacho
 * + BLAST_GetSubjectTotals
 *
