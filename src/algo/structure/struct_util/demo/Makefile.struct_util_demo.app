@@ -13,7 +13,6 @@ SRC = struct_util_demo
 LIB = xstruct_util \
       xstruct_dp \
       xblast composition_adjustment seqdb blastdb xnetblastcli xnetblast \
-      xalgodustmask \
       tables xobjsimple xobjutil \
       ncbimime \
       cdd \
