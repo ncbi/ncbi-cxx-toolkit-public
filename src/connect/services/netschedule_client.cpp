@@ -294,6 +294,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
     bool connected = CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
+
     //cerr << "Input: " << input << endl;
     MakeCommandPacket(&m_Tmp, "SUBMIT \"", connected);
     m_Tmp.append(NStr::PrintableString(input));
@@ -527,7 +528,7 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
         CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
         MakeCommandPacket(&m_Tmp, "SUBMIT \"", connected);
-        m_Tmp.append(input);
+        m_Tmp.append(NStr::PrintableString(input));
         m_Tmp.append("\" ");
         m_Tmp.append(NStr::UIntToString(udp_port));
         m_Tmp.append(" ");
@@ -1179,6 +1180,11 @@ void CNetScheduleClient::PutResult(const string& job_key,
                                    int           ret_code, 
                                    const string& output)
 {
+    if (output.length() > kNetScheduleMaxDataSize) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+            "Output data too long.");
+    }
+
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
@@ -1196,6 +1202,7 @@ void CNetScheduleClient::PutResult(const string& job_key,
     m_Tmp.append("\"");
 
     //cerr << output << endl << "==================" << endl;
+    //cerr << output.size() << endl;
     //cerr << m_Tmp << endl;
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
@@ -1226,11 +1233,19 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
     _ASSERT(new_job_key);
     _ASSERT(new_input);
 
+    if (done_output.length() > kNetScheduleMaxDataSize) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+            "Output data too long.");
+    }
+
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
     bool connected = CheckConnect(done_job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+
+    //cerr << done_output << endl << "==================" << endl;
+    //cerr << done_output.size() << endl;
 
     MakeCommandPacket(&m_Tmp, "JXCG ", connected);
 
@@ -1337,6 +1352,11 @@ void CNetScheduleClient::PutFailure(const string& job_key,
 {
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    if (output.length() > kNetScheduleMaxDataSize) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+            "Output data too long.");
     }
 
     if (err_msg.length() >= kNetScheduleMaxErrSize) {
@@ -1899,6 +1919,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/07/19 16:24:13  didenko
+ * Added checking for the length of the output data
+ *
  * Revision 1.62  2006/06/28 16:01:56  didenko
  * Redone job's exlusivity processing
  *
