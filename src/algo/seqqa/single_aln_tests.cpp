@@ -42,6 +42,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -123,8 +124,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         CSeq_loc_Mapper mapper(*aln, 1, &scope);
         CRef<CSeq_loc> genomic_cds_loc = mapper.Map(cds_loc);
         const CGenetic_code* code = 0;
-        if (it->GetOriginalFeature().GetData().GetCdregion().CanGetCode()) {
-            code = &it->GetOriginalFeature().GetData().GetCdregion().GetCode();
+        if (it->GetData().GetCdregion().CanGetCode()) {
+            code = &it->GetData().GetCdregion().GetCode();
         }
         string xcript_prot, genomic_prot;
         CSeqTranslator::Translate(cds_loc, xcript_hand,
@@ -133,10 +134,38 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
                                   genomic_prot, code);
         // Say that they "can make same prot" iff the translations
         // are the same AND do not contain ambiguities
-        bool can_make_same_prot =
-            xcript_prot == genomic_prot &&
-            xcript_prot.find_first_not_of("ACDEFGHIKLMNPQRSTVWY*") == NPOS;
+        bool can_make_same_prot = false;
+        if (xcript_prot == genomic_prot &&
+            xcript_prot.find_first_not_of("ACDEFGHIKLMNPQRSTVWY*") == NPOS) {
                                   // no need to check genomic (it's equal)
+
+            can_make_same_prot = true;  // provisionally true, but...
+
+            // Demand that any code-breaks annotated on transcript
+            // are identical at the nucleotide level in the genomic
+            if (it->GetData().GetCdregion().IsSetCode_break()) {
+                ITERATE (CCdregion::TCode_break, cb,
+                         it->GetMappedFeature().GetData().GetCdregion()
+                         .GetCode_break()) {
+                    const CCode_break& code_break = **cb;
+                    const CSeq_loc& xcript_cb_loc = code_break.GetLoc();
+                    CRef<CSeq_loc> genomic_cb_loc = mapper.Map(xcript_cb_loc);
+
+                    CSeqVector gvec(*genomic_cb_loc, scope);
+                    string gseq;
+                    gvec.GetSeqData(0, gvec.size(), gseq);
+
+                    CSeqVector xvec(xcript_cb_loc, scope);
+                    string xseq;
+                    gvec.GetSeqData(0, xvec.size(), xseq);
+
+                    if (gseq != xseq) {
+                        can_make_same_prot = false;
+                        break;
+                    }
+                }
+            }
+        }
         result->SetOutput_data()
             .AddField("can_make_same_prot", can_make_same_prot);
     }
@@ -603,6 +632,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/07/19 20:25:42  jcherry
+ * For "can_make_same_prot", added additional check that any code-break
+ * locations in the transcript are identical at the nucleotide level
+ * to the genomic (this is conservative; if there are differences, a person
+ * will have to determine whether they are consistent with the code-break)
+ *
  * Revision 1.19  2006/07/18 19:18:52  jcherry
  * Added "can_make_same_prot" result
  *
