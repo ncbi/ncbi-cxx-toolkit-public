@@ -280,7 +280,7 @@ public:
     pair<const_iterator, bool>  find_2(position_type pos) const
     {
         PRangeLess<TAlignRange>    p;
-        const_iterator it = std::lower_bound(begin(), end(), pos, p);
+        const_iterator it = std::lower_bound(begin(), end(), pos, p); /* NCBI_FAKE_WARNING: WorkShop */
         bool b_contains = (it != end()  &&  it->GetFirstFrom() <= pos);
         return make_pair(it, b_contains);
     }    
@@ -749,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/07/19 16:15:17  ivanov
+ * Mark fake WorkShop warning using NCBI_FAKE_WARNING
+ *
  * Revision 1.12  2006/03/22 16:49:24  gouriano
  * Corrected comparison
  *
