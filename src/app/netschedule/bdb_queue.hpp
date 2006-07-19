@@ -60,8 +60,8 @@ BEGIN_NCBI_SCOPE
 ///
 struct SNS_BatchSubmitRec
 {
-    char      input[kNetScheduleMaxDataSize];
-    char      affinity_token[kNetScheduleMaxDataSize];
+    char      input[kNetScheduleMaxDBDataSize];
+    char      affinity_token[kNetScheduleMaxDBDataSize];
     unsigned  affinity_id;
     unsigned  job_id;
 
@@ -574,6 +574,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/07/19 15:53:34  kuznets
+ * Extended database size to accomodate escaped strings
+ *
  * Revision 1.52  2006/06/29 21:09:33  kuznets
  * Added queue dump by status(pending, running, etc)
  *

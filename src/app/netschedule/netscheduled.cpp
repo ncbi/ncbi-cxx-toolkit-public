@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.12.1  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.12.2  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -120,13 +120,13 @@ typedef enum {
 struct SJS_Request
 {
     EJS_RequestType    req_type;
-    char               input[kNetScheduleMaxDataSize];
-    char               output[kNetScheduleMaxDataSize];
-    char               progress_msg[kNetScheduleMaxDataSize];
-    char               cout[kNetScheduleMaxDataSize];
-    char               cerr[kNetScheduleMaxDataSize];
-    char               err[kNetScheduleMaxErrSize];
-    char               affinity_token[kNetScheduleMaxDataSize];
+    char               input[kNetScheduleMaxDBDataSize];
+    char               output[kNetScheduleMaxDBDataSize];
+    char               progress_msg[kNetScheduleMaxDBDataSize];
+    char               cout[kNetScheduleMaxDBDataSize];
+    char               cerr[kNetScheduleMaxDBDataSize];
+    char               err[kNetScheduleMaxDBErrSize];
+    char               affinity_token[kNetScheduleMaxDBDataSize];
     string             job_key_str;
     unsigned int       jcount;
     unsigned int       job_id;
@@ -147,7 +147,7 @@ struct SJS_Request
 };
 
 
-const unsigned kMaxMessageSize = kNetScheduleMaxErrSize * 4;
+const unsigned kMaxMessageSize = kNetScheduleMaxDBErrSize * 4;
 
 /// Thread specific data for threaded server
 ///
@@ -175,7 +175,7 @@ struct SThreadData
     vector<SNS_BatchSubmitRec>  batch_subm_vec;
 
 private:
-    unsigned int   x_request_buf[kNetScheduleMaxErrSize];
+    unsigned int   x_request_buf[kNetScheduleMaxDBErrSize];
 public:
     SThreadData() { request = (char*) x_request_buf; }  
     size_t  RequestBufSize() const { return sizeof(x_request_buf); }
@@ -1010,7 +1010,7 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
                                             SThreadData&            tdata,
                                             CQueueDataBase::CQueue& queue)
 {
-    char    buf[kNetScheduleMaxDataSize * 6 + 1];
+    char    buf[kNetScheduleMaxDBDataSize * 6 + 1];
     size_t  n_read;
 
     WriteMsg(sock, "OK:", "Batch submit ready");
@@ -1273,7 +1273,7 @@ void CNetScheduleServer::ProcessStatus(CSocket&                sock,
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
 
     CNetScheduleClient::EJobStatus status = queue.GetStatus(job_id);
-    char szBuf[kNetScheduleMaxDataSize * 3];
+    char szBuf[kNetScheduleMaxDBDataSize * 2];
     int st = (int) status;
     int ret_code = 0;
 
@@ -2079,7 +2079,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             for (++s; true; ++s) {
                 if (*s == '"' && *(s-1) != '\\') break;
                 NS_CHECKEND(s, "Misformed SUBMIT request")
-                NS_CHECKSIZE(ptr-req->input, kNetScheduleMaxDataSize);
+                NS_CHECKSIZE(ptr-req->input, kNetScheduleMaxDBDataSize);
                 *ptr++ = *s;
             }
             ++s;
@@ -2096,7 +2096,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                     if (*s == '"' && *(s-1) != '\\') break;
                     NS_CHECKEND(s, "Misformed SUBMIT request")
                     NS_CHECKSIZE(ptr-req->progress_msg, 
-                                 kNetScheduleMaxDataSize);
+                                 kNetScheduleMaxDBDataSize);
                     *ptr++ = *s;
                 }
                 ++s;
@@ -2133,7 +2133,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 for (++s; *s != '"'; ++s) {
                     NS_CHECKEND(s, "Misformed SUBMIT request")
                     NS_CHECKSIZE(ptr-req->affinity_token, 
-                                 kNetScheduleMaxDataSize);
+                                 kNetScheduleMaxDBDataSize);
                     *ptr++ = *s;
                 }
                 *ptr = 0;
@@ -2152,7 +2152,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 for (++s; *s != '"'; ++s) {
                     NS_CHECKEND(s, "Misformed SUBMIT request")
                     NS_CHECKSIZE(ptr-req->cout, 
-                                 kNetScheduleMaxDataSize);
+                                 kNetScheduleMaxDBDataSize);
                     *ptr++ = *s;
                 }
                 *ptr = 0;
@@ -2170,7 +2170,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 for (++s; *s != '"'; ++s) {
                     NS_CHECKEND(s, "Misformed SUBMIT request")
                     NS_CHECKSIZE(ptr-req->cerr, 
-                                 kNetScheduleMaxDataSize);
+                                 kNetScheduleMaxDBDataSize);
                     *ptr++ = *s;
                 }
                 *ptr = 0;
@@ -2208,7 +2208,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 for (++s; *s != '"'; ++s) {
                     NS_CHECKEND(s, "Misformed Status Snapshot request")
                     NS_CHECKSIZE(ptr - req->affinity_token, 
-                                 kNetScheduleMaxDataSize);
+                                 kNetScheduleMaxDBDataSize);
                     *ptr++ = *s;
                 }
                 *ptr = 0;
@@ -2264,7 +2264,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             for (++s; true; ++s) {
                 if (*s == '"' && *(s-1) != '\\') break;
                 NS_CHECKEND(s, "Misformed MPUT request")
-                NS_CHECKSIZE(ptr-req->progress_msg, kNetScheduleMaxDataSize);
+                NS_CHECKSIZE(ptr-req->progress_msg, kNetScheduleMaxDBDataSize);
                 *ptr++ = *s;            
             }
             *ptr = 0;
@@ -2375,7 +2375,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             for (++s; true; ++s) {
                 if (*s == '"' && *(s-1) != '\\') break;
                 NS_CHECKEND(s, "Misformed PUT request")
-                NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDataSize);
+                NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDBDataSize);
                 *ptr++ = *s;            
             }
             *ptr = 0;
@@ -2490,7 +2490,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             for (++s; true; ++s) {
                 if (*s == '"' && *(s-1) != '\\') break;
                 NS_CHECKEND(s, "Misformed PUT error request")
-                NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDataSize);
+                NS_CHECKSIZE(ptr-req->output, kNetScheduleMaxDBDataSize);
                 *ptr++ = *s;            
             }
             *ptr = 0;
@@ -2983,6 +2983,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2006/07/19 15:53:34  kuznets
+ * Extended database size to accomodate escaped strings
+ *
  * Revision 1.94  2006/06/29 21:24:45  kuznets
  * cosmetics
  *

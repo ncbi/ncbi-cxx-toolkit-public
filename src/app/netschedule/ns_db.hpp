@@ -138,14 +138,14 @@ struct SQueueDB : public CBDB_File
         BindData("aff_id", &aff_id);
         BindData("mask",   &mask);
 
-        BindData("input",  &input,  kNetScheduleMaxDataSize);
-        BindData("output", &output, kNetScheduleMaxDataSize);
+        BindData("input",  &input,  kNetScheduleMaxDBDataSize);
+        BindData("output", &output, kNetScheduleMaxDBDataSize);
 
-        BindData("err_msg", &err_msg, kNetScheduleMaxErrSize);
-        BindData("progress_msg", &progress_msg, kNetScheduleMaxDataSize);
+        BindData("err_msg", &err_msg, kNetScheduleMaxDBErrSize);
+        BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);
 
-        BindData("cout",  &cout, kNetScheduleMaxDataSize);
-        BindData("cerr",  &cerr, kNetScheduleMaxDataSize);
+        BindData("cout",  &cout, kNetScheduleMaxDBDataSize);
+        BindData("cerr",  &cerr, kNetScheduleMaxDBDataSize);
     }
 };
 
@@ -179,7 +179,7 @@ struct SAffinityDictDB : public CBDB_File
     {
         DisableNull(); 
         BindKey("aff_id",  &aff_id);
-        BindData("token",  &token,  kNetScheduleMaxDataSize);
+        BindData("token",  &token,  kNetScheduleMaxDBDataSize);
     }
 };
 
@@ -195,7 +195,7 @@ struct SAffinityDictTokenIdx : public CBDB_File
     SAffinityDictTokenIdx()
     {
         DisableNull(); 
-        BindKey("token",  &token,  kNetScheduleMaxDataSize);
+        BindKey("token",  &token,  kNetScheduleMaxDBDataSize);
         BindData("aff_id",  &aff_id);
     }
 };
@@ -417,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/19 15:53:34  kuznets
+ * Extended database size to accomodate escaped strings
+ *
  * Revision 1.3  2006/06/27 15:39:42  kuznets
  * Added int mask to jobs to carry flags(like exclusive)
  *
