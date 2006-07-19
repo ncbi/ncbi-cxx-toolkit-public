@@ -45,20 +45,12 @@ CTDS_CursorCmd::CTDS_CursorCmd(CTDS_Connection* conn, DBPROCESS* cmd,
                                const string& cursor_name, const string& query,
                                unsigned int nof_params) :
     CDBL_Cmd( conn, cmd ),
-    m_Name(cursor_name),
+    impl::CCursorCmd(cursor_name, query, nof_params),
     m_LCmd(0),
-    m_Query(query),
-    m_Params(nof_params),
     m_Res(0)
 {
 }
 
-
-bool CTDS_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
-{
-    return
-        m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
-}
 
 static bool for_update_of(const string& q)
 {
@@ -363,11 +355,11 @@ bool CTDS_CursorCmd::x_AssignParams()
 {
     static const char s_hexnum[] = "0123456789ABCDEF";
 
-    for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
-        const string& name = m_Params.GetParamName(n);
+    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
+        const string& name = GetParams().GetParamName(n);
         if (name.empty())
             continue;
-        CDB_Object& param = *m_Params.GetParam(n);
+        CDB_Object& param = *GetParams().GetParam(n);
         char val_buffer[16*1024];
 
         if (!param.IsNULL()) {
@@ -522,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/07/19 14:11:02  ssikorsk
+ * Refactoring of CursorCmd.
+ *
  * Revision 1.26  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

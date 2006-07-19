@@ -352,7 +352,9 @@ private:
 //  CTL_CursorCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd : CTL_Cmd, public impl::CCursorCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd :
+    CTL_Cmd,
+    public impl::CCursorCmd
 {
     friend class CTL_Connection;
 
@@ -365,7 +367,6 @@ protected:
     void CloseForever(void);
 
 protected:
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
     virtual CDB_Result* Open(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
@@ -382,9 +383,6 @@ private:
     I_ITDescriptor*   x_GetITDescriptor(unsigned int item_num);
 
 private:
-    string            m_Name;
-    string            m_Query;
-    CDB_Params        m_Params;
     unsigned int      m_FetchSize;
     bool              m_Used;
 };
@@ -739,6 +737,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/07/19 14:09:55  ssikorsk
+ * Refactoring of CursorCmd.
+ *
  * Revision 1.38  2006/07/18 15:46:00  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
@@ -770,7 +771,7 @@ END_NCBI_SCOPE
  * Added CDBExceptionStorage class
  *
  * Revision 1.28  2006/05/10 14:38:13  ssikorsk
- * 		Added class CGuard to CCTLExceptions.
+ *      Added class CGuard to CCTLExceptions.
  *
  * Revision 1.27  2006/05/04 15:23:26  ucko
  * Modify CCTLExceptions to store pointers, as our exception classes

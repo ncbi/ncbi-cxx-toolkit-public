@@ -168,12 +168,16 @@ class NCBI_DBAPIDRIVER_EXPORT CCursorCmd : public CCommand
     friend class ncbi::CDB_CursorCmd; // Because of AttachTo
 
 public:
-    CCursorCmd(void);
+    CCursorCmd(const string& cursor_name,
+               const string& query,
+               unsigned int nof_params);
     virtual ~CCursorCmd(void);
 
 protected:
     /// Binding
-    virtual bool BindParam(const string& name, CDB_Object* param_ptr) = 0;
+    virtual bool BindParam(const string& name,
+                           CDB_Object* param_ptr,
+                           bool out_param = false);
 
     /// Open the cursor.
     /// Return NULL if cursor resulted in no data.
@@ -204,15 +208,24 @@ protected:
 
     void DetachInterface(void);
 
+    const CDB_Params& GetParams(void) const
+    {
+        return m_Params;
+    }
+
 protected:
-    bool m_IsOpen;
-    bool m_IsDeclared;
+    bool        m_IsOpen;
+    bool        m_IsDeclared;
     // bool m_HasFailed;
+    string      m_Name;
+    string      m_Query;
 
 private:
     void AttachTo(CDB_CursorCmd* interface);
 
     CInterfaceHook<CDB_CursorCmd> m_Interface;
+
+    CDB_Params  m_Params;
 };
 
 
@@ -251,6 +264,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/07/19 14:09:55  ssikorsk
+ * Refactoring of CursorCmd.
+ *
  * Revision 1.5  2006/07/18 15:46:00  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

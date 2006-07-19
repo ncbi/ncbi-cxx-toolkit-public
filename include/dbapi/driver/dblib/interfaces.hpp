@@ -390,7 +390,9 @@ private:
 ///  CDBL_LangCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : CDBL_Cmd, public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd :
+    CDBL_Cmd,
+    public impl::CBaseCmd
 {
     friend class CDBL_Connection;
 
@@ -429,7 +431,9 @@ private:
 ///  CTL_RPCCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : CDBL_Cmd, public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd :
+    CDBL_Cmd,
+    public impl::CBaseCmd
 {
     friend class CDBL_Connection;
 
@@ -474,7 +478,9 @@ private:
 ///  CDBL_CursorCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd : CDBL_Cmd, public impl::CCursorCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd :
+    CDBL_Cmd,
+    public impl::CCursorCmd
 {
     friend class CDBL_Connection;
 
@@ -485,7 +491,6 @@ protected:
     virtual ~CDBL_CursorCmd(void);
 
 protected:
-    virtual bool BindParam(const string& param_name, CDB_Object* pVal);
     virtual CDB_Result* Open(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
@@ -505,10 +510,7 @@ private:
     bool x_AssignParams(void);
     I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
 
-    string             m_Name;
     CDB_LangCmd*       m_LCmd;
-    string             m_Query;
-    CDB_Params         m_Params;
     CDBL_CursorResult* m_Res;
 };
 
@@ -519,7 +521,9 @@ private:
 ///  CDBL_BCPInCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : CDBL_Cmd, public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd :
+    CDBL_Cmd,
+    public impl::CBaseCmd
 {
     friend class CDBL_Connection;
 
@@ -553,7 +557,9 @@ private:
 ///  CDBL_SendDataCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd : CDBL_Cmd, public impl::CSendDataCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd :
+    CDBL_Cmd,
+    public impl::CSendDataCmd
 {
     friend class CDBL_Connection;
 
@@ -1057,6 +1063,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/07/19 14:09:55  ssikorsk
+ * Refactoring of CursorCmd.
+ *
  * Revision 1.48  2006/07/18 15:46:00  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

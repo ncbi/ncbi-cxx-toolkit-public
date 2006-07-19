@@ -143,10 +143,15 @@ void CBaseCmd::AttachTo(CDB_BCPInCmd* interface)
 }
 
 ///////////////////////////////////////////////////////////////////////////
-CCursorCmd::CCursorCmd(void) :
-m_IsOpen(false),
-m_IsDeclared(false)
-// m_HasFailed(false)
+CCursorCmd::CCursorCmd(const string& cursor_name,
+                       const string& query,
+                       unsigned int nof_params) :
+    m_IsOpen(false),
+    m_IsDeclared(false),
+    // m_HasFailed(false)
+    m_Name(cursor_name),
+    m_Query(query),
+    m_Params(nof_params)
 {
 }
 
@@ -154,6 +159,16 @@ CCursorCmd::~CCursorCmd(void)
 {
     return;
 }
+
+bool CCursorCmd::BindParam(const string& param_name,
+                           CDB_Object* param_ptr,
+                           bool out_param)
+{
+    return
+        m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr,
+                           out_param);
+}
+
 
 void CCursorCmd::DetachInterface(void)
 {
@@ -194,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/19 14:11:02  ssikorsk
+ * Refactoring of CursorCmd.
+ *
  * Revision 1.3  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

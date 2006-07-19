@@ -341,6 +341,8 @@ protected:
         const string& lang_query,
         unsigned int nof_params
         );
+
+public:
     virtual ~CODBC_LangCmd(void);
 
 protected:
@@ -421,7 +423,8 @@ protected:
     virtual ~CODBC_CursorCmd(void);
 
 protected:
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
+                           bool out_param = false);
     virtual CDB_Result* Open(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
@@ -436,12 +439,11 @@ private:
     bool x_AssignParams(bool just_declare = false);
     CDB_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
 
-    CODBC_LangCmd m_CursCmd;
-    CODBC_LangCmd* m_LCmd;
+    CODBC_LangCmd           m_CursCmd;
+    auto_ptr<CODBC_LangCmd> m_LCmd;
 
-    string          m_Name;
-    unsigned int    m_FetchSize;
-    impl::CResult*  m_Res;
+    unsigned int            m_FetchSize;
+    auto_ptr<impl::CResult> m_Res;
 };
 
 
@@ -708,6 +710,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/07/19 14:09:55  ssikorsk
+ * Refactoring of CursorCmd.
+ *
  * Revision 1.35  2006/07/18 15:46:00  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

@@ -45,19 +45,10 @@ CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                              const string& cursor_name, const string& query,
                              unsigned int nof_params, unsigned int fetch_size) :
     CTL_Cmd(conn, cmd),
-    m_Name(cursor_name),
-    m_Query(query),
-    m_Params(nof_params),
+    impl::CCursorCmd(cursor_name, query, nof_params),
     m_FetchSize(fetch_size)
 {
     m_Used        = false;
-}
-
-
-bool CTL_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
-{
-    return
-        m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
 }
 
 
@@ -82,7 +73,7 @@ CDB_Result* CTL_CursorCmd::Open()
             DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
         }
 
-        if (m_Params.NofParams() > 0) {
+        if (GetParams().NofParams() > 0) {
             // we do have the parameters
             // check if query is a select statement or a function call
             if (m_Query.find("select") != string::npos  ||
@@ -123,7 +114,7 @@ CDB_Result* CTL_CursorCmd::Open()
 
     m_IsOpen = true;
 
-    if (m_Params.NofParams() > 0) {
+    if (GetParams().NofParams() > 0) {
         // we do have the parameters
         m_HasFailed = !x_AssignParams(false);
         CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 122003 );
@@ -453,11 +444,11 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
     param_fmt.namelen = CS_NULLTERM;
     param_fmt.status  = CS_INPUTVALUE;
 
-    for (unsigned int i = 0;  i < m_Params.NofParams();  i++) {
-        if(m_Params.GetParamStatus(i) == 0) continue;
+    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
+        if(GetParams().GetParamStatus(i) == 0) continue;
 
-        CDB_Object&   param = *m_Params.GetParam(i);
-        const string& param_name = m_Params.GetParamName(i);
+        CDB_Object&   param = *GetParams().GetParam(i);
+        const string& param_name = GetParams().GetParamName(i);
         CS_SMALLINT   indicator = (!declare_only  &&  param.IsNULL()) ? -1 : 0;
 
         if ( !AssignCmdParam(param, param_name, param_fmt, indicator, declare_only) ) {
@@ -476,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/07/19 14:11:02  ssikorsk
+ * Refactoring of CursorCmd.
+ *
  * Revision 1.23  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
