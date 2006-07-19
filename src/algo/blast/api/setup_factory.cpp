@@ -192,15 +192,23 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
     if (Blast_ProgramIsPhiBlast(opts_memento->m_ProgramType)) {
         SPHIPatternSearchBlk* phi_lookup_table
             = (SPHIPatternSearchBlk*) retval->lut;
+        CBlast_Message blast_msg;
         status = Blast_SetPHIPatternInfo(opts_memento->m_ProgramType,
                                 phi_lookup_table,
                                 queries,
                                 lookup_segments,
-                                query_data->GetQueryInfo());
-        if (status != 0) {  /** FIXME: better error here. */
-             NCBI_THROW(CBlastException, eCoreBlastError,
-                   "Blast_SetPHIPatternInfo failed (" + 
-                   NStr::IntToString(status) + " error code)");
+                                query_data->GetQueryInfo(), 
+                                &blast_msg);
+        if (status != 0) {  
+             TSearchMessages search_messages;
+             Blast_Message2TSearchMessages(blast_msg.Get(), query_data->GetQueryInfo(), search_messages);
+             string msg;
+             if (search_messages.HasMessages()) {
+                 msg = search_messages.ToString();
+             } else {
+                 msg = "Blast_SetPHIPatternInfo failed (" + NStr::IntToString(status) + " error code)";
+             }
+             NCBI_THROW(CBlastException, eCoreBlastError, msg);
         }
     }
 

@@ -594,7 +594,7 @@ void CDbBlast::SetupSearch()
             SPHIPatternSearchBlk* pattern_blk =
                 (SPHIPatternSearchBlk*) m_ipLookupTable->lut;
             Blast_SetPHIPatternInfo(x_eProgram, pattern_blk, m_iclsQueries, 
-                                    m_ipLookupSegments, m_iclsQueryInfo);
+                                    m_ipLookupSegments, m_iclsQueryInfo, NULL);
         }
 
         // Fill the effective search space values in the BlastQueryInfo
@@ -792,6 +792,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.95  2006/07/19 13:26:08  madden
+ * Change to Blast_SetPHIPatternInfo parameters
+ *
  * Revision 1.94  2006/07/05 15:19:31  papadopo
  * allow for 26- or 28-letter alphabets in RPS databases
  *
