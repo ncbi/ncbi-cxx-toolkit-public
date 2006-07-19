@@ -482,7 +482,7 @@ void x_GetBestOverlappingFeat(const CSeq_loc& loc,
         try {
             loc.CheckId(single_id);
         }
-        catch (CException) {
+        catch (CException&) {
             single_id = 0;
         }
         if ( single_id ) {
@@ -499,11 +499,12 @@ void x_GetBestOverlappingFeat(const CSeq_loc& loc,
     }
 
     try {
-        CFeat_CI feat_it(scope, loc, SAnnotSelector()
-            .SetFeatType(feat_type)
+        SAnnotSelector sel;
+        sel.SetFeatType(feat_type)
             .SetFeatSubtype(feat_subtype)
             .SetOverlapType(annot_overlap_type)
-            .SetResolveTSE());
+            .SetResolveTSE();
+        CFeat_CI feat_it(scope, loc, sel);
         for ( ;  feat_it;  ++feat_it) {
             // treat subset as a special case
             Int8 cur_diff = ( !revert_locations ) ?
@@ -845,7 +846,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     x_GetBestOverlappingFeat(mrna_feat.GetLocation(),
                              CSeqFeatData::e_Cdregion,
                              CSeqFeatData::eSubtype_cdregion,
-                             eOverlap_Contains,
+                             eOverlap_CheckIntervals,
                              feats, scope);
 
     /// easy out: 0 or 1 possible features
@@ -2815,6 +2816,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.142  2006/07/19 18:44:08  dicuccio
+* GetBestCdsForMrna(): use CheckIntervals
+*
 * Revision 1.141  2006/06/13 19:08:58  dicuccio
 * Cleaned up logic and bugs in GetBestXxxForXxx(), GetXxxForXxx() functions
 *
