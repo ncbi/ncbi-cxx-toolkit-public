@@ -157,7 +157,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
 
                     CSeqVector xvec(xcript_cb_loc, scope);
                     string xseq;
-                    gvec.GetSeqData(0, xvec.size(), xseq);
+                    xvec.GetSeqData(0, xvec.size(), xseq);
 
                     if (gseq != xseq) {
                         can_make_same_prot = false;
@@ -632,6 +632,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/07/19 22:29:49  jcherry
+ * Fixed copy-and-paste error in previous commit
+ *
  * Revision 1.20  2006/07/19 20:25:42  jcherry
  * For "can_make_same_prot", added additional check that any code-break
  * locations in the transcript are identical at the nucleotide level
