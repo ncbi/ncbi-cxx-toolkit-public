@@ -18,7 +18,7 @@ LIB =   xbma_refiner \
         cn3d \
         mmdb \
         id1cli id1 \
-        xobjread creaders \
+        xalgodustmask xobjread creaders \
         xobjsimple xobjutil \
         $(OBJMGR_LIBS)
 
