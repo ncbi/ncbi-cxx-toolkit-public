@@ -178,6 +178,12 @@ public:
     };
     static void GatherAlignStats(const objects::CAlnVec& vec,
                                  SAlignStats& align_stats);
+    static void GatherAlignStats(const objects::CDense_seg& ds,
+                                 objects::CScope& scope,
+                                 SAlignStats& align_stats);
+    static void GatherAlignStats(const objects::CSeq_align& aln,
+                                 objects::CScope& scope,
+                                 SAlignStats& align_stats);
 };
 
 
@@ -193,6 +199,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/07/19 19:58:23  jcherry
+ * Added additional CContigAssembly::GatherAlignStats signatures
+ * for convenience
+ *
  * Revision 1.6  2006/07/17 14:14:43  jcherry
  * Added calculation of fancy new alignment statistics
  *

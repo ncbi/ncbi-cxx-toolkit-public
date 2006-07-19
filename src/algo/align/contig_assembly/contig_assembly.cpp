@@ -890,11 +890,32 @@ void CContigAssembly::GatherAlignStats(const CAlnVec& vec,
 }
 
 
+void CContigAssembly::GatherAlignStats(const CDense_seg& ds,
+                                       CScope& scope,
+                                       SAlignStats& align_stats)
+{
+    CAlnVec avec(ds, scope);
+    GatherAlignStats(avec, align_stats);
+}
+
+
+void CContigAssembly::GatherAlignStats(const CSeq_align& aln,
+                                       CScope& scope,
+                                       SAlignStats& align_stats)
+{
+    GatherAlignStats(aln.GetSegs().GetDenseg(), scope, align_stats);
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/07/19 19:58:23  jcherry
+ * Added additional CContigAssembly::GatherAlignStats signatures
+ * for convenience
+ *
  * Revision 1.10  2006/07/17 14:14:43  jcherry
  * Added calculation of fancy new alignment statistics
  *
