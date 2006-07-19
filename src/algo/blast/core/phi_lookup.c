@@ -369,8 +369,26 @@ SPHIPatternSearchBlk* s_PatternSearchItemsInit()
     return retval;
 }
 
+static void
+s_MakePatternUpperCase(char* pattern_in, char* pattern_out, int length)
+{
+     int index = 0;
+
+     ASSERT(pattern_in && pattern_out && length > 0);
+ 
+     for (index=0; index<length; index++)
+     {
+          if (pattern_in[index] >= 'a' && pattern_in[index] <= 'z')
+             pattern_out[index] = toupper(pattern_in[index]);
+          else
+             pattern_out[index] = pattern_in[index];
+     }
+
+     return;
+}
+
 Int2
-SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp, 
+SPHIPatternSearchBlkNew(char* pattern_in, Boolean is_dna, BlastScoreBlk* sbp, 
                        SPHIPatternSearchBlk* *pattern_blk_out, 
                        Blast_Message* *error_msg)
 {
@@ -407,6 +425,8 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
     SLongPatternItems* multiword_items;
     const Uint1* kOrder = (is_dna ? IUPACNA_TO_NCBI4NA : AMINOACID_TO_NCBISTDAA);
     Blast_ResFreq* rfp = NULL;
+    char* pattern = NULL;  /* copy of pattern made upper-case. */
+    int pattern_length = 0; /* length of above. */
 
     *pattern_blk_out = pattern_blk = s_PatternSearchItemsInit();        
     one_word_items = pattern_blk->one_word_items;
@@ -420,11 +440,16 @@ SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
     prevSetMask = 0;
     currentSetMask = 0;
 
+    pattern_length = strlen(pattern_in);
+    pattern = calloc(pattern_length+1, sizeof(char));
+    s_MakePatternUpperCase(pattern_in, pattern, pattern_length);
+    pattern_blk->pattern = pattern; /* Save the copy here */
+
     memset(localPattern, 0, PHI_MAX_PATTERN_LENGTH*sizeof(Uint1));
 
     /* Parse the pattern */
-    for (charIndex = 0, posIndex = 0; charIndex < (Int4)strlen(pattern); 
-         charIndex++) {
+    for (charIndex = 0, posIndex = 0; charIndex < pattern_length; charIndex++) 
+    {
         if ((next_char=pattern[charIndex]) == '-' || next_char == '\n' || 
             next_char == '.' || next_char =='>' || next_char ==' ' || 
             next_char == '<')  /*spacers that mean nothing*/
@@ -663,10 +688,15 @@ SPHIPatternSearchBlk* SPHIPatternSearchBlkFree(SPHIPatternSearchBlk* lut)
         sfree(lut->multi_word_items);
     }
     if (lut->one_word_items) {
-        sfree(lut->one_word_items->dna_items);
-        sfree(lut->one_word_items->whichPositionPtr);
+        if (lut->flagPatternLength != eVeryLong)
+        {  /* For eVeryLong these are just pointers to another array. */
+            sfree(lut->one_word_items->dna_items);
+            sfree(lut->one_word_items->whichPositionPtr);
+        }
         sfree(lut->one_word_items);
     }
+
+    sfree(lut->pattern);
 
     sfree(lut);
     return NULL;
