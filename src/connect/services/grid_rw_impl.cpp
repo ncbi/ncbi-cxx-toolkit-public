@@ -42,19 +42,29 @@ static const char *s_Flags[s_FlagsLen] = {
 CStringOrBlobStorageWriter::
 CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage& storage,
                            string& data)
-    : m_MaxBuffSize(max_string_size), m_Storage(storage), m_BlobOstr(NULL),
+    : m_Storage(storage), m_BlobOstr(NULL),
       m_Data(data)
 {
-    m_Data = s_Flags[0];
+    x_Init(max_string_size);
 }
 CStringOrBlobStorageWriter::
 CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage* storage,
                            string& data)
-    : m_MaxBuffSize(max_string_size), 
-      m_Storage(*storage), m_StorageGuard(storage),
+    : m_Storage(*storage), m_StorageGuard(storage),
       m_BlobOstr(NULL), m_Data(data)
 {
-    m_Data = s_Flags[0];
+    x_Init(max_string_size);
+}
+
+void CStringOrBlobStorageWriter::x_Init(size_t max_string_size)
+{
+    if (max_string_size > s_FlagsLen+1) {
+        m_MaxBuffSize = max_string_size - (s_FlagsLen+1);
+        m_Data = s_Flags[0];
+    } else {
+        m_MaxBuffSize = 0;
+        m_Data = s_Flags[1];
+    }
 }
 
 CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter() 
@@ -99,7 +109,7 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
 
     if (m_BlobOstr) 
         return x_WriteToStream(buf,count, &written);
-
+    //cerr << "before " << m_Data.size() << " " <<count << endl;
     if (m_Data.size()+count > m_MaxBuffSize) {
         _ASSERT(!m_BlobOstr);
         string tmp(m_Data.begin() + s_FlagsLen, m_Data.end());
@@ -118,6 +128,7 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
         return x_WriteToStream(buf,count, &written);            
     }
     m_Data.append( (const char*)buf, count);
+    //cerr << "after " << m_Data.size() << " " <<count << endl;
     written = count;
     return eRW_Success;
 }
@@ -256,6 +267,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2006/07/19 16:23:14  didenko
+ * + x_Init method
+ * Corrected calculation of m_MaxBuffSize
+ *
  * Revision 6.12  2006/05/19 13:34:42  didenko
  * Now reader/writer can take an ownership of a blobstorage
  *

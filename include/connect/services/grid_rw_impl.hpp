@@ -71,6 +71,8 @@ private:
                                size_t      count,
                                size_t*     bytes_written = 0);
 
+    void x_Init(size_t max_string_size);
+
     size_t        m_MaxBuffSize;
     IBlobStorage& m_Storage;
     auto_ptr<IBlobStorage> m_StorageGuard;
@@ -152,6 +154,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/07/19 16:23:14  didenko
+ * + x_Init method
+ * Corrected calculation of m_MaxBuffSize
+ *
  * Revision 1.5  2006/05/19 13:34:41  didenko
  * Now reader/writer can take an ownership of a blobstorage
  *
