@@ -58,8 +58,8 @@ CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage* storage,
 
 void CStringOrBlobStorageWriter::x_Init(size_t max_string_size)
 {
-    if (max_string_size > s_FlagsLen+1) {
-        m_MaxBuffSize = max_string_size - (s_FlagsLen+1);
+    if (max_string_size > 0) {
+        m_MaxBuffSize = max_string_size;
         m_Data = s_Flags[0];
     } else {
         m_MaxBuffSize = 0;
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2006/07/19 16:50:40  didenko
+ * m_MaxBuffSize calculation correction
+ *
  * Revision 6.13  2006/07/19 16:23:14  didenko
  * + x_Init method
  * Corrected calculation of m_MaxBuffSize
