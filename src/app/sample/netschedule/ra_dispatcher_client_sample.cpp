@@ -82,7 +82,7 @@ int CRADispatcherClientSampleApp::Run(void)
     request.SetCmdLine(...);
     */
 
-    string inp_fname = "inp.fast";
+    string inp_fname = "inp.fasta";
     ifstream inp(inp_fname.c_str());
     if (!inp.good()) {
         cerr << "Could not read \"" << inp_fname << "\" file with input FASTA sequence.\n";
@@ -139,6 +139,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/20 16:26:01  didenko
+ * Cosmetics
+ *
  * Revision 1.3  2006/07/20 15:45:00  didenko
  * Cosmetics
  *
