@@ -138,7 +138,7 @@ private:
     void x_Check(const string& where);
 
     TCacheFlags m_CacheFlags;
-    string*  m_CreatedBlobId;
+    string   m_CreatedBlobId;
     string   m_TempDir;
 
     CBlobStorage_NetCache(const CBlobStorage_NetCache&);
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/07/20 15:50:17  didenko
+ * Changed the way a key for an output stream is stored
+ *
  * Revision 1.7  2006/05/30 16:41:05  didenko
  * Improved error handling
  *

@@ -51,7 +51,6 @@ CBlobStorage_NetCache::CBlobStorage_NetCache(CNetCacheClient* nc_client,
                                        const string&  temp_dir)
     : m_NCClient(nc_client), 
       m_CacheFlags(flags),
-      m_CreatedBlobId(NULL),
       m_TempDir(temp_dir)
 {
 }
@@ -78,7 +77,7 @@ CBlobStorage_NetCache::~CBlobStorage_NetCache()
 void CBlobStorage_NetCache::x_Check(const string& where)
 {
     if ( (m_IStream.get() && !(m_CacheFlags & eCacheInput)) || 
-         (m_OStream.get() && !(m_CacheFlags & eCacheOutput)) )//&& m_CreatedBlobId) )
+         (m_OStream.get() && !(m_CacheFlags & eCacheOutput)) )
         NCBI_THROW(CBlobStorageException,
                    eBusy, "Communication channel is already in use." + where);
 }
@@ -235,7 +234,8 @@ CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
         }
 
     } else {
-        m_CreatedBlobId = &key;
+        key = CreateEmptyBlob();
+        m_CreatedBlobId = key;
         m_OStream.reset(CFile::CreateTmpFileEx(m_TempDir,sm_OutputBlobCachePrefix));        
         if( !m_OStream.get() || !m_OStream->good()) {
             m_OStream.reset();
@@ -267,12 +267,12 @@ void CBlobStorage_NetCache::Reset()
 {
     m_IStream.reset();
     try {
-        if ((m_CacheFlags & eCacheOutput) && m_OStream.get()) {
+        if ((m_CacheFlags & eCacheOutput) && m_OStream.get() && !m_CreatedBlobId.empty() ) {
             auto_ptr<IWriter> writer;
             int try_count = 0;
             while(1) {
                 try {
-                    writer.reset(m_NCClient->PutData(m_CreatedBlobId));
+                    writer.reset(m_NCClient->PutData(&m_CreatedBlobId));
                     break;
                 }
                 catch (CNetServiceException& ex) {
@@ -284,7 +284,7 @@ void CBlobStorage_NetCache::Reset()
                     SleepMilliSec(1000 + try_count*2000);
                 }
             }
-            if (!writer.get()) {
+            if (!writer.get()) { 
                 NCBI_THROW(CBlobStorageException,
                            eWriter, "Writer couldn't be created.");
             }
@@ -303,7 +303,7 @@ void CBlobStorage_NetCache::Reset()
                 NCBI_THROW(CBlobStorageException,
                            eWriter, "Wrong cast.");
             }
-            m_CreatedBlobId = NULL;
+            m_CreatedBlobId = "";
             
         }
         if (m_OStream.get() && !(m_CacheFlags & eCacheOutput)) {
@@ -415,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2006/07/20 15:50:17  didenko
+ * Changed the way a key for an output stream is stored
+ *
  * Revision 6.8  2006/06/19 14:53:06  didenko
  * Fixed GetBlobAsString method
  *
