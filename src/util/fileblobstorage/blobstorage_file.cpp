@@ -99,7 +99,7 @@ CNcbiIstream& CBlobStorage_File::GetIStream(const string& key,
                    eBlobNotFound, "Requested blob is not found. " + key);
 
     Int8 fsize = blob.GetLength();
-    m_IStream.reset(new CNcbiIfstream(blob.GetPath().c_str()));
+    m_IStream.reset(new CNcbiIfstream(blob.GetPath().c_str(), IOS_BASE::in | IOS_BASE::binary));
     if (!m_IStream->good() || fsize == -1 )
         NCBI_THROW(CBlobStorageException, eReader, 
                    "Reader couldn't create a temporary file. BlobKey: " + key);
@@ -128,7 +128,7 @@ CNcbiOstream& CBlobStorage_File::CreateOStream(string& key,
                    eBusy, "The output stream is in use.");
 
     string fpath = CFile::GetTmpNameEx(m_StorageDir, kEmptyStr, CFile::eTmpFileCreate);
-    m_OStream.reset(new CNcbiOfstream(fpath.c_str()));
+    m_OStream.reset(new CNcbiOfstream(fpath.c_str(), IOS_BASE::out | IOS_BASE::binary));
     if (!m_OStream->good())
             NCBI_THROW(CBlobStorageException,
                        eWriter, "Writer couldn't create an ouput stream.");
@@ -230,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/20 13:05:53  didenko
+ * Added binary flag for storage files
+ *
  * Revision 1.2  2006/07/13 14:40:35  didenko
  * Added DeleteStorage method
  *
