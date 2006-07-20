@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.426 2006/07/17 14:12:49 ucko Exp $
+#  $Id: configure.ac,v 1.427 2006/07/20 15:53:35 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -126,6 +126,8 @@ AC_ARG_WITH(lib-rebuilds2,
    [ --with-lib-rebuilds=ask ask whether to update each app's libraries])dnl'
 AC_ARG_WITH(projects,
    [ --with-projects=FILE    build projects listed in FILE by default])
+AC_ARG_WITH(flat-makefile,
+   [ --with-flat-makefile    generate a flat makefile to build all projects)])
 AC_ARG_WITH(check,
    [ --with-check            run test suite after the build])
 AC_ARG_WITH(check-tools,
@@ -351,6 +353,7 @@ x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution ccache distcc \
+flat-makefile \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype fltk \
@@ -5431,6 +5434,24 @@ else
    echo "$ncbicfg" is not present
 fi
 
+if test "$with_flat_makefile" = "yes"; then
+   cfm_flags='-b'
+   ptb=$NCBI/c++/Release/bin/project_tree_builder
+   if test -x "$ptb"; then
+      case `"$ptb" -version 2>&1 | sed -e 's/.*: //'` in
+         1.[2-9]* | 1.1[0-9]* | [2-9]* | 1[0-9]*) cfm_flags='' ;;
+      esac
+   fi
+   case "$with_projects" in
+      yes     ) cfm_flags="$cfm_flags -p projects" ;;
+      no | '' ) ;;
+      *       ) cfm_flags="$cfm_flags -p $with_projects" ;;
+   esac
+   $real_srcdir/scripts/create_flat_makefile.sh "$build_root" \
+       -s "$real_srcdir" $cfm_flags
+   build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
+fi
+
 dnl execute extra-action
 if test -n "$with_extra_action" ; then
    with_extra_action=`echo "$with_extra_action" | sed "s%{}%$build_root%g"`
@@ -5486,6 +5507,7 @@ Configuration  header:  $ncbiconf
 To build everything:  cd $builddir && make all_r
 or simply run make in the current directory
 $build_proj
+$build_flat
 ******* CONFIGURATION SUCCESSFUL *******
 EOCONF
 ], [
@@ -5508,6 +5530,7 @@ WithProjects='$WithProjects $OPT_GROUPS'
 WithoutProjects='$WithoutProjects'
 with_extra_action='$with_extra_action'
 with_projects='$with_projects'
+with_flat_makefile='$with_flat_makefile'
 smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
 ])
