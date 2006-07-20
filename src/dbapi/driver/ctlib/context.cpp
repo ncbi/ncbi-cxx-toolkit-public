@@ -203,15 +203,17 @@ CS_START_EXTERN_C
     }
 CS_END_EXTERN_C
 
-CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
+CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
+    m_Context(0),
+    m_PacketSize(2048),
+    m_LoginRetryCount(0),
+    m_LoginLoopDelay(0),
+    m_TDSVersion(version),
+    m_Registry(NULL)
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
-    m_Context         = 0;
-    m_LoginRetryCount = 0;
-    m_LoginLoopDelay  = 0;
-    m_PacketSize      = 2048;
 
     SetApplicationName("CTLibDriver");
 
@@ -893,7 +895,6 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 }
 
 
-
 // Tunable version of TDS protocol to use
 
 #if !defined(NCBI_CTLIB_TDS_VERSION)
@@ -1162,6 +1163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2006/07/20 19:55:07  ssikorsk
+ * Added CTLibContext.m_TDSVersion.
+ *
  * Revision 1.84  2006/07/20 16:31:07  vakatov
  * NCBI_CTLIB_TDS_VERSION -- preprocessor var to allow altering the
  * default version of TDS protocol (from the current default of 110)
