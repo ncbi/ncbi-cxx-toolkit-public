@@ -893,16 +893,26 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 }
 
 
+
+// Tunable version of TDS protocol to use
+
+#if !defined(NCBI_CTLIB_TDS_VERSION)
+#  define NCBI_CTLIB_TDS_VERSION 110
+#endif
+
 NCBI_PARAM_DECL(int, ctlib, TDS_VERSION);
-NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION, 110, eParam_NoThread,
+NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION,
+                  NCBI_CTLIB_TDS_VERSION,  // default TDS version
+                  eParam_NoThread,
                   CTLIB_TDS_VERSION);
 typedef NCBI_PARAM_TYPE(ctlib, TDS_VERSION) TCtlibTdsVersion;
+
 
 int GetCtlibTdsVersion(void)
 {
     int version = CS_VERSION_110;
 
-    switch(TCtlibTdsVersion::GetDefault()) {
+    switch (TCtlibTdsVersion::GetDefault()) {
     case 100:
         version = CS_VERSION_100;
         break;
@@ -923,6 +933,8 @@ int GetCtlibTdsVersion(void)
 
     return version;
 }
+
+
 
 ///////////////////////////////////////////////////////////////////////
 // Driver manager related functions
@@ -1150,6 +1162,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2006/07/20 16:31:07  vakatov
+ * NCBI_CTLIB_TDS_VERSION -- preprocessor var to allow altering the
+ * default version of TDS protocol (from the current default of 110)
+ *
  * Revision 1.83  2006/07/13 16:08:12  ssikorsk
  * Timeout == 0 --> CS_NO_LIMIT.
  *
