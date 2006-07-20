@@ -709,7 +709,8 @@ void UpdateViewer::ImportStructure(void)
             choices[choice].Printf("%s_%c %s",
                 pdbID.c_str(), chains[choice].second, chains[choice].first->GetSeqIdString().c_str());
         wxArrayInt selections;
-        int nsel = wxGetMultipleChoices(selections, "Which chain do you want to align?",
+        selections.Add(0);    // select first by default
+        int nsel = wxGetMultipleChoices(selections, "Which chain(s) do you want to align?",
             "Select Chain", chains.size(), choices, *viewerWindow);
         if (nsel == 0) return;
         for (choice=0; choice<nsel; ++choice)
@@ -1197,6 +1198,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2006/07/20 18:17:37  thiessen
+* select first chain to align by default on structure import
+*
 * Revision 1.87  2006/07/13 22:33:51  thiessen
 * change all 'slave' -> 'dependent'
 *
