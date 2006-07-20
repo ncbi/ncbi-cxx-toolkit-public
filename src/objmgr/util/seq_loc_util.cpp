@@ -2163,6 +2163,7 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
         }
     case eOverlap_Subset:
     case eOverlap_CheckIntervals:
+    case eOverlap_CheckIntRev:
     case eOverlap_Interval:
         {
             // For this types the function should not be called
@@ -2238,6 +2239,7 @@ Int8 x_TestForOverlap_MultiStrand(const CSeq_loc& loc1,
             return x_TestForOverlap_MultiSeq(loc1, loc2, type);
         }
     case eOverlap_CheckIntervals:
+    case eOverlap_CheckIntRev:
     default:
         {
             // For this types the function should not be called
@@ -2266,13 +2268,15 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                       TSeqPos circular_len,
                       CScope* scope)
 {
+    const CSeq_loc* ploc1 = type == eOverlap_CheckIntRev ? &loc2 : &loc1;
+    const CSeq_loc* ploc2 = type == eOverlap_CheckIntRev ? &loc1 : &loc2;
     typedef CRange<Int8> TRange8;
     CRange<TSeqPos> int_rg1, int_rg2;
     TRange8 rg1, rg2;
     bool multi_seq = false;
     try {
-        int_rg1 = loc1.GetTotalRange();
-        int_rg2 = loc2.GetTotalRange();
+        int_rg1 = ploc1->GetTotalRange();
+        int_rg2 = ploc2->GetTotalRange();
     }
     catch (exception&) {
         // Can not use total range for multi-sequence locations
@@ -2283,18 +2287,18 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
             if (circular_len != 0  &&  circular_len != kInvalidSeqPos) {
                 throw;
             }
-            return x_TestForOverlap_MultiSeq(loc1, loc2, type);
+            return x_TestForOverlap_MultiSeq(*ploc1, *ploc2, type);
         }
         multi_seq = true;
     }
-    if ( scope && loc1.IsWhole() ) {
-        CBioseq_Handle h1 = scope->GetBioseqHandle(loc1.GetWhole());
+    if ( scope && ploc1->IsWhole() ) {
+        CBioseq_Handle h1 = scope->GetBioseqHandle(ploc1->GetWhole());
         if ( h1 ) {
             int_rg1.Set(0, h1.GetBioseqLength() - 1);
         }
     }
-    if ( scope && loc2.IsWhole() ) {
-        CBioseq_Handle h2 = scope->GetBioseqHandle(loc2.GetWhole());
+    if ( scope && ploc2->IsWhole() ) {
+        CBioseq_Handle h2 = scope->GetBioseqHandle(ploc2->GetWhole());
         if ( h2 ) {
             int_rg2.Set(0, h2.GetBioseqLength() - 1);
         }
@@ -2302,14 +2306,16 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     rg1.Set(int_rg1.GetFrom(), int_rg1.GetTo());
     rg2.Set(int_rg2.GetFrom(), int_rg2.GetTo());
 
-    ENa_strand strand1 = GetStrand(loc1);
-    ENa_strand strand2 = GetStrand(loc2);
+    ENa_strand strand1 = GetStrand(*ploc1);
+    ENa_strand strand2 = GetStrand(*ploc2);
     if ( !TestForStrands(strand1, strand2) ) {
         // Subset and CheckIntervals don't use total ranges
-        if ( type != eOverlap_Subset   &&  type != eOverlap_CheckIntervals ) {
+        if (type != eOverlap_Subset  &&
+            type != eOverlap_CheckIntervals  &&
+            type != eOverlap_CheckIntRev) {
             if ( strand1 == eNa_strand_other  ||
                 strand2 == eNa_strand_other ) {
-                return x_TestForOverlap_MultiStrand(loc1, loc2, type, scope);
+                return x_TestForOverlap_MultiStrand(*ploc1, *ploc2, type, scope);
             }
             return -1;
         }
@@ -2318,10 +2324,10 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Simple:
         {
             if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = loc1.GetStart(eExtreme_Positional);
-                Int8 from2 = loc2.GetStart(eExtreme_Positional);
-                Int8 to1 = loc1.GetStop(eExtreme_Positional);
-                Int8 to2 = loc2.GetStop(eExtreme_Positional);
+                Int8 from1 = ploc1->GetStart(eExtreme_Positional);
+                Int8 from2 = ploc2->GetStart(eExtreme_Positional);
+                Int8 to1 = ploc1->GetStop(eExtreme_Positional);
+                Int8 to2 = ploc2->GetStop(eExtreme_Positional);
                 if (from1 > to1) {
                     if (from2 > to2) {
                         // Both locations are circular and must intersect at 0
@@ -2332,7 +2338,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                         // for the second one.
                         Int8 loc_len =
                             rg2.GetLength() +
-                            Int8(loc1.GetCircularLength(circular_len));
+                            Int8(ploc1->GetCircularLength(circular_len));
                         if (from1 < rg2.GetFrom()  ||  to1 > rg2.GetTo()) {
                             // loc2 is completely in loc1
                             return loc_len - 2*rg2.GetLength();
@@ -2350,7 +2356,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                     // Only the second location is circular
                     Int8 loc_len =
                         rg1.GetLength() +
-                        Int8(loc2.GetCircularLength(circular_len));
+                        Int8(ploc2->GetCircularLength(circular_len));
                     if (from2 < rg1.GetFrom()  ||  to2 > rg1.GetTo()) {
                         // loc2 is completely in loc1
                         return loc_len - 2*rg1.GetLength();
@@ -2375,10 +2381,10 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Contained:
         {
             if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = loc1.GetStart(eExtreme_Positional);
-                Int8 from2 = loc2.GetStart(eExtreme_Positional);
-                Int8 to1 = loc1.GetStop(eExtreme_Positional);
-                Int8 to2 = loc2.GetStop(eExtreme_Positional);
+                Int8 from1 = ploc1->GetStart(eExtreme_Positional);
+                Int8 from2 = ploc2->GetStart(eExtreme_Positional);
+                Int8 to1 = ploc1->GetStop(eExtreme_Positional);
+                Int8 to2 = ploc2->GetStop(eExtreme_Positional);
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from1 <= from2  &&  to1 >= to2) ?
@@ -2386,7 +2392,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                     }
                     else {
                         if (rg2.GetFrom() >= from1  ||  rg2.GetTo() <= to1) {
-                            return Int8(loc1.GetCircularLength(circular_len)) -
+                            return Int8(ploc1->GetCircularLength(circular_len)) -
                                 rg2.GetLength();
                         }
                         return -1;
@@ -2407,10 +2413,10 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Contains:
         {
             if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = loc1.GetStart(eExtreme_Positional);
-                Int8 from2 = loc2.GetStart(eExtreme_Positional);
-                Int8 to1 = loc1.GetStop(eExtreme_Positional);
-                Int8 to2 = loc2.GetStop(eExtreme_Positional);
+                Int8 from1 = ploc1->GetStart(eExtreme_Positional);
+                Int8 from2 = ploc2->GetStart(eExtreme_Positional);
+                Int8 to1 = ploc1->GetStop(eExtreme_Positional);
+                Int8 to2 = ploc2->GetStop(eExtreme_Positional);
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from2 <= from1  &&  to2 >= to1) ?
@@ -2423,7 +2429,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                 }
                 else if (from2 > to2) {
                     if (rg1.GetFrom() >= from2  ||  rg1.GetTo() <= to2) {
-                        return Int8(loc2.GetCircularLength(circular_len)) -
+                        return Int8(ploc2->GetCircularLength(circular_len)) -
                             rg1.GetLength();
                     }
                     return -1;
@@ -2439,20 +2445,22 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Subset:
         {
             // loc1 should contain loc2
-            if ( Compare(loc1, loc2, scope) != eContains ) {
+            if ( Compare(*ploc1, *ploc2, scope) != eContains ) {
                 return -1;
             }
-            return Int8(GetLength(loc1, scope)) - Int8(GetLength(loc2, scope));
+            return Int8(GetLength(*ploc1, scope)) -
+                Int8(GetLength(*ploc2, scope));
         }
     case eOverlap_CheckIntervals:
+    case eOverlap_CheckIntRev:
         {
             if ( !multi_seq  &&
                 (rg1.GetFrom() > rg2.GetTo()  || rg1.GetTo() < rg2.GetFrom()) ) {
                 return -1;
             }
             // Check intervals' boundaries
-            CSeq_loc_CI it1(loc1);
-            CSeq_loc_CI it2(loc2);
+            CSeq_loc_CI it1(*ploc1);
+            CSeq_loc_CI it2(*ploc2);
             if (!it1  ||  !it2) {
                 break;
             }
@@ -2466,8 +2474,8 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                 for ( ; it1  &&  it1.GetRange().GetTo() >= loc2start; ++it1) {
                     if (it1.GetRange().GetTo() >= loc2end  &&
                         TestForIntervals(it1, it2, true)) {
-                        return Int8(GetLength(loc1, scope)) -
-                            Int8(GetLength(loc2, scope));
+                        return Int8(GetLength(*ploc1, scope)) -
+                            Int8(GetLength(*ploc2, scope));
                     }
                 }
             }
@@ -2479,8 +2487,8 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                     if (it1.GetSeq_id().Equals(it2.GetSeq_id())  &&
                         it1.GetRange().GetFrom() <= loc2start  &&
                         TestForIntervals(it1, it2, false)) {
-                        return Int8(GetLength(loc1, scope)) -
-                            Int8(GetLength(loc2, scope));
+                        return Int8(GetLength(*ploc1, scope)) -
+                            Int8(GetLength(*ploc2, scope));
                     }
                 }
             }
@@ -2488,7 +2496,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
         }
     case eOverlap_Interval:
         {
-            return (Compare(loc1, loc2, scope) == eNoOverlap) ? -1
+            return (Compare(*ploc1, *ploc2, scope) == eNoOverlap) ? -1
                 : AbsInt8(rg2.GetFrom() - rg1.GetFrom()) +
                 AbsInt8(rg1.GetTo() - rg2.GetTo());
         }
@@ -2646,6 +2654,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2006/07/20 22:19:01  grichenk
+* Added eOverlap_CheckIntRev, use it in GetBestXXXForCds().
+*
 * Revision 1.22  2006/06/08 19:21:29  grichenk
 * Removed unused variable.
 *

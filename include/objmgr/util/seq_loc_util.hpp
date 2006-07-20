@@ -229,6 +229,7 @@ enum EOverlapType {
     eOverlap_Contains,       ///< 2nd contains 1st extremes
     eOverlap_Subset,         ///< 2nd is a subset of 1st ranges
     eOverlap_CheckIntervals, ///< 2nd is a subset of 1st with matching boundaries
+    eOverlap_CheckIntRev,    ///< 1st is a subset of 2nd with matching boundaries
     eOverlap_Interval        ///< at least one pair of intervals must overlap
 };
 
@@ -334,6 +335,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2006/07/20 22:19:01  grichenk
+* Added eOverlap_CheckIntRev, use it in GetBestXXXForCds().
+*
 * Revision 1.9  2005/02/18 15:01:32  shomrat
 * Changes to GetStop/GetStart
 *

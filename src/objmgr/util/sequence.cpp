@@ -465,6 +465,7 @@ void x_GetBestOverlappingFeat(const CSeq_loc& loc,
     case eOverlap_Subset:
     case eOverlap_CheckIntervals:
     case eOverlap_Interval:
+    case eOverlap_CheckIntRev:
         revert_locations = true;
         // there's no break here - proceed to "default"
     default:
@@ -698,7 +699,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
     x_GetBestOverlappingFeat(cds_feat.GetLocation(),
                              CSeqFeatData::e_Rna,
                              CSeqFeatData::eSubtype_mRNA,
-                             eOverlap_Contained,
+                             eOverlap_CheckIntRev,
                              feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -1008,7 +1009,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
     x_GetBestOverlappingFeat(mrna_feat.GetLocation(),
                              CSeqFeatData::e_Gene,
                              CSeqFeatData::eSubtype_any,
-                             eOverlap_Contained,
+                             eOverlap_CheckIntRev,
                              feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -1096,7 +1097,7 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
     x_GetBestOverlappingFeat(cds_feat.GetLocation(),
                              CSeqFeatData::e_Gene,
                              CSeqFeatData::eSubtype_any,
-                             eOverlap_Contained,
+                             eOverlap_CheckIntRev,
                              feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -2816,6 +2817,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.143  2006/07/20 22:19:01  grichenk
+* Added eOverlap_CheckIntRev, use it in GetBestXXXForCds().
+*
 * Revision 1.142  2006/07/19 18:44:08  dicuccio
 * GetBestCdsForMrna(): use CheckIntervals
 *
