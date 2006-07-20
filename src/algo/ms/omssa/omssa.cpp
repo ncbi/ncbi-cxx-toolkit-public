@@ -42,6 +42,14 @@
 #include <corelib/ncbifloat.h>
 #include <util/miscmath.h>
 #include <algo/blast/core/ncbi_math.h>
+#include <corelib/ncbifile.hpp>
+#include <serial/serial.hpp>
+#include <serial/objistrasn.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
+#include <serial/iterator.hpp>
+#include <serial/objostrxml.hpp>
 
 #include <fstream>
 #include <string>
@@ -58,6 +66,146 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(omssa);
+
+
+
+void     
+CLadderContainer::CreateLadderArrays(int MaxModPerPep, int MaxLadderSize)
+{
+    TSeriesChargePairList::iterator Iter;
+    for( Iter = SetSeriesChargePairList().begin();
+         Iter != SetSeriesChargePairList().end();
+         ++Iter) {
+        int Key = CMSMatchedPeakSetMap::ChargeSeries2Key(Iter->first, Iter->second);
+        CRef <CLadder> newLadder;
+        TLadderListPtr newLadderListPtr(new TLadderList);
+        int i;
+        for (i = 0; i < MaxModPerPep; i++) {
+            newLadder.Reset(new CLadder(MaxLadderSize));
+            newLadderListPtr->push_back(newLadder);
+        }
+        SetLadderMap().insert(TLadderMap::value_type(Key, newLadderListPtr));
+    }
+}
+
+bool 
+CLadderContainer::MatchIter(TLadderMap::iterator& Iter,
+                       TMSCharge BeginCharge,
+                       TMSCharge EndCharge,
+                       TMSIonSeries SeriesType)
+{
+    bool retval = true;
+    if(BeginCharge != 0 && EndCharge != 0) {
+        if(CMSMatchedPeakSetMap::Key2Charge(Iter->first) < BeginCharge ||
+           CMSMatchedPeakSetMap::Key2Charge(Iter->first) > EndCharge)
+            retval = false;
+    }
+    if(SeriesType != eMSIonTypeUnknown) {
+        if(CMSMatchedPeakSetMap::Key2Series(Iter->first) != SeriesType)
+            retval = false;
+    }
+
+    return retval;
+}
+
+void 
+CLadderContainer::Next(TLadderMap::iterator& Iter,
+                       TMSCharge BeginCharge,
+                       TMSCharge EndCharge,
+                       TMSIonSeries SeriesType)
+{
+    if(Iter == SetLadderMap().end()) return;
+    Iter++;
+    while(Iter != SetLadderMap().end() && 
+          !MatchIter(Iter, BeginCharge, EndCharge, SeriesType))
+        Iter++;
+}
+    
+    
+void     
+CLadderContainer::Begin(TLadderMap::iterator& Iter,
+                        TMSCharge BeginCharge,
+                        TMSCharge EndCharge,
+                        TMSIonSeries SeriesType)
+{
+    Iter = SetLadderMap().begin();
+    if(MatchIter(Iter, BeginCharge, EndCharge, SeriesType)) return;
+    Next(Iter, BeginCharge ,EndCharge, SeriesType);
+}
+        
+
+int 
+CSearchHelper::ReadModFiles(const string& ModFileName,
+                          const string& UserModFileName,
+                          const string& Path,
+                          CRef <CMSModSpecSet> Modset)
+{  
+    CDirEntry DirEntry(Path);
+    string FileName;
+    if(ModFileName == "")
+        ERR_POST(Critical << "modification filename is blank!");
+    if(!CDirEntry::IsAbsolutePath(ModFileName))
+        FileName = DirEntry.GetDir() + ModFileName;
+    else FileName = ModFileName;
+    auto_ptr<CObjectIStream> 
+        modsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
+    if(modsin->fail()) {	    
+        ERR_POST(Fatal << "ommsacl: unable to open modification file" << 
+                 FileName);
+        return 1;
+    }
+    modsin->Read(ObjectInfo(*Modset));
+    modsin->Close();
+
+    // read in user mod file, if any
+    if(UserModFileName != "") {
+        CRef <CMSModSpecSet> UserModset(new CMSModSpecSet);
+        if(!CDirEntry::IsAbsolutePath(UserModFileName))
+            FileName = DirEntry.GetDir() + UserModFileName;
+        else FileName = UserModFileName;
+        auto_ptr<CObjectIStream> 
+         usermodsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
+        if(usermodsin->fail()) {	    
+             ERR_POST(Warning << "ommsacl: unable to open user modification file" << 
+                      ModFileName);
+             return 0;
+         }
+        usermodsin->Read(ObjectInfo(*UserModset));
+        usermodsin->Close();
+        Modset->Append(*UserModset);
+    }
+    return 0;
+}
+
+
+void 
+CSearchHelper::ReadTaxFile(string& Filename, TTaxNameMap& TaxNameMap)
+{
+    ifstream taxnames(Filename.c_str());
+    string line;
+    list<string> linelist;
+    list<string>::iterator ilist;
+    while(taxnames && !taxnames.eof()) {
+        getline(taxnames, line);
+        linelist.clear();
+        NStr::Split(line, ",", linelist);
+        if(!linelist.empty()) {
+            ilist = linelist.begin();
+            ilist++;
+            TaxNameMap[NStr::StringToInt(*ilist)] = *(linelist.begin());
+        }
+    }
+}   
+
+void 
+CSearchHelper::ConditionXMLStream(CObjectOStreamXml *xml_out)
+{
+    if(!xml_out) return;
+    // turn on xml schema
+    xml_out->SetReferenceSchema();
+    // turn off names in named integers
+    xml_out->SetWriteNamedIntegersByValue(true);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -572,13 +720,6 @@ void CSearch::SetIons(int& ForwardIon, int& BackwardIon)
 }
 
 
-/**
- * set up modifications from both user input and mod file data
- * 
- * @param MyRequest the user search params and spectra
- * @param Modset list of modifications
- */
-
 void CSearch::SetupMods(CRef <CMSModSpecSet> Modset)
 {
     //Modset->Append(MyRequest);
@@ -586,13 +727,7 @@ void CSearch::SetupMods(CRef <CMSModSpecSet> Modset)
 }
 
 
-/**
- * initialize mass ladders
- * 
- * @param MaxLadderSize the number of ions per ladder
- * @param NumLadders the number of ladders per series
- */
-void CSearch::InitLadders(void)
+void CSearch::InitLadders(int ForwardIon, int BackwardIon)
 {
     BLadder.clear();
     YLadder.clear();
@@ -613,6 +748,15 @@ void CSearch::InitLadders(void)
         newLadder.Reset(new CLadder(2*MaxLadderSize));
         Y2Ladder.push_back(newLadder);
     }
+
+
+    // new way
+
+    SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)ForwardIon));
+    SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)ForwardIon));
+    SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)BackwardIon));
+    SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)BackwardIon));
+    SetLadderContainer().CreateLadderArrays(MaxModPerPep, MaxLadderSize);
 }
 
 
@@ -666,8 +810,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
         int ForwardIon(1), BackwardIon(4);
         SetIons(ForwardIon, BackwardIon);
-
-        InitLadders();
+        InitLadders(ForwardIon, BackwardIon);
 
         LadderCalc.reset(new Int1[MaxModPerPep]);
         CAA AA;

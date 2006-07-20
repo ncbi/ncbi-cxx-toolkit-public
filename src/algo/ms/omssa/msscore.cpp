@@ -225,11 +225,23 @@ CMSMatchedPeakSet * CMSMatchedPeakSetMap::SetSeries(TMSCharge Charge, TMSIonSeri
 
 //typedef std::map <int, CMSMatchedPeakSet *> TIonSeriesMatchMap;
 
-const int CMSMatchedPeakSetMap::ChargeSeries2Key(TMSCharge Charge, TMSIonSeries Series) const
+const int 
+CMSMatchedPeakSetMap::ChargeSeries2Key(TMSCharge Charge, TMSIonSeries Series)
 { 
     return eMSIonTypeMax * Charge + Series;
 }
 
+const TMSCharge
+CMSMatchedPeakSetMap::Key2Charge(int Key)
+{ 
+    return static_cast <TMSCharge> (Key/eMSIonTypeMax);
+}
+
+const TMSIonSeries
+CMSMatchedPeakSetMap::Key2Series(int Key)
+{ 
+    return static_cast <TMSIonSeries> (Key - Key2Charge(Key)*eMSIonTypeMax);
+}
 
 
 

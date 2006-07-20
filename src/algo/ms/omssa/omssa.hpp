@@ -62,6 +62,159 @@ const int kAccLen = 20;
 // arbitrary high evalue
 const double kHighEval = 1e50;
 
+typedef vector < CRef <CLadder> > TLadderList;
+typedef AutoPtr <TLadderList> TLadderListPtr;
+typedef pair <int,  TLadderListPtr > TLadderMapPair;
+typedef map <int, TLadderListPtr > TLadderMap;
+typedef list <TSeriesChargePair> TSeriesChargePairList;
+
+
+class NCBI_XOMSSA_EXPORT CLadderContainer {
+    public:
+
+        /** 
+         * returns the laddermap (maps key based on charge and series type to a vector of CLadder)
+         */
+        TLadderMap& SetLadderMap(void);
+
+        /**
+         * returns const laddermap
+         */
+        const TLadderMap& GetLadderMap(void) const;
+
+        /**
+         * return the list of charge, series type pairs that are used to
+         * initialize the maps
+         */
+        TSeriesChargePairList& SetSeriesChargePairList(void);
+
+        /**
+          * return the list of charge, series type pairs that are used to
+          * initialize the maps
+          */
+        const TSeriesChargePairList& GetSeriesChargePairList(void) const;
+
+        /** 
+         * iterate over the ladder map over the charge range and series type indicated
+         * 
+         * @param Iter the iterator
+         * @param BeginCharge the minimum charge to look for (0=all)
+         * @param EndCharge the maximum charge to look for (0=all)
+         * @param SeriesType the type of the ion series
+         */
+        void Next(TLadderMap::iterator& Iter,
+                  TMSCharge BeginCharge = 0,
+                  TMSCharge EndCharge = 0,
+                  TMSIonSeries SeriesType = eMSIonTypeUnknown);
+
+
+        void Begin(TLadderMap::iterator& Iter,
+                                   TMSCharge BeginCharge = 0,
+                                   TMSCharge EndCharge = 0,
+                                   TMSIonSeries SeriesType = eMSIonTypeUnknown);
+
+
+        /**
+         * populate the Ladder Map with arrays based on the ladder
+         * 
+         * @param MaxModPerPep size of the arrays
+         * @param MaxLadderSize size of the ladders
+         */
+        void CreateLadderArrays(int MaxModPerPep, int MaxLadderSize);
+
+        
+    private:
+
+        /**
+         * see if key of the map element pointed to by Iter matches the conditions
+         * 
+         * @param Iter the iterator
+         * @param BeginCharge the minimum charge to look for (0=all)
+         * @param EndCharge the maximum charge to look for (0=all)
+         * @param SeriesType the type of the ion series
+         */
+        bool MatchIter(TLadderMap::iterator& Iter,
+                       TMSCharge BeginCharge = 0,
+                       TMSCharge EndCharge = 0,
+                       TMSIonSeries SeriesType = eMSIonTypeUnknown);
+        /**     
+         * contains a map from charge, ion series to the CLadderArrays 
+         * the key is gotten from CMSMatchedPeakSetMap::ChargeSeries2Key 
+         */
+        TLadderMap LadderMap;
+        
+        /** 
+         * contains the series, charge of the ion series to be generated 
+         */
+        TSeriesChargePairList SeriesChargePairList;
+};  
+
+inline
+TLadderMap& 
+CLadderContainer::SetLadderMap(void)
+{
+    return LadderMap;
+}
+
+inline
+const TLadderMap& 
+CLadderContainer::GetLadderMap(void) const
+{
+    return LadderMap;
+}
+
+inline
+TSeriesChargePairList& 
+CLadderContainer::SetSeriesChargePairList(void)
+{
+    return SeriesChargePairList;
+}
+
+inline
+const TSeriesChargePairList& 
+CLadderContainer::GetSeriesChargePairList(void) const
+{
+    return SeriesChargePairList;
+}
+
+/**
+ * class to hold various helper functions for CSearch
+ */
+class NCBI_XOMSSA_EXPORT CSearchHelper {
+public:
+
+    /**
+     * read in modification files.  probably should be in some helper class
+     * 
+     * @param ModFileName mods.xml
+     * @param UserModFileName usermods.xml
+     * @param Path program path
+     * @param Modset the data structure containing the mods
+     * @return 1 on error
+     */
+    static int ReadModFiles(const string& ModFileName,
+                            const string& UserModFileName, 
+                            const string& Path,
+                            CRef <CMSModSpecSet> Modset);
+
+    /** 
+     * read in taxonomy file
+     * 
+     * @param Filename filename
+     * @param TaxNameMap maps taxid to friendly name
+     */
+    typedef map<int, string> TTaxNameMap;
+    static void ReadTaxFile(string& Filename, TTaxNameMap& TaxNameMap);
+
+    /**
+     * correctly set up xml stream
+     * 
+     * @param xml_out xml output stream
+     */
+    static void ConditionXMLStream(CObjectOStreamXml *xml_out);
+
+};
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -96,8 +249,13 @@ public:
     ~CSearch(void);
 
     
-    // init blast databases.  stream thru db if InitDB true
+    /**
+     *  init blast databases.  stream thru db if InitDB true
+     * 
+     * @param blastdb name of blast database
+     */
     int InitBlast(const char *blastdb);
+
 
     /**
      *  Performs the ms/ms search
@@ -191,10 +349,14 @@ protected:
                             int& M,
                             int& Sum);
 
-    //! set up the ions to use
+    /**
+     * set up the ions to use
+     */
     void SetIons(int& ForwardIon, int& BackwardIon);
 
-    //! create the ladders from sequence
+    /**
+     *  create the ladders from sequence
+     */
     int CreateLadders(const char *Sequence, int iSearch, int position,
 		      int endposition,
 		      int *Masses, int iMissed, CAA& AA, 
@@ -205,7 +367,9 @@ protected:
               int BackwardIon  //!< x,y,z series
               );
 
-    // compare ladders to experiment
+    /**
+     * compare ladders to experiment
+     */
     int CompareLadders(int iMod,
                        CMSPeak *Peaks,
                        bool OrLadders,
@@ -324,10 +488,8 @@ protected:
     /**
      * initialize mass ladders
      * 
-     * @param MaxLadderSize the number of ions per ladder
-     * @param NumLadders the number of ladders per series
      */
-    void InitLadders(void);
+    void InitLadders(int ForwardIon, int BackwardIon);
 
     /**
      * makes map of oid from previous search
@@ -434,6 +596,21 @@ protected:
     CConstRef<CCleave> GetEnzyme(void) const;
 
 
+    /**
+     * set the ladder container
+     * 
+     * this container holds theoretical mass ladders sorted by charge and series type
+     */
+    CLadderContainer& 
+        SetLadderContainer(void);
+
+    /**
+     * get the ladder container
+     */
+    const CLadderContainer& 
+        GetLadderContainer(void) const;
+
+
 private:
     /** blast library */
     CRef <CSeqDB> rdfp;
@@ -472,6 +649,7 @@ private:
         YLadder,
         B2Ladder,
         Y2Ladder;
+    CLadderContainer LadderContainer;
 
 	/**
      * bool array that indicates if the ladders been calculated
@@ -753,6 +931,20 @@ CConstRef<CCleave> CSearch::GetEnzyme(void) const
     return Enzyme;
 }
 
+inline
+CLadderContainer& 
+CSearch::SetLadderContainer(void)
+{
+    return LadderContainer;
+}
+
+inline
+const CLadderContainer& 
+CSearch::GetLadderContainer(void) const
+{
+    return LadderContainer;
+}
+
 
 /////////////////// end of CSearch inline methods
 
@@ -765,6 +957,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.40  2006/07/20 21:00:21  lewisg
+  move functions out of COMSSA, create laddercontainer
+
   Revision 1.39  2006/05/25 17:11:56  lewisg
   one filtered spectrum per precursor charge state
 

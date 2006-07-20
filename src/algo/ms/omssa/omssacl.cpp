@@ -79,8 +79,6 @@ private:
     void PrintEnzymes(void);
     void PrintIons(void);
 
-    //! reads in modification files
-    int ReadModFiles(CArgs& args, CRef <CMSModSpecSet> Modset);
     template <class T> void InsertList(const string& List, T& ToInsert, string error); 
 
     /**
@@ -413,47 +411,6 @@ int main(int argc, const char* argv[])
 }
 
 
-//! reads in modification files
-
-int COMSSA::ReadModFiles(CArgs& args, CRef <CMSModSpecSet> Modset)
-{  
-    CDirEntry DirEntry(GetProgramExecutablePath());
-    string ModFileName;
-    if(args["mx"].AsString() == "")
-        ERR_POST(Critical << "modification filename is blank!");
-    if(!CDirEntry::IsAbsolutePath(args["mx"].AsString()))
-        ModFileName = DirEntry.GetDir() + args["mx"].AsString();
-    auto_ptr<CObjectIStream> 
-    modsin(CObjectIStream::Open(ModFileName.c_str(), eSerial_Xml));
-    if(modsin->fail()) {	    
-        ERR_POST(Fatal << "ommsacl: unable to open modification file" << 
-                 ModFileName);
-        return 1;
-    }
-    modsin->Read(ObjectInfo(*Modset));
-    modsin->Close();
-
-    // read in user mod file, if any
-    if(args["mux"].AsString() != "") {
-        CRef <CMSModSpecSet> UserModset(new CMSModSpecSet);
-        if(!CDirEntry::IsAbsolutePath(args["mux"].AsString()))
-            ModFileName = DirEntry.GetDir() + args["mux"].AsString();
-        auto_ptr<CObjectIStream> 
-         usermodsin(CObjectIStream::Open(ModFileName.c_str(), eSerial_Xml));
-        usermodsin->Open(ModFileName.c_str(), eSerial_Xml);
-        if(usermodsin->fail()) {	    
-             ERR_POST(Warning << "ommsacl: unable to open user modification file" << 
-                      ModFileName);
-             return 0;
-         }
-        usermodsin->Read(ObjectInfo(*UserModset));
-        usermodsin->Close();
-        Modset->Append(*UserModset);
-    }
-    return 0;
-}
-
-
 void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
 {
 	Settings->SetPrecursorsearchtype(args["tem"].AsInteger());
@@ -524,8 +481,10 @@ int COMSSA::Run()
 	CArgs args = GetArgs();
     CRef <CMSModSpecSet> Modset(new CMSModSpecSet);
 
+
     // read in modifications
-    if(ReadModFiles(args, Modset))
+    if(CSearchHelper::ReadModFiles(args["mx"].AsString(), args["mux"].AsString(),
+                            GetProgramExecutablePath(), Modset))
         return 1;
 
 	// print out the modification list
@@ -547,7 +506,7 @@ int COMSSA::Run()
          return 0;
      }
 
-	CSearch Search;
+     CSearch Search;
 
     // set up rank scoring
     if(args["os"]) Search.SetRankScore() = false;
@@ -598,19 +557,11 @@ int COMSSA::Run()
 
     // which search settings to use
     CRef <CMSSearchSettings> SearchSettings;
-    // the ordinal number of the SearchSettings
-    int Settingid(0);
 
     // set up search settings
-    if(Search.GetIterative()) {
-        Settingid = 1 + (*MySearch.SetRequest().begin())->SetMoresettings().Set().size();
-        SearchSettings = new CMSSearchSettings;
-        (*MySearch.SetRequest().begin())->SetMoresettings().Set().push_back(SearchSettings);
-    }
-    else {
-        SearchSettings.Reset(&((*MySearch.SetRequest().begin())->SetSettings()));
-    }
-    SearchSettings->SetSettingid() = Settingid;
+    MySearch.SetUpSearchSettings(SearchSettings, 
+                                 Search.GetIterative());
+
     SetSearchSettings(args, SearchSettings);
 
 	_TRACE("omssa: search begin");
@@ -672,12 +623,9 @@ int COMSSA::Run()
 					     eSerial_AsnBinary));
 	}
 	else if(args["ox"].AsString() != "") {
-        txt_out.reset(CObjectOStream::Open(args["ox"].AsString().c_str(), eSerial_Xml));
-        // turn on xml schema
+        txt_out.reset(CObjectOStream::Open(args["ox"].AsString().c_str(), eSerial_Xml)); 
         CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
-        xml_out->SetReferenceSchema();
-        // turn off names in named integers
-        xml_out->SetWriteNamedIntegersByValue(true);
+        CSearchHelper::ConditionXMLStream(xml_out);
 	}
 
     if(txt_out.get() != 0) {
@@ -710,6 +658,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.49  2006/07/20 21:00:22  lewisg
+  move functions out of COMSSA, create laddercontainer
+
   Revision 1.48  2006/05/25 17:11:56  lewisg
   one filtered spectrum per precursor charge state
 

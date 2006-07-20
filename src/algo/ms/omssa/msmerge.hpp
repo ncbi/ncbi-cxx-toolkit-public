@@ -42,6 +42,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <objects/omssa/MSSearch.hpp>
+#include "msms.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -49,30 +50,6 @@ BEGIN_SCOPE(omssa)
 
 /** type that hold a list of oids */
 typedef std::set <int> TOid;
-
-
-/** generic exception class */
-class COMSSAException: EXCEPTION_VIRTUAL_BASE public CException {
-    public:
-    /// Error types that subsystem can generate.
-    enum EErrCode {
-        eMSParseException,		///< unable to parse COMSSASearch
-        eMSNoMatchException		///< unmatched sequence library
-    };
-
-    /// Translate from the error code value to its string representation.   
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eMSParseException: return "unable to parse COMSSASearch";
-        case eMSNoMatchException: return "unmatched sequence library";
-        default:     return CException::GetErrCodeString();
-        }
-    }
-    
-    // Standard exception boilerplate code.    
-    NCBI_EXCEPTION_DEFAULT(COMSSAException, CException);
-}; 
 
 
 class NCBI_XOMSSA_EXPORT COMSSASearch : public CMSSearch {

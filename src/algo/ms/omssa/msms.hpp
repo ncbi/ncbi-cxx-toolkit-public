@@ -432,6 +432,35 @@ CMod::TFixed& CMod::SetFixed(void)
 
 
 
+/** 
+ * generic exception class for omssa
+ */
+
+class COMSSAException: EXCEPTION_VIRTUAL_BASE public CException {
+    public:
+    /// Error types that subsystem can generate.
+    enum EErrCode {
+        eMSParseException,		///< unable to parse COMSSASearch
+        eMSNoMatchException,	///< unmatched sequence library
+        eMSLadderNotFound	    ///< ladder not found in CLadderContainer
+    };
+
+    /// Translate from the error code value to its string representation.   
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eMSParseException: return "unable to parse COMSSASearch";
+        case eMSNoMatchException: return "unmatched sequence library";
+        case eMSLadderNotFound: return "ladder not found in CLadderContainer";
+        default:     return CException::GetErrCodeString();
+        }
+    }
+    
+    // Standard exception boilerplate code.    
+    NCBI_EXCEPTION_DEFAULT(COMSSAException, CException);
+}; 
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CCleave::
@@ -1030,6 +1059,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.32  2006/07/20 21:00:21  lewisg
+  move functions out of COMSSA, create laddercontainer
+
   Revision 1.31  2006/03/13 15:48:11  lewisg
   omssamerge and intermediate score fixes
 

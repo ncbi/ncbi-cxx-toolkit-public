@@ -78,6 +78,9 @@ enum EMSIonSeries {
 };
 
 
+/** pair of ion series, charge */
+typedef pair <TMSCharge, EMSIonSeries> TSeriesChargePair;
+
 /** set of ion series specifiers */
 typedef std::vector <EMSIonSeries> TIonSeriesSet;
 
@@ -470,12 +473,32 @@ public:
     /** Set the Map */
     TIonSeriesMatchMap& SetMatchMap(void);
 
+    /** convert a charge and series to a map key */
+    static const int 
+        ChargeSeries2Key(TMSCharge Charge, TMSIonSeries Series);
+
+    /**
+     * convert a key into a charge
+     * 
+     * @param Key the key to convert
+     * @return the charge contained in the key
+     */
+    static const TMSCharge 
+        Key2Charge(int Key);
+    
+    /**
+      * convert a key into a series type
+      * 
+      * @param Key the key to convert
+      * @return the series type contained in the key
+      */
+    static const TMSIonSeries 
+        Key2Series(int Key);
+
 private:
     /** the map itself */
     TIonSeriesMatchMap MatchMap;
 
-    /** convert a charge and series to a map key */
-    const int ChargeSeries2Key(TMSCharge Charge, TMSIonSeries Series) const;
 };
 
 
