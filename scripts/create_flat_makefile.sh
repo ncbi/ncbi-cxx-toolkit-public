@@ -10,6 +10,7 @@
 # defaults
 solution="Makefile.flat"
 logfile="Flat.configuration_log"
+extptb="$NCBI/c++/Release/bin/project_tree_builder"
 #-----------------------------------------------------------------------------
 
 initial_dir=`pwd`
@@ -75,6 +76,24 @@ fi
 
 #-----------------------------------------------------------------------------
 # more checks
+if test $buildptb = "no"; then
+  ptb="$extptb"
+  if test -f "$ptb"; then
+    ptbver=`$ptb -version 2>&1 | sed -e 's/[a-zA-Z._: ]//g'`
+    if test $ptbver -lt 120; then
+      $ptb -version 2>&1
+      echo "Prebuilt project_tree_builder at"
+      echo $extptb
+      echo "is too old. Will build PTB locally"
+      buildptb="yes"
+    fi
+  else
+    echo "Prebuilt project_tree_builder is not found at"
+    echo $extptb
+    echo "Will build PTB locally"
+    buildptb="yes"
+  fi
+fi
 
 cd $builddir
 dll=""
@@ -104,9 +123,6 @@ if test "$buildptb" = "yes"; then
   cd $builddir
   ptb="./app/project_tree_builder/project_tree_builder"
   test -f "$ptb" || Usage "$builddir/$ptb not found"
-else
-  ptb="$NCBI/c++/Release/bin/project_tree_builder"
-  test -f "$ptb" || Usage "$ptb not found"
 fi
 
 cd $builddir
