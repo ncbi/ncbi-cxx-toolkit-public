@@ -51,12 +51,14 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 ////////////////////////////////////////////////////////////////////////////
-CTL_Connection::CTL_Connection(CTLibContext& cntx, CS_CONNECTION* con,
-                               bool reusable, const string& pool_name) :
-    impl::CConnection(cntx, false, reusable, pool_name)
+CTL_Connection::CTL_Connection(CTLibContext& cntx,
+                               CS_CONNECTION* con,
+                               bool reusable,
+                               const string& pool_name) :
+    impl::CConnection(cntx, false, reusable, pool_name),
+    m_Cntx(&cntx),
+    m_Link(con)
 {
-    m_Link     = con;
-
     CTL_Connection* link = this;
     Check(ct_con_props(x_GetSybaseConn(), CS_SET, CS_USERDATA,
                  &link, (CS_INT) sizeof(link), NULL));
@@ -110,6 +112,29 @@ CTL_Connection::Check(CS_RETCODE rc)
     GetCTLExceptionStorage().Handle(GetMsgHandlers());
 
     return rc;
+}
+
+CS_INT
+CTL_Connection::GetBLKVersion(void) const
+{
+    CS_INT blk_version = BLK_VERSION_100;
+
+    _ASSERT(m_Cntx);
+    switch (m_Cntx->GetTDSVersion()) {
+    case CS_VERSION_100:
+        blk_version = BLK_VERSION_100;
+        break;
+    case CS_VERSION_110: // Same as CS_VERSION_120
+        blk_version = BLK_VERSION_110;
+        break;
+#ifdef CS_VERSION_125
+    case CS_VERSION_125:
+        blk_version = BLK_VERSION_125;
+        break;
+#endif
+    }
+
+    return blk_version;
 }
 
 void
@@ -174,7 +199,7 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
     CHECK_DRIVER_ERROR( !IsBCPable(), "No bcp on this connection", 110003 );
 
     CS_BLKDESC* cmd;
-    if (blk_alloc(x_GetSybaseConn(), BLK_VERSION_100, &cmd) != CS_SUCCEED) {
+    if (blk_alloc(x_GetSybaseConn(), GetBLKVersion(), &cmd) != CS_SUCCEED) {
         DATABASE_DRIVER_ERROR( "blk_alloc failed", 110004 );
     }
 
@@ -672,6 +697,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/07/20 19:56:19  ssikorsk
+ * Added CTL_Connection::GetBLKVersion() implementation.
+ *
  * Revision 1.39  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
