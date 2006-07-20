@@ -1175,14 +1175,30 @@ static string s_ComposeNameExtra(size_t idx)
 }
 
 
+inline bool s_IsArgNameChar(char c)
+{
+    return isalnum(c)  ||  c == '_'  ||  c == '-';
+}
+
+
 CArgs::TArgsCI CArgs::x_Find(const string& name) const
 {
-    return m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
+    CArgs::TArgsCI arg = m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
+    if (arg != m_Args.end() || name.empty() || name[0] == '-'  ||
+        !s_IsArgNameChar(name[0])) {
+        return arg;
+    }
+    return m_Args.find(CRef<CArgValue> (new CArg_NoValue("-" + name)));
 }
 
 CArgs::TArgsI CArgs::x_Find(const string& name)
 {
-    return m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
+    CArgs::TArgsI arg = m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
+    if (arg != m_Args.end() || name.empty() || name[0] == '-'  ||
+        !s_IsArgNameChar(name[0])) {
+        return arg;
+    }
+    return m_Args.find(CRef<CArgValue> (new CArg_NoValue("-" + name)));
 }
 
 
@@ -2064,12 +2080,6 @@ void CArgDescriptions::SetUsageContext
 }
 
 
-inline bool s_IsArgNameChar(char c)
-{
-    return isalnum(c)  ||  c == '_'  ||  c == '-';
-}
-
-
 bool CArgDescriptions::VerifyName(const string& name, bool extended)
 {
     if ( name.empty() )
@@ -2693,6 +2703,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/07/20 16:02:09  grichenk
+ * Allow to omit leading '-' in argument name
+ *
  * Revision 1.69  2006/07/11 19:05:29  grichenk
  * Fixed problem in arguments parser.
  * Added flag for strict processing of positional arguments.
