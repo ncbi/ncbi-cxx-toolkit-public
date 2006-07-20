@@ -1,9 +1,0 @@
-# $Id$
-
-# Meta-makefile("seqdb/test" project)
-#################################
-
-EXPENDABLE_APP_PROJ = test_pin
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
