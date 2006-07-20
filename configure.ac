@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.427 2006/07/20 15:53:35 ucko Exp $
+#  $Id: configure.ac,v 1.428 2006/07/20 18:11:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -5435,13 +5435,7 @@ else
 fi
 
 if test "$with_flat_makefile" = "yes"; then
-   cfm_flags='-b'
-   ptb=$NCBI/c++/Release/bin/project_tree_builder
-   if test -x "$ptb"; then
-      case `"$ptb" -version 2>&1 | sed -e 's/.*: //'` in
-         1.[2-9]* | 1.1[0-9]* | [2-9]* | 1[0-9]*) cfm_flags='' ;;
-      esac
-   fi
+   cfm_flags=''
    case "$with_projects" in
       yes     ) cfm_flags="$cfm_flags -p projects" ;;
       no | '' ) ;;

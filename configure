@@ -27260,13 +27260,7 @@ else
 fi
 
 if test "$with_flat_makefile" = "yes"; then
-   cfm_flags='-b'
-   ptb=$NCBI/c++/Release/bin/project_tree_builder
-   if test -x "$ptb"; then
-      case `"$ptb" -version 2>&1 | sed -e 's/.*: //'` in
-         1.2-9* | 1.10-9* | 2-9* | 10-9*) cfm_flags='' ;;
-      esac
-   fi
+   cfm_flags=''
    case "$with_projects" in
       yes     ) cfm_flags="$cfm_flags -p projects" ;;
       no | '' ) ;;
