@@ -88,11 +88,11 @@ void CCacheDemoApp::SimpleCacheDemo(void)
     // Elements of the cache are CObject-derived.
     // The cache does not require any special allocator/remover since
     // elemnts are stored in CRef<>-s.
-    // The cache uses default locking (CFastMutex).
+    // The cache uses default locking (CMutex).
     typedef CCache<int, CRef<CObjElement> > TSimpleCache;
     TSimpleCache cache(100);
     // Allocate and insert elements into the cache. Check result.
-    for (int i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         CRef<CObjElement> element(new CObjElement(i*10));
         TSimpleCache::EAddResult result;
         cache.Add(i, element, 1, 0, &result);
@@ -100,7 +100,7 @@ void CCacheDemoApp::SimpleCacheDemo(void)
     }
     // Try to get the elements from the cache. Some will be missing
     // since cache size is less than total number of elements inserted.
-    for (int i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         CRef<CObjElement> element = cache.Get(i);
         if (element) {
             // If present, check the element's size.
@@ -165,14 +165,14 @@ void CCacheDemoApp::HeapCacheDemo(void)
 
     THeapCache cache(100);
     // Fill the cache with dynamically allocated objects.
-    for (int i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         CHeapElement* element = new CHeapElement(i*10);
         THeapCache::EAddResult result;
         cache.Add(i, element, 1, 0, &result);
         _ASSERT(result == THeapCache::eAdd_Inserted);
     }
     // Get the objects back if still available.
-    for (int i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         CHeapElement* element = cache.Get(i);
         if (element) {
             _ASSERT(element->GetSize() == i*10);
@@ -237,7 +237,7 @@ void CCacheDemoApp::MemoryCacheDemo(void)
     typedef CRef<CObjElement> TElement;
     typedef CCacheTraits<int,
                         TElement,
-                        CFastMutex,
+                        CMutex,
                         size_t,
                         CDemoHandler_MemSize> TMemCacheTraits;
     typedef CCache<int, TElement, TMemCacheTraits> TMemCache;
@@ -246,7 +246,7 @@ void CCacheDemoApp::MemoryCacheDemo(void)
     // the max memory allowed by the handler.
     TMemCache cache(1);
     // Fill the cache with elements of different size.
-    for (int i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         TElement element(new CObjElement(i*10));
         TMemCache::EAddResult result;
         cache.Add(i, element, 1, 0, &result);
@@ -259,7 +259,7 @@ void CCacheDemoApp::MemoryCacheDemo(void)
             _ASSERT(result == TMemCache::eAdd_NotInserted);
         }
     }
-    for (int i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         TElement element = cache.Get(i);
         if (element) {
             _ASSERT(element->GetSize() == i*10);
@@ -324,7 +324,7 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
     typedef CRef<CObjElement> TElement;
     typedef CCacheTraits<int,
                         TElement,
-                        CFastMutex,
+                        CMutex,
                         size_t,
                         CDemoHandler_EmptyOnOverflow> TEmptyOnOverflowTraits;
     typedef CCache<int, TElement, TEmptyOnOverflowTraits> TEmptyOnOverflowCache;
@@ -332,7 +332,7 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
     // Cache capacity must be positive. The real capacity depends on
     // the max number of elements allowed by the handler.
     TEmptyOnOverflowCache cache(1);
-    for (int i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         TElement element(new CObjElement(i*10));
         TEmptyOnOverflowCache::EAddResult result;
         cache.Add(i, element, 1, 0, &result);
@@ -340,7 +340,7 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
             _ASSERT(cache.GetSize() == 1);
         }
     }
-    for (int i = 0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         TElement element = cache.Get(i);
         if (element) {
             _ASSERT(element->GetSize() == i*10);
@@ -363,6 +363,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/07/20 17:01:18  grichenk
+ * Fixed warnings.
+ * Replaced CFastMutex with CMutex.
+ *
  * Revision 1.4  2006/06/05 15:28:06  grichenk
  * Added CreateElement() callback, improved indexing, added comments.
  *
