@@ -70,7 +70,7 @@ int CRADispatcherClientSampleApp::Run(void)
 
     // create a factory for a data cache
     CBlobStorageFactory factory(reg);
-
+    
     // create a request 
     CRemoteAppRequestSB request(factory);
 
@@ -118,6 +118,9 @@ int CRADispatcherClientSampleApp::Run(void)
     NcbiCout.clear();
     NcbiCout << NcbiEndl << "----------------------" <<  NcbiEndl;
 
+    // release all resouces
+    rad_client.Reset();
+    
     // clean up the cache
     auto_ptr<IBlobStorage> storage(factory.CreateInstance());
     storage->DeleteStorage();
@@ -136,6 +139,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/07/20 15:45:00  didenko
+ * Cosmetics
+ *
  * Revision 1.2  2006/07/17 17:59:00  didenko
  * + Comments
  *
