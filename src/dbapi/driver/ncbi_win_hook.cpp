@@ -1493,7 +1493,7 @@ namespace NWinHook
     {
         // A static variable below is used to check for enabling of tracing
         // when CNcbiApplication is not available any more.
-        static bool enabled_from_registry = false;
+        static bool enabled_from_registry = true;
 
         CNcbiApplication* app = CNcbiApplication::Instance();
 
@@ -1502,6 +1502,7 @@ namespace NWinHook
             const IRegistry& registry = app->GetConfig();
 
             if (!registry.GetBool("WIN_HOOK", "ENABLED", true)) {
+                enabled_from_registry = false;
                 NCBI_THROW(CWinHookException, 
                         eDisabled, 
                         "Windows API hooking is disabled from registry.");
@@ -1962,6 +1963,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/07/20 14:39:48  ssikorsk
+ * Enable winhook by default.
+ *
  * Revision 1.10  2006/06/02 19:26:38  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *
