@@ -316,7 +316,9 @@ public:
     /// Return TRUE if arg "name" was described in the parent CArgDescriptions.
     bool Exist(const string& name) const;
 
-    /// Get value of argument by name.
+    /// Get value of argument by name. If the name starts with '-'
+    /// (e.g. '-arg') the argument can also be found by 'arg' name if there
+    /// is no another argument named 'arg'.
     ///
     /// Throw an exception if such argument does not exist.
     /// @sa
@@ -528,7 +530,8 @@ public:
     ///
     /// Will throw exception CArgException if:
     ///  - description with name "name" already exists
-    ///  - "name" contains symbols other than {alnum}
+    ///  - "name" contains symbols other than {alnum, '-', '_'}
+    ///  - "name" starts with more than one '-'
     ///  - "synopsis" contains symbols other than {alnum, '_'}
     ///  - "flags" are inconsistent with "type"
     ///
@@ -548,7 +551,8 @@ public:
     ///
     /// Will throw exception CArgException if:
     ///  - description with name "name" already exists
-    ///  - "name" contains symbols other than {alnum}
+    ///  - "name" contains symbols other than {alnum, '-', '_'}
+    ///  - "name" starts with more than one '-'
     ///  - "synopsis" contains symbols other than {alnum, '_'}
     ///  - "flags" are inconsistent with "type"
     ///
@@ -568,7 +572,8 @@ public:
     ///
     /// Will throw exception CArgException if:
     ///  - description with name "name" already exists
-    ///  - "name" contains symbols other than {alnum}
+    ///  - "name" contains symbols other than {alnum, '-', '_'}
+    ///  - "name" starts with more than one '-'
     ///  - "synopsis" contains symbols other than {alnum, '_'}
     ///  - "flags" are inconsistent with "type"
     ///
@@ -615,7 +620,8 @@ public:
     ///
     /// Will throw exception CArgException if:
     ///  - description with name "name" already exists
-    ///  - "name" contains symbols other than {alnum}
+    ///  - "name" contains symbols other than {alnum, '-', '_'}
+    ///  - "name" starts with more than one '-'
     ///  - "flags" are inconsistent with "type"
     ///
     /// Any argument can be later referenced using its unique name "name".
@@ -635,7 +641,8 @@ public:
     ///
     /// Will throw exception CArgException if:
     ///  - description with name "name" already exists
-    ///  - "name" contains symbols other than {alnum}
+    ///  - "name" contains symbols other than {alnum, '-', '_'}
+    ///  - "name" starts with more than one '-'
     ///  - "flags" are inconsistent with "type"
     ///
     /// Any argument can be later referenced using its unique name "name".
@@ -656,7 +663,8 @@ public:
     ///
     /// Will throw exception CArgException if:
     ///  - description with name "name" already exists
-    ///  - "name" contains symbols other than {alnum}
+    ///  - "name" contains symbols other than {alnum, '-', '_'}
+    ///  - "name" starts with more than one '-'
     ///  - "flags" are inconsistent with "type"
     ///
     /// @sa
@@ -1337,6 +1345,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/07/20 16:01:19  grichenk
+ * Fixed comments
+ *
  * Revision 1.55  2006/07/11 19:05:29  grichenk
  * Fixed problem in arguments parser.
  * Added flag for strict processing of positional arguments.
