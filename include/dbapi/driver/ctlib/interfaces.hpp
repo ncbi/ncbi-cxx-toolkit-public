@@ -113,6 +113,10 @@ public:
                                     CS_CLIENTMSG* msg);
     static bool CTLIB_srverr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                                      CS_SERVERMSG* msg);
+    CS_INT GetTDSVersion(void) const
+    {
+        return m_TDSVersion;
+    }
 
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
@@ -122,6 +126,7 @@ private:
     CS_INT      m_PacketSize;
     CS_INT      m_LoginRetryCount;
     CS_INT      m_LoginLoopDelay;
+    CS_INT      m_TDSVersion;
     CTLibContextRegistry* m_Registry;
 
     CS_CONNECTION* x_ConnectToServer(const string&   srv_name,
@@ -159,6 +164,7 @@ protected:
 
 public:
     CS_RETCODE Check(CS_RETCODE rc);
+    CS_INT GetBLKVersion(void) const;
 
 protected:
     virtual bool IsAlive(void);
@@ -204,7 +210,8 @@ private:
     CS_CONNECTION* x_GetSybaseConn(void) const { return m_Link; }
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
 
-    CS_CONNECTION*      m_Link;
+    CTLibContext*   m_Cntx;
+    CS_CONNECTION*  m_Link;
 };
 
 
@@ -737,6 +744,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/07/20 19:50:02  ssikorsk
+ * Added CTLibContext.m_TDSVersion, CTLibContext ::GetTDSVersion();
+ * Added CTL_Connection:: GetBLKVersion();
+ *
  * Revision 1.39  2006/07/19 14:09:55  ssikorsk
  * Refactoring of CursorCmd.
  *
