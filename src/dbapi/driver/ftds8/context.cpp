@@ -366,11 +366,11 @@ CTDSContext::x_Close(bool delete_conn)
         CFastMutexGuard mg(m_Mtx);
         if (g_pTDSContext) {
 
-            // Unregister first
-            g_pTDSContext = NULL;
-            x_RemoveFromRegistry();
-
             if (x_SafeToFinalize()) {
+                // Unregister first
+                g_pTDSContext = NULL;
+                x_RemoveFromRegistry();
+
                 // close all connections first
                 try {
                     if (delete_conn) {
@@ -386,6 +386,9 @@ CTDSContext::x_Close(bool delete_conn)
                 CheckFunctCall();
                 dbexit();
                 CheckFunctCall();
+            } else {
+                g_pTDSContext = NULL;
+                x_RemoveFromRegistry();
             }
 
 #if defined(NCBI_OS_MSWIN)
@@ -880,6 +883,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2006/07/20 14:41:30  ssikorsk
+ * Put x_RemoveFromRegistry() after x_SafeToFinalize().
+ *
  * Revision 1.78  2006/07/13 19:57:22  ssikorsk
  * Register CTDSContext with CTDSContextRegistry.
  *

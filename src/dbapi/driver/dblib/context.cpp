@@ -432,10 +432,12 @@ CDBLibContext::x_Close(bool delete_conn)
         CFastMutexGuard mg(m_Mtx);
         if (g_pContext) {
 
-            g_pContext = NULL;
-            x_RemoveFromRegistry();
-
             if (x_SafeToFinalize()) {
+                // Unregister itself before any other poeration
+                // for sake of exception safety.
+                g_pContext = NULL;
+                x_RemoveFromRegistry();
+
                 // close all connections first
                 try {
                     if (delete_conn) {
@@ -463,6 +465,9 @@ CDBLibContext::x_Close(bool delete_conn)
                 NCBI_CATCH_ALL( "dbexit() call failed. This usually happens when "
                     "Sybase client has been used to connect to a MS SQL Server." )
 #endif
+            } else {
+                g_pContext = NULL;
+                x_RemoveFromRegistry();
             }
 
 #if defined(NCBI_OS_MSWIN) && defined(FTDS_IN_USE)
@@ -1314,6 +1319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2006/07/20 14:41:09  ssikorsk
+ * Put x_RemoveFromRegistry() after x_SafeToFinalize().
+ *
  * Revision 1.86  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
