@@ -77,7 +77,8 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
     // ---------- @ncbi_runpath@ ----------
 
     string run_path = GetApp().GetEnvironment().Get("NCBI_INSTALL_PATH");
-    // For installing toolkit the path like to "$NCBI_INSTALL_PATH/DebugDLL",
+    // For installing toolkit the path like to
+    // "$NCBI_INSTALL_PATH/lib/static/DebugDLL",
     // otherwise the path like to 
     // ".../compilers/msvc710_prj/static/bin/DebugDLL".
     if ( run_path.empty() ) {
@@ -85,6 +86,10 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
         run_path = CDirEntry::ConcatPath(run_path,
                                          GetApp().GetBuildType().GetTypeStr());
         run_path = CDirEntry::ConcatPath(run_path, "bin");
+    } else {
+        run_path = CDirEntry::ConcatPath(run_path, "lib");
+        run_path = CDirEntry::ConcatPath(run_path,
+                                         GetApp().GetBuildType().GetTypeStr());
     }
     run_path = CDirEntry::ConcatPath(run_path, config_name);
     run_path = NStr::Replace(run_path, "\\", "\\\\");
@@ -123,6 +128,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/20 15:52:40  ivanov
+ * Add "lib/<buildtype>" to generated runpath, if NCBI_INSTALL_PATH
+ * environment variable was set.
+ *
  * Revision 1.3  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *
