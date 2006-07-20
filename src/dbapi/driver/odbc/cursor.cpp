@@ -121,7 +121,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
 
 CDB_ITDescriptor* CODBC_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!m_IsOpen || (m_Res == 0) || (m_LCmd.get() == 0)) {
+    if(!m_IsOpen || (m_Res.get() == 0) || (m_LCmd.get() == 0)) {
         return 0;
     }
     string cond= "current of " + m_Name;
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/07/20 14:37:43  ssikorsk
+ * Fixed compilation issue with MSVC v8
+ *
  * Revision 1.23  2006/07/19 14:11:02  ssikorsk
  * Refactoring of CursorCmd.
  *
