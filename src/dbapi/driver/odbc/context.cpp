@@ -416,6 +416,9 @@ CODBCContext::x_Close(bool delete_conn)
     if ( m_Context ) {
         CFastMutexGuard mg(m_Mtx);
         if (m_Context) {
+            // Unregister first for sake of exception safety.
+            x_RemoveFromRegistry();
+
             // close all connections first
             if (delete_conn) {
                 DeleteAllConn();
@@ -439,9 +442,9 @@ CODBCContext::x_Close(bool delete_conn)
             };
 
             m_Context = NULL;
-            x_RemoveFromRegistry();
         }
     } else {
+        x_RemoveFromRegistry();
         if (delete_conn) {
             DeleteAllConn();
         }
@@ -818,6 +821,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/07/20 14:38:39  ssikorsk
+ * More exception safe CODBCContext::x_Close.
+ *
  * Revision 1.56  2006/07/12 17:11:11  ssikorsk
  * Fixed compilation isssues.
  *
