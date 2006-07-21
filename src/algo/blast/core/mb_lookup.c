@@ -599,10 +599,9 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
          /* for strides that are a multiple of 4, words are
             always aligned and three bytes of the subject sequence 
             will always hold a complete word (plus possible extra bases 
-            that must be shifted away). s_end below points to either
-            the second to last or third to last byte of the subject 
-            sequence; all subject sequences must therefore have a 
-            sentinel byte */
+            that must be shifted away). s_end below always points to
+            the third-to-last byte of the subject sequence, so we will
+            never fetch the byte beyond the end of subject */
 
          Uint1* s_end = abs_start + (subject->length - lut_word_length) /
                                                    COMPRESSION_RATIO;
@@ -635,9 +634,33 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
             the subject sequence. The portion of each 16-base
             region that contains the actual word depends on the
             offset of the word and the lookup table width, and
-            must be recalculated for each 16-base region */
+            must be recalculated for each 16-base region
+          
+            Unlike the aligned stride case, the scanning can
+            walk off the subject array for lut_word_length = 10 or 11
+            (length 12 may also do this, but only if the subject is a
+            multiple of 4 bases in size, and in that case there is 
+            a sentinel byte). We avoid this by first handling all 
+            the cases where 16-base regions fit, then handling the 
+            last few offsets separately */
 
-         for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
+         Int4 last_offset4 = last_offset;
+         switch (subject->length % COMPRESSION_RATIO) {
+         case 2:
+             if (lut_word_length == 10)
+                 last_offset4--;
+             break;
+         case 3:
+             if (lut_word_length == 10)
+                 last_offset4 -= 2;
+             else if (lut_word_length == 11)
+                 last_offset4--;
+             break;
+         default:
+             break;
+         }
+
+         for (s_off = start_offset; s_off <= last_offset4; s_off += scan_step) {
       
             Int4 shift = 2*(16 - (s_off % COMPRESSION_RATIO + lut_word_length));
             s = abs_start + (s_off / COMPRESSION_RATIO);
@@ -656,13 +679,41 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
                }
             }
          }
+
+         /* repeat the loop but only read three bytes at a time. For
+            lut_word_length = 10 the loop runs at most twice, and for
+            lut_word_length = 11 it runs at most once */
+
+         for (; s_off > last_offset4 && s_off <= last_offset; 
+                                                s_off += scan_step) {
+      
+            Int4 shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
+            s = abs_start + (s_off / COMPRESSION_RATIO);
+      
+            index = s[0] << 16 | s[1] << 8 | s[2];
+            index = (index >> shift) & mask;
+      
+            if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
+               if (total_hits >= max_hits)
+                  break;
+               q_off = mb_lt->hashtable[index];
+               while (q_off) {
+                  offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
+                  q_off = mb_lt->next_pos[q_off];
+               }
+            }
+         }
          *end_offset = s_off;
       }
    }
    else {
-      /* perform scanning for a lookup tables of width 9
+      /* perform scanning for a lookup tables of width 9.
          Here the stride will never be a multiple of 4 
-         (this table is only used for very small word sizes) */
+         (this table is only used for small word sizes).
+         The last word is always three bytes from the end of the 
+         sequence, so the following does not need to be corrected 
+         when scanning near the end of the subject sequence */
 
       for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
    

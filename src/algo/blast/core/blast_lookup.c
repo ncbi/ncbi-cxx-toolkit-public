@@ -1115,13 +1115,11 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
          /* for strides that are a multiple of 4, words are
             always aligned and two bytes of the subject sequence 
             will always hold a complete word (plus possible extra bases 
-            that must be shifted away). s_end below points to either
-            the last byte of the subject sequence or the second to
-            last; all subject sequences must therefore have a sentinel
-            byte */
+            that must be shifted away). s_end below always points to the 
+            second-to-last byte of subject, so we will never fetch 
+            the byte beyond the end of subject */
 
-         Uint1* s_end = abs_start + (subject->length - lut_word_length) /
-                                           COMPRESSION_RATIO;
+         Uint1* s_end = abs_start + last_offset / COMPRESSION_RATIO;
          Int4 shift = 2 * (FULL_BYTE_SHIFT - lut_word_length);
          s = abs_start + start_offset/COMPRESSION_RATIO;
          scan_step = scan_step / COMPRESSION_RATIO;
@@ -1163,14 +1161,72 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
             the subject sequence. The portion of each 12-base
             region that contains the actual word depends on the
             offset of the word and the lookup table width, and
-            must be recalculated for each 12-base region */
+            must be recalculated for each 12-base region 
+          
+            Unlike the aligned stride case, the scanning can
+            walk off the subject array for lut_word_length = 6 or 7
+            (length 8 may also do this, but only if the subject is a
+            multiple of 4 bases in size, and in that case there is 
+            a sentinel byte). We avoid this by first handling all 
+            the cases where 12-base regions fit, then handling the 
+            last few offsets separately */
 
-         for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
+         Int4 last_offset3 = last_offset;
+         switch (subject->length % COMPRESSION_RATIO) {
+         case 2:
+             if (lut_word_length == 6)
+                 last_offset3--;
+             break;
+         case 3:
+             if (lut_word_length == 6)
+                 last_offset3 -= 2;
+             else if (lut_word_length == 7)
+                 last_offset3--;
+             break;
+         }
+
+         for (s_off = start_offset; s_off <= last_offset3; s_off += scan_step) {
    
             Int4 shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
             s = abs_start + (s_off / COMPRESSION_RATIO);
             
             index = s[0] << 16 | s[1] << 8 | s[2];
+            index = (index >> shift) & mask;
+   
+            if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
+               num_hits = lookup->thick_backbone[index].num_used;
+               ASSERT(num_hits != 0);
+               if (num_hits > (max_hits - total_hits))
+                  break;
+   
+               if (num_hits <= HITS_ON_BACKBONE)
+                  lookup_pos = lookup->thick_backbone[index].payload.entries;
+               else
+                  lookup_pos = lookup->overflow + 
+                      lookup->thick_backbone[index].payload.overflow_cursor;
+               
+               while (num_hits) {
+                  q_off = *((Uint4 *) lookup_pos); /* get next query offset */
+                  lookup_pos++;
+                  num_hits--;
+                  
+                  offset_pairs[total_hits].qs_offsets.q_off = q_off;
+                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
+               }
+            }
+         }
+
+         /* repeat the loop but only read two bytes at a time. For
+            lut_word_length = 6 the loop runs at most twice, and for
+            lut_word_length = 7 it runs at most once */
+
+         for (; s_off > last_offset3 && s_off <= last_offset; 
+                                s_off += scan_step) {
+   
+            Int4 shift = 2*(8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+            s = abs_start + (s_off / COMPRESSION_RATIO);
+            
+            index = s[0] << 8 | s[1];
             index = (index >> shift) & mask;
    
             if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
@@ -1201,7 +1257,12 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
    else {
       /* perform scanning for lookup tables of width 4 and 5.
          Here the stride will never be a multiple of 4 (these tables
-         are only used for very small word sizes) */
+         are only used for very small word sizes). The last word
+         is always two bytes from the end of the sequence, unless
+         the table width is 4 and subect is a multiple of 4 bases;
+         in that case there is a sentinel byte, so the following 
+         does not need to be corrected when scanning near the end
+         of the subject sequence */
 
       for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
 
