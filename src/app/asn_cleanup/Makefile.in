@@ -1,3 +1,6 @@
-APP_PROJ = cleanup
+# $Id$
+
+APP_PROJ = asn_cleanup
 srcdir = @srcdir@
+
 include @builddir@/Makefile.meta
