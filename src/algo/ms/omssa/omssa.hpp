@@ -34,7 +34,26 @@
 #ifndef OMSSA__HPP
 #define OMSSA__HPP
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbidiag.hpp>
+#include <corelib/ncbidiag.hpp>
+#include <corelib/ncbiutil.hpp>
+#include <corelib/ncbifloat.h>
+#include <corelib/ncbifile.hpp>
+
+#include <serial/serial.hpp>
+#include <serial/objistrasn.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
+#include <serial/iterator.hpp>
+#include <serial/objostrxml.hpp>
+
 #include <objects/omssa/omssa__.hpp>
+
 #include <objtools/readers/seqdb/seqdb.hpp>
 
 #include "msms.hpp"
@@ -957,6 +976,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.41  2006/07/24 15:28:30  lewisg
+  move headers
+
   Revision 1.40  2006/07/20 21:00:21  lewisg
   move functions out of COMSSA, create laddercontainer
 

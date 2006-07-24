@@ -32,36 +32,21 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbidiag.hpp>
-#include <corelib/ncbidiag.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <corelib/ncbifloat.h>
+
 #include <util/miscmath.h>
 #include <algo/blast/core/ncbi_math.h>
-#include <corelib/ncbifile.hpp>
-#include <serial/serial.hpp>
-#include <serial/objistrasn.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasn.hpp>
-#include <serial/objostrasnb.hpp>
-#include <serial/iterator.hpp>
-#include <serial/objostrxml.hpp>
+
+
+#include "SpectrumSet.hpp"
+#include "omssa.hpp"
 
 #include <fstream>
 #include <string>
 #include <list>
 #include <deque>
 #include <algorithm>
+
 #include <math.h>
-
-#include "SpectrumSet.hpp"
-#include "omssa.hpp"
-
-// #include <ncbimath.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -257,6 +242,29 @@ int CSearch::CreateLadders(const char *Sequence,
                            int ForwardIon,
                            int BackwardIon)
 {
+    // new way
+    TLadderMap::iterator Iter;
+    SetLadderContainer().Begin(Iter);
+    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+        if (!(*(Iter->second))[iMod]->
+            CreateLadder(CMSMatchedPeakSetMap::Key2Charge(Iter->first),
+                         CMSMatchedPeakSetMap::Key2Series(Iter->first),
+                         Sequence,
+                         iSearch,
+                         position,
+                         endposition,
+                         Masses[iMissed], 
+                         MassArray,
+                         AA,
+                         SetMassAndMask(iMissed, iMod).Mask,
+                         ModList,
+                         NumMod,
+                         *GetSettings()
+                         )) return 1;
+    }
+
+    // end new way
+
     if (!BLadder[iMod]->CreateLadder(ForwardIon,
                                      1,
                                      Sequence,
@@ -331,10 +339,11 @@ int CSearch::CompareLadders(int iMod,
         Peaks->CompareSorted(*(YLadder[iMod]), Which, 0); 
         Peaks->CompareSorted(*(B2Ladder[iMod]), Which, 0); 
         Peaks->CompareSorted(*(Y2Ladder[iMod]), Which, 0);
-        if (OrLadders) {
-            BLadder[iMod]->Or(*(B2Ladder[iMod]));
-            YLadder[iMod]->Or(*(Y2Ladder[iMod]));   
-        }
+// peak or'ing no longer used
+//        if (OrLadders) {
+//            BLadder[iMod]->Or(*(B2Ladder[iMod]));
+//            YLadder[iMod]->Or(*(Y2Ladder[iMod]));   
+//        }
     }
     else {
         Peaks->CompareSorted(*(BLadder[iMod]), Which, 0); 
@@ -757,6 +766,8 @@ void CSearch::InitLadders(int ForwardIon, int BackwardIon)
     SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)BackwardIon));
     SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)BackwardIon));
     SetLadderContainer().CreateLadderArrays(MaxModPerPep, MaxLadderSize);
+
+    // end new way
 }
 
 
