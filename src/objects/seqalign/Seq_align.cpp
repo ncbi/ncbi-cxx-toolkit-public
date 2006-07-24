@@ -251,24 +251,71 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
     // return CSeq_id();
 }
 
+
+typedef pair<CSeq_align::EScoreType, string> TScoreNamePair;
+static TScoreNamePair sc_ScoreNames[] = {
+    TScoreNamePair(CSeq_align::eScore_Score,           "score"),
+    TScoreNamePair(CSeq_align::eScore_BitScore,        "bit_score"),
+    TScoreNamePair(CSeq_align::eScore_EValue,          "e_value"),
+    TScoreNamePair(CSeq_align::eScore_IdentityCount,   "num_ident"),
+    TScoreNamePair(CSeq_align::eScore_PercentIdentity, "pct_identity")
+};
+
+
+/// retrieve a named score object
+CConstRef<CScore> CSeq_align::x_GetNamedScore(const string& name) const
+{
+    CConstRef<CScore> score;
+    if (IsSetScore()) {
+        ITERATE (TScore, iter, GetScore()) {
+            if ((*iter)->IsSetId()  &&  (*iter)->GetId().IsStr()  &&
+                (*iter)->GetId().GetStr() == name) {
+                score = *iter;
+                break;
+            }
+        }
+    }
+
+    return score;
+}
+
+
+CRef<CScore> CSeq_align::x_SetNamedScore(const string& name)
+{
+    CRef<CScore> score;
+    if (IsSetScore()) {
+        NON_CONST_ITERATE (TScore, iter, SetScore()) {
+            if ((*iter)->IsSetId()  &&  (*iter)->GetId().IsStr()  &&
+                (*iter)->GetId().GetStr() == name) {
+                score = *iter;
+                break;
+            }
+        }
+    }
+
+    if ( !score ) {
+        score.Reset(new CScore);
+        score->SetId().SetStr(name);
+        SetScore().push_back(score);
+    }
+
+    return score;
+}
+
+
 ///---------------------------------------------------------------------------
 /// PRE : name of score to return
 /// POST: whether or not we found that score; score converted to int
 bool CSeq_align::GetNamedScore(const string &id, int &score) const
 {
-    if (IsSetScore()) {
-        const TScore &scores = GetScore();
-        ITERATE (TScore, scoreI, scores) {
-            if ((*scoreI)->IsSetId()  &&  (*scoreI)->GetId().IsStr()  &&
-                (*scoreI)->GetId().GetStr() == id) {
-                if ((*scoreI)->GetValue().IsInt()) {
-                    score = (*scoreI)->GetValue().GetInt();
-                } else {
-                    score = (int) (*scoreI)->GetValue().GetReal();
-                }
-                return true;
-            }
+    CConstRef<CScore> ref = x_GetNamedScore(id);
+    if (ref) {
+        if (ref->GetValue().IsInt()) {
+            score = ref->GetValue().GetInt();
+        } else {
+            score = (int)ref->GetValue().GetReal();
         }
+        return true;
     }
     return false;
 }
@@ -278,22 +325,54 @@ bool CSeq_align::GetNamedScore(const string &id, int &score) const
 /// POST: whether or not we found that score; score converted to double
 bool CSeq_align::GetNamedScore(const string &id, double &score) const
 {
-    if (IsSetScore()) {
-        const TScore &scores = GetScore();
-        ITERATE (TScore, scoreI, scores) {
-            if ((*scoreI)->IsSetId()  &&  (*scoreI)->GetId().IsStr()  &&
-                (*scoreI)->GetId().GetStr() == id) {
-                if ((*scoreI)->GetValue().IsInt()) {
-                    score = (double) (*scoreI)->GetValue().GetInt();
-                } else {
-                    score = (*scoreI)->GetValue().GetReal();
-                }
-                return true;
-            }
+    CConstRef<CScore> ref = x_GetNamedScore(id);
+    if (ref) {
+        if (ref->GetValue().IsInt()) {
+            score = (double)ref->GetValue().GetInt();
+        } else {
+            score = ref->GetValue().GetReal();
         }
+        return true;
     }
     return false;
 }
+
+
+bool CSeq_align::GetNamedScore(EScoreType type, int& score) const
+{
+    return GetNamedScore(sc_ScoreNames[type].second, score);
+}
+
+bool CSeq_align::GetNamedScore(EScoreType type, double& score) const
+{
+    return GetNamedScore(sc_ScoreNames[type].second, score);
+}
+
+
+void CSeq_align::SetNamedScore(EScoreType type, int score)
+{
+    CRef<CScore> ref = x_SetNamedScore(sc_ScoreNames[type].second);
+    ref->SetValue().SetInt(score);
+}
+
+void CSeq_align::SetNamedScore(EScoreType type, double score)
+{
+    CRef<CScore> ref = x_SetNamedScore(sc_ScoreNames[type].second);
+    ref->SetValue().SetReal(score);
+}
+
+void CSeq_align::SetNamedScore(const string& id, int score)
+{
+    CRef<CScore> ref = x_SetNamedScore(id);
+    ref->SetValue().SetInt(score);
+}
+
+void CSeq_align::SetNamedScore(const string& id, double score)
+{
+    CRef<CScore> ref = x_SetNamedScore(id);
+    ref->SetValue().SetReal(score);
+}
+
 
 void CSeq_align::Validate(bool full_test) const
 {
@@ -899,6 +978,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/07/24 13:11:05  dicuccio
+* Doxygenated.  Added support for creating named scores
+*
 * Revision 1.28  2006/07/17 15:49:26  todorov
 * Simplified and optimized building the strands in CreateDensegFromDisc.
 *

@@ -47,7 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_objects_SCOPE /// namespace ncbi::objects::
 
 class CSeq_id;
 
@@ -55,30 +55,58 @@ class NCBI_SEQALIGN_EXPORT CSeq_align : public CSeq_align_Base
 {
     typedef CSeq_align_Base Tparent;
 public:
-    // constructor
+    /// enum controlling known named scores
+    enum EScoreType {
+        //< generic 'score'
+        eScore_Score,
+
+        //< blast-style 'bit_score'
+        eScore_BitScore,
+
+        //< blast-style 'e_value'
+        eScore_EValue,
+
+        //< count of identities (num_ident)
+        eScore_IdentityCount,
+
+        //< percent identity (0.0-100.0) (pct_identity)
+        eScore_PercentIdentity
+
+    };
+
+    /// constructor
     CSeq_align(void);
-    // destructor
+    /// destructor
     ~CSeq_align(void);
 
-    // Validatiors
+    /// Validatiors
     TDim CheckNumRows(void)                   const;
     void Validate    (bool full_test = false) const;
 
-    // GetSeqRange
+    /// GetSeqRange
     CRange<TSeqPos> GetSeqRange(TDim row) const;
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop (TDim row) const;
 
-    // Get strand (the first one if segments have different strands).
+    /// Get strand (the first one if segments have different strands).
     ENa_strand      GetSeqStrand(TDim row) const;
 
-    // Get seq-id (the first one if segments have different ids).
-    // Throw exception if row is invalid.
+    /// Get seq-id (the first one if segments have different ids).
+    /// Throw exception if row is invalid.
     const CSeq_id&  GetSeq_id(TDim row) const;
 
-    // Get score
+    /// Get score
     bool GetNamedScore(const string& id, int &score) const;
     bool GetNamedScore(const string& id, double &score) const;
+
+    bool GetNamedScore(EScoreType type, int &score) const;
+    bool GetNamedScore(EScoreType type, double &score) const;
+
+    void SetNamedScore(const string& id, int score);
+    void SetNamedScore(const string& id, double score);
+
+    void SetNamedScore(EScoreType type, int score);
+    void SetNamedScore(EScoreType type, double score);
 
 
     /// Reverse the segments' orientation
@@ -89,18 +117,18 @@ public:
     /// NOTE: currently *only* works for dense-seg & disc
     void SwapRows(TDim row1, TDim row2);
 
-    // Create a Dense-seg from a Std-seg
-    // Used by AlnMgr to handle nucl2prot alignments
+    /// Create a Dense-seg from a Std-seg
+    /// Used by AlnMgr to handle nucl2prot alignments
     //
 
-    // NOTE: Here we assume that the same rows on different segments
-    // contain the same sequence. Without access to OM we can only check
-    // if the ids are the same via SerialEquals, and we throw an exception
-    // if not equal. Since the same sequence can be represented with a 
-    // different type of seq-id, we provide an optional callback mechanism
-    // to compare id1 and id2, and if both resolve to the same sequence 
-    // and id2 is preferred, to SerialAssign it to id1. Otherwise, again,
-    // an exception should be thrown.
+    /// NOTE: Here we assume that the same rows on different segments
+    /// contain the same sequence. Without access to OM we can only check
+    /// if the ids are the same via SerialEquals, and we throw an exception
+    /// if not equal. Since the same sequence can be represented with a 
+    /// different type of seq-id, we provide an optional callback mechanism
+    /// to compare id1 and id2, and if both resolve to the same sequence 
+    /// and id2 is preferred, to SerialAssign it to id1. Otherwise, again,
+    /// an exception should be thrown.
     struct SSeqIdChooser : CObject
     {
         virtual void ChooseSeqId(CSeq_id& id1, const CSeq_id& id2) = 0;
@@ -109,10 +137,10 @@ public:
 
     CRef<CSeq_align> CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser = 0) const;
 
-    // Create a Dense-seg with widths from Dense-seg of nucleotides
-    // Used by AlnMgr to handle translated nucl2nucl alignments
-    // IMPORTANT NOTE: Do *NOT* use for alignments containing proteins;
-    //                 the code will not check for this
+    /// Create a Dense-seg with widths from Dense-seg of nucleotides
+    /// Used by AlnMgr to handle translated nucl2nucl alignments
+    /// IMPORTANT NOTE: Do *NOT* use for alignments containing proteins;
+    ///                 the code will not check for this
     CRef<CSeq_align> CreateTranslatedDensegFromNADenseg(void) const;
 
 
@@ -124,8 +152,13 @@ public:
                                     const CSeq_loc& dst_loc,
                                     bool ignore_strand = false);
 
+protected:
+    /// retrieve a named score object
+    CConstRef<CScore> x_GetNamedScore(const string& name) const;
+    CRef<CScore>      x_SetNamedScore(const string& name);
+
 private:
-    // Prohibit copy constructor and assignment operator
+    /// Prohibit copy constructor and assignment operator
     CSeq_align(const CSeq_align& value);
     CSeq_align& operator=(const CSeq_align& value);
 
@@ -145,7 +178,7 @@ CSeq_align::CSeq_align(void)
 /////////////////// end of CSeq_align inline methods
 
 
-END_objects_SCOPE // namespace ncbi::objects::
+END_objects_SCOPE /// namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
@@ -154,6 +187,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/07/24 13:11:05  dicuccio
+* Doxygenated.  Added support for creating named scores
+*
 * Revision 1.18  2006/06/06 22:44:47  todorov
 * Added OffsetRow method.
 * Marked RemapToLoc for deprecation.
@@ -214,5 +250,5 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif // OBJECTS_SEQALIGN_SEQ_ALIGN_HPP
+#endif /// OBJECTS_SEQALIGN_SEQ_ALIGN_HPP
 /* Original file checksum: lines: 93, chars: 2426, CRC32: 6ba198f0 */
