@@ -126,6 +126,7 @@ void DTDLexer::LookupComments(void)
             SkipChar();
             break;
         case '\n':
+            EndCommentBlock();
             SkipChar();
             NextLine();
             break;
@@ -147,6 +148,7 @@ void DTDLexer::LookupComments(void)
 bool DTDLexer::ProcessComment(void)
 {
     CComment& comment = AddComment();
+    bool allblank = true;
     for (;;) {
         char c = Char();
         switch ( c ) {
@@ -156,6 +158,9 @@ bool DTDLexer::ProcessComment(void)
         case '\n':
             SkipChar();
             NextLine();
+            if (allblank) {
+                RemoveLastComment();
+            }
             return true; // comment not ended - there is more
         case 0:
             if ( Eof() )
@@ -165,10 +170,14 @@ bool DTDLexer::ProcessComment(void)
             if ((Char(1) == '-') && (Char(2) == '>')) {
                 // end of the comment
                 SkipChars(3);
+                if (allblank) {
+                    RemoveLastComment();
+                }
                 return false;
             }
             // no break here
         default:
+            allblank = allblank && isspace((unsigned char)c);
             comment.AddChar(c);
             SkipChar();
             break;
@@ -321,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2006/07/24 18:57:39  gouriano
+ * Preserve comments when parsing DTD
+ *
  * Revision 1.10  2005/06/03 17:05:33  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

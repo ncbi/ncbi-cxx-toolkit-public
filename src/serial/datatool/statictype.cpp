@@ -121,7 +121,7 @@ void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) con
         GetParentType()->GetDataMember() &&
         GetParentType()->GetDataMember()->Attlist()) {
         const CDataMember* mem = GetDataMember();
-        out << tag << " CDATA ";
+        out << "\n    " << tag << " CDATA ";
         if (mem->GetDefault()) {
             out << "\"" << mem->GetDefault()->GetXmlString() << "\"";
         } else {
@@ -131,7 +131,6 @@ void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) con
                 out << "#REQUIRED";
             }
         }
-        out << '\n';
     } else {
         string open("("), close(")");
         if (content == "EMPTY") {
@@ -838,6 +837,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.48  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.47  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *

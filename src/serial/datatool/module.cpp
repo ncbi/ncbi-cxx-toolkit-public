@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.47  2006/06/28 19:03:36  gouriano
 * Print type comments when generating schema
 *
@@ -326,7 +329,7 @@ void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
 
     ITERATE ( TDefinitions, i, m_Definitions ) {
         out << "\n";
-        i->second->PrintXMLSchemaTypeComments(out, 0);
+        i->second->PrintDTDTypeComments(out, 0);
         i->second->PrintXMLSchema(out,0);
     }
 
@@ -341,11 +344,11 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
         "<!-- This section is mapped from module \"" << GetName() << "\"\n"
         "================================================= -->\n";
 
-    m_Comments.PrintDTD(out, CComments::eMultiline);
+    m_Comments.PrintDTD(out, CComments::eNoEOL);
 
     if ( !m_Exports.empty() ) {
         out <<
-            "<!-- Elements used by other modules:\n";
+            "\n\n<!-- Elements used by other modules:\n";
 
         ITERATE ( TExports, i, m_Exports ) {
             if ( i != m_Exports.begin() )
@@ -353,11 +356,11 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
             out << "          " << *i;
         }
 
-        out << " -->\n\n";
+        out << " -->";
     }
     if ( !m_Imports.empty() ) {
         out <<
-            "<!-- Elements referenced from other modules:\n";
+            "\n\n<!-- Elements referenced from other modules:\n";
         ITERATE ( TImports, i, m_Imports ) {
             if ( i != m_Imports.begin() )
                 out << ",\n";
@@ -370,14 +373,13 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
             }
             out << " FROM "<< imp->moduleName;
         }
-        out << " -->\n\n";
+        out << " -->";
     }
 
     if ( !m_Exports.empty() || !m_Imports.empty() ) {
         out <<
-            "<!-- ============================================ -->\n";
+            "\n<!-- ============================================ -->";
     }
-    out << "\n";
 
     ITERATE ( TDefinitions, i, m_Definitions ) {
 //        out <<
@@ -614,13 +616,21 @@ string CDataTypeModule::ToAsnName(const string& name)
     string asn;
     asn.reserve(name.size());
     bool first = true, hyphen = false;
-    for (string::const_iterator i = name.begin(); i != name.end(); ++i) {
+    for (string::const_iterator i = name.begin(); i != name.end();) {
         unsigned char u = (unsigned char)(*i);
         if (first) {
             if (isalpha(u)) {
                 asn += toupper(u);
-                first = false;
+            } else {
+                asn += 'A';
+                if (isdigit(u)) {
+                    asn += u;
+                } else {
+                    hyphen = true;
+                    asn += '-';
+                }
             }
+            first = false;
         } else if (isalpha(u) || isdigit(u)) {
             hyphen = false;
             asn += u;
@@ -628,6 +638,7 @@ string CDataTypeModule::ToAsnName(const string& name)
             hyphen = true;
             asn += '-';
         }
+        ++i;
     }
     if (hyphen) {
         asn.resize( asn.size()-1 );

@@ -42,6 +42,7 @@
 #include <corelib/ncbistre.hpp>
 #include <serial/datatool/dtdlexer.hpp>
 #include <serial/datatool/xsdlexer.hpp>
+#include <serial/datatool/comments.hpp>
 #include <list>
 #include <map>
 
@@ -135,7 +136,15 @@ public:
 
     void AddEnumValue(const string& value);
     const list<string>& GetEnumValues(void) const;
-
+    
+    CComments& Comments(void)
+    {
+        return m_Comments;
+    }
+    const CComments& GetComments(void) const
+    {
+        return m_Comments;
+    }
 private:
     string m_Name;
     string m_TypeName;
@@ -143,6 +152,7 @@ private:
     EValueType m_ValueType;
     string m_Value;
     list<string> m_ListEnum;
+    CComments m_Comments;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -214,6 +224,22 @@ public:
     void SetNamespaceName(const string& name);
     const string& GetNamespaceName(void) const;
 
+    CComments& Comments(void)
+    {
+        return m_Comments;
+    }
+    const CComments& GetComments(void) const
+    {
+        return m_Comments;
+    }
+    CComments& AttribComments(void)
+    {
+        return m_AttribComments;
+    }
+    const CComments& GetAttribComments(void) const
+    {
+        return m_AttribComments;
+    }
 private:
     string m_Name;
     string m_TypeName;
@@ -226,6 +252,8 @@ private:
     bool m_Refd;
     bool m_Embd;
     bool m_Named;
+    CComments m_Comments;
+    CComments m_AttribComments;
 };
 
 
@@ -263,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2006/07/24 18:57:13  gouriano
+ * Preserve comments when parsing DTD
+ *
  * Revision 1.8  2006/06/05 15:33:32  gouriano
  * Implemented local elements when parsing XML schema
  *

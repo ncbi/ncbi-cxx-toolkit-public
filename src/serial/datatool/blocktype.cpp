@@ -285,14 +285,10 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
 
 void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
-    if (!contents_only) {
-        out << "\n";
-    }
     string tag = XmlTagName();
     bool hasAttlist= false, isAttlist= false;
     bool hasNotag= false;
     bool isSimple= false, isSeq= false;
-    string indent("    ");
 
     if (GetEnforcedStdXml()) {
         ITERATE ( TMembers, i, m_Members ) {
@@ -334,7 +330,7 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
 
     if (isAttlist) {
         ITERATE ( TMembers, i, m_Members ) {
-            out << indent;
+            (*i)->Comments().PrintDTD(out,CComments::eNoEOL);
             i->get()->GetType()->PrintDTDElement(out);
         }
         return;
@@ -407,18 +403,16 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
         }
     }
     if (hasAttlist) {
-        out << "\n<!ATTLIST " << tag;
         ITERATE ( TMembers, i, m_Members ) {
             const CDataMember& member = **i;
             if (member.Attlist()) {
+                member.GetComments().PrintDTD(out, CComments::eNoEOL);
+                out << "\n<!ATTLIST " << tag;
                 member.GetType()->PrintDTDElement(out);
                 break;
             }
         }
-        out << indent << ">";
-    }
-    if (!contents_only && !isSimple) {
-        out << '\n';
+        out << ">";
     }
 }
 
@@ -747,15 +741,9 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
 
 void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent) const
 {
-    GetType()->PrintXMLSchemaTypeComments(out, indent);
-    bool oneLineComment = m_Comments.OneLine();
-    if ( !oneLineComment )
-        m_Comments.PrintDTD(out, CComments::eNoEOL);
+    GetType()->PrintDTDTypeComments(out, indent);
+    m_Comments.PrintDTD(out, CComments::eNoEOL); 
     GetType()->PrintXMLSchema(out, indent);
-    if ( oneLineComment ) {
-        out << ' ';
-        m_Comments.PrintDTD(out, CComments::eOneLine);
-    }
 }
 
 void CDataMember::PrintDTD(CNcbiOstream& out) const
@@ -805,6 +793,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.68  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.67  2006/06/27 18:01:42  gouriano
 * Preserve local elements defined in XML schema
 *

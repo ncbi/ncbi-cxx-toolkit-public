@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/07/24 18:57:13  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.2  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -53,6 +56,7 @@ class CComments
 public:
     CComments(void);
     ~CComments(void);
+    CComments& operator= (const CComments& other);
 
     void Add(const string& s);
 

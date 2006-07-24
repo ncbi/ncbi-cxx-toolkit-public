@@ -61,6 +61,9 @@ DTDParser::DTDParser(DTDLexer& lexer)
 {
     m_StackLexer.push(&lexer);
     m_SrcType = eDTD;
+    m_Comments = 0;
+    m_ExpectLastComment = false;
+    lexer.SetParser(this);
 }
 
 DTDParser::~DTDParser(void)
@@ -80,8 +83,20 @@ AutoPtr<CFileModules> DTDParser::Modules(const string& fileName)
         m_StackLexerName.pop_back();
         m_StackPath.pop();
     }
-//    CopyComments(modules->LastComments());
     return modules;
+}
+
+void DTDParser::EndCommentBlock()
+{
+    if (m_Comments) {
+        if (Lexer().HaveComments()) {
+            CopyComments(*m_Comments);
+        }
+        if (m_ExpectLastComment) {
+            m_Comments = 0;
+            m_ExpectLastComment = false;
+        }
+    }
 }
 
 AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
@@ -89,7 +104,9 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
     AutoPtr<CDataTypeModule> module(new CDataTypeModule(name));
 
     try {
+        CopyComments(module->Comments());
         BuildDocumentTree();
+        EndCommentBlock();
     }
     catch (CException& e) {
         NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
@@ -281,6 +298,7 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
 {
     DTDElement& node = m_MapElement[ name];
     node.SetName(name);
+    m_Comments = &(node.Comments());
     switch (GetNextToken()) {
     default:
     case T_IDENTIFIER:
@@ -305,6 +323,7 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
     // element description is ended
     GetNextToken();
     ConsumeSymbol('>');
+    m_ExpectLastComment = true;
 }
 
 void DTDParser::ConsumeElementContent(DTDElement& node)
@@ -549,6 +568,7 @@ void DTDParser::PushEntityLexer(const string& name)
         lexer_name = name;
     }
     AbstractLexer *lexer = CreateEntityLexer(*in,lexer_name);
+    lexer->SetParser(this);
     m_StackLexer.push(lexer);
     SetLexer(lexer);
 }
@@ -582,13 +602,14 @@ void DTDParser::BeginAttributesContent(void)
     // element name
     string name = GetNextTokenText();
     ConsumeToken();
-    ParseAttributesContent(name);
+    ParseAttributesContent(m_MapElement[ name]);
 }
 
-void DTDParser::ParseAttributesContent(const string& name)
+void DTDParser::ParseAttributesContent(DTDElement& node)
 {
+    m_Comments = &(node.AttribComments());
+    m_ExpectLastComment = true;
     string id_name;
-    DTDElement& node = m_MapElement[ name];
     while (GetNextToken()==T_IDENTIFIER) {
         // attribute name
         id_name = GetNextTokenText();
@@ -598,14 +619,18 @@ void DTDParser::ParseAttributesContent(const string& name)
     // attlist description is ended
     GetNextToken();
     ConsumeSymbol('>');
+    m_ExpectLastComment = true;
 }
 
 void DTDParser::ConsumeAttributeContent(DTDElement& node,
                                         const string& id_name)
 {
     bool done=false;
-    DTDAttribute attrib;
-    attrib.SetName(id_name);
+    DTDAttribute a;
+    a.SetName(id_name);
+    node.AddAttribute(a);
+    DTDAttribute& attrib = node.GetNonconstAttributes().back();
+    m_Comments = &(attrib.Comments());
     for (done=false; !done;) {
         switch(GetNextToken()) {
         default:
@@ -632,6 +657,7 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
             break;
         case T_STRING:
             attrib.SetValue(GetNextTokenText());
+            m_ExpectLastComment = true;
             break;
         case K_CDATA:
             attrib.SetType(DTDAttribute::eString);
@@ -662,22 +688,25 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
             break;
         case K_DEFAULT:
             attrib.SetValueType(DTDAttribute::eDefault);
+            m_ExpectLastComment = true;
             break;
         case K_REQUIRED:
             attrib.SetValueType(DTDAttribute::eRequired);
+            m_ExpectLastComment = true;
             break;
         case K_IMPLIED:
             attrib.SetValueType(DTDAttribute::eImplied);
+            m_ExpectLastComment = true;
             break;
         case K_FIXED:
             attrib.SetValueType(DTDAttribute::eFixed);
+            m_ExpectLastComment = true;
             break;
         }
         if (!done) {
             ConsumeToken();
         }
     }
-    node.AddAttribute(attrib);
 }
 
 void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
@@ -917,8 +946,10 @@ CDataType* DTDParser::TypesBlock(
             member->SetNotag();
         }
         member->SetNoPrefix();
+        member->Comments() = refNode.GetComments();
         container->AddMember(member);
     }
+    container->Comments() = node.GetComments();
     return container.release();
 }
 
@@ -945,7 +976,7 @@ CDataType* DTDParser::CompositeNode(
         member->SetSimpleType();
     }
     container->AddMember(member);
-
+    container->Comments() = node.GetComments();
     return container.release();
 }
 
@@ -957,6 +988,7 @@ void DTDParser::AddAttributes(
             new CDataMember("Attlist", AttribBlock(node)));
         member->SetNoPrefix();
         member->SetAttlist();
+        member->Comments() = node.GetAttribComments();
         container->AddMember(member);
     }
 }
@@ -977,8 +1009,10 @@ CDataType* DTDParser::AttribBlock(const DTDElement& node)
             member->SetOptional();
         }
         member->SetNoPrefix();
+        member->Comments() = i->GetComments();
         container->AddMember(member);
     }
+    container->Comments() = node.GetComments();
     return container.release();
 }
 
@@ -1129,6 +1163,14 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
     }
     cout << endl;
+    if (!node.GetComments().Empty()) {
+        cout << "        === Comments ===" << endl;
+        node.GetComments().PrintDTD(cout, CComments::eDoNotWriteBlankLine);
+    }
+    if (!node.GetAttribComments().Empty()) {
+        cout << "        === AttribComments ===" << endl;
+        node.GetAttribComments().PrintDTD(cout, CComments::eDoNotWriteBlankLine);
+    }
     if (!node.GetNamespaceName().empty()) {
         cout << "Namespace: " << node.GetNamespaceName() << endl;
     }
@@ -1216,6 +1258,10 @@ void DTDParser::PrintAttribute(const DTDAttribute& attrib, bool indent/*=true*/)
     cout << ", ";
     cout << "\"" << attrib.GetValue() << "\"";
     cout << endl;
+    if (!attrib.GetComments().Empty()) {
+        cout << "        === Comments ===" << endl;
+        attrib.GetComments().PrintDTD(cout, CComments::eDoNotWriteBlankLine);
+    }
 }
 
 #endif
@@ -1226,6 +1272,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.32  2006/07/24 18:57:39  gouriano
+ * Preserve comments when parsing DTD
+ *
  * Revision 1.31  2006/06/27 18:01:42  gouriano
  * Preserve local elements defined in XML schema
  *

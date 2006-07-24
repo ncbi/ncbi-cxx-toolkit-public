@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.21  2005/01/06 20:21:54  gouriano
 * Added name property to lexers - for better diagnostics
 *
@@ -96,6 +99,7 @@
 #include <ncbi_pch.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/alexer.hpp>
+#include <serial/datatool/aparser.hpp>
 #include <serial/datatool/atoken.hpp>
 #include <serial/datatool/comments.hpp>
 
@@ -104,7 +108,7 @@ BEGIN_NCBI_SCOPE
 #define READ_AHEAD 1024
 
 AbstractLexer::AbstractLexer(CNcbiIstream& in, const string& name)
-    : m_Input(in), m_Line(1),
+    : m_Parser(0), m_Input(in), m_Line(1),
       m_Buffer(new char[READ_AHEAD]), m_AllocEnd(m_Buffer + READ_AHEAD),
       m_Position(m_Buffer), m_DataEnd(m_Position),
       m_TokenStart(0), m_Name(name)
@@ -257,6 +261,11 @@ AbstractLexer::CComment& AbstractLexer::AddComment(void)
     return m_Comments.back();
 }
 
+void AbstractLexer::RemoveLastComment(void)
+{
+    m_Comments.pop_back();
+}
+
 void AbstractLexer::CComment::AddChar(char c)
 {
     m_Value += c;
@@ -273,6 +282,13 @@ void AbstractLexer::FlushCommentsTo(CComments& comments)
         comments.Add(i->GetValue());
     }
     FlushComments();
+}
+
+void AbstractLexer::EndCommentBlock()
+{
+    if (m_Parser) {
+        m_Parser->EndCommentBlock();
+    }
 }
 
 END_NCBI_SCOPE

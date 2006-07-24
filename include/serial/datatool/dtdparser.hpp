@@ -52,6 +52,7 @@ class CDataValue;
 class CDataMember;
 class CEnumDataType;
 class CEnumDataTypeValue;
+class CComments;
 
 
 
@@ -70,6 +71,7 @@ public:
     };
         
     AutoPtr<CFileModules> Modules(const string& fileName);
+    virtual void EndCommentBlock(void);
 
 protected:
     AutoPtr<CDataTypeModule> Module(const string& name);
@@ -99,7 +101,7 @@ protected:
         CNcbiIstream& in, const string& name, bool autoDelete=true);
 
     void BeginAttributesContent(void);
-    void ParseAttributesContent(const string& name);
+    void ParseAttributesContent(DTDElement& node);
     void ConsumeAttributeContent(DTDElement& node, const string& id_name);
     void ParseEnumeratedList(DTDAttribute& attrib);
 
@@ -136,6 +138,8 @@ protected:
     list<string>           m_StackLexerName;
     string                 m_IdentifierText;
     ESrcType  m_SrcType;
+    CComments* m_Comments;
+    bool m_ExpectLastComment;
 };
 
 END_NCBI_SCOPE
@@ -146,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.12  2006/07/24 18:57:13  gouriano
+ * Preserve comments when parsing DTD
+ *
  * Revision 1.11  2006/06/27 17:56:50  gouriano
  * Corrected schema generation to preserve local elements
  *

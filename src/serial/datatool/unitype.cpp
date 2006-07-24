@@ -90,6 +90,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
     int indent, bool contents_only) const
 {
     const CDataType* typeElem = GetElementType();
+    typeElem->PrintDTDTypeComments(out,0);
     const CReferenceDataType* typeRef =
         dynamic_cast<const CReferenceDataType*>(typeElem);
     const CStaticDataType* typeStatic =
@@ -239,6 +240,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
 void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
     const CDataType* typeElem = GetElementType();
+    typeElem->PrintDTDTypeComments(out,0);
     const CReferenceDataType* typeRef =
         dynamic_cast<const CReferenceDataType*>(typeElem);
     const CStaticDataType* typeStatic = 0;
@@ -457,6 +459,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.44  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.43  2006/06/28 19:04:29  gouriano
 * Corrected schema generation for ASN containers
 *

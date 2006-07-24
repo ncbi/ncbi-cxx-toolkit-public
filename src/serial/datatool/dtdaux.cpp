@@ -101,6 +101,7 @@ DTDAttribute::DTDAttribute(const DTDAttribute& other)
     m_ValueType = other.m_ValueType;
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
+    m_Comments  = other.m_Comments;
 }
 DTDAttribute::~DTDAttribute(void)
 {
@@ -114,6 +115,7 @@ DTDAttribute& DTDAttribute::operator= (const DTDAttribute& other)
     m_ValueType = other.m_ValueType;
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
+    m_Comments  = other.m_Comments;
     return *this;
 }
 
@@ -209,6 +211,8 @@ DTDElement::DTDElement(const DTDElement& other)
     m_RefOcc   = other.m_RefOcc;
     m_Attrib   = other.m_Attrib;
     m_Named    = other.m_Named;
+    m_Comments = other.m_Comments;
+    m_AttribComments = other.m_AttribComments;
 }
 
 DTDElement::~DTDElement(void)
@@ -391,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2006/07/24 18:57:39  gouriano
+ * Preserve comments when parsing DTD
+ *
  * Revision 1.9  2006/06/05 15:33:14  gouriano
  * Implemented local elements when parsing XML schema
  *

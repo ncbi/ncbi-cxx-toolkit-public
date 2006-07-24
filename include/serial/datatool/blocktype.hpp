@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/07/24 18:57:13  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.18  2006/06/19 17:33:33  gouriano
 * Redesigned generation of XML schema
 *
@@ -175,6 +178,10 @@ public:
     void SetDefault(const AutoPtr<CDataValue>& value);
 
     CComments& Comments(void)
+        {
+            return m_Comments;
+        }
+    const CComments& GetComments(void) const
         {
             return m_Comments;
         }

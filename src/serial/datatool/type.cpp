@@ -111,7 +111,7 @@ void CDataType::PrintASNTypeComments(CNcbiOstream& out, int indent) const
     m_Comments.PrintASN(out, indent);
 }
 
-void CDataType::PrintXMLSchemaTypeComments(CNcbiOstream& out, int /*indent*/) const
+void CDataType::PrintDTDTypeComments(CNcbiOstream& out, int /*indent*/) const
 {
     m_Comments.PrintDTD(out, CComments::eNoEOL);
 }
@@ -126,7 +126,8 @@ void CDataType::PrintDTD(CNcbiOstream& out) const
     if (x_IsSavedName(XmlTagName())) {
         return;
     }
-    m_Comments.PrintDTD(out);
+    out << "\n\n";
+    m_Comments.PrintDTD(out, CComments::eNoEOL);
     PrintDTDElement(out);
     x_AddSavedName(XmlTagName());
     PrintDTDExtra(out);
@@ -141,10 +142,11 @@ void CDataType::PrintDTD(CNcbiOstream& out,
     if (x_IsSavedName(XmlTagName())) {
         return;
     }
-    m_Comments.PrintDTD(out);
+    out << "\n";
+    m_Comments.PrintDTD(out, CComments::eNoEOL);
     bool oneLineComment = extra.OneLine();
     if ( !oneLineComment )
-        extra.PrintDTD(out);
+        extra.PrintDTD(out, CComments::eNoEOL);
     PrintDTDElement(out);
     if ( oneLineComment ) {
         out << ' ';
@@ -705,6 +707,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.88  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.87  2006/06/27 18:01:42  gouriano
 * Preserve local elements defined in XML schema
 *

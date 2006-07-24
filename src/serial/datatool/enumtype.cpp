@@ -200,7 +200,7 @@ void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
         GetParentType()->GetDataMember() &&
         GetParentType()->GetDataMember()->Attlist()) {
         const CDataMember* mem = GetDataMember();
-        out << tag << " (" << content << ") ";
+        out << "\n    " << tag << " (" << content << ") ";
         if (mem->GetDefault()) {
             out << "\"" << mem->GetDefault()->GetXmlString() << "\"";
         } else {
@@ -210,7 +210,6 @@ void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
                 out << "#REQUIRED";
             }
         }
-        out << '\n';
     } else {
         out <<
             "\n<!ELEMENT " << tag << " ";
@@ -413,6 +412,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.35  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *

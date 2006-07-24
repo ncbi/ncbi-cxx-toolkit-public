@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2006/07/24 18:57:13  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.31  2006/06/27 17:57:44  gouriano
 * Corrected C++ code generation to preserve local elements
 *
@@ -253,7 +256,7 @@ public:
     bool InChoice(void) const;
 
     void PrintASNTypeComments(CNcbiOstream& out, int indent) const;
-    void PrintXMLSchemaTypeComments(CNcbiOstream& out, int indent) const;
+    void PrintDTDTypeComments(CNcbiOstream& out, int indent) const;
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
     virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const = 0;
     virtual string GetSchemaTypeString(void) const;

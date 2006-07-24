@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/07/24 18:57:13  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.9  2005/01/06 20:24:51  gouriano
 * Added GetLocation method - for better diagnostics
 *
@@ -92,6 +95,8 @@ public:
     virtual string GetLocation(void);
     virtual void ParseError(const char* error, const char* expected,
                             const AbstractToken& token);
+    virtual void EndCommentBlock(void) {}
+
     void ParseError(const char* error, const char* expected)
         {
             ParseError(error, expected, NextToken());

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.4  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -60,6 +63,12 @@ CComments::CComments(void)
 
 CComments::~CComments(void)
 {
+}
+
+CComments& CComments::operator= (const CComments& other)
+{
+    m_Comments = other.m_Comments;
+    return *this;
 }
 
 void CComments::Add(const string& s)

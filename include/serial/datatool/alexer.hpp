@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/07/24 18:57:13  gouriano
+* Preserve comments when parsing DTD
+*
 * Revision 1.13  2006/04/20 14:00:56  gouriano
 * Added XML schema parsing
 *
@@ -98,12 +101,17 @@
 BEGIN_NCBI_SCOPE
 
 class CComments;
+class AbstractParser;
 
 class AbstractLexer {
 public:
     AbstractLexer(CNcbiIstream& in, const string& name);
     virtual ~AbstractLexer(void);
     
+    void SetParser(AbstractParser* parser)
+        {
+            m_Parser = parser;
+        }
     const AbstractToken& NextToken(void)
         {
             if ( TokenStarted() )
@@ -246,9 +254,12 @@ protected:
         {
             return CurrentTokenEnd() - CurrentTokenStart();
         }
+    void EndCommentBlock();
 
 protected:
     CComment& AddComment(void);
+    void RemoveLastComment(void);
+    AbstractParser* m_Parser;
 
 private:
     const AbstractToken& FillNextToken(void);
