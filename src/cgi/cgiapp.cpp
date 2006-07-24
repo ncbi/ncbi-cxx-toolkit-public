@@ -185,12 +185,14 @@ int CCgiApplication::Run(void)
             VerifyCgiContext(*m_Context);
             // Set HTTP_REFERER
             string ref = m_Context->GetSelfURL();
-            string args =
-                m_Context->GetRequest().GetProperty(eCgi_QueryString);
-            if ( !args.empty() ) {
-                ref += "?" + args;
+            if ( !ref.empty() ) {
+                string args =
+                    m_Context->GetRequest().GetProperty(eCgi_QueryString);
+                if ( !args.empty() ) {
+                    ref += "?" + args;
+                }
+                GetConfig().Set("CONN", "HTTP_REFERER", ref);
             }
-            GetConfig().Set("CONN", "HTTP_REFERER", ref);
             result = ProcessRequest(*m_Context);
             if (result != 0) {
                 SetHTTPStatus(500);
@@ -1127,6 +1129,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.81  2006/07/24 19:03:37  grichenk
+* Return empty self-url and do not set HTTP_REFERER if server name is not set.
+*
 * Revision 1.80  2006/06/29 16:02:21  grichenk
 * Added constants for setting CDiagContext properties.
 *

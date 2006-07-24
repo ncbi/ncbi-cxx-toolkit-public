@@ -270,9 +270,13 @@ const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
     if ( !m_SelfURL.empty() )
         return m_SelfURL;
 
+    string server(GetRequest().GetProperty(eCgi_ServerName));
+    if ( server.empty() ) {
+        return kEmptyStr;
+    }
+
     // Do not add the port # for front-end URLs by default for NCBI front-ends
     if (use_port == eSelfUrlPort_Default) {
-        string server(GetRequest().GetProperty(eCgi_ServerName));
         if (NStr::StartsWith(server, "www.ncbi",   NStr::eNocase) ||
             NStr::StartsWith(server, "web.ncbi",   NStr::eNocase) ||
             NStr::StartsWith(server, "wwwqa.ncbi", NStr::eNocase) ||
@@ -386,6 +390,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.53  2006/07/24 19:03:37  grichenk
+* Return empty self-url and do not set HTTP_REFERER if server name is not set.
+*
 * Revision 1.52  2006/07/13 19:23:19  ucko
 * RetrieveTrackingId: don't use sprintf, which might not even have been declared.
 *
