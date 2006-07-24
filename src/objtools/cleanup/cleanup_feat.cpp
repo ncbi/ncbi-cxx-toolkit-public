@@ -1173,40 +1173,41 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
     int num_genes = 0;
     int num_cdss = 0;
     
-    CFeat_CI gene_it;
-    
-    for (CFeat_CI feat_ci(bsh); num_genes < 2 && num_cdss < 2; ++feat_ci) {
+    for (CFeat_CI feat_ci(bsh); num_genes < 2 && num_cdss < 2 && feat_ci; ++feat_ci) {
         if (feat_ci->GetFeatType() == CSeqFeatData::e_Gene) {
             num_genes ++;
-            if (num_genes == 1) {
-                gene_it = feat_ci;
-            }
         } else if (feat_ci->GetFeatType() == CSeqFeatData::e_Cdregion) {
             num_cdss++;
         }
     }
     
     if (num_genes == 1 && num_cdss < 2) {
-        CBioseq_Handle gene_bsh = m_Scope->GetBioseqHandle(gene_it->GetLocation());
-        if (gene_bsh == bsh) {
-            CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, gene_it->GetOriginalFeature());
+        objects::SAnnotSelector sel(CSeqFeatData::eSubtype_gene);
+
+        CFeat_CI gene_it(bsh, sel);
+
+        if (gene_it->GetLocation().GetId()) {
+            CBioseq_Handle gene_bsh = m_Scope->GetBioseqHandle(gene_it->GetLocation());
+            if (gene_bsh == bsh) {
+                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, gene_it->GetOriginalFeature());
         
-            if (!fh.GetSeq_feat().IsNull()) {
-                CRef<CSeq_feat> new_gene(new CSeq_feat);
-                new_gene->Assign(gene_it->GetOriginalFeature());
-                CRef<CSeq_loc> new_loc(new CSeq_loc);
+                if (!fh.GetSeq_feat().IsNull()) {
+                    CRef<CSeq_feat> new_gene(new CSeq_feat);
+                    new_gene->Assign(gene_it->GetOriginalFeature());
+                    CRef<CSeq_loc> new_loc(new CSeq_loc);
         
-                CRef<CSeq_id> new_id(new CSeq_id);
-                new_id->Assign(*(new_gene->GetLocation().GetId()));
-                new_loc->SetInt().SetId(*new_id);
-                new_loc->SetInt().SetFrom(0);
-                new_loc->SetInt().SetTo(bsh.GetBioseqLength() - 1);
-                new_loc->SetInt().SetStrand(new_gene->GetLocation().GetStrand());
-                new_gene->SetLocation(*new_loc);
+                    CRef<CSeq_id> new_id(new CSeq_id);
+                    new_id->Assign(*(new_gene->GetLocation().GetId()));
+                    new_loc->SetInt().SetId(*new_id);
+                    new_loc->SetInt().SetFrom(0);
+                    new_loc->SetInt().SetTo(bsh.GetBioseqLength() - 1);
+                    new_loc->SetInt().SetStrand(new_gene->GetLocation().GetStrand());
+                    new_gene->SetLocation(*new_loc);
             
-                fh.Replace(*new_gene);
+                    fh.Replace(*new_gene);
+                }
             }
-        }
+        }  
     }  
 }
 
@@ -1227,6 +1228,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2006/07/24 13:08:17  bollin
+ * fixed bug in m_ExtendSingleGeneOnmRNA
+ *
  * Revision 1.19  2006/07/13 17:12:12  rsmith
  * Bring up to date with C BSEC.
  *
