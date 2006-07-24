@@ -15,6 +15,12 @@
 /* Define to 1 if you have the `atoll' function. */
 #undef HAVE_ATOLL
 
+/* Define to 1 if your C compiler supports __attribute__((destructor)) */
+#undef HAVE_ATTRIBUTE_DESTRUCTOR
+
+/* Define to 1 if you have the `basename' function. */
+#undef HAVE_BASENAME
+
 /* Define to 1 if NCBI C++ API for BerkeleyDB is available. */
 #undef HAVE_BDB
 
@@ -64,6 +70,9 @@
 /* Define to 1 if FreeType is available. */
 #undef HAVE_FREETYPE
 
+/* Define to 1 if you have the `fseeko' function. */
+#undef HAVE_FSEEKO
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
@@ -86,6 +95,9 @@
 /* If you have the `gethostbyname_r' function, define to the number of
    arguments it takes (normally 5 or 6). */
 #undef HAVE_GETHOSTBYNAME_R
+
+/* Define to 1 if you have the `gethostent_r' function. */
+#undef HAVE_GETHOSTENT_R
 
 /* Define to 1 if you have the `getipnodebyaddr' function. */
 #undef HAVE_GETIPNODEBYADDR
@@ -181,6 +193,9 @@
 /* Define to 1 if you have libglut. */
 #undef HAVE_LIBGLUT
 
+/* Define to 1 if libgnutls is available. */
+#undef HAVE_LIBGNUTLS
+
 /* Define to 1 if ICONV is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBICONV
@@ -194,6 +209,9 @@
 
 /* Define to 1 if liboechem is available. */
 #undef HAVE_LIBOECHEM
+
+/* Define to 1 if libssl is available. */
+#undef HAVE_LIBOPENSSL
 
 /* Define to 1 if you have libOSMesa. */
 #undef HAVE_LIBOSMESA
@@ -317,11 +335,17 @@
 /* Define to 1 if the ORBacus CORBA package is available. */
 #undef HAVE_ORBACUS
 
+/* Define to 1 if you have the <paths.h> header file. */
+#undef HAVE_PATHS_H
+
 /* Define to 1 if you have the <poll.h> header file. */
 #undef HAVE_POLL_H
 
 /* Define to 1 if you have the `pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK
+
+/* Define to 1 if pthread mutexes are available. */
+#undef HAVE_PTHREAD_MUTEX
 
 /* Define to 1 if you have the `pthread_setconcurrency' function. */
 #undef HAVE_PTHREAD_SETCONCURRENCY
@@ -336,6 +360,9 @@
    takes (normally 2 or 3). */
 #undef HAVE_READDIR_R
 
+/* Define to 1 if you have the `readpassphrase' function. */
+#undef HAVE_READPASSPHRASE
+
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
 
@@ -344,6 +371,9 @@
 
 /* Define to 1 if you have `union semun'. */
 #undef HAVE_SEMUN
+
+/* Define to 1 if you have the <signal.h> header file. */
+#undef HAVE_SIGNAL_H
 
 /* Define to 1 if `sin_len' is a member of `struct sockaddr_in'. */
 #undef HAVE_SIN_LEN
@@ -378,6 +408,12 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if you have the `strlcat' function. */
+#undef HAVE_STRLCAT
+
+/* Define to 1 if you have the `strlcpy' function. */
+#undef HAVE_STRLCPY
+
 /* Define to 1 if you have the `strndup' function. */
 #undef HAVE_STRNDUP
 
@@ -392,6 +428,12 @@
 
 /* Define to 1 if you have the `strtok_r' function. */
 #undef HAVE_STRTOK_R
+
+/* Define to 1 if `tm_zone' is member of `struct tm'. */
+#undef HAVE_STRUCT_TM_TM_ZONE
+
+/* Define to 1 if `__tm_zone' is member of `struct tm'. */
+#undef HAVE_STRUCT_TM___TM_ZONE
 
 /* Define to 1 if SYBASE has reentrant libraries. */
 #undef HAVE_SYBASE_REENTRANT

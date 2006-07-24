@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.428 2006/07/20 18:11:56 ucko Exp $
+#  $Id: configure.ac,v 1.429 2006/07/24 14:08:33 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -172,6 +172,14 @@ AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre2,
    [ --without-pcre          use internal copy of PCRE])
+AC_ARG_WITH(gnutls,
+   [ --with-gnutls=DIR       use GNUTLS installation in DIR])
+AC_ARG_WITH(gnutls2,
+   [ --without-gnutls        do not use GNUTLS])
+AC_ARG_WITH(openssl,
+   [ --with-openssl=DIR      use OpenSSL installation in DIR])
+AC_ARG_WITH(openssl2,
+   [ --without-openssl       do not use OpenSSL])
 AC_ARG_WITH(sybase,
    [ --without-sybase        do not use SYBASE libraries])
 AC_ARG_WITH(sybase-local,
@@ -356,7 +364,8 @@ check static-exe bin-release strip version lfs pch caution ccache distcc \
 flat-makefile \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype fltk \
+z bz2 pcre gnutls openssl sybase sybase-local sybase-new \
+ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb odbc python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
@@ -395,6 +404,7 @@ for x_arg in "$@" ; do
       | --libdir=* | --bindir=* | --includedir=* \
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-pcre=* \
+      | --with-gnutls=* | --with-openssl=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
@@ -2009,7 +2019,7 @@ AC_CHECK_HEADERS(dlfcn.h ieeefp.h poll.h sys/mount.h sys/sockio.h \
                  sys/statvfs.h sys/sysinfo.h sys/vfs.h)
 # for FreeTDS 0.6x
 AC_CHECK_HEADERS(arpa/inet.h errno.h malloc.h netdb.h \
-                 netinet/in.h netinet/tcp.h \
+                 netinet/in.h netinet/tcp.h paths.h signal.h \
                  sys/ioctl.h sys/select.h sys/socket.h sys/time.h wchar.h)
 AC_HEADER_TIME
 
@@ -2211,17 +2221,30 @@ if test "$ac_cv_func_localtime_r" = "yes" ; then
 fi
 
 AC_SEARCH_LIBS(sched_yield, rt,
-    AC_DEFINE(HAVE_SCHED_YIELD, 1,
-              [Define to 1 if you have the `sched_yield' function.])
-)
+   [AC_DEFINE(HAVE_SCHED_YIELD, 1,
+              [Define to 1 if you have the `sched_yield' function.])])
+
+AC_CACHE_CHECK([whether pthread mutexes are available],
+   ncbi_cv_func_pthread_mutex,
+   [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+       [[#include <pthread.h>
+         pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;]],
+       [[pthread_mutex_lock(&mutex); pthread_mutex_unlock(&mutex);]])],
+      [ncbi_cv_func_pthread_mutex=yes], [ncbi_cv_func_pthread_mutex=no])])
+if test $ncbi_cv_func_pthread_mutex=yes; then
+   AC_DEFINE(HAVE_PTHREAD_MUTEX, 1,
+      [Define to 1 if pthread mutexes are available.])
+fi
 
 
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(atoll lchown getpagesize getpwuid gettimeofday getuid \
-               nanosleep asprintf vasprintf vsnprintf select statfs statvfs \
-               strcasecmp strdup strndup strtok_r sysmp timegm utimes lutimes)
+AC_CHECK_FUNCS(atoll basename lchown fseeko getpagesize getpwuid \
+               gettimeofday getuid readpassphrase nanosleep \
+               asprintf vasprintf vsnprintf select statfs statvfs \
+               strcasecmp strlcat strlcpy strdup strndup strtok_r \
+               sysmp timegm utimes lutimes)
 AC_LANG_POP(C)
 
 AC_TYPE_SIGNAL
@@ -2338,6 +2361,9 @@ AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
       [Define to 1 if `sin_len' is a member of `struct sockaddr_in'.])],
    [], [#include <sys/types.h>
         #include <netinet/in.h>])
+
+AC_CHECK_MEMBERS([struct tm.tm_zone, struct tm.__tm_zone], [], [],
+   [#include <time.h>])
 
 
 AC_CACHE_CHECK([whether function prototypes can use throw(...)],
@@ -2539,7 +2565,7 @@ esac
 
 AC_CACHE_CHECK([syntax for marking deprecated functions],
    ncbi_cv_c_deprecation_syntax,
-   [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[void f(void) __attribute__((__deprecated__)); void f(void) { }]],
        [[f();]])],
       [ncbi_cv_c_deprecation_syntax='__attribute__((__deprecated__))'],
@@ -2565,6 +2591,18 @@ test "$forceinline" = "no"  &&  forceinline=""
 AC_DEFINE_UNQUOTED(NCBI_FORCEINLINE, $forceinline,
    [Define to whatever syntax your compiler supports for marking functions
     as to be inlined even if they might not otherwise be.])
+
+AC_CACHE_CHECK([whether the C compiler supports __attribute__((destructor))],
+   ncbi_cv_c_attribute_destructor,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[void f(void) __attribute__((destructor)); void f(void) { }]],
+       [[f();]])],
+      [ncbi_cv_c_attribute_destructor=yes],
+      [ncbi_cv_c_attribute_destructor=no])])
+if test $ncbi_cv_c_attribute_destructor=yes; then
+   AC_DEFINE(HAVE_ATTRIBUTE_DESTRUCTOR, 1,
+      [Define to 1 if your C compiler supports __attribute__((destructor))])
+fi
 
 AC_CACHE_CHECK([whether the C compiler supports C99 restrict],
    ncbi_cv_c_restrict,
@@ -2688,7 +2726,8 @@ else
    test "$ac_cv_func_getnameinfo" = "yes" && \
      AC_DEFINE(HAVE_GETNAMEINFO, 1,
                [Define to 1 if you have the `getnameinfo' function.])
-   AC_CHECK_FUNCS(freehostent getipnodebyaddr getipnodebyname inet_ntop)
+   AC_CHECK_FUNCS(freehostent gethostent_r getipnodebyaddr getipnodebyname \
+                  inet_ntop)
 fi
 LIBS=$orig_LIBS
 
@@ -2829,6 +2868,28 @@ if test -z "$PCRE_LIBS"; then
    NCBI_PACKAGE(LocalPCRE)
 else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
+fi
+
+## SSL/TLS libraries
+if test -z "$GNUTLS_PATH"  &&  libgnutls-config --version >/dev/null 2>&1; then
+    p=`libgnutls-config --prefix`
+    test "x$p" = "x/usr"  ||  LIBGNUTLS_PATH=$p
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
+ [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
+   [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]])
+
+NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
+ [[AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+   [[SSL_library_init();]])]],
+ -lcrypt)
+
+if test -n "$GNUTLS_LIBS"; then
+   TLS_INCLUDE=$GNUTLS_INCLUDE
+   TLS_LIBS=$GNUTLS_LIBS
+else
+   TLS_INCLUDE=$OPENSSL_INCLUDE
+   TLS_LIBS=$OPENSSL_LIBS
 fi
 
 ## SYBASE libraries
@@ -4378,7 +4439,7 @@ else
 fi
 
 : ${LIBXSLT_PATH=$LIBXML_PATH}
-NCBI_CHECK_THIRD_PARTY_LIB_(libxslt, LIBXSLT, xslt,
+NCBI_CHECK_THIRD_PARTY_LIB_EX(libxslt, LIBXSLT, xslt,
  [AC_LANG_PROGRAM([#include <libxslt/xsltutils.h>],
                   [xsltSaveResultToFilename("foo.xml.gz", NULL, NULL, 1)])],
  [], [$LIBXML_LIBS $Z_LIBS], [$LIBXML_INCLUDE])
@@ -5244,6 +5305,8 @@ AC_SUBST(Z_LIB)
 AC_SUBST(BZ2_LIB)
 AC_SUBST(PCREPOSIX_LIBS)
 AC_SUBST(PCRE_LIB)
+AC_SUBST(TLS_INCLUDE)
+AC_SUBST(TLS_LIBS)
 AC_SUBST(SYBASE_PATH)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)

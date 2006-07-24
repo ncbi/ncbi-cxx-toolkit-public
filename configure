@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT DISTCC CCACHE TAIL EGREP VALGRIND_PATH CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS63_INCLUDE FTDS63_LIBS FTDS63_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds8 ftds63 mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS SQLITE_INCLUDE SQLITE_LIBS SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT DISTCC CCACHE TAIL EGREP VALGRIND_PATH CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS63_INCLUDE FTDS63_LIBS FTDS63_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds8 ftds63 mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS SQLITE_INCLUDE SQLITE_LIBS SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -911,6 +911,10 @@ Optional Packages:
  --without-bz2           use internal copy of bzlib
  --with-pcre=DIR         use PCRE installation in DIR
  --without-pcre          use internal copy of PCRE
+ --with-gnutls=DIR       use GNUTLS installation in DIR
+ --without-gnutls        do not use GNUTLS
+ --with-openssl=DIR      use OpenSSL installation in DIR
+ --without-openssl       do not use OpenSSL
  --without-sybase        do not use SYBASE libraries
  --with-sybase-local=DIR use local SYBASE install (DIR is optional)
  --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)
@@ -1793,6 +1797,30 @@ if test "${with_pcre2+set}" = set; then
 
 fi;
 
+# Check whether --with-gnutls or --without-gnutls was given.
+if test "${with_gnutls+set}" = set; then
+  withval="$with_gnutls"
+
+fi;
+
+# Check whether --with-gnutls2 or --without-gnutls2 was given.
+if test "${with_gnutls2+set}" = set; then
+  withval="$with_gnutls2"
+
+fi;
+
+# Check whether --with-openssl or --without-openssl was given.
+if test "${with_openssl+set}" = set; then
+  withval="$with_openssl"
+
+fi;
+
+# Check whether --with-openssl2 or --without-openssl2 was given.
+if test "${with_openssl2+set}" = set; then
+  withval="$with_openssl2"
+
+fi;
+
 # Check whether --with-sybase or --without-sybase was given.
 if test "${with_sybase+set}" = set; then
   withval="$with_sybase"
@@ -2316,7 +2344,8 @@ check static-exe bin-release strip version lfs pch caution ccache distcc \
 flat-makefile \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype fltk \
+z bz2 pcre gnutls openssl sybase sybase-local sybase-new \
+ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb odbc python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
@@ -2355,6 +2384,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --libdir=* | --bindir=* | --includedir=* \
       | [A-Z]*=* \
       | --with-z=* | --with-bz2=* | --with-pcre=* \
+      | --with-gnutls=* | --with-openssl=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
@@ -8703,8 +8733,10 @@ done
 
 
 
+
+
 for ac_header in arpa/inet.h errno.h malloc.h netdb.h \
-                 netinet/in.h netinet/tcp.h \
+                 netinet/in.h netinet/tcp.h paths.h signal.h \
                  sys/ioctl.h sys/select.h sys/socket.h sys/time.h wchar.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -9813,9 +9845,71 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_SCHED_YIELD 1
 _ACEOF
 
-
 fi
 
+
+echo "$as_me:$LINENO: checking whether pthread mutexes are available" >&5
+echo $ECHO_N "checking whether pthread mutexes are available... $ECHO_C" >&6
+if test "${ncbi_cv_func_pthread_mutex+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <pthread.h>
+         pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+int
+main ()
+{
+pthread_mutex_lock(&mutex); pthread_mutex_unlock(&mutex);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_func_pthread_mutex=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_func_pthread_mutex=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_func_pthread_mutex" >&5
+echo "${ECHO_T}$ncbi_cv_func_pthread_mutex" >&6
+if test $ncbi_cv_func_pthread_mutex=yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PTHREAD_MUTEX 1
+_ACEOF
+
+fi
 
 
 ### Check for other standard library functions
@@ -10042,9 +10136,16 @@ done
 
 
 
-for ac_func in atoll lchown getpagesize getpwuid gettimeofday getuid \
-               nanosleep asprintf vasprintf vsnprintf select statfs statvfs \
-               strcasecmp strdup strndup strtok_r sysmp timegm utimes lutimes
+
+
+
+
+
+for ac_func in atoll basename lchown fseeko getpagesize getpwuid \
+               gettimeofday getuid readpassphrase nanosleep \
+               asprintf vasprintf vsnprintf select statfs statvfs \
+               strcasecmp strlcat strlcpy strdup strndup strtok_r \
+               sysmp timegm utimes lutimes
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -15424,6 +15525,230 @@ _ACEOF
 fi
 
 
+echo "$as_me:$LINENO: checking for struct tm.tm_zone" >&5
+echo $ECHO_N "checking for struct tm.tm_zone... $ECHO_C" >&6
+if test "${ac_cv_member_struct_tm_tm_zone+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <time.h>
+
+int
+main ()
+{
+static struct tm ac_aggr;
+if (ac_aggr.tm_zone)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_tm_tm_zone=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <time.h>
+
+int
+main ()
+{
+static struct tm ac_aggr;
+if (sizeof ac_aggr.tm_zone)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_tm_tm_zone=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_member_struct_tm_tm_zone=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_member_struct_tm_tm_zone" >&5
+echo "${ECHO_T}$ac_cv_member_struct_tm_tm_zone" >&6
+if test $ac_cv_member_struct_tm_tm_zone = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_TM_TM_ZONE 1
+_ACEOF
+
+
+fi
+echo "$as_me:$LINENO: checking for struct tm.__tm_zone" >&5
+echo $ECHO_N "checking for struct tm.__tm_zone... $ECHO_C" >&6
+if test "${ac_cv_member_struct_tm___tm_zone+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <time.h>
+
+int
+main ()
+{
+static struct tm ac_aggr;
+if (ac_aggr.__tm_zone)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_tm___tm_zone=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <time.h>
+
+int
+main ()
+{
+static struct tm ac_aggr;
+if (sizeof ac_aggr.__tm_zone)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_tm___tm_zone=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_member_struct_tm___tm_zone=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_member_struct_tm___tm_zone" >&5
+echo "${ECHO_T}$ac_cv_member_struct_tm___tm_zone" >&6
+if test $ac_cv_member_struct_tm___tm_zone = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_TM___TM_ZONE 1
+_ACEOF
+
+
+fi
+
+
 
 echo "$as_me:$LINENO: checking whether function prototypes can use throw(...)" >&5
 echo $ECHO_N "checking whether function prototypes can use throw(...)... $ECHO_C" >&6
@@ -16282,9 +16607,9 @@ f();
   return 0;
 }
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
   ac_status=$?
   grep -v '^ *+' conftest.er1 >conftest.err
   rm -f conftest.er1
@@ -16298,7 +16623,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
+	 { ac_try='test -s conftest.$ac_objext'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -16311,8 +16636,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 ncbi_cv_c_deprecation_syntax=none
 fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_c_deprecation_syntax" >&5
 echo "${ECHO_T}$ncbi_cv_c_deprecation_syntax" >&6
@@ -16387,6 +16711,67 @@ cat >>confdefs.h <<_ACEOF
 #define NCBI_FORCEINLINE $forceinline
 _ACEOF
 
+
+echo "$as_me:$LINENO: checking whether the C compiler supports __attribute__((destructor))" >&5
+echo $ECHO_N "checking whether the C compiler supports __attribute__((destructor))... $ECHO_C" >&6
+if test "${ncbi_cv_c_attribute_destructor+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+void f(void) __attribute__((destructor)); void f(void) { }
+int
+main ()
+{
+f();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_c_attribute_destructor=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_c_attribute_destructor=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_c_attribute_destructor" >&5
+echo "${ECHO_T}$ncbi_cv_c_attribute_destructor" >&6
+if test $ncbi_cv_c_attribute_destructor=yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ATTRIBUTE_DESTRUCTOR 1
+_ACEOF
+
+fi
 
 echo "$as_me:$LINENO: checking whether the C compiler supports C99 restrict" >&5
 echo $ECHO_N "checking whether the C compiler supports C99 restrict... $ECHO_C" >&6
@@ -17137,7 +17522,9 @@ _ACEOF
 
 
 
-for ac_func in freehostent getipnodebyaddr getipnodebyname inet_ntop
+
+for ac_func in freehostent gethostent_r getipnodebyaddr getipnodebyname \
+                  inet_ntop
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -18245,6 +18632,8 @@ if test "$with_z" != "no"; then
        test -d "$Z_PATH/include" && Z_INCLUDE="-I$Z_PATH/include"
        if test -d "$Z_PATH/lib${bit64_sfx}"; then
           Z_LIBPATH="-L$Z_PATH/lib${bit64_sfx} ${CONF_f_runpath}$Z_PATH/lib${bit64_sfx}"
+       elif test -d "$Z_PATH/lib"; then
+          Z_LIBPATH="-L$Z_PATH/lib ${CONF_f_runpath}$Z_PATH/lib"
        fi
        Z_LIBS="$Z_LIBPATH -lz "
     else
@@ -18351,6 +18740,8 @@ if test "$with_bz2" != "no"; then
        test -d "$BZ2_PATH/include" && BZ2_INCLUDE="-I$BZ2_PATH/include"
        if test -d "$BZ2_PATH/lib${bit64_sfx}"; then
           BZ2_LIBPATH="-L$BZ2_PATH/lib${bit64_sfx} ${CONF_f_runpath}$BZ2_PATH/lib${bit64_sfx}"
+       elif test -d "$BZ2_PATH/lib"; then
+          BZ2_LIBPATH="-L$BZ2_PATH/lib ${CONF_f_runpath}$BZ2_PATH/lib"
        fi
        BZ2_LIBS="$BZ2_LIBPATH -lbz2 "
     else
@@ -18466,6 +18857,8 @@ if test "$with_pcre" != "no"; then
        test -d "$PCRE_PATH/include" && PCRE_INCLUDE="-I$PCRE_PATH/include"
        if test -d "$PCRE_PATH/lib${bit64_sfx}"; then
           PCRE_LIBPATH="-L$PCRE_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PCRE_PATH/lib${bit64_sfx}"
+       elif test -d "$PCRE_PATH/lib"; then
+          PCRE_LIBPATH="-L$PCRE_PATH/lib ${CONF_f_runpath}$PCRE_PATH/lib"
        fi
        PCRE_LIBS="$PCRE_LIBPATH -lpcre "
     else
@@ -18567,6 +18960,211 @@ _ACEOF
    	  WithPackages="$WithPackages${WithPackagesSep}LocalPCRE"; WithPackagesSep=" "
 else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
+fi
+
+## SSL/TLS libraries
+if test -z "$GNUTLS_PATH"  &&  libgnutls-config --version >/dev/null 2>&1; then
+    p=`libgnutls-config --prefix`
+    test "x$p" = "x/usr"  ||  LIBGNUTLS_PATH=$p
+fi
+if test "$with_gnutls" != "no"; then
+    case "$with_gnutls" in
+       yes | "" ) ;;
+       *        ) GNUTLS_PATH=$with_gnutls ;;
+    esac
+    if test -d "$GNUTLS_PATH"; then
+       in_path=" in $GNUTLS_PATH"
+       test -d "$GNUTLS_PATH/include" && GNUTLS_INCLUDE="-I$GNUTLS_PATH/include"
+       if test -d "$GNUTLS_PATH/lib${bit64_sfx}"; then
+          GNUTLS_LIBPATH="-L$GNUTLS_PATH/lib${bit64_sfx} ${CONF_f_runpath}$GNUTLS_PATH/lib${bit64_sfx}"
+       elif test -d "$GNUTLS_PATH/lib"; then
+          GNUTLS_LIBPATH="-L$GNUTLS_PATH/lib ${CONF_f_runpath}$GNUTLS_PATH/lib"
+       fi
+       GNUTLS_LIBS="$GNUTLS_LIBPATH -lgnutls "
+    else
+       GNUTLS_INCLUDE=""
+       GNUTLS_LIBS="-lgnutls "
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libgnutls$in_path" >&5
+echo $ECHO_N "checking for libgnutls$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_gnutls+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $GNUTLS_INCLUDE $orig_CPPFLAGS"
+       LIBS="$GNUTLS_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <gnutls/gnutls.h>
+int
+main ()
+{
+gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_gnutls=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_gnutls=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_gnutls" >&5
+echo "${ECHO_T}$ncbi_cv_lib_gnutls" >&6
+    if test "$ncbi_cv_lib_gnutls" = "no"; then
+       with_gnutls="no"
+    fi
+ fi
+ if test "$with_gnutls" = "no"; then
+    GNUTLS_PATH="No_GNUTLS"
+    GNUTLS_INCLUDE=
+    GNUTLS_LIBS=
+ else
+    	  WithPackages="$WithPackages${WithPackagesSep}GNUTLS"; WithPackagesSep=" "
+    GNUTLS_INCLUDE=" $GNUTLS_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGNUTLS 1
+_ACEOF
+
+ fi
+
+
+
+
+if test "$with_openssl" != "no"; then
+    case "$with_openssl" in
+       yes | "" ) ;;
+       *        ) OPENSSL_PATH=$with_openssl ;;
+    esac
+    if test -d "$OPENSSL_PATH"; then
+       in_path=" in $OPENSSL_PATH"
+       test -d "$OPENSSL_PATH/include" && OPENSSL_INCLUDE="-I$OPENSSL_PATH/include"
+       if test -d "$OPENSSL_PATH/lib${bit64_sfx}"; then
+          OPENSSL_LIBPATH="-L$OPENSSL_PATH/lib${bit64_sfx} ${CONF_f_runpath}$OPENSSL_PATH/lib${bit64_sfx}"
+       elif test -d "$OPENSSL_PATH/lib"; then
+          OPENSSL_LIBPATH="-L$OPENSSL_PATH/lib ${CONF_f_runpath}$OPENSSL_PATH/lib"
+       fi
+       OPENSSL_LIBS="$OPENSSL_LIBPATH -lssl -lcrypt"
+    else
+       OPENSSL_INCLUDE=""
+       OPENSSL_LIBS="-lssl -lcrypt"
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libssl$in_path" >&5
+echo $ECHO_N "checking for libssl$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_openssl+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $OPENSSL_INCLUDE $orig_CPPFLAGS"
+       LIBS="$OPENSSL_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <openssl/ssl.h>
+int
+main ()
+{
+SSL_library_init();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_openssl=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_openssl=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_openssl" >&5
+echo "${ECHO_T}$ncbi_cv_lib_openssl" >&6
+    if test "$ncbi_cv_lib_openssl" = "no"; then
+       with_openssl="no"
+    fi
+ fi
+ if test "$with_openssl" = "no"; then
+    OPENSSL_PATH="No_OPENSSL"
+    OPENSSL_INCLUDE=
+    OPENSSL_LIBS=
+ else
+    	  WithPackages="$WithPackages${WithPackagesSep}OPENSSL"; WithPackagesSep=" "
+    OPENSSL_INCLUDE=" $OPENSSL_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBOPENSSL 1
+_ACEOF
+
+ fi
+
+
+
+
+if test -n "$GNUTLS_LIBS"; then
+   TLS_INCLUDE=$GNUTLS_INCLUDE
+   TLS_LIBS=$GNUTLS_LIBS
+else
+   TLS_INCLUDE=$OPENSSL_INCLUDE
+   TLS_LIBS=$OPENSSL_LIBS
 fi
 
 ## SYBASE libraries
@@ -23149,6 +23747,8 @@ if test "$with_expat" != "no"; then
        test -d "$EXPAT_PATH/include" && EXPAT_INCLUDE="-I$EXPAT_PATH/include"
        if test -d "$EXPAT_PATH/lib${bit64_sfx}"; then
           EXPAT_LIBPATH="-L$EXPAT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$EXPAT_PATH/lib${bit64_sfx}"
+       elif test -d "$EXPAT_PATH/lib"; then
+          EXPAT_LIBPATH="-L$EXPAT_PATH/lib ${CONF_f_runpath}$EXPAT_PATH/lib"
        fi
        EXPAT_LIBS="$EXPAT_LIBPATH -lexpat "
     else
@@ -23250,6 +23850,8 @@ if test "$with_sablot" != "no"; then
        test -d "$SABLOT_PATH/include" && SABLOT_INCLUDE="-I$SABLOT_PATH/include"
        if test -d "$SABLOT_PATH/lib${bit64_sfx}"; then
           SABLOT_LIBPATH="-L$SABLOT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SABLOT_PATH/lib${bit64_sfx}"
+       elif test -d "$SABLOT_PATH/lib"; then
+          SABLOT_LIBPATH="-L$SABLOT_PATH/lib ${CONF_f_runpath}$SABLOT_PATH/lib"
        fi
        SABLOT_LIBS="$SABLOT_LIBPATH -lsablot $EXPAT_LIBS"
     else
@@ -23464,6 +24066,8 @@ if test "$with_libxslt" != "no"; then
        test -d "$LIBXSLT_PATH/include" && LIBXSLT_INCLUDE="-I$LIBXSLT_PATH/include"
        if test -d "$LIBXSLT_PATH/lib${bit64_sfx}"; then
           LIBXSLT_LIBPATH="-L$LIBXSLT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$LIBXSLT_PATH/lib${bit64_sfx}"
+       elif test -d "$LIBXSLT_PATH/lib"; then
+          LIBXSLT_LIBPATH="-L$LIBXSLT_PATH/lib ${CONF_f_runpath}$LIBXSLT_PATH/lib"
        fi
        LIBXSLT_LIBS="$LIBXSLT_LIBPATH -lxslt "
     else
@@ -23792,6 +24396,8 @@ if test "$with_sqlite" != "no"; then
        test -d "$SQLITE_PATH/include" && SQLITE_INCLUDE="-I$SQLITE_PATH/include"
        if test -d "$SQLITE_PATH/lib${bit64_sfx}"; then
           SQLITE_LIBPATH="-L$SQLITE_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SQLITE_PATH/lib${bit64_sfx}"
+       elif test -d "$SQLITE_PATH/lib"; then
+          SQLITE_LIBPATH="-L$SQLITE_PATH/lib ${CONF_f_runpath}$SQLITE_PATH/lib"
        fi
        SQLITE_LIBS="$SQLITE_LIBPATH -lsqlite "
     else
@@ -23890,6 +24496,8 @@ if test "$with_sqlite3" != "no"; then
        test -d "$SQLITE3_PATH/include" && SQLITE3_INCLUDE="-I$SQLITE3_PATH/include"
        if test -d "$SQLITE3_PATH/lib${bit64_sfx}"; then
           SQLITE3_LIBPATH="-L$SQLITE3_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SQLITE3_PATH/lib${bit64_sfx}"
+       elif test -d "$SQLITE3_PATH/lib"; then
+          SQLITE3_LIBPATH="-L$SQLITE3_PATH/lib ${CONF_f_runpath}$SQLITE3_PATH/lib"
        fi
        SQLITE3_LIBS="$SQLITE3_LIBPATH -lsqlite3 "
     else
@@ -23989,6 +24597,8 @@ if test "$with_oechem" != "no"; then
        test -d "$OECHEM_PATH/include" && OECHEM_INCLUDE="-I$OECHEM_PATH/include"
        if test -d "$OECHEM_PATH/lib${bit64_sfx}"; then
           OECHEM_LIBPATH="-L$OECHEM_PATH/lib${bit64_sfx} ${CONF_f_runpath}$OECHEM_PATH/lib${bit64_sfx}"
+       elif test -d "$OECHEM_PATH/lib"; then
+          OECHEM_LIBPATH="-L$OECHEM_PATH/lib ${CONF_f_runpath}$OECHEM_PATH/lib"
        fi
        OECHEM_LIBS="$OECHEM_LIBPATH -loechem -loeiupac -loedepict -loechem -loesystem -loeplatform -lz"
     else
@@ -24091,6 +24701,8 @@ if test "$with_jpeg" != "no"; then
        test -d "$JPEG_PATH/include" && JPEG_INCLUDE="-I$JPEG_PATH/include"
        if test -d "$JPEG_PATH/lib${bit64_sfx}"; then
           JPEG_LIBPATH="-L$JPEG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$JPEG_PATH/lib${bit64_sfx}"
+       elif test -d "$JPEG_PATH/lib"; then
+          JPEG_LIBPATH="-L$JPEG_PATH/lib ${CONF_f_runpath}$JPEG_PATH/lib"
        fi
        JPEG_LIBS="$JPEG_LIBPATH -ljpeg "
     else
@@ -24193,6 +24805,8 @@ if test "$with_png" != "no"; then
        test -d "$PNG_PATH/include" && PNG_INCLUDE="-I$PNG_PATH/include"
        if test -d "$PNG_PATH/lib${bit64_sfx}"; then
           PNG_LIBPATH="-L$PNG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PNG_PATH/lib${bit64_sfx}"
+       elif test -d "$PNG_PATH/lib"; then
+          PNG_LIBPATH="-L$PNG_PATH/lib ${CONF_f_runpath}$PNG_PATH/lib"
        fi
        PNG_LIBS="$PNG_LIBPATH -lpng $Z_LIBS"
     else
@@ -24290,6 +24904,8 @@ if test "$with_tiff" != "no"; then
        test -d "$TIFF_PATH/include" && TIFF_INCLUDE="-I$TIFF_PATH/include"
        if test -d "$TIFF_PATH/lib${bit64_sfx}"; then
           TIFF_LIBPATH="-L$TIFF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$TIFF_PATH/lib${bit64_sfx}"
+       elif test -d "$TIFF_PATH/lib"; then
+          TIFF_LIBPATH="-L$TIFF_PATH/lib ${CONF_f_runpath}$TIFF_PATH/lib"
        fi
        TIFF_LIBS="$TIFF_LIBPATH -ltiff $Z_LIBS"
     else
@@ -24387,6 +25003,8 @@ if test "$with_ungif" != "no"; then
        test -d "$UNGIF_PATH/include" && UNGIF_INCLUDE="-I$UNGIF_PATH/include"
        if test -d "$UNGIF_PATH/lib${bit64_sfx}"; then
           UNGIF_LIBPATH="-L$UNGIF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$UNGIF_PATH/lib${bit64_sfx}"
+       elif test -d "$UNGIF_PATH/lib"; then
+          UNGIF_LIBPATH="-L$UNGIF_PATH/lib ${CONF_f_runpath}$UNGIF_PATH/lib"
        fi
        UNGIF_LIBS="$UNGIF_LIBPATH -lungif $X_LIBS -lX11"
     else
@@ -24483,6 +25101,8 @@ if test "$with_ungif" = "no"; then
        test -d "$GIF_PATH/include" && GIF_INCLUDE="-I$GIF_PATH/include"
        if test -d "$GIF_PATH/lib${bit64_sfx}"; then
           GIF_LIBPATH="-L$GIF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$GIF_PATH/lib${bit64_sfx}"
+       elif test -d "$GIF_PATH/lib"; then
+          GIF_LIBPATH="-L$GIF_PATH/lib ${CONF_f_runpath}$GIF_PATH/lib"
        fi
        GIF_LIBS="$GIF_LIBPATH -lgif $X_LIBS -lX11"
     else
@@ -24589,6 +25209,8 @@ if test "$with_xpm" != "no"; then
        test -d "$XPM_PATH/include" && XPM_INCLUDE="-I$XPM_PATH/include"
        if test -d "$XPM_PATH/lib${bit64_sfx}"; then
           XPM_LIBPATH="-L$XPM_PATH/lib${bit64_sfx} ${CONF_f_runpath}$XPM_PATH/lib${bit64_sfx}"
+       elif test -d "$XPM_PATH/lib"; then
+          XPM_LIBPATH="-L$XPM_PATH/lib ${CONF_f_runpath}$XPM_PATH/lib"
        fi
        XPM_LIBS="$XPM_LIBPATH -lXpm $X_LIBS -lX11"
     else
@@ -25343,7 +25965,7 @@ for x in MT DLL MSWin unix AIX BSD Cygwin CygwinMT Darwin IRIX Linux OSF Solaris
           ;;
       esac
    done
-  for x in Z LocalZ BZ2 LocalBZ2 PCRE LocalPCRE Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON CPPUNIT Boost.Test C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets Fast-CGI SSSUTILS SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 OECHEM JPEG PNG TIFF UNGIF GIF XPM FreeType; do
+  for x in Z LocalZ BZ2 LocalBZ2 PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON CPPUNIT Boost.Test C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets Fast-CGI SSSUTILS SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 OECHEM JPEG PNG TIFF UNGIF GIF XPM FreeType; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -25441,6 +26063,8 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 #AC_SUBST(real_srcdir)
+
+
 
 
 
@@ -26378,6 +27002,10 @@ s,@BZ2_INCLUDE@,$BZ2_INCLUDE,;t t
 s,@BZ2_LIBS@,$BZ2_LIBS,;t t
 s,@PCRE_INCLUDE@,$PCRE_INCLUDE,;t t
 s,@PCRE_LIBS@,$PCRE_LIBS,;t t
+s,@GNUTLS_INCLUDE@,$GNUTLS_INCLUDE,;t t
+s,@GNUTLS_LIBS@,$GNUTLS_LIBS,;t t
+s,@OPENSSL_INCLUDE@,$OPENSSL_INCLUDE,;t t
+s,@OPENSSL_LIBS@,$OPENSSL_LIBS,;t t
 s,@FTDS8_INCLUDE@,$FTDS8_INCLUDE,;t t
 s,@FTDS8_LIBS@,$FTDS8_LIBS,;t t
 s,@FTDS8_LIB@,$FTDS8_LIB,;t t
@@ -26500,6 +27128,8 @@ s,@Z_LIB@,$Z_LIB,;t t
 s,@BZ2_LIB@,$BZ2_LIB,;t t
 s,@PCREPOSIX_LIBS@,$PCREPOSIX_LIBS,;t t
 s,@PCRE_LIB@,$PCRE_LIB,;t t
+s,@TLS_INCLUDE@,$TLS_INCLUDE,;t t
+s,@TLS_LIBS@,$TLS_LIBS,;t t
 s,@SYBASE_PATH@,$SYBASE_PATH,;t t
 s,@SYBASE_INCLUDE@,$SYBASE_INCLUDE,;t t
 s,@SYBASE_LIBS@,$SYBASE_LIBS,;t t
