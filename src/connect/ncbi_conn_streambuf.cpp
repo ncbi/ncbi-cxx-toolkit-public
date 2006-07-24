@@ -222,20 +222,17 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         return 0;
     size_t n = (size_t) m;
 
-    size_t n_read;
-    // read from the memory buffer
-    if (gptr()  &&  gptr() < egptr()) {
-        n_read = egptr() - gptr();
-        if (n_read > n)
-            n_read = n;
-        memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
-        gbump(int(n_read));
-        buf += n_read;
-        n   -= n_read;
-    } else
-        n_read = 0;
+    // first, read from the memory buffer
+    size_t n_read = gptr() ? egptr() - gptr() : 0;
+    if (n_read > n)
+        n_read = n;
+    memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
+    gbump(int(n_read));
+    buf += n_read;
+    n   -= n_read;
 
     while ( n ) {
+        // next, read from the connection
         size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         EIO_Status   status = CONN_Read(m_Conn, x_buf,
@@ -335,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.62  2006/07/24 21:11:11  lavr
+ * Simplify CConn_Streambuf::xsgetn()
+ *
  * Revision 6.61  2006/07/24 20:54:26  lavr
  * BUGFIX: CConn_Streambuf::overflow() to correctly advance in written data
  *
