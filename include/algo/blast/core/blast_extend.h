@@ -71,8 +71,8 @@ typedef struct BlastInitHitList {
 
 /** Structure for keeping last hit information for a diagonal */
 typedef struct DiagStruct {
-   Int4 last_hit; /**< Offset of the last hit */
-   Int4 diag_level; /**< To what length has this hit been extended so far? */
+   Uint4 reset     : 1 ; /**< Reset the next extension? */
+   Int4 last_hit   : 31; /**< Offset of the last hit */
 } DiagStruct;
 
 /** Structure for keeping last hit information for a diagonal on a stack, when 
@@ -97,7 +97,7 @@ typedef struct BLAST_DiagTable {
    Int4 diag_mask; /**< Used to mask off everything above
                           min_diag_length (mask = min_diag_length-1). */
    Int4 offset; /**< "offset" added to query and subject position
-                   so that "diag_level" and "last_hit" don't have
+                   so that "last_hit" doesn't have
                    to be zeroed out every time. */
    Int4 window; /**< The "window" size, within which two (or more)
                    hits must be found in order to be extended. */
