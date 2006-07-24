@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.429 2006/07/24 14:08:33 ucko Exp $
+#  $Id: configure.ac,v 1.430 2006/07/24 14:37:16 ssikorsk Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3103,6 +3103,7 @@ if test "$with_ftds" != "no" ; then
    ftds_def=8
    ftds8=ftds8
    ftds63=ftds63
+   ftds64=ftds64
    try_local=yes
    : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
    case "$with_ftds" in
@@ -3113,6 +3114,9 @@ if test "$with_ftds" != "no" ; then
       63 )
          ftds63=ftds
          ;;
+      64 )
+         ftds64=ftds
+         ;;
       * )
          FTDS_PATH=$with_ftds
          try_local=no
@@ -3121,7 +3125,7 @@ if test "$with_ftds" != "no" ; then
    : ${FTDS_LIBS:="-lsybdb -ltds"}
    FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
    FTDS_INCLUDE="-I$FTDS_PATH/include"
-   m4_foreach(V, [8,63],
+   m4_foreach(V, [8,63,64],
       [d="dbapi/driver/[ftds]V/freetds"
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
          test "$with_ftds" = V  &&  FTDS_PATH="<$d>"
@@ -3177,6 +3181,9 @@ if test "$with_ftds" = "no" ; then
    FTDS63_INCLUDE=
    FTDS63_LIBS=
    FTDS63_LIB=
+   FTDS64_INCLUDE=
+   FTDS64_LIBS=
+   FTDS64_LIB=
    freetds=
 else
    AC_DEFINE(HAVE_LIBFTDS, 1,
@@ -3189,12 +3196,16 @@ AC_SUBST(FTDS8_LIB)
 AC_SUBST(FTDS63_INCLUDE)
 AC_SUBST(FTDS63_LIBS)
 AC_SUBST(FTDS63_LIB)
+AC_SUBST(FTDS64_INCLUDE)
+AC_SUBST(FTDS64_LIBS)
+AC_SUBST(FTDS64_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)
 AC_SUBST(freetds)
 AC_SUBST(ftds8)
 AC_SUBST(ftds63)
+AC_SUBST(ftds64)
 
 
 ## MySQL

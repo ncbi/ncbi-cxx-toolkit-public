@@ -286,7 +286,7 @@ SYBASE_LIBS    = @SYBASE_LIBS@
 SYBASE_DLLS    = @SYBASE_DLLS@
 SYBASE_DBLIBS  = @SYBASE_DBLIBS@
 
-# FreeTDS -- version 0.60 (named after protocol v8), v0.63, default
+# FreeTDS -- version 0.60 (named after protocol v8), v0.63, v0.64, default
 ftds8         = @ftds8@
 FTDS8_LIBS    = @FTDS8_LIBS@
 FTDS8_LIB     = @FTDS8_LIB@
@@ -296,6 +296,11 @@ ftds63         = @ftds63@
 FTDS63_LIBS    = @FTDS63_LIBS@
 FTDS63_LIB     = @FTDS63_LIB@
 FTDS63_INCLUDE = @FTDS63_INCLUDE@
+
+ftds64         = @ftds64@
+FTDS64_LIBS    = @FTDS64_LIBS@
+FTDS64_LIB     = @FTDS64_LIB@
+FTDS64_INCLUDE = @FTDS64_INCLUDE@
 
 FTDS_LIBS    = @FTDS_LIBS@
 FTDS_LIB     = @FTDS_LIB@
