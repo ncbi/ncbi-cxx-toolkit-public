@@ -245,7 +245,7 @@ int CSearch::CreateLadders(const char *Sequence,
     // new way
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter);
-    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+    while(Iter != SetLadderContainer().SetLadderMap().end()) {
         if (!(*(Iter->second))[iMod]->
             CreateLadder(CMSMatchedPeakSetMap::Key2Charge(Iter->first),
                          CMSMatchedPeakSetMap::Key2Series(Iter->first),
@@ -341,7 +341,7 @@ int CSearch::CompareLadders(int iMod,
         ChargeLimit = 1;
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
-    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+    while(Iter != SetLadderContainer().SetLadderMap().end()) {
         Peaks->CompareSorted(*((*(Iter->second))[iMod]), Which, 0);
         SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
     }
@@ -389,7 +389,7 @@ void CSearch::CompareLaddersRank(int iMod,
     }
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
-    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+    while(Iter != SetLadderContainer().SetLadderMap().end()) {
         Peaks->CompareSortedRank(*((*(Iter->second))[iMod]), Which, 0, Sum, M);
         SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
     }
@@ -424,7 +424,7 @@ bool CSearch::CompareLaddersTop(int iMod,
 
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
-    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+    while(Iter != SetLadderContainer().SetLadderMap().end()) {
         if(Peaks->CompareTop(*((*(Iter->second))[iMod]))) return true;
         SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
     }
@@ -1093,7 +1093,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                 // new way
                                 TLadderMap::iterator Iter;
                                 SetLadderContainer().Begin(Iter);
-                                while(Iter != SetLadderContainer().GetLadderMap().end()) {
+                                while(Iter != SetLadderContainer().SetLadderMap().end()) {
                                     (*(Iter->second))[iMod]->ClearHits();
                                     SetLadderContainer().Next(Iter);
                                 }
@@ -1128,7 +1128,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                     hits = 0;
                                     TLadderMap::iterator Iter;
                                     SetLadderContainer().Begin(Iter);
-                                    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+                                    while(Iter != SetLadderContainer().SetLadderMap().end()) {
                                         hits += (*(Iter->second))[iMod]->HitCount();
                                         SetLadderContainer().Next(Iter);
                                     }
