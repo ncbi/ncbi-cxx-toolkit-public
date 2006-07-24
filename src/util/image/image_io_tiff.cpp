@@ -119,7 +119,6 @@ static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
 {
     CNcbiIstream* istr = reinterpret_cast<CNcbiIstream*>(handle);
     if (istr  &&  *istr) {
-        size_t pos0 = istr->tellg();
         switch (whence) {
         case SEEK_SET:
             istr->seekg(offset, ios::beg);
@@ -133,8 +132,6 @@ static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
             istr->seekg(offset, ios::end);
             break;
         }
-
-        size_t pos1 = istr->tellg();
         return istr->tellg() - CT_POS_TYPE(0);
     }
     return (toff_t)-1;
@@ -531,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/07/24 13:34:15  dicuccio
+ * Remove unused variables
+ *
  * Revision 1.11  2006/06/23 16:18:45  dicuccio
  * Added ability to inspect image's information (size, width, height, depth)
  *
