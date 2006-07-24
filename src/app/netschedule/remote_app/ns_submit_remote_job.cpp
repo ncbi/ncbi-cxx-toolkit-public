@@ -176,7 +176,7 @@ int CNSSubmitRemoveJobApp::Run(void)
     if ( args["ns"]) {
         service = args["ns"].AsString();
         if (NStr::SplitInTwo(service, ":", host, sport)) {
-            unsigned int port = NStr::StringToUInt(sport);
+            /*unsigned int port =*/ NStr::StringToUInt(sport);
             reg.Set(kNetScheduleDriverName, "host", host);
             reg.Set(kNetScheduleDriverName, "port", sport);
             m_UsePermanentConnection = true;
@@ -192,7 +192,7 @@ int CNSSubmitRemoveJobApp::Run(void)
     if ( args["nc"]) {
         service = args["nc"].AsString();
         if (NStr::SplitInTwo(service, ":", host, sport)) {
-            unsigned int port = NStr::StringToUInt(sport);
+            /*unsigned int port =*/ NStr::StringToUInt(sport);
             reg.Set(kNetCacheDriverName, "host", host);
             reg.Set(kNetCacheDriverName, "port", sport);
         } else {
@@ -333,6 +333,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/07/24 16:39:37  didenko
+ * Got rid of compiler warnings
+ *
  * Revision 1.9  2006/07/13 14:37:23  didenko
  * Made it compile with the new job's maks implemetaion
  *
