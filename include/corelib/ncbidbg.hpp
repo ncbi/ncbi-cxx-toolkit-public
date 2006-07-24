@@ -82,7 +82,7 @@ BEGIN_NCBI_SCOPE
 #  define _TRACE(message)           ((void)0)
 #  define NCBI_TROUBLE(mess)
 #  define NCBI_ASSERT(expr, mess)   ((void)0)
-#  define NCBI_VERIFY(expr, mess)   ((void)(expr))
+#  define NCBI_VERIFY(expr, mess)   while ( expr ) break
 #  define _DEBUG_ARG(arg)
 #  define _DEBUG_CODE(code)         ((void)0)
 
@@ -120,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.37  2006/07/24 13:37:40  grichenk
+ * Fixed warning in NCBI_VERIFY
+ *
  * Revision 1.36  2006/05/23 16:03:54  grichenk
  * Added NCBI_TROUBLE, NCBI_ASSERT, NCBI_VERIFY and _DEBUG_CODE
  *
