@@ -72,7 +72,7 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
 void TrimSpaces(string& str, int indent = 0);
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);
-
+void MakeLegalFlatFileString( string& str );
 
 enum EAccValFlag
 {
@@ -141,6 +141,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/07/24 14:34:41  ludwigf
+* CHANGED: In flat file string values, embedded double quotes are now turned
+*   into single quotes.
+*
 * Revision 1.18  2005/11/23 16:20:56  ludwigf
 * FIXED: Function "TrimSpacesAndJunkFromEnds()" would not respect parameter
 * "allow_ellipsis".

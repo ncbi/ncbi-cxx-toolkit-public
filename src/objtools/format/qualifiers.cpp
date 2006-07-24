@@ -257,6 +257,7 @@ CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style)
     :  IFlatQVal(&kSpace, &kSemicolon),
        m_Value(value), m_Style(style), m_AddPeriod(0)
 {
+	MakeLegalFlatFileString( m_Value );
     NStr::TruncateSpacesInPlace(m_Value);
 }
 
@@ -270,6 +271,7 @@ CFlatStringQVal::CFlatStringQVal
         m_Value(value),
         m_Style(style), m_AddPeriod(0)
 {
+	MakeLegalFlatFileString( m_Value );
     NStr::TruncateSpacesInPlace(m_Value);
 }
 
@@ -994,6 +996,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2006/07/24 14:34:41  ludwigf
+* CHANGED: In flat file string values, embedded double quotes are now turned
+*   into single quotes.
+*
 * Revision 1.35  2006/06/06 20:39:59  ucko
 * CFlatXrefQVal::Format: canonicalize the database name "cdd" to "CDD".
 *

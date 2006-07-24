@@ -912,6 +912,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
     if (m_Feat->IsSetComment()) {
         string comment = m_Feat->GetComment();
         TrimSpacesAndJunkFromEnds(comment, true);
+		MakeLegalFlatFileString( comment );
         add_period = RemovePeriodFromEnd(comment, true);
 
         if (precursor_comment != comment) {
@@ -3818,6 +3819,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2006/07/24 14:34:41  ludwigf
+* CHANGED: In flat file string values, embedded double quotes are now turned
+*   into single quotes.
+*
 * Revision 1.76  2006/06/05 13:10:41  ludwigf
 * CHANGED: Removed warning generating unused local variable.
 *
