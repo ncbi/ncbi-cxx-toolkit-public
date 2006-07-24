@@ -147,12 +147,10 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
                 return CT_EOF;
             n_written /= sizeof(CT_CHAR_TYPE);
             // update buffer content (get rid of data just sent)
-            if (n_written != n_write) {
-                memmove(pbase(), pbase() + n_written,
-                        (n_write - n_written)*sizeof(CT_CHAR_TYPE));
-            }
+            memmove(pbase(), pbase() + n_written,
+                    (n_write - n_written)*sizeof(CT_CHAR_TYPE));
+            pbump(-int(n_written));
             x_PPos += (CT_OFF_TYPE) n_written;
-            setp(pbase() + n_write - n_written, epptr());
         }
 
         // store char
@@ -231,7 +229,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         if (n_read > n)
             n_read = n;
         memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
-        gbump((int) n_read);
+        gbump(int(n_read));
         buf += n_read;
         n   -= n_read;
     } else
@@ -337,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.61  2006/07/24 20:54:26  lavr
+ * BUGFIX: CConn_Streambuf::overflow() to correctly advance in written data
+ *
  * Revision 6.60  2006/05/01 19:26:04  lavr
  * Consistently use pbase() instead of m_WriteBuf where appropriate
  *
