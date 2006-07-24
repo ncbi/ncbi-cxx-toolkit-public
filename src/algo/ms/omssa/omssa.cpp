@@ -214,7 +214,7 @@ int CSearch::InitBlast(const char *blastdb)
         rdfp.Reset(new CSeqDB(blastdb, CSeqDB::eProtein));
         numseq = rdfp->GetNumOIDs();
     }
-    catch (const exception &e) {
+    catch (const std::exception &e) {
         ERR_POST(Critical << "Unable to open blast library " << blastdb << " with error:" <<
                  e.what());
         return 1;
@@ -261,6 +261,7 @@ int CSearch::CreateLadders(const char *Sequence,
                          NumMod,
                          *GetSettings()
                          )) return 1;
+        SetLadderContainer().Next(Iter);
     }
 
     // end new way
@@ -334,6 +335,19 @@ int CSearch::CompareLadders(int iMod,
 {
     EMSPeakListTypes Which = Peaks->GetWhich(MassPeak->Charge);
 
+    // new way
+    int ChargeLimit(0);
+    if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) 
+        ChargeLimit = 1;
+    TLadderMap::iterator Iter;
+    SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
+    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+        Peaks->CompareSorted(*((*(Iter->second))[iMod]), Which, 0);
+        SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
+    }
+    return 0;
+    // end new way
+
     if (MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
         Peaks->CompareSorted(*(BLadder[iMod]), Which, 0); 
         Peaks->CompareSorted(*(YLadder[iMod]), Which, 0); 
@@ -364,6 +378,24 @@ void CSearch::CompareLaddersRank(int iMod,
 {
     EMSPeakListTypes Which = Peaks->GetWhich(MassPeak->Charge);
 
+    // new way
+    int ChargeLimit(0);
+    if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) { 
+        ChargeLimit = 1;
+        N = (Peaks->GetPeakLists())[eMSPeakListCharge1]->GetNum();
+    }
+    else {
+        N = (Peaks->GetPeakLists())[eMSPeakListCharge3]->GetNum();
+    }
+    TLadderMap::iterator Iter;
+    SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
+    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+        Peaks->CompareSortedRank(*((*(Iter->second))[iMod]), Which, 0, Sum, M);
+        SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
+    }
+    return;
+    // end new way
+
     if (MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
         Peaks->CompareSortedRank(*(BLadder[iMod]), Which, 0, Sum, M);
         Peaks->CompareSortedRank(*(YLadder[iMod]), Which, 0, Sum, M);
@@ -384,6 +416,21 @@ bool CSearch::CompareLaddersTop(int iMod,
                                 CMSPeak *Peaks,
                                 const TMassPeak *MassPeak)
 {
+    // new way
+    int ChargeLimit(0);
+    if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) { 
+        ChargeLimit = 1;
+    }
+
+    TLadderMap::iterator Iter;
+    SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
+    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+        if(Peaks->CompareTop(*((*(Iter->second))[iMod]))) return true;
+        SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
+    }
+    return false;
+    // end new way
+
     if (MassPeak && MassPeak->Charge >=  Peaks->GetConsiderMult() ) {
         if (Peaks->CompareTop(*(BLadder[iMod]))) return true;
         if (Peaks->CompareTop(*(YLadder[iMod]))) return true;
@@ -760,7 +807,7 @@ void CSearch::InitLadders(int ForwardIon, int BackwardIon)
 
 
     // new way
-
+    SetLadderContainer().SetSeriesChargePairList().clear();
     SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)ForwardIon));
     SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)ForwardIon));
     SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)BackwardIon));
@@ -1043,6 +1090,14 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                 // continue to next sequence if ladders not successfully made
                             }
                             else {
+                                // new way
+                                TLadderMap::iterator Iter;
+                                SetLadderContainer().Begin(Iter);
+                                while(Iter != SetLadderContainer().GetLadderMap().end()) {
+                                    (*(Iter->second))[iMod]->ClearHits();
+                                    SetLadderContainer().Next(Iter);
+                                }
+                                // end new way
                                 BLadder[iMod]->ClearHits();
                                 YLadder[iMod]->ClearHits();
                                 B2Ladder[iMod]->ClearHits();
@@ -1068,6 +1123,17 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                        YLadder[iMod]->HitCount() +
                                        B2Ladder[iMod]->HitCount() +
                                        Y2Ladder[iMod]->HitCount();
+                                // new way
+                                {
+                                    hits = 0;
+                                    TLadderMap::iterator Iter;
+                                    SetLadderContainer().Begin(Iter);
+                                    while(Iter != SetLadderContainer().GetLadderMap().end()) {
+                                        hits += (*(Iter->second))[iMod]->HitCount();
+                                        SetLadderContainer().Next(Iter);
+                                    }
+                                }
+                                // end new way
                                 if (hits >= GetSettings()->GetMinhit()) {
                                     // need to save mods.  bool map?
                                     NewHit.SetHits() = hits;   
