@@ -162,9 +162,9 @@ AC_DEFUN(NCBI_CHECK_LIBS,
 # 5. (7.) Extra include paths that should go into $2_INCLUDE.
 
 AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB,
-[NCBI_CHECK_THIRD_PARTY_LIB_(m4_tolower($1), m4_toupper($1), $@)])
+[NCBI_CHECK_THIRD_PARTY_LIB_EX(m4_tolower($1), m4_toupper($1), $@)])
 
-AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_,
+AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
 [if test "$with_$1" != "no"; then
     case "$with_$1" in
        yes | "" ) ;;
@@ -175,6 +175,8 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_,
        test -d "[$]$2_PATH/include" && $2_INCLUDE="-I[$]$2_PATH/include"
        if test -d "[$]$2_PATH/lib${bit64_sfx}"; then
           $2_LIBPATH="-L[$]$2_PATH/lib${bit64_sfx} ${CONF_f_runpath}[$]$2_PATH/lib${bit64_sfx}"
+       elif test -d "[$]$2_PATH/lib"; then
+          $2_LIBPATH="-L[$]$2_PATH/lib ${CONF_f_runpath}[$]$2_PATH/lib"
        fi
        $2_LIBS="[$]$2_LIBPATH -l$3 $5"
     else
