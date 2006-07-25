@@ -695,7 +695,9 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     k = makefile.m_Contents.find("DATATOOL_SRC");
     if ( k != makefile.m_Contents.end() ) {
         //Add depends from datatoool for ASN projects
-        project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId()));
+        if (!GetApp().GetDatatoolId().empty()) {
+            project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId()));
+        }
         const list<string> datatool_src_list = k->second;
         ITERATE(list<string>, i, datatool_src_list) {
 
@@ -925,8 +927,10 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
     CProjItem& project = p->second;
 
     //Add depends from datatoool for ASN projects
-    project.m_Depends.push_back(CProjKey(CProjKey::eApp,
-                                         GetApp().GetDatatoolId()));
+    if (!GetApp().GetDatatoolId().empty()) {
+        project.m_Depends.push_back(CProjKey(CProjKey::eApp,
+                                            GetApp().GetDatatoolId()));
+    }
 
     //Will process .asn or .dtd files
     string source_file_path = CDirEntry::ConcatPath(source_base_dir, proj_name);
@@ -1064,8 +1068,10 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     project.m_DatatoolSources = datatool_sources;
 
     //Add depends from datatoool for ASN projects
-    project.m_Depends.push_back(CProjKey(CProjKey::eApp, 
-                                         GetApp().GetDatatoolId()));
+    if (!GetApp().GetDatatoolId().empty()) {
+        project.m_Depends.push_back(CProjKey(CProjKey::eApp, 
+                                            GetApp().GetDatatoolId()));
+    }
 
     return proj_id;
 }
@@ -1651,6 +1657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/07/25 18:37:27  gouriano
+ * Made dependency on datatool for ASN projects optional
+ *
  * Revision 1.39  2006/07/17 15:39:27  gouriano
  * Changed SCHEMA_PROJ to XSD_PROJ
  *

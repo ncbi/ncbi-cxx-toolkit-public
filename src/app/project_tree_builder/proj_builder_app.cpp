@@ -1030,7 +1030,8 @@ CDllSrcFilesDistr& CProjBulderApp::GetDllFilesDistr(void)
 
 string CProjBulderApp::GetDatatoolId(void) const
 {
-    return GetConfig().GetString("Datatool", "datatool", "datatool");
+    return GetConfig().GetString("Datatool", "datatool",
+        CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone ? "datatool" : "");
 }
 
 
@@ -1164,6 +1165,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2006/07/25 18:37:27  gouriano
+ * Made dependency on datatool for ASN projects optional
+ *
  * Revision 1.80  2006/07/20 17:58:58  gouriano
  * Corrected format of generated UNIX makefile
  *
