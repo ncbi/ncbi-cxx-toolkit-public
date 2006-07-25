@@ -1278,6 +1278,81 @@ void CCleanup_imp::x_RemovePseudoProducts (CSeq_annot_Handle sa)
 }
 
 
+void CCleanup_imp::x_RemoveGeneXref(CRef<CSeq_feat> feat) 
+{
+    if (!feat->IsSetXref()) {
+        return;
+    }
+    CSeq_feat::TXref& xref_list = feat->SetXref();
+
+    NON_CONST_ITERATE ( CSeq_feat::TXref, it, xref_list) {
+        const CSeqFeatXref& xref = **it;
+        if ( xref.IsSetData() && xref.GetData().Which() == CSeqFeatData::e_Gene) {
+            it = xref_list.erase(it);
+            break;
+        }
+    }
+    if (xref_list.empty()) {
+        feat->ResetXref();
+    }
+}
+
+
+void CCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa)
+{
+    if (sa.IsFtable()) {
+        objects::SAnnotSelector gene_sel(CSeqFeatData::eSubtype_gene);
+        
+        CFeat_CI feat_ci(sa);
+        while (feat_ci) {
+            if (feat_ci->GetFeatSubtype() != CSeqFeatData::eSubtype_gene) {
+                const CSeq_feat& feat = feat_ci->GetOriginalFeature();
+                const CGene_ref* gene_xref = feat.GetGeneXref();
+                if (gene_xref != NULL && ! gene_xref->IsSuppressed()) {
+                    CConstRef<CSeq_feat> overlap = sequence::GetOverlappingGene(feat.GetLocation(), *m_Scope);
+                    if (!overlap.IsNull()) {
+                        const CGene_ref& overlap_ref = overlap->GetData().GetGene();
+                        CFeat_CI other_genes(*m_Scope, overlap->GetLocation(), gene_sel);
+                        int num_in_place = 0;
+                        while (other_genes && num_in_place < 2) {
+                            if (sequence::Compare(overlap->GetLocation(),
+                                                     other_genes->GetOriginalFeature().GetLocation(), 
+                                                      m_Scope) == sequence::eSame) {
+                                num_in_place++;
+                            }
+                            ++other_genes;
+                        }
+                        if (num_in_place == 1) {
+                            bool redundant = false;
+                            if (overlap_ref.CanGetLocus() && !NStr::IsBlank(overlap_ref.GetLocus())
+                                && gene_xref->CanGetLocus() && !NStr::IsBlank(gene_xref->GetLocus())) {
+                                if (NStr::EqualNocase(overlap_ref.GetLocus(), gene_xref->GetLocus())) {
+                                    redundant = true;
+                                }
+                            } else if(overlap_ref.CanGetSyn() && gene_xref->CanGetSyn()
+                                      && !NStr::IsBlank(overlap_ref.GetSyn().front())
+                                      && !NStr::IsBlank(gene_xref->GetSyn().front())
+                                      && NStr::EqualNocase (overlap_ref.GetSyn().front(),
+                                                            gene_xref->GetSyn().front())) {
+                                redundant = true;
+                            }
+                            if (redundant) {
+                                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat);
+                                CRef<CSeq_feat> new_feat(new CSeq_feat);
+                                new_feat->Assign(feat);
+                                x_RemoveGeneXref(new_feat);
+                                fh.Replace(*new_feat);
+                            }
+                        }
+                    }
+                }
+            }
+            ++feat_ci;
+        } 
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -1286,6 +1361,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2006/07/25 20:07:13  bollin
+ * added step to ExtendedCleanup to remove unnecessary gene xrefs
+ *
  * Revision 1.22  2006/07/25 16:51:23  bollin
  * fixed bug in x_RemovePseudoProducts
  * implemented more efficient method for removing descriptors

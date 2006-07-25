@@ -258,6 +258,8 @@ private:
     
     void x_MoveFeaturesOnPartsSets (CSeq_annot_Handle sa);
     void x_RemovePseudoProducts (CSeq_annot_Handle sa);
+    void x_RemoveGeneXref(CRef<CSeq_feat> feat);
+    void x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa);
 
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
@@ -298,6 +300,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2006/07/25 20:07:13  bollin
+ * added step to ExtendedCleanup to remove unnecessary gene xrefs
+ *
  * Revision 1.35  2006/07/25 16:51:23  bollin
  * fixed bug in x_RemovePseudoProducts
  * implemented more efficient method for removing descriptors

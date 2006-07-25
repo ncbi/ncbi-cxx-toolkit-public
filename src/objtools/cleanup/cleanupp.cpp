@@ -390,22 +390,47 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     RemoveEmptyFeaturesDescriptorsAndAnnots(bss);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemovePseudoProducts);
+    
+    CSeq_entry_EditHandle seh = bss.GetEditHandle().GetParentEntry();
     RenormalizeNucProtSets(bss);
     
-    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
+    if (seh.IsSet()) {
+        bss = seh.GetSet().GetEditHandle();
+        x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
 
-    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
-    x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+        x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
+        x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
 
-    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
-    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
-    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
-    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
-    x_MergeAdjacentAnnots(bss);
+        x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
+        x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
+        x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
+        x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
+        x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
+        x_MergeAdjacentAnnots(bss);
     
-    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
+        x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
+    
+        x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
+    } else {
+        CBioseq_EditHandle bsh = seh.GetSeq().GetEditHandle();
+        x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
+
+        x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
+        x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+
+        x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
+        x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
+        x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
+        x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
+        x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
+        x_MergeAdjacentAnnots(bsh);
+    
+        x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
+    
+        x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
+    }
 }
 
 
@@ -445,6 +470,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_MergeAdjacentAnnots(bsh);
     
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);        
+
+    x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
 }
 
 
@@ -461,6 +488,8 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
     x_MoveDbxrefs(sa);
  
     x_CheckCodingRegionEnds(sa);
+    
+    x_RemoveUnnecessaryGeneXrefs (sa);
 }
 
 
@@ -1436,6 +1465,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2006/07/25 20:07:13  bollin
+ * added step to ExtendedCleanup to remove unnecessary gene xrefs
+ *
  * Revision 1.36  2006/07/25 16:51:23  bollin
  * fixed bug in x_RemovePseudoProducts
  * implemented more efficient method for removing descriptors
