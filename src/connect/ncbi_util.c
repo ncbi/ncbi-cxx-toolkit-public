@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -757,7 +757,7 @@ extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
         }
     }
     /*NOTREACHED*/
-    return 0/*false - dummy for compiler*/;
+    return 0/*false*/; /* NCBI_FAKE_WARNING: WorkShop */
 }
 
 
@@ -770,6 +770,9 @@ extern int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2006/07/25 19:06:57  lavr
+ * Mark fake WorkShop warning using NCBI_FAKE_WARNING -- by ivanov
+ *
  * Revision 6.35  2006/06/15 02:45:13  lavr
  * GetUsername, GetVMPageSize (got CORE prefix), CRC32 moved here
  *
