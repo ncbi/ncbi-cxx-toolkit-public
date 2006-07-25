@@ -1,7 +1,7 @@
 # $Id$
 
 # no bcp, at least for now...
-SRC = connection context cursor lang_cmd result rpc
+SRC = connection context cursor lang_cmd result rpc odbc_utils
 LIB = ncbi_xdbapi_odbc
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(ODBC_INCLUDE)
