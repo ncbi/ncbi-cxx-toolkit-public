@@ -51,7 +51,7 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
                             const BlastQueryInfo * query_info,
                             Blast_Message** error_return)
 {
-    Int2 index = 0;
+    Int4 index = 0;
 
     if (sbp == NULL || scoring_options == NULL) {
         Blast_PerrorWithLocation(error_return, BLASTERR_INVALIDPARAM, -1);
