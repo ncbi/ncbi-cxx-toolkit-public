@@ -1245,7 +1245,8 @@ void CCleanup_imp::x_RemovePseudoProducts (CSeq_annot_Handle sa)
         objects::SAnnotSelector cds_sel(CSeqFeatData::eSubtype_cdregion);
         CFeat_CI feat_ci(sa, cds_sel);
         while (feat_ci) {
-            if (feat_ci->GetPseudo() 
+            if (feat_ci->GetOriginalFeature().CanGetPseudo()
+                && feat_ci->GetPseudo() 
                 && feat_ci->IsSetProduct()) {
                 CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
                 if (!fh.GetSeq_feat().IsNull()) {
@@ -1285,6 +1286,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2006/07/25 16:51:23  bollin
+ * fixed bug in x_RemovePseudoProducts
+ * implemented more efficient method for removing descriptors
+ *
  * Revision 1.21  2006/07/25 14:36:47  bollin
  * added method to ExtendedCleanup to remove products on coding regions marked
  * as pseudo.

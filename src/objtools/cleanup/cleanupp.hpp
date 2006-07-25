@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 
@@ -204,7 +205,7 @@ private:
     bool x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str);
 
     // Extended Cleanup
-    typedef void (CCleanup_imp::*RecurseDescriptor)(CSeq_descr& sdr);
+    typedef void (CCleanup_imp::*RecurseDescriptor)(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
     void x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor pmf);
     void x_RecurseForDescriptors (CBioseq_set_Handle bs, RecurseDescriptor pmf);
     
@@ -217,18 +218,18 @@ private:
     void x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot);
     void x_RecurseForSeqAnnots (CBioseq_set_Handle bs, RecurseSeqAnnot);
     
-    void x_MolInfoUpdate(CSeq_descr& sdr);
+    void x_MolInfoUpdate(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
     
-    void x_RemoveEmptyGenbankDesc(CSeq_descr& sdr);
+    void x_RemoveEmptyGenbankDesc(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
 
     void x_CleanGenbankBlockStrings (CGB_block& block);
-    void x_CleanGenbankBlockStrings (CSeq_descr& sdr);
+    void x_CleanGenbankBlockStrings (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
     
     void x_RemoveEmptyFeatures (CSeq_annot_Handle sa);
     
-    void x_RemoveMultipleTitles (CSeq_descr& sdr);
+    void x_RemoveMultipleTitles (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
     
-    void x_MergeMultipleDates (CSeq_descr& sdr);
+    void x_MergeMultipleDates (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
 
     void x_ExtendedCleanStrings (CSeqdesc& sd);
     void x_ExtendedCleanStrings (COrg_ref& org);
@@ -297,6 +298,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2006/07/25 16:51:23  bollin
+ * fixed bug in x_RemovePseudoProducts
+ * implemented more efficient method for removing descriptors
+ *
  * Revision 1.34  2006/07/25 14:36:47  bollin
  * added method to ExtendedCleanup to remove products on coding regions marked
  * as pseudo.

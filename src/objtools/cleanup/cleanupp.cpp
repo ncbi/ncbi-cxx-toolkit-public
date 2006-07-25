@@ -467,8 +467,15 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
 void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor pmf)
 {
     if (bs.IsSetDescr()) {
+        CSeq_descr::Tdata remove_list;
+
+        remove_list.clear();
         CBioseq_EditHandle eh = bs.GetEditHandle();    
-        (this->*pmf)(eh.SetDescr());
+        (this->*pmf)(eh.SetDescr(), remove_list);
+        for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+            it1 != remove_list.end(); ++it1) { 
+            eh.RemoveSeqdesc(**it1);
+        }        
     }
 }
 
@@ -476,11 +483,16 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor
 void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescriptor pmf)
 {
     if (bss.IsSetDescr()) {
+        CSeq_descr::Tdata remove_list;
+
+        remove_list.clear();
         CBioseq_set_EditHandle eh = bss.GetEditHandle();
-        (this->*pmf)(eh.SetDescr());
-        if (eh.SetDescr().Set().empty()) {
-            eh.ResetDescr();
-        }
+        (this->*pmf)(eh.SetDescr(), remove_list);
+
+        for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+            it1 != remove_list.end(); ++it1) { 
+            eh.RemoveSeqdesc(**it1);
+        }        
     }
 
     if (bss.GetCompleteBioseq_set()->IsSetSeq_set()) {
@@ -650,7 +662,7 @@ void CCleanup_imp::x_RecurseForSeqAnnots (CBioseq_set_Handle bss, RecurseSeqAnno
 //   the Method descriptor value is “concept_trans”, “seq_pept”, “both”, “seq_pept_overlap”,  “seq_pept_homol”, 
 //   “concept_transl_a”, or “other”, then the Method descriptor value will be used to set the MolInfo technique value.  
 //   The Method descriptor will be removed, whether its value was copied to the MolInfo descriptor or not.
-void CCleanup_imp::x_MolInfoUpdate(CSeq_descr& sdr)
+void CCleanup_imp::x_MolInfoUpdate(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
 {
     bool has_molinfo = false;
     CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
@@ -759,20 +771,10 @@ void CCleanup_imp::x_MolInfoUpdate(CSeq_descr& sdr)
                     mi.SetTech (tech);
                 }
             }
-            break;
+        } else if ((*it)->Which() == CSeqdesc::e_Method
+                   || (*it)->Which() == CSeqdesc::e_Mol_type) {
+            remove_list.push_back(*it);
         }
-    }
-
-    bool found = true;
-    while (found) {
-        found = false;
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-            if ((*it)->Which() == CSeqdesc::e_Method || (*it)->Which() == CSeqdesc::e_Mol_type) {
-                sdr.Set().erase(it);
-                found = true;
-                break;
-            }
-        }        
     }
 }
 
@@ -869,22 +871,15 @@ bool IsEmpty (CSeq_feat& sf)
 //         gbp->date == NULL && gbp->entry_date == NULL &&
 //         gbp->div == NULL && gbp->taxonomy == NULL) {
 
-void CCleanup_imp::x_RemoveEmptyGenbankDesc(CSeq_descr& sdr)
+void CCleanup_imp::x_RemoveEmptyGenbankDesc(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
 {
-    bool found = true;
-    
-    while (found) {
-        found = false;
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-            if ((*it)->Which() == CSeqdesc::e_Genbank) {
-                CGB_block& block = (*it)->SetGenbank();
-                block.ResetTaxonomy();
-                (*it)->SetGenbank(block);
-                if (IsEmpty(block)) {
-                    sdr.Set().erase(it);
-                    found = true;
-                    break;
-                }
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((*it)->Which() == CSeqdesc::e_Genbank) {
+            CGB_block& block = (*it)->SetGenbank();
+            block.ResetTaxonomy();
+            (*it)->SetGenbank(block);
+            if (IsEmpty(block)) {
+                remove_list.push_back(*it);
             }
         }
     }
@@ -963,21 +958,14 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
 }
 
 
-void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr)
+void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
 {
-    bool found = true;
-    
-    while (found) {
-        found = false;
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-            if ((*it)->Which() == CSeqdesc::e_Genbank) {
-                x_CleanGenbankBlockStrings((*it)->SetGenbank());
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((*it)->Which() == CSeqdesc::e_Genbank) {
+            x_CleanGenbankBlockStrings((*it)->SetGenbank());
                 
-                if (IsEmpty((*it)->SetGenbank())) {
-                    sdr.Set().erase(it);
-                    found = true;
-                    break;
-                }
+            if (IsEmpty((*it)->SetGenbank())) {
+                remove_list.push_back(*it);
             }
         }
     }
@@ -986,31 +974,18 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CSeq_descr& sdr)
 
 // removes all title descriptors except the last one
 // Was RemoveMultipleTitles in C Toolkit
-void CCleanup_imp::x_RemoveMultipleTitles (CSeq_descr& sdr)
+void CCleanup_imp::x_RemoveMultipleTitles (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
 {
     int num_titles = 0;
-    CSeq_descr::Tdata& current_list = sdr.Set();
-    CSeq_descr::Tdata new_list;
     
-    new_list.clear();
-    
-    while (current_list.size() > 0) {
-        CRef< CSeqdesc > sd = current_list.back();
-        current_list.pop_back();
-        if ((*sd).Which() == CSeqdesc::e_Title ) {
+    NON_CONST_REVERSE_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((*it)->Which() == CSeqdesc::e_Title ) {
             if (num_titles == 0) {
                 num_titles ++;
-                new_list.push_front(sd);
+            } else {
+                remove_list.push_back(*it);
             }
-        } else {
-            new_list.push_front(sd);
         }
-    }
-    
-    while (new_list.size() > 0) {
-        CRef< CSeqdesc > sd = new_list.front();
-        new_list.pop_front();
-        current_list.push_back (sd);
     }
 }
 
@@ -1185,14 +1160,11 @@ void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle b
 
 // Retain the most recent create date, remove the others
 // Was MergeMultipleDates in C Toolkit
-void CCleanup_imp::x_MergeMultipleDates (CSeq_descr& sdr)
+void CCleanup_imp::x_MergeMultipleDates (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
 {
-    CSeq_descr::Tdata& current_list = sdr.Set();
-    CSeq_descr::Tdata new_list;    
     CSeq_descr::Tdata dates_list;    
     int num_dates = 0;
     
-    new_list.clear();
     dates_list.clear();
     
     NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
@@ -1213,25 +1185,16 @@ void CCleanup_imp::x_MergeMultipleDates (CSeq_descr& sdr)
     }
     
     num_dates = 0;
-    while (current_list.size() > 0) {
-        CRef< CSeqdesc > sd = current_list.front();
-        current_list.pop_front();
-        if ((*sd).Which() == CSeqdesc::e_Create_date ) {
-            if (num_dates == 0
-                && (*(dates_list.back())).GetCreate_date().Compare (sd->GetCreate_date()) == CDate::eCompare_same) {
-                new_list.push_back(sd);
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((*it)->Which() == CSeqdesc::e_Create_date ) {
+            if (num_dates > 0
+                || (*(dates_list.back())).GetCreate_date().Compare ((*it)->GetCreate_date()) != CDate::eCompare_same) {
+                remove_list.push_back(*it);
+            } else {
                 num_dates ++;
             }
-        } else {
-            new_list.push_back(sd);
         }
                 
-    }
-    
-    while (new_list.size() > 0) {
-        CRef< CSeqdesc > sd = new_list.front();
-        new_list.pop_front();
-        current_list.push_back (sd);
     }
 }
 
@@ -1441,10 +1404,24 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
             
             seh.CollapseSet();
             if (seh.IsSetDescr()) {
+                CSeq_descr::Tdata remove_list;
+
+                remove_list.clear();
+                
                 if (seh.IsSeq()) {
-                    x_RemoveMultipleTitles(seh.GetSeq().GetEditHandle().SetDescr());
+                    CBioseq_EditHandle eh = seh.GetSeq().GetEditHandle();
+                    x_RemoveMultipleTitles(eh.SetDescr(), remove_list);
+                    for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+                        it1 != remove_list.end(); ++it1) { 
+                        eh.RemoveSeqdesc(**it1);
+                    }        
                 } else if (seh.IsSet()) {
-                    x_RemoveMultipleTitles(seh.GetSet().GetEditHandle().SetDescr());
+                    CBioseq_set_EditHandle eh = seh.GetSet().GetEditHandle();
+                    x_RemoveMultipleTitles(eh.SetDescr(), remove_list);
+                    for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+                        it1 != remove_list.end(); ++it1) { 
+                        eh.RemoveSeqdesc(**it1);
+                    }        
                 }
             }
         }
@@ -1459,6 +1436,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2006/07/25 16:51:23  bollin
+ * fixed bug in x_RemovePseudoProducts
+ * implemented more efficient method for removing descriptors
+ *
  * Revision 1.35  2006/07/25 14:36:47  bollin
  * added method to ExtendedCleanup to remove products on coding regions marked
  * as pseudo.
