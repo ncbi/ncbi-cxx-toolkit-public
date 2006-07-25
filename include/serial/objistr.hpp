@@ -114,6 +114,13 @@ public:
     ESerialDataFormat GetDataFormat(void) const;
 
 //---------------------------------------------------------------------------
+// Open methods
+    virtual void Open(CByteSourceReader& reader);
+    void Open(CByteSource& source);
+    void Open(CNcbiIstream& inStream, bool deleteInStream = false);
+    void Close(void);
+
+//---------------------------------------------------------------------------
 // Data verification setup
     // When enabled, stream verifies data on input
     // and throws CSerialException with eFormatError err.code
@@ -206,13 +213,6 @@ public:
     void SetPathSkipMemberHook( const string& path, CSkipClassMemberHook*   hook);
     void SetPathReadVariantHook(const string& path, CReadChoiceVariantHook* hook);
     void SetPathSkipVariantHook(const string& path, CSkipChoiceVariantHook* hook);
-
-//---------------------------------------------------------------------------
-// Open methods
-    virtual void Open(CByteSourceReader& reader);
-    void Open(CByteSource& source);
-    void Open(CNcbiIstream& inStream, bool deleteInStream = false);
-    void Close(void);
 
 //---------------------------------------------------------------------------
 // User interface
@@ -758,6 +758,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.118  2006/07/25 13:33:38  gouriano
+* Moved Open methods up
+*
 * Revision 1.117  2006/03/10 14:51:23  gouriano
 * Categorized methods
 *
