@@ -685,20 +685,6 @@ protected:
     bool m_EOR;
 };
 
-/////////////////////////////////////////////////////////////////////////////
-extern NCBI_DBAPIDRIVER_ODBC_EXPORT const string kDBAPI_ODBC_DriverName;
-
-extern "C"
-{
-
-NCBI_DBAPIDRIVER_ODBC_EXPORT
-void
-NCBI_EntryPoint_xdbapi_odbc(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-} // extern C
-
 
 END_NCBI_SCOPE
 
@@ -710,6 +696,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/07/25 13:50:51  ssikorsk
+ * Moved declaration of NCBI_EntryPoint_xdbapi_odbc into odbc_utils.hpp.
+ *
  * Revision 1.36  2006/07/19 14:09:55  ssikorsk
  * Refactoring of CursorCmd.
  *
