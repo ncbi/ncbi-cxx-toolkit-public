@@ -389,7 +389,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     RemoveEmptyFeaturesDescriptorsAndAnnots(bss);
-    
+    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemovePseudoProducts);
     RenormalizeNucProtSets(bss);
     
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
@@ -456,8 +456,10 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
    
     x_CorrectExceptText(sa);
     
-    x_MoveDbxrefs(sa);
+    x_RemovePseudoProducts(sa);   
     
+    x_MoveDbxrefs(sa);
+ 
     x_CheckCodingRegionEnds(sa);
 }
 
@@ -1435,10 +1437,16 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
             }
         } else if (bclass == CBioseq_set::eClass_nuc_prot && set.size() == 1) {
             // collapse nuc-prot set
-            CBioseq_set_EditHandle bseh = bsh.GetEditHandle();
+            CSeq_entry_EditHandle seh = bsh.GetEditHandle().GetParentEntry();
             
-            bseh.GetParentEntry().CollapseSet();
-            x_RemoveMultipleTitles(bseh.SetDescr());
+            seh.CollapseSet();
+            if (seh.IsSetDescr()) {
+                if (seh.IsSeq()) {
+                    x_RemoveMultipleTitles(seh.GetSeq().GetEditHandle().SetDescr());
+                } else if (seh.IsSet()) {
+                    x_RemoveMultipleTitles(seh.GetSet().GetEditHandle().SetDescr());
+                }
+            }
         }
     }
 }
@@ -1451,6 +1459,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2006/07/25 14:36:47  bollin
+ * added method to ExtendedCleanup to remove products on coding regions marked
+ * as pseudo.
+ *
  * Revision 1.34  2006/07/18 16:43:43  bollin
  * added x_RecurseDescriptorsForMerge and changed the ExtendedCleanup functions
  * for merging duplicate BioSources and equivalent CitSubs to use the new function

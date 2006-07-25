@@ -1220,6 +1220,63 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh)
 }
 
 
+void CCleanup_imp::x_MoveFeaturesOnPartsSets (CSeq_annot_Handle sa)
+{
+    if (sa.IsFtable()) {
+        CFeat_CI feat_ci(sa);
+        while (feat_ci) {
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat_ci->GetLocation());
+            if (bsh.CanGetId()) {
+                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
+                // put feature in annotation for appropriate part            
+                // remove from this annotation
+
+            }
+            ++feat_ci;                
+        }
+    }
+}
+
+
+void CCleanup_imp::x_RemovePseudoProducts (CSeq_annot_Handle sa)
+{
+    if (sa.IsFtable()) {
+        objects::SAnnotSelector prot_sel(CSeqFeatData::eSubtype_prot);
+        objects::SAnnotSelector cds_sel(CSeqFeatData::eSubtype_cdregion);
+        CFeat_CI feat_ci(sa, cds_sel);
+        while (feat_ci) {
+            if (feat_ci->GetPseudo() 
+                && feat_ci->IsSetProduct()) {
+                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
+                if (!fh.GetSeq_feat().IsNull()) {
+                    CRef<CSeq_feat> new_cds(new CSeq_feat);            
+                    new_cds->Assign(feat_ci->GetOriginalFeature());
+                    CBioseq_Handle product = m_Scope->GetBioseqHandle(feat_ci->GetProduct());
+                    CFeat_CI product_ci(product, prot_sel);
+                    if (product_ci) {
+                        const CProt_ref& prot_ref = product_ci->GetOriginalFeature().GetData().GetProt();
+                        if (prot_ref.CanGetName() && prot_ref.GetName().size() > 0
+                            && !NStr::IsBlank(prot_ref.GetName().front())) {
+                            if (new_cds->IsSetComment()) {
+                                string old_comment = new_cds->SetComment();
+                                old_comment += "; ";
+                                old_comment += prot_ref.GetName().front();
+                            } else {
+                                new_cds->SetComment(prot_ref.GetName().front());
+                            }
+                        }        
+                    }
+                    product.GetParentEntry().GetEditHandle().Remove();
+                    new_cds->ResetProduct();
+                    fh.Replace(*new_cds);
+                }
+            }
+            ++feat_ci;
+        }
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -1228,6 +1285,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2006/07/25 14:36:47  bollin
+ * added method to ExtendedCleanup to remove products on coding regions marked
+ * as pseudo.
+ *
  * Revision 1.20  2006/07/24 13:08:17  bollin
  * fixed bug in m_ExtendSingleGeneOnmRNA
  *

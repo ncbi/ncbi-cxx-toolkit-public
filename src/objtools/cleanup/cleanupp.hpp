@@ -254,6 +254,9 @@ private:
     
     void x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh);
     void x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh);
+    
+    void x_MoveFeaturesOnPartsSets (CSeq_annot_Handle sa);
+    void x_RemovePseudoProducts (CSeq_annot_Handle sa);
 
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
@@ -294,6 +297,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2006/07/25 14:36:47  bollin
+ * added method to ExtendedCleanup to remove products on coding regions marked
+ * as pseudo.
+ *
  * Revision 1.33  2006/07/18 16:43:43  bollin
  * added x_RecurseDescriptorsForMerge and changed the ExtendedCleanup functions
  * for merging duplicate BioSources and equivalent CitSubs to use the new function
