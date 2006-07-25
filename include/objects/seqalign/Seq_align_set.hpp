@@ -61,6 +61,9 @@ public:
     /// Swap two rows (changing *order*, not content)
     void SwapRows(TDim row1, TDim row2);
 
+    Tparent::Tdata::size_type Size() const;
+
+    bool IsEmpty() const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -79,6 +82,17 @@ CSeq_align_set::CSeq_align_set(void)
 {
 }
 
+inline CSeq_align_set::Tparent::Tdata::size_type
+CSeq_align_set::Size() const
+{
+    return CanGet() ? Get().size() : 0;
+}
+
+inline bool
+CSeq_align_set::IsEmpty() const
+{
+    return Size() == 0;
+}
 
 /////////////////// end of CSeq_align_set inline methods
 
@@ -92,6 +106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/07/25 21:58:03  camacho
+* + Size() and IsEmpty()
+*
 * Revision 1.1  2004/05/05 19:16:25  johnson
 * Added SwapRows method for 'disc' seq-align / seq-align-set
 *
