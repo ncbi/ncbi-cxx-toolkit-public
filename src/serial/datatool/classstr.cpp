@@ -619,7 +619,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 "\n";
 
             string cType = i->type->GetCType(code.GetNamespace());
+#if 0
             string rType = i->type->GetPrefixedCType(code.GetNamespace(),methodPrefix);
+#else
+            //use defined types
+            string rType = methodPrefix + i->tName;
+#endif
             CTypeStrings::EKind kind = i->type->GetKind();
 
             // generate getter
@@ -1513,6 +1518,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2006/07/25 15:58:06  gouriano
+* In generated code use typedefs consistently
+*
 * Revision 1.75  2006/05/23 15:35:55  gouriano
 * Corrected code generation for SET type
 *

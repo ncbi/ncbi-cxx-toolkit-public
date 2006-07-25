@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2006/07/25 15:58:06  gouriano
+* In generated code use typedefs consistently
+*
 * Revision 1.56  2006/05/09 15:16:43  gouriano
 * Added XML namespace definition possibility
 *
@@ -1014,7 +1017,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         ITERATE ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
             string tType = "T" + i->cName;
+#if 0
             string rType = i->type->GetPrefixedCType(code.GetNamespace(),methodPrefix);
+#else
+            //use defined types
+            string rType = methodPrefix + tType;
+#endif
             CTypeStrings::EKind kind = i->type->GetKind();
             bool isNull = x_IsNullType(i);
             bool isNullWithAtt = x_IsNullWithAttlist(i);
