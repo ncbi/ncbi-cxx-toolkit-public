@@ -146,7 +146,6 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
     
     if (desc_i && (*desc_i).GetSource().CanGetOrg()) {
         string src;
-        src.clear();
         
         const COrg_ref& org = (*desc_i).GetSource().GetOrg();
         
@@ -186,7 +185,6 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
         }
         
         string div;
-        div.clear();
         
         if (org.CanGetOrgname() && org.GetOrgname().CanGetDiv()) {
             div = org.GetOrgname().GetDiv();
@@ -208,6 +206,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/07/26 18:58:27  ucko
+ * x_ChangeGenBankBlocks: don't bother clear()ing brand new strings,
+ * particularly given that GCC 2.95 would require erase() instead.
+ *
  * Revision 1.2  2006/07/26 17:12:41  bollin
  * added method to remove redundant genbank block information
  *
