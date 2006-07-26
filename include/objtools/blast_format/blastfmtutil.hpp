@@ -71,8 +71,7 @@ const string kGenomeButton = "<table border=0 width=600 cellpadding=8>\
 using the Entrez Genomes MapViewer</td></tr></table><p>";
 
 ///unigene
-const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entr\
-ez/query.fcgi?db=unigene&cmd=search&term=%d[Nucleotide+UID]\"><img border=0 h\
+const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=%s&cmd=Display&dopt=%s_unigene&from_uid=%d\"><img border=0 h\
 eight=16 width=16 src=\"/blast/images/U.gif\" alt=\"UniGene info\"></a>";
 
 ///structure
@@ -266,7 +265,7 @@ public:
     ///@param out: ostream to add white space
     ///@param number: the number of white spaces desired
     ///
-    static void AddSpace(CNcbiOstream& out, size_t number);
+    static void AddSpace(CNcbiOstream& out, int number);
     
     ///format evalue and bit_score 
     ///@param evalue: e value
@@ -274,9 +273,12 @@ public:
     ///@param evalue_str: variable to store the formatted evalue
     ///@param bit_score_str: variable to store the formatted bit score
     ///
-    static void GetScoreString(double evalue, double bit_score, 
+    static void GetScoreString(double evalue, 
+                               double bit_score, 
+                               double total_bit_score, 
                                string& evalue_str, 
-                               string& bit_score_str);
+                               string& bit_score_str,
+                               string& total_bit_score_str);
     
     ///Fill new alignset containing the specified number of alignments with
     ///unique slave seqids.  Note no new seqaligns were created. It just 
@@ -370,6 +372,64 @@ public:
     ///
     static string MakeURLSafe(char* src);
 
+    ///calculate the percent identity for a seqalign
+    ///@param aln" the seqalign
+    ///@param scope: scope to fetch sequences
+    ///@do_translation: is this a translated nuc to nuc alignment?
+    ///@return: the identity 
+    ///
+    static double GetPercentIdentity(const CSeq_align& aln, CScope& scope,
+                                     bool do_translation);
+
+    ///get the alignment length
+    ///@param aln" the seqalign
+    ///@do_translation: is this a translated nuc to nuc alignment?
+    ///@return: the alignment length
+    ///
+    static int GetAlignmentLength(const CSeq_align& aln, bool do_translation);
+
+    ///sort a list of seqalign set by alignment identity
+    ///@param seqalign_hit_list: list to be sorted.
+    ///@param do_translation: is this a translated nuc to nuc alignment?
+    ///
+    static void SortHitByPercentIdentityDescending(list< CRef<CSeq_align_set> >&
+                                                   seqalign_hit_list,
+                                                   bool do_translation);
+
+    ///sorting function for sorting a list of seqalign set by descending identity
+    ///@param info1: the first element 
+    ///@param info2: the second element
+    ///@return: info1 >= info2?
+    ///
+    static bool SortHitByPercentIdentityDescendingEx(CRef<CSeq_align_set>& info1,
+                                                     CRef<CSeq_align_set>& info2);
+    
+    ///sorting function for sorting a list of seqalign by descending identity
+    ///@param info1: the first element 
+    ///@param info2: the second element
+    ///@return: info1 >= info2?
+    ///
+    static bool SortHspByPercentIdentityDescending(CRef<CSeq_align>& info1,
+                                                   CRef<CSeq_align>& info2);
+    
+    ///sorting function for sorting a list of seqalign by ascending mater 
+    ///start position
+    ///@param info1: the first element 
+    ///@param info2: the second element
+    ///@return: info1 >= info2?
+    ///
+    static bool SortHspByMasterStartAscending(CRef<CSeq_align> const& info1,
+                                              CRef<CSeq_align> const& info2);
+
+    ///sorting function for sorting a list of seqalign set by ascending mater 
+    ///start position
+    ///@param info1: the first element 
+    ///@param info2: the second element
+    ///@return: info1 >= info2?
+    ///
+    static bool SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1,
+                                              CRef<CSeq_align_set>& info2);
+
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.
@@ -391,6 +451,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.24  2006/07/26 18:06:06  jianye
+fix unigene linkout and added seqalign sort funstions
+
 Revision 1.23  2006/07/17 14:50:42  jianye
 adding sorting seqalign functions
 
