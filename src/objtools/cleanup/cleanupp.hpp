@@ -117,6 +117,20 @@ public:
     /// Cleanup a Seq-feat.
     void BasicCleanup(CSeq_feat& sf);
     
+    // using handles
+    /// cleanup fields that object manager cares about. (like changing feature types.)
+
+    /// Cleanup a Seq-entry. 
+    void BasicCleanup(CSeq_entry_Handle& seh);
+    /// Cleanup a Bioseq. 
+    void BasicCleanup(const CBioseq_Handle& bsh);
+    /// Cleanup a Bioseq_set.
+    void BasicCleanup(CBioseq_set_Handle& bssh);
+    /// Cleanup a Seq-Annot. 
+    void BasicCleanup(CSeq_annot_Handle& sah);
+    /// Cleanup a Seq-feat.
+    void BasicCleanup(const CSeq_feat_Handle& sfh);
+    
     //Extended Cleanup
     void ExtendedCleanup(CSeq_entry_Handle seh);
     void ExtendedCleanup(CSeq_submit& ss);
@@ -129,6 +143,9 @@ public:
 private:
     void Setup(const CSeq_entry& se);
     void Finish(CSeq_entry& se);
+    
+    void Setup(const CSeq_entry_Handle& seh);
+    void Finish(CSeq_entry_Handle& seh);
     
     void ChangeMade(CCleanupChange::EChanges e);
 
@@ -204,7 +221,7 @@ private:
     // cleanup strings in User objects and fields
     void x_CleanupUserString(string& str);
 
-    bool x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str);
+    bool x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str);
 
     // Extended Cleanup
     typedef void (CCleanup_imp::*RecurseDescriptor)(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
@@ -306,6 +323,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2006/07/26 19:37:04  rsmith
+ * add cleanup w/Handles
+ *
  * Revision 1.37  2006/07/26 17:12:41  bollin
  * added method to remove redundant genbank block information
  *

@@ -137,6 +137,54 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 }
 
 
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry_Handle& seh, Uint4 options)
+{
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
+    clean_i.BasicCleanup(seh);
+    return changes;
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_Handle& bsh,    Uint4 options)
+{
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
+    clean_i.BasicCleanup(bsh);
+    return changes;
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set_Handle& bssh, Uint4 options)
+{
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
+    clean_i.BasicCleanup(bssh);
+    return changes;
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot_Handle& sah, Uint4 options)
+{
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
+    clean_i.BasicCleanup(sah);
+    return changes;
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 options)
+{
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CCleanup_imp clean_i(changes, m_Scope, options);
+    clean_i.BasicCleanup(sfh);
+    return changes;
+}
+
+
+
+
+
 // *********************** Extended Cleanup implementation ********************
 CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry& se)
 {
@@ -273,6 +321,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/07/26 19:37:04  rsmith
+* add cleanup w/Handles
+*
 * Revision 1.14  2006/07/03 12:34:38  bollin
 * use handles instead of operating directly on the data for extended cleanup
 *
