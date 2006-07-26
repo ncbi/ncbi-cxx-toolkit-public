@@ -1076,7 +1076,9 @@ void CDisplaySeqalign::x_AddLinkout(const CBioseq& cbsp,
             char buf[1024];
             
             if ((*iter) & eUnigene) {
-                sprintf(buf, kUnigeneUrl.c_str(),  gi);
+                sprintf(buf, kUnigeneUrl.c_str(), 
+                        !cbsp.IsAa() ? "nucleotide" : "protein", 
+                        !cbsp.IsAa() ? "nucleotide" : "protein", gi);
                 out << buf;
             }
             if ((*iter) & eStructure){
@@ -2711,10 +2713,10 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
         } 
     }
     if (m_AlignOption&eShowBlastInfo) {
-        string evalue_buf, bit_score_buf;
+        string evalue_buf, bit_score_buf, total_bit_buf;
         CBlastFormatUtil::GetScoreString(aln_vec_info->evalue, 
-                                         aln_vec_info->bits, evalue_buf, 
-                                         bit_score_buf);
+                                         aln_vec_info->bits, 0, evalue_buf, 
+                                         bit_score_buf, total_bit_buf);
         //add id anchor for mapviewer link
         string type_temp = m_BlastType;
         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
@@ -3000,6 +3002,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.123  2006/07/26 18:14:07  jianye
+*fix unigene url
+*
 *Revision 1.122  2006/07/17 20:01:50  zaretska
 *Changed 'Tree view' button text on 'Distance tree of results'
 *

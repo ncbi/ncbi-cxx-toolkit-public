@@ -200,7 +200,8 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
     char buf[1024];
     
     if (linkout & eUnigene) {
-        sprintf(buf, kUnigeneUrl.c_str(),  gi);
+        sprintf(buf, kUnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
+                is_na ? "nucleotide" : "protein", gi);
         linkout_list.push_back(buf);
     }
     if (linkout & eStructure){
@@ -771,7 +772,7 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 {
     SDeflineInfo* sdl = NULL;
     const CSeq_id& id = aln.GetSeq_id(1); 
-    string evalue_buf, bit_score_buf;
+    string evalue_buf, bit_score_buf, total_bit_score_buf;
     int score = 0;
     double bits = 0;
     double evalue = 0;
@@ -784,8 +785,8 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
       
         CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
                                        num_ident, use_this_gi);
-        CBlastFormatUtil::GetScoreString(evalue, bits, evalue_buf, 
-                                         bit_score_buf);
+        CBlastFormatUtil::GetScoreString(evalue, bits, 0, evalue_buf, 
+                                         bit_score_buf, total_bit_score_buf);
         sdl = new SDeflineInfo;
 
         x_FillDeflineAndId(handle, id, use_this_gi, sdl);
@@ -796,7 +797,8 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
         sdl = new SDeflineInfo;
         CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n,
                                        num_ident, use_this_gi);
-        CBlastFormatUtil::GetScoreString(evalue, bits, evalue_buf, bit_score_buf);
+        CBlastFormatUtil::GetScoreString(evalue, bits, 0, evalue_buf, 
+                                         bit_score_buf, total_bit_score_buf);
         sdl->sum_n = sum_n == -1 ? 1:sum_n;
         sdl->bit_string = bit_score_buf;
         sdl->evalue_string = evalue_buf;
@@ -831,6 +833,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.30  2006/07/26 18:14:07  jianye
+*fix unigene url
+*
 *Revision 1.29  2006/07/17 14:52:49  jianye
 *consolidate custom url functions
 *
