@@ -726,14 +726,12 @@ extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
     for (;;) {
         char c = *mask++;
         char d;
-        switch (c) {
-        case '\0':
-            return !*name;
-        case '?':
+        if (!c) {
+            break;
+        } else if (c == '?') {
             if (!*name++)
                 return 0/*false*/;
-            break;
-        case '*':
+        } else if (c == '*') {
             c = *mask;
             while (c == '*')
                 c = *++mask;
@@ -745,7 +743,7 @@ extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
                 name++;
             }
             return 0/*false*/;
-        default:
+        } else {
             d = *name++;
             if (ignore_case) {
                 c = tolower((unsigned char) c);
@@ -753,11 +751,9 @@ extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
             }
             if (c != d)
                 return 0/*false*/;
-            break;
         }
     }
-    /*NOTREACHED*/
-    return 0/*false*/; /* NCBI_FAKE_WARNING: WorkShop */
+    return !*name;
 }
 
 
@@ -770,6 +766,9 @@ extern int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2006/07/26 14:38:07  lavr
+ * UTIL_MatchesMaskEx():  rewrite to avoid use of NCBI_FAKE_WARNING
+ *
  * Revision 6.36  2006/07/25 19:06:57  lavr
  * Mark fake WorkShop warning using NCBI_FAKE_WARNING -- by ivanov
  *
