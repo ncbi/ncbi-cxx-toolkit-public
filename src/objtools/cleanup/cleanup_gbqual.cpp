@@ -96,12 +96,15 @@ bool CCleanup_imp::BasicCleanup(CGene_ref& gene, const CGb_qual& gb_qual)
             }            
         }
     }
+    if (retval) {
+        ChangeMade(CCleanupChange::eChangeQualifiers);
+    }
 
     return retval;
 }
 
 
-bool CCleanup_imp::x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str)
+bool CCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str)
 {
     unsigned int aa_pos = NStr::Find(str, "aa:");
     unsigned int len = 0;
@@ -122,10 +125,10 @@ bool CCleanup_imp::x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str)
     }
 
     if (aa_pos != string::npos) {    
-        while (aa_pos < str.length() && isspace (str.c_str()[aa_pos])) {
+        while (aa_pos < str.length() && isspace (str[aa_pos])) {
             aa_pos++;
         }
-        while (aa_pos + len < str.length() && isalpha (str.c_str()[aa_pos + len])) {
+        while (aa_pos + len < str.length() && isalpha (str[aa_pos + len])) {
             len++;
         }
         if (len != 0) {    
@@ -138,7 +141,7 @@ bool CCleanup_imp::x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str)
         return false;
     }
     loc_pos += 5;
-    while (loc_pos < str.length() && isspace (str.c_str()[loc_pos])) {
+    while (loc_pos < str.length() && isspace (str[loc_pos])) {
         loc_pos++;
     }
     end_pos = NStr::Find (str, ",", loc_pos);
@@ -155,14 +158,15 @@ bool CCleanup_imp::x_ParseCodeBreak(CSeq_feat& feat, CCdregion& cds, string str)
     }
     
     // need to build code break object and add it to coding region
-    CRef<CCode_break> m_NewCodeBreak(new CCode_break());
-    CCode_break::TAa& aa = m_NewCodeBreak->SetAa();
+    CRef<CCode_break> newCodeBreak(new CCode_break());
+    CCode_break::TAa& aa = newCodeBreak->SetAa();
     aa.SetNcbieaa(protein_letter);
-    m_NewCodeBreak->SetLoc (*break_loc);
+    newCodeBreak->SetLoc (*break_loc);
 
     CCdregion::TCode_break& orig_list = cds.SetCode_break();
-    orig_list.push_back(m_NewCodeBreak);
+    orig_list.push_back(newCodeBreak);
     
+    ChangeMade(CCleanupChange::eChangeCodeBreak);
     
     return true;
     
@@ -190,6 +194,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual&
             if (frame == CCdregion::eFrame_not_set  ||
                 (feat.IsSetPseudo()  &&  feat.GetPseudo()  &&  !feat.IsSetProduct())) {
                 cds.SetFrame(new_frame);
+                ChangeMade(CCleanupChange::eChangeQualifiers);
             }
             return true;
         }
@@ -216,6 +221,8 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual&
                 CRef<CGenetic_code::C_E> gc(new CGenetic_code::C_E);
                 gc->SetId(new_val);
                 cds.SetCode().Set().push_back(gc);
+                
+                ChangeMade(CCleanupChange::eChangeGeneticCode);
                 return true;
             }
         }
@@ -237,9 +244,11 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& 
         if (rna.IsSetType()) {
             if (rna.GetType() == CRNA_ref::eType_unknown) {
                 rna.SetType(CRNA_ref::eType_other);
+                ChangeMade(CCleanupChange::eChangeKeywords);
             }
         } else {
             rna.SetType(CRNA_ref::eType_other);
+            ChangeMade(CCleanupChange::eChangeKeywords);
         }
         _ASSERT(rna.IsSetType());
 
@@ -256,11 +265,13 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& 
     if (NStr::EqualNocase(qual, "anticodon")) {
         if (!rna.IsSetType()) {
             rna.SetType(CRNA_ref::eType_tRNA);
+            ChangeMade(CCleanupChange::eChangeKeywords);
         }
         _ASSERT(rna.IsSetType());
         CRNA_ref::TType type = rna.GetType();
         if (type == CRNA_ref::eType_unknown) {
             rna.SetType(CRNA_ref::eType_tRNA);
+            ChangeMade(CCleanupChange::eChangeKeywords);
         } else if (type != CRNA_ref::eType_tRNA) {
             return false;
         }
@@ -270,6 +281,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& 
             CRef<CSeq_loc> anticodon = ReadLocFromText (gb_qual.GetVal(), feat.GetLocation().GetId(), m_Scope);
             if (anticodon != NULL) {
                 rna.SetExt().SetTRNA().SetAnticodon(*anticodon);
+                ChangeMade(CCleanupChange::eChangeAnticodon);
                 return true;
             }
         }
@@ -286,11 +298,13 @@ bool CCleanup_imp::BasicCleanup(CProt_ref& prot, const CGb_qual& gb_qual)
     if (NStr::EqualNocase(qual, "product")  ||  NStr::EqualNocase(qual, "standard_name")) {
         if (!prot.IsSetName()  ||  NStr::IsBlank(prot.GetName().front())) {
             prot.SetName().push_back(val);
+            ChangeMade(CCleanupChange::eChangeQualifiers);
             if (prot.IsSetDesc()) {
                 const CProt_ref::TDesc& desc = prot.GetDesc();
                 ITERATE (CProt_ref::TName, it, prot.GetName()) {
                     if (NStr::EqualNocase(desc, *it)) {
                         prot.ResetDesc();
+                        ChangeMade(CCleanupChange::eChangeQualifiers);
                         break;
                     }
                 }
@@ -299,9 +313,11 @@ bool CCleanup_imp::BasicCleanup(CProt_ref& prot, const CGb_qual& gb_qual)
         }
     } else if (NStr::EqualNocase(qual, "function")) {
         prot.SetActivity().push_back(val);
+        ChangeMade(CCleanupChange::eChangeQualifiers);
         return true;
     } else if (NStr::EqualNocase(qual, "EC_number")) {
         prot.SetEc().push_back(val);
+        ChangeMade(CCleanupChange::eChangeQualifiers);
         return true;
     }
 
@@ -391,6 +407,7 @@ void CCleanup_imp::x_ExpandCombinedQuals(CSeq_feat::TQual& quals)
     
     if ( ! new_quals.empty() ) {
         quals.insert(quals.end(), new_quals.begin(), new_quals.end());
+        ChangeMade(CCleanupChange::eChangeQualifiers);
     }
 }
 
@@ -419,12 +436,14 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
             string val_no_u = NStr::Replace(val, "u", "t");
             if (val_no_u != val) {
                 gb_qual.SetVal(val_no_u);
+                ChangeMade(CCleanupChange::eChangeQualifiers);
             }
         }
     }
     
     if (NStr::EqualNocase(qual, "partial")) {
         feat.SetPartial();
+        ChangeMade(CCleanupChange::eChangeQualifiers);
         return true;  // mark qual for deletion
     } else if (NStr::EqualNocase(qual, "evidence")) {
     /*
@@ -442,6 +461,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
         if (!NStr::IsBlank(val)  &&  !NStr::EqualNocase(val, "true")) {
             if (!feat.IsSetExcept_text()) {
                 feat.SetExcept_text(val);
+                ChangeMade(CCleanupChange::eChangeQualifiers);
             }
         }
         return true;  // mark qual for deletion
@@ -453,6 +473,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
         } else {
             (feat.SetComment() += "; ") += val;
         }
+        ChangeMade(CCleanupChange::eChangeQualifiers);
         return true;  // mark qual for deletion
     } else if (NStr::EqualNocase(qual, "db_xref")) {
         string tag, db;
@@ -461,6 +482,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
             dbp->SetDb(db);
             dbp->SetTag().SetStr(tag);
             feat.SetDbxref().push_back(dbp);
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
             return true;  // mark qual for deletion
         }
     } else if (NStr::EqualNocase(qual, "gdb_xref")) {
@@ -468,9 +490,11 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
         dbp->SetDb("GDB");
         dbp->SetTag().SetStr(val);
         feat.SetDbxref().push_back(dbp);
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
         return true;  // mark qual for deletion
     } else if (NStr::EqualNocase(qual, "pseudo")) {
         feat.SetPseudo(true);
+        ChangeMade(CCleanupChange::eChangeQualifiers);
         return true;  // mark qual for deletion
     } else if (data.IsGene()  &&  BasicCleanup(data.SetGene(), gb_qual)) {
         return true;  // mark qual for deletion
@@ -485,6 +509,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
             CRef<CSeqFeatXref> xref(new CSeqFeatXref);
             xref->SetData().SetGene().SetLocus(val);
             feat.SetXref().push_back(xref);
+            ChangeMade(CCleanupChange::eCopyGeneXref);
             return true;  // mark qual for deletion
         }
     } else if (NStr::EqualNocase(qual, "codon_start")) {
@@ -519,6 +544,7 @@ void CCleanup_imp::BasicCleanup(CGb_qual& gbq)
     CLEAN_STRING_MEMBER(gbq, Val);
     if (gbq.IsSetVal()  &&  s_IsJustQuotes(gbq.GetVal())) {
         gbq.ResetVal();
+        ChangeMade(CCleanupChange::eCleanDoubleQuotes);
     }
     if (!gbq.IsSetVal()) {
         gbq.SetVal(kEmptyStr);
@@ -537,6 +563,7 @@ void CCleanup_imp::BasicCleanup(CGb_qual& gbq)
             } else {
                 gbq.SetQual("rpt_unit_seq");
             }
+            ChangeMade(CCleanupChange::eChangeQualifiers);
         }
     }
 }
@@ -557,6 +584,7 @@ void CCleanup_imp::x_CleanupConsSplice(CGb_qual& gbq)
     size_t pos = val.find(",3'site:");
     if (pos != NPOS) {
         val.insert(pos + 1, " ");
+        ChangeMade(CCleanupChange::eChangeQualifiers);
     }
 }
 
@@ -612,7 +640,11 @@ bool CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
             }
         }
     }
-    val = s;
+    if (val != s) {
+        val = s;
+        ChangeMade(CCleanupChange::eChangeQualifiers);
+    }
+    
     return  (digits1 && sep && digits2);
 }
 
@@ -625,6 +657,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/07/26 19:39:40  rsmith
+ * add change reporting
+ *
  * Revision 1.6  2006/07/13 17:12:12  rsmith
  * Bring up to date with C BSEC.
  *
