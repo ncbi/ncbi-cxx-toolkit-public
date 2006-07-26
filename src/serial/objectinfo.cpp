@@ -199,6 +199,17 @@ void CConstObjectInfo::GetPrimitiveValueOctetString(vector<char>& value) const
     GetPrimitiveTypeInfo()->GetValueOctetString(GetObjectPtr(), value);
 }
 
+void CConstObjectInfo::GetPrimitiveValueBitString(CBitString& value) const
+{
+    GetPrimitiveTypeInfo()->GetValueBitString(GetObjectPtr(), value);
+}
+
+void CConstObjectInfo::GetPrimitiveValueAnyContent(CAnyContentObject& value)
+    const
+{
+    GetPrimitiveTypeInfo()->GetValueAnyContent(GetObjectPtr(), value);
+}
+
 void CObjectInfo::SetPrimitiveValueBool(bool value)
 {
     GetPrimitiveTypeInfo()->SetValueBool(GetObjectPtr(), value);
@@ -262,6 +273,16 @@ void CObjectInfo::SetPrimitiveValueString(const string& value)
 void CObjectInfo::SetPrimitiveValueOctetString(const vector<char>& value)
 {
     GetPrimitiveTypeInfo()->SetValueOctetString(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueBitString(const CBitString& value)
+{
+    GetPrimitiveTypeInfo()->SetValueBitString(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueAnyContent(const CAnyContentObject& value)
+{
+    GetPrimitiveTypeInfo()->SetValueAnyContent(GetObjectPtr(), value);
 }
 
 TMemberIndex CConstObjectInfo::GetCurrentChoiceVariantIndex(void) const
@@ -383,6 +404,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/07/26 19:06:30  ucko
+* Add reflective accessors for BitString and AnyContent values.
+*
 * Revision 1.9  2004/07/27 15:01:14  ucko
 * Restore (and define) removed SetPrimitiveValueInt variants.
 *

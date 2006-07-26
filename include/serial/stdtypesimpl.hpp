@@ -261,18 +261,30 @@ public:
                              const vector<char>& value) const;
 };
 
-class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoAnyContent : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoAnyContent
+    : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
     CPrimitiveTypeInfoAnyContent(void);
+
+    void GetValueAnyContent(TConstObjectPtr objectPtr,
+                            CAnyContentObject& value) const;
+    void SetValueAnyContent(TObjectPtr objectPtr,
+                            const CAnyContentObject& value) const;
 };
 
-class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoBitString : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoBitString
+    : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
     CPrimitiveTypeInfoBitString(void);
+
+    virtual void GetValueBitString(TConstObjectPtr objectPtr,
+                                   CBitString& value) const;
+    virtual void SetValueBitString(TObjectPtr objectPtr,
+                                   const CBitString& value) const;
 };
 
 /* @} */
@@ -288,6 +300,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/07/26 19:06:30  ucko
+* Add reflective accessors for BitString and AnyContent values.
+*
 * Revision 1.14  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

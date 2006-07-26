@@ -119,6 +119,16 @@ public:
     virtual void SetValueOctetString(TObjectPtr objectPtr,
                                      const vector<char>& value) const;
 
+    virtual void GetValueBitString(TConstObjectPtr objectPtr,
+                                   CBitString& value) const;
+    virtual void SetValueBitString(TObjectPtr objectPtr,
+                                   const CBitString& value) const;
+
+    virtual void GetValueAnyContent(TConstObjectPtr objectPtr,
+                                    CAnyContentObject& value) const;
+    virtual void SetValueAnyContent(TObjectPtr objectPtr,
+                                    const CAnyContentObject& value) const;
+
     static const CPrimitiveTypeInfo* GetIntegerTypeInfo(size_t size,
                                                         bool sign = true);
 
@@ -369,6 +379,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/07/26 19:06:30  ucko
+* Add reflective accessors for BitString and AnyContent values.
+*
 * Revision 1.32  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

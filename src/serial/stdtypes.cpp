@@ -464,7 +464,32 @@ void CPrimitiveTypeInfo::GetValueOctetString(TConstObjectPtr /*objectPtr*/,
 }
 
 void CPrimitiveTypeInfo::SetValueOctetString(TObjectPtr /*objectPtr*/,
-                                             const vector<char>& /*value*/) const
+                                             const vector<char>& /*value*/)
+    const
+{
+    ThrowIncompatibleValue();
+}
+
+void CPrimitiveTypeInfo::GetValueBitString(TConstObjectPtr /*objectPtr*/,
+                                           CBitString& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+void CPrimitiveTypeInfo::SetValueBitString(TObjectPtr /*objectPtr*/,
+                                           const CBitString& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+void CPrimitiveTypeInfo::GetValueAnyContent(TConstObjectPtr /*objectPtr*/,
+                                            CAnyContentObject& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+void CPrimitiveTypeInfo::SetValueAnyContent(TObjectPtr /*objectPtr*/,
+                                            const CAnyContentObject& /*value*/)
+    const
 {
     ThrowIncompatibleValue();
 }
@@ -1560,6 +1585,24 @@ CTypeInfo* CStdTypeInfo<ncbi::CAnyContentObject>::CreateTypeInfo(void)
     return new CPrimitiveTypeInfoAnyContent();
 }
 
+void
+CPrimitiveTypeInfoAnyContent::GetValueAnyContent(TConstObjectPtr objectPtr,
+                                                 CAnyContentObject& value)
+    const
+{
+    typedef CPrimitiveTypeFunctions<ncbi::CAnyContentObject> TFunctions;
+    value = TFunctions::Get(objectPtr);
+}
+
+void
+CPrimitiveTypeInfoAnyContent::SetValueAnyContent(TObjectPtr objectPtr,
+                                                 const CAnyContentObject& value)
+    const
+{
+    typedef CPrimitiveTypeFunctions<ncbi::CAnyContentObject> TFunctions;
+    TFunctions::Get(objectPtr) = value;
+}
+
 
 class CBitStringFunctions : public CPrimitiveTypeFunctions<CBitString>
 {
@@ -1607,12 +1650,30 @@ CTypeInfo* CStdTypeInfo<CBitString>::CreateTypeInfo(void)
     return new CPrimitiveTypeInfoBitString();
 }
 
+void CPrimitiveTypeInfoBitString::GetValueBitString(TConstObjectPtr objectPtr,
+                                                    CBitString& value) const
+{
+    typedef CPrimitiveTypeFunctions<ncbi::CBitString> TFunctions;
+    value = TFunctions::Get(objectPtr);
+}
+
+void CPrimitiveTypeInfoBitString::SetValueBitString(TObjectPtr objectPtr,
+                                                    const CBitString& value)
+    const
+{
+    typedef CPrimitiveTypeFunctions<ncbi::CBitString> TFunctions;
+    TFunctions::Get(objectPtr) = value;
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2006/07/26 19:06:30  ucko
+* Add reflective accessors for BitString and AnyContent values.
+*
 * Revision 1.48  2006/03/13 20:55:12  gouriano
 * Verify that vector is not empty before accessing it
 *

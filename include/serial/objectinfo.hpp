@@ -257,6 +257,10 @@ public:
 
     void GetPrimitiveValueOctetString(vector<char>& value) const;
 
+    void GetPrimitiveValueBitString(CBitString& value) const;
+
+    void GetPrimitiveValueAnyContent(CAnyContentObject& value) const;
+
     // class interface
     CMemberIterator GetMember(CObjectTypeInfo::CMemberIterator m) const;
     CMemberIterator BeginMembers(void) const;
@@ -329,6 +333,10 @@ public:
 
     void SetPrimitiveValueOctetString(const vector<char>& value);
 
+    void SetPrimitiveValueBitString(const CBitString& value);
+
+    void SetPrimitiveValueAnyContent(const CAnyContentObject& value);
+
     // class interface
     CMemberIterator GetMember(CObjectTypeInfo::CMemberIterator m) const;
     CMemberIterator BeginMembers(void) const;
@@ -361,6 +369,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/07/26 19:06:30  ucko
+* Add reflective accessors for BitString and AnyContent values.
+*
 * Revision 1.12  2005/01/26 13:10:07  rsmith
 * delete unnecessary and illegal class specifier.
 *
