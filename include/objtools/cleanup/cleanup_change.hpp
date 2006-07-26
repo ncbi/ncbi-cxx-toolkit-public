@@ -71,6 +71,8 @@ public:
         eChangeKeywords,
         eChangeSubsource,
         eChangeOrgmod,
+        eChangeException,
+        eChangeComment,
         // Set when fields are rescued
         eChange_tRna,
         eChange_rRna,
@@ -119,6 +121,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/07/26 19:35:27  rsmith
+ * add new change types.
+ *
  * Revision 1.1  2006/06/23 17:09:20  rsmith
  * moved from cleanup.hpp
  *
