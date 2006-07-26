@@ -40,16 +40,103 @@
 
 #include <serial/objectiter.hpp>
 
+#if BITSTRING_AS_VECTOR
+#  include <util/resize_iter.hpp>
+#else
+#  include <util/bitset/bmserial.h>
+#endif
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 typedef CUser_field::TData TUFData;
+typedef TUFData::TOs       TUFDOs;
 
 static CRef<CUser_field> s_PackAsUserField(CConstObjectInfo obj,
                                            const string* label = 0);
 
-static void s_SetPrimitiveData(TUFData& data, CConstObjectInfo obj)
+static void s_SetOSFromBS(TUFDOs& os, CBitString& bs)
 {
+#if BITSTRING_AS_VECTOR
+    os.resize((bs.size() + CHAR_BIT - 1) / CHAR_BIT + 1);
+    // data.SetNum(bs.size());
+    os[0] = static_cast<unsigned char>(bs.size());
+    Int8 i = 1;
+    for (CConstResizingIterator<CBitString, char> it(bs, CHAR_BIT);
+         !it.AtEnd();  ++it) {
+        os[++i] = *it;
+    }
+#else
+    CBitString::statistics st;
+    bs.calc_stat(&st);
+    os.resize(st.max_serialize_mem);
+    SIZE_TYPE n = bm::serialize(bs, reinterpret_cast<unsigned char*>(&os[0]));
+    os.resize(n);
+#endif
+}
+
+static void s_SetBSFromOS(CBitString& bs, const TUFDOs& os)
+{
+#if BITSTRING_AS_VECTOR
+    bs.resize(os.size() * CHAR_BIT);
+    Int8 i = 1;
+    for (CResizingIterator<CBitString, char> it(bs, CHAR_BIT);
+         !it.AtEnd();  ++it) {
+        *it = os[++i];
+    }
+    Int8 count = (os.size() - ((os[0] % CHAR_BIT) ? 2 : 1)) * CHAR_BIT;
+    _ASSERT( !(static_cast<unsigned char>(count) & ~os[0]) );
+    count |= os[0];
+    bs.resize(count);
+#else
+    bm::deserialize(bs, reinterpret_cast<const unsigned char*>(&os[0]));
+#endif
+}
+
+static void s_SetFieldsFromAnyContent(CUser_field& parent,
+                                      const CAnyContentObject& obj)
+{
+    parent.SetNum(obj.GetAttributes().size() + 4);
+
+    parent.AddField("name",      obj.GetName());
+    parent.AddField("value",     obj.GetValue());
+    parent.AddField("ns_name",   obj.GetNamespaceName());
+    parent.AddField("ns_prefix", obj.GetNamespacePrefix());
+    
+    ITERATE (vector<CSerialAttribInfoItem>, it, obj.GetAttributes()) {
+        parent.AddField(it->GetNamespaceName() + ":" + it->GetName(),
+                        it->GetValue());
+    }
+}
+
+static void s_SetAnyContentFromFields(CAnyContentObject& obj,
+                                      const TUFData::TFields& fields)
+{
+    ITERATE (TUFData::TFields, it, fields) {
+        const string& name  = (*it)->GetLabel().GetStr();
+        const string& value = (*it)->GetData().GetStr();
+        SIZE_TYPE     colon = name.find(':');
+        if (colon != NPOS) {
+            obj.AddAttribute(name.substr(colon + 1), name.substr(0, colon - 1),
+                             value);
+        } else if (name == "name") {
+            obj.SetName(value);
+        } else if (name == "value") {
+            obj.SetValue(value);
+        } else if (name == "ns_name") {
+            obj.SetNamespaceName(value);
+        } else if (name == "ns_prefix") {
+            obj.SetNamespacePrefix(value);
+        } else {
+            NCBI_THROW(CSerialException, eInvalidData,
+                       "Bad User-object encoding.");
+        }
+    }
+}
+
+static void s_SetPrimitiveData(CUser_field& field, CConstObjectInfo obj)
+{
+    TUFData& data = field.SetData();
     switch (obj.GetPrimitiveValueType()) {
     case ePrimitiveValueSpecial:
         data.SetBool(true);
@@ -90,6 +177,22 @@ static void s_SetPrimitiveData(TUFData& data, CConstObjectInfo obj)
     case ePrimitiveValueOctetString:
         obj.GetPrimitiveValueOctetString(data.SetOs());
         break;
+
+    case ePrimitiveValueBitString:
+    {
+        CBitString bs;
+        obj.GetPrimitiveValueBitString(bs);
+        s_SetOSFromBS(data.SetOs(), bs);
+        break;
+    }
+
+    case ePrimitiveValueOther: // AnyContent
+    {
+        CAnyContentObject obj2;
+        obj.GetPrimitiveValueAnyContent(obj2);
+        s_SetFieldsFromAnyContent(field, obj2);
+        break;
+    }
     }
 }
 
@@ -122,7 +225,11 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 data.SetReals().reserve(count);
                 break;
             case ePrimitiveValueOctetString:
+            case ePrimitiveValueBitString:
                 data.SetOss().reserve(count);
+                break;
+            case ePrimitiveValueOther:
+                data.SetFields().reserve(count);
                 break;
             }
         default:
@@ -173,10 +280,30 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 break;
             }
             case ePrimitiveValueOctetString:
+            {
                 TUFData::TOs* os = new TUFData::TOs;
                 obj.GetPrimitiveValueOctetString(*os);
                 data.SetOss().push_back(os);
                 break;
+            }
+            case ePrimitiveValueBitString:
+            {
+                TUFData::TOs* os = new TUFData::TOs;
+                CBitString bs;
+                obj.GetPrimitiveValueBitString(bs);
+                s_SetOSFromBS(*os, bs);
+                data.SetOss().push_back(os);
+                break;
+            }
+            case ePrimitiveValueOther:
+            {
+                CRef<CUser_field> field(new CUser_field);
+                CAnyContentObject aco;
+                obj.GetPrimitiveValueAnyContent(aco);
+                s_SetFieldsFromAnyContent(*field, aco);
+                data.SetFields().push_back(field);
+                break;
+            }
             }
             break;
 
@@ -207,7 +334,7 @@ CRef<CUser_field> s_PackAsUserField(CConstObjectInfo obj, const string* label)
     TUFData& data = field->SetData();
     switch (obj.GetTypeFamily()) {
     case eTypeFamilyPrimitive:
-        s_SetPrimitiveData(data, obj);
+        s_SetPrimitiveData(*field, obj);
         break;
 
     case eTypeFamilyContainer:
@@ -313,6 +440,20 @@ static void s_UnpackPrimitiveField(const TUFData& data, CObjectInfo obj)
 
     case ePrimitiveValueOctetString:
         obj.SetPrimitiveValueOctetString(data.GetOs());
+
+    case ePrimitiveValueBitString:
+    {
+        CBitString bs;
+        s_SetBSFromOS(bs, data.GetOs());
+        obj.SetPrimitiveValueBitString(bs);
+    }
+
+    case ePrimitiveValueOther:
+    {
+        CAnyContentObject aco;
+        s_SetAnyContentFromFields(aco, data.GetFields());
+        obj.SetPrimitiveValueAnyContent(aco);
+    }
     }
 }
 
@@ -411,9 +552,7 @@ static void s_UnpackContainerField(const TUFData& data, CObjectInfo obj)
         break;
 
     case TUFData::e_Oss:
-        if (elt_oti.GetTypeFamily() != eTypeFamilyPrimitive
-            ||  elt_oti.GetPrimitiveValueType()
-            != ePrimitiveValueOctetString) {
+        if (elt_oti.GetTypeFamily() != eTypeFamilyPrimitive) {
             NCBI_THROW(CSerialException, eInvalidData,
                        "Bad User-object encoding.");
         }
@@ -425,7 +564,23 @@ static void s_UnpackContainerField(const TUFData& data, CObjectInfo obj)
         ITERATE (TUFData::TOss, it, data.GetOss()) {
             TObjectPtr p = elt_ti->Create();
             CObjectInfo obj2(p, elt_ti, CObjectInfo::eNonCObject);
-            obj2.SetPrimitiveValueOctetString(**it);
+            switch (elt_oti.GetPrimitiveValueType()) {
+            case ePrimitiveValueOctetString:
+                obj2.SetPrimitiveValueOctetString(**it);
+                break;
+
+            case ePrimitiveValueBitString:
+            {
+                CBitString bs;
+                s_SetBSFromOS(bs, **it);
+                obj.SetPrimitiveValueBitString(bs);
+                break;
+            }
+
+            default:
+                NCBI_THROW(CSerialException, eInvalidData,
+                           "Bad User-object encoding.");
+            }
             elt_ti->Delete(p);
         }
         break;
@@ -496,6 +651,9 @@ static void s_UnpackUserField(const CUser_field& field, CObjectInfo obj)
             case CObject_id::e_Id:
                 index = obj.FindVariantIndex(field.GetLabel().GetId());
                 break;
+            default:
+                index = kInvalidMember;
+                break;
             }
             // make sure index is valid?
             obj.GetChoiceTypeInfo()->SetIndex(obj.GetObjectPtr(), index);
@@ -535,6 +693,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/07/26 19:07:00  ucko
+* Handle BitString and AnyContent fields.
+*
 * Revision 1.3  2005/01/21 13:14:50  dicuccio
 * Include user-object header in implementation, not header
 *
