@@ -50,6 +50,12 @@ class CSeq_annot;
 class CSeq_feat;
 class CSeq_submit;
 
+class CSeq_entry_Handle;
+class CBioseq_Handle;
+class CBioseq_set_Handle;
+class CSeq_annot_Handle;
+class CSeq_feat_Handle;
+
 class CCleanupChange;
 
 class NCBI_CLEANUP_EXPORT CCleanup : public CObject 
@@ -66,6 +72,8 @@ public:
 
     void SetScope(CRef<CScope> scope);
     
+    // BASIC CLEANUP
+    
     /// Cleanup a Seq-entry. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
     /// Cleanup a Seq-submit. 
@@ -79,6 +87,13 @@ public:
     /// Cleanup a Seq-feat. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
 
+    // Handle versions.
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);
+    CConstRef<CCleanupChange> BasicCleanup(CBioseq_Handle& bsh,    Uint4 options = 0);
+    CConstRef<CCleanupChange> BasicCleanup(CBioseq_set_Handle& bssh, Uint4 options = 0);
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_annot_Handle& sak, Uint4 options = 0);
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 options = 0);
+    
     // Extended Cleanup
         /// Cleanup a Seq-entry. 
     CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry& se);
@@ -105,6 +120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/07/26 19:35:13  rsmith
+* add BasicCleanup w/Handles
+*
 * Revision 1.13  2006/06/23 17:10:20  rsmith
 * totally rewrite CCleanupChange class.
 *
