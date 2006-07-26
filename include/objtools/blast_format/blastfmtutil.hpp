@@ -401,16 +401,18 @@ public:
     ///@param info2: the second element
     ///@return: info1 >= info2?
     ///
-    static bool SortHitByPercentIdentityDescendingEx(CRef<CSeq_align_set>& info1,
-                                                     CRef<CSeq_align_set>& info2);
+    static bool SortHitByPercentIdentityDescendingEx
+        (const CRef<CSeq_align_set>& info1,
+         const CRef<CSeq_align_set>& info2);
     
     ///sorting function for sorting a list of seqalign by descending identity
     ///@param info1: the first element 
     ///@param info2: the second element
     ///@return: info1 >= info2?
     ///
-    static bool SortHspByPercentIdentityDescending(CRef<CSeq_align>& info1,
-                                                   CRef<CSeq_align>& info2);
+    static bool SortHspByPercentIdentityDescending
+        (const CRef<CSeq_align>& info1,
+         const CRef<CSeq_align>& info2);
     
     ///sorting function for sorting a list of seqalign by ascending mater 
     ///start position
@@ -451,6 +453,10 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.25  2006/07/26 22:05:48  ucko
+SortHitByPercentIdentityDescendingEx, SortHspByPercentIdentityDescending:
+take references to const CRefs to fix compilation under WorkShop.
+
 Revision 1.24  2006/07/26 18:06:06  jianye
 fix unigene linkout and added seqalign sort funstions
 

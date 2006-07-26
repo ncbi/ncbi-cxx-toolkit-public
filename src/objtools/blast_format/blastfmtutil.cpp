@@ -794,8 +794,8 @@ SortHitByPercentIdentityDescending(list< CRef<CSeq_align_set> >&
 
 
 bool CBlastFormatUtil::
-SortHspByPercentIdentityDescending(CRef<CSeq_align>& info1,
-                                   CRef<CSeq_align>& info2) 
+SortHspByPercentIdentityDescending(const CRef<CSeq_align>& info1,
+                                   const CRef<CSeq_align>& info2) 
 {
      
     int score1, sum_n1, num_ident1;
@@ -974,12 +974,13 @@ double CBlastFormatUtil::GetPercentIdentity(const CSeq_align& aln,
 }
 
 bool CBlastFormatUtil::
-SortHitByPercentIdentityDescendingEx(CRef<CSeq_align_set>& info1,
-                                     CRef<CSeq_align_set>& info2)
+SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
+                                     const CRef<CSeq_align_set>& info2)
 {
-    
-    info1->Set().sort(SortHspByPercentIdentityDescending);
-    info2->Set().sort(SortHspByPercentIdentityDescending);
+    CRef<CSeq_align_set> i1(info1), i2(info2);
+
+    i1->Set().sort(SortHspByPercentIdentityDescending);
+    i2->Set().sort(SortHspByPercentIdentityDescending);
 
   
     int score1, sum_n1, num_ident1;
