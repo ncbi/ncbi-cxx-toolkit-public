@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --**********************************************************************
 --
 --  NCBI Sequence Alignment elements
@@ -12,7 +12,7 @@ BEGIN
 EXPORTS Seq-align, Score, Score-set, Seq-align-set;
 
 IMPORTS Seq-id, Seq-loc , Na-strand FROM NCBI-Seqloc
-        Object-id FROM NCBI-General;
+        User-object, Object-id FROM NCBI-General;
 
 --*** Sequence Alignment ********************************
 --*
@@ -24,8 +24,8 @@ Seq-align ::= SEQUENCE {
         not-set (0) ,
         global (1) ,
         diags (2) ,		-- unbroken, but not ordered, diagonals
-        partial (3) ,           -- mapping pieces together
-	disc (4) ,              -- discontinuous alignment
+        partial (3) ,   -- mapping pieces together
+    	disc (4) ,      -- discontinuous alignment
         other (255) } ,
     dim INTEGER OPTIONAL ,     -- dimensionality
     score SET OF Score OPTIONAL ,   -- for whole alignment
@@ -33,10 +33,21 @@ Seq-align ::= SEQUENCE {
         dendiag SEQUENCE OF Dense-diag ,
         denseg Dense-seg ,
         std SEQUENCE OF Std-seg ,
-	packed Packed-seg ,
-	disc Seq-align-set } ,
-    bounds SET OF Seq-loc OPTIONAL }  -- regions of sequence over which align
-                                      --  was computed
+	    packed Packed-seg ,
+	    disc Seq-align-set,
+	    spliced Spliced-seg
+	} ,
+	
+    -- regions of sequence over which align
+    --  was computed
+    bounds SET OF Seq-loc OPTIONAL,
+
+    -- alignment id
+    id SEQUENCE OF Object-id OPTIONAL,
+
+    --extra info
+    ext SEQUENCE OF User-object OPTIONAL
+}
 
 Dense-diag ::= SEQUENCE {         -- for (multiway) diagonals
     dim INTEGER DEFAULT 2 ,    -- dimensionality
@@ -84,6 +95,140 @@ Std-seg ::= SEQUENCE {
     ids SEQUENCE OF Seq-id OPTIONAL ,
     loc SEQUENCE OF Seq-loc ,
     scores SET OF Score OPTIONAL }
+
+
+Spliced-seg ::= SEQUENCE {
+    -- product is either protein or transcript (cDNA)
+    product-id Seq-id OPTIONAL,
+    genomic-id Seq-id OPTIONAL,
+
+    -- should be 'plus' or 'minus'
+    product-strand Na-strand OPTIONAL ,
+    genomic-strand Na-strand OPTIONAL ,
+    
+    product-type ENUMERATED {
+        transcript(0),
+        protein(1)
+    },
+
+    -- set of segments involved
+    -- each segment corresponds to one exon
+    -- exons are always in biological order
+    exons SEQUENCE OF Spliced-exon ,
+
+    -- optional poly(A) tail
+    poly-a INTEGER OPTIONAL,
+
+    -- length of the product, in bases/residues
+    -- from this, a 3' unaligned length can be extracted; this also captures
+    -- the case in which a protein aligns leaving a partial codon alignment
+    -- at the 3' end
+    product-length INTEGER OPTIONAL,
+
+    -- alignment descriptors / modifiers
+    -- this provides us a set for extension
+    modifiers SET OF Spliced-seg-modifier OPTIONAL
+}
+
+Spliced-seg-modifier ::= CHOICE {
+    -- protein aligns from the start and the first codon 
+    -- on both product and genomic is start codon
+    start-codon-found BOOLEAN,
+    
+    -- protein aligns to it's end and there is stop codon 
+    -- on the genomic right after the alignment
+    stop-codon-found BOOLEAN
+}
+
+
+-- complete or partial exon
+-- two consecutive Spliced-exons may belong to one exon
+Spliced-exon ::= SEQUENCE {
+    -- product-end >= product-start
+    product-start Product-pos ,
+    product-end Product-pos ,
+
+    -- genomic-end >= genomic-start
+    genomic-start INTEGER ,
+    genomic-end INTEGER ,
+
+    -- product is either protein or transcript (cDNA)
+    product-id Seq-id OPTIONAL ,
+    genomic-id Seq-id OPTIONAL ,
+
+    -- should be 'plus' or 'minus'
+    product-strand Na-strand OPTIONAL ,
+    
+    -- genomic-strand represents the strand of translation
+    genomic-strand Na-strand OPTIONAL ,
+
+    -- basic seqments always are in biologic order
+    parts SEQUENCE OF Spliced-exon-chunk OPTIONAL ,
+
+    -- scores for this exon
+    scores Score-set OPTIONAL ,
+
+    -- splice sites
+    splice-5-prime Splice-site OPTIONAL,
+    splice-3-prime Splice-site OPTIONAL,
+    
+    -- flag: is this exon complete or partial?
+    partial BOOLEAN OPTIONAL,
+
+    --extra info
+    ext SEQUENCE OF User-object OPTIONAL
+}
+
+
+Product-pos ::= CHOICE {
+    nucpos INTEGER,
+    protpos Prot-pos
+}
+
+
+-- codon based position on protein (1/3 of aminoacid)
+Prot-pos ::= SEQUENCE {
+    -- standard protein position
+    amin INTEGER ,
+
+    -- 0, 1, 2, or 3 as for Cdregion
+    -- 0 = not set
+    -- 1, 2, 3 = actual frame
+    frame INTEGER DEFAULT 0
+}
+
+
+-- Spliced-exon-chunk: piece of an exon
+-- lengths are given in nucleotide bases (1/3 of aminoacid when product is a
+-- protein)
+Spliced-exon-chunk ::= CHOICE {
+    -- both sequences represented, product and genomic sequences match
+    match INTEGER ,
+
+    -- both sequences represented, product and genomic sequences do not match
+    mismatch INTEGER ,
+
+    -- both sequences are represented, there is sufficient similarity 
+    -- between product and genomic sequences. Can be used to replace stretches
+    -- of matches and mismatches, mostly for protein to genomic where 
+    -- definition of match or mismatch depends on translation table
+    diag INTEGER ,
+
+     -- insertion in product sequence (i.e. gap in the genomic sequence)
+    product-ins INTEGER ,
+
+     -- insertion in genomic sequence (i.e. gap in the product sequence)
+    genomic-ins INTEGER
+}
+
+
+-- site involved in splice
+Splice-site ::= SEQUENCE {
+    -- typically two bases in the intronic region, always
+    -- in IUPAC format
+    bases VisibleString
+}
+
 
 -- use of Score is discouraged for external ASN.1 specifications
 Score ::= SEQUENCE {
