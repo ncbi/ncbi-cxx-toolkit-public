@@ -75,6 +75,11 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);
 
+
+bool kTranslation;
+CRef<CScope> kScope;
+
+
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
 ///@param score: place to extract the raw score to
@@ -513,20 +518,23 @@ void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
     }	
 }
 
-void CBlastFormatUtil::AddSpace(CNcbiOstream& out, size_t number)
+void CBlastFormatUtil::AddSpace(CNcbiOstream& out, int number)
 
 {
-    for(size_t i=0; i<number; i++){
+    for(int i=0; i<number; i++){
         out<<" ";
     }
 
 }
 
-void CBlastFormatUtil::GetScoreString(double evalue, double bit_score, 
+void CBlastFormatUtil::GetScoreString(double evalue, 
+                                      double bit_score, 
+                                      double total_bit_score, 
                                       string& evalue_str, 
-                                      string& bit_score_str)
+                                      string& bit_score_str,
+                                      string& total_bit_score_str)
 {
-    char evalue_buf[10], bit_score_buf[10];
+    char evalue_buf[10], bit_score_buf[10], total_bit_score_buf[10];
     
     if (evalue < 1.0e-180) {
         sprintf(evalue_buf, "0.0");
@@ -551,8 +559,16 @@ void CBlastFormatUtil::GetScoreString(double evalue, double bit_score,
     } else {
         sprintf(bit_score_buf, "%4.1lf", bit_score);
     }
+    if (total_bit_score > 9999){
+        sprintf(total_bit_score_buf, "%4.3le", total_bit_score);
+    } else if (total_bit_score > 99.9){
+        sprintf(total_bit_score_buf, "%4.0ld", (long)total_bit_score);
+    } else {
+        sprintf(total_bit_score_buf, "%4.1lf", total_bit_score);
+    }
     evalue_str = evalue_buf;
     bit_score_str = bit_score_buf;
+    total_bit_score_str = total_bit_score_buf;
 }
 
 
@@ -765,9 +781,238 @@ CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows,
     }
 }
 
+void CBlastFormatUtil::
+SortHitByPercentIdentityDescending(list< CRef<CSeq_align_set> >&
+                                   seqalign_hit_list,
+                                   bool do_translation
+                                   )
+{
+
+    kTranslation = do_translation;
+    seqalign_hit_list.sort(SortHitByPercentIdentityDescendingEx);
+}
+
+
+bool CBlastFormatUtil::
+SortHspByPercentIdentityDescending(CRef<CSeq_align>& info1,
+                                   CRef<CSeq_align>& info2) 
+{
+     
+    int score1, sum_n1, num_ident1;
+    double bits1, evalue1;
+    list<int> use_this_gi1;
+    
+    int score2, sum_n2, num_ident2;
+    double bits2, evalue2;
+    list<int> use_this_gi2;
+    
+    
+    GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
+    GetAlnScores(*info2, score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
+
+    int length1 = GetAlignmentLength(*info1, kTranslation);
+    int length2 = GetAlignmentLength(*info2, kTranslation);
+    
+    
+    if(length1 > 0 && length2 > 0 && num_ident1 > 0 &&num_ident2 > 0 ) {
+        if (((double)num_ident1)/length1 == ((double)num_ident2)/length2) {
+       
+            return bits1 > bits2;
+        
+        } else {
+            return ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
+            
+        }
+    } else {
+        return bits2 >= bits2;
+    }
+}
+
+bool CBlastFormatUtil::SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1,
+                                                     CRef<CSeq_align_set>& info2)
+{
+    int start1 = 0, start2 = 0;
+    
+    
+    info1->Set().sort(SortHspByMasterStartAscending);
+    info2->Set().sort(SortHspByMasterStartAscending);
+  
+    
+    start1 = min(info1->Get().front()->GetSeqStart(0),
+                  info1->Get().front()->GetSeqStop(0));
+    start2 = min(info2->Get().front()->GetSeqStart(0),
+                  info2->Get().front()->GetSeqStop(0));
+    
+    if (start1 == start2) {
+        //same start then arrange by bits score
+        int score1, sum_n1, num_ident1;
+        double bits1, evalue1;
+        list<int> use_this_gi1;
+        
+        int score2, sum_n2, num_ident2;
+        double bits2, evalue2;
+        list<int> use_this_gi2;
+        
+        
+        GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
+        GetAlnScores(*(info1->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
+        return bits1 > bits2;
+        
+    } else {
+        return start1 <= start2;   
+    }
+
+}
+
+bool CBlastFormatUtil::SortHspByMasterStartAscending(CRef<CSeq_align> const& info1,
+                                                     CRef<CSeq_align> const& info2) 
+{
+    int start1 = 0, start2 = 0;
+   
+    start1 = min(info1->GetSeqStart(0), info1->GetSeqStop(0));
+    start2 = min(info2->GetSeqStart(0), info2->GetSeqStop(0)) ;
+   
+    if (start1 == start2) {
+        //same start then arrange by bits score
+        int score1, sum_n1, num_ident1;
+        double bits1, evalue1;
+        list<int> use_this_gi1;
+        
+        int score2, sum_n2, num_ident2;
+        double bits2, evalue2;
+        list<int> use_this_gi2;
+        
+        
+        GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
+        GetAlnScores(*info2, score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
+        return bits1 > bits2;
+        
+    } else {
+        
+        return start1 < start2;  
+    } 
+}
+
+
+int CBlastFormatUtil::GetAlignmentLength(const CSeq_align& aln, bool do_translation)
+{
+  
+    CRef<CSeq_align> final_aln;
+   
+    // Convert Std-seg and Dense-diag alignments to Dense-seg.
+    // Std-segs are produced only for translated searches; Dense-diags only for 
+    // ungapped, not translated searches.
+
+    if (aln.GetSegs().IsStd()) {
+        CRef<CSeq_align> denseg_aln = aln.CreateDensegFromStdseg();
+        // When both query and subject are translated, i.e. tblastx, convert
+        // to a special type of Dense-seg.
+        if (do_translation) {
+            final_aln = denseg_aln->CreateTranslatedDensegFromNADenseg();
+        } else {
+            final_aln = denseg_aln;
+           
+        }
+    } else if (aln.GetSegs().IsDendiag()) {
+        final_aln = CreateDensegFromDendiag(aln);
+    } 
+
+    const CDense_seg& ds = (final_aln ? final_aln->GetSegs().GetDenseg() :
+                            aln.GetSegs().GetDenseg());
+    
+    CAlnMap alnmap(ds);
+    return alnmap.GetAlnStop() + 1;
+}
+
+double CBlastFormatUtil::GetPercentIdentity(const CSeq_align& aln,
+                                            CScope& scope,
+                                            bool do_translation) {
+    double identity = 0;
+    CRef<CSeq_align> final_aln;
+   
+    // Convert Std-seg and Dense-diag alignments to Dense-seg.
+    // Std-segs are produced only for translated searches; Dense-diags only for 
+    // ungapped, not translated searches.
+
+    if (aln.GetSegs().IsStd()) {
+        CRef<CSeq_align> denseg_aln = aln.CreateDensegFromStdseg();
+        // When both query and subject are translated, i.e. tblastx, convert
+        // to a special type of Dense-seg.
+        if (do_translation) {
+            final_aln = denseg_aln->CreateTranslatedDensegFromNADenseg();
+        } else {
+            final_aln = denseg_aln;
+           
+        }
+    } else if (aln.GetSegs().IsDendiag()) {
+        final_aln = CreateDensegFromDendiag(aln);
+    } 
+
+    const CDense_seg& ds = (final_aln ? final_aln->GetSegs().GetDenseg() :
+                            aln.GetSegs().GetDenseg());
+    
+    CAlnVec alnvec(ds, scope);
+    string query, subject;
+
+    alnvec.GetWholeAlnSeqString(0, query);
+    alnvec.GetWholeAlnSeqString(1, subject);
+
+    int num_ident = 0;
+    int length = min(query.size(), subject.size());
+
+    for (int i = 0; i < length; ++i) {
+        if (query[i] == subject[i]) {
+            ++num_ident;
+        }
+    }
+    
+    if (length > 0) {
+        identity = ((double)num_ident)/length;
+    }
+
+    return identity;
+}
+
+bool CBlastFormatUtil::
+SortHitByPercentIdentityDescendingEx(CRef<CSeq_align_set>& info1,
+                                     CRef<CSeq_align_set>& info2)
+{
+    
+    info1->Set().sort(SortHspByPercentIdentityDescending);
+    info2->Set().sort(SortHspByPercentIdentityDescending);
+
+  
+    int score1, sum_n1, num_ident1;
+    double bits1, evalue1;
+    list<int> use_this_gi1;
+    
+    int score2, sum_n2, num_ident2;
+    double bits2, evalue2;
+    list<int> use_this_gi2;
+    
+    GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
+    GetAlnScores(*(info2->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
+    
+    int length1 = GetAlignmentLength(*(info1->Get().front()), kTranslation);
+    int length2 = GetAlignmentLength(*(info2->Get().front()), kTranslation);
+    
+    
+    if(length1 > 0 && length2 > 0 && num_ident1 > 0 &&num_ident2 > 0) {
+        if (((double)num_ident1)/length1 == ((double)num_ident2)/length2) {
+       
+            return bits1 > bits2;
+        
+        } else {
+            return ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
+          
+        }
+    } else {
+        return bits1 >= bits2;
+    }
+}
 
 bool CBlastFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const& info1,
-                                           CRef<CSeq_align_set> const& info2)
+                                                     CRef<CSeq_align_set> const& info2)
 {
     int score1,  score2, sum_n, num_ident;
     double bits, evalue;
