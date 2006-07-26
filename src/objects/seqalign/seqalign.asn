@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --**********************************************************************
 --
 --  NCBI Sequence Alignment elements
@@ -33,10 +33,10 @@ Seq-align ::= SEQUENCE {
         dendiag SEQUENCE OF Dense-diag ,
         denseg Dense-seg ,
         std SEQUENCE OF Std-seg ,
-	    packed Packed-seg ,
-	    disc Seq-align-set,
-	    spliced Spliced-seg
-	} ,
+        packed Packed-seg ,
+        disc Seq-align-set,
+        spliced Spliced-seg
+    } ,
 	
     -- regions of sequence over which align
     --  was computed
