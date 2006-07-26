@@ -56,6 +56,13 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/bioseq_set_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_feat_handle.hpp>
+#include <objmgr/bioseq_ci.hpp>
+
 #include <objtools/cleanup/cleanup.hpp>
 #include "../format/utils.hpp"
 #include "cleanupp.hpp"
@@ -231,7 +238,6 @@ void CCleanup_imp::BasicCleanup(CSeq_descr& sdr)
 }
 
 
-
 static bool s_SeqDescCommentCleanup( CSeqdesc::TComment& comment )
 {
     //  Remove trailing periods:
@@ -253,10 +259,14 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
         case CSeqdesc::e_Method:
             break;
         case CSeqdesc::e_Name:
-            CleanString( sd.SetName() );
+            if (CleanString( sd.SetName() ) ) {
+                ChangeMade(CCleanupChange::eTrimSpaces);
+            }
             break;
         case CSeqdesc::e_Title:
-            CleanString( sd.SetTitle() );
+            if (CleanString( sd.SetTitle() ) ) {
+                ChangeMade(CCleanupChange::eTrimSpaces);
+            }
             break;
         case CSeqdesc::e_Org:
             BasicCleanup(sd.SetOrg() );
@@ -279,7 +289,9 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
             BasicCleanup(sd.SetPub());
             break;
         case CSeqdesc::e_Region:
-            CleanString( sd.SetRegion() );
+            if (CleanString( sd.SetRegion() ) ) {
+                ChangeMade(CCleanupChange::eTrimSpaces);
+            }
             break;
         case CSeqdesc::e_User:
             BasicCleanup( sd.SetUser() );
@@ -328,6 +340,93 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
         }
     }
 }
+
+
+// Basic Cleanup w/Object Manager Handles.
+// cleanup fields that object manager cares about. (like changing feature types.)
+
+void CCleanup_imp::Setup(const CSeq_entry_Handle& seh)
+{
+    /*** Set cleanup mode. ***/
+    
+    CBioseq_Handle first_bioseq;
+    switch (seh.Which()) {
+        case CSeq_entry::e_Seq :
+        {
+            first_bioseq = seh.GetSeq();
+            break;            
+        }
+        case CSeq_entry::e_Set :
+        {
+            CBioseq_CI bs_i(seh.GetSet());
+            if (bs_i) {
+                first_bioseq = *bs_i;
+            }
+            break;            
+        }
+    }
+    
+    m_Mode = eCleanup_GenBank;
+    if (first_bioseq  &&  first_bioseq.CanGetId()) {
+        ITERATE (CBioseq_Handle::TId, it, first_bioseq.GetId()) {
+            const CSeq_id& id = *(it->GetSeqId());
+            if (id.IsEmbl()  ||  id.IsTpe()) {
+                m_Mode = eCleanup_EMBL;
+            } else if (id.IsDdbj()  ||  id.IsTpd()) {
+                m_Mode = eCleanup_DDBJ;
+            } else if (id.IsSwissprot()) {
+                m_Mode = eCleanup_SwissProt;
+            }
+        }        
+    }
+    
+}
+
+
+void CCleanup_imp::Finish(CSeq_entry_Handle& seh)
+{
+    // cleanup for Cleanup.
+    
+}
+
+void CCleanup_imp::BasicCleanup(CSeq_entry_Handle& seh)
+{
+    Setup(seh);
+    CFeat_CI fi(seh);
+    for (; fi; ++fi) {
+        BasicCleanup(fi->GetSeq_feat_Handle());
+    }
+    Finish(seh);
+}
+
+
+void CCleanup_imp::BasicCleanup(const CBioseq_Handle& bsh)
+{
+    CFeat_CI fi(bsh);
+    for (; fi; ++fi) {
+        BasicCleanup(fi->GetSeq_feat_Handle());
+    }
+}
+
+
+void CCleanup_imp::BasicCleanup(CBioseq_set_Handle& bssh)
+{
+    CBioseq_CI bsi(bssh);
+    for (; bsi; ++bsi) {
+        BasicCleanup(*bsi);
+    }
+}
+
+
+void CCleanup_imp::BasicCleanup(CSeq_annot_Handle& sah)
+{
+    CFeat_CI fi(sah);
+    for (; fi; ++fi) {
+        BasicCleanup(fi->GetSeq_feat_Handle());
+    }
+}
+
+
 
 // Extended Cleanup Methods
 void CCleanup_imp::ExtendedCleanup(CSeq_entry_Handle seh)
@@ -1467,6 +1566,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2006/07/26 19:37:50  rsmith
+ * add cleanup w/handles and reporting
+ *
  * Revision 1.38  2006/07/26 17:12:41  bollin
  * added method to remove redundant genbank block information
  *

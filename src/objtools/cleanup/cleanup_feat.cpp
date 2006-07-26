@@ -91,18 +91,27 @@ void CCleanup_imp::x_CleanupExcept_text(string& except_text)
 
     NON_CONST_ITERATE(vector<string>, it, exceptions) {
         string& text = *it;
+        size_t tlen = text.length();
         NStr::TruncateSpacesInPlace(text);
+        if (text.length() != tlen) {
+            ChangeMade(CCleanupChange::eTrimSpaces);
+        }
         if (!text.empty()) {
             if (text == "ribosome slippage") {
                 text = "ribosomal slippage";
+                ChangeMade(CCleanupChange::eChangeException);
             } else if (text == "trans splicing") {
                 text = "trans-splicing";
+                ChangeMade(CCleanupChange::eChangeException);
             } else if (text == "alternate processing") {
                 text = "alternative processing";
+                ChangeMade(CCleanupChange::eChangeException);
             } else if (text == "adjusted for low quality genome") {
                 text = "adjusted for low-quality genome";
+                ChangeMade(CCleanupChange::eChangeException);
             } else if (text == "non-consensus splice site") {
                 text = "nonconsensus splice site";
+                ChangeMade(CCleanupChange::eChangeException);
             }
         }
     }
@@ -194,6 +203,7 @@ void CCleanup_imp::x_AddReplaceQual(CSeq_feat& feat, const string& str)
         SIZE_TYPE end = str.find_first_of('\"', start + 1);
         if (end != NPOS) {
             feat.AddQualifier("replace", str.substr(start + 1, end));
+            ChangeMade(CCleanupChange::eChangeQualifiers);
         }
     }
 }
@@ -287,6 +297,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
             if (gene.IsSetLocus()  &&  feat.IsSetComment()) {
                 if (feat.GetComment() == gene.GetLocus()) {
                     feat.ResetComment();
+                    ChangeMade(CCleanupChange::eChangeComment);
                 }
             }
                 
@@ -294,6 +305,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
             if (gene.IsSetDb()) {
                 copy(gene.GetDb().begin(), gene.GetDb().end(), back_inserter(feat.SetDbxref()));
                 gene.ResetDb();
+                ChangeMade(CCleanupChange::eChangeDbxrefs);
             }
             
             // move db_xref from gene xrefs to feature
@@ -308,10 +320,12 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                             copy(gref.GetDb().begin(), gref.GetDb().end(), 
                                  back_inserter(feat.SetDbxref()));
                             gref.ResetDb();
+                            ChangeMade(CCleanupChange::eChangeDbxrefs);
                         }
                         // remove gene xref if it has no values set
                         if (s_IsEmptyGeneRef(gref)) {
                             it = xrefs.erase(it);
+                            ChangeMade(CCleanupChange::eChangeDbxrefs);
                         } else {
                             ++it;
                         }
@@ -339,11 +353,13 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                             if (NStr::Find(*it, "putative") != NPOS  ||
                                 NStr::Find(*it, "put. ") != NPOS) {
                                 feat.SetComment("putative");
+                                ChangeMade(CCleanupChange::eChangeComment);
                             }
                         }
                         // remove uninformative names
                         if (!s_IsInformativeName(*it)) {
                             it = name.erase(it);
+                            ChangeMade(CCleanupChange::eChangeQualifiers);
                         } else {
                             ++it;
                         }
@@ -356,6 +372,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                 copy(prot.GetDb().begin(), prot.GetDb().end(),
                      back_inserter(feat.SetDbxref()));
                 prot.ResetDb();
+                ChangeMade(CCleanupChange::eChangeDbxrefs);
             }
         }
         break;
@@ -372,20 +389,25 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
             if (imp.IsSetLoc()  &&  (NStr::Find(imp.GetLoc(), "replace") != NPOS)) {
                 x_AddReplaceQual(feat, imp.GetLoc());
                 imp.ResetLoc();
+                ChangeMade(CCleanupChange::eChangeQualifiers);
             }
             
+/*
             if (imp.IsSetKey()) {
                 const CImp_feat::TKey& key = imp.GetKey();
                 
                 if (key == "CDS") {
+
                     if ( ! (m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ) ) {
                         data.SetCdregion();
+                        ChangeMade(CCleanupChange::eChangeFeatureKey);
                         //s_CleanupCdregion(feat);
                     }
                 } else if (!imp.IsSetLoc()  ||  NStr::IsBlank(imp.GetLoc())) {
                     TRnaTypeMap::const_iterator rna_type_it = sc_RnaTypeMap.find(key);
                     if (rna_type_it != sc_RnaTypeMap.end()) {
                         CSeqFeatData::TRna& rna = data.SetRna();
+                        ChangeMade(CCleanupChange::eChangeFeatureKey);
                         rna.SetType(rna_type_it->second);
                         BasicCleanup(rna);
                     } else {
@@ -393,6 +415,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                     }
                 }
             }
+*/
         }
         break;
     case CSeqFeatData::e_Region:
@@ -404,9 +427,12 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
             if (ConvertDoubleQuotes(region)) {
                 ChangeMade(CCleanupChange::eCleanDoubleQuotes);
             }
+/*
             if (region.empty()) {
                 feat.SetData().SetComment();
+                ChangeMade(CCleanupChange::eChangeFeatureKey);
             }
+ */
         }
         break;
     case CSeqFeatData::e_Comment:
@@ -425,6 +451,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                         if (NStr::IsBlank(comment, it->first.length())  ||
                             NStr::EqualNocase(comment, it->first.length(), NPOS, " site")) {
                             feat.ResetComment();
+                            ChangeMade(CCleanupChange::eChangeComment);
                         }
                     }
                 }
@@ -451,6 +478,54 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
         break;
     }
 }
+
+
+void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
+{
+    CSeq_feat& feat = const_cast<CSeq_feat&> (*sfh.GetSeq_feat());
+    
+    CSeqFeatData& data = feat.SetData();
+    switch (data.Which()) {
+    case CSeqFeatData::e_Imp:
+        {
+            CSeqFeatData::TImp& imp = data.SetImp();
+            
+            if (imp.IsSetKey()) {
+                const CImp_feat::TKey& key = imp.GetKey();
+                
+                if (key == "CDS") {
+                    if ( ! (m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ) ) {
+                        data.SetCdregion();
+                        ChangeMade(CCleanupChange::eChangeFeatureKey);
+                    }
+                } else if (!imp.IsSetLoc()  ||  NStr::IsBlank(imp.GetLoc())) {
+                    TRnaTypeMap::const_iterator rna_type_it = sc_RnaTypeMap.find(key);
+                    if (rna_type_it != sc_RnaTypeMap.end()) {
+                        CSeqFeatData::TRna& rna = data.SetRna();
+                        ChangeMade(CCleanupChange::eChangeFeatureKey);
+                        rna.SetType(rna_type_it->second);
+                    } else {
+                        // !!! need to find protein bioseq with object manager
+                    }
+                }
+            }
+        }
+        break;
+    case CSeqFeatData::e_Region:
+        {            
+            string &region = data.SetRegion();
+            if (CleanString(region)) {
+                ChangeMade(CCleanupChange::eTrimSpaces);
+            }
+            if (region.empty()) {
+                feat.SetData().SetComment();
+                ChangeMade(CCleanupChange::eChangeFeatureKey);
+            }
+        }
+        break;
+    }
+}
+
 
 
 // === Seq-feat.dbxref
@@ -505,6 +580,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
     CLEAN_STRING_MEMBER(f, Comment);
     if (f.IsSetComment()  &&  f.GetComment() == ".") {
         f.ResetComment();
+        ChangeMade(CCleanupChange::eChangeComment);
     }
     CLEAN_STRING_MEMBER(f, Title);
     CLEAN_STRING_MEMBER(f, Except_text);
@@ -523,6 +599,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         while (it != dbxref.end()) {
             if (it->Empty()) {
                 it = dbxref.erase(it);
+                ChangeMade(CCleanupChange::eCleanDbxrefs);
                 continue;
             }
             BasicCleanup(**it);
@@ -531,9 +608,13 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         }
         
         // sort/unique db_xrefs
+        size_t n_dbxref = dbxref.size();
         stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
         it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
         dbxref.erase(it, dbxref.end());
+        if (dbxref.size() != n_dbxref) {
+            ChangeMade(CCleanupChange::eCleanDbxrefs);
+        }
     }
     if (f.IsSetQual()) {
         
@@ -547,6 +628,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
             if (BasicCleanup(f, gb_qual)) {
                 it = f.SetQual().erase(it);
                 it_end = f.SetQual().end();
+                ChangeMade(CCleanupChange::eCleanQualifiers);
             } else {
                 ++it;
             }
@@ -556,9 +638,13 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         
         // sort/uniquequalsdb_xrefs
         CSeq_feat::TQual& quals = f.SetQual();
+        size_t n_quals = quals.size();
         stable_sort(quals.begin(), quals.end(), SGb_QualCompare());
         CSeq_feat::TQual::iterator erase_it = unique(quals.begin(), quals.end(), SGb_QualEqual());
         quals.erase(erase_it, quals.end());
+        if (n_quals != quals.size()) {
+            ChangeMade(CCleanupChange::eCleanQualifiers);
+        }
     }
     if (f.IsSetCit()) {
         CPub_set& ps = f.SetCit();
@@ -582,6 +668,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
             }
             if (dup_rejected) {
                 // report that we deleted a duplicate citation.
+                ChangeMade(CCleanupChange::eCleanCitonFeat);
             }
         }
     }
@@ -613,6 +700,7 @@ void CCleanup_imp::BasicCleanup(CGene_ref& gene_ref)
         while (it != syns.end()) {
             if (locus == *it) {
                 it = syns.erase(it);
+                ChangeMade(CCleanupChange::eChangeQualifiers);
             } else {
                 ++it;
             }
@@ -634,6 +722,7 @@ void CCleanup_imp::BasicCleanup(CProt_ref& prot_ref)
         if (processed == CProt_ref::eProcessed_preprotein  ||  
             processed == CProt_ref::eProcessed_mature) {
             prot_ref.SetName().push_back("unnamed");
+            ChangeMade(CCleanupChange::eChangeQualifiers);
         }
     }
 }
@@ -653,10 +742,13 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
                     _ASSERT(rr.IsSetExt()  &&  rr.GetExt().IsName());
                     
                     string& name = rr.SetExt().SetName();
-                    CleanString(name);
+                    if (CleanString(name)) {
+                        ChangeMade(CCleanupChange::eTrimSpaces);
+                    }
                     
                     if (name.empty()) {
                         rr.ResetExt();
+                        ChangeMade(CCleanupChange::eChangeQualifiers);
                     } else if (rr.IsSetType()) {
                         switch (rr.GetType()) {
                             case CRNA_ref::eType_rRNA:
@@ -666,6 +758,7 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
                                     NStr::EndsWith(name, rRNA, NStr::eNocase)  &&
                                     !NStr::EndsWith(name, kRibosomalrRna, NStr::eNocase)) {
                                     name.replace(len - rRNA.length(), name.size(), kRibosomalrRna);
+                                    ChangeMade(CCleanupChange::eChangeQualifiers);
                                 }
                                 break;
                             }}
@@ -678,12 +771,16 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
                             {{
                                 if (NStr::EqualNocase(name, "its1")) {
                                     name = "internal transcribed spacer 1";
+                                    ChangeMade(CCleanupChange::eChangeQualifiers);
                                 } else if (NStr::EqualNocase(name, "its2")) {
                                     name = "internal transcribed spacer 2";
+                                    ChangeMade(CCleanupChange::eChangeQualifiers);
                                 } else if (NStr::EqualNocase(name, "its3")) {
                                     name = "internal transcribed spacer 3";
+                                    ChangeMade(CCleanupChange::eChangeQualifiers);
                                 } else if (NStr::EqualNocase(name, "its")) {
                                     name = "internal transcribed spacer";
+                                    ChangeMade(CCleanupChange::eChangeQualifiers);
                                     break;
                                 }
                             }}
@@ -715,8 +812,10 @@ void CCleanup_imp::BasicCleanup(CImp_feat& imf)
         const CImp_feat::TKey& key = imf.GetKey();
         if (key == "allele"  ||  key == "mutation") {
             imf.SetKey("variation");
+            ChangeMade(CCleanupChange::eChangeKeywords);
         } else if (NStr::EqualNocase(key, "import")) {
             imf.SetKey("misc_feature");
+            ChangeMade(CCleanupChange::eChangeKeywords);
         }
     }
 }
@@ -1361,6 +1460,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2006/07/26 19:38:56  rsmith
+ * add cleanup w/handles and reporting
+ *
  * Revision 1.23  2006/07/25 20:07:13  bollin
  * added step to ExtendedCleanup to remove unnecessary gene xrefs
  *
