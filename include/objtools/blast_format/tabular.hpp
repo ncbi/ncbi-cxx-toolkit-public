@@ -276,9 +276,10 @@ private:
 inline void 
 CBlastTabularInfo::SetScores(int score, double bit_score, double evalue)
 {
+    string total_bit_string;
     m_Score = score;
-    CBlastFormatUtil::GetScoreString(evalue, bit_score, m_Evalue, 
-                                     m_BitScore);
+    CBlastFormatUtil::GetScoreString(evalue, bit_score, 0, m_Evalue, 
+                                     m_BitScore, total_bit_string);
 }
 
 inline void 
@@ -529,6 +530,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/07/26 18:07:02  jianye
+* adjust parameters due to proto type in GetScoreString
+*
 * Revision 1.11  2006/03/15 02:09:04  ucko
 * +<algorithm> (once indirectly included?) for sort().
 *
