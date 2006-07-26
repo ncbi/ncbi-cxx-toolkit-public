@@ -388,6 +388,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
                                       &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
     x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+                                      
+                                      
     RemoveEmptyFeaturesDescriptorsAndAnnots(bss);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemovePseudoProducts);
     
@@ -396,8 +398,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     
     if (seh.IsSet()) {
         bss = seh.GetSet().GetEditHandle();
+        x_ChangeGenBankBlocks (bss.GetParentEntry());
         x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
-
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
         x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
@@ -415,7 +417,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     } else {
         CBioseq_EditHandle bsh = seh.GetSeq().GetEditHandle();
         x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
-
+        x_ChangeGenBankBlocks (bsh.GetParentEntry());
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
         x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
@@ -456,8 +458,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     RemoveEmptyFeaturesDescriptorsAndAnnots(bsh);
     
+    x_ChangeGenBankBlocks (bsh.GetParentEntry());
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
-
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
     x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
@@ -1465,6 +1467,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2006/07/26 17:12:41  bollin
+ * added method to remove redundant genbank block information
+ *
  * Revision 1.37  2006/07/25 20:07:13  bollin
  * added step to ExtendedCleanup to remove unnecessary gene xrefs
  *

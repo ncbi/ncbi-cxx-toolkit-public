@@ -135,6 +135,7 @@ void CCleanup_imp::x_ChangeGBDiv (CSeq_entry_Handle seh, string div)
 			    }
 			} 
 		}
+		++gbdesc_i;
 	}
 }
 
@@ -193,6 +194,7 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
         CSeq_entry_CI seq_iter(seh);
         while (seq_iter) {
             x_ChangeGBDiv (*seq_iter, div);
+            ++seq_iter;
         }
     }
 }
@@ -206,6 +208,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/07/26 17:12:41  bollin
+ * added method to remove redundant genbank block information
+ *
  * Revision 1.1  2006/07/26 15:40:48  bollin
  * file to hold basic and extended cleanup functions for descriptors that are not
  * source descriptors

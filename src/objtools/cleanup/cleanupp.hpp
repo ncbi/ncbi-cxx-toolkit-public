@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 
@@ -82,6 +83,7 @@ class COrg_ref;
 class COrgName;
 class COrgMod;
 class CSubSource;
+class CMolInfo;
 
 
 /// right now a slightly different cleanup is performed for EMBL/DDBJ and
@@ -280,6 +282,10 @@ private:
     bool x_IsMergeableBioSource(const CSeqdesc& sd);    
     bool x_MergeDuplicateBioSources(CSeqdesc& sd1, CSeqdesc& sd2);
 
+    void x_CheckGenbankBlockTechKeywords(CGB_block& gb_block, CMolInfo::TTech tech);
+    void x_ChangeGBDiv (CSeq_entry_Handle seh, string div);
+    void x_ChangeGenBankBlocks(CSeq_entry_Handle seh);
+
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
     CCleanup_imp& operator= (const CCleanup_imp&);
@@ -300,6 +306,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2006/07/26 17:12:41  bollin
+ * added method to remove redundant genbank block information
+ *
  * Revision 1.36  2006/07/25 20:07:13  bollin
  * added step to ExtendedCleanup to remove unnecessary gene xrefs
  *
