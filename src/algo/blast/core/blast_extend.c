@@ -188,8 +188,8 @@ Int2 BlastExtendWordNew(const LookupTableWrap* lookup_wrap, Uint4 query_length,
 
       search_space = 
          ((double) query_length) * subject_length;
-      num_stacks = MIN(1 + (Int4) (sqrt(search_space)/100), 500);
-      stack_size = 5000/num_stacks;
+      num_stacks = 512;
+      stack_size = 8;
       stack_table->stack_index = (Int4*) calloc(num_stacks, sizeof(Int4));
       stack_table->stack_size = (Int4*) malloc(num_stacks*sizeof(Int4));
 
@@ -661,9 +661,8 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
    two_hits = (window_size > 0);
 
    /* Find the stack index */
-   diag = (s_off - q_off) % stack_table->num_stacks;
-   if (diag<0)
-      diag += stack_table->num_stacks;
+   diag = (s_off - q_off) & 0x1ff;
+
    stack = stack_table->bn_stack_array[diag];
    stack_top = stack_table->stack_index[diag] - 1;
    
