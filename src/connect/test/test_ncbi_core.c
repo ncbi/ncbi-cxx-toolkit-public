@@ -341,7 +341,7 @@ static void TEST_UTIL_Log(void)
 }
 
 
-static void TEST_GetUsername(void)
+static void TEST_CORE_GetUsername(void)
 {
     char buffer[512];
     const char* username = CORE_GetUsername(buffer, sizeof(buffer));
@@ -352,10 +352,31 @@ static void TEST_GetUsername(void)
 }
 
 
+static void TEST_UTIL_MatchesMask(void)
+{
+    assert(UTIL_MatchesMaskEx("aaa", "*a",  0) == 1);
+    assert(UTIL_MatchesMaskEx("bbb", "*a",  0) == 0);
+    assert(UTIL_MatchesMaskEx("bba", "*a",  0) == 1);
+    assert(UTIL_MatchesMaskEx("aab", "*a",  0) == 0);
+    assert(UTIL_MatchesMaskEx("aaa", "*a*", 0) == 1);
+    assert(UTIL_MatchesMaskEx("AAA", "*a",  1) == 1);
+    assert(UTIL_MatchesMaskEx("aaa", "*",   0) == 1);
+    printf("PASSED\n");
+}
+
+
+static void TEST_CORE_GetVMPageSize(void)
+{
+    printf("PageSize = %d\n", (int) CORE_GetVMPageSize());
+}
+
+
 static void TEST_UTIL(void)
 {
   DO_TEST(TEST_UTIL_Log);
-  DO_TEST(TEST_GetUsername);
+  DO_TEST(TEST_CORE_GetUsername);
+  DO_TEST(TEST_UTIL_MatchesMask);
+  DO_TEST(TEST_CORE_GetVMPageSize);
 }
 
 
@@ -375,6 +396,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2006/07/26 14:47:32  lavr
+ * +TEST_UTIL_MatchesMask, +TEST_CORE_GetVMPageSize
+ *
  * Revision 6.11  2006/06/15 03:02:32  lavr
  * GetUsername test moved here
  *
