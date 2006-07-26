@@ -523,12 +523,12 @@ double GetStandardProbability(char ch)
     static CharDoubleMap standardProbabilities;
 
     if (standardProbabilities.size() == 0) {  // initialize static stuff
-        if (BLASTAA_SIZE != 26) {
-            ERRORMSG("GetStandardProbability() - confused by BLASTAA_SIZE != 26");
+        if (BLASTAA_SIZE != 28) {
+            ERRORMSG("GetStandardProbability() - confused by BLASTAA_SIZE != 28");
             return 0.0;
         }
         double *probs = BLAST_GetStandardAaProbabilities();
-        for (unsigned int i=0; i<26; ++i) {
+        for (unsigned int i=0; i<28; ++i) {
             standardProbabilities[LookupCharacterFromNCBIStdaaNumber(i)] = probs[i];
 //            TRACEMSG("standard probability " << LookupCharacterFromNCBIStdaaNumber(i) << " : " << probs[i]);
         }
@@ -547,6 +547,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2006/07/26 22:21:07  thiessen
+* adjust for 28-letter ncbistdaa
+*
 * Revision 1.49  2006/07/13 22:33:51  thiessen
 * change all 'slave' -> 'dependent'
 *

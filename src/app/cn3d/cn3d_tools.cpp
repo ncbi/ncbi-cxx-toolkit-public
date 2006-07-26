@@ -312,6 +312,7 @@ CRef < CBioseq > FetchSequenceViaHTTP(const string& id)
     return bioseq;
 }
 
+static const string NCBIStdaaResidues("-ABCDEFGHIKLMNPQRSTVWXYZU*OJ");
 
 // gives NCBIStdaa residue number for a character (or value for 'X' if char not found)
 unsigned char LookupNCBIStdaaNumberFromCharacter(char r)
@@ -320,7 +321,6 @@ unsigned char LookupNCBIStdaaNumberFromCharacter(char r)
     static Char2UChar charMap;
 
     if (charMap.size() == 0) {
-        const string NCBIStdaaResidues("-ABCDEFGHIKLMNPQRSTVWXYZU*");
         for (unsigned int i=0; i<NCBIStdaaResidues.size(); ++i)
             charMap[NCBIStdaaResidues[i]] = (unsigned char) i;
     }
@@ -332,12 +332,11 @@ unsigned char LookupNCBIStdaaNumberFromCharacter(char r)
         return charMap.find('X')->second;
 }
 
-extern char LookupCharacterFromNCBIStdaaNumber(unsigned char n)
+char LookupCharacterFromNCBIStdaaNumber(unsigned char n)
 {
-    static const string NCBIStdaaResidues("-ABCDEFGHIKLMNPQRSTVWXYZU*");
-    if (n <= 25)
+    if (n <= 27)
         return NCBIStdaaResidues[n];
-    ERRORMSG("LookupCharacterFromNCBIStdaaNumber() - valid values are 0 - 25");
+    ERRORMSG("LookupCharacterFromNCBIStdaaNumber() - valid values are 0 - 27");
     return '?';
 }
 
@@ -346,6 +345,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/07/26 22:21:07  thiessen
+* adjust for 28-letter ncbistdaa
+*
 * Revision 1.12  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

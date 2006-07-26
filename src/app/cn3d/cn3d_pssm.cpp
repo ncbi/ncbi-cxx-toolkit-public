@@ -212,7 +212,7 @@ void PSSMWrapper::UnpackMatrix(ncbi::cd_utils::PssmMaker& pm)
     if (!pssm->GetPssm().IsSetFinalData())
         PTHROW("UnpackMatrix() - pssm must have finalData");
     unsigned int nScores = pssm->GetPssm().GetNumRows() * pssm->GetPssm().GetNumColumns();
-    if (pssm->GetPssm().GetNumRows() != 26 || pssm->GetPssm().GetFinalData().GetScores().size() != nScores)
+    if (pssm->GetPssm().GetNumRows() != 28 || pssm->GetPssm().GetFinalData().GetScores().size() != nScores)
         PTHROW("UnpackMatrix() - bad matrix size");
 
     scalingFactor = pssm->GetPssm().GetFinalData().GetScalingFactor();
@@ -221,7 +221,7 @@ void PSSMWrapper::UnpackMatrix(ncbi::cd_utils::PssmMaker& pm)
     unsigned int i;
     scaledMatrix.resize(pssm->GetPssm().GetNumColumns());
     for (i=0; (int)i<pssm->GetPssm().GetNumColumns(); ++i)
-        scaledMatrix[i].resize(26);
+        scaledMatrix[i].resize(28);
 
     // convert matrix
     unsigned int r = 0, c = 0;
@@ -312,7 +312,7 @@ static inline int Round(double Num)
 
 int PSSMWrapper::GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIndex) const
 {
-    if (ncbistdaa >= 26 || realMasterIndex > multiple->GetMaster()->Length()) {
+    if (ncbistdaa >= 28 || realMasterIndex > multiple->GetMaster()->Length()) {
         ERRORMSG("PSSMWrapper::GetPSSMScore() - invalid parameters");
         return kMin_Int;
     }
@@ -346,6 +346,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/07/26 22:21:07  thiessen
+* adjust for 28-letter ncbistdaa
+*
 * Revision 1.24  2006/07/13 22:33:51  thiessen
 * change all 'slave' -> 'dependent'
 *

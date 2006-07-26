@@ -180,11 +180,9 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
 
 static void StringFromStdaa(const vector < char >& vec, string *str)
 {
-    static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
-
     str->resize(vec.size());
     for (unsigned int i=0; i<vec.size(); ++i)
-        str->at(i) = stdaaMap[vec[i]];
+        str->at(i) = LookupCharacterFromNCBIStdaaNumber(vec[i]);
 }
 
 Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
@@ -645,6 +643,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2006/07/26 22:21:07  thiessen
+* adjust for 28-letter ncbistdaa
+*
 * Revision 1.78  2006/05/30 22:21:29  thiessen
 * fix warning
 *
