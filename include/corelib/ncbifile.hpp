@@ -40,7 +40,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
-#include <vector>
+#include <memory>
 
 #include <sys/types.h>
 #if defined(HAVE_SYS_STAT_H)
@@ -2760,6 +2760,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2006/07/27 15:16:56  ucko
+ * Don't bother including <vector>, which ncbistr.hpp already covers, but
+ * *do* make sure to include <memory> for auto_ptr<>.
+ *
  * Revision 1.77  2006/07/27 13:37:30  ivanov
  * Fixed FindFilesInDir functions to find files in sub-directories without
  * applying masks to sub-directory name.
