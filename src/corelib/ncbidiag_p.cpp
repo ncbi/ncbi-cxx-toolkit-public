@@ -81,6 +81,24 @@ void CDiagStrStringMatcher::Print(ostream& out) const
 ///////////////////////////////////////////////////////
 //  CDiagStrPathMatcher::
 
+CDiagStrPathMatcher::CDiagStrPathMatcher(const string& pattern)
+    : m_Pattern(pattern)
+{
+#   ifdef NCBI_OS_MSWIN
+    size_t pos;
+    // replace \ in windows path to /
+    while ( (pos = m_Pattern.find('\\'))  !=  string::npos )
+        m_Pattern[pos] = '/';
+#   endif
+#   ifdef NCBI_OS_MACOS
+    size_t pos;
+    // replace : in mac path to /
+    while ( (pos = m_Pattern.find(':'))  !=  string::npos )
+        m_Pattern[pos] = '/';
+#   endif
+}
+
+
 bool CDiagStrPathMatcher::Match(const char* str) const
 {
     if ( !str )
@@ -441,6 +459,7 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
                 m_Str = kEmptyStr;
                 state = eExpectCloseBracket;
                 break;
+            case '\\':
             case '/' :
                 state = eInsidePath;
                 m_Str = symbol;
@@ -823,6 +842,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.14  2006/07/27 21:16:51  grichenk
+ * Accept both slashes as path start in SetDiagFilter.
+ *
  * Revision 1.13  2005/05/12 18:35:13  vakatov
  * Minor warning heeded
  *

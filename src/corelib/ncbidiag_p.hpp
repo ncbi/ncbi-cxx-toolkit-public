@@ -133,10 +133,9 @@ private:
 class CDiagStrPathMatcher : public CDiagStrMatcher
 {
 public:
-    // Constructor - set the pattern to match
-    CDiagStrPathMatcher(const string& pattern)
-        : m_Pattern(pattern)
-    {}
+    // Constructor - set the pattern to match. The pattern is converted
+    // to UNIX format ('/' rather than '\' or ':').
+    CDiagStrPathMatcher(const string& pattern);
 
     /// Return true if str is equal to pattern
     virtual bool Match(const char* str) const;
@@ -356,6 +355,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/07/27 21:16:51  grichenk
+ * Accept both slashes as path start in SetDiagFilter.
+ *
  * Revision 1.5  2005/04/26 14:46:28  ssikorsk
  * Changed semantic of the "!" (negation) operator from *NOT* to *AND NOT*
  * with the DIAG_FILTER expression evaluation.
