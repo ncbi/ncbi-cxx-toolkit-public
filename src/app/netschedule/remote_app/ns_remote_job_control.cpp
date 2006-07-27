@@ -144,7 +144,7 @@ void CNSRemoveJobControlApp::Init(void)
     arg_desc->AddOptionalKey("of", 
                              "file_names",
                              "Output file",
-                             CArgDescriptions::eString);
+                             CArgDescriptions::eOutputFile);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -207,19 +207,8 @@ int CNSRemoveJobControlApp::Run(void)
 
 
     CNcbiOstream* out = &NcbiCout;
-    auto_ptr<CNcbiOstream> out_guard;
     if (args["of"]) {
-        string fname = args["of"].AsString();
-        if (fname == "-")
-            out = &NcbiCout;
-        else {
-            out_guard.reset(new CNcbiOfstream(fname.c_str()));
-            if (!out_guard->good())
-                NCBI_THROW(CArgException, eInvalidArg,
-                       "Could not create file \"" + fname + "\"");
-            else
-                out = out_guard.get();
-        }
+        out = &args["of"].AsOutputFile();
     }
 
     auto_ptr<ITagWriter> writer;
@@ -360,6 +349,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/07/27 15:30:44  didenko
+ * Simplified the output file creation.
+ *
  * Revision 1.3  2006/06/15 15:27:08  didenko
  * Added drop_jobs command
  *

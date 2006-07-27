@@ -134,7 +134,7 @@ void CNSSubmitRemoveJobApp::Init(void)
     arg_desc->AddOptionalKey("of", 
                              "file_names",
                              "Ouput files with job ids",
-                             CArgDescriptions::eString);
+                             CArgDescriptions::eOutputFile);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -204,19 +204,8 @@ int CNSSubmitRemoveJobApp::Run(void)
     CGridClientApp::Init();
 
     CNcbiOstream* out = NULL;
-    auto_ptr<CNcbiOstream> out_guard;
     if (args["of"]) {
-        string fname = args["of"].AsString();
-        if (fname == "-")
-            out = &NcbiCout;
-        else {
-            out_guard.reset(new CNcbiOfstream(fname.c_str()));
-            if (!out_guard->good())
-                NCBI_THROW(CArgException, eInvalidArg,
-                       "Could not create file \"" + fname + "\"");
-            else
-                out = out_guard.get();
-        }
+        out = &args["of"].AsOutputFile();
     }
 
     CBlobStorageFactory factory(reg);
@@ -333,6 +322,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/07/27 15:30:44  didenko
+ * Simplified the output file creation.
+ *
  * Revision 1.10  2006/07/24 16:39:37  didenko
  * Got rid of compiler warnings
  *
