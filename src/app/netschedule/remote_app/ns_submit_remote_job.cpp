@@ -95,7 +95,7 @@ void CNSSubmitRemoveJobApp::Init(void)
     arg_desc->AddOptionalKey("jf",
                              "jobs_file",
                              "File with job descriptions",
-                             CArgDescriptions::eString);
+                             CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey("args", 
                              "cmd_args",
@@ -255,11 +255,7 @@ int CNSSubmitRemoveJobApp::Run(void)
             *out << job_key << NcbiEndl;
         return 0;
     } if (args["jf"]) {
-        string fname = args["jf"].AsString();
-        CNcbiIfstream is(fname.c_str());
-        if ( !is.good() )
-            NCBI_THROW(CArgException, eInvalidArg,
-                       "Could not read file \"" + fname + "\"");
+        CNcbiIstream& is = args["jf"].AsInputFile();
 
         while ( !is.eof() && is.good() ) {
             string line;
@@ -322,6 +318,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/07/27 16:09:07  didenko
+ * Simplified the input file creation.
+ *
  * Revision 1.11  2006/07/27 15:30:44  didenko
  * Simplified the output file creation.
  *
