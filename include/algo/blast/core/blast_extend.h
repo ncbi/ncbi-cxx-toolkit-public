@@ -271,6 +271,73 @@ Blast_InitHitListSortByScore(BlastInitHitList* init_hitlist);
 */
 Boolean Blast_InitHitListIsSortedByScore(BlastInitHitList* init_hitlist);
 
+/** Extend the lookup table exact match hit in one direction and 
+ * update the diagonal structure.
+ * @param offset_pairs Array of query and subject offsets. [in]
+ * @param num_hits Size of the above arrays [in]
+ * @param word_params Parameters for word extension [in]
+ * @param lookup_wrap Lookup table wrapper structure [in]
+ * @param query Query sequence data [in]
+ * @param subject Subject sequence data [in]
+ * @param matrix Scoring matrix for ungapped extension [in]
+ * @param ewp Word extension structure containing information about the 
+ *            extent of already processed hits on each diagonal [in]
+ * @param init_hitlist Structure to keep the extended hits. 
+ *                     Must be allocated outside of this function [in] [out]
+ * @return Number of hits extended. 
+ */
+Int4
+BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits, 
+                   const BlastInitialWordParameters* word_params,
+                   LookupTableWrap* lookup_wrap,
+                   BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
+                   Int4** matrix, Blast_ExtendWord* ewp, 
+                   BlastInitHitList* init_hitlist);
+
+/** Extend the lookup table exact match hit in both directions and 
+ * update the diagonal structure.
+ * @param offset_pairs Array of query and subject offsets [in]
+ * @param num_hits Size of the above arrays [in]
+ * @param word_params Parameters for word extension [in]
+ * @param lookup_wrap Lookup table wrapper structure [in]
+ * @param query Query sequence data [in]
+ * @param subject Subject sequence data [in]
+ * @param matrix Scoring matrix for ungapped extension [in]
+ * @param ewp Word extension structure containing information about the 
+ *            extent of already processed hits on each diagonal [in]
+ * @param init_hitlist Structure to keep the extended hits. 
+ *                     Must be allocated outside of this function [in] [out]
+ * @return Number of hits extended. 
+ */
+Int4 
+BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits, 
+                          const BlastInitialWordParameters* word_params,
+                          LookupTableWrap* lookup_wrap,
+                          BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
+                          Int4** matrix, Blast_ExtendWord* ewp, 
+                          BlastInitHitList* init_hitlist);
+
+/** Discontiguous Mega BLAST initial word extension
+ * @param offset_pairs Array of query/subject offset pairs to extend from [in]
+ * @param num_hits Size of the offset_pairs array [in]
+ * @param query The query sequence [in]
+ * @param subject The subject sequence [in]
+ * @param lookup Lookup table structure [in]
+ * @param word_params The parameters related to initial word extension [in]
+ * @param matrix the substitution matrix for ungapped extension [in]
+ * @param ewp The structure containing word extension information [in]
+ * @param init_hitlist The structure containing information about all 
+ *                     initial hits [in] [out]
+ * @return Has this hit been extended? 
+ */
+Boolean
+DiscMB_ExtendInitialHits(const BlastOffsetPair* offset_pairs,
+                         Int4 num_hits, BLAST_SequenceBlk* query, 
+                         BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
+                         const BlastInitialWordParameters* word_params, 
+                         Int4** matrix, Blast_ExtendWord* ewp, 
+                         BlastInitHitList* init_hitlist);
+
 #ifdef __cplusplus
 }
 #endif

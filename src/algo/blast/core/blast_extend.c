@@ -39,7 +39,6 @@ static char const rcsid[] =
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 #include "blast_inline.h"
-#include "blast_extend_priv.h"
 
 /* Description in blast_extend.h */
 BlastInitHitList* BLAST_InitHitListNew(void)
@@ -129,34 +128,6 @@ Boolean Blast_InitHitListIsSortedByScore(BlastInitHitList* init_hitlist)
             return FALSE;
     }
     return TRUE;
-}
-
-BLAST_DiagTable*
-BlastDiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
-
-{
-        BLAST_DiagTable* diag_table;
-        Int4 diag_array_length;
-
-        diag_table= (BLAST_DiagTable*) calloc(1, sizeof(BLAST_DiagTable));
-
-        if (diag_table)
-        {
-                diag_array_length = 1;
-                /* What power of 2 is just longer than the query? */
-                while (diag_array_length < (qlen+window_size))
-                {
-                        diag_array_length = diag_array_length << 1;
-                }
-                /* These are used in the word finders to shift and mask
-                rather than dividing and taking the remainder. */
-                diag_table->diag_array_length = diag_array_length;
-                diag_table->diag_mask = diag_array_length-1;
-                diag_table->multiple_hits = multiple_hits;
-                diag_table->offset = window_size;
-                diag_table->window = window_size;
-        }
-        return diag_table;
 }
 
 /* Description in blast_extend.h */
@@ -1335,17 +1306,6 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    return 0;
 } 
 
-/* Deallocate memory for the diagonal table structure */
-BLAST_DiagTable* 
-BlastDiagTableFree(BLAST_DiagTable* diag_table)
-{
-   if (diag_table) {
-      sfree(diag_table->hit_level_array);
-               
-      sfree(diag_table);
-   }
-   return NULL;
-}
 
 /** Deallocate memory for the stack table structure.
  * @param stack_table The stack table structure to free. [in]

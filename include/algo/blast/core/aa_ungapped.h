@@ -329,6 +329,35 @@ Int4 BlastAaExtendTwoHit(Int4 ** matrix,
 	                 Boolean *right_extend,
 	                 Int4* s_last_off);
 
+/** Allocates memory for the BLAST_DiagTable*. This function also 
+ * sets many of the parametes such as diag_array_length etc.
+ * @param qlen Length of the query [in]
+ * @param multiple_hits Specifies whether multiple hits method is used [in]
+ * @param window_size The max. distance between two hits that are extended [in]
+ * @return The allocated BLAST_DiagTable structure
+*/
+BLAST_DiagTable*
+BlastDiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size);
+
+/** Deallocate memory for the diagonal table structure 
+ * @param diag_table the object to be freed [in]
+ * @return NULL
+*/
+BLAST_DiagTable*
+BlastDiagTableFree(BLAST_DiagTable* diag_table);
+
+/** Update the offset for use with a new sequence.
+ * @param diag pointer to the diagonal array structure [in]
+ * @param length length of the last db sequence searched [in]
+ * @return allocated ptr to BLAST_DiagTable.
+ */
+Int4 BlastDiagUpdate(BLAST_DiagTable* diag, Int4 length);
+
+/** Reset the diagonal array structure. Used when offset has wrapped around.
+ * @param diag pointer to the diagonal array structure [in]
+ */
+Int4 BlastDiagClear(BLAST_DiagTable* diag);
+
 #ifdef __cplusplus
 }
 #endif
