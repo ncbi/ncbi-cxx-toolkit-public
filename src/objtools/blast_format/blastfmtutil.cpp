@@ -812,20 +812,22 @@ SortHspByPercentIdentityDescending(const CRef<CSeq_align>& info1,
 
     int length1 = GetAlignmentLength(*info1, kTranslation);
     int length2 = GetAlignmentLength(*info2, kTranslation);
+    bool retval = false;
     
     
     if(length1 > 0 && length2 > 0 && num_ident1 > 0 &&num_ident2 > 0 ) {
         if (((double)num_ident1)/length1 == ((double)num_ident2)/length2) {
        
-            return bits1 > bits2;
+            retval = bits1 > bits2;
         
         } else {
-            return ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
+            retval = ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
             
         }
     } else {
-        return bits2 >= bits2;
+        retval = bits2 >= bits2;
     }
+    return retval;
 }
 
 bool CBlastFormatUtil::SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1,
@@ -996,20 +998,22 @@ SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
     
     int length1 = GetAlignmentLength(*(info1->Get().front()), kTranslation);
     int length2 = GetAlignmentLength(*(info2->Get().front()), kTranslation);
+    bool retval = false;
     
     
     if(length1 > 0 && length2 > 0 && num_ident1 > 0 &&num_ident2 > 0) {
         if (((double)num_ident1)/length1 == ((double)num_ident2)/length2) {
        
-            return bits1 > bits2;
+            retval = bits1 > bits2;
         
         } else {
-            return ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
+            retval = ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
           
         }
     } else {
-        return bits1 >= bits2;
+        retval = bits1 >= bits2;
     }
+    return retval;
 }
 
 bool CBlastFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const& info1,
