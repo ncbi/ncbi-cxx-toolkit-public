@@ -1597,32 +1597,43 @@ TFindFunc FindFilesInDir(const CDir&            dir,
                          TFindFunc              find_func,
                          TFindFiles             flags = fFF_Default)
 {
-    CDir::TGetEntriesFlags ge_flags = CDir::fIgnoreRecursive;
-    if (flags & fFF_Nocase) {
-        ge_flags |= CDir::fNoCase;
-    }
-    CDir::TEntries contents = dir.GetEntries(masks, ge_flags);
+    auto_ptr<CDir::TEntries> 
+        contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive));
+    NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
 
-    ITERATE(CDir::TEntries, it, contents) {
+    ITERATE(CDir::TEntries, it, *contents) {
         const CDirEntry& dir_entry = **it;
 
         if (dir_entry.IsDir()) {
             if (flags & fFF_Dir) {
-                find_func(dir_entry);
+                ITERATE(vector<string>, itm, masks) {
+                    const string& mask = *itm;
+                    if ( mask.empty()  ||
+                        CDirEntry::MatchesMask(dir_entry.GetPath().c_str(),
+                                               mask.c_str(), use_case) ) {
+                        find_func(dir_entry);
+                    }
+                } // ITERATE masks
             }
             if (flags & fFF_Recursive) {
                 CDir nested_dir(dir_entry.GetPath());
                 find_func = 
-                  FindFilesInDir(nested_dir, masks, find_func, flags);
+                    FindFilesInDir(nested_dir, masks, find_func, flags);
             }
         }
-        else if (dir_entry.IsFile() && (flags & fFF_File)) {
-            find_func(dir_entry);
+        else if ((flags & fFF_File)  &&  dir_entry.IsFile()) {
+            ITERATE(vector<string>, itm, masks) {
+                const string& mask = *itm;
+                if ( mask.empty()  ||
+                    CDirEntry::MatchesMask(dir_entry.GetPath().c_str(),
+                                           mask.c_str(), use_case) ) {
+                    find_func(dir_entry);
+                }
+            } // ITERATE masks
         }
-    } // ITERATE
+    } // ITERATE entries
     return find_func;
 }
-
 
 /// Find files in the specified directory
 template<class TFindFunc>
@@ -1631,18 +1642,18 @@ TFindFunc FindFilesInDir(const CDir&   dir,
                          TFindFunc     find_func,
                          TFindFiles    flags = fFF_Default)
 {
-    CDir::TGetEntriesFlags ge_flags = CDir::fIgnoreRecursive;
-    if (flags & fFF_Nocase) {
-        ge_flags |= CDir::fNoCase;
-    }
-    CDir::TEntries contents = dir.GetEntries(masks, ge_flags);
+    auto_ptr<CDir::TEntries> 
+        contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive));
+    NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
 
-    ITERATE(CDir::TEntries, it, contents) {
+    ITERATE(CDir::TEntries, it, *contents) {
         const CDirEntry& dir_entry = **it;
 
         if (dir_entry.IsDir()) {
             if (flags & fFF_Dir) {
-                find_func(dir_entry);
+                if ( masks.Match(dir_entry.GetPath(), use_case) ) {
+                    find_func(dir_entry);
+                }
             }
             if (flags & fFF_Recursive) {
                 CDir nested_dir(dir_entry.GetPath());
@@ -1650,10 +1661,12 @@ TFindFunc FindFilesInDir(const CDir&   dir,
                     FindFilesInDir(nested_dir, masks, find_func, flags);
             }
         }
-        else if (dir_entry.IsFile() && (flags & fFF_File)) {
-            find_func(dir_entry);
+        else if ((flags & fFF_File)  &&  dir_entry.IsFile()) {
+            if ( masks.Match(dir_entry.GetPath(), use_case) ) {
+                find_func(dir_entry);
+            }
         }
-    } // ITERATE
+    } // ITERATE entries
     return find_func;
 }
 
@@ -2747,6 +2760,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2006/07/27 13:37:30  ivanov
+ * Fixed FindFilesInDir functions to find files in sub-directories without
+ * applying masks to sub-directory name.
+ *
  * Revision 1.76  2006/04/06 14:24:32  ivanov
  * CMemoryFile[Map] -- added constructor parameters for automatic
  * creating/extend mapped file.
