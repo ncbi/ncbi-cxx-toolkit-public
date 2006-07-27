@@ -924,6 +924,7 @@ Blast_HSPGetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk,
                                      subject_length_ptr, &translation_buffer);
    }
    hsp->subject.offset -= start_shift;
+   hsp->subject.end -= start_shift;
    hsp->subject.gapped_start -= start_shift;
    *translation_buffer_ptr = translation_buffer;
    *start_shift_ptr = start_shift;
