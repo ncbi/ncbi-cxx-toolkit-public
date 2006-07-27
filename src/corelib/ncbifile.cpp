@@ -2489,6 +2489,23 @@ CDir::~CDir(void)
 }
 
 
+bool CDirEntry::MatchesMask(const char* name,
+                            const vector<string>& masks,
+                            NStr::ECase use_case)
+{
+    if ( masks.empty() ) {
+        return true;
+    }
+    ITERATE(vector<string>, itm, masks) {
+        const string& mask = *itm;
+        if ( MatchesMask(name, mask.c_str(), use_case) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 // Helpers functions and macro for GetEntries().
 
 #if defined(NCBI_OS_MSWIN)
@@ -4068,6 +4085,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.146  2006/07/27 18:59:04  ivanov
+ * Moved implementation of vector version CDirEntry::MatchesMask()
+ * from ncbifile.hpp. Return true if vector of masks is empty.
+ *
  * Revision 1.145  2006/07/13 04:03:13  lavr
  * Typo fix: pathes -> paths
  *
