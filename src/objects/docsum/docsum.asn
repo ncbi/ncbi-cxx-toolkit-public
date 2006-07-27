@@ -111,7 +111,13 @@ Rs ::= SEQUENCE {
     assembly SEQUENCE OF Assembly OPTIONAL,
     primarySequence SEQUENCE OF PrimarySequence OPTIONAL,
     rsStruct SEQUENCE OF RsStruct OPTIONAL,
-    rsLinkout SEQUENCE OF RsLinkout OPTIONAL
+    rsLinkout SEQUENCE OF RsLinkout OPTIONAL,
+
+    mergeHistory SEQUENCE OF SEQUENCE {
+        rsId INTEGER, -- previously issued rs id whose member assays have now been merged
+        buildId INTEGER OPTIONAL, -- build id when rs id was merged into parent rs
+        orientFlip BOOLEAN OPTIONAL -- TRUE if strand of rs id is reverse to parent object's current strand
+    } OPTIONAL
 } -- defines the docsum structure for refSNP clusters, where a refSNP cluster (rs) is a grouping of individual dbSNP submissions that all refer to the same variation. The refsnp provides a single unified record for annotation of NCBI resources such as reference genome sequence.
 
 
@@ -186,7 +192,6 @@ MapLoc ::= SEQUENCE {
         forward (1),
         reverse (2)
     } OPTIONAL, -- orientation of refSNP sequence to contig sequence
-    physMapStr VisibleString OPTIONAL, -- chromosome position of var as seq-loc in # of bases
     physMapInt INTEGER OPTIONAL, -- chromosome position as integer for sorting
     leftFlankNeighborPos INTEGER OPTIONAL, -- nearest aligned position in 5' flanking sequence of snp
     rightFlankNeighborPos INTEGER OPTIONAL, -- nearest aligned position in 3' flanking sequence of snp
@@ -230,6 +235,7 @@ Assembly ::= SEQUENCE {
     groupLabel VisibleString OPTIONAL, -- High-level classification of the assembly to distinguish reference projects from alternate solutions. GroupLabel field from organism/build-specific ContigInfo tables. "reference" is occasionally used as the preferred assembly; standards will converge as additional organism genome projects are finished. Note that some organism assembly names include extended characters like '~' and '/' that may be incompatible with OS filename conventions.
     assemblySource VisibleString OPTIONAL, -- Name of the group(s) or organization(s) that generated the assembly
     current BOOLEAN OPTIONAL, -- Marks the current genomic assembly
+    reference BOOLEAN OPTIONAL,
     component SEQUENCE OF Component OPTIONAL,
 
     snpStat SEQUENCE {
@@ -300,6 +306,7 @@ PrimarySequence ::= SEQUENCE {
         blastmb (2),
         xm (3)
     } OPTIONAL,
+    accession VisibleString OPTIONAL,
     mapLoc SEQUENCE OF MapLoc
 }
 
