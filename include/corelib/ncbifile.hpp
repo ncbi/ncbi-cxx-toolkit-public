@@ -319,10 +319,12 @@ public:
                             NStr::ECase use_case = NStr::eCase);
 
     /// Match a "name" against a set of "masks"
+    /// Note that any name match to empty vector of masks.
     static bool MatchesMask(const char* name, const vector<string>& masks,
                             NStr::ECase use_case = NStr::eCase);
 
     /// Match a "name" against a set of "masks"
+    /// Note that any name match to empty set of masks.
     static bool MatchesMask(const char* name, const CMask& mask,
                             NStr::ECase use_case = NStr::eCase);
 
@@ -2215,21 +2217,6 @@ bool CDirEntry::MatchesMask(const char* name, const char* mask,
 }
 
 inline
-bool CDirEntry::MatchesMask(const char* name,
-                            const vector<string>& masks,
-                            NStr::ECase use_case)
-{
-    ITERATE(vector<string>, itm, masks) {
-        const string& mask = *itm;
-        if ( mask.empty() || MatchesMask(name, mask.c_str(), use_case) ) {
-            return true;
-        }
-    } // ITERATE masks
-    return false;
-}
-
-
-inline
 bool CDirEntry::MatchesMask(const char* name, const CMask& mask,
                             NStr::ECase use_case) 
 {
@@ -2588,7 +2575,7 @@ TFindFunc FindFilesInDir(const CDir&            dir,
                 find_func(dir_entry);
             }
         }
-    } // ITERATE entries
+    } // ITERATE
     return find_func;
 }
 
@@ -2741,9 +2728,7 @@ void FindFiles(TContainer&           out,
                TFindFiles            flags = fFF_Default)
 {
     CFindFileNamesFunc<TContainer> func(out);
-    FindFiles(first_path, last_path,
-              masks,
-              func, flags);
+    FindFiles(first_path, last_path, masks, func, flags);
 }
 
 
@@ -2762,9 +2747,7 @@ void FindFiles(TContainer&    out,
                TFindFiles     flags = fFF_Default)
 {
     CFindFileNamesFunc<TContainer> func(out);
-    FindFiles(first_path, last_path,
-              masks,
-              func, flags);
+    FindFiles(first_path, last_path, masks, func, flags);
 }
 
 
@@ -2784,9 +2767,7 @@ void FindFiles(TContainer&    out,
                TFindFiles     flags = fFF_Default)
 {
     CFindFileNamesFunc<TContainer> func(out);
-    FindFiles(first_path, last_path,
-              first_mask, last_mask,
-              func, flags);
+    FindFiles(first_path, last_path, first_mask, last_mask, func, flags);
 }
 
 
@@ -2796,6 +2777,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2006/07/27 18:58:54  ivanov
+ * Moved implementation of vector version CDirEntry::MatchesMask()
+ * to ncbifile.cpp. Some cosmetics.
+ *
  * Revision 1.79  2006/07/27 18:07:01  vasilche
  * Check entry name instead of path in FindFiles().
  * Call FindFiles functor only once if file matches to several masks.
