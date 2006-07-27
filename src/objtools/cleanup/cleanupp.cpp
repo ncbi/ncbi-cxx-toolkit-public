@@ -396,6 +396,8 @@ void CCleanup_imp::BasicCleanup(CSeq_entry_Handle& seh)
     for (; fi; ++fi) {
         BasicCleanup(fi->GetSeq_feat_Handle());
     }
+    // do the non-handle stuff
+    BasicCleanup(const_cast<CSeq_entry&>(*seh.GetCompleteSeq_entry()));
     Finish(seh);
 }
 
@@ -406,6 +408,8 @@ void CCleanup_imp::BasicCleanup(const CBioseq_Handle& bsh)
     for (; fi; ++fi) {
         BasicCleanup(fi->GetSeq_feat_Handle());
     }
+    // do the non-handle stuff
+    BasicCleanup(const_cast<CBioseq&>(*bsh.GetCompleteBioseq()));
 }
 
 
@@ -415,6 +419,8 @@ void CCleanup_imp::BasicCleanup(CBioseq_set_Handle& bssh)
     for (; bsi; ++bsi) {
         BasicCleanup(*bsi);
     }
+    // do the non-handle stuff
+    BasicCleanup(const_cast<CBioseq_set&>(*bssh.GetCompleteBioseq_set()));
 }
 
 
@@ -424,6 +430,8 @@ void CCleanup_imp::BasicCleanup(CSeq_annot_Handle& sah)
     for (; fi; ++fi) {
         BasicCleanup(fi->GetSeq_feat_Handle());
     }
+    // do the non-handle stuff
+    BasicCleanup(const_cast<CSeq_annot&>(*sah.GetCompleteSeq_annot()));
 }
 
 
@@ -1566,6 +1574,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2006/07/27 19:02:58  rsmith
+ * Handle versions of Basic cleanup call non-handle stuff as well.
+ *
  * Revision 1.39  2006/07/26 19:37:50  rsmith
  * add cleanup w/handles and reporting
  *
