@@ -81,7 +81,9 @@ extern "C" {
  */
 
 
-/** I/O read method
+/** I/O read method.
+ * @sa
+ *  EIO_WriteMethod
  */
 typedef enum {
     eIO_ReadPlain,   /**< read presently available data only                 */
@@ -94,16 +96,18 @@ typedef enum {
 } EIO_ReadMethod;
 
 
-/** I/O write method
+/** I/O write method.
+ * @sa
+ *  EIO_ReadMethod
  */
 typedef enum {
-    eIO_WritePlain,
-    eIO_WritePersist,
-    eIO_WriteOutOfBand
+    eIO_WritePlain,    /**< write as much as possible, report back how much  */
+    eIO_WritePersist,  /**< write exactly as much as specified               */
+    eIO_WriteOutOfBand /**< write out-of-band chunk of urgent data           */
 } EIO_WriteMethod;
 
 
-/** I/O event (or direction)
+/** I/O event (or direction).
  * @li <b>NOTE:</b> Internally, these constants are used as bit-values,
  *     and thus should not be changed in this header.  However, user code
  *     should not rely on the values of these constants.
@@ -119,7 +123,7 @@ typedef enum {
 } EIO_Event;
 
 
-/** I/O status
+/** I/O status.
  */
 typedef enum {
     eIO_Success = 0,  /**< everything is fine, no errors occurred            */
@@ -133,7 +137,7 @@ typedef enum {
 } EIO_Status;
 
 
-/** Get the text form of an enum status value
+/** Get the text form of an enum status value.
  * @param status
  *  An enum value to get the text form for
  * @return 
@@ -242,7 +246,7 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Delete(MT_LOCK lk);
  * @return
  *  Value returned by the lock handler ("handler" in MT_LOCK_Create()).
  * If lock handler is not specified then always return "-1".
- * @li <b>NOTE:</b>  use MT_LOCK_Do() to avoid overhead!
+ * @li <b>NOTE:</b>  use MT_LOCK_Do to avoid overhead!
  * @sa
  *  MT_LOCK_Create, FMT_LOCK_Handler, EMT_Lock
  */
@@ -264,7 +268,7 @@ struct LOG_tag;
 typedef struct LOG_tag* LOG;
 
 
-/** Log severity level
+/** Log severity level.
  */
 typedef enum {
     eLOG_Trace = 0,
@@ -584,7 +588,7 @@ extern NCBI_XCONNECT_EXPORT void REG_Reset
  );
 
 
-/** Increment internal reference counter by 1, then return "rg"
+/** Increment internal reference counter by 1, then return "rg".
  * @param rg
  *  Registry handle as previously obtained from REG_Create
  * @sa
@@ -674,6 +678,9 @@ extern NCBI_XCONNECT_EXPORT void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.29  2006/07/27 15:42:50  lavr
+ * More doxygenization
+ *
  * Revision 6.28  2006/07/13 21:00:22  lavr
  * Doxygenization
  *
