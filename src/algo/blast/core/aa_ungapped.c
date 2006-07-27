@@ -161,7 +161,7 @@ BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                 diag_coord = (query_offset - subject_offset) & diag_mask;
 
                 /* If the reset bit is set, an extension just happened. */
-                if (diag_array[diag_coord].reset) {
+                if (diag_array[diag_coord].flag) {
                     /* If we've already extended past this hit, skip it. */
                     if ((Int4) (subject_offset + diag_offset) <
                         diag_array[diag_coord].last_hit) {
@@ -171,7 +171,7 @@ BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                     else {
                         diag_array[diag_coord].last_hit =
                             subject_offset + diag_offset;
-                        diag_array[diag_coord].reset = 0;
+                        diag_array[diag_coord].flag = 0;
                     }
                 }
                 /* If the reset bit is cleared, try to start an extension. */
@@ -220,7 +220,7 @@ BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                        over. */
 
                     if (right_extend) {
-                        diag_array[diag_coord].reset = 1;
+                        diag_array[diag_coord].flag = 1;
                         diag_array[diag_coord].last_hit =
                             s_last_off - (wordsize - 1) + diag_offset;
                     }
@@ -308,7 +308,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
             diag_coord = (query_offset - subject_offset) & diag_mask;
 
             /* If the reset bit is set, an extension just happened. */
-            if (diag_array[diag_coord].reset) {
+            if (diag_array[diag_coord].flag) {
                 /* If we've already extended past this hit, skip it. */
                 if ((Int4) (subject_offset + diag_offset) <
                     diag_array[diag_coord].last_hit) {
@@ -318,7 +318,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                 else {
                     diag_array[diag_coord].last_hit =
                         subject_offset + diag_offset;
-                    diag_array[diag_coord].reset = 0;
+                    diag_array[diag_coord].flag = 0;
                 }
             }
             /* If the reset bit is cleared, try to start an extension. */
@@ -366,7 +366,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                    so that future hits to this diagonal must start over. */
 
                 if (right_extend) {
-                    diag_array[diag_coord].reset = 1;
+                    diag_array[diag_coord].flag = 1;
                     diag_array[diag_coord].last_hit =
                         s_last_off - (wordsize - 1) + diag_offset;
                 }
@@ -885,7 +885,7 @@ Int4 BlastDiagClear(BLAST_DiagTable * diag)
     diag_struct_array = diag->hit_level_array;
 
     for (i = 0; i < n; i++) {
-        diag_struct_array[i].reset = 0;
+        diag_struct_array[i].flag = 0;
         diag_struct_array[i].last_hit = -diag->window;
     }
     return 0;

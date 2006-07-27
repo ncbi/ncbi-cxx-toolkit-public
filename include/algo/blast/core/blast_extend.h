@@ -44,6 +44,9 @@
 extern "C" {
 #endif
 
+/** Minimal size of an array of initial word hits, allocated up front. */
+#define MIN_INIT_HITLIST_SIZE 100
+
 /** Structure to hold ungapped alignment information */
 typedef struct BlastUngappedData {
    Int4 q_start; /**< Start of the ungapped alignment in query */
@@ -71,16 +74,17 @@ typedef struct BlastInitHitList {
 
 /** Structure for keeping last hit information for a diagonal */
 typedef struct DiagStruct {
-   Uint4 reset     : 1 ; /**< Reset the next extension? */
    Int4 last_hit   : 31; /**< Offset of the last hit */
+   Uint4 flag      : 1 ; /**< Reset the next extension? */
 } DiagStruct;
 
 /** Structure for keeping last hit information for a diagonal on a stack, when 
  * eRight or eRightAndLeft methods are used for initial hit extension.
  */
 typedef struct BlastnStack {
-   Int4 diag; /**< This hit's actual diagonal */
-   Int4 level; /**< This hit's offset in the subject sequence */
+   Int4 diag;            /**< This hit's actual diagonal */
+   Int4 level      : 31; /**< This hit's offset in the subject sequence */
+   Uint4 hit_saved : 1;  /**< Whether or not this hit has been saved */
 }  BlastnStack;
   
 /** Structure containing parameters needed for initial word extension.
@@ -90,9 +94,6 @@ typedef struct BlastnStack {
 typedef struct BLAST_DiagTable {
    DiagStruct* hit_level_array;/**< Array to hold latest hits and their 
                                   lengths for all diagonals */
-   Uint4* last_hit_array; /**< Array of latest hits on all diagonals, with 
-                             top byte indicating whether hit has been 
-                             saved. */
    Int4 diag_array_length; /**< Smallest power of 2 longer than query length */
    Int4 diag_mask; /**< Used to mask off everything above
                           min_diag_length (mask = min_diag_length-1). */

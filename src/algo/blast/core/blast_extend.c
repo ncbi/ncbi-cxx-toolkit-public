@@ -41,9 +41,6 @@ static char const rcsid[] =
 #include "blast_inline.h"
 #include "blast_extend_priv.h"
 
-/** Minimal size of an array of initial word hits, allocated up front. */
-#define MIN_INIT_HITLIST_SIZE 100
-
 /* Description in blast_extend.h */
 BlastInitHitList* BLAST_InitHitListNew(void)
 {
@@ -211,21 +208,12 @@ Int2 BlastExtendWordNew(const LookupTableWrap* lookup_wrap, Uint4 query_length,
          BlastDiagTableNew(query_length, multiple_hits, 
                             word_params->options->window_size);
       /* Allocate the buffer to be used for diagonal array. */
-      if (!kIsNa || 
-          (word_params->extension_method == eUpdateDiag && !kDiscMb)) {
-         diag_table->hit_level_array = (DiagStruct*)
+
+	  diag_table->hit_level_array = (DiagStruct*)
             calloc(diag_table->diag_array_length, sizeof(DiagStruct));
          if (!diag_table->hit_level_array)	{
             sfree(ewp);
             return -1;
-         }
-      } else {
-         diag_table->last_hit_array = 
-            (Uint4*) calloc(diag_table->diag_array_length, sizeof(Uint4));
-         if (!diag_table->last_hit_array)	{
-            sfree(ewp);
-            return -1;
-         }
       }
    }
    *ewp_ptr = ewp;
@@ -466,12 +454,6 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
    }
 }
 
-/** Mask for encoding in one integer a hit offset and whether that hit has 
- * already been extended and saved. The latter is put in the top bit of the
- * integer.
- */
-#define LAST_HIT_MASK 0x7fffffff
-
 /** Perform ungapped extension given an offset pair, and save the initial 
  * hit information if the hit qualifies. This function assumes that the
  * exact match has already been extended to the word size parameter. It also
@@ -512,15 +494,15 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
    Int4 step;
    Uint4 last_hit;
    Uint4 hit_saved;
-   Uint4* last_hit_array;
+   DiagStruct *hit_level_array;
 
-   last_hit_array = diag_table->last_hit_array;
-   ASSERT(last_hit_array);
+   hit_level_array = diag_table->hit_level_array;
+   ASSERT(hit_level_array);
 
    diag = s_off + diag_table->diag_array_length - q_off;
    real_diag = diag & diag_table->diag_mask;
-   last_hit = last_hit_array[real_diag] & LAST_HIT_MASK;
-   hit_saved = last_hit_array[real_diag] & ~LAST_HIT_MASK;
+   last_hit = hit_level_array[real_diag].last_hit;
+   hit_saved = hit_level_array[real_diag].flag;
    s_pos = s_end + diag_table->offset;
    step = s_pos - last_hit;
 
@@ -558,14 +540,14 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
       if (ungapped_data == NULL) {
          BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
          /* Set the "saved" flag for this hit */
-         hit_saved = ~LAST_HIT_MASK;
+         hit_saved = 1;
       } else if (ungapped_data->score >= word_params->cutoff_score) {
          BlastUngappedData *final_data = (BlastUngappedData *)malloc(
                                                  sizeof(BlastUngappedData));
          *final_data = *ungapped_data;
          BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
          /* Set the "saved" flag for this hit */
-         hit_saved = ~LAST_HIT_MASK;
+         hit_saved = 1;
       } else {
          /* Unset the "saved" flag for this hit */
          hit_saved = 0;
@@ -579,7 +561,8 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
          hit_saved = 0;
    }
 
-   last_hit_array[real_diag] = last_hit | hit_saved;
+   hit_level_array[real_diag].last_hit = last_hit;
+   hit_level_array[real_diag].flag     = hit_saved;
 
    return hit_ready;
 }
@@ -668,11 +651,11 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
    
    /* Find previous hit on this diagonal in the stack entries */
    for (index = 0; index <= stack_top; ) {
-      Int4 last_hit = stack[index].level & LAST_HIT_MASK;
+      Int4 last_hit = stack[index].level;
       Int4 step = s_end - last_hit;
       Boolean new_hit = FALSE;
       if (stack[index].diag == s_off - q_off) {
-         Int4 hit_saved = stack[index].level & ~LAST_HIT_MASK;
+         Int4 hit_saved = stack[index].hit_saved;
          Boolean second_hit = FALSE;
 
          if (step <= 0)
@@ -707,14 +690,14 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
             if (ungapped_data == NULL) {
                BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
                /* Set the "saved" flag for this hit */
-               hit_saved = ~LAST_HIT_MASK;
+               hit_saved = 1;
             } else if (ungapped_data->score >= word_params->cutoff_score) {
                BlastUngappedData *final_data = (BlastUngappedData *)malloc(
                                                  sizeof(BlastUngappedData));
                *final_data = *ungapped_data;
                BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
                /* Set the "saved" flag for this hit */
-               hit_saved = ~LAST_HIT_MASK;
+               hit_saved = 1;
             } else {
                /* Unset the "saved" flag for this hit */
                hit_saved = 0;
@@ -727,7 +710,8 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
             if (new_hit)
                hit_saved = 0;
          }
-         stack[index].level = last_hit | hit_saved;
+         stack[index].level     = last_hit;
+		 stack[index].hit_saved = hit_saved;
          return hit_ready;
       } else if (step <= (Int4)min_step || (two_hits && step <= window_size)) {
          /* Hit from a different diagonal, and it can be continued */
@@ -775,17 +759,17 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
       }
       if (ungapped_data == NULL) {
          BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
-         stack[stack_top].level |= ~LAST_HIT_MASK;
+         stack[stack_top].hit_saved = 1;
       } else if (ungapped_data->score >= word_params->cutoff_score) {
          BlastUngappedData *final_data = (BlastUngappedData *)malloc(
                                                  sizeof(BlastUngappedData));
          *final_data = *ungapped_data;
          BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
-         stack[stack_top].level |= ~LAST_HIT_MASK;
+         stack[stack_top].hit_saved = 1;
       } else {
          /* Set hit length back to 0 after ungapped extension 
             failure */
-         stack[stack_top].level &= LAST_HIT_MASK;
+         stack[stack_top].hit_saved = 0;
       }
    }
 
@@ -880,9 +864,6 @@ s_BlastNaExtendWordExit(Blast_ExtendWord* ewp, Int4 subject_length)
          if (diag_table->hit_level_array) {
             memset(diag_table->hit_level_array, 0, 
                    diag_array_length*sizeof(DiagStruct));
-         } else if (diag_table->last_hit_array) {
-            memset(diag_table->last_hit_array, 0, 
-                   diag_array_length*sizeof(Uint4));
          }
       }
       
@@ -1360,7 +1341,6 @@ BlastDiagTableFree(BLAST_DiagTable* diag_table)
 {
    if (diag_table) {
       sfree(diag_table->hit_level_array);
-      sfree(diag_table->last_hit_array);
                
       sfree(diag_table);
    }
