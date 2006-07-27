@@ -108,9 +108,10 @@ typedef enum {
 
 
 /** I/O event (or direction).
- * @li <b>NOTE:</b> Internally, these constants are used as bit-values,
- *     and thus should not be changed in this header.  However, user code
- *     should not rely on the values of these constants.
+ * @par <b>NOTE:</b>
+ *  Internally, these constants are used as bit-values,
+ *  and thus should not be changed in this header.  However, user code
+ *  should not rely on the values of these constants.
  * @sa
  *  SOCK_Wait, SOCK_Poll, CONN_Wait, SOCK_SetTimeout, CONN_SetTimeout
  */
@@ -161,8 +162,10 @@ typedef struct MT_LOCK_tag* MT_LOCK;
 
 
 /** Set the lock/unlock callback function and its data for MT critical section.
- * @li <b>TIP:</b> If the RW-lock functionality is not provided by the
- *     callback, then: eMT_LockRead <==> eMT_Lock
+ * @par <b>TIP:</b>
+ *  If the RW-lock functionality is not provided by the
+ *  callback, then: eMT_LockRead <==> eMT_Lock
+ *
  */
 typedef enum {
     eMT_Lock,      /**< lock   critical section             */
@@ -178,10 +181,11 @@ typedef enum {
  *  As passed to MT_LOCK_Do()
  * @return
  *  Non-zero value if the requested operation was successful.
- * @li <b>NOTE:</b>  the "-1" value is reserved for unset handler;  you also
- *     may want to return "-1" if your locking function does no locking, and
- *     you don't consider it as an error, but still want the caller to be
- *     aware of this "rightful non-doing" as opposed to the "rightful doing".
+ * @par <b>NOTE:</b>
+ *  The "-1" value is reserved for unset handler;  you also
+ *  may want to return "-1" if your locking function does no locking, and
+ *  you don't consider it as an error, but still want the caller to be
+ *  ware of this "rightful non-doing" as opposed to the "rightful doing".
  * @sa
  *   MT_LOCK_Create, MT_LOCK_Delete
  */
@@ -246,7 +250,8 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Delete(MT_LOCK lk);
  * @return
  *  Value returned by the lock handler ("handler" in MT_LOCK_Create()).
  * If lock handler is not specified then always return "-1".
- * @li <b>NOTE:</b>  use MT_LOCK_Do to avoid overhead!
+ * @par <b>NOTE:</b>
+ *  Use MT_LOCK_Do to avoid overhead!
  * @sa
  *  MT_LOCK_Create, FMT_LOCK_Handler, EMT_Lock
  */
@@ -347,10 +352,11 @@ typedef void (*FLOG_Cleanup)
 
 
 /** Create new LOG (with an internal reference counter set to 1).
- * @li <b>ATTENTION:</b>  if non-NULL "mt_lock" is specified then
- *     MT_LOCK_Delete() will be called on it when this LOG gets deleted
- *     -- be aware of it (hence, if the lock is also to be used with something
- *     else, then call MT_LOCK_AddRef() on it before passing to LOG_Create)!
+ * @par <b>ATTENTION:</b>
+ *  If non-NULL "mt_lock" is specified then
+ * MT_LOCK_Delete() will be called on it when this LOG gets deleted
+ * -- be aware of it (hence, if the lock is also to be used with something
+ * else, then call MT_LOCK_AddRef() on it before passing to LOG_Create)!
  * @param user_data
  *  Unspecified data to call "handler" and "cleanup" with
  * @param handler
@@ -371,7 +377,8 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Create
 
 
 /** Reset the "lg" to use the new "user_data", "handler" and "cleanup".
- * @li <b>NOTE:</b>  it does not change the reference counter of the log.
+ * @par <b>NOTE:</b>
+ *  It does not change the reference counter of the log.
  * @param lg
  *  A log handle previously obtained from LOG_Create
  * @param user_data
@@ -413,12 +420,13 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
 
 /** Write message (perhaps with raw data attached) to the log by doing
  * "lg->handler(lg->user_data, SLOG_Handler*)".
- * @li <b>NOTE:</b>  Do not call this function directly, if possible.
- *     Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
+ * @par <b>NOTE:</b>
+ *  Do not call this function directly, if possible.
+ *  Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
  * @param lg
  *  A log handle previously obtained from LOG_Create
  * @param level
- *  Severity of the message
+ *  The message severity
  * @param module
  *  Module name (can be NULL)
  * @param file
@@ -432,7 +440,7 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
  * @param raw_size
  *  Size of the raw data (can be zero)
  * @sa
- *  LOG_Create, FLOG_Handler, LOG_WRITE, LOG_DATA
+ *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_WRITE, LOG_DATA
  */
 extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
 (LOG         lg,   
@@ -473,8 +481,10 @@ typedef enum {
  * Look for the matching entry first in the transient storage, and then in
  * the persistent storage.  Do not modify the "value" (leave it "as is",
  * i.e. default) if the requested entry is not found in the registry.
- * @li <b>NOTE:</b>  always terminate value by '\0'.
- * @li <b>NOTE:</b>  do not put more than "value_size" bytes to "value".
+ * @par <b>NOTE:</b>
+ *  Always terminate value by '\0'.
+ * @par <b>NOTE:</b>
+ *  Do not put more than "value_size" bytes to "value".
  * @param user_data
  *  Unspecified data as passed to REG_Create or REG_Reset
  * @param section
@@ -534,10 +544,11 @@ typedef void (*FREG_Cleanup)
 
 
 /** Create new registry (with an internal reference counter set to 1).
- * @li <b>ATTENTION:</b>  if non-NULL "mt_lock" is specified then
- *     MT_LOCK_Delete() will be called on it when this REG gets destroyed
- *     -- be aware of it (hence, if the lock is also to be used with something
- *     else, then call MT_LOCK_AddRef() on it before passing to REG_Create)!
+ * @par <b>ATTENTION:</b>
+ *  if non-NULL "mt_lock" is specified then
+ *  MT_LOCK_Delete() will be called on it when this REG gets destroyed
+ *  -- be aware of it (hence, if the lock is also to be used with something
+ *  else, then call MT_LOCK_AddRef() on it before passing to REG_Create)!
  * @param user_data
  *  Unspecified data to call "set", "get" and "cleanup" with 
  * @param get
@@ -562,7 +573,8 @@ extern NCBI_XCONNECT_EXPORT REG REG_Create
 
 /** Reset the registry handle to use the new "user_data", "set", "get",
  * and "cleanup".
- * @li <b>NOTE:</b>  no change to the internal reference counter.
+ * @par <b>NOTE:</b>
+ *  No change to the internal reference counter.
  * @param rg
  *  Registry handle as previously obtained from REG_Create
  * @param user_data
@@ -678,6 +690,9 @@ extern NCBI_XCONNECT_EXPORT void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.30  2006/07/27 17:00:39  lavr
+ * Corrected doxygenization of NOTEs
+ *
  * Revision 6.29  2006/07/27 15:42:50  lavr
  * More doxygenization
  *
