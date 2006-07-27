@@ -38,6 +38,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
+#include <algo/blast/core/aa_ungapped.h> /* for BlastDiagTable{New,Free} */
 #include "blast_inline.h"
 
 /* Description in blast_extend.h */
