@@ -138,8 +138,6 @@ Int2 BlastExtendWordNew(const LookupTableWrap* lookup_wrap, Uint4 query_length,
 {
    Blast_ExtendWord* ewp;
    Int4 index;
-   Boolean kDiscMb = (lookup_wrap->lut_type == MB_LOOKUP_TABLE && 
-                      ((BlastMBLookupTable*)lookup_wrap->lut)->discontiguous);
 
    *ewp_ptr = ewp = (Blast_ExtendWord*) calloc(1, sizeof(Blast_ExtendWord));
 
@@ -173,8 +171,6 @@ Int2 BlastExtendWordNew(const LookupTableWrap* lookup_wrap, Uint4 query_length,
    } else /* container_type == eDiagArray */ {
       Boolean multiple_hits = (word_params->options->window_size > 0);
       BLAST_DiagTable* diag_table;
-      const Boolean kIsNa = (lookup_wrap->lut_type == MB_LOOKUP_TABLE || 
-                             lookup_wrap->lut_type == NA_LOOKUP_TABLE);
 
       ewp->diag_table = diag_table = 
          BlastDiagTableNew(query_length, multiple_hits, 
