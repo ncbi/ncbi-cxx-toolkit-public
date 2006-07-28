@@ -547,6 +547,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetDBLExceptionStorage().Accept(ex);
         }
@@ -559,6 +560,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetDBLExceptionStorage().Accept(ex);
 
@@ -581,6 +583,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetDBLExceptionStorage().Accept(ex);
         }
@@ -598,6 +601,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetDBLExceptionStorage().Accept(ex);
         }
@@ -611,6 +615,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetDBLExceptionStorage().Accept(ex);
         }
@@ -622,6 +627,10 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                             message,
                             eDiag_Critical,
                             dberr);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetDBLExceptionStorage().Accept(ex);
         }
@@ -664,6 +673,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
         ex.SetServerName(server_name);
         ex.SetUserName(user_name);
+        ex.SetSybaseSeverity(severity);
 
         GetDBLExceptionStorage().Accept(ex);
     } else {
@@ -683,6 +693,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetDBLExceptionStorage().Accept(ex);
         } else {
@@ -694,6 +705,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetDBLExceptionStorage().Accept(ex);
         }
@@ -1319,6 +1331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2006/07/28 15:00:49  ssikorsk
+ * Revamp code to use CDB_Exception::SetSybaseSeverity.
+ *
  * Revision 1.87  2006/07/20 14:41:09  ssikorsk
  * Put x_RemoveFromRegistry() after x_SafeToFinalize().
  *

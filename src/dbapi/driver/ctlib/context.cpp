@@ -533,12 +533,16 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
         sev = eDiag_Critical;
     }
 
-    GetCTLExceptionStorage().Accept(CDB_ClientEx(
+    CDB_ClientEx ex(
         kBlankCompileInfo,
         0, msg->msgstring,
         sev,
         msg->msgnumber
-        ));
+        );
+
+    ex.SetSybaseSeverity(msg->severity);
+
+    GetCTLExceptionStorage().Accept(ex);
 
     return true;
 }
@@ -615,6 +619,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
 
         ex.SetServerName(server_name);
         ex.SetUserName(user_name);
+        ex.SetSybaseSeverity(msg->severity);
 
         GetCTLExceptionStorage().Accept(ex);
 
@@ -629,6 +634,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
 
         ex.SetServerName(server_name);
         ex.SetUserName(user_name);
+        ex.SetSybaseSeverity(msg->severity);
 
         GetCTLExceptionStorage().Accept(ex);
 
@@ -665,6 +671,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
 
         ex.SetServerName(server_name);
         ex.SetUserName(user_name);
+        ex.SetSybaseSeverity(msg->severity);
 
         GetCTLExceptionStorage().Accept(ex);
 
@@ -680,6 +687,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
 
         ex.SetServerName(server_name);
         ex.SetUserName(user_name);
+        ex.SetSybaseSeverity(msg->severity);
 
         GetCTLExceptionStorage().Accept(ex);
 
@@ -766,6 +774,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
         ex.SetServerName(server_name);
         ex.SetUserName(user_name);
+        ex.SetSybaseSeverity(msg->severity);
 
         GetCTLExceptionStorage().Accept(ex);
     }
@@ -786,6 +795,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(msg->severity);
 
             GetCTLExceptionStorage().Accept(ex);
         }
@@ -801,6 +811,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(msg->severity);
 
             GetCTLExceptionStorage().Accept(ex);
         }
@@ -813,6 +824,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(msg->severity);
 
             GetCTLExceptionStorage().Accept(ex);
         }
@@ -1163,6 +1175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2006/07/28 15:00:45  ssikorsk
+ * Revamp code to use CDB_Exception::SetSybaseSeverity.
+ *
  * Revision 1.85  2006/07/20 19:55:07  ssikorsk
  * Added CTLibContext.m_TDSVersion.
  *

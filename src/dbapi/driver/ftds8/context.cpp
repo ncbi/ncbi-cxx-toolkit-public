@@ -461,6 +461,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetFTDS8ExceptionStorage().Accept(ex);
         }
@@ -473,6 +474,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetFTDS8ExceptionStorage().Accept(ex);
 
@@ -495,6 +497,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetFTDS8ExceptionStorage().Accept(ex);
         }
@@ -512,6 +515,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetFTDS8ExceptionStorage().Accept(ex);
         }
@@ -525,6 +529,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetFTDS8ExceptionStorage().Accept(ex);
         }
@@ -536,6 +541,10 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                             message,
                             eDiag_Critical,
                             dberr);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetFTDS8ExceptionStorage().Accept(ex);
         }
@@ -577,6 +586,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 
         ex.SetServerName(server_name);
         ex.SetUserName(user_name);
+        ex.SetSybaseSeverity(severity);
 
         GetFTDS8ExceptionStorage().Accept(ex);
     } else {
@@ -596,6 +606,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetFTDS8ExceptionStorage().Accept(ex);
         } else {
@@ -607,6 +618,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 
             ex.SetServerName(server_name);
             ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
             GetFTDS8ExceptionStorage().Accept(ex);
         }
@@ -883,6 +895,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2006/07/28 15:00:56  ssikorsk
+ * Revamp code to use CDB_Exception::SetSybaseSeverity.
+ *
  * Revision 1.79  2006/07/20 14:41:30  ssikorsk
  * Put x_RemoveFromRegistry() after x_SafeToFinalize().
  *
