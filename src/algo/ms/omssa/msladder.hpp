@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "msms.hpp"
+#include "omssascore.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -296,97 +297,127 @@ inline bool CLadder::MaskSet(unsigned ModMask, int ModIndex)
 
 /////////////////// end of CLadder inline methods
 
+
+
+typedef vector < CRef <CLadder> > TLadderList;
+typedef AutoPtr <TLadderList> TLadderListPtr;
+typedef pair <int,  TLadderListPtr > TLadderMapPair;
+typedef map <int, TLadderListPtr > TLadderMap;
+typedef list <TSeriesChargePair> TSeriesChargePairList;
+
+
+class NCBI_XOMSSA_EXPORT CLadderContainer {
+    public:
+
+        /** 
+         * returns the laddermap (maps key based on charge and series type to a vector of CLadder)
+         */
+        TLadderMap& SetLadderMap(void);
+
+        /**
+         * returns const laddermap
+         */
+        const TLadderMap& GetLadderMap(void) const;
+
+        /**
+         * return the list of charge, series type pairs that are used to
+         * initialize the maps
+         */
+        TSeriesChargePairList& SetSeriesChargePairList(void);
+
+        /**
+          * return the list of charge, series type pairs that are used to
+          * initialize the maps
+          */
+        const TSeriesChargePairList& GetSeriesChargePairList(void) const;
+
+        /** 
+         * iterate over the ladder map over the charge range and series type indicated
+         * 
+         * @param Iter the iterator
+         * @param BeginCharge the minimum charge to look for (0=all)
+         * @param EndCharge the maximum charge to look for (0=all)
+         * @param SeriesType the type of the ion series
+         */
+        void Next(TLadderMap::iterator& Iter,
+                  TMSCharge BeginCharge = 0,
+                  TMSCharge EndCharge = 0,
+                  TMSIonSeries SeriesType = eMSIonTypeUnknown);
+
+
+        void Begin(TLadderMap::iterator& Iter,
+                                   TMSCharge BeginCharge = 0,
+                                   TMSCharge EndCharge = 0,
+                                   TMSIonSeries SeriesType = eMSIonTypeUnknown);
+
+
+        /**
+         * populate the Ladder Map with arrays based on the ladder
+         * 
+         * @param MaxModPerPep size of the arrays
+         * @param MaxLadderSize size of the ladders
+         */
+        void CreateLadderArrays(int MaxModPerPep, int MaxLadderSize);
+
+        
+    private:
+
+        /**
+         * see if key of the map element pointed to by Iter matches the conditions
+         * 
+         * @param Iter the iterator
+         * @param BeginCharge the minimum charge to look for (0=all)
+         * @param EndCharge the maximum charge to look for (0=all)
+         * @param SeriesType the type of the ion series
+         */
+        bool MatchIter(TLadderMap::iterator& Iter,
+                       TMSCharge BeginCharge = 0,
+                       TMSCharge EndCharge = 0,
+                       TMSIonSeries SeriesType = eMSIonTypeUnknown);
+        /**     
+         * contains a map from charge, ion series to the CLadderArrays 
+         * the key is gotten from CMSMatchedPeakSetMap::ChargeSeries2Key 
+         */
+        TLadderMap LadderMap;
+        
+        /** 
+         * contains the series, charge of the ion series to be generated 
+         */
+        TSeriesChargePairList SeriesChargePairList;
+};  
+
+inline
+TLadderMap& 
+CLadderContainer::SetLadderMap(void)
+{
+    return LadderMap;
+}
+
+inline
+const TLadderMap& 
+CLadderContainer::GetLadderMap(void) const
+{
+    return LadderMap;
+}
+
+inline
+TSeriesChargePairList& 
+CLadderContainer::SetSeriesChargePairList(void)
+{
+    return SeriesChargePairList;
+}
+
+inline
+const TSeriesChargePairList& 
+CLadderContainer::GetSeriesChargePairList(void) const
+{
+    return SeriesChargePairList;
+}
+
+
 END_SCOPE(omssa)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
 
-/*
-  $Log$
-  Revision 1.18  2005/11/08 20:36:07  lewisg
-  exact mass for multiply charged ions
-
-  Revision 1.17  2005/10/24 21:46:13  lewisg
-  exact mass, peptide size limits, validation, code cleanup
-
-  Revision 1.16  2005/09/20 21:07:57  lewisg
-  get rid of c-toolkit dependencies and nrutil
-
-  Revision 1.15  2005/09/14 15:30:17  lewisg
-  neutral loss
-
-  Revision 1.14  2005/05/19 16:59:17  lewisg
-  add top-down searching, fix variable mod bugs
-
-  Revision 1.13  2005/05/13 17:57:17  lewisg
-  one mod per site and bug fixes
-
-  Revision 1.12  2005/03/14 22:29:54  lewisg
-  add mod file input
-
-  Revision 1.11  2005/01/11 21:08:43  lewisg
-  average mass search
-
-  Revision 1.10  2004/11/17 23:42:11  lewisg
-  add cterm pep mods, fix prob for tophitnum
-
-  Revision 1.9  2004/11/15 15:32:40  lewisg
-  memory overwrite fixes
-
-  Revision 1.8  2004/05/27 20:52:15  lewisg
-  better exception checking, use of AutoPtr, command line parsing
-
-  Revision 1.7  2004/03/30 19:36:59  lewisg
-  multiple mod code
-
-  Revision 1.6  2004/03/16 20:18:54  gorelenk
-  Changed includes of private headers.
-
-  Revision 1.5  2003/12/22 21:57:59  lewisg
-  top hit code and variable mod fixes
-
-  Revision 1.4  2003/11/18 18:16:03  lewisg
-  perf enhancements, ROCn adjusted params made default
-
-  Revision 1.3  2003/10/24 21:28:41  lewisg
-  add omssa, xomssa, omssacl to win32 build, including dll
-
-  Revision 1.2  2003/10/21 21:12:16  lewisg
-  reorder headers
-
-  Revision 1.1  2003/10/20 21:32:13  lewisg
-  ommsa toolkit version
-
-  Revision 1.10  2003/10/07 18:02:28  lewisg
-  prep for toolkit
-
-  Revision 1.9  2003/10/06 18:14:17  lewisg
-  threshold vary
-
-  Revision 1.8  2003/08/14 23:49:22  lewisg
-  first pass at variable mod
-
-  Revision 1.7  2003/07/17 18:45:49  lewisg
-  multi dta support
-
-  Revision 1.6  2003/07/07 16:17:51  lewisg
-  new poisson distribution and turn off histogram
-
-  Revision 1.5  2003/05/01 14:52:10  lewisg
-  fixes to scoring
-
-  Revision 1.4  2003/04/24 18:45:55  lewisg
-  performance enhancements to ladder creation and peak compare
-
-  Revision 1.3  2003/04/18 20:46:52  lewisg
-  add graphing to omssa
-
-  Revision 1.2  2003/04/02 18:49:50  lewisg
-  improved score, architectural changes
-
-  Revision 1.1  2003/03/21 21:14:40  lewisg
-  merge ming's code, other stuff
-
-
-*/

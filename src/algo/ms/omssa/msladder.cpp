@@ -226,3 +226,71 @@ bool CLadder::ContainsFast(int MassIndex, int Tolerance)
 #endif
     return false;
 }
+
+
+void     
+CLadderContainer::CreateLadderArrays(int MaxModPerPep, int MaxLadderSize)
+{
+    TSeriesChargePairList::iterator Iter;
+    for( Iter = SetSeriesChargePairList().begin();
+         Iter != SetSeriesChargePairList().end();
+         ++Iter) {
+        int Key = CMSMatchedPeakSetMap::ChargeSeries2Key(Iter->first, Iter->second);
+        CRef <CLadder> newLadder;
+        TLadderListPtr newLadderListPtr(new TLadderList);
+        int i;
+        for (i = 0; i < MaxModPerPep; i++) {
+            newLadder.Reset(new CLadder(MaxLadderSize));
+            newLadderListPtr->push_back(newLadder);
+        }
+        SetLadderMap().insert(TLadderMap::value_type(Key, newLadderListPtr));
+    }
+}
+
+bool 
+CLadderContainer::MatchIter(TLadderMap::iterator& Iter,
+                       TMSCharge BeginCharge,
+                       TMSCharge EndCharge,
+                       TMSIonSeries SeriesType)
+{
+    bool retval = true;
+    if(BeginCharge != 0 && EndCharge != 0) {
+        if(CMSMatchedPeakSetMap::Key2Charge(Iter->first) < BeginCharge ||
+           CMSMatchedPeakSetMap::Key2Charge(Iter->first) > EndCharge)
+            retval = false;
+    }
+    if(SeriesType != eMSIonTypeUnknown) {
+        if(CMSMatchedPeakSetMap::Key2Series(Iter->first) != SeriesType)
+            retval = false;
+    }
+
+    return retval;
+}
+
+void 
+CLadderContainer::Next(TLadderMap::iterator& Iter,
+                       TMSCharge BeginCharge,
+                       TMSCharge EndCharge,
+                       TMSIonSeries SeriesType)
+{
+    if(Iter == SetLadderMap().end()) return;
+    Iter++;
+    while(Iter != SetLadderMap().end() && 
+          !MatchIter(Iter, BeginCharge, EndCharge, SeriesType))
+        Iter++;
+}
+    
+    
+void     
+CLadderContainer::Begin(TLadderMap::iterator& Iter,
+                        TMSCharge BeginCharge,
+                        TMSCharge EndCharge,
+                        TMSIonSeries SeriesType)
+{
+    Iter = SetLadderMap().begin();
+    if(MatchIter(Iter, BeginCharge, EndCharge, SeriesType)) return;
+    Next(Iter, BeginCharge ,EndCharge, SeriesType);
+}
+        
+
+

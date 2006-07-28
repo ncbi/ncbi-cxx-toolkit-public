@@ -61,12 +61,8 @@ BEGIN_SCOPE(omssa)
 const int kNumAAIntervals = 19;
 
 // ABCXYZ ion mass calculation constants.  See Papayannopoulos, pg 63.
-// need to add proton * charge also.
-const int kAIon = 0, kBIon = 1, kCIon = 2, kXIon = 3, kYIon = 4,
-    kZIon = 5;
-const int kIonTypes = 6;
 
-// direction.  1 = N->C, -1 = C->N
+/** mass of water */
 const double kWater = 18.015; 
 
 /** neutron mass */
@@ -88,8 +84,6 @@ const int AAIntervals[] = { 57, 71, 87, 97, 99, 101, 103, 113, 114, 115, 128, 12
 
 const double kTermMass[] =  {1.008, 1.008, 1.008, 17.007, 17.007, 17.007};
 const double kIonTypeMass[] = { -28.01, 0.0, 17.01, 30.026, 2.016, -13.985 };
-// direction.  1 = N->C, -1 = C->N
-const int kIonDirection[] = { 1, 1, 1, -1, -1, -1 };
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1059,6 +1053,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.33  2006/07/28 14:21:05  lewisg
+  new ladder container
+
   Revision 1.32  2006/07/20 21:00:21  lewisg
   move functions out of COMSSA, create laddercontainer
 

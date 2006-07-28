@@ -223,10 +223,8 @@ public:
     /**     
      * Make a record of the hits to the mass ladders
      * 
-     * @param BLadder plus one forward ladder
-     * @param YLadder plus one backward ladder
-     * @param B2Ladder plus two forward ladder
-     * @param Y2Ladder plus two backward ladder
+     * @param LadderContainer holds the theoretical ladders
+     * @param iMods index into LadderContainer
      * @param Peaks the experimental spectrum
      * @param ModMask the bit array of modifications
      * @param ModList modification information
@@ -236,10 +234,8 @@ public:
      * @param Searchb1 search the first forward ion?
      * @param TheoreticalMassIn the mass of the theoretical peptide
      */
-    void RecordMatches(CLadder& BLadder,
-					   CLadder& YLadder, 
-					   CLadder& B2Ladder,
-					   CLadder& Y2Ladder,
+    void RecordMatches(CLadderContainer& LadderContainer,
+                       int iMod,
 					   CMSPeak *Peaks,
 					   unsigned ModMask,
 					   CMod ModList[],
@@ -287,13 +283,15 @@ protected:
      * @param iHitInfo the index of the hit
      * @param Peaks the spectrum that is hit
      * @param Which which noise reduced spectrum to examine
-     * @param Offset the numbering offset for the ladder
+     * @param NOffset the numbering offset for the ladder at n terminus
+     * @param COffset the numbering offset for the ladder at c terminus
      */
     void RecordMatchesScan(CLadder& Ladder,
                            int& iHitInfo,
                            CMSPeak *Peaks,
                            EMSPeakListTypes Which,
-                           int Offset);
+                           int NOffset,
+                           int COffset);
 
 private:
 
@@ -505,18 +503,6 @@ typedef CMSHit * TMSHitList;
 
 // size of histogram bin in Daltons
 #define MSBIN 100
-
-// culled for single charges
-//#define MSCULLED1 1
-// culled for double charges
-//#define MSCULLED2 2
-// original data
-//#define MSORIGINAL 0
-// only the few most intense peaks
-//#define MSTOPHITS 3
-// number of above cull states
-//#define MSNUMDATA 4
-
 
 // the maximum charge state that can be considered
 //#define MSMAXCHARGE 10
@@ -920,21 +906,6 @@ public:
      *  return number of allowed computed charges
      */
     const int GetNumCharges(void) const;
-#if 0
-    /**
-     * Get the number of peaks
-     * 
-     * @param Which which experimental spectrum to use
-     */
-    const unsigned GetNum(const int Which = MSORIGINAL) const;
-
-    /**
-     * Get the m/z and intensity array
-     * 
-     * @param Which which experimental spectrum to use
-     */
-    CMZI *GetMZI(const int Which = MSORIGINAL) const;
-#endif
 
     /**
      * compare peaks to ladder using ContainsFast
@@ -1119,14 +1090,6 @@ public:
      * get the precursor mass tolerance in Daltons.
      */
 	const int GetPrecursorTol(void) const;
-#if 0
-    /**
-     * return array to mark peaks as used
-     * 
-     * @param Which which experimental spectrum to use
-     */
-    char *SetUsed(const int Which);
-#endif
 
     /**
      * clear used arrays for all cull types
@@ -1177,10 +1140,6 @@ public:
 private:
     /** lists of peaks filtered at different precursor charges, etc. */
     TPeakLists PeakLists;
-    //CMZI *MZI[MSNUMDATA]; // m/z values and intensities, sorted by m/z.  first is original, second is culled
-    //char *Used[MSNUMDATA];  // used to mark m/z values as used in a match
-    //unsigned Num[MSNUMDATA]; // number of CMZI.  first is original, second is culled
-    //bool Sorted[MSNUMDATA]; // have the CMZI been sorted?
     int Precursormz;
     int Charges[eMSPeakListChargeMax - eMSPeakListCharge1];  // Computed allowed charges
     int NumCharges;  // array size of Charges[]
@@ -1237,20 +1196,6 @@ const EChargeState CMSPeak::GetComputedCharge(void) const
 { 
     return ComputedCharge; 
 }
-
-#if 0
-inline 
-const unsigned CMSPeak::GetNum(const int Which) const
-{ 
-    return Num[Which];
-}
-
-inline 
-CMZI * CMSPeak::GetMZI(const int Which) const 
-{ 
-    return MZI[Which];
-}
-#endif
 
 inline 
 TMSHitList& CMSPeak::GetHitList(const int Index)
@@ -1354,14 +1299,6 @@ const int CMSPeak::GetPrecursorTol(void) const
 { 
     return PrecursorTol; 
 }
-
-#if 0
-inline 
-char *CMSPeak::SetUsed(const int Which)
-{
-    return Used[Which];
-}
-#endif
 
 inline 
 void CMSPeak::ClearUsedAll(void)
@@ -1475,182 +1412,3 @@ END_NCBI_SCOPE
 
 #endif
 
-/*
-  $Log$
-  Revision 1.38  2006/05/25 17:10:56  lewisg
-  one filtered spectrum per precursor charge state
-
-  Revision 1.37  2006/03/13 15:48:11  lewisg
-  omssamerge and intermediate score fixes
-
-  Revision 1.36  2006/01/23 17:47:37  lewisg
-  refactor scoring
-
-  Revision 1.35  2005/11/18 15:11:40  lewisg
-  move code from CSearch into CMSPeak
-
-  Revision 1.34  2005/10/24 21:46:13  lewisg
-  exact mass, peptide size limits, validation, code cleanup
-
-  Revision 1.33  2005/09/21 18:05:59  lewisg
-  speed up non-specific search, add fields to result
-
-  Revision 1.32  2005/09/14 18:50:56  lewisg
-  add theoretical mass to hit
-
-  Revision 1.31  2005/09/14 15:30:17  lewisg
-  neutral loss
-
-  Revision 1.30  2005/08/15 14:24:56  lewisg
-  new mod, enzyme; stat test
-
-  Revision 1.29  2005/08/03 17:59:29  lewisg
-  *** empty log message ***
-
-  Revision 1.28  2005/08/01 13:44:18  lewisg
-  redo enzyme classes, no-enzyme, fix for fixed mod enumeration
-
-  Revision 1.27  2005/05/13 17:57:17  lewisg
-  one mod per site and bug fixes
-
-  Revision 1.26  2005/04/21 21:54:03  lewisg
-  fix Jeri's mem bug, split off mod file, add aspn and gluc
-
-  Revision 1.25  2005/01/31 17:30:57  lewisg
-  adjustable intensity, z dpendence of precursor mass tolerance
-
-  Revision 1.24  2004/12/20 20:24:16  lewisg
-  fix uncalc ladder bug, cleanup
-
-  Revision 1.23  2004/12/06 23:35:16  lewisg
-  get rid of file charge
-
-  Revision 1.22  2004/12/06 22:57:34  lewisg
-  add new file formats
-
-  Revision 1.21  2004/12/03 21:14:16  lewisg
-  file loading code
-
-  Revision 1.20  2004/11/30 23:39:57  lewisg
-  fix interval query
-
-  Revision 1.19  2004/11/22 23:10:36  lewisg
-  add evalue cutoff, fix fixed mods
-
-  Revision 1.18  2004/10/20 22:24:48  lewisg
-  neutral mass bugfix, concatenate result and response
-
-  Revision 1.17  2004/09/15 18:35:00  lewisg
-  cz ions
-
-  Revision 1.16  2004/07/22 22:22:58  lewisg
-  output mods
-
-  Revision 1.15  2004/06/08 19:46:21  lewisg
-  input validation, additional user settable parameters
-
-  Revision 1.14  2004/05/27 20:52:15  lewisg
-  better exception checking, use of AutoPtr, command line parsing
-
-  Revision 1.13  2004/04/06 19:53:20  lewisg
-  allow adjustment of precursor charges that allow multiply charged product ions
-
-  Revision 1.12  2004/03/30 19:36:59  lewisg
-  multiple mod code
-
-  Revision 1.11  2004/03/16 20:18:54  gorelenk
-  Changed includes of private headers.
-
-  Revision 1.10  2003/12/22 23:03:18  lewisg
-  top hit code and variable mod fixes
-
-  Revision 1.9  2003/12/08 17:37:20  ucko
-  #include <string.h> rather than <cstring>, since MIPSpro lacks the latter.
-
-  Revision 1.8  2003/12/05 13:10:32  lewisg
-  delete GetUsed
-
-  Revision 1.7  2003/12/04 23:39:08  lewisg
-  no-overlap hits and various bugfixes
-
-  Revision 1.6  2003/11/14 20:28:05  lewisg
-  scale precursor tolerance by charge
-
-  Revision 1.5  2003/11/10 22:24:12  lewisg
-  allow hitlist size to vary
-
-  Revision 1.4  2003/10/24 21:28:41  lewisg
-  add omssa, xomssa, omssacl to win32 build, including dll
-
-  Revision 1.3  2003/10/21 21:12:17  lewisg
-  reorder headers
-
-  Revision 1.2  2003/10/21 03:43:20  lewisg
-  fix double default
-
-  Revision 1.1  2003/10/20 21:32:13  lewisg
-  ommsa toolkit version
-
-  Revision 1.20  2003/10/07 18:02:28  lewisg
-  prep for toolkit
-
-  Revision 1.19  2003/10/06 18:14:17  lewisg
-  threshold vary
-
-  Revision 1.18  2003/08/14 23:49:22  lewisg
-  first pass at variable mod
-
-  Revision 1.17  2003/08/06 18:29:11  lewisg
-  support for filenames, numbers using regex
-
-  Revision 1.16  2003/07/21 20:25:03  lewisg
-  fix missing peak bug
-
-  Revision 1.15  2003/07/19 15:07:38  lewisg
-  indexed peaks
-
-  Revision 1.14  2003/07/18 20:50:34  lewisg
-  *** empty log message ***
-
-  Revision 1.13  2003/07/17 18:45:50  lewisg
-  multi dta support
-
-  Revision 1.12  2003/07/07 16:17:51  lewisg
-  new poisson distribution and turn off histogram
-
-  Revision 1.11  2003/04/24 18:45:55  lewisg
-  performance enhancements to ladder creation and peak compare
-
-  Revision 1.10  2003/04/18 20:46:52  lewisg
-  add graphing to omssa
-
-  Revision 1.9  2003/04/02 18:49:51  lewisg
-  improved score, architectural changes
-
-  Revision 1.8  2003/03/21 21:14:40  lewisg
-  merge ming's code, other stuff
-
-  Revision 1.7  2003/02/07 16:18:23  lewisg
-  bugfixes for perf and to work on exp data
-
-  Revision 1.6  2003/02/03 20:39:02  lewisg
-  omssa cgi
-
-  Revision 1.5  2003/01/21 22:19:26  lewisg
-  get rid of extra 2 aa function
-
-  Revision 1.4  2003/01/21 21:46:12  lewisg
-  *** empty log message ***
-
-  Revision 1.3  2002/11/27 00:07:52  lewisg
-  fix conflicts
-
-  Revision 1.2  2002/11/26 00:53:34  lewisg
-  sync versions
-
-  Revision 1.1  2002/07/16 13:27:09  lewisg
-  *** empty log message ***
-
-  
-	
-*/

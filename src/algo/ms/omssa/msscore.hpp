@@ -77,6 +77,9 @@ enum EMSIonSeries {
     eMSIonTypeMax
 };
 
+/** ion direction.  1 = N->C, -1 = C->N */
+const int kIonDirection[] = { 1, 1, 1, -1, -1, -1, 0, 0 ,0 };
+
 
 /** pair of ion series, charge */
 typedef pair <TMSCharge, EMSIonSeries> TSeriesChargePair;

@@ -54,25 +54,16 @@ USING_SCOPE(omssa);
 //
 
 
-/**
- *  helper function for RecordHits that scans thru a single ladder
- * 
- * @param Ladder the ladder to record
- * @param iHitInfo the index of the hit
- * @param Peaks the spectrum that is hit
- * @param Which which noise reduced spectrum to examine
- * @param Offset the numbering offset for the ladder
- */
 void CMSHit::RecordMatchesScan(CLadder& Ladder,
                                int& iHitInfo,
                                CMSPeak *Peaks,
                                EMSPeakListTypes Which,
-                               int Offset)
+                               int NOffset,
+                               int COffset)
 {
     try {
 	TIntensity Intensity(new unsigned [Ladder.size()]);
 	Peaks->CompareSortedRank(Ladder, Which, &Intensity, SetSum(), SetM());
-	// Peaks->CompareSorted(Ladder, Which, &Intensity);
 
     // examine hits array
 	unsigned i;
@@ -81,7 +72,8 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
 	    if(Ladder.GetHit()[i] > 0) {
     		SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
     		SetHitInfo(iHitInfo).SetIonSeries() = (char) Ladder.GetType();
-    		SetHitInfo(iHitInfo).SetNumber() = (short) i + Offset;
+    		if(kIonDirection[Ladder.GetType()] == 1) SetHitInfo(iHitInfo).SetNumber() = (short) i + NOffset;
+            else SetHitInfo(iHitInfo).SetNumber() = (short) i + COffset;
     		SetHitInfo(iHitInfo).SetIntensity() = *(Intensity.get() + i);
     		//  for poisson test
     		SetHitInfo(iHitInfo).SetMZ() = Ladder[i];
@@ -134,26 +126,8 @@ void CMSHit::RecordModInfo(unsigned ModMask,
 	}
 }
 
-
-/**
- * Make a record of the hits to the mass ladders
- * 
- * @param BLadder plus one forward ladder
- * @param YLadder plus one backward ladder
- * @param B2Ladder plus two forward ladder
- * @param Y2Ladder plus two backward ladder
- * @param Peaks the experimental spectrum
- * @param ModMask the bit array of modifications
- * @param ModList modification information
- * @param NumMod  number of modifications
- * @param PepStart starting position of peptide
- * @param Searchctermproduct search the c terminal ions
- * @param Searchb1 search the first forward ion?
- */
-void CMSHit::RecordMatches(CLadder& BLadder, 
-						   CLadder& YLadder,
-						   CLadder& B2Ladder,
-						   CLadder& Y2Ladder,
+void CMSHit::RecordMatches(CLadderContainer& LadderContainer,
+                           int iMod,
 						   CMSPeak *Peaks,
 						   unsigned ModMask,
 						   CMod ModList[],
@@ -181,20 +155,17 @@ void CMSHit::RecordMatches(CLadder& BLadder,
     SetM() = 0;
     SetSum() = 0;
     // scan thru each ladder
-    if(GetCharge() >= Peaks->GetConsiderMult()) {
-		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which, Searchb1);
-		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which, Searchctermproduct);
-		RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which, Searchb1);
-		RecordMatchesScan(Y2Ladder, iHitInfo, Peaks, Which, Searchctermproduct);
-        SetN() = (Peaks->GetPeakLists())[Which]->GetNum();
-    }
-    else {
-		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which, Searchb1);
-		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which, Searchctermproduct);
-        SetN() = (Peaks->GetPeakLists())[Which]->GetNum();
-    }
 
-
+    int ChargeLimit(0);
+    if (GetCharge() < Peaks->GetConsiderMult()) 
+        ChargeLimit = 1;
+    TLadderMap::iterator Iter;
+    LadderContainer.Begin(Iter, ChargeLimit, ChargeLimit);
+    while(Iter != LadderContainer.GetLadderMap().end()) {
+        RecordMatchesScan(*((*(Iter->second))[iMod]),iHitInfo, Peaks, Which, Searchb1, Searchctermproduct);
+        LadderContainer.Next(Iter, ChargeLimit, ChargeLimit);
+    }
+    SetN() = (Peaks->GetPeakLists())[Which]->GetNum();
 
 	// need to make function to save the info in ModInfo
 	RecordModInfo(ModMask,
@@ -456,6 +427,7 @@ const int CMSPeak::CompareSorted(CLadder& Ladder,
     unsigned i(0), j(0);
     int retval(0);
     CRef <CMSPeakList> PeakList = SetPeakLists()[Which];
+
     if(Ladder.size() == 0 ||  PeakList->GetNum() == 0) return 0;
 
     do {
@@ -1105,7 +1077,9 @@ void CMSPeak::SmartCull(const CMSSearchSettings& Settings,
     for(iMZI = 0; iMZI < TempLen - 1; iMZI++) { 
 	if(Deleted.count(iMZI) != 0) continue;
 	HitCount = 0;
-	if(!ConsiderMultProduct || Temp[iMZI].GetMZ() > Precursormz) {
+	if(!ConsiderMultProduct ||
+       Temp[iMZI].GetMZ() > 
+       Precursormz) {
 	    // if charge 1 region, allow fewer peaks
 	    Window = Settings.GetSinglewin(); //27;
 	    HitsAllowed = Settings.GetSinglenum();

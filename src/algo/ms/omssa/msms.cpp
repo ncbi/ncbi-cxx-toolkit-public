@@ -37,6 +37,7 @@
 #include <fstream>
 
 #include "msms.hpp"
+#include "omssascore.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -73,7 +74,7 @@ CAA::CAA(void)
 CCleave::CCleave(void): CleaveAt(0), kCleave(0), NMethionine(false)
 {
     ProtonMass = MSSCALE2INT(kProton);
-    TermMass = MSSCALE2INT(kTermMass[kCIon] + kTermMass[kXIon]);
+    TermMass = MSSCALE2INT(kWater);
 }
 
 // char based replacement for find_first_of()
@@ -631,6 +632,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.33  2006/07/28 14:21:05  lewisg
+  new ladder container
+
   Revision 1.32  2006/05/25 17:10:18  lewisg
   one filtered spectrum per precursor charge state
 

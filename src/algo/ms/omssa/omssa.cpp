@@ -54,71 +54,6 @@ USING_SCOPE(omssa);
 
 
 
-void     
-CLadderContainer::CreateLadderArrays(int MaxModPerPep, int MaxLadderSize)
-{
-    TSeriesChargePairList::iterator Iter;
-    for( Iter = SetSeriesChargePairList().begin();
-         Iter != SetSeriesChargePairList().end();
-         ++Iter) {
-        int Key = CMSMatchedPeakSetMap::ChargeSeries2Key(Iter->first, Iter->second);
-        CRef <CLadder> newLadder;
-        TLadderListPtr newLadderListPtr(new TLadderList);
-        int i;
-        for (i = 0; i < MaxModPerPep; i++) {
-            newLadder.Reset(new CLadder(MaxLadderSize));
-            newLadderListPtr->push_back(newLadder);
-        }
-        SetLadderMap().insert(TLadderMap::value_type(Key, newLadderListPtr));
-    }
-}
-
-bool 
-CLadderContainer::MatchIter(TLadderMap::iterator& Iter,
-                       TMSCharge BeginCharge,
-                       TMSCharge EndCharge,
-                       TMSIonSeries SeriesType)
-{
-    bool retval = true;
-    if(BeginCharge != 0 && EndCharge != 0) {
-        if(CMSMatchedPeakSetMap::Key2Charge(Iter->first) < BeginCharge ||
-           CMSMatchedPeakSetMap::Key2Charge(Iter->first) > EndCharge)
-            retval = false;
-    }
-    if(SeriesType != eMSIonTypeUnknown) {
-        if(CMSMatchedPeakSetMap::Key2Series(Iter->first) != SeriesType)
-            retval = false;
-    }
-
-    return retval;
-}
-
-void 
-CLadderContainer::Next(TLadderMap::iterator& Iter,
-                       TMSCharge BeginCharge,
-                       TMSCharge EndCharge,
-                       TMSIonSeries SeriesType)
-{
-    if(Iter == SetLadderMap().end()) return;
-    Iter++;
-    while(Iter != SetLadderMap().end() && 
-          !MatchIter(Iter, BeginCharge, EndCharge, SeriesType))
-        Iter++;
-}
-    
-    
-void     
-CLadderContainer::Begin(TLadderMap::iterator& Iter,
-                        TMSCharge BeginCharge,
-                        TMSCharge EndCharge,
-                        TMSIonSeries SeriesType)
-{
-    Iter = SetLadderMap().begin();
-    if(MatchIter(Iter, BeginCharge, EndCharge, SeriesType)) return;
-    Next(Iter, BeginCharge ,EndCharge, SeriesType);
-}
-        
-
 int 
 CSearchHelper::ReadModFiles(const string& ModFileName,
                           const string& UserModFileName,
@@ -214,7 +149,7 @@ int CSearch::InitBlast(const char *blastdb)
         rdfp.Reset(new CSeqDB(blastdb, CSeqDB::eProtein));
         numseq = rdfp->GetNumOIDs();
     }
-    catch (const std::exception &e) {
+    catch (const NCBI_NS_STD::exception &e) {
         ERR_POST(Critical << "Unable to open blast library " << blastdb << " with error:" <<
                  e.what());
         return 1;
@@ -242,13 +177,12 @@ int CSearch::CreateLadders(const char *Sequence,
                            int ForwardIon,
                            int BackwardIon)
 {
-    // new way
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter);
     while(Iter != SetLadderContainer().SetLadderMap().end()) {
         if (!(*(Iter->second))[iMod]->
-            CreateLadder(CMSMatchedPeakSetMap::Key2Charge(Iter->first),
-                         CMSMatchedPeakSetMap::Key2Series(Iter->first),
+            CreateLadder(CMSMatchedPeakSetMap::Key2Series(Iter->first),
+                         CMSMatchedPeakSetMap::Key2Charge(Iter->first),
                          Sequence,
                          iSearch,
                          position,
@@ -264,65 +198,6 @@ int CSearch::CreateLadders(const char *Sequence,
         SetLadderContainer().Next(Iter);
     }
 
-    // end new way
-
-    if (!BLadder[iMod]->CreateLadder(ForwardIon,
-                                     1,
-                                     Sequence,
-                                     iSearch,
-                                     position,
-                                     endposition,
-                                     Masses[iMissed], 
-                                     MassArray,
-                                     AA,
-                                     SetMassAndMask(iMissed, iMod).Mask,
-                                     ModList,
-                                     NumMod,
-                                     *GetSettings()
-                                    )) return 1;
-    if (!YLadder[iMod]->CreateLadder(BackwardIon,
-                                     1,
-                                     Sequence,
-                                     iSearch,
-                                     position,
-                                     endposition,
-                                     Masses[iMissed], 
-                                     MassArray,
-                                     AA, 
-                                     SetMassAndMask(iMissed, iMod).Mask,
-                                     ModList, 
-                                     NumMod,
-                                     *GetSettings()
-                                    )) return 1;
-    if (!B2Ladder[iMod]->CreateLadder(ForwardIon,
-                                      2,
-                                      Sequence,
-                                      iSearch,
-                                      position,
-                                      endposition, 
-                                      Masses[iMissed], 
-                                      MassArray, 
-                                      AA, 
-                                      SetMassAndMask(iMissed, iMod).Mask,
-                                      ModList, 
-                                      NumMod,
-                                      *GetSettings()
-                                     )) return 1;
-    if (!Y2Ladder[iMod]->CreateLadder(BackwardIon,
-                                      2,
-                                      Sequence,
-                                      iSearch,
-                                      position,
-                                      endposition,
-                                      Masses[iMissed], 
-                                      MassArray,
-                                      AA,
-                                      SetMassAndMask(iMissed, iMod).Mask,
-                                      ModList,
-                                      NumMod,
-                                      *GetSettings()
-                                     )) return 1;
-
     return 0;
 }
 
@@ -335,7 +210,6 @@ int CSearch::CompareLadders(int iMod,
 {
     EMSPeakListTypes Which = Peaks->GetWhich(MassPeak->Charge);
 
-    // new way
     int ChargeLimit(0);
     if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) 
         ChargeLimit = 1;
@@ -344,24 +218,6 @@ int CSearch::CompareLadders(int iMod,
     while(Iter != SetLadderContainer().SetLadderMap().end()) {
         Peaks->CompareSorted(*((*(Iter->second))[iMod]), Which, 0);
         SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
-    }
-    return 0;
-    // end new way
-
-    if (MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
-        Peaks->CompareSorted(*(BLadder[iMod]), Which, 0); 
-        Peaks->CompareSorted(*(YLadder[iMod]), Which, 0); 
-        Peaks->CompareSorted(*(B2Ladder[iMod]), Which, 0); 
-        Peaks->CompareSorted(*(Y2Ladder[iMod]), Which, 0);
-// peak or'ing no longer used
-//        if (OrLadders) {
-//            BLadder[iMod]->Or(*(B2Ladder[iMod]));
-//            YLadder[iMod]->Or(*(Y2Ladder[iMod]));   
-//        }
-    }
-    else {
-        Peaks->CompareSorted(*(BLadder[iMod]), Which, 0); 
-        Peaks->CompareSorted(*(YLadder[iMod]), Which, 0); 
     }
     return 0;
 }
@@ -378,7 +234,6 @@ void CSearch::CompareLaddersRank(int iMod,
 {
     EMSPeakListTypes Which = Peaks->GetWhich(MassPeak->Charge);
 
-    // new way
     int ChargeLimit(0);
     if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) { 
         ChargeLimit = 1;
@@ -393,21 +248,6 @@ void CSearch::CompareLaddersRank(int iMod,
         Peaks->CompareSortedRank(*((*(Iter->second))[iMod]), Which, 0, Sum, M);
         SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
     }
-    return;
-    // end new way
-
-    if (MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
-        Peaks->CompareSortedRank(*(BLadder[iMod]), Which, 0, Sum, M);
-        Peaks->CompareSortedRank(*(YLadder[iMod]), Which, 0, Sum, M);
-        Peaks->CompareSortedRank(*(B2Ladder[iMod]), Which, 0, Sum, M);
-        Peaks->CompareSortedRank(*(Y2Ladder[iMod]), Which, 0, Sum, M);
-        N = (Peaks->GetPeakLists())[eMSPeakListCharge3]->GetNum();
-    }
-    else {
-        Peaks->CompareSortedRank(*(BLadder[iMod]), Which, 0, Sum, M);
-        Peaks->CompareSortedRank(*(YLadder[iMod]), Which, 0, Sum, M);
-        N = (Peaks->GetPeakLists())[eMSPeakListCharge1]->GetNum();
-    }
 }
 
 
@@ -416,7 +256,6 @@ bool CSearch::CompareLaddersTop(int iMod,
                                 CMSPeak *Peaks,
                                 const TMassPeak *MassPeak)
 {
-    // new way
     int ChargeLimit(0);
     if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) { 
         ChargeLimit = 1;
@@ -427,19 +266,6 @@ bool CSearch::CompareLaddersTop(int iMod,
     while(Iter != SetLadderContainer().SetLadderMap().end()) {
         if(Peaks->CompareTop(*((*(Iter->second))[iMod]))) return true;
         SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
-    }
-    return false;
-    // end new way
-
-    if (MassPeak && MassPeak->Charge >=  Peaks->GetConsiderMult() ) {
-        if (Peaks->CompareTop(*(BLadder[iMod]))) return true;
-        if (Peaks->CompareTop(*(YLadder[iMod]))) return true;
-        if (Peaks->CompareTop(*(B2Ladder[iMod]))) return true;
-        if (Peaks->CompareTop(*(Y2Ladder[iMod]))) return true;
-    }
-    else {
-        if (Peaks->CompareTop(*(BLadder[iMod]))) return true;
-        if (Peaks->CompareTop(*(YLadder[iMod]))) return true;
     }
     return false;
 }
@@ -785,36 +611,20 @@ void CSearch::SetupMods(CRef <CMSModSpecSet> Modset)
 
 void CSearch::InitLadders(int ForwardIon, int BackwardIon)
 {
-    BLadder.clear();
-    YLadder.clear();
-    B2Ladder.clear();
-    Y2Ladder.clear();
 
     int MaxLadderSize = GetSettings()->GetMaxproductions();
-    int i;
     if (MaxLadderSize == 0) MaxLadderSize = kMSLadderMax;
-    CRef <CLadder> newLadder;
-    for (i = 0; i < MaxModPerPep; i++) {
-        newLadder.Reset(new CLadder(MaxLadderSize));
-        BLadder.push_back(newLadder);
-        newLadder.Reset(new CLadder(MaxLadderSize));
-        YLadder.push_back(newLadder);
-        newLadder.Reset(new CLadder(2*MaxLadderSize));
-        B2Ladder.push_back(newLadder);
-        newLadder.Reset(new CLadder(2*MaxLadderSize));
-        Y2Ladder.push_back(newLadder);
-    }
 
-
-    // new way
     SetLadderContainer().SetSeriesChargePairList().clear();
-    SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)ForwardIon));
-    SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)ForwardIon));
-    SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)BackwardIon));
-    SetLadderContainer().SetSeriesChargePairList().push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)BackwardIon));
+    SetLadderContainer().SetSeriesChargePairList().
+        push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)ForwardIon));
+    SetLadderContainer().SetSeriesChargePairList().
+        push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)ForwardIon));
+    SetLadderContainer().SetSeriesChargePairList().
+        push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)BackwardIon));
+    SetLadderContainer().SetSeriesChargePairList().
+        push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)BackwardIon));
     SetLadderContainer().CreateLadderArrays(MaxModPerPep, MaxLadderSize);
-
-    // end new way
 }
 
 
@@ -932,6 +742,9 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         const TMassPeak *MassPeak; // peak currently in consideration
         CMSPeak* Peaks;
         CIntervalTree::const_iterator im; // iterates over interval tree
+
+        // iterates over ladders
+        TLadderMap::iterator Iter;
 
         Spectrum2Peak(PeakSet);
 
@@ -1090,28 +903,20 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                 // continue to next sequence if ladders not successfully made
                             }
                             else {
-                                // new way
                                 TLadderMap::iterator Iter;
                                 SetLadderContainer().Begin(Iter);
                                 while(Iter != SetLadderContainer().SetLadderMap().end()) {
                                     (*(Iter->second))[iMod]->ClearHits();
                                     SetLadderContainer().Next(Iter);
                                 }
-                                // end new way
-                                BLadder[iMod]->ClearHits();
-                                YLadder[iMod]->ClearHits();
-                                B2Ladder[iMod]->ClearHits();
-                                Y2Ladder[iMod]->ClearHits();
                             }
 
                             if (UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
 
-                            if (/*UseRankScore || */
-                                CompareLaddersTop(iMod, 
+                            if (CompareLaddersTop(iMod, 
                                                   Peaks,
                                                   MassPeak)
                                ) {
-                                // end of new addition
 
                                 if (!UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
                                 Peaks->ClearUsedAll();
@@ -1119,21 +924,12 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                                Peaks,
                                                false,
                                                MassPeak);
-                                hits = BLadder[iMod]->HitCount() + 
-                                       YLadder[iMod]->HitCount() +
-                                       B2Ladder[iMod]->HitCount() +
-                                       Y2Ladder[iMod]->HitCount();
-                                // new way
-                                {
-                                    hits = 0;
-                                    TLadderMap::iterator Iter;
-                                    SetLadderContainer().Begin(Iter);
-                                    while(Iter != SetLadderContainer().SetLadderMap().end()) {
-                                        hits += (*(Iter->second))[iMod]->HitCount();
-                                        SetLadderContainer().Next(Iter);
-                                    }
+                                hits = 0;
+                                SetLadderContainer().Begin(Iter);
+                                while(Iter != SetLadderContainer().SetLadderMap().end()) {
+                                    hits += (*(Iter->second))[iMod]->HitCount();
+                                    SetLadderContainer().Next(Iter);
                                 }
-                                // end new way
                                 if (hits >= GetSettings()->GetMinhit()) {
                                     // need to save mods.  bool map?
                                     NewHit.SetHits() = hits;   
@@ -1147,10 +943,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                         // record the hits
                                         Peaks->ClearUsedAll();
                                         NewHitOut->
-                                        RecordMatches(*(BLadder[iMod]),
-                                                      *(YLadder[iMod]),
-                                                      *(B2Ladder[iMod]), 
-                                                      *(Y2Ladder[iMod]),
+                                        RecordMatches(SetLadderContainer(),
+                                                      iMod,
                                                       Peaks,
                                                       SetMassAndMask(iMissed, iMod).Mask,
                                                       ModList[iMissed],
@@ -1267,7 +1061,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
         if (GetSettings()->IsSetTaxids() && !TaxInfo)
             ERR_POST(Error << 
-                     "Taxonomically restricted search specified and no taxonomy information found in sequence library");
+                     "Taxonomically restricted search specified and no matching organisms found in sequence library.  Did you use a sequence library with taxonomic information?");
 
         // read out hits
         SetResult(PeakSet);
@@ -1654,13 +1448,71 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             EMSPeakListTypes Which = Peaks->GetWhich(Charge);
 
             // set up new score
-            
+
             // what ions to use
             int ForwardIon, BackwardIon;
             SetIons(ForwardIon, BackwardIon);
 
             // minimum intensity
             int minintensity = Threshold * Peaks->GetMaxI(Which);
+
+
+            TSeriesChargePairList::const_iterator iPairList;
+
+            CMSMatchedPeakSet *b1(0), *y1(0), *current;
+            for (iPairList = SetLadderContainer().GetSeriesChargePairList().begin();
+                iPairList != SetLadderContainer().GetSeriesChargePairList().end();
+                ++iPairList) {
+                if (iPairList->first != 1) continue;  // only examine charge 1
+                current = PepCharge(HitList[iHitList],
+                                    iPairList->first,
+                                    iPairList->second,
+                                    minintensity,
+                                    Which,
+                                    Peaks,
+                                    GetSettings()->GetMaxproductions());
+                if (!b1 && 
+                    kIonDirection[iPairList->second] == 1)
+                    b1 = current;
+                else if (!y1 &&
+                         kIonDirection[iPairList->second] == -1)
+                    y1 = current;
+
+            }
+            if (b1 && y1) b1->Compare(y1, false);
+
+            if (Charge >= Peaks->GetConsiderMult()) {
+                for (iPairList = SetLadderContainer().GetSeriesChargePairList().begin();
+                    iPairList != SetLadderContainer().GetSeriesChargePairList().end();
+                    ++iPairList) {
+                    if (iPairList->first == 1) continue;  // examine charges greater than 1
+                    current = PepCharge(HitList[iHitList],
+                                        iPairList->first,
+                                        iPairList->second,
+                                        minintensity,
+                                        Which,
+                                        Peaks,
+                                        GetSettings()->GetMaxproductions());
+                    // compare to forward charge one state
+                    if (b1) {
+                        if (kIonDirection[iPairList->second] == 1)
+                            current->Compare(b1, true);
+                        if (kIonDirection[iPairList->second] == -1)
+                            current->Compare(b1, false);
+                    }
+
+                    // compare to reverse charge one state
+                    if (y1) {
+                        if (kIonDirection[iPairList->second] == -1)
+                            current->Compare(y1, true);
+                        if (kIonDirection[iPairList->second] == 1)
+                            current->Compare(y1, false);
+                    }
+                }
+            }
+
+
+#if 0
 
             // fill out the match list
             CMSMatchedPeakSet *b1 = 
@@ -1683,6 +1535,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 b2->Compare(b1, true);
                 y2->Compare(y1, true);
             }
+#endif
             double a = HitList[iHitList].CalcPoissonMean(0.5, GetEnzyme()->GetCleaveNum(), 0.5, 19);
 
             if (a == 0) {
