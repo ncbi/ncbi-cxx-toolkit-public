@@ -42,13 +42,14 @@ static const string kAsnDeflineObjLabel = "ASN1_BlastDefLine";
 static const string kTaxDataObjLabel    = "TaxNamesData";
 
 enum LinkoutTypes {
-  eLocuslink       = (1<<0),
-  eUnigene         = (1<<1),
-  eStructure       = (1<<2),
-  eGeo             = (1<<3),
-  eGene            = (1<<4),
-  eInMapviewer     = (1<<5),
-  eGenomicSeq      = (1<<6)
+  eLocuslink              = (1<<0),
+  eUnigene                = (1<<1),
+  eStructure              = (1<<2),
+  eGeo                    = (1<<3),
+  eGene                   = (1<<4),
+  eHitInMapviewer         = (1<<5),
+  eAnnotatedInMapviewer   = (1<<6),
+  eGenomicSeq             = (1<<7)
 };
 
 END_objects_SCOPE
@@ -58,6 +59,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/07/28 15:38:05  jianye
+* Add eHitInMapviewer, eAnnotatedInMapviewer
+*
 * Revision 1.6  2006/07/25 17:00:24  jianye
 * changed flag naming
 *
