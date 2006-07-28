@@ -27,10 +27,10 @@ Usage()
     cat <<EOF 1>&2
 USAGE: $script_name BuildDir [-s SrcDir] [-p ProjectList] [-b] 
 SYNOPSIS:
- Create flat makefile for a given build tree:
+ Create flat makefile for a given build tree.
 ARGUMENTS:
-  BuildDir  -- mandatory. Root directory of the build tree (eg ~/c++/GCC340-Debug)
-  -s        -- optional.  Root directory of the source tree (eg ~/c++)
+  BuildDir  -- mandatory. Root dir of the build tree (eg ~/c++/GCC340-Debug)
+  -s        -- optional.  Root dir of the source tree (eg ~/c++)
   -p        -- optional.  List of projects: subtree of the source tree, or LST file
   -b        -- optional.  Build project_tree_builder locally
 EOF
@@ -42,10 +42,10 @@ EOF
 #-----------------------------------------------------------------------------
 # analyze script arguments
 
-builddir=""
+
 test $# -lt 1 && Usage "Mandatory argument is missing"
-cd $initial_dir
-cd $1
+COMMON_Exec cd $initial_dir
+COMMON_Exec cd $1
 a1=`pwd`
 builddir="$a1/build"
 srcdir="$a1/.."
@@ -56,14 +56,14 @@ shift
 dest=""
 for cmd_arg in "$@"; do
   case "$dest" in
-    src  ) srcdir="$cmd_arg"; dest=""; continue ;;
-    prj  ) projectlist="$cmd_arg"; dest=""; continue ;;
-    * )  dest="" ;;
+    src  )  dest="";  srcdir="$cmd_arg";    ;  continue ;;
+    prj  )  dest="";  projectlist="$cmd_arg";  continue ;;
+    *    )  dest=""                                     ;;
   esac
   case "$cmd_arg" in
     -s )  dest="src" ;;
     -p )  dest="prj" ;;
-    -b )  buildptb="yes"; dest="" ;;
+    -b )  dest="";    buildptb="yes" ;;
     *  )  Usage "Invalid command line argument:  $cmd_arg"
   esac
 done
@@ -74,11 +74,12 @@ if test ! -f "$srcdir/$projectlist"; then
   test -d "$srcdir/$projectlist" || Usage "$srcdir/$projectlist not found"
 fi
 
+
 #-----------------------------------------------------------------------------
 # more checks
 if test $buildptb = "no"; then
   ptb="$extptb"
-  if test -f "$ptb"; then
+  if test -x "$ptb"; then
     ptbver=`$ptb -version 2>&1 | sed -e 's/[a-zA-Z._: ]//g'`
     if test $ptbver -lt 120; then
       $ptb -version 2>&1
@@ -95,20 +96,21 @@ if test $buildptb = "no"; then
   fi
 fi
 
-cd $builddir
+COMMON_Exec cd $builddir
 dll=""
 test -f "../status/DLL.enabled" && dll="-dll"
 ptbini="$srcdir/compilers/msvc710_prj/project_tree_builder.ini"
 test -f "$ptbini" || Usage "$ptbini not found"
 
+
 #-----------------------------------------------------------------------------
 # build project_tree_builder
 
-cd $builddir
+COMMON_Exec cd $builddir
 if test "$buildptb" = "yes"; then
   ptbdep="corelib util serial serial/datatool app/project_tree_builder"
   for dep in $ptbdep; do
-    test -d "$dep" || Usage "$builddir/$dep not found"
+    test -d "$dep"          || Usage "$builddir/$dep not found"
     test -f "$dep/Makefile" || Usage "$builddir/$dep/Makefile not found"
   done
 
@@ -120,16 +122,19 @@ if test "$buildptb" = "yes"; then
     COMMON_Exec cd $dep
     COMMON_Exec make
   done
-  cd $builddir
+  COMMON_Exec cd $builddir
   ptb="./app/project_tree_builder/project_tree_builder"
-  test -f "$ptb" || Usage "$builddir/$ptb not found"
+  test -x "$ptb" || Usage "$builddir/$ptb not found"
 fi
 
-cd $builddir
+
+#-----------------------------------------------------------------------------
+# run project_tree_builder
+
+COMMON_Exec cd $builddir
 echo "**********************************************************************"
 echo "Running project_tree_builder. Please wait."
 echo "**********************************************************************"
 echo $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 COMMON_Exec $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 echo "Done"
-
