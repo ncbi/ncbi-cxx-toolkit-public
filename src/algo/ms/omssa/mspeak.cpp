@@ -161,7 +161,7 @@ void CMSHit::RecordMatches(CLadderContainer& LadderContainer,
         ChargeLimit = 1;
     TLadderMap::iterator Iter;
     LadderContainer.Begin(Iter, ChargeLimit, ChargeLimit);
-    while(Iter != LadderContainer.GetLadderMap().end()) {
+    while(Iter != LadderContainer.SetLadderMap().end()) {
         RecordMatchesScan(*((*(Iter->second))[iMod]),iHitInfo, Peaks, Which, Searchb1, Searchctermproduct);
         LadderContainer.Next(Iter, ChargeLimit, ChargeLimit);
     }
