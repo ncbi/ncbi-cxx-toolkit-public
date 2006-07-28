@@ -93,7 +93,8 @@ enum EDB_Severity {
 
 
 // class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public std::exception
-class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_DBAPIDRIVER_EXPORT CDB_Exception :
+    EXCEPTION_VIRTUAL_BASE public CException
 {
     friend class CDB_MultiEx;
 
@@ -136,6 +137,11 @@ public:
     void SetUserName(const string& name) { m_UserName = name;          }
     const string& GetUserName(void) const { return m_UserName;         }
 
+    /// WARNING !!! Sybase severity value can be provided by Sybase/FreeTDS
+    /// ctlib/dblib drivers only.
+    void SetSybaseSeverity(int severity) { m_SybaseSeverity = severity;}
+    int GetSybaseSeverity(void) const { return m_SybaseSeverity;       }
+
 public:
     virtual void ReportExtra(ostream& out) const;
     virtual CDB_Exception* Clone(void) const;
@@ -155,10 +161,11 @@ public:
                      message,
                      severity )
         , m_DBErrCode(db_err_code)
+        , m_SybaseSeverity(0)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_Exception, CException);
 
 protected:
-    int         m_DBErrCode;
+    int     m_DBErrCode;
 
 protected:
     void x_StartOfWhat(ostream& out) const;
@@ -166,8 +173,9 @@ protected:
     virtual void x_Assign(const CException& src);
 
 private:
-    string m_ServerName;
-    string m_UserName;
+    string  m_ServerName;
+    string  m_UserName;
+    int     m_SybaseSeverity;
 };
 
 
@@ -500,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/07/28 14:57:40  ssikorsk
+ * Added GetSybaseSeverity/SetSybaseSeverity to CDB_Exception.
+ *
  * Revision 1.28  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

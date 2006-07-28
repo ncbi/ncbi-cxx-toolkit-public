@@ -139,6 +139,7 @@ CDB_Exception::x_Assign(const CException& src)
     m_DBErrCode = other.m_DBErrCode;
     m_ServerName = other.m_ServerName;
     m_UserName = other.m_UserName;
+    m_SybaseSeverity = other.m_SybaseSeverity;
 }
 
 
@@ -537,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/07/28 14:58:40  ssikorsk
+ * Added GetSybaseSeverity/SetSybaseSeverity to CDB_Exception.
+ *
  * Revision 1.30  2006/06/19 19:07:05  ssikorsk
  * Revamp CDB_UserHandler::~CDB_UserHandler to work with new CHandlerStack.
  *
