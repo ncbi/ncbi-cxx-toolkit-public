@@ -3045,7 +3045,17 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    for (index=0; index<init_hitlist->total; index++)
    {
       BlastHSP tmp_hsp;
-      init_hsp = &init_hsp_array[index];
+      BlastInitHSP tmp_init_hsp;
+      BlastUngappedData tmp_ungapped_data;
+
+      /* make a local copy of the initial HSP */
+
+      tmp_init_hsp = init_hsp_array[index];
+      if (tmp_init_hsp.ungapped_data) {
+          tmp_ungapped_data = *(init_hsp_array[index].ungapped_data);
+          tmp_init_hsp.ungapped_data = &tmp_ungapped_data;
+      }
+      init_hsp = &tmp_init_hsp;
 
       s_AdjustHspOffsetsAndGetQueryData(query, query_info, init_hsp, 
                                         &query_tmp, &context);
