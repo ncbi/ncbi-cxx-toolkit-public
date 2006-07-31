@@ -6,4 +6,4 @@ LIB_PROJ = dblib64
 
 srcdir = @srcdir@
 
-include @builddir@/Makefile.meta 
+include @builddir@/Makefile.meta
