@@ -2191,8 +2191,8 @@ void CSeqDBVol::GetStringBounds(string         & low_id,
 {
     m_Atlas.Lock(locked);
     count = 0;
-    low_id.clear();
-    high_id.clear();
+    low_id.erase();
+    high_id.erase();
     
     if (m_IsamStr.NotEmpty()) {
         m_IsamStr->GetIdBounds(low_id, high_id, count, locked);
