@@ -162,12 +162,14 @@ BOOL INSTAPI SQLWritePrivateProfileString(LPCSTR lpszSection,
 										 LPCSTR lpszString,
 										 LPCSTR lpszFilename);
 
+#ifdef HAVE_SQLGETPRIVATEPROFILESTRING
 int  INSTAPI SQLGetPrivateProfileString( LPCSTR lpszSection,
 										LPCSTR lpszEntry,
 										LPCSTR lpszDefault,
 										LPSTR  lpszRetBuffer,
 										int    cbRetBuffer,
 										LPCSTR lpszFilename);
+#endif
 
 #if (ODBCVER >= 0x0250)
 BOOL INSTAPI SQLRemoveDriverManager(LPDWORD lpdwUsageCount);
