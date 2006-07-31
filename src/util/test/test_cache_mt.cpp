@@ -70,30 +70,15 @@ public:
 
 typedef CElement* TElement;
 typedef CMutex    TCacheLock;
-typedef CCacheTraits<Uint8,
-                     TElement,
-                     TCacheLock,
-                     unsigned char,
-                     CTestHandler>  TUCharCacheTr;
-typedef CCacheTraits<Uint8,
-                     TElement,
-                     TCacheLock,
-                     unsigned int,
-                     CTestHandler>  TUIntCacheTr;
-typedef CCacheTraits<Uint8,
-                     TElement,
-                     TCacheLock,
-                     Uint8,
-                     CTestHandler>  TUInt8CacheTr;
-typedef CCacheTraits<Uint8,
-                     TElement,
-                     TCacheLock,
-                     signed char,
-                     CTestHandler>  TIntCacheTr;
-typedef CCache<Uint8, TElement, TUCharCacheTr> TUCharCache;
-typedef CCache<Uint8, TElement, TUIntCacheTr>  TUIntCache;
-typedef CCache<Uint8, TElement, TUInt8CacheTr> TUInt8Cache;
-typedef CCache<Uint8, TElement, TIntCacheTr>   TIntCache;
+
+typedef CCache<Uint8, TElement,
+               CTestHandler, TCacheLock, unsigned char> TUCharCache;
+typedef CCache<Uint8, TElement,
+               CTestHandler, TCacheLock, unsigned int>  TUIntCache;
+typedef CCache<Uint8, TElement,
+               CTestHandler, TCacheLock, Uint8> TUInt8Cache;
+typedef CCache<Uint8, TElement,
+               CTestHandler, TCacheLock, signed char>   TIntCache;
 
 
 class CTestCacheApp : public CThreadedApp
@@ -241,6 +226,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/07/31 18:52:13  joukovv
+ * CCache template parameters reordered, got rid of traits
+ *
  * Revision 1.5  2006/06/05 15:28:06  grichenk
  * Added CreateElement() callback, improved indexing, added comments.
  *

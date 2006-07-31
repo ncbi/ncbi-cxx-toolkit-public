@@ -133,8 +133,7 @@ public:
 typedef CMutex TCacheLock_Default;
 
 
-/// Cache traits template.
-/// TKey and TValue define types stored in the cache.
+/// Cache template. TKey and TValue define types stored in the cache.
 /// TLock must define TWriteLockGuard subtype so that a value of type
 /// TLock can be used to initialize TWriteLockGuard.
 /// TSize is an integer type used for element indexing.
@@ -144,40 +143,23 @@ typedef CMutex TCacheLock_Default;
 ///   ECache_InsertFlag CanInsertElement(const TKey& key, const TValue& value)
 ///   TValue CreateValue(const TKey& key)
 /// @sa CCacheElement_Handler
-template <class            TKey,
-          class            TValue,
-          class TLock    = TCacheLock_Default,
-          class TSize    = Uint4,
-          class THandler = CCacheElement_Handler<TKey, TValue> >
-class CCacheTraits
-{
-public:
-    typedef TKey     TKeyType;
-    typedef TValue   TValueType;
-    typedef TSize    TSizeType;
-    /// cache operation handler
-    typedef THandler THandlerType;
-    /// MT-safety
-    typedef TLock    TLockType;
-};
-
-
-/// Cache template. TKey and TValue define types stored in the cache.
 template <class TKey,
           class TValue,
-          class TTraits = CCacheTraits<TKey, TValue> >
+          class THandler = CCacheElement_Handler<TKey, TValue>,
+          class TLock    = TCacheLock_Default,
+          class TSize    = Uint4>
 class CCache
 {
 public:
-    typedef typename TTraits::TKeyType          TKeyType;
-    typedef typename TTraits::TValueType        TValueType;
-    typedef typename TTraits::TSizeType         TSizeType;
+    typedef TKey          TKeyType;
+    typedef TValue        TValueType;
+    typedef TSize         TSizeType;
     typedef SCacheElement<TKeyType, TSizeType>  TCacheElement;
     typedef TSizeType                           TWeight;
     typedef TSizeType                           TOrder;
 
     /// Create cache object with the given capacity
-    CCache(TSizeType capacity);
+    CCache(TSizeType capacity, THandler *handler = new THandler());
 
     /// Get cache element by the key. If the key is not cached yet,
     /// the handler's CreateValue() will be called to create one and
@@ -291,9 +273,9 @@ private:
     typedef typename TCacheSet::iterator         TCacheSet_I;
     typedef map<TKeyType, SValueWithIndex>       TCacheMap;
     typedef typename TCacheMap::iterator         TCacheMap_I;
-    typedef typename TTraits::TLockType          TLockType;
+    typedef TLock                                TLockType;
     typedef typename TLockType::TWriteLockGuard  TGuardType;
-    typedef typename TTraits::THandlerType       THandlerType;
+    typedef THandler                             THandlerType;
 
     // Get next counter value, adjust order of all elements if the counter
     // approaches its limit.
@@ -313,7 +295,7 @@ private:
     TCacheSet    m_CacheSet;
     TCacheMap    m_CacheMap;
     TOrder       m_Counter;
-    THandlerType m_Handler;
+    auto_ptr<THandlerType> m_Handler;
 };
 
 
@@ -339,17 +321,19 @@ public:
 //  CCache<> implementation
 //
 
-template <class TKey, class TValue, class TTraits>
-CCache<TKey, TValue, TTraits>::CCache(TSizeType capacity)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+CCache<TKey, TValue, THandler, TLock, TSize>::CCache(TSizeType capacity,
+                                                     THandler *handler)
     : m_Capacity(capacity),
       m_Counter(0)
 {
     _ASSERT(capacity > 0);
+    m_Handler.reset(handler);
 }
 
 
-template <class TKey, class TValue, class TTraits>
-CCache<TKey, TValue, TTraits>::~CCache(void)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+CCache<TKey, TValue, THandler, TLock, TSize>::~CCache(void)
 {
     TGuardType guard(m_Lock);
 
@@ -360,23 +344,24 @@ CCache<TKey, TValue, TTraits>::~CCache(void)
 }
 
 
-template <class TKey, class TValue, class TTraits>
-void CCache<TKey, TValue, TTraits>::x_EraseElement(TCacheSet_I& set_iter,
-                                                   TCacheMap_I& map_iter)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+void CCache<TKey, TValue, THandler, TLock, TSize>::x_EraseElement(
+    TCacheSet_I& set_iter,
+    TCacheMap_I& map_iter)
 {
     _ASSERT(set_iter != m_CacheSet.end());
     _ASSERT(map_iter != m_CacheMap.end());
     TCacheElement* next = *set_iter;
     _ASSERT(next);
-    m_Handler.RemoveElement(map_iter->first, map_iter->second.m_Value);
+    m_Handler->RemoveElement(map_iter->first, map_iter->second.m_Value);
     m_CacheMap.erase(map_iter);
     m_CacheSet.erase(set_iter);
     delete next;
 }
 
 
-template <class TKey, class TValue, class TTraits>
-void CCache<TKey, TValue, TTraits>::x_EraseLast(void)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+void CCache<TKey, TValue, THandler, TLock, TSize>::x_EraseLast(void)
 {
     _ASSERT(!m_CacheSet.empty());
     TCacheSet_I set_iter = m_CacheSet.begin();
@@ -385,10 +370,11 @@ void CCache<TKey, TValue, TTraits>::x_EraseLast(void)
 }
 
 
-template <class TKey, class TValue, class TTraits>
-typename CCache<TKey, TValue, TTraits>::TCacheElement*
-CCache<TKey, TValue, TTraits>::x_InsertElement(const TKeyType& key,
-                                               TWeight         weight)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+typename CCache<TKey, TValue, THandler, TLock, TSize>::TCacheElement*
+CCache<TKey, TValue, THandler, TLock, TSize>::x_InsertElement(
+    const TKeyType& key,
+    TWeight         weight)
 {
     if (weight == 0) {
         weight = 1;
@@ -409,8 +395,9 @@ CCache<TKey, TValue, TTraits>::x_InsertElement(const TKeyType& key,
 }
 
 
-template <class TKey, class TValue, class TTraits>
-void CCache<TKey, TValue, TTraits>::x_UpdateElement(TCacheElement* elem)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+void CCache<TKey, TValue, THandler, TLock, TSize>::x_UpdateElement(
+    TCacheElement* elem)
 {
     _ASSERT(elem);
     TCacheSet_I it = m_CacheSet.find(elem);
@@ -426,9 +413,9 @@ void CCache<TKey, TValue, TTraits>::x_UpdateElement(TCacheElement* elem)
 }
 
 
-template <class TKey, class TValue, class TTraits>
-typename CCache<TKey, TValue, TTraits>::TOrder
-CCache<TKey, TValue, TTraits>::x_GetNextCounter(void)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+typename CCache<TKey, TValue, THandler, TLock, TSize>::TOrder
+CCache<TKey, TValue, THandler, TLock, TSize>::x_GetNextCounter(void)
 {
     if (TSizeType(m_Counter + 1) <= 0) {
         x_PackElementIndex();
@@ -437,8 +424,8 @@ CCache<TKey, TValue, TTraits>::x_GetNextCounter(void)
 }
 
 
-template <class TKey, class TValue, class TTraits>
-void CCache<TKey, TValue, TTraits>::x_PackElementIndex(void)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+void CCache<TKey, TValue, THandler, TLock, TSize>::x_PackElementIndex(void)
 {
     // Overflow detected - adjust orders
     TOrder order_shift = m_Counter - 1;
@@ -513,13 +500,13 @@ void CCache<TKey, TValue, TTraits>::x_PackElementIndex(void)
 }
 
 
-template <class TKey, class TValue, class TTraits>
-typename CCache<TKey, TValue, TTraits>::TOrder
-CCache<TKey, TValue, TTraits>::Add(const TKeyType&   key,
-                                   const TValueType& value,
-                                   TWeight           weight,
-                                   TAddFlags         add_flags,
-                                   EAddResult*       result)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+typename CCache<TKey, TValue, THandler, TLock, TSize>::TOrder
+CCache<TKey, TValue, THandler, TLock, TSize>::Add(const TKeyType&   key,
+                                                  const TValueType& value,
+                                                  TWeight           weight,
+                                                  TAddFlags         add_flags,
+                                                  EAddResult*       result)
 {
     TGuardType guard(m_Lock);
     TCacheMap_I it = m_CacheMap.find(key);
@@ -540,8 +527,8 @@ CCache<TKey, TValue, TTraits>::Add(const TKeyType&   key,
         *result = eAdd_Inserted;
     }
     
-    for (ECache_InsertFlag ins_flag = m_Handler.CanInsertElement(key, value);;
-         ins_flag = m_Handler.CanInsertElement(key, value)) {
+    for (ECache_InsertFlag ins_flag = m_Handler->CanInsertElement(key, value);;
+         ins_flag = m_Handler->CanInsertElement(key, value)) {
         if (ins_flag == eCache_CheckSize) {
             while (GetSize() >= m_Capacity) {
                 x_EraseLast();
@@ -569,7 +556,7 @@ CCache<TKey, TValue, TTraits>::Add(const TKeyType&   key,
         }
     }
 
-    m_Handler.InsertElement(key, value);
+    m_Handler->InsertElement(key, value);
 
     SValueWithIndex& map_val = m_CacheMap[key];
     map_val.m_CacheElement = x_InsertElement(key, weight);
@@ -579,9 +566,9 @@ CCache<TKey, TValue, TTraits>::Add(const TKeyType&   key,
 }
 
 
-template <class TKey, class TValue, class TTraits>
-typename CCache<TKey, TValue, TTraits>::TValueType
-CCache<TKey, TValue, TTraits>::operator[](const TKeyType& key)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+typename CCache<TKey, TValue, THandler, TLock, TSize>::TValueType
+CCache<TKey, TValue, THandler, TLock, TSize>::operator[](const TKeyType& key)
 {
     TGuardType guard(m_Lock);
 
@@ -590,17 +577,17 @@ CCache<TKey, TValue, TTraits>::operator[](const TKeyType& key)
         x_UpdateElement(it->second.m_CacheElement);
         return it->second.m_Value;
     }
-    TValueType value = m_Handler.CreateValue(key);
+    TValueType value = m_Handler->CreateValue(key);
     Add(key, value);
     return value;
 }
 
 
-template <class TKey, class TValue, class TTraits>
-typename CCache<TKey, TValue, TTraits>::TValueType
-CCache<TKey, TValue, TTraits>::Get(const TKeyType& key,
-                                   TGetFlags       get_flags,
-                                   EGetResult*     result)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+typename CCache<TKey, TValue, THandler, TLock, TSize>::TValueType
+CCache<TKey, TValue, THandler, TLock, TSize>::Get(const TKeyType& key,
+                                                  TGetFlags       get_flags,
+                                                  EGetResult*     result)
 {
     TGuardType guard(m_Lock);
 
@@ -621,7 +608,7 @@ CCache<TKey, TValue, TTraits>::Get(const TKeyType& key,
             "Can not find the requested key");
     }
 
-    TValueType value = m_Handler.CreateValue(key);
+    TValueType value = m_Handler->CreateValue(key);
     if ((get_flags & fGet_NoInsert) == 0) {
         // Insert the new element
         Add(key, value);
@@ -638,8 +625,8 @@ CCache<TKey, TValue, TTraits>::Get(const TKeyType& key,
 }
 
 
-template <class TKey, class TValue, class TTraits>
-bool CCache<TKey, TValue, TTraits>::Remove(const TKeyType& key)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+bool CCache<TKey, TValue, THandler, TLock, TSize>::Remove(const TKeyType& key)
 {
     TGuardType guard(m_Lock);
 
@@ -653,8 +640,8 @@ bool CCache<TKey, TValue, TTraits>::Remove(const TKeyType& key)
 }
 
 
-template <class TKey, class TValue, class TTraits>
-void CCache<TKey, TValue, TTraits>::SetCapacity(TSizeType new_capacity)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+void CCache<TKey, TValue, THandler, TLock, TSize>::SetCapacity(TSizeType new_capacity)
 {
     if (new_capacity <= 0) {
         NCBI_THROW(CCacheException, eOtherError,
@@ -668,8 +655,8 @@ void CCache<TKey, TValue, TTraits>::SetCapacity(TSizeType new_capacity)
 }
 
 
-template <class TKey, class TValue, class TTraits>
-void CCache<TKey, TValue, TTraits>::SetSize(TSizeType new_size)
+template <class TKey, class TValue, class THandler, class TLock, class TSize>
+void CCache<TKey, TValue, THandler, TLock, TSize>::SetSize(TSizeType new_size)
 {
     TGuardType guard(m_Lock);
     while (GetSize() > new_size) {
@@ -686,6 +673,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/07/31 18:52:13  joukovv
+ * CCache template parameters reordered, got rid of traits
+ *
  * Revision 1.6  2006/06/06 00:30:10  ucko
  * +<corelib/ncbi_limits.hpp> for numeric_limits<>
  *

@@ -156,12 +156,8 @@ void CCacheDemoApp::HeapCacheDemo(void)
     // Define cache type, override the default insert/remove handler.
     // Set lock type to CNoMutex to avoid locking overhead.
     typedef CHeapElement* TElement;
-    typedef CCacheTraits<int,
-                        TElement,
-                        CNoMutex,
-                        size_t,
-                        CDemoHandler_HeapAlloc> THeapCacheTraits;
-    typedef CCache<int, TElement, THeapCacheTraits> THeapCache;
+    typedef CCache<int, TElement,
+                   CDemoHandler_HeapAlloc, CNoMutex> THeapCache;
 
     THeapCache cache(100);
     // Fill the cache with dynamically allocated objects.
@@ -235,12 +231,7 @@ void CCacheDemoApp::MemoryCacheDemo(void)
 {
     // Override the default insert/remove handler.
     typedef CRef<CObjElement> TElement;
-    typedef CCacheTraits<int,
-                        TElement,
-                        CMutex,
-                        size_t,
-                        CDemoHandler_MemSize> TMemCacheTraits;
-    typedef CCache<int, TElement, TMemCacheTraits> TMemCache;
+    typedef CCache<int, TElement, CDemoHandler_MemSize> TMemCache;
 
     // Cache capacity must be positive. The real capacity depends on
     // the max memory allowed by the handler.
@@ -322,12 +313,7 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
 {
     // Override the default insert/remove handler
     typedef CRef<CObjElement> TElement;
-    typedef CCacheTraits<int,
-                        TElement,
-                        CMutex,
-                        size_t,
-                        CDemoHandler_EmptyOnOverflow> TEmptyOnOverflowTraits;
-    typedef CCache<int, TElement, TEmptyOnOverflowTraits> TEmptyOnOverflowCache;
+    typedef CCache<int, TElement, CDemoHandler_EmptyOnOverflow> TEmptyOnOverflowCache;
 
     // Cache capacity must be positive. The real capacity depends on
     // the max number of elements allowed by the handler.
@@ -363,6 +349,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/07/31 18:52:13  joukovv
+ * CCache template parameters reordered, got rid of traits
+ *
  * Revision 1.5  2006/07/20 17:01:18  grichenk
  * Fixed warnings.
  * Replaced CFastMutex with CMutex.
