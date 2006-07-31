@@ -43,6 +43,11 @@
 #ifdef NCBI_OS_MSWIN
 #include <windows.h>
 #endif
+
+#ifndef HAVE_LONG_LONG
+    #define HAVE_LONG_LONG 1 // needed by UnixODBC
+#endif
+
 #include <sql.h>
 #include <sqlext.h>
 #include <sqltypes.h>
@@ -115,7 +120,9 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public impl::CDriverContext
     friend class CDB_Connection;
 
 public:
-    CODBCContext(SQLLEN version = SQL_OV_ODBC3, bool use_dsn= false);
+    CODBCContext(SQLLEN version = SQL_OV_ODBC3,
+                 int tds_version = 80,
+                 bool use_dsn = false);
     virtual ~CODBCContext(void);
 
 public:
@@ -144,6 +151,10 @@ public:
     {
         return m_Reporter;
     }
+    int GetTDSVersion(void) const
+    {
+        return m_TDSVersion;
+    }
 
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
@@ -155,6 +166,7 @@ private:
     CODBC_Reporter  m_Reporter;
     bool            m_UseDSN;
     CODBCContextRegistry* m_Registry;
+    int             m_TDSVersion;
 
     SQLHDBC x_ConnectToServer(const string&   srv_name,
                    const string&   usr_name,
@@ -166,6 +178,7 @@ private:
     void x_RemoveFromRegistry(void);
     void x_SetRegistry(CODBCContextRegistry* registry);
     void x_Close(bool delete_conn = true);
+    static string x_MakeFreeTDSVersion(int version);
 
 
     friend class CODBCContextRegistry;
@@ -696,6 +709,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/07/31 15:48:34  ssikorsk
+ * Minor changes to add support for the FreeTDS odbc driver.
+ *
  * Revision 1.37  2006/07/25 13:50:51  ssikorsk
  * Moved declaration of NCBI_EntryPoint_xdbapi_odbc into odbc_utils.hpp.
  *
