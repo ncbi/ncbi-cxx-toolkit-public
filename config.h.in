@@ -381,6 +381,12 @@
 /* Define to 1 if the system has the type `socklen_t'. */
 #undef HAVE_SOCKLEN_T
 
+/* Define to 1 if you have the `SQLGetPrivateProfileString' function. */
+#undef HAVE_SQLGETPRIVATEPROFILESTRING
+
+/* Define to 1 if the system has the type `SQLLEN'. */
+#undef HAVE_SQLLEN
+
 /* Define to 1 if you have the `statfs' function. */
 #undef HAVE_STATFS
 
@@ -636,6 +642,9 @@
 /* Define to whatever syntax, if any, your C++ compiler supports for marking
    pointers as restricted in the C99 sense. */
 #undef NCBI_RESTRICT_CXX
+
+/* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
+#undef NCBI_SQLCOLATTRIBUTE_SQLLEN
 
 /* Define to 1 if prototypes can use exception specifications. */
 #undef NCBI_USE_THROW_SPEC

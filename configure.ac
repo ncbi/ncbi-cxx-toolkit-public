@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.431 2006/07/31 18:28:05 ucko Exp $
+#  $Id: configure.ac,v 1.432 2006/07/31 20:31:23 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2253,28 +2253,28 @@ AC_CACHE_CHECK([whether select updates the timeout when interrupted],
                ncbi_cv_func_select_updates_timeout,
    [AC_RUN_IFELSE([AC_LANG_PROGRAM(
        [[#include <signal.h>
-	 #include <sys/types.h>
+         #include <sys/types.h>
          #ifdef HAVE_SYS_SELECT_H
          #  include <sys/select.h>
-	 #endif
-	 #ifdef HAVE_SYS_TIME_H
-	 #  include <sys/time.h>
-	 #endif
-	 #ifdef HAVE_UNISTD_H
-	 #  include <unistd.h>
-	 #endif
+         #endif
+         #ifdef HAVE_SYS_TIME_H
+         #  include <sys/time.h>
+         #endif
+         #ifdef HAVE_UNISTD_H
+         #  include <unistd.h>
+         #endif
          RETSIGTYPE handler(int sig) { }]],
        [[struct timeval timeout = { 5, 0 };
          signal(SIGALRM, &handler);
          alarm(1);
-	 select(0, NULL, NULL, NULL, &timeout);
-	 return timeout.tv_sec == 5;]])],
+         select(0, NULL, NULL, NULL, &timeout);
+         return timeout.tv_sec == 5;]])],
        [ncbi_cv_func_select_updates_timeout=yes],
        [ncbi_cv_func_select_updates_timeout=no],
        [case "$host_os" in
           linux) ncbi_cv_func_select_updates_timeout=yes ;;
-	  *) ncbi_cv_func_select_updates_timeout=no ;;
-	esac])])
+          *) ncbi_cv_func_select_updates_timeout=no ;;
+        esac])])
 if test "$ncbi_cv_func_select_updates_timeout" = yes; then
    AC_DEFINE(SELECT_UPDATES_TIMEOUT, 1,
       [Define to 1 if the `select' function updates its timeout when
@@ -3387,12 +3387,33 @@ if test "$with_odbc" != "no" ; then
    else
       # odbcss.h isn't self-contained :-/
       AC_CHECK_HEADERS(odbcss.h, [], [], [#include <sql.h>])
+
+      AC_CHECK_FUNCS(SQLGetPrivateProfileString)
+      AC_CHECK_TYPES(SQLLEN,,,[#include <sqltypes.h>])
+
+      AC_CACHE_CHECK([whether SQLColAttribute's last argument is an SQLLEN *],
+         ncbi_cv_func_sqlcolattribute_sqllen,
+         [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+            [[#include <sql.h>>
+              SQLRETURN SQL_API SQLColAttribute
+                (SQLHSTMT sh, SQLUSMALLINT cn, SQLUSMALLINT fi, SQLPOINTER ca,
+                 SQLSMALLINT bl, SQLSMALLINT *sl, SQLLEN *na);]],
+            [[]])],
+            ncbi_cv_func_sqlcolattribute_sqllen=yes,
+            ncbi_cv_func_sqlcolattribute_sqllen=no)])
+      if test $ncbi_cv_func_sqlcolattribute_sqllen = yes; then
+         AC_DEFINE(NCBI_SQLCOLATTRIBUTE_SQLLEN, 1,
+            [Define to 1 if SQLColAttribute's last argument is an SQLLEN *])
+      fi
    fi
 fi
 if test "$with_odbc" = "no" ; then
    ODBC_PATH="No_ODBC"
-   ODBC_INCLUDE=
+   # Point to a local copy of unixODBC's headers, required by FreeTDS 0.64+.
+   ODBC_INCLUDE='-I$(includedir)/dbapi/driver/odbc/unix_odbc -I$(includedir0)/dbapi/driver/odbc/unix_odbc'
    ODBC_LIBS=
+   dnl AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1)
+   AC_DEFINE(HAVE_SQLLEN, 1)
 else
    NCBI_PACKAGE(ODBC)
    AC_DEFINE(HAVE_ODBC, 1, [Define to 1 if ODBC libraries are available.])
