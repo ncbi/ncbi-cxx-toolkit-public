@@ -78,7 +78,11 @@ class ILocalQueryData; // forward declaration
 typedef vector<Blast_Message*> TBlastError;
 
 /// Runs the BLAST algorithm between a set of sequences and BLAST database
-class NCBI_XBLAST_EXPORT CDbBlast : public CObject
+/// @deprecated
+/// @note This class is deprecated, please use CLocalBlast instead
+/// For an example on how to transition from CDbBlast to CLocalBlast, please
+/// see repeats_filter_cxx.cpp, revision 1.29 and 1.30.
+class NCBI_XBLAST_EXPORT NCBI_DEPRECATED CDbBlast : public CObject
 {
 public:
 
@@ -330,6 +334,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2006/07/31 13:20:29  camacho
+* Deprecate CDbBlast
+*
 * Revision 1.40  2006/06/15 17:42:24  papadopo
 * PartialRun -> RunWithoutSeqalignGeneration
 *
