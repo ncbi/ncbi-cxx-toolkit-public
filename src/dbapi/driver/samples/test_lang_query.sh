@@ -185,43 +185,56 @@ EOF
             cmd="dbapi_conn_policy -lb random -d $driver -S $server"
             RunSimpleTest "dbapi_conn_policy"
 
-            # do not run tests with a boolk copy operations 
-            # on Sybase databases with the "ftds" driver
-            if test \( $driver = "ftds" -a $server = $server_mssql \) -o \
-                    \( $driver != "ftds" -a $driver != "msdblib" \); then
-
-                cmd="dbapi_bcp -lb random -d $driver -S $server"
-                if test $server != "MOZART" -a $server != "BARTOK" ; then 
-                    RunSimpleTest "dbapi_bcp"
-                else
-                    sum_list="$sum_list XXX_SEPARATOR #  $cmd (Skipped. It causes deadlocks.)"
-                fi
-
-                # Do not run dbapi_testspeed with MOZART and BARTOK
-                cmd="dbapi_testspeed -lb random -d $driver -S $server"
-                if test $server != "MOZART" -a $server != "BARTOK" ; then 
-                    RunSimpleTest "dbapi_testspeed"
-                else
-                    sum_list="$sum_list XXX_SEPARATOR #  $cmd (Skipped. It causes deadlocks.)"
-                fi
-
+            # Do not run dbapi_bcp and dbapi_testspeed on andy
+            if test $driver = "ctlib" -a hostname = "andy" ; then
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
             else
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
+                # do not run tests with a boolk copy operations 
+                # on Sybase databases with the "ftds" driver
+                if test \( $driver = "ftds" -a $server = $server_mssql \) -o \
+                        \( $driver != "ftds" -a $driver != "msdblib" \); then
+
+                    # Do not run dbapi_testspeed with MOZART and BARTOK
+                    cmd="dbapi_bcp -lb random -d $driver -S $server"
+                    if test $server != "MOZART" -a $server != "BARTOK" ; then 
+                        RunSimpleTest "dbapi_bcp"
+                    else
+                        sum_list="$sum_list XXX_SEPARATOR #  $cmd (Skipped. It causes deadlocks.)"
+                    fi
+
+                    # Do not run dbapi_testspeed with MOZART and BARTOK
+                    cmd="dbapi_testspeed -lb random -d $driver -S $server"
+                    if test $server != "MOZART" -a $server != "BARTOK" ; then 
+                        RunSimpleTest "dbapi_testspeed"
+                    else
+                        sum_list="$sum_list XXX_SEPARATOR #  $cmd (Skipped. It causes deadlocks.)"
+                    fi
+                    
+                else
+                    sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
+                    sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
+                fi
             fi
 
-            # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
-            # MS SQL is already disabled for non-ftds drivers.
-            cmd="dbapi_cursor -lb random -d $driver -S $server"
-            if test \( \( $driver != "ftds" -a $driver != "ftds63" -a \
-                        $driver != "msdblib" \) -o \
-                    \( $driver = "ftds" -a $server = $server_mssql \) -o \
-                    \( $driver = "ftds63" -a $server = $server_mssql \) \) -a \
-                    $server != "MOZART" -a $server != "BARTOK" ; then
-                RunSimpleTest "dbapi_cursor"
+            # Do not run dbapi_cursor on andy
+            if test $driver = "ctlib" -a hostname = "andy" ; then
+                sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
             else
-                sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
+                # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
+                # MS SQL is already disabled for non-ftds drivers.
+                cmd="dbapi_cursor -lb random -d $driver -S $server"
+                if test \( \( $driver != "ftds" -a $driver != "ftds63" -a \
+                            $driver != "msdblib" \) -o \
+                        \( $driver = "ftds" -a $server = $server_mssql \) -o \
+                        \( $driver = "ftds63" -a $server = $server_mssql \) \) -a \
+                        $server != "MOZART" -a $server != "BARTOK" ; then
+                    RunSimpleTest "dbapi_cursor"
+                else
+                    sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
+                fi
             fi
+
 
             # Do not run dbapi_send_data with MOZART and BARTOK
             cmd="dbapi_query -lb random -d $driver -S $server"
