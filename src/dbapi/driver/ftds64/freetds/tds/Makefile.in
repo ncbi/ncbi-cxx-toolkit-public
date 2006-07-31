@@ -1,0 +1,12 @@
+# $Id$
+#################################
+
+# TDS library
+#################################
+
+
+LIB_PROJ = tds64
+
+srcdir = @srcdir@
+
+include @builddir@/Makefile.meta 
