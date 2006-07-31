@@ -505,7 +505,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_PRECISION,
                     (VOID*)(m_ColFmt[m_CurrItem].ColumnSize),0);
             SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_SCALE,
-                    (VOID*)(m_ColFmt[m_CurrItem].DecimalDigits),0);
+                    reinterpret_cast<VOID*>(m_ColFmt[m_CurrItem].DecimalDigits),0);
 
             outlen= xGetData(SQL_ARD_TYPE, &v, sizeof(SQL_NUMERIC_STRUCT));
             if (outlen <= 0) item_buf->AssignNULL();
@@ -552,7 +552,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                     ReportErrors();
                 default:
                     {
-                        string err_message = "SQLGetData failed while retrieving text/image into CDB_Text" + 
+                        string err_message = "SQLGetData failed while retrieving text/image into CDB_Text" +
                             GetDiagnosticInfo();
                         DATABASE_DRIVER_ERROR( err_message, 430021 );
                     }
@@ -580,7 +580,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                     ReportErrors();
                 default:
                     {
-                        string err_message = "SQLGetData failed while retrieving text/image into CDB_Image" + 
+                        string err_message = "SQLGetData failed while retrieving text/image into CDB_Image" +
                             GetDiagnosticInfo();
                         DATABASE_DRIVER_ERROR( err_message, 430022 );
                     }
@@ -749,7 +749,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
                 ReportErrors();
             default:
                 {
-                    string err_message = "SQLGetData failed while retrieving text into CDB_Text" + 
+                    string err_message = "SQLGetData failed while retrieving text into CDB_Text" +
                         GetDiagnosticInfo();
                     DATABASE_DRIVER_ERROR( err_message, 430023 );
                 }
@@ -778,7 +778,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
                 ReportErrors();
             default:
                 {
-                    string err_message = "SQLGetData failed while retrieving text into CDB_Image" + 
+                    string err_message = "SQLGetData failed while retrieving text into CDB_Image" +
                         GetDiagnosticInfo();
                     DATABASE_DRIVER_ERROR( err_message, 430024 );
                 }
@@ -831,7 +831,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
             return 0;
         default:
             if ( f >= 0 ) {
-                return (static_cast<size_t>(f) <= buffer_size) ? 
+                return (static_cast<size_t>(f) <= buffer_size) ?
                     static_cast<size_t>(f) : buffer_size;
             }
             ReportErrors();
@@ -983,7 +983,7 @@ EDB_ResType CODBC_ParamResult::ResultType() const
 //  CODBC_CursorResult::
 //
 
-CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd) 
+CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd)
 : m_Cmd(cmd)
 , m_Res(NULL)
 , m_EOR(false)
@@ -1161,6 +1161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/07/31 15:53:03  ssikorsk
+ * Minor fixes to compile with UnixODBC.
+ *
  * Revision 1.29  2006/06/02 19:37:40  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *
