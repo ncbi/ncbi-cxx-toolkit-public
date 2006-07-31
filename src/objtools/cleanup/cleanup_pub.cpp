@@ -118,6 +118,7 @@ void CCleanup_imp::x_FlattenPubEquiv(CPub_equiv& pe)
             x_FlattenPubEquiv(equiv);
             copy(equiv.Set().begin(), equiv.Set().end(), back_inserter(data));
             it = data.erase(it);
+            ChangeMade(CCleanupChange::eChangePublication);
         } else {
             ++it;
         }
@@ -163,16 +164,24 @@ void CCleanup_imp::BasicCleanup(CCit_gen& cg, bool fix_initials)
         CCit_gen::TCit& cit = cg.SetCit();
         if (NStr::StartsWith(cit, "unpublished", NStr::eNocase)) {
             cit[0] = 'U';
+            ChangeMade(CCleanupChange::eChangePublication);
         }
         if (!cg.IsSetJournal()) {
             cg.ResetVolume();
             cg.ResetPages();
             cg.ResetIssue();
+            ChangeMade(CCleanupChange::eChangePublication);
         }
+        size_t cit_size = cit.size();
         NStr::TruncateSpacesInPlace(cit);
+        if (cit_size != cit.size()) {
+            ChangeMade(CCleanupChange::eChangePublication);
+        }
     }
     if (cg.IsSetPages()) {
-        RemoveSpaces(cg.SetPages());
+        if (RemoveSpaces(cg.SetPages()) ) {
+            ChangeMade(CCleanupChange::eChangePublication);
+        }
     }
     
     //!!! TO DO: serial
@@ -203,13 +212,16 @@ void CCleanup_imp::BasicCleanup(CCit_sub& cs, bool fix_initials)
         if (authors  &&  !authors->IsSetAffil()  &&  imp.IsSetPub()) {
             authors->SetAffil(imp.SetPub());
             imp.ResetPub();
+            ChangeMade(CCleanupChange::eChangePublication);
         }
         if (! cs.IsSetDate()  &&  imp.IsSetDate()) {
              cs.SetDate().Assign(imp.GetDate());
             imp.ResetDate();
+            ChangeMade(CCleanupChange::eChangePublication);
         }
         if (!imp.IsSetPub()) {
-             cs.ResetImp();
+            cs.ResetImp();
+            ChangeMade(CCleanupChange::eChangePublication);
         }
     }
     if (authors  &&  authors->IsSetAffil()) {
@@ -226,6 +238,7 @@ void CCleanup_imp::BasicCleanup(CCit_sub& cs, bool fix_initials)
                     str = str.substr(34);
                 }
                 affil.SetStr(str);
+                ChangeMade(CCleanupChange::eChangePublication);
                 BasicCleanup(affil);
             }
         }
@@ -354,8 +367,9 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
 {
     if (al.IsSetAffil()) {
         BasicCleanup(al.SetAffil());
-        if (s_IsEmptyAffil(al.SetAffil())) {
+        if (s_IsEmptyAffil(al.GetAffil())) {
             al.ResetAffil();
+            ChangeMade(CCleanupChange::eChangePublication);
         }
     }
     
@@ -372,6 +386,7 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
                     BasicCleanup(**it, fix_initials);
                     if (s_IsEmptyAuthor(**it)) {
                         it = std.erase(it);
+                        ChangeMade(CCleanupChange::eChangePublication);
                     } else {
                         ++it;
                     }
@@ -383,17 +398,23 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
             }}
             case TNames::e_Ml:
             {{
-                CleanStringContainer(names.SetMl());
+                if (CleanStringContainer(names.SetMl())) {
+                    ChangeMade(CCleanupChange::eChangePublication);
+                }
                 if (names.GetMl().empty()) {
                     names.Reset();
+                    ChangeMade(CCleanupChange::eChangePublication);
                 }
                 break;
             }}
             case TNames::e_Str:
             {{
-                CleanStringContainer(names.SetStr());
+                if (CleanStringContainer(names.SetStr())) {
+                    ChangeMade(CCleanupChange::eChangePublication);
+                }
                 if (names.GetStr().empty()) {
                     names.Reset();
+                    ChangeMade(CCleanupChange::eChangePublication);
                 }
                 break;
             }}
@@ -404,6 +425,7 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
     // if no remaining authors, put in default author for legal ASN.1
     if (!al.IsSetNames()) {
         al.SetNames().SetStr().push_back("?");
+        ChangeMade(CCleanupChange::eChangePublication);
     }
 }
 
@@ -558,6 +580,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/07/31 14:29:37  rsmith
+ * Add change reporting
+ *
  * Revision 1.6  2006/07/18 16:43:43  bollin
  * added x_RecurseDescriptorsForMerge and changed the ExtendedCleanup functions
  * for merging duplicate BioSources and equivalent CitSubs to use the new function

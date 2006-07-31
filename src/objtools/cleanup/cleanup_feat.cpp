@@ -570,6 +570,12 @@ struct TCitSort {
 };
 
 
+static
+bool cmpSortedvsOld(const TCit& e1, const CRef<CPub>& e2) {
+    return e1.second == e2;
+}
+
+
 // BasicCleanup
 void CCleanup_imp::BasicCleanup(CSeq_feat& f)
 {
@@ -608,8 +614,11 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         }
         
         // sort/unique db_xrefs
+        if ( ! is_sorted(dbxref.begin(), dbxref.end(), SDbtagCompare()) ) {
+            ChangeMade(CCleanupChange::eCleanDbxrefs);
+            stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
+        }
         size_t n_dbxref = dbxref.size();
-        stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
         it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
         dbxref.erase(it, dbxref.end());
         if (dbxref.size() != n_dbxref) {
@@ -638,8 +647,11 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         
         // sort/uniquequalsdb_xrefs
         CSeq_feat::TQual& quals = f.SetQual();
+        if ( ! is_sorted(quals.begin(), quals.end(), SGb_QualCompare()) ) {
+            ChangeMade(CCleanupChange::eCleanDbxrefs);
+            stable_sort(quals.begin(), quals.end(), SGb_QualCompare());
+        }
         size_t n_quals = quals.size();
-        stable_sort(quals.begin(), quals.end(), SGb_QualCompare());
         CSeq_feat::TQual::iterator erase_it = unique(quals.begin(), quals.end(), SGb_QualEqual());
         quals.erase(erase_it, quals.end());
         if (n_quals != quals.size()) {
@@ -661,13 +673,15 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
                 (*cit_it)->GetLabel(&label, CPub::eBoth, true);
                 dup_rejected |= cit_set.insert( TCit(label, *cit_it) ).second;
             }
-            // now put everything left back into the feature's citation list.
-            ps.SetPub().clear();
-            ITERATE (TCitSet, citset_it, cit_set) {
-                ps.SetPub().push_back(citset_it->second);
-            }
-            if (dup_rejected) {
-                // report that we deleted a duplicate citation.
+            // Has anything been deleted, or has the order changed?
+            if ( dup_rejected  ||
+                 ! equal(cit_set.begin(), cit_set.end(), ps.SetPub().begin(), cmpSortedvsOld) ) {
+                
+                // put everything left back into the feature's citation list.
+                ps.SetPub().clear();
+                ITERATE (TCitSet, citset_it, cit_set) {
+                    ps.SetPub().push_back(citset_it->second);
+                }
                 ChangeMade(CCleanupChange::eCleanCitonFeat);
             }
         }
@@ -1460,6 +1474,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2006/07/31 14:29:37  rsmith
+ * Add change reporting
+ *
  * Revision 1.24  2006/07/26 19:38:56  rsmith
  * add cleanup w/handles and reporting
  *

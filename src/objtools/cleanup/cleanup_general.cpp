@@ -76,6 +76,7 @@ void CCleanup_imp::x_TagCleanup(CDbtag::TTag& tag)
     if (str[0] != '0'  ||  all_zero) {
         try {
             tag.SetId(NStr::StringToUInt(str));
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
         } catch (CStringException&) {
             // just leave things as are
         }
@@ -96,17 +97,23 @@ void CCleanup_imp::x_DbCleanup(string& db)
 {
     if (NStr::EqualNocase(db, "Swiss-Prot")) {
         db = "UniProtKB/Swiss-Prot";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "SPTREMBL")  ||
                NStr::EqualNocase(db, "TrEMBL")) {
         db = "UniProtKB/TrEMBL";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "SUBTILIS")) {
         db = "SubtiList";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "LocusID")) {
         db = "GeneID";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "MaizeDB")) {
         db = "MaizeGDB";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "GeneW")) {
         db = "HGNC";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
 }
 
@@ -114,17 +121,23 @@ void CCleanup_imp::x_DbCleanup(string& db)
 void CCleanup_imp::BasicCleanup(CDbtag& dbtag)
 {
     if (dbtag.IsSetDb()) {
-        CleanString(dbtag.SetDb());
+        if (CleanString(dbtag.SetDb())) {
+            ChangeMade(CCleanupChange::eTrimSpaces);
+        }
     } else {
         dbtag.SetDb();  // make sure mandatory field is set.
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
     
     if (dbtag.IsSetTag()) {
         if (dbtag.GetTag().IsStr()) {
-            CleanString(dbtag.SetTag().SetStr());
+            if (CleanString(dbtag.SetTag().SetStr())) {
+                ChangeMade(CCleanupChange::eTrimSpaces);
+            }
         }
     } else {
         dbtag.SetTag();  // make sure mandatory field is set.
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
     _ASSERT(dbtag.IsSetDb()  &&  dbtag.IsSetTag());  // mandatory fields
     
@@ -209,11 +222,12 @@ void CCleanup_imp::x_FixEtAl(CName_std& name)
         name.ResetFirst();
         name.ResetInitials();
         name.SetLast("et al.");
+        ChangeMade(CCleanupChange::eNormalizeAuthors);
     }
 }
 
 
-static void s_FixInitials(string& initials)
+static bool s_FixInitials(string& initials)
 {
     string fixed;
 
@@ -226,7 +240,7 @@ static void s_FixInitials(string& initials)
         char c = *it;
     
         if (c == ',') {
-            *it = c = '.';
+            c = '.';
         }
         if (isalpha((unsigned char) c)) {
             if (prev != '\0'  &&  isupper((unsigned char) c)  &&  isupper((unsigned char) prev)) {
@@ -253,7 +267,11 @@ static void s_FixInitials(string& initials)
     if (!fixed.empty()  &&  fixed[fixed.length() - 1] == '-') {
         fixed.resize(fixed.length() - 1);
     }
-    initials = fixed;
+    if (initials != fixed) {
+        initials = fixed;
+        return true;
+    }
+    return false;
 }
 
 
@@ -309,15 +327,22 @@ CName_std::TInitials s_GetInitialsFromFirst(const CName_std& name)
 void CCleanup_imp::x_FixInitials(CName_std& name)
 {
     if (name.IsSetInitials()) {
-        s_FixInitials(name.SetInitials());
+        if (s_FixInitials(name.SetInitials())) {
+            ChangeMade(CCleanupChange::eNormalizeAuthors);
+        }
         
         if (name.SetInitials().empty()) {
             name.ResetInitials();
+            ChangeMade(CCleanupChange::eNormalizeAuthors);
         }
     }
 
     if (name.IsSetFirst()  &&  !name.IsSetInitials()) {
-        name.SetInitials(s_GetInitialsFromFirst(name));
+        string new_initials = s_GetInitialsFromFirst(name);
+        if ( ! new_initials.empty() ) {
+            name.SetInitials(new_initials);
+            ChangeMade(CCleanupChange::eNormalizeAuthors);
+        }
         return;
     }
     if (!name.IsSetInitials()) {
@@ -348,7 +373,10 @@ void CCleanup_imp::x_FixInitials(CName_std& name)
     while (it2 != initials.end()) {
         f_initials += *it2++;
     }
-    initials.swap(f_initials);
+    if (f_initials != initials) {
+        initials.swap(f_initials);
+        ChangeMade(CCleanupChange::eNormalizeAuthors);
+    }
 }
 
 
@@ -404,6 +432,7 @@ void CCleanup_imp::x_ExtractSuffixFromInitials(CName_std& name)
     if (best != suffixes.end()) {
         initials.resize(len - best->length());
         name.SetSuffix(*best);
+        ChangeMade(CCleanupChange::eNormalizeAuthors);
         return;
     }
 
@@ -413,6 +442,7 @@ void CCleanup_imp::x_ExtractSuffixFromInitials(CName_std& name)
             initials.length() > it->first.length()) {
             initials.resize(len - it->first.length());
             name.SetSuffix(it->second);
+            ChangeMade(CCleanupChange::eNormalizeAuthors);
             return;
         }
     }
@@ -428,6 +458,7 @@ void CCleanup_imp::x_FixSuffix(CName_std& name)
     ITERATE (TSuffixMap, it, sc_BadSuffixes) {
         if (NStr::EqualNocase(suffix, it->first)) {
             name.SetSuffix(it->second);
+            ChangeMade(CCleanupChange::eNormalizeAuthors);
             break;
         }
     }
@@ -440,7 +471,11 @@ void CCleanup_imp::x_FixSuffix(CName_std& name)
 void CCleanup_imp::x_CleanupUserString(string& str)
 {
     if (!NStr::IsBlank(str)) {
+        size_t str_n = str.size();
         NStr::TruncateSpacesInPlace(str);
+        if (str_n != str.size()) {
+            ChangeMade(CCleanupChange::eTrimSpaces);
+        }
     }
 }
 
@@ -510,6 +545,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/07/31 14:29:37  rsmith
+ * Add change reporting
+ *
  * Revision 1.2  2006/03/23 18:32:24  rsmith
  * move cleanup of User object/fields here. String changes.
  *

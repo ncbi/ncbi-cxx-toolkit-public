@@ -141,6 +141,7 @@ void CCleanup_imp::x_OrgModToSubtype(CBioSource& bs)
         if (subsrc) {
             bs.SetSubtype().push_back(subsrc);
             it = mod_list.erase(it);
+            ChangeMade(CCleanupChange::eChangeSubsource);
         } else {
             ++it;
         }
@@ -242,7 +243,11 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
     }
     
     // remove those with no name unless it has a subtype that doesn't need a name.
+    size_t subtypes_cnt = subtypes.size();
     subtypes.remove_if(s_SubSourceRemove);
+    if (subtypes_cnt != subtypes.size()) {
+        ChangeMade(CCleanupChange::eCleanSubsource);
+    }    
     
     // merge any duplicate fwd_primer_seq and rev_primer_seq.
     // and any duplicate fwd_primer_name and rev_primer_name.
@@ -264,6 +269,7 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
                         fwd_primer_seq = it;
                     } else {
                         x_CombinePrimerStrings((*fwd_primer_seq)->SetName(), ss.GetName());
+                        ChangeMade(CCleanupChange::eChangeSubsource);
                         it = subtypes.erase(it);
                         continue;
                     }
@@ -272,6 +278,7 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
                         rev_primer_seq = it;
                     } else {
                         x_CombinePrimerStrings((*rev_primer_seq)->SetName(), ss.GetName());
+                        ChangeMade(CCleanupChange::eChangeSubsource);
                         it = subtypes.erase(it);
                         continue;
                     }
@@ -283,6 +290,7 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
                         fwd_primer_name = it;
                     } else {
                         x_CombinePrimerStrings((*fwd_primer_name)->SetName(), ss.GetName());
+                        ChangeMade(CCleanupChange::eChangeSubsource);
                         it = subtypes.erase(it);
                         continue;
                     }
@@ -291,6 +299,7 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
                         rev_primer_name = it;
                     } else {
                         x_CombinePrimerStrings((*rev_primer_name)->SetName(), ss.GetName());
+                        ChangeMade(CCleanupChange::eChangeSubsource);
                         it = subtypes.erase(it);
                         continue;
                     }
@@ -302,8 +311,15 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
     
     // sort and remove duplicates.
     // Do not sort before merging primer_seq's above.
-    subtypes.sort(s_SubsourceCompare);
-    subtypes.unique(s_SubsourceEqual);    
+    if (! is_sorted(subtypes.begin(), subtypes.end(), s_SubsourceCompare)) {
+        ChangeMade(CCleanupChange::eCleanSubsource);
+        subtypes.sort(s_SubsourceCompare);        
+    }
+    subtypes_cnt = subtypes.size();
+    subtypes.unique(s_SubsourceEqual);
+    if (subtypes_cnt != subtypes.size()) {
+        ChangeMade(CCleanupChange::eCleanSubsource);
+    }
 }
 
 
@@ -325,6 +341,7 @@ void CCleanup_imp::BasicCleanup(COrg_ref& oref)
         COrg_ref::TDb& dbxref = oref.SetDb();
         
         // dbxrefs cleanup
+        size_t dbxref_cnt = dbxref.size();
         COrg_ref::TDb::iterator it = dbxref.begin();
         while (it != dbxref.end()) {
             if (it->Empty()) {
@@ -337,9 +354,15 @@ void CCleanup_imp::BasicCleanup(COrg_ref& oref)
         }
         
         // sort/unique db_xrefs
-        stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
+        if ( ! is_sorted(dbxref.begin(), dbxref.end(), SDbtagCompare())) {
+            ChangeMade(CCleanupChange::eCleanDbxrefs);
+            stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());            
+        }
         it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
         dbxref.erase(it, dbxref.end());
+        if (dbxref_cnt != dbxref.size()) {
+            ChangeMade(CCleanupChange::eCleanDbxrefs);
+        }
     }
     
 }
@@ -394,6 +417,7 @@ void CCleanup_imp::x_ModToOrgMod(COrg_ref& oref)
         if (orgmod) {
             orgname.SetMod().push_back(orgmod);
             it = mod_list.erase(it);
+            ChangeMade(CCleanupChange::eChangeOrgmod);
         } else {
             ++it;
         }
@@ -454,6 +478,7 @@ void CCleanup_imp::BasicCleanup(COrgName& on)
     CLEAN_STRING_MEMBER(on, Div);
     if (on.IsSetMod()) {
         COrgName::TMod& mods = on.SetMod();
+        size_t mods_cnt = mods.size();
         COrgName::TMod::iterator it = mods.begin();
         while (it != mods.end() ) {
             BasicCleanup(**it);
@@ -466,9 +491,15 @@ void CCleanup_imp::BasicCleanup(COrgName& on)
         
         // if type of COrgName::TMod is changed from 'list' 
         // these will need to be changed.
+        if ( ! is_sorted(mods.begin(), mods.end(), s_OrgModCompareSubtypeFirst)) {
+            ChangeMade(CCleanupChange::eCleanOrgmod);
+        }
         mods.sort(s_OrgModCompareNameFirst);
         mods.unique(s_OrgModEqual);
         mods.sort(s_OrgModCompareSubtypeFirst);
+        if (mods.size() != mods_cnt) {
+            ChangeMade(CCleanupChange::eCleanOrgmod);
+        }
     }
 }
 
@@ -685,6 +716,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/07/31 14:29:37  rsmith
+ * Add change reporting
+ *
  * Revision 1.10  2006/07/18 16:43:43  bollin
  * added x_RecurseDescriptorsForMerge and changed the ExtendedCleanup functions
  * for merging duplicate BioSources and equivalent CitSubs to use the new function
