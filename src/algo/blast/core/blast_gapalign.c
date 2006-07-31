@@ -2352,7 +2352,8 @@ s_AdjustInitialHSPOffsets(BlastInitHSP* init_hsp, Int4 query_start)
     if (init_hsp->ungapped_data) {
         init_hsp->ungapped_data->q_start -= query_start;
     }
-    ASSERT(init_hsp->ungapped_data->q_start >= 0);
+    ASSERT(init_hsp->ungapped_data == NULL ||
+           init_hsp->ungapped_data->q_start >= 0);
 }
 
 /** Set up a BLAST_SequenceBlk structure for a single query sequence
@@ -2421,11 +2422,13 @@ s_AdjustHspOffsetsAndGetQueryData(const BLAST_SequenceBlk* query,
     ASSERT(init_hsp);
     ASSERT(context);
 
-    ASSERT(init_hsp->ungapped_data->q_start >= 0);
+    ASSERT(init_hsp->ungapped_data == NULL || 
+           init_hsp->ungapped_data->q_start >= 0);
     *context = s_GetUngappedHSPContext(query_info, init_hsp);
     s_SetUpLocalBlastSequenceBlk(query, query_info, *context,
                                  query_out, &query_start);
-    ASSERT((init_hsp->ungapped_data->q_start-query_start) >= 0);
+    ASSERT(init_hsp->ungapped_data == NULL ||
+           (init_hsp->ungapped_data->q_start-query_start) >= 0);
     s_AdjustInitialHSPOffsets(init_hsp, query_start);
 }
 
