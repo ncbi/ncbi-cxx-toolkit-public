@@ -78,14 +78,14 @@ typedef struct DiagStruct {
    Uint4 flag      : 1 ; /**< Reset the next extension? */
 } DiagStruct;
 
-/** Structure for keeping last hit information for a diagonal on a stack, when 
+/** Structure for keeping last hit information for a diagonal in a hash table, when 
  * eRight or eRightAndLeft methods are used for initial hit extension.
  */
-typedef struct BlastnStack {
-   Int4 diag;            /**< This hit's actual diagonal */
+typedef struct DiagHashCell {
+   Int4 diag;            /**< This hit's diagonal */
    Int4 level      : 31; /**< This hit's offset in the subject sequence */
    Uint4 hit_saved : 1;  /**< Whether or not this hit has been saved */
-}  BlastnStack;
+}  DiagHashCell;
   
 /** Structure containing parameters needed for initial word extension.
  * Only one copy of this structure is needed, regardless of how many
@@ -110,21 +110,18 @@ typedef struct BLAST_DiagTable {
                           hits method was used and a hit was found. */
 } BLAST_DiagTable;
 
-/** Structure containing an array of stacks for keeping track of the 
- * initial word matches. Can be used in megablast. */
-typedef struct BLAST_StackTable {
-   Int4 num_stacks; /**< Number of stacks to be used for storing hit offsets
-                       by MegaBLAST */
-   Int4* stack_index; /**< Current number of elements in each stack */
-   Int4* stack_size;  /**< Available memory for each stack */
-   BlastnStack** bn_stack_array; /**< Array of stacks for most recent hits 
-                                    without lengths. */
-} BLAST_StackTable;
+/** Track initial word matches using hashing with chaining. Can be used in blastn. */
+typedef struct BLAST_DiagHash {
+   Int4 num_buckets; /**< Number of buckets to be used for storing hit offsets */
+   Int4* size; /**< Number of occupied elements in each bucket */
+   Int4* capacity;  /**< Total number of elements in each bucket */
+   DiagHashCell** backbone; /**< Array of pointers to arrays of cells. */
+} BLAST_DiagHash;
    
 /** Structure for keeping initial word extension information */
 typedef struct Blast_ExtendWord {
    BLAST_DiagTable* diag_table; /**< Diagonal array and related parameters */
-   BLAST_StackTable* stack_table; /**< Stacks and related parameters */ 
+   BLAST_DiagHash* hash_table; /**< Hash table and related parameters */ 
 } Blast_ExtendWord;
 
 /** Initializes the word extension structure

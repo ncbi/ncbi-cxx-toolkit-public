@@ -209,8 +209,8 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 {
    Blast_KarlinBlk* kbp_std;
    Int2 status = 0;
-   const int kQueryLenForStacks = 8000;  /* For blastn, use stacks rather 
-                                            than diags for any query longer 
+   const int kQueryLenForHashTable = 8000;  /* For blastn, use hash table rather 
+                                            than diag array for any query longer 
                                             than this */
 
    /* If parameters pointer is NULL, there is nothing to fill, 
@@ -234,8 +234,8 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 
    if (program_number == eBlastTypeBlastn &&
       (query_info->contexts[query_info->last_context].query_offset +
-            query_info->contexts[query_info->last_context].query_length) > kQueryLenForStacks)
-       (*parameters)->container_type = eWordStacks;
+            query_info->contexts[query_info->last_context].query_length) > kQueryLenForHashTable)
+       (*parameters)->container_type = eDiagHash;
    else
        (*parameters)->container_type = eDiagArray;
 
@@ -936,6 +936,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2006/07/31 17:06:10  coulouri
+ * refactor access to diagonal hash, use standard nomenclature
+ *
  * Revision 1.23  2006/07/17 15:59:20  papadopo
  * add initialization for approximate gapped alignment (blastp only)
  *

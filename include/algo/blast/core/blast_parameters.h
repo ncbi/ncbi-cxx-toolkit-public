@@ -81,7 +81,7 @@ extern "C" {
 typedef enum ESeedContainerType {
     eDiagArray,         /**< use diagonal structures with array of last hits
                            and levels. */
-    eWordStacks,          /**< use stacks (megablast only) */
+    eDiagHash,          /**< use hash table (blastn only) */
     eMaxContainerType   /**< maximum value for this enumeration */
 } ESeedContainerType;
 
@@ -217,7 +217,7 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
  * raw x_dropoff from the bit x_dropoff and puts it into
  * the x_dropoff field of BlastInitialWordParameters*.
  * The container type is also set.  For blastn queries over a certain
- * length eWordStacks is set, otherwise it's eDiagArray.
+ * length eDiagHash is set, otherwise it's eDiagArray.
  * The extension method is also set via a call to s_GetBestExtensionMethod
  *
  * @param program_number Type of BLAST program [in]
