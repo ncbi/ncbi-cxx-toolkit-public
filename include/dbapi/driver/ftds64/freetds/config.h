@@ -100,14 +100,8 @@ typedef int socklen_t;
 #  define TDS_HAVE_PTHREAD_MUTEX 1
 #endif
 
-
-/* Define to 1 if last argument of SQLColAttribute it's SQLLEN * */
-/* #undef TDS_SQLCOLATTRIBUTE_SQLLEN */
-
-/* Define to 1 if you have the SQLGetPrivateProfileString function. */
-/* #undef HAVE_SQLGETPRIVATEPROFILESTRING */
-
-/* Define if sqltypes.h define SQLLEN */
-/* #undef HAVE_SQLLEN */
+#ifdef NCBI_SQLCOLATTRIBUTE_SQLLEN
+#  define TDS_SQLCOLATTRIBUTE_SQLLEN 1
+#endif
 
 #endif  /* DBAPI_DRIVER_FTDS64_FREETDS___CONFIG__H */
