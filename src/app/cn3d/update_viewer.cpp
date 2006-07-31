@@ -346,9 +346,11 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
 //        WriteASNToFile("Seq-entry.txt", *se, false, &err);
 
         // create Sequences from each one
-        if (!se->IsSet() || se->GetSet().GetSeq_set().size() == 0) {
-            WARNINGMSG("ReadFasta() returned unknown format or no Bioseqs");
-        } else {
+        if (se->IsSeq()) {
+            const Sequence *sequence = sSet->CreateNewSequence(se->SetSeq());
+            if (sequence)
+                 newSequences->push_back(sequence);
+        } else if (se->IsSet() && se->GetSet().GetSeq_set().size() >= 0)  {
             CBioseq_set::TSeq_set::iterator b, be = se->SetSet().SetSeq_set().end();
             for (b=se->SetSet().SetSeq_set().begin(); b!=be; ++b) {
                 if (!(*b)->IsSeq()) {
@@ -359,6 +361,8 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
                          newSequences->push_back(sequence);
                 }
             }
+        } else {
+            WARNINGMSG("ReadFasta() returned unknown format or no Bioseqs");
         }
     }
 }
@@ -1198,6 +1202,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2006/07/31 19:47:06  thiessen
+* adjust for changes in ReadFasta()
+*
 * Revision 1.88  2006/07/20 18:17:37  thiessen
 * select first chain to align by default on structure import
 *
