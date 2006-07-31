@@ -17,8 +17,6 @@
 #include "tds_sysdep_private.h"
 #include "replacements.h"
 
-TDS_RCSID(var, "$Id$");
-
 char *
 strtok_r(char *str, const char *sep, char **lasts)
 {

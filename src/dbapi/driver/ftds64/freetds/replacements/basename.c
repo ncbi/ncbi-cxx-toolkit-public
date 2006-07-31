@@ -43,8 +43,6 @@
 
 #if ! HAVE_BASENAME
 
-TDS_RCSID(var, "$Id$");
-
 char *tds_basename(char *path)
 {
 	char *p;

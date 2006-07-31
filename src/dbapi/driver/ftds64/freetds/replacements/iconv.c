@@ -53,8 +53,6 @@
 #include <dmalloc.h>
 #endif
 
-TDS_RCSID(var, "$Id$");
-
 /**
  * \addtogroup conv
  * \@{ 
