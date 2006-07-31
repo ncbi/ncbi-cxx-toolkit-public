@@ -16765,7 +16765,7 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_c_attribute_destructor" >&5
 echo "${ECHO_T}$ncbi_cv_c_attribute_destructor" >&6
-if test $ncbi_cv_c_attribute_destructor=yes; then
+if test $ncbi_cv_c_attribute_destructor = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ATTRIBUTE_DESTRUCTOR 1

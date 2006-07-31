@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.430 2006/07/24 14:37:16 ssikorsk Exp $
+#  $Id: configure.ac,v 1.431 2006/07/31 18:28:05 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2599,7 +2599,7 @@ AC_CACHE_CHECK([whether the C compiler supports __attribute__((destructor))],
        [[f();]])],
       [ncbi_cv_c_attribute_destructor=yes],
       [ncbi_cv_c_attribute_destructor=no])])
-if test $ncbi_cv_c_attribute_destructor=yes; then
+if test $ncbi_cv_c_attribute_destructor = yes; then
    AC_DEFINE(HAVE_ATTRIBUTE_DESTRUCTOR, 1,
       [Define to 1 if your C compiler supports __attribute__((destructor))])
 fi
