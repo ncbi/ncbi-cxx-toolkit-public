@@ -102,8 +102,8 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
 CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
                                     unsigned int  nof_columns)
 {
-#ifdef NCBI_OS_UNIX
-    return 0; // not implemented
+#ifdef FTDS_IN_USE
+    return NULL; // not implemented yet
 #else
     if ( !IsBCPable() ) {
         string err_message = "No bcp on this connection" + GetDiagnosticInfo();
@@ -583,6 +583,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/07/31 21:35:21  ssikorsk
+ * Disable BCP for the ftds64_odbc driver temporarily.
+ *
  * Revision 1.33  2006/07/18 15:47:59  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
