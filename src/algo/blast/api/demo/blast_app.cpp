@@ -60,6 +60,8 @@ environment.
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/hspstream_queue.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
+#include <algo/blast/api/local_blast.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 
 #ifndef NCBI_C_TOOLKIT
 #define NCBI_C_TOOLKIT
@@ -93,7 +95,7 @@ private:
     virtual int Run(void);
     virtual void Exit(void);
     void InitScope(void);
-    void ProcessCommandLineArgs(CBlastOptionsHandle* opt, 
+    void ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opt, 
                                 BlastSeqSrc* seq_src);
     void PrintSeqAlign(const TSeqAlignVector& seqalignv);
     /// NB: The object manager member field must be put in front of the scope
@@ -262,7 +264,7 @@ CBlastApplication::InitScope(void)
 }
 
 void
-CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle, 
+CBlastApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle,
                                           BlastSeqSrc* seq_src)
 {
     CArgs args = GetArgs();
@@ -321,7 +323,7 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
             // CBlastNucleotideOptionsHandle class, but not in the base
             // CBlastOptionsHandle class.
             CBlastNucleotideOptionsHandle* nucl_handle = 
-                dynamic_cast<CBlastNucleotideOptionsHandle*>(opts_handle);
+                dynamic_cast<CBlastNucleotideOptionsHandle*>(&*opts_handle);
             nucl_handle->SetWordSize(args["word"].AsInteger());
         } else {
             opt.SetWordSize(args["word"].AsInteger());
@@ -335,7 +337,7 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
             // CDiscNucleotideOptionsHandle class, but not in the base
             // CBlastOptionsHandle class.
             CDiscNucleotideOptionsHandle* disc_nucl_handle = 
-                dynamic_cast<CDiscNucleotideOptionsHandle*>(opts_handle);
+                dynamic_cast<CDiscNucleotideOptionsHandle*>(&*opts_handle);
         
             disc_nucl_handle->SetTemplateLength(args["templen"].AsInteger());
         }
@@ -529,7 +531,7 @@ int CBlastApplication::Run(void)
         exit(CBlastException::eInvalidOptions);
     }
 
-    CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));
 
     ProcessCommandLineArgs(opts, seq_src);
 
@@ -542,16 +544,24 @@ int CBlastApplication::Run(void)
 
     try {
 
+       CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
+
        if (!tabular_output) {
-          CDbBlast blaster(query_loc, seq_src, *opts, 
-                               hsp_stream, num_threads);
-          seqalignv = blaster.Run();
+          CLocalBlast blaster(query_factory, opts, seq_src);
+          blaster.SetNumberOfThreads(num_threads);
+          CSearchResultSet results = blaster.Run();
+          seqalignv.reserve(results.GetNumResults());
+          for (int i = 0; i < results.GetNumResults(); i++) {
+              CRef<CSeq_align_set>
+                  sas(const_cast<CSeq_align_set*>(&*results[i].GetSeqAlign()));
+              seqalignv.push_back(sas);
+          }
           PrintSeqAlign(seqalignv);
        } else {
           hsp_stream = Blast_HSPListCQueueInit();
           
           CDbBlast blaster(query_loc, seq_src, *opts, 
-                               hsp_stream, num_threads);
+                              hsp_stream, num_threads);
           blaster.SetupSearch();
 	  
           CSeqDbSeqInfoSrc seqinfo_src(args["db"].AsString(), db_is_aa);
