@@ -73,6 +73,14 @@ public:
     /// Get the length of the sequence indicated by index.
     virtual int GetSeqLength(int index) = 0;
 
+    int GetSumOfSequenceLengths() {
+        int retval = 0;
+        for (int i = 0; i < GetNumQueries(); i++) {
+            retval += GetSeqLength(i);
+        }
+        return retval;
+    }
+
     /// Retrieve all error/warning messages
     void GetMessages(TSearchMessages& messages) const;
 
