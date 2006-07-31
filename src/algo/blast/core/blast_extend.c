@@ -695,7 +695,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                Int4 q_off, Int4 s_end, Int4 s_off,
                                BlastInitHitList * init_hitlist)
 {
-    Int4 index, diag;
+    Int4 diag;
     Int4 window_size;
     Boolean hit_ready = FALSE, two_hits;
     BlastUngappedData dummy_ungapped_data;
