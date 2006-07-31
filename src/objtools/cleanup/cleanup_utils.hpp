@@ -109,16 +109,26 @@ bool CleanStringContainer(C& str_cont)
 
 #define TRUNCATE_SPACES(o, x) \
     if ((o).IsSet##x()) { \
+        size_t n = (o).Get##x().size(); \
         NStr::TruncateSpacesInPlace((o).Set##x()); \
+        if (n != (o).Get##x().size() ) { \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
+        } \
         if (NStr::IsBlank((o).Get##x())) { \
             (o).Reset##x(); \
         } \
     }
 
 #define TRUNCATE_CHOICE_SPACES(o, x) \
-    NStr::TruncateSpacesInPlace((o).Set##x()); \
-    if (NStr::IsBlank((o).Get##x())) { \
-        (o).Reset(); \
+    { \
+        size_t n = (o).Get##x().size(); \
+        NStr::TruncateSpacesInPlace((o).Set##x()); \
+        if (n != (o).Get##x().size() ) { \
+            ChangeMade(CCleanupChange::eTrimSpaces); \
+        } \
+        if (NStr::IsBlank((o).Get##x())) { \
+            (o).Reset(); \
+        } \
     }
 
 #define CONVERT_QUOTES(x) \
@@ -277,6 +287,27 @@ struct SDbtagEqual
 };
 
 
+// Is this range sorted according to the given comparison?
+// needed to see if sorts in cleanup do anything.
+// Maybe should be at a higher level of the source tree?
+
+template <class Iter, class Comp>
+bool is_sorted(Iter first, Iter last,
+               Comp comp)
+{
+    if (first == last)
+        return true;
+    
+    Iter next = first;
+    for (++next; next != last; first = next, ++next) {
+        if (comp(*next, *first))
+            return false;
+    }
+    
+    return true;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -285,6 +316,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/07/31 14:29:14  rsmith
+* Change reporting. is_sorted template.
+*
 * Revision 1.9  2006/07/13 19:16:19  rsmith
 * eliminate unnecessary includes
 *
