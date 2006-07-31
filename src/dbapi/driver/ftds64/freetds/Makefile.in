@@ -5,7 +5,7 @@
 #################################
 
 
-SUB_PROJ = tds ctlib dblib # odbc
+SUB_PROJ = tds ctlib dblib odbc
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
