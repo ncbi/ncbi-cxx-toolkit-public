@@ -33,7 +33,12 @@
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include <string.h>
-#include <odbcss.h>
+
+#ifdef FTDS_IN_USE
+    #include <sybdb.h>
+#else
+    #include <odbcss.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -474,6 +479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/07/31 15:50:58  ssikorsk
+ * Use <sybdb.h> (from dblib) header in case of the FreeTDS odbc driver.
+ *
  * Revision 1.19  2006/07/18 15:47:59  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
