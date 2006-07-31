@@ -72,5 +72,32 @@ void CSeqDBExpert::GetRawSeqAndAmbig(int           oid,
     m_Impl->Verify();
 }
 
+void CSeqDBExpert::GetGiBounds(int * low_id,
+                               int * high_id,
+                               int * count)
+{
+    m_Impl->Verify();
+    m_Impl->GetGiBounds(low_id, high_id, count);
+    m_Impl->Verify();
+}
+
+void CSeqDBExpert::GetPigBounds(int * low_id,
+                                int * high_id,
+                                int * count)
+{
+    m_Impl->Verify();
+    m_Impl->GetPigBounds(low_id, high_id, count);
+    m_Impl->Verify();
+}
+
+void CSeqDBExpert::GetStringBounds(string * low_id,
+                                   string * high_id,
+                                   int * count)
+{
+    m_Impl->Verify();
+    m_Impl->GetStringBounds(low_id, high_id, count);
+    m_Impl->Verify();
+}
+
 END_NCBI_SCOPE
 

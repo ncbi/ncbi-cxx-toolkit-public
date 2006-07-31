@@ -532,6 +532,49 @@ public:
                            int            * ambig_length,
                            CSeqDBLockHold & locked) const;
     
+    /// Get GI Bounds.
+    /// 
+    /// Fetch the lowest, highest, and total number of GIs.  If the
+    /// operation fails, zero will be returned for count.
+    /// 
+    /// @param low_id Lowest GI value in database. [out]
+    /// @param high_id Highest GI value in database. [out]
+    /// @param count Number of GI values in database. [out]
+    /// @param locked Lock holder object for this thread. [in]
+    void GetGiBounds(int            & low_id,
+                     int            & high_id,
+                     int            & count,
+                     CSeqDBLockHold & locked) const;
+    
+    /// Get PIG Bounds.
+    /// 
+    /// Fetch the lowest, highest, and total number of PIGs.  If the
+    /// operation fails, zero will be returned for count.
+    /// 
+    /// @param low_id Lowest PIG value in database. [out]
+    /// @param high_id Highest PIG value in database. [out]
+    /// @param count Number of PIG values in database. [out]
+    /// @param locked Lock holder object for this thread. [in]
+    void GetPigBounds(int            & low_id,
+                      int            & high_id,
+                      int            & count,
+                      CSeqDBLockHold & locked) const;
+    
+    /// Get String Bounds.
+    /// 
+    /// Fetch the lowest, highest, and total number of string keys in
+    /// the database index.  If the operation fails, zero will be
+    /// returned for count.
+    /// 
+    /// @param low_id Lowest string value in database. [out]
+    /// @param high_id Highest string value in database. [out]
+    /// @param count Number of string values in database. [out]
+    /// @param locked Lock holder object for this thread. [in]
+    void GetStringBounds(string         & low_id,
+                         string         & high_id,
+                         int            & count,
+                         CSeqDBLockHold & locked) const;
+    
 private:
     /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;

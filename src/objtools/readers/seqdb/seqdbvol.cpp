@@ -2158,5 +2158,46 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     }
 }
 
+void CSeqDBVol::GetGiBounds(int            & low_id,
+                            int            & high_id,
+                            int            & count,
+                            CSeqDBLockHold & locked) const
+{
+    m_Atlas.Lock(locked);
+    low_id = high_id = count = 0;
+    
+    if (m_IsamGi.NotEmpty()) {
+        m_IsamGi->GetIdBounds(low_id, high_id, count, locked);
+    }
+}
+
+void CSeqDBVol::GetPigBounds(int            & low_id,
+                             int            & high_id,
+                             int            & count,
+                             CSeqDBLockHold & locked) const
+{
+    m_Atlas.Lock(locked);
+    low_id = high_id = count = 0;
+    
+    if (m_IsamPig.NotEmpty()) {
+        m_IsamPig->GetIdBounds(low_id, high_id, count, locked);
+    }
+}
+
+void CSeqDBVol::GetStringBounds(string         & low_id,
+                                string         & high_id,
+                                int            & count,
+                                CSeqDBLockHold & locked) const
+{
+    m_Atlas.Lock(locked);
+    count = 0;
+    low_id.clear();
+    high_id.clear();
+    
+    if (m_IsamStr.NotEmpty()) {
+        m_IsamStr->GetIdBounds(low_id, high_id, count, locked);
+    }
+}
+
 END_NCBI_SCOPE
 

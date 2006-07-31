@@ -1125,5 +1125,142 @@ void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
     NCBI_THROW(CSeqDBException, eArgErr, "OID not in valid range.");
 }
 
+/// Accumulate optional min, max, and count.
+///
+/// This generic template describes the accumulation of low, high, and
+/// count values over any ordered type.
+///
+/// @param low_in    The low value for one volume. [in]
+/// @param high_in   The high value for one volume. [in]
+/// @param count_in  The ID count for one volume. [in]
+/// @param low_out   If non-null, the low output value. [out]
+/// @param high_out  If non-null, the high output value. [out]
+/// @param count_out If non-null, the ID output value. [out]
+template<class TId>
+inline void s_AccumulateMinMaxCount(TId   low_in,
+                                    TId   high_in,
+                                    int   count_in,
+                                    TId * low_out,
+                                    TId * high_out,
+                                    int * count_out,
+                                    bool set_all)
+{
+    if (set_all) {
+        if (low_out) {
+            *low_out   = low_in;
+        }
+        
+        *high_out  = high_in;
+        *count_out = count_in;
+    } else {
+        if (low_out && (set_all || *low_out > low_in)) {
+            *low_out = low_in;
+        }
+        if (high_out && (set_all || *high_out < high_in)) {
+            *high_out = high_in;
+        }
+        if (count_out) {
+            if (set_all) {
+                *count_out = 0;
+            }
+            *count_out += count_in;
+        }
+    }
+}
+
+void CSeqDBImpl::GetGiBounds(int * low_id,
+                             int * high_id,
+                             int * count)
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    bool found = false;
+    
+    for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
+        int vlow(0), vhigh(0), vcount(0);
+        
+        m_VolSet.GetVol(i)->GetGiBounds(vlow, vhigh, vcount, locked);
+        
+        if (vcount) {
+            s_AccumulateMinMaxCount(vlow,
+                                    vhigh,
+                                    vcount,
+                                    low_id,
+                                    high_id,
+                                    count,
+                                    ! found);
+            
+            found = true;
+        }
+    }
+    
+    if (! found) {
+        NCBI_THROW(CSeqDBException, eArgErr, "No GIs found.");
+    }
+}
+
+void CSeqDBImpl::GetPigBounds(int * low_id,
+                              int * high_id,
+                              int * count)
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    bool found = false;
+    
+    for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
+        int vlow(0), vhigh(0), vcount(0);
+        
+        m_VolSet.GetVol(i)->GetPigBounds(vlow, vhigh, vcount, locked);
+        
+        if (vcount) {
+            s_AccumulateMinMaxCount(vlow,
+                                    vhigh,
+                                    vcount,
+                                    low_id,
+                                    high_id,
+                                    count,
+                                    ! found);
+            
+            found = true;
+        }
+    }
+    
+    if (! found) {
+        NCBI_THROW(CSeqDBException, eArgErr, "No PIGs found.");
+    }
+}
+
+void CSeqDBImpl::GetStringBounds(string * low_id,
+                                 string * high_id,
+                                 int    * count)
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    bool found = false;
+    
+    for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
+        string vlow, vhigh;
+        int vcount(0);
+        
+        m_VolSet.GetVol(i)->GetStringBounds(vlow, vhigh, vcount, locked);
+        
+        if (vcount) {
+            s_AccumulateMinMaxCount(vlow,
+                                    vhigh,
+                                    vcount,
+                                    low_id,
+                                    high_id,
+                                    count,
+                                    ! found);
+            
+            found = true;
+        }
+    }
+    
+    if (! found) {
+        NCBI_THROW(CSeqDBException, eArgErr, "No strings found.");
+    }
+}
+
 END_NCBI_SCOPE
 

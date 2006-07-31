@@ -135,6 +135,44 @@ public:
                            const char ** buffer,
                            int         * seq_length,
                            int         * ambig_length) const;
+    
+    /// Get GI Bounds.
+    /// 
+    /// Fetch the lowest, highest, and total number of GIs.  A value
+    /// is returned for each non-null argument.  If the operation
+    /// fails, an exception will be thrown, which probably indicates a
+    /// missing index file.
+    /// 
+    /// @param low_id Lowest GI value in database. [out]
+    /// @param high_id Highest GI value in database. [out]
+    /// @param count Number of GI values in database. [out]
+    void GetGiBounds(int * low_id, int * high_id, int * count);
+    
+    /// Get PIG Bounds.
+    /// 
+    /// Fetch the lowest, highest, and total number of PIGs.  A value
+    /// is returned for each non-null argument.  If the operation
+    /// fails, an exception will be thrown, which probably indicates a
+    /// missing index file.
+    /// 
+    /// @param low_id Lowest PIG value in database. [out]
+    /// @param high_id Highest PIG value in database. [out]
+    /// @param count Number of PIG values in database. [out]
+    void GetPigBounds(int * low_id, int * high_id, int * count);
+    
+    /// Get String Bounds.
+    /// 
+    /// Fetch the lowest, highest, and total number of string keys in
+    /// the database index.  A value is returned for each non-null
+    /// argument.  If the operation fails, an exception will be
+    /// thrown, which probably indicates a missing index file.  Note
+    /// that the number of string keys does not directly correspond to
+    /// the number of deflines, Seq-ids, or accessions.
+    /// 
+    /// @param low_id Lowest string value in database. [out]
+    /// @param high_id Highest string value in database. [out]
+    /// @param count Number of string values in database. [out]
+    void GetStringBounds(string * low_id, string * high_id, int * count);
 };
 
 END_NCBI_SCOPE

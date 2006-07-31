@@ -244,7 +244,6 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
             // Most ordinary errors (missing GIs for example) are
             // ignored for "multi" mode searches.  But if a GI list is
             // specified, and cannot be interpreted, it is an error.
-            // Note that multiple searches
             
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -1950,6 +1949,56 @@ bool CSeqDBIsam::x_OutOfBounds(string key, CSeqDBLockHold & locked)
     }
     
     return false;
+}
+
+void CSeqDBIsam::GetIdBounds(int            & low_id,
+                             int            & high_id,
+                             int            & count,
+                             CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if(m_Initialized == false) {
+        EErrorCode error = x_InitSearch(locked);
+        
+        if(error != eNoError) {
+            count = 0;
+            return;
+        }
+    }
+    
+    if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
+        x_FindIndexBounds(locked);
+    }
+    
+    low_id = m_FirstKey.GetNumeric();
+    high_id = m_LastKey.GetNumeric();
+    count = m_NumTerms;
+}
+
+void CSeqDBIsam::GetIdBounds(string         & low_id,
+                             string         & high_id,
+                             int            & count,
+                             CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if(m_Initialized == false) {
+        EErrorCode error = x_InitSearch(locked);
+        
+        if(error != eNoError) {
+            count = 0;
+            return;
+        }
+    }
+    
+    if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
+        x_FindIndexBounds(locked);
+    }
+    
+    low_id = m_FirstKey.GetString();
+    high_id = m_LastKey.GetString();
+    count = m_NumTerms;
 }
 
 END_NCBI_SCOPE

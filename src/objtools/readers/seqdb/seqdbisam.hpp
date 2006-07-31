@@ -279,6 +279,36 @@ public:
                   string        & str_id,
                   bool          & simpler);
     
+    /// Get Numeric Bounds.
+    /// 
+    /// Fetch the lowest, highest, and total number of numeric keys in
+    /// the database index.  If the operation fails, zero will be
+    /// returned for count.
+    /// 
+    /// @param low_id Lowest numeric id value in database. [out]
+    /// @param high_id Highest numeric id value in database. [out]
+    /// @param count Number of numeric id values in database. [out]
+    /// @param locked Lock holder object for this thread. [in]
+    void GetIdBounds(int            & low_id,
+                     int            & high_id,
+                     int            & count,
+                     CSeqDBLockHold & locked);
+    
+    /// Get String Bounds.
+    /// 
+    /// Fetch the lowest, highest, and total number of string keys in
+    /// the database index.  If the operation fails, zero will be
+    /// returned for count.
+    /// 
+    /// @param low_id Lowest string id value in database. [out]
+    /// @param high_id Highest string id value in database. [out]
+    /// @param count Number of string id values in database. [out]
+    /// @param locked Lock holder object for this thread. [in]
+    void GetIdBounds(string         & low_id,
+                     string         & high_id,
+                     int            & count,
+                     CSeqDBLockHold & locked);
+    
 private:
     /// Stores a key for an ISAM file.
     ///
@@ -310,11 +340,23 @@ private:
             m_NKey = ident;
         }
         
-        /// Assign a string value to this object.
+        /// Fetch the numeric value of this object.
+        int GetNumeric() const
+        {
+            return m_NKey;
+        }
+        
+        /// Fetch the string value of this object.
         void SetString(const string & ident)
         {
             m_IsSet = true;
             m_SKey = ident;
+        }
+        
+        /// Fetch the numeric value of this object.
+        string GetString() const
+        {
+            return m_SKey;
         }
         
         /// Returns true if the provided integer compares as lower
