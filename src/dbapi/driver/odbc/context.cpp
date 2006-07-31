@@ -158,8 +158,8 @@ CODBC_Reporter::CODBC_Reporter(CDBHandlerStack* hs,
                                SQLHANDLE h,
                                const CODBC_Reporter* parent_reporter)
 : m_HStack(hs)
-, m_HType(ht)
 , m_Handle(h)
+, m_HType(ht)
 , m_ParentReporter(parent_reporter)
 {
 }
@@ -266,12 +266,15 @@ void CODBC_Reporter::ReportErrors(void) const
 //  CODBCContext::
 //
 
-CODBCContext::CODBCContext(SQLLEN version, bool use_dsn)
+CODBCContext::CODBCContext(SQLLEN version,
+                           int tds_version,
+                           bool use_dsn)
 : m_PacketSize(0)
 , m_TextImageSize(0)
 , m_Reporter(0, SQL_HANDLE_ENV, 0)
 , m_UseDSN(use_dsn)
 , m_Registry(&CODBCContextRegistry::Instance())
+, m_TDSVersion(tds_version)
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
@@ -466,6 +469,41 @@ SQLHENV CODBCContext::ODBC_GetContext() const
 }
 
 
+string CODBCContext::x_MakeFreeTDSVersion(int version)
+{
+    string str_version = "TDS_Version=";
+
+    switch ( version )
+    {
+    case 42:
+        str_version += "4.2";
+        break;
+    case 46:
+        str_version += "4.6";
+        break;
+    case 70:
+        str_version += "7.0";
+        break;
+    case 80:
+        str_version += "8.0";
+        break;
+    case 100:
+        str_version += "10.0";
+        break;
+    case 110:
+        str_version += "11.0";
+        break;
+    case 120:
+        str_version += "12.0";
+        break;
+    case 125:
+        str_version += "12.5";
+        break;
+    }
+
+    return str_version;
+}
+
 SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
                                         const string&   user_name,
                                         const string&   passwd,
@@ -509,7 +547,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
                                      user_name +
                                      ";PWD=" +
                                      passwd);
-#ifdef NCBI_OS_MSWIN
+#ifndef FTDS_IN_USE
         // Default connection string ...
         string connect_str("DRIVER={SQL Server};SERVER=");
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -592,11 +630,15 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         // string connect_str("DRIVER={SQL Native Client};MultipleActiveResultSets=true;SERVER=");
         // string connect_str("DRIVER={SQL Native Client};SERVER=");
 #else
-        string connect_str("DSN=");
+        string connect_str("DRIVER={FreeTDS};SERVER=");
 #endif
         // Ignore non-complete driver name ...
         // Use default driver name ...
         connect_str += conn_str_suffix;
+
+#ifdef FTDS_IN_USE
+        connect_str += ";" + x_MakeFreeTDSVersion(GetTDSVersion());
+#endif
 
         r = SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
                              0, 0, 0, SQL_DRIVER_NOPROMPT);
@@ -684,16 +726,14 @@ I_DriverContext* ODBC_CreateContext(const map<string,string>* attr = 0)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-const string kDBAPI_ODBC_DriverName("odbc");
-
-class CDbapiOdbcCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CODBCContext>
+class CDbapiOdbcCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CODBCContext>
 {
 public:
     typedef CSimpleClassFactoryImpl<I_DriverContext, CODBCContext> TParent;
 
 public:
-    CDbapiOdbcCF2(void);
-    ~CDbapiOdbcCF2(void);
+    CDbapiOdbcCFBase(const string& driver_name);
+    ~CDbapiOdbcCFBase(void);
 
 public:
     virtual TInterface*
@@ -705,19 +745,19 @@ public:
 
 };
 
-CDbapiOdbcCF2::CDbapiOdbcCF2(void)
-    : TParent( kDBAPI_ODBC_DriverName, 0 )
+CDbapiOdbcCFBase::CDbapiOdbcCFBase(const string& driver_name)
+    : TParent( driver_name, 0 )
 {
     return ;
 }
 
-CDbapiOdbcCF2::~CDbapiOdbcCF2(void)
+CDbapiOdbcCFBase::~CDbapiOdbcCFBase(void)
 {
     return ;
 }
 
-CDbapiOdbcCF2::TInterface*
-CDbapiOdbcCF2::CreateInstance(
+CDbapiOdbcCFBase::TInterface*
+CDbapiOdbcCFBase::CreateInstance(
     const string& driver,
     CVersionInfo version,
     const TPluginManagerParamTree* params) const
@@ -729,7 +769,7 @@ CDbapiOdbcCF2::CreateInstance(
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
-        SQLINTEGER odbc_version = SQL_OV_ODBC3;
+        int tds_version = 80;
         bool use_dsn = false;
 
         // Optional parameters ...
@@ -749,16 +789,7 @@ CDbapiOdbcCF2::CreateInstance(
                 if ( v.id == "use_dsn" ) {
                     use_dsn = (v.value != "false");
                 } else if ( v.id == "version" ) {
-                    int value = NStr::StringToInt( v.value );
-
-                    switch ( value ) {
-                    case 3 :
-                        odbc_version = SQL_OV_ODBC3;
-                        break;
-                    case 2 :
-                        odbc_version = SQL_OV_ODBC3;
-                        break;
-                    }
+                    tds_version = NStr::StringToInt( v.value );
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
                 }
@@ -766,7 +797,7 @@ CDbapiOdbcCF2::CreateInstance(
         }
 
         // Create a driver ...
-        drv = new CODBCContext( odbc_version, use_dsn );
+        drv = new CODBCContext( SQL_OV_ODBC3, tds_version, use_dsn );
 
         // Set parameters ...
         if ( page_size ) {
@@ -777,19 +808,54 @@ CDbapiOdbcCF2::CreateInstance(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-NCBI_EntryPoint_xdbapi_odbc(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+class CDbapiOdbcCF : public CDbapiOdbcCFBase
 {
-    CHostEntryPointImpl<CDbapiOdbcCF2>::NCBI_EntryPointImpl( info_list, method );
-}
+public:
+    CDbapiOdbcCF(void)
+    : CDbapiOdbcCFBase("odbc")
+    {
+    }
+};
 
-NCBI_DBAPIDRIVER_ODBC_EXPORT
-void
-DBAPI_RegisterDriver_ODBC(void)
+class CDbapiOdbcCF_ftds64 : public CDbapiOdbcCFBase
 {
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
+public:
+    CDbapiOdbcCF_ftds64(void)
+    : CDbapiOdbcCFBase("ftds64_odbc")
+    {
+    }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+extern "C"
+{
+
+    void
+    NCBI_EntryPoint_xdbapi_odbc(
+        CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+        CPluginManager<I_DriverContext>::EEntryPointRequest method)
+    {
+        CHostEntryPointImpl<CDbapiOdbcCF>::NCBI_EntryPointImpl( info_list, method );
+        CHostEntryPointImpl<CDbapiOdbcCF_ftds64>::NCBI_EntryPointImpl( info_list, method );
+    }
+
+    void
+    NCBI_EntryPoint_xdbapi_ftds64_odbc(
+        CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+        CPluginManager<I_DriverContext>::EEntryPointRequest method)
+    {
+        CHostEntryPointImpl<CDbapiOdbcCF_ftds64>::NCBI_EntryPointImpl( info_list, method );
+    }
+
+    NCBI_DBAPIDRIVER_ODBC_EXPORT
+    void
+    DBAPI_RegisterDriver_ODBC(void)
+    {
+        RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
+        RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_odbc );
+    }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -821,6 +887,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/07/31 15:52:06  ssikorsk
+ * Added support for the FreeTDS odbc driver.
+ *
  * Revision 1.57  2006/07/20 14:38:39  ssikorsk
  * More exception safe CODBCContext::x_Close.
  *
