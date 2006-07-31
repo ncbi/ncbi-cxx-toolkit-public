@@ -44,6 +44,8 @@
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include "../ncbi_win_hook.hpp"
 
+#include <algorithm>
+
 #ifdef HAVE_ODBCSS_H
 #include <odbcss.h>
 #endif
@@ -887,6 +889,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/07/31 23:24:37  ucko
+ * +<algorithm> for find
+ *
  * Revision 1.58  2006/07/31 15:52:06  ssikorsk
  * Added support for the FreeTDS odbc driver.
  *
