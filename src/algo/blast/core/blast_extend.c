@@ -54,7 +54,7 @@ static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
                                                   Int4 diag, Int4 * level,
                                                   Int4 * hit_saved)
 {
-	Int4 bucket = diag & 0x1ff;
+	Int4 bucket = (Uint4) diag % DIAGHASH_NUM_BUCKETS;
 	Int4 numElements = table->size[bucket];
 	Int4 index;
 
@@ -251,8 +251,8 @@ Int2 BlastExtendWordNew(const LookupTableWrap * lookup_wrap,
             (BLAST_DiagHash *) calloc(1, sizeof(BLAST_DiagHash));
 
         search_space = ((double) query_length) * subject_length;
-        num_buckets = 512;
-        capacity = 8;
+        num_buckets = DIAGHASH_NUM_BUCKETS;
+        capacity = DIAGHASH_CHAIN_LENGTH;
         hash_table->size = (Int4 *) calloc(num_buckets, sizeof(Int4));
         hash_table->capacity = (Int4 *) malloc(num_buckets * sizeof(Int4));
 
