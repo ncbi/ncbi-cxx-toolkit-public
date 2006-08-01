@@ -67,7 +67,7 @@ public:
     }
 
     static TCoord s_GetDefaultMaxIntron(void) {
-        return 750000;
+        return 1048575;
     }
     
     void SetPenalty(TCoord penalty) {
@@ -807,6 +807,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/08/01 15:06:10  kapustin
+ * Max intron length up to 1M
+ *
  * Revision 1.9  2006/06/27 14:23:58  kapustin
  * Cosmetics
  *
