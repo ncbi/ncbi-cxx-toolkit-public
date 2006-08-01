@@ -494,9 +494,9 @@ public:
     /// Destructor
     virtual ~CSeqDBIdxFile()
     {
-        CSeqDBLockHold locked(m_Atlas);
-        
-        m_Atlas.Lock(locked);
+        // Synchronization removed from this path - it was causing a
+        // deadlock in an error path, and destruction and construction
+        // are necessarily single threaded in any case.
         
         Verify();
         UnLease();
