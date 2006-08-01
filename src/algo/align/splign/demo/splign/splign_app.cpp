@@ -474,9 +474,9 @@ CSplignApp::x_SetupBlastOptions(bool cross)
         const CArgs& args = GetArgs();
         blast_opt.SetWordSize(args["W"].AsInteger());
         blast_opt.SetFilterString("m");
-        blast_opt.SetMaskAtHash(true);
-        blast_opt.SetGapXDropoff(1);
-        blast_opt.SetGapXDropoffFinal(1);
+        //blast_opt.SetMaskAtHash(true);
+        //blast_opt.SetGapXDropoff(1);
+        //blast_opt.SetGapXDropoffFinal(1);
     }
 
     if(blast_options_handle->Validate() == false) {
@@ -1184,17 +1184,14 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/08/01 15:24:57  kapustin
+ * Activate megablast mask-at-hash with SetFilterString
+ *
  * Revision 1.69  2006/07/18 19:42:11  kapustin
  * Use more common terminology to designate query alignment direction
  *
  * Revision 1.68  2006/05/22 15:52:22  kapustin
  * Engage new FASTA reader in the pairwise mode
- *
- * Revision 1.67  2006/05/18 17:01:18  kapustin
- * More code cleanup
- *
- * Revision 1.66  2006/05/08 15:19:02  kapustin
- * Code and file cleanup
  *
  * Revision 1.65  2006/03/31 19:11:20  kapustin
  * Refine common argument set
@@ -1214,9 +1211,6 @@ int main(int argc, const char* argv[])
  * Revision 1.60  2006/02/14 02:21:35  ucko
  * Use our IOS_BASE macro rather than ios_base for compatibility with GCC 2.95.
  *
- * Revision 1.59  2006/02/13 20:03:35  kapustin
- * Intermediate update
- *
  * Revision 1.58  2006/02/13 19:31:54  kapustin
  * Do not pre-load mRNA
  *
@@ -1234,9 +1228,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 1.53  2005/10/31 16:29:58  kapustin
  * Support traditional pairwise alignment text output
- *
- * Revision 1.52  2005/10/24 17:44:06  kapustin
- * Intermediate update
  *
  * Revision 1.51  2005/10/19 17:56:35  kapustin
  * Switch to using ObjMgr+LDS to load sequence data
@@ -1326,9 +1317,6 @@ int main(int argc, const char* argv[])
  * Revision 1.24  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
- * Revision 1.23  2004/05/18 21:43:40  kapustin
- * Code cleanup
- *
  * Revision 1.22  2004/05/10 16:40:12  kapustin
  * Support a pairwise mode
  *
@@ -1343,9 +1331,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 1.18  2004/04/26 15:38:46  kapustin
  * Add model_id as a CSplign member
- *
- * Revision 1.17  2004/04/23 14:33:32  kapustin
- * *** empty log message ***
  *
  * Revision 1.15  2004/02/19 22:57:55  ucko
  * Accommodate stricter implementations of CT_POS_TYPE.
