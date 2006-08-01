@@ -46,7 +46,8 @@ public:
         eInvalidInputAlignment,
         eInvalidRowNumber,
         eOutOfRange,
-        eInvalidInputData
+        eInvalidInputData,
+        eInvalidSeqId
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -58,6 +59,7 @@ public:
         case eInvalidRowNumber:      return "eInvalidRowNumber";
         case eOutOfRange:            return "eOutOfRange";
         case eInvalidInputData:      return "eInvalidInputData";
+        case eInvalidSeqId:          return "eInvalidSeqId";
         default:                     return CException::GetErrCodeString();
         }
     }
@@ -73,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/08/01 20:08:41  todorov
+* + eInvalidSeqId
+*
 * Revision 1.7  2004/08/19 13:04:59  dicuccio
 * Dropped export specifier on exceptions
 *
