@@ -65,11 +65,6 @@
 
 %ignore ncbi::x_SwapPointers(void* volatile*, void*);
 
-%ignore ncbi::objects::CAlnMap::
-    GetNumberOfInsertedSegmentsOnLeft(TNumrow row, TNumseg seg) const;
-%ignore ncbi::objects::CAlnMap::
-    GetNumberOfInsertedSegmentsOnRight(TNumrow row, TNumseg seg) const;
-
 %ignore ncbi::CHTMLHelper::LoadIDList(TIDList& ids,  
                                       const TCgiEntries& values,
                                       const string& hiddenPrefix,
@@ -85,6 +80,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/08/01 13:47:13  jcherry
+ * Removed %ignore's of some CAlnMap methods, which have been removed
+ * from the class declaration
+ *
  * Revision 1.16  2006/02/09 19:43:56  jcherry
  * %ignore's for Object Manager prefetch stuff
  *
