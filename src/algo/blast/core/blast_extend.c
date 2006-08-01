@@ -42,9 +42,13 @@ static char const rcsid[] =
                                                    BlastDiagTable{New,Free} */
 #include "blast_inline.h"
 
-/*
+/**
  * Attempt to retrieve information associated with diagonal diag.
- * Return 1 if successful, 0 if failed.
+ * @param table The hash table [in]
+ * @param diag The diagonal to be retrieved [in]
+ * @param level The offset of the last hit on the specified diagonal [out]
+ * @param hit_saved Whether or not the last hit on the specified diagonal was saved [out]
+ * @return 1 if successful, 0 if no hit was found on the specified diagonal.
  */
 static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
                                                   Int4 diag, Int4 * level,
@@ -67,10 +71,18 @@ static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
 	return 0;
 }
 
-/*
+/**
  * Attempt to store information associated with diagonal diag.
- * Clean up defunct entries along the way or allocate more space if necessary.
- * Return 1 if successful, 0 if failed.
+ * Cleans up defunct entries along the way or allocates more space if necessary.
+ * @param table The hash table [in]
+ * @param diag The diagonal to be stored [in]
+ * @param level The offset of the hit to be stored [in]
+ * @param hit_saved Whether or not this hit was stored [in]
+ * @param s_end Needed to clean up defunct entries [in]
+ * @param window_size Needed to clean up defunct entries [in]
+ * @param min_step Needed to clean up defunct entries [in]
+ * @param two_hits Needed to clean up defunct entries [in]
+ * @return 1 if successful, 0 if memory allocation failed.
  */
 static NCBI_INLINE Int4 s_BlastDiagHashInsert(BLAST_DiagHash * table,
                                                 Int4 diag, Int4 level,
