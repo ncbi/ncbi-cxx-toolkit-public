@@ -3932,6 +3932,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             args.GetDriverName() == "ctlib" ||
             // args.GetDriverName() == "dblib" || // Code will hang up with dblib for some reason ...
             args.GetDriverName() == "ftds63" ||
+            args.GetDriverName() == "odbc" ||
             args.GetDriverName() == "ftds64_dblib" ) {
             //
             boost::unit_test::test_case* tc_cursor =
@@ -4204,6 +4205,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.85  2006/08/01 16:50:09  ssikorsk
+ * Enable Test_Cursor, Test_LOB, Test_BlobStream with the odbc driver.
+ *
  * Revision 1.84  2006/08/01 15:49:07  ssikorsk
  * Added the ftds64_odbc driver to the test-suite.
  *
