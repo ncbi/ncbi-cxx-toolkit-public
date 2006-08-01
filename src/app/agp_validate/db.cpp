@@ -206,7 +206,7 @@ int CDb::Execute(const string& sql)
 }
 
 IBulkInsert* CDb::CreateBulkInsert(const string& table_name, 
-                                   unsigned int num_of_rows)
+                                   unsigned int num_of_cols)
 {
     try {
         IBulkInsert* bi;
@@ -218,7 +218,7 @@ IBulkInsert* CDb::CreateBulkInsert(const string& table_name,
             }
         }
 
-        bi = m_Connection->CreateBulkInsert(table_name, num_of_rows);
+        bi = m_Connection->CreateBulkInsert(table_name, num_of_cols);
         return bi;
     }
     catch (CDB_Exception& e) {
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2006/08/01 18:34:58  meric
+ * Renamed variable num_of_rows to num_of_cols
+ *
  * Revision 1.1  2006/03/29 19:51:12  friedman
  * Initial version
  *

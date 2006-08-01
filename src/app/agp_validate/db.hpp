@@ -61,7 +61,7 @@ public:
     void CloseConnection(void);
 
     IBulkInsert* CreateBulkInsert(const string& table_name, 
-                                  unsigned int num_of_rows);
+                                  unsigned int num_of_cols);
 
 private:
     auto_ptr<IConnection> m_Connection;  
@@ -81,6 +81,9 @@ END_NCBI_SCOPE
 /*
  * =========================================================================
  * $Log$
+ * Revision 1.2  2006/08/01 18:34:58  meric
+ * Renamed variable num_of_rows to num_of_cols
+ *
  * Revision 1.1  2006/03/29 19:51:12  friedman
  * Initial version
  * 
