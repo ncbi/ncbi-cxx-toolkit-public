@@ -190,15 +190,12 @@ void CSeq_annot_Info::x_UpdateName(void)
         ITERATE( CSeq_annot::TDesc::Tdata, it, m_Object->GetDesc().Get() ) {
             const CAnnotdesc& desc = **it;
             if ( desc.Which() == CAnnotdesc::e_Name ) {
-                name = desc.GetName();
-                break;
+                m_Name.SetNamed(desc.GetName());
+                return;
             }
         }
-        m_Name.SetNamed(name);
     }
-    else {
-        m_Name.SetUnnamed();
-    }
+    m_Name.SetUnnamed();
 }
 
 
@@ -1125,6 +1122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/08/01 22:14:41  vasilche
+ * Set name of Seq-annot only if desc.name is present.
+ *
  * Revision 1.40  2006/05/05 15:06:38  vasilche
  * Skip empty locations for edited annotations too.
  *
