@@ -438,7 +438,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                 const size_t len1 = pattern0[i+1] - pattern0[i] + 1;
                 const size_t len2 = pattern0[i+3] - pattern0[i+2] + 1;
                 const size_t maxlen = max(len1, len2);
-                const size_t band = (1 - imperfect[i/4].second) * maxlen + 2;
+                const size_t band = size_t((1 - imperfect[i/4].second) * maxlen) + 2;
                 nwa.SetBand(band);
                 nwa.SetSequences(Seq1 + pattern0[i],   len1,
                                  Seq2 + pattern0[i+2], len2,
@@ -1895,6 +1895,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/08/01 15:25:40  kapustin
+ * Suppress a warning
+ *
  * Revision 1.58  2006/07/18 19:36:58  kapustin
  * Retrieve longest ORF information when in sense direction. Use band-limited NW for best diag extraction.
  *
