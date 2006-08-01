@@ -5,7 +5,7 @@
 ulimit -n 1024 > /dev/null 2>&1
 
 # Declare drivers and servers
-driver_list="ctlib dblib ftds ftds63 odbc msdblib" # mysql
+driver_list="ctlib dblib ftds ftds63 odbc msdblib ftds64_odbc" # mysql
 server_list="MS_DEV1 OBERON"
 server_mssql="MS_DEV1"
 
@@ -99,7 +99,7 @@ EOF
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
-            if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+            if test \( $driver = "ftds64_odbc" -o $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
                 continue
             fi
 
