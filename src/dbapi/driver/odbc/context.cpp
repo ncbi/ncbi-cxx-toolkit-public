@@ -833,15 +833,16 @@ public:
 extern "C"
 {
 
+    NCBI_DBAPIDRIVER_ODBC_EXPORT
     void
     NCBI_EntryPoint_xdbapi_odbc(
         CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
         CPluginManager<I_DriverContext>::EEntryPointRequest method)
     {
         CHostEntryPointImpl<CDbapiOdbcCF>::NCBI_EntryPointImpl( info_list, method );
-        CHostEntryPointImpl<CDbapiOdbcCF_ftds64>::NCBI_EntryPointImpl( info_list, method );
     }
 
+    NCBI_DBAPIDRIVER_ODBC_EXPORT
     void
     NCBI_EntryPoint_xdbapi_ftds64_odbc(
         CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
@@ -889,6 +890,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/08/01 17:01:28  ssikorsk
+ * + NCBI_DBAPIDRIVER_ODBC_EXPORT to NCBI_EntryPoint_xdbapi_odbc/NCBI_EntryPoint_xdbapi_ftds64_odbc
+ *
  * Revision 1.59  2006/07/31 23:24:37  ucko
  * +<algorithm> for find
  *
