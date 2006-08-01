@@ -47,6 +47,12 @@ extern "C" {
 /** Minimal size of an array of initial word hits, allocated up front. */
 #define MIN_INIT_HITLIST_SIZE 100
 
+/** Number of hash buckets in BLAST_DiagHash */
+#define DIAGHASH_NUM_BUCKETS 512
+
+/** Default hash chain length */
+#define DIAGHASH_CHAIN_LENGTH 8
+
 /** Structure to hold ungapped alignment information */
 typedef struct BlastUngappedData {
    Int4 q_start; /**< Start of the ungapped alignment in query */
