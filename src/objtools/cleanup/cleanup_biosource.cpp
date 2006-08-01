@@ -311,7 +311,8 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
     
     // sort and remove duplicates.
     // Do not sort before merging primer_seq's above.
-    if (! is_sorted(subtypes.begin(), subtypes.end(), s_SubsourceCompare)) {
+    if (! objects::is_sorted(subtypes.begin(), subtypes.end(),
+                             s_SubsourceCompare)) {
         ChangeMade(CCleanupChange::eCleanSubsource);
         subtypes.sort(s_SubsourceCompare);        
     }
@@ -354,7 +355,8 @@ void CCleanup_imp::BasicCleanup(COrg_ref& oref)
         }
         
         // sort/unique db_xrefs
-        if ( ! is_sorted(dbxref.begin(), dbxref.end(), SDbtagCompare())) {
+        if ( ! objects::is_sorted(dbxref.begin(), dbxref.end(),
+                                  SDbtagCompare())) {
             ChangeMade(CCleanupChange::eCleanDbxrefs);
             stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());            
         }
@@ -491,7 +493,8 @@ void CCleanup_imp::BasicCleanup(COrgName& on)
         
         // if type of COrgName::TMod is changed from 'list' 
         // these will need to be changed.
-        if ( ! is_sorted(mods.begin(), mods.end(), s_OrgModCompareSubtypeFirst)) {
+        if ( ! objects::is_sorted(mods.begin(), mods.end(),
+                                  s_OrgModCompareSubtypeFirst)) {
             ChangeMade(CCleanupChange::eCleanOrgmod);
         }
         mods.sort(s_OrgModCompareNameFirst);
@@ -716,6 +719,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/08/01 00:22:15  ucko
+ * Qualify is_sorted by objects::, to avoid confusion with std::is_sorted.
+ *
  * Revision 1.11  2006/07/31 14:29:37  rsmith
  * Add change reporting
  *
