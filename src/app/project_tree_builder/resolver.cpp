@@ -162,6 +162,9 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def,
         resolved_def->clear();
         resolved_def->push_back(data);
     }
+    if ( IsDefine(define) && resolved_def->empty() ) {
+        Resolve(define, resolved_def);
+    }
 }
 
 
@@ -251,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/08/01 16:02:11  gouriano
+ * Corrected macro resolving
+ *
  * Revision 1.12  2005/09/15 18:24:37  gouriano
  * Recognize and process local (within a single makefile) macros
  *

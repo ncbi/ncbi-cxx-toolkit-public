@@ -158,7 +158,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                         list<string> resolved_def;
                         string val_define = FilterDefine(val);
                         if (val_define == val) {
-	                        CSymResolver::Resolve(val_define, &resolved_def, p->second);
+	                        resolver.Resolve(val_define, &resolved_def, p->second);
 	                    }
 	                    if ( resolved_def.empty() ) {
     	                    resolver.Resolve(val_define, &resolved_def);
@@ -1657,6 +1657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/08/01 16:02:11  gouriano
+ * Corrected macro resolving
+ *
  * Revision 1.40  2006/07/25 18:37:27  gouriano
  * Made dependency on datatool for ASN projects optional
  *
