@@ -312,7 +312,7 @@ property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_fe
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project, data_handle, gbench_svc, gbench_svc_cli}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table, w_seq_text}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
-property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_data, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
+property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_data, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general ncbi_algo gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
 property gui_services : {name:"gui_services", libs:{gui__services}, dep:"gui_core gui_config gui_utils gui_widgets gui_widgets_seq ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext" & FLTK_LIBS, req:true}
 
 -- PLUG-INS
@@ -440,6 +440,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2006/08/01 17:18:56  lebedev
+ * gui_widgets_aln += ncbi_algo
+ *
  * Revision 1.105  2006/07/17 17:41:16  lebedev
  * Libraries updated
  *
