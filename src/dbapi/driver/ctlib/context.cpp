@@ -46,7 +46,7 @@
 #include <algorithm>
 
 #if defined(NCBI_OS_MSWIN)
-#  include <winsock.h>
+#  include <winsock2.h>
 #  include "../ncbi_win_hook.hpp"
 #else
 #  include <unistd.h>
@@ -1205,6 +1205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2006/08/02 18:49:43  ssikorsk
+ * winsock.h --> winsock2.h
+ *
  * Revision 1.87  2006/08/02 15:17:41  ssikorsk
  * Implemented NCBI_EntryPoint_xdbapi_ftds64_ctlib.
  *
