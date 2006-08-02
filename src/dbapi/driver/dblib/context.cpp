@@ -1125,6 +1125,15 @@ public:
     }
 };
 
+class CDbapiFtdsCF64 : public CDbapiFtdsCFBase
+{
+public:
+    CDbapiFtdsCF64(void)
+    : CDbapiFtdsCFBase("ftds64_dblib")
+    {
+    }
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 NCBI_EntryPoint_xdbapi_ftds(
@@ -1142,12 +1151,21 @@ NCBI_EntryPoint_xdbapi_ftds63(
     CHostEntryPointImpl<CDbapiFtdsCF63>::NCBI_EntryPointImpl( info_list, method );
 }
 
+void
+NCBI_EntryPoint_xdbapi_ftds64_dblib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiFtdsCF64>::NCBI_EntryPointImpl( info_list, method );
+}
+
 NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void
 DBAPI_RegisterDriver_FTDS(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds63 );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_dblib );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1331,6 +1349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2006/08/02 18:49:03  ssikorsk
+ * Added implementation of NCBI_EntryPoint_xdbapi_ftds64_dblib.
+ *
  * Revision 1.88  2006/07/28 15:00:49  ssikorsk
  * Revamp code to use CDB_Exception::SetSybaseSeverity.
  *
