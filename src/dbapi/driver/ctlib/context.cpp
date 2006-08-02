@@ -178,7 +178,8 @@ CTLibContextRegistry::StaticClearAll(void)
 //  CTLibContext::
 //
 
-CS_START_EXTERN_C
+extern "C"
+{
     CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context,
                                                 CS_CLIENTMSG* msg)
     {
@@ -201,7 +202,9 @@ CS_START_EXTERN_C
         return CTLibContext::CTLIB_srverr_handler(context, con, msg)
             ? CS_SUCCEED : CS_FAIL;
     }
-CS_END_EXTERN_C
+
+}
+
 
 CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     m_Context(0),
@@ -1018,16 +1021,14 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-const string kDBAPI_CTLIB_DriverName("ctlib");
-
-class CDbapiCtlibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CTLibContext>
+class CDbapiCtlibCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CTLibContext>
 {
 public:
     typedef CSimpleClassFactoryImpl<I_DriverContext, CTLibContext> TParent;
 
 public:
-    CDbapiCtlibCF2(void);
-    ~CDbapiCtlibCF2(void);
+    CDbapiCtlibCFBase(const string& driver_name);
+    ~CDbapiCtlibCFBase(void);
 
 public:
     virtual TInterface*
@@ -1039,19 +1040,19 @@ public:
 
 };
 
-CDbapiCtlibCF2::CDbapiCtlibCF2(void)
-    : TParent( kDBAPI_CTLIB_DriverName, 0 )
+CDbapiCtlibCFBase::CDbapiCtlibCFBase(const string& driver_name)
+    : TParent( driver_name, 0 )
 {
     return ;
 }
 
-CDbapiCtlibCF2::~CDbapiCtlibCF2(void)
+CDbapiCtlibCFBase::~CDbapiCtlibCFBase(void)
 {
     return ;
 }
 
-CDbapiCtlibCF2::TInterface*
-CDbapiCtlibCF2::CreateInstance(
+CDbapiCtlibCFBase::TInterface*
+CDbapiCtlibCFBase::CreateInstance(
     const string& driver,
     CVersionInfo version,
     const TPluginManagerParamTree* params) const
@@ -1131,12 +1132,40 @@ CDbapiCtlibCF2::CreateInstance(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+class CDbapiCtlibCF_Sybase : public CDbapiCtlibCFBase
+{
+public:
+    CDbapiCtlibCF_Sybase(void)
+    : CDbapiCtlibCFBase("ctlib")
+    {
+    }
+};
+
+class CDbapiCtlibCF_ftds64_ctlib : public CDbapiCtlibCFBase
+{
+public:
+    CDbapiCtlibCF_ftds64_ctlib(void)
+    : CDbapiCtlibCFBase("ftds64_ctlib")
+    {
+    }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 void
 NCBI_EntryPoint_xdbapi_ctlib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CDbapiCtlibCF2>::NCBI_EntryPointImpl( info_list, method );
+    CHostEntryPointImpl<CDbapiCtlibCF_Sybase>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+NCBI_EntryPoint_xdbapi_ftds64_ctlib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiCtlibCF_ftds64_ctlib>::NCBI_EntryPointImpl( info_list, method );
 }
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
@@ -1144,6 +1173,7 @@ void
 DBAPI_RegisterDriver_CTLIB(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ctlib );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_ctlib );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1175,6 +1205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2006/08/02 15:17:41  ssikorsk
+ * Implemented NCBI_EntryPoint_xdbapi_ftds64_ctlib.
+ *
  * Revision 1.86  2006/07/28 15:00:45  ssikorsk
  * Revamp code to use CDB_Exception::SetSybaseSeverity.
  *
