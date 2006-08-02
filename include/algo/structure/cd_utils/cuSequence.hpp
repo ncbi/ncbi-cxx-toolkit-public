@@ -88,7 +88,7 @@ char   GetResidueAtPosition(const CBioseq& bioseq, int pos, bool zeroBasedPos = 
 char   GetResidueAtPosition(const CRef< CSeq_entry >& seqEntry, int pos, bool zeroBasedPos = true);
 
 bool IsConsensus(const CRef< CSeq_id >& seqId);
-
+bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, CRef< CSeq_id>& seqId);
 
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 
@@ -101,6 +101,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/08/02 14:04:51  cliu
+ * add function GetAccAndVersion
+ *
  * Revision 1.4  2005/06/30 23:58:42  lanczyck
  * move a few includes from .cpp to .hpp; add an IsEnvironmentalSeq method
  *

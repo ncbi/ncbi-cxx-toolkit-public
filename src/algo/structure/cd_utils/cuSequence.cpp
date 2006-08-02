@@ -359,8 +359,32 @@ bool IsConsensus(const CRef< CSeq_id >& seqId) {
     return result;
 }
 
-END_SCOPE(cd_utils) // namespace ncbi::objects::
+bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, CRef< CSeq_id>& seqId)
+{
+	acc.erase();
+	const list< CRef< CSeq_id > >& seqIds = bioseq->GetId();
+	for (list< CRef< CSeq_id > >::const_iterator cit = seqIds.begin();
+		cit != seqIds.end(); cit++)
+	{
+		const CTextseq_id* textId = (*cit)->GetTextseq_Id();
+		if (textId)
+		{
+			if (textId->CanGetAccession())
+				acc = textId->GetAccession();
+			if (acc.size() >= 0)
+			{
+				if (textId->CanGetVersion())
+					version = textId->GetVersion();	
+				seqId = new CSeq_id;
+				seqId->Assign(**cit);
+				break;
+			}
+		}
+	}
+	return acc.size() != 0;
+}
 
+END_SCOPE(cd_utils) // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 
@@ -368,6 +392,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/08/02 14:04:28  cliu
+ * add function GetAccAndVersion
+ *
  * Revision 1.5  2005/06/30 23:59:00  lanczyck
  * move a few includes from .cpp to .hpp; add an IsEnvironmentalSeq method
  *
