@@ -223,8 +223,8 @@ void BMAUtils::PrintPSSM(const BMA& bma, bool rowMajor, string* stringOutput) {
     unsigned int ni = bma.GetPSSM()->rows, nj = bma.GetPSSM()->columns;
     int** pssmMatrix = bma.GetPSSM()->matrix;
 
-    //  copied from su_block_multiple_alignment.cpp...
-    const string BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+    //  copied from su_pssm.cpp (NCBIStdaaResidues).
+    const string BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ";
 
     oss << endl << "Raw matrix ... dimensions " << ni << " " << nj << endl;
     if (rowMajor) {
@@ -296,7 +296,7 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
 
     bool isAlignedBlock, isInPssm;
     char residue, masterResidue;
-    unsigned int seqIndex, masterSeqIndex;
+    unsigned int seqIndex, masterSeqIndex, alphabetSize;
     unsigned int column = 0, blockNum = 0, alignedBlockNum = 0, nRows = bma.NRows();
     int thisScore, score = 0;
 
@@ -323,6 +323,8 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
     CNcbiOstrstream oss;
     IOS_BASE::fmtflags initFlags = oss.flags();
     oss << endl;
+
+    alphabetSize = (unsigned int) bma.GetPSSM()->columns;
 
     be = blocks.end();
     for (b=blocks.begin(); b!=be; ++b) {
@@ -373,7 +375,7 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
 
                     if (viewColumn) {
                         oss << " residue number " << setw(4) << LookupNCBIStdaaNumberFromCharacter(residue) << endl;
-                        for (unsigned int k=0; k < 26; ++k) {
+                        for (unsigned int k=0; k < alphabetSize; ++k) {
                             oss << "  " << k+1 << "  " << bma.GetPSSM()->matrix[masterSeqIndex][k];
                         }
                     }
@@ -443,7 +445,7 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
     char residue;
     int thisScore, score = 0;
     unsigned int alignmentIndex = 0, alignedBlockNum = 0, blockNum = 0;
-    unsigned int blockIndex, seqIndex, masterSeqIndex, nRows, row;
+    unsigned int alphabetSize, blockIndex, seqIndex, masterSeqIndex, nRows, row;
 
 
     BMA::ConstBlockList blocks;
@@ -482,6 +484,7 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
 
     masterSeqIndex = 0;
     nRows = bma.NRows();
+    alphabetSize = (unsigned int) bma.GetPSSM()->columns;
 
     for (row = 0; row < nRows; ++row) {
 
@@ -511,7 +514,7 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
             oss << " score " << setw(4) << thisScore;
             if (viewColumn) {
                 oss << " residue number " << setw(4) << LookupNCBIStdaaNumberFromCharacter(residue);
-                for (unsigned int k=0; k < 26; ++k) {
+                for (unsigned int k=0; k < alphabetSize; ++k) {
                     oss << endl << "  " << k+1 << "  " << bma.GetPSSM()->matrix[masterSeqIndex][k];
                 }
             }
@@ -613,6 +616,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2006/08/02 19:46:39  lanczyck
+* fixed for the 26->28 letter alphabet switch
+*
 * Revision 1.5  2006/01/19 20:34:36  lanczyck
 * add GetReisiduesForColumn method
 *
