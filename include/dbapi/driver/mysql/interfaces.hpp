@@ -40,9 +40,11 @@
 #include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 
-#if defined(_WIN32) || defined(_WIN64)
-# include <windows.h>
-# include <winsock.h>
+#if defined(NCBI_OS_MSWIN)
+#  include <windows.h>
+#ifdef WIN32_LEAN_AND_MEAN
+#  include <winsock2.h>
+#endif
 #endif
 
 #include <mysql.h>
@@ -265,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/08/02 18:44:00  ssikorsk
+ * winsock.h --> winsock2.h
+ *
  * Revision 1.25  2006/07/18 15:46:00  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
