@@ -35,6 +35,10 @@ Authors:  See src/dbapi/driver/ftds*/freetds/AUTHORS
 License:  GNU Library/Lesser General Public License
           [src/dbapi/driver/ftds8/freetds/COPYING.LIB]
 
+Location: include/dbapi/driver/odbc/unix_odbc
+Authors:  Peter Harvey and Nick Gorham
+License:  GNU LGPL
+
 Location: {src,include}/gui/widgets/FLU
 Authors:  Jason Bryan
 License:  GNU LGPL
