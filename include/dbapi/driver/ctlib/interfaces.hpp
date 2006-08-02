@@ -228,10 +228,14 @@ public:
     virtual ~CTL_Cmd(void);
 
 protected:
+    inline CS_RETCODE Check(CS_RETCODE rc);
+    CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+    CS_RETCODE CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+
+protected:
     inline CTL_Connection& GetConnection(void);
     inline CS_COMMAND* x_GetSybaseCmd(void) const;
     inline void SetSybaseCmd(CS_COMMAND* cmd);
-    inline CS_RETCODE Check(CS_RETCODE rc);
     inline void DropCmd(impl::CCommand& cmd);
     inline bool x_SendData(I_ITDescriptor& desc,
                            CDB_Stream& img,
@@ -744,6 +748,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/08/02 15:12:46  ssikorsk
+ * Added methods CheckSFB and CheckSFBCP to CTL_Cmd.
+ *
  * Revision 1.40  2006/07/20 19:50:02  ssikorsk
  * Added CTLibContext.m_TDSVersion, CTLibContext ::GetTDSVersion();
  * Added CTL_Connection:: GetBLKVersion();
