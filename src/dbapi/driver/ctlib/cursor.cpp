@@ -60,18 +60,11 @@ CDB_Result* CTL_CursorCmd::Open()
     if ( !m_Used ) {
         m_HasFailed = false;
 
-        switch ( Check(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DECLARE,
+        CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DECLARE,
                            const_cast<char*> (m_Name.c_str()), CS_NULLTERM,
                            const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
-                           CS_UNUSED)) ) {
-        case CS_SUCCEED:
-            break;
-        case CS_FAIL:
-            m_HasFailed = true;
-            DATABASE_DRIVER_ERROR( "ct_cursor(DECLARE) failed", 122001 );
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-        }
+                           CS_UNUSED),
+                 "ct_cursor(DECLARE) failed", 122001);
 
         if (GetParams().NofParams() > 0) {
             // we do have the parameters
@@ -85,32 +78,18 @@ CDB_Result* CTL_CursorCmd::Open()
         }
 
         if (m_FetchSize > 1) {
-            switch ( Check(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_ROWS, 0, CS_UNUSED,
-                               0, CS_UNUSED, (CS_INT) m_FetchSize)) ) {
-            case CS_SUCCEED:
-                break;
-            case CS_FAIL:
-                m_HasFailed = true;
-                DATABASE_DRIVER_ERROR( "ct_cursor(ROWS) failed", 122004 );
-            case CS_BUSY:
-                DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-            }
+            CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_ROWS, 0, CS_UNUSED,
+                               0, CS_UNUSED, (CS_INT) m_FetchSize),
+                     "ct_cursor(ROWS) failed", 122004);
         }
     }
 
     m_HasFailed = false;
 
     // open the cursor
-    switch ( Check(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_OPEN, 0, CS_UNUSED, 0, CS_UNUSED,
-                       m_Used ? CS_RESTORE_OPEN : CS_UNUSED)) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_cursor(open) failed", 122005 );
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-    }
+    CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_OPEN, 0, CS_UNUSED, 0, CS_UNUSED,
+                       m_Used ? CS_RESTORE_OPEN : CS_UNUSED),
+             "ct_cursor(open) failed", 122005);
 
     m_IsOpen = true;
 
@@ -121,18 +100,7 @@ CDB_Result* CTL_CursorCmd::Open()
     }
 
     // send this command
-    switch ( Check(ct_send(x_GetSybaseCmd())) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_send failed", 122006 );
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
-    case CS_BUSY:
-    case CS_PENDING:
-        DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
-    }
+    CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122006);
 
     m_Used = true;
 
@@ -150,8 +118,10 @@ CDB_Result* CTL_CursorCmd::Open()
             DATABASE_DRIVER_ERROR( "ct_result failed", 122013 );
         case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "your command has been canceled", 122011 );
+#ifdef CS_BUSY
         case CS_BUSY:
             DATABASE_DRIVER_ERROR( "connection has another request pending", 122014 );
+#endif
         default:
             DATABASE_DRIVER_ERROR( "your request is pending", 122015 );
         }
@@ -189,33 +159,14 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
         return false;
     }
 
-    switch ( Check(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_UPDATE,
+    CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_UPDATE,
                        const_cast<char*> (table_name.c_str()), CS_NULLTERM,
                        const_cast<char*> (upd_query.c_str()),  CS_NULLTERM,
-                       CS_UNUSED)) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_cursor(update) failed", 122030 );
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122031 );
-    }
-
+                       CS_UNUSED),
+             "ct_cursor(update) failed", 122030);
 
     // send this command
-    switch ( Check(ct_send(x_GetSybaseCmd())) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_send failed", 122032 );
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "command was canceled", 122033 );
-    case CS_BUSY:
-    case CS_PENDING:
-        DATABASE_DRIVER_ERROR( "connection has another request pending", 122034 );
-    }
+    CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122032);
 
     // process the results
     return ProcessResults();
@@ -273,31 +224,13 @@ bool CTL_CursorCmd::Delete(const string& table_name)
         return false;
     }
 
-    switch ( Check(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DELETE,
+    CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DELETE,
                        const_cast<char*> (table_name.c_str()), CS_NULLTERM,
-                       0, CS_UNUSED, CS_UNUSED)) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_cursor(delete) failed", 122040 );
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122041 );
-    }
+                       0, CS_UNUSED, CS_UNUSED),
+             "ct_cursor(delete) failed", 122040);
 
     // send this command
-    switch ( Check(ct_send(x_GetSybaseCmd())) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_send failed", 122042 );
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "command was canceled", 122043 );
-    case CS_BUSY:
-    case CS_PENDING:
-        DATABASE_DRIVER_ERROR( "connection has another request pending", 122044 );
-    }
+    CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122042);
 
     // process the results
     return ProcessResults();
@@ -318,35 +251,17 @@ bool CTL_CursorCmd::Close()
 
     DeleteResult();
 
-    switch ( Check(ct_cursor(x_GetSybaseCmd(),
-                             CS_CURSOR_CLOSE,
-                             0,
-                             CS_UNUSED,
-                             0,
-                             CS_UNUSED,
-                             CS_UNUSED)) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_cursor(close) failed", 122020 );
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122021 );
-    }
+    CheckSFB(ct_cursor(x_GetSybaseCmd(),
+                         CS_CURSOR_CLOSE,
+                         0,
+                         CS_UNUSED,
+                         0,
+                         CS_UNUSED,
+                         CS_UNUSED),
+             "ct_cursor(close) failed", 122020);
 
     // send this command
-    switch ( Check(ct_send(x_GetSybaseCmd())) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_send failed", 122022 );
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "command was canceled", 122023 );
-    case CS_BUSY:
-    case CS_PENDING:
-        DATABASE_DRIVER_ERROR( "connection has another request pending", 122024 );
-    }
+    CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122022);
 
     m_IsOpen = false;
 
@@ -375,9 +290,11 @@ CTL_CursorCmd::CloseForever(void)
                 // m_HasFailed = true;
                 //throw CDB_ClientEx(eDiag_Fatal, 122050, "::~CTL_CursorCmd",
                 //                   "ct_cursor(dealloc) failed");
+#ifdef CS_BUSY
             case CS_BUSY:
                 //throw CDB_ClientEx(eDiag_Error, 122051, "::~CTL_CursorCmd",
                 //                   "the connection is busy");
+#endif
                 Check(ct_cmd_drop(x_GetSybaseCmd()));
                 return;
             }
@@ -393,7 +310,9 @@ CTL_CursorCmd::CloseForever(void)
             case CS_CANCELED:
                 // throw CDB_ClientEx(eDiag_Error, 122053, "::~CTL_CursorCmd",
                 //                   "command was canceled");
+#ifdef CS_BUSY
             case CS_BUSY:
+#endif
             case CS_PENDING:
                 // throw CDB_ClientEx(eDiag_Error, 122054, "::~CTL_CursorCmd",
                 //                   "connection has another request pending");
@@ -467,6 +386,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/08/02 15:16:27  ssikorsk
+ * Revamp code to use CheckSFB and CheckSFBCP;
+ * Revamp code to compile with FreeTDS ctlib implementation;
+ *
  * Revision 1.24  2006/07/19 14:11:02  ssikorsk
  * Refactoring of CursorCmd.
  *

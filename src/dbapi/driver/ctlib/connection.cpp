@@ -145,8 +145,10 @@ CTL_Connection::x_CmdAlloc(CS_COMMAND** cmd)
         break;
     case CS_FAIL:
         DATABASE_DRIVER_ERROR( "ct_cmd_alloc failed", 110001 );
+#ifdef CS_BUSY
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "the connection is busy", 110002 );
+#endif
     }
 }
 
@@ -490,6 +492,7 @@ bool CTL_Connection::Abort()
 {
     int fd = -1;
 
+#ifdef CS_ENDPOINT
     if(Check(ct_con_props(x_GetSybaseConn(),
                           CS_GET,
                           CS_ENDPOINT,
@@ -501,6 +504,8 @@ bool CTL_Connection::Abort()
             return true;
         }
     }
+#endif
+
     return false;
 }
 
@@ -697,6 +702,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/08/02 15:16:52  ssikorsk
+ * Revamp code to use CheckSFB and CheckSFBCP;
+ * Revamp code to compile with FreeTDS ctlib implementation;
+ *
  * Revision 1.40  2006/07/20 19:56:19  ssikorsk
  * Added CTL_Connection::GetBLKVersion() implementation.
  *

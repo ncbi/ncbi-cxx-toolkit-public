@@ -56,17 +56,10 @@ bool CTL_RPCCmd::Send()
 
     m_HasFailed = false;
 
-    switch ( Check(ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
+    CheckSFB(ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
                         const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
-                              NeedToRecompile() ? CS_RECOMPILE : CS_UNUSED)) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_command failed", 121001 );
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 121002 );
-    }
+                              NeedToRecompile() ? CS_RECOMPILE : CS_UNUSED),
+             "ct_command failed", 121001);
 
     m_HasFailed = !x_AssignParams();
     CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 121003 );
@@ -84,8 +77,10 @@ bool CTL_RPCCmd::Send()
         DATABASE_DRIVER_ERROR( "ct_send failed", 121005 );
     case CS_CANCELED:
         DATABASE_DRIVER_ERROR( "command was canceled", 121006 );
+#ifdef CS_BUSY
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "connection has another request pending", 121007 );
+#endif
     case CS_PENDING:
     default:
         m_WasSent = true;
@@ -225,6 +220,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/08/02 15:15:58  ssikorsk
+ * Revamp code to use CheckSFB and CheckSFBCP;
+ * Revamp code to compile with FreeTDS ctlib implementation;
+ *
  * Revision 1.22  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
