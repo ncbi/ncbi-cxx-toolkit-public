@@ -83,6 +83,12 @@ NCBI_EntryPoint_xdbapi_ftds63(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
+void
+NCBI_EntryPoint_xdbapi_ftds64_dblib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
 } // extern C
 
 #else
@@ -117,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/08/02 18:48:23  ssikorsk
+ * Added declaration of NCBI_EntryPoint_xdbapi_ftds64_dblib.
+ *
  * Revision 1.2  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
