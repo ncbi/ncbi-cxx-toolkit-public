@@ -416,7 +416,8 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 	CRef<CPssmWithParameters> pssmPara(new CPssmWithParameters);
 	CPssm& pssm = pssmPara->SetPssm();
 	pssm.SetNumColumns(consensus.size());
-	pssm.SetNumRows(26);
+	int numRows = ColumnResidueProfile::m_residues.size();
+	pssm.SetNumRows(numRows);
 	list< double >* freqs = 0;
 	if (m_config.requestFrequencyRatios)
 	{
@@ -426,7 +427,7 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 	for (int col = 0; col < consensus.size(); col++)
 	{
 		char c1 = consensus.at(col);
-		for (char row = 0; row < 26; row++)
+		for (char row = 0; row < numRows; row++)
 		{
 			char c2 =  ColumnResidueProfile::getEaaCode(row);
 			int score = m_config.scalingFactor * sm.GetScore(c1, c2);
@@ -553,6 +554,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2006/08/02 14:03:10  cliu
+ * 28 alphabet
+ *
  * Revision 1.17  2006/07/12 18:07:32  cliu
  * fix a bug with making default PSSM with consensus-mastered CD
  *

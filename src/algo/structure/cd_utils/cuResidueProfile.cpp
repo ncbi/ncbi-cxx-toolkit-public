@@ -31,13 +31,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 // define ColumnResidueProfile
-const string ColumnResidueProfile::m_residues = "-ABCDEFGHIKLMNPQRSTVWXYZU*"; //ncbieaa
+const string ColumnResidueProfile::m_residues = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ"; //ncbieaa
 
 unsigned char ColumnResidueProfile::getNcbiStdCode(char eaa)
 {
 	unsigned char  ret = m_residues.find(eaa);
-	assert(ret < m_residues.size() && ret >= 0);
-	return ret;
+	if(ret < m_residues.size() && ret >= 0)
+		return ret;
+	else
+		return m_residues.find('X');
 }
 
 ColumnResidueProfile::ColumnResidueProfile()
@@ -956,6 +958,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/08/02 14:03:34  cliu
+ * 28 alphabet
+ *
  * Revision 1.9  2006/06/08 16:28:56  cliu
  * remove a debug line.
  *
