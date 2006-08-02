@@ -60,6 +60,46 @@ CTL_Cmd::~CTL_Cmd(void)
 }
 
 
+CS_RETCODE CTL_Cmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        m_HasFailed = true;
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    }
+
+    return rc;
+}
+
+
+CS_RETCODE CTL_Cmd::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        m_HasFailed = true;
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    case CS_CANCELED:
+        DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
+    case CS_PENDING:
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
+    }
+
+    return rc;
+}
+
+
 void CTL_Cmd::DropSybaseCmd(void)
 {
 #if 0
@@ -92,20 +132,9 @@ CTL_Cmd::ProcessResults(void)
     for (;;) {
         CS_INT res_type;
 
-        switch ( Check(ct_results(x_GetSybaseCmd(), &res_type)) ) {
-        case CS_SUCCEED:
-            break;
-        case CS_END_RESULTS:
+        if (CheckSFBCP(ct_results(x_GetSybaseCmd(), &res_type),
+                       "ct_result failed", 122045) == CS_END_RESULTS) {
             return true;
-        case CS_FAIL:
-            m_HasFailed = true;
-            DATABASE_DRIVER_ERROR( "ct_result failed", 122045 );
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "your command has been canceled", 122046 );
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 122047 );
-        default:
-            DATABASE_DRIVER_ERROR( "your request is pending", 122048 );
         }
 
         if (ProcessResultInternal(res_type)) {
@@ -146,8 +175,10 @@ CTL_Cmd::Cancel(void)
             return true;
         case CS_FAIL:
             DATABASE_DRIVER_ERROR( "ct_cancel failed", 120008 );
+#ifdef CS_BUSY
         case CS_BUSY:
             DATABASE_DRIVER_ERROR( "connection has another request pending", 120009 );
+#endif
         default:
             return false;
         }
@@ -410,8 +441,10 @@ CDB_Result* CTL_Cmd::MakeResult(void)
         case CS_CANCELED:
             m_WasSent = false;
             DATABASE_DRIVER_ERROR( "your command has been canceled", 120011 );
+#ifdef CS_BUSY
         case CS_BUSY:
             DATABASE_DRIVER_ERROR( "connection has another request pending", 120014 );
+#endif
         default:
             DATABASE_DRIVER_ERROR( "your request is pending", 120015 );
         }
@@ -472,17 +505,12 @@ bool CTL_LangCmd::Send()
     Cancel();
 
     m_HasFailed = false;
-    switch ( Check(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
+
+    CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
                         const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
-                        CS_END)) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "ct_command failed", 120001 );
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 120002 );
-    }
+                        CS_END),
+             "ct_command failed", 120001);
+
 
     m_HasFailed = !x_AssignParams();
     CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 120003 );
@@ -500,8 +528,10 @@ bool CTL_LangCmd::Send()
         DATABASE_DRIVER_ERROR( "ct_send failed", 120005 );
     case CS_CANCELED:
         DATABASE_DRIVER_ERROR( "command was canceled", 120006 );
+#ifdef CS_BUSY
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "connection has another request pending", 120007 );
+#endif
     case CS_PENDING:
     default:
         m_WasSent = true;
@@ -636,6 +666,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/08/02 15:15:22  ssikorsk
+ * Implemented methods CheckSFB and CheckSFBCP;
+ * Revamp code to use CheckSFB and CheckSFBCP;
+ * Revamp code to compile with FreeTDS ctlib implementation;
+ *
  * Revision 1.22  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
