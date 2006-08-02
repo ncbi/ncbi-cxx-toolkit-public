@@ -172,12 +172,7 @@ s_SeqAlignToBlastSeqLoc(const CSeq_align_set& alignment,
             right = starts.front() + lengths.front() - 1;
         }
 
-        // Shift the coordinates so they correspond to the full sequence.
-        left += query_start;
-        right += query_start;
-        
         BlastSeqLocNew(locs, left, right);
-
     }
 }
 
@@ -414,6 +409,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.32  2006/08/02 23:37:32  camacho
+ *  Remove unneeded shifting when processing Seq-align results
+ *
  *  Revision 1.31  2006/08/02 16:12:46  camacho
  *  Correct handling of no repeat filtering results
  *
