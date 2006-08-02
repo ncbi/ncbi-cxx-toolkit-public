@@ -75,24 +75,29 @@ BEGIN_SCOPE(blast)
 /** Convert a list of mask locations to a CSeq_loc object.
  * @param query Query sequence location [in]
  * @param loc_list List of mask locations [in]
- * @return List of mask locations in a CSeq_loc form.
+ * @return List of mask locations in a CSeq_loc form or NULL if loc_list is
+ * NULL
  */
 static CSeq_loc* 
 s_BlastSeqLoc2CSeqloc(const CSeq_loc & query,
                       CScope         * scope,
                       BlastSeqLoc    * loc_list)
 {
-   CSeq_loc* seqloc = new CSeq_loc();
-   BlastSeqLoc* loc;
+    if ( !loc_list ) {
+        return NULL;
+    }
 
-   seqloc->SetNull();
-   for (loc = loc_list; loc; loc = loc->next) {
-      seqloc->SetPacked_int().AddInterval(
-          sequence::GetId(query, scope),
-          loc->ssr->left, loc->ssr->right);
-   }
-   
-   return seqloc;
+    CSeq_loc* seqloc = new CSeq_loc();
+    BlastSeqLoc* loc;
+
+    seqloc->SetNull();
+    for (loc = loc_list; loc; loc = loc->next) {
+       seqloc->SetPacked_int().AddInterval(
+           sequence::GetId(query, scope),
+           loc->ssr->left, loc->ssr->right);
+    }
+    
+    return seqloc;
 }
 
 /** Convert a list of mask locations to a CSeq_loc object.
@@ -409,6 +414,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.31  2006/08/02 16:12:46  camacho
+ *  Correct handling of no repeat filtering results
+ *
  *  Revision 1.30  2006/07/31 13:20:39  camacho
  *  Deprecate CDbBlast
  *

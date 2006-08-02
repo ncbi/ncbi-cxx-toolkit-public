@@ -608,7 +608,10 @@ TMaskedQueryRegions
 PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in,
                                  EBlastProgramType            prog)
 {
-    if (sloc_in.Empty()) {
+    if (sloc_in.Empty() || 
+        sloc_in->Which() == CSeq_loc::e_not_set ||
+        sloc_in->IsEmpty() || 
+        sloc_in->IsNull()) {
         return TMaskedQueryRegions();
     }
     
@@ -711,6 +714,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2006/08/02 16:12:46  camacho
+* Correct handling of no repeat filtering results
+*
 * Revision 1.73  2006/07/12 15:02:40  bealer
 * - Produce the filtered GI list for both nucleotide and protein.
 *
