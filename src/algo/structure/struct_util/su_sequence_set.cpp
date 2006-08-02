@@ -173,7 +173,7 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
 
 static void StringFromStdaa(const vector < char >& vec, string *str)
 {
-    static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+    static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ";
 
     str->resize(vec.size());
     for (unsigned int i=0; i<vec.size(); ++i)
@@ -307,6 +307,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/08/02 15:59:58  thiessen
+* adjust for 28-character ncbistdaa
+*
 * Revision 1.6  2005/10/24 23:24:24  thiessen
 * switch to C++ PSSM generation
 *

@@ -51,7 +51,7 @@ public:
     char *name;       /* Name of Matrix (i.e., BLOSUM62). */
     /* Position-specific BLAST rows and columns are different, otherwise they are the alphabet length. */
     int rows,       /* query length + 1 for PSSM. */
-        columns;    /* alphabet size in all cases (26). */
+        columns;    /* alphabet size in all cases (28). */
     int **matrix;
 //    double **posFreqs;
     double karlinK;
@@ -77,6 +77,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/08/02 16:00:51  thiessen
+* adjust for 28-character ncbistdaa
+*
 * Revision 1.1  2005/10/24 23:26:59  thiessen
 * switch to C++ PSSM generation
 *

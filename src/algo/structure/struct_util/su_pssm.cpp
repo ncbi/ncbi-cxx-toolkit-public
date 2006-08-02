@@ -110,6 +110,8 @@ int GetPSSMScoreOfCharWithAverageOfBZ(const BLAST_Matrix *matrix, unsigned int p
     return score;
 }
 
+static const string NCBIStdaaResidues("-ABCDEFGHIKLMNPQRSTVWXYZU*OJ");
+
 // gives NCBIStdaa residue number for a character (or value for 'X' if char not found)
 unsigned char LookupNCBIStdaaNumberFromCharacter(char r)
 {
@@ -117,7 +119,6 @@ unsigned char LookupNCBIStdaaNumberFromCharacter(char r)
     static Char2UChar charMap;
 
     if (charMap.size() == 0) {
-        const string NCBIStdaaResidues("-ABCDEFGHIKLMNPQRSTVWXYZU*");
         for (unsigned int i=0; i<NCBIStdaaResidues.size(); ++i)
             charMap[NCBIStdaaResidues[i]] = (unsigned char) i;
     }
@@ -131,17 +132,16 @@ unsigned char LookupNCBIStdaaNumberFromCharacter(char r)
 
 char LookupCharacterFromNCBIStdaaNumber(unsigned char n)
 {
-    static const string NCBIStdaaResidues("-ABCDEFGHIKLMNPQRSTVWXYZU*");
-    if (n <= 25)
+    if (n < 28)
         return NCBIStdaaResidues[n];
-    ERROR_MESSAGE("LookupCharacterFromNCBIStdaaNumber() - valid values are 0 - 25");
+    ERROR_MESSAGE("LookupCharacterFromNCBIStdaaNumber() - valid values are 0 - 27");
     return '?';
 }
 
-static const unsigned char gap = LookupNCBIStdaaNumberFromCharacter('-');
-
 static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
 {
+    const unsigned char gap = LookupNCBIStdaaNumberFromCharacter('-');
+
     if (data->dimensions->query_length != bma->GetMaster()->Length() || data->dimensions->num_seqs != bma->NRows() - 1)
         PTHROW("FillInAlignmentData() - data array size mismatch");
 
@@ -265,12 +265,12 @@ double GetStandardProbability(char ch)
     static CharDoubleMap standardProbabilities;
 
     if (standardProbabilities.size() == 0) {  // initialize static stuff
-        if (BLASTAA_SIZE != 26) {
-            ERROR_MESSAGE("GetStandardProbability() - confused by BLASTAA_SIZE != 26");
+        if (BLASTAA_SIZE != 28) {
+            ERROR_MESSAGE("GetStandardProbability() - confused by BLASTAA_SIZE != 28");
             return 0.0;
         }
         double *probs = BLAST_GetStandardAaProbabilities();
-        for (unsigned int i=0; i<26; ++i) {
+        for (unsigned int i=0; i<28; ++i) {
             standardProbabilities[LookupCharacterFromNCBIStdaaNumber(i)] = probs[i];
 //            TRACE_MESSAGE("standard probability " << LookupCharacterFromNCBIStdaaNumber(i) << " : " << probs[i]);
         }
@@ -286,6 +286,7 @@ double GetStandardProbability(char ch)
 
 static double CalculateInformationContent(const PSIMsa *data, bool ignoreMaster)
 {
+    const unsigned char gap = LookupNCBIStdaaNumberFromCharacter('-');
     double infoContent = 0.0;
 
     typedef map < unsigned char, unsigned int > ColumnProfile;
@@ -435,7 +436,7 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
     if (!pssm.GetPssm().IsSetFinalData())
         PTHROW("ConvertPSSMToBLASTMatrix() - pssm must have finalData");
     unsigned int nScores = pssm.GetPssm().GetNumRows() * pssm.GetPssm().GetNumColumns();
-    if (pssm.GetPssm().GetNumRows() != 26 || pssm.GetPssm().GetFinalData().GetScores().size() != nScores)
+    if (pssm.GetPssm().GetNumRows() != 28 || pssm.GetPssm().GetFinalData().GetScores().size() != nScores)
         PTHROW("ConvertPSSMToBLASTMatrix() - bad matrix size");
 
     // rows and columns are reversed in pssm vs BLAST_Matrix
@@ -550,6 +551,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/08/02 15:59:58  thiessen
+* adjust for 28-character ncbistdaa
+*
 * Revision 1.2  2005/10/24 23:39:13  thiessen
 * GCC warning fixes
 *
