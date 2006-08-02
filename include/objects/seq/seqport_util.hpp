@@ -335,23 +335,9 @@ public:
 private:
     
     // we maintain a singleton internally
-    // these variables and functions control access to the singleton
-
-    static auto_ptr<CSeqportUtil_implementation> sm_Implementation;
-
-    static void                         x_InitImplementation(void);
+    // the singleton can be retrieved by calling x_GetImplementation()
     static CSeqportUtil_implementation& x_GetImplementation (void);
 };
-
-
-inline
-CSeqportUtil_implementation& CSeqportUtil::x_GetImplementation(void)
-{
-    if ( !sm_Implementation.get() ) {
-        x_InitImplementation();
-    }
-    return *sm_Implementation;
-}
 
 
 END_objects_SCOPE
@@ -362,6 +348,9 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2006/08/02 16:50:09  vasilche
+ * MT-Safe managing of the singleton.
+ *
  * Revision 1.11  2006/05/10 18:03:16  dondosha
  * Added function ConvertWithBlastAmbig to convert Seq-data to ncbi2na, plus a
  * vector of ambiguities in BLAST database format.

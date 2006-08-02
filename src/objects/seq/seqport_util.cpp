@@ -30,7 +30,6 @@
  */  
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbimtx.hpp>
 #include <objects/seq/seqport_util.hpp>
 
 #include <serial/serial.hpp>
@@ -55,6 +54,7 @@
 #include <util/sequtil/sequtil.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <algorithm>
 #include <string.h>
@@ -899,15 +899,11 @@ private:
 };
 
 
-auto_ptr<CSeqportUtil_implementation> CSeqportUtil::sm_Implementation;
+static CSafeStaticPtr<CSeqportUtil_implementation> sx_Implementation;
 
-DEFINE_STATIC_FAST_MUTEX(init_implementation_mutex); /* put back inside x_InitImplementation after Mac CodeWarrior 9.0 comes out */
-void CSeqportUtil::x_InitImplementation(void)
+CSeqportUtil_implementation& CSeqportUtil::x_GetImplementation(void)
 {
-    CFastMutexGuard   LOCK(init_implementation_mutex);
-    if ( !sm_Implementation.get() ) {
-        sm_Implementation.reset(new CSeqportUtil_implementation());
-    }
+    return *sx_Implementation;
 }
 
 
@@ -6757,6 +6753,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2006/08/02 16:50:09  vasilche
+ * MT-Safe managing of the singleton.
+ *
  * Revision 6.28  2006/06/27 18:13:53  ucko
  * Restore the previous version of ncbistdaa (sans J and O) per the BLAST
  * group's request.
