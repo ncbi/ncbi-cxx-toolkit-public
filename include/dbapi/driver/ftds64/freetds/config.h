@@ -16,12 +16,12 @@
 
 #include <ncbiconf.h>
 
-#include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h> 
+#include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
 
 #ifdef _DEBUG
 #define DEBUG 1
-/* Should we leave the extra checks off? */ 
-#define ENABLE_EXTRA_CHECKS 1 
+/* Should we leave the extra checks off? */
+#define ENABLE_EXTRA_CHECKS 1
 #endif
 
 #if defined(HAVE_GETHOSTBYADDR_R)
@@ -76,8 +76,8 @@
 #  define HAVE_ICONV 1
 #endif
 
-#if SIZEOF_LONG == 8  ||  SIZEOF_LONG_LONG == 8  ||  SIZEOF___INT64 == 8 
-#  define HAVE_INT64 1 
+#if SIZEOF_LONG == 8  ||  SIZEOF_LONG_LONG == 8  ||  SIZEOF___INT64 == 8
+#  define HAVE_INT64 1
 #endif
 
 #ifndef HAVE_SOCKLEN_T
@@ -102,6 +102,11 @@ typedef int socklen_t;
 
 #ifdef NCBI_SQLCOLATTRIBUTE_SQLLEN
 #  define TDS_SQLCOLATTRIBUTE_SQLLEN 1
+#endif
+
+#ifndef HAVE_SQLGETPRIVATEPROFILESTRING
+// unixODBC has its own SQLGetPrivateProfileString.
+#  define HAVE_SQLGETPRIVATEPROFILESTRING 0
 #endif
 
 #endif  /* DBAPI_DRIVER_FTDS64_FREETDS___CONFIG__H */
