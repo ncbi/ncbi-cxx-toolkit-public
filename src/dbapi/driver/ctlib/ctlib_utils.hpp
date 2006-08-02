@@ -50,6 +50,12 @@ NCBI_EntryPoint_xdbapi_ctlib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
+void
+NCBI_EntryPoint_xdbapi_ftds64_ctlib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
 } // extern C
 
 
@@ -67,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/08/02 15:13:14  ssikorsk
+ * + NCBI_EntryPoint_xdbapi_ftds64_ctlib
+ *
  * Revision 1.2  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
