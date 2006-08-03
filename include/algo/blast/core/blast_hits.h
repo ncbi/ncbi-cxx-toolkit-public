@@ -719,6 +719,18 @@ Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results,
 /* Forward declaration */
 struct BlastHSPStream;
 
+/** Move all of the hits within an HSPStream into a BlastHSPResults
+ * structure.
+ * @param hsp_stream The HSPStream [in][out]
+ * @param num_queries Number of queries in the search [in]
+ * @param hit_options Hit saving options, used to determine
+ *                      hit list sizes [in]
+ * @param ext_options Extension options, used to determine
+ *                      hit list sizes [in]
+ * @param scoring_options Scoring options, used to determine
+ *                      hit list sizes [in]
+ * @return The generated collection of HSP results
+ */
 BlastHSPResults*
 Blast_HSPResultsFromHSPStream(struct BlastHSPStream* hsp_stream, 
                               size_t num_queries, 
@@ -726,6 +738,25 @@ Blast_HSPResultsFromHSPStream(struct BlastHSPStream* hsp_stream,
                               const BlastExtensionOptions* ext_options, 
                               const BlastScoringOptions* scoring_options);
 
+/** As Blast_HSPResultsFromHSPStream, except the total number of
+ * HSPs kept for each query does not exceed an explicit limit.
+ * The database sequences with the smallest number of hits are
+ * saved first, and hits are removed from query i if the average
+ * number of hits saved threatens to exceed (max_num_hsps / (number
+ * of DB sequences with hits to query i))
+ * @param hsp_stream The HSPStream [in][out]
+ * @param num_queries Number of queries in the search [in]
+ * @param hit_options Hit saving options, used to determine
+ *                      hit list sizes [in]
+ * @param ext_options Extension options, used to determine
+ *                      hit list sizes [in]
+ * @param scoring_options Scoring options, used to determine
+ *                      hit list sizes [in]
+ * @param max_num_hsps The limit on the number of HSPs to be
+ *                     kept for each query sequence [in]
+ * @param removed_hsps Set to TRUE if any hits were removed [out]
+ * @return The generated collection of HSP results
+ */
 BlastHSPResults*
 Blast_HSPResultsFromHSPStreamWithLimit(struct BlastHSPStream* hsp_stream, 
                                    Uint4 num_queries, 

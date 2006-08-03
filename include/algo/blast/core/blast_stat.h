@@ -55,6 +55,7 @@ extern "C" {
 
 #define BLASTMAT_DIR "/usr/ncbi/blast/matrix" /**< Default location for blast databases. */
 
+/** callback to resolve the path to blast score matrices */
 typedef char* (*GET_MATRIX_PATH) (const char*, Boolean);
 
 /**
