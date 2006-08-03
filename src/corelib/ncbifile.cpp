@@ -2489,7 +2489,7 @@ CDir::~CDir(void)
 }
 
 
-bool CDirEntry::MatchesMask(const char* name,
+bool CDirEntry::MatchesMask(const string& name,
                             const vector<string>& masks,
                             NStr::ECase use_case)
 {
@@ -2498,7 +2498,7 @@ bool CDirEntry::MatchesMask(const char* name,
     }
     ITERATE(vector<string>, itm, masks) {
         const string& mask = *itm;
-        if ( MatchesMask(name, mask.c_str(), use_case) ) {
+        if ( MatchesMask(name, mask, use_case) ) {
             return true;
         }
     }
@@ -2537,14 +2537,17 @@ void s_SetFindFileError(void)
 void s_AddEntry(CDir::TEntries* contents, const string& base_path,
                 const WIN32_FIND_DATA& entry, CDir::TGetEntriesFlags flags)
 {
-    const string path = base_path + entry.cFileName;
+    const string name = (flags & CDir::fIgnorePath) ?
+                         entry.cFileName :
+                         base_path + entry.cFileName;
+        
     if (flags & CDir::fCreateObjects) {
         CDirEntry::EType type = (entry.dwFileAttributes &
                                  FILE_ATTRIBUTE_DIRECTORY) 
                                  ? CDirEntry::eDir : CDirEntry::eFile;
-        contents->push_back(CDirEntry::CreateObject(type, path));
+        contents->push_back(CDirEntry::CreateObject(type, name));
     } else {
-        contents->push_back(new CDirEntry(path));
+        contents->push_back(new CDirEntry(name));
     }
 }
 
@@ -2558,7 +2561,10 @@ void s_AddEntry(CDir::TEntries* contents, const string& base_path,
 void s_AddEntry(CDir::TEntries* contents, const string& base_path,
                 const struct dirent* entry, CDir::TGetEntriesFlags flags)
 {
-    const string path = base_path + entry->d_name;
+    const string name = (flags & CDir::fIgnorePath) ?
+                         entry->d_name :
+                         base_path + entry->d_name;
+
     if (flags & CDir::fCreateObjects) {
         CDirEntry::EType type = CDir::eUnknown;
 #  if defined(_DIRENT_HAVE_D_TYPE)
@@ -2569,11 +2575,16 @@ void s_AddEntry(CDir::TEntries* contents, const string& base_path,
         }
 #  endif
         if (type == CDir::eUnknown) {
-            type = CDirEntry(path).GetType();                                
+            if (flags & CDir::fIgnorePath) {
+                const string path = base_path + entry->d_name;
+                type = CDirEntry(path).GetType();
+            } else {
+                type = CDirEntry(name).GetType();
+            }
         }
-        contents->push_back(CDirEntry::CreateObject(type, path));
+        contents->push_back(CDirEntry::CreateObject(type, name));
     } else {
-        contents->push_back(new CDirEntry(path));
+        contents->push_back(new CDirEntry(name));
     }
 }
 
@@ -2636,8 +2647,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
                 ITERATE(vector<string>, it, masks) {
                     const string& mask = *it;
                     if ( mask.empty()  ||
-                        MatchesMask(entry.cFileName, mask.c_str(),
-                                    use_case) ) {
+                        MatchesMask(entry.cFileName, mask, use_case) ) {
                         s_AddEntry(contents, base_path, entry, flags);
                         break;
                     }                
@@ -2659,7 +2669,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
                 if ( mask.empty()  ||
-                    MatchesMask(entry->d_name, mask.c_str(), use_case) ) {
+                    MatchesMask(entry->d_name, mask, use_case) ) {
                     s_AddEntry(contents, base_path, entry, flags);
                     break;
                 }
@@ -4085,6 +4095,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.147  2006/08/03 13:07:59  ivanov
+ * CDirEntry::MatchesMask() -- change first parameter type from
+ * 'const char*' to 'const string&'.
+ * CDir::GetEntries() -- added fIgnorePath flag.
+ *
  * Revision 1.146  2006/07/27 18:59:04  ivanov
  * Moved implementation of vector version CDirEntry::MatchesMask()
  * from ncbifile.hpp. Return true if vector of masks is empty.
