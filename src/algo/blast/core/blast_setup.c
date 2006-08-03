@@ -533,6 +533,13 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     return status;
 }
 
+/** Return the search space appropriate for a given context from
+ * a list of tabulated search spaces
+ * @param eff_len_options Container for search spaces [in]
+ * @param context_index Identifier for the search space to return [in]
+ * @param blast_message List of messages, to receive possible warnings [in][out]
+ * @return The selected search space
+ */
 static Int8 s_GetEffectiveSearchSpaceForContext(
                         const BlastEffectiveLengthsOptions* eff_len_options,
                         int context_index, Blast_Message **blast_message)
