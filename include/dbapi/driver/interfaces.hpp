@@ -148,12 +148,12 @@ public:
     /// Send command to the server
     virtual bool Send(void) = 0;
     /// Implementation-specific.
-    NCBI_DEPRECATED virtual bool WasSent(void) const = 0;
+    virtual bool WasSent(void) const = 0;
 
     /// Cancel the command execution
     virtual bool Cancel(void) = 0;
     /// Implementation-specific.
-    NCBI_DEPRECATED virtual bool WasCanceled(void) const = 0;
+    virtual bool WasCanceled(void) const = 0;
 
     /// Get result set
     virtual CDB_Result* Result(void) = 0;
@@ -223,7 +223,7 @@ protected:
 
     /// Set the "recompile before execute" flag for the stored proc
     /// Implementation-specific.
-    NCBI_DEPRECATED virtual void SetRecompile(bool recompile = true) = 0;
+    virtual void SetRecompile(bool recompile = true) = 0;
 };
 
 
@@ -659,6 +659,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/08/03 18:42:10  ssikorsk
+ * Removed deprecation with WasSent(), WasCanceled(), SetRecompile().
+ * These methods are still deprecated in CDB_... classes.
+ *
  * Revision 1.52  2006/07/18 15:39:32  ssikorsk
  * Deprecated methods WasSent() and WasCanceled() of class I_BaseCmd.
  * These methods belong to implementation, but interface.
