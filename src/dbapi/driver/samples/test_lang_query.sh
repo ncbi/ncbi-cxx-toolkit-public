@@ -19,6 +19,7 @@ n_ok=0
 n_err=0
 sum_list=""
 driver_status=0
+HOST_NAME=`(hostname || uname -n) 2>/dev/null | sed 1q`
 
 # Run one test
 RunSimpleTest()
@@ -186,7 +187,7 @@ EOF
             RunSimpleTest "dbapi_conn_policy"
 
             # Do not run dbapi_bcp and dbapi_testspeed on andy
-            if test $driver = "ctlib" -a hostname = "andy" ; then
+            if test $driver = "ctlib" -a $HOST_NAME = "andy" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
             else
@@ -218,7 +219,7 @@ EOF
             fi
 
             # Do not run dbapi_cursor on andy
-            if test $driver = "ctlib" -a hostname = "andy" ; then
+            if test $driver = "ctlib" -a $HOST_NAME = "andy" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
             else
                 # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
