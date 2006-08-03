@@ -1470,10 +1470,12 @@ void CCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa)
 bool CCleanup_imp::x_ChangeNoteQualToComment(CSeq_feat& feat)
 {
     bool rval = false;
-    if (!feat.CanGetQual()) {
+    if (!feat.CanGetQual() || feat.GetQual().empty()) {
         return rval;
     }
-    NON_CONST_ITERATE (CSeq_feat::TQual, it, feat.SetQual()) {
+    
+    CSeq_feat::TQual::iterator it = feat.SetQual().begin();
+    while (it != feat.SetQual().end()) {
         CGb_qual& gb_qual = **it;
                 
         if (gb_qual.CanGetQual()
@@ -1689,7 +1691,7 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
             // find the best overlapping coding region that isn't pseudo and doesn't have a pseudogene
             CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(feat_ci->GetLocation(),
                                                               CSeqFeatData::eSubtype_cdregion,
-                                                              sequence::eOverlap_Subset,
+                                                              sequence::eOverlap_CheckIntRev,
                                                               *m_Scope);
             if (!cds.IsNull() && cds->CanGetProduct()) {
                 // get location for feature on protein sequence                                                                  
@@ -1952,6 +1954,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2006/08/03 14:25:58  bollin
+ * bug fixes for converting import features to coding regions and protein features
+ *
  * Revision 1.26  2006/08/03 12:05:31  bollin
  * added method to ExtendedCleanup for converting imp_feat coding regions to
  * real coding regions and for converting imp_feat protein features annotated
