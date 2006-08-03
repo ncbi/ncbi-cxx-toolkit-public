@@ -591,57 +591,6 @@ typedef CStaticArrayMap <const char*, const COrgMod::ESubtype, PNocase_CStr> TOr
 static const TOrgModMap sm_OrgModKeys (orgmod_key_to_subtype, sizeof (orgmod_key_to_subtype));
 
 
-typedef pair <const char *, const CSeqFeatData::EBond> TBondKey;
-
-static const TBondKey bond_key_to_subtype [] = {
-    TBondKey ( "disulfide",         CSeqFeatData::eBond_disulfide  ),
-    TBondKey ( "other",             CSeqFeatData::eBond_other      ),
-    TBondKey ( "thioether",         CSeqFeatData::eBond_thioether  ),
-    TBondKey ( "thiolester",        CSeqFeatData::eBond_thiolester ),
-    TBondKey ( "xlink",             CSeqFeatData::eBond_xlink      )
-};
-
-typedef CStaticArrayMap <const char*, const CSeqFeatData::EBond, PNocase_CStr> TBondMap;
-static const TBondMap sm_BondKeys (bond_key_to_subtype, sizeof (bond_key_to_subtype));
-
-
-typedef pair <const char *, const CSeqFeatData::ESite> TSiteKey;
-
-static const TSiteKey site_key_to_subtype [] = {
-    TSiteKey ( "acetylation",                 CSeqFeatData::eSite_acetylation                 ),
-    TSiteKey ( "active",                      CSeqFeatData::eSite_active                      ),
-    TSiteKey ( "amidation",                   CSeqFeatData::eSite_amidation                   ),
-    TSiteKey ( "binding",                     CSeqFeatData::eSite_binding                     ),
-    TSiteKey ( "blocked",                     CSeqFeatData::eSite_blocked                     ),
-    TSiteKey ( "cleavage",                    CSeqFeatData::eSite_cleavage                    ),
-    TSiteKey ( "DNA binding",                 CSeqFeatData::eSite_dna_binding                 ),
-    TSiteKey ( "gamma carboxyglutamic acid",  CSeqFeatData::eSite_gamma_carboxyglutamic_acid  ),
-    TSiteKey ( "glycosylation",               CSeqFeatData::eSite_glycosylation               ),
-    TSiteKey ( "hydroxylation",               CSeqFeatData::eSite_hydroxylation               ),
-    TSiteKey ( "inhibit",                     CSeqFeatData::eSite_inhibit                     ),
-    TSiteKey ( "lipid binding",               CSeqFeatData::eSite_lipid_binding               ),
-    TSiteKey ( "metal binding",               CSeqFeatData::eSite_metal_binding               ),
-    TSiteKey ( "methylation",                 CSeqFeatData::eSite_methylation                 ),
-    TSiteKey ( "modified",                    CSeqFeatData::eSite_modified                    ),
-    TSiteKey ( "mutagenized",                 CSeqFeatData::eSite_mutagenized                 ),
-    TSiteKey ( "myristoylation",              CSeqFeatData::eSite_myristoylation              ),
-    TSiteKey ( "nitrosylation",               CSeqFeatData::eSite_nitrosylation               ),
-    TSiteKey ( "np binding",                  CSeqFeatData::eSite_np_binding                  ),
-    TSiteKey ( "other",                       CSeqFeatData::eSite_other                       ),
-    TSiteKey ( "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       ),
-    TSiteKey ( "phosphorylation",             CSeqFeatData::eSite_phosphorylation             ),
-    TSiteKey ( "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid ),
-    TSiteKey ( "signal peptide",              CSeqFeatData::eSite_signal_peptide              ),
-    TSiteKey ( "sulfatation",                 CSeqFeatData::eSite_sulfatation                 ),
-    TSiteKey ( "transit peptide",             CSeqFeatData::eSite_transit_peptide             ),
-    TSiteKey ( "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        ),
-    TSiteKey ( "unclassified",                CSeqFeatData::eSite_other                       ),
-};
-
-typedef CStaticArrayMap <const char*, const CSeqFeatData::ESite, PNocase_CStr> TSiteMap;
-static const TSiteMap sm_SiteKeys (site_key_to_subtype, sizeof (site_key_to_subtype));
-
-
 typedef pair <const char *, const int> TTrnaKey;
 
 static const TTrnaKey trna_key_to_subtype [] = {
@@ -1264,9 +1213,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     break;
                 case CSeqFeatData::e_Bond:
                     if (qtype == eQual_bond_type) {
-                        TBondMap::const_iterator b_iter = sm_BondKeys.find (val.c_str ());
-                        if (b_iter != sm_BondKeys.end ()) {
-                            CSeqFeatData::EBond btyp = b_iter->second;
+                        CSeqFeatData::EBond btyp = CSeqFeatData::eBond_other;
+                        if (CSeqFeatData::GetBondList()->IsBondName(val.c_str(), btyp)) {
                             sfdata.SetBond (btyp);
                             return true;
                         }
@@ -1274,9 +1222,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     break;
                 case CSeqFeatData::e_Site:
                     if (qtype == eQual_site_type) {
-                        TSiteMap::const_iterator s_iter = sm_SiteKeys.find (val.c_str ());
-                        if (s_iter != sm_SiteKeys.end ()) {
-                            CSeqFeatData::ESite styp = s_iter->second;
+                        CSeqFeatData::ESite styp = CSeqFeatData::eSite_other;
+                        if (CSeqFeatData::GetSiteList()->IsSiteName(val.c_str(), styp)) {
                             sfdata.SetSite (styp);
                             return true;
                         }
