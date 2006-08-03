@@ -127,7 +127,7 @@ void CDataType::PrintDTD(CNcbiOstream& out) const
         return;
     }
     out << "\n\n";
-    m_Comments.PrintDTD(out, CComments::eNoEOL);
+    m_Comments.PrintDTD(out, CComments::eOneLine);
     PrintDTDElement(out);
     x_AddSavedName(XmlTagName());
     PrintDTDExtra(out);
@@ -143,7 +143,10 @@ void CDataType::PrintDTD(CNcbiOstream& out,
         return;
     }
     out << "\n";
-    m_Comments.PrintDTD(out, CComments::eNoEOL);
+    if (IsReference() && extra.Empty()) {
+        Resolve()->m_Comments.PrintDTD(out, CComments::eOneLine);
+    }
+    m_Comments.PrintDTD(out, CComments::eOneLine);
     bool oneLineComment = extra.OneLine();
     if ( !oneLineComment )
         extra.PrintDTD(out, CComments::eNoEOL);
@@ -707,6 +710,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.89  2006/08/03 17:21:10  gouriano
+* Preserve comments when parsing schema
+*
 * Revision 1.88  2006/07/24 18:57:39  gouriano
 * Preserve comments when parsing DTD
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2006/08/03 17:21:10  gouriano
+* Preserve comments when parsing schema
+*
 * Revision 1.43  2006/06/27 18:04:43  gouriano
 * When generating schema, use type namespace, not a hardcoded one
 *
@@ -325,8 +328,9 @@ void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
     if ( const CArgValue& px_ns = args["xmlns"] ) {
         nsName = px_ns.AsString();
     }
-    out << "<?xml version=\"1.0\" ?>\n"
-        << "<xs:schema\n"
+    out << "<?xml version=\"1.0\" ?>\n";
+    PrintXMLRefInfo(out);
+    out << "<xs:schema\n"
         << "  xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n";
     if (!nsName.empty()) {
         out << "  xmlns=\"" << nsName << "\"\n"
@@ -334,7 +338,6 @@ void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
     }
     out << "  elementFormDefault=\"qualified\"\n"
         << "  attributeFormDefault=\"unqualified\">\n\n";
-    PrintXMLRefInfo(out);
 }
 
 void CFileModules::EndXMLSchema(CNcbiOstream& out) const

@@ -105,7 +105,7 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
 
     try {
         CopyComments(module->Comments());
-        BuildDocumentTree();
+        BuildDocumentTree(*module);
         EndCommentBlock();
     }
     catch (CException& e) {
@@ -124,7 +124,7 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
     return module;
 }
 
-void DTDParser::BuildDocumentTree(void)
+void DTDParser::BuildDocumentTree(CDataTypeModule& /*module*/)
 {
     bool conditional_ignore = false;
     int conditional_level = 0;
@@ -769,6 +769,9 @@ AutoPtr<CDataType> DTDParser::Type(
     bool fromInside, bool ignoreAttrib)
 {
     AutoPtr<CDataType> type(x_Type(node, occ, fromInside, ignoreAttrib));
+    if (m_SrcType != eDTD && !fromInside) {
+        type->Comments() = node.GetComments();
+    }
     return type;
 }
 
@@ -946,10 +949,14 @@ CDataType* DTDParser::TypesBlock(
             member->SetNotag();
         }
         member->SetNoPrefix();
-        member->Comments() = refNode.GetComments();
+        if (m_SrcType == eDTD || refNode.IsEmbedded()) {
+            member->Comments() = refNode.GetComments();
+        }
         container->AddMember(member);
     }
-    container->Comments() = node.GetComments();
+    if (m_SrcType == eDTD || node.IsEmbedded()) {
+        container->Comments() = node.GetComments();
+    }
     return container.release();
 }
 
@@ -976,7 +983,9 @@ CDataType* DTDParser::CompositeNode(
         member->SetSimpleType();
     }
     container->AddMember(member);
-    container->Comments() = node.GetComments();
+    if (m_SrcType == eDTD || node.IsEmbedded()) {
+        container->Comments() = node.GetComments();
+    }
     return container.release();
 }
 
@@ -1012,7 +1021,9 @@ CDataType* DTDParser::AttribBlock(const DTDElement& node)
         member->Comments() = i->GetComments();
         container->AddMember(member);
     }
-    container->Comments() = node.GetComments();
+     if (m_SrcType == eDTD || node.IsEmbedded()) {
+        container->Comments() = node.GetComments();
+    }
     return container.release();
 }
 
@@ -1272,6 +1283,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.33  2006/08/03 17:21:10  gouriano
+ * Preserve comments when parsing schema
+ *
  * Revision 1.32  2006/07/24 18:57:39  gouriano
  * Preserve comments when parsing DTD
  *

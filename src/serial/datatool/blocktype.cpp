@@ -741,7 +741,6 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
 
 void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent) const
 {
-    GetType()->PrintDTDTypeComments(out, indent);
     m_Comments.PrintDTD(out, CComments::eNoEOL); 
     GetType()->PrintXMLSchema(out, indent);
 }
@@ -793,6 +792,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.69  2006/08/03 17:21:10  gouriano
+* Preserve comments when parsing schema
+*
 * Revision 1.68  2006/07/24 18:57:39  gouriano
 * Preserve comments when parsing DTD
 *

@@ -36,6 +36,7 @@
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/xsdparser.hpp>
 #include <serial/datatool/tokens.hpp>
+#include <serial/datatool/module.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,10 +53,11 @@ XSDParser::~XSDParser(void)
 {
 }
 
-void XSDParser::BuildDocumentTree(void)
+void XSDParser::BuildDocumentTree(CDataTypeModule& module)
 {
     Reset();
     ParseHeader();
+    CopyComments(module.Comments());
 
     TToken tok;
     int emb=0;
@@ -333,6 +335,7 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
             m_MapElement[name].SetNamed();
         }
         m_MapElement[name].SetName(m_Value);
+        m_Comments = &(m_MapElement[name].Comments());
     }
     if (GetAttribute("type")) {
         if (!DefineElementType(m_MapElement[name])) {
@@ -386,6 +389,7 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
     if (tok == K_CLOSING) {
         ParseContent(m_MapElement[name]);
     }
+    m_ExpectLastComment = true;
     if (!ref && !named_type) {
         m_MapElement[name].SetTypeIfUnknown(DTDElement::eEmpty);
     }
@@ -453,7 +457,9 @@ void XSDParser::ParseContent(DTDElement& node)
             }
             break;
         case K_DOCUMENTATION:
+            m_Comments = &(node.Comments());
             ParseDocumentation();
+            m_ExpectLastComment = true;
             break;
         default:
             for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
@@ -484,6 +490,7 @@ void XSDParser::ParseDocumentation(void)
 void XSDParser::ParseContainer(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
+    m_ExpectLastComment = true;
 
     if (GetAttribute("minOccurs")) {
         int m = NStr::StringToInt(m_Value);
@@ -568,7 +575,11 @@ void XSDParser::ParseRestriction(DTDElement& node)
 
 void XSDParser::ParseAttribute(DTDElement& node)
 {
-    DTDAttribute att;
+    DTDAttribute a;
+    node.AddAttribute(a);
+    DTDAttribute& att = node.GetNonconstAttributes().back();
+    m_Comments = &(att.Comments());
+
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("ref")) {
         att.SetName(m_Value);
@@ -594,7 +605,7 @@ void XSDParser::ParseAttribute(DTDElement& node)
     if (tok == K_CLOSING) {
         ParseContent(att);
     }
-    node.AddAttribute(att);
+    m_ExpectLastComment = true;
 }
 
 string XSDParser::ParseAttributeContent()
@@ -607,6 +618,7 @@ string XSDParser::ParseAttributeContent()
     if (GetAttribute("name")) {
         name = m_Value;
         m_MapAttribute[name].SetName(name);
+        m_Comments = &(m_MapAttribute[name].Comments());
     }
     if (GetAttribute("type")) {
         if (!DefineAttributeType(m_MapAttribute[name])) {
@@ -616,6 +628,7 @@ string XSDParser::ParseAttributeContent()
     if (tok == K_CLOSING) {
         ParseContent(m_MapAttribute[name]);
     }
+    m_ExpectLastComment = true;
     return name;
 }
 
@@ -633,7 +646,9 @@ void XSDParser::ParseContent(DTDAttribute& att)
             ParseRestriction(att);
             break;
         case K_DOCUMENTATION:
+            m_Comments = &(att.Comments());
             ParseDocumentation();
+            m_ExpectLastComment = true;
             break;
         default:
             tok = GetRawAttributeSet();
@@ -837,6 +852,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2006/08/03 17:21:10  gouriano
+ * Preserve comments when parsing schema
+ *
  * Revision 1.7  2006/06/27 18:00:57  gouriano
  * Parse attributes as SET
  *

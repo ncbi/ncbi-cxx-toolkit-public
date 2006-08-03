@@ -90,7 +90,6 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
     int indent, bool contents_only) const
 {
     const CDataType* typeElem = GetElementType();
-    typeElem->PrintDTDTypeComments(out,0);
     const CReferenceDataType* typeRef =
         dynamic_cast<const CReferenceDataType*>(typeElem);
     const CStaticDataType* typeStatic =
@@ -459,6 +458,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.45  2006/08/03 17:21:10  gouriano
+* Preserve comments when parsing schema
+*
 * Revision 1.44  2006/07/24 18:57:39  gouriano
 * Preserve comments when parsing DTD
 *

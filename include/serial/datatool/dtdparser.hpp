@@ -76,7 +76,7 @@ public:
 protected:
     AutoPtr<CDataTypeModule> Module(const string& name);
 
-    virtual void BuildDocumentTree(void);
+    virtual void BuildDocumentTree(CDataTypeModule& module);
     void SkipConditionalSection(void);
 
     virtual string GetLocation(void);
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.13  2006/08/03 17:23:02  gouriano
+ * Preserve comments when parsing schema
+ *
  * Revision 1.12  2006/07/24 18:57:13  gouriano
  * Preserve comments when parsing DTD
  *

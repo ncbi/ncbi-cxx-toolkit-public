@@ -171,20 +171,24 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
     }
     bool haveComments = false;
     ITERATE ( TValues, i, m_Values ) {
-        PrintASNNewLine(out, indent) <<
-            "<xs:enumeration value=\"" << i->GetName() << "\"/>";
-        if ( !i->GetComments().Empty() )
+        if ( !i->GetComments().Empty() ) {
             haveComments = true;
+            break;
+        }
     }
     if ( haveComments ) {
         out << "\n<!--\n";
         ITERATE ( TValues, i, m_Values ) {
             if ( !i->GetComments().Empty() ) {
-                i->GetComments().Print(out, "    "+i->GetName()+" - ",
+                i->GetComments().Print(out, "    "+i->GetName()+"\t- ",
                                        "\n        ", "\n");
             }
         }
         out << "-->";
+    }
+    ITERATE ( TValues, i, m_Values ) {
+        PrintASNNewLine(out, indent) <<
+            "<xs:enumeration value=\"" << i->GetName() << "\"/>";
     }
     ITERATE ( list<string>, s, closetag ) {
         PrintASNNewLine(out, --indent) << *s;
@@ -222,32 +226,36 @@ void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 
 void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
+    bool haveComments = false;
+    ITERATE ( TValues, i, m_Values ) {
+        if ( !i->GetComments().Empty() ) {
+            haveComments = true;
+            break;
+        }
+    }
+    if ( haveComments ) {
+        out << "\n\n<!--\n";
+        ITERATE ( TValues, i, m_Values ) {
+            if ( !i->GetComments().Empty() ) {
+                i->GetComments().Print(out, "    "+i->GetName()+"\t- ",
+                                       "\n        ", "\n");
+            }
+        }
+        out << "-->";
+    }
     out <<
         "\n<!ATTLIST "<<XmlTagName()<<" value (\n";
-    bool haveComments = false;
     ITERATE ( TValues, i, m_Values ) {
         if ( i != m_Values.begin() )
             out << " |\n";
         out << "        " << i->GetName();
-        if ( !i->GetComments().Empty() )
-            haveComments = true;
     }
-    out << " ) ";
+    out << "\n        ) ";
     if ( IsInteger() )
         out << "#IMPLIED";
     else
         out << "#REQUIRED";
     out << " >\n";
-    if ( haveComments ) {
-        out << "<!--\n";
-        ITERATE ( TValues, i, m_Values ) {
-            if ( !i->GetComments().Empty() ) {
-                i->GetComments().Print(out, "    "+i->GetName()+" - ",
-                                       "\n        ", "\n");
-            }
-        }
-        out << "-->\n";
-    }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
 
@@ -412,6 +420,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2006/08/03 17:21:10  gouriano
+* Preserve comments when parsing schema
+*
 * Revision 1.36  2006/07/24 18:57:39  gouriano
 * Preserve comments when parsing DTD
 *

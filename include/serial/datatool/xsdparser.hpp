@@ -51,7 +51,7 @@ public:
     virtual ~XSDParser(void);
 
 protected:
-    virtual void BuildDocumentTree(void);
+    virtual void BuildDocumentTree(CDataTypeModule& module);
     void Reset(void);
     TToken GetNextToken(void);
 
@@ -126,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2006/08/03 17:23:02  gouriano
+ * Preserve comments when parsing schema
+ *
  * Revision 1.5  2006/06/27 17:58:24  gouriano
  * Parse attributes as SET
  *
