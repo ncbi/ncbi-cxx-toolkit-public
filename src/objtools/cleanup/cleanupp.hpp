@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objmgr/scope.hpp>
@@ -84,7 +85,7 @@ class COrgName;
 class COrgMod;
 class CSubSource;
 class CMolInfo;
-
+class CCdregion;
 
 /// right now a slightly different cleanup is performed for EMBL/DDBJ and
 /// SwissProt records. All other types are handled as GenBank records.
@@ -280,6 +281,12 @@ private:
     void x_RemoveGeneXref(CRef<CSeq_feat> feat);
     void x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa);
 
+    bool x_ChangeNoteQualToComment(CSeq_feat& feat);
+    CCdregion::EFrame x_FrameFromSeqLoc(const CSeq_loc& loc);
+    bool x_ImpFeatToCdRegion (CSeq_feat& feat);
+    void x_ChangeImpFeatToCDS(CSeq_annot_Handle sa);
+    void x_ChangeImpFeatToProt(CSeq_annot_Handle sa);
+    
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
     
@@ -323,6 +330,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2006/08/03 12:05:31  bollin
+ * added method to ExtendedCleanup for converting imp_feat coding regions to
+ * real coding regions and for converting imp_feat protein features annotated
+ * on the nucleotide sequence to real protein features annotated on the protein
+ * sequence
+ *
  * Revision 1.38  2006/07/26 19:37:04  rsmith
  * add cleanup w/Handles
  *

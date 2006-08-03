@@ -62,6 +62,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 
 #include "cleanupp.hpp"
 
@@ -1466,6 +1467,483 @@ void CCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa)
 }
 
 
+bool CCleanup_imp::x_ChangeNoteQualToComment(CSeq_feat& feat)
+{
+    bool rval = false;
+    if (!feat.CanGetQual()) {
+        return rval;
+    }
+    NON_CONST_ITERATE (CSeq_feat::TQual, it, feat.SetQual()) {
+        CGb_qual& gb_qual = **it;
+                
+        if (gb_qual.CanGetQual()
+            && NStr::EqualNocase(gb_qual.GetQual(), "note")
+            && gb_qual.CanGetVal()) {
+            string note = gb_qual.GetVal();
+            if (!NStr::IsBlank(note)) {
+                string& comment = feat.SetComment();
+                if (NStr::IsBlank(comment)) {
+                    comment = note;
+                } else {
+                    comment += "; ";
+                    comment += note;
+                }
+            }
+            it = feat.SetQual().erase(it);
+            rval = true;
+        } else {
+            ++it;
+        }
+    }
+    
+    if ( feat.GetQual().empty()) {
+        feat.ResetQual();
+        rval = true;
+    }
+    return rval;
+}
+
+// Was GetFrameFromLoc in C Toolkit (api/seqport.c)
+// returns 1, 2, or 3 if it can find the frame,
+// 0 otherwise
+CCdregion::EFrame CCleanup_imp::x_FrameFromSeqLoc(const CSeq_loc& loc)
+{
+    CCdregion::EFrame frame = CCdregion::eFrame_not_set;
+
+    if (!loc.IsPartialStart(eExtreme_Biological)) {
+        frame = CCdregion::eFrame_one;
+    } else if (!loc.IsPartialStop(eExtreme_Biological)) {
+        unsigned int len = sequence::GetLength(loc, m_Scope);
+        unsigned int remainder = len % 3;
+        switch (remainder) {
+            case 0:
+                frame = CCdregion::eFrame_one;
+                break;
+            case 1:
+                frame = CCdregion::eFrame_two;
+                break;
+            case 2:
+                frame = CCdregion::eFrame_three;
+                break;
+            default:
+                break;
+        }
+    }
+    return frame;
+}
+
+
+bool CCleanup_imp::x_ImpFeatToCdRegion (CSeq_feat& feat)
+{
+    
+    if (!feat.CanGetData() || !feat.GetData().IsImp()
+        || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_Imp_CDS) {
+        return false;
+    }
+
+    try {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+        ITERATE (list< CRef< CSeq_id > >, it, bsh.GetCompleteBioseq()->GetId()) {
+            if ((*it)->Which() == CSeq_id::e_Ddbj 
+                || (*it)->Which() == CSeq_id::e_Embl) {
+                return false;
+            }
+        }
+    } catch (...) {
+        return false;
+    }
+
+    feat.ResetData();
+    feat.SetData().SetCdregion();
+    
+    int frame = -1;
+    
+    if (feat.CanGetQual()) {
+        NON_CONST_ITERATE (CSeq_feat::TQual, it, feat.SetQual()) {
+            CGb_qual& gb_qual = **it;
+                
+            if (gb_qual.CanGetQual() && (gb_qual.CanGetVal() || NStr::Equal(gb_qual.GetQual(), "translation"))) {
+                string qual_name = gb_qual.GetQual();
+                if (NStr::Equal(qual_name, "transl_table")) {
+                    unsigned int gc = NStr::StringToUInt(gb_qual.GetVal());
+                    CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
+                    ce->Select(CGenetic_code::C_E::e_Id);
+                    ce->SetId(gc);
+                    feat.SetData().SetCdregion().SetCode().Set().push_back(ce);
+                    it = feat.SetQual().erase(it);
+                } else if (NStr::Equal(qual_name, "translation")) {
+                    it = feat.SetQual().erase(it);
+                } else if (NStr::Equal(qual_name, "transl_except")) {
+                    x_ParseCodeBreak(feat, feat.SetData().SetCdregion(), gb_qual.GetVal());
+                    it = feat.SetQual().erase(it);
+                } else if (NStr::Equal(qual_name, "codon_start")) {
+                    frame = NStr::StringToInt(gb_qual.GetVal());
+                    switch (frame) {
+                        case 1:
+                            feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+                            break;
+                        case 2:
+                            feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+                            break;
+                        case 3:
+                            feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+                            break;
+                        default:
+                            feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_not_set);
+                            break;
+                    }
+                    it = feat.SetQual().erase(it);
+                } else if (NStr::Equal(qual_name, "exception")) {
+                    feat.SetExcept(true);
+                    it = feat.SetQual().erase(it);
+                } else {
+                    ++ it;
+                }            
+            } else {
+                ++it;
+            }
+        }
+    }
+    if (frame == -1) {
+        feat.SetData().SetCdregion().SetFrame(x_FrameFromSeqLoc(feat.GetLocation()));
+    }
+
+    return true;	
+}
+
+
+// Was ChangeImpFeat in C Toolkit
+void CCleanup_imp::x_ChangeImpFeatToCDS(CSeq_annot_Handle sa)
+{
+    if (!sa.IsFtable()) {
+        return;
+    }
+    
+    CFeat_CI feat_ci(sa);
+
+    while (feat_ci) {
+        CRef<CSeq_feat> feat(new CSeq_feat);
+        const CSeq_feat& orig_feat = feat_ci->GetOriginalFeature();
+        feat->Assign(orig_feat);
+        bool changed = false;
+    
+        changed |= x_ChangeNoteQualToComment(*feat);
+        
+        if (feat->CanGetData() && feat->GetData().IsImp()) {
+            CImp_feat& ifp = feat->SetData().SetImp();
+            
+            if (ifp.CanGetLoc()) {
+                unsigned int pos = NStr::Find(ifp.GetLoc(), "replace");
+                if (pos != NCBI_NS_STD::string::npos) {
+                    x_AddReplaceQual(*feat, ifp.GetLoc());
+                    ifp.ResetLoc();
+                    changed = true;
+                }
+            }
+            
+            x_ImpFeatToCdRegion(*feat);
+        }
+                        
+        if (changed) {
+            CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+            ofh.Replace(*feat);
+        }
+		++feat_ci;
+    }
+}
+
+
+void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
+{
+    // iterate through features.
+    CFeat_CI feat_ci(sa);
+    
+    while (feat_ci) {
+        CSeqFeatData::ESubtype subtype = feat_ci->GetFeatSubtype();
+        bool need_convert = false;
+        bool is_site = false;
+        bool is_bond = false;
+        string key;
+        CSeqFeatData::ESite site_type = CSeqFeatData::eSite_other;
+        CSeqFeatData::EBond bond_type = CSeqFeatData::eBond_other;
+        
+        if (feat_ci->GetFeatType() == CSeqFeatData::e_Imp) {
+            key = feat_ci->GetOriginalFeature().GetData().GetImp().GetKey();
+            if (NStr::Equal(key, "mat_peptide") 
+                || NStr::Equal(key, "sig_peptide")
+                || NStr::Equal(key, "transit_peptide")) {
+                need_convert = true;
+            }
+        } else if (feat_ci->GetFeatSubtype() == CSeqFeatData::eSubtype_misc_feature) {
+            if (CSeqFeatData::GetSiteList()->IsSiteName(feat_ci->GetComment().c_str(), site_type)) {
+                is_site = true;
+                need_convert = true;
+            } else if (CSeqFeatData::GetBondList()->IsBondName(feat_ci->GetComment(), bond_type)) {
+                is_bond = true;
+                need_convert = true;
+            }
+        }
+        
+        if (need_convert) {
+            const CSeq_feat& orig_feat = feat_ci->GetOriginalFeature();
+            // find the best overlapping coding region that isn't pseudo and doesn't have a pseudogene
+            CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(feat_ci->GetLocation(),
+                                                              CSeqFeatData::eSubtype_cdregion,
+                                                              sequence::eOverlap_Subset,
+                                                              *m_Scope);
+            if (!cds.IsNull() && cds->CanGetProduct()) {
+                // get location for feature on protein sequence                                                                  
+                CSeq_loc_Mapper mapper(*cds,
+                                       CSeq_loc_Mapper::eLocationToProduct,
+                                       m_Scope);
+                CRef<CSeq_loc> product_loc = mapper.Map(feat_ci->GetLocation());
+            
+                product_loc->SetPartialStart (feat_ci->GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
+                product_loc->SetPartialStop (feat_ci->GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);
+                                                                               
+                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+                
+                CRef<CSeq_feat> feat(new CSeq_feat);
+                feat->Assign(orig_feat);
+                
+                feat->SetLocation(*product_loc);
+              
+                if (NStr::Equal(key, "mat_peptide") 
+                    || NStr::Equal(key, "sig_peptide")
+                    || NStr::Equal(key, "transit_peptide")) {
+                    feat->SetData().Reset();
+                    CProt_ref& prot_ref = feat->SetData().SetProt();
+                    if (NStr::Equal(key, "mat_peptide")) {
+                        prot_ref.SetProcessed(CProt_ref::eProcessed_mature);
+                        // copy product qualifiers to product names
+                        if (feat->IsSetQual()) {
+                            CSeq_feat::TQual::iterator it = feat->SetQual().begin();
+                            while (it != feat->SetQual().end()) {
+                                if (NStr::Equal((*it)->GetQual(), "product")) {
+                                    prot_ref.SetName().push_back((*it)->GetVal());
+                                    it = feat->SetQual().erase(it);
+                                } else {
+                                    ++it;
+                                }
+                            }
+                        }
+    				} else if (NStr::Equal(key, "sig_peptide")) {
+	    			    prot_ref.SetProcessed(CProt_ref::eProcessed_signal_peptide);
+		    		} else if (NStr::Equal(key, "transit_peptide")) {
+			    	    prot_ref.SetProcessed(CProt_ref::eProcessed_transit_peptide);
+				    }
+
+                    if (feat->CanGetComment() 
+                        && NStr::Equal(feat->GetComment(), "putative", NStr::eNocase)
+                        && (NStr::Equal(key, "sig_peptide") || !prot_ref.CanGetName() || prot_ref.GetName().empty())) {
+                        prot_ref.SetName().push_back(feat->GetComment());
+                        feat->ResetComment();
+                    }
+                } else if (is_bond) {
+                    feat->SetData().Reset();
+                    feat->SetData().SetSite(site_type);
+                    feat->ResetComment();
+                    // TODO
+                    // for any bond features, strip NULLs from the location
+                } else if (is_site) {
+                    feat->SetData().Reset();
+                    feat->SetData().SetBond(bond_type);
+                }
+
+                // TODO
+                // Must move feature to protein SeqAnnot
+                fh.Replace(*feat);
+            }   
+        }
+        
+        ++feat_ci;
+    }
+#if 0
+static void ImpFeatToProtRef(SeqFeatArr sfa)
+{
+	SeqFeatPtr f1, f2, best_cds, sfp;
+	SeqLocPtr loc, slp;
+	ImpFeatPtr ifp;
+	ProtRefPtr prot;
+	BioseqPtr bsp;
+	SeqAnnotPtr sap;
+	Int4 diff_lowest, diff_current, frame;
+	ValNodePtr tmp1, tmp2;
+	Uint2 retval;
+	Int2 i;
+	Boolean lfree = FALSE, partial5, partial3;
+	CharPtr p, q;
+	GBQualPtr qu, qunext;
+	
+	for (tmp1 = sfa.pept; tmp1; tmp1 = tmp1->next) {
+		lfree = FALSE;
+		f1 = (SeqFeatPtr) tmp1->data.ptrvalue;
+		loc = f1->location;
+		if (tmp1->choice == SEQFEAT_BOND) {
+			loc = fake_bond_loc(f1->location);
+			lfree = TRUE;
+		}
+		diff_lowest = -1;
+		best_cds = NULL;
+		for (tmp2=sfa.cds; tmp2; tmp2=tmp2->next) {
+			f2 = tmp2->data.ptrvalue;
+			diff_current = SeqLocAinB(loc, f2->location);
+			if (! diff_current)   /* perfect match */ {
+				best_cds = f2;
+				break;
+			} else if (diff_current > 0) {
+				if ((diff_lowest == -1) || (diff_current < diff_lowest)) {
+					diff_lowest = diff_current;
+					best_cds = f2;
+				}
+			}
+		}
+/*		if (lfree)
+			SeqLocFree(loc);
+*/
+		if (best_cds == NULL) { 
+			p = SeqLocPrint(f1->location);
+			ErrPostEx(SEV_WARNING, ERR_FEATURE_CDSNotFound, 
+			"CDS for the peptide feature [%s] not found", p);
+			MemFree(p);
+		} else {
+			if (OutOfFramePeptideButEmblOrDdbj (f1, best_cds))
+				continue;
+			CheckSeqLocForPartial (f1->location, &partial5, &partial3);
+			slp = dnaLoc_to_aaLoc(best_cds, f1->location, TRUE, &frame, FALSE);
+			if (slp == NULL) {
+			p = SeqLocPrint(f1->location);
+			q = SeqLocPrint(best_cds->location);
+			ErrPostEx(SEV_ERROR, ERR_FEATURE_CannotMapDnaLocToAALoc, "peptide location:%s| CDS location:%s", p, q);
+			MemFree(p);
+			MemFree(q);
+				continue;
+			}
+			SetSeqLocPartial (slp, partial5, partial3);
+			ifp = (ImpFeatPtr) f1->data.value.ptrvalue;
+			sfp = SeqFeatNew();
+			sfp->location = slp;
+
+			sfp->partial = (Boolean) (f1->partial || partial5 || partial3);
+			sfp->excpt = f1->excpt;
+			sfp->exp_ev = f1->exp_ev;
+			sfp->pseudo = f1->pseudo;
+
+			sfp->comment = f1->comment;
+			f1->comment = NULL;
+			sfp->qual = f1->qual;
+			f1->qual = NULL;
+			sfp->title = f1->title;
+			f1->title = NULL;
+			sfp->ext = f1->ext;
+			f1->ext = NULL;
+			sfp->cit = f1->cit;
+			f1->cit = NULL;
+
+			sfp->xref = f1->xref;
+			f1->xref = NULL;
+			sfp->dbxref = f1->dbxref;
+			f1->dbxref = NULL;
+			sfp->except_text = f1->except_text;
+			f1->except_text = NULL;
+
+			if (f1->qual != NULL) {
+				sfp->qual = f1->qual;
+				f1->qual = NULL;
+			}
+			if (tmp1->choice == SEQFEAT_PROT) {
+				sfp->data.choice = SEQFEAT_PROT;
+				prot = ProtRefNew();
+				sfp->data.value.ptrvalue = prot;
+				if (StringCmp(ifp->key, "mat_peptide") == 0) {
+					prot->processed = 2;
+					for (qu=sfp->qual; qu; qu=qunext) {
+						qunext = qu->next;
+						if (StringCmp(qu->qual, "product") == 0) {
+							ValNodeAddStr(&(prot->name), 0,StringSave(qu->val));
+							sfp->qual = remove_qual(sfp->qual, qu); 
+						}
+					}
+				}
+				if (StringCmp(ifp->key, "sig_peptide") == 0)
+					prot->processed = 3;
+				if (StringCmp(ifp->key, "transit_peptide") == 0)
+					prot->processed = 4;
+				if (f1->comment != NULL) {
+					if ((prot->processed == 2 || prot->name == NULL) && StringICmp (f1->comment, "putative") != 0) {
+						ValNodeAddStr(&(prot->name), 0,StringSave(f1->comment));
+					} else {
+						sfp->comment = StringSave(f1->comment);
+					}
+				}
+			} else if (tmp1->choice == SEQFEAT_SITE) {
+				sfp->data.choice = SEQFEAT_SITE;
+				if ((i = FindStr(feat_site, num_site, f1->comment)) != -1) {
+					sfp->data.value.intvalue = i;
+				} else {
+					sfp->data.value.intvalue = 255;
+				}
+			} else if (tmp1->choice == SEQFEAT_BOND) {
+				sfp->data.choice = SEQFEAT_BOND;
+				if ((i = FindStr(feat_bond, num_bond, f1->comment)) != -1) {
+					sfp->data.value.intvalue = i;
+				} else {
+					sfp->data.value.intvalue = 255;
+				}
+			}
+			if (f1->title)
+			{
+				if(sfp->comment != NULL)
+					MemFree(sfp->comment);
+				sfp->comment = StringSave(f1->title);
+			}
+			CheckSeqLocForPartial (f1->location, &partial5, &partial3);
+			sfp->excpt = f1->excpt;
+			sfp->partial = (Boolean) (f1->partial || partial5 || partial3);
+			sfp->exp_ev = f1->exp_ev;
+			sfp->pseudo = f1->pseudo;
+			if(sfp->location)
+				SeqLocFree(sfp->location);
+			sfp->location = 
+				dnaLoc_to_aaLoc(best_cds, f1->location, TRUE, &frame, FALSE);
+			if (sfp->location == NULL) {
+			p = SeqLocPrint(f1->location);
+			q = SeqLocPrint(best_cds->location);
+			ErrPostEx(SEV_ERROR, ERR_FEATURE_CannotMapDnaLocToAALoc, "peptide location:%s| CDS location:%s", p, q);
+				MemFree(sfp);
+				MemFree(p);
+				MemFree(q);
+				continue;
+			}
+			SetSeqLocPartial (sfp->location, partial5, partial3);
+			if(f1->comment != NULL)
+				MemFree(f1->comment);
+			f1->comment = StringSave("FeatureToBeDeleted");
+			if (sfp->partial == FALSE) {
+				retval = SeqLocPartialCheck(sfp->location);
+				if (retval > SLP_COMPLETE && retval < SLP_NOSTART) {
+					sfp->partial = TRUE;
+				}
+			}
+			bsp = BioseqLockById(SeqLocId(best_cds->product));
+			if (bsp) {
+				if (bsp->annot == NULL) {
+					sap = SeqAnnotNew();
+					sap->type = 1;
+					bsp->annot = sap;
+				} else {
+					sap = bsp->annot;
+				}
+				sap->data = tie_feat(sap->data, sfp);
+				BioseqUnlock(bsp); 
+			}
+		}
+	}
+
+#endif
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -1474,6 +1952,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2006/08/03 12:05:31  bollin
+ * added method to ExtendedCleanup for converting imp_feat coding regions to
+ * real coding regions and for converting imp_feat protein features annotated
+ * on the nucleotide sequence to real protein features annotated on the protein
+ * sequence
+ *
  * Revision 1.25  2006/07/31 14:29:37  rsmith
  * Add change reporting
  *
