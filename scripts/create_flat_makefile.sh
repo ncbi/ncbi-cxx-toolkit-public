@@ -56,7 +56,7 @@ shift
 dest=""
 for cmd_arg in "$@"; do
   case "$dest" in
-    src  )  dest="";  srcdir="$cmd_arg";    ;  continue ;;
+    src  )  dest="";  srcdir="$cmd_arg"     ;  continue ;;
     prj  )  dest="";  projectlist="$cmd_arg";  continue ;;
     *    )  dest=""                                     ;;
   esac
