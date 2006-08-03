@@ -79,7 +79,8 @@ public:
             return true;
         }
         os << "ERR:Shutdown access denied.";
-        LOG_POST(Warning << "Shutdown access denied: " << m_Host);
+        LOG_POST(Warning << CTime(CTime::eCurrent).AsString() 
+                 << " Shutdown access denied: " << m_Host);
         return false;
     }
 
@@ -88,8 +89,10 @@ public:
                          CGridWorkerNode& )
     {
         if (request.find("SUICIDE") != NPOS) {
-            LOG_POST("DIE request has been received from host: " << m_Host);
-            LOG_POST("SERVER IS COMMITTING SUICIDE!!");
+            LOG_POST(Warning << CTime(CTime::eCurrent).AsString() 
+                     << " DIE request has been received from host: " << m_Host);
+            LOG_POST(Warning << CTime(CTime::eCurrent).AsString() 
+                     << " SERVER IS COMMITTING SUICIDE!!");
             CGridGlobals::GetInstance().KillNode();
         } else {
             CNetScheduleClient::EShutdownLevel level =
@@ -99,7 +102,8 @@ public:
             os << "OK:";
             CGridGlobals::GetInstance().
                 RequestShutdown(level);
-            LOG_POST("Shutdown request has been received from host: " << m_Host);
+            LOG_POST(CTime(CTime::eCurrent).AsString() 
+                     << " Shutdown request has been received from host: " << m_Host);
         }
     }
 private:
@@ -222,7 +226,7 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port,
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
 {
-    LOG_POST("Control server stopped.");
+    LOG_POST(CTime(CTime::eCurrent).AsString() << " Control server stopped.");
 }
 
 #define JS_CHECK_IO_STATUS(x) \
@@ -282,7 +286,8 @@ void CWorkerNodeControlThread::Process(SOCK sock)
     }
     catch (exception& ex)
     {
-        ERR_POST("Exception in the control server : " << ex.what());
+        ERR_POST(CTime(CTime::eCurrent).AsString() 
+                 << " Exception in the control server : " << ex.what());
         string err = "ERR:" + NStr::PrintableString(ex.what());
         socket.Write(err.c_str(), err.length() + 1 );     
     }
@@ -298,6 +303,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.25  2006/08/03 19:33:10  didenko
+ * Added auto_shutdown_if_idle config file paramter
+ * Added current date to messages in the log file.
+ *
  * Revision 6.24  2006/05/22 18:02:07  didenko
  * Added support for shutdown immediate command
  *

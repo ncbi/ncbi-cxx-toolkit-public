@@ -61,7 +61,8 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
             m_ActiveJobs[&job] = make_pair(CStopWatch(CStopWatch::eStart), false);
             ++m_JobsStarted;
             if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
-                LOG_POST("The maximum number of allowed jobs (" 
+                LOG_POST(CTime(CTime::eCurrent).AsString() 
+                         << " The maximum number of allowed jobs (" 
                          << m_MaxJobsAllowed << ") has been reached.\n" 
                          << "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
@@ -78,7 +79,8 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
     case eJobFailed :
         ++m_JobsFailed;
         if (m_MaxFailuresAllowed > 0 && m_JobsFailed > m_MaxFailuresAllowed - 1) {
-                LOG_POST("The maximum number of failed jobs (" 
+                LOG_POST(CTime(CTime::eCurrent).AsString() 
+                         << " The maximum number of failed jobs (" 
                          << m_MaxFailuresAllowed << ") has been reached.\n" 
                          << "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
@@ -130,8 +132,9 @@ void CWNJobsWatcher::CheckInfinitLoop()
         NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
             if (!it->second.second) {
                 if ( it->second.first.Elapsed() > m_InfinitLoopTime) {
-                    ERR_POST( "An infinit loop is detected in job " 
-                              << it->first->GetJobKey());
+                    ERR_POST(CTime(CTime::eCurrent).AsString() 
+                             << " An infinit loop is detected in job " 
+                             << it->first->GetJobKey());
                     it->second.second = true;      
                     CGridGlobals::GetInstance().
                         RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
@@ -140,7 +143,8 @@ void CWNJobsWatcher::CheckInfinitLoop()
                 ++count;
         }
         if( count > 0 && count == m_ActiveJobs.size()) {
-            ERR_POST("All jobs are in the infinit loops." 
+            ERR_POST(CTime(CTime::eCurrent).AsString()
+                     << " All jobs are in the infinit loops." 
                      << " SERVER IS COMMITTING SUICIDE!!");
             CGridGlobals::GetInstance().KillNode();
         }
@@ -228,6 +232,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2006/08/03 19:33:10  didenko
+ * Added auto_shutdown_if_idle config file paramter
+ * Added current date to messages in the log file.
+ *
  * Revision 6.6  2006/06/22 13:52:36  didenko
  * Returned back a temporary fix for CStdPoolOfThreads
  * Added check_status_period configuration paramter

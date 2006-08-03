@@ -134,7 +134,7 @@ protected:
     {
         CThread::OnExit();
         m_ControlThread.RequestShutdown();
-        LOG_POST("Worker Node Thread exited.");
+        LOG_POST(CTime(CTime::eCurrent).AsString() << " Worker Node Thread exited.");
     }
 
 private:
@@ -155,6 +155,23 @@ public:
     }
 };
  
+/*
+/////////////////////////////////////////////////////////////////////////////
+//
+//     CShutdownIdleTask      -- 
+class CShutdownIdleTask : public IWorkerNodeIdleTask
+{
+public:
+    CShutdownIdleTask() {}
+    virtual ~CShutdownIdleTask() {}
+    virtual void Run(CWorkerNodeIdleTaskContext& ctx)
+    {
+        LOG_POST(CTime(CTime::eCurrent).AsString() 
+                 << " There are no more jobs to be done. Exiting.");
+        ctx.RequestShutdown();
+    }
+};
+*/
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -162,10 +179,11 @@ public:
 class CWorkerNodeIdleThread : public CThread
 {
 public:
-    CWorkerNodeIdleThread(IWorkerNodeIdleTask&, 
+    CWorkerNodeIdleThread(IWorkerNodeIdleTask*, 
                           CGridWorkerNode& worker_node,
                           unsigned run_delay,
-                          bool exclusive_mode);
+                          bool exclusive_mode,
+                          unsigned int auto_shutdown);
 
     void RequestShutdown() 
     { 
@@ -176,6 +194,7 @@ public:
     void Schedule() 
     { 
         CFastMutexGuard(m_Mutext);
+        m_AutoShutdownSW.Restart();
         if (m_StopFlag) {
             m_StopFlag = false; 
             m_Wait1.Post(); 
@@ -184,6 +203,8 @@ public:
     void Suspend() 
     { 
         CFastMutexGuard(m_Mutext);
+        m_AutoShutdownSW.Restart();
+        m_AutoShutdownSW.Stop();
         if (!m_StopFlag) {
             m_StopFlag = true; 
             m_Wait2.Post(); 
@@ -191,7 +212,6 @@ public:
     }
     
     bool IsShutdownRequested() const { return m_ShutdownFlag; }
-    bool GetStopFlag() const { CFastMutexGuard(m_Mutext); return m_StopFlag; }
 
 
 protected:
@@ -201,7 +221,26 @@ protected:
     CWorkerNodeIdleTaskContext& GetContext();
     
 private:
-    IWorkerNodeIdleTask& m_Task;
+
+    unsigned int x_GetInterval() const 
+    {
+        CFastMutexGuard(m_Mutext);
+        return  m_AutoShutdown > 0 ?
+                min( m_AutoShutdown - (unsigned int)m_AutoShutdownSW.Elapsed(), m_RunInterval ) 
+                : m_RunInterval;
+    }
+    bool x_GetStopFlag() const 
+    { 
+        CFastMutexGuard(m_Mutext); 
+        return m_StopFlag; 
+    }
+    bool x_IsAutoShutdownTime() const 
+    {
+        CFastMutexGuard(m_Mutext); 
+        return m_AutoShutdown > 0 ? m_AutoShutdownSW.Elapsed() > m_AutoShutdown : false;
+    }
+
+    IWorkerNodeIdleTask* m_Task;
     CGridWorkerNode& m_WorkerNode;
     auto_ptr<CWorkerNodeIdleTaskContext> m_TaskContext;
     mutable CSemaphore  m_Wait1; 
@@ -210,39 +249,58 @@ private:
     volatile bool       m_ShutdownFlag;
     unsigned int        m_RunInterval;
     bool                m_ExclusiveMode;
+    unsigned int        m_AutoShutdown;
+    CStopWatch          m_AutoShutdownSW;
     mutable CFastMutex  m_Mutext;
 
     CWorkerNodeIdleThread(const CWorkerNodeIdleThread&);
     CWorkerNodeIdleThread& operator=(const CWorkerNodeIdleThread&);
 };
 
-CWorkerNodeIdleThread::CWorkerNodeIdleThread(IWorkerNodeIdleTask& task,
+CWorkerNodeIdleThread::CWorkerNodeIdleThread(IWorkerNodeIdleTask* task,
                                              CGridWorkerNode& worker_node,
                                              unsigned run_delay,
-                                             bool exclusive_mode)
+                                             bool exclusive_mode,
+                                             unsigned int auto_shutdown)
     : m_Task(task), m_WorkerNode(worker_node),
       m_Wait1(0,100000), m_Wait2(0,1000000),
       m_StopFlag(false), m_ShutdownFlag(false),
-      m_RunInterval(run_delay), m_ExclusiveMode(exclusive_mode)
+      m_RunInterval(run_delay), m_ExclusiveMode(exclusive_mode),
+      m_AutoShutdown(auto_shutdown), m_AutoShutdownSW(CStopWatch::eStart)
 {
 }
 void* CWorkerNodeIdleThread::Main()
 {
     while (!m_ShutdownFlag) {
-        if (m_Wait1.TryWait(m_RunInterval, 0)) {
+        if ( x_IsAutoShutdownTime() ) {
+            LOG_POST(CTime(CTime::eCurrent).AsString() 
+                     << " There are no more jobs to be done. Exiting.");
+            CGridGlobals::GetInstance().RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            break;
+        }            
+        unsigned int interval = m_AutoShutdown > 0 ? min (m_RunInterval,m_AutoShutdown) : m_RunInterval;
+        if (m_Wait1.TryWait(interval, 0)) {
             if (m_ShutdownFlag)
                 continue;
-            if (m_Wait2.TryWait(m_RunInterval, 0)) {
-                continue;  // Shutdown is requested
+            interval = x_GetInterval();
+            if (m_Wait2.TryWait(interval, 0)) {
+                continue; 
             }
         } 
-        if (!GetStopFlag()) {
+        if (m_Task && !x_GetStopFlag()) {
             if (m_ExclusiveMode)
                 m_WorkerNode.PutOnHold(true);
             try {
                 do {
+                    if ( x_IsAutoShutdownTime() ) {
+                        LOG_POST(CTime(CTime::eCurrent).AsString() 
+                                 << " There are no more jobs to be done. Exiting.");
+                        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+                        m_ShutdownFlag = true;
+                        break;
+                    }            
                     GetContext().Reset();
-                    m_Task.Run(GetContext());
+                    m_Task->Run(GetContext());
                 } while( GetContext().NeedRunAgain() && !m_ShutdownFlag);
             } NCBI_CATCH_ALL("CWorkerNodeIdleThread::Main: Idle Task failed");
             if (m_ExclusiveMode)
@@ -254,7 +312,7 @@ void* CWorkerNodeIdleThread::Main()
 
 void CWorkerNodeIdleThread::OnExit(void)
 {
-    LOG_POST(Info << "Idle Thread stopped.");
+    LOG_POST(CTime(CTime::eCurrent).AsString() << " Idle Thread stopped.");
 }
 
 CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
@@ -397,7 +455,9 @@ int CGridWorkerApp_Impl::Run()
 
     unsigned int idle_run_delay = 
         reg.GetInt("server","idle_run_delay",30,0,IRegistry::eReturn);
-    if (idle_run_delay < 1) idle_run_delay = 1;
+
+    unsigned int auto_shutdown = 
+        reg.GetInt("server","auto_shutdown_if_idle",0,0,IRegistry::eReturn);
 
     unsigned int infinit_loop_time = 
         reg.GetInt("server","infinite_loop_time",0,0,IRegistry::eReturn);
@@ -527,10 +587,11 @@ int CGridWorkerApp_Impl::Run()
     CGridGlobals::GetInstance().SetWorker(*m_WorkerNode);
 
     IWorkerNodeIdleTask* task = GetJobFactory().GetIdleTask();
-    if (task) {
-        m_IdleThread.Reset(new CWorkerNodeIdleThread(*task, *m_WorkerNode, 
-                                                     idle_run_delay,
-                                                     idle_exclusive));
+    if (task || auto_shutdown > 0 ) {
+        m_IdleThread.Reset(new CWorkerNodeIdleThread(task, *m_WorkerNode, 
+                                                     task ? idle_run_delay : auto_shutdown,
+                                                     idle_exclusive,
+                                                     auto_shutdown));
         m_IdleThread->Run();
         AttachJobWatcher(*(new CIdleWatcher(*m_IdleThread)), eTakeOwnership);
     }
@@ -559,7 +620,8 @@ int CGridWorkerApp_Impl::Run()
             control_server.Run();
         }
         catch (exception& ex) {
-            ERR_POST( "Couldn't run a Threaded server: " << ex.what()  << "\n");
+            ERR_POST(CTime(CTime::eCurrent).AsString()
+                     << " Couldn't run a Threaded server: " << ex.what()  << "\n");
             RequestShutdown();
         }
     }
@@ -614,6 +676,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.24  2006/08/03 19:33:10  didenko
+ * Added auto_shutdown_if_idle config file paramter
+ * Added current date to messages in the log file.
+ *
  * Revision 6.23  2006/06/22 13:52:36  didenko
  * Returned back a temporary fix for CStdPoolOfThreads
  * Added check_status_period configuration paramter
