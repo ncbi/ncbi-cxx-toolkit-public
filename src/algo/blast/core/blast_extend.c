@@ -92,7 +92,7 @@ static NCBI_INLINE Int4 s_BlastDiagHashInsert(BLAST_DiagHash * table,
 												Int4 min_step,
 												Int4 two_hits)
 {
-	Int4 bucket = diag & 0x1ff;
+	Int4 bucket = (Uint4) diag % DIAGHASH_NUM_BUCKETS;
 	Int4 numElements = table->size[bucket];
 	Int4 index;
 
