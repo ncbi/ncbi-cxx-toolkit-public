@@ -2192,6 +2192,35 @@ const CFeatList* CSeqFeatData::GetFeatList()
     return theFeatList.get();
 }
 
+const CBondList* CSeqFeatData::GetBondList()
+{
+    static auto_ptr<CBondList> theBondList;
+
+    if ( !theBondList.get() ) {
+        DEFINE_STATIC_MUTEX(s_Mutex);
+        CMutexGuard LOCK(s_Mutex);
+        if ( !theBondList.get() ) {
+            theBondList.reset(new CBondList());
+        }
+    }
+    return theBondList.get();
+}
+
+
+const CSiteList* CSeqFeatData::GetSiteList()
+{
+    static auto_ptr<CSiteList> theSiteList;
+
+    if ( !theSiteList.get() ) {
+        DEFINE_STATIC_MUTEX(s_Mutex);
+        CMutexGuard LOCK(s_Mutex);
+        if ( !theSiteList.get() ) {
+            theSiteList.reset(new CSiteList());
+        }
+    }
+    return theSiteList.get();
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -2444,6 +2473,103 @@ void CFeatList::GetDescriptions(vector<string> &descs, bool hierarchical) const
     }
 }
 
+string x_SpaceToDash(string str1)
+{
+    unsigned int pos = 0;
+    while ((pos = NStr::Find(str1, " ", pos)) != NCBI_NS_STD::string::npos) {
+        str1[pos] = '-';
+    }
+    return str1;
+}
+
+
+CBondList::CBondList() : sm_BondKeys (bond_key_to_subtype, sizeof (bond_key_to_subtype))
+{
+}
+
+
+CBondList::~CBondList()
+{
+}
+
+
+bool CBondList::IsBondName(string str) const
+{
+    const_iterator ci_it = sm_BondKeys.find (x_SpaceToDash(str).c_str());
+    if (ci_it != sm_BondKeys.end ()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CBondList::IsBondName (string str, CSeqFeatData::EBond& bond_type) const
+{
+    const_iterator ci_it = sm_BondKeys.find (x_SpaceToDash(str).c_str());
+    if (ci_it != sm_BondKeys.end ()) {
+        bond_type = ci_it->second;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+CSeqFeatData::EBond CBondList::GetBondType(string str) const
+{
+    const_iterator ci_it = sm_BondKeys.find (x_SpaceToDash(str).c_str());
+    if (ci_it == sm_BondKeys.end()) {
+        NCBI_THROW(CException, eUnknown, "Not a valid bond type!");
+    } else {
+        return ci_it->second;
+    }
+}
+
+
+CSiteList::CSiteList() : sm_SiteKeys (site_key_to_subtype, sizeof (site_key_to_subtype))
+{
+}
+
+
+CSiteList::~CSiteList()
+{
+}
+
+
+bool CSiteList::IsSiteName(string str) const
+{
+    const_iterator ci_it = sm_SiteKeys.find (x_SpaceToDash(str).c_str());
+    if (ci_it != sm_SiteKeys.end ()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CSiteList::IsSiteName (string str, CSeqFeatData::ESite& site_type) const
+{
+    const_iterator ci_it = sm_SiteKeys.find (x_SpaceToDash(str).c_str());
+    if (ci_it != sm_SiteKeys.end ()) {
+        site_type = ci_it->second;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+CSeqFeatData::ESite CSiteList::GetSiteType(string str) const
+{
+    const_iterator ci_it = sm_SiteKeys.find (x_SpaceToDash(str).c_str());
+    if (ci_it == sm_SiteKeys.end()) {
+        NCBI_THROW(CException, eUnknown, "Not a valid site type!");
+    } else {
+        return ci_it->second;
+    }
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -2453,6 +2579,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.33  2006/08/03 12:01:09  bollin
+* added CSiteList and CBondList for getting the list of available site and bond
+* types and their descriptive strings
+*
 * Revision 6.32  2006/06/22 22:14:44  shkeda
 * Added snoRNA Subtype conversion
 *
