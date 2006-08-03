@@ -1661,7 +1661,6 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
     CFeat_CI feat_ci(sa);
     
     while (feat_ci) {
-        CSeqFeatData::ESubtype subtype = feat_ci->GetFeatSubtype();
         bool need_convert = false;
         bool is_site = false;
         bool is_bond = false;
@@ -1689,7 +1688,7 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
         if (need_convert) {
             const CSeq_feat& orig_feat = feat_ci->GetOriginalFeature();
             // find the best overlapping coding region that isn't pseudo and doesn't have a pseudogene
-            CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(feat_ci->GetLocation(),
+            CConstRef<CSeq_feat> cds = sequence::GetBestOverlappingFeat(feat_ci->GetLocation(),
                                                               CSeqFeatData::eSubtype_cdregion,
                                                               sequence::eOverlap_CheckIntRev,
                                                               *m_Scope);
@@ -1954,6 +1953,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2006/08/03 16:00:27  bollin
+ * removed unused variable
+ *
  * Revision 1.27  2006/08/03 14:25:58  bollin
  * bug fixes for converting import features to coding regions and protein features
  *
