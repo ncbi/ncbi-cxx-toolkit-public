@@ -687,6 +687,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
             }
         }
     }
+    BasicCleanup(f.SetLocation());
 }
 
 
@@ -1953,6 +1954,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2006/08/03 18:13:46  rsmith
+ * BasicCleanup(CSeq_loc)
+ *
  * Revision 1.28  2006/08/03 16:00:27  bollin
  * removed unused variable
  *

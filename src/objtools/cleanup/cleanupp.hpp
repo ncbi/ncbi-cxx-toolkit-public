@@ -54,6 +54,7 @@ class CSeq_feat;
 class CSeqFeatData;
 class CSeq_descr;
 class CSeqdesc;
+class CSeq_loc;
 class CGene_ref;
 class CProt_ref;
 class CRNA_ref;
@@ -184,6 +185,9 @@ private:
     void BasicCleanup(CObject_id& oid);
     void BasicCleanup(CUser_field& field);
     void BasicCleanup(CUser_object& uo);
+    void BasicCleanup(CSeq_loc& sl);
+    void BasicCleanup(CSeq_interval& si);
+
 
     void BasicCleanup(CSeq_feat& feat, CSeqFeatData& data);
     bool BasicCleanup(CSeq_feat& feat, CGb_qual& qual);
@@ -330,6 +334,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2006/08/03 18:13:46  rsmith
+ * BasicCleanup(CSeq_loc)
+ *
  * Revision 1.39  2006/08/03 12:05:31  bollin
  * added method to ExtendedCleanup for converting imp_feat coding regions to
  * real coding regions and for converting imp_feat protein features annotated

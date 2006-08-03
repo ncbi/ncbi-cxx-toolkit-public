@@ -42,6 +42,8 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -434,6 +436,101 @@ void CCleanup_imp::BasicCleanup(CSeq_annot_Handle& sah)
     BasicCleanup(const_cast<CSeq_annot&>(*sah.GetCompleteSeq_annot()));
 }
 
+
+void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
+{
+    if (sl.IsWhole()) {
+        // change the Seq-id to a Seq-loc, Interval which covers the whole sequence.
+        // But how do you find the length of the sequence without the object manager??
+    }
+    
+    switch (sl.Which()) {
+    case CSeq_loc::e_Int :
+        BasicCleanup(sl.SetInt());
+        break;
+    case CSeq_loc::e_Packed_int :
+        {
+            CSeq_loc::TPacked_int::Tdata& ints = sl.SetPacked_int().Set();
+            NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, interval_it, ints) {
+                BasicCleanup(**interval_it);
+            }
+            if (ints.size() == 1) {
+                CRef<CSeq_interval> int_ref = ints.front();
+                sl.SetInt(*int_ref);
+                ChangeMade(CCleanupChange::eChangeSeqloc);
+            }
+        }
+        break;
+    case CSeq_loc::e_Pnt :
+        {
+            CSeq_loc::TPnt& pnt = sl.SetPnt();
+            ENa_strand strand = pnt.GetStrand();
+            if (strand == eNa_strand_both) {
+                pnt.SetStrand(eNa_strand_plus);
+                ChangeMade(CCleanupChange::eChangeStrand);
+            } else if (strand == eNa_strand_both_rev) {
+                pnt.SetStrand(eNa_strand_minus);
+                ChangeMade(CCleanupChange::eChangeStrand);
+            }            
+        }
+        break;
+    case CSeq_loc::e_Mix :
+        typedef CSeq_loc::TMix::Tdata TMixList;
+        // delete Null type Seq-locs from beginning and end of Mix list.
+        TMixList& sl_list = sl.SetMix().Set();
+        TMixList::iterator sl_it = sl_list.begin();
+        while (sl_it != sl_list.end()) {
+            if ((*sl_it)->IsNull()) {
+                sl_it = sl_list.erase(sl_it);
+                ChangeMade(CCleanupChange::eChangeSeqloc);
+            } else {
+                break;
+            }
+        }
+        sl_it = sl_list.end();
+        while (sl_it != sl_list.begin()) {
+            --sl_it;
+            if ( ! (*sl_it)->IsNull()) {
+                break;
+            }
+        }
+        ++sl_it;
+        if (sl_it != sl_list.end()) {
+            sl_list.erase(sl_it, sl_list.end());
+            ChangeMade(CCleanupChange::eChangeSeqloc);            
+        }
+
+        NON_CONST_ITERATE(TMixList, sl_it, sl_list) {
+            BasicCleanup(**sl_it);
+        }
+            
+        if (sl_list.size() == 1) {
+            CRef<CSeq_loc> only_sl = sl_list.front();
+            sl.Assign(*only_sl);
+            ChangeMade(CCleanupChange::eChangeSeqloc);
+        }
+        break;
+    }
+}
+
+
+void CCleanup_imp::BasicCleanup(CSeq_interval& si)
+{
+    // Fix backwards intervals
+    if (si.GetFrom() > si.GetTo()) {
+        swap(si.SetFrom(), si.SetTo());
+        ChangeMade(CCleanupChange::eChangeSeqloc);
+    }
+    // change bad strand values.
+    ENa_strand strand = si.GetStrand();
+    if (strand == eNa_strand_both) {
+        si.SetStrand(eNa_strand_plus);
+        ChangeMade(CCleanupChange::eChangeStrand);
+    } else if (strand == eNa_strand_both_rev) {
+        si.SetStrand(eNa_strand_minus);
+        ChangeMade(CCleanupChange::eChangeStrand);
+    }
+}
 
 
 // Extended Cleanup Methods
@@ -1124,6 +1221,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2006/08/03 18:13:46  rsmith
+ * BasicCleanup(CSeq_loc)
+ *
  * Revision 1.41  2006/08/03 12:04:01  bollin
  * moved descriptor extended cleanup methods to cleanup_desc.cpp
  *
