@@ -162,7 +162,7 @@ BOOL INSTAPI SQLWritePrivateProfileString(LPCSTR lpszSection,
 										 LPCSTR lpszString,
 										 LPCSTR lpszFilename);
 
-#ifdef HAVE_SQLGETPRIVATEPROFILESTRING
+#if HAVE_SQLGETPRIVATEPROFILESTRING
 int  INSTAPI SQLGetPrivateProfileString( LPCSTR lpszSection,
 										LPCSTR lpszEntry,
 										LPCSTR lpszDefault,
