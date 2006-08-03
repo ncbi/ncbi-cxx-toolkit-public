@@ -369,6 +369,11 @@ SPHIPatternSearchBlk* s_PatternSearchItemsInit()
     return retval;
 }
 
+/** Convert the string representation of a PHIblast pattern to uppercase
+ * @param pattern_in The input patter [in]
+ * @param pattern_out The converted pattern [out]
+ * @param length Length of the pattern [in]
+ */
 static void
 s_MakePatternUpperCase(char* pattern_in, char* pattern_out, int length)
 {
