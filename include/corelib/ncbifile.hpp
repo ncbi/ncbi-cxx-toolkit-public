@@ -315,17 +315,17 @@ public:
     //
 
     /// Match a "name" against a simple filename "mask".
-    static bool MatchesMask(const char* name, const char* mask,
+    static bool MatchesMask(const string& name, const string& mask,
                             NStr::ECase use_case = NStr::eCase);
 
     /// Match a "name" against a set of "masks"
     /// Note that any name match to empty vector of masks.
-    static bool MatchesMask(const char* name, const vector<string>& masks,
+    static bool MatchesMask(const string& name, const vector<string>& masks,
                             NStr::ECase use_case = NStr::eCase);
 
     /// Match a "name" against a set of "masks"
     /// Note that any name match to empty set of masks.
-    static bool MatchesMask(const char* name, const CMask& mask,
+    static bool MatchesMask(const string& name, const CMask& mask,
                             NStr::ECase use_case = NStr::eCase);
 
     /// Check the entry existence.
@@ -1201,11 +1201,11 @@ public:
         fCreateObjects   = (1<<2), ///< Get objects accordingly to entry type
                                    ///< (CFile,CDir,...), not just a CDirEntry
         fNoCase          = (1<<3), ///< Use case insensitive compare by mask
+        fIgnorePath      = (1<<4), ///< Return only entries names, not full path
         // These flags added for backward compatibility and will be removed
         // in the future, so don't use it.
         eAllEntries       = 0,
         eIgnoreRecursive  = fIgnoreRecursive
-
     };
     typedef int TGetEntriesFlags; ///< Binary OR of "EGetEntriesFlags"
 
@@ -2210,14 +2210,14 @@ bool CDirEntry::Exists(void) const
 }
 
 inline
-bool CDirEntry::MatchesMask(const char* name, const char* mask,
+bool CDirEntry::MatchesMask(const string& name, const string& mask,
                             NStr::ECase use_case)
 {
-    return NStr::MatchesMask(name, mask, use_case);
+    return NStr::MatchesMask(name.c_str(), mask.c_str(), use_case);
 }
 
 inline
-bool CDirEntry::MatchesMask(const char* name, const CMask& mask,
+bool CDirEntry::MatchesMask(const string& name, const CMask& mask,
                             NStr::ECase use_case) 
 {
     return mask.Match(name, use_case);
@@ -2496,7 +2496,7 @@ inline
 size_t CMemoryFile::GetSize(void) const
 {
     // Special case: file is not mapped and its length is zero.
-    if ( !m_Ptr  &&  GetFileSize() == 0) {
+    if (!m_Ptr  &&  GetFileSize() == 0) {
         return 0;
     }
     x_Verify();
@@ -2546,32 +2546,41 @@ typedef int TFindFiles;
 template<class TFindFunc>
 TFindFunc FindFilesInDir(const CDir&            dir,
                          const vector<string>&  masks,
+                         const vector<string>&  masks_subdir,
                          TFindFunc              find_func,
                          TFindFiles             flags = fFF_Default)
 {
     auto_ptr<CDir::TEntries> 
-        contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive));
+        contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive | 
+                                       CDir::fIgnorePath));
     NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
 
+    string path;
+    if ( dir.GetPath().length() ) {
+        path = CDirEntry::AddTrailingPathSeparator(dir.GetPath());
+    }
+    bool check_dir = ((flags & fFF_Dir) | (flags & fFF_Recursive)) > 0;
     ITERATE(CDir::TEntries, it, *contents) {
-        const CDirEntry& dir_entry = **it;
+        CDirEntry& dir_entry = **it;
+        string name = dir_entry.GetPath();
+        dir_entry.Reset(CDirEntry::MakePath(path, name));
 
-        if (dir_entry.IsDir()) {
+        if (check_dir  &&  dir_entry.IsDir()) {
             if (flags & fFF_Dir) {
-                if ( CDirEntry::MatchesMask(dir_entry.GetName().c_str(),
-                                            masks, use_case) ) {
+                if (CDirEntry::MatchesMask(name, masks, use_case)) {
                     find_func(dir_entry);
                 }
             }
             if (flags & fFF_Recursive) {
-                CDir nested_dir(dir_entry.GetPath());
-                find_func = 
-                    FindFilesInDir(nested_dir, masks, find_func, flags);
+                if (CDirEntry::MatchesMask(name, masks_subdir, use_case)) {
+                    CDir nested_dir(dir_entry.GetPath());
+                    find_func = FindFilesInDir(nested_dir, masks,masks_subdir,
+                                               find_func, flags);
+                }
             }
         }
         else if ((flags & fFF_File)  &&  dir_entry.IsFile()) {
-            if ( CDirEntry::MatchesMask(dir_entry.GetName().c_str(),
-                                        masks, use_case) ) {
+            if (CDirEntry::MatchesMask(name, masks, use_case)) {
                 find_func(dir_entry);
             }
         }
@@ -2583,30 +2592,41 @@ TFindFunc FindFilesInDir(const CDir&            dir,
 template<class TFindFunc>
 TFindFunc FindFilesInDir(const CDir&   dir,
                          const CMask&  masks,
+                         const CMask&  masks_subdir,
                          TFindFunc     find_func,
                          TFindFiles    flags = fFF_Default)
 {
     auto_ptr<CDir::TEntries> 
-        contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive));
+        contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive | 
+                                       CDir::fIgnorePath));
     NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
 
+    string path;
+    if ( dir.GetPath().length() ) {
+        path = CDirEntry::AddTrailingPathSeparator(dir.GetPath());
+    }
+    bool check_dir = ((flags & fFF_Dir) | (flags & fFF_Recursive)) > 0;
     ITERATE(CDir::TEntries, it, *contents) {
-        const CDirEntry& dir_entry = **it;
+        CDirEntry& dir_entry = **it;
+        string name = dir_entry.GetPath();
+        dir_entry.Reset(CDirEntry::MakePath(path, name));
 
-        if (dir_entry.IsDir()) {
+        if (check_dir  &&  dir_entry.IsDir()) {
             if (flags & fFF_Dir) {
-                if ( masks.Match(dir_entry.GetName(), use_case) ) {
+                if (masks.Match(name, use_case)) {
                     find_func(dir_entry);
                 }
             }
             if (flags & fFF_Recursive) {
-                CDir nested_dir(dir_entry.GetPath());
-                find_func = 
-                    FindFilesInDir(nested_dir, masks, find_func, flags);
+                if (masks_subdir.Match(name, use_case)) {
+                    CDir nested_dir(dir_entry.GetPath());
+                    find_func = FindFilesInDir(nested_dir, masks,masks_subdir,
+                                               find_func, flags);
+                }
             }
         }
         else if ((flags & fFF_File)  &&  dir_entry.IsFile()) {
-            if ( masks.Match(dir_entry.GetName(), use_case) ) {
+            if ( masks.Match(name, use_case) ) {
                 find_func(dir_entry);
             }
         }
@@ -2621,8 +2641,13 @@ TFindFunc FindFilesInDir(const CDir&   dir,
 ///
 /// Algorithm scans the provided directories using iterators,
 /// finds files to match the masks and stores all calls functor
-/// object for all found entries
-/// Functor call should match: void Functor(const CDirEntry& dir_entry)
+/// object for all found entries.
+/// Functor call should match: void Functor(const CDirEntry& dir_entry).
+///
+/// The difference between FindFiles<> and FileFiles2<> is that last one
+/// use two different masks - one for dir entries (files and/or subdirs)
+/// and second for subdirectories, that will be used for recursive
+/// search. FindFiles<> use all subdirectories for recursive search.
 ///
 
 template<class TPathIterator, 
@@ -2633,10 +2658,30 @@ TFindFunc FindFiles(TPathIterator         path_begin,
                     TFindFunc             find_func,
                     TFindFiles            flags = fFF_Default)
 {
+    vector<string> masks_empty;
     for (; path_begin != path_end; ++path_begin) {
         const string& dir_name = *path_begin;
         CDir dir(dir_name);
-        find_func = FindFilesInDir(dir, masks, find_func, flags);
+        find_func = FindFilesInDir(dir, masks, masks_empty, find_func, flags);
+    }
+    return find_func;
+}
+
+
+template<class TPathIterator, 
+         class TFindFunc>
+TFindFunc FindFiles2(TPathIterator         path_begin,
+                     TPathIterator         path_end,
+                     const vector<string>& masks,
+                     const vector<string>& masks_subdir,
+                     TFindFunc             find_func,
+                     TFindFiles            flags = fFF_Default)
+{
+    for (; path_begin != path_end; ++path_begin) {
+        const string& dir_name = *path_begin;
+        CDir dir(dir_name);
+        find_func = FindFilesInDir(dir, masks, masks_subdir,
+                                   find_func, flags);
     }
     return find_func;
 }
@@ -2648,8 +2693,8 @@ TFindFunc FindFiles(TPathIterator         path_begin,
 ///
 /// Algorithm scans the provided directories using iterators,
 /// finds files to match the masks and stores all calls functor
-/// object for all found entries
-/// Functor call should match: void Functor(const CDirEntry& dir_entry)
+/// object for all found entries.
+/// Functor call should match: void Functor(const CDirEntry& dir_entry).
 ///
 
 template<class TPathIterator, 
@@ -2676,8 +2721,8 @@ TFindFunc FindFiles(TPathIterator path_begin,
 ///
 /// Algorithm scans the provided directories using iterators,
 /// finds files to match the masks and stores all calls functor
-/// object for all found entries
-/// Functor call should match: void Functor(const CDirEntry& dir_entry)
+/// object for all found entries.
+/// Functor call should match: void Functor(const CDirEntry& dir_entry).
 ///
 
 template<class TPathIterator, 
@@ -2688,10 +2733,30 @@ TFindFunc FindFiles(TPathIterator path_begin,
                     TFindFunc     find_func,
                     TFindFiles    flags = fFF_Default)
 {
+    CMask masks_empty;
     for (; path_begin != path_end; ++path_begin) {
         const string& dir_name = *path_begin;
         CDir dir(dir_name);
-        find_func = FindFilesInDir(dir, masks, find_func, flags);
+        find_func = FindFilesInDir(dir, masks, masks_empty, find_func, flags);
+    }
+    return find_func;
+}
+
+
+template<class TPathIterator, 
+         class TFindFunc>
+TFindFunc FindFiles2(TPathIterator path_begin,
+                     TPathIterator path_end,
+                     const CMask&  masks,
+                     const CMask&  masks_subdir,
+                     TFindFunc     find_func,
+                     TFindFiles    flags = fFF_Default)
+{
+    for (; path_begin != path_end; ++path_begin) {
+        const string& dir_name = *path_begin;
+        CDir dir(dir_name);
+        find_func = FindFilesInDir(dir, masks, masks_subdir,
+                                   find_func, flags);
     }
     return find_func;
 }
@@ -2731,6 +2796,18 @@ void FindFiles(TContainer&           out,
     FindFiles(first_path, last_path, masks, func, flags);
 }
 
+template<class TContainer, class TPathIterator>
+void FindFiles2(TContainer&           out, 
+                TPathIterator         first_path, 
+                TPathIterator         last_path, 
+                const vector<string>& masks,
+                const vector<string>& masks_subdir,
+                TFindFiles            flags = fFF_Default)
+{
+    CFindFileNamesFunc<TContainer> func(out);
+    FindFiles2(first_path, last_path, masks, masks_subdir, func, flags);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -2748,6 +2825,18 @@ void FindFiles(TContainer&    out,
 {
     CFindFileNamesFunc<TContainer> func(out);
     FindFiles(first_path, last_path, masks, func, flags);
+}
+
+template<class TContainer, class TPathIterator>
+void FindFiles2(TContainer&    out, 
+                TPathIterator  first_path, 
+                TPathIterator  last_path, 
+                const CMask&   masks,
+                const CMask&   masks_subdir,
+                TFindFiles     flags = fFF_Default)
+{
+    CFindFileNamesFunc<TContainer> func(out);
+    FindFiles2(first_path, last_path, masks, masks_subdir, func, flags);
 }
 
 
@@ -2777,6 +2866,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2006/08/03 13:07:44  ivanov
+ * CDirEntry::MatchesMask() -- change first parameter type from
+ * 'const char*' to 'const string&'.
+ * CDir::GetEntries() -- added fIgnorePath flag.
+ * FindFiles<> -- use advantage of GetEntries() with fIgnorePath flag.
+ * Added FindFiles2<> algorithm for file search.
+ *
  * Revision 1.80  2006/07/27 18:58:54  ivanov
  * Moved implementation of vector version CDirEntry::MatchesMask()
  * to ncbifile.cpp. Some cosmetics.
