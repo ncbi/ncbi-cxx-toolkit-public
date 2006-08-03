@@ -564,9 +564,13 @@ s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
     if (amb_chars.empty()) 
         return;
     
+    // Number of ambiguities.
     Uint4 amb_num = amb_chars[0];
     
-    // Check if highest order bit set.
+    // The new format is indicated by setting the highest order bit in
+    // the LENGTH field.  Either all ambiguities for this sequence
+    // will use the new format, or all will use the old format.
+    
     bool new_format = (amb_num & 0x80000000) != 0;
     
     if (new_format) {
@@ -984,7 +988,11 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
     m_Atlas.Lock(locked);
     
     for(TBDLLConstIter iter = dl.begin(); iter != dl.end(); iter ++) {
-        int taxid = (*iter)->GetTaxid();
+        int taxid = 0;
+        
+        if ((*iter)->CanGetTaxid()) {
+            taxid = (*iter)->GetTaxid();
+        }
         
         bool have_org_desc = false;
         
