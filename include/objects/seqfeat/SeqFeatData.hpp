@@ -75,6 +75,9 @@
 #include <objects/seqfeat/SeqFeatData_.hpp>
 #include <set>
 
+#include <corelib/ncbistr.hpp>
+#include <util/static_map.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -82,6 +85,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CFeatList;
+class CBondList;
+class CSiteList;
 
 class NCBI_SEQFEAT_EXPORT CSeqFeatData : public CSeqFeatData_Base
 {
@@ -321,6 +326,8 @@ public:
     static const string& GetQulifierAsString(EQualifier qual);
 
     static const CFeatList* GetFeatList();
+    static const CBondList* GetBondList();
+    static const CSiteList* GetSiteList();
 
 private:
     mutable ESubtype m_Subtype; // cached
@@ -332,8 +339,8 @@ private:
     // Prohibit copy constructor and assignment operator
     CSeqFeatData(const CSeqFeatData& value);
     CSeqFeatData& operator=(const CSeqFeatData& value);
+    
 };
-
 
 
 /////////////////// CSeqFeatData inline methods
@@ -488,6 +495,7 @@ private:
     
     typedef map<int, CFeatListItem>   TSubtypeMap;
     TSubtypeMap    m_FeatTypeMap; ///> indexed by subtype only.
+    
 };
 
 
@@ -512,6 +520,157 @@ CFeatList::const_iterator CFeatList::end() const
 }
 
 
+class NCBI_SEQFEAT_EXPORT CBondList
+{
+public:
+    typedef pair <const char *, const CSeqFeatData::EBond> TBondKey;
+
+private:
+    typedef CStaticArrayMap <const char*, const CSeqFeatData::EBond, PNocase_CStr> TBondMap;
+    
+public:
+    
+    CBondList();
+    ~CBondList();
+    
+    bool    IsBondName (string str) const;
+    bool    IsBondName (string str, CSeqFeatData::EBond& bond_type) const;
+    CSeqFeatData::EBond GetBondType (string str) const;
+            
+    // Iteratable list of key values (type/subtype).
+    // can iterate through all values including defaults or with only
+    // real Feature types/subtypes.
+    typedef TBondMap::const_iterator const_iterator;
+    
+    size_t          size() const;
+    const_iterator  begin() const;
+    const_iterator  end() const;
+private:
+        /// initialize our container of feature types and descriptions.
+        void    x_Init(void);
+    
+    const TBondMap sm_BondKeys;
+    
+};
+
+
+inline
+size_t CBondList::size() const
+{
+    return sm_BondKeys.size();
+}
+
+
+inline
+CBondList::const_iterator CBondList::begin() const
+{
+    return sm_BondKeys.begin();
+}
+
+
+inline
+CBondList::const_iterator CBondList::end() const
+{
+    return sm_BondKeys.end();
+}
+
+
+static const CBondList::TBondKey bond_key_to_subtype [] = {
+    CBondList::TBondKey ( "disulfide",         CSeqFeatData::eBond_disulfide  ),
+    CBondList::TBondKey ( "other",             CSeqFeatData::eBond_other      ),
+    CBondList::TBondKey ( "thioether",         CSeqFeatData::eBond_thioether  ),
+    CBondList::TBondKey ( "thiolester",        CSeqFeatData::eBond_thiolester ),
+    CBondList::TBondKey ( "xlink",             CSeqFeatData::eBond_xlink      )
+};
+
+
+class NCBI_SEQFEAT_EXPORT CSiteList
+{
+public:
+    typedef pair <const char *, const CSeqFeatData::ESite> TSiteKey;
+
+private:
+    typedef CStaticArrayMap <const char*, const CSeqFeatData::ESite, PNocase_CStr> TSiteMap;
+    
+public:
+    
+    CSiteList();
+    ~CSiteList();
+    
+    bool    IsSiteName (string str) const;
+    bool    IsSiteName (string str, CSeqFeatData::ESite& site_type) const;
+    CSeqFeatData::ESite GetSiteType (string str) const;
+            
+    // Iteratable list of key values (type/subtype).
+    // can iterate through all values including defaults or with only
+    // real Feature types/subtypes.
+    typedef TSiteMap::const_iterator const_iterator;
+    
+    size_t          size() const;
+    const_iterator  begin() const;
+    const_iterator  end() const;
+private:
+        /// initialize our container of feature types and descriptions.
+        void    x_Init(void);
+    
+    const TSiteMap sm_SiteKeys;
+    
+};
+
+
+inline
+size_t CSiteList::size() const
+{
+    return sm_SiteKeys.size();
+}
+
+
+inline
+CSiteList::const_iterator CSiteList::begin() const
+{
+    return sm_SiteKeys.begin();
+}
+
+
+inline
+CSiteList::const_iterator CSiteList::end() const
+{
+    return sm_SiteKeys.end();
+}
+
+
+static const CSiteList::TSiteKey site_key_to_subtype [] = {
+    CSiteList::TSiteKey ( "acetylation",                 CSeqFeatData::eSite_acetylation                 ),
+    CSiteList::TSiteKey ( "active",                      CSeqFeatData::eSite_active                      ),
+    CSiteList::TSiteKey ( "amidation",                   CSeqFeatData::eSite_amidation                   ),
+    CSiteList::TSiteKey ( "binding",                     CSeqFeatData::eSite_binding                     ),
+    CSiteList::TSiteKey ( "blocked",                     CSeqFeatData::eSite_blocked                     ),
+    CSiteList::TSiteKey ( "cleavage",                    CSeqFeatData::eSite_cleavage                    ),
+    CSiteList::TSiteKey ( "DNA binding",                 CSeqFeatData::eSite_dna_binding                 ),
+    CSiteList::TSiteKey ( "gamma carboxyglutamic acid",  CSeqFeatData::eSite_gamma_carboxyglutamic_acid  ),
+    CSiteList::TSiteKey ( "glycosylation",               CSeqFeatData::eSite_glycosylation               ),
+    CSiteList::TSiteKey ( "hydroxylation",               CSeqFeatData::eSite_hydroxylation               ),
+    CSiteList::TSiteKey ( "inhibit",                     CSeqFeatData::eSite_inhibit                     ),
+    CSiteList::TSiteKey ( "lipid binding",               CSeqFeatData::eSite_lipid_binding               ),
+    CSiteList::TSiteKey ( "metal binding",               CSeqFeatData::eSite_metal_binding               ),
+    CSiteList::TSiteKey ( "methylation",                 CSeqFeatData::eSite_methylation                 ),
+    CSiteList::TSiteKey ( "modified",                    CSeqFeatData::eSite_modified                    ),
+    CSiteList::TSiteKey ( "mutagenized",                 CSeqFeatData::eSite_mutagenized                 ),
+    CSiteList::TSiteKey ( "myristoylation",              CSeqFeatData::eSite_myristoylation              ),
+    CSiteList::TSiteKey ( "nitrosylation",               CSeqFeatData::eSite_nitrosylation               ),
+    CSiteList::TSiteKey ( "np binding",                  CSeqFeatData::eSite_np_binding                  ),
+    CSiteList::TSiteKey ( "other",                       CSeqFeatData::eSite_other                       ),
+    CSiteList::TSiteKey ( "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       ),
+    CSiteList::TSiteKey ( "phosphorylation",             CSeqFeatData::eSite_phosphorylation             ),
+    CSiteList::TSiteKey ( "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid ),
+    CSiteList::TSiteKey ( "signal peptide",              CSeqFeatData::eSite_signal_peptide              ),
+    CSiteList::TSiteKey ( "sulfatation",                 CSeqFeatData::eSite_sulfatation                 ),
+    CSiteList::TSiteKey ( "transit peptide",             CSeqFeatData::eSite_transit_peptide             ),
+    CSiteList::TSiteKey ( "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        ),
+    CSiteList::TSiteKey ( "unclassified",                CSeqFeatData::eSite_other                       ),
+};
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -523,6 +682,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/08/03 12:00:21  bollin
+* added CBondList and CSiteList for listing the available site and bond types
+* and their descriptive names
+*
 * Revision 1.15  2006/04/04 18:57:55  rsmith
 * Remove obsolete declaration of GetFeatConfigList()
 *
