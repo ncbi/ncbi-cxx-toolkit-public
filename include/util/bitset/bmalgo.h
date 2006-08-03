@@ -550,7 +550,7 @@ template<class BV, class It>
 void combine_or(BV& bv, It  first, It last)
 {
     typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
-    unsigned max_id = bv.size();
+    unsigned max_id = 0;
 
     while (first < last)
     {
@@ -558,7 +558,10 @@ void combine_or(BV& bv, It  first, It last)
         It right = block_range_scan(first, last, nblock, &max_id);
 
         if (max_id >= bv.size())
+        {
+            BM_ASSERT(max_id < bm::id_max);
             bv.resize(max_id + 1);
+        }
 
         // now we have one in-block array of bits to set
         
@@ -626,7 +629,7 @@ template<class BV, class It>
 void combine_xor(BV& bv, It  first, It last)
 {
     typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
-    unsigned max_id = bv.size();
+    unsigned max_id = 0;
 
     while (first < last)
     {
@@ -634,7 +637,10 @@ void combine_xor(BV& bv, It  first, It last)
         It right = block_range_scan(first, last, nblock, &max_id);
 
         if (max_id >= bv.size())
+        {
+            BM_ASSERT(max_id < bm::id_max);
             bv.resize(max_id + 1);
+        }
 
         // now we have one in-block array of bits to set
         
@@ -707,7 +713,7 @@ template<class BV, class It>
 void combine_sub(BV& bv, It  first, It last)
 {
     typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
-    unsigned max_id = bv.size();
+    unsigned max_id = 0;
 
     while (first < last)
     {
@@ -715,7 +721,10 @@ void combine_sub(BV& bv, It  first, It last)
         It right = block_range_scan(first, last, nblock, &max_id);
 
         if (max_id >= bv.size())
+        {
+            BM_ASSERT(max_id < bm::id_max);
             bv.resize(max_id + 1);
+        }
 
         // now we have one in-block array of bits to set
         
