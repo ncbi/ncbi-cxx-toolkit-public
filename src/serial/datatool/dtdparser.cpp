@@ -744,7 +744,7 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
         }
         DTDElement::EType type = i->second.GetType();
 
-        bool generate = true;
+        bool generate = type != DTDElement::eUnknown;
         if (m_SrcType == eDTD) {
             generate = ( (type == DTDElement::eSequence) ||
                          (type == DTDElement::eChoice) ||
@@ -903,7 +903,9 @@ CDataType* DTDParser::TypesBlock(
         }
         DTDElement& refNode = m_MapElement[*i];
         if (refNode.GetName().empty()) {
-            ParseError(i->c_str(),"definition");
+//            ParseError(i->c_str(),"definition");
+            ERR_POST(Warning << "Undefined type: " << *i);
+            refNode.SetName(*i);
         }
         DTDElement::EOccurrence occ = node.GetOccurrence(*i);
         if (refNode.IsEmbedded()) {
@@ -1283,6 +1285,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.34  2006/08/03 19:16:54  gouriano
+ * Get rid of crashes when parsing incomplete DTD or schema
+ *
  * Revision 1.33  2006/08/03 17:21:10  gouriano
  * Preserve comments when parsing schema
  *

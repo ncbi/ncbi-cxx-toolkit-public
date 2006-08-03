@@ -144,7 +144,10 @@ void CDataType::PrintDTD(CNcbiOstream& out,
     }
     out << "\n";
     if (IsReference() && extra.Empty()) {
-        Resolve()->m_Comments.PrintDTD(out, CComments::eOneLine);
+        const CDataType* realType = Resolve();
+        if (realType && realType != this) {
+            realType->m_Comments.PrintDTD(out, CComments::eOneLine);
+        }
     }
     m_Comments.PrintDTD(out, CComments::eOneLine);
     bool oneLineComment = extra.OneLine();
@@ -710,6 +713,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.90  2006/08/03 19:16:54  gouriano
+* Get rid of crashes when parsing incomplete DTD or schema
+*
 * Revision 1.89  2006/08/03 17:21:10  gouriano
 * Preserve comments when parsing schema
 *

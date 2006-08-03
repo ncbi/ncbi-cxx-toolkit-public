@@ -98,8 +98,10 @@ void CReferenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) 
         dynamic_cast<const CUniSequenceDataType*>(GetParentType());
 
     if (tag == userType || (GetEnforcedStdXml() && uniType)) {
-        const CDataType* realType = Resolve();
-        realType->PrintDTDElement(out, contents_only);
+        const CDataType* realType = ResolveOrNull();
+        if (realType) {
+            realType->PrintDTDElement(out, contents_only);
+        }
         return;
     }
     out <<
@@ -114,7 +116,10 @@ void CReferenceDataType::PrintDTDExtra(CNcbiOstream& out) const
         dynamic_cast<const CUniSequenceDataType*>(GetParentType());
 
     if (tag == userType || (GetEnforcedStdXml() && uniType)) {
-        Resolve()->PrintDTDExtra(out);
+        const CDataType* realType = ResolveOrNull();
+        if (realType) {
+            realType->PrintDTDExtra(out);
+        }
     }
 }
 
@@ -237,6 +242,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/08/03 19:16:54  gouriano
+* Get rid of crashes when parsing incomplete DTD or schema
+*
 * Revision 1.35  2006/06/19 17:34:06  gouriano
 * Redesigned generation of XML schema
 *
