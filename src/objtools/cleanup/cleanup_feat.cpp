@@ -1137,41 +1137,41 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
     
     CBioseq_Handle last_seq = m_Scope->GetBioseqHandle(last_it.GetSeq_loc());
     
-	switch (remainder)
-	{
-		case 0:
-			remainder = 3;
-			break;
-		case 1:
-			remainder = 2;
-			break;
-		case 2:
-			remainder = 1;
-			break;
-	}
+    switch (remainder)
+    {
+        case 0:
+            remainder = 3;
+            break;
+        case 1:
+            remainder = 2;
+            break;
+        case 2:
+            remainder = 1;
+            break;
+    }
 
     TSeqPos old_from = last_it.GetRange().GetFrom();
-	TSeqPos old_to = last_it.GetRange().GetTo();
+    TSeqPos old_to = last_it.GetRange().GetTo();
 
     if (last_it.GetStrand() == eNa_strand_minus) {
-		if (old_from < remainder) {
-			return false;
-		} else if (last_it.GetFuzzFrom() != NULL) {
-		    return false;
-		} else {
-		    (const_cast <CSeq_loc& > (last_it.GetSeq_loc())).SetInt().SetFrom (old_from - remainder);
-		}
-	}
-	else
-	{
-	    if (old_to >= last_seq.GetBioseqLength() - remainder) {
-	        return false;
-	    } else if (last_it.GetFuzzTo() != NULL) {
-	        return false;
-	    } else {
-		    (const_cast <CSeq_loc& > (last_it.GetSeq_loc())).SetInt().SetTo (old_to + remainder);
-	    }
-	}
+        if (old_from < remainder) {
+            return false;
+        } else if (last_it.GetFuzzFrom() != NULL) {
+            return false;
+        } else {
+            (const_cast <CSeq_loc& > (last_it.GetSeq_loc())).SetInt().SetFrom (old_from - remainder);
+        }
+    }
+    else
+    {
+        if (old_to >= last_seq.GetBioseqLength() - remainder) {
+            return false;
+        } else if (last_it.GetFuzzTo() != NULL) {
+            return false;
+        } else {
+            (const_cast <CSeq_loc& > (last_it.GetSeq_loc())).SetInt().SetTo (old_to + remainder);
+        }
+    }
 
     // get new protein sequence by translating the coding region
     CBioseq_Handle nuc_bsh = m_Scope->GetBioseqHandle(feat->GetLocation());
@@ -1183,9 +1183,9 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
                                            true);
 
     // if the translation is the wrong length, give up
-	if (data.length() != (frame_adjusted_len + remainder) / 3) {
-	    return false;
-	}
+    if (data.length() != (frame_adjusted_len + remainder) / 3) {
+        return false;
+    }
 
     // if the translation doesn't end with stop codon, give up
     if (!NStr::Equal(data.substr(data.length() - 1), "*")) {
@@ -1235,9 +1235,9 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
                     fh.Replace(*gene_feat);
                 }        
             }
-		}
-	}
-	
+        }
+    }
+    
     // fix location of coding region
     feat->SetLocation(*new_location);
     
@@ -1611,7 +1611,7 @@ bool CCleanup_imp::x_ImpFeatToCdRegion (CSeq_feat& feat)
         feat.SetData().SetCdregion().SetFrame(x_FrameFromSeqLoc(feat.GetLocation()));
     }
 
-    return true;	
+    return true;    
 }
 
 
@@ -1651,7 +1651,7 @@ void CCleanup_imp::x_ChangeImpFeatToCDS(CSeq_annot_Handle sa)
             CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
             ofh.Replace(*feat);
         }
-		++feat_ci;
+        ++feat_ci;
     }
 }
 
@@ -1729,12 +1729,12 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
                                 }
                             }
                         }
-    				} else if (NStr::Equal(key, "sig_peptide")) {
-	    			    prot_ref.SetProcessed(CProt_ref::eProcessed_signal_peptide);
-		    		} else if (NStr::Equal(key, "transit_peptide")) {
-			    	    prot_ref.SetProcessed(CProt_ref::eProcessed_transit_peptide);
-				    }
-
+                    } else if (NStr::Equal(key, "sig_peptide")) {
+                        prot_ref.SetProcessed(CProt_ref::eProcessed_signal_peptide);
+                    } else if (NStr::Equal(key, "transit_peptide")) {
+                        prot_ref.SetProcessed(CProt_ref::eProcessed_transit_peptide);
+                    }
+                    
                     if (feat->CanGetComment() 
                         && NStr::Equal(feat->GetComment(), "putative", NStr::eNocase)
                         && (NStr::Equal(key, "sig_peptide") || !prot_ref.CanGetName() || prot_ref.GetName().empty())) {
@@ -1762,185 +1762,185 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
     }
 #if 0
 static void ImpFeatToProtRef(SeqFeatArr sfa)
-{
-	SeqFeatPtr f1, f2, best_cds, sfp;
-	SeqLocPtr loc, slp;
-	ImpFeatPtr ifp;
-	ProtRefPtr prot;
-	BioseqPtr bsp;
-	SeqAnnotPtr sap;
-	Int4 diff_lowest, diff_current, frame;
-	ValNodePtr tmp1, tmp2;
-	Uint2 retval;
-	Int2 i;
-	Boolean lfree = FALSE, partial5, partial3;
-	CharPtr p, q;
-	GBQualPtr qu, qunext;
-	
-	for (tmp1 = sfa.pept; tmp1; tmp1 = tmp1->next) {
-		lfree = FALSE;
-		f1 = (SeqFeatPtr) tmp1->data.ptrvalue;
-		loc = f1->location;
-		if (tmp1->choice == SEQFEAT_BOND) {
-			loc = fake_bond_loc(f1->location);
-			lfree = TRUE;
-		}
-		diff_lowest = -1;
-		best_cds = NULL;
-		for (tmp2=sfa.cds; tmp2; tmp2=tmp2->next) {
-			f2 = tmp2->data.ptrvalue;
-			diff_current = SeqLocAinB(loc, f2->location);
-			if (! diff_current)   /* perfect match */ {
-				best_cds = f2;
-				break;
-			} else if (diff_current > 0) {
-				if ((diff_lowest == -1) || (diff_current < diff_lowest)) {
-					diff_lowest = diff_current;
-					best_cds = f2;
-				}
-			}
-		}
-/*		if (lfree)
-			SeqLocFree(loc);
+{  
+  SeqFeatPtr f1, f2, best_cds, sfp;
+  SeqLocPtr loc, slp;
+  ImpFeatPtr ifp;
+  ProtRefPtr prot;
+  BioseqPtr bsp;
+  SeqAnnotPtr sap;
+  Int4 diff_lowest, diff_current, frame;
+  ValNodePtr tmp1, tmp2;
+  Uint2 retval;
+  Int2 i;
+  Boolean lfree = FALSE, partial5, partial3;
+  CharPtr p, q;
+  GBQualPtr qu, qunext;
+  
+  for (tmp1 = sfa.pept; tmp1; tmp1 = tmp1->next) {
+    lfree = FALSE;
+    f1 = (SeqFeatPtr) tmp1->data.ptrvalue;
+    loc = f1->location;
+    if (tmp1->choice == SEQFEAT_BOND) {
+      loc = fake_bond_loc(f1->location);
+      lfree = TRUE;
+    }
+    diff_lowest = -1;
+    best_cds = NULL;
+    for (tmp2=sfa.cds; tmp2; tmp2=tmp2->next) {
+      f2 = tmp2->data.ptrvalue;
+      diff_current = SeqLocAinB(loc, f2->location);
+      if (! diff_current)   /* perfect match */ {
+        best_cds = f2;
+        break;
+      } else if (diff_current > 0) {
+        if ((diff_lowest == -1) || (diff_current < diff_lowest)) {
+          diff_lowest = diff_current;
+          best_cds = f2;
+        }
+      }
+    }
+/*    if (lfree)
+      SeqLocFree(loc);
 */
-		if (best_cds == NULL) { 
-			p = SeqLocPrint(f1->location);
-			ErrPostEx(SEV_WARNING, ERR_FEATURE_CDSNotFound, 
-			"CDS for the peptide feature [%s] not found", p);
-			MemFree(p);
-		} else {
-			if (OutOfFramePeptideButEmblOrDdbj (f1, best_cds))
-				continue;
-			CheckSeqLocForPartial (f1->location, &partial5, &partial3);
-			slp = dnaLoc_to_aaLoc(best_cds, f1->location, TRUE, &frame, FALSE);
-			if (slp == NULL) {
-			p = SeqLocPrint(f1->location);
-			q = SeqLocPrint(best_cds->location);
-			ErrPostEx(SEV_ERROR, ERR_FEATURE_CannotMapDnaLocToAALoc, "peptide location:%s| CDS location:%s", p, q);
-			MemFree(p);
-			MemFree(q);
-				continue;
-			}
-			SetSeqLocPartial (slp, partial5, partial3);
-			ifp = (ImpFeatPtr) f1->data.value.ptrvalue;
-			sfp = SeqFeatNew();
-			sfp->location = slp;
+    if (best_cds == NULL) { 
+      p = SeqLocPrint(f1->location);
+      ErrPostEx(SEV_WARNING, ERR_FEATURE_CDSNotFound, 
+      "CDS for the peptide feature [%s] not found", p);
+      MemFree(p);
+    } else {
+      if (OutOfFramePeptideButEmblOrDdbj (f1, best_cds))
+        continue;
+      CheckSeqLocForPartial (f1->location, &partial5, &partial3);
+      slp = dnaLoc_to_aaLoc(best_cds, f1->location, TRUE, &frame, FALSE);
+      if (slp == NULL) {
+      p = SeqLocPrint(f1->location);
+      q = SeqLocPrint(best_cds->location);
+      ErrPostEx(SEV_ERROR, ERR_FEATURE_CannotMapDnaLocToAALoc, "peptide location:%s| CDS location:%s", p, q);
+      MemFree(p);
+      MemFree(q);
+        continue;
+      }
+      SetSeqLocPartial (slp, partial5, partial3);
+      ifp = (ImpFeatPtr) f1->data.value.ptrvalue;
+      sfp = SeqFeatNew();
+      sfp->location = slp;
 
-			sfp->partial = (Boolean) (f1->partial || partial5 || partial3);
-			sfp->excpt = f1->excpt;
-			sfp->exp_ev = f1->exp_ev;
-			sfp->pseudo = f1->pseudo;
+      sfp->partial = (Boolean) (f1->partial || partial5 || partial3);
+      sfp->excpt = f1->excpt;
+      sfp->exp_ev = f1->exp_ev;
+      sfp->pseudo = f1->pseudo;
 
-			sfp->comment = f1->comment;
-			f1->comment = NULL;
-			sfp->qual = f1->qual;
-			f1->qual = NULL;
-			sfp->title = f1->title;
-			f1->title = NULL;
-			sfp->ext = f1->ext;
-			f1->ext = NULL;
-			sfp->cit = f1->cit;
-			f1->cit = NULL;
+      sfp->comment = f1->comment;
+      f1->comment = NULL;
+      sfp->qual = f1->qual;
+      f1->qual = NULL;
+      sfp->title = f1->title;
+      f1->title = NULL;
+      sfp->ext = f1->ext;
+      f1->ext = NULL;
+      sfp->cit = f1->cit;
+      f1->cit = NULL;
 
-			sfp->xref = f1->xref;
-			f1->xref = NULL;
-			sfp->dbxref = f1->dbxref;
-			f1->dbxref = NULL;
-			sfp->except_text = f1->except_text;
-			f1->except_text = NULL;
+      sfp->xref = f1->xref;
+      f1->xref = NULL;
+      sfp->dbxref = f1->dbxref;
+      f1->dbxref = NULL;
+      sfp->except_text = f1->except_text;
+      f1->except_text = NULL;
 
-			if (f1->qual != NULL) {
-				sfp->qual = f1->qual;
-				f1->qual = NULL;
-			}
-			if (tmp1->choice == SEQFEAT_PROT) {
-				sfp->data.choice = SEQFEAT_PROT;
-				prot = ProtRefNew();
-				sfp->data.value.ptrvalue = prot;
-				if (StringCmp(ifp->key, "mat_peptide") == 0) {
-					prot->processed = 2;
-					for (qu=sfp->qual; qu; qu=qunext) {
-						qunext = qu->next;
-						if (StringCmp(qu->qual, "product") == 0) {
-							ValNodeAddStr(&(prot->name), 0,StringSave(qu->val));
-							sfp->qual = remove_qual(sfp->qual, qu); 
-						}
-					}
-				}
-				if (StringCmp(ifp->key, "sig_peptide") == 0)
-					prot->processed = 3;
-				if (StringCmp(ifp->key, "transit_peptide") == 0)
-					prot->processed = 4;
-				if (f1->comment != NULL) {
-					if ((prot->processed == 2 || prot->name == NULL) && StringICmp (f1->comment, "putative") != 0) {
-						ValNodeAddStr(&(prot->name), 0,StringSave(f1->comment));
-					} else {
-						sfp->comment = StringSave(f1->comment);
-					}
-				}
-			} else if (tmp1->choice == SEQFEAT_SITE) {
-				sfp->data.choice = SEQFEAT_SITE;
-				if ((i = FindStr(feat_site, num_site, f1->comment)) != -1) {
-					sfp->data.value.intvalue = i;
-				} else {
-					sfp->data.value.intvalue = 255;
-				}
-			} else if (tmp1->choice == SEQFEAT_BOND) {
-				sfp->data.choice = SEQFEAT_BOND;
-				if ((i = FindStr(feat_bond, num_bond, f1->comment)) != -1) {
-					sfp->data.value.intvalue = i;
-				} else {
-					sfp->data.value.intvalue = 255;
-				}
-			}
-			if (f1->title)
-			{
-				if(sfp->comment != NULL)
-					MemFree(sfp->comment);
-				sfp->comment = StringSave(f1->title);
-			}
-			CheckSeqLocForPartial (f1->location, &partial5, &partial3);
-			sfp->excpt = f1->excpt;
-			sfp->partial = (Boolean) (f1->partial || partial5 || partial3);
-			sfp->exp_ev = f1->exp_ev;
-			sfp->pseudo = f1->pseudo;
-			if(sfp->location)
-				SeqLocFree(sfp->location);
-			sfp->location = 
-				dnaLoc_to_aaLoc(best_cds, f1->location, TRUE, &frame, FALSE);
-			if (sfp->location == NULL) {
-			p = SeqLocPrint(f1->location);
-			q = SeqLocPrint(best_cds->location);
-			ErrPostEx(SEV_ERROR, ERR_FEATURE_CannotMapDnaLocToAALoc, "peptide location:%s| CDS location:%s", p, q);
-				MemFree(sfp);
-				MemFree(p);
-				MemFree(q);
-				continue;
-			}
-			SetSeqLocPartial (sfp->location, partial5, partial3);
-			if(f1->comment != NULL)
-				MemFree(f1->comment);
-			f1->comment = StringSave("FeatureToBeDeleted");
-			if (sfp->partial == FALSE) {
-				retval = SeqLocPartialCheck(sfp->location);
-				if (retval > SLP_COMPLETE && retval < SLP_NOSTART) {
-					sfp->partial = TRUE;
-				}
-			}
-			bsp = BioseqLockById(SeqLocId(best_cds->product));
-			if (bsp) {
-				if (bsp->annot == NULL) {
-					sap = SeqAnnotNew();
-					sap->type = 1;
-					bsp->annot = sap;
-				} else {
-					sap = bsp->annot;
-				}
-				sap->data = tie_feat(sap->data, sfp);
-				BioseqUnlock(bsp); 
-			}
-		}
-	}
+      if (f1->qual != NULL) {
+        sfp->qual = f1->qual;
+        f1->qual = NULL;
+      }
+      if (tmp1->choice == SEQFEAT_PROT) {
+        sfp->data.choice = SEQFEAT_PROT;
+        prot = ProtRefNew();
+        sfp->data.value.ptrvalue = prot;
+        if (StringCmp(ifp->key, "mat_peptide") == 0) {
+          prot->processed = 2;
+          for (qu=sfp->qual; qu; qu=qunext) {
+            qunext = qu->next;
+            if (StringCmp(qu->qual, "product") == 0) {
+              ValNodeAddStr(&(prot->name), 0,StringSave(qu->val));
+              sfp->qual = remove_qual(sfp->qual, qu); 
+            }
+          }
+        }
+        if (StringCmp(ifp->key, "sig_peptide") == 0)
+          prot->processed = 3;
+        if (StringCmp(ifp->key, "transit_peptide") == 0)
+          prot->processed = 4;
+        if (f1->comment != NULL) {
+          if ((prot->processed == 2 || prot->name == NULL) && StringICmp (f1->comment, "putative") != 0) {
+            ValNodeAddStr(&(prot->name), 0,StringSave(f1->comment));
+          } else {
+            sfp->comment = StringSave(f1->comment);
+          }
+        }
+      } else if (tmp1->choice == SEQFEAT_SITE) {
+        sfp->data.choice = SEQFEAT_SITE;
+        if ((i = FindStr(feat_site, num_site, f1->comment)) != -1) {
+          sfp->data.value.intvalue = i;
+        } else {
+          sfp->data.value.intvalue = 255;
+        }
+      } else if (tmp1->choice == SEQFEAT_BOND) {
+        sfp->data.choice = SEQFEAT_BOND;
+        if ((i = FindStr(feat_bond, num_bond, f1->comment)) != -1) {
+          sfp->data.value.intvalue = i;
+        } else {
+          sfp->data.value.intvalue = 255;
+        }
+      }
+      if (f1->title)
+      {
+        if(sfp->comment != NULL)
+          MemFree(sfp->comment);
+        sfp->comment = StringSave(f1->title);
+      }
+      CheckSeqLocForPartial (f1->location, &partial5, &partial3);
+      sfp->excpt = f1->excpt;
+      sfp->partial = (Boolean) (f1->partial || partial5 || partial3);
+      sfp->exp_ev = f1->exp_ev;
+      sfp->pseudo = f1->pseudo;
+      if(sfp->location)
+        SeqLocFree(sfp->location);
+      sfp->location = 
+        dnaLoc_to_aaLoc(best_cds, f1->location, TRUE, &frame, FALSE);
+      if (sfp->location == NULL) {
+      p = SeqLocPrint(f1->location);
+      q = SeqLocPrint(best_cds->location);
+      ErrPostEx(SEV_ERROR, ERR_FEATURE_CannotMapDnaLocToAALoc, "peptide location:%s| CDS location:%s", p, q);
+        MemFree(sfp);
+        MemFree(p);
+        MemFree(q);
+        continue;
+      }
+      SetSeqLocPartial (sfp->location, partial5, partial3);
+      if(f1->comment != NULL)
+        MemFree(f1->comment);
+      f1->comment = StringSave("FeatureToBeDeleted");
+      if (sfp->partial == FALSE) {
+        retval = SeqLocPartialCheck(sfp->location);
+        if (retval > SLP_COMPLETE && retval < SLP_NOSTART) {
+          sfp->partial = TRUE;
+        }
+      }
+      bsp = BioseqLockById(SeqLocId(best_cds->product));
+      if (bsp) {
+        if (bsp->annot == NULL) {
+          sap = SeqAnnotNew();
+          sap->type = 1;
+          bsp->annot = sap;
+        } else {
+          sap = bsp->annot;
+        }
+        sap->data = tie_feat(sap->data, sfp);
+        BioseqUnlock(bsp); 
+      }
+    }
+  }
 
 #endif
 }
@@ -1954,6 +1954,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2006/08/04 13:14:52  rsmith
+ * replace tab chars with spaces.
+ *
  * Revision 1.29  2006/08/03 18:13:46  rsmith
  * BasicCleanup(CSeq_loc)
  *
