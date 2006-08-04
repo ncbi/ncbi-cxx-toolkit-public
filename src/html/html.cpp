@@ -450,8 +450,12 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
                      !i->second.GetValue().empty() ) {
                     string attr = i->second.GetValue();
                     out << "=\"";
+                    // Escape '"'
+                    if (s_Find(attr, "\"") != NPOS) {
+                        attr = NStr::Replace(attr, "\"", "&quot;");
+                    }
                     // Check tags inside attribute value
-                    if ( s_Find(attr, kTagStart) == NPOS) {
+                    if (s_Find(attr, kTagStart) == NPOS) {
                         out << attr;
                     } else {
                         CHTMLText tmp(attr);
@@ -2319,6 +2323,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.127  2006/08/04 19:10:01  ivanov
+ * CHTMLOpenElement::PrintBegin() -- escape quote in the attribute values
+ *
  * Revision 1.126  2006/05/04 19:16:13  ivanov
  * CHTML_submit -- changed constructor parameter name
  *
