@@ -50,6 +50,12 @@
 #include <odbcss.h>
 #endif
 
+#ifdef FTDS_IN_USE
+#if defined(NCBI_OS_MSWIN)
+#  include <winsock2.h>
+#endif
+#endif
+
 BEGIN_NCBI_SCOPE
 
 static const CDiagCompileInfo kBlankCompileInfo;
@@ -281,6 +287,15 @@ CODBCContext::CODBCContext(SQLLEN version,
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
+#if defined(FTDS_IN_USE)
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
+    {
+        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
+    }
+#endif
+
+
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
         string err_message = "Cannot allocate a context" + m_Reporter.GetExtraMsg();
         DATABASE_DRIVER_ERROR( err_message, 400001 );
@@ -411,6 +426,10 @@ CODBCContext::~CODBCContext()
 {
     try {
         x_Close();
+
+#if defined(FTDS_IN_USE)
+        WSACleanup();
+#endif
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -890,6 +909,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/08/04 20:41:21  ssikorsk
+ * Manually initialize/finalize winsock2 in case of FreeTDS.
+ *
  * Revision 1.60  2006/08/01 17:01:28  ssikorsk
  * + NCBI_DBAPIDRIVER_ODBC_EXPORT to NCBI_EntryPoint_xdbapi_odbc/NCBI_EntryPoint_xdbapi_ftds64_odbc
  *
