@@ -50,10 +50,8 @@
 #include <odbcss.h>
 #endif
 
-#ifdef FTDS_IN_USE
-#if defined(NCBI_OS_MSWIN)
+#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
-#endif
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -287,7 +285,7 @@ CODBCContext::CODBCContext(SQLLEN version,
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
-#if defined(FTDS_IN_USE)
+#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
     {
@@ -427,7 +425,7 @@ CODBCContext::~CODBCContext()
     try {
         x_Close();
 
-#if defined(FTDS_IN_USE)
+#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
         WSACleanup();
 #endif
     }
@@ -909,6 +907,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/08/04 21:03:34  ssikorsk
+ * Handle winsock2 on Windows only.
+ *
  * Revision 1.61  2006/08/04 20:41:21  ssikorsk
  * Manually initialize/finalize winsock2 in case of FreeTDS.
  *
