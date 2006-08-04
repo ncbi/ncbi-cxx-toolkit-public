@@ -298,6 +298,25 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
     }
 #endif
 
+    *ph = SQL_LEN_DATA_AT_EXEC(size);
+
+#ifdef FTDS_IN_USE
+    // Do not use SQLDescribeParam. It is not implemented with the odbc driver 
+    // from FreeTDS.
+    switch(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
+                     is_text? SQL_C_CHAR : SQL_C_BINARY, 
+                     // par_type,
+                     is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+                     size, 0, id, 0, ph)) {
+    case SQL_SUCCESS_WITH_INFO:
+        stmt.ReportErrors();
+    case SQL_SUCCESS: break;
+    case SQL_ERROR:
+        stmt.ReportErrors();
+    default:
+        return false;
+    }
+#else
     switch(SQLDescribeParam(stmt.GetHandle(), 1, &par_type, &par_size, &par_dig, &par_null)){
     case SQL_SUCCESS_WITH_INFO:
         stmt.ReportErrors();
@@ -306,8 +325,6 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
         stmt.ReportErrors();
     default: return false;
     }
-
-    *ph = SQL_LEN_DATA_AT_EXEC(size);
 
     switch(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
                      is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
@@ -321,8 +338,7 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
     default:
         return false;
     }
-
-
+#endif
 
     switch(SQLExecute(stmt.GetHandle())) {
     case SQL_NEED_DATA:
@@ -583,6 +599,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/08/04 20:39:48  ssikorsk
+ * Do not use SQLBindParameter in case of FreeTDS. It is not implemented.
+ *
  * Revision 1.34  2006/07/31 21:35:21  ssikorsk
  * Disable BCP for the ftds64_odbc driver temporarily.
  *
