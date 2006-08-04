@@ -364,6 +364,7 @@ struct ICompilerTool : public ITool
 struct ILinkerTool : public ITool
 {
     //string Name : "VCLinkerTool"
+    virtual string AdditionalDependencies(void)		  const = 0;
     virtual string AdditionalOptions(void)			  const = 0;
     virtual string OutputFile(void)					  const = 0;
     virtual string LinkIncremental(void)			  const = 0;
@@ -548,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/08/04 19:11:48  gouriano
+ * Added AdditionalDependencies Linker option
+ *
  * Revision 1.27  2006/03/22 20:26:43  gouriano
  * Added PDB file name option to compiler
  *

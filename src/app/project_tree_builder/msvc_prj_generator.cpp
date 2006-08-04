@@ -163,6 +163,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             CRef<CTool> tool(new CTool(""));
 
             BIND_TOOLS(tool, msvc_tool.Linker(), Name);
+            BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalDependencies);
             BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalOptions);
             BIND_TOOLS(tool, msvc_tool.Linker(), OutputFile);
             BIND_TOOLS(tool, msvc_tool.Linker(), LinkIncremental);
@@ -483,6 +484,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/08/04 19:10:21  gouriano
+ * Added AdditionalDependencies Linker option
+ *
  * Revision 1.47  2006/03/22 20:26:10  gouriano
  * Added PDB file name option to compiler
  *

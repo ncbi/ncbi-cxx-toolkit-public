@@ -342,10 +342,19 @@ public:
     SUPPORT_LINKER_OPTION(EnableCOMDATFolding)
     SUPPORT_LINKER_OPTION(IgnoreAllDefaultLibraries)
     SUPPORT_LINKER_OPTION(IgnoreDefaultLibraryNames)
+    SUPPORT_LINKER_OPTION(AdditionalDependencies)
 
     virtual string AdditionalLibraryDirectories(void) const
     {
-	    return m_AdditionalLibraryDirectories;
+        string add = 
+            GetLinkerOpt(m_MsvcMetaMakefile,
+                         m_MsvcProjectMakefile,
+                         "AdditionalLibraryDirectories", 
+                         m_Config );
+        if (!add.empty() && !m_AdditionalLibraryDirectories.empty()) {
+            add += ", ";
+        }
+	    return add + m_AdditionalLibraryDirectories;
     }
 
 private:
@@ -387,6 +396,7 @@ public:
     {
 	    return "VCLinkerTool";
     }
+    SUPPORT_DUMMY_OPTION(AdditionalDependencies)
     SUPPORT_DUMMY_OPTION(AdditionalOptions)
     SUPPORT_DUMMY_OPTION(OutputFile)
     SUPPORT_DUMMY_OPTION(LinkIncremental)
@@ -770,6 +780,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/08/04 19:11:48  gouriano
+ * Added AdditionalDependencies Linker option
+ *
  * Revision 1.26  2006/03/22 20:26:43  gouriano
  * Added PDB file name option to compiler
  *
