@@ -650,10 +650,14 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
         if (org.CanGetOrgname() && org.GetOrgname().CanGetDiv()) {
             div = org.GetOrgname().GetDiv();
         }
-        CSeq_entry_CI seq_iter(seh);
-        while (seq_iter) {
-            x_ChangeGBDiv (*seq_iter, div);
-            ++seq_iter;
+        if (seh.IsSet()) {
+            CSeq_entry_CI seq_iter(seh);
+            while (seq_iter) {
+                x_ChangeGBDiv (*seq_iter, div);
+                ++seq_iter;
+            }
+        } else {
+            x_ChangeGBDiv (seh, div);
         }
     }
 }
@@ -667,6 +671,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/08/04 12:11:20  bollin
+ * fixed crash bug in extended cleanup
+ *
  * Revision 1.4  2006/08/03 12:03:23  bollin
  * moved descriptor extended cleanup methods here from cleanupp.cpp
  *
