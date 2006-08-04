@@ -455,10 +455,12 @@ SPHIPatternSearchBlkNew(char* pattern_in, Boolean is_dna, BlastScoreBlk* sbp,
     /* Parse the pattern */
     for (charIndex = 0, posIndex = 0; charIndex < pattern_length; charIndex++) 
     {
-        if ((next_char=pattern[charIndex]) == '-' || next_char == '\n' || 
-            next_char == '.' || next_char =='>' || next_char ==' ' || 
-            next_char == '<')  /*spacers that mean nothing*/
-            continue;
+        next_char = pattern[charIndex];
+        if (next_char == '\0' || next_char == '\r' || next_char == '\n')
+            break;
+        if (next_char == '-' || next_char == '.' || 
+            next_char =='>' || next_char ==' ' || next_char == '<')
+            continue;  /*spacers that mean nothing*/
         if ( next_char != '[' && next_char != '{') { /*not the start of a set of characters*/
             if (next_char == 'x' || next_char== 'X') {  /*wild-card character matches anything*/
                 /* Next line checks to see if wild card is for multiple 
