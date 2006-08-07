@@ -239,6 +239,9 @@ class NCBI_XOBJMGR_EXPORT CSeq_entry_EditHandle : public CSeq_entry_Handle
 public:
     // Default constructor
     CSeq_entry_EditHandle(void);
+    /// create edit interface class to the object which already allows editing
+    /// throw an exception if the argument is not in editing mode
+    explicit CSeq_entry_EditHandle(const CSeq_entry_Handle& h);
 
     // Navigate object tree
 
@@ -544,7 +547,6 @@ protected:
     friend class CSeq_annot_EditHandle;
     friend class CSeq_entry_I;
 
-    CSeq_entry_EditHandle(const CSeq_entry_Handle& h);
     CSeq_entry_EditHandle(CSeq_entry_Info& info, const CTSE_Handle& tse);
 
 public: // non-public section
@@ -668,21 +670,6 @@ CSeq_entry_EditHandle::CSeq_entry_EditHandle(void)
 
 
 inline
-CSeq_entry_EditHandle::CSeq_entry_EditHandle(const CSeq_entry_Handle& h)
-    : CSeq_entry_Handle(h)
-{
-}
-
-
-inline
-CSeq_entry_EditHandle::CSeq_entry_EditHandle(CSeq_entry_Info& info,
-                                             const CTSE_Handle& tse)
-    : CSeq_entry_Handle(info, tse)
-{
-}
-
-
-inline
 CSeq_entry_ScopeInfo& CSeq_entry_EditHandle::x_GetScopeInfo(void) const
 {
     return m_Info.GetNCObject();
@@ -698,6 +685,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/08/07 15:25:03  vasilche
+* CSeq_entry_EditHandle(CSeq_entry_Handle) made public and explicit.
+* Avoid unnecessary GetEditHandle() calls.
+*
 * Revision 1.27  2006/02/02 14:28:19  vasilche
 * Added TObject, GetCompleteObject(), GetObjectCore() for templates.
 *
