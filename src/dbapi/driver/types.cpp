@@ -86,7 +86,7 @@ CDB_Object* CDB_Object::Create(EDB_Type type, size_t size)
 }
 
 
-const char* CDB_Object::GetTypeName(EDB_Type db_type) 
+const char* CDB_Object::GetTypeName(EDB_Type db_type)
 {
     switch ( db_type ) {
     case eDB_Int             : return "DB_Int";
@@ -219,15 +219,60 @@ void CDB_BigInt::AssignValue(CDB_Object& v)
 //  CDB_VarChar::
 //
 
+CDB_VarChar& CDB_VarChar::SetValue(const string& s)
+{
+    m_Null = false;
+    m_Size = s.copy(m_Val, sizeof(m_Val) - 1);
+    m_Val[m_Size] = '\0';
+    return *this;
+}
+
+
+CDB_VarChar& CDB_VarChar::SetValue(const char* s)
+{
+    if ( s ) {
+        for (m_Size = 0;  (m_Size < sizeof(m_Val) - 1)  &&  (*s != '\0');
+             ++s) {
+            m_Val[m_Size++] = *s;
+        }
+        m_Val[m_Size] = '\0';
+        m_Null = false;
+    }
+    else {
+        m_Null = true;
+    }
+    return *this;
+}
+
+
+CDB_VarChar& CDB_VarChar::SetValue(const char* s, size_t l)
+{
+    if ( s ) {
+        m_Size = l < sizeof(m_Val) ? l : sizeof(m_Val) - 1;
+        if ( m_Size ) {
+            memcpy(m_Val, s, m_Size);
+        }
+        m_Val[m_Size] = '\0';
+        m_Null = false;
+    }
+    else {
+        m_Null = true;
+    }
+    return *this;
+}
+
+
 EDB_Type CDB_VarChar::GetType() const
 {
     return eDB_VarChar;
 }
 
+
 CDB_Object* CDB_VarChar::Clone() const
 {
     return m_Null ? new CDB_VarChar : new CDB_VarChar(m_Val);
 }
+
 
 void CDB_VarChar::AssignValue(CDB_Object& v)
 {
@@ -236,9 +281,122 @@ void CDB_VarChar::AssignValue(CDB_Object& v)
     *this= (CDB_VarChar&)v;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Char::
 //
+
+
+CDB_Char::CDB_Char(size_t s) : CDB_Object(true)
+{
+    m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
+    m_Val  = new char[m_Size + 1];
+    memset(m_Val, ' ', m_Size);
+    m_Val[m_Size] = '\0';
+}
+
+
+CDB_Char::CDB_Char(size_t s, const string& v) :  CDB_Object(false)
+{
+    m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
+    m_Val = new char[m_Size + 1];
+    size_t l = v.copy(m_Val, m_Size);
+    if (l < m_Size) {
+        memset(m_Val + l, ' ', m_Size - l);
+    }
+    m_Val[m_Size] = '\0';
+}
+
+
+CDB_Char::CDB_Char(size_t len, const char* str) :  CDB_Object(str == 0)
+{
+    m_Size = (len < 1) ? 1 : (len > kMaxCharSize ? kMaxCharSize : len);
+    m_Val = new char[m_Size + 1];
+
+    if ( str ) {
+        size_t l;
+        for (l = 0;  (l < m_Size)  &&  (*str != '\0');  ++str) {
+            m_Val[l++] = *str;
+        }
+        if (l < m_Size) {
+            memset(m_Val + l, ' ', m_Size - l);
+        }
+    } else {
+        memset(m_Val, ' ', m_Size);
+    }
+
+    m_Val[m_Size] = '\0';
+}
+
+
+CDB_Char::CDB_Char(const CDB_Char& v)
+{
+    m_Null = v.m_Null;
+    m_Size = v.m_Size;
+    m_Val = new char[m_Size + 1];
+    memcpy(m_Val, v.m_Val, m_Size + 1);
+}
+
+
+CDB_Char& CDB_Char::operator= (const CDB_Char& v)
+{
+    m_Null = v.m_Null;
+    size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
+    memmove(m_Val, v.m_Val, l);
+    if (l < m_Size)
+        memset(m_Val + l, ' ', m_Size - l);
+    return *this;
+}
+
+
+CDB_Char& CDB_Char::operator= (const string& v)
+{
+    m_Null = false;
+    size_t l = v.copy(m_Val, m_Size);
+    if (l < m_Size)
+        memset(m_Val + l, ' ', m_Size - l);
+    return *this;
+}
+
+
+CDB_Char& CDB_Char::operator= (const char* v)
+{
+    if (v == 0) {
+        m_Null = true;
+    }
+    else {
+        m_Null = false;
+        size_t l;
+
+        for (l = 0;  (l < m_Size)  &&  (*v != '\0');  ++v) {
+            m_Val[l++] = *v;
+        }
+        if (l < m_Size)
+            memset(m_Val + l, ' ', m_Size - l);
+    }
+    return *this;
+}
+
+
+void CDB_Char::SetValue(const char* str, size_t len)
+{
+    if ( str ) {
+        if (len >= m_Size) {
+            memcpy(m_Val, str, m_Size);
+        }
+        else {
+            if ( len ) {
+                memcpy(m_Val, str, len);
+            }
+            memset(m_Val + len, ' ', m_Size - len);
+        }
+        m_Null = false;
+    }
+    else {
+        m_Null = true;
+    }
+}
+
 
 EDB_Type CDB_Char::GetType() const
 {
@@ -281,15 +439,111 @@ CDB_Char::~CDB_Char()
 //  CDB_LongChar::
 //
 
+
+CDB_LongChar::CDB_LongChar(size_t s) : CDB_Object(true)
+{
+    m_Size = (s < 1) ? 1 : s;
+    m_Val  = new char[m_Size + 1];
+}
+
+
+CDB_LongChar::CDB_LongChar(size_t s, const string& v) :  CDB_Object(false)
+{
+    m_Size = (s < 1) ? K8_1 : s;
+    m_Val = new char[m_Size + 1];
+    size_t l = v.copy(m_Val, m_Size);
+    m_Val[l] = '\0';
+}
+
+
+CDB_LongChar::CDB_LongChar(size_t len, const char* str) :  CDB_Object(str == 0)
+{
+    m_Size = (len < 1) ? K8_1 : len;
+    m_Val = new char[m_Size + 1];
+
+    if(str) strncpy(m_Val, str, m_Size);
+    m_Val[m_Size] = '\0';
+}
+
+
+CDB_LongChar::CDB_LongChar(const CDB_LongChar& v)
+{
+    m_Null = v.m_Null;
+    m_Size = v.m_Size;
+    m_Val = new char[m_Size + 1];
+    memcpy(m_Val, v.m_Val, m_Size + 1);
+}
+
+
+CDB_LongChar& CDB_LongChar::operator= (const CDB_LongChar& v)
+{
+    m_Null = v.m_Null;
+    size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
+    memmove(m_Val, v.m_Val, l);
+    m_Val[l]= '\0';
+    return *this;
+}
+
+
+CDB_LongChar& CDB_LongChar::operator= (const string& v)
+{
+    m_Null = false;
+    size_t l = v.copy(m_Val, m_Size);
+    m_Val[l]= '\0';
+    return *this;
+}
+
+
+CDB_LongChar& CDB_LongChar::operator= (const char* v)
+{
+    if (v == 0) {
+        m_Null = true;
+    }
+    else {
+        m_Null = false;
+        size_t l;
+
+        for (l = 0;  (l < m_Size)  &&  (*v != '\0');  ++v) {
+            m_Val[l++] = *v;
+        }
+        m_Val[l]= '\0';
+    }
+    return *this;
+}
+
+
+void CDB_LongChar::SetValue(const char* str, size_t len)
+{
+    if ( str ) {
+        if (len >= m_Size) {
+            memcpy(m_Val, str, m_Size);
+            m_Val[m_Size]= '\0';
+        }
+        else {
+            if ( len ) {
+                memcpy(m_Val, str, len);
+            }
+            m_Val[len]= '\0';
+        }
+        m_Null = false;
+    }
+    else {
+        m_Null = true;
+    }
+}
+
+
 EDB_Type CDB_LongChar::GetType() const
 {
     return eDB_LongChar;
 }
 
+
 CDB_Object* CDB_LongChar::Clone() const
 {
     return new CDB_LongChar(*this);
 }
+
 
 void CDB_LongChar::AssignValue(CDB_Object& v)
 {
@@ -310,6 +564,7 @@ void CDB_LongChar::AssignValue(CDB_Object& v)
     }
 }
 
+
 CDB_LongChar::~CDB_LongChar()
 {
     try {
@@ -323,15 +578,31 @@ CDB_LongChar::~CDB_LongChar()
 //  CDB_VarBinary::
 //
 
+
+void CDB_VarBinary::SetValue(const void* v, size_t l)
+{
+    if (v  &&  l) {
+        m_Size = l > sizeof(m_Val) ? sizeof(m_Val) : l;
+        memcpy(m_Val, v, m_Size);
+        m_Null = false;
+    }
+    else {
+        m_Null = true;
+    }
+}
+
+
 EDB_Type CDB_VarBinary::GetType() const
 {
     return eDB_VarBinary;
 }
 
+
 CDB_Object* CDB_VarBinary::Clone() const
 {
     return m_Null ? new CDB_VarBinary : new CDB_VarBinary(m_Val, m_Size);
 }
+
 
 void CDB_VarBinary::AssignValue(CDB_Object& v)
 {
@@ -344,15 +615,69 @@ void CDB_VarBinary::AssignValue(CDB_Object& v)
 //  CDB_Binary::
 //
 
+
+CDB_Binary::CDB_Binary(size_t s) : CDB_Object(true)
+{
+    m_Size = (s < 1) ? 1 : (s > kMaxBinSize ? kMaxBinSize : s);
+    m_Val = new unsigned char[m_Size];
+    memset(m_Val, 0, m_Size);
+}
+
+
+CDB_Binary::CDB_Binary(size_t s, const void* v, size_t v_size)
+{
+    m_Size = (s == 0) ? 1 : (s > kMaxBinSize ? kMaxBinSize : s);
+    m_Val  = new unsigned char[m_Size];
+    SetValue(v, v_size);
+}
+
+
+CDB_Binary::CDB_Binary(const CDB_Binary& v)
+{
+    m_Null = v.m_Null;
+    m_Size = v.m_Size;
+    m_Val = new unsigned char[m_Size];
+    memcpy(m_Val, v.m_Val, m_Size);
+}
+
+
+void CDB_Binary::SetValue(const void* v, size_t v_size)
+{
+    if (v  &&  v_size) {
+        memcpy(m_Val, v, (v_size > m_Size) ? m_Size : v_size);
+        if (v_size < m_Size) {
+            memset(m_Val + v_size, 0, m_Size - v_size);
+        }
+        m_Null = false;
+    } else {
+        m_Null = true;
+    }
+}
+
+
+CDB_Binary& CDB_Binary::operator= (const CDB_Binary& v)
+{
+    m_Null = v.m_Null;
+    size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
+    memmove(m_Val, v.m_Val, l);
+    if (l < m_Size) {
+        memset(m_Val+l, 0, m_Size - l);
+    }
+    return *this;
+}
+
+
 EDB_Type CDB_Binary::GetType() const
 {
     return eDB_Binary;
 }
 
+
 CDB_Object* CDB_Binary::Clone() const
 {
     return m_Null ? new CDB_Binary(m_Size) : new CDB_Binary(*this);
 }
+
 
 void CDB_Binary::AssignValue(CDB_Object& v)
 {
@@ -373,6 +698,7 @@ void CDB_Binary::AssignValue(CDB_Object& v)
     }
 }
 
+
 CDB_Binary::~CDB_Binary()
 {
     try {
@@ -385,21 +711,74 @@ CDB_Binary::~CDB_Binary()
 //  CDB_LongBinary::
 //
 
+
+CDB_LongBinary::CDB_LongBinary(size_t s) : CDB_Object(true)
+{
+    m_Size = (s < 1) ? 1 : s;
+    m_Val = new unsigned char[m_Size];
+    m_DataSize= 0;
+}
+
+
+CDB_LongBinary::CDB_LongBinary(size_t s, const void* v, size_t v_size)
+{
+    m_Size = (s == 0) ? K8_1 : s;
+    m_Val  = new unsigned char[m_Size];
+    SetValue(v, v_size);
+}
+
+
+CDB_LongBinary::CDB_LongBinary(const CDB_LongBinary& v)
+{
+    m_Null = v.m_Null;
+    m_Size = v.m_Size;
+    m_DataSize= v.m_DataSize;
+    m_Val = new unsigned char[m_Size];
+    memcpy(m_Val, v.m_Val, m_DataSize);
+}
+
+
+void CDB_LongBinary::SetValue(const void* v, size_t v_size)
+{
+    if (v  &&  v_size) {
+        m_DataSize= (v_size > m_Size) ? m_Size : v_size;
+        memcpy(m_Val, v, m_DataSize);
+        m_Null = false;
+    } else {
+        m_Null = true;
+        m_DataSize= 0;
+    }
+}
+
+
+CDB_LongBinary& CDB_LongBinary::operator= (const CDB_LongBinary& v)
+{
+    m_Null = v.m_Null;
+    m_DataSize = (m_Size > v.m_DataSize) ? v.m_DataSize : m_Size;
+    if(m_DataSize) {
+        memmove(m_Val, v.m_Val, m_DataSize);
+    }
+    return *this;
+}
+
+
 EDB_Type CDB_LongBinary::GetType() const
 {
     return eDB_LongBinary;
 }
+
 
 CDB_Object* CDB_LongBinary::Clone() const
 {
     return new CDB_LongBinary(*this);
 }
 
+
 void CDB_LongBinary::AssignValue(CDB_Object& v)
 {
-    CHECK_DRIVER_ERROR( 
-        v.GetType() != eDB_LongBinary, 
-        "wrong type of CDB_Object", 
+    CHECK_DRIVER_ERROR(
+        v.GetType() != eDB_LongBinary,
+        "wrong type of CDB_Object",
         2 );
     register CDB_LongBinary& cv= (CDB_LongBinary&)v;
     if(cv.IsNULL()) {
@@ -411,6 +790,7 @@ void CDB_LongBinary::AssignValue(CDB_Object& v)
         memcpy(m_Val, cv.m_Val, m_DataSize);
     }
 }
+
 
 CDB_LongBinary::~CDB_LongBinary()
 {
@@ -424,6 +804,15 @@ CDB_LongBinary::~CDB_LongBinary()
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Float::
 //
+
+
+CDB_Float& CDB_Float::operator= (const float& i)
+{
+    m_Null = false;
+    m_Val  = i;
+    return *this;
+}
+
 
 EDB_Type CDB_Float::GetType() const
 {
@@ -449,6 +838,14 @@ void CDB_Float::AssignValue(CDB_Object& v)
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Double::
 //
+
+
+CDB_Double& CDB_Double::operator= (const double& i)
+{
+    m_Null = false;
+    m_Val  = i;
+    return *this;
+}
 
 EDB_Type CDB_Double::GetType() const
 {
@@ -537,9 +934,9 @@ void CDB_Stream::Truncate(size_t nof_bytes)
 
 void CDB_Stream::AssignValue(CDB_Object& v)
 {
-    CHECK_DRIVER_ERROR( 
-        (v.GetType() != eDB_Image) && (v.GetType() != eDB_Text), 
-        "wrong type of CDB_Object", 
+    CHECK_DRIVER_ERROR(
+        (v.GetType() != eDB_Image) && (v.GetType() != eDB_Text),
+        "wrong type of CDB_Object",
         2 );
     Assign((CDB_Stream&)v);
 }
@@ -569,9 +966,9 @@ EDB_Type CDB_Image::GetType() const
 
 CDB_Object* CDB_Image::Clone() const
 {
-    CHECK_DRIVER_ERROR( 
-        !m_Null, 
-        "Clone for the non NULL image is not supported", 
+    CHECK_DRIVER_ERROR(
+        !m_Null,
+        "Clone for the non NULL image is not supported",
         1 );
 
     return new CDB_Image;
@@ -606,9 +1003,9 @@ EDB_Type CDB_Text::GetType() const
 
 CDB_Object* CDB_Text::Clone() const
 {
-    CHECK_DRIVER_ERROR( 
-        !m_Null, 
-        "Clone for the non-NULL text is not supported", 
+    CHECK_DRIVER_ERROR(
+        !m_Null,
+        "Clone for the non-NULL text is not supported",
         1 );
 
     return new CDB_Text;
@@ -618,6 +1015,87 @@ CDB_Object* CDB_Text::Clone() const
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_SmallDateTime::
 //
+
+
+CDB_SmallDateTime::CDB_SmallDateTime(CTime::EInitMode mode)
+: m_NCBITime(mode)
+, m_Status( 0x1 )
+{
+    m_DBTime.days = 0;
+    m_DBTime.time = 0;
+    m_Null = (mode == CTime::eEmpty);
+}
+
+
+CDB_SmallDateTime::CDB_SmallDateTime(const CTime& t)
+: m_NCBITime( t )
+, m_Status( 0x1 )
+{
+    m_DBTime.days = 0;
+    m_DBTime.time = 0;
+    m_Null = t.IsEmpty();
+}
+
+
+CDB_SmallDateTime::CDB_SmallDateTime(Uint2 days, Uint2 minutes)
+: m_Status( 0x2 )
+{
+    m_DBTime.days = days;
+    m_DBTime.time = minutes;
+    m_Null        = false;
+}
+
+
+CDB_SmallDateTime& CDB_SmallDateTime::Assign(Uint2 days, Uint2 minutes)
+{
+    m_DBTime.days = days;
+    m_DBTime.time = minutes;
+    m_Status      = 0x2;
+    m_Null        = false;
+    return *this;
+}
+
+
+CDB_SmallDateTime& CDB_SmallDateTime::operator= (const CTime& t)
+{
+    m_NCBITime = t;
+    m_DBTime.days = 0;
+    m_DBTime.time = 0;
+    m_Status = 0x1;
+    m_Null = t.IsEmpty();
+    return *this;
+}
+
+
+const CTime& CDB_SmallDateTime::Value(void) const
+{
+    if((m_Status & 0x1) == 0) {
+        m_NCBITime.SetTimeDBU(m_DBTime);
+        m_Status |= 0x1;
+    }
+    return m_NCBITime;
+}
+
+
+Uint2 CDB_SmallDateTime::GetDays(void) const
+{
+    if((m_Status & 0x2) == 0) {
+        m_DBTime = m_NCBITime.GetTimeDBU();
+        m_Status |= 0x2;
+    }
+    return m_DBTime.days;
+}
+
+
+Uint2 CDB_SmallDateTime::GetMinutes(void) const
+{
+    if((m_Status & 0x2) == 0) {
+        m_DBTime = m_NCBITime.GetTimeDBU();
+        m_Status |= 0x2;
+    }
+    return m_DBTime.time;
+}
+
 
 EDB_Type CDB_SmallDateTime::GetType() const
 {
@@ -631,9 +1109,9 @@ CDB_Object* CDB_SmallDateTime::Clone() const
 
 void CDB_SmallDateTime::AssignValue(CDB_Object& v)
 {
-    CHECK_DRIVER_ERROR( 
-        v.GetType() != eDB_SmallDateTime, 
-        "wrong type of CDB_Object", 
+    CHECK_DRIVER_ERROR(
+        v.GetType() != eDB_SmallDateTime,
+        "wrong type of CDB_Object",
         2 );
     *this= (CDB_SmallDateTime&)v;
 }
@@ -642,6 +1120,87 @@ void CDB_SmallDateTime::AssignValue(CDB_Object& v)
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_DateTime::
 //
+
+
+CDB_DateTime::CDB_DateTime(CTime::EInitMode mode)
+: m_NCBITime(mode)
+, m_Status(0x1)
+{
+    m_DBTime.days = 0;
+    m_DBTime.time = 0;
+    m_Null = (mode == CTime::eEmpty);
+}
+
+
+CDB_DateTime::CDB_DateTime(const CTime& t)
+: m_NCBITime( t )
+, m_Status( 0x1 )
+{
+    m_DBTime.days = 0;
+    m_DBTime.time = 0;
+    m_Null = t.IsEmpty();
+}
+
+
+CDB_DateTime::CDB_DateTime(Int4 d, Int4 s300)
+: m_Status( 0x2 )
+{
+    m_DBTime.days = d;
+    m_DBTime.time = s300;
+    m_Null = false;
+}
+
+
+CDB_DateTime& CDB_DateTime::operator= (const CTime& t)
+{
+    m_NCBITime = t;
+    m_DBTime.days = 0;
+    m_DBTime.time = 0;
+    m_Status = 0x1;
+    m_Null = t.IsEmpty();
+    return *this;
+}
+
+
+CDB_DateTime& CDB_DateTime::Assign(Int4 d, Int4 s300)
+{
+    m_DBTime.days = d;
+    m_DBTime.time = s300;
+    m_Status = 0x2;
+    m_Null = false;
+    return *this;
+}
+
+
+const CTime& CDB_DateTime::Value(void) const
+{
+    if((m_Status & 0x1) == 0) {
+        m_NCBITime.SetTimeDBI(m_DBTime);
+        m_Status |= 0x1;
+    }
+    return m_NCBITime;
+}
+
+
+Int4 CDB_DateTime::GetDays(void) const
+{
+    if((m_Status & 0x2) == 0) {
+        m_DBTime = m_NCBITime.GetTimeDBI();
+        m_Status |= 0x2;
+    }
+    return m_DBTime.days;
+}
+
+
+Int4 CDB_DateTime::Get300Secs(void) const
+{
+    if((m_Status & 0x2) == 0) {
+        m_DBTime = m_NCBITime.GetTimeDBI();
+        m_Status |= 0x2;
+    }
+    return m_DBTime.time;
+}
+
 
 EDB_Type CDB_DateTime::GetType() const
 {
@@ -655,9 +1214,9 @@ CDB_Object* CDB_DateTime::Clone() const
 
 void CDB_DateTime::AssignValue(CDB_Object& v)
 {
-    CHECK_DRIVER_ERROR( 
-        v.GetType() != eDB_DateTime, 
-        "wrong type of CDB_Object", 
+    CHECK_DRIVER_ERROR(
+        v.GetType() != eDB_DateTime,
+        "wrong type of CDB_Object",
         2 );
     *this= (CDB_DateTime&)v;
 }
@@ -665,6 +1224,23 @@ void CDB_DateTime::AssignValue(CDB_Object& v)
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Bit::
 //
+
+
+CDB_Bit& CDB_Bit::operator= (const int& i)
+{
+    m_Null = false;
+    m_Val = i ? 1 : 0;
+    return *this;
+}
+
+
+CDB_Bit& CDB_Bit::operator= (const bool& i)
+{
+    m_Null = false;
+    m_Val = i ? 1 : 0;
+    return *this;
+}
+
 
 EDB_Type CDB_Bit::GetType() const
 {
@@ -678,9 +1254,9 @@ CDB_Object* CDB_Bit::Clone() const
 
 void CDB_Bit::AssignValue(CDB_Object& v)
 {
-    CHECK_DRIVER_ERROR( 
-        v.GetType() != eDB_Bit, 
-        "wrong type of CDB_Object", 
+    CHECK_DRIVER_ERROR(
+        v.GetType() != eDB_Bit,
+        "wrong type of CDB_Object",
         2 );
     *this= (CDB_Bit&)v;
 }
@@ -690,6 +1266,96 @@ void CDB_Bit::AssignValue(CDB_Object& v)
 //
 //  CDB_Numeric::
 //
+
+
+CDB_Numeric::CDB_Numeric() : CDB_Object(true)
+{
+    m_Precision= m_Scale= 0;
+    return;
+}
+
+
+CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale)
+    : CDB_Object(false)
+{
+    m_Precision = precision;
+    m_Scale     = scale;
+    memset(m_Body, 0, sizeof(m_Body));
+}
+
+
+CDB_Numeric::CDB_Numeric(unsigned int precision,
+                         unsigned int scale,
+                         const unsigned char* arr) : CDB_Object(false)
+{
+    m_Precision = precision;
+    m_Scale     = scale;
+    memcpy(m_Body, arr, sizeof(m_Body));
+}
+
+
+CDB_Numeric::CDB_Numeric(unsigned int precision,
+                         unsigned int scale,
+                         bool is_negative,
+                         const unsigned char* arr) : CDB_Object(false)
+{
+    m_Precision = precision;
+    m_Scale     = scale;
+    m_Body[0]= is_negative? 1 : 0;
+    memcpy(m_Body+1, arr, sizeof(m_Body)-1);
+}
+
+
+CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale, const char* val)
+{
+    x_MakeFromString(precision, scale, val);
+}
+
+
+CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale, const string& val)
+{
+    x_MakeFromString(precision, scale, val.c_str());
+}
+
+
+CDB_Numeric& CDB_Numeric::Assign(unsigned int precision,
+                                 unsigned int scale,
+                                 const unsigned char* arr)
+{
+    m_Precision = precision;
+    m_Scale     = scale;
+    m_Null      = false;
+    memcpy(m_Body, arr, sizeof(m_Body));
+    return *this;
+}
+
+
+CDB_Numeric& CDB_Numeric::Assign(unsigned int precision,
+                                 unsigned int scale,
+                                 bool is_negative,
+                                 const unsigned char* arr)
+{
+    m_Precision = precision;
+    m_Scale     = scale;
+    m_Null      = false;
+    m_Body[0]= is_negative? 1 : 0;
+    memcpy(m_Body + 1, arr, sizeof(m_Body) - 1);
+    return *this;
+}
+
+
+CDB_Numeric& CDB_Numeric::operator= (const char* val)
+{
+    x_MakeFromString(m_Precision, m_Scale, val);
+    return *this;
+}
+
+
+CDB_Numeric& CDB_Numeric::operator= (const string& val)
+{
+    x_MakeFromString(m_Precision, m_Scale, val.c_str());
+    return *this;
+}
 
 
 EDB_Type CDB_Numeric::GetType() const
@@ -850,13 +1516,13 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
         }
     }
 
-    CHECK_DRIVER_ERROR( 
-        !precision  ||  precision > kMaxPrecision, 
-        "illegal precision", 
+    CHECK_DRIVER_ERROR(
+        !precision  ||  precision > kMaxPrecision,
+        "illegal precision",
         100 );
-    CHECK_DRIVER_ERROR( 
-        scale > precision, 
-        "scale cannot be more than precision", 
+    CHECK_DRIVER_ERROR(
+        scale > precision,
+        "scale cannot be more than precision",
         101 );
 
     bool is_negative= false;
@@ -882,9 +1548,9 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
         ++val;
     }
 
-    CHECK_DRIVER_ERROR( 
-        precision - n < scale, 
-        "string cannot be converted because of overflow", 
+    CHECK_DRIVER_ERROR(
+        precision - n < scale,
+        "string cannot be converted because of overflow",
         103 );
 
     unsigned int dec = 0;
@@ -932,9 +1598,9 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
 
 void CDB_Numeric::AssignValue(CDB_Object& v)
 {
-    CHECK_DRIVER_ERROR( 
-        v.GetType() != eDB_Numeric, 
-        "wrong type of CDB_Object", 
+    CHECK_DRIVER_ERROR(
+        v.GetType() != eDB_Numeric,
+        "wrong type of CDB_Object",
         2 );
     *this= (CDB_Numeric&)v;
 }
@@ -946,6 +1612,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/08/07 15:55:01  ssikorsk
+ * Moved definitions of big inline functions into cpp.
+ *
  * Revision 1.22  2006/06/02 19:26:38  ssikorsk
  * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
  *

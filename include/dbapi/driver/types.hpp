@@ -99,7 +99,7 @@ public:
     // NOTE:  "size" matters only for eDB_Char, eDB_Binary, eDB_LongChar, eDB_LongBinary.
     static CDB_Object* Create(EDB_Type type, size_t size = 1);
 
-    // Get human-readable type name for db_type    
+    // Get human-readable type name for db_type
     static const char* GetTypeName(EDB_Type db_type);
 
 protected:
@@ -246,40 +246,9 @@ public:
     CDB_VarChar& operator= (const char*   s)  { return SetValue(s); }
 
     // set-value methods
-    CDB_VarChar& SetValue(const string& s) {
-        m_Null = false;
-        m_Size = s.copy(m_Val, sizeof(m_Val) - 1);
-        m_Val[m_Size] = '\0';
-        return *this;
-    }
-    CDB_VarChar& SetValue(const char* s) {
-        if ( s ) {
-            for (m_Size = 0;  (m_Size < sizeof(m_Val) - 1)  &&  (*s != '\0');
-                 ++s) {
-                m_Val[m_Size++] = *s;
-            }
-            m_Val[m_Size] = '\0';
-            m_Null = false;
-        }
-        else {
-            m_Null = true;
-        }
-        return *this;
-    }
-    CDB_VarChar& SetValue(const char* s, size_t l) {
-        if ( s ) {
-            m_Size = l < sizeof(m_Val) ? l : sizeof(m_Val) - 1;
-            if ( m_Size ) {
-                memcpy(m_Val, s, m_Size);
-            }
-            m_Val[m_Size] = '\0';
-            m_Null = false;
-        }
-        else {
-            m_Null = true;
-        }
-        return *this;
-    }
+    CDB_VarChar& SetValue(const string& s);
+    CDB_VarChar& SetValue(const char* s);
+    CDB_VarChar& SetValue(const char* s, size_t l);
 
     //
     const char* Value() const  { return m_Null ? 0 : m_Val;  }
@@ -301,101 +270,16 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_Char : public CDB_Object
 public:
     enum { kMaxCharSize = 255 };
 
-    CDB_Char(size_t s = 1) : CDB_Object(true) {
-        m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
-        m_Val  = new char[m_Size + 1];
-        memset(m_Val, ' ', m_Size);
-        m_Val[m_Size] = '\0';
-    }
+    CDB_Char(size_t s = 1);
+    CDB_Char(size_t s, const string& v);
+    CDB_Char(size_t len, const char* str);
+    CDB_Char(const CDB_Char& v);
 
-    CDB_Char(size_t s, const string& v) :  CDB_Object(false) {
-        m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
-        m_Val = new char[m_Size + 1];
-        size_t l = v.copy(m_Val, m_Size);
-        if (l < m_Size) {
-            memset(m_Val + l, ' ', m_Size - l);
-        }
-        m_Val[m_Size] = '\0';
-    }
+    CDB_Char& operator= (const CDB_Char& v);
+    CDB_Char& operator= (const string& v);
+    CDB_Char& operator= (const char* v);
 
-    CDB_Char(size_t len, const char* str) :  CDB_Object(str == 0) {
-        m_Size = (len < 1) ? 1 : (len > kMaxCharSize ? kMaxCharSize : len);
-        m_Val = new char[m_Size + 1];
-
-        if ( str ) {
-            size_t l;
-            for (l = 0;  (l < m_Size)  &&  (*str != '\0');  ++str) {
-                m_Val[l++] = *str;
-            }
-            if (l < m_Size) {
-                memset(m_Val + l, ' ', m_Size - l);
-            }
-        } else {
-            memset(m_Val, ' ', m_Size);
-        }
-
-        m_Val[m_Size] = '\0';
-    }
-
-    CDB_Char(const CDB_Char& v) {
-        m_Null = v.m_Null;
-        m_Size = v.m_Size;
-        m_Val = new char[m_Size + 1];
-        memcpy(m_Val, v.m_Val, m_Size + 1);
-    }
-
-
-    CDB_Char& operator= (const CDB_Char& v) {
-        m_Null = v.m_Null;
-        size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
-        memmove(m_Val, v.m_Val, l);
-        if (l < m_Size)
-            memset(m_Val + l, ' ', m_Size - l);
-        return *this;
-    }
-
-    CDB_Char& operator= (const string& v) {
-        m_Null = false;
-        size_t l = v.copy(m_Val, m_Size);
-        if (l < m_Size)
-            memset(m_Val + l, ' ', m_Size - l);
-        return *this;
-    }
-
-    CDB_Char& operator= (const char* v) {
-        if (v == 0) {
-            m_Null = true;
-        }
-        else {
-            m_Null = false;
-            size_t l;
-
-            for (l = 0;  (l < m_Size)  &&  (*v != '\0');  ++v) {
-                m_Val[l++] = *v;
-            }
-            if (l < m_Size)
-                memset(m_Val + l, ' ', m_Size - l);
-        }
-        return *this;
-    }
-
-    void SetValue(const char* str, size_t len) {
-        if ( str ) {
-            if (len >= m_Size) {
-                memcpy(m_Val, str, m_Size);
-            }
-            else {
-                if ( len ) {
-                    memcpy(m_Val, str, len);
-                }
-                memset(m_Val + len, ' ', m_Size - len);
-            }
-            m_Null = false;
-        }
-        else {
-            m_Null = true;
-        }
-    }
+    void SetValue(const char* str, size_t len);
 
     const char* Value() const  { return m_Null ? 0 : m_Val; }
     size_t      Size()  const  { return m_Size; }
@@ -417,83 +301,16 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_LongChar : public CDB_Object
 {
 public:
 
-    CDB_LongChar(size_t s = K8_1) : CDB_Object(true) {
-        m_Size = (s < 1) ? 1 : s;
-        m_Val  = new char[m_Size + 1];
-    }
+    CDB_LongChar(size_t s = K8_1);
+    CDB_LongChar(size_t s, const string& v);
+    CDB_LongChar(size_t len, const char* str);
+    CDB_LongChar(const CDB_LongChar& v);
 
-    CDB_LongChar(size_t s, const string& v) :  CDB_Object(false) {
-        m_Size = (s < 1) ? K8_1 : s;
-        m_Val = new char[m_Size + 1];
-        size_t l = v.copy(m_Val, m_Size);
-        m_Val[l] = '\0';
-    }
+    CDB_LongChar& operator= (const CDB_LongChar& v);
+    CDB_LongChar& operator= (const string& v);
+    CDB_LongChar& operator= (const char* v);
 
-    CDB_LongChar(size_t len, const char* str) :  CDB_Object(str == 0) {
-        m_Size = (len < 1) ? K8_1 : len;
-        m_Val = new char[m_Size + 1];
-
-		if(str) strncpy(m_Val, str, m_Size);
-        m_Val[m_Size] = '\0';
-    }
-
-    CDB_LongChar(const CDB_LongChar& v) {
-        m_Null = v.m_Null;
-        m_Size = v.m_Size;
-        m_Val = new char[m_Size + 1];
-        memcpy(m_Val, v.m_Val, m_Size + 1);
-    }
-
-
-    CDB_LongChar& operator= (const CDB_LongChar& v) {
-        m_Null = v.m_Null;
-        size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
-        memmove(m_Val, v.m_Val, l);
-		m_Val[l]= '\0';
-        return *this;
-    }
-
-    CDB_LongChar& operator= (const string& v) {
-        m_Null = false;
-        size_t l = v.copy(m_Val, m_Size);
-		m_Val[l]= '\0';
-        return *this;
-    }
-
-    CDB_LongChar& operator= (const char* v) {
-        if (v == 0) {
-            m_Null = true;
-        }
-        else {
-            m_Null = false;
-            size_t l;
-
-            for (l = 0;  (l < m_Size)  &&  (*v != '\0');  ++v) {
-                m_Val[l++] = *v;
-            }
-			m_Val[l]= '\0';
-        }
-        return *this;
-    }
-
-    void SetValue(const char* str, size_t len) {
-        if ( str ) {
-            if (len >= m_Size) {
-                memcpy(m_Val, str, m_Size);
-				m_Val[m_Size]= '\0';
-            }
-            else {
-                if ( len ) {
-                    memcpy(m_Val, str, len);
-                }
-                m_Val[len]= '\0';
-            }
-            m_Null = false;
-        }
-        else {
-		    m_Null = true;
-        }
-    }
+    void SetValue(const char* str, size_t len);
 
     const char* Value() const  { return m_Null ? 0 : m_Val; }
     size_t      Size()  const  { return m_Size; }
@@ -518,16 +335,7 @@ public:
     CDB_VarBinary()                         : CDB_Object(true)  { return; }
     CDB_VarBinary(const void* v, size_t l)  { SetValue(v, l); }
 
-    void SetValue(const void* v, size_t l) {
-        if (v  &&  l) {
-            m_Size = l > sizeof(m_Val) ? sizeof(m_Val) : l;
-            memcpy(m_Val, v, m_Size);
-            m_Null = false;
-        }
-        else {
-            m_Null = true;
-        }
-    }
+    void SetValue(const void* v, size_t l);
 
     //
     const void* Value() const  { return m_Null ? 0 : (void*) m_Val; }
@@ -549,46 +357,13 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_Binary : public CDB_Object
 public:
     enum { kMaxBinSize = 255 };
 
-    CDB_Binary(size_t s = 1) : CDB_Object(true) {
-        m_Size = (s < 1) ? 1 : (s > kMaxBinSize ? kMaxBinSize : s);
-        m_Val = new unsigned char[m_Size];
-        memset(m_Val, 0, m_Size);
-    }
+    CDB_Binary(size_t s = 1);
+    CDB_Binary(size_t s, const void* v, size_t v_size);
+    CDB_Binary(const CDB_Binary& v);
 
-    CDB_Binary(size_t s, const void* v, size_t v_size) {
-        m_Size = (s == 0) ? 1 : (s > kMaxBinSize ? kMaxBinSize : s);
-        m_Val  = new unsigned char[m_Size];
-        SetValue(v, v_size);
-    }
+    void SetValue(const void* v, size_t v_size);
 
-    CDB_Binary(const CDB_Binary& v) {
-        m_Null = v.m_Null;
-        m_Size = v.m_Size;
-        m_Val = new unsigned char[m_Size];
-        memcpy(m_Val, v.m_Val, m_Size);
-    }
-
-    void SetValue(const void* v, size_t v_size) {
-        if (v  &&  v_size) {
-            memcpy(m_Val, v, (v_size > m_Size) ? m_Size : v_size);
-            if (v_size < m_Size) {
-                memset(m_Val + v_size, 0, m_Size - v_size);
-            }
-            m_Null = false;
-        } else {
-            m_Null = true;
-        }
-    }
-
-    CDB_Binary& operator= (const CDB_Binary& v) {
-        m_Null = v.m_Null;
-        size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
-        memmove(m_Val, v.m_Val, l);
-        if (l < m_Size) {
-            memset(m_Val+l, 0, m_Size - l);
-        }
-        return *this;
-    }
+    CDB_Binary& operator= (const CDB_Binary& v);
 
     //
     const void* Value() const  { return m_Null ? 0 : (void*) m_Val; }
@@ -609,45 +384,13 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_LongBinary : public CDB_Object
 {
 public:
 
-    CDB_LongBinary(size_t s = K8_1) : CDB_Object(true) {
-        m_Size = (s < 1) ? 1 : s;
-        m_Val = new unsigned char[m_Size];
-		m_DataSize= 0;
-    }
+    CDB_LongBinary(size_t s = K8_1);
+    CDB_LongBinary(size_t s, const void* v, size_t v_size);
+    CDB_LongBinary(const CDB_LongBinary& v);
 
-    CDB_LongBinary(size_t s, const void* v, size_t v_size) {
-        m_Size = (s == 0) ? K8_1 : s;
-        m_Val  = new unsigned char[m_Size];
-        SetValue(v, v_size);
-    }
+    void SetValue(const void* v, size_t v_size);
 
-    CDB_LongBinary(const CDB_LongBinary& v) {
-        m_Null = v.m_Null;
-        m_Size = v.m_Size;
-		m_DataSize= v.m_DataSize;
-        m_Val = new unsigned char[m_Size];
-        memcpy(m_Val, v.m_Val, m_DataSize);
-    }
-
-    void SetValue(const void* v, size_t v_size) {
-        if (v  &&  v_size) {
-		    m_DataSize= (v_size > m_Size) ? m_Size : v_size;
-            memcpy(m_Val, v, m_DataSize);
-            m_Null = false;
-        } else {
-            m_Null = true;
-			m_DataSize= 0;
-        }
-    }
-
-    CDB_LongBinary& operator= (const CDB_LongBinary& v) {
-        m_Null = v.m_Null;
-        m_DataSize = (m_Size > v.m_DataSize) ? v.m_DataSize : m_Size;
-		if(m_DataSize) {
-		    memmove(m_Val, v.m_Val, m_DataSize);
-		}
-        return *this;
-    }
+    CDB_LongBinary& operator= (const CDB_LongBinary& v);
 
     //
     const void* Value() const  { return m_Null ? 0 : (void*) m_Val; }
@@ -673,11 +416,7 @@ public:
     CDB_Float()        : CDB_Object(true)             { return; }
     CDB_Float(float i) : CDB_Object(false), m_Val(i)  { return; }
 
-    CDB_Float& operator= (const float& i) {
-        m_Null = false;
-        m_Val  = i;
-        return *this;
-    }
+    CDB_Float& operator= (const float& i);
 
     float Value()   const { return m_Null ? 0 : m_Val; }
     void* BindVal() const { return (void*) &m_Val; }
@@ -698,11 +437,7 @@ public:
     CDB_Double()         : CDB_Object(true)             { return; }
     CDB_Double(double i) : CDB_Object(false), m_Val(i)  { return; }
 
-    CDB_Double& operator= (const double& i) {
-        m_Null = false;
-        m_Val  = i;
-        return *this;
-    }
+    CDB_Double& operator= (const double& i);
 
     //
     double Value()   const  { return m_Null ? 0 : m_Val; }
@@ -777,70 +512,16 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDB_SmallDateTime : public CDB_Object
 {
 public:
-    CDB_SmallDateTime(CTime::EInitMode mode= CTime::eEmpty)
-    : m_NCBITime(mode) 
-    , m_Status( 0x1 )
-    {
-        m_DBTime.days = 0;
-        m_DBTime.time = 0;
-        m_Null = (mode == CTime::eEmpty);
-    }
-    CDB_SmallDateTime(const CTime& t) 
-    : m_NCBITime( t )
-    , m_Status( 0x1 )
-    {
-        m_DBTime.days = 0;
-        m_DBTime.time = 0;
-        m_Null = t.IsEmpty();
-    }
-    CDB_SmallDateTime(Uint2 days, Uint2 minutes) 
-    : m_Status( 0x2 )
-    {
-        m_DBTime.days = days;
-        m_DBTime.time = minutes;
-        m_Null        = false;
-    }
+    CDB_SmallDateTime(CTime::EInitMode mode= CTime::eEmpty);
+    CDB_SmallDateTime(const CTime& t);
+    CDB_SmallDateTime(Uint2 days, Uint2 minutes);
 
-    CDB_SmallDateTime& Assign(Uint2 days, Uint2 minutes) {
-        m_DBTime.days = days;
-        m_DBTime.time = minutes;
-        m_Status      = 0x2;
-        m_Null        = false;
-        return *this;
-    }
+    CDB_SmallDateTime& operator= (const CTime& t);
 
-    CDB_SmallDateTime& operator= (const CTime& t) {
-        m_NCBITime = t;
-        m_DBTime.days = 0;
-        m_DBTime.time = 0;
-        m_Status = 0x1;
-        m_Null = t.IsEmpty();
-        return *this;
-    }
-
-    const CTime& Value(void) const {
-        if((m_Status & 0x1) == 0) {
-            m_NCBITime.SetTimeDBU(m_DBTime);
-            m_Status |= 0x1;
-        }
-        return m_NCBITime;
-    }
-
-    Uint2 GetDays(void) const {
-        if((m_Status & 0x2) == 0) {
-            m_DBTime = m_NCBITime.GetTimeDBU();
-            m_Status |= 0x2;
-        }
-        return m_DBTime.days;
-    }
-
-    Uint2 GetMinutes(void) const {
-        if((m_Status & 0x2) == 0) {
-            m_DBTime = m_NCBITime.GetTimeDBU();
-            m_Status |= 0x2;
-        }
-        return m_DBTime.time;
-    }
+    CDB_SmallDateTime& Assign(Uint2 days, Uint2 minutes);
+    const CTime& Value(void) const;
+    Uint2 GetDays(void) const;
+    Uint2 GetMinutes(void) const;
 
     virtual EDB_Type    GetType(void) const;
     virtual CDB_Object* Clone(void)   const;
@@ -858,70 +539,17 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_DateTime : public CDB_Object
 {
 public:
-    CDB_DateTime(CTime::EInitMode mode= CTime::eEmpty)
-    : m_NCBITime(mode) 
-    , m_Status(0x1)
-    {
-        m_DBTime.days = 0;
-        m_DBTime.time = 0;
-        m_Null = (mode == CTime::eEmpty);
-    }
-    CDB_DateTime(const CTime& t) 
-    : m_NCBITime( t )
-    , m_Status( 0x1 )
-    {
-        m_DBTime.days = 0;
-        m_DBTime.time = 0;
-        m_Null = t.IsEmpty();
-    }
-    CDB_DateTime(Int4 d, Int4 s300) 
-    : m_Status( 0x2 )
-    {
-        m_DBTime.days = d;
-        m_DBTime.time = s300;
-        m_Null = false;
-    }
+    CDB_DateTime(CTime::EInitMode mode= CTime::eEmpty);
+    CDB_DateTime(const CTime& t);
+    CDB_DateTime(Int4 d, Int4 s300);
 
-    CDB_DateTime& operator= (const CTime& t) {
-        m_NCBITime = t;
-        m_DBTime.days = 0;
-        m_DBTime.time = 0;
-        m_Status = 0x1;
-        m_Null = t.IsEmpty();
-        return *this;
-    }
+    CDB_DateTime& operator= (const CTime& t);
 
-    CDB_DateTime& Assign(Int4 d, Int4 s300) {
-        m_DBTime.days = d;
-        m_DBTime.time = s300;
-        m_Status = 0x2;
-        m_Null = false;
-        return *this;
-    }
+    CDB_DateTime& Assign(Int4 d, Int4 s300);
+    const CTime& Value(void) const;
 
-    const CTime& Value(void) const {
-        if((m_Status & 0x1) == 0) {
-            m_NCBITime.SetTimeDBI(m_DBTime);
-            m_Status |= 0x1;
-        }
-        return m_NCBITime;
-    }
-
-    Int4 GetDays(void) const {
-        if((m_Status & 0x2) == 0) {
-            m_DBTime = m_NCBITime.GetTimeDBI();
-            m_Status |= 0x2;
-        }
-        return m_DBTime.days;
-    }
-
-    Int4 Get300Secs(void) const {
-        if((m_Status & 0x2) == 0) {
-            m_DBTime = m_NCBITime.GetTimeDBI();
-            m_Status |= 0x2;
-        }
-        return m_DBTime.time;
-    }
+    Int4 GetDays(void) const;
+    Int4 Get300Secs(void) const;
 
     virtual EDB_Type    GetType(void) const;
     virtual CDB_Object* Clone(void)   const;
@@ -943,17 +571,8 @@ public:
     CDB_Bit(int  i) : CDB_Object(false)  { m_Val = i ? 1 : 0; }
     CDB_Bit(bool i) : CDB_Object(false)  { m_Val = i ? 1 : 0; }
 
-    CDB_Bit& operator= (const int& i) {
-        m_Null = false;
-        m_Val = i ? 1 : 0;
-        return *this;
-    }
-
-    CDB_Bit& operator= (const bool& i) {
-        m_Null = false;
-        m_Val = i ? 1 : 0;
-        return *this;
-    }
+    CDB_Bit& operator= (const int& i);
+    CDB_Bit& operator= (const bool& i);
 
     int   Value()   const  { return m_Null ? 0 : (int) m_Val; }
     void* BindVal() const  { return (void*) &m_Val; }
@@ -971,64 +590,22 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_Numeric : public CDB_Object
 {
 public:
-    CDB_Numeric() : CDB_Object(true)  { m_Precision= m_Scale= 0; return; }
-    CDB_Numeric(unsigned int precision, unsigned int scale)
-        : CDB_Object(false) {
-        m_Precision = precision;
-        m_Scale     = scale;
-        memset(m_Body, 0, sizeof(m_Body));
-    }
+    CDB_Numeric();
+    CDB_Numeric(unsigned int precision, unsigned int scale);
     CDB_Numeric(unsigned int precision, unsigned int scale,
-                const unsigned char* arr)
-        : CDB_Object(false) {
-        m_Precision = precision;
-        m_Scale     = scale;
-        memcpy(m_Body, arr, sizeof(m_Body));
-    }
-
+                const unsigned char* arr);
     CDB_Numeric(unsigned int precision, unsigned int scale, bool is_negative,
-                const unsigned char* arr)
-        : CDB_Object(false) {
-        m_Precision = precision;
-        m_Scale     = scale;
-        m_Body[0]= is_negative? 1 : 0;
-        memcpy(m_Body+1, arr, sizeof(m_Body)-1);
-    }
-
-    CDB_Numeric(unsigned int precision, unsigned int scale, const char* val) {
-        x_MakeFromString(precision, scale, val);
-    }
-    CDB_Numeric(unsigned int precision, unsigned int scale, const string& val) {
-        x_MakeFromString(precision, scale, val.c_str());
-    }
+                const unsigned char* arr);
+    CDB_Numeric(unsigned int precision, unsigned int scale, const char* val);
+    CDB_Numeric(unsigned int precision, unsigned int scale, const string& val);
 
     CDB_Numeric& Assign(unsigned int precision, unsigned int scale,
-                        const unsigned char* arr) {
-        m_Precision = precision;
-        m_Scale     = scale;
-        m_Null      = false;
-        memcpy(m_Body, arr, sizeof(m_Body));
-        return *this;
-    }
-
+                        const unsigned char* arr);
     CDB_Numeric& Assign(unsigned int precision, unsigned int scale,
-                        bool is_negative, const unsigned char* arr) {
-        m_Precision = precision;
-        m_Scale     = scale;
-        m_Null      = false;
-        m_Body[0]= is_negative? 1 : 0;
-        memcpy(m_Body + 1, arr, sizeof(m_Body) - 1);
-        return *this;
-    }
+                        bool is_negative, const unsigned char* arr);
 
-    CDB_Numeric& operator= (const char* val) {
-        x_MakeFromString(m_Precision, m_Scale, val);
-        return *this;
-    }
-    CDB_Numeric& operator= (const string& val) {
-        x_MakeFromString(m_Precision, m_Scale, val.c_str());
-        return *this;
-    }
+    CDB_Numeric& operator= (const char* val);
+    CDB_Numeric& operator= (const string& val);
 
     string Value() const;
 
@@ -1065,6 +642,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/08/07 15:54:43  ssikorsk
+ * Moved definitions of big inline functions into cpp.
+ *
  * Revision 1.20  2005/09/21 13:54:19  ssikorsk
  * Set CDB_DateTime and CDB_SmallDateTime to null in case of initialization with empty CTime
  *
