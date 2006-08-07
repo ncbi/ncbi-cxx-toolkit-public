@@ -96,6 +96,7 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CConstRef<objects::CPssmWithParameters> pssm,
                            const string& dbname)
 {
+    TSearchMessages m;
     options->Validate();
 
     // 1. Initialize the query data (borrow it from the factory)
@@ -103,7 +104,10 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
         query_data(query_factory->MakeLocalQueryData(&*options));
     m_InternalData->m_Queries = query_data->GetSequenceBlk();
     m_InternalData->m_QueryInfo = query_data->GetQueryInfo();
+    // get any warning messages from instantiating the queries
+    query_data->GetMessages(m); 
     m_Messages.resize(query_data->GetNumQueries());
+    m_Messages.Combine(m);
 
     // 2. Take care of any rps information
     if (Blast_ProgramIsRpsBlast(options->GetProgramType())) {
@@ -156,7 +160,6 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
         (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
 
     // 8. Get errors/warnings
-    TSearchMessages m;
     query_data->GetMessages(m);
     m_Messages.Combine(m);
 }
