@@ -462,6 +462,9 @@ class NCBI_XOBJMGR_EXPORT CBioseq_EditHandle : public CBioseq_Handle
 {
 public:
     CBioseq_EditHandle(void);
+    /// create edit interface class to the object which already allows editing
+    /// throw an exception if the argument is not in editing mode
+    explicit CBioseq_EditHandle(const CBioseq_Handle& h);
     
     /// Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
@@ -593,7 +596,6 @@ public:
 protected:
     friend class CScope_Impl;
 
-    CBioseq_EditHandle(const CBioseq_Handle& h);
     CBioseq_EditHandle(const CSeq_id_Handle& id, TScopeInfo& info);
     CBioseq_EditHandle(const CSeq_id_Handle& id, const TLock& lock);
 
@@ -827,6 +829,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2006/08/07 15:24:59  vasilche
+* CBioseq_EditHandle(CBioseq_Handle) made public and explicit.
+*
 * Revision 1.86  2006/02/02 14:28:19  vasilche
 * Added TObject, GetCompleteObject(), GetObjectCore() for templates.
 *
