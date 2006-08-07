@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.432 2006/07/31 20:31:23 ucko Exp $
+#  $Id: configure.ac,v 1.433 2006/08/07 14:53:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -244,8 +244,6 @@ AC_ARG_WITH(orbacus2,
    [ --with-orbacus=DIR      use ORBacus installation in DIR])
 AC_ARG_WITH(odbc,
    [ --with-odbc=DIR         use ODBC installation in DIR])
-AC_ARG_WITH(odbc2,
-   [ --without-odbc          do not use ODBC])
 AC_ARG_WITH(python,
    [ --with-python=DIR       use Python installation in DIR])
 AC_ARG_WITH(python2,
@@ -366,7 +364,7 @@ ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
-opengl mesa glut bdb odbc python sqlite sqlite3 icu cppunit boost boost-tag \
+opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -409,7 +407,8 @@ for x_arg in "$@" ; do
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* \
-      | --with-libxml=* | --with-libxslt=* | --with-bdb=* | --with-odbc=* \
+      | --with-libxml=* | --with-libxslt=* \
+      | --with-bdb=* | --with-odbc | --with-odbc=* \
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
@@ -3366,11 +3365,16 @@ fi
 
 
 ## ODBC
-if test "$with_odbc" != "no" ; then
-   case "$with_odbc" in
-      yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"} ;;
-      */*      ) ODBC_PATH=$with_odbc                  ;;
-   esac
+case "$with_odbc" in
+   # yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"}       ;;
+   yes | ""   ) : ${ODBC_PATH:=dbapi/driver/odbc/unix_odbc} ;;
+   internal   ) ODBC_PATH=dbapi/driver/odbc/unix_odbc       ;;
+   *          ) ODBC_PATH=$with_odbc                        ;;
+esac
+
+case "$ODBC_PATH" in
+ dbapi/* ) ;;
+ *)
    ODBC_INCLUDE="-I$ODBC_PATH/include"
    ODBC_LIBPATH="${ODBC_PATH}/lib"
    ODBC_LIBS="-L${ODBC_LIBPATH} ${CONF_f_runpath}${ODBC_LIBPATH} -lodbc -lodbcinst"
@@ -3383,7 +3387,8 @@ if test "$with_odbc" != "no" ; then
             SQLRETURN x = SQLConnect(hdbc, cp, 1, cp, 2, cp, 3);]])],
           [ncbi_cv_lib_odbc=yes], [ncbi_cv_lib_odbc=no])])
    if test "$ncbi_cv_lib_odbc" = "no"; then
-      with_odbc="no"
+      ODBC_PATH=dbapi/driver/odbc/unix_odbc
+      AC_MSG_WARN([Falling back to internal FreeTDS-specific ODBC implementation.])
    else
       # odbcss.h isn't self-contained :-/
       AC_CHECK_HEADERS(odbcss.h, [], [], [#include <sql.h>])
@@ -3406,18 +3411,23 @@ if test "$with_odbc" != "no" ; then
             [Define to 1 if SQLColAttribute's last argument is an SQLLEN *])
       fi
    fi
-fi
-if test "$with_odbc" = "no" ; then
-   ODBC_PATH="No_ODBC"
+   ;;
+esac
+
+case "$ODBC_PATH" in
+ dbapi/*)
+   # ODBC_PATH="No_ODBC"
    # Point to a local copy of unixODBC's headers, required by FreeTDS 0.64+.
-   ODBC_INCLUDE='-I$(includedir)/dbapi/driver/odbc/unix_odbc -I$(includedir0)/dbapi/driver/odbc/unix_odbc'
+   ODBC_INCLUDE="-I\$(includedir)/$ODBC_PATH -I\$(includedir0)/$ODBC_PATH"
    ODBC_LIBS=
    dnl AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1)
    AC_DEFINE(HAVE_SQLLEN, 1)
-else
+   ;;
+ *)
    NCBI_PACKAGE(ODBC)
    AC_DEFINE(HAVE_ODBC, 1, [Define to 1 if ODBC libraries are available.])
-fi
+   ;;
+esac
 
 ## Python
 if test "$with_python" != "no" ; then

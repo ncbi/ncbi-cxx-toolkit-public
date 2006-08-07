@@ -947,7 +947,6 @@ Optional Packages:
  --without-orbacus       do not use ORBacus CORBA libraries
  --with-orbacus=DIR      use ORBacus installation in DIR
  --with-odbc=DIR         use ODBC installation in DIR
- --without-odbc          do not use ODBC
  --with-python=DIR       use Python installation in DIR
  --without-python        do not use Python
  --with-cppunit=DIR      use CPPUNIT installation in DIR
@@ -2013,12 +2012,6 @@ if test "${with_odbc+set}" = set; then
 
 fi;
 
-# Check whether --with-odbc2 or --without-odbc2 was given.
-if test "${with_odbc2+set}" = set; then
-  withval="$with_odbc2"
-
-fi;
-
 # Check whether --with-python or --without-python was given.
 if test "${with_python+set}" = set; then
   withval="$with_python"
@@ -2346,7 +2339,7 @@ ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
-opengl mesa glut bdb odbc python sqlite sqlite3 icu cppunit boost boost-tag \
+opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -2389,7 +2382,8 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* \
-      | --with-libxml=* | --with-libxslt=* | --with-bdb=* | --with-odbc=* \
+      | --with-libxml=* | --with-libxslt=* \
+      | --with-bdb=* | --with-odbc | --with-odbc=* \
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
@@ -20062,11 +20056,16 @@ fi
 
 
 ## ODBC
-if test "$with_odbc" != "no" ; then
-   case "$with_odbc" in
-      yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"} ;;
-      */*      ) ODBC_PATH=$with_odbc                  ;;
-   esac
+case "$with_odbc" in
+   # yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"}       ;;
+   yes | ""   ) : ${ODBC_PATH:=dbapi/driver/odbc/unix_odbc} ;;
+   internal   ) ODBC_PATH=dbapi/driver/odbc/unix_odbc       ;;
+   *          ) ODBC_PATH=$with_odbc                        ;;
+esac
+
+case "$ODBC_PATH" in
+ dbapi/* ) ;;
+ *)
    ODBC_INCLUDE="-I$ODBC_PATH/include"
    ODBC_LIBPATH="${ODBC_PATH}/lib"
    ODBC_LIBS="-L${ODBC_LIBPATH} ${CONF_f_runpath}${ODBC_LIBPATH} -lodbc -lodbcinst"
@@ -20128,7 +20127,9 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_odbc" >&5
 echo "${ECHO_T}$ncbi_cv_lib_odbc" >&6
    if test "$ncbi_cv_lib_odbc" = "no"; then
-      with_odbc="no"
+      ODBC_PATH=dbapi/driver/odbc/unix_odbc
+      { echo "$as_me:$LINENO: WARNING: Falling back to internal FreeTDS-specific ODBC implementation." >&5
+echo "$as_me: WARNING: Falling back to internal FreeTDS-specific ODBC implementation." >&2;}
    else
       # odbcss.h isn't self-contained :-/
 
@@ -20426,24 +20427,29 @@ _ACEOF
 
       fi
    fi
-fi
-if test "$with_odbc" = "no" ; then
-   ODBC_PATH="No_ODBC"
+   ;;
+esac
+
+case "$ODBC_PATH" in
+ dbapi/*)
+   # ODBC_PATH="No_ODBC"
    # Point to a local copy of unixODBC's headers, required by FreeTDS 0.64+.
-   ODBC_INCLUDE='-I$(includedir)/dbapi/driver/odbc/unix_odbc -I$(includedir0)/dbapi/driver/odbc/unix_odbc'
+   ODBC_INCLUDE="-I\$(includedir)/$ODBC_PATH -I\$(includedir0)/$ODBC_PATH"
    ODBC_LIBS=
       cat >>confdefs.h <<\_ACEOF
 #define HAVE_SQLLEN 1
 _ACEOF
 
-else
+   ;;
+ *)
    	  WithPackages="$WithPackages${WithPackagesSep}ODBC"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ODBC 1
 _ACEOF
 
-fi
+   ;;
+esac
 
 ## Python
 if test "$with_python" != "no" ; then
