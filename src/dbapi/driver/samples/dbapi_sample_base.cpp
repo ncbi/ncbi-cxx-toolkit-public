@@ -136,11 +136,18 @@ CDbapiSampleApp::Init()
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
-#else
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "gateway", \
+                      "odbc", "ftds64_odbc", "ftds64_dblib"
+#elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
+                      "odbc", "ftds64_odbc", "ftds64_dblib"
+#else
+#define DEF_SERVER    "MS_DEV1"
+#define DEF_DRIVER    "ftds"
+#define ALL_DRIVERS   "ftds", "ftds63", "gateway", \
+                      "odbc", "ftds64_odbc", "ftds64_dblib"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -168,7 +175,7 @@ CDbapiSampleApp::Init()
     arg_desc->AddDefaultKey("lb", "use_load_balancer",
                             "Use load balancer for service mapping",
                             CArgDescriptions::eString, "off");
-    arg_desc->SetConstraint("lb", &(*new CArgAllow_Strings, 
+    arg_desc->SetConstraint("lb", &(*new CArgAllow_Strings,
                                     "on", "off", "random"));
 
     // Add user's command-line argument descriptions
@@ -195,7 +202,7 @@ CDbapiSampleApp::Run()
     } else {
         m_TDSVersion.erase();
     }
-    
+
     string service_mapping = args["lb"].AsString();
     if (service_mapping == "on") {
         m_UseSvcMapper = true;
@@ -203,7 +210,7 @@ CDbapiSampleApp::Run()
         static CRandom rdm_gen(time(NULL));
         m_UseSvcMapper = (rdm_gen.GetRand(0, 1) != 0);
     }
-    
+
     if (UseSvcMapper()) {
         DBLB_INSTALL_DEFAULT();
 #ifdef HAVE_LIBCONNEXT
@@ -212,7 +219,7 @@ CDbapiSampleApp::Run()
         ERR_POST("Load balancing requested, but not available in this build");
 #endif
     }
-    
+
     if ( m_TDSVersion.empty() ) {
         // Setup some driver-specific attributes
         if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
@@ -221,7 +228,7 @@ CDbapiSampleApp::Run()
             SetDatabaseParameter("version", "100");
 //         } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
 //             SetDatabaseParameter("version", "100");
-        } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") &&  
+        } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") &&
                     GetServerType() == eSybase ) {
             // ftds forks with Sybase databases using protocol v42 only ...
             SetDatabaseParameter("version", "42");
@@ -282,12 +289,12 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
 {
     auto_ptr<CDB_Connection> conn;
     I_DriverContext& dc(GetDriverContext());
-    
+
     if (validator) {
         conn.reset(dc.ConnectValidated(GetServerName(),
                               GetUserName(),
                               GetPassword(),
-                              *validator,         
+                              *validator,
                               mode,
                               reusable,
                               pool_name));
@@ -324,7 +331,7 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
             }
         }
     }
-    
+
     if ( m_UseSampleDatabase == eUseSampleDatabase ) {
         //  Change default database:
         auto_ptr<CDB_LangCmd> set_cmd(conn->LangCmd("use DBAPI_Sample"));
@@ -398,7 +405,7 @@ CDbapiSampleApp::DeleteLostTables(void)
         }
     }
 
-    for(citer = table_name_list.begin(); citer != table_name_list.end(); ++citer)      
+    for(citer = table_name_list.begin(); citer != table_name_list.end(); ++citer)
     {
       DeleteTable(*citer);
     }
@@ -542,7 +549,7 @@ CDbapiSampleErrHandler::~CDbapiSampleErrHandler(void)
 }
 
 // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
-bool 
+bool
 CDbapiSampleErrHandler::HandleIt(CDB_Exception* ex)
 {
     if ( !ex )
@@ -564,6 +571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/08/07 15:31:57  ssikorsk
+ * Added odbc, ftds64_odbc, ftds64_dblib drivers to a list of available drivers.
+ *
  * Revision 1.23  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
