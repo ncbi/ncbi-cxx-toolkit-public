@@ -215,6 +215,23 @@ CSeq_entry_Handle::TBlobVersion CSeq_entry_Handle::GetBlobVersion(void) const
 // CSeq_entry_EditHandle
 
 
+CSeq_entry_EditHandle::CSeq_entry_EditHandle(const CSeq_entry_Handle& h)
+    : CSeq_entry_Handle(h)
+{
+    if ( !h.GetTSE_Handle().CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "object is not in editing mode");
+    }
+}
+
+
+CSeq_entry_EditHandle::CSeq_entry_EditHandle(CSeq_entry_Info& info,
+                                             const CTSE_Handle& tse)
+    : CSeq_entry_Handle(info, tse)
+{
+}
+
+
 CSeq_entry_EditHandle CSeq_entry_EditHandle::GetParentEntry(void) const
 {
     CSeq_entry_EditHandle ret;
@@ -677,6 +694,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2006/08/07 15:25:04  vasilche
+* CSeq_entry_EditHandle(CSeq_entry_Handle) made public and explicit.
+*
 * Revision 1.22  2006/01/25 18:59:04  didenko
 * Redisgned bio objects edit facility
 *
