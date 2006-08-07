@@ -248,7 +248,7 @@ CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry,
       m_Level(level),
       m_InParts(0)
 {
-    x_Initialize(m_Scope->GetSeq_entryHandle(entry));
+    x_Initialize(scope.GetSeq_entryHandle(entry));
 }
 
 
@@ -281,6 +281,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/08/07 15:25:09  vasilche
+* Use CScope instead of CScope_Impl.
+*
 * Revision 1.8  2005/04/12 18:15:16  grichenk
 * Skip bioseq-sets not containing the requested types
 *

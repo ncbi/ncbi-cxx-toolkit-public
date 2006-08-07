@@ -47,7 +47,7 @@ CScope& CScopeSource::GetScope(void)
 {
     if ( m_Scope.IsNull() ) {
         m_Scope.Set(new CScope(m_BaseScope->GetObjectManager()));
-        m_Scope->AddScope(*m_BaseScope.GetImpl());
+        (*m_Scope).AddScope(*m_BaseScope);
     }
     return m_Scope;
 }
