@@ -329,6 +329,23 @@ int CBioseq_set_Handle::GetSeq_entry_Index(const CSeq_entry_Handle& entry) const
 /////////////////////////////////////////////////////////////////////////////
 // CBioseq_set_EditHandle
 
+CBioseq_set_EditHandle::CBioseq_set_EditHandle(const CBioseq_set_Handle& h)
+    : CBioseq_set_Handle(h)
+{
+    if ( !h.GetTSE_Handle().CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "object is not in editing mode");
+    }
+}
+
+
+CBioseq_set_EditHandle::CBioseq_set_EditHandle(CBioseq_set_Info& info,
+                                               const CTSE_Handle& tse)
+    : CBioseq_set_Handle(info, tse)
+{
+}
+
+
 CSeq_entry_EditHandle CBioseq_set_EditHandle::GetParentEntry(void) const
 {
     CSeq_entry_EditHandle ret;
@@ -627,9 +644,9 @@ void CBioseq_set_EditHandle::Remove(CBioseq_set_EditHandle::ERemoveMode mode) co
         x_Detach();
     else {
         CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
-        CSeq_entry_Handle parent = GetParentEntry();
+        CSeq_entry_EditHandle parent = GetParentEntry();
         x_Detach();
-        parent.GetEditHandle().Remove();
+        parent.Remove();
         tr->Commit();
     }
 }
@@ -748,6 +765,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/08/07 15:25:02  vasilche
+* CBioseq_set_EditHandle(CBioseq_set_Handle) made public and explicit.
+* Avoid unnecessary GetEditHandle() calls.
+*
 * Revision 1.24  2006/05/01 16:56:45  didenko
 * Attach SeqEntry edit command revamp
 *
