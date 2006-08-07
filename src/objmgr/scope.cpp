@@ -106,16 +106,18 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 }
 
 
-CTSE_Handle CScope::GetTSE_Handle(const CSeq_entry& entry)
+CTSE_Handle CScope::GetTSE_Handle(const CSeq_entry& entry,
+                                  EMissing action)
 {
-    return GetSeq_entryHandle(entry).GetTSE_Handle();
+    return GetSeq_entryHandle(entry, action).GetTSE_Handle();
 }
 
 
-CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
+CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq,
+                                       EMissing action)
 {
     //ERR_POST_ONCE(Warning<<"CScope::GetBioseqHandle(CBioseq&) is deprecated");
-    return m_Impl->GetBioseqHandle(seq);
+    return m_Impl->GetBioseqHandle(seq, action);
 }
 
 
@@ -139,30 +141,33 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id,
 }
 
 
-CBioseq_set_Handle CScope::GetBioseq_setHandle(const CBioseq_set& seqset)
+CBioseq_set_Handle CScope::GetBioseq_setHandle(const CBioseq_set& seqset,
+                                               EMissing action)
 {
     //ERR_POST_ONCE(Warning<<"CScope::GetBioseq_setHandle(CBioseq_set&) is deprecated.");
-    return m_Impl->GetBioseq_setHandle(seqset);
+    return m_Impl->GetBioseq_setHandle(seqset, action);
 }
 
 
-CSeq_entry_Handle CScope::GetSeq_entryHandle(const CSeq_entry& entry)
+CSeq_entry_Handle CScope::GetSeq_entryHandle(const CSeq_entry& entry,
+                                             EMissing action)
 {
     //ERR_POST_ONCE(Warning<<"CScope::GetSeq_entryHandle(CSeq_entry&) is deprecated.");
-    return m_Impl->GetSeq_entryHandle(entry);
+    return m_Impl->GetSeq_entryHandle(entry, action);
 }
 
 
-CSeq_annot_Handle CScope::GetSeq_annotHandle(const CSeq_annot& annot)
+CSeq_annot_Handle CScope::GetSeq_annotHandle(const CSeq_annot& annot,
+                                             EMissing action)
 {
     //ERR_POST_ONCE(Warning<<"CScope::GetSeq_annotHandle(CSeq_annot&) is deprecated.");
-    return m_Impl->GetSeq_annotHandle(annot);
+    return m_Impl->GetSeq_annotHandle(annot, action);
 }
 
 
 CSeq_entry_EditHandle CScope::GetSeq_entryEditHandle(const CSeq_entry& entry)
 {
-    CSeq_entry_Handle h = m_Impl->GetSeq_entryHandle(entry);
+    CSeq_entry_Handle h = m_Impl->GetSeq_entryHandle(entry, eMissing_Throw);
     if ( !h.GetTSE_Handle().CanBeEdited() ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CScope::GetSeq_entryEditHandle: entry cannot be edited");
@@ -173,7 +178,7 @@ CSeq_entry_EditHandle CScope::GetSeq_entryEditHandle(const CSeq_entry& entry)
 
 CSeq_annot_EditHandle CScope::GetSeq_annotEditHandle(const CSeq_annot& annot)
 {
-    CSeq_annot_Handle h = m_Impl->GetSeq_annotHandle(annot);
+    CSeq_annot_Handle h = m_Impl->GetSeq_annotHandle(annot, eMissing_Throw);
     if ( !h.GetTSE_Handle().CanBeEdited() ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CScope::GetSeq_annotEditHandle: annot cannot be edited");
@@ -184,7 +189,7 @@ CSeq_annot_EditHandle CScope::GetSeq_annotEditHandle(const CSeq_annot& annot)
 
 CBioseq_EditHandle CScope::GetBioseqEditHandle(const CBioseq& bioseq)
 {
-    CBioseq_Handle h = m_Impl->GetBioseqHandle(bioseq);
+    CBioseq_Handle h = m_Impl->GetBioseqHandle(bioseq, eMissing_Throw);
     if ( !h.GetTSE_Handle().CanBeEdited() ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CScope::GetBioseqEditHandle: bioseq cannot be edited");
@@ -196,7 +201,7 @@ CBioseq_EditHandle CScope::GetBioseqEditHandle(const CBioseq& bioseq)
 CBioseq_set_EditHandle
 CScope::GetBioseq_setEditHandle(const CBioseq_set& seqset)
 {
-    CBioseq_set_Handle h = m_Impl->GetBioseq_setHandle(seqset);
+    CBioseq_set_Handle h = m_Impl->GetBioseq_setHandle(seqset, eMissing_Throw);
     if ( !h.GetTSE_Handle().CanBeEdited() ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CScope::GetBioseq_setEditHandle: "
@@ -357,44 +362,50 @@ void CScope::AddScope(CScope& scope, TPriority priority)
 
 
 CSeq_entry_Handle CScope::AddTopLevelSeqEntry(CSeq_entry& entry,
-                                              TPriority priority)
+                                              TPriority priority,
+                                              EExist action)
 {
-    return m_Impl->AddSeq_entry(entry, priority);
+    return m_Impl->AddSeq_entry(entry, priority, action);
 }
 
 
 CBioseq_Handle CScope::AddBioseq(CBioseq& bioseq,
-                                 TPriority priority)
+                                 TPriority priority,
+                                 EExist action)
 {
-    return m_Impl->AddBioseq(bioseq, priority);
+    return m_Impl->AddBioseq(bioseq, priority, action);
 }
 
 
 CSeq_annot_Handle CScope::AddSeq_annot(CSeq_annot& annot,
-                                       TPriority priority)
+                                       TPriority priority,
+                                       EExist action)
 {
-    return m_Impl->AddSeq_annot(annot, priority);
+    return m_Impl->AddSeq_annot(annot, priority, action);
 }
 
 
 CSeq_entry_Handle CScope::AddTopLevelSeqEntry(const CSeq_entry& entry,
-                                              TPriority priority)
+                                              TPriority priority,
+                                              EExist action)
 {
-    return m_Impl->AddSharedSeq_entry(entry, priority);
+    return m_Impl->AddSharedSeq_entry(entry, priority, action);
 }
 
 
 CBioseq_Handle CScope::AddBioseq(const CBioseq& bioseq,
-                                 TPriority priority)
+                                 TPriority priority,
+                                 EExist action)
 {
-    return m_Impl->AddSharedBioseq(bioseq, priority);
+    return m_Impl->AddSharedBioseq(bioseq, priority, action);
 }
 
 
 CSeq_annot_Handle CScope::AddSeq_annot(const CSeq_annot& annot,
-                                       TPriority priority)
+                                       TPriority priority,
+                                       EExist action)
 {
-    return m_Impl->AddSharedSeq_annot(annot, priority);
+    return m_Impl->AddSharedSeq_annot(annot, priority, action);
 }
 
 
@@ -474,6 +485,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.121  2006/08/07 15:25:11  vasilche
+* Added RemoveTopLevelEntry(CSeq_entry_Handle).
+* Fixed removing top level entries.
+* AddXxx() and GetXxxHandle() accept extra control argument EMissing/EExist.
+*
 * Revision 1.120  2006/06/05 13:42:05  vasilche
 * Added CScope::GetObjectManager().
 *

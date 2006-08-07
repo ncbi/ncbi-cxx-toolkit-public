@@ -87,6 +87,12 @@ public:
     explicit CScope(CObjectManager& objmgr);
     virtual ~CScope(void);
 
+    // priority type and special value for added objects
+    typedef int TPriority;
+    enum EPriority {
+        kPriority_NotSet = -1
+    };
+
     /// Get object manager controlling this scope
     CObjectManager& GetObjectManager(void);
 
@@ -119,18 +125,39 @@ public:
     /// bioseq handles for all requested ids in the same order.
     TBioseqHandles GetBioseqHandles(const TIds& ids);
 
+    /// GetXxxHandle control values.
+    enum EMissing {
+        eMissing_Throw,
+        eMissing_Null,
+        eMissing_Default = eMissing_Throw
+    };
+
     // Deprecated interface
-    CTSE_Handle GetTSE_Handle(const CSeq_entry& tse);
-    CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
-    CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& seqset);
-    CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
-    CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
+    /// Find object in scope
+    /// If object is not found GetXxxHandle() methods will either
+    /// throw an exception or return null handle depending on argument.
+    CTSE_Handle GetTSE_Handle(const CSeq_entry& tse,
+                              EMissing action = eMissing_Default);
+    CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq,
+                                   EMissing action = eMissing_Default);
+    CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& seqset,
+                                           EMissing action = eMissing_Default);
+    CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry,
+                                         EMissing action = eMissing_Default);
+    CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot,
+                                         EMissing action = eMissing_Default);
 
-    CBioseq_Handle GetObjectHandle(const CBioseq& bioseq);
-    CBioseq_set_Handle GetObjectHandle(const CBioseq_set& seqset);
-    CSeq_entry_Handle GetObjectHandle(const CSeq_entry& entry);
-    CSeq_annot_Handle GetObjectHandle(const CSeq_annot& annot);
+    CBioseq_Handle GetObjectHandle(const CBioseq& bioseq,
+                                   EMissing action = eMissing_Default);
+    CBioseq_set_Handle GetObjectHandle(const CBioseq_set& seqset,
+                                       EMissing action = eMissing_Default);
+    CSeq_entry_Handle GetObjectHandle(const CSeq_entry& entry,
+                                      EMissing action = eMissing_Default);
+    CSeq_annot_Handle GetObjectHandle(const CSeq_annot& annot,
+                                      EMissing action = eMissing_Default);
 
+    /// Get edit handle for the specified object
+    /// Throw an exception if object is not found, or non-editable
     CBioseq_EditHandle GetBioseqEditHandle(const CBioseq& bioseq);
     CSeq_entry_EditHandle GetSeq_entryEditHandle(const CSeq_entry& entry);
     CSeq_annot_EditHandle GetSeq_annotEditHandle(const CSeq_annot& annot);
@@ -164,10 +191,6 @@ public:
 
 
     // CScope contents modification methods
-    typedef int TPriority;
-    enum EPriority {
-        kPriority_NotSet = -1
-    };
 
     /// Add default data loaders from object manager
     void AddDefaults(TPriority pri = kPriority_NotSet);
@@ -182,31 +205,66 @@ public:
                   TPriority pri = kPriority_NotSet);
 
 
+    /// AddXxx() control values
+    enum EExist {
+        eExist_Throw,
+        eExist_Get,
+        eExist_Default = eExist_Throw
+    };
     /// Add seq_entry, default priority is higher than for defaults or loaders
+    /// Add object to the score with possibility to edit it directly.
+    /// If the object is already in the scope the AddXxx() methods will
+    /// throw an exception or return handle to existent object depending
+    /// on the action argument.
     CSeq_entry_Handle AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                                          TPriority pri = kPriority_NotSet);
+                                          TPriority pri = kPriority_NotSet,
+                                          EExist action = eExist_Default);
     /// Add shared Seq-entry, scope will not modify it.
     /// If edit handle is requested, scope will create a copy object.
+    /// If the object is already in the scope the AddXxx() methods will
+    /// throw an exception or return handle to existent object depending
+    /// on the action argument.
     CSeq_entry_Handle AddTopLevelSeqEntry(const CSeq_entry& top_entry,
-                                          TPriority pri = kPriority_NotSet);
+                                          TPriority pri = kPriority_NotSet,
+                                          EExist action = eExist_Throw);
+
 
     /// Add bioseq, return bioseq handle. Try to use unresolved seq-id
     /// from the bioseq, fail if all ids are already resolved to
     /// other sequences.
+    /// Add object to the score with possibility to edit it directly.
+    /// If the object is already in the scope the AddXxx() methods will
+    /// throw an exception or return handle to existent object depending
+    /// on the action argument.
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
-                             TPriority pri = kPriority_NotSet);
+                             TPriority pri = kPriority_NotSet,
+                             EExist action = eExist_Throw);
+
     /// Add shared Bioseq, scope will not modify it.
     /// If edit handle is requested, scope will create a copy object.
+    /// If the object is already in the scope the AddXxx() methods will
+    /// throw an exception or return handle to existent object depending
+    /// on the action argument.
     CBioseq_Handle AddBioseq(const CBioseq& bioseq,
-                             TPriority pri = kPriority_NotSet);
+                             TPriority pri = kPriority_NotSet,
+                             EExist action = eExist_Throw);
 
     /// Add Seq-annot, return its CSeq_annot_Handle.
+    /// Add object to the score with possibility to edit it directly.
+    /// If the object is already in the scope the AddXxx() methods will
+    /// throw an exception or return handle to existent object depending
+    /// on the action argument.
     CSeq_annot_Handle AddSeq_annot(CSeq_annot& annot,
-                                   TPriority pri = kPriority_NotSet);
+                                   TPriority pri = kPriority_NotSet,
+                                   EExist action = eExist_Throw);
     /// Add shared Seq-annot, scope will not modify it.
     /// If edit handle is requested, scope will create a copy object.
+    /// If the object is already in the scope the AddXxx() methods will
+    /// throw an exception or return handle to existent object depending
+    /// on the action argument.
     CSeq_annot_Handle AddSeq_annot(const CSeq_annot& annot,
-                                   TPriority pri = kPriority_NotSet);
+                                   TPriority pri = kPriority_NotSet,
+                                   EExist action = eExist_Throw);
 
     /// Get editable Biosec handle by regular one
     CBioseq_EditHandle     GetEditHandle(const CBioseq_Handle&     seq);
@@ -241,6 +299,7 @@ public:
     // AddBioseq(). Throw exception if the TSE is still in use or
     /// not found in the scope.
     void RemoveTopLevelSeqEntry(const CTSE_Handle& entry);
+    void RemoveTopLevelSeqEntry(const CSeq_entry_Handle& entry);
 
     /// Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id&        id );
@@ -315,30 +374,34 @@ CScope_Impl& CScope::GetImpl(void)
 
 
 inline
-CBioseq_Handle CScope::GetObjectHandle(const CBioseq& obj)
+CBioseq_Handle CScope::GetObjectHandle(const CBioseq& obj,
+                                       EMissing action)
 {
-    return GetBioseqHandle(obj);
+    return GetBioseqHandle(obj, action);
 }
 
 
 inline
-CBioseq_set_Handle CScope::GetObjectHandle(const CBioseq_set& obj)
+CBioseq_set_Handle CScope::GetObjectHandle(const CBioseq_set& obj,
+                                           EMissing action)
 {
-    return GetBioseq_setHandle(obj);
+    return GetBioseq_setHandle(obj, action);
 }
 
 
 inline
-CSeq_entry_Handle CScope::GetObjectHandle(const CSeq_entry& obj)
+CSeq_entry_Handle CScope::GetObjectHandle(const CSeq_entry& obj,
+                                          EMissing action)
 {
-    return GetSeq_entryHandle(obj);
+    return GetSeq_entryHandle(obj, action);
 }
 
 
 inline
-CSeq_annot_Handle CScope::GetObjectHandle(const CSeq_annot& obj)
+CSeq_annot_Handle CScope::GetObjectHandle(const CSeq_annot& obj,
+                                          EMissing action)
 {
-    return GetSeq_annotHandle(obj);
+    return GetSeq_annotHandle(obj, action);
 }
 
 
@@ -369,6 +432,14 @@ CSeq_annot_EditHandle CScope::GetObjectEditHandle(const CSeq_annot& obj)
     return GetSeq_annotEditHandle(obj);
 }
 
+
+inline
+void CScope::RemoveTopLevelSeqEntry(const CSeq_entry_Handle& entry)
+{
+    RemoveTopLevelSeqEntry(entry.GetTSE_Handle());
+}
+
+
 /* @} */
 
 
@@ -378,6 +449,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2006/08/07 15:25:11  vasilche
+* Added RemoveTopLevelEntry(CSeq_entry_Handle).
+* Fixed removing top level entries.
+* AddXxx() and GetXxxHandle() accept extra control argument EMissing/EExist.
+*
 * Revision 1.92  2006/07/10 18:08:13  vasilche
 * Added overloaded CScope::GetObjectHandle() & CScope::GetObjectEditHandle().
 *

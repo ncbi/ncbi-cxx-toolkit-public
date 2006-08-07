@@ -145,37 +145,42 @@ public:
 
     //////////////////////////////////////////////////////////////////
     // Adding top level objects: DataLoader, Seq-entry, Bioseq, Seq-annot
-    enum EPriority {
-        kPriority_NotSet = -1
-    };
+    typedef int TMissing;
+    typedef int TExist;
 
     // Add default data loaders from object manager
-    void AddDefaults(TPriority priority = kPriority_NotSet);
+    void AddDefaults(TPriority priority);
     // Add data loader by name.
     // The loader (or its factory) must be known to Object Manager.
     void AddDataLoader(const string& loader_name,
-                       TPriority priority = kPriority_NotSet);
+                       TPriority priority);
     // Add the scope's datasources as a single group with the given priority
-    void AddScope(CScope_Impl& scope, TPriority priority = kPriority_NotSet);
+    void AddScope(CScope_Impl& scope, TPriority priority);
 
     // Add seq_entry, default priority is higher than for defaults or loaders
     CSeq_entry_Handle AddSeq_entry(CSeq_entry& entry,
-                                   TPriority pri = kPriority_NotSet);
+                                   TPriority pri,
+                                   TExist action);
     CSeq_entry_Handle AddSharedSeq_entry(const CSeq_entry& entry,
-                                         TPriority pri = kPriority_NotSet);
+                                         TPriority pri,
+                                         TExist action);
     // Add bioseq, return bioseq handle. Try to use unresolved seq-id
     // from the bioseq, fail if all ids are already resolved to
     // other sequences.
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
-                             TPriority pri = kPriority_NotSet);
+                             TPriority pri,
+                             TExist action);
     CBioseq_Handle AddSharedBioseq(const CBioseq& bioseq,
-                                   TPriority pri = kPriority_NotSet);
+                                   TPriority pri,
+                                   TExist action);
 
     // Add Seq-annot.
     CSeq_annot_Handle AddSeq_annot(CSeq_annot& annot,
-                                   TPriority pri = kPriority_NotSet);
+                                   TPriority pri,
+                                   TExist action);
     CSeq_annot_Handle AddSharedSeq_annot(const CSeq_annot& annot,
-                                         TPriority pri = kPriority_NotSet);
+                                         TPriority pri,
+                                         TExist action);
 
     //////////////////////////////////////////////////////////////////
     // Modification of existing object tree
@@ -293,10 +298,14 @@ public:
     void RemoveTopLevelSeqEntry(CTSE_Handle entry);
 
     // Deprecated interface
-    CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
-    CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& seqset);
-    CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
-    CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
+    CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq,
+                                   TMissing action);
+    CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& seqset,
+                                           TMissing action);
+    CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry,
+                                         TMissing action);
+    CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot,
+                                         TMissing action);
     CSeq_entry_Handle GetSeq_entryHandle(const CTSE_Handle& tse);
 
     CScope& GetScope(void);
@@ -396,11 +405,16 @@ public:
     typedef pair<CConstRef<CBioseq_set_Info>, TTSE_Lock> TBioseq_set_Lock;
     typedef CDataSource_ScopeInfo::TBioseq_Lock TBioseq_Lock;
 
-    TTSE_Lock x_GetTSE_Lock(const CSeq_entry& tse);
-    TSeq_entry_Lock x_GetSeq_entry_Lock(const CSeq_entry& entry);
-    TSeq_annot_Lock x_GetSeq_annot_Lock(const CSeq_annot& annot);
-    TBioseq_set_Lock x_GetBioseq_set_Lock(const CBioseq_set& seqset);
-    TBioseq_Lock x_GetBioseq_Lock(const CBioseq& bioseq);
+    TTSE_Lock x_GetTSE_Lock(const CSeq_entry& tse,
+                            int action);
+    TSeq_entry_Lock x_GetSeq_entry_Lock(const CSeq_entry& entry,
+                                        int action);
+    TSeq_annot_Lock x_GetSeq_annot_Lock(const CSeq_annot& annot,
+                                        int action);
+    TBioseq_set_Lock x_GetBioseq_set_Lock(const CBioseq_set& seqset,
+                                          int action);
+    TBioseq_Lock x_GetBioseq_Lock(const CBioseq& bioseq,
+                                  int action);
 
     TTSE_Lock x_GetTSE_Lock(const CTSE_Lock& lock, CDataSource_ScopeInfo& ds);
     TTSE_Lock x_GetTSE_Lock(const CTSE_ScopeInfo& tse);

@@ -126,7 +126,7 @@ void CScope_Impl::AddDefaults(TPriority priority)
     TWriteLockGuard guard(m_ConfLock);
     NON_CONST_ITERATE( CObjectManager::TDataSourcesLock, it, ds_set ) {
         m_setDataSrc.Insert(*x_GetDSInfo(const_cast<CDataSource&>(**it)),
-                            (priority == kPriority_NotSet) ?
+                            (priority == CScope::kPriority_NotSet) ?
                             (*it)->GetDefaultPriority() : priority);
     }
     x_ClearCacheOnNewData();
@@ -139,7 +139,7 @@ void CScope_Impl::AddDataLoader(const string& loader_name, TPriority priority)
 
     TWriteLockGuard guard(m_ConfLock);
     m_setDataSrc.Insert(*x_GetDSInfo(*ds),
-                        (priority == kPriority_NotSet) ?
+                        (priority == CScope::kPriority_NotSet) ?
                         ds->GetDefaultPriority() : priority);
     x_ClearCacheOnNewData();
 }
@@ -152,15 +152,28 @@ void CScope_Impl::AddScope(CScope_Impl& scope, TPriority priority)
     src_guard.Release();
     
     TWriteLockGuard guard(m_ConfLock);
-    m_setDataSrc.Insert(tree, (priority == kPriority_NotSet) ? 9 : priority);
+    m_setDataSrc.Insert(tree,
+                        (priority == CScope::kPriority_NotSet) ? 9 : priority);
     x_ClearCacheOnNewData();
 }
 
 
 CSeq_entry_Handle CScope_Impl::AddSeq_entry(CSeq_entry& entry,
-                                            TPriority priority)
+                                            TPriority priority,
+                                            TExist action)
 {
     TWriteLockGuard guard(m_ConfLock);
+    
+    // first check if object already added to the scope
+    TSeq_entry_Lock lock = x_GetSeq_entry_Lock(entry, CScope::eMissing_Null);
+    if ( lock.first ) {
+        if ( action == CScope::eExist_Throw ) {
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       "Seq-entry already added to the scope");
+        }
+        return CSeq_entry_Handle(*lock.first, *lock.second);
+    }
+    
     CRef<CDataSource_ScopeInfo> ds_info = GetNonSharedDS(priority);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(entry);
     x_ClearCacheOnNewData();
@@ -170,9 +183,21 @@ CSeq_entry_Handle CScope_Impl::AddSeq_entry(CSeq_entry& entry,
 
 
 CSeq_entry_Handle CScope_Impl::AddSharedSeq_entry(const CSeq_entry& entry,
-                                                 TPriority priority)
+                                                  TPriority priority,
+                                                  TExist action)
 {
     TWriteLockGuard guard(m_ConfLock);
+    
+    // first check if object already added to the scope
+    TSeq_entry_Lock lock = x_GetSeq_entry_Lock(entry, CScope::eMissing_Null);
+    if ( lock.first ) {
+        if ( action == CScope::eExist_Throw ) {
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       "Seq-entry already added to the scope");
+        }
+        return CSeq_entry_Handle(*lock.first, *lock.second);
+    }
+    
     CRef<CDataSource> ds = m_ObjMgr->AcquireSharedSeq_entry(entry);
     CRef<CDataSource_ScopeInfo> ds_info = AddDS(ds, priority);
     CTSE_Lock tse_lock = ds->GetSharedTSE();
@@ -183,9 +208,21 @@ CSeq_entry_Handle CScope_Impl::AddSharedSeq_entry(const CSeq_entry& entry,
 
 
 CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
-                                      TPriority priority)
+                                      TPriority priority,
+                                      TExist action)
 {
     TWriteLockGuard guard(m_ConfLock);
+    
+    // first check if object already added to the scope
+    TBioseq_Lock lock = x_GetBioseq_Lock(bioseq, CScope::eMissing_Null);
+    if ( lock ) {
+        if ( action == CScope::eExist_Throw ) {
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       "Bioseq already added to the scope");
+        }
+        return CBioseq_Handle(CSeq_id_Handle(), *lock);
+    }
+    
     CRef<CDataSource_ScopeInfo> ds_info = GetNonSharedDS(priority);
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(bioseq);
@@ -198,7 +235,8 @@ CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
 
 
 CBioseq_Handle CScope_Impl::AddSharedBioseq(const CBioseq& bioseq,
-                                            TPriority priority)
+                                            TPriority priority,
+                                            TExist action)
 {
     TWriteLockGuard guard(m_ConfLock);
     CRef<CDataSource> ds = m_ObjMgr->AcquireSharedBioseq(bioseq);
@@ -213,9 +251,21 @@ CBioseq_Handle CScope_Impl::AddSharedBioseq(const CBioseq& bioseq,
 
 
 CSeq_annot_Handle CScope_Impl::AddSeq_annot(CSeq_annot& annot,
-                                            TPriority priority)
+                                            TPriority priority,
+                                            TExist action)
 {
     TWriteLockGuard guard(m_ConfLock);
+    
+    // first check if object already added to the scope
+    TSeq_annot_Lock lock = x_GetSeq_annot_Lock(annot, CScope::eMissing_Null);
+    if ( lock.first ) {
+        if ( action == CScope::eExist_Throw ) {
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       "Seq-annot already added to the scope");
+        }
+        return CSeq_annot_Handle(*lock.first, *lock.second);
+    }
+    
     CRef<CDataSource_ScopeInfo> ds_info = GetNonSharedDS(priority);
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetSeq_set(); // it's not optional
@@ -229,9 +279,21 @@ CSeq_annot_Handle CScope_Impl::AddSeq_annot(CSeq_annot& annot,
 
 
 CSeq_annot_Handle CScope_Impl::AddSharedSeq_annot(const CSeq_annot& annot,
-                                                  TPriority priority)
+                                                  TPriority priority,
+                                                  TExist action)
 {
     TWriteLockGuard guard(m_ConfLock);
+    
+    // first check if object already added to the scope
+    TSeq_annot_Lock lock = x_GetSeq_annot_Lock(annot, CScope::eMissing_Null);
+    if ( lock.first ) {
+        if ( action == CScope::eExist_Throw ) {
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       "Seq-annot already added to the scope");
+        }
+        return CSeq_annot_Handle(*lock.first, *lock.second);
+    }
+    
     CRef<CDataSource> ds = m_ObjMgr->AcquireSharedSeq_annot(annot);
     CRef<CDataSource_ScopeInfo> ds_info = AddDS(ds, priority);
     CTSE_Lock tse_lock = ds->GetSharedTSE();
@@ -305,6 +367,7 @@ void CScope_Impl::RemoveTopLevelSeqEntry(CTSE_Handle tse)
                 "CScope_Impl::RemoveTopLevelSeqEntry: "
                 "can not remove a loaded TSE");
     }
+    tse_lock.Reset();
     tse_info->RemoveFromHistory(eRemoveIfLocked);
     _ASSERT(!tse_info->IsAttached());
     _ASSERT(!tse);
@@ -315,11 +378,14 @@ void CScope_Impl::RemoveTopLevelSeqEntry(CTSE_Handle tse)
         ds.Reset();
         ds_info->DetachScope();
     }
+    /*
     else { // private -> remove TSE only
-        ds_info->GetDataSource().DropStaticTSE
-            (const_cast<CTSE_Info&>(*tse_lock));
-        x_ClearCacheOnRemoveData();
+        CRef<CTSE_Info> info(&const_cast<CTSE_Info&>(*tse_lock));
+        tse_lock.Reset();
+        ds_info->GetDataSource().DropStaticTSE(*info);
     }
+    */
+    x_ClearCacheOnRemoveData();
 }
 
 
@@ -800,19 +866,55 @@ void CScope_Impl::x_ClearAnnotCache(void)
 }
 
 
-CBioseq_set_Handle CScope_Impl::GetBioseq_setHandle(const CBioseq_set& seqset)
+CBioseq_set_Handle CScope_Impl::GetBioseq_setHandle(const CBioseq_set& seqset,
+                                                    TMissing action)
 {
+    CBioseq_set_Handle ret;
     TReadLockGuard guard(m_ConfLock);
-    TBioseq_set_Lock lock = x_GetBioseq_set_Lock(seqset);
-    return CBioseq_set_Handle(*lock.first, *lock.second);
+    TBioseq_set_Lock lock = x_GetBioseq_set_Lock(seqset, action);
+    if ( lock.first ) {
+        ret = CBioseq_set_Handle(*lock.first, *lock.second);
+    }
+    return ret;
 }
 
 
-CSeq_entry_Handle CScope_Impl::GetSeq_entryHandle(const CSeq_entry& entry)
+CSeq_entry_Handle CScope_Impl::GetSeq_entryHandle(const CSeq_entry& entry,
+                                                  TMissing action)
 {
+    CSeq_entry_Handle ret;
     TReadLockGuard guard(m_ConfLock);
-    TSeq_entry_Lock lock = x_GetSeq_entry_Lock(entry);
-    return CSeq_entry_Handle(*lock.first, *lock.second);
+    TSeq_entry_Lock lock = x_GetSeq_entry_Lock(entry, action);
+    if ( lock.first ) {
+        ret = CSeq_entry_Handle(*lock.first, *lock.second);
+    }
+    return ret;
+}
+
+
+CSeq_annot_Handle CScope_Impl::GetSeq_annotHandle(const CSeq_annot& annot,
+                                                  TMissing action)
+{
+    CSeq_annot_Handle ret;
+    TReadLockGuard guard(m_ConfLock);
+    TSeq_annot_Lock lock = x_GetSeq_annot_Lock(annot, action);
+    if ( lock.first ) {
+        ret = CSeq_annot_Handle(*lock.first, *lock.second);
+    }
+    return ret;
+}
+
+
+CBioseq_Handle CScope_Impl::GetBioseqHandle(const CBioseq& seq,
+                                            TMissing action)
+{
+    CBioseq_Handle ret;
+    TReadLockGuard guard(m_ConfLock);
+    ret.m_Info = x_GetBioseq_Lock(seq, action);
+    if ( ret.m_Info ) {
+        x_UpdateHandleSeq_id(ret);
+    }
+    return ret;
 }
 
 
@@ -822,33 +924,13 @@ CSeq_entry_Handle CScope_Impl::GetSeq_entryHandle(const CTSE_Handle& tse)
 }
 
 
-CSeq_annot_Handle CScope_Impl::GetSeq_annotHandle(const CSeq_annot& annot)
-{
-    TReadLockGuard guard(m_ConfLock);
-    TSeq_annot_Lock lock = x_GetSeq_annot_Lock(annot);
-    return CSeq_annot_Handle(*lock.first, *lock.second);
-}
-
-
-CBioseq_Handle CScope_Impl::GetBioseqHandle(const CBioseq& seq)
-{
-    CBioseq_Handle ret;
-    {{
-        TReadLockGuard guard(m_ConfLock);
-        ret.m_Info = x_GetBioseq_Lock(seq);
-        x_UpdateHandleSeq_id(ret);
-    }}
-    return ret;
-}
-
-
 CRef<CDataSource_ScopeInfo> CScope_Impl::AddDS(CRef<CDataSource> ds,
                                                TPriority priority)
 {
     TWriteLockGuard guard(m_ConfLock);
     CRef<CDataSource_ScopeInfo> ds_info = x_GetDSInfo(*ds);
     m_setDataSrc.Insert(*ds_info,
-                        (priority == kPriority_NotSet) ?
+                        (priority == CScope::kPriority_NotSet) ?
                         ds->GetDefaultPriority() : priority);
     x_ClearCacheOnNewData();
     return ds_info;
@@ -905,7 +987,8 @@ CRef<CDataSource_ScopeInfo> CScope_Impl::x_GetDSInfo(CDataSource& ds)
 }
 
 
-CScope_Impl::TTSE_Lock CScope_Impl::x_GetTSE_Lock(const CSeq_entry& tse)
+CScope_Impl::TTSE_Lock CScope_Impl::x_GetTSE_Lock(const CSeq_entry& tse,
+                                                  int action)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         TTSE_Lock lock = it->FindTSE_Lock(tse);
@@ -913,13 +996,16 @@ CScope_Impl::TTSE_Lock CScope_Impl::x_GetTSE_Lock(const CSeq_entry& tse)
             return lock;
         }
     }
+    if ( action == CScope::eMissing_Null ) {
+        return TTSE_Lock();
+    }
     NCBI_THROW(CObjMgrException, eFindFailed,
                "CScope_Impl::x_GetTSE_Lock: entry is not attached");
 }
 
 
 CScope_Impl::TSeq_entry_Lock
-CScope_Impl::x_GetSeq_entry_Lock(const CSeq_entry& entry)
+CScope_Impl::x_GetSeq_entry_Lock(const CSeq_entry& entry, int action)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         TSeq_entry_Lock lock = it->FindSeq_entry_Lock(entry);
@@ -927,13 +1013,16 @@ CScope_Impl::x_GetSeq_entry_Lock(const CSeq_entry& entry)
             return lock;
         }
     }
+    if ( action == CScope::eMissing_Null ) {
+        return TSeq_entry_Lock();
+    }
     NCBI_THROW(CObjMgrException, eFindFailed,
                "CScope_Impl::x_GetSeq_entry_Lock: entry is not attached");
 }
 
 
 CScope_Impl::TSeq_annot_Lock
-CScope_Impl::x_GetSeq_annot_Lock(const CSeq_annot& annot)
+CScope_Impl::x_GetSeq_annot_Lock(const CSeq_annot& annot, int action)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         TSeq_annot_Lock lock = it->FindSeq_annot_Lock(annot);
@@ -941,19 +1030,25 @@ CScope_Impl::x_GetSeq_annot_Lock(const CSeq_annot& annot)
             return lock;
         }
     }
+    if ( action == CScope::eMissing_Null ) {
+        return TSeq_annot_Lock();
+    }
     NCBI_THROW(CObjMgrException, eFindFailed,
                "CScope_Impl::x_GetSeq_annot_Lock: annot is not attached");
 }
 
 
 CScope_Impl::TBioseq_set_Lock
-CScope_Impl::x_GetBioseq_set_Lock(const CBioseq_set& seqset)
+CScope_Impl::x_GetBioseq_set_Lock(const CBioseq_set& seqset, int action)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         TBioseq_set_Lock lock = it->FindBioseq_set_Lock(seqset);
         if ( lock.first ) {
             return lock;
         }
+    }
+    if ( action == CScope::eMissing_Null ) {
+        return TBioseq_set_Lock();
     }
     NCBI_THROW(CObjMgrException, eFindFailed,
                "CScope_Impl::x_GetBioseq_set_Lock: "
@@ -962,13 +1057,16 @@ CScope_Impl::x_GetBioseq_set_Lock(const CBioseq_set& seqset)
 
 
 CScope_Impl::TBioseq_Lock
-CScope_Impl::x_GetBioseq_Lock(const CBioseq& bioseq)
+CScope_Impl::x_GetBioseq_Lock(const CBioseq& bioseq, int action)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         TBioseq_Lock lock = it->FindBioseq_Lock(bioseq);
         if ( lock ) {
             return lock;
         }
+    }
+    if ( action == CScope::eMissing_Null ) {
+        return TBioseq_Lock();
     }
     NCBI_THROW(CObjMgrException, eFindFailed,
                "CScope_Impl::x_GetBioseq_Lock: bioseq is not attached");
