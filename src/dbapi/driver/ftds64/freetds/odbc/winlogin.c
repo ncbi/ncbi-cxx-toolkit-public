@@ -51,7 +51,7 @@
 #include <assert.h>
 #include <shlobj.h>
 
-#include "resource.h"
+// #include "resource.h"
 
 #include "tds.h"
 #include "tdsodbc.h"
@@ -64,29 +64,29 @@
 #endif
 
 /* This is defined in ... */
-extern HINSTANCE hinstFreeTDS;
-
-static char *
-get_desktop_file(const char *file)
-{
-    LPITEMIDLIST pidl;
-    char path[MAX_PATH];
-    HRESULT hr;
-    LPMALLOC pMalloc = NULL;
-    char * res = NULL;
-
-    hr = SHGetMalloc(&pMalloc);
-    if (SUCCEEDED(hr)) {
-        hr = SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOPDIRECTORY, &pidl);
-        if (SUCCEEDED(hr)) {
-            if (SHGetPathFromIDList(pidl, path))
-                asprintf(&res, "%s\\%s", path, file);
-            (*pMalloc->lpVtbl->Free)(pMalloc, pidl);
-        }
-        (*pMalloc->lpVtbl->Release)(pMalloc);
-    }
-    return res;
-}
+// extern HINSTANCE hinstFreeTDS;
+//
+// static char *
+// get_desktop_file(const char *file)
+// {
+//     LPITEMIDLIST pidl;
+//     char path[MAX_PATH];
+//     HRESULT hr;
+//     LPMALLOC pMalloc = NULL;
+//     char * res = NULL;
+//
+//     hr = SHGetMalloc(&pMalloc);
+//     if (SUCCEEDED(hr)) {
+//         hr = SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOPDIRECTORY, &pidl);
+//         if (SUCCEEDED(hr)) {
+//             if (SHGetPathFromIDList(pidl, path))
+//                 asprintf(&res, "%s\\%s", path, file);
+//             (*pMalloc->lpVtbl->Free)(pMalloc, pidl);
+//         }
+//         (*pMalloc->lpVtbl->Release)(pMalloc);
+//     }
+//     return res;
+// }
 
 
 /**
