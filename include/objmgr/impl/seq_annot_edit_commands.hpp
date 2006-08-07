@@ -90,8 +90,8 @@ template<typename Handle>
 struct AnnotDataResolver;
 
 template<>
-struct AnnotDataResolver<CSeq_feat_Handle> {
-    typedef CSeq_feat_Handle THandle;
+struct AnnotDataResolver<CSeq_feat_EditHandle> {
+    typedef CSeq_feat_EditHandle THandle;
     typedef CSeq_feat        TData;
     static inline CConstRef<TData> GetData(const THandle& handle)
     { return handle.GetSeq_feat(); }
@@ -273,6 +273,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/08/07 15:25:07  vasilche
+* Introduced CSeq_feat_EditHandle.
+*
 * Revision 1.4  2006/05/01 16:56:45  didenko
 * Attach SeqEntry edit command revamp
 *
