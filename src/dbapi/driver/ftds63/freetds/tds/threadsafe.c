@@ -83,49 +83,49 @@ static void *no_unused_var_warn[] = { software_version, no_unused_var_warn };
 char *
 tds_timestamp_str(char *str, int maxlen)
 {
-	struct tm *tm;
-	time_t t;
+    struct tm *tm;
+    time_t t;
 
 #if HAVE_GETTIMEOFDAY
-	struct timeval tv;
-	char usecs[10];
+    struct timeval tv;
+    char usecs[10];
 #endif
 #ifdef _REENTRANT
-	struct tm res;
+    struct tm res;
 #endif
 
 #if HAVE_GETTIMEOFDAY
-	gettimeofday(&tv, NULL);
-	t = tv.tv_sec;
+    gettimeofday(&tv, NULL);
+    t = tv.tv_sec;
 #else
-	/*
-	 * XXX Need to get a better time resolution for
-	 * systems that don't have gettimeofday().
-	 */
-	time(&t);
+    /*
+     * XXX Need to get a better time resolution for
+     * systems that don't have gettimeofday().
+     */
+    time(&t);
 #endif
 
 #if defined(_REENTRANT) && !defined(WIN32)
 #if HAVE_FUNC_LOCALTIME_R_TM
-	tm = localtime_r(&t, &res);
+    tm = localtime_r(&t, &res);
 #else
-	tm = NULL;
-	if (!localtime_r(&t, &res))
-		tm = &res;
+    tm = NULL;
+    if (!localtime_r(&t, &res))
+        tm = &res;
 #endif /* HAVE_FUNC_LOCALTIME_R_TM */
 #else
-	tm = localtime(&t);
+    tm = localtime(&t);
 #endif
 
-/**	strftime(str, maxlen - 6, "%Y-%m-%d %H:%M:%S", tm); **/
-	strftime(str, maxlen - 6, "%H:%M:%S", tm);
+/** strftime(str, maxlen - 6, "%Y-%m-%d %H:%M:%S", tm); **/
+    strftime(str, maxlen - 6, "%H:%M:%S", tm);
 
 #if HAVE_GETTIMEOFDAY
-	sprintf(usecs, ".%06lu", (long) tv.tv_usec);
-	strcat(str, usecs);
+    sprintf(usecs, ".%06lu", (long) tv.tv_usec);
+    strcat(str, usecs);
 #endif
 
-	return str;
+    return str;
 }
 
 /*
@@ -135,7 +135,7 @@ tds_timestamp_str(char *str, int maxlen)
 #ifndef _REENTRANT
 # ifndef NETDB_REENTRANT
 #  define NETDB_REENTRANT 1
-# endif	/* NETDB_REENTRANT */
+# endif /* NETDB_REENTRANT */
 #endif /* _REENTRANT */
 
 #if !defined(NETDB_REENTRANT) && (defined(HAVE_GETIPNODEBYNAME) || defined(HAVE_GETIPNODEBYADDR))
@@ -147,76 +147,76 @@ static int
 tds_copy_hostent(struct hostent *he, struct hostent *result, char *buffer, int buflen)
 {
 #define CHECK_BUF(len) \
-	if (p + sizeof(struct hostent) - buffer > buflen) return -1;
+    if (p + sizeof(struct hostent) - buffer > buflen) return -1;
 #define ALIGN_P do { p += TDS_ALIGN_SIZE - 1; p -= (p-buffer) % TDS_ALIGN_SIZE; } while(0)
 
-	int n, i;
-	char *p = buffer;
-	struct hostent *he2;
+    int n, i;
+    char *p = buffer;
+    struct hostent *he2;
 
-	/* copy structure */
-	he2 = result;
-	memcpy(he2, he, sizeof(struct hostent));
+    /* copy structure */
+    he2 = result;
+    memcpy(he2, he, sizeof(struct hostent));
 
-	if (he->h_addr_list) {
-		int len;
-		char **addresses;
+    if (he->h_addr_list) {
+        int len;
+        char **addresses;
 
-		/* count addresses */
-		for (n = 0; he->h_addr_list[n]; ++n);
+        /* count addresses */
+        for (n = 0; he->h_addr_list[n]; ++n);
 
-		/* copy addresses */
-		addresses = (char **) p;
-		he2->h_addr_list = (char **) p;
-		len = sizeof(char *) * (n + 1);
-		CHECK_BUF(len);
-		p += len;
-		ALIGN_P;
-		for (i = 0; i < n; ++i) {
-			addresses[i] = p;
+        /* copy addresses */
+        addresses = (char **) p;
+        he2->h_addr_list = (char **) p;
+        len = sizeof(char *) * (n + 1);
+        CHECK_BUF(len);
+        p += len;
+        ALIGN_P;
+        for (i = 0; i < n; ++i) {
+            addresses[i] = p;
 
-			CHECK_BUF(he->h_length);
-			memcpy(p, he->h_addr_list[i], he->h_length);
-			p += he->h_length;
-			ALIGN_P;
-		}
-		addresses[n] = NULL;
-	}
+            CHECK_BUF(he->h_length);
+            memcpy(p, he->h_addr_list[i], he->h_length);
+            p += he->h_length;
+            ALIGN_P;
+        }
+        addresses[n] = NULL;
+    }
 
-	/* copy name */
-	if (he->h_name) {
-		n = strlen(he->h_name) + 1;
-		he2->h_name = p;
-		CHECK_BUF(n);
-		memcpy(p, he->h_name, n);
-		p += n;
-		ALIGN_P;
-	}
+    /* copy name */
+    if (he->h_name) {
+        n = strlen(he->h_name) + 1;
+        he2->h_name = p;
+        CHECK_BUF(n);
+        memcpy(p, he->h_name, n);
+        p += n;
+        ALIGN_P;
+    }
 
-	if (he->h_aliases) {
-		int len;
-		char **aliases;
+    if (he->h_aliases) {
+        int len;
+        char **aliases;
 
-		/* count aliases */
-		for (n = 0; he->h_aliases[n]; ++n);
+        /* count aliases */
+        for (n = 0; he->h_aliases[n]; ++n);
 
-		/* copy aliases */
-		aliases = (char **) p;
-		he2->h_aliases = (char **) p;
-		len = sizeof(char *) * (n + 1);
-		CHECK_BUF(len);
-		p += len;
-		for (i = 0; i < n; ++i) {
-			len = strlen(he->h_aliases[i]) + 1;
-			aliases[i] = p;
+        /* copy aliases */
+        aliases = (char **) p;
+        he2->h_aliases = (char **) p;
+        len = sizeof(char *) * (n + 1);
+        CHECK_BUF(len);
+        p += len;
+        for (i = 0; i < n; ++i) {
+            len = strlen(he->h_aliases[i]) + 1;
+            aliases[i] = p;
 
-			CHECK_BUF(len);
-			memcpy(p, he->h_aliases[i], len);
-			p += len;
-		}
-		aliases[n] = NULL;
-	}
-	return 0;
+            CHECK_BUF(len);
+            memcpy(p, he->h_aliases[i], len);
+            p += len;
+        }
+        aliases[n] = NULL;
+    }
+    return 0;
 }
 #endif
 
@@ -224,42 +224,42 @@ struct hostent *
 tds_gethostbyname_r(const char *servername, struct hostent *result, char *buffer, int buflen, int *h_errnop)
 {
 #if defined(NETDB_REENTRANT)
-	return gethostbyname(servername);
+    return gethostbyname(servername);
 
 /* we have a better replacements */
 #elif defined(HAVE_GETIPNODEBYNAME)
-	struct hostent *he = getipnodebyname(servername, AF_INET, 0, h_errnop);
+    struct hostent *he = getipnodebyname(servername, AF_INET, 0, h_errnop);
 
-	if (!he)
-		return NULL;
-	if (tds_copy_hostent(he, result, buffer, buflen)) {
-		errno = ENOMEM;
-		if (h_errnop)
-			*h_errnop = NETDB_INTERNAL;
-		freehostent(he);
-		return NULL;
-	}
-	freehostent(he);
-	return result;
+    if (!he)
+        return NULL;
+    if (tds_copy_hostent(he, result, buffer, buflen)) {
+        errno = ENOMEM;
+        if (h_errnop)
+            *h_errnop = NETDB_INTERNAL;
+        freehostent(he);
+        return NULL;
+    }
+    freehostent(he);
+    return result;
 
 #elif defined(HAVE_FUNC_GETHOSTBYNAME_R_6)
-	if (gethostbyname_r(servername, result, buffer, buflen, &result, h_errnop))
-		return NULL;
-	return result;
+    if (gethostbyname_r(servername, result, buffer, buflen, &result, h_errnop))
+        return NULL;
+    return result;
 
 #elif defined(HAVE_FUNC_GETHOSTBYNAME_R_5)
-	result = gethostbyname_r(servername, result, buffer, buflen, h_errnop);
-	return result;
+    result = gethostbyname_r(servername, result, buffer, buflen, h_errnop);
+    return result;
 
 #elif defined(HAVE_FUNC_GETHOSTBYNAME_R_3)
-	struct hostent_data *data = (struct hostent_data *) buffer;
+    struct hostent_data *data = (struct hostent_data *) buffer;
 
-	memset(buffer, 0, buflen);
-	if (gethostbyname_r(servername, result, data)) {
-		*h_errnop = 0;
-		result = NULL;
-	}
-	return result;
+    memset(buffer, 0, buflen);
+    if (gethostbyname_r(servername, result, data)) {
+        *h_errnop = 0;
+        result = NULL;
+    }
+    return result;
 
 #else
 #error gethostbyname_r style unknown
@@ -270,41 +270,41 @@ struct hostent *
 tds_gethostbyaddr_r(const char *addr, int len, int type, struct hostent *result, char *buffer, int buflen, int *h_errnop)
 {
 #if defined(NETDB_REENTRANT)
-	return gethostbyaddr(addr, len, type);
+    return gethostbyaddr(addr, len, type);
 
 #elif defined(HAVE_GETIPNODEBYADDR)
-	struct hostent *he = getipnodebyaddr(addr, len, type, h_errnop);
+    struct hostent *he = getipnodebyaddr(addr, len, type, h_errnop);
 
-	if (!he)
-		return NULL;
-	if (tds_copy_hostent(he, result, buffer, buflen)) {
-		errno = ENOMEM;
-		if (h_errnop)
-			*h_errnop = NETDB_INTERNAL;
-		freehostent(he);
-		return NULL;
-	}
-	freehostent(he);
-	return result;
+    if (!he)
+        return NULL;
+    if (tds_copy_hostent(he, result, buffer, buflen)) {
+        errno = ENOMEM;
+        if (h_errnop)
+            *h_errnop = NETDB_INTERNAL;
+        freehostent(he);
+        return NULL;
+    }
+    freehostent(he);
+    return result;
 
 #elif defined(HAVE_FUNC_GETHOSTBYADDR_R_8)
-	if (gethostbyaddr_r(addr, len, type, result, buffer, buflen, &result, h_errnop))
-		return NULL;
-	return result;
+    if (gethostbyaddr_r(addr, len, type, result, buffer, buflen, &result, h_errnop))
+        return NULL;
+    return result;
 
 #elif defined(HAVE_FUNC_GETHOSTBYADDR_R_7)
-	result = gethostbyaddr_r(addr, len, type, result, buffer, buflen, h_errnop);
-	return result;
+    result = gethostbyaddr_r(addr, len, type, result, buffer, buflen, h_errnop);
+    return result;
 
 #elif defined(HAVE_FUNC_GETHOSTBYADDR_R_5)
-	struct hostent_data *data = (struct hostent_data *) buffer;
+    struct hostent_data *data = (struct hostent_data *) buffer;
 
-	memset(buffer, 0, buflen);
-	if (gethostbyaddr_r(addr, len, type, result, data)) {
-		*h_errnop = 0;
-		result = NULL;
-	}
-	return result;
+    memset(buffer, 0, buflen);
+    if (gethostbyaddr_r(addr, len, type, result, data)) {
+        *h_errnop = 0;
+        result = NULL;
+    }
+    return result;
 
 #else
 #error gethostbyaddr_r style unknown
@@ -315,41 +315,44 @@ struct servent *
 tds_getservbyname_r(const char *name, const char *proto, struct servent *result, char *buffer, int buflen)
 {
 #if defined(NETDB_REENTRANT)
-	return getservbyname(name, proto);
+    return getservbyname(name, proto);
 
 #elif defined(HAVE_FUNC_GETSERVBYNAME_R_6)
-	struct servent result_buf;
+    struct servent result_buf;
 
-	getservbyname_r(name, proto, &result_buf, buffer, buflen, &result);
-	return result;
+    getservbyname_r(name, proto, &result_buf, buffer, buflen, &result);
+    return result;
 
 #elif defined(HAVE_FUNC_GETSERVBYNAME_R_5)
-	getservbyname_r(name, proto, result, buffer, buflen);
-	return result;
+    getservbyname_r(name, proto, result, buffer, buflen);
+    return result;
 
 #elif defined(HAVE_FUNC_GETSERVBYNAME_R_4)
-	struct servent_data data;
+    struct servent_data data;
 
-	getservbyname_r(name, proto, result, &data);
-	return result;
+    getservbyname_r(name, proto, result, &data);
+    return result;
 
 #elif defined(HAVE_GETADDRINFO)
-	struct addrinfo hints, *res;
+    struct addrinfo hints, *res;
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = PF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	if (getaddrinfo(NULL, name, &hints, &res))
-		return NULL;
-	if (res->ai_family != PF_INET || !res->ai_addr) {
-		freeaddrinfo(res);
-		return NULL;
-	}
-	memset(result, 0, sizeof(*result));
-	result->s_port = ((struct sockaddr_in *) res->ai_addr)->sin_port;
-	freeaddrinfo(res);
-	return result;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = PF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+#ifdef AI_CANONNAME
+        hints.ai_flags |= AI_CANONNAME;
+#endif
+    if (getaddrinfo(NULL, name, &hints, &res))
+        return NULL;
+    if (res->ai_family != PF_INET || !res->ai_addr) {
+        freeaddrinfo(res);
+        return NULL;
+    }
+    memset(result, 0, sizeof(*result));
+    result->s_port = ((struct sockaddr_in *) res->ai_addr)->sin_port;
+    freeaddrinfo(res);
+    return result;
 
 #else
 #error getservbyname_r style unknown
@@ -366,61 +369,61 @@ tds_get_homedir(void)
 #ifndef WIN32
 /* if is available getpwuid_r use it */
 #if defined(HAVE_GETUID) && defined(HAVE_GETPWUID_R)
-	struct passwd *pw, bpw;
-	char buf[1024];
+    struct passwd *pw, bpw;
+    char buf[1024];
 
 # if defined(HAVE_FUNC_GETPWUID_R_5)
-	if (getpwuid_r(getuid(), &bpw, buf, sizeof(buf), &pw))
-		return NULL;
+    if (getpwuid_r(getuid(), &bpw, buf, sizeof(buf), &pw))
+        return NULL;
 
 # elif defined(HAVE_FUNC_GETPWUID_R_4_PW)
-	if (!(pw = getpwuid_r(getuid(), &bpw, buf, sizeof(buf))))
-		return NULL;
+    if (!(pw = getpwuid_r(getuid(), &bpw, buf, sizeof(buf))))
+        return NULL;
 # else /* !HAVE_FUNC_GETPWUID_R_4_PW */
-	if (getpwuid_r(getuid(), &bpw, buf, sizeof(buf)))
-		return NULL;
-	pw = &bpw;
+    if (getpwuid_r(getuid(), &bpw, buf, sizeof(buf)))
+        return NULL;
+    pw = &bpw;
 # endif
 
-	return strdup(pw->pw_dir);
+    return strdup(pw->pw_dir);
 
 /* if getpwuid is available use it for no reentrant (getpwuid is not reentrant) */
 #elif defined(HAVE_GETUID) && defined(HAVE_GETPWUID) && !defined(_REENTRANT)
-	struct passwd *pw;
+    struct passwd *pw;
 
-	pw = getpwuid(getuid());
-	if (!pw)
-		return NULL;
-	return strdup(pw->pw_dir);
+    pw = getpwuid(getuid());
+    if (!pw)
+        return NULL;
+    return strdup(pw->pw_dir);
 #else
-	char *home;
+    char *home;
 
-	home = getenv("HOME");
-	if (!home || !home[0])
-		return NULL;
-	return strdup(home);
+    home = getenv("HOME");
+    if (!home || !home[0])
+        return NULL;
+    return strdup(home);
 #endif
 #else /* WIN32 */
-	/*
-	 * For win32 we return application data cause we use "HOME" 
-	 * only to store configuration files
-	 */
-	LPITEMIDLIST pidl;
-	char path[MAX_PATH];
-	HRESULT hr;
-	LPMALLOC pMalloc = NULL;
-	char * res = NULL;
+    /*
+     * For win32 we return application data cause we use "HOME"
+     * only to store configuration files
+     */
+    LPITEMIDLIST pidl;
+    char path[MAX_PATH];
+    HRESULT hr;
+    LPMALLOC pMalloc = NULL;
+    char * res = NULL;
 
-	hr = SHGetMalloc(&pMalloc);
-	if (!FAILED(hr)) {
-		hr = SHGetSpecialFolderLocation(NULL, CSIDL_APPDATA, &pidl);
-		if (!FAILED(hr)) {
-			if (SHGetPathFromIDList(pidl, path))
-				res = strdup(path);
-			(*pMalloc->lpVtbl->Free)(pMalloc, pidl);
-		}
-		(*pMalloc->lpVtbl->Release)(pMalloc);
-	}
-	return res;
+    hr = SHGetMalloc(&pMalloc);
+    if (!FAILED(hr)) {
+        hr = SHGetSpecialFolderLocation(NULL, CSIDL_APPDATA, &pidl);
+        if (!FAILED(hr)) {
+            if (SHGetPathFromIDList(pidl, path))
+                res = strdup(path);
+            (*pMalloc->lpVtbl->Free)(pMalloc, pidl);
+        }
+        (*pMalloc->lpVtbl->Release)(pMalloc);
+    }
+    return res;
 #endif
 }
