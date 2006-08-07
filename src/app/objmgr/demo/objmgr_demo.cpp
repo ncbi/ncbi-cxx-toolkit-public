@@ -538,10 +538,7 @@ int CDemoApp::Run(void)
         if ( used_memory_check ) {
             exit(0);
         }
-        CBioseq_Handle h2 = scope.GetBioseqHandle(*id);
-        if ( !h2 ) {
-            added_entry = scope.AddTopLevelSeqEntry(*entry);
-        }
+        added_entry = scope.AddTopLevelSeqEntry(*entry);
     }
     if ( args["bfile"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
@@ -1194,6 +1191,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.112  2006/08/07 15:26:19  vasilche
+* Correctly add TSE from file.
+*
 * Revision 1.111  2006/02/01 19:16:38  vasilche
 * Added -exact_depth option.
 *
