@@ -636,6 +636,10 @@ CBioseq_EditHandle::CBioseq_EditHandle(void)
 CBioseq_EditHandle::CBioseq_EditHandle(const CBioseq_Handle& h)
     : CBioseq_Handle(h)
 {
+    if ( !h.GetTSE_Handle().CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "object is not in editing mode");
+    }
 }
 
 
@@ -713,9 +717,9 @@ void CBioseq_EditHandle::Remove(CBioseq_EditHandle::ERemoveMode mode) const
         x_Detach();
     else {
         CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
-        CSeq_entry_Handle parent = GetParentEntry();
+        CSeq_entry_EditHandle parent = GetParentEntry();
         x_Detach();
-        parent.GetEditHandle().Remove();
+        parent.Remove();
         tr->Commit();
     }
 }
@@ -1107,6 +1111,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2006/08/07 15:25:00  vasilche
+* CBioseq_EditHandle(CBioseq_Handle) made public and explicit.
+* Avoid unnecessary GetEditHandle() calls.
+*
 * Revision 1.98  2006/01/25 18:59:04  didenko
 * Redisgned bio objects edit facility
 *
