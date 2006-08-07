@@ -98,7 +98,7 @@ CSeq_entry_Remove_EditCommand::~CSeq_entry_Remove_EditCommand()
 void CSeq_entry_Remove_EditCommand::Do(IScopeTransaction_Impl& tr)
 {
     _ASSERT(m_Handle.GetParentEntry()); // Does not handle TSE
-    m_ParentHandle = m_Handle.GetParentBioseq_set().GetEditHandle();
+    m_ParentHandle = m_Handle.GetParentBioseq_set();
     m_Index = m_ParentHandle.GetSeq_entry_Index(m_Handle);
     if( m_Index < 0 )
         return;
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/08/07 15:25:08  vasilche
+ * Avoid unnecessary GetEditHandle() calls.
+ *
  * Revision 1.3  2006/05/01 16:56:45  didenko
  * Attach SeqEntry edit command revamp
  *
