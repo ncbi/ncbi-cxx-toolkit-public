@@ -223,6 +223,23 @@ const CSeq_annot::TDesc& CSeq_annot_Handle::Seq_annot_GetDesc(void) const
 }
 
 
+CSeq_annot_EditHandle::CSeq_annot_EditHandle(const CSeq_annot_Handle& h)
+    : CSeq_annot_Handle(h)
+{
+    if ( !h.GetTSE_Handle().CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "object is not in editing mode");
+    }
+}
+
+
+CSeq_annot_EditHandle::CSeq_annot_EditHandle(CSeq_annot_Info& info,
+                                             const CTSE_Handle& tse)
+    : CSeq_annot_Handle(info, tse)
+{
+}
+
+
 CSeq_annot_Info& CSeq_annot_EditHandle::x_GetInfo(void) const
 {
     return const_cast<CSeq_annot_Info&>(CSeq_annot_Handle::x_GetInfo());
@@ -245,10 +262,11 @@ void CSeq_annot_EditHandle::Remove(void) const
 }
 
 
-CSeq_feat_Handle CSeq_annot_EditHandle::AddFeat(const CSeq_feat& new_obj) const
+CSeq_feat_EditHandle
+CSeq_annot_EditHandle::AddFeat(const CSeq_feat& new_obj) const
 {
 
-    typedef CSeq_annot_Add_EditCommand<CSeq_feat_Handle> TCommand;
+    typedef CSeq_annot_Add_EditCommand<CSeq_feat_EditHandle> TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
     return processor.run(new TCommand(*this, new_obj));
     //    return CSeq_feat_Handle(*this, x_GetInfo().Add(new_obj));
@@ -272,11 +290,11 @@ CSeq_graph_Handle CSeq_annot_EditHandle::AddGraph(const CSeq_graph& new_obj) con
     //    return CSeq_graph_Handle(*this, x_GetInfo().Add(new_obj));
 }
 
-CSeq_feat_Handle 
+CSeq_feat_EditHandle 
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_feat& new_obj) const
 {
 
-    CSeq_feat_Handle handle(*this, x_GetInfo().Add(new_obj));
+    CSeq_feat_EditHandle handle(*this, x_GetInfo().Add(new_obj));
     x_GetScopeImpl().x_ClearAnnotCache();
     return handle;
 }
@@ -306,6 +324,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2006/08/07 15:25:05  vasilche
+* CSeq_annot_EditHandle(CSeq_annot_Handle) made public and explicit.
+* Introduced CSeq_feat_EditHandle.
+*
 * Revision 1.22  2006/02/02 14:28:19  vasilche
 * Added TObject, GetCompleteObject(), GetObjectCore() for templates.
 *

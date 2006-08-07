@@ -61,7 +61,9 @@ class CSeq_entry_EditHandle;
 class CSeq_feat_Handle;
 class CSeq_align_Handle;
 class CSeq_graph_Handle;
-
+class CSeq_feat_EditHandle;
+class CSeq_align_EditHandle;
+class CSeq_graph_EditHandle;
 class CSeq_annot_Info;
 
 
@@ -213,6 +215,9 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_EditHandle : public CSeq_annot_Handle
 {
 public:
     CSeq_annot_EditHandle(void);
+    /// create edit interface class to the object which already allows editing
+    /// throw an exception if the argument is not in editing mode
+    explicit CSeq_annot_EditHandle(const CSeq_annot_Handle& h);
 
     /// Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
@@ -225,7 +230,7 @@ public:
     // of new_obj argument will be taken by CSeq_annot_Handle,
     // and the object should not be modified after the call.
 
-    CSeq_feat_Handle AddFeat(const CSeq_feat& new_obj) const;
+    CSeq_feat_EditHandle AddFeat(const CSeq_feat& new_obj) const;
     CSeq_align_Handle AddAlign(const CSeq_align& new_obj) const;
     CSeq_graph_Handle AddGraph(const CSeq_graph& new_obj) const;
 
@@ -235,7 +240,6 @@ protected:
     friend class CBioseq_set_EditHandle;
     friend class CSeq_entry_EditHandle;
 
-    CSeq_annot_EditHandle(const CSeq_annot_Handle& h);
     CSeq_annot_EditHandle(CSeq_annot_Info& info, const CTSE_Handle& tse);
 
 public: // non-public section
@@ -243,11 +247,11 @@ public: // non-public section
     CSeq_annot_Info& x_GetInfo(void) const;
 
 public:
-    friend class CSeq_annot_Add_EditCommand<CSeq_feat_Handle>;
+    friend class CSeq_annot_Add_EditCommand<CSeq_feat_EditHandle>;
     friend class CSeq_annot_Add_EditCommand<CSeq_align_Handle>;
     friend class CSeq_annot_Add_EditCommand<CSeq_graph_Handle>;
 
-    CSeq_feat_Handle x_RealAdd(const CSeq_feat& new_obj) const;
+    CSeq_feat_EditHandle x_RealAdd(const CSeq_feat& new_obj) const;
     CSeq_align_Handle x_RealAdd(const CSeq_align& new_obj) const;
     CSeq_graph_Handle x_RealAdd(const CSeq_graph& new_obj) const;
 
@@ -342,20 +346,6 @@ CSeq_annot_EditHandle::CSeq_annot_EditHandle(void)
 
 
 inline
-CSeq_annot_EditHandle::CSeq_annot_EditHandle(const CSeq_annot_Handle& h)
-    : CSeq_annot_Handle(h)
-{
-}
-
-
-inline
-CSeq_annot_EditHandle::CSeq_annot_EditHandle(CSeq_annot_Info& info,
-                                             const CTSE_Handle& tse)
-    : CSeq_annot_Handle(info, tse)
-{
-}
-
-inline
 CSeq_annot_ScopeInfo& CSeq_annot_EditHandle::x_GetScopeInfo(void) const
 {
     return m_Info.GetNCObject();
@@ -371,6 +361,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2006/08/07 15:25:05  vasilche
+* CSeq_annot_EditHandle(CSeq_annot_Handle) made public and explicit.
+* Introduced CSeq_feat_EditHandle.
+*
 * Revision 1.25  2006/02/02 14:28:19  vasilche
 * Added TObject, GetCompleteObject(), GetObjectCore() for templates.
 *
