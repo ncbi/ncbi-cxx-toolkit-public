@@ -261,6 +261,9 @@ class NCBI_XOBJMGR_EXPORT CBioseq_set_EditHandle : public CBioseq_set_Handle
 public:
     // Default constructor
     CBioseq_set_EditHandle(void);
+    /// create edit interface class to the object which already allows editing
+    /// throw an exception if the argument is not in editing mode
+    explicit CBioseq_set_EditHandle(const CBioseq_set_Handle& h);
 
     /// Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
@@ -475,7 +478,6 @@ protected:
     friend class CBioseq_EditHandle;
     friend class CSeq_entry_EditHandle;
 
-    CBioseq_set_EditHandle(const CBioseq_set_Handle& h);
     CBioseq_set_EditHandle(CBioseq_set_Info& info,
                            const CTSE_Handle& tse);
 
@@ -602,21 +604,6 @@ CBioseq_set_EditHandle::CBioseq_set_EditHandle(void)
 
 
 inline
-CBioseq_set_EditHandle::CBioseq_set_EditHandle(const CBioseq_set_Handle& h)
-    : CBioseq_set_Handle(h)
-{
-}
-
-
-inline
-CBioseq_set_EditHandle::CBioseq_set_EditHandle(CBioseq_set_Info& info,
-                                               const CTSE_Handle& tse)
-    : CBioseq_set_Handle(info, tse)
-{
-}
-
-
-inline
 CBioseq_set_ScopeInfo& CBioseq_set_EditHandle::x_GetScopeInfo(void) const
 {
     return m_Info.GetNCObject();
@@ -631,6 +618,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2006/08/07 15:25:01  vasilche
+* CBioseq_set_EditHandle(CBioseq_set_Handle) made public and explicit.
+*
 * Revision 1.25  2006/02/02 14:28:19  vasilche
 * Added TObject, GetCompleteObject(), GetObjectCore() for templates.
 *
