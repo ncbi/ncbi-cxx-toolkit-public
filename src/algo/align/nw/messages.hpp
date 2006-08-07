@@ -11,7 +11,7 @@ const char g_msg_InvalidTranscriptSymbol[] = "Invalid transcript symbol";
 
 const char g_msg_InvalidBacktraceData[] = "Invalid backtrace data";
 
-const char g_msg_UnexpectedTermIndex[] = "Unexpected term index";
+const char g_msg_UnexpectedTermIndex[] = "Term index not initialized";
 
 const char g_msg_InvalidAddress[] = "Invalid address specified";
 
@@ -40,6 +40,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.6  2006/08/07 17:33:59  kapustin
+ * Support off-main diagonal bands
+ *
  * Revision 1.5  2006/07/18 19:29:47  kapustin
  * Add/edit messages
  *

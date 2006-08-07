@@ -105,8 +105,14 @@ void CAppNWA::Init()
          NStr::IntToString(CNWAligner::GetDefaultWs()).c_str());
 
     argdescr->AddDefaultKey
-        ("band", "band", "Band width for banded alignment",
+        ("band", "band", "Band width in banded alignment",
          CArgDescriptions::eInteger, "-1");
+
+    argdescr->AddDefaultKey
+        ("shift", "shift", 
+         "Band shift in banded alignment "
+         "(specify negative value to indicate second sequence)",
+         CArgDescriptions::eInteger, "0");
 
     argdescr->AddDefaultKey
         ("Wi0", "intron0", "type 0 (GT/AG) intron weight",
@@ -210,6 +216,7 @@ void CAppNWA::x_RunOnPair() const
     bool   output_exons  ( args["oexons"] );
 
     int    band (args["band"].AsInteger());
+    int    shift(args["shift"].AsInteger());
 
     if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
         NCBI_THROW(CAppNWAException,
@@ -283,8 +290,11 @@ void CAppNWA::x_RunOnPair() const
         pnwaligner = new CNWAligner(&v1[0], v1.size(), &v2[0], v2.size(), psm);
     }
     else {
-        pnwaligner = new CBandAligner(&v1[0], v1.size(), &v2[0], v2.size(),
+        CBandAligner * ba = new CBandAligner(&v1[0], v1.size(), &v2[0], v2.size(),
                                       psm, band);
+        Uint1 where = shift >= 0? 0: 1;
+        ba->SetShift(where,abs(shift));
+        pnwaligner = ba;
     }
 
     auto_ptr<CNWAligner> aligner (pnwaligner);
@@ -449,6 +459,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/08/07 17:33:59  kapustin
+ * Support off-main diagonal bands
+ *
  * Revision 1.5  2005/07/01 16:40:36  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *

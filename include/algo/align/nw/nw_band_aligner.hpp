@@ -52,7 +52,10 @@ class NCBI_XALGOALIGN_EXPORT CBandAligner: public CNWAligner
 public:
 
     // ctors
-    CBandAligner(size_t band = 0): m_band(band) {}
+    CBandAligner(size_t band = 0): 
+        m_band(band),
+        m_Shift(0)
+    {}
 
     // Null scoremat pointer indicates IUPACna coding
     CBandAligner(const char* seq1, size_t len1,
@@ -69,17 +72,24 @@ public:
 
     // Setters    
     void    SetBand(size_t band) { m_band = band; }
+    void    SetShift(Uint1 where, size_t offset);
 
     // Getters
-    size_t  GetBand  (void) { return  m_band; }
+    size_t  GetBand  (void) const { return  m_band; }
+    pair<Uint1,size_t> GetShift(void) const;
 
 protected:
 
     // band width
     size_t   m_band;
 
-    // terminal backtrace index
-    size_t  m_TermK;
+    // band shift along the first sequences (can be negative)
+    int      m_Shift;
+
+    // backtrace helpers
+    size_t   m_TermK;
+    size_t   m_LastCoordSeq1;
+    size_t   m_LastCoordSeq2;
 
     // core dynamic programming
     virtual TScore x_Align (CNWAligner::SAlignInOut* data);
@@ -89,6 +99,7 @@ protected:
                                  CNWAligner::SAlignInOut* data);
 
     // other
+    void x_CheckParameters(const SAlignInOut* data) const;
     virtual bool   x_CheckMemoryLimit(void);
 };
 
@@ -102,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/08/07 17:33:43  kapustin
+ * Support off-main diagonal bands
+ *
  * Revision 1.7  2006/07/18 19:34:17  kapustin
  * Save terminal backtrace index in a member
  *
@@ -115,7 +129,9 @@ END_NCBI_SCOPE
  * Fix after algo/align rearrangement
  *
  * Revision 1.3  2004/11/29 14:36:45  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. 
+ * x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters 
+ * to specify starting coordinates.
  *
  * Revision 1.2  2004/11/15 22:21:48  grichenk
  * Doxygenized comments, fixed group names.

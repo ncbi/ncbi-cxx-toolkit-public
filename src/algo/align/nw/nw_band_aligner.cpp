@@ -46,7 +46,8 @@ CBandAligner::CBandAligner( const char* seq1, size_t len1,
                             const SNCBIPackedScoreMatrix* scoremat,
                             size_t band):
     CNWAligner(seq1, len1, seq2, len2, scoremat),
-    m_band(band)
+    m_band(band),
+    m_Shift(0)
 {
 }
 
@@ -56,8 +57,37 @@ CBandAligner::CBandAligner(const string& seq1,
                            const SNCBIPackedScoreMatrix* scoremat,
                            size_t band):
     CNWAligner(seq1, seq2, scoremat),
-    m_band(band)
+    m_band(band),
+    m_Shift(0)
 {
+}
+
+
+void CBandAligner::SetShift(Uint1 where, size_t offset)
+{
+    switch(where) {
+    case 0: m_Shift = offset;  break;
+    case 1: m_Shift = -offset; break;
+    default:
+        NCBI_THROW(CAlgoAlignException, eBadParameter, 
+                   "CBandAligner::SetShift(): Incorrect sequence index specified");
+    }
+}
+
+
+pair<Uint1,size_t> CBandAligner::GetShift(void) const
+{
+    Uint1 where;
+    size_t offset;
+    if(m_Shift < 0) {
+        where = 1;
+        offset = size_t(-m_Shift);
+    }
+    else {
+        where = 0;
+        offset = size_t(m_Shift);
+    }
+    return pair<Uint1,size_t>(where, offset);
 }
 
 
@@ -78,140 +108,108 @@ const unsigned char kVoid    = 0xFF;
 
 CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 {
-    if(size_t(abs(int(data->m_len1) - int(data->m_len2))) > m_band) {
+    x_CheckParameters(data);
 
-        NCBI_THROW(CAlgoAlignException, eBadParameter,
-                   "Difference in sequence lengths "
-                   "should not exceed the band");
-    }
-
-    if(m_band >= data->m_len1 || m_band >= data->m_len2) {
-
-        NCBI_THROW(CAlgoAlignException, eBadParameter,
-                   "Band should be less than the sequence lengths");
-    }
-
-    const size_t N1 = data->m_len1 + 1;
-    const size_t N2 = 2*(m_band + 1) + 1;
-    const size_t n2 = data->m_len2 + 1;
-
-    vector<TScore> stl_rowV (n2), stl_rowF(n2);
-
-    TScore* rowV    = &stl_rowV.front();
-    TScore* rowF    = &stl_rowF.front();
-
+    const size_t N1 = data->m_len1;
+    const size_t N2 = data->m_len2;
+    const size_t fullrow = 2*m_band + 1;
+    vector<TScore> stl_rowV (N2), stl_rowF (N2);
+    TScore  * rowV = &stl_rowV.front();
+    TScore  * rowF = &stl_rowF.front();
     TScore* pV = rowV - 1;
-
-    const char* seq1 = m_Seq1 + data->m_offset1 - 1;
-    const char* seq2 = m_Seq2 + data->m_offset2 - 1;
-
+    const char* seq1 = m_Seq1 + data->m_offset1;
+    const char* seq2 = m_Seq2 + data->m_offset2;
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
-
-    m_terminate = false;
-    if(m_prg_callback) {
-
-        m_prg_info.m_iter_total = N1*N2;
-        m_prg_info.m_iter_done = 0;
-        if(m_terminate = m_prg_callback(&m_prg_info)) {
-	  return 0;
-	}
-    }
-
-    bool bFreeGapLeft1  = data->m_esf_L1 && data->m_offset1 == 0;
-    bool bFreeGapRight1 = data->m_esf_R1 &&
-                          m_SeqLen1 == data->m_offset1 + data->m_len1; 
-
-    bool bFreeGapLeft2  = data->m_esf_L2 && data->m_offset2 == 0;
-    bool bFreeGapRight2 = data->m_esf_R2 &&
-                          m_SeqLen2 == data->m_offset2 + data->m_len2; 
-
-    TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
-    TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
-    TScore wg1 = m_Wg, ws1 = m_Ws;
-
-    // index calculation: [i,j] = i*N2 + j
     
-    vector<unsigned char> stl_bm (N1*N2, kVoid);
+    vector<unsigned char> stl_bm (N1*fullrow, kVoid);
     unsigned char* backtrace_matrix = &stl_bm[0];
 
-    // first row
-    size_t k = m_band + 2;
-    rowV[0] = wgleft1;
-    for(size_t i = 1; i <= m_band + 1; ++i, ++k) {
-
-        rowV[i] = pV[i] + wsleft1;
-        rowF[i] = kInfMinus;
-        backtrace_matrix[k] = kMaskE | kMaskEc;
-    }
-    rowV[0] = 0;
-	
-    if(m_prg_callback) {
-        m_prg_info.m_iter_done = N2;
-        m_terminate = m_prg_callback(&m_prg_info);
-    }
-
-    // recurrences
-    TScore wgleft2   = bFreeGapLeft2? 0: m_Wg;
-    TScore wsleft2   = bFreeGapLeft2? 0: m_Ws;
     TScore V = 0;
-    TScore V0 = wgleft2;
-    TScore E, G, n0;
+    TScore E = kInfMinus, V2 = kInfMinus, G, n0;
     unsigned char tracer = 0;
 
-    m_TermK = kMax_UInt;
+    const int ibeg ((m_Shift >= 0 && m_Shift > int(m_band))? (m_Shift - m_band): 0);
 
-    size_t i, j;
-    for(i = 1;  i < N1 && !m_terminate;  ++i) {
+    const TScore wgleft1   = data->m_esf_L1? 0: m_Wg;
+    const TScore wsleft1   = data->m_esf_L1? 0: m_Ws;
+    const TScore wgleft2   = data->m_esf_L2? 0: m_Wg;
+    const TScore wsleft2   = data->m_esf_L2? 0: m_Ws;    
+
+    TScore wg1 = m_Wg, ws1 = m_Ws;
+    TScore wg2 = m_Wg, ws2 = m_Ws;
+
+    TScore V1 = wgleft2 + wsleft2 * ibeg;
+
+    int lendif = int(N2) - (int(N1) - (m_Shift + int(m_band)));
+    const int iend ((lendif >= 0)? N1: (N1 - abs(lendif)));
+
+    m_LastCoordSeq1 = m_LastCoordSeq2 = m_TermK = kMax_UInt;
+
+    int jbeg0 = ibeg - m_Shift - int(m_band);
+    for(int i = ibeg; i < iend && !m_terminate; ++i, ++jbeg0) {
+
+        int jbeg = i - m_Shift - int(m_band), jend = i - m_Shift + int(m_band) + 1;
+        if(jbeg < 0) jbeg = 0;
+        if(jend > int(N2)) jend = N2;
+
+        const Uint1 ci = seq1[i];
         
-        int di = int(i) - (m_band + 1);
-        if(di <= 0) {
-
-            V = V0 += wsleft2;
-            E = kInfMinus;
-            k = N2*i - di;
-            backtrace_matrix[k] = kMaskFc;
-        }
-        else {
-
-            k = N2*i;
-            V = V0 = E = kInfMinus;
-        }
-        unsigned char ci = seq1[i];
-        ++k;
-
-        if(i == N1 - 1 && bFreeGapRight1) {
-                wg1 = ws1 = 0;
+        if(i == 0) {
+            V2 = wgleft1 + wsleft1 * jbeg;
+            TScore s = V2;
+            for(size_t j = 0; j < N2; ++j) {
+                s += wsleft1;
+                rowV[j] = s;
+            }
         }
 
-        TScore wg2 = m_Wg, ws2 = m_Ws;
-
-        size_t jstart = (di <= 0)? 1: (di + 1);
-        size_t jend = i + m_band;
-        if(jend >= n2) {
-            jend = n2 - 1;
+        if(i + 1 == int(N1) && data->m_esf_R1) {
+            wg1 = ws1 = 0;
         }
+        
+        int j;
+        int k = fullrow * (i - ibeg) + jbeg - jbeg0;
+        for(j = jbeg; j < jend; ++j) {            
 
-        for (j = jstart; j <= jend; ++j, ++k) {
-            
-            G = pV[j] + sm[ci][(unsigned char)seq2[j]];
-            pV[j] = V;
-
-            n0 = V + wg1;
-            if(E >= n0) {
-                E += ws1;      // continue the gap
-                tracer = kMaskEc;
+            if(j > 0) {
+                G = sm[ci][Uint1(seq2[j])] + pV[j];
+                pV[j] = V;
             }
             else {
-                E = n0 + ws1;  // open a new gap
-                tracer = 0;
+                G = sm[ci][(unsigned char)seq2[j]];
+                if(i > 0) G += V1;                
             }
 
-            if(j == n2 - 1 && bFreeGapRight2) {
+            if(j == 0) {
+                V1 += wsleft2;
+                E = V1 + wg1 + ws1;
+                tracer = 0;
+            }
+            else if(j > jbeg) {
+                n0 = V + wg1;
+                if(E >= n0) {
+                    E += ws1;      // gap extension
+                    tracer = kMaskEc;
+                }
+                else {
+                    E = n0 + ws1;  // gap open
+                    tracer = 0;
+                }
+            }
+            else {
+                E = kInfMinus;
+                tracer = 0; // to fire on the backtrace
+            }
+
+            if(j + 1 == int(N2) && data->m_esf_R2) {
                 wg2 = ws2 = 0;
             }
 
-            if(i == 1 || j < m_band + i) {
-
+            if(i == 0) {
+                V2 += wsleft1;
+                rowF[j] = V2 + wg2 + ws2;
+            }
+            else if(j + 1 < jend) {
                 n0 = rowV[j] + wg2;
                 if(rowF[j] >= n0) {
                     rowF[j] += ws2;
@@ -234,7 +232,8 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                     V = G;
                     tracer |= kMaskD;
                 }
-            } else {
+            }
+            else {
                 if(rowF[j] >= G) {
                     V = rowF[j];
                 }
@@ -243,36 +242,20 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                     tracer |= kMaskD;
                 }
             }
-            backtrace_matrix[k] = tracer;
+            backtrace_matrix[k++] = tracer;
         }
 
         pV[j] = V;
 
-        if(m_prg_callback) {
-            m_prg_info.m_iter_done = k;
-            if(m_terminate = m_prg_callback(&m_prg_info)) {
-                break;
-            }
-        }
-
-        if(i + 1 == N1 && i + m_band + 1 >= n2) {
-            m_TermK = k - 1;
-        }
+        m_TermK = k - 1;
+        m_LastCoordSeq2 = jend - 1;
     }
 
-//#define NWB_DUMP_DPM
-#ifdef  NWB_DUMP_DPM
-    for(size_t i = 0; i < N1; ++i) {
-        for(size_t j = 0; j < N2; ++j) {
-            unsigned int a = backtrace_matrix[i*N2 + j];
-            cerr << hex << a << '\t';
-        }
-        cerr << endl;
-    }
-    cerr << dec;
-#endif
+    m_LastCoordSeq1 = iend - 1;
 
-    if(m_TermK == kMax_UInt && !m_terminate) {
+    const bool uninit = m_TermK == kMax_UInt || m_LastCoordSeq1 == kMax_UInt 
+        || m_LastCoordSeq2 == kMax_UInt;
+    if(uninit && !m_terminate) {
         NCBI_THROW(CAlgoAlignException, eInternal, g_msg_UnexpectedTermIndex);
     }
 
@@ -284,25 +267,101 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 }
 
 
+void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
+{    
+    if( m_Shift >= 0 && data->m_len1 <= m_Shift + m_band || 
+        m_Shift < 0 && data->m_len2 <= m_band - m_Shift )
+    {
+        NCBI_THROW(CAlgoAlignException, eBadParameter, 
+                   "Shift + band exceeds sequence lengths.");
+    }
+
+    if(data->m_len1 < 2 || data->m_len2 < 2) {        
+        NCBI_THROW(CAlgoAlignException, eBadParameter, 
+                   "Input sequence interval too small.");        
+    }
+
+    // Each of the following checks will verify if a corresponding end 
+    // is within the band and, if it is not, whether the end-space free
+    // more was specified for that end.
+    // When doing restrained alignment, an exception may be caused by improper
+    // adjustment of the band offset.
+
+    string msg_head;
+
+    // seq 1, left
+    if(m_Shift >= 0 && int(m_band) < m_Shift && !data->m_esf_L2) {
+        msg_head = "Left end of first sequence ";
+    }
+
+    // seq 1,2, right
+    if(m_Shift + int(data->m_len2) + int(m_band) 
+           < int(data->m_len1) && !data->m_esf_R2) {
+        msg_head = "Right end of first sequence ";
+    }
+    else if(int(data->m_len1) - m_Shift + int(m_band) 
+               < int(data->m_len2) && !data->m_esf_R1){
+        msg_head = "Right end of second sequence ";
+    }
+
+    // seq 2, left
+    if(m_Shift < 0 && int(m_band) < - m_Shift && !data->m_esf_L1) {
+        msg_head = "Left end of second sequence ";
+    }
+
+    if(msg_head.size() > 0) {
+        const string msg_tail ("out of band and end-space free flag not set.");
+        const string msg = msg_head + msg_tail;
+        NCBI_THROW(CAlgoAlignException, eBadParameter, msg.c_str());
+    }
+}
+
 void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
                                  CNWAligner::SAlignInOut* data)
 {
-    const size_t N1 = data->m_len1 + 1;
-    const size_t N2 = 2*(m_band + 1) + 1;
+    const size_t N1 = data->m_len1;
+    const size_t N2 = 2*m_band + 1;
 
     data->m_transcript.clear();
     data->m_transcript.reserve(N1 + N2);
 
-    size_t k = m_TermK, k_end = m_band + 1;
+    size_t k = m_TermK;
 
-    size_t i1 = data->m_offset1 + data->m_len1 - 1;
-    size_t i2 = data->m_offset2 + data->m_len2 - 1;
+    size_t i1 = data->m_offset1 + m_LastCoordSeq1;
+    size_t i2 = data->m_offset2 + m_LastCoordSeq2;
 
-    while (k != k_end) {
+    if(m_LastCoordSeq1 + 1 < data->m_len1 && data->m_esf_R2) {
+        data->m_transcript.insert(data->m_transcript.begin(),
+                                  data->m_len1 - m_LastCoordSeq1 - 1, eTS_Delete);
+    }
+
+    if(m_LastCoordSeq2 + 1 < data->m_len2 && data->m_esf_R1) {
+        data->m_transcript.insert(data->m_transcript.begin(),
+                                  data->m_len2 - m_LastCoordSeq2 - 1, eTS_Insert);
+    }
+
+    while (true) {
 
         const size_t kOverflow = 0xFFFFFF00, kMax = 0xFFFFFFFF;
         if(i1 > kOverflow && i1 != kMax || i2 > kOverflow && i2 != kMax) {
             NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidBacktraceData);
+        }
+
+        if(i1 == kMax) {
+            if(i2 == kMax) break;
+            do {
+                data->m_transcript.push_back(eTS_Insert);
+                --i2;
+            } while (i2 != kMax);
+            break;
+        }
+
+        if(i2 == kMax) {
+            do {
+                data->m_transcript.push_back(eTS_Delete);
+                --i1;
+            } while (i1 != kMax);
+            break;
         }
 
         unsigned char Key = backtrace[k];
@@ -319,7 +378,7 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
             data->m_transcript.push_back(eTS_Insert);
             --k;
             --i2;
-            while(k != k_end && (Key & kMaskEc)) {
+            while(i2 != kMax && (Key & kMaskEc)) {
                 data->m_transcript.push_back(eTS_Insert);
                 Key = backtrace[k--];
                 --i2;
@@ -329,7 +388,7 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
             data->m_transcript.push_back(eTS_Delete);
             k -= (N2-1);
             --i1;
-            while(k != k_end && (Key & kMaskFc)) {
+            while(i1 != kMax && (Key & kMaskFc)) {
                 data->m_transcript.push_back(eTS_Delete);
                 Key = backtrace[k];
                 k -= (N2-1);
@@ -384,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/08/07 17:33:59  kapustin
+ * Support off-main diagonal bands
+ *
  * Revision 1.8  2006/07/18 19:29:38  kapustin
  * Fix backtrace index problem
  *
