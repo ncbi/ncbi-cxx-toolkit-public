@@ -94,7 +94,7 @@ const CAnnotObject_Info& CSeq_feat_Handle::x_GetAnnotObject_InfoAny(void) const
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_Handle::x_GetAnnotObject: not Seq-feat info");
     }
-    return x_GetSeq_annot_Info().GetInfo(m_AnnotIndex);
+    return x_GetSeq_annot_Info().GetInfo(x_GetAnnotIndex());
 }
 
 
@@ -116,7 +116,7 @@ const SSNP_Info& CSeq_feat_Handle::x_GetSNP_InfoAny(void) const
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_Handle::GetSNP_Info: not SNP info");
     }
-    return x_GetSNP_annot_Info().GetInfo(-1 - m_AnnotIndex);
+    return x_GetSNP_annot_Info().GetInfo(-1 - x_GetAnnotIndex());
 }
 
 
@@ -207,23 +207,61 @@ bool CSeq_feat_Handle::IsRemoved(void) const
 
 void CSeq_feat_Handle::Remove(void) const
 {
-    typedef CSeq_annot_Remove_EditCommand<CSeq_feat_Handle> TCommand;
-    CCommandProcessor processor(GetAnnot().x_GetScopeImpl());
-    processor.run(new TCommand(*this));
+    CSeq_feat_EditHandle(*this).Remove();
 }
 
 
 void CSeq_feat_Handle::Replace(const CSeq_feat& new_feat) const
 {
-    typedef CSeq_annot_Replace_EditCommand<CSeq_feat_Handle> TCommand;
+    CSeq_feat_EditHandle(*this).Replace(new_feat);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_feat_EditHandle
+
+
+CSeq_feat_EditHandle::CSeq_feat_EditHandle(const CSeq_feat_Handle& h)
+    : CSeq_feat_Handle(h)
+{
+    GetAnnot(); // force check of editing mode
+}
+
+
+CSeq_feat_EditHandle::CSeq_feat_EditHandle(const CSeq_annot_EditHandle& annot,
+                                           TIndex index)
+    : CSeq_feat_Handle(annot, index)
+{
+}
+
+
+CSeq_feat_EditHandle::CSeq_feat_EditHandle(const CSeq_annot_EditHandle& annot,
+                                           const SSNP_Info& snp_info,
+                                           CCreatedFeat_Ref& created_ref)
+    : CSeq_feat_Handle(annot, snp_info, created_ref)
+{
+}
+
+
+void CSeq_feat_EditHandle::Remove(void) const
+{
+    typedef CSeq_annot_Remove_EditCommand<CSeq_feat_EditHandle> TCommand;
+    CCommandProcessor processor(GetAnnot().x_GetScopeImpl());
+    processor.run(new TCommand(*this));
+}
+
+
+void CSeq_feat_EditHandle::Replace(const CSeq_feat& new_feat) const
+{
+    typedef CSeq_annot_Replace_EditCommand<CSeq_feat_EditHandle> TCommand;
     CCommandProcessor processor(GetAnnot().x_GetScopeImpl());
     processor.run(new TCommand(*this, new_feat));
 }
 
-void CSeq_feat_Handle::x_RealRemove(void) const
+void CSeq_feat_EditHandle::x_RealRemove(void) const
 {
     if ( IsPlainFeat() ) {
-        GetAnnot().GetEditHandle().x_GetInfo().Remove(m_AnnotIndex);
+        GetAnnot().x_GetInfo().Remove(x_GetAnnotIndex());
         _ASSERT(IsRemoved());
     }
     else {
@@ -233,11 +271,11 @@ void CSeq_feat_Handle::x_RealRemove(void) const
 }
 
 
-void CSeq_feat_Handle::x_RealReplace(const CSeq_feat& new_feat) const
+void CSeq_feat_EditHandle::x_RealReplace(const CSeq_feat& new_feat) const
 {
     if ( IsPlainFeat() ) {
-        GetAnnot().GetEditHandle().x_GetInfo().
-            Replace(m_AnnotIndex, new_feat);
+        GetAnnot().x_GetInfo().
+            Replace(x_GetAnnotIndex(), new_feat);
         _ASSERT(!IsRemoved());
     }
     else {
@@ -350,12 +388,119 @@ void CSeq_annot_ftable_CI::x_Settle(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_annot_ftable_I
+
+CSeq_annot_ftable_I::CSeq_annot_ftable_I(const CSeq_annot_EditHandle& annot,
+                                           TFlags flags)
+    : m_Annot(annot), m_Flags(flags)
+{
+    if ( !annot.IsFtable() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_annot_ftable_I: annot is not ftable");
+    }
+    m_Feat.m_Annot = annot;
+    if ( m_Flags & fOnlyTable ) {
+        // only table features requested
+        if ( GetAnnot().x_GetInfo().x_HasSNP_annot_Info() ) {
+            // start with table features
+            m_Feat.m_AnnotIndex = -1;
+        }
+        else {
+            // no requested features
+            x_Reset();
+            return;
+        }
+    }
+    else {
+        // start with plain features
+        m_Feat.m_AnnotIndex = 0;
+    }
+    // find by flags
+    x_Settle();
+}
+
+
+bool CSeq_annot_ftable_I::x_IsValid(void) const
+{
+    if ( !GetAnnot() ) {
+        // null iterator
+        return false;
+    }
+    CSeq_feat_Handle::TIndex index = m_Feat.m_AnnotIndex;
+    if ( index == m_Feat.eNull ) {
+        // end of features
+        return false;
+    }
+    if ( index >= 0 ) {
+        // scanning plain features
+        CSeq_feat_Handle::TIndex count =
+            GetAnnot().x_GetInfo().GetAnnotObjectInfos().size();
+        return index < count || GetAnnot().x_GetInfo().x_HasSNP_annot_Info();
+    }
+    else {
+        // scanning table features
+        CSeq_feat_Handle::TIndex count =
+            GetAnnot().x_GetInfo().x_GetSNP_annot_Info().size();
+        index = -1 - index;
+        return index < count;
+    }
+}
+
+
+void CSeq_annot_ftable_I::x_Step(void)
+{
+    _ASSERT(m_Feat.m_AnnotIndex != m_Feat.eNull);
+    if ( m_Feat.IsPlainFeat() ) {
+        // scanning plain features
+        CSeq_feat_Handle::TIndex count =
+            GetAnnot().x_GetInfo().GetAnnotObjectInfos().size();
+        if ( ++m_Feat.m_AnnotIndex == count ) {
+            // no more plain features
+            if ( (m_Flags & fIncludeTable) &&
+                 GetAnnot().x_GetInfo().x_HasSNP_annot_Info() ) {
+                // switch to table
+                m_Feat.m_AnnotIndex = -1;
+            }
+        }
+    }
+    else {
+        --m_Feat.m_AnnotIndex;
+    }
+}
+
+
+void CSeq_annot_ftable_I::x_Reset(void)
+{
+    // mark end of features
+    m_Feat.m_AnnotIndex = m_Feat.eNull;
+}
+
+
+void CSeq_annot_ftable_I::x_Settle(void)
+{
+    while ( x_IsValid() ) {
+        if ( m_Feat.IsRemoved() ) {
+            x_Step();
+        }
+        else {
+            return;
+        }
+    }
+    x_Reset();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/08/07 15:25:06  vasilche
+ * Introduced CSeq_feat_EditHandle.
+ * Introduced CSeq_annot_ftable_CI & CSeq_annot_ftable_I.
+ *
  * Revision 1.15  2006/07/12 16:17:31  vasilche
  * Added CSeq_annot_ftable_CI.
  *

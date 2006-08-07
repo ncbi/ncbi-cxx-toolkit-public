@@ -56,14 +56,7 @@ BEGIN_SCOPE(objects)
 class CSeq_annot_Handle;
 class CMappedFeat;
 class CSeq_annot_ftable_CI;
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-///  CSeq_feat_Handle --
-///
-///  Proxy to access the seq-feat objects data
-///
+class CSeq_annot_ftable_I;
 
 template<typename Handle>
 class CSeq_annot_Add_EditCommand;
@@ -71,6 +64,13 @@ template<typename Handle>
 class CSeq_annot_Replace_EditCommand;
 template<typename Handle>
 class CSeq_annot_Remove_EditCommand;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_feat_Handle --
+///
+///  Proxy to access the seq-feat objects data
+///
 
 class NCBI_XOBJMGR_EXPORT CSeq_feat_Handle
 {
@@ -158,16 +158,22 @@ public:
     /// Return true if this feature was removed already
     bool IsRemoved(void) const;
     /// Remove the feature from Seq-annot
-    void Remove(void) const;
+    /// The method is deprecated, use CSeq_feat_EditHandle
+    NCBI_DEPRECATED void Remove(void) const;
     /// Replace the feature with new Seq-feat object.
     /// All indexes are updated correspondingly.
-    void Replace(const CSeq_feat& new_feat) const;
+    /// The method is deprecated, use CSeq_feat_EditHandle
+    NCBI_DEPRECATED void Replace(const CSeq_feat& new_feat) const;
 
-private:
+protected:
     friend class CMappedFeat;
     friend class CCreatedFeat_Ref;
-    friend class CSeq_annot_EditHandle;
+    friend class CSeq_annot_Handle;
+    friend class CSeq_annot_ftable_CI;
+    friend class CSeq_annot_ftable_I;
     typedef Int4 TIndex;
+
+    TIndex x_GetAnnotIndex() const;
 
     // Seq-annot retrieval
     const CSeq_annot_Info& x_GetSeq_annot_Info(void) const;
@@ -195,22 +201,10 @@ private:
                      const SSNP_Info& snp_info,
                      CCreatedFeat_Ref& created_ref);
 
+private:
     CSeq_annot_Handle              m_Annot;
     TIndex                         m_AnnotIndex;
     mutable CRef<CCreatedFeat_Ref> m_CreatedFeat;
-
-private:
-    friend class CSeq_annot_Add_EditCommand<CSeq_feat_Handle>;
-    friend class CSeq_annot_Replace_EditCommand<CSeq_feat_Handle>;
-    friend class CSeq_annot_Remove_EditCommand<CSeq_feat_Handle>;
-    friend class CSeq_annot_ftable_CI;
-
-    /// Remove the feature from Seq-annot
-    void x_RealRemove(void) const;
-    /// Replace the feature with new Seq-feat object.
-    /// All indexes are updated correspondingly.
-    void x_RealReplace(const CSeq_feat& new_feat) const;
-
 };
 
 
@@ -243,9 +237,17 @@ CScope& CSeq_feat_Handle::GetScope(void) const
 
 
 inline
+CSeq_feat_Handle::TIndex CSeq_feat_Handle::x_GetAnnotIndex(void) const
+{
+    return m_AnnotIndex;
+}
+
+
+inline
 bool CSeq_feat_Handle::operator ==(const CSeq_feat_Handle& feat) const
 {
-    return m_Annot == feat.m_Annot && m_AnnotIndex == feat.m_AnnotIndex;
+    return GetAnnot() == feat.GetAnnot() &&
+        x_GetAnnotIndex() == feat.x_GetAnnotIndex();
 }
 
 
@@ -259,24 +261,23 @@ bool CSeq_feat_Handle::operator !=(const CSeq_feat_Handle& feat) const
 inline
 bool CSeq_feat_Handle::operator <(const CSeq_feat_Handle& feat) const
 {
-    if (m_Annot != feat.m_Annot) {
-        return m_Annot < feat.m_Annot;
-    }
-    return m_AnnotIndex < feat.m_AnnotIndex;
+    return GetAnnot() < feat.GetAnnot() ||
+        GetAnnot() == feat.GetAnnot() &&
+        x_GetAnnotIndex() < feat.x_GetAnnotIndex();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsPlainFeat(void) const
 {
-    return m_AnnotIndex >= 0;
+    return x_GetAnnotIndex() >= 0;
 }
 
 
 inline
 bool CSeq_feat_Handle::IsTableSNP(void) const
 {
-    return m_AnnotIndex < 0;
+    return x_GetAnnotIndex() < 0;
 }
 
 
@@ -545,6 +546,62 @@ CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
 
 
 /////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_feat_EditHandle --
+///
+///  Proxy to edit the seq-feat objects data
+///
+
+class NCBI_XOBJMGR_EXPORT CSeq_feat_EditHandle : public CSeq_feat_Handle
+{
+public:
+    CSeq_feat_EditHandle(void);
+    explicit CSeq_feat_EditHandle(const CSeq_feat_Handle& h);
+
+    CSeq_annot_EditHandle GetAnnot(void) const;
+
+    /// Remove the feature from Seq-annot
+    void Remove(void) const;
+    /// Replace the feature with new Seq-feat object.
+    /// All indexes are updated correspondingly.
+    void Replace(const CSeq_feat& new_feat) const;
+
+protected:
+    friend class CSeq_annot_EditHandle;
+
+    CSeq_feat_EditHandle(const CSeq_annot_EditHandle& annot, TIndex index);
+    CSeq_feat_EditHandle(const CSeq_annot_EditHandle& annot,
+                         const SSNP_Info& snp_info,
+                         CCreatedFeat_Ref& created_ref);
+
+    friend class CSeq_annot_Add_EditCommand<CSeq_feat_EditHandle>;
+    friend class CSeq_annot_Replace_EditCommand<CSeq_feat_EditHandle>;
+    friend class CSeq_annot_Remove_EditCommand<CSeq_feat_EditHandle>;
+    friend class CSeq_annot_ftable_I;
+
+    /// Remove the feature from Seq-annot
+    void x_RealRemove(void) const;
+    /// Replace the feature with new Seq-feat object.
+    /// All indexes are updated correspondingly.
+    void x_RealReplace(const CSeq_feat& new_feat) const;
+
+};
+
+
+inline
+CSeq_feat_EditHandle::CSeq_feat_EditHandle(void)
+{
+}
+
+
+inline
+CSeq_annot_EditHandle CSeq_feat_EditHandle::GetAnnot(void) const
+{
+    return CSeq_annot_EditHandle(CSeq_feat_Handle::GetAnnot());
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CSeq_annot_ftable_CI
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_ftable_CI
@@ -625,6 +682,89 @@ CSeq_annot_ftable_CI& CSeq_annot_ftable_CI::operator++(void)
     return *this;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_annot_ftable_I
+
+class NCBI_XOBJMGR_EXPORT CSeq_annot_ftable_I
+{
+public:
+    enum EFlags {
+        fIncludeTable    = 1<<0,
+        fOnlyTable       = 1<<1
+    };
+    typedef int TFlags;
+
+    CSeq_annot_ftable_I(void);
+    explicit CSeq_annot_ftable_I(const CSeq_annot_EditHandle& annot,
+                                 TFlags flags = 0);
+
+    CScope& GetScope(void) const;
+    const CSeq_annot_EditHandle& GetAnnot(void) const;
+
+    DECLARE_OPERATOR_BOOL(m_Feat);
+
+    const CSeq_feat_EditHandle& operator*(void) const;
+    const CSeq_feat_EditHandle* operator->(void) const;
+
+    CSeq_annot_ftable_I& operator++(void);
+
+protected:
+    bool x_IsValid(void) const;
+    bool x_IsExcluded(void) const;
+    void x_Step(void);
+    void x_Reset(void);
+    void x_Settle(void);
+
+private:
+    CSeq_annot_EditHandle m_Annot;
+    TFlags                m_Flags;
+    CSeq_feat_EditHandle  m_Feat;
+};
+
+
+inline
+CSeq_annot_ftable_I::CSeq_annot_ftable_I(void)
+    : m_Flags(0)
+{
+}
+
+
+inline
+const CSeq_annot_EditHandle& CSeq_annot_ftable_I::GetAnnot(void) const
+{
+    return m_Annot;
+}
+
+
+inline
+CScope& CSeq_annot_ftable_I::GetScope(void) const
+{
+    return GetAnnot().GetScope();
+}
+
+
+inline
+const CSeq_feat_EditHandle& CSeq_annot_ftable_I::operator*(void) const
+{
+    return m_Feat;
+}
+
+
+inline
+const CSeq_feat_EditHandle* CSeq_annot_ftable_I::operator->(void) const
+{
+    return &m_Feat;
+}
+
+
+inline
+CSeq_annot_ftable_I& CSeq_annot_ftable_I::operator++(void)
+{
+    x_Step();
+    x_Settle();
+    return *this;
+}
+
 /* @} */
 
 END_SCOPE(objects)
@@ -633,6 +773,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2006/08/07 15:25:06  vasilche
+* Introduced CSeq_feat_EditHandle.
+* Introduced CSeq_annot_ftable_CI & CSeq_annot_ftable_I.
+*
 * Revision 1.19  2006/07/12 16:17:30  vasilche
 * Added CSeq_annot_ftable_CI.
 *
