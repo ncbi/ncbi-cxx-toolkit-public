@@ -30,6 +30,7 @@
 *
 */
 
+#define ANNOT_EDIT_COPY 1
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
@@ -230,6 +231,9 @@ namespace {
     CRef<CSeq_annot> sx_ShallowCopy(const CSeq_annot& src)
     {
         CRef<CSeq_annot> obj(new CSeq_annot);
+#if ANNOT_EDIT_COPY
+        obj->Assign(src);
+#else
         if ( src.IsSetId() ) {
             obj->SetId() = src.GetId();
         }
@@ -263,6 +267,7 @@ namespace {
             break;
         }
         */
+#endif
         return obj;
     }
 }
@@ -282,7 +287,11 @@ void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info,
         m_SNP_Info->x_ParentAttach(*this);
         x_AttachObject(*m_SNP_Info);
     }
+#if ANNOT_EDIT_COPY
+    x_InitAnnotList();
+#else
     x_InitAnnotList(info);
+#endif
     x_SetDirtyAnnotIndex();
 }
 
@@ -1122,6 +1131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/08/07 15:25:10  vasilche
+ * Copy all annotations at editing start.
+ *
  * Revision 1.41  2006/08/01 22:14:41  vasilche
  * Set name of Seq-annot only if desc.name is present.
  *
