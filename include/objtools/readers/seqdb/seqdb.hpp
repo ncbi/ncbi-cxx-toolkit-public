@@ -356,8 +356,8 @@ public:
     /// In the protein case, this is identical to GetSequence().  In
     /// the nucleotide case, it stores 2 bases per byte instead of 4.
     /// The third parameter indicates the encoding for nucleotide
-    /// data, either kSeqDBNucl4NA or kSeqDBNuclBlastNA, ignored if
-    /// the sequence is a protein sequence.  When done, resources
+    /// data, either kSeqDBNuclNcbiNA8 or kSeqDBNuclBlastNA8, ignored
+    /// if the sequence is a protein sequence.  When done, resources
     /// should be returned with RetSequence.
     /// 
     /// @param oid
