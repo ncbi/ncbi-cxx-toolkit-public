@@ -262,6 +262,8 @@ Int2 BlastExtendWordNew(const LookupTableWrap * lookup_wrap,
             hash_table->backbone[index] =
                 (DiagHashCell *) malloc(capacity * sizeof(DiagHashCell));
             hash_table->capacity[index] = capacity;
+            hash_table->window = word_params->options->window_size;
+            hash_table->offset = hash_table->window;
         }
         hash_table->num_buckets = num_buckets;
     } else {                    /* container_type == eDiagArray */
@@ -714,6 +716,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     BlastUngappedData *ungapped_data = NULL;
     Int4 rc;
     Int4 last_hit, hit_saved;
+    Int4 s_pos = s_end + hash_table->offset;
 
     window_size = word_params->options->window_size;
     two_hits = (window_size > 0);
@@ -723,7 +726,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
 
     /* if we found a previous hit on this diagonal */
     if (rc) {
-        Int4 step = s_end - last_hit;
+        Int4 step = s_pos - last_hit;
         Boolean new_hit = FALSE;
         Boolean second_hit = FALSE;
 
@@ -753,10 +756,10 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                      word_params->nucl_score_table,
                                      word_params->reduced_nucl_cutoff_score);
 
-                last_hit = ungapped_data->length + ungapped_data->s_start;
+                last_hit = ungapped_data->length + ungapped_data->s_start + hash_table->offset;
             } else {
                 ungapped_data = NULL;
-                last_hit = s_end;
+                last_hit = s_pos;
             }
             if (ungapped_data == NULL) {
                 BLAST_SaveInitialHit(init_hitlist, q_off, s_off,
@@ -778,18 +781,18 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
             /* First hit in the 2-hit case or a direct extension of the
                previous hit - update the last hit information only */
             if (step > window_size)
-                last_hit = s_end;
+                last_hit = s_pos;
             if (new_hit)
                 hit_saved = 0;
         }
 
-        s_BlastDiagHashInsert(hash_table, diag, last_hit, hit_saved, s_end, window_size, min_step,two_hits);
+        s_BlastDiagHashInsert(hash_table, diag, last_hit, hit_saved, s_pos, window_size, min_step,two_hits);
 
         return hit_ready;
     } else {                    /* we did not find a previous hit on this
                                    diagonal */
 
-        Int4 level = s_end;
+        Int4 level = s_pos;
 
         /* Save the hit if it already qualifies */
         if (!two_hits) {
@@ -802,7 +805,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                      ungapped_data,
                                      word_params->nucl_score_table,
                                      word_params->reduced_nucl_cutoff_score);
-                level = (ungapped_data->length + ungapped_data->s_start);
+                level = ungapped_data->length + ungapped_data->s_start + hash_table->offset;
             } else {
                 ungapped_data = NULL;
             }
@@ -823,7 +826,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
             }
         }
 
-        s_BlastDiagHashInsert(hash_table, diag, level, hit_saved, s_end, window_size,min_step,two_hits);
+        s_BlastDiagHashInsert(hash_table, diag, level, hit_saved, s_pos, window_size,min_step,two_hits);
 
         return hit_ready;
     }
@@ -913,29 +916,22 @@ s_BlastNaExtendWordExit(Blast_ExtendWord * ewp, Int4 subject_length)
         return -1;
 
     if (ewp->diag_table) {
-        BLAST_DiagTable *diag_table;
-        Int4 diag_array_length;
-
-        diag_table = ewp->diag_table;
-
-        if (diag_table->offset >= INT4_MAX / 2) {
-            diag_array_length = diag_table->diag_array_length;
-            if (diag_table->hit_level_array) {
-                memset(diag_table->hit_level_array, 0,
-                       diag_array_length * sizeof(DiagStruct));
-            }
-        }
-
-        if (diag_table->offset < INT4_MAX / 2) {
-            diag_table->offset += subject_length + diag_table->window;
+        if (ewp->diag_table->offset >= INT4_MAX / 2) {
+            ewp->diag_table->offset = ewp->diag_table->window;
+            memset(ewp->diag_table->hit_level_array, 0,
+                   ewp->diag_table->diag_array_length * sizeof(DiagStruct));
         } else {
-            diag_table->offset = diag_table->window;
+            ewp->diag_table->offset += subject_length + ewp->diag_table->window;
         }
     } else if (ewp->hash_table) {
-        memset(ewp->hash_table->size, 0,
-               ewp->hash_table->num_buckets * sizeof(Int4));
+        if (ewp->hash_table->offset >= INT4_MAX / 2) {
+            ewp->hash_table->offset = ewp->hash_table->window;
+            memset(ewp->hash_table->size, 0,
+                   ewp->hash_table->num_buckets * sizeof(Int4));
+        } else {
+            ewp->hash_table->offset += subject_length + ewp->hash_table->window;
+        }
     }
-
     return 0;
 }
 

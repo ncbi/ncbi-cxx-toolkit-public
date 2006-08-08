@@ -122,6 +122,8 @@ typedef struct BLAST_DiagHash {
    Int4* size; /**< Number of occupied elements in each bucket */
    Int4* capacity;  /**< Total number of elements in each bucket */
    DiagHashCell** backbone; /**< Array of pointers to arrays of cells. */
+   Int4 offset;
+   Int4 window;
 } BLAST_DiagHash;
    
 /** Structure for keeping initial word extension information */
