@@ -450,9 +450,15 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
                      !i->second.GetValue().empty() ) {
                     string attr = i->second.GetValue();
                     out << "=\"";
-                    // Escape '"'
-                    if (s_Find(attr, "\"") != NPOS) {
-                        attr = NStr::Replace(attr, "\"", "&quot;");
+                    // Escape attributes
+                    if ( attr.find_first_of("\"&") != NPOS ) {
+                        attr = CHTMLHelper::HTMLAttributeEncode(attr, 
+                                            CHTMLHelper::fSkipEntities |
+    /* NOTE: 
+       temporary use fCheckPreencoded flag here to clean up redundant
+       HTMLEncode() calls from NCBI code.
+    */
+                                            CHTMLHelper::fCheckPreencoded);
                     }
                     // Check tags inside attribute value
                     if (s_Find(attr, kTagStart) == NPOS) {
@@ -464,9 +470,6 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
                     out << '"';
                 }
             }
-        }
-        if ( m_NoWrap ) {
-            out << " nowrap";
         }
         INIT_STREAM_WRITE;
         out << '>';
@@ -2323,6 +2326,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.128  2006/08/08 18:09:41  ivanov
+ * CHTMLOpenElement::PrintBegin() -- use CHTMLHelper::HTMLAttributeEncode()
+ * to escape quote and ampersands in the attribute values.
+ * Replace <... nowrap> with <... nowrap="nowrap">.
+ *
  * Revision 1.127  2006/08/04 19:10:01  ivanov
  * CHTMLOpenElement::PrintBegin() -- escape quote in the attribute values
  *
