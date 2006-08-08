@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <corelib/ncbi_limits.h>
 
 #include <vector>
 #include <list>
@@ -44,10 +43,6 @@
 
 USING_NCBI_SCOPE;
 
-
-const int DP_NEGATIVE_INFINITY = kMin_Int;
-const unsigned int DP_POSITIVE_INFINITY = kMax_UInt;
-const unsigned int DP_UNFROZEN_BLOCK = kMax_UInt;
 
 BEGIN_SCOPE(struct_dp)
 
@@ -910,6 +905,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/08/08 16:30:59  thiessen
+* extern -> static for constants
+*
 * Revision 1.20  2004/05/21 21:41:04  gorelenk
 * Added PCH ncbi_pch.hpp
 *

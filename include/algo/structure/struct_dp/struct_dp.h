@@ -34,6 +34,8 @@
 #ifndef STRUCT_DP__H
 #define STRUCT_DP__H
 
+#include <corelib/ncbi_limits.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,17 +48,17 @@ extern "C" {
 #define STRUCT_DP_OKAY             5  /* generic ok status */
 
 /* lowest possible score */
-extern const int DP_NEGATIVE_INFINITY;
+static const int DP_NEGATIVE_INFINITY = kMin_Int;
 
 /* highest possible loop penalty */
-extern const unsigned int DP_POSITIVE_INFINITY;
+static const unsigned int DP_POSITIVE_INFINITY = kMax_UInt;
 
 /*
  * Block alignment structures and functions
  */
 
 /* use for block that is not frozen */
-extern const unsigned int DP_UNFROZEN_BLOCK;
+static const unsigned int DP_UNFROZEN_BLOCK = kMax_UInt;
 
 /* info on block structure */
 typedef struct {
@@ -189,6 +191,9 @@ DP_MultipleLocalBlockAlignGeneric(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/08/08 16:30:42  thiessen
+* extern -> static for constants
+*
 * Revision 1.1  2004/02/19 01:46:04  thiessen
 * move to include/algo/structure/struct_dp
 *
