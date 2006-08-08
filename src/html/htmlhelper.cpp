@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Eugene Vasilchenko
+ * Author: Eugene Vasilchenko, Vladimir Ivanov
  *
  */
 
@@ -39,55 +39,104 @@ BEGIN_NCBI_SCOPE
 string CHTMLHelper::sm_newline( "\n" );
 
 
-string CHTMLHelper::HTMLEncode(const string& input)
+static string s_HTMLEncode(const string& str, const string& set, 
+                           CHTMLHelper::THTMLEncodeFlags flags)
 {
-    string    output;
-    SIZE_TYPE last = 0;
+    CNcbiOstrstream out;
 
-    // Reserve memory.
-    output.reserve(input.size());
+    SIZE_TYPE last = 0;
+    SIZE_TYPE semicolon = 0;
 
     // Find first symbol to encode.
-    SIZE_TYPE ptr = input.find_first_of("\"&<>", last);
+    SIZE_TYPE ptr = str.find_first_of(set, last);
     while ( ptr != NPOS ) {
-        // We don't know how big output str  will need to be, so we grow it
-        // exponentially.
-        if ( output.size() == output.capacity()) {
-            output.reserve(output.size() + output.size() / 2);
-        }
-        // Copy plain part of input.
+        // Copy plain part of the input string
         if ( ptr != last ) {
-            output.append(input, last, ptr - last);
+            out.write(str.data() + last, ptr - last);
         }
-        // Append encoded symbol.
-        switch ( input[ptr] ) {
+        // Append encoded symbol
+        switch (str[ptr]) {
         case '"':
-            output.append("&quot;");
+            out << "&quot;";
             break;
         case '&':
-            output.append("&");
-            // Disable numeric characters reference encoding
-            if ( (ptr+1 >= input.length()) || (input[ptr+1] != '#') ) {
-                output.append("amp;");
+            {{
+            out.put('&');
+            bool is_entity = false;
+            // Check on HTML entity
+            if ((flags & CHTMLHelper::fSkipEntities) &&
+                (ptr+2 < str.length())  &&
+                (semicolon != NPOS)) {
+                if ( ptr >= semicolon )
+                    semicolon = str.find(";", ptr+1);
+                if ( semicolon != NPOS ) {
+                    SIZE_TYPE len = semicolon - ptr;
+                    SIZE_TYPE p = ptr + 1;
+                    if (str[ptr+1] == '#') {
+                        // Check on numeric character reference encoding
+                        if (flags & CHTMLHelper::fSkipNumericEntities) {
+                            p++;
+                            if (len  ||  len <= 4) {
+                                for (; p < semicolon; ++p) {
+                                    if (!isdigit((unsigned char)(str[p])))
+                                        break;
+                                }
+                            }
+                        }
+                    } else {
+                        // Check on literal entity
+                        if (flags & CHTMLHelper::fSkipLiteralEntities) {
+                            if (len  &&  len <= 10) {
+                                for (; p < semicolon; ++p) {
+                                    if (!isalpha((unsigned char)(str[p])))
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                    is_entity = (p == semicolon);
+                }
             }
+            if ( is_entity ) {
+                if (flags & CHTMLHelper::fCheckPreencoded) {
+                    ERR_POST_ONCE(Warning << "string \"" <<  str <<
+                                 "\" contains HTML encoded entities");
+                }
+            } else {
+                out << "amp;";
+            }
+            }}
             break;
+
         case '<':
-            output.append("&lt;");
+            out << "&lt;";
             break;
         case '>':
-            output.append("&gt;");
+            out << "&gt;";
             break;
         }
-        // Skip it
-        last = ptr + 1;
         // Find next symbol to encode
-        ptr = input.find_first_of("\"&<>", last);
+        last = ptr + 1;
+        ptr = str.find_first_of(set, last);
     }
-    // Append last part of input
-    if ( last != input.size() ) {
-        output.append(input, last, input.size() - last);
+    // Append last part of the source string
+    if ( last != str.size() ) {
+        out.write(str.data() + last, str.size() - last);
     }
-    return output;
+    return CNcbiOstrstreamToString(out);
+}
+
+
+string CHTMLHelper::HTMLEncode(const string& str, THTMLEncodeFlags flags)
+{
+    return s_HTMLEncode(str, "\"&<>", flags);
+}
+
+
+string
+CHTMLHelper::HTMLAttributeEncode(const string& str, THTMLEncodeFlags flags)
+{
+    return s_HTMLEncode(str, "\"&", flags);
 }
 
 
@@ -174,6 +223,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/08/08 18:07:52  ivanov
+ * CHTMLHelper -- added flags parameter to HTMLEncode/HTMLJavaScriptEncode.
+ * Added new method HTMLAttributeEncode to encode HTML tags attributes.
+ * Move common encode code to s_HTMLEncode.
+ *
  * Revision 1.28  2005/12/19 16:55:10  jcherry
  * Inline all methods of CIDs and remove export specifier to get around
  * multiply defined symbol proble on windows (list<int> ctor and dtor)
