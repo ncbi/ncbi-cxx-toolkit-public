@@ -98,10 +98,6 @@ CNcbiOstream& CCtxMsgString::Write(CNcbiOstream& os) const
 //  CCgiContext::
 //
 
-const string kDefaultTrackingIdName = "ncbi_trackingid";
-const string kDefaultTrackingCookieDomain = ".ncbi.nlm.nih.gov";
-const string kDefaultTrackingCookiePath = "/";
-
 CCgiContext::CCgiContext(CCgiApplication&        app,
                          const CNcbiArguments*   args,
                          const CNcbiEnvironment* env,
@@ -151,18 +147,12 @@ void CCgiContext::x_InitSession()
 
     m_Request->x_SetSession(*m_Session);
     m_Response.x_SetSession(*m_Session);
-    bool enable_tracking = m_App.GetConfig().
-        GetBool("CGI", "EnableTracking", true, 0, CNcbiRegistry::eReturn);
-    if(enable_tracking) {
-        string track_cookie_name = m_App.GetConfig().
-            GetString("CGI", "TrackingCookieName", kDefaultTrackingIdName);
-        string track_cookie_domain = m_App.GetConfig().
-            GetString("CGI", "TrackingCookieDomain", kDefaultTrackingCookieDomain);
-        string track_cookie_path = m_App.GetConfig().
-            GetString("CGI", "TrackingCookiePath", kDefaultTrackingCookiePath);
+    if( !TCGI_DisableTrackingCookie::GetDefault() ) {
         string track_cookie_value = RetrieveTrackingId();
-        m_Response.SetTrackingCookie(track_cookie_name, track_cookie_value,
-                                     track_cookie_domain, track_cookie_path);
+        m_Response.SetTrackingCookie(TCGI_TrackingCookieName::GetDefault(), 
+                                     track_cookie_value,
+                                     TCGI_TrackingCookieDomain::GetDefault(), 
+                                     TCGI_TrackingCookiePath::GetDefault());
     }
 
 }
@@ -355,9 +345,7 @@ static inline bool s_CheckCookieForTID(const CCgiCookie* cookie, string& tid)
 
 string CCgiContext::RetrieveTrackingId() const
 {
-    bool enable_tracking = m_App.GetConfig().
-        GetBool("CGI", "EnableTracking", true, 0, CNcbiRegistry::eReturn);
-    if(!enable_tracking) 
+    if(TCGI_DisableTrackingCookie::GetDefault()) 
         return "";
 
     const CCgiCookies& cookies = m_Request->GetCookies();
@@ -370,9 +358,7 @@ string CCgiContext::RetrieveTrackingId() const
     if( s_CheckCookieForTID(cookie, tid) )
         return tid;
 
-    string track_cookie_name = m_App.GetConfig().
-        GetString("CGI", "TrackingCookieName", kDefaultTrackingIdName);
-    cookie = cookies.Find(track_cookie_name, kEmptyStr, kEmptyStr); 
+    cookie = cookies.Find(TCGI_TrackingCookieName::GetDefault(), kEmptyStr, kEmptyStr); 
     
     if (cookie) 
         return cookie->GetValue();
@@ -390,6 +376,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.54  2006/08/08 18:27:51  didenko
+* Added customization to the tracking cookie
+*
 * Revision 1.53  2006/07/24 19:03:37  grichenk
 * Return empty self-url and do not set HTTP_REFERER if server name is not set.
 *

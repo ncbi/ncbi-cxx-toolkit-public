@@ -36,6 +36,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <cgi/ncbires.hpp>
@@ -319,7 +320,6 @@ private:
 };
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  CCgiStatistics::
 //
@@ -366,6 +366,20 @@ protected:
 };
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+//  Tracking Environment
+
+NCBI_PARAM_DECL(bool, CGI, DisableTrackingCookie); 
+typedef NCBI_PARAM_TYPE(CGI, DisableTrackingCookie) TCGI_DisableTrackingCookie;
+NCBI_PARAM_DECL(string, CGI, TrackingCookieName); 
+typedef NCBI_PARAM_TYPE(CGI, TrackingCookieName) TCGI_TrackingCookieName;
+NCBI_PARAM_DECL(string, CGI, TrackingCookieDomain); 
+typedef NCBI_PARAM_TYPE(CGI, TrackingCookieDomain) TCGI_TrackingCookieDomain;
+NCBI_PARAM_DECL(string, CGI, TrackingCookiePath); 
+typedef NCBI_PARAM_TYPE(CGI, TrackingCookiePath) TCGI_TrackingCookiePath;
+
+
 END_NCBI_SCOPE
 
 
@@ -376,6 +390,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2006/08/08 18:27:50  didenko
+* Added customization to the tracking cookie
+*
 * Revision 1.52  2006/05/18 19:07:26  grichenk
 * Added output to log file(s), application access log, new cgi log formatting.
 *
