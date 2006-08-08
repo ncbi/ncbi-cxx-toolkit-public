@@ -364,40 +364,38 @@ class NCBI_XHTML_EXPORT CHTMLOpenElement: public CHTMLNode
     typedef CHTMLNode CParent;
 public:
     CHTMLOpenElement(const char* tagname)
-        : CParent(tagname), m_NoWrap(false)
+        : CParent(tagname)
     { }
     CHTMLOpenElement(const char* tagname, const char* text)
-        : CParent(tagname, text), m_NoWrap(false)
+        : CParent(tagname, text)
     { }
     CHTMLOpenElement(const char* tagname, const string& text)
-        : CParent(tagname, text), m_NoWrap(false)
+        : CParent(tagname, text)
     { }
     CHTMLOpenElement(const char* tagname, CNCBINode* node)
-        : CParent(tagname, node), m_NoWrap(false)
+        : CParent(tagname, node)
     { }
     CHTMLOpenElement(const string& tagname)
-        : CParent(tagname), m_NoWrap(false)
+        : CParent(tagname)
     { }
     CHTMLOpenElement(const string& tagname, const char* text)
-        : CParent(tagname, text), m_NoWrap(false)
+        : CParent(tagname, text)
     { }
     CHTMLOpenElement(const string& tagname, const string& text)
-        : CParent(tagname, text), m_NoWrap(false)
+        : CParent(tagname, text)
     { }
     CHTMLOpenElement(const string& tagname, CNCBINode* node)
-        : CParent(tagname, node), m_NoWrap(false)
+        : CParent(tagname, node)
     { }
     ~CHTMLOpenElement(void);
 
     // Print tag itself.
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 
-    // Set NOWRAP attribute (NOTE: it is depricated in HTML 4.0)
-    virtual void SetNoWrap(bool noWrap = true)
-        { m_NoWrap = noWrap; }
+    // Set NOWRAP attribute
+    void SetNoWrap(void)
+        { SetAttribute("nowrap", "nowrap"); }
 
-protected:
-    bool m_NoWrap;
 };
 
 
@@ -1617,6 +1615,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2006/08/08 18:09:57  ivanov
+ * Replace <... nowrap> with <... nowrap="nowrap">
+ *
  * Revision 1.89  2006/05/04 19:15:49  ivanov
  * CHTML_submit, CHTML_input_button -- changed constructor parameter name
  *
