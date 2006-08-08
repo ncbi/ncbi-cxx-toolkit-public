@@ -416,27 +416,32 @@ void CGridWorkerApp_Impl::Init()
         m_ClientFactory.reset(new CNetScheduleClientFactory(reg));
 }
 
+const string kServerSec = "server";
+
 int CGridWorkerApp_Impl::Run()
 {
     LOG_POST( GetJobFactory().GetJobVersion() << WN_BUILD_DATE); 
 
     const IRegistry& reg = m_App.GetConfig();
     unsigned int udp_port =
-        reg.GetInt("server", "notify_udp_port", 0/*9111*/,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec, "notify_udp_port", 0/*9111*/,0,IRegistry::eReturn);
     unsigned int max_threads = 1;
     unsigned int init_threads = 1;
     if (!m_SingleThreadForced) {
         max_threads = 
-            reg.GetInt("server","max_threads",4,0,IRegistry::eReturn);
+            reg.GetInt(kServerSec,"max_threads",4,0,IRegistry::eReturn);
         init_threads = 
-            reg.GetInt("server","init_threads",2,0,IRegistry::eReturn);
+            reg.GetInt(kServerSec,"init_threads",2,0,IRegistry::eReturn);
     }
+    if (init_threads > max_threads) 
+        init_threads = max_threads;
+
     unsigned int ns_timeout = 
-        reg.GetInt("server","job_wait_timeout",30,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"job_wait_timeout",30,0,IRegistry::eReturn);
     unsigned int threads_pool_timeout = 
-        reg.GetInt("server","thread_pool_timeout",30,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"thread_pool_timeout",30,0,IRegistry::eReturn);
     unsigned int control_port = 
-        reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"control_port",9300,0,IRegistry::eReturn);
 
     const CArgs& args = m_App.GetArgs();
     if (args["control_port"]) {
@@ -444,9 +449,9 @@ int CGridWorkerApp_Impl::Run()
     }
 
     bool server_log = 
-        reg.GetBool("server","log",false,0,IRegistry::eReturn);
+        reg.GetBool(kServerSec,"log",false,0,IRegistry::eReturn);
     string s_log_type =
-        reg.GetString("server","log_type","self_rotating");
+        reg.GetString(kServerSec,"log_type","self_rotating");
     ELoggingType log_type = eSelfRotatingLog;
     if (NStr::CompareNocase(s_log_type, "rotating")==0) 
         log_type = eRotatingLog;
@@ -454,53 +459,52 @@ int CGridWorkerApp_Impl::Run()
         log_type = eNonRotatingLog;
 
     unsigned int idle_run_delay = 
-        reg.GetInt("server","idle_run_delay",30,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"idle_run_delay",30,0,IRegistry::eReturn);
 
     unsigned int auto_shutdown = 
-        reg.GetInt("server","auto_shutdown_if_idle",0,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"auto_shutdown_if_idle",0,0,IRegistry::eReturn);
 
-    unsigned int infinit_loop_time = 
-        reg.GetInt("server","infinite_loop_time",0,0,IRegistry::eReturn);
-
-    if (infinit_loop_time == 0)
-        infinit_loop_time = 
-            reg.GetInt("server","infinit_loop_time",0,0,IRegistry::eReturn);
+    unsigned int infinit_loop_time = 0;
+    if (reg.HasEntry(kServerSec,"infinite_loop_time") )
+        infinit_loop_time = reg.GetInt(kServerSec,"infinite_loop_time",0,0,IRegistry::eReturn);
+    else
+        infinit_loop_time = reg.GetInt(kServerSec,"infinit_loop_time",0,0,IRegistry::eReturn);
                              
     bool idle_exclusive =
-        reg.GetBool("server", "idle_exclusive", true, 0, 
+        reg.GetBool(kServerSec, "idle_exclusive", true, 0, 
                     CNcbiRegistry::eReturn);
 
     bool permanent_conntction =
-        reg.GetBool("server", "use_permanent_connection", false, 0, 
+        reg.GetBool(kServerSec, "use_permanent_connection", false, 0, 
                     CNcbiRegistry::eReturn);
 
     bool reuse_job_object =
-        reg.GetBool("server", "reuse_job_object", false, 0, 
+        reg.GetBool(kServerSec, "reuse_job_object", false, 0, 
                     CNcbiRegistry::eReturn);
 
     unsigned int log_size = 
-        reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"log_file_size",1024*1024,0,IRegistry::eReturn);
     string log_file_name = GetLogName();
 
     unsigned int max_total_jobs = 
-        reg.GetInt("server","max_total_jobs",0,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"max_total_jobs",0,0,IRegistry::eReturn);
 
     unsigned int max_failed_jobs = 
-        reg.GetInt("server","max_failed_jobs",0,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"max_failed_jobs",0,0,IRegistry::eReturn);
 
     bool is_daemon =
-        reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
+        reg.GetBool(kServerSec, "daemon", false, 0, CNcbiRegistry::eReturn);
 
     string masters = 
-            reg.GetString("server", "master_nodes", "");
+            reg.GetString(kServerSec, "master_nodes", kEmptyStr);
     string admin_hosts = 
-            reg.GetString("server", "admin_hosts", "");
+            reg.GetString(kServerSec, "admin_hosts", kEmptyStr);
 
     unsigned int check_status_period = 
-        reg.GetInt("server","check_status_period",2,0,IRegistry::eReturn);
+        reg.GetInt(kServerSec,"check_status_period",2,0,IRegistry::eReturn);
 
     bool use_embedded_input = false;
-    if (!reg.Get(kNetScheduleDriverName, "use_embedded_storage").empty())
+    if (reg.HasEntry(kNetScheduleDriverName, "use_embedded_storage"))
         use_embedded_input = reg.
             GetBool(kNetScheduleDriverName, "use_embedded_storage", false, 0, 
                     CNcbiRegistry::eReturn);
@@ -676,6 +680,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.25  2006/08/08 18:26:20  didenko
+ * Code cleanning
+ *
  * Revision 6.24  2006/08/03 19:33:10  didenko
  * Added auto_shutdown_if_idle config file paramter
  * Added current date to messages in the log file.
