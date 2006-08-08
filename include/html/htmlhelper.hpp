@@ -59,8 +59,21 @@ class CHTML_form;
 class NCBI_XHTML_EXPORT CHTMLHelper
 {
 public:
+
+    /// Flags for HTMLEncode
+    enum EHTMLEncodeFlags {
+        fEncodeAll           = 0,       ///< Encode all symbols
+        fSkipLiteralEntities = 1 << 1,  ///< Skip "&entity;"
+        fSkipNumericEntities = 1 << 2,  ///< Skip "&#NNNN;"
+        fSkipEntities        = fSkipLiteralEntities | fSkipNumericEntities,
+        fCheckPreencoded     = 1 << 3   ///< Print warning if some preencoded
+                                        ///< entity found in the string
+    };
+    typedef int THTMLEncodeFlags;       //<  bitwise OR of "EHTMLEncodeFlags"
+
     /// HTML encodes a string. E.g. &lt;.
-    static string HTMLEncode(const string& str);
+    static string HTMLEncode(const string& str,
+                             THTMLEncodeFlags flags = fEncodeAll);
 
     /// Encode a string for JavaScript.
     ///
@@ -69,7 +82,12 @@ public:
     /// where S is the symbol code or as "\xDD" where DD is
     /// the character's code in hexadecimal.
     /// @sa NStr::JavaScriptEncode, HTMLEncode
-    static string HTMLJavaScriptEncode(const string& str);
+    static string HTMLJavaScriptEncode(const string& str,
+                                      THTMLEncodeFlags flags = fEncodeAll);
+
+    /// HTML encodes a tag attribute ('&' and '"' symbols).
+    static string HTMLAttributeEncode(const string& str,
+                                      THTMLEncodeFlags flags = fSkipEntities);
 
     /// Strip all HTML code from a string.
     static string StripHTML(const string& str);
@@ -158,9 +176,10 @@ private:
 //=============================================================================
 
 inline
-string CHTMLHelper::HTMLJavaScriptEncode(const string& str)
+string CHTMLHelper::HTMLJavaScriptEncode(const string& str,
+                                         THTMLEncodeFlags flags)
 {
-    return NStr::JavaScriptEncode(HTMLEncode(str));
+    return NStr::JavaScriptEncode(HTMLEncode(str, flags));
 }
 
 inline
@@ -259,6 +278,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/08/08 18:06:48  ivanov
+ * CHTMLHelper -- added flags parameter to HTMLEncode/HTMLJavaScriptEncode.
+ * Added new method HTMLAttributeEncode to encode HTML tags attributes.
+ *
  * Revision 1.17  2005/12/19 16:55:10  jcherry
  * Inline all methods of CIDs and remove export specifier to get around
  * multiply defined symbol proble on windows (list<int> ctor and dtor)
