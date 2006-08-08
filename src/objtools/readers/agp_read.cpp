@@ -89,15 +89,19 @@ void AgpRead(CNcbiIstream& is,
     int line_num = 0;
     while (NcbiGetlineEOL(is, line)) {
         line_num++;
-        if (line[0] == '#') {
-            // comment line; skip
-            continue;
+
+        // remove everything after (and including) the first '#'
+        SIZE_TYPE first_hash_pos = line.find_first_of('#');
+        if (first_hash_pos != NPOS) {
+            line.resize(first_hash_pos);
         }
-        if (line.find_first_not_of(" \t\n\r") == string::npos) {
-            // skip lines containing only white space
+
+        // skip lines containing only white space
+        if (line.find_first_not_of(" \t\n\r") == NPOS) {
             continue;
         }
 
+        // split into fields, as delimited by tabs
         fields.clear();
         NStr::Tokenize(line, "\t", fields);
 
@@ -250,6 +254,10 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.16  2006/08/08 18:48:50  jcherry
+ * Interpret '#' anywhere as the start of a comment (not just at the
+ * beginning of a line)
+ *
  * Revision 1.15  2005/07/01 16:40:37  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *
