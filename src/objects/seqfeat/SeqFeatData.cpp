@@ -2482,6 +2482,16 @@ string x_SpaceToDash(string str1)
     return str1;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+static const CBondList::TBondKey bond_key_to_subtype [] = {
+    CBondList::TBondKey ( "disulfide",  CSeqFeatData::eBond_disulfide  ),
+    CBondList::TBondKey ( "other",      CSeqFeatData::eBond_other      ),
+    CBondList::TBondKey ( "thioether",  CSeqFeatData::eBond_thioether  ),
+    CBondList::TBondKey ( "thiolester", CSeqFeatData::eBond_thiolester ),
+    CBondList::TBondKey ( "xlink",      CSeqFeatData::eBond_xlink      )
+};
+
 
 CBondList::CBondList() : sm_BondKeys (bond_key_to_subtype, sizeof (bond_key_to_subtype))
 {
@@ -2525,7 +2535,38 @@ CSeqFeatData::EBond CBondList::GetBondType(string str) const
         return ci_it->second;
     }
 }
+/////////////////////////////////////////////////////////////////////////////
 
+static const CSiteList::TSiteKey site_key_to_subtype [] = {
+    CSiteList::TSiteKey ( "acetylation",                 CSeqFeatData::eSite_acetylation                 ),
+    CSiteList::TSiteKey ( "active",                      CSeqFeatData::eSite_active                      ),
+    CSiteList::TSiteKey ( "amidation",                   CSeqFeatData::eSite_amidation                   ),
+    CSiteList::TSiteKey ( "binding",                     CSeqFeatData::eSite_binding                     ),
+    CSiteList::TSiteKey ( "blocked",                     CSeqFeatData::eSite_blocked                     ),
+    CSiteList::TSiteKey ( "cleavage",                    CSeqFeatData::eSite_cleavage                    ),
+    CSiteList::TSiteKey ( "DNA binding",                 CSeqFeatData::eSite_dna_binding                 ),
+    CSiteList::TSiteKey ( "gamma carboxyglutamic acid",  CSeqFeatData::eSite_gamma_carboxyglutamic_acid  ),
+    CSiteList::TSiteKey ( "glycosylation",               CSeqFeatData::eSite_glycosylation               ),
+    CSiteList::TSiteKey ( "hydroxylation",               CSeqFeatData::eSite_hydroxylation               ),
+    CSiteList::TSiteKey ( "inhibit",                     CSeqFeatData::eSite_inhibit                     ),
+    CSiteList::TSiteKey ( "lipid binding",               CSeqFeatData::eSite_lipid_binding               ),
+    CSiteList::TSiteKey ( "metal binding",               CSeqFeatData::eSite_metal_binding               ),
+    CSiteList::TSiteKey ( "methylation",                 CSeqFeatData::eSite_methylation                 ),
+    CSiteList::TSiteKey ( "modified",                    CSeqFeatData::eSite_modified                    ),
+    CSiteList::TSiteKey ( "mutagenized",                 CSeqFeatData::eSite_mutagenized                 ),
+    CSiteList::TSiteKey ( "myristoylation",              CSeqFeatData::eSite_myristoylation              ),
+    CSiteList::TSiteKey ( "nitrosylation",               CSeqFeatData::eSite_nitrosylation               ),
+    CSiteList::TSiteKey ( "np binding",                  CSeqFeatData::eSite_np_binding                  ),
+    CSiteList::TSiteKey ( "other",                       CSeqFeatData::eSite_other                       ),
+    CSiteList::TSiteKey ( "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       ),
+    CSiteList::TSiteKey ( "phosphorylation",             CSeqFeatData::eSite_phosphorylation             ),
+    CSiteList::TSiteKey ( "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid ),
+    CSiteList::TSiteKey ( "signal peptide",              CSeqFeatData::eSite_signal_peptide              ),
+    CSiteList::TSiteKey ( "sulfatation",                 CSeqFeatData::eSite_sulfatation                 ),
+    CSiteList::TSiteKey ( "transit peptide",             CSeqFeatData::eSite_transit_peptide             ),
+    CSiteList::TSiteKey ( "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        ),
+    CSiteList::TSiteKey ( "unclassified",                CSeqFeatData::eSite_other                       ),
+};
 
 CSiteList::CSiteList() : sm_SiteKeys (site_key_to_subtype, sizeof (site_key_to_subtype))
 {
@@ -2579,6 +2620,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.34  2006/08/08 17:14:09  dicuccio
+* Make static array map data truly private
+*
 * Revision 6.33  2006/08/03 12:01:09  bollin
 * added CSiteList and CBondList for getting the list of available site and bond
 * types and their descriptive strings
