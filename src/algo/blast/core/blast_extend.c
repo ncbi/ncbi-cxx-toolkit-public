@@ -236,7 +236,6 @@ Int2 BlastExtendWordNew(const LookupTableWrap * lookup_wrap,
                         Uint4 subject_length, Blast_ExtendWord ** ewp_ptr)
 {
     Blast_ExtendWord *ewp;
-    Int4 index;
 
     *ewp_ptr = ewp = (Blast_ExtendWord *) calloc(1, sizeof(Blast_ExtendWord));
 
