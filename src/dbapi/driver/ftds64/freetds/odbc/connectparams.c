@@ -85,8 +85,11 @@ static FILE *tdoGetIniFileName(void);
  *    expect see tdoGetIniFileName().
  *
  */
+#if !defined(NCBI_OS_MSWIN)
 static int SQLGetPrivateProfileString(LPCSTR pszSection, LPCSTR pszEntry, LPCSTR pszDefault, LPSTR pRetBuffer, int nRetBuffer,
 				      LPCSTR pszFileName);
+#endif // !defined(NCBI_OS_MSWIN)
+
 #endif
 
 #if defined(FILENAME_MAX) && FILENAME_MAX < 512
@@ -311,7 +314,7 @@ odbc_parse_connect_string(const char *connect_string, const char *connect_string
 
 #if !HAVE_SQLGETPRIVATEPROFILESTRING
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(_FREETDS_LIBRARY_SOURCE)
 #  error There is something wrong  in configuration...
 #endif
 
@@ -338,9 +341,15 @@ tdoParseProfile(const char *option, const char *value, void *param)
 	}
 }
 
+#if defined(WIN32) && defined(_FREETDS_LIBRARY_SOURCE)
+int INSTAPI 
+SQLGetPrivateProfileString(LPCSTR pszSection, LPCSTR pszEntry, LPCSTR pszDefault, LPSTR pRetBuffer, int nRetBuffer,
+			   LPCSTR pszFileName)
+#else
 static int
 SQLGetPrivateProfileString(LPCSTR pszSection, LPCSTR pszEntry, LPCSTR pszDefault, LPSTR pRetBuffer, int nRetBuffer,
 			   LPCSTR pszFileName)
+#endif
 {
 	FILE *hFile;
 	ProfileParam param;
