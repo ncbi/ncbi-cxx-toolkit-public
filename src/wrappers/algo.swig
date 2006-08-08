@@ -230,22 +230,23 @@ FindPolyTail(objects::CSeqVector_CI begin, objects::CSeqVector_CI end,
 #include <algo/phy_tree/bio_tree.hpp>
 #include <algo/phy_tree/bio_tree_conv.hpp>
 %}
-#define ALGO_PHY_TREE___BIO_TREE__HPP
-//%include algo/phy_tree/bio_tree.hpp
+//#define ALGO_PHY_TREE___BIO_TREE__HPP
+%include algo/phy_tree/bio_tree.hpp
 %include algo/phy_tree/bio_tree_conv.hpp
 
-//%template(CBioTreeDynamic)
-//    ncbi::CBioTree<ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,
-//                                         ncbi::CBioTreeFeatureList> >;
+%template(CBioTreeDynamic)
+   ncbi::CBioTree<ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,
+                                        ncbi::CBioTreeFeatureList> >;
+
 %template(TTreeNode)
     ncbi::CTreeNode<ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,
                                           ncbi::CBioTreeFeatureList> >;
 %template(TBioTreeBaseNode) ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,
                                                   ncbi::CBioTreeFeatureList>;
 namespace ncbi {
-    class CBioTreeDynamic
-    {
-    };
+//     class CBioTreeDynamic
+//     {
+//     };
     void BioTreeConvertContainer2Dynamic
     (CBioTreeDynamic& dyn_tree, 
      const objects::CBioTreeContainer& tree_container);
@@ -284,6 +285,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/08/08 21:29:38  jcherry
+ * Wrap some tree stuff
+ *
  * Revision 1.15  2006/06/12 14:54:32  jcherry
  * Enable wrapping of some tree-related things
  *
