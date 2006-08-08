@@ -104,9 +104,4 @@ typedef int socklen_t;
 #  define TDS_SQLCOLATTRIBUTE_SQLLEN 1
 #endif
 
-#ifndef HAVE_SQLGETPRIVATEPROFILESTRING
-// unixODBC has its own SQLGetPrivateProfileString.
-#  define HAVE_SQLGETPRIVATEPROFILESTRING 0
-#endif
-
 #endif  /* DBAPI_DRIVER_FTDS64_FREETDS___CONFIG__H */
