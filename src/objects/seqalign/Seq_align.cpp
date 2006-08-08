@@ -240,6 +240,20 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
             }
             break;
         }
+    case C_Segs::e_Disc:
+        {
+            // Try to find a sub-alignment for which we can get a
+            // Seq-id for this row.
+            ITERATE (CSeq_align_set::Tdata, sub_aln, GetSegs().GetDisc().Get()) {
+                try {
+                    const CSeq_id& rv = (*sub_aln)->GetSeq_id(row);
+                    return rv;
+                }
+                catch (const CSeqalignException&) {
+                }
+            }
+            break;
+        }
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeq_id() currently does not handle "
@@ -978,6 +992,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2006/08/08 19:45:34  jcherry
+* Handle disc alignments in CSeq_align::GetSeq_id
+*
 * Revision 1.29  2006/07/24 13:11:05  dicuccio
 * Doxygenated.  Added support for creating named scores
 *
