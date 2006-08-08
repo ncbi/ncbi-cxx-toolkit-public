@@ -50,6 +50,12 @@
 #  endif
 #endif
 
+#if defined(FTDS_IN_USE)
+#  define HAVE_SQLGETPRIVATEPROFILESTRING 0
+#elif defined(NCBI_OS_MSWIN)
+#  define HAVE_SQLGETPRIVATEPROFILESTRING 1
+#endif
+
 #include <sql.h>
 #include <sqlext.h>
 #include <sqltypes.h>
@@ -711,6 +717,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/08/08 15:43:10  ssikorsk
+ * + #define HAVE_SQLGETPRIVATEPROFILESTRING
+ *
  * Revision 1.39  2006/07/31 22:18:28  ssikorsk
  * Added forward declaration of CStatementBase;
  * Define HAVE_LONG_LONG on base of SIZEOF_LONG_LONG;
