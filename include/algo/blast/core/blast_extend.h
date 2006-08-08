@@ -51,7 +51,7 @@ extern "C" {
 #define DIAGHASH_NUM_BUCKETS 512
 
 /** Default hash chain length */
-#define DIAGHASH_CHAIN_LENGTH 8
+#define DIAGHASH_CHAIN_LENGTH 256
 
 /** Structure to hold ungapped alignment information */
 typedef struct BlastUngappedData {
@@ -91,6 +91,7 @@ typedef struct DiagHashCell {
    Int4 diag;            /**< This hit's diagonal */
    Int4 level      : 31; /**< This hit's offset in the subject sequence */
    Uint4 hit_saved : 1;  /**< Whether or not this hit has been saved */
+   Uint4 next;           /**< Offset of next element in the chain */
 }  DiagHashCell;
   
 /** Structure containing parameters needed for initial word extension.
@@ -118,10 +119,11 @@ typedef struct BLAST_DiagTable {
 
 /** Track initial word matches using hashing with chaining. Can be used in blastn. */
 typedef struct BLAST_DiagHash {
-   Int4 num_buckets; /**< Number of buckets to be used for storing hit offsets */
-   Int4* size; /**< Number of occupied elements in each bucket */
-   Int4* capacity;  /**< Total number of elements in each bucket */
-   DiagHashCell** backbone; /**< Array of pointers to arrays of cells. */
+   Uint4 num_buckets;   /**< Number of buckets to be used for storing hit offsets */
+   Uint4 occupancy;     /**< Number of occupied elements */
+   Uint4 capacity;      /**< Total number of elements */
+   Uint4 *backbone;     /**< Array of offsets to chains. */
+   DiagHashCell *chain; /**< The data. */
    Int4 offset;
    Int4 window;
 } BLAST_DiagHash;

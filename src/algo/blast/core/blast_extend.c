@@ -42,6 +42,7 @@ static char const rcsid[] =
                                                    BlastDiagTable{New,Free} */
 #include "blast_inline.h"
 
+
 /**
  * Attempt to retrieve information associated with diagonal diag.
  * @param table The hash table [in]
@@ -51,24 +52,22 @@ static char const rcsid[] =
  * @return 1 if successful, 0 if no hit was found on the specified diagonal.
  */
 static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
-                                                  Int4 diag, Int4 * level,
-                                                  Int4 * hit_saved)
+                                                Int4 diag, Int4 * level,
+                                                Int4 * hit_saved)
 {
-	Int4 bucket = (Uint4) diag % DIAGHASH_NUM_BUCKETS;
-	Int4 numElements = table->size[bucket];
-	Int4 index;
+    Uint4 bucket = ((Uint4) diag * 0x9E370001) % DIAGHASH_NUM_BUCKETS;
+    Uint4 index = table->backbone[bucket];
 
-	for(index=0;index<numElements;index++)
-	{
-		if (table->backbone[bucket][index].diag == diag)
-		{
-			*level     = table->backbone[bucket][index].level;
-			*hit_saved = table->backbone[bucket][index].hit_saved;
-			return 1;
-		}
-	}
+    while (index) {
+        if (table->chain[index].diag == diag) {
+            *level = table->chain[index].level;
+            *hit_saved = table->chain[index].hit_saved;
+            return 1;
+        }
 
-	return 0;
+        index = table->chain[index].next;
+    }
+    return 0;
 }
 
 /**
@@ -85,58 +84,61 @@ static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
  * @return 1 if successful, 0 if memory allocation failed.
  */
 static NCBI_INLINE Int4 s_BlastDiagHashInsert(BLAST_DiagHash * table,
-                                                Int4 diag, Int4 level,
-                                                Int4 hit_saved,
-												Int4 s_end,
-												Int4 window_size,
-												Int4 min_step,
-												Int4 two_hits)
+                                              Int4 diag, Int4 level,
+                                              Int4 hit_saved,
+                                              Int4 s_end,
+                                              Int4 window_size,
+                                              Int4 min_step, Int4 two_hits)
 {
-	Int4 bucket = (Uint4) diag % DIAGHASH_NUM_BUCKETS;
-	Int4 numElements = table->size[bucket];
-	Int4 index;
+    Uint4 bucket = ((Uint4) diag * 0x9E370001) % DIAGHASH_NUM_BUCKETS;
+    Uint4 index = table->backbone[bucket];
 
-	for(index=0;index<numElements;index++)
-	{
-		/* if we find what we're looking for, save into it */
-		if (table->backbone[bucket][index].diag == diag)
-		{
-			table->backbone[bucket][index].level     = level;
-			table->backbone[bucket][index].hit_saved = hit_saved;
-			return 1;
-		}
-		else
-		{
-			Int4 step = s_end - table->backbone[bucket][index].level;
-			/* if this hit is stale, save into it. */
-			if ( ! (step <= (Int4)min_step || (two_hits && step <= window_size)) ) {
-                table->backbone[bucket][index].diag      = diag;
-				table->backbone[bucket][index].level     = level;
-                table->backbone[bucket][index].hit_saved = hit_saved;
-				return 1;
-			}
-		}
-	}
+    while (index) {
+        /* if we find what we're looking for, save into it */
+        if (table->chain[index].diag == diag) {
+            table->chain[index].level = level;
+            table->chain[index].hit_saved = hit_saved;
+            return 1;
+        }
+        /* otherwise, if this hit is stale, save into it. */
+        else {
+            Int4 step = s_end - table->chain[index].level;
+            /* if this hit is stale, save into it. */
+            if (!
+                (step <= (Int4) min_step
+                 || (two_hits && step <= window_size))) {
+                table->chain[index].diag = diag;
+                table->chain[index].level = level;
+                table->chain[index].hit_saved = hit_saved;
+                return 1;
+            }
+        }
+        index = table->chain[index].next;
+    }
 
-	/* if we got this far, we were unable to replace any existing entries.
-       add a new hit to the end, allocating more memory if necessary */
+    /* if we got this far, we were unable to replace any existing entries. */
 
-	/* if we need more space, allocate it */
-	if (numElements == table->capacity[bucket]) {
-        table->capacity[bucket] *= 2;
-		table->backbone[bucket] = realloc(table->backbone[bucket],
-												table->capacity[bucket] * sizeof(DiagHashCell));
-		if (table->backbone[bucket] == NULL)
-			return 0;
-	}
+    /* if there's no more room, allocate more */
 
-	/* save the hit */
-	table->backbone[bucket][numElements].diag      = diag;
-	table->backbone[bucket][numElements].level     = level;
-	table->backbone[bucket][numElements].hit_saved = hit_saved;
-	table->size[bucket]++;
+    if (table->occupancy == table->capacity) {
+        table->capacity *= 2;
+        table->chain =
+            realloc(table->chain, table->capacity * sizeof(DiagHashCell));
+        if (table->chain == NULL)
+            return 0;
+    }
 
-return 1;
+    {
+        DiagHashCell *cell = table->chain + table->occupancy;
+        cell->diag = diag;
+        cell->level = level;
+        cell->hit_saved = hit_saved;
+        cell->next = table->backbone[bucket];
+        table->backbone[bucket] = table->occupancy;
+        table->occupancy++;
+    }
+
+    return 1;
 }
 
 /* Description in blast_extend.h */
@@ -243,30 +245,17 @@ Int2 BlastExtendWordNew(const LookupTableWrap * lookup_wrap,
     }
 
     if (word_params->container_type == eDiagHash) {
-        double search_space;
-        Int4 capacity, num_buckets;
-        BLAST_DiagHash *hash_table;
-
-        ewp->hash_table = hash_table =
+        ewp->hash_table =
             (BLAST_DiagHash *) calloc(1, sizeof(BLAST_DiagHash));
 
-        search_space = ((double) query_length) * subject_length;
-        num_buckets = DIAGHASH_NUM_BUCKETS;
-        capacity = DIAGHASH_CHAIN_LENGTH;
-        hash_table->size = (Int4 *) calloc(num_buckets, sizeof(Int4));
-        hash_table->capacity = (Int4 *) malloc(num_buckets * sizeof(Int4));
-
-        hash_table->backbone =
-            (DiagHashCell **) malloc(num_buckets * sizeof(DiagHashCell *));
-        for (index = 0; index < num_buckets; index++) {
-            hash_table->backbone[index] =
-                (DiagHashCell *) malloc(capacity * sizeof(DiagHashCell));
-            hash_table->capacity[index] = capacity;
-            hash_table->window = word_params->options->window_size;
-            hash_table->offset = hash_table->window;
-        }
-        hash_table->num_buckets = num_buckets;
-    } else {                    /* container_type == eDiagArray */
+        ewp->hash_table->num_buckets = DIAGHASH_NUM_BUCKETS;
+        ewp->hash_table->backbone =
+            calloc(ewp->hash_table->num_buckets, sizeof(Uint4));
+        ewp->hash_table->capacity = DIAGHASH_CHAIN_LENGTH;
+        ewp->hash_table->chain =
+            calloc(ewp->hash_table->capacity, sizeof(DiagHashCell));
+        ewp->hash_table->occupancy = 1;
+	} else {                    /* container_type == eDiagArray */
 
         Boolean multiple_hits = (word_params->options->window_size > 0);
         BLAST_DiagTable *diag_table;
@@ -925,8 +914,9 @@ s_BlastNaExtendWordExit(Blast_ExtendWord * ewp, Int4 subject_length)
         }
     } else if (ewp->hash_table) {
         if (ewp->hash_table->offset >= INT4_MAX / 2) {
+			ewp->hash_table->occupancy = 1;
             ewp->hash_table->offset = ewp->hash_table->window;
-            memset(ewp->hash_table->size, 0,
+            memset(ewp->hash_table->backbone, 0,
                    ewp->hash_table->num_buckets * sizeof(Int4));
         } else {
             ewp->hash_table->offset += subject_length + ewp->hash_table->window;
@@ -1413,19 +1403,13 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk * subject,
  */
 static BLAST_DiagHash *s_BlastDiagHashFree(BLAST_DiagHash * hash_table)
 {
-    Int4 index;
-
     if (!hash_table)
         return NULL;
 
-    if (hash_table->backbone) {
-        for (index = 0; index < hash_table->num_buckets; ++index)
-            sfree(hash_table->backbone[index]);
-        sfree(hash_table->backbone);
-    }
-    sfree(hash_table->size);
-    sfree(hash_table->capacity);
+    sfree(hash_table->backbone);
+    sfree(hash_table->chain);
     sfree(hash_table);
+
     return NULL;
 }
 
