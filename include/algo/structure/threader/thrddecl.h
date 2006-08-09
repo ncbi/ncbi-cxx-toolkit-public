@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/08/09 19:04:13  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.3  2006/01/09 12:52:44  thiessen
 * tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
 *
@@ -94,11 +97,13 @@
 #define THRDDECL_H
 
 #include <stdio.h>
+#include <corelib/mswin_export.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+NCBI_THREADER_EXPORT 
 int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
         Gib_Scd* gsp, Thd_Tbl* ttb, Seq_Mtf* psm, float* trg, int zscs,
         double ScalingFactor, float PSSM_Weight);
@@ -166,35 +171,56 @@ float g0(Seg_Nsm* spn, Thd_Cxe* cxe);
 float dgri(Seg_Gsm* spe, Seg_Nsm* spn, Thd_Cxe* cxe, Thd_Gsm* tdg,
            Seq_Mtf* psm, Seg_Cmp* spc);
 
+NCBI_THREADER_EXPORT 
 Cor_Def*  NewCorDef(int NumBlocks);
+NCBI_THREADER_EXPORT 
 Cor_Def*  FreeCorDef(Cor_Def* cdf);
+NCBI_THREADER_EXPORT 
 void      PrintCorDef(Cor_Def* cdf, FILE* pFile);
 
+NCBI_THREADER_EXPORT 
 Seq_Mtf*  NewSeqMtf(int NumResidues, int AlphabetSize);
+NCBI_THREADER_EXPORT 
 Seq_Mtf*  FreeSeqMtf(Seq_Mtf* psm);
+NCBI_THREADER_EXPORT 
 void      PrintSeqMtf(Seq_Mtf* psm, FILE* pFile);
 
+NCBI_THREADER_EXPORT 
 Qry_Seq*  NewQrySeq(int NumResidues, int NumBlocks);
+NCBI_THREADER_EXPORT 
 Qry_Seq*  FreeQrySeq(Qry_Seq* qsq);
+NCBI_THREADER_EXPORT 
 void      PrintQrySeq(Qry_Seq* qsq, FILE* pFile);
 
+NCBI_THREADER_EXPORT 
 Rcx_Ptl*  NewRcxPtl(int NumResTypes, int NumDistances, int PeptideIndex);
+NCBI_THREADER_EXPORT 
 Rcx_Ptl*  FreeRcxPtl(Rcx_Ptl* pmf);
 
+NCBI_THREADER_EXPORT 
 Gib_Scd*  NewGibScd(int NumTempSteps);
+NCBI_THREADER_EXPORT 
 Gib_Scd*  FreeGibScd(Gib_Scd* gsp);
 
+NCBI_THREADER_EXPORT 
 Fld_Mtf*  NewFldMtf(int NumResidues, int NumResResContacts, int NumResPepContacts);
+NCBI_THREADER_EXPORT 
 Fld_Mtf*  FreeFldMtf(Fld_Mtf* mtf);
+NCBI_THREADER_EXPORT 
 void      PrintFldMtf(Fld_Mtf* mtf, FILE* pFile);
 
+NCBI_THREADER_EXPORT 
 Thd_Tbl*  NewThdTbl(int NumResults, int NumCoreElements);
+NCBI_THREADER_EXPORT 
 Thd_Tbl*  FreeThdTbl(Thd_Tbl* ttb);
 void      OrderThdTbl(Thd_Tbl* pResults);
 int       CopyResult(Thd_Tbl* pFromResults, Thd_Tbl* pToResults, int from, int to);
+NCBI_THREADER_EXPORT 
 void      PrintThdTbl(Thd_Tbl* ttb, FILE* pFile);
+NCBI_THREADER_EXPORT 
 void      ScaleThdTbl(Thd_Tbl* ttb, double ScalingFactor);
 
+NCBI_THREADER_EXPORT 
 int       ThrdRound(double Num);
 
 #ifdef __cplusplus
