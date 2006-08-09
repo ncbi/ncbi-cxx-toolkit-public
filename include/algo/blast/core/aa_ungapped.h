@@ -25,8 +25,7 @@
  */
 
 /** @file aa_ungapped.h
- * @todo FIXME: Need file description (protein wordfinding & ungapped 
- * extension code?)
+ * Protein ungapped extension code.
  */
 
 #ifndef AA_UNGAPPED__H

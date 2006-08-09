@@ -28,8 +28,11 @@
  */
 
 /** @file blast_extend.h
- * Structures used for BLAST extension @todo FIXME: elaborate description
- * rename to nt_ungapped.h?
+ * Nucleotide ungapped extension code.
+ * Also includes associative data structures used
+ * to track progress of extensions on each diagonal. Protein
+ * searches only use DiagTable; nucleotide searches can use 
+ * either DiagTable or DiagHash.
  */
 
 #ifndef __BLAST_EXTEND__
