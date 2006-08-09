@@ -98,7 +98,7 @@ int ScoreByBlosum62(unsigned int block, unsigned int queryPos)
     }
 
     int score = 0;
-    for (int i=0; i<blocks->blockSizes[block]; i++)
+    for (unsigned int i=0; i<blocks->blockSizes[block]; i++)
         score += GetBLOSUM62Score(
             subject[blocks->blockPositions[block] + i],
             query[queryPos + i]);
@@ -201,6 +201,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/08/09 18:44:26  lanczyck
+* fix compiler signed/unsigned int warning
+*
 * Revision 1.12  2005/06/03 16:23:54  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
