@@ -55,6 +55,8 @@ static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
                                                 Int4 diag, Int4 * level,
                                                 Int4 * hit_saved)
 {
+    /* see http://lxr.linux.no/source/include/linux/hash.h */
+    /* mod operator will be strength-reduced to an and by the compiler */
     Uint4 bucket = ((Uint4) diag * 0x9E370001) % DIAGHASH_NUM_BUCKETS;
     Uint4 index = table->backbone[bucket];
 
