@@ -52,7 +52,7 @@ enum EClassicalOrComponent {
 
 const int PENDING_ROW_START = 1000000;
 
-class CCdCore : public CCdd
+class NCBI_CDUTILS_EXPORT CCdCore : public CCdd
 {
 public:
 	enum AlignmentSrc {
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.3  2006/04/05 19:28:12  lanczyck
  * allow for changing order of phases in a cycle
  *

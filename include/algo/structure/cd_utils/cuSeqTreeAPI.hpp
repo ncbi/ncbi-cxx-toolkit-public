@@ -54,7 +54,7 @@ struct SeqTreeNode
 };
 typedef pair<SeqTreeNode, SeqTreeNode> SeqTreeEdge;
 
-class SeqTreeAPI
+class NCBI_CDUTILS_EXPORT SeqTreeAPI
 {
 public:
 	SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly=true);
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.7  2006/05/18 20:01:14  cliu
  * To enable read-only SeqTreeAPI
  *

@@ -51,43 +51,60 @@ BEGIN_SCOPE(cd_utils)
 // the taxid for Venter's environmental sequences
 const  int ENVIRONMENTAL_SEQUENCE_TAX_ID = 256318;
 
+NCBI_CDUTILS_EXPORT 
 CRef< CSeq_id > CopySeqId(const CRef< CSeq_id >& seqId);
 
 //  Wraps the CSeq_id.Match(id) method:  id1.Match(id2).
+NCBI_CDUTILS_EXPORT 
 bool SeqIdsMatch(const CRef< CSeq_id>& id1, const CRef< CSeq_id>& id2);  
 
 //   Return 0 if Seq_id is not of proper type (e_General and database 'CDD')
+NCBI_CDUTILS_EXPORT 
 int  GetCDDPssmIdFromSeqId(const CRef< CSeq_id >& id);
 
 //  Return -1 on failure; was FindMMDBIdInBioseq
+NCBI_CDUTILS_EXPORT 
 int    GetMMDBId (const CBioseq& bioseq);
 
 //  Consistent w/ CTaxon1 class, return 0 if no tax id was found, 
 //  or -(firstTaxId) if multiple tax ids found.
+NCBI_CDUTILS_EXPORT 
 int  GetTaxIdInBioseq(const CBioseq& bioseq);
 
+NCBI_CDUTILS_EXPORT 
 bool IsEnvironmentalSeq(const CBioseq& bioseq);
 
 //  Return species description as a string.
 //  Empty string returned on failure; was CCd::GetSpecies(...).
+NCBI_CDUTILS_EXPORT 
 string GetSpeciesFromBioseq(const CBioseq& bioseq);  
 
 //  length = 0 if detect error condition.
 //  Incorporates code from cdt_vutils & cdt_manipcd
+NCBI_CDUTILS_EXPORT 
 int    GetSeqLength(const CBioseq& bioseq);
+NCBI_CDUTILS_EXPORT 
 bool   GetSeqLength(const CRef< CSeq_entry >& seqEntry, int& len); 
 
+NCBI_CDUTILS_EXPORT 
 void   NcbistdaaToNcbieaaString(const vector< char >& vec, string* str);  //  StringFromStdaa(...)
+NCBI_CDUTILS_EXPORT 
 bool   GetNcbieaaString(const CBioseq& bioseq, string& str);
+NCBI_CDUTILS_EXPORT 
 bool   GetNcbieaaString(const CRef< CSeq_entry >& seqEntry, string& str);  //  from cdt_manipcd
+NCBI_CDUTILS_EXPORT 
 string GetRawSequenceString(const CBioseq& bioseq);
 
 //  On failure, returns \0 (i.e., null character)
 //  If zeroBased == true, first letter is at index 0, otherwise number residues from 1.
+NCBI_CDUTILS_EXPORT 
 char   GetResidueAtPosition(const CBioseq& bioseq, int pos, bool zeroBasedPos = true);
+NCBI_CDUTILS_EXPORT 
 char   GetResidueAtPosition(const CRef< CSeq_entry >& seqEntry, int pos, bool zeroBasedPos = true);
 
+NCBI_CDUTILS_EXPORT 
 bool IsConsensus(const CRef< CSeq_id >& seqId);
+NCBI_CDUTILS_EXPORT 
 bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, CRef< CSeq_id>& seqId);
 
 END_SCOPE(cd_utils) // namespace ncbi::objects::
@@ -101,6 +118,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.5  2006/08/02 14:04:51  cliu
  * add function GetAccAndVersion
  *

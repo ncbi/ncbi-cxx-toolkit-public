@@ -57,7 +57,7 @@ BEGIN_SCOPE(cd_utils)
 //  high scores map to short distances.  Although note that each row will
 //  in general have a different score for an exact match, making d=0 ambiguous.
 
-class DMAlignedOptimalScore : public AlignedDM {
+class NCBI_CDUTILS_EXPORT DMAlignedOptimalScore : public AlignedDM {
 
     static const EDistMethod DIST_METHOD;
 
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

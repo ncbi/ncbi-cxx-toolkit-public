@@ -52,7 +52,7 @@ class UngappedAlignedBlock;
 class UnalignedBlock;
 class BLAST_Matrix;
 
-class BlockMultipleAlignment : public ncbi::CObject
+class NCBI_STRUCTUTIL_EXPORT BlockMultipleAlignment : public ncbi::CObject
 {
 public:
     enum {
@@ -257,12 +257,13 @@ private:
 
 
 // static function to create Seq-aligns out of multiple
+NCBI_STRUCTUTIL_EXPORT 
 ncbi::objects::CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
     const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, unsigned int slaveRow);
 
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these
-class Block : public ncbi::CObject
+class NCBI_STRUCTUTIL_EXPORT Block : public ncbi::CObject
 {
 public:
     virtual ~Block(void) { }    // virtual destructor for base class
@@ -316,7 +317,7 @@ protected:
 
 
 // a gapless aligned block; width must be >= 1
-class UngappedAlignedBlock : public Block
+class NCBI_STRUCTUTIL_EXPORT UngappedAlignedBlock : public Block
 {
 public:
     UngappedAlignedBlock(const BlockMultipleAlignment *multiple) : Block(multiple) { }
@@ -340,7 +341,7 @@ public:
 // an unaligned block; max width of block must be >=1. But range over any given
 // sequence can be length 0 (but not <0); if length 0, "to" is the residue before
 // the block, and "from" (= to+1) is the residue after.
-class UnalignedBlock : public Block
+class NCBI_STRUCTUTIL_EXPORT UnalignedBlock : public Block
 {
 public:
     UnalignedBlock(const BlockMultipleAlignment *multiple) : Block(multiple) { }
@@ -365,6 +366,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/08/09 18:38:10  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.4  2005/10/24 23:26:59  thiessen
 * switch to C++ PSSM generation
 *

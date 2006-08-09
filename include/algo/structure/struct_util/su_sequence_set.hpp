@@ -48,7 +48,7 @@
 
 BEGIN_SCOPE(struct_util)
 
-class Sequence : public ncbi::CObject
+class NCBI_STRUCTUTIL_EXPORT Sequence : public ncbi::CObject
 {
 public:
     Sequence(ncbi::objects::CBioseq& bioseq);
@@ -67,7 +67,7 @@ public:
     std::string IdentifierString(void) const;
 };
 
-class SequenceSet : public ncbi::CObject
+class NCBI_STRUCTUTIL_EXPORT SequenceSet : public ncbi::CObject
 {
 public:
     typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
@@ -84,6 +84,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/08/09 18:38:10  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.1  2004/06/14 13:49:16  thiessen
 * make BlockMultipleAlignment and Sequence classes public
 *

@@ -67,15 +67,23 @@ static int CDTreeColorCycle[] ={
     0xeeee00,  // yellow
 };
 
+NCBI_CDUTILS_EXPORT 
 string GetSeqIDStr(const CSeq_id& SeqID);
+NCBI_CDUTILS_EXPORT 
 string GetSeqIDStr(const CRef< CSeq_id >& SeqID);
+NCBI_CDUTILS_EXPORT 
 void Make_GI_or_PDB_String(const CRef< CSeq_id > SeqID, std::string& Str, bool Pad, int Len);
+NCBI_CDUTILS_EXPORT 
 void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str);
 
+NCBI_CDUTILS_EXPORT 
 string CddIdString(const CCdd& cdd);    //  give all Cdd_id's for this Cd
+NCBI_CDUTILS_EXPORT 
 string CddIdString(const CCdd_id& id);
+NCBI_CDUTILS_EXPORT 
 bool   SameCDAccession(const CCdd_id& id1, const CCdd_id& id2);
 
+NCBI_CDUTILS_EXPORT 
 bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* errString);
 
 END_SCOPE(cd_utils)
@@ -88,6 +96,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.3  2005/11/16 21:19:19  hurwitz
  * changed a color in the color cycle
  *

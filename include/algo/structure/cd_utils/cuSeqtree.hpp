@@ -48,7 +48,7 @@ BEGIN_SCOPE(cd_utils)
 
 typedef map<CCdCore*, bool> SelectionByCd;
 
-class SeqItem
+class NCBI_CDUTILS_EXPORT SeqItem
 {
 	friend ostream &operator<<(ostream& os, const SeqItem&);
 public:
@@ -89,7 +89,7 @@ typedef map<int, string> RowMembershipColor;
 typedef tree<SeqItem> SeqTreeBase;
 typedef SeqTreeBase::iterator SeqTreeIterator;
 
-class SeqTree: public SeqTreeBase
+class NCBI_CDUTILS_EXPORT SeqTree: public SeqTreeBase
 {
 public:
 	SeqTree();
@@ -170,6 +170,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  * 
  * $Log$
+ * Revision 1.4  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.3  2006/05/18 20:01:14  cliu
  * To enable read-only SeqTreeAPI
  *

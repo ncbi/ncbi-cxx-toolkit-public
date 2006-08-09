@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class AlignedDM : public DistanceMatrix
+class NCBI_CDUTILS_EXPORT AlignedDM : public DistanceMatrix
 {
 
 public:
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.1  2005/04/19 14:28:00  lanczyck
  * initial version under algo/structure
  *

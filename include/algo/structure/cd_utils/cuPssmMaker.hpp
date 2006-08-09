@@ -70,7 +70,7 @@ struct PssmMakerOptions
 	bool reuseUid;
 };
 
-class CdPssmInput : public IPssmInputData, public ColumnReader
+class NCBI_CDUTILS_EXPORT CdPssmInput : public IPssmInputData, public ColumnReader
 {
 public:
 	CdPssmInput(ResidueProfiles& profiles, PssmMakerOptions& config, bool useConsensus);
@@ -121,7 +121,7 @@ private:
 	void unalignLeadingTrailingGaps();
 };
 
-class PssmMaker
+class NCBI_CDUTILS_EXPORT PssmMaker
 {
 public:
 	PssmMaker(CCdCore* cd, bool useConsensus=true, bool addQueryToPssm=true);
@@ -161,6 +161,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.9  2006/04/24 19:57:19  cliu
  * make a defaul psssm
  *

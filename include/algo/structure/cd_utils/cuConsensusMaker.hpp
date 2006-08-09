@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class ConsensusMaker
+class NCBI_CDUTILS_EXPORT ConsensusMaker
 {
 public:
 
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.3  2006/03/09 19:17:41  cliu
  * export the inclusionThreshold parameter
  *

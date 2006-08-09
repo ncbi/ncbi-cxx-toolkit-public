@@ -48,7 +48,7 @@ class AlignmentSet;
 class BlockMultipleAlignment;
 class BLAST_Matrix;
 
-class AlignmentUtility
+class NCBI_STRUCTUTIL_EXPORT AlignmentUtility
 {
 public:
     typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
@@ -151,6 +151,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/08/09 18:38:10  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.14  2006/03/27 16:34:19  lanczyck
 * add a few utility methods to AlignmentUtility
 *

@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class TaxClient
+class NCBI_CDUTILS_EXPORT TaxClient
 {
 
     static const bool   REFRESH_DEFAULT;
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.5  2006/05/18 20:01:14  cliu
  * To enable read-only SeqTreeAPI
  *

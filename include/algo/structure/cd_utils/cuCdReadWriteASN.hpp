@@ -25,6 +25,7 @@ USING_NCBI_SCOPE;
 // create a new copy of a C++ ASN data object (copied from Paul's asn_converter.hpp)
 //------------------------------------------------------------------------------------
 template < class ASNClassOld, class ASNClassNew >
+//NCBI_CDUTILS_EXPORT 
 static void TransformASNObject(ASNClassNew& newObject,const ASNClassOld& originalObject, std::string *err)
 {
     err->erase();
@@ -48,6 +49,7 @@ static void TransformASNObject(ASNClassNew& newObject,const ASNClassOld& origina
 // create a new copy of a C++ ASN data object (copied from Paul's asn_converter.hpp)
 //------------------------------------------------------------------------------------
 template < class ASNClass >
+//NCBI_CDUTILS_EXPORT 
 static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
 {
     err->erase();
@@ -76,6 +78,7 @@ static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err
 // (copied from Paul's asn_reader.hpp)
 //------------------------------------------------------------------------------------
 template < class ASNClass >
+//NCBI_CDUTILS_EXPORT 
 static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, std::string *err)
 {
     err->erase();
@@ -108,6 +111,7 @@ static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBi
 }
 
 template < class ASNClass >
+//NCBI_CDUTILS_EXPORT 
 static bool ReadASNFromStream(ncbi::CNcbiIstream& is, ASNClass *ASNobject, bool isBinary, std::string *err)
 {
     err->erase();
@@ -137,6 +141,7 @@ static bool ReadASNFromStream(ncbi::CNcbiIstream& is, ASNClass *ASNobject, bool 
 // for writing ASN data (copied from Paul's asn_reader.hpp)
 //------------------------------------------------------------------------------------
 template < class ASNClass >
+//NCBI_CDUTILS_EXPORT 
 static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBinary,
     std::string *err, ncbi::EFixNonPrint fixNonPrint = ncbi::eFNP_Default)
 {
@@ -170,6 +175,7 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
 }
 
 template < class ASNClass >
+//NCBI_CDUTILS_EXPORT 
 static bool WriteASNToStream(ncbi::CNcbiOstream& os, const ASNClass& ASNobject, bool isBinary,
     std::string *err, ncbi::EFixNonPrint fixNonPrint = ncbi::eFNP_Default)
 {
@@ -195,9 +201,9 @@ static bool WriteASNToStream(ncbi::CNcbiOstream& os, const ASNClass& ASNobject, 
     }
     return true;
 }
-
+ 
 template < class ASNContainerClass >
-class CObjectIStreamHelper
+class NCBI_CDUTILS_EXPORT CObjectIStreamHelper
 {
 private:
     auto_ptr<CObjectIStream> inStream;
@@ -216,7 +222,7 @@ public:
 
 
 template < class ASNContainerClass , class ASNElementClass >
-class ASNInputContainerStream
+class NCBI_CDUTILS_EXPORT ASNInputContainerStream
 {
 private:
     CObjectIStreamHelper < ASNContainerClass > inStream;

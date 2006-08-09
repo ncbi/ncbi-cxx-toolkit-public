@@ -72,8 +72,10 @@ typedef struct {
 
 /* convenience functions for allocating/destroying BlockInfo structures;
    do not use free (MemFree), because these are C++-allocated! */
-extern DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks);
-extern void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
+extern 
+NCBI_STRUCTDP_EXPORT DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks);
+extern 
+NCBI_STRUCTDP_EXPORT void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
 
 /* standard function for calculating max loop length, given a list of the sizes of all the
    corresponding loops in each sequence/row of an existing multiple alignment:
@@ -85,7 +87,8 @@ extern void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
 
         if cutoff > 0, max will be truncated to be <= cutoff
 */
-extern unsigned int DP_CalculateMaxLoopLength(
+extern 
+NCBI_STRUCTDP_EXPORT unsigned int DP_CalculateMaxLoopLength(
     unsigned int nLoops, const unsigned int *loopLengths,   /* based on existing alignment */
     double percentile, unsigned int extension, unsigned int cutoff);
 
@@ -103,10 +106,12 @@ typedef struct {
 } DP_AlignmentResult;
 
 /* for destroying alignment result; do not use free (MemFree) */
-extern void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment);
+extern 
+NCBI_STRUCTDP_EXPORT void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment);
 
 /* global alignment routine */
-extern int                              /* returns an above STRUCT_DP_ status code */
+extern 
+NCBI_STRUCTDP_EXPORT int                              /* returns an above STRUCT_DP_ status code */
 DP_GlobalBlockAlign(
     const DP_BlockInfo *blocks,         /* blocks on subject */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -116,7 +121,8 @@ DP_GlobalBlockAlign(
 );
 
 /* local alignment routine */
-extern int                              /* returns an above STRUCT_DP_ status code */
+extern 
+NCBI_STRUCTDP_EXPORT int                              /* returns an above STRUCT_DP_ status code */
 DP_LocalBlockAlign(
     const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -132,10 +138,12 @@ typedef struct {
 } DP_MultipleAlignmentResults;
 
 /* for destroying multiple alignment results; do not use free (MemFree) */
-extern void DP_DestroyMultipleAlignmentResults(DP_MultipleAlignmentResults *alignments);
+extern 
+NCBI_STRUCTDP_EXPORT void DP_DestroyMultipleAlignmentResults(DP_MultipleAlignmentResults *alignments);
 
 /* local alignment routine returning sorted list of highest-scoring alignments */
-extern int                              /* returns an above STRUCT_DP_ status code */
+extern 
+NCBI_STRUCTDP_EXPORT int                              /* returns an above STRUCT_DP_ status code */
 DP_MultipleLocalBlockAlign(
     const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -149,7 +157,8 @@ DP_MultipleLocalBlockAlign(
 typedef unsigned int (*DP_LoopPenaltyFunction)(unsigned int loopNumber, unsigned int loopLength);
 
 /* global alignment routine for generic loop scoring function */
-extern int                              /* returns an above STRUCT_DP_ status code */
+extern 
+NCBI_STRUCTDP_EXPORT int                              /* returns an above STRUCT_DP_ status code */
 DP_GlobalBlockAlignGeneric(
     const DP_BlockInfo *blocks,         /* blocks on subject; note that maxLoops are ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -160,7 +169,8 @@ DP_GlobalBlockAlignGeneric(
 );
 
 /* local alignment routine for generic loop scoring */
-extern int                              /* returns an above STRUCT_DP_ status code */
+extern 
+NCBI_STRUCTDP_EXPORT int                              /* returns an above STRUCT_DP_ status code */
 DP_LocalBlockAlignGeneric(
     const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -171,7 +181,8 @@ DP_LocalBlockAlignGeneric(
 );
 
 /* local generic alignment routine returning sorted list of highest-scoring alignments */
-extern int                              /* returns an above STRUCT_DP_ status code */
+extern 
+NCBI_STRUCTDP_EXPORT int                              /* returns an above STRUCT_DP_ status code */
 DP_MultipleLocalBlockAlignGeneric(
     const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -191,6 +202,9 @@ DP_MultipleLocalBlockAlignGeneric(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/08/09 18:37:40  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.2  2006/08/08 16:30:42  thiessen
 * extern -> static for constants
 *

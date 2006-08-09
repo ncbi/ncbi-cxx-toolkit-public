@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-class AMatrix_base {
+class NCBI_CDUTILS_EXPORT AMatrix_base {
 
   protected:
     double**  m_Array;
@@ -152,7 +152,7 @@ class AMatrix_base {
 };
 
 
-class AMatrix : public AMatrix_base {
+class NCBI_CDUTILS_EXPORT AMatrix : public AMatrix_base {
 //---------------------------------------------------------------
 //  I've introduced this class so that I can peform the
 //  [][] operator.  (e.g. Matrix[3][5])
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.2  2005/04/19 21:46:20  ucko
  * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
  *

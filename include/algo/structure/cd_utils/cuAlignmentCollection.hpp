@@ -15,7 +15,7 @@ BEGIN_SCOPE(cd_utils)
 class MultipleAlignment;
 
 //row=0 is master
-class AlignmentCollection
+class NCBI_CDUTILS_EXPORT AlignmentCollection
 {
 public:
 	AlignmentCollection(CCdCore* cd, CCdCore::AlignmentUsage alignUse=CCdCore::USE_PENDING_ALIGNMENT, bool uniqueSeqId=false, bool scoped=true);
@@ -101,7 +101,7 @@ protected:
 
 //all rows in Multiple Alignment should have the same block structure.
 
-class MultipleAlignment : public AlignmentCollection
+class NCBI_CDUTILS_EXPORT MultipleAlignment : public AlignmentCollection
 {
 public:
 	MultipleAlignment(CCdCore* cd, bool scoped=true);

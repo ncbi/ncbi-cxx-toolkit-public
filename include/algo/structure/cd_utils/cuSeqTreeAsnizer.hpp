@@ -18,7 +18,7 @@ struct TreeNodePair
 };
 
 typedef map<const CSeq_interval*, TreeNodePair> SeqLocToSeqItemMap;
-class SeqTreeAsnizer
+class NCBI_CDUTILS_EXPORT SeqTreeAsnizer
 {
 public:
 	static bool convertToTreeOption(const CRef< CAlgorithm_type>&  alg, TreeOptions& treeOption);

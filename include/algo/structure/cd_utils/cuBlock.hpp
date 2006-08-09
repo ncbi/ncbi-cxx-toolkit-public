@@ -18,7 +18,7 @@ struct DeltaBlock
 	bool operator<(const DeltaBlock& rhs)const { return subjectBlockID < rhs.subjectBlockID;}
 };
 
-class Block
+class NCBI_CDUTILS_EXPORT Block
 {
 public:
 	Block ();
@@ -64,7 +64,7 @@ typedef multiset<DeltaBlock> DeltaBlockModel;
 string DeltaBlockModelToString(const DeltaBlockModel& dbm);
 //typedef auto_ptr<DeltaBlockModel> DeltaBlockModelPtr;
 
-class BlockModel
+class NCBI_CDUTILS_EXPORT BlockModel
 {
 public:
 	BlockModel() ;
@@ -130,7 +130,7 @@ private:
 	bool minusOneBlock(const Block& aBlock, DeltaBlockModel& delta) const;
 };
 
-class BlockModelPair
+class NCBI_CDUTILS_EXPORT BlockModelPair
 {
 public:
 	BlockModelPair();

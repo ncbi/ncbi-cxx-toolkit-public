@@ -75,9 +75,9 @@ inline void destructor(T1* p)
    }
 
 }
-
+ 
 template<class T>
-class tree_node_ { // size: 5*4=20 bytes (on 32 bit arch), can be reduced by 8.
+class NCBI_CDUTILS_EXPORT tree_node_ { // size: 5*4=20 bytes (on 32 bit arch), can be reduced by 8.
    public:
       tree_node_<T> *parent;
       tree_node_<T> *first_child, *last_child;
@@ -86,7 +86,7 @@ class tree_node_ { // size: 5*4=20 bytes (on 32 bit arch), can be reduced by 8.
 };
 
 template <class T, class tree_node_allocator = std::allocator<tree_node_<T> > >
-class tree {
+class NCBI_CDUTILS_EXPORT tree {
    protected:
    public:
       typedef tree_node_<T> tree_node;
@@ -428,6 +428,7 @@ class tree {
 // }
 
 template <class T, class tree_node_allocator>
+NCBI_CDUTILS_EXPORT 
 bool operator>(const typename tree<T, tree_node_allocator>::iterator_base& one,
                const typename tree<T, tree_node_allocator>::iterator_base& two)
    {
@@ -1986,6 +1987,9 @@ typename tree<T, tree_node_allocator>::tree_node *tree<T, tree_node_allocator>::
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.2  2005/04/19 21:46:20  ucko
  * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
  *

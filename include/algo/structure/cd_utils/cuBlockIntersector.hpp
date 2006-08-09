@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class BlockIntersector
+class NCBI_CDUTILS_EXPORT BlockIntersector
 {
 public:
 	BlockIntersector(int seqLen);
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.3  2006/05/30 21:11:58  cliu
  * Make a new CD changes
  *

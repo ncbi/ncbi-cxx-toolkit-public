@@ -191,6 +191,16 @@
 #  define NCBI_XOMSSA_EXPORTS
 #endif
 
+/* Definitions for NCBI_ALGO_STRUCTURE.DLL
+ */
+#ifdef NCBI_ALGOSTRUCTURE_EXPORTS
+#  define NCBI_BMAREFINE_EXPORTS
+#  define NCBI_CDUTILS_EXPORTS
+#  define NCBI_STRUCTDP_EXPORTS
+#  define NCBI_STRUCTUTIL_EXPORTS
+#  define NCBI_THREADER_EXPORTS
+#endif
+
 
 /* ------------------------------------------------- */
 
@@ -288,10 +298,26 @@
 
 /* Export specifier for library cdd
  */
+#ifdef NCBI_BMAREFINE_EXPORTS
+#  define NCBI_BMAREFINE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_BMAREFINE_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library cdd
+ */
 #ifdef NCBI_CDD_EXPORTS
 #  define NCBI_CDD_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_CDD_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library cdd
+ */
+#ifdef NCBI_CDUTILS_EXPORTS
+#  define NCBI_CDUTILS_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_CDUTILS_EXPORT __declspec(dllimport)
 #endif
 
 /* Export specifier for library cn3d
@@ -711,6 +737,22 @@
 #  define NCBI_SEQ_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library struct_dp
+ */
+#ifdef NCBI_STRUCTDP_EXPORTS
+#  define NCBI_STRUCTDP_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_STRUCTDP_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library struct_util
+ */
+#ifdef NCBI_STRUCTUTIL_EXPORTS
+#  define NCBI_STRUCTUTIL_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_STRUCTUTIL_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library submit
  */
 #ifdef NCBI_SUBMIT_EXPORTS
@@ -725,6 +767,14 @@
 #  define NCBI_TAXON1_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_TAXON1_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library threader
+ */
+#ifdef NCBI_THREADER_EXPORTS
+#  define NCBI_THREADER_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_THREADER_EXPORT __declspec(dllimport)
 #endif
 
 /* Export specifier for library tinyseq
@@ -1113,7 +1163,9 @@
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT
 #  define NCBI_BLOBSTORAGE_FILE_EXPORT
+#  define NCBI_BMAREFINE_EXPORT
 #  define NCBI_CDD_EXPORT
+#  define NCBI_CDUTILS_EXPORT
 #  define NCBI_CLEANUP_EXPORT
 #  define NCBI_CN3D_EXPORT
 #  define NCBI_COBALT_EXPORT
@@ -1170,8 +1222,11 @@
 #  define NCBI_SEQTEST_EXPORT
 #  define NCBI_SEQUENCE_EXPORT
 #  define NCBI_SEQ_EXPORT
+#  define NCBI_STRUCTDP_EXPORT
+#  define NCBI_STRUCTUTIL_EXPORT
 #  define NCBI_SUBMIT_EXPORT
 #  define NCBI_TAXON1_EXPORT
+#  define NCBI_THREADER_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALERR_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
@@ -1238,6 +1293,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.117  2006/08/09 18:32:27  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.116  2006/07/05 19:07:32  didenko
  * + NCBI_BLOBSTORAGE_FILE_EXPORT
  *

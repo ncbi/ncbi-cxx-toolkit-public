@@ -53,7 +53,7 @@ struct OrgNode
 
 typedef map<int, OrgNode > TaxidToOrgMap;
 
-class CPriorityTaxNodes 
+class NCBI_CDUTILS_EXPORT CPriorityTaxNodes 
 {
     static const string PREF_TAXNODE_FILE;
 public: 
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /* 
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.5  2006/04/27 17:18:40  dicuccio
  * Drop hanging comma in enum list
  *

@@ -38,7 +38,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class SeqTreeLayout
+class NCBI_CDUTILS_EXPORT SeqTreeLayout
 {
 public:
 	virtual void calculateNodePositions(SeqTree& treeData, int maxX, int maxY)=0;

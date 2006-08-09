@@ -43,7 +43,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
 // class for standalone application
-class CFastaIOWrapper
+class NCBI_CDUTILS_EXPORT CFastaIOWrapper
 {
 
 public:
@@ -110,7 +110,7 @@ protected:
 
 //  Uses the 'ReadFasta' C++-Toolkit function as a reader.
 //  The CSeq_entry has a CBioseq_set unless there's only one bioseq.
-class CBasicFastaWrapper : public CFastaIOWrapper {
+class NCBI_CDUTILS_EXPORT CBasicFastaWrapper : public CFastaIOWrapper {
 
 public:
 
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.1  2006/03/29 15:35:59  lanczyck
  * add files for fasta->cd converter
  *

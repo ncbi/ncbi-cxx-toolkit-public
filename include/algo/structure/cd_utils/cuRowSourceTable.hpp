@@ -23,7 +23,7 @@ struct RowSource
 };
 
 typedef map<CCdCore*, vector<int> >CDRowsMap;
-class RowSourceTable
+class NCBI_CDUTILS_EXPORT RowSourceTable
 {
 public:
 	RowSourceTable();

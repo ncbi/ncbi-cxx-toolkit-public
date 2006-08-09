@@ -58,7 +58,7 @@ enum ColumnScoringMethod {
 
 //  Simple scorers have no scorers in m_scorers.
 //  Compound scorers have had one or more scorers added to m_scorers by AddScorer.
-class ColumnScorer {
+class NCBI_BMAREFINE_EXPORT ColumnScorer {
 
 public:
 
@@ -113,7 +113,7 @@ protected:
 
 //  For a given threshold, count the number of rows in a column for whose residue the PSSM 
 //  score is above that threshold.  
-class PercentAtOrOverThresholdColumnScorer : public ColumnScorer {
+class NCBI_BMAREFINE_EXPORT PercentAtOrOverThresholdColumnScorer : public ColumnScorer {
 
 public:
     PercentAtOrOverThresholdColumnScorer(double threshold = 0.0) : ColumnScorer(ePercentAtOrOverThreshold) {
@@ -129,7 +129,7 @@ private:
 };
 
 //  Column score == the median PSSM score for specified alignment index.
-class MedianColumnScorer : public ColumnScorer {
+class NCBI_BMAREFINE_EXPORT MedianColumnScorer : public ColumnScorer {
 
 public:
     MedianColumnScorer() : ColumnScorer(eMedianScore) {};
@@ -138,7 +138,7 @@ public:
 };
 
 
-class SumOfScoresColumnScorer : public ColumnScorer {
+class NCBI_BMAREFINE_EXPORT SumOfScoresColumnScorer : public ColumnScorer {
 
 public:
     SumOfScoresColumnScorer() : ColumnScorer(eSumOfScores) {};
@@ -181,7 +181,7 @@ enum PssmScoreUsage {
     eUseGlobalShiftedValue   //  weight = score - (smallest score in PSSM)
 };
 
-class PercentOfWeightOverThresholdColumnScorer : public ColumnScorer {
+class NCBI_BMAREFINE_EXPORT PercentOfWeightOverThresholdColumnScorer : public ColumnScorer {
 
 public:
     PercentOfWeightOverThresholdColumnScorer(double threshold = 0.0, PssmScoreUsage usage = eUseRawScore) : ColumnScorer(ePercentOfWeightOverThreshold) {
@@ -200,7 +200,7 @@ private:
 };
 
 
-class InfoContentColumnScorer : public ColumnScorer {
+class NCBI_BMAREFINE_EXPORT InfoContentColumnScorer : public ColumnScorer {
 
 public:
     InfoContentColumnScorer() : ColumnScorer(eInfoContent) {};
@@ -211,7 +211,7 @@ public:
 
 //  A generic compound scorer.
 //  Cleans up any scorers added to it.
-class CompoundColumnScorer : public ColumnScorer {
+class NCBI_BMAREFINE_EXPORT CompoundColumnScorer : public ColumnScorer {
 
 public:
     CompoundColumnScorer() : ColumnScorer(eCompoundScorer) {};
@@ -249,6 +249,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/08/09 18:33:51  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.2  2006/01/24 15:05:26  lanczyck
 * implement ColumnScore for InfoContent scorer
 *

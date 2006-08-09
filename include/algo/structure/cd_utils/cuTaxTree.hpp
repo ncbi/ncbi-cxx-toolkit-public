@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class TaxNode
+class NCBI_CDUTILS_EXPORT TaxNode
 {
 public:
 	//fields for internal tax nodes
@@ -88,7 +88,7 @@ typedef TaxonomyTree::iterator TaxTreeIterator;
 */
 
 // define a family hiearchy of CDs 
-class TaxTreeData : public TaxonomyTree
+class NCBI_CDUTILS_EXPORT TaxTreeData : public TaxonomyTree
 {
 public:
 	TaxTreeData(const AlignmentCollection& ac);
@@ -147,6 +147,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.2  2005/07/20 20:04:32  cliu
  * redesign SeqTreeAPI
  *

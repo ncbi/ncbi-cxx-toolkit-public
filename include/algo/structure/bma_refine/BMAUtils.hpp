@@ -59,7 +59,7 @@ enum AlignmentCharacterType {
     eAllCharacters
 };
 
-class BMAUtils {
+class NCBI_BMAREFINE_EXPORT BMAUtils {
 
 public:
 
@@ -132,6 +132,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/08/09 18:33:51  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.3  2006/01/30 18:02:49  rsmith
 * remove redundant & illegal class specifier.
 *

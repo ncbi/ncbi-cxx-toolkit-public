@@ -40,7 +40,7 @@
 
 BEGIN_SCOPE(align_refine)
 
-class CBMARefinerPhase
+class NCBI_BMAREFINE_EXPORT CBMARefinerPhase
 {
 protected:
 
@@ -121,7 +121,7 @@ protected:
 
 };
 
-class CBMARefinerLOOPhase : public CBMARefinerPhase {
+class NCBI_BMAREFINE_EXPORT CBMARefinerLOOPhase : public CBMARefinerPhase {
 public:
 
     CBMARefinerLOOPhase(LeaveOneOutParams looParams) : CBMARefinerPhase(true), m_looParams(looParams) {
@@ -169,7 +169,7 @@ private:
 
 
 
-class CBMARefinerBlockEditPhase : public CBMARefinerPhase
+class NCBI_BMAREFINE_EXPORT CBMARefinerBlockEditPhase : public CBMARefinerPhase
 {
 public:
 
@@ -206,6 +206,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/08/09 18:33:51  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.4  2006/03/27 16:38:18  lanczyck
  * refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector
  *

@@ -18,7 +18,9 @@ typedef int (* algSORTFunction)(void * pVal,int i, int j);
 // ind -  are the sorted indexes. 
  
 
+NCBI_CDUTILS_EXPORT 
 void   algSortQuickCallbackIndex(void * pVal,int n,int * istack,int * ind,algSORTFunction isCondFunc);
+NCBI_CDUTILS_EXPORT 
 int algIntSORTFunction(void * pVal,int i, int j);
 
 END_SCOPE(cd_utils)

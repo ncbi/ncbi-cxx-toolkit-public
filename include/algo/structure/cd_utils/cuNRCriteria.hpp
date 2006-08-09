@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-class CBaseNRCriteria {
+class NCBI_CDUTILS_EXPORT CBaseNRCriteria {
 
 public:
     CBaseNRCriteria() {};
@@ -71,7 +71,7 @@ protected:
 //  differently by a concrete subclass.
 //  Subclass to add data needed by specific criteria.
 
-class CNRItem {
+class NCBI_CDUTILS_EXPORT CNRItem {
 public:
     virtual ~CNRItem() {};
 
@@ -125,7 +125,7 @@ private:
 //  Add a mapping between the unique id of an item in a cluster and a generic
 //  CNRItem instance associated with that id.  Class cleans up the CNRItems.
 
-class CNRCriteria : public CBaseNRCriteria {
+class NCBI_CDUTILS_EXPORT CNRCriteria : public CBaseNRCriteria {
 
 public:
 
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/08/09 18:41:24  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.3  2005/10/18 17:06:51  lanczyck
 * make TaxClient a virtual base class;
 * add methods CanBeApplied and GetCriteriaError in base criteria

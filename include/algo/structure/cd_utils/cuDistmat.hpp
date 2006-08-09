@@ -73,7 +73,7 @@ const EDistMethod GLOBAL_DEFAULT_DIST_METHOD = eScoreAligned;
 
 //  Since this is a distance matrix, diagonal entries should be zero.
 
-class DistanceMatrix : public AMatrix {
+class NCBI_CDUTILS_EXPORT DistanceMatrix : public AMatrix {
 
 	static const double TINY_DISTANCE;
 	static const double HUGE_DISTANCE;
@@ -170,6 +170,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.2  2005/07/06 14:33:59  lanczyck
  * change global default tree parameters to NJ + SAR
  *

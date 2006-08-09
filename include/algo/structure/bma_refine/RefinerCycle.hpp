@@ -42,7 +42,7 @@ BEGIN_SCOPE(align_refine)
 
     class CBMARefinerPhase;
 
-class CBMARefinerCycle
+class NCBI_BMAREFINE_EXPORT CBMARefinerCycle
 {
 
 public:
@@ -91,6 +91,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/08/09 18:33:51  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.2  2005/11/23 01:01:14  lanczyck
  * freeze specified blocks in both LOO and BE phases;
  * add support for a callback for a progress meter

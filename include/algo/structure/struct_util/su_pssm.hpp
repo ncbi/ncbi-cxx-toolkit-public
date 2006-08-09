@@ -43,7 +43,7 @@ BEGIN_SCOPE(struct_util)
 // BLAST_Matrix structure (from blastkar.h, edited), brought in here to avoid any C-toolkit dependency;
 // will use this structure for PSSM scoring since it's more efficient than accessing the more complex
 // scoremat.asn objects (plus I already have code that uses this... ;))
-class BLAST_Matrix
+class NCBI_STRUCTUTIL_EXPORT BLAST_Matrix
 {
 public:
     // data, parallels original BLAST_Matrix structure
@@ -63,12 +63,16 @@ public:
 
 class BlockMultipleAlignment;
 
+NCBI_STRUCTUTIL_EXPORT 
 BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma);
 
 // utility functions
-extern int GetPSSMScoreOfCharWithAverageOfBZ(const BLAST_Matrix *matrix, unsigned int pssmIndex, char resChar);
-extern unsigned char LookupNCBIStdaaNumberFromCharacter(char r);
-extern char LookupCharacterFromNCBIStdaaNumber(unsigned char n);
+extern 
+NCBI_STRUCTUTIL_EXPORT int GetPSSMScoreOfCharWithAverageOfBZ(const BLAST_Matrix *matrix, unsigned int pssmIndex, char resChar);
+extern 
+NCBI_STRUCTUTIL_EXPORT unsigned char LookupNCBIStdaaNumberFromCharacter(char r);
+extern 
+NCBI_STRUCTUTIL_EXPORT char LookupCharacterFromNCBIStdaaNumber(unsigned char n);
 
 END_SCOPE(struct_util)
 
@@ -77,6 +81,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/08/09 18:38:10  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.2  2006/08/02 16:00:51  thiessen
 * adjust for 28-character ncbistdaa
 *

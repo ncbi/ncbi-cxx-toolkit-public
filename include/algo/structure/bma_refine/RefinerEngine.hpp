@@ -41,7 +41,7 @@ BEGIN_SCOPE(align_refine)
 
 class CBMARefinerTrial;
 
-class CBMARefinerEngine
+class NCBI_BMAREFINE_EXPORT CBMARefinerEngine
 {
 
     static const unsigned int NTRIALS_DEFAULT;

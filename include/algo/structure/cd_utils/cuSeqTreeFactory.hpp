@@ -61,7 +61,7 @@ struct TreeOptions
 
 };
 
-class TreeFactory 
+class NCBI_CDUTILS_EXPORT TreeFactory 
 {
 public:
 
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.2  2005/05/10 20:12:28  cliu
  * fix a typo
  *

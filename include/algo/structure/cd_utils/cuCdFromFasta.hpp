@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class CCdFromFasta : public CCdCore
+class NCBI_CDUTILS_EXPORT CCdFromFasta : public CCdCore
 {
 
 public:
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.1  2006/05/22 17:13:22  lanczyck
  * new file:  CCdCore subclass for a Fasta-generated CD
  *

@@ -51,7 +51,7 @@ enum AlignmentScoringMethod {
     ePSSMScoring = 0
 };
 
-class RowScorer {
+class NCBI_BMAREFINE_EXPORT RowScorer {
 
     static const double SCORE_INVALID_OR_NOT_COMPUTED;
 
@@ -101,6 +101,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/08/09 18:33:51  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.2  2006/07/17 14:36:39  ucko
 * Place forward declarations within BEGIN_/END_SCOPE blocks per VisualAge.
 *

@@ -58,17 +58,22 @@ enum ETreeMethod {
 };  //  add name to array above and increment # algorithms
 const ETreeMethod GLOBAL_DEFAULT_ALGORITHM = eNJ;
 
+NCBI_CDUTILS_EXPORT 
 string GetTreeAlgorithmName(ETreeMethod algorithm);
 	
 
 const double RESET_WITH_TINY_DISTANCE = 0.0001;  //  used to reset zero-distance leafs in MPRooting
+
+NCBI_CDUTILS_EXPORT 
 void MidpointRootSeqTree(const SeqTree& oldTree, SeqTree& newTree);
 //SeqTree MidpointRootSeqTree(const SeqTree& oldTree);
+NCBI_CDUTILS_EXPORT 
 bool GetMaxPath(const SeqTree& atree, double& dMax, SeqTree::iterator& end1, SeqTree::iterator& end2);
+NCBI_CDUTILS_EXPORT 
 bool GetMaxPath(const SeqTree::iterator& cursor, double& dMax, double& dBranch1, SeqTree::iterator& end1, double& dBranch2, SeqTree::iterator& end2);
 
 
-class TreeAlgorithm {
+class NCBI_CDUTILS_EXPORT TreeAlgorithm {
 
 public:
 
@@ -175,6 +180,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.2  2005/07/06 14:33:59  lanczyck
  * change global default tree parameters to NJ + SAR
  *

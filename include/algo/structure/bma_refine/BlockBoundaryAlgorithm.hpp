@@ -78,7 +78,7 @@ enum BlockBoundaryAlgorithmMethod {
     eGreedyExtend           //  evaluate all possible boundary extensions and choose the 'best'
 };
 
-class BlockBoundaryAlgorithm {
+class NCBI_BMAREFINE_EXPORT BlockBoundaryAlgorithm {
 
     static const unsigned int DEFAULT_MIN_BLOCK_SIZE;
 public:
@@ -125,7 +125,7 @@ protected:
 //  The algorithm is to independently extend the N- and C-termini column by column
 //  while the column score equals or exceeds the threshold value in 'm_extensionThreshold'.  
 //  for each scorer present.  Stop extending at the last such column on each terminus.
-class SimpleBoundaryExtender : public BlockBoundaryAlgorithm {
+class NCBI_BMAREFINE_EXPORT SimpleBoundaryExtender : public BlockBoundaryAlgorithm {
    
 public:
 
@@ -148,7 +148,7 @@ private:
 //  Stop shrinking at the last such column on each terminus.  If 'm_minBlockSize' is zero,
 //  block deletion is possible; such an event is indicated by the ExtendableBlock returned
 //  in GetNewBoundaries having its 'from' field greater than its 'to' field.
-class SimpleBoundaryShrinker : public BlockBoundaryAlgorithm {
+class NCBI_BMAREFINE_EXPORT SimpleBoundaryShrinker : public BlockBoundaryAlgorithm {
 
 public:
 
@@ -186,7 +186,7 @@ static const bool SHRINK_FIRST = false;
 //  Warning:  depending on how parameters to scores & algorithm are set step two may
 //            undo in part or in total the boundary moves from step one.  Roughly equal
 //            extension and shrinkage thresholds should minimize this occurring.
-class SimpleBoundaryExtenderAndShrinker : public BlockBoundaryAlgorithm {
+class NCBI_BMAREFINE_EXPORT SimpleBoundaryExtenderAndShrinker : public BlockBoundaryAlgorithm {
 
 public:
 
@@ -215,7 +215,7 @@ private:
 //  with the best score is chosen.  If 'ext' is a valid score, the best score must be equal 
 //  to or better than this value.  In case of ties, choose the larger extension.
 //  NOTE:  if multiple scorers, choose the largest extension from the possibilities.
-class GreedyBoundaryExtender : public BlockBoundaryAlgorithm {
+class NCBI_BMAREFINE_EXPORT GreedyBoundaryExtender : public BlockBoundaryAlgorithm {
    
 public:
 
@@ -285,6 +285,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/08/09 18:33:51  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.1  2005/06/28 13:45:25  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *

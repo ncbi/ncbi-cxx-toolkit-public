@@ -50,13 +50,16 @@ BEGIN_SCOPE(cd_utils) // namespace ncbi::objects::
 
 const int ALIGN_ANNOTS_VALID_FAILURE = 1;
 
+NCBI_CDUTILS_EXPORT 
 int  GetReMasterFailureCode(const CCdCore* cd);
 
+NCBI_CDUTILS_EXPORT 
 bool Reorder(CCdCore* pCD, const vector<int> positions);
 
 //   Structure alignments in the features are required to be listed the order in
 //   which the PDB identifiers appear in the alignment.
 //   'positions' contains the new order of all NON-MASTER rows, as in Reorder
+NCBI_CDUTILS_EXPORT 
 bool ReorderStructureAlignments(CCdCore* pCD, const vector<int>& positions);
 
 //  Assumes cd has been remastered and the alignannot field still
@@ -64,13 +67,16 @@ bool ReorderStructureAlignments(CCdCore* pCD, const vector<int>& positions);
     //  or out of range, and returns false.  Returns false if seqId of oldMasterRow
     //  does not match the seqId of every annotation in the alignannot, or if any
     //  mapping of from/to has an error.
+NCBI_CDUTILS_EXPORT 
 bool remasterAlignannot(CCdCore& cd, unsigned int oldMasterRow = 1);
 
 //   Resets a variety of fields that need to be wiped out on remastering, or
 //   when removing a consensus.
+NCBI_CDUTILS_EXPORT 
 void ResetFields(CCdCore* pCD);
 
 //   If ncbiMime contains a CD, return it.  Otherwise return NULL.
+NCBI_CDUTILS_EXPORT 
 CCdCore* ExtractCDFromMime(CNcbi_mime_asn1* ncbiMime);
 
 //   Remove consensus sequence from alignment and sequence list.
@@ -79,17 +85,22 @@ CCdCore* ExtractCDFromMime(CNcbi_mime_asn1* ncbiMime);
 
 //  If copyNonASNMembers = true, all statistics, sequence strings and aligned residues 
 //  data structures are copied.  The CD's read status is *always* copied.
+NCBI_CDUTILS_EXPORT 
 CCdCore* CopyCD(const CCdCore* cd);
 /* replaced CdAlignmentAdapter::CreateCD
 CCdCore* CreateChildCD(const CCdCore* origCD, const vector<int> selectedRows, string newAccession, string shortName);
 */
 
 //   Set creation date of CD w/ the current time.  Removes existing creation date.
+NCBI_CDUTILS_EXPORT 
 bool SetCreationDate(CCdCore* cd);
+NCBI_CDUTILS_EXPORT 
 bool SetUpdateDate(CCdCore* cd);
 //  When only the first pointer is passed, checks for overlaps among that CD's rows.
 //  Otherwise, it reports on overlaps between two distinct CDs.
+NCBI_CDUTILS_EXPORT 
 int NumberOfOverlappedRows(CCdCore* cd1, CCdCore* cd2 = NULL);
+NCBI_CDUTILS_EXPORT 
 int GetOverlappedRows(CCdCore* cd1, CCdCore* cd2, vector<int>& rowsOfCD1, vector<int>& rowsOfCD2);
 
 //  For a specified row in cd1, find all potential matches in cd2.
@@ -99,34 +110,47 @@ int GetOverlappedRows(CCdCore* cd1, CCdCore* cd2, vector<int>& rowsOfCD1, vector
 //  In 'overlapMode', returns the row index of cd2 for *any* overlap with row1, not just
 //  those overlaps which obey the specified parent/child relationship between.
 //  Return number of rows found.
+NCBI_CDUTILS_EXPORT 
 int GetMappedRowIds(CCdCore* cd1, int row1, CCdCore* cd2, vector<int>& rows2, bool cd1AsChild, bool overlapMode = false);
 
 //  return a vector containing (in order) the full sequence in NCBIeaa
 //  format for every Seq_entry in the sequence list
+NCBI_CDUTILS_EXPORT 
 void SetConvertedSequencesForCD(CCdCore* cd, vector<string>& convertedSequences, bool forceRecompute = false);
 
 //  for each row, return a char* containing all residues aligned in the cd
+NCBI_CDUTILS_EXPORT 
 void SetAlignedResiduesForCD(CCdCore* cd, char** & ppAlignedResidues, bool forceRecompute = false);
 
 //  Returns '<cd->GetAccession> (<cd->GetName>)' w/o the angle brackets; 
 //  format used by the validator. 
+NCBI_CDUTILS_EXPORT 
 string GetVerboseNameStr(const CCdCore* cd);
 
 // for getting the bioseq and seq-loc for rows of a CD.
+NCBI_CDUTILS_EXPORT 
 CRef< CBioseq > GetMasterBioseqWithFootprintOld(CCdCore* cd);  // deprecated
+NCBI_CDUTILS_EXPORT 
 CRef< CBioseq > GetMasterBioseqWithFootprint(CCdCore* cd);
+NCBI_CDUTILS_EXPORT 
 CRef< CBioseq > GetBioseqWithFootprintForNthRow(CCdCore* cd, int N, string& errstr);
+NCBI_CDUTILS_EXPORT 
 bool GetBioseqWithFootprintForNRows(CCdCore* cd, int N, vector< CRef< CBioseq > >& bioseqs, string& errstr);
 
+NCBI_CDUTILS_EXPORT 
 CRef< COrg_ref > GetCommonTax(CCdCore* cd);
+NCBI_CDUTILS_EXPORT 
 bool obeysParentTypeConstraints(const CCdCore* pCD);
+NCBI_CDUTILS_EXPORT 
 void calcDiversityRanking(CCdCore* pCD, list<int>& rankList);
 
 
 //   Remove consensus sequence from alignment and sequence list.
 //   If the master was a consensus sequence, remaster to the 2nd alignment row first.
+NCBI_CDUTILS_EXPORT 
 int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields = true);
 
+NCBI_CDUTILS_EXPORT 
 bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = true);
 
 //   Return +ve (equal to # of block in IBM CD) if the block structure was modified successfully. 
@@ -134,6 +158,7 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = tru
 //   Return -ve if run IBM and it found no intersection or otherwise failed.
 //   NOTE:  Only modifying the alignment data; no other coordinate-dependent data in
 //          'ccd' are altered due to modification of alignment blocks caused by IBM.
+NCBI_CDUTILS_EXPORT 
 int IntersectByMaster(CCdCore* ccd);
 
 END_SCOPE(cd_utils)
@@ -146,6 +171,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.8  2006/01/03 16:15:29  lanczyck
  * fixes for IBM;
  * add overload of 'getIntersectedAlignment' to force specific block boundaries

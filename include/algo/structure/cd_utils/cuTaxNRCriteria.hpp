@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class CTaxNRItem : public CNRItem {
+class NCBI_CDUTILS_EXPORT CTaxNRItem : public CNRItem {
 public:
 
     typedef int  TTaxItemId;
@@ -104,7 +104,7 @@ private:
     }
 };
 
-class CTaxNRCriteria : public CNRCriteria {
+class NCBI_CDUTILS_EXPORT CTaxNRCriteria : public CNRCriteria {
 
 public:
 
@@ -197,6 +197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/08/09 18:41:24  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.6  2006/03/13 15:31:50  vakatov
 * Removed extraneous CTaxNRCriteria:: scope qualifier that confused GCC 4.1.0
 *

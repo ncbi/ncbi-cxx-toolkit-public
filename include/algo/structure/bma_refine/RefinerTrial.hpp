@@ -45,7 +45,7 @@ class CBMARefinerCycle;
 
 
 // Class for default refiner trial:  one LOO phase and one BE phase per cycle.
-class CBMARefinerTrial
+class NCBI_BMAREFINE_EXPORT CBMARefinerTrial
 {
 
     static const unsigned int NCYCLES_DEFAULT;
@@ -116,6 +116,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/08/09 18:33:51  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.4  2006/04/05 19:28:12  lanczyck
  * allow for changing order of phases in a cycle
  *

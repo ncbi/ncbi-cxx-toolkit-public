@@ -49,7 +49,7 @@ BEGIN_SCOPE(cd_utils)
 //
 //  d[i][j] = 1 - (n_matched/n_tested);  d is in [0, 1]
 
-class DM_Identities : public AlignedDM {
+class NCBI_CDUTILS_EXPORT DM_Identities : public AlignedDM {
 
     //  Since for the Kimura distance measure (see below) D can diverge to +infinity,
     //  place a ceiling on distances.  (for p = 0.8541, D ~ 13)
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

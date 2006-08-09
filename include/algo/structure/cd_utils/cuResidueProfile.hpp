@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 //on one column
- class ColumnResidueProfile
+ class NCBI_CDUTILS_EXPORT ColumnResidueProfile
  {
  public:
 	static const string m_residues;
@@ -86,7 +86,7 @@ BEGIN_SCOPE(cd_utils)
 	 int m_indexByConsensus;
  };
 
- class ColumnAddress
+ class NCBI_CDUTILS_EXPORT ColumnAddress
  {
  public:
 	ColumnAddress(int posOnMaster, int gap=0);
@@ -99,13 +99,13 @@ BEGIN_SCOPE(cd_utils)
  };
 
  //interface
- class ColumnReader
+ class NCBI_CDUTILS_EXPORT ColumnReader
  {
  public:
 	 virtual void read(ColumnResidueProfile& crp) = 0;
  };
 
-class MasterColumnCounter : public ColumnReader
+class NCBI_CDUTILS_EXPORT MasterColumnCounter : public ColumnReader
 {
 public:
 	MasterColumnCounter():m_count(0){};
@@ -118,7 +118,7 @@ private:
 };
 
 //forward del
-class UnalignedSegReader : public ColumnReader
+class NCBI_CDUTILS_EXPORT UnalignedSegReader : public ColumnReader
 {
 public:
 	typedef pair<int,int> Seg;
@@ -147,7 +147,7 @@ private:
 	int getLen(Seg seg);
 };
 
- class ResidueProfiles
+ class NCBI_CDUTILS_EXPORT ResidueProfiles
  {
  public:
 	
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.6  2006/03/09 19:17:41  cliu
  * export the inclusionThreshold parameter
  *

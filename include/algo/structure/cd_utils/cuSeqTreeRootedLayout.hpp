@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class SeqTreeRootedLayout : public SeqTreeLayout
+class NCBI_CDUTILS_EXPORT SeqTreeRootedLayout : public SeqTreeLayout
 {
 public:
 	explicit SeqTreeRootedLayout(int yInterval = 0);

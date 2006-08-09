@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class BlockFormater
+class NCBI_CDUTILS_EXPORT BlockFormater
 {
 public:
 	BlockFormater(vector< CRef< CSeq_align > > & seqAlignVec, int masterSeqLen);
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/08/09 18:41:23  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.3  2006/07/13 20:55:41  cliu
  * format existing alignments
  *

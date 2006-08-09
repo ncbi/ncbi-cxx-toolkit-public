@@ -55,7 +55,7 @@ END_SCOPE(struct_util)
 BEGIN_SCOPE(align_refine)
 
 
-class CBlockedAlignmentEditor
+class NCBI_BMAREFINE_EXPORT CBlockedAlignmentEditor
 {
 public:
 
@@ -151,6 +151,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/08/09 18:33:51  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.3  2006/07/17 14:36:39  ucko
 * Place forward declarations within BEGIN_/END_SCOPE blocks per VisualAge.
 *

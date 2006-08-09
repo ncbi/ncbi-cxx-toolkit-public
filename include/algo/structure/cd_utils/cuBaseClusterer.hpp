@@ -46,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-class CBaseClusterer {
+class NCBI_CDUTILS_EXPORT CBaseClusterer {
 
 public:
 
@@ -118,7 +118,7 @@ protected:
 //  Subclass for distance-based clustering.
 ///////////////////////////////////////////
 
-class CDistBasedClusterer : public CBaseClusterer {
+class NCBI_CDUTILS_EXPORT CDistBasedClusterer : public CBaseClusterer {
 
 public:
 
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/08/09 18:41:23  lanczyck
+* add export macros for ncbi_algo_structure.dll
+*
 * Revision 1.2  2005/07/13 19:05:35  lanczyck
 * change visibility of CDistBasedClusterer ctor
 *

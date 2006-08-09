@@ -67,6 +67,7 @@ enum EScoreMatrixType {
 };
 const EScoreMatrixType GLOBAL_DEFAULT_SCORE_MATRIX = eBlosum62;
 
+NCBI_CDUTILS_EXPORT 
 string GetScoringMatrixName(EScoreMatrixType type);
 
 #define INVALIDSIZE 0
@@ -110,6 +111,7 @@ string GetScoringMatrixName(EScoreMatrixType type);
 //====================  End Matrix Definitions  ====================//
 //
 
+NCBI_CDUTILS_EXPORT 
 inline char ScreenResidueCharacter(char original)
 {
     char ch = toupper((unsigned char) original);
@@ -126,7 +128,7 @@ inline char ScreenResidueCharacter(char original)
     return ch;
 }
 
-class ScoreMatrix {
+class NCBI_CDUTILS_EXPORT ScoreMatrix {
 
 //    typedef std::map < char, std::map < char, int > > ScoreMap;
 
@@ -174,6 +176,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.3  2006/02/06 16:38:49  cliu
  * remove c dependency
  *

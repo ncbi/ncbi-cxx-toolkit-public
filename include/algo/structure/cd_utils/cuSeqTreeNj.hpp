@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class NJ_TreeAlgorithm : public TreeAlgorithm {
+class NCBI_CDUTILS_EXPORT NJ_TreeAlgorithm : public TreeAlgorithm {
 
     static const double REPLACE_NEG_DIST;
     static const Rootedness MY_ROOTEDNESS;
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/08/09 18:41:24  lanczyck
+ * add export macros for ncbi_algo_structure.dll
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
