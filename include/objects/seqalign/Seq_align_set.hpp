@@ -61,7 +61,7 @@ public:
     /// Swap two rows (changing *order*, not content)
     void SwapRows(TDim row1, TDim row2);
 
-    Tparent::Tdata::size_type Size() const;
+    Tdata::size_type Size() const;
 
     bool IsEmpty() const;
 
@@ -82,7 +82,7 @@ CSeq_align_set::CSeq_align_set(void)
 {
 }
 
-inline CSeq_align_set::Tparent::Tdata::size_type
+inline CSeq_align_set::Tdata::size_type
 CSeq_align_set::Size() const
 {
     return CanGet() ? Get().size() : 0;
@@ -106,6 +106,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/08/09 18:35:33  jcherry
+* Don't use unnecessary Tparent:: qualifier for return type of Size()
+* (it's a private typedef, and is a problem for automated wrapping)
+*
 * Revision 1.2  2006/07/25 21:58:03  camacho
 * + Size() and IsEmpty()
 *
