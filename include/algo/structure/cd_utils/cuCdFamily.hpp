@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-class CDNode
+class NCBI_CDUTILS_EXPORT CDNode
 {
 public:
 	CCdCore* cd;
@@ -57,7 +57,7 @@ typedef tree<CDNode> CDFamilyBase;
 typedef CDFamilyBase::iterator CDFamilyIterator;
 
 // define a family hiearchy of CDs 
-class CDFamily:public CDFamilyBase
+class NCBI_CDUTILS_EXPORT CDFamily:public CDFamilyBase
 {
 public:
     CDFamily(CCdCore* rootCD);
@@ -83,6 +83,7 @@ public:
 	int  getSelectedCDs(vector<CCdCore*>& cds);
 
 	CDFamilyIterator findCD(CCdCore* cd) const;
+//	CDFamilyIterator findCDByAccession(CCdCore* cd) const;  //  in case have a different pointer than used to build family
 	int getCDCounts() const;
 	int getAllCD(vector<CCdCore*>& cds) const;
 
@@ -103,6 +104,14 @@ public:
     //  true if 'cd' is a direct ancestor of 'potentialDescendantCd',
     //  or alternatively, if potentialDescendantCd is in cd's subtree.
     bool isDescendant(CCdCore* cd, CCdCore* potentialDescendantCd) const;
+
+    //  Return iterator to the deepest common ancestor in the tree between the two
+    //  inputs.  Return 'end' if there is no common ancestor.
+    //  In the first form, if the 'byAccession' flag is true, cd1 and cd2 are located in the family 
+    //  by accession, and not the pointer values themselves (i.e., findCDByAccession vs. findCD).
+    //  The second form always compares the CD pointers found in the input iterators.
+//    CDFamilyIterator getFirstCommonAncestor(CCdCore* cd1, CCdCore* cd2, bool byAccession) const;
+//    CDFamilyIterator getFirstCommonAncestor(CDFamilyIterator cd1, CDFamilyIterator cd2) const;
 
     //  sanity check on pointer, root and number of nodes
     static bool IsFamilyValid(const CDFamily* family, string& err);
@@ -132,6 +141,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/08/09 18:42:34  lanczyck
+ * add export macros for ncbi_algo_structure.dll;
+ * includes commented out declarations for new methods
+ *
  * Revision 1.1  2005/04/19 14:28:00  lanczyck
  * initial version under algo/structure
  *
