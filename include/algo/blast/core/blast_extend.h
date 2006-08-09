@@ -122,10 +122,10 @@ typedef struct BLAST_DiagHash {
    Uint4 num_buckets;   /**< Number of buckets to be used for storing hit offsets */
    Uint4 occupancy;     /**< Number of occupied elements */
    Uint4 capacity;      /**< Total number of elements */
-   Uint4 *backbone;     /**< Array of offsets to chains. */
-   DiagHashCell *chain; /**< The data. */
-   Int4 offset;
-   Int4 window;
+   Uint4 *backbone;     /**< Array of offsets to heads of chains. */
+   DiagHashCell *chain; /**< Array of data cells. */
+   Int4 offset;         /**< "offset" added to query and subject position so that "last_hit" doesn't have to be zeroed out every time. */
+   Int4 window;         /**< The "window" size, within which two (or more) hits must be found in order to be extended. */
 } BLAST_DiagHash;
    
 /** Structure for keeping initial word extension information */
