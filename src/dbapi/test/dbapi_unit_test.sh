@@ -21,6 +21,9 @@ driver_status=0
 PATH="$CFG_BIN:$PATH"
 export PATH
 
+SYSTEM_NAME=`uname -s`
+SYSTEM_MAJOR_RELEASE=`uname -r | sed -e 's/\..*//'`
+
 # Run one test
 RunTest()
 {
@@ -99,7 +102,14 @@ EOF
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
+
             if test \( $driver = "ftds64_odbc" -o $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+                continue
+            fi
+
+            ## Do not test odbc driver on FreeBSD 4.x. 
+            if test \( $driver = "ftds64_odbc" -o $driver = "odbc" \) -a $SYSTEM_NAME = "FreeBSD" -a $SYSTEM_MAJOR_RELEASE = 4 ; then
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped because of problems with a host name to IP resolution)"
                 continue
             fi
 
