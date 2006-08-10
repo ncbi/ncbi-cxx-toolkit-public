@@ -204,6 +204,8 @@ protected:
     virtual bool Close(void);
     void x_CmdAlloc(CS_COMMAND** cmd);
 
+    CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
@@ -230,6 +232,7 @@ public:
 protected:
     inline CS_RETCODE Check(CS_RETCODE rc);
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+    CS_RETCODE CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
     CS_RETCODE CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
 protected:
@@ -748,6 +751,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/08/10 15:17:54  ssikorsk
+ * Added method CTL_Connection::CheckSFB;
+ * Added method CTL_Cmd:: CheckSentSFB;
+ *
  * Revision 1.41  2006/08/02 15:12:46  ssikorsk
  * Added methods CheckSFB and CheckSFBCP to CTL_Cmd.
  *
