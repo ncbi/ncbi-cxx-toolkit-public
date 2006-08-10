@@ -323,7 +323,7 @@ private:
         }
     };
     
-    CStringSort    m_StringSort;  ///< Sorted list of strings.
+    set<string>    m_StringSort;  ///< Sorted list of strings.
     vector<SIdOid> m_NumberTable; ///< Sorted list of numbers.
     
     /// The data file associated with this index file.

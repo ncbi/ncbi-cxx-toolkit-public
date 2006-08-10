@@ -206,7 +206,7 @@ void CWriteDB_IsamIndex::x_WriteHeader()
     case eAcc:
         isam_type = eIsamStringType; // string w/ data
         max_line_size = eMaxStringLine;
-        num_terms = m_StringSort.Size();
+        num_terms = m_StringSort.size();
         break;
         
     default:
@@ -246,9 +246,7 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
     // index file, then finally the list of keys.
     
     int data_pos = 0;
-    
-    m_StringSort.Sort();
-    unsigned count = m_StringSort.Size();
+    unsigned count = m_StringSort.size();
     
     unsigned nsamples = s_DivideRoundUp(count, m_PageSize);
     
@@ -268,17 +266,18 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
     string NUL("x");
     NUL[0] = (char) 0;
     
-    CTempString prevs;
+    const string * prevs = 0;
     
     int output_count = 0;
+    int index = 0;
     
-    for(i = 0; i < count; i++) {
-        CTempString elemstr = m_StringSort[i];
+    ITERATE(set<string>, iter, m_StringSort) {
+        const string & elemstr = * iter;
         
-        if (i && CStringSort::Equal(prevs, elemstr)) {
+        if (prevs && ((*prevs) == elemstr)) {
             continue;
         } else {
-            prevs = elemstr;
+            prevs = & elemstr;
         }
         
         // For each element whose index is a multiple of m_PageSize
@@ -310,6 +309,7 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
         output_count ++;
         
         data_pos = m_DataFile->Write(elemstr);
+        index ++;
     }
     
     // Write the final data position.
@@ -700,7 +700,7 @@ void CWriteDB_IsamIndex::x_AddString(int oid, const string & s)
         buf[i] = tolower(buf[i]);
     }
     
-    m_StringSort.AddString(buf, buf + sz);
+    m_StringSort.insert(string(buf, sz));
     
     m_DataFileSize += sz;
 }
@@ -794,7 +794,7 @@ bool CWriteDB_IsamIndex::CanFit(int num)
 
 void CWriteDB_IsamIndex::x_Free()
 {
-    m_StringSort.Clear();
+    m_StringSort.clear();
     m_NumberTable.clear();
 }
 
