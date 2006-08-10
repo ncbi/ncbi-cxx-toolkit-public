@@ -187,6 +187,7 @@ private:
     void x_SetRegistry(CODBCContextRegistry* registry);
     void x_Close(bool delete_conn = true);
     static string x_MakeFreeTDSVersion(int version);
+    bool CheckSIE(int rc, SQLHDBC con);
 
 
     friend class CODBCContextRegistry;
@@ -319,6 +320,9 @@ public:
     // Exception will be thrown in case of a logical error only.
     // Return false in case of a database error.
     bool CheckRC(int rc) const;
+    int CheckSIE(int rc, const char* msg, unsigned int msg_num) const;
+    int CheckSIENd(int rc, const char* msg, unsigned int msg_num) const;
+
     bool Close(void) const
     {
         return CheckRC( SQLFreeStmt(m_Cmd, SQL_CLOSE) );
@@ -598,6 +602,8 @@ protected:
     {
         m_Stmt.Close();
     }
+    bool CheckSIENoD_Text(CDB_Stream* val);
+    bool CheckSIENoD_Binary(CDB_Stream* val);
 
 private:
     CStatementBase&   m_Stmt;
@@ -717,6 +723,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/08/10 15:23:49  ssikorsk
+ * Added method CODBCContext::CheckSIE;
+ * Added methods CheckSIE and CheckSIENd to CStatementBase;
+ * Added methods CheckSIENoD_Text and CheckSIENoD_Binary to CODBC_RowResult;
+ *
  * Revision 1.40  2006/08/08 15:43:10  ssikorsk
  * + #define HAVE_SQLGETPRIVATEPROFILESTRING
  *
