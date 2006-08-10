@@ -22562,7 +22562,7 @@ fi
                      with_opengl=/usr/ncbi/lib/OpenGL64/openwin
                      ogl_lib_sfx=/sparcv9
                      ;;
-                  solaris:i386:) with_opengl=/usr/ncbi ;;
+                  solaris:i386:) with_opengl=$NCBI/OpenGL ;;
                esac
                ;;
          esac

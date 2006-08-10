@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.433 2006/08/07 14:53:32 ucko Exp $
+#  $Id: configure.ac,v 1.434 2006/08/10 14:09:22 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3728,7 +3728,7 @@ if test "$with_opengl" != "no"; then
                      with_opengl=/usr/ncbi/lib/OpenGL64/openwin
                      ogl_lib_sfx=/sparcv9
                      ;;
-                  solaris:i386:) with_opengl=/usr/ncbi ;;
+                  solaris:i386:) with_opengl=$NCBI/OpenGL ;;
                esac
                ;;
          esac
