@@ -42,7 +42,6 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbifile.hpp>
 #include "writedb_files.hpp"
-#include "string_sort.hpp"
 
 BEGIN_NCBI_SCOPE
 
