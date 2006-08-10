@@ -1125,8 +1125,8 @@ string CCgiStatistics::Compose_ErrMessage(void)
 //  Tracking Environment
 
 NCBI_PARAM_DEF(bool, CGI, DisableTrackingCookie, false);
-NCBI_PARAM_DEF(string, CGI, TrackingCookieName, "ncbi_trackingid");
-NCBI_PARAM_DEF(string, CGI, TrackingCookieDomain, ".ncbi.nlm.nih.gov");
+NCBI_PARAM_DEF(string, CGI, TrackingCookieName, "ncbi_sid");
+NCBI_PARAM_DEF(string, CGI, TrackingCookieDomain, ".nih.gov");
 NCBI_PARAM_DEF(string, CGI, TrackingCookiePath, "/");
 
 
@@ -1137,6 +1137,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.83  2006/08/10 15:18:45  didenko
+* Changed cookies names : ncbi_sessionid -> ncbi_session_data, ncbi_tracking_id -> ncbi_sid
+* Changed cookies domain : .ncbi.nlm.nih.gov -> .nih.gov
+*
 * Revision 1.82  2006/08/08 18:27:51  didenko
 * Added customization to the tracking cookie
 *

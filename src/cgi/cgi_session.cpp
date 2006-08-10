@@ -37,8 +37,8 @@
 
 BEGIN_NCBI_SCOPE
 
-const string CCgiSession::kDefaultSessionIdName = "ncbi_sessionid";
-const string CCgiSession::kDefaultSessionCookieDomain = ".ncbi.nlm.nih.gov";
+const string CCgiSession::kDefaultSessionIdName = "ncbi_session_data";
+const string CCgiSession::kDefaultSessionCookieDomain = ".nih.gov";
 const string CCgiSession::kDefaultSessionCookiePath = "/";
 
 CCgiSession::CCgiSession(const CCgiRequest& request, 
@@ -244,6 +244,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/08/10 15:18:45  didenko
+ * Changed cookies names : ncbi_sessionid -> ncbi_session_data, ncbi_tracking_id -> ncbi_sid
+ * Changed cookies domain : .ncbi.nlm.nih.gov -> .nih.gov
+ *
  * Revision 1.13  2006/07/13 19:50:05  golikov
  * err msg text typos
  *
