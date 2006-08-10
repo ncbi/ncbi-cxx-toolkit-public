@@ -20,6 +20,16 @@ n_err=0
 sum_list=""
 driver_status=0
 HOST_NAME=`(hostname || uname -n) 2>/dev/null | sed 1q`
+SYSTEM_NAME=`uname -s`
+
+## Get a processor type.
+PROCESSOR_TYPE=`uname -p`
+
+if test $PROCESSOR_TYPE = "unknown" ; then
+    PROCESSOR_TYPE=`uname -m`
+fi
+
+PROCESSOR_TYPE=`echo $PROCESSOR_TYPE | sed -e 's/[0-9].*//'`
 
 # Run one test
 RunSimpleTest()
@@ -186,8 +196,8 @@ EOF
             cmd="dbapi_conn_policy -lb random -d $driver -S $server"
             RunSimpleTest "dbapi_conn_policy"
 
-            # Do not run dbapi_bcp and dbapi_testspeed on andy
-            if test $driver = "ctlib" -a $HOST_NAME = "andy" ; then
+            # Do not run dbapi_bcp and dbapi_testspeed on SunOS Intel
+            if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
             else
@@ -218,8 +228,8 @@ EOF
                 fi
             fi
 
-            # Do not run dbapi_cursor on andy
-            if test $driver = "ctlib" -a $HOST_NAME = "andy" ; then
+            # Do not run dbapi_cursor on SunOS Intel
+            if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
             else
                 # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
