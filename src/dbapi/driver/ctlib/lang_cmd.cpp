@@ -78,6 +78,26 @@ CS_RETCODE CTL_Cmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_nu
 }
 
 
+CS_RETCODE CTL_Cmd::CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        m_WasSent = false;
+        break;
+    case CS_FAIL:
+        m_HasFailed = true;
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        m_WasSent = false;
+        // DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    }
+
+    return rc;
+}
+
+
 CS_RETCODE CTL_Cmd::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
     switch (Check(rc)) {
@@ -666,6 +686,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/08/10 15:19:27  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.23  2006/08/02 15:15:22  ssikorsk
  * Implemented methods CheckSFB and CheckSFBCP;
  * Revamp code to use CheckSFB and CheckSFBCP;

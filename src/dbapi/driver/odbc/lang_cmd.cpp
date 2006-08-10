@@ -205,45 +205,14 @@ CDB_Result* CODBC_LangCmd::Result()
     SQLSMALLINT nof_cols= 0;
 
     while(m_hasResults) {
-        switch(SQLNumResultCols(GetHandle(), &nof_cols)) {
-        case SQL_SUCCESS_WITH_INFO:
-            ReportErrors();
-
-        case SQL_SUCCESS:
-            break;
-
-        case SQL_ERROR:
-            ReportErrors();
-            {
-                string err_message = "SQLNumResultCols failed" + GetDiagnosticInfo();
-                DATABASE_DRIVER_ERROR( err_message, 420011 );
-            }
-        default:
-            {
-                string err_message = "SQLNumResultCols failed (memory corruption suspected)" + GetDiagnosticInfo();
-                DATABASE_DRIVER_ERROR( err_message, 420012 );
-            }
-        }
+        CheckSIE(SQLNumResultCols(GetHandle(), &nof_cols),
+                 "SQLNumResultCols failed", 420011);
 
         if(nof_cols < 1) { // no data in this result set
             SQLLEN rc;
-            switch(SQLRowCount(GetHandle(), &rc)) {
-                case SQL_SUCCESS_WITH_INFO:
-                    ReportErrors();
-                case SQL_SUCCESS: break;
-                case SQL_ERROR:
-                    {
-                        ReportErrors();
 
-                        string err_message = "SQLRowCount failed" + GetDiagnosticInfo();
-                        DATABASE_DRIVER_ERROR( err_message, 420013 );
-                    }
-                default:
-                    {
-                        string err_message = "SQLRowCount failed (memory corruption suspected)" + GetDiagnosticInfo();
-                        DATABASE_DRIVER_ERROR( err_message, 420014 );
-                    }
-            }
+            CheckSIE(SQLRowCount(GetHandle(), &rc),
+                     "SQLRowCount failed", 420013);
 
             m_RowCount = rc;
             m_hasResults= xCheck4MoreResults();
@@ -467,26 +436,8 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* ind
             return false;
         }
 
-        switch(rc_from_bind) {
-            case SQL_SUCCESS_WITH_INFO:
-                ReportErrors();
+        CheckSIE(rc_from_bind, "SQLBindParameter failed", 420066);
 
-            case SQL_SUCCESS:
-                break;
-
-            case SQL_ERROR:
-                {
-                    ReportErrors();
-
-                    string err_message = "SQLBindParameter failed" + GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 420066 );
-                }
-            default:
-                {
-                    string err_message = "SQLBindParameter failed (memory corruption suspected)" + GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 420067 );
-                }
-        }
         cmd += "declare " + name + ' ' + type + ";select " + name + " = ?;";
 
         if(param.IsNULL()) {
@@ -499,6 +450,10 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* ind
 
 bool CODBC_LangCmd::xCheck4MoreResults()
 {
+//     int rc = CheckSIE(SQLMoreResults(GetHandle()), "SQLBindParameter failed", 420066);
+//
+//     return (rc == SQL_SUCCESS_WITH_INFO || rc == SQL_SUCCESS);
+
     switch(SQLMoreResults(GetHandle())) {
     case SQL_SUCCESS_WITH_INFO: ReportErrors();
     case SQL_SUCCESS:           return true;
@@ -525,6 +480,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/08/10 15:24:22  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.29  2006/07/18 15:47:59  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

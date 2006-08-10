@@ -50,10 +50,10 @@ CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
                            unsigned int nof_columns) :
     CTL_Cmd(conn, NULL),
     impl::CBaseCmd(table_name, nof_columns),
+    m_Cmd(cmd),
+    m_Bind(new SBcpBind[nof_columns]),
     m_RowCount(0)
 {
-    m_Cmd        = cmd;
-    m_Bind       = new SBcpBind[nof_columns];
 }
 
 bool CTL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
@@ -271,27 +271,33 @@ bool CTL_BCPInCmd::Send(void)
 
     if ( !m_WasSent ) {
         // we need to init the bcp
-        if (Check(blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) m_Query.c_str(), CS_NULLTERM))
-            != CS_SUCCEED) {
-            m_HasFailed = true;
-            DATABASE_DRIVER_ERROR( "blk_init failed", 123001 );
-        }
+        CheckSFB(blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) m_Query.c_str(), CS_NULLTERM),
+                 "blk_init failed", 123001);
+
         m_WasSent = true;
 
         // check what needs to be default
         CS_DATAFMT fmt;
         for (i = 0;  i < m_Params.NofParams();  i++) {
-            if (m_Params.GetParamStatus(i) != 0)
+            if (m_Params.GetParamStatus(i) != 0) {
                 continue;
+            }
 
-            m_HasFailed = (Check(blk_describe(x_GetSybaseCmd(), i + 1, &fmt)) != CS_SUCCEED);
+            m_HasFailed = (Check(blk_describe(x_GetSybaseCmd(),
+                                              i + 1,
+                                              &fmt)) != CS_SUCCEED);
             CHECK_DRIVER_ERROR(
                 m_HasFailed,
                 "blk_describe failed (check the number of "
                 "columns in a table)",
                 123002 );
 
-            m_HasFailed = (Check(blk_bind(x_GetSybaseCmd(), i + 1, &fmt, (void*) &m_Params,&datalen, &indicator)) != CS_SUCCEED);
+            m_HasFailed = (Check(blk_bind(x_GetSybaseCmd(),
+                                          i + 1,
+                                          &fmt,
+                                          (void*) &m_Params,
+                                          &datalen,
+                                          &indicator)) != CS_SUCCEED);
             CHECK_DRIVER_ERROR(
                 m_HasFailed,
                 "blk_bind failed for default value",
@@ -357,17 +363,8 @@ bool CTL_BCPInCmd::Cancel()
 
     CS_INT outrow = 0;
 
-    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow)) ) {
-    case CS_SUCCEED:
-        m_WasSent = false;
-        return true;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
-    default:
-        m_WasSent = false;
-        return false;
-    }
+    return (CheckSentSFB(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow),
+                         "blk_done failed", 123020) == CS_SUCCEED);
 }
 
 bool CTL_BCPInCmd::WasCanceled(void) const
@@ -399,17 +396,12 @@ bool CTL_BCPInCmd::EndBCP(void)
 
     CS_INT outrow = 0;
 
-    switch( Check(blk_done(x_GetSybaseCmd(), CS_BLK_ALL, &outrow)) ) {
-    case CS_SUCCEED:
-        m_WasSent = false;
+    if (CheckSentSFB(blk_done(x_GetSybaseCmd(), CS_BLK_ALL, &outrow),
+                     "blk_done failed", 123020) == CS_SUCCEED) {
         return (outrow > 0);
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
-    default:
-        m_WasSent = false;
-        return false;
     }
+
+    return false;
 }
 
 
@@ -470,6 +462,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/08/10 15:19:27  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.23  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

@@ -231,6 +231,66 @@ static void xConvert2CDB_Numeric(CDB_Numeric* d, SQL_NUMERIC_STRUCT& s)
              s.sign == 0, s.val);
 }
 
+bool CODBC_RowResult::CheckSIENoD_Text(CDB_Stream* val)
+{
+    SQLLEN f = 0;
+    char buffer[8*1024];
+
+    switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
+    case SQL_SUCCESS_WITH_INFO:
+        if(f == SQL_NO_TOTAL) f= sizeof(buffer) - 1;
+        else if(f < 0) ReportErrors();
+    case SQL_SUCCESS:
+        if(f > 0) {
+            if(f > sizeof(buffer)-1) f= sizeof(buffer)-1;
+            val->Append(buffer, f);
+        }
+        return true;
+    case SQL_NO_DATA:
+        break;
+    case SQL_ERROR:
+        ReportErrors();
+    default:
+        {
+            string err_message = "SQLGetData failed while retrieving text/image into CDB_Text" +
+                GetDiagnosticInfo();
+            DATABASE_DRIVER_ERROR( err_message, 430021 );
+        }
+    }
+
+    return false;
+}
+
+bool CODBC_RowResult::CheckSIENoD_Binary(CDB_Stream* val)
+{
+    SQLLEN f = 0;
+    char buffer[8*1024];
+
+    switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
+    case SQL_SUCCESS_WITH_INFO:
+        if(f == SQL_NO_TOTAL || f > sizeof(buffer)) f= sizeof(buffer);
+        else ReportErrors();
+    case SQL_SUCCESS:
+        if(f > 0) {
+            if(f > sizeof(buffer)) f= sizeof(buffer);
+            val->Append(buffer, f);
+        }
+        return true;
+    case SQL_NO_DATA:
+        break;
+    case SQL_ERROR:
+        ReportErrors();
+    default:
+        {
+            string err_message = "SQLGetData failed while retrieving text/image into CDB_Image" +
+                GetDiagnosticInfo();
+            DATABASE_DRIVER_ERROR( err_message, 430022 );
+        }
+    }
+
+    return false;
+}
+
 CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
 {
     char buffer[8*1024];
@@ -534,56 +594,18 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         SQLLEN f;
         switch(item_buf->GetType()) {
         case eDB_Text: {
-            CDB_Stream* val = (CDB_Stream*) item_buf;
             for(;;) {
-                switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
-                case SQL_SUCCESS_WITH_INFO:
-                    if(f == SQL_NO_TOTAL) f= sizeof(buffer) - 1;
-                    else if(f < 0) ReportErrors();
-                case SQL_SUCCESS:
-                    if(f > 0) {
-                        if(f > sizeof(buffer)-1) f= sizeof(buffer)-1;
-                        val->Append(buffer, f);
-                    }
+                if (CheckSIENoD_Text((CDB_Stream*)item_buf)) {
                     continue;
-                case SQL_NO_DATA:
-                    break;
-                case SQL_ERROR:
-                    ReportErrors();
-                default:
-                    {
-                        string err_message = "SQLGetData failed while retrieving text/image into CDB_Text" +
-                            GetDiagnosticInfo();
-                        DATABASE_DRIVER_ERROR( err_message, 430021 );
-                    }
                 }
                 break;
             }
             break;
         }
         case eDB_Image: {
-            CDB_Stream* val = (CDB_Stream*) item_buf;
             for(;;) {
-                switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
-                case SQL_SUCCESS_WITH_INFO:
-                    if(f == SQL_NO_TOTAL || f > sizeof(buffer)) f= sizeof(buffer);
-                    else ReportErrors();
-                case SQL_SUCCESS:
-                    if(f > 0) {
-                        if(f > sizeof(buffer)) f= sizeof(buffer);
-                        val->Append(buffer, f);
-                    }
+                if (CheckSIENoD_Binary((CDB_Stream*)item_buf)) {
                     continue;
-                case SQL_NO_DATA:
-                    break;
-                case SQL_ERROR:
-                    ReportErrors();
-                default:
-                    {
-                        string err_message = "SQLGetData failed while retrieving text/image into CDB_Image" +
-                            GetDiagnosticInfo();
-                        DATABASE_DRIVER_ERROR( err_message, 430022 );
-                    }
                 }
                 break;
             }
@@ -733,27 +755,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         SQLLEN f;
 
         for(;;) {
-            switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
-            case SQL_SUCCESS_WITH_INFO:
-                if(f == SQL_NO_TOTAL) f= sizeof(buffer) - 1;
-                else if(f < 0) ReportErrors();
-            case SQL_SUCCESS:
-                if(f > 0) {
-                    if(f > sizeof(buffer)-1) f= sizeof(buffer)-1;
-                    val->Append(buffer, f);
-                }
-                continue;
-            case SQL_NO_DATA:
-                break;
-            case SQL_ERROR:
-                ReportErrors();
-            default:
-                {
-                    string err_message = "SQLGetData failed while retrieving text into CDB_Text" +
-                        GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 430023 );
-                }
-            }
+            CheckSIENoD_Text(val);
         }
         return val;
     }
@@ -762,27 +764,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         CDB_Image* val = new CDB_Image;
         SQLLEN f;
         for(;;) {
-            switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
-            case SQL_SUCCESS_WITH_INFO:
-                if(f == SQL_NO_TOTAL) f= sizeof(buffer);
-                else if(f < 0) ReportErrors();
-            case SQL_SUCCESS:
-                if(f > 0) {
-                    if(f > sizeof(buffer)) f= sizeof(buffer);
-                    val->Append(buffer, f);
-                }
-                continue;
-            case SQL_NO_DATA:
-                break;
-            case SQL_ERROR:
-                ReportErrors();
-            default:
-                {
-                    string err_message = "SQLGetData failed while retrieving text into CDB_Image" +
-                        GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 430024 );
-                }
-            }
+            CheckSIENoD_Binary(val);
         }
         return val;
     }
@@ -1161,6 +1143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/08/10 15:24:22  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.30  2006/07/31 15:53:03  ssikorsk
  * Minor fixes to compile with UnixODBC.
  *

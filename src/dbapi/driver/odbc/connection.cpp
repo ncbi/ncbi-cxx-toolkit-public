@@ -247,8 +247,23 @@ bool CODBC_Connection::Close(void)
     return false;
 }
 
-static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
-                                  CStatementBase& stmt,
+static
+bool
+ODBC_xCheckSIE(int rc, CStatementBase& stmt)
+{
+    switch(rc) {
+    case SQL_SUCCESS_WITH_INFO:
+        stmt.ReportErrors();
+    case SQL_SUCCESS: break;
+    case SQL_ERROR:
+        stmt.ReportErrors();
+    default: return false;
+    }
+
+    return true;
+}
+
+static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
                                   SQLLEN size,
                                   bool is_text,
@@ -276,77 +291,57 @@ static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn,
     }
 #endif
 
-    switch(SQLPrepare(stmt.GetHandle(), (SQLCHAR*)q.c_str(), SQL_NTS)) {
-    case SQL_SUCCESS_WITH_INFO:
-        stmt.ReportErrors();
-    case SQL_SUCCESS: break;
-    case SQL_ERROR:
-        stmt.ReportErrors();
-    default: return false;
+    if (!ODBC_xCheckSIE(SQLPrepare(stmt.GetHandle(),
+                                   (SQLCHAR*)q.c_str(),
+                                   SQL_NTS),
+                        stmt)) {
+        return false;
     }
 
     SQLSMALLINT par_type, par_dig, par_null;
     SQLULEN par_size;
 
-#if 0
-    switch(SQLNumParams(stmt.GetHandle(), &par_dig)) {
-    case SQL_SUCCESS: break;
-    case SQL_SUCCESS_WITH_INFO:
-    case SQL_ERROR:
-        stmt.ReportErrors();
-    default: return false;
-    }
-#endif
-
     *ph = SQL_LEN_DATA_AT_EXEC(size);
 
 #ifdef FTDS_IN_USE
-    // Do not use SQLDescribeParam. It is not implemented with the odbc driver 
+    // Do not use SQLDescribeParam. It is not implemented with the odbc driver
     // from FreeTDS.
-    switch(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
-                     is_text? SQL_C_CHAR : SQL_C_BINARY, 
-                     // par_type,
-                     is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
-                     size, 0, id, 0, ph)) {
-    case SQL_SUCCESS_WITH_INFO:
-        stmt.ReportErrors();
-    case SQL_SUCCESS: break;
-    case SQL_ERROR:
-        stmt.ReportErrors();
-    default:
+    if (!ODBC_xCheckSIE(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
+                                         is_text? SQL_C_CHAR : SQL_C_BINARY,
+                                         // par_type,
+                                         is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+                                         size, 0, id, 0, ph),
+                        stmt)) {
         return false;
     }
 #else
-    switch(SQLDescribeParam(stmt.GetHandle(), 1, &par_type, &par_size, &par_dig, &par_null)){
-    case SQL_SUCCESS_WITH_INFO:
-        stmt.ReportErrors();
-    case SQL_SUCCESS: break;
-    case SQL_ERROR:
-        stmt.ReportErrors();
-    default: return false;
+    if (!ODBC_xCheckSIE(SQLDescribeParam(stmt.GetHandle(),
+                                         1,
+                                         &par_type,
+                                         &par_size,
+                                         &par_dig,
+                                         &par_null),
+                        stmt)) {
+        return false;
     }
 
-    switch(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
-                     is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
-                     // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
-                     size, 0, id, 0, ph)) {
-    case SQL_SUCCESS_WITH_INFO:
-        stmt.ReportErrors();
-    case SQL_SUCCESS: break;
-    case SQL_ERROR:
-        stmt.ReportErrors();
-    default:
+    if (!ODBC_xCheckSIE(SQLBindParameter(stmt.GetHandle(),
+                                         1,
+                                         SQL_PARAM_INPUT,
+                                         is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
+                                         // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+                                         size,
+                                         0,
+                                         id,
+                                         0,
+                                         ph),
+                        stmt)) {
         return false;
     }
 #endif
 
-    switch(SQLExecute(stmt.GetHandle())) {
-    case SQL_NEED_DATA:
-        return true;
-    case SQL_SUCCESS_WITH_INFO:
-    case SQL_ERROR:
-        stmt.ReportErrors();
-    default:
+    if (!ODBC_xCheckSIE(SQLExecute(stmt.GetHandle()),
+                        stmt)) {
         return false;
     }
 }
@@ -479,6 +474,68 @@ CStatementBase::CheckRC(int rc) const
     return false;
 }
 
+int
+CStatementBase::CheckSIE(int rc, const char* msg, unsigned int msg_num) const
+{
+    switch( rc ) {
+    case SQL_SUCCESS_WITH_INFO:
+        ReportErrors();
+
+    case SQL_SUCCESS:
+        break;
+
+    case SQL_ERROR:
+        ReportErrors();
+        {
+            string err_message = msg + GetDiagnosticInfo();
+            DATABASE_DRIVER_ERROR( err_message, msg_num );
+        }
+    default:
+        {
+            string err_message;
+
+            err_message.append(msg);
+            err_message.append(" (memory corruption suspected)");
+            err_message.append(GetDiagnosticInfo());
+
+            DATABASE_DRIVER_ERROR( err_message, 420001 );
+        }
+    }
+
+    return rc;
+}
+
+int
+CStatementBase::CheckSIENd(int rc, const char* msg, unsigned int msg_num) const
+{
+    switch( rc ) {
+    case SQL_SUCCESS_WITH_INFO:
+        ReportErrors();
+
+    case SQL_SUCCESS:
+        break;
+
+    case SQL_ERROR:
+        ReportErrors();
+        {
+            string err_message = msg + GetDiagnosticInfo();
+            DATABASE_DRIVER_ERROR( err_message, msg_num );
+        }
+    default:
+        {
+            string err_message;
+
+            err_message.append(msg);
+            err_message.append(" (memory corruption suspected)");
+            err_message.append(GetDiagnosticInfo());
+
+            DATABASE_DRIVER_ERROR( err_message, 420001 );
+        }
+    }
+
+    return rc;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CODBC_SendDataCmd::
@@ -599,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/08/10 15:24:22  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.35  2006/08/04 20:39:48  ssikorsk
  * Do not use SQLBindParameter in case of FreeTDS. It is not implemented.
  *

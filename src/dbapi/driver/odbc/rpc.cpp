@@ -207,46 +207,14 @@ CDB_Result* CODBC_RPCCmd::Result()
     char n_buff[64];
 
     while(m_hasResults) {
-        switch(SQLNumResultCols(GetHandle(), &nof_cols)) {
-        case SQL_SUCCESS_WITH_INFO:
-            ReportErrors();
-
-        case SQL_SUCCESS:
-            break;
-
-        case SQL_ERROR:
-            ReportErrors();
-            {
-                string err_message = "SQLNumResultCols failed" + GetDiagnosticInfo();
-                DATABASE_DRIVER_ERROR( err_message, 420011 );
-            }
-        default:
-            {
-                string err_message = "SQLNumResultCols failed (memory corruption suspected)" +
-                    GetDiagnosticInfo();
-                DATABASE_DRIVER_ERROR( err_message, 420012 );
-            }
-        }
+        CheckSIE(SQLNumResultCols(GetHandle(), &nof_cols),
+                 "SQLNumResultCols failed", 420011);
 
         if(nof_cols < 1) { // no data in this result set
             SQLLEN rc;
-            switch(SQLRowCount(GetHandle(), &rc)) {
-                case SQL_SUCCESS_WITH_INFO:
-                    ReportErrors();
-                case SQL_SUCCESS: break;
-                case SQL_ERROR:
-                        ReportErrors();
-                        {
-                            string err_message = "SQLRowCount failed" + GetDiagnosticInfo();
-                            DATABASE_DRIVER_ERROR( err_message, 420013 );
-                        }
-                default:
-                    {
-                        string err_message = "SQLRowCount failed (memory corruption suspected)" +
-                            GetDiagnosticInfo();
-                        DATABASE_DRIVER_ERROR( err_message, 420014 );
-                    }
-            }
+
+            CheckSIE(SQLRowCount(GetHandle(), &rc),
+                     "SQLRowCount failed", 420013);
 
             m_RowCount = rc;
             m_hasResults= xCheck4MoreResults();
@@ -255,22 +223,9 @@ CDB_Result* CODBC_RPCCmd::Result()
 
         if(nof_cols == 1) { // it could be a status result
             SQLSMALLINT l;
-            switch(SQLColAttribute(GetHandle(), 1, SQL_DESC_LABEL, n_buff, 64, &l, 0)) {
-            case SQL_SUCCESS_WITH_INFO: ReportErrors();
-            case SQL_SUCCESS:           break;
-            case SQL_ERROR:
-                ReportErrors();
-                {
-                    string err_message = "SQLColAttribute failed" + GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 420015 );
-                }
-            default:
-                {
-                    string err_message = "SQLColAttribute failed (memory corruption suspected)" +
-                        GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 420016 );
-                }
-            }
+
+            CheckSIE(SQLColAttribute(GetHandle(), 1, SQL_DESC_LABEL, n_buff, 64, &l, 0),
+                     "SQLColAttribute failed", 420015);
 
             if(strcmp(n_buff, "STpROCrETURNsTATUS") == 0) {//this is a status result
                 m_HasStatus= true;
@@ -538,6 +493,11 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
 
 bool CODBC_RPCCmd::xCheck4MoreResults()
 {
+//     int rc = CheckSIE(SQLMoreResults(GetHandle()),
+//              "SQLMoreResults failed", 420015);
+//
+//     return (rc == SQL_SUCCESS_WITH_INFO || rc == SQL_SUCCESS);
+
     switch(SQLMoreResults(GetHandle())) {
     case SQL_SUCCESS_WITH_INFO: ReportErrors();
     case SQL_SUCCESS:           return true;
@@ -564,6 +524,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/08/10 15:24:22  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.29  2006/07/18 16:37:21  ssikorsk
  * Fixed compilation issues.
  *

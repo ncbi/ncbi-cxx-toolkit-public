@@ -325,6 +325,8 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         default:
             return false;
         }
+
+
         if (r != SUCCEED) {
             ReportErrors();
             return false;
@@ -479,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/08/10 15:24:22  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.20  2006/07/31 15:50:58  ssikorsk
  * Use <sybdb.h> (from dblib) header in case of the FreeTDS odbc driver.
  *

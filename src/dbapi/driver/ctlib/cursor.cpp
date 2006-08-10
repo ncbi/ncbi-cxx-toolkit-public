@@ -46,9 +46,9 @@ CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                              unsigned int nof_params, unsigned int fetch_size) :
     CTL_Cmd(conn, cmd),
     impl::CCursorCmd(cursor_name, query, nof_params),
-    m_FetchSize(fetch_size)
+    m_FetchSize(fetch_size),
+    m_Used(false)
 {
-    m_Used        = false;
 }
 
 
@@ -108,22 +108,9 @@ CDB_Result* CTL_CursorCmd::Open()
     for (;;) {
         CS_INT res_type;
 
-        switch ( Check(ct_results(x_GetSybaseCmd(), &res_type)) ) {
-        case CS_SUCCEED:
-            break;
-        case CS_END_RESULTS:
-            return 0;
-        case CS_FAIL:
-            m_HasFailed = true;
-            DATABASE_DRIVER_ERROR( "ct_result failed", 122013 );
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "your command has been canceled", 122011 );
-#ifdef CS_BUSY
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 122014 );
-#endif
-        default:
-            DATABASE_DRIVER_ERROR( "your request is pending", 122015 );
+        if (CheckSFBCP(ct_results(x_GetSybaseCmd(), &res_type),
+                       "ct_result failed", 122013) == CS_END_RESULTS) {
+            return NULL;
         }
 
         switch ( res_type ) {
@@ -177,6 +164,7 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     if(!m_IsOpen || !HaveResult()) {
         return 0;
     }
+
     while ( static_cast<unsigned int>(GetResult().CurrentItemNo()) < item_num ) {
         if(!GetResult().SkipItem()) return 0;
     }
@@ -386,6 +374,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/08/10 15:19:27  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.25  2006/08/02 15:16:27  ssikorsk
  * Revamp code to use CheckSFB and CheckSFBCP;
  * Revamp code to compile with FreeTDS ctlib implementation;

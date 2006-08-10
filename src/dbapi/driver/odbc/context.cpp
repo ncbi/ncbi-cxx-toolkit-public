@@ -495,10 +495,13 @@ string CODBCContext::x_MakeFreeTDSVersion(int version)
     switch ( version )
     {
     case 42:
-        str_version += "4.2";
+        str_version += "4.2;Port=2158";
         break;
     case 46:
         str_version += "4.6";
+        break;
+    case 50:
+        str_version += "5.0;Port=2158";
         break;
     case 70:
         str_version += "7.0";
@@ -506,22 +509,33 @@ string CODBCContext::x_MakeFreeTDSVersion(int version)
     case 80:
         str_version += "8.0";
         break;
-    case 100:
-        str_version += "10.0";
-        break;
-    case 110:
-        str_version += "11.0";
-        break;
-    case 120:
-        str_version += "12.0";
-        break;
-    case 125:
-        str_version += "12.5";
-        break;
+    default:
+        DATABASE_DRIVER_ERROR( "Invalid TDS version with the FreeTDS driver.", 100000 );
     }
 
     return str_version;
 }
+
+
+bool CODBCContext::CheckSIE(int rc, SQLHDBC con)
+{
+    switch(rc) {
+    case SQL_SUCCESS_WITH_INFO:
+        xReportConError(con);
+    case SQL_SUCCESS:
+        return true;
+    case SQL_ERROR:
+        xReportConError(con);
+        SQLFreeHandle(SQL_HANDLE_DBC, con);
+        break;
+    default:
+        m_Reporter.ReportErrors();
+        break;
+    }
+
+    return false;
+}
+
 
 SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
                                         const string&   user_name,
@@ -617,26 +631,16 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
                     string conn_str("DRIVER={" + driver_name + "};SERVER=");
                     conn_str += conn_str_suffix;
 
-                    r = SQLDriverConnect(con,
-                                        0,
-                                        (SQLCHAR*) conn_str.c_str(),
-                                        SQL_NTS,
-                                        0,
-                                        0,
-                                        0,
-                                        SQL_DRIVER_NOPROMPT);
-
-                    switch(r) {
-                    case SQL_SUCCESS_WITH_INFO:
-                        xReportConError(con);
-                    case SQL_SUCCESS:
+                    if (CheckSIE(SQLDriverConnect(con,
+                                                  0,
+                                                  (SQLCHAR*) conn_str.c_str(),
+                                                  SQL_NTS,
+                                                  0,
+                                                  0,
+                                                  0,
+                                                  SQL_DRIVER_NOPROMPT),
+                                 con)) {
                         return con;
-                    case SQL_ERROR:
-                        xReportConError(con);
-                        break;
-                    default:
-                        m_Reporter.ReportErrors();
-                        break;
                     }
 
                     ERR_POST(Warning << "Cannot initialize ODBC driver '" <<
@@ -668,21 +672,11 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
                       (SQLCHAR*) passwd.c_str(), SQL_NTS);
     }
 
-    switch(r) {
-    case SQL_SUCCESS_WITH_INFO:
-        xReportConError(con);
-    case SQL_SUCCESS:
+    if (CheckSIE(r, con)) {
         return con;
-    case SQL_ERROR:
-        xReportConError(con);
-        SQLFreeHandle(SQL_HANDLE_DBC, con);
-        break;
-    default:
-        m_Reporter.ReportErrors();
-        break;
     }
 
-    return 0;
+    return NULL;
 }
 
 void CODBCContext::xReportConError(SQLHDBC con)
@@ -907,6 +901,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/08/10 15:24:22  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.62  2006/08/04 21:03:34  ssikorsk
  * Handle winsock2 on Windows only.
  *

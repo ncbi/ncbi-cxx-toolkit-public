@@ -114,6 +114,25 @@ CTL_Connection::Check(CS_RETCODE rc)
     return rc;
 }
 
+
+CS_RETCODE CTL_Connection::CheckSFB(CS_RETCODE rc,
+                                    const char* msg,
+                                    unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    }
+
+    return rc;
+}
+
+
 CS_INT
 CTL_Connection::GetBLKVersion(void) const
 {
@@ -140,16 +159,8 @@ CTL_Connection::GetBLKVersion(void) const
 void
 CTL_Connection::x_CmdAlloc(CS_COMMAND** cmd)
 {
-    switch ( Check(ct_cmd_alloc(m_Link, cmd)) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        DATABASE_DRIVER_ERROR( "ct_cmd_alloc failed", 110001 );
-#ifdef CS_BUSY
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 110002 );
-#endif
-    }
+    CheckSFB(ct_cmd_alloc(m_Link, cmd),
+             "ct_cmd_alloc failed", 110001);
 }
 
 
@@ -702,6 +713,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/08/10 15:19:27  ssikorsk
+ * Revamp code to use new CheckXXX methods.
+ *
  * Revision 1.41  2006/08/02 15:16:52  ssikorsk
  * Revamp code to use CheckSFB and CheckSFBCP;
  * Revamp code to compile with FreeTDS ctlib implementation;
