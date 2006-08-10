@@ -2662,8 +2662,8 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
       gap_align->subject_stop += s_length;
    }
    else {
-      gap_align->query_stop = q_length - 1;
-      gap_align->subject_stop = s_length - 1;
+      gap_align->query_stop = q_length;
+      gap_align->subject_stop = s_length;
    }
 
    gap_align->score = score_right+score_left;
@@ -3438,8 +3438,8 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
       gap_align->subject_start = init_hsp->offsets.qs_offsets.s_off;
    }
    if (found_end == FALSE) {    /* impossible for out-of-frame */
-      gap_align->query_stop = q_length;
-      gap_align->subject_stop = s_length;
+      gap_align->query_stop = init_hsp->offsets.qs_offsets.q_off;
+      gap_align->subject_stop = init_hsp->offsets.qs_offsets.s_off;
    }
    
    gap_align->score = score_right+score_left;
