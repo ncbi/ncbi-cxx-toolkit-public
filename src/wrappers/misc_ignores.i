@@ -36,7 +36,11 @@
 %ignore ncbi::CTreeNode::FindSubNode;
 
 // Default assignment operator can't be used
-%ignore *::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
+%ignore ncbi::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
+%ignore ncbi::SNcbiParamDesc_CGI_TrackingCookieName::sm_ParamDescription;
+%ignore ncbi::SNcbiParamDesc_CGI_DisableTrackingCookie::sm_ParamDescription;
+%ignore ncbi::SNcbiParamDesc_CGI_TrackingCookieDomain::sm_ParamDescription;
+%ignore ncbi::SNcbiParamDesc_CGI_TrackingCookiePath::sm_ParamDescription;
 
 // CScopeTransaction cannot be allocated dynamically
 %ignore *::CScopeTransaction;
@@ -248,6 +252,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/08/10 15:17:05  jcherry
+ * Added %ignore's for sm_ParamDescription members of new SNcbiParamDesc_CGI_*
+ *
  * Revision 1.10  2006/06/29 18:06:51  jcherry
  * %ignore SNcbiParamDesc_READ_FASTA_USE_NEW_IMPLEMENTATION::sm_ParamDescription
  *
