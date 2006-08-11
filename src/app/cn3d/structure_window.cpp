@@ -1562,7 +1562,7 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
 
     if (event.GetId() == MID_OPEN) {
         const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str(),
-            "", "", "All Files|*.*|CDD (*.acd)|*.acd|Binary ASN (*.val)|*.val|ASCII ASN (*.prt)|*.prt",
+            "", "", "All Files|*.*|Cn3D Files (*.cn3)|*.cn3",
             wxOPEN | wxFILE_MUST_EXIST);
         if (!filestr.IsEmpty())
             LoadData(filestr.c_str(), false, false);
@@ -1611,36 +1611,35 @@ void StructureWindow::OnSave(wxCommandEvent& event)
 
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxString outputFilename;
-    bool outputBinary;
+    bool outputBinary = false, outputCDD = glCanvas->structureSet->IsCDD();
 
     // don't ask for filename if Save As is disabled
     if ((prompt && fileMenu->IsEnabled(MID_SAVE_AS)) || currentFile.size() == 0) {
         wxFileName fn(currentFile.c_str());
-        wxFileDialog dialog(this, "Choose a filename for output", outputFolder,
+        wxFileDialog dialog(this, "Choose a filename and type for output", outputFolder,
 #ifdef __WXGTK__
             fn.GetFullName(),
 #else
             fn.GetName(),
 #endif
-            "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
+            "All Files|*.*|Binary (*.cn3)|*.cn3|Text (*.cn3)|*.cn3|Text CDD (*.cn3)|*.cn3",
             wxSAVE | wxOVERWRITE_PROMPT);
-        dialog.SetFilterIndex(fn.GetExt() == "val" ? 1 : (fn.GetExt() == "acd" ? 2 :
-            (fn.GetExt() == "prt" ? 3 : 0)));
+        dialog.SetFilterIndex(glCanvas->structureSet->IsCDD() ? 3 : 2);
         if (dialog.ShowModal() == wxID_OK)
             outputFilename = dialog.GetPath();
         outputBinary = (dialog.GetFilterIndex() == 1);
+        outputCDD = (dialog.GetFilterIndex() == 3);
     } else {
         outputFilename = (userDir + currentFile).c_str();
-        outputBinary = (outputFilename.Right(4) == ".val");
     }
 
+    TRACEMSG("binary = " << outputBinary << ", cdd = " << outputCDD);
     INFOMSG("save file: '" << outputFilename.c_str() << "'");
 
     if (!outputFilename.IsEmpty()) {
 
         // convert mime to cdd if specified
-        if (outputFilename.Right(4) == ".acd" &&
-            (!glCanvas->structureSet->IsCDD() || glCanvas->structureSet->IsCDDInMime()))
+        if (outputCDD && (!glCanvas->structureSet->IsCDD() || glCanvas->structureSet->IsCDDInMime()))
         {
             string cddName;
             if (glCanvas->structureSet->IsCDDInMime() && glCanvas->structureSet->GetCDDName().size() > 0)
@@ -1700,6 +1699,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2006/08/11 14:46:36  thiessen
+* switch open/save menus to use only .cn3 extension
+*
 * Revision 1.52  2006/07/13 22:33:51  thiessen
 * change all 'slave' -> 'dependent'
 *
