@@ -23,17 +23,17 @@
  *
  * ===========================================================================
  *
- * Authors:  
+ * Authors:
  *      Lou Friedman
  *
  * File Description:
  *      Validate AGP data. The AGP data source is either an AGP file
- *      or from the AGP DB. A command line option picks the type of 
+ *      or from the AGP DB. A command line option picks the type of
  *      validation; either syntactic or semantic. Syntactic validation
  *      are tests that can be preformed solely by the information that
  *      is in the AGP file. Semantic validation are trests that require
  *      extra, external information, such as, the size of a sequence.
- *   
+ *
  *
  */
 
@@ -102,7 +102,7 @@ using namespace objects;
 class CAgpValidateApplication : public CNcbiApplication
 {
 private:
-    
+
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
@@ -120,11 +120,15 @@ private:
 
     // count varibles
     int m_ObjCount;
+
     int m_CompCount;
+    set<string> m_UniqComp;
+
     int m_CompPosCount;
     int m_CompNegCount;
     int m_CompZeroCount;
     int m_GapCount;
+
 
     // count the dfiffernt types of gaps
     map<string, int> m_TypeGapCount;
@@ -132,7 +136,7 @@ private:
     bool m_LineErrorOccured;
     CNcbiStrstream* m_ValidateMsg;
 
-    // data of an AGP line either 
+    // data of an AGP line either
     //  from a file or the agp adb
     struct SDataLine {
         int     line_num;
@@ -152,7 +156,7 @@ private:
     typedef vector<SDataLine> TDataLines;
 
     // keep track of the componet and object ids used
-    //  in the AGP. Used to detect duplicates and 
+    //  in the AGP. Used to detect duplicates and
     //  duplicates with seq range intersections.
     typedef CRangeCollection<TSeqPos> TIdMapValue;
     typedef map<string, TIdMapValue> TIdMap;
@@ -176,7 +180,7 @@ private:
     TValuesSet m_LinkageValues;
 
 
-    // The next few structures are used to keep track 
+    // The next few structures are used to keep track
     //  of the taxids used in the AGP files. A map of
     //  taxid to a vector of AGP file lines is maintained.
     struct SAgpLineInfo {
@@ -193,18 +197,18 @@ private:
 
     typedef map<int, int> TTaxidSpeciesMap;
     TTaxidSpeciesMap m_TaxidSpeciesMap;
-    
-    // 
+
+    //
     // Validate either from AGP files or from AGP DB
-    //  Each line (entry) of AGP data from either source is 
+    //  Each line (entry) of AGP data from either source is
     //  populates a SDataLine. The SDataline is validated
     //  syntatically or semanticaly.
-    // 
+    //
     void x_ValidateUsingDB(const CArgs& args);
     void x_ValidateUsingFiles(const CArgs& args);
     void x_ValidateFile(CNcbiIstream& istr);
 
-    // 
+    //
     // Syntax validate methods
     //
     void x_ValidateSyntaxLine(const SDataLine& line, const string& text_line,
@@ -213,14 +217,14 @@ private:
     bool x_CheckValues(int line_num, const TValuesSet& values,
                        const string& value, const string& field_name,
                        bool log_error = true);
-    int x_CheckRange(int line_num, int start, int begin, int end, 
+    int x_CheckRange(int line_num, int start, int begin, int end,
                      string begin_name, string end_name);
-    int x_CheckIntField(int line_num, const string& field, 
+    int x_CheckIntField(int line_num, const string& field,
                         const string& field_name, bool log_error = true);
-    bool x_IncremenalCheck(int line_num, int prev_num, int num, 
+    bool x_IncremenalCheck(int line_num, int prev_num, int num,
                           const string& field_name);
 
-    // 
+    //
     // Semantic validate methods
     //
     void x_ValidateSemanticInit();
@@ -244,15 +248,15 @@ void CAgpValidateApplication::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                              "Validate AGP data",
                               false);
- 
+
 /*
-    arg_desc->AddOptionalKey("i", "InputFile", 
+    arg_desc->AddOptionalKey("i", "InputFile",
                       "AGP Input File to validate",
                        CArgDescriptions::eInputFile);
 */
 
-    arg_desc->AddDefaultKey("type", "ValidationType", 
-                            "Type of validation to be preformed", 
+    arg_desc->AddDefaultKey("type", "ValidationType",
+                            "Type of validation to be preformed",
                             CArgDescriptions::eString,
                             "syntax");
     CArgAllow_Strings* constraint_type = new CArgAllow_Strings;
@@ -260,8 +264,8 @@ void CAgpValidateApplication::Init(void)
     constraint_type->Allow("semantics");
     arg_desc->SetConstraint("type", constraint_type);
 
-    arg_desc->AddDefaultKey("taxon", "TaxonCheckType", 
-                            "Type of Taxonomy semanitic check to be preformed", 
+    arg_desc->AddDefaultKey("taxon", "TaxonCheckType",
+                            "Type of Taxonomy semanitic check to be preformed",
                             CArgDescriptions::eString,
                             "exact");
     CArgAllow_Strings* constraint_taxon = new CArgAllow_Strings;
@@ -307,7 +311,7 @@ void CAgpValidateApplication::Init(void)
 
 
     // file list for file processing
-    arg_desc->AddExtra(0,100, "files to be processed",  
+    arg_desc->AddExtra(0,100, "files to be processed",
                        CArgDescriptions::eInputFile);
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -362,7 +366,7 @@ void CAgpValidateApplication::Init(void)
     m_TypeGapCount["heterochromatinno"] = 0;
     m_TypeGapCount["telomereyes"] = 0;
     m_TypeGapCount["telomereno"] = 0;
-    
+
 
     m_TaxidComponentTotal = 0;
 
@@ -399,14 +403,14 @@ int CAgpValidateApplication::Run(void)
 */
         x_ValidateUsingFiles(args);
     if (m_ValidationType == syntax) {
-        x_AgpTotals(); 
+        x_AgpTotals();
     } else {
         x_CheckTaxid();
     }
     return 0;
 }
 
-void CAgpValidateApplication::x_ValidateUsingDB(const CArgs& args) 
+void CAgpValidateApplication::x_ValidateUsingDB(const CArgs& args)
 {
 
     // Validate the data from the AGP DB based on submit id.
@@ -420,11 +424,11 @@ void CAgpValidateApplication::x_ValidateUsingDB(const CArgs& args)
     string db_passwd        = args["passwd"].AsString();
 
 
-    m_MainDb.Reset(new CDb(main_db_server, main_db_database, 
+    m_MainDb.Reset(new CDb(main_db_server, main_db_database,
                            db_user, db_passwd));
 
     // get agp bulk data volume name and server
-    string sql = "select agp_volume_id, volume_name, server " 
+    string sql = "select agp_volume_id, volume_name, server "
                  "from AGP_DBVolumeServer "
                  "where is_current = 1";
     m_MainDb->Run(sql);
@@ -448,7 +452,7 @@ void CAgpValidateApplication::x_ValidateUsingDB(const CArgs& args)
     sql = "insert into AGP_Submission values ('" +
                   m_Directory + "','" + m_MasterFile +
                   "', NULL  ,  NULL" +           // proj_id tax_id
-                  ",'" + time.AsString() + "', 1, " + 
+                  ",'" + time.AsString() + "', 1, " +
                   NStr::IntToString(m_VolId) + ")";
     if (m_MainDb->Execute(sql) == 0) {
         // log error
@@ -475,18 +479,18 @@ void CAgpValidateApplication::x_ValidateUsingDB(const CArgs& args)
 #endif
 }
 
-void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args) 
+void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
 {
     if (args.GetNExtra() == 0) {
         x_ValidateFile(cin);
     } else {
         for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
-            m_CurrentFileName = 
+            m_CurrentFileName =
                 args['#' + NStr::IntToString(i)].AsString();
-            CNcbiIstream& istr = 
+            CNcbiIstream& istr =
                 args['#' + NStr::IntToString(i)].AsInputFile();
             if (!istr) {
-                LOG_POST(Fatal << "Unable to open file : " << 
+                LOG_POST(Fatal << "Unable to open file : " <<
                          m_CurrentFileName);
                 exit (0);
             }
@@ -508,15 +512,15 @@ void CAgpValidateApplication::x_ValidateFile(CNcbiIstream& istr)
         NStr::Tokenize(line, "\t", cols);
 
         data_line.line_num        = line_num++;
-        if (cols.size() > 0) 
+        if (cols.size() > 0)
             data_line.object          = cols[0];
-        if (cols.size() > 1) 
+        if (cols.size() > 1)
             data_line.begin           = cols[1];
-        if (cols.size() > 2) 
+        if (cols.size() > 2)
             data_line.end             = cols[2];
-        if (cols.size() > 3) 
+        if (cols.size() > 3)
             data_line.part_num        = cols[3];
-        if (cols.size() > 4) 
+        if (cols.size() > 4)
             data_line.component_type  = cols[4];
 
         if (cols.size() > 5) {
@@ -531,11 +535,11 @@ void CAgpValidateApplication::x_ValidateFile(CNcbiIstream& istr)
             data_line.component_end = cols[7];
             data_line.linkage = cols[7];
         }
-    
+
             data_line.orientation = "";
             if (data_line.component_type != "N") {  // Component
-                
-                if (cols.size() > 8) 
+
+                if (cols.size() > 8)
                      data_line.orientation = cols[8];
             }
 
@@ -550,38 +554,39 @@ void CAgpValidateApplication::x_ValidateFile(CNcbiIstream& istr)
 void CAgpValidateApplication::x_AgpTotals()
 {
     LOG_POST(
-    "Number of Objects: " << m_ObjCount << "\n\n" << 
-    "Number of Componenets: " << m_CompCount << "\n" << 
-    "\tWith orientation of +: " << m_CompPosCount << "\n" << 
-    "\tWith orientation of -: " << m_CompNegCount << "\n" << 
-    "\tWith orientation of 0: " << m_CompZeroCount << "\n\n" << 
-    "Number of Gaps: " << m_GapCount << "\n" << 
-    "\tFragment with linkage: " << m_TypeGapCount["fragmentyes"] << "\n" << 
-    "\tFragment with  no linkage: " <<  m_TypeGapCount["fragmentno"] << "\n" << 
-    "\tClone with linkage: " << m_TypeGapCount["cloneyes"] << "\n" << 
-    "\tClone with  no linkage: " <<  m_TypeGapCount["cloneno"] << "\n" << 
-    "\tContig with linkage: " << m_TypeGapCount["contigyes"] << "\n" << 
-    "\tContig with  no linkage: " <<  m_TypeGapCount["contigno"] << "\n" << 
-    "\tCentromere with linkage: " << m_TypeGapCount["centromereyes"] << "\n" << 
-    "\tCentromere with  no linkage: " <<  m_TypeGapCount["centromereno"] << "\n" << 
-    "\tShort_arm with linkage: " << m_TypeGapCount["short_armyes"] << "\n" << 
-    "\tShort_arm with  no linkage: " <<  m_TypeGapCount["short_armno"] << "\n" << 
-    "\tHeterochromatin with linkage: " << m_TypeGapCount["heterochromatinyes"] << "\n" << 
-    "\tHeterochromatin with  no linkage: " <<  m_TypeGapCount["heterochromatinno"] << "\n" << 
-    "\tTelomere with linkage: " << m_TypeGapCount["telomereyes"] << "\n" << 
-    "\tTelomere with  no linkage: " <<  m_TypeGapCount["telomereno"] << "\n" << 
-    "\tSplit_finished with linkage: " << m_TypeGapCount["split_finishedyes"] << "\n" << 
-    "\tSplit_finished with  no linkage: " <<  m_TypeGapCount["split_finishedno"] << "\n"); 
+    "\nObjects: " << m_ObjCount << "\n\n" <<
+    "Unique Component Accessions: " << m_UniqComp.size() << "\n" <<
+    "Lines with Components: " << m_CompCount << "\n" <<
+    "\tWith orientation of +: " << m_CompPosCount << "\n" <<
+    "\tWith orientation of -: " << m_CompNegCount << "\n" <<
+    "\tWith orientation of 0: " << m_CompZeroCount << "\n\n" <<
+    "Gaps: " << m_GapCount << "\n" <<
+    "\tFragment with linkage          : " << m_TypeGapCount["fragmentyes"]        << "\n" <<
+    "\tFragment with no linkage       : " << m_TypeGapCount["fragmentno"]         << "\n" <<
+    "\tClone with linkage             : " << m_TypeGapCount["cloneyes"]           << "\n" <<
+    "\tClone with no linkage          : " << m_TypeGapCount["cloneno"]            << "\n" <<
+    "\tContig with linkage            : " << m_TypeGapCount["contigyes"]          << "\n" <<
+    "\tContig with no linkage         : " << m_TypeGapCount["contigno"]           << "\n" <<
+    "\tCentromere with linkage        : " << m_TypeGapCount["centromereyes"]      << "\n" <<
+    "\tCentromere with no linkage     : " << m_TypeGapCount["centromereno"]       << "\n" <<
+    "\tShort_arm with linkage         : " << m_TypeGapCount["short_armyes"]       << "\n" <<
+    "\tShort_arm with no linkage      : " << m_TypeGapCount["short_armno"]        << "\n" <<
+    "\tHeterochromatin with linkage   : " << m_TypeGapCount["heterochromatinyes"] << "\n" <<
+    "\tHeterochromatin with no linkage: " << m_TypeGapCount["heterochromatinno"]  << "\n" <<
+    "\tTelomere with linkage          : " << m_TypeGapCount["telomereyes"]        << "\n" <<
+    "\tTelomere with no linkage       : " << m_TypeGapCount["telomereno"]         << "\n" <<
+    "\tSplit_finished with linkage    : " << m_TypeGapCount["split_finishedyes"]  << "\n" <<
+    "\tSplit_finished with no linkage : " << m_TypeGapCount["split_finishedno"]   << "\n");
 }
 
 
 
-bool CAgpValidateApplication::x_IncremenalCheck(int line_num, int prev_num, 
-                                                int num, 
+bool CAgpValidateApplication::x_IncremenalCheck(int line_num, int prev_num,
+                                                int num,
                                                 const string& field_name)
 {
     if (num != ++prev_num) {
-        COLLECT_VALIDATE_ERROR("The " << field_name << 
+        COLLECT_VALIDATE_ERROR("The " << field_name <<
                                " filed must increment sequentially");
         return false;
     }
@@ -589,8 +594,8 @@ bool CAgpValidateApplication::x_IncremenalCheck(int line_num, int prev_num,
     return true;
 }
 
-int CAgpValidateApplication::x_CheckIntField(int line_num, const string& field, 
-                                             const string& field_name, 
+int CAgpValidateApplication::x_CheckIntField(int line_num, const string& field,
+                                             const string& field_name,
                                              bool log_error)
 {
 /*
@@ -606,23 +611,23 @@ int CAgpValidateApplication::x_CheckIntField(int line_num, const string& field,
     }
 
     if (field_value <= 0  &&  log_error) {
-        COLLECT_VALIDATE_ERROR("The " << field_name << 
+        COLLECT_VALIDATE_ERROR("The " << field_name <<
                                " field must be a positive integer");
     }
     return field_value;
-} 
-            
-int CAgpValidateApplication::x_CheckRange(int line_num, int start, 
-                                          int begin, int end, 
+}
+
+int CAgpValidateApplication::x_CheckRange(int line_num, int start,
+                                          int begin, int end,
                                           string begin_name, string end_name)
 {
     int range = 0;
     if (begin <= start){
-        COLLECT_VALIDATE_ERROR(begin_name << 
+        COLLECT_VALIDATE_ERROR(begin_name <<
                                " field overlaps previous line in the file");
     }
     else if (end < begin) {
-        COLLECT_VALIDATE_ERROR(end_name << 
+        COLLECT_VALIDATE_ERROR(end_name <<
                                " field is less than " <<
                                end_name << " field");
     } else {
@@ -632,7 +637,7 @@ int CAgpValidateApplication::x_CheckRange(int line_num, int start,
     return range;
 }
 
-bool CAgpValidateApplication::x_CheckValues(int line_num, 
+bool CAgpValidateApplication::x_CheckValues(int line_num,
                                             const TValuesSet& values,
                                             const string& value,
                                             const string& field_name,
@@ -672,7 +677,7 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
 
     int obj_range_len = 0;
     int comp_len = 0;
-    
+
 
     TIdMapResult id_insert_result;
     TObjSetResult obj_insert_result;
@@ -687,7 +692,7 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
         m_ObjCount++;
     }
 
-    if (new_obj && (prev_component_type == "N") && 
+    if (new_obj && (prev_component_type == "N") &&
          (prev_gap_type == "fragment")) {
             // new scafold. Previous line is a scaffold ending
             //   with a fragment gap
@@ -699,10 +704,10 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
                 LOG_POST("\n\n" << prev_line_filename << ", line " <<
                          prev_line_num << ":\n" << prev_line);
             }
-        LOG_POST("\tWARNING: Next line is a new scaffold " 
+        LOG_POST("\tWARNING: Next line is a new scaffold "
                  "(and new object). "
                  "Current line is a fragment gap. "
-                 "A Scaffold should not end with a gap."); 
+                 "A Scaffold should not end with a gap.");
 
         if (last_validation) {
             // Finished validating all lines.
@@ -720,19 +725,19 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
                                        " found");
         }
     }
-        
-    if ((obj_begin = x_CheckIntField(dl.line_num, dl.begin, "object_begin")) && 
+
+    if ((obj_begin = x_CheckIntField(dl.line_num, dl.begin, "object_begin")) &&
         (obj_end = x_CheckIntField(dl.line_num, dl.end, "object_end"))) {
-        
+
         if (new_obj && obj_begin != 1) {
-            COLLECT_VALIDATE_ERROR("A new object must have an object_begin " 
+            COLLECT_VALIDATE_ERROR("A new object must have an object_begin "
                                    "field equal to 1");
         }
-            
-        obj_range_len = x_CheckRange(dl.line_num, prev_end, obj_begin, obj_end, 
+
+        obj_range_len = x_CheckRange(dl.line_num, prev_end, obj_begin, obj_end,
                                      "object_begin", "object_end");
         prev_end = obj_end;
-        
+
     }
 
     if (part_num = x_CheckIntField(dl.line_num, dl.part_num, "part_num")) {
@@ -740,19 +745,19 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
         prev_part_num = part_num;
     }
 
-    if (x_CheckValues(dl.line_num, m_ComponentTypeValues, dl.component_type, 
+    if (x_CheckValues(dl.line_num, m_ComponentTypeValues, dl.component_type,
                       "component_type")) {
     }
 
-               
+
     if (dl.component_type == "N") { // gap
         m_GapCount++;
         error = false;
-        if (gap_len = x_CheckIntField(dl.line_num, dl.gap_length, 
+        if (gap_len = x_CheckIntField(dl.line_num, dl.gap_length,
                                       "gap_length")) {
             if (obj_range_len && obj_range_len != gap_len) {
                 COLLECT_VALIDATE_ERROR("The object range length (" <<
-                                       obj_range_len << 
+                                       obj_range_len <<
                                        ") is not equal to the gap length (" <<
                                        gap_len << ")");
                 error = true;
@@ -761,9 +766,9 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
             error = true;
         }
 
-        if (x_CheckValues(dl.line_num, m_GapTypeValues, 
-                          dl.gap_type, "gap_type") && 
-            x_CheckValues(dl.line_num, m_LinkageValues, 
+        if (x_CheckValues(dl.line_num, m_GapTypeValues,
+                          dl.gap_type, "gap_type") &&
+            x_CheckValues(dl.line_num, m_LinkageValues,
                           dl.linkage, "linakge")) {
             string key = dl.gap_type + dl.linkage;
             m_TypeGapCount[key]++;
@@ -783,14 +788,14 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
                             "Current line is a new object. "
                             "Object begins with a scaffold-ending gap.");
             }
-        } 
+        }
 
         if (prev_component_type == "N") {
             // Previous line a gap. Check the gap_type.
 
             if (prev_gap_type == "fragment") {
                 // two gaps in a row
-                
+
                 if (!new_obj) {
 
                     if (dl.gap_type == "fragment") {
@@ -799,19 +804,19 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
                                     "Two fragment gap lines in a row.");
                     } else {
                         // Current gap type is a scaffold boundary.
-                        
+
                         // special error reporting mechanism since the
                         //  error is on the previous line. Directly Log
                         //  the error messages.
                         if (!prev_line_error_occured) {
-                            LOG_POST("\n\n" << prev_line_filename << 
-                                     ", line " << prev_line_num << 
+                            LOG_POST("\n\n" << prev_line_filename <<
+                                     ", line " << prev_line_num <<
                                      ":\n" << prev_line);
                         }
                         LOG_POST("\tWARNING: Next line is a scaffold-"
                                  "ending gap. "
                                  "Current line is a fragment gap. "
-                                 "A Scaffold should not end with a gap."); 
+                                 "A Scaffold should not end with a gap.");
                     }
                 }
             } else {
@@ -834,20 +839,20 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
                 }
             }
         }
-        
-        if (error) {
-            // Check if the line should be a component type 
-            //  i.e., dl.component_type != "N" 
 
-            // A component line has an integer in 
+        if (error) {
+            // Check if the line should be a component type
+            //  i.e., dl.component_type != "N"
+
+            // A component line has an integer in
             //  column 7 (component start) and column 8 (component end).
             //  It also has a +, - or 0 in column 9 (orientation)
-            if ( 
-                  x_CheckIntField(dl.line_num, dl.component_start, 
-                                  "component_start", NO_LOG) && 
-                  x_CheckIntField(dl.line_num, dl.component_end, 
+            if (
+                  x_CheckIntField(dl.line_num, dl.component_start,
+                                  "component_start", NO_LOG) &&
+                  x_CheckIntField(dl.line_num, dl.component_end,
                                    "component_end", NO_LOG) &&
-                  x_CheckValues(dl.line_num, m_OrientaionValues, 
+                  x_CheckValues(dl.line_num, m_OrientaionValues,
                                  dl.orientation, "orientation", NO_LOG)
                ) {
                 COLLECT_VALIDATE_WARNING(
@@ -858,24 +863,25 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
     } else { // component
         error = false;
         m_CompCount++;
-        if ( (comp_start = x_CheckIntField(dl.line_num, dl.component_start, 
-                                           "component_start")) && 
-             (comp_end =  x_CheckIntField(dl.line_num, dl.component_end, 
+        m_UniqComp.insert(dl.component_id);
+        if ( (comp_start = x_CheckIntField(dl.line_num, dl.component_start,
+                                           "component_start")) &&
+             (comp_end =  x_CheckIntField(dl.line_num, dl.component_end,
                                           "component_end"))) {
-              comp_len = x_CheckRange(dl.line_num, 0, 
+              comp_len = x_CheckRange(dl.line_num, 0,
                                       comp_start, comp_end,
                                       "component_start", "component_end");
             if (comp_len && obj_range_len && comp_len != obj_range_len) {
                 COLLECT_VALIDATE_ERROR(
-                                    "The object range length is not " 
+                                    "The object range length is not "
                                     "equal to the component length");
                 error = true;
             }
         } else {
             error = true;
         }
-    
-        if (x_CheckValues(dl.line_num, m_OrientaionValues, dl.orientation, 
+
+        if (x_CheckValues(dl.line_num, m_OrientaionValues, dl.orientation,
                           "orientation")) {
             if ( dl.orientation == "0") {
                 COLLECT_VALIDATE_ERROR(
@@ -893,40 +899,40 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
             error = true;
         }
 
-        
+
         CRange<TSeqPos>  component_range(comp_start, comp_end);
-        TIdMapKeyValuePair value_pair(dl.component_id, 
+        TIdMapKeyValuePair value_pair(dl.component_id,
                                       TIdMapValue(component_range));
         id_insert_result = m_CompIdSet.insert(value_pair);
         if (id_insert_result.second == false) {
             TIdMapValue& collection = (id_insert_result.first)->second;
-            
+
             string post_message = "Duplicate component id found.";
-            
+
             if (collection.IntersectingWith(component_range)) {
                 post_message += " The span overlaps a previous span "
                                 "for this component.";
-            } else if (comp_start < collection.GetToOpen()) {
+            } else if (comp_start < collection.GetToOpen() && dl.orientation!="-") {
                 post_message += " The component span is out of order.";
             }
             COLLECT_VALIDATE_WARNING(post_message);
 
             collection.CombineWith(component_range);
-        } 
+        }
 
         if (error) {
-            // Check if the line sholud be a gap type 
-            //  i.e., dl.component_type == "N" 
+            // Check if the line sholud be a gap type
+            //  i.e., dl.component_type == "N"
 
-            // A gap line has an integer in column 6 (gap length), 
-            //  a gap type value in column 7, 
+            // A gap line has an integer in column 6 (gap length),
+            //  a gap type value in column 7,
             //  and a yes or no in column 8.
-            if ( 
-                  gap_len = x_CheckIntField(dl.line_num, dl.gap_length, 
+            if (
+                  gap_len = x_CheckIntField(dl.line_num, dl.gap_length,
                                             "gap_length", NO_LOG) &&
-                  x_CheckValues(dl.line_num, m_GapTypeValues, 
-                                dl.gap_type, "gap_type", NO_LOG) && 
-                  x_CheckValues(dl.line_num, m_LinkageValues, 
+                  x_CheckValues(dl.line_num, m_GapTypeValues,
+                                dl.gap_type, "gap_type", NO_LOG) &&
+                  x_CheckValues(dl.line_num, m_LinkageValues,
                                 dl.linkage, "linakge", NO_LOG)
                 ) {
                 COLLECT_VALIDATE_WARNING(
@@ -940,11 +946,11 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(const SDataLine& dl,
     }
 
     prev_component_type = dl.component_type;
-    prev_gap_type = dl.gap_type; 
+    prev_gap_type = dl.gap_type;
     prev_line = text_line;
     prev_line_num = dl.line_num;
     prev_line_filename = m_CurrentFileName;
-    prev_line_error_occured = m_LineErrorOccured;    
+    prev_line_error_occured = m_LineErrorOccured;
 }
 
 void CAgpValidateApplication::x_ValidateSemanticInit()
@@ -982,7 +988,7 @@ void CAgpValidateApplication::x_ValidateSemanticLine(const SDataLine& dl,
     try {
         seq_id.Set(dl.component_id);
     }
-//    catch (CSeqIdException::eFormat) 
+//    catch (CSeqIdException::eFormat)
     catch (...) {
          COLLECT_VALIDATE_ERROR(
                              "Component " << dl.component_id <<
@@ -1011,14 +1017,14 @@ void CAgpValidateApplication::x_ValidateSemanticLine(const SDataLine& dl,
                             " that has a length of " << seq_len);
     }
 
-    int taxid = x_GetTaxid(bioseq_handle); 
+    int taxid = x_GetTaxid(bioseq_handle);
     x_AddToTaxidMap(taxid, dl);
 
-    
+
 
 }
- 
-int CAgpValidateApplication::x_GetTaxid(CBioseq_Handle& bioseq_handle) 
+
+int CAgpValidateApplication::x_GetTaxid(CBioseq_Handle& bioseq_handle)
 {
     int taxid = 0;
     string docsum_taxid = "";
@@ -1026,29 +1032,29 @@ int CAgpValidateApplication::x_GetTaxid(CBioseq_Handle& bioseq_handle)
     taxid = sequence::GetTaxId(bioseq_handle);
     if (taxid == 0) {
         try {
-            CSeq_id_Handle seq_id_handle = 
+            CSeq_id_Handle seq_id_handle =
                 sequence::GetId(bioseq_handle, sequence::eGetId_ForceGi);
             int gi = seq_id_handle.GetGi();
             CEntrez2Client entrez;
-            CRef<CEntrez2_docsum_list> docsums = 
+            CRef<CEntrez2_docsum_list> docsums =
                 entrez.GetDocsums(gi, "Nucleotide");
 
-            ITERATE(CEntrez2_docsum_list::TList, it, 
+            ITERATE(CEntrez2_docsum_list::TList, it,
                     docsums->GetList()) {
                 docsum_taxid = (*it)->GetValue("TaxId");
-                
+
                 if (docsum_taxid != "") {
                     taxid = NStr::StringToInt(docsum_taxid);
                     break;
                 }
-            } 
-            
-            
-        } 
+            }
+
+
+        }
         catch(...) {
             COLLECT_VALIDATE_ERROR("Unable to get Entrez Dosum Info");
         }
-    }     
+    }
 
     if (m_SpeciesLevelTaxonCheck) {
         taxid = x_GetSpecies(taxid);
@@ -1056,7 +1062,7 @@ int CAgpValidateApplication::x_GetTaxid(CBioseq_Handle& bioseq_handle)
     return taxid;
 }
 
-int CAgpValidateApplication::x_GetSpecies(int taxid) 
+int CAgpValidateApplication::x_GetSpecies(int taxid)
 {
     TTaxidSpeciesMap::iterator map_it;
     map_it = m_TaxidSpeciesMap.find(taxid);
@@ -1073,7 +1079,7 @@ int CAgpValidateApplication::x_GetSpecies(int taxid)
     return species_id;
 }
 
-int CAgpValidateApplication::x_GetTaxonSpecies(int taxid) 
+int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
 {
 
     CTaxon1 taxon;
@@ -1086,11 +1092,11 @@ int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
     int species_id = 0;
     int prev_id = taxid;
 
-    for (int id = taxon.GetParent(taxid); 
-         is_species == true && id > 1; 
+    for (int id = taxon.GetParent(taxid);
+         is_species == true && id > 1;
          id = taxon.GetParent(id)) {
 
-        CConstRef<COrg_ref> org_ref = 
+        CConstRef<COrg_ref> org_ref =
             taxon.GetOrgRef(id, is_species, is_uncultured, blast_name);
         if (org_ref == null) {
             COLLECT_VALIDATE_ERROR(
@@ -1112,18 +1118,18 @@ int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
 void CAgpValidateApplication::x_AddToTaxidMap(int taxid, const SDataLine& dl)
 {
     SAgpLineInfo line_info;
-    
+
     line_info.filename = m_CurrentFileName;
     line_info.line_num = dl.line_num;
     line_info.component_id = dl.component_id;
 
     TAgpInfoList info_list;
-    TTaxidMapRes res = 
+    TTaxidMapRes res =
         m_TaxidMap.insert(TTaxidMap::value_type(taxid, info_list));
     (res.first)->second.push_back(line_info);
     m_TaxidComponentTotal++;
 }
-        
+
 
 void CAgpValidateApplication::x_CheckTaxid()
 {
@@ -1135,7 +1141,7 @@ void CAgpValidateApplication::x_CheckTaxid()
 
     // determine the taxid for the agp
     ITERATE(TTaxidMap, it, m_TaxidMap) {
-        agp_taxid_percent = 
+        agp_taxid_percent =
             float(it->second.size())/float(m_TaxidComponentTotal);
         if (agp_taxid_percent >= .8) {
             agp_taxid = it->first;
@@ -1154,7 +1160,7 @@ void CAgpValidateApplication::x_CheckTaxid()
     // report components that have an incorrect taxid
     ITERATE(TTaxidMap, map_it, m_TaxidMap) {
         if (map_it->first == agp_taxid) continue;
- 
+
         int taxid = map_it->first;
         ITERATE(TAgpInfoList, list_it, map_it->second) {
             LOG_POST(Error << "\t" <<
@@ -1165,7 +1171,7 @@ void CAgpValidateApplication::x_CheckTaxid()
         }
     }
 }
-    
+
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
@@ -1190,6 +1196,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/08/11 16:46:05  sapojnik
+ * Print Unique Component Accessions, do not complain about the order of "-" spans
+ *
  * Revision 1.2  2006/04/06 20:35:51  ucko
  * Replace "and" with "&&" for compatibility with GCC 2.95.
  *
