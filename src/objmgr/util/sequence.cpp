@@ -1009,7 +1009,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
     x_GetBestOverlappingFeat(mrna_feat.GetLocation(),
                              CSeqFeatData::e_Gene,
                              CSeqFeatData::eSubtype_any,
-                             eOverlap_CheckIntRev,
+                             eOverlap_Contained,
                              feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -2817,6 +2817,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.145  2006/08/11 17:50:28  dicuccio
+* GetBestGeneForMrna(): use eOverlap_Contained
+*
 * Revision 1.144  2006/08/11 17:38:05  dicuccio
 * GetBestGeneForCds(): should use eOverlap_Contained
 *
