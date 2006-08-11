@@ -214,8 +214,8 @@ public:
     CObjMgr_LocalQueryData(const CObjMgr_QueryFactory::TSeqLocs* seqlocs,
                            const CBlastOptions* options);
     
-    BLAST_SequenceBlk* GetSequenceBlk();
-    BlastQueryInfo* GetQueryInfo();
+    virtual BLAST_SequenceBlk* GetSequenceBlk();
+    virtual BlastQueryInfo* GetQueryInfo();
     
     
     /// Get the number of queries.
@@ -319,8 +319,8 @@ public:
     CObjMgr_RemoteQueryData(CBlastQueryVector & queries);
     CObjMgr_RemoteQueryData(const CObjMgr_QueryFactory::TSeqLocs* queries);
     
-    CRef<objects::CBioseq_set> GetBioseqSet();
-    TSeqLocs GetSeqLocs();
+    virtual CRef<objects::CBioseq_set> GetBioseqSet();
+    virtual TSeqLocs GetSeqLocs();
 
 private:
     const TSeqLocVector* m_Queries;
