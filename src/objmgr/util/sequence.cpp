@@ -1097,7 +1097,7 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
     x_GetBestOverlappingFeat(cds_feat.GetLocation(),
                              CSeqFeatData::e_Gene,
                              CSeqFeatData::eSubtype_any,
-                             eOverlap_CheckIntRev,
+                             eOverlap_Contained,
                              feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -2817,6 +2817,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.144  2006/08/11 17:38:05  dicuccio
+* GetBestGeneForCds(): should use eOverlap_Contained
+*
 * Revision 1.143  2006/07/20 22:19:01  grichenk
 * Added eOverlap_CheckIntRev, use it in GetBestXXXForCds().
 *
