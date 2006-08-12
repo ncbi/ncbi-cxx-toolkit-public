@@ -796,7 +796,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     // Set info members now
 
     // Name
-    if (ustar  &&  !oldgnu  &&  h->prefix[0]) {
+    if (ustar/*implies "&&  !oldgnu"*/  &&  h->prefix[0]) {
         info.m_Name =
             CDirEntry::ConcatPath(string(h->prefix,
                                          s_Length(h->prefix,
@@ -909,6 +909,20 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 
         // Group name
         info.m_GroupName.assign(h->gname, s_Length(h->gname,sizeof(h->gname)));
+    }
+
+    if (oldgnu) {
+        // Name prefix cannot be used because there are times, and other stuff
+        if (!s_OctalToNum(value, h->prefix,      12)) {
+            NCBI_THROW(CTarException, eUnsupportedTarFormat,
+                       "Bad last access time");
+        }
+        info.m_Stat.st_atime = value;
+        if (!s_OctalToNum(value, h->prefix + 12, 12)) {
+            NCBI_THROW(CTarException, eUnsupportedTarFormat,
+                       "Bad creation time");
+        }
+        info.m_Stat.st_ctime = value;
     }
 
     return eSuccess;
@@ -1024,10 +1038,11 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     size_t        size = link ? sizeof(h->linkname) : sizeof(h->name);
     const string& name = link ? info.GetLinkName()  : info.GetName();
     size_t         len = name.length();
+    const char*    src = name.c_str();
 
     if (len <= size) {
         // Name fits!
-        memcpy(storage, name.c_str(), len);
+        memcpy(storage, src, len);
         return true;
     }
 
@@ -1037,25 +1052,22 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
         if (i > sizeof(h->prefix)) {
             i = sizeof(h->prefix);
         }
-        while (i > 0  &&  !CDirEntry::IsPathSeparator(name[--i])) {
-            if (len - i > sizeof(h->name))
+        while (i > 0) {
+            if (CDirEntry::IsPathSeparator(src[--i])) {
                 break;
+            }
         }
-        size_t dir = info.GetType() == CTarEntryInfo::eDir ? 2 : 1;
-        if (i  &&  len - i - dir <= sizeof(h->name)) {
-            memcpy(&h->prefix, name.c_str(),         i);
-            memcpy(&h->name,   name.c_str() + i + 1, (len - i - 1 <=
-                                                      sizeof(h->name) ?
-                                                      len - i - 1     :
-                                                      len - i - dir));
+        if (i  &&  len - i <= sizeof(h->name) + 1) {
+            memcpy(h->prefix, src,         i);
+            memcpy(h->name,   src + i + 1, len - i - 1);
             return true;
         }
     }
 
     // Still, store the initial part in the original header
-    memcpy(storage, name.c_str(), size);
+    memcpy(storage, src, size);
 
-    // Prepare extended block header with the long name info (GNU style)
+    // Prepare extended block header with the long name info (old GNU style)
     _ASSERT(m_BufferPos % kBlockSize == 0  &&  m_BufferPos < m_BufferSize);
     TBlock* block = (TBlock*)(m_Buffer + m_BufferPos);
     _ASSERT(sizeof(block->buffer) == kBlockSize);
@@ -1084,7 +1096,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     // Store the full name in the extended block
     AutoPtr< char, ArrayDeleter<char> > buf_ptr(new char[len]);
     storage = buf_ptr.get();
-    memcpy(storage, name.c_str(), len);
+    memcpy(storage, src, len);
 
     // Write the extended block (will be aligned as necessary)
     x_WriteArchive(len, storage);
@@ -1406,7 +1418,11 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
     // this setting can also affect file permissions.
     if (m_Flags & fPreserveTime) {
         time_t modification = info.GetModificationTime();
-        if ( !dst->SetTimeT(&modification) ) {
+        time_t last_access = info.GetLastAccessTime();
+        time_t creation = info.GetCreationTime();
+        if ( !dst->SetTimeT(&modification,
+                            last_access ? &last_access : 0,
+                            creation    ? &creation    : 0) ) {
             NCBI_THROW(CTarException, eRestoreAttrs,
                        "Cannot restore date/time for '" +
                        info.GetName() + '\'');
@@ -1675,6 +1691,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/08/12 07:01:28  lavr
+ * BUGFIX: x_PackName() to correctly split long names
+ * Added:  Restore original atime (and virtually ctime) for old GNU formats
+ *
  * Revision 1.42  2006/07/13 15:11:06  lavr
  * Bug fixes in x_Backspace() [proper pos] and x_ToArchiveName() [.. handling]
  *
