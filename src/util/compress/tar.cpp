@@ -862,12 +862,9 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
         info.m_Stat.st_size = 0;
         break;
     case '5':
-        if (ustar  ||  oldgnu) {
-            info.m_Type = CTarEntryInfo::eDir;
-            info.m_Stat.st_size = 0;
-            break;
-        }
-        /*FALLTHRU*/
+        info.m_Type = CTarEntryInfo::eDir;
+        info.m_Stat.st_size = 0;
+        break;
     case 'K':
     case 'L':
         if (oldgnu) {
@@ -1691,6 +1688,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/08/12 17:47:29  lavr
+ * Allow type '5' for V7 archives
+ *
  * Revision 1.43  2006/08/12 07:01:28  lavr
  * BUGFIX: x_PackName() to correctly split long names
  * Added:  Restore original atime (and virtually ctime) for old GNU formats
