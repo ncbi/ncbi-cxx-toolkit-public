@@ -179,6 +179,8 @@ public:
     const string& GetUserName(void)         const { return m_UserName;      }
     const string& GetGroupName(void)        const { return m_GroupName;     }
     time_t        GetModificationTime(void) const { return m_Stat.st_mtime; }
+    time_t        GetLastAccessTime(void)   const { return m_Stat.st_atime; }
+    time_t        GetCreationTime(void)     const { return m_Stat.st_ctime; }
 
 private:
     string       m_Name;       ///< Name of file
@@ -598,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/08/12 06:59:26  lavr
+ * CTarEntryInfo:: Last access and creation time getters added
+ *
  * Revision 1.24  2006/07/13 17:57:10  lavr
  * Fix previous change log entry
  *
