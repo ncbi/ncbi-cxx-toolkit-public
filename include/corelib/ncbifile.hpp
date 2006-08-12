@@ -619,7 +619,7 @@ public:
     /// The creation time under MS windows is an actual creation time of the
     /// entry. Under UNIX "creation" time is the time of last entry status
     /// change. If either OS or file system does not support some time type
-    /// (modification/creation/last access), then the corresponding CTime
+    /// (modification/last access/creation), then the corresponding CTime
     /// gets returned "empty".
     /// Returned times are always in CTime's time zone format (eLocal/eGMT). 
     /// NOTE that what GetTime returns may not be equal to the the time(s)
@@ -630,8 +630,8 @@ public:
     /// @sa
     ///   GetTimeT, SetTime, Stat
     bool GetTime(CTime* modification,
-                 CTime* creation    = 0, 
-                 CTime* last_access = 0) const;
+                 CTime* last_access = 0,
+                 CTime* creation    = 0) const;
 
     /// Get time stamp(s) of a directory entry (time_t version).
     ///
@@ -642,8 +642,8 @@ public:
     /// @sa
     ///   GetTime, SetTimeT
     bool GetTimeT(time_t* modification,
-                  time_t* creation    = 0, 
-                  time_t* last_access = 0) const;
+                  time_t* last_access = 0,
+                  time_t* creation    = 0) const;
 
     /// Set time stamp(s) of a directory entry.
     ///
@@ -657,19 +657,19 @@ public:
     /// (we silently ignore the "creation" time stamp on that platform).
     /// @param modification
     ///   Entry modification time to set.
-    /// @param creation
-    ///   Entry creation time to set. On some platforms it cannot be changed,
-    ///   so this parameter will be quietly ignored.
     /// @param last_access
     ///   Entry last access time to set. It cannot be less than the entry
     ///   creation time, otherwise it will be set equal to the creation time.
+    /// @param creation
+    ///   Entry creation time to set. On some platforms it cannot be changed,
+    ///   so this parameter will be quietly ignored.
     /// @return
     ///   TRUE if the time(s) changed successfully, FALSE otherwise.
     /// @sa
     ///   SetTimeT, GetTime
     bool SetTime(CTime* modification = 0,
-                 CTime* creation     = 0,
-                 CTime* last_access  = 0) const;
+                 CTime* last_access  = 0,
+                 CTime* creation     = 0) const;
 
     /// Set time stamp(s) of a directory entry (time_t version).
     ///
@@ -687,8 +687,8 @@ public:
     /// @sa
     ///   SetTime, GetTimeT
     bool SetTimeT(time_t* modification = 0,
-                  time_t* creation     = 0,
-                  time_t* last_access  = 0) const;
+                  time_t* last_access  = 0,
+                  time_t* creation     = 0) const;
 
 
     /// What IsNewer() should do if the dir entry does not exist or
@@ -2866,6 +2866,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2006/08/12 05:30:15  lavr
+ * CDirEntry::{Get|Set}Time[T]: Swap last access time / creation-change time
+ *
  * Revision 1.81  2006/08/03 13:07:44  ivanov
  * CDirEntry::MatchesMask() -- change first parameter type from
  * 'const char*' to 'const string&'.

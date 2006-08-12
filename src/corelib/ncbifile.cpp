@@ -1053,7 +1053,8 @@ void s_UnixTimeToFileTime(time_t t, long nanosec, FILETIME& filetime)
 
 
 bool CDirEntry::GetTime(CTime* modification,
-                        CTime* creation, CTime* last_access) const
+                        CTime* last_access,
+                        CTime* creation) const
 {
 #ifdef NCBI_OS_MSWIN
     HANDLE handle;
@@ -1071,12 +1072,12 @@ bool CDirEntry::GetTime(CTime* modification,
         !s_FileTimeToCTime(buf.ftLastWriteTime, *modification) ) {
         return false;
     }
-    if ( creation  &&
-        !s_FileTimeToCTime(buf.ftCreationTime, *creation) ) {
-        return false;
-    }
     if ( last_access  &&
          !s_FileTimeToCTime(buf.ftLastAccessTime, *last_access) ) {
+        return false;
+    }
+    if ( creation  &&
+        !s_FileTimeToCTime(buf.ftCreationTime, *creation) ) {
         return false;
     }
     return true;
@@ -1093,15 +1094,15 @@ bool CDirEntry::GetTime(CTime* modification,
         if ( st.mtime_nsec )
             modification->SetNanoSecond(st.mtime_nsec);
     }
-    if ( creation ) {
-        creation->SetTimeT(st.orig.st_ctime);
-        if ( st.ctime_nsec )
-            creation->SetNanoSecond(st.ctime_nsec);
-    }
     if ( last_access ) {
         last_access->SetTimeT(st.orig.st_atime);
         if ( st.atime_nsec )
             last_access->SetNanoSecond(st.atime_nsec);
+    }
+    if ( creation ) {
+        creation->SetTimeT(st.orig.st_ctime);
+        if ( st.ctime_nsec )
+            creation->SetNanoSecond(st.ctime_nsec);
     }
     return true;
 #endif
@@ -1109,16 +1110,17 @@ bool CDirEntry::GetTime(CTime* modification,
 
 
 bool CDirEntry::SetTime(CTime* modification,
-                        CTime* creation, CTime* last_access) const
+                        CTime* last_access,
+                        CTime* creation) const
 {
-    if ( !modification  &&  !creation  &&  !last_access ) {
+    if ( !modification  &&  !last_access  &&  !creation ) {
         return true;
     }
 
 #ifdef NCBI_OS_MSWIN
 
-    FILETIME   x_modification, x_creation, x_lastaccess;
-    LPFILETIME p_modification = NULL, p_creation= NULL, p_lastaccess = NULL;
+    FILETIME   x_modification,        x_last_access,        x_creation;
+    LPFILETIME p_modification = NULL, p_last_access = NULL, p_creation = NULL;
 
     // Convert times to FILETIME format
     if ( modification ) {
@@ -1126,15 +1128,15 @@ bool CDirEntry::SetTime(CTime* modification,
                              modification->NanoSecond(), x_modification);
         p_modification = &x_modification;
     }
+    if ( last_access ) {
+        s_UnixTimeToFileTime(last_access->GetTimeT(),
+                             last_access->NanoSecond(), x_last_access);
+        p_last_access = &x_last_access;
+    }
     if ( creation ) {
         s_UnixTimeToFileTime(creation->GetTimeT(),
                              creation->NanoSecond(), x_creation);
         p_creation = &x_creation;
-    }
-    if ( last_access ) {
-        s_UnixTimeToFileTime(last_access->GetTimeT(),
-                             last_access->NanoSecond(), x_lastaccess);
-        p_lastaccess = &x_lastaccess;
     }
 
     // Change times
@@ -1144,7 +1146,7 @@ bool CDirEntry::SetTime(CTime* modification,
     if ( h == INVALID_HANDLE_VALUE ) {
         return false;
     }
-    if ( !SetFileTime(h, p_creation, p_lastaccess, p_modification) ) {
+    if ( !SetFileTime(h, p_creation, p_last_access, p_modification) ) {
         CloseHandle(h);
         return false;
     }
@@ -1156,16 +1158,16 @@ bool CDirEntry::SetTime(CTime* modification,
 
 #  ifdef HAVE_UTIMES
     // Get current times
-    CTime x_modification, x_lastaccess;
+    CTime x_modification, x_last_access;
     GetTime(modification ? &x_modification : 0,
-            0 /* creation */,
-        last_access  ? &x_lastaccess : 0);
+            last_access  ? &x_last_access  : 0,
+            0 /* creation/change */);
 
     if ( !modification ) {
         modification = &x_modification;
     }
     if ( !last_access ) {
-        last_access = &x_lastaccess;
+        last_access = &x_last_access;
     }
     // Change times
     struct timeval tvp[2];
@@ -1185,13 +1187,13 @@ bool CDirEntry::SetTime(CTime* modification,
     // so use less accurate utime().
 
     // Get current times
-    time_t x_modification, x_lastaccess;
-    GetTimeT(&x_modification, 0, &x_lastaccess);
+    time_t x_modification, x_last_access;
+    GetTimeT(&x_modification, &x_last_access, 0 /* creation/change */);
 
     // Change times to new
     struct utimbuf times;
     times.modtime  = modification ? modification->GetTimeT() : x_modification;
-    times.actime   = last_access  ? last_access->GetTimeT()  : x_lastaccess;
+    times.actime   = last_access  ? last_access->GetTimeT()  : x_last_access;
     return utime(GetPath().c_str(), &times) == 0;
 
 #  endif // HAVE_UTIMES
@@ -1201,7 +1203,8 @@ bool CDirEntry::SetTime(CTime* modification,
 
 
 bool CDirEntry::GetTimeT(time_t* modification,
-                         time_t* creation, time_t* last_access) const
+                         time_t* last_access,
+                         time_t* creation) const
 {
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
@@ -1210,40 +1213,41 @@ bool CDirEntry::GetTimeT(time_t* modification,
     if ( modification ) {
         *modification = st.st_mtime;
     }
-    if ( creation ) {
-        *creation = st.st_ctime;
-    }
     if ( last_access ) {
         *last_access = st.st_atime;
+    }
+    if ( creation ) {
+        *creation = st.st_ctime;
     }
     return true;
 }
 
 
 bool CDirEntry::SetTimeT(time_t* modification,
-                         time_t* creation, time_t* last_access) const
+                         time_t* last_access,
+                         time_t* creation) const
 {
-    if ( !modification  &&  !creation  &&  !last_access ) {
+    if ( !modification  &&  !last_access  &&  !creation ) {
         return true;
     }
 
 #ifdef NCBI_OS_MSWIN
 
-    FILETIME   x_modification, x_creation, x_lastaccess;
-    LPFILETIME p_modification = NULL, p_creation= NULL, p_lastaccess = NULL;
+    FILETIME   x_modification,        x_last_access,        x_creation;
+    LPFILETIME p_modification = NULL, p_last_access = NULL, p_creation = NULL;
 
     // Convert times to FILETIME format
     if ( modification ) {
         s_UnixTimeToFileTime(*modification, 0, x_modification);
         p_modification = &x_modification;
     }
+    if ( last_access ) {
+        s_UnixTimeToFileTime(*last_access, 0, x_last_access);
+        p_last_access = &x_last_access;
+    }
     if ( creation ) {
         s_UnixTimeToFileTime(*creation, 0, x_creation);
         p_creation = &x_creation;
-    }
-    if ( last_access ) {
-        s_UnixTimeToFileTime(*last_access, 0, x_lastaccess);
-        p_lastaccess = &x_lastaccess;
     }
 
     // Change times
@@ -1253,7 +1257,7 @@ bool CDirEntry::SetTimeT(time_t* modification,
     if ( h == INVALID_HANDLE_VALUE ) {
         return false;
     }
-    if ( !SetFileTime(h, p_creation, p_lastaccess, p_modification) ) {
+    if ( !SetFileTime(h, p_creation, p_last_access, p_modification) ) {
         CloseHandle(h);
         return false;
     }
@@ -1263,13 +1267,13 @@ bool CDirEntry::SetTimeT(time_t* modification,
 
 #else // NCBI_OS_UNIX
     // Get current times
-    time_t x_modification, x_lastaccess;
-    GetTimeT(&x_modification, 0, &x_lastaccess);
+    time_t x_modification, x_last_access;
+    GetTimeT(&x_modification, &x_last_access, 0 /* creation/change */);
 
     // Change times to new
     struct utimbuf times;
     times.modtime  = modification ? *modification : x_modification;
-    times.actime   = last_access  ? *last_access  : x_lastaccess;
+    times.actime   = last_access  ? *last_access  : x_last_access;
     return utime(GetPath().c_str(), &times) == 0;
 
 #endif
@@ -1298,9 +1302,9 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
     }
    
     // Assign additional fields
+    buffer->atime_nsec = 0;
     buffer->mtime_nsec = 0;
     buffer->ctime_nsec = 0;
-    buffer->atime_nsec = 0;
     
 #ifdef NCBI_OS_UNIX
     // UNIX:
@@ -1314,13 +1318,13 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 
 #  if defined(NCBI_OS_LINUX)  &&  __GLIBC_PREREQ(2,3)
 #    if defined(__USE_MISC)
+    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
     buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
     buffer->ctime_nsec = buffer->orig.st_ctim.tv_nsec;
-    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
 #    else
+    buffer->atime_nsec = buffer->orig.st_atimensec;
     buffer->mtime_nsec = buffer->orig.st_mtimensec;
     buffer->ctime_nsec = buffer->orig.st_ctimensec;
-    buffer->atime_nsec = buffer->orig.st_atimensec;
 #    endif
 #  endif
 
@@ -1328,39 +1332,39 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 #  if defined(NCBI_OS_SOLARIS)
 #    if !defined(_XOPEN_SOURCE) && !defined(_POSIX_C_SOURCE) || \
      defined(__EXTENSIONS__)
+    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
     buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
     buffer->ctime_nsec = buffer->orig.st_ctim.tv_nsec;
-    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
 #    else
+    buffer->atime_nsec = buffer->orig.st_atim.__tv_nsec;
     buffer->mtime_nsec = buffer->orig.st_mtim.__tv_nsec;
     buffer->ctime_nsec = buffer->orig.st_ctim.__tv_nsec;
-    buffer->atime_nsec = buffer->orig.st_atim.__tv_nsec;
 #    endif
 #  endif
 
    
 #  if defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN)
 #    if defined(_POSIX_SOURCE)
+    buffer->atime_nsec = buffer->orig.st_atimensec;
     buffer->mtime_nsec = buffer->orig.st_mtimensec;
     buffer->ctime_nsec = buffer->orig.st_ctimensec;
-    buffer->atime_nsec = buffer->orig.st_atimensec;
 #    else
+    buffer->atime_nsec = buffer->orig.st_atimespec.tv_nsec;
     buffer->mtime_nsec = buffer->orig.st_mtimespec.tv_nsec;
     buffer->ctime_nsec = buffer->orig.st_ctimespec.tv_nsec;
-    buffer->atime_nsec = buffer->orig.st_atimespec.tv_nsec;
 #    endif
 #  endif
 
 
 #  if defined(NCBI_OS_IRIX)
 #    if defined(tv_sec)
+    buffer->atime_nsec = buffer->orig.st_atim.__tv_nsec;
     buffer->mtime_nsec = buffer->orig.st_mtim.__tv_nsec;
     buffer->ctime_nsec = buffer->orig.st_ctim.__tv_nsec;
-    buffer->atime_nsec = buffer->orig.st_atim.__tv_nsec;
 #    else
+    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
     buffer->mtime_nsec = buffer->orig.st_mtim.tv_nsec;
     buffer->ctime_nsec = buffer->orig.st_ctim.tv_nsec;
-    buffer->atime_nsec = buffer->orig.st_atim.tv_nsec;
 #    endif
 #  endif
     
@@ -1861,8 +1865,8 @@ static bool s_CopyAttrs(const char* from, const char* to,
         // utimes() does not exists on current platform,
         // so use less accurate utime().
         struct utimbuf times;
-        times.modtime = st.orig.st_mtime;
         times.actime  = st.orig.st_atime;
+        times.modtime = st.orig.st_mtime;
         if (utime(to, &times)) {
             return false;
         }
@@ -4095,6 +4099,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.148  2006/08/12 05:30:38  lavr
+ * CDirEntry::{Get|Set}Time[T]: Swap last access time / creation-change time
+ *
  * Revision 1.147  2006/08/03 13:07:59  ivanov
  * CDirEntry::MatchesMask() -- change first parameter type from
  * 'const char*' to 'const string&'.

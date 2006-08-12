@@ -455,8 +455,8 @@ static void s_TEST_File(void)
 
         // Get/set file modification time
         CTime::SetFormat("M/D/Y h:m:s Z");
-        CTime mtime, ctime, atime;
-        assert( f.GetTime(&mtime, &ctime , &atime) );
+        CTime mtime, atime, ctime;
+        assert( f.GetTime(&mtime, &atime, &ctime) );
         cout << "File creation time     : " << ctime.AsString() << endl;
         cout << "File modification time : " << mtime.AsString() << endl;
         cout << "File last access time  : " << atime.AsString() << endl;
@@ -466,13 +466,13 @@ static void s_TEST_File(void)
         // because mtime_new and SetTime() can be affected by
         // Daylight Saving Time changes.
         mtime_cmp.AddDay(-2);
-        // Account daylight savings time for file local times
+        // Account daylight saving time for file local times
         mtime_new.SetTimeZonePrecision(CTime::eDay);
         atime_new.SetTimeZonePrecision(CTime::eDay);
         mtime_new.AddDay(-2);
         atime_new.AddDay(-1);
-        assert( f.SetTime(&mtime_new, 0, &atime_new) );
-        assert( f.GetTime(&mtime, &ctime , &atime) );
+        assert( f.SetTime(&mtime_new, &atime_new) );
+        assert( f.GetTime(&mtime, &atime, &ctime) );
         cout << "File creation time     : " << ctime.AsString() << endl;
         cout << "File modification time : " << mtime.AsString() << endl;
         cout << "File last access time  : " << atime.AsString() << endl;
@@ -483,7 +483,7 @@ static void s_TEST_File(void)
         assert( f.Remove() );
         assert( !f.Exists() );
     }}
-    
+
     {{
         // Create temporary file
         const string kTestData = "testdata";
@@ -1095,6 +1095,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/08/12 05:30:44  lavr
+ * CDirEntry::{Get|Set}Time[T]: Swap last access time / creation-change time
+ *
  * Revision 1.60  2006/04/10 12:37:13  ivanov
  * MSWin: CDirEntry::NormalizePath -- remove leading '\\?\' from path,
  * do not replace it with '\'.
