@@ -93,7 +93,7 @@ public:
     CWriteDB(const string & dbname,
              ESeqType       seqtype,
              const string & title,
-             EIndexType     itype = eNoIndex);
+             EIndexType     itype = eFullIndex);
     
     /// Destructor.
     ///
