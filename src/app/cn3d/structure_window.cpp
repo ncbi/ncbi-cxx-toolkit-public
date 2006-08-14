@@ -97,6 +97,7 @@ BEGIN_SCOPE(Cn3D)
 static string
     userDir,        // directory of latest user-selected file
     currentFile;    // name of current working file
+static bool currentFileIsBinary;
 const string& GetUserDir(void) { return userDir; }
 const string& GetWorkingFilename(void) { return currentFile; }
 
@@ -1407,6 +1408,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         glCanvas->structureSet = new StructureSet(mimeData, structureLimit, glCanvas->renderer);
         userDir = GetWorkingDir();
         currentFile = "";
+        currentFileIsBinary = false;
     }
 
     else {
@@ -1436,13 +1438,14 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         static const string
             asciiMimeFirstWord = "Ncbi-mime-asn1",
             asciiCDDFirstWord = "Cdd";
-        bool isMime = false, isCDD = false, isBinary = true;
+        bool isMime = false, isCDD = false;
+        currentFileIsBinary = true;
         if (firstWord == asciiMimeFirstWord) {
             isMime = true;
-            isBinary = false;
+            currentFileIsBinary = false;
         } else if (firstWord == asciiCDDFirstWord) {
             isCDD = true;
-            isBinary = false;
+            currentFileIsBinary = false;
         }
 
         // try to read the file as various ASN types (if it's not clear from the first ascii word).
@@ -1452,10 +1455,10 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         string err;
         if (!isCDD) {
             TRACEMSG("trying to read file '" << filename << "' as " <<
-                ((isBinary) ? "binary" : "ascii") << " mime");
+                ((currentFileIsBinary) ? "binary" : "ascii") << " mime");
             CNcbi_mime_asn1 *mime = new CNcbi_mime_asn1();
             SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-            readOK = ReadASNFromFile(filename, mime, isBinary, &err);
+            readOK = ReadASNFromFile(filename, mime, currentFileIsBinary, &err);
             SetDiagPostLevel(eDiag_Info);
             if (readOK) {
                 glCanvas->structureSet = new StructureSet(mime, structureLimit, glCanvas->renderer);
@@ -1469,10 +1472,10 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         }
         if (!readOK) {
             TRACEMSG("trying to read file '" << filename << "' as " <<
-                ((isBinary) ? "binary" : "ascii") << " cdd");
+                ((currentFileIsBinary) ? "binary" : "ascii") << " cdd");
             CCdd *cdd = new CCdd();
             SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-            readOK = ReadASNFromFile(filename, cdd, isBinary, &err);
+            readOK = ReadASNFromFile(filename, cdd, currentFileIsBinary, &err);
             SetDiagPostLevel(eDiag_Info);
             if (readOK) {
                 glCanvas->structureSet = new StructureSet(cdd, structureLimit, glCanvas->renderer);
@@ -1611,7 +1614,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
 
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxString outputFilename;
-    bool outputBinary = false, outputCDD = glCanvas->structureSet->IsCDD();
+    bool outputBinary = currentFileIsBinary, outputCDD = glCanvas->structureSet->IsCDD();
 
     // don't ask for filename if Save As is disabled
     if ((prompt && fileMenu->IsEnabled(MID_SAVE_AS)) || currentFile.size() == 0) {
@@ -1624,7 +1627,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
 #endif
             "All Files|*.*|Binary (*.cn3)|*.cn3|Text (*.cn3)|*.cn3|Text CDD (*.cn3)|*.cn3",
             wxSAVE | wxOVERWRITE_PROMPT);
-        dialog.SetFilterIndex(glCanvas->structureSet->IsCDD() ? 3 : 2);
+        dialog.SetFilterIndex(glCanvas->structureSet->IsCDD() ? 3 : (outputBinary ? 1 : 2));
         if (dialog.ShowModal() == wxID_OK)
             outputFilename = dialog.GetPath();
         outputBinary = (dialog.GetFilterIndex() == 1);
@@ -1633,10 +1636,10 @@ void StructureWindow::OnSave(wxCommandEvent& event)
         outputFilename = (userDir + currentFile).c_str();
     }
 
-    TRACEMSG("binary = " << outputBinary << ", cdd = " << outputCDD);
-    INFOMSG("save file: '" << outputFilename.c_str() << "'");
-
     if (!outputFilename.IsEmpty()) {
+
+        TRACEMSG("binary = " << outputBinary << ", cdd = " << outputCDD);
+        INFOMSG("save file: '" << outputFilename.c_str() << "'");
 
         // convert mime to cdd if specified
         if (outputCDD && (!glCanvas->structureSet->IsCDD() || glCanvas->structureSet->IsCDDInMime()))
@@ -1689,6 +1692,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
         else
             userDir = GetWorkingDir() + wxPathOnly(outputFilename).c_str() + wxFILE_SEP_PATH;
         currentFile = wxFileNameFromPath(outputFilename);
+        currentFileIsBinary = outputBinary;
         SetWorkingTitle(glCanvas->structureSet);
         GlobalMessenger()->SetAllWindowTitles();
     }
@@ -1699,6 +1703,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2006/08/14 11:52:50  thiessen
+* remember whether input was binary or ascii
+*
 * Revision 1.53  2006/08/11 14:46:36  thiessen
 * switch open/save menus to use only .cn3 extension
 *
