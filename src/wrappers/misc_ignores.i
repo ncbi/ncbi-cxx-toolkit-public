@@ -36,7 +36,7 @@
 %ignore ncbi::CTreeNode::FindSubNode;
 
 // Default assignment operator can't be used
-%ignore ncbi::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
+%ignore *::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_TrackingCookieName::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_DisableTrackingCookie::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_TrackingCookieDomain::sm_ParamDescription;
@@ -252,6 +252,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/08/14 13:27:15  jcherry
+ * Fix namespace for SNcbiParamDesc_GENBANK_LOADER_METHOD
+ *
  * Revision 1.11  2006/08/10 15:17:05  jcherry
  * Added %ignore's for sm_ParamDescription members of new SNcbiParamDesc_CGI_*
  *
