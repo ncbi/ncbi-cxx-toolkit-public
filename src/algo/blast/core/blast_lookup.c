@@ -1128,7 +1128,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
    BlastLookupTable* lookup;
    Uint1* s;
    Uint1* abs_start;
-   Int4 q_off, s_off;
+   Int4 s_off;
    Int4 num_hits;
    Int4 index;
    Int4 total_hits = 0;
@@ -1294,7 +1294,6 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
 {
    Uint1* s;
    Uint1* abs_start,* s_end;
-   Int4 q_off, s_off;
    BlastLookupTable* lookup;
    Int4 num_hits;
    Int4 total_hits = 0;
