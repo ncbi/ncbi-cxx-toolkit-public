@@ -4289,7 +4289,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 #if defined(HAVE_GETADDRINFO)
         struct addrinfo hints, *out = 0;
         memset(&hints, 0, sizeof(hints));
-        hints.ai_family = PF_INET; /* currently, we only handle IPv4 */
+        hints.ai_family = AF_INET; /* currently, we only handle IPv4 */
         if ((x_errno = getaddrinfo(hostname, 0, &hints, &out)) == 0  &&  out) {
             struct sockaddr_in* addr = (struct sockaddr_in *) out->ai_addr;
             assert(addr->sin_family == AF_INET);
@@ -4560,6 +4560,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.190  2006/08/14 19:09:13  lavr
+ * Use AF_INET consistently everywhere
+ *
  * Revision 6.189  2006/07/13 17:59:26  lavr
  * SOCK_gethostbyaddr() to upcall SOCK_ntoa() as the last resort
  *
