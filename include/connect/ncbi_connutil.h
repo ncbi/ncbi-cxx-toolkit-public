@@ -247,6 +247,7 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
  *  firewall          FIREWALL
  *  lb_disable        LB_DISABLE
  *  http_user_header  HTTP_USER_HEADER  "\r\n" if missing is appended
+ *  http_referer      HTTP_REFERER      may be assigned automatically
  *
  * A value of the field NAME is first looked for in the environment variable
  * of the form service_CONN_NAME; then in the current corelib registry,
@@ -734,6 +735,9 @@ size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2006/08/14 19:08:41  lavr
+ * HTTP_REFERER documented as may have added automatically
+ *
  * Revision 6.58  2006/06/15 02:43:59  lavr
  * GetUsername, GetVMPageSize, CRC32 moved from here to ncbi_util.h
  *
