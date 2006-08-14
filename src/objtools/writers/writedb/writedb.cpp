@@ -34,7 +34,6 @@
 #include <objtools/writers/writedb/writedb.hpp>
 #include "writedb_impl.hpp"
 #include <iostream>
-//#include <objtools/writers/writedb/measure.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -51,7 +50,6 @@ CWriteDB::CWriteDB(const string       & dbname,
                    EIndexType           indices)
     : m_Impl(0)
 {
-    //MeasureBlock("-");
     m_Impl = new CWriteDB_Impl(dbname,
                                seqtype == CWriteDB::eProtein,
                                title,
@@ -60,50 +58,42 @@ CWriteDB::CWriteDB(const string       & dbname,
 
 CWriteDB::~CWriteDB()
 {
-    //MeasureBlock("-");
     delete m_Impl;
 }
 
 void CWriteDB::AddSequence(const CBioseq & bs)
 {
-    //MeasureBlock("-");
     m_Impl->AddSequence(bs);
 }
 
 void CWriteDB::AddSequence(const CBioseq_Handle & bsh)
 {
-    //MeasureBlock("-");
     m_Impl->AddSequence(bsh);
 }
 
 void CWriteDB::AddSequence(const CBioseq & bs, CSeqVector & sv)
 {
-    //MeasureBlock("-");
     m_Impl->AddSequence(bs, sv);
 }
 
 void CWriteDB::SetDeflines(const CBlast_def_line_set & deflines)
 {
-    //MeasureBlock("-");
     m_Impl->SetDeflines(deflines);
 }
 
 void CWriteDB::SetPig(int pig)
 {
-    //MeasureBlock("-");
     m_Impl->SetPig(pig);
 }
 
 void CWriteDB::Close()
 {
-    //MeasureBlock("-");
     m_Impl->Close();
 }
 
 void CWriteDB::AddSequence(const CTempString & sequence,
                            const CTempString & ambig)
 {
-    //MeasureBlock("-");
     string s(sequence.data(), sequence.length());
     string a(ambig.data(), ambig.length());
     
@@ -112,13 +102,11 @@ void CWriteDB::AddSequence(const CTempString & sequence,
 
 void CWriteDB::SetMaxFileSize(Uint8 sz)
 {
-    //MeasureBlock("-");
     m_Impl->SetMaxFileSize(sz);
 }
 
 void CWriteDB::SetMaxVolumeLetters(Uint8 sz)
 {
-    //MeasureBlock("-");
     m_Impl->SetMaxVolumeLetters(sz);
 }
 
