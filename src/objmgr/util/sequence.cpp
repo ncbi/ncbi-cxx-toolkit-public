@@ -308,6 +308,18 @@ int GetGiForAccession(const string& acc, CScope& scope)
 }
 
 
+int GetGiForId(const objects::CSeq_id& id, CScope& scope)
+{
+    try {
+        return GetId(id, scope, eGetId_ForceGi).GetGi();
+    } catch (CException& e) {
+         ERR_POST(Warning << e.what());
+    }
+
+    return 0;
+}
+
+
 string GetAccessionForGi
 (int           gi,
  CScope&       scope,
@@ -318,6 +330,23 @@ string GetAccessionForGi
     try {
         CSeq_id gi_id(CSeq_id::e_Gi, gi);
         return GetId(gi_id, scope, eGetId_ForceAcc).GetSeqId()->
+            GetSeqIdString(with_version);
+    } catch (CException& e) {
+        ERR_POST(Warning << e.what());
+    }
+
+    return kEmptyStr;
+}
+
+
+string GetAccessionForId(const objects::CSeq_id& id,
+                         CScope&       scope,
+                         EAccessionVersion use_version)
+{
+    bool with_version = (use_version == eWithAccessionVersion);
+
+    try {
+        return GetId(id, scope, eGetId_ForceAcc).GetSeqId()->
             GetSeqIdString(with_version);
     } catch (CException& e) {
         ERR_POST(Warning << e.what());
@@ -2817,6 +2846,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.146  2006/08/14 17:32:26  jcherry
+* Added GetAccessionForId and GetGiForId
+*
 * Revision 1.145  2006/08/11 17:50:28  dicuccio
 * GetBestGeneForMrna(): use eOverlap_Contained
 *

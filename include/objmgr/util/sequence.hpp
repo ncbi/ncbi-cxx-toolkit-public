@@ -91,9 +91,21 @@ NCBI_XOBJUTIL_EXPORT
 int GetGiForAccession(const string& acc, CScope& scope);
 
 /// Retrieve the accession for a given GI.
-/// if no accession was found returns and empty string.
+/// if no accession was found returns an empty string.
 NCBI_XOBJUTIL_EXPORT
 string GetAccessionForGi(int           gi,
+                         CScope&       scope,
+                         EAccessionVersion use_version = eWithAccessionVersion);
+
+/// Given a Seq-id retrieve the corresponding GI.
+/// if no GI was found returns 0.
+NCBI_XOBJUTIL_EXPORT
+int GetGiForId(const objects::CSeq_id& id, CScope& scope);
+
+/// Retrieve the accession string for a Seq-id.
+/// if no accession was found returns an empty string.
+NCBI_XOBJUTIL_EXPORT
+string GetAccessionForId(const objects::CSeq_id& id,
                          CScope&       scope,
                          EAccessionVersion use_version = eWithAccessionVersion);
 
@@ -759,6 +771,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.67  2006/08/14 17:32:26  jcherry
+* Added GetAccessionForId and GetGiForId
+*
 * Revision 1.66  2006/04/04 13:21:41  dicuccio
 * Added option to favor the longest item among the best matching features.
 * Added options to all versions of GetBestOverlappingFeature().
