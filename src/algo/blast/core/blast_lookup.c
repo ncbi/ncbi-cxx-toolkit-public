@@ -108,6 +108,55 @@ static void _AddPSSMWordHits(NeighborInfo *info,
                          Int4 current_pos);
 
 
+/* 
+* Retrieve query offsets from the lookup table and store them in the array of
+* (query,subject) offset pairs.
+* @param lookup The LUT to read from. [in]
+* @param index The index value of the word to retrieve. [in]
+* @param count The number of available elements in the destination array. [in]
+* @param offset_pairs A pointer into the destination array. [out]
+* @param s_off The subject offset to be associated with the retrieved query offset(s). [in]
+* @return -1 if insufficient space to store results, otherwise, the number of hits stored.
+*/
+static NCBI_INLINE Int4 s_BlastLookupRetrieve(BlastLookupTable *lookup,
+				Int4 index,
+				Int4 count,
+				BlastOffsetPair *offset_pairs,
+				Int4 s_off)
+{
+Int4 num_hits;
+Int4 *lookup_pos;
+Int4 i;
+
+			/* Test the PV bitvector to see if there are hits for this index */
+            if (NA_PV_TEST(lookup->pv, index, PV_ARRAY_BTS)) {
+               num_hits = lookup->thick_backbone[index].num_used;
+               ASSERT(num_hits != 0);
+
+			   /* Exit if there is not enough room to save the hits. */
+			   if (num_hits > count)
+                  return -1;
+   
+               /* determine if hits live in the backbone or the
+                  overflow array */
+   
+               if (num_hits <= HITS_ON_BACKBONE)
+                  lookup_pos = lookup->thick_backbone[index].payload.entries;
+               else
+                  lookup_pos = lookup->overflow + 
+                        lookup->thick_backbone[index].payload.overflow_cursor;
+               
+			   /* Copy the (query,subject) offset pairs to the destination. */
+			   for(i=0;i<num_hits;i++) {
+					offset_pairs[i].qs_offsets.q_off = lookup_pos[i];
+				    offset_pairs[i].qs_offsets.s_off = s_off;
+			   }
+			   return num_hits;
+
+			} // end if
+return 0;
+}
+
 Int4 BlastAaLookupNew(const LookupTableOptions* opt,
 		      BlastLookupTable* * lut)
 {
@@ -1080,10 +1129,8 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
    Uint1* s;
    Uint1* abs_start;
    Int4 q_off, s_off;
-   Int4* lookup_pos;
    Int4 num_hits;
    Int4 index;
-   PV_ARRAY_TYPE *pv_array;
    Int4 total_hits = 0;
    Int4 scan_step;
    Int4 mask;
@@ -1093,8 +1140,6 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
    ASSERT(lookup_wrap->lut_type == NA_LOOKUP_TABLE);
    lookup = (BlastLookupTable*) lookup_wrap->lut;
   
-   pv_array = lookup->pv;
-
    abs_start = subject->sequence;
    mask = lookup->mask;
    scan_step = lookup->scan_step;
@@ -1127,33 +1172,15 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
          for ( ; s <= s_end; s += scan_step) {
             index = s[0] << 8 | s[1];
             index = index >> shift;
-            
-            if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
-               num_hits = lookup->thick_backbone[index].num_used;
-               ASSERT(num_hits != 0);
-               if (num_hits > (max_hits - total_hits))
-                  break;
-   
-               /* determine if hits live in the backbone or the
-                  overflow array */
-   
-               if (num_hits <= HITS_ON_BACKBONE)
-                  lookup_pos = lookup->thick_backbone[index].payload.entries;
-               else
-                  lookup_pos = lookup->overflow + 
-                        lookup->thick_backbone[index].payload.overflow_cursor;
-               
-               s_off = (s - abs_start)*COMPRESSION_RATIO;
-               while (num_hits) {
-                  q_off = *((Uint4 *) lookup_pos); /* get next query offset */
-                  lookup_pos++;
-                  num_hits--;
-                  
-                  offset_pairs[total_hits].qs_offsets.q_off = q_off;
-                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-               }
-            }
-         }
+
+            num_hits = s_BlastLookupRetrieve(lookup,
+				index,
+				max_hits - total_hits,
+				offset_pairs + total_hits,
+				(s - abs_start)*COMPRESSION_RATIO);
+			if (num_hits == -1) break;
+			total_hits += num_hits;
+		 }
          *end_offset = (s - abs_start)*COMPRESSION_RATIO;
       } else {
          /* when the stride is not a multiple of 4, extra bases
@@ -1193,28 +1220,14 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
             index = s[0] << 16 | s[1] << 8 | s[2];
             index = (index >> shift) & mask;
    
-            if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
-               num_hits = lookup->thick_backbone[index].num_used;
-               ASSERT(num_hits != 0);
-               if (num_hits > (max_hits - total_hits))
-                  break;
-   
-               if (num_hits <= HITS_ON_BACKBONE)
-                  lookup_pos = lookup->thick_backbone[index].payload.entries;
-               else
-                  lookup_pos = lookup->overflow + 
-                      lookup->thick_backbone[index].payload.overflow_cursor;
-               
-               while (num_hits) {
-                  q_off = *((Uint4 *) lookup_pos); /* get next query offset */
-                  lookup_pos++;
-                  num_hits--;
-                  
-                  offset_pairs[total_hits].qs_offsets.q_off = q_off;
-                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-               }
-            }
-         }
+            num_hits = s_BlastLookupRetrieve(lookup,
+				index,
+				max_hits - total_hits,
+				offset_pairs + total_hits,
+				s_off);
+			if (num_hits == -1) break;
+			total_hits += num_hits;
+		 }
 
          /* repeat the loop but only read two bytes at a time. For
             lut_word_length = 6 the loop runs at most twice, and for
@@ -1229,28 +1242,14 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
             index = s[0] << 8 | s[1];
             index = (index >> shift) & mask;
    
-            if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
-               num_hits = lookup->thick_backbone[index].num_used;
-               ASSERT(num_hits != 0);
-               if (num_hits > (max_hits - total_hits))
-                  break;
-   
-               if (num_hits <= HITS_ON_BACKBONE)
-                  lookup_pos = lookup->thick_backbone[index].payload.entries;
-               else
-                  lookup_pos = lookup->overflow + 
-                      lookup->thick_backbone[index].payload.overflow_cursor;
-               
-               while (num_hits) {
-                  q_off = *((Uint4 *) lookup_pos); /* get next query offset */
-                  lookup_pos++;
-                  num_hits--;
-                  
-                  offset_pairs[total_hits].qs_offsets.q_off = q_off;
-                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-               }
-            }
-         }
+            num_hits = s_BlastLookupRetrieve(lookup,
+				index,
+				max_hits - total_hits,
+				offset_pairs + total_hits,
+				s_off);
+			if (num_hits == -1) break;
+			total_hits += num_hits;
+		}
          *end_offset = s_off;
       }
    }
@@ -1272,27 +1271,13 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
          index = s[0] << 8 | s[1];
          index = (index >> shift) & mask;
 
-         if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
-            num_hits = lookup->thick_backbone[index].num_used;
-            ASSERT(num_hits != 0);
-            if (num_hits > (max_hits - total_hits))
-               break;
-
-            if (num_hits <= HITS_ON_BACKBONE)
-               lookup_pos = lookup->thick_backbone[index].payload.entries;
-            else
-               lookup_pos = lookup->overflow + 
-                   lookup->thick_backbone[index].payload.overflow_cursor;
-            
-            while (num_hits) {
-               q_off = *((Uint4 *) lookup_pos); /* get next query offset */
-               lookup_pos++;
-               num_hits--;
-               
-               offset_pairs[total_hits].qs_offsets.q_off = q_off;
-               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-            }
-         }
+            num_hits = s_BlastLookupRetrieve(lookup,
+				index,
+				max_hits - total_hits,
+				offset_pairs + total_hits,
+				s_off);
+			if (num_hits == -1) break;
+			total_hits += num_hits;
       }
       *end_offset = s_off;
    }
@@ -1311,16 +1296,13 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    Uint1* abs_start,* s_end;
    Int4 q_off, s_off;
    BlastLookupTable* lookup;
-   Int4* lookup_pos;
    Int4 num_hits;
-   PV_ARRAY_TYPE *pv_array;
    Int4 total_hits = 0;
    Int4 lut_word_length;
 
    ASSERT(lookup_wrap->lut_type == NA_LOOKUP_TABLE);
    lookup = (BlastLookupTable*) lookup_wrap->lut;
 
-   pv_array = lookup->pv;
    lut_word_length = lookup->lut_word_length;
    ASSERT(lut_word_length == 8);
 
@@ -1333,29 +1315,13 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
 
       Int4 index = s[0] << 8 | s[1];
 
-      if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
-         num_hits = lookup->thick_backbone[index].num_used;
-         ASSERT(num_hits != 0);
-
-         if (num_hits > (max_hits - total_hits))
-            break;
-
-         if (num_hits <= HITS_ON_BACKBONE)
-            lookup_pos = lookup->thick_backbone[index].payload.entries;
-         else
-            lookup_pos = lookup->overflow + 
-                       lookup->thick_backbone[index].payload.overflow_cursor;
-         
-         s_off = (s - abs_start)*COMPRESSION_RATIO;
-         while (num_hits) {
-            q_off = *((Uint4 *) lookup_pos); /* get next query offset */
-            lookup_pos++;
-            num_hits--;
-            
-            offset_pairs[total_hits].qs_offsets.q_off = q_off;
-            offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-         }
-      }
+            num_hits = s_BlastLookupRetrieve(lookup,
+				index,
+				max_hits - total_hits,
+				offset_pairs + total_hits,
+				(s - abs_start)*COMPRESSION_RATIO);
+			if (num_hits == -1) break;
+			total_hits += num_hits;
    }
    *end_offset = (s - abs_start)*COMPRESSION_RATIO;
 
