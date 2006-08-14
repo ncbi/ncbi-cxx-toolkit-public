@@ -196,7 +196,8 @@ static void
 s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list, 
                        const CSeq_align_set& alnset, CScope* scope, 
                        const CBlastFormattingMatrix* matrix,
-                       const list<CRef<blast::CSeqLocInfo> >* mask_info)
+                       const list<CRef<blast::CSeqLocInfo> >* mask_info,
+                       int master_gentice_code, int slave_genetic_code)
 {
     int index = 1;
     ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()) {
@@ -278,7 +279,11 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
             aln_vec.Reset(new CAlnVec(*reversed_ds, *scope));   
         } else {
             aln_vec.Reset(new CAlnVec(kDenseg, *scope));
-        }        
+        }    
+
+        //Note: do not switch the set order per calnvec specs.
+        aln_vec->SetGenCode(slave_genetic_code);
+        aln_vec->SetGenCode(master_gentice_code, 0);
 
         int align_length, num_gaps, num_gap_opens;
         CBlastFormatUtil::GetAlignLengths(*aln_vec, align_length, num_gaps, 
@@ -397,7 +402,7 @@ static void
 s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
                    const CBlastFormattingMatrix* matrix, 
                    const list<CRef<blast::CSeqLocInfo> >* mask_info, 
-                   bool ungapped)
+                   bool ungapped, int master_gentice_code, int slave_genetic_code)
 {
     _ASSERT(align_in.GetSegs().IsDisc());
     const CSeq_align_set& kAlignSet = align_in.GetSegs().GetDisc();
@@ -458,10 +463,10 @@ s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
             CDisplaySeqalign::PrepareBlastUngappedSeqalign(kAlignSet);
         
         s_SeqAlignSetToXMLHsps(hit->SetHsps(), *expanded_align_set, scope, 
-                               matrix, mask_info);
+                               matrix, mask_info, master_gentice_code, slave_genetic_code);
     } else {
         s_SeqAlignSetToXMLHsps(hit->SetHsps(), kAlignSet, scope, matrix, 
-                               mask_info);
+                               mask_info, master_gentice_code, slave_genetic_code);
     }
 }
 
@@ -494,7 +499,7 @@ static void
 s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
                        CScope* scope, const CBlastFormattingMatrix* matrix, 
                        const list<CRef<blast::CSeqLocInfo> >* mask_info,
-                       bool ungapped)
+                       bool ungapped, int master_gentice_code, int slave_genetic_code)
 {
     // If there are no hits for this query, return with empty Hits list.
     if (alnset.Get().empty())
@@ -513,7 +518,7 @@ s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
         // Seq-align.
         if ((*iter)->GetSegs().IsDisc()) {
             s_SeqAlignToXMLHit(new_hit, *(*iter), scope, matrix, mask_info, 
-                               ungapped);
+                               ungapped, master_gentice_code, slave_genetic_code);
             ++iter;
         } else {
             CSeq_align_set one_subject_alnset;
@@ -528,7 +533,7 @@ s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
             CSeq_align disc_align_wrap;
             disc_align_wrap.SetSegs().SetDisc(one_subject_alnset);
             s_SeqAlignToXMLHit(new_hit, disc_align_wrap, scope, matrix, 
-                               mask_info, ungapped);
+                               mask_info, ungapped, master_gentice_code, slave_genetic_code);
         }
         
         if (new_hit) {
@@ -555,7 +560,8 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
                        const CSeq_loc& seqloc, CScope* scope, 
                        const CBlastFormattingMatrix* matrix, 
                        const list<CRef<blast::CSeqLocInfo> >* mask_info,
-                       int index, CStatistics& stat, bool is_ungapped)
+                       int index, CStatistics& stat, bool is_ungapped,
+                       int master_gentice_code, int slave_genetic_code)
 {
     list<CRef<CIteration> >& iterations = bxmlout.SetIterations();
 
@@ -588,7 +594,8 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
     // Only add hits if they exist.
     if (alnset) {
         s_SeqAlignSetToXMLHits(one_query_iter->SetHits(), *alnset,
-                               scope, matrix, mask_info, is_ungapped);
+                               scope, matrix, mask_info, is_ungapped, 
+                               master_gentice_code, slave_genetic_code);
     }
     one_query_iter->SetStat(stat);
 
@@ -731,7 +738,8 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data)
         s_BlastXMLAddIteration(bxmlout, data->GetAlignment(index), *seqloc, 
                                data->GetScope(index), matrix.get(), 
                                data->GetMaskLocations(index), index, 
-                               *stat_vec[index], !data->GetGappedMode());
+                               *stat_vec[index], !data->GetGappedMode(),
+                               data->GetMasterGeneticCode(),  data->GetSlaveGeneticCode());
     }
 }
 

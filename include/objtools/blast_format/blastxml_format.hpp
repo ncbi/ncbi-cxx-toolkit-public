@@ -108,6 +108,11 @@ public:
     GetAlignment(int query_index) const = 0;
     /// Returns true if search was gapped, false otherwise.
     virtual bool GetGappedMode(void) const = 0;
+    ///master genetic code
+    virtual int GetMasterGeneticCode() const = 0;
+    ///slave genetic code
+    virtual int GetSlaveGeneticCode() const = 0;
+
 };
 
 /// Fills all fields in the XML BLAST output object.
@@ -126,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/08/14 19:15:35  jianye
+* handles genetic code
+*
 * Revision 1.6  2005/12/21 15:18:13  jcherry
 * Added export specifiers
 *
