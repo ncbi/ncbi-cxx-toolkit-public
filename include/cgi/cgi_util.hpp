@@ -569,7 +569,7 @@ protected:
     EBrowserEngine    m_Engine;         ///< Browser engine type
     TUserAgentVersion m_EngineVersion;  ///< Browser engine version
     TUserAgentVersion m_MozillaVersion; ///< Browser mozilla version
-    EBrowserEngine    m_Platform;       ///< Platform type
+    EBrowserPlatform  m_Platform;       ///< Platform type
 };
 
 
@@ -678,6 +678,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/08/15 16:29:43  ivanov
+ * More fixes
+ *
  * Revision 1.13  2006/08/15 16:26:10  ivanov
  * Fix for previous revision
  *
@@ -710,6 +713,9 @@ END_NCBI_SCOPE
  * Added ampersand encoding flag
  *
  * $Log$
+ * Revision 1.14  2006/08/15 16:29:43  ivanov
+ * More fixes
+ *
  * Revision 1.13  2006/08/15 16:26:10  ivanov
  * Fix for previous revision
  *
