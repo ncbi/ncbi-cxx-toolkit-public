@@ -540,7 +540,7 @@ public:
 
     /// Get platform (OS) type.
     /// @sa EPlatform
-    EBrowserEngine GetPlatform(void) const 
+    EBrowserPlatform GetPlatform(void) const 
         { return m_Platform; }
 
     /// Get browser version information.
@@ -678,6 +678,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/08/15 16:26:10  ivanov
+ * Fix for previous revision
+ *
  * Revision 1.12  2006/08/15 16:23:43  ivanov
  * + CCgiUserAgent::GetPlatform()
  *
@@ -707,6 +710,9 @@ END_NCBI_SCOPE
  * Added ampersand encoding flag
  *
  * $Log$
+ * Revision 1.13  2006/08/15 16:26:10  ivanov
+ * Fix for previous revision
+ *
  * Revision 1.12  2006/08/15 16:23:43  ivanov
  * + CCgiUserAgent::GetPlatform()
  *

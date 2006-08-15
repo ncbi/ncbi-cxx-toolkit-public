@@ -818,7 +818,7 @@ void CCgiUserAgent::x_Init(void)
     m_Engine = eEngine_Unknown; 
     m_EngineVersion.SetVersion(-1, -1, -1);
     m_MozillaVersion.SetVersion(-1, -1, -1);
-    m_Platform = eUnknown;
+    m_Platform = ePlatform_Unknown;
 }
 
 void CCgiUserAgent::Reset(const string& user_agent)
@@ -1148,6 +1148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/08/15 16:30:07  ivanov
+ * Fix for previous revision
+ *
  * Revision 1.14  2006/08/15 16:24:36  ivanov
  * + CCgiUserAgent::GetPlatform()
  *
