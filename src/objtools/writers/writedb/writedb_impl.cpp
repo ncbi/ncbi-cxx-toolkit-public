@@ -36,6 +36,7 @@
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
+#include <serial/typeinfo.hpp>
 
 #include "writedb_impl.hpp"
 #include "writedb_convert.hpp"
@@ -123,8 +124,8 @@ void CWriteDB_Impl::AddSequence(const CBioseq & bs)
 
 void CWriteDB_Impl::AddSequence(const CBioseq & bs, CSeqVector & sv)
 {
-    m_SeqVector = sv;
     AddSequence(bs);
+    m_SeqVector = sv;
 }
 
 void CWriteDB_Impl::AddSequence(const CBioseq_Handle & bsh)
@@ -358,6 +359,14 @@ x_SetDeflinesFromBinary(const string                   & bin_hdr,
     deflines.Reset(&* bdls);
 }
 
+static CRef<CBlast_def_line_set>
+s_EditDeflineSet(CConstRef<CBlast_def_line_set> & deflines)
+{
+    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
+    SerialAssign(*bdls, *deflines);
+    return bdls;
+}
+
 void
 CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  CConstRef<CBlast_def_line_set> & deflines,
@@ -366,7 +375,7 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  const vector< vector<int> >    & linkouts,
                                  int                              pig)
 {
-    bool use_bin = deflines.Empty();
+    bool use_bin = (deflines.Empty() && pig == 0);
     
     if (! bin_hdr.empty()) {
         return;
@@ -405,6 +414,33 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
         NCBI_THROW(CWriteDBException,
                    eArgErr,
                    "Error: No deflines provided.");
+    }
+    
+    if (pig != 0) {
+        const list<int> * L = 0;
+        
+        if (deflines->Get().front()->CanGetOther_info()) {
+            L = & deflines->Get().front()->GetOther_info();
+        }
+        
+        // If the pig does not agree with the current value, set the
+        // new value and force a rebuild of the binary headers.  If
+        // there is more than one value in the list, leave the others
+        // in place.
+        
+        if ((L == 0) || L->empty()) {
+            CRef<CBlast_def_line_set> bdls = s_EditDeflineSet(deflines);
+            bdls->Set().front()->SetOther_info().push_back(pig);
+            
+            deflines.Reset(&* bdls);
+            bin_hdr.clear();
+        } else if (L->front() != pig) {
+            CRef<CBlast_def_line_set> bdls = s_EditDeflineSet(deflines);
+            bdls->Set().front()->SetOther_info().front() = pig;
+            
+            deflines.Reset(&* bdls);
+            bin_hdr.clear();
+        }
     }
     
     if (bin_hdr.empty()) {
@@ -522,26 +558,34 @@ void CWriteDB_Impl::x_CookSequence()
                        "and no Bioseq_Handle available.");
         }
         
-        // I add one to the string length to allow the "i+1" in the
-        // loop to be done safely.
+        if (m_Protein) {
+            // I add one to the string length to allow the "i+1" in
+            // the loop to be done safely.
+            
+            m_Sequence.reserve(sz);
+            m_SeqVector.GetSeqData(0, sz, m_Sequence);
+        } else {
+            // I add one to the string length to allow the "i+1" in the
+            // loop to be done safely.
         
-        string na8;
-        na8.reserve(sz + 1);
-        m_SeqVector.GetSeqData(0, sz, na8);
-        na8.resize(sz + 1);
+            string na8;
+            na8.reserve(sz + 1);
+            m_SeqVector.GetSeqData(0, sz, na8);
+            na8.resize(sz + 1);
         
-        string na4;
-        na4.resize((sz + 1) / 2);
+            string na4;
+            na4.resize((sz + 1) / 2);
         
-        for(int i = 0; i < sz; i += 2) {
-            na4[i/2] = (na8[i] << 4) + na8[i+1];
+            for(int i = 0; i < sz; i += 2) {
+                na4[i/2] = (na8[i] << 4) + na8[i+1];
+            }
+        
+            WriteDB_Ncbi4naToBinary(na4.data(),
+                                    na4.size(),
+                                    si.GetLength(),
+                                    m_Sequence,
+                                    m_Ambig);
         }
-        
-        WriteDB_Ncbi4naToBinary(na4.data(),
-                                na4.size(),
-                                si.GetLength(),
-                                m_Sequence,
-                                m_Ambig);
     }
 }
 
