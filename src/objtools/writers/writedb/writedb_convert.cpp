@@ -519,7 +519,7 @@ void WriteDB_Ncbi4naToBinary(const CSeq_inst & seqinst,
     const vector<char> & na4 = seqinst.GetSeq_data().GetNcbi4na().Get();
     int base_length = seqinst.GetLength();
     
-    return WriteDB_Ncbi4naToBinary(& na4[0], na4.size(), base_length, seq, amb);
+    WriteDB_Ncbi4naToBinary(& na4[0], na4.size(), base_length, seq, amb);
 }
 
 void WriteDB_StdaaToBinary(const CSeq_inst & si, string & seq)
