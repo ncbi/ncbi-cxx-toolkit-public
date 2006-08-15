@@ -242,8 +242,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/08/15 15:50:31  lavr
+ * Fix typo
+ *
  * Revision 1.9  2006/07/13 18:00:55  lavr
- * Throw "Must specify file(s)" instead of ambigous "filename(s)" [cf. usage]
+ * Throw "Must specify file(s)" instead of ambiguous "filename(s)" [cf. usage]
  *
  * Revision 1.8  2006/03/03 18:34:14  lavr
  * Mark non-standard options so
