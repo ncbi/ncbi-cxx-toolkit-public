@@ -101,10 +101,10 @@ static void _AddPSSMWordHits(NeighborInfo * info,
                              Int4 score, Int4 current_pos);
 
 
-/* 
+/** 
 * Retrieve query offsets from the lookup table and store them in the array of
 * (query,subject) offset pairs.
-* @param lookup The LUT to read from. [in]
+* @param lookup The lookup table to read from. [in]
 * @param index The index value of the word to retrieve. [in]
 * @param count The number of available elements in the destination array. [in]
 * @param offset_pairs A pointer into the destination array. [out]
