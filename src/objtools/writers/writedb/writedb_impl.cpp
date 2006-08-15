@@ -89,9 +89,9 @@ void CWriteDB_Impl::x_ResetSequenceData()
     m_Memberships.clear();
     m_Pig = 0;
     
-    m_Sequence.clear();
-    m_Ambig.clear();
-    m_BinHdr.clear();
+    m_Sequence.erase();
+    m_Ambig.erase();
+    m_BinHdr.erase();
 }
 
 void CWriteDB_Impl::AddSequence(const CTempString & seq,
@@ -142,8 +142,8 @@ void CWriteDB_Impl::Close()
     m_Closed = true;
     
     x_Publish();
-    m_Sequence.clear();
-    m_Ambig.clear();
+    m_Sequence.erase();
+    m_Ambig.erase();
     
     if (! m_Volume.Empty()) {
         m_Volume->Close();
@@ -433,13 +433,13 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
             bdls->Set().front()->SetOther_info().push_back(pig);
             
             deflines.Reset(&* bdls);
-            bin_hdr.clear();
+            bin_hdr.erase();
         } else if (L->front() != pig) {
             CRef<CBlast_def_line_set> bdls = s_EditDeflineSet(deflines);
             bdls->Set().front()->SetOther_info().front() = pig;
             
             deflines.Reset(&* bdls);
-            bin_hdr.clear();
+            bin_hdr.erase();
         }
     }
     
