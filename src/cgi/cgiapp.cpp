@@ -777,7 +777,7 @@ void CCgiApplication::x_LogPost(const char*             msg_header,
 
         if ( flags & fEnd ) {
             CTime end_time(CTime::eCurrent);
-            CTime elapsed(end_time.DiffSecond(start_time));
+            CTimeSpan elapsed = end_time.DiffTimeSpan(start_time);
 
             msg << "    end time = " << end_time.AsString()
                 << "    elapsed = "  << elapsed.AsString();
@@ -987,10 +987,10 @@ string CCgiStatistics::Compose(void)
 
     // Check if it is assigned NOT to log the requests took less than
     // cut off time threshold
-    int time_cutoff = reg.GetInt("CGI", "TimeStatCutOff", 0, 0,
-                                 CNcbiRegistry::eReturn);
+    TSeconds time_cutoff = reg.GetInt("CGI", "TimeStatCutOff", 0, 0,
+                                      CNcbiRegistry::eReturn);
     if (time_cutoff > 0) {
-        int diff = end_time.DiffSecond(m_StartTime);
+        TSeconds diff = end_time.DiffSecond(m_StartTime);
         if (diff < time_cutoff) {
             return kEmptyStr;  // do nothing if it is a light weight request
         }
@@ -1049,7 +1049,7 @@ string CCgiStatistics::Compose_ProgramName(void)
 
 string CCgiStatistics::Compose_Timing(const CTime& end_time)
 {
-    CTime elapsed(end_time.DiffSecond(m_StartTime));
+    CTimeSpan elapsed = end_time.DiffTimeSpan(m_StartTime);
     return m_StartTime.AsString() + m_LogDelim + elapsed.AsString();
 }
 
@@ -1137,6 +1137,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.84  2006/08/15 16:21:37  ivanov
+* CCgiStatistics::Compose_Timing()
+* CCgiApplication::x_LogPost() -- use CTimeSpan for elapsed time
+*
 * Revision 1.83  2006/08/10 15:18:45  didenko
 * Changed cookies names : ncbi_sessionid -> ncbi_session_data, ncbi_tracking_id -> ncbi_sid
 * Changed cookies domain : .ncbi.nlm.nih.gov -> .nih.gov
