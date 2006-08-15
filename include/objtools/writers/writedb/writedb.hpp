@@ -39,6 +39,7 @@
 /// Implemented for: UNIX, MS-Windows
 
 #include <objtools/writers/writedb/writedb_common.hpp>
+#include <objtools/writers/writedb/writedb_error.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/seq/seq__.hpp>
