@@ -486,7 +486,12 @@ void CWriteDB_Impl::x_CookIds()
     
     ITERATE(list< CRef<CBlast_def_line> >, iter, m_Deflines->Get()) {
         const list< CRef<CSeq_id> > & ids = (**iter).GetSeqid();
-        m_Ids.insert(m_Ids.end(), ids.begin(), ids.end());
+        // m_Ids.insert(m_Ids.end(), ids.begin(), ids.end());
+        // Spelled out for WorkShop. :-/
+        m_Ids.reserve(m_Ids.size() + ids.size());
+        ITERATE (list<CRef<CSeq_id> >, it, ids) {
+            m_Ids.push_back(*it);
+        }
     }
 }
 
