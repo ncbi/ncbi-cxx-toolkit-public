@@ -511,10 +511,18 @@ public:
 
     /// Browser engine types.
     enum EBrowserEngine {
-        eEngine_Unknown = eUnknown,  ///< Unknown engine
-        eEngine_IE      = eIE,       ///< Microsoft Internet Explorer
-        eEngine_Gecko   = eMozilla,  ///< Gecko-based
-        eEngine_KHTML   = eSafari    ///< Apple WebKit
+        eEngine_Unknown = eUnknown,     ///< Unknown engine
+        eEngine_IE      = eIE,          ///< Microsoft Internet Explorer
+        eEngine_Gecko   = eMozilla,     ///< Gecko-based
+        eEngine_KHTML   = eSafari       ///< Apple WebKit
+    };
+
+    /// Platform types
+    enum EBrowserPlatform {
+        ePlatform_Unknown = eUnknown,   ///< Unknown OS
+        ePlatform_Windows,              ///< Microsoft Windows
+        ePlatform_Mac,                  ///< MacOS
+        ePlatform_Unix                  ///< Unix
     };
 
     /// Get user agent string.
@@ -526,15 +534,19 @@ public:
         { return m_Browser; }
 
     /// Get browser engine type.
-    /// @sa EBrowserEngine
+    /// @sa EBrowserEngine 
     EBrowserEngine GetEngine(void) const 
         { return m_Engine; }
+
+    /// Get platform (OS) type.
+    /// @sa EPlatform
+    EBrowserEngine GetPlatform(void) const 
+        { return m_Platform; }
 
     /// Get browser version information.
     ///
     /// If version field (major, minor, patch level) equal -1 that
     /// it is not defined.
-
     const TUserAgentVersion& GetBrowserVersion(void) const
         { return m_BrowserVersion; }
     const TUserAgentVersion& GetEngineVersion(void) const
@@ -557,6 +569,7 @@ protected:
     EBrowserEngine    m_Engine;         ///< Browser engine type
     TUserAgentVersion m_EngineVersion;  ///< Browser engine version
     TUserAgentVersion m_MozillaVersion; ///< Browser mozilla version
+    EBrowserEngine    m_Platform;       ///< Platform type
 };
 
 
@@ -665,6 +678,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/08/15 16:23:43  ivanov
+ * + CCgiUserAgent::GetPlatform()
+ *
  * Revision 1.11  2006/05/10 14:43:26  ivanov
  * Get rid of warnings about unused variables
  *
@@ -691,6 +707,9 @@ END_NCBI_SCOPE
  * Added ampersand encoding flag
  *
  * $Log$
+ * Revision 1.12  2006/08/15 16:23:43  ivanov
+ * + CCgiUserAgent::GetPlatform()
+ *
  * Revision 1.11  2006/05/10 14:43:26  ivanov
  * Get rid of warnings about unused variables
  *

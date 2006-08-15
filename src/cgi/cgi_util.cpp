@@ -818,6 +818,7 @@ void CCgiUserAgent::x_Init(void)
     m_Engine = eEngine_Unknown; 
     m_EngineVersion.SetVersion(-1, -1, -1);
     m_MozillaVersion.SetVersion(-1, -1, -1);
+    m_Platform = eUnknown;
 }
 
 void CCgiUserAgent::Reset(const string& user_agent)
@@ -852,7 +853,6 @@ struct SBrowser {
 
 // Browser search table (the order does matter!)
 const SBrowser s_Browsers[] = {
-
     // Gecko-based
 
     { CCgiUserAgent::eBeonex,       "Beonex",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
@@ -946,6 +946,24 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // Initialization
     x_Init();
     m_UserAgent = NStr::TruncateSpaces(user_agent);
+
+    // Very crude algorithm to get platform type...
+    if (m_UserAgent.find("Win") != NPOS) {
+        m_Platform = ePlatform_Windows;
+    } else if (m_UserAgent.find("Mac") != NPOS) {
+        if (m_UserAgent.find("OS X") == NPOS) {
+            m_Platform = ePlatform_Mac;
+        } else {
+            m_Platform = ePlatform_Unix;
+        }
+    } else if (m_UserAgent.find("SunOS")   != NPOS  || 
+               m_UserAgent.find("Linux")   != NPOS  ||
+               m_UserAgent.find("FreeBSD") != NPOS  ||
+               m_UserAgent.find("NetBSD")  != NPOS  ||
+               m_UserAgent.find("OpenBSD") != NPOS  ||
+               m_UserAgent.find("IRIX")    != NPOS) {
+        m_Platform = ePlatform_Unix;
+    }
 
     // Check VendorProduct token first.
     // If it matched some browser name, return it.
@@ -1086,6 +1104,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
             pos += search.length();
             s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
         }
+        m_Platform = ePlatform_Mac;
     }
 
     return;
@@ -1125,55 +1144,58 @@ bool CCgiUserAgent::x_ParseToken(const string& token, int where)
 
 END_NCBI_SCOPE
 
+
 /*
-* ===========================================================================
-* $Log$
-* Revision 1.13  2006/03/16 13:42:17  ivanov
-* URL_DecodeInPlace(): Accordingly RFC 1738 the '%' character is unsafe
-* and should be always encoded, but sometimes it is not really encoded.
-*
-* Revision 1.12  2006/01/05 15:24:50  lavr
-* URL_EncodeString(): Keep off compiler warning
-*
-* Revision 1.11  2005/12/15 21:53:38  grichenk
-* Check if ArgsList is initialized (initialize in non-const GetArgs())
-*
-* Revision 1.10  2005/12/08 21:33:21  grichenk
-* Added CCgiArgsException and CCgiArgsParserException
-*
-* Revision 1.9  2005/12/07 23:06:31  vasilche
-* Fixed typo.
-*
-* Revision 1.8  2005/12/07 22:38:58  grichenk
-* Reverted to case-insensitive names
-*
-* Revision 1.7  2005/12/07 20:29:55  grichenk
-* Use string& rather than string in arguments.
-* Added public methods FindFirst() and FindNext().
-* Made arguments names case sensitive by default.
-*
-* Revision 1.6  2005/11/22 12:37:20  ivanov
-* Added class CCgiUserAgent to parse user agent strings.
-* Moved inline function implementation to classes definition.
-* Some cosmetics.
-*
-* Revision 1.5  2005/11/08 20:30:04  grichenk
-* Added ampersand encoding flag
-*
-* Revision 1.4  2005/11/01 22:02:44  grichenk
-* Allow any number of ampersands in queries.
-*
-* Revision 1.3  2005/10/31 22:22:09  vakatov
-* Allow ampersand in the end of URL args
-*
-* Revision 1.2  2005/10/17 16:46:43  grichenk
-* Added CCgiArgs_Parser base class.
-* Redesigned CCgiRequest to use CCgiArgs_Parser.
-* Replaced CUrlException with CCgiParseException.
-*
-* Revision 1.1  2005/10/13 15:42:47  grichenk
-* Initial revision
-*
-*
-* ==========================================================================
-*/
+ * ===========================================================================
+ * $Log$
+ * Revision 1.14  2006/08/15 16:24:36  ivanov
+ * + CCgiUserAgent::GetPlatform()
+ *
+ * Revision 1.13  2006/03/16 13:42:17  ivanov
+ * URL_DecodeInPlace(): Accordingly RFC 1738 the '%' character is unsafe
+ * and should be always encoded, but sometimes it is not really encoded.
+ *
+ * Revision 1.12  2006/01/05 15:24:50  lavr
+ * URL_EncodeString(): Keep off compiler warning
+ *
+ * Revision 1.11  2005/12/15 21:53:38  grichenk
+ * Check if ArgsList is initialized (initialize in non-const GetArgs())
+ *
+ * Revision 1.10  2005/12/08 21:33:21  grichenk
+ * Added CCgiArgsException and CCgiArgsParserException
+ *
+ * Revision 1.9  2005/12/07 23:06:31  vasilche
+ * Fixed typo.
+ *
+ * Revision 1.8  2005/12/07 22:38:58  grichenk
+ * Reverted to case-insensitive names
+ *
+ * Revision 1.7  2005/12/07 20:29:55  grichenk
+ * Use string& rather than string in arguments.
+ * Added public methods FindFirst() and FindNext().
+ * Made arguments names case sensitive by default.
+ *
+ * Revision 1.6  2005/11/22 12:37:20  ivanov
+ * Added class CCgiUserAgent to parse user agent strings.
+ * Moved inline function implementation to classes definition.
+ * Some cosmetics.
+ *
+ * Revision 1.5  2005/11/08 20:30:04  grichenk
+ * Added ampersand encoding flag
+ *
+ * Revision 1.4  2005/11/01 22:02:44  grichenk
+ * Allow any number of ampersands in queries.
+ *
+ * Revision 1.3  2005/10/31 22:22:09  vakatov
+ * Allow ampersand in the end of URL args
+ *
+ * Revision 1.2  2005/10/17 16:46:43  grichenk
+ * Added CCgiArgs_Parser base class.
+ * Redesigned CCgiRequest to use CCgiArgs_Parser.
+ * Replaced CUrlException with CCgiParseException.
+ *
+ * Revision 1.1  2005/10/13 15:42:47  grichenk
+ * Initial revision
+ *
+ * ==========================================================================
+ */
