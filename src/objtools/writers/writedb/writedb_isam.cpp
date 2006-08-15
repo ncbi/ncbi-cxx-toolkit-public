@@ -40,7 +40,7 @@
 #include <serial/serial.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/general/general__.hpp>
-#include <iostream>
+#include <stdio.h>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
