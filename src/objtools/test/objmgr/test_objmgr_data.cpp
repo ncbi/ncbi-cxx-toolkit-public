@@ -50,6 +50,9 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
+#include <serial/serial.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasnb.hpp>
 
 #include <algorithm>
 
@@ -93,7 +96,7 @@ protected:
 
     typedef vector<CConstRef<CSeq_feat> >   TFeats;
     typedef CSeq_id_Handle                  TMapKey;
-    typedef map<TMapKey, TFeats>            TFeatMap;
+    typedef map<TMapKey, string>            TFeatMap;
     typedef map<CSeq_id_Handle, int>        TIntMap;
     typedef vector<CSeq_id_Handle> TIds;
 
@@ -124,6 +127,7 @@ protected:
     bool m_keep_handles;
     bool m_selective_reset;
     bool m_edit_handles;
+    bool m_release_all_memory;
 };
 
 
@@ -131,6 +135,7 @@ protected:
 
 void CTestOM::SetValue(TIntMap& vm, const CSeq_id_Handle& id, int value)
 {
+    if ( m_release_all_memory ) return;
     int old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
@@ -148,23 +153,41 @@ void CTestOM::SetValue(TIntMap& vm, const CSeq_id_Handle& id, int value)
 
 void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 {
-    const TFeats* old_value;
+    if ( m_release_all_memory ) return;
+    CNcbiOstrstream str;
+    {{
+        CObjectOStreamAsnBinary out(str);
+        ITERATE ( TFeats, it, value )
+            out << **it;
+    }}
+    string new_str = CNcbiOstrstreamToString(str);
+    const string* old_str;
     {{
         CFastMutexGuard guard(s_GlobalLock);
         TFeatMap::iterator it = vm.lower_bound(key);
         if ( it == vm.end() || it->first != key ) {
-            it = vm.insert(it, TFeatMap::value_type(key, value));
+            it = vm.insert(it, TFeatMap::value_type(key, new_str));
         }
-        old_value = &it->second;
+        old_str = &it->second;
     }}
-    if ( old_value->size() != value.size() ) {
+    if ( *old_str != new_str ) {
+        TFeats old_value;
+        {{
+            CNcbiIstrstream str(old_str->data(), old_str->size());
+            CObjectIStreamAsnBinary in(str);
+            while ( in.HaveMoreData() ) {
+                CRef<CSeq_feat> feat(new CSeq_feat);
+                in >> *feat;
+                old_value.push_back(feat);
+            }
+        }}
         CNcbiOstrstream s;
         string name;
         if ( &vm == &m_Feat0Map ) name = "feat0";
         if ( &vm == &m_Feat1Map ) name = "feat1";
         s << "Inconsistent "<<name<<" on "<<key.AsString()<<
-            " was "<<old_value->size()<<" now "<<value.size() << NcbiEndl;
-        ITERATE ( TFeats, it, *old_value ) {
+            " was "<<old_value.size()<<" now "<<value.size() << NcbiEndl;
+        ITERATE ( TFeats, it, old_value ) {
             s << " old: " << MSerial_AsnText << **it;
         }
         ITERATE ( TFeats, it, value ) {
@@ -172,7 +195,7 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
         }
         ERR_POST(string(CNcbiOstrstreamToString(s)));
     }
-    _ASSERT(old_value->size() == value.size());
+    _ASSERT(*old_str == new_str);
 }
 
 
@@ -334,11 +357,18 @@ bool CTestOM::Thread_Run(int idx)
 
                 if ( !handle ) {
                     if ( preload_ids ) {
-                        _ASSERT(ids1.empty());
+                        int mask =
+                            handle.fState_confidential|
+                            handle.fState_withdrawn;
+                        bool restricted =
+                            (handle.GetState() & mask) != 0;
+                        if ( !restricted ) {
+                            _ASSERT(ids1.empty());
+                        }
                     }
                     ++null_handle_count;
                     LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                             ": INVALID HANDLE");
+                             ": INVALID HANDLE: "<<handle.GetState());
                     continue;
                 }
                 ++seq_count;
@@ -435,7 +465,7 @@ bool CTestOM::Thread_Run(int idx)
 
                         all_feat_count += it.GetSize();
                         for ( ; it; ++it ) {
-                            if ( m_verbose ) {
+                            if ( 0 && m_verbose ) {
                                 NcbiCout << MSerial_AsnText
                                          << it->GetOriginalFeature();
                                 NcbiCout << MSerial_AsnText
@@ -449,10 +479,12 @@ bool CTestOM::Thread_Run(int idx)
                             NcbiCout
                                 << " Seq-annots: " << annot_it.size()
                                 << " features: " << feats.size() << NcbiEndl;
-                            for ( ; annot_it; ++annot_it ) {
-                                NcbiCout << MSerial_AsnText
-                                         << *annot_it->GetCompleteObject()
-                                         << NcbiEndl;
+                            if ( 0 ) {
+                                for ( ; annot_it; ++annot_it ) {
+                                    NcbiCout << MSerial_AsnText
+                                             << *annot_it->GetCompleteObject()
+                                             << NcbiEndl;
+                                }
                             }
                             annot_it.Rewind();
                         }
@@ -628,6 +660,8 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
                  "Check GetEditHandle()");
     args.AddFlag("keep_handles",
                  "Remember bioseq handles if not resetting scope history");
+    args.AddFlag("release_all_memory",
+                 "Do not keep any objects to check memory leaks");
     return true;
 }
 
@@ -709,6 +743,7 @@ bool CTestOM::TestApp_Init(void)
     m_edit_handles = args["edit_handles"];
     m_keep_handles = args["keep_handles"];
     m_idx = args["thread_index"].AsInteger();
+    m_release_all_memory = args["release_all_memory"];
 
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
@@ -748,6 +783,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/08/16 15:19:23  vasilche
+* Added option -release_all_memory for memory leaks check.
+* Propely handle withdrawn and confidential records.
+*
 * Revision 1.27  2006/07/10 20:26:40  vasilche
 * Removed conditional compilation.
 *

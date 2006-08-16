@@ -51,6 +51,9 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
+#include <serial/serial.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasnb.hpp>
 
 #include <algorithm>
 #include <map>
@@ -92,7 +95,7 @@ protected:
 
     typedef vector<CConstRef<CSeq_feat> >   TFeats;
     typedef pair<CSeq_id_Handle, bool>      TMapKey;
-    typedef map<TMapKey, TFeats>            TFeatMap;
+    typedef map<TMapKey, string>            TFeatMap;
     typedef map<TMapKey, int>               TIntMap;
     typedef map<TMapKey, CBlobIdKey>        TBlobIdMap;
     typedef vector<CSeq_id_Handle>          TIds;
@@ -119,6 +122,8 @@ protected:
     bool m_no_reset;
     bool m_keep_handles;
     bool m_verbose;
+    bool m_release_all_memory;
+
     CRef<CPrefetchManager> m_prefetch_manager;
 
     bool failed;
@@ -131,6 +136,7 @@ protected:
 void CTestOM::SetValue(TBlobIdMap& vm, const TMapKey& key,
                        const CBlobIdKey& value)
 {
+    if ( m_release_all_memory ) return;
     const CBlobIdKey* old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
@@ -153,6 +159,7 @@ void CTestOM::SetValue(TBlobIdMap& vm, const TMapKey& key,
 
 void CTestOM::SetValue(TIntMap& vm, const TMapKey& key, int value)
 {
+    if ( m_release_all_memory ) return;
     int old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
@@ -171,24 +178,41 @@ void CTestOM::SetValue(TIntMap& vm, const TMapKey& key, int value)
 
 void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 {
-    const TFeats* old_value;
+    if ( m_release_all_memory ) return;
+    CNcbiOstrstream str;
+    {{
+        CObjectOStreamAsnBinary out(str);
+        ITERATE ( TFeats, it, value )
+            out << **it;
+    }}
+    string new_str = CNcbiOstrstreamToString(str);
+    const string* old_str;
     {{
         CFastMutexGuard guard(s_GlobalLock);
         TFeatMap::iterator it = vm.lower_bound(key);
         if ( it == vm.end() || it->first != key ) {
-            it = vm.insert(it, TFeatMap::value_type(key, value));
+            it = vm.insert(it, TFeatMap::value_type(key, new_str));
         }
-        old_value = &it->second;
+        old_str = &it->second;
     }}
-    if ( old_value->size() != value.size() ) {
+    if ( *old_str != new_str ) {
+        TFeats old_value;
+        {{
+            CNcbiIstrstream str(old_str->data(), old_str->size());
+            CObjectIStreamAsnBinary in(str);
+            while ( in.HaveMoreData() ) {
+                CRef<CSeq_feat> feat(new CSeq_feat);
+                in >> *feat;
+                old_value.push_back(feat);
+            }
+        }}
         CNcbiOstrstream s;
         string name;
         if ( &vm == &m_Feat0Map ) name = "feat0";
         if ( &vm == &m_Feat1Map ) name = "feat1";
-        s << "Inconsistent "<<name<<" on "<<
-            key.first.AsString()<<" "<<key.second<<
-            " was "<<old_value->size()<<" now "<<value.size() << NcbiEndl;
-        ITERATE ( TFeats, it, *old_value ) {
+        s << "Inconsistent "<<name<<" on "<<key.first.AsString()<<
+            " was "<<old_value.size()<<" now "<<value.size() << NcbiEndl;
+        ITERATE ( TFeats, it, old_value ) {
             s << " old: " << MSerial_AsnText << **it;
         }
         ITERATE ( TFeats, it, value ) {
@@ -196,7 +220,7 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
         }
         ERR_POST(string(CNcbiOstrstreamToString(s)));
     }
-    _ASSERT(old_value->size() == value.size());
+    _ASSERT(*old_str == new_str);
 }
 
 
@@ -276,7 +300,14 @@ bool CTestOM::Thread_Run(int idx)
 
                 if ( !handle ) {
                     if ( preload_ids ) {
-                        _ASSERT(ids1.empty());
+                        int mask =
+                            handle.fState_confidential|
+                            handle.fState_withdrawn;
+                        bool restricted =
+                            (handle.GetState() & mask) != 0;
+                        if ( !restricted ) {
+                            _ASSERT(ids1.empty());
+                        }
                     }
                     LOG_POST("T" << idx << ": id = " << sih.AsString() <<
                              ": INVALID HANDLE");
@@ -484,6 +515,8 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
                  "Remember bioseq handles if not resetting scope history");
     args.AddFlag("verbose", "Print each Seq-id before processing");
     args.AddFlag("prefetch", "Use prefetching");
+    args.AddFlag("release_all_memory",
+                 "Do not keep any objects to check memory leaks");
     return true;
 }
 
@@ -555,6 +588,7 @@ bool CTestOM::TestApp_Init(void)
     m_no_reset = args["no_reset"];
     m_keep_handles = args["keep_handles"];
     m_verbose = args["verbose"];
+    m_release_all_memory = args["release_all_memory"];
 
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
@@ -607,6 +641,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2006/08/16 15:19:23  vasilche
+* Added option -release_all_memory for memory leaks check.
+* Propely handle withdrawn and confidential records.
+*
 * Revision 1.20  2006/07/10 20:26:40  vasilche
 * Removed conditional compilation.
 *
