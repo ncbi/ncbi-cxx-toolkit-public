@@ -340,8 +340,13 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     }
 #endif
 
-    if (!ODBC_xCheckSIE(SQLExecute(stmt.GetHandle()),
-                        stmt)) {
+    switch(SQLExecute(stmt.GetHandle())) {
+    case SQL_NEED_DATA:
+        return true;
+    case SQL_SUCCESS_WITH_INFO:
+    case SQL_ERROR:
+        stmt.ReportErrors();
+    default:
         return false;
     }
 }
@@ -656,6 +661,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/08/16 15:38:47  ssikorsk
+ * Fixed a bug introduced during refactoring.
+ *
  * Revision 1.36  2006/08/10 15:24:22  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *
