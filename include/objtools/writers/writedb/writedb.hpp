@@ -46,6 +46,7 @@
 
 #include <objmgr/bioseq_handle.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
 /// Include definitions from the objects namespace.
@@ -61,7 +62,8 @@ USING_SCOPE(objects);
 /// calling methods on objects which represent the various database
 /// files, such as the index, header, sequence, and alias files.
 
-class NCBI_XOBJREAD_EXPORT CWriteDB : public CObject {
+class NCBI_XOBJWRITE_EXPORT CWriteDB : public CObject
+{
 public:
     /// Sequence types.
     enum ESeqType {
