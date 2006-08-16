@@ -1201,6 +1201,14 @@ CId2Reader::x_ProcessError(CReaderRequestResult& /*result*/,
     case CID2_Error::eSeverity_restricted_data:
         severity = "restricted data: ";
         error_flags |= fError_no_data;
+        if ( error.IsSetMessage() &&
+             (NStr::FindNoCase(error.GetMessage(), "withdrawn") != NPOS ||
+              NStr::FindNoCase(error.GetMessage(), "removed") != NPOS) ) {
+            error_flags |= fError_withdrawn;
+        }
+        else {
+            error_flags |= fError_restricted;
+        }
         break;
     case CID2_Error::eSeverity_unsupported_command:
         m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
@@ -1292,8 +1300,14 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
 
     if ( errors & fError_no_data ) {
         // no Seq-ids
-        ids->SetState(CBioseq_Handle::fState_other_error|
-                      CBioseq_Handle::fState_no_data);
+        int state = CBioseq_Handle::fState_no_data;
+        if ( errors & fError_restricted ) {
+            state |= CBioseq_Handle::fState_confidential;
+        }
+        if ( errors & fError_withdrawn ) {
+            state |= CBioseq_Handle::fState_withdrawn;
+        }
+        ids->SetState(state);
         SetAndSaveStringSeq_ids(result, seq_id, ids);
         return;
     }
@@ -1342,8 +1356,14 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
 
     if ( errors & fError_no_data ) {
         // no Seq-ids
-        ids->SetState(CBioseq_Handle::fState_other_error|
-                      CBioseq_Handle::fState_no_data);
+        int state = CBioseq_Handle::fState_no_data;
+        if ( errors & fError_restricted ) {
+            state |= CBioseq_Handle::fState_confidential;
+        }
+        if ( errors & fError_withdrawn ) {
+            state |= CBioseq_Handle::fState_withdrawn;
+        }
+        ids->SetState(state);
         SetAndSaveSeq_idSeq_ids(result, seq_id, ids);
         return;
     }
@@ -1386,8 +1406,15 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     const CSeq_id& seq_id = reply.GetSeq_id();
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
     if ( errors & fError_no_data ) {
+        int state = CBioseq_Handle::fState_no_data;
+        if ( errors & fError_restricted ) {
+            state |= CBioseq_Handle::fState_confidential;
+        }
+        if ( errors & fError_withdrawn ) {
+            state |= CBioseq_Handle::fState_withdrawn;
+        }
         CLoadLockBlob_ids ids(result, idh);
-        ids->SetState(CBioseq_Handle::fState_no_data);
+        ids->SetState(state);
         SetAndSaveSeq_idBlob_ids(result, idh, ids);
         return;
     }
@@ -1477,6 +1504,14 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     }
 
     if ( errors & fError_no_data ) {
+        int state = CBioseq_Handle::fState_no_data;
+        if ( errors & fError_restricted ) {
+            state |= CBioseq_Handle::fState_confidential;
+        }
+        if ( errors & fError_withdrawn ) {
+            state |= CBioseq_Handle::fState_withdrawn;
+        }
+        blob.SetBlobState(state);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
         _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
         return;

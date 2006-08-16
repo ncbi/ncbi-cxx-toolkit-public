@@ -146,7 +146,9 @@ protected:
         fError_no_data          = 1 << 1,
         fError_bad_command      = 1 << 2,
         fError_bad_connection   = 1 << 3,
-        fError_warning_dead     = 1 << 4
+        fError_warning_dead     = 1 << 4,
+        fError_restricted       = 1 << 5,
+        fError_withdrawn        = 1 << 6
     };
     typedef int TErrorFlags;
     TErrorFlags x_ProcessError(CReaderRequestResult& result,
