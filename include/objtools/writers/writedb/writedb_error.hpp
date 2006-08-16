@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 /// This exception class is thrown for WriteDB related errors such as
 /// configuration, parameter, and file errors.
 
-class CWriteDBException : public CException {
+class NCBI_XOBJWRITE_EXPORT CWriteDBException : public CException {
 public:
     /// Errors are classified into one of two types.
     enum EErrCode {
