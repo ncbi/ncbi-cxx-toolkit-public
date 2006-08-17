@@ -56,6 +56,11 @@ void CThreadNonStop::RequestStop()
     m_StopSignal.Post();
 }
 
+void CThreadNonStop::RequestDoJob()
+{
+    m_StopSignal.Post();
+}
+
 void* CThreadNonStop::Main(void)
 {
     while (1) {
@@ -81,6 +86,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/08/17 21:09:17  kuznets
+ * + RequestDoJob()
+ *
  * Revision 1.4  2005/04/06 14:19:26  kuznets
  * +RequestDoJob()
  *
