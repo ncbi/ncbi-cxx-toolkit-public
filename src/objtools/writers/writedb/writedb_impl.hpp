@@ -40,6 +40,7 @@
 
 #include <objects/seq/seq__.hpp>
 #include <objects/blastdb/blastdb__.hpp>
+#include <objtools/writers/writedb/writedb.hpp>
 #include "writedb_volume.hpp"
 
 #include <objmgr/bioseq_handle.hpp>
@@ -57,7 +58,7 @@ USING_SCOPE(objects);
 class CWriteDB_Impl {
 public:
     /// Whether and what kind of indices to build.
-    typedef EWriteDBIndexType EIndexType;
+    typedef CWriteDB::EIndexType EIndexType;
     
     // Setup and control
     

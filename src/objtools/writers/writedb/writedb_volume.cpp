@@ -78,8 +78,8 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                           max_file_size,
                                           max_letters));
     
-    if (m_Indices != eNoIndex) {
-        bool sparse = (m_Indices == eSparseIndex);
+    if (m_Indices != CWriteDB::eNoIndex) {
+        bool sparse = (m_Indices == CWriteDB::eSparseIndex);
         
         if (m_Protein) {
             m_PigIsam.Reset(new CWriteDB_Isam(ePig,
@@ -139,7 +139,7 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
         overfull = true;
     }
     
-    if (m_Indices != eNoIndex) {
+    if (m_Indices != CWriteDB::eNoIndex) {
         int num = idlist.size();
         
         if (! (m_AccIsam->CanFit(num) && m_GiIsam->CanFit(num))) {
@@ -173,7 +173,7 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
         m_Idx->AddSequence(length, off_hdr, off_seq, off_amb);
     }
     
-    if (m_Indices != eNoIndex) {
+    if (m_Indices != CWriteDB::eNoIndex) {
         m_AccIsam->AddIds(m_OID, idlist);
         m_GiIsam->AddIds(m_OID, idlist);
         
@@ -206,7 +206,7 @@ void CWriteDB_Volume::Close()
         m_Hdr->Close();
         m_Seq->Close();
         
-        if (m_Indices != eNoIndex) {
+        if (m_Indices != CWriteDB::eNoIndex) {
             if (m_Protein) {
                 m_PigIsam->Close();
             }
@@ -226,7 +226,7 @@ void CWriteDB_Volume::RenameSingle()
     m_Hdr->RenameSingle();
     m_Seq->RenameSingle();
     
-    if (m_Indices != eNoIndex) {
+    if (m_Indices != CWriteDB::eNoIndex) {
         if (m_Protein) {
             m_PigIsam->RenameSingle();
         }

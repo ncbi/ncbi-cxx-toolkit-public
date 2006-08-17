@@ -38,7 +38,7 @@
 ///
 /// Implemented for: UNIX, MS-Windows
 
-#include <objtools/writers/writedb/writedb_common.hpp>
+#include <objtools/writers/writedb/writedb.hpp>
 #include <objects/seq/seq__.hpp>
 #include "writedb_files.hpp"
 #include "writedb_isam.hpp"
@@ -55,7 +55,7 @@ USING_SCOPE(objects);
 class CWriteDB_Volume : public CObject {
 public:
     /// Whether and what kind of indices to build.
-    typedef EWriteDBIndexType EIndexType;
+    typedef CWriteDB::EIndexType EIndexType;
     
     /// Type used for lists of identifiers.
     typedef vector< CRef<CSeq_id> > TIdList;

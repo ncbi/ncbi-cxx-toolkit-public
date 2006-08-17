@@ -75,7 +75,16 @@ public:
     };
     
     /// Whether and what kind of indices to build.
-    typedef EWriteDBIndexType EIndexType;
+    enum EIndexType {
+        /// Build a database without any indices.
+        eNoIndex,
+        
+        /// Use only simple accessions in the string index.
+        eSparseIndex,
+        
+        /// Use several forms of each Seq-id in the string index.
+        eFullIndex
+    };
     
     //
     // Setup
