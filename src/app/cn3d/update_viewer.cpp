@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <util/line_reader.hpp>
 
 #include <objects/cdd/Cdd.hpp>
 #include <objects/cdd/Update_align.hpp>
@@ -341,7 +342,9 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
             ERRORMSG("Unable to open file " << fastaFile.c_str());
             return;
         }
-        CRef < CSeq_entry > se = ReadFasta(ifs, fReadFasta_AssumeProt);
+        CStreamLineReader slr(ifs);
+        CFastaReader reader(slr, CFastaReader::fAssumeProt);
+        CRef < CSeq_entry > se = reader.ReadSet();
 //        string err;
 //        WriteASNToFile("Seq-entry.txt", *se, false, &err);
 
@@ -354,7 +357,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
             CBioseq_set::TSeq_set::iterator b, be = se->SetSet().SetSeq_set().end();
             for (b=se->SetSet().SetSeq_set().begin(); b!=be; ++b) {
                 if (!(*b)->IsSeq()) {
-                    WARNINGMSG("ReadFasta() returned nested Bioseq-set");
+                    WARNINGMSG("CFastaReader returned nested Bioseq-set");
                 } else {
                     const Sequence *sequence = sSet->CreateNewSequence((*b)->SetSeq());
                     if (sequence)
@@ -362,7 +365,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
                 }
             }
         } else {
-            WARNINGMSG("ReadFasta() returned unknown format or no Bioseqs");
+            WARNINGMSG("CFastaReader returned unknown format or no Bioseqs");
         }
     }
 }
@@ -1202,6 +1205,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2006/08/17 16:03:38  thiessen
+* switch from ReadFasta() to CFastaReader
+*
 * Revision 1.89  2006/07/31 19:47:06  thiessen
 * adjust for changes in ReadFasta()
 *
