@@ -64,7 +64,8 @@ class CTL_CursorResult;
 class CTLibContextRegistry;
 
 
-int NCBI_DBAPIDRIVER_CTLIB_EXPORT GetCtlibTdsVersion(void);
+CS_INT NCBI_DBAPIDRIVER_CTLIB_EXPORT GetCtlibTdsVersion(int version = 0);
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -76,8 +77,8 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public impl::CDriverContext
     friend class CDB_Connection;
 
 public:
-    CTLibContext(bool reuse_context = true,
-                 CS_INT version = GetCtlibTdsVersion());
+    CTLibContext(bool   reuse_context = true,
+                 CS_INT version       = GetCtlibTdsVersion());
     virtual ~CTLibContext(void);
 
 public:
@@ -751,6 +752,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/08/17 06:33:06  vakatov
+ * Switch default version of TDS protocol to 12.5 (from 11.0)
+ *
  * Revision 1.42  2006/08/10 15:17:54  ssikorsk
  * Added method CTL_Connection::CheckSFB;
  * Added method CTL_Cmd:: CheckSentSFB;

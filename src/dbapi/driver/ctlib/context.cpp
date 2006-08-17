@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Soussov
  *
- * File Description:  Driver for CTLib server
+ * File Description:  Driver for CTLib client library
  *
  */
 
@@ -913,10 +913,13 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 // Tunable version of TDS protocol to use
 
 #if !defined(NCBI_CTLIB_TDS_VERSION)
-#  define NCBI_CTLIB_TDS_VERSION 110
+#    define NCBI_CTLIB_TDS_VERSION 125
 #endif
 
-NCBI_PARAM_DECL(int, ctlib, TDS_VERSION);
+#define NCBI_CTLIB_TDS_FALLBACK_VERSION 110
+
+
+NCBI_PARAM_DECL  (int, ctlib, TDS_VERSION);
 NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION,
                   NCBI_CTLIB_TDS_VERSION,  // default TDS version
                   eParam_NoThread,
@@ -924,30 +927,36 @@ NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION,
 typedef NCBI_PARAM_TYPE(ctlib, TDS_VERSION) TCtlibTdsVersion;
 
 
-int GetCtlibTdsVersion(void)
+CS_INT GetCtlibTdsVersion(int version)
 {
-    int version = CS_VERSION_110;
+    if (version == 0) {
+        version = TCtlibTdsVersion::GetDefault();
+    }
 
-    switch (TCtlibTdsVersion::GetDefault()) {
+    switch ( version ) {
     case 100:
-        version = CS_VERSION_100;
-        break;
+        return CS_VERSION_100;
     case 110:
-        version = CS_VERSION_110;
-        break;
+        return CS_VERSION_110;
 #ifdef CS_VERSION_120
     case 120:
-        version = CS_VERSION_120;
-        break;
+        return CS_VERSION_120;
 #endif
 #ifdef CS_VERSION_125
     case 125:
-        version = CS_VERSION_125;
-        break;
+        return CS_VERSION_125;
 #endif
-    };
+    }
 
-    return version;
+    int fallback_version = (version == NCBI_CTLIB_TDS_VERSION) ?
+        NCBI_CTLIB_TDS_FALLBACK_VERSION : NCBI_CTLIB_TDS_VERSION;
+    
+    ERR_POST(Critical <<
+             "The version " << version << " of TDS protocol for "
+             "the DBAPI CTLib driver is not supported. Falling back to "
+             "the TDS protocol version " << fallback_version << ".");
+
+    return GetCtlibTdsVersion(fallback_version);
 }
 
 
@@ -958,38 +967,23 @@ int GetCtlibTdsVersion(void)
 
 I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
 {
-    bool reuse_context= true;
-    CS_INT version = CS_VERSION_110;
+    bool reuse_context = true;
+    int  tds_version   = NCBI_CTLIB_TDS_VERSION;
 
     if ( attr ) {
         map<string,string>::const_iterator citer = attr->find("reuse_context");
         if ( citer != attr->end() ) {
             reuse_context = (citer->second != "false");
         }
-        string vers;
-        citer = attr->find("version");
-        if ( citer != attr->end() ) {
-            vers = citer->second;
-        }
 
-        if ( vers.find("100") != string::npos ) {
-            version = CS_VERSION_100;
-        } else if ( vers.find("110") != string::npos ) {
-            version = CS_VERSION_110;
-#ifdef CS_VERSION_120
-        } else if ( vers.find("120") != string::npos ) {
-            version = CS_VERSION_120;
-#endif
-#ifdef CS_VERSION_125
-        } else if ( vers.find("125") != string::npos ) {
-            version = CS_VERSION_125;
-#endif
-        } else {
-            version = GetCtlibTdsVersion();
-        }
+        citer = attr->find("version");
+        if (citer != attr->end())
+            tds_version = NStr::StringToInt(citer->second);
     }
 
-    CTLibContext* cntx= new CTLibContext(reuse_context, version);
+    CTLibContext* cntx = new CTLibContext(reuse_context,
+                                          GetCtlibTdsVersion(tds_version));
+
     if ( cntx && attr ) {
         string page_size;
         map<string,string>::const_iterator citer = attr->find("packet");
@@ -1065,7 +1059,7 @@ CDbapiCtlibCFBase::CreateInstance(
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
         bool reuse_context = true;
-        CS_INT db_version = CS_VERSION_110;
+        int  tds_version   = NCBI_CTLIB_TDS_VERSION;
 
         // Optional parameters ...
         CS_INT page_size = 0;
@@ -1077,7 +1071,7 @@ CDbapiCtlibCFBase::CreateInstance(
             typedef TPluginManagerParamTree::TValueType   TValue;
 
             // Get parameters ...
-            TCIter cit = params->SubNodeBegin();
+            TCIter cit  = params->SubNodeBegin();
             TCIter cend = params->SubNodeEnd();
 
             for (; cit != cend; ++cit) {
@@ -1086,22 +1080,7 @@ CDbapiCtlibCFBase::CreateInstance(
                 if ( v.id == "reuse_context" ) {
                     reuse_context = (v.value != "false");
                 } else if ( v.id == "version" ) {
-                    int value = NStr::StringToInt( v.value );
-                    if ( value == 100 ) {
-                        db_version = CS_VERSION_100;
-                    } else if ( value == 110 ) {
-                        db_version = CS_VERSION_110;
-#ifdef CS_VERSION_120
-                    } else if ( value == 120 ) {
-                        db_version = CS_VERSION_120;
-#endif
-#ifdef CS_VERSION_125
-                    } else if ( value == 125 ) {
-                        db_version = CS_VERSION_125;
-#endif
-                    } else {
-                        db_version = GetCtlibTdsVersion();
-                    }
+                    tds_version = NStr::StringToInt( v.value );
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
                 } else if ( v.id == "prog_name" ) {
@@ -1110,12 +1089,11 @@ CDbapiCtlibCFBase::CreateInstance(
                     host_name = v.value;
                 }
             }
-        } else {
-            db_version = GetCtlibTdsVersion();
         }
 
         // Create a driver ...
-        drv = new CTLibContext( reuse_context, db_version );
+        drv = new CTLibContext(reuse_context,
+                               GetCtlibTdsVersion(tds_version));
 
         // Set parameters ...
         if ( page_size ) {
@@ -1205,6 +1183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2006/08/17 06:33:06  vakatov
+ * Switch default version of TDS protocol to 12.5 (from 11.0)
+ *
  * Revision 1.88  2006/08/02 18:49:43  ssikorsk
  * winsock.h --> winsock2.h
  *
