@@ -473,6 +473,25 @@ bool CODBC_LangCmd::xCheck4MoreResults()
     }
 }
 
+
+void CODBC_LangCmd::SetCursorName(const string& name) const
+{
+//     CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CONCURRENCY, (void*)SQL_CONCUR_VALUES, 0),
+//              "SQLSetStmtAttr failed", 420017);
+//     CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CURSOR_TYPE, (void*)SQL_CURSOR_STATIC, 0),
+//              "SQLSetStmtAttr failed", 420018);
+    CheckSIE(SQLSetCursorName(GetHandle(), (SQLCHAR*)name.c_str(), name.size()),
+             "SQLSetCursorName failed", 420016);
+}
+
+
+void
+CODBC_LangCmd::CloseCursor(void) const
+{
+    CheckSIE(SQLCloseCursor(GetHandle()),
+             "SQLCloseCursor failed", 420017);
+}
+
 END_NCBI_SCOPE
 
 
@@ -480,6 +499,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/08/17 14:40:23  ssikorsk
+ * Implemented SetCursorName and CloseCursor.
+ *
  * Revision 1.30  2006/08/10 15:24:22  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *
