@@ -45,6 +45,8 @@ class CChecksumTestApp : public CNcbiApplication
 public:
     void Init(void);
     int  Run (void);
+    void RunChecksum(CChecksum::EMethod type);
+    void RunChecksum(CChecksum::EMethod type, CNcbiIstream& is);
 };
 
 void CChecksumTestApp::Init(void)
@@ -55,6 +57,14 @@ void CChecksumTestApp::Init(void)
 
     arg_desc->AddFlag("selftest",
                       "Just verify behavior on internal test data");
+    arg_desc->AddFlag("CRC32",
+                      "Run CRC32 test only on files.");
+    arg_desc->AddFlag("CRC32ZIP",
+                      "Run CRC32ZIP test only on files.");
+    arg_desc->AddFlag("MD5",
+                      "Run MD5 test only on files.");
+    arg_desc->AddFlag("Adler32",
+                      "Run Adler32 test only on files.");
     arg_desc->AddExtra(0, kMax_UInt, "files to process (stdin if none given)",
                        CArgDescriptions::eInputFile,
                        CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
@@ -112,6 +122,106 @@ static bool s_VerifySum(const string& s, const string& md5hex)
     return ok;
 }
 
+bool s_Adler32Test()
+{
+    // 1000, 6000, ..., 96000 arrays filled with value = (byte) index.
+    static const int kNumTests = 20;
+    static const Uint4 expected[kNumTests] = {
+        486795068U,
+        1525910894U,
+        3543032800U,
+        2483946130U,
+        4150712693U,
+        3878123687U,
+        3650897945U,
+        1682829244U,
+        1842395054U,
+        460416992U,
+        3287492690U,
+        479453429U,
+        3960773095U,
+        2008242969U,
+        4130540683U,
+        1021367854U,
+        4065361952U,
+        2081116754U,
+        4033606837U,
+        1162071911U
+    };
+    
+    bool ok = true;
+    for ( int l = 0; l < kNumTests; l++ ) {
+        int length = l * 5000 + 1000;
+        vector<char> bs(length);
+        for (int j = 0; j < length; j++ ) {
+            bs[j] = j;
+        }
+        for ( int c = length; c > 0; c >>= 1 ) {
+            CChecksum sum(CChecksum::eAdler32);
+            for ( int p = 0; p < length; p += c ) {
+                sum.AddChars(&bs[p], min(c, length-p));
+            }
+            if ( sum.GetChecksum() != expected[l] ) {
+                cerr << "Failed Adler32 test "<<l
+                     << " length: "<<length
+                     << " chunk: "<<c
+                     << hex
+                     << " expected: "<<expected[l]
+                     << " calculated: "<<sum.GetChecksum()
+                     << dec << endl;
+                ok = false;
+            }
+        }
+    }
+    if ( ok ) {
+        cerr << "Adler32 test passed" << endl;
+    }
+    else {
+        cerr << "Adler32 test failed" << endl;
+    }
+    return ok;
+}
+
+const int BUF_SIZE = 1<<13;
+const int BUF_COUNT = 1;
+
+void CChecksumTestApp::RunChecksum(CChecksum::EMethod type,
+                                   CNcbiIstream& is)
+{
+    CStopWatch timer(CStopWatch::eStart);
+    CChecksum sum(type);
+    while (!is.eof()) {
+        char buf[BUF_SIZE]; // reasonable buffer size
+        is.read(buf, sizeof(buf));
+
+        size_t count = is.gcount();
+
+        if (count) {
+            for ( int k = 0; k < BUF_COUNT; ++k )
+                sum.AddChars(buf, count);
+        }
+    }
+
+    string time = timer.AsString();
+    cout << "Processed in "<<time<<": ";
+    sum.WriteChecksumData(cout) << endl;
+}
+
+void CChecksumTestApp::RunChecksum(CChecksum::EMethod type)
+{
+    const CArgs& args = GetArgs();
+    if (args.GetNExtra()) {
+        for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
+            if (extra > 1) {
+                cout << endl;
+            }
+            cout << "File: " << args[extra].AsString() << endl;
+            CNcbiIstream& is = args[extra].AsInputFile();
+            RunChecksum(type, is);
+        }
+    }
+}
+
 int CChecksumTestApp::Run(void)
 {
     CArgs args = GetArgs();
@@ -133,34 +243,57 @@ int CChecksumTestApp::Run(void)
         ok &= s_VerifySum("1234567890123456789012345678901234567890123456789"
                           "0123456789012345678901234567890",
                           "57edf4a22be3c955ac49da2e2107b67a");
+        ok &= s_Adler32Test();
         return !ok;
     }
     else if ( args["print_tables"] ) {
         CChecksum::PrintTables(NcbiCout);
     }
-    else if (args.GetNExtra()) {
-        for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
-            if (extra > 1) {
-                cout << endl;
+    else {
+        bool run_crc32 = args["CRC32"];
+        bool run_crc32zip = args["CRC32ZIP"];
+        bool run_md5 = args["MD5"];
+        bool run_adler32 = args["Adler32"];
+        if ( run_crc32 | run_crc32zip | run_md5 | run_adler32 ) {
+            if ( run_crc32 ) {
+                RunChecksum(CChecksum::eCRC32);
             }
-            cout << "File: " << args[extra].AsString() << endl;
-            CNcbiIstream& is = args[extra].AsInputFile();
-            CChecksum crc32(CChecksum::eCRC32);
-            CChecksum crc32zip(CChecksum::eCRC32ZIP);
-            CChecksum md5(CChecksum::eMD5);
-            s_ComputeSums(is, crc32, crc32zip, md5);
-            crc32.WriteChecksumData(cout) << endl;
-            crc32zip.WriteChecksumData(cout) << endl;
-            md5.  WriteChecksumData(cout) << endl;
+            if ( run_crc32zip ) {
+                RunChecksum(CChecksum::eCRC32ZIP);
+            }
+            if ( run_md5 ) {
+                RunChecksum(CChecksum::eMD5);
+            }
+            if ( run_adler32 ) {
+                RunChecksum(CChecksum::eAdler32);
+            }
         }
-    } else {
-        CChecksum crc32(CChecksum::eCRC32);
-        CChecksum crc32zip(CChecksum::eCRC32ZIP);
-        CChecksum md5(CChecksum::eMD5);
-        s_ComputeSums(cin, crc32, crc32zip, md5);
-        crc32.WriteChecksumData(cout) << endl;
-        crc32zip.WriteChecksumData(cout) << endl;
-        md5.  WriteChecksumData(cout) << endl;
+        else {
+            if (args.GetNExtra()) {
+                for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
+                    if (extra > 1) {
+                        cout << endl;
+                    }
+                    cout << "File: " << args[extra].AsString() << endl;
+                    CNcbiIstream& is = args[extra].AsInputFile();
+                    CChecksum crc32(CChecksum::eCRC32);
+                    CChecksum crc32zip(CChecksum::eCRC32ZIP);
+                    CChecksum md5(CChecksum::eMD5);
+                    s_ComputeSums(is, crc32, crc32zip, md5);
+                    crc32.WriteChecksumData(cout) << endl;
+                    crc32zip.WriteChecksumData(cout) << endl;
+                    md5.  WriteChecksumData(cout) << endl;
+                }
+            } else {
+                CChecksum crc32(CChecksum::eCRC32);
+                CChecksum crc32zip(CChecksum::eCRC32ZIP);
+                CChecksum md5(CChecksum::eMD5);
+                s_ComputeSums(cin, crc32, crc32zip, md5);
+                crc32.WriteChecksumData(cout) << endl;
+                crc32zip.WriteChecksumData(cout) << endl;
+                md5.  WriteChecksumData(cout) << endl;
+            }
+        }
     }
     return 0;
 }
@@ -174,6 +307,10 @@ int main(int argc, char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/08/17 20:36:42  vasilche
+* Added timing tests for individual checksum methods.
+* Added selftest for Adler32 checksum.
+*
 * Revision 1.3  2005/11/21 14:34:01  vasilche
 * Check ZIP style CRC32.
 * Added option for printing CRC32 table code.
