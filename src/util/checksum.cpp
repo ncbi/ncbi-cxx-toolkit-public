@@ -57,6 +57,7 @@ static void s_InitTableCRC32ZIP();
 #endif
 static Uint4 s_UpdateCRC32(Uint4 checksum, const char* str, size_t length);
 static Uint4 s_UpdateCRC32ZIP(Uint4 checksum, const char* str, size_t length);
+static Uint4 s_UpdateAdler32(Uint4 sum, const char* data, size_t len);
 static void s_PrintTable(CNcbiOstream& out, const char* name,
                          const Uint4* table, size_t size);
 
@@ -75,6 +76,9 @@ CChecksum::CChecksum(EMethod method)
     case eMD5:
         m_Checksum.m_MD5 = new CMD5;
         break;
+    case eAdler32:
+        m_Checksum.m_CRC32 = 1;
+        break;
     default:
         break;
     }
@@ -88,6 +92,7 @@ CChecksum::CChecksum(const CChecksum& cks)
     switch ( GetMethod() ) {
     case eCRC32:
     case eCRC32ZIP:
+    case eAdler32:
         m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
         break;
     case eMD5:
@@ -129,6 +134,7 @@ CChecksum& CChecksum::operator= (const CChecksum& cks)
     switch ( GetMethod() ) {
     case eCRC32:
     case eCRC32ZIP:
+    case eAdler32:
         m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
         break;
     case eMD5:        
@@ -156,6 +162,9 @@ void CChecksum::Reset()
         delete m_Checksum.m_MD5;
         m_Checksum.m_MD5 = new CMD5();
         break;
+    case eAdler32:
+        m_Checksum.m_CRC32 = 1;
+        break;
     default:
         break;
     }
@@ -169,6 +178,8 @@ Uint4 CChecksum::GetChecksum() const
         return m_Checksum.m_CRC32;
     case eCRC32ZIP:
         return ~m_Checksum.m_CRC32;
+    case eAdler32:
+        return m_Checksum.m_CRC32;
     default:
         _ASSERT(0);
         return 0;
@@ -220,6 +231,9 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
                    << GetChecksum();
     case eMD5:
         return out << "MD5: " << m_Checksum.m_MD5->GetHexSum();
+    case eAdler32:
+        return out << "Adler32: " << hex << setprecision(8)
+                   << GetChecksum();
     default:
         return out << "none";
     }
@@ -234,6 +248,9 @@ void CChecksum::x_Update(const char* str, size_t count)
         break;
     case eCRC32ZIP:
         m_Checksum.m_CRC32 = s_UpdateCRC32ZIP(m_Checksum.m_CRC32, str, count);
+        break;
+    case eAdler32:
+        m_Checksum.m_CRC32 = s_UpdateAdler32(m_Checksum.m_CRC32, str, count);
         break;
     case eMD5:
         m_Checksum.m_MD5->Update(str, count);
@@ -581,6 +598,32 @@ Uint4 s_UpdateCRC32ZIP(Uint4 checksum, const char *str, size_t count)
 }
 
 
+Uint4 s_UpdateAdler32(Uint4 sum, const char* data, size_t len)
+{
+    const Uint4 MOD_ADLER = 65521;
+
+    Uint4 a = sum & 0xffff, b = sum >> 16;
+    
+    while (len) {
+        size_t tlen = len > 5550u ? 5550u : len;
+        len -= tlen;
+        do {
+            a += Uint1(*data++);
+            b += a;
+        } while (--tlen);
+        a = (a & 0xffff) + (a >> 16) * (65536-MOD_ADLER);
+        b = (b & 0xffff) + (b >> 16) * (65536-MOD_ADLER);
+    }
+    // It can be shown that a <= 0x1013a here, so a single subtract will do.
+    if (a >= MOD_ADLER)
+        a -= MOD_ADLER;
+    // It can be shown that b can reach 0xffef1 here.
+    b = (b & 0xffff) + (b >> 16) * (65536-MOD_ADLER);
+    if (b >= MOD_ADLER)
+        b -= MOD_ADLER;
+    return (b << 16) | a;
+}
+
 void CChecksum::PrintTables(CNcbiOstream& out)
 {
     InitTables();
@@ -595,6 +638,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/08/17 20:35:43  vasilche
+ * Added implementation of faster Adler32 checksum.
+ *
  * Revision 1.14  2005/11/23 16:27:48  vasilche
  * Commented algorithm used for CRC32 table calculation.
  * Removed unnecessary check in the cycle.

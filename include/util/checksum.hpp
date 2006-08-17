@@ -60,6 +60,8 @@ public:
         eCRC32,            // 32-bit Cyclic Redundancy Check
         eMD5,              // Message Digest version 5
         eCRC32ZIP,         // Exact zip CRC32, slightly differs from eCRC32
+        eAdler32,          // A bit faster than CRC32ZIP, not recommended
+                           // for small data sizes.
         eDefault = eCRC32
     };
     enum {
@@ -93,7 +95,7 @@ public:
 
     CNcbiOstream& WriteChecksum(CNcbiOstream& out) const;
 
-    /// Only valid in CRC32 mode!
+    /// Only valid in CRC32 and Adler32 modes!
     Uint4 GetChecksum() const;
 
     /// Only valid in MD5 mode!
@@ -149,6 +151,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/08/17 20:35:42  vasilche
+* Added implementation of faster Adler32 checksum.
+*
 * Revision 1.10  2005/11/21 14:30:22  vasilche
 * Replaced inclusion of util/md5.hpp with forward declaration of CMD5.
 * Implemented ZIP style CRC32.
