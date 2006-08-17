@@ -30,6 +30,8 @@
  *
  */
 
+%ignore ncbi::CThreadNonStop::RequestDoJob;
+
 %ignore ncbi::objects::CPrefetchToken::GetPriority;
 %ignore ncbi::objects::CPrefetchToken::SetPriority;
 %ignore ncbi::objects::CPrefetchManager::GetThreadCount;
@@ -80,6 +82,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/08/17 20:22:22  jcherry
+ * %ignore ncbi::CThreadNonStop::RequestDoJob
+ *
  * Revision 1.17  2006/08/01 13:47:13  jcherry
  * Removed %ignore's of some CAlnMap methods, which have been removed
  * from the class declaration
