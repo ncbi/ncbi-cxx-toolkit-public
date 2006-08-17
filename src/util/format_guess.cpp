@@ -619,7 +619,7 @@ bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
     return true;
 }
 
-/*
+
 bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
 {
     // Alignment files come in all different shapes and broken formats,
@@ -651,7 +651,7 @@ bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
     }
     return false;
 }
-*/        
+        
 
 bool x_IsInputXml( const char* byte_buf, size_t byte_count )
 {
@@ -769,9 +769,9 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     if ( x_IsInputXml( (const char*)buf, count ) ) {
         return eXml;
     }
-//    if ( x_IsInputAlignment( (const char*)buf, count ) ) {
-//        return eAlignment;
-//    }
+    if ( x_IsInputAlignment( (const char*)buf, count ) ) {
+        return eAlignment;
+    }
     if ( x_IsInputBinaryAsn( (const char*)buf, count ) ) {
         return eBinaryASN;
     }
@@ -861,6 +861,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/08/17 13:20:56  ludwigf
+ * ADDED: Simple test that will identify *some* alignment files.
+ *
  * Revision 1.27  2006/06/22 17:58:28  dicuccio
  * Ignore leading comment lines in GTF/GFF files
  *

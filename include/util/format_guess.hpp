@@ -57,7 +57,8 @@ public:
         ePhrapAce,
         eGtf,
         eAgp,
-        eNewick
+        eNewick,
+        eAlignment
     };
 
     enum ESequenceType {
@@ -81,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/08/17 13:19:57  ludwigf
+ * ADDED: Simple test that will identify *some* alignment files.
+ *
  * Revision 1.5  2006/06/15 17:45:40  dicuccio
  * Added recognition of Glimmer3 predictions
  *
