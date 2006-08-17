@@ -108,6 +108,14 @@ static bool IsSameTypeInfo( const CSerialObject& obj1,
 #undef NCBI_THROW
 #define NCBI_THROW(foo, bar, baz)
 
+// Avoid error:
+//    ISO C++ forbids casting to an array type
+//    `ncbi::utf8::SUnicodeTranslation (* const*[256])[256]'
+%ignore *::UnicodeToAscii;
+%ignore *::UTF8ToAscii;
+%ignore *::UTF8ToAsciiString;
+
+
 %%
 
 corelib/ddumpable.hpp
@@ -151,6 +159,9 @@ corelib/rwstream.hpp
 corelib/syslog.hpp
 corelib/version.hpp
 
+util/align_range.hpp
+util/align_range_coll.hpp
+util/arg_regexp.hpp
 util/compress/bzip2.hpp
 util/compress/compress.hpp
 util/compress/reader_zlib.hpp
@@ -169,20 +180,27 @@ util/checksum.hpp
 util/ddump_viewer.hpp
 util/file_obsolete.hpp
 util/format_guess.hpp
+// #include's some stuff in util/bitset that leads to problems
+//util/id_mux.hpp
 util/itree.hpp
 util/lightstr.hpp
+util/line_reader.hpp
 util/linkedset.hpp
 util/logrotate.hpp
 util/md5.hpp
 util/mutex_pool.hpp
+util/ncbi_cache.hpp
+util/ncbi_table.hpp
 util/random_gen.hpp
 util/range.hpp
 util/range_coll.hpp
 util/rangemap.hpp
+util/reader_writer.hpp
 util/regexp.hpp
 util/request_control.hpp
 util/resize_iter.hpp
 util/resource_pool.hpp
+util/rwstream.hpp
 util/sgml_entity.hpp
 util/smalldns.hpp
 util/static_map.hpp
@@ -190,8 +208,11 @@ util/static_set.hpp
 util/strbuffer.hpp
 util/stream_utils.hpp
 util/strsearch.hpp
+util/thread_nonstop.hpp
 util/thread_pool.hpp
 util/transmissionrw.hpp
+util/unicode.hpp
+
 // util/unicode.hpp and util/utf8.hpp both define ncbi::utf8::eSkip
 //util/unicode.hpp
 util/utf8.hpp
@@ -363,6 +384,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/08/17 20:22:47  jcherry
+ * Added some headers from util/
+ *
  * Revision 1.18  2006/07/14 14:14:42  jcherry
  * Work-around for strange problem involving NCBI_EXCEPTION_VAR_EX
  *
