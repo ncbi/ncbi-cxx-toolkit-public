@@ -60,6 +60,9 @@
 #include <sqlext.h>
 #include <sqltypes.h>
 
+#if !defined(FTDS_IN_USE)
+#  define HAS_DEFERRED_PREPARE 1
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -381,6 +384,10 @@ protected:
     virtual int  RowCount(void) const;
     virtual void DumpResults(void);
 
+protected:
+    void SetCursorName(const string& name) const;
+    void CloseCursor(void) const;
+
 private:
     bool x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* indicator);
     bool xCheck4MoreResults(void);
@@ -465,7 +472,6 @@ private:
     CDB_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
 
     CODBC_LangCmd           m_CursCmd;
-    auto_ptr<CODBC_LangCmd> m_LCmd;
 
     unsigned int            m_FetchSize;
     auto_ptr<impl::CResult> m_Res;
@@ -723,6 +729,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/08/17 14:31:08  ssikorsk
+ * Added methods SetCursorName and CloseCursor to CODBC_LangCmd in order
+ * to use implicit cursors with ODBC API;
+ * Removed m_LCmd (of type CODBC_LangCmd) because cursors are going to be
+ * created implicitly;
+ *
  * Revision 1.41  2006/08/10 15:23:49  ssikorsk
  * Added method CODBCContext::CheckSIE;
  * Added methods CheckSIE and CheckSIENd to CStatementBase;
