@@ -1058,22 +1058,6 @@ bool CODBC_CursorResult::Fetch()
                 }
             }
         }
-
-        // send the another "fetch cursor_name" command
-        m_Cmd->Send();
-        while (m_Cmd->HasMoreResults()) {
-            m_Res = m_Cmd->Result();
-            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
-                m_EOR = false;
-                return m_Res->Fetch();
-            }
-            if ( m_Res ) {
-                while (m_Res->Fetch())
-                    ;
-                delete m_Res;
-                m_Res = 0;
-            }
-        }
     } catch (const CDB_Exception& e) {
         string err_message = "Failed to fetch the results" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422011 );
@@ -1143,6 +1127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/08/17 14:39:34  ssikorsk
+ * Use implicit cursors with the ODBC API;
+ *
  * Revision 1.31  2006/08/10 15:24:22  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *

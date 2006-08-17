@@ -47,7 +47,7 @@ CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection* conn,
                                  unsigned int nof_params) :
     CStatementBase(*conn),
     impl::CCursorCmd(cursor_name, query, nof_params),
-    m_CursCmd(conn, "declare " + cursor_name + " cursor for " + query, nof_params)
+    m_CursCmd(conn, query, nof_params)
 {
 }
 
@@ -68,32 +68,18 @@ CDB_Result* CODBC_CursorCmd::Open()
 
     // declare the cursor
     try {
+        m_CursCmd.SetCursorName(m_Name);
         m_CursCmd.Send();
-        m_CursCmd.DumpResults();
     } catch (const CDB_Exception& e) {
         string err_message = "failed to declare cursor" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422001 );
     }
     m_IsDeclared = true;
 
-    // open the cursor
-    // buff = "open " + m_Name;
-
-    try {
-        auto_ptr<impl::CBaseCmd> stmt(GetConnection().xLangCmd("open " + m_Name));
-
-        stmt->Send();
-        stmt->DumpResults();
-    } catch (const CDB_Exception& e) {
-        string err_message = "failed to open cursor" + GetDiagnosticInfo();
-        DATABASE_DRIVER_ERROR_EX( e, err_message, 422002 );
-    }
     m_IsOpen = true;
 
-    //buff = "fetch " + m_Name;
+    m_Res.reset(new CODBC_CursorResult(&m_CursCmd));
 
-    m_LCmd.reset(GetConnection().xLangCmd("fetch " + m_Name));
-    m_Res.reset(new CODBC_CursorResult(m_LCmd.get()));
     return Create_Result(*m_Res);
 }
 
@@ -104,8 +90,6 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
         return false;
 
     try {
-        m_LCmd->Cancel();
-
         string buff = upd_query + " where current of " + m_Name;
 
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
@@ -121,11 +105,11 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
 
 CDB_ITDescriptor* CODBC_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!m_IsOpen || (m_Res.get() == 0) || (m_LCmd.get() == 0)) {
+    if(!m_IsOpen || (m_Res.get() == 0)) {
         return 0;
     }
-    string cond= "current of " + m_Name;
-    return m_LCmd->m_Res->GetImageOrTextDescriptor(item_num, cond);
+    string cond = "current of " + m_Name;
+    return m_CursCmd.m_Res->GetImageOrTextDescriptor(item_num, cond);
 }
 
 bool CODBC_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
@@ -134,8 +118,6 @@ bool CODBC_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
     CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
     if(desc == 0) return false;
     auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
-
-    m_LCmd->Cancel();
 
     return (data.GetType() == eDB_Text)?
         GetConnection().SendData(*desc, (CDB_Text&)data, log_it) :
@@ -149,9 +131,6 @@ CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size
     if(desc == 0) return 0;
     auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
 
-    // Next line will cause dbapi_unit_test to fail ...
-    m_LCmd->Cancel();
-
     return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it);
 }
 
@@ -161,8 +140,6 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
         return false;
 
     try {
-        m_LCmd->Cancel();
-
         string buff = "delete " + table_name + " where current of " + m_Name;
 
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
@@ -189,35 +166,13 @@ bool CODBC_CursorCmd::Close()
         return false;
 
     m_Res.reset();
-    m_LCmd.reset();
 
     if (m_IsOpen) {
-        string buff = "close " + m_Name;
-        try {
-            auto_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
-
-            cmd->Send();
-            cmd->DumpResults();
-        } catch (const CDB_Exception& e) {
-            string err_message = "failed to close cursor" + GetDiagnosticInfo();
-            DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
-        }
-
         m_IsOpen = false;
     }
 
     if (m_IsDeclared) {
-        string buff = "deallocate " + m_Name;
-
-        try {
-            auto_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
-
-            cmd->Send();
-            cmd->DumpResults();
-        } catch (const CDB_Exception& e) {
-            string err_message = "failed to deallocate cursor" + GetDiagnosticInfo();
-            DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
-        }
+        m_CursCmd.CloseCursor();
 
         m_IsDeclared = false;
     }
@@ -246,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/08/17 14:38:29  ssikorsk
+ * Use implicit cursors with the ODBC API;
+ *
  * Revision 1.24  2006/07/20 14:37:43  ssikorsk
  * Fixed compilation issue with MSVC v8
  *
