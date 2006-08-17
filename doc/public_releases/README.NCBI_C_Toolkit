@@ -66,9 +66,3 @@ Build:
     in the projects that depend on the NCBI C Toolkit libs, make sure that
     you really did built the NCBI C Toolkit libs for the configuration(s)
     that you are trying to build the C++ Toolkit with!
-
-
-
-
-----------------------------------
-$Id: README.NCBI_C_Toolkit,v 1.1 2006/08/17 19:02:29 vakatov Exp $
