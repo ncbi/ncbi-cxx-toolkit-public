@@ -1748,7 +1748,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
             (int) (hitParams->cutoff_score * context->localScalingFactor);
     } else {
         /* There is no cutoff score; we consider e-values instead */
-        cutoff_s = 0;
+        cutoff_s = 1;
     }
     cutoff_e = hitParams->options->expect_value;
     rows = positionBased ? queryInfo->max_length : BLASTAA_SIZE;

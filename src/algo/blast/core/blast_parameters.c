@@ -356,7 +356,7 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
          if (program_number == eBlastTypeBlastn)
             query_length *= 2;
       
-         new_cutoff = 0;
+         new_cutoff = 1;
          BLAST_Cutoffs(&new_cutoff, &cutoff_e, kbp, 
                        MIN((Uint8)subj_length, (Uint8) query_length)*((Uint8)subj_length), 
                        TRUE, gap_decay_rate);
@@ -768,7 +768,7 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
                           context <= query_info->last_context; ++context) {
          Blast_KarlinBlk* kbp;
          Int8 searchsp;
-         Int4 new_cutoff = 0;
+         Int4 new_cutoff = 1;
          double evalue = options->expect_value;
 
          kbp = kbp_array[context];
@@ -810,7 +810,7 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
          for (context = query_info->first_context;
                              context <= query_info->last_context; ++context) {
             Blast_KarlinBlk* kbp;
-            Int4 new_cutoff = 0;
+            Int4 new_cutoff = 1;
 
             kbp = kbp_array[context];
             if (!s_BlastKarlinBlkIsValid(kbp)) {/* skip invalid Karlin blocks */
@@ -936,6 +936,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2006/08/17 17:13:30  papadopo
+ * Force the minimum score of alignments to be positive; resolves rt#15190206
+ *
  * Revision 1.24  2006/07/31 17:06:10  coulouri
  * refactor access to diagonal hash, use standard nomenclature
  *
