@@ -219,7 +219,7 @@ change_database(TDS_DBC * dbc, char *database, int database_len)
 {
 	TDSSOCKET *tds = dbc->tds_socket;
 
-	/* 
+	/*
 	 * We may not be connected yet and dbc->tds_socket
 	 * may not initialized.
 	 */
@@ -616,7 +616,7 @@ SQLMoreResults(SQLHSTMT hstmt)
 			break;
 
 			/*
-			 * TODO test flags ? check error and change result ? 
+			 * TODO test flags ? check error and change result ?
 			 * see also other DONEINPROC handle (below)
 			 */
 		case TDS_DONEINPROC_RESULT:
@@ -1317,7 +1317,7 @@ SQLCancel(SQLHSTMT hstmt)
 	TDSSOCKET *tds;
 
 	/*
-	 * FIXME this function can be called from other thread, do not free 
+	 * FIXME this function can be called from other thread, do not free
 	 * errors for this function
 	 * If function is called from another thread errors are not touched
 	 */
@@ -2365,6 +2365,14 @@ odbc_populate_ird(TDS_STMT * stmt)
 		if (!tds_dstr_copyn(&drec->sql_desc_name, col->column_name, col->column_namelen))
 			return SQL_ERROR;
 
+        /* ssikorsk ... */
+		if (!tds_dstr_copyn(&drec->sql_desc_base_column_name, col->column_name, col->column_namelen))
+			return SQL_ERROR;
+
+        /* ssikorsk ... */
+		if (!tds_dstr_copyn(&drec->sql_desc_base_table_name, col->table_name, col->table_namelen))
+			return SQL_ERROR;
+
 		drec->sql_desc_unnamed = tds_dstr_isempty(&drec->sql_desc_name) ? SQL_UNNAMED : SQL_NAMED;
 		/* TODO use is_nullable_type ?? */
 		drec->sql_desc_nullable = col->column_nullable ? SQL_TRUE : SQL_FALSE;
@@ -2880,8 +2888,8 @@ _SQLFetch(TDS_STMT * stmt)
 #if 0
 				stmt->row_count = tds->rows_affected;
 #endif
-				/* 
-				 * NOTE do not set row_status to NOT_IN_ROW, 
+				/*
+				 * NOTE do not set row_status to NOT_IN_ROW,
 				 * if compute tds_process_tokens above returns TDS_NO_MORE_RESULTS
 				 */
 				stmt->row_status = PRE_NORMAL_ROW;
@@ -3508,7 +3516,7 @@ SQLPrepare(SQLHSTMT hstmt, SQLCHAR FAR * szSqlStr, SQLINTEGER cbSqlStr)
 
 		/*
 		 * using TDS7+ we need parameters to prepare a query so try
-		 * to get them 
+		 * to get them
 		 * TDS5 do not need parameters type and we have always to
 		 * prepare sepatarely so this is not an issue
 		 */
@@ -3738,11 +3746,11 @@ SQLSetParam(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT fCType, SQLSMALLINT f
  * mapped to a call to sp_columns which - lucky for us - returns
  * the exact result set we need.
  *
- * exec sp_columns [ @table_name = ] object 
- *                 [ , [ @table_owner = ] owner ] 
- *                 [ , [ @table_qualifier = ] qualifier ] 
- *                 [ , [ @column_name = ] column ] 
- *                 [ , [ @ODBCVer = ] ODBCVer ] 
+ * exec sp_columns [ @table_name = ] object
+ *                 [ , [ @table_owner = ] owner ]
+ *                 [ , [ @table_qualifier = ] qualifier ]
+ *                 [ , [ @column_name = ] column ]
+ *                 [ , [ @ODBCVer = ] ODBCVer ]
  *
  */
 SQLRETURN SQL_API
@@ -4336,7 +4344,7 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType, SQLPOINTER rgbInfoValue, SQLSMA
 		break;
 	case SQL_DATA_SOURCE_READ_ONLY:
 		/*
-		 * TODO: determine the right answer from connection 
+		 * TODO: determine the right answer from connection
 		 * attribute SQL_ATTR_ACCESS_MODE
 		 */
 		p = "N";	/* false, writable */
@@ -5593,13 +5601,13 @@ SQLTables(SQLHSTMT hstmt, SQLCHAR FAR * szCatalogName, SQLSMALLINT cbCatalogName
 	ODBC_RETURN_(stmt);
 }
 
-/** 
+/**
  * Log a useful message about unimplemented options
  * Defying belief, Microsoft defines mutually exclusive options that
- * some ODBC implementations #define as duplicate values (meaning, of course, 
- * that they couldn't be implemented in the same function because they're 
- * indistinguishable.  
- * 
+ * some ODBC implementations #define as duplicate values (meaning, of course,
+ * that they couldn't be implemented in the same function because they're
+ * indistinguishable.
+ *
  * Those duplicates are commented out below.
  */
 static void
@@ -5713,7 +5721,7 @@ odbc_quote_metadata(TDS_DBC * dbc, char type, char *dest, const char *s, int len
 	dst = dest;
 
 	/*
-	 * handle patterns 
+	 * handle patterns
 	 * "'" -> "''" (normal string quoting)
 	 *
 	 * if metadata_id is FALSE
@@ -5807,7 +5815,7 @@ odbc_stat_execute(TDS_STMT * stmt, const char *begin, int nparams, ...)
 		param_len = va_arg(marker, int);
 		if (params[i].value && param_len != SQL_NULL_DATA) {
 			params[i].len = odbc_get_string_size(param_len, (SQLCHAR *) params[i].value);
-			len += strlen(params[i].name) + odbc_quote_metadata(stmt->dbc, params[i].type, NULL, 
+			len += strlen(params[i].name) + odbc_quote_metadata(stmt->dbc, params[i].type, NULL,
 									    params[i].value, params[i].len) + 3;
 			if (begin[0] == '.' && strstr(params[i].name, "qualifier")) {
 				len += tds_quote_id(stmt->dbc->tds_socket, NULL, params[i].value, params[i].len);
