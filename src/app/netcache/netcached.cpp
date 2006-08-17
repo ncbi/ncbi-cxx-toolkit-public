@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.0.8  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.1.0  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -2061,6 +2061,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2006/08/17 20:47:44  kuznets
+ * Added support of in-memory logs
+ *
  * Revision 1.87  2006/05/18 13:27:51  kuznets
  * Implemented cache cleaning function
  *

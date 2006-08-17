@@ -320,9 +320,10 @@ public:
     ///
     /// @param cache_path  Path to cache
     /// @param cache_name  Cache instance name
-    /// @param lm          Locking mode, protection against using the
-    ///                    cache from multiple applications
-    /// @param cache_size  Berkeley DB memory cache settings
+    /// @param lm           Locking mode, protection against using the
+    ///                     cache from multiple applications
+    /// @param cache_size   Berkeley DB memory cache settings
+    /// @param log_mem_size Size of in memory transaction log
     ///
     /// @sa OpenReadOnly
     ///
@@ -330,7 +331,8 @@ public:
               const char*  cache_name,
               ELockMode    lm = eNoLock,
               unsigned int cache_ram_size = 0,
-              ETRansact    use_trans = eUseTrans);
+              ETRansact    use_trans = eUseTrans,
+              unsigned int log_mem_size = 0);
 
     /// Run verification of the cache database
     ///
@@ -820,6 +822,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/08/17 20:46:48  kuznets
+ * Added support of in-memory logs
+ *
  * Revision 1.65  2006/01/11 15:07:23  vasilche
  * Cleaned SBlobCacheDescr structure.
  *

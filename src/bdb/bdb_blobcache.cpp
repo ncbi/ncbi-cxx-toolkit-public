@@ -1095,7 +1095,8 @@ void CBDB_Cache::Open(const char* cache_path,
                       const char* cache_name,
                       ELockMode lm,
                       unsigned int cache_ram_size,
-                      ETRansact    use_trans)
+                      ETRansact    use_trans,
+                      unsigned int log_mem_size)
 {
     {{
 
@@ -1122,13 +1123,17 @@ void CBDB_Cache::Open(const char* cache_path,
     string err_file = m_Path + "err" + string(cache_name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
 
-    if (m_LogSizeMax >= (20 * 1024 * 1024)) {
-        m_Env->SetLogFileMax(m_LogSizeMax);
+    if (log_mem_size == 0) {
+        if (m_LogSizeMax >= (20 * 1024 * 1024)) {
+            m_Env->SetLogFileMax(m_LogSizeMax);
+        } else {
+            m_Env->SetLogFileMax(200 * 1024 * 1024);
+        }
+        m_Env->SetLogBSize(1 * 1024 * 1024);
     } else {
-        m_Env->SetLogFileMax(200 * 1024 * 1024);
+        m_Env->SetLogInMemory(true);
+        m_Env->SetLogBSize(log_mem_size);        
     }
-
-    m_Env->SetLogBSize(1 * 1024 * 1024);
 
     // Check if bdb env. files are in place and try to join
     CDir dir(m_Path);
@@ -3100,8 +3105,9 @@ static const string kCFParam_lock           = "lock";
 static const string kCFParam_lock_default   = "no_lock";
 static const string kCFParam_lock_pid_lock  = "pid_lock";
 
-static const string kCFParam_mem_size       = "mem_size";
-static const string kCFParam_read_only      = "read_only";
+static const string kCFParam_mem_size          = "mem_size";
+static const string kCFParam_log_mem_size      = "log_mem_size";
+static const string kCFParam_read_only         = "read_only";
 static const string kCFParam_write_sync        = "write_sync";
 static const string kCFParam_use_transactions  = "use_transactions";
 
@@ -3186,6 +3192,9 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     unsigned mem_size =
         GetParamDataSize(params, kCFParam_mem_size, false, 0);
 
+    unsigned log_mem_size =
+        GetParamDataSize(params, kCFParam_log_mem_size, false, 0);
+
     if (!page_size.empty()) {
         if (NStr::CompareNocase(page_size, "small") == 0) {
             drv->SetPageSize(CBDB_Cache::eSmall);
@@ -3251,7 +3260,8 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     } else {
         drv->Open(path.c_str(), name.c_str(),
                   lock, mem_size,
-                  use_trans ? CBDB_Cache::eUseTrans : CBDB_Cache::eNoTrans);
+                  use_trans ? CBDB_Cache::eUseTrans : CBDB_Cache::eNoTrans,
+                  log_mem_size);
     }
     return drv.release();
 
@@ -3321,6 +3331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.134  2006/08/17 20:46:59  kuznets
+ * Added support of in-memory logs
+ *
  * Revision 1.133  2006/05/08 15:54:36  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and
