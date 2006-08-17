@@ -256,8 +256,9 @@ ODBC_xCheckSIE(int rc, CStatementBase& stmt)
         stmt.ReportErrors();
     case SQL_SUCCESS: break;
     case SQL_ERROR:
+    default:
         stmt.ReportErrors();
-    default: return false;
+        return false;
     }
 
     return true;
@@ -271,12 +272,12 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   SQLPOINTER id,
                                   SQLLEN* ph)
 {
-    string q= "update ";
-    q+= descr_in.TableName();
-    q+= " set ";
-    q+= descr_in.ColumnName();
-    q+= "=? where ";
-    q+= descr_in.SearchConditions();
+    string q = "update ";
+    q += descr_in.TableName();
+    q += " set ";
+    q += descr_in.ColumnName();
+    q += "= ? where ";
+    q += descr_in.SearchConditions();
     //q+= " ;\nset rowcount 0";
 
 #ifdef SQL_TEXTPTR_LOGGING
@@ -291,6 +292,14 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     }
 #endif
 
+
+    *ph = SQL_LEN_DATA_AT_EXEC(size);
+
+#if defined(HAS_DEFERRED_PREPARE)
+
+    SQLULEN par_size;
+    SQLSMALLINT par_type, par_dig, par_null;
+
     if (!ODBC_xCheckSIE(SQLPrepare(stmt.GetHandle(),
                                    (SQLCHAR*)q.c_str(),
                                    SQL_NTS),
@@ -298,23 +307,6 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
         return false;
     }
 
-    SQLSMALLINT par_type, par_dig, par_null;
-    SQLULEN par_size;
-
-    *ph = SQL_LEN_DATA_AT_EXEC(size);
-
-#ifdef FTDS_IN_USE
-    // Do not use SQLDescribeParam. It is not implemented with the odbc driver
-    // from FreeTDS.
-    if (!ODBC_xCheckSIE(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
-                                         is_text? SQL_C_CHAR : SQL_C_BINARY,
-                                         // par_type,
-                                         is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
-                                         size, 0, id, 0, ph),
-                        stmt)) {
-        return false;
-    }
-#else
     if (!ODBC_xCheckSIE(SQLDescribeParam(stmt.GetHandle(),
                                          1,
                                          &par_type,
@@ -328,8 +320,9 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     if (!ODBC_xCheckSIE(SQLBindParameter(stmt.GetHandle(),
                                          1,
                                          SQL_PARAM_INPUT,
-                                         is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
+                                         is_text? SQL_C_CHAR : SQL_C_BINARY,
                                          // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+                                         par_type,
                                          size,
                                          0,
                                          id,
@@ -338,7 +331,28 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                         stmt)) {
         return false;
     }
-#endif
+
+#else // Same as defined(FTDS_IN_USE) ...
+
+    // Do not use SQLDescribeParam. It is not implemented with the odbc driver
+    // from FreeTDS.
+    if (!ODBC_xCheckSIE(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
+                                         is_text? SQL_C_CHAR : SQL_C_BINARY,
+                                         // par_type,
+                                         // SQL_LONGVARCHAR,
+                                         is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+                                         size, 0, id, 0, ph),
+                        stmt)) {
+        return false;
+    }
+
+    if (!ODBC_xCheckSIE(SQLPrepare(stmt.GetHandle(),
+                                   (SQLCHAR*)q.c_str(),
+                                   SQL_NTS),
+                        stmt)) {
+        return false;
+    }
+#endif // defined(HAS_DEFERRED_PREPARE)
 
     switch(SQLExecute(stmt.GetHandle())) {
     case SQL_NEED_DATA:
@@ -661,6 +675,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/08/17 14:37:16  ssikorsk
+ * Improved ODBC_xSendDataPrepare to behave correctly when HAS_DEFERRED_PREPARE is not defined (FreeTDS).
+ *
  * Revision 1.37  2006/08/16 15:38:47  ssikorsk
  * Fixed a bug introduced during refactoring.
  *
