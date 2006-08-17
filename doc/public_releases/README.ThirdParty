@@ -12,8 +12,11 @@ for local data storage) are available.
 
 To facilitate the building of these 3rd-party libraries, there is an archive
 that bundles together source code of the 3rd-party packages, plus a MSVC++.NET
-"solution" to build all (or any combination) of them:
+"solution" to build all (or any combination) of them.
 
+All of the libraries in this archive feature open-source licenses, but
+the exact licensing terms vary from library to library; please see the
+individual libraries' documentation for details.
 
                       ----------------------
 HOWTO:
@@ -67,4 +70,4 @@ We are also planning to compose a similar bundle for UNIX.
 
 
 ----------------------------------
-$Id: README.ThirdParty,v 1.1 2006/08/17 19:13:11 vakatov Exp $
+$Id: README.ThirdParty,v 1.2 2006/08/17 20:22:17 ucko Exp $
