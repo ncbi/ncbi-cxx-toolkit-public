@@ -67,10 +67,11 @@ BEGIN_NCBI_SCOPE
 class CQueueItemBase : public CObject {
 public:
     enum EStatus {
-        ePending,  ///< still in the queue
-        eActive,   ///< extracted but not yet released
-        eComplete, ///< extracted and released
-        eWithdrawn ///< dropped by submitter's request
+        ePending,       ///< still in the queue
+        eActive,        ///< extracted but not yet released
+        eComplete,      ///< extracted and released
+        eWithdrawn,     ///< dropped by submitter's request
+        eForciblyCaught ///< let an exception escape
     };
 
     /// Every request has an associated 32-bit priority field, but
@@ -90,7 +91,8 @@ public:
     const EStatus&   GetStatus(void) const       { return m_Status; }
     TUserPriority    GetUserPriority(void) const { return m_Priority >> 24; }
 
-    void             MarkAsComplete(void)        { x_SetStatus(eComplete); }
+    void MarkAsComplete(void)        { x_SetStatus(eComplete); }
+    void MarkAsForciblyCaught(void)  { x_SetStatus(eForciblyCaught); }
 
 protected:
     TPriority m_Priority;
@@ -875,19 +877,26 @@ void* CThreadInPool<TRequest>::Main(void)
                 m_Pool->m_Delta.Add(1);
                 continue;
             }
-            ProcessRequest(handle);
+            try {
+                ProcessRequest(handle);
+            } catch (std::exception& e) {
+                handle->MarkAsForciblyCaught();
+                ERR_POST("Exception from thread in pool: " << e.what());
+                // throw;
+            } catch (...) {
+                handle->MarkAsForciblyCaught();
+                // silently propagate non-standard exceptions because they're
+                // likely to be CExitThreadException.
+                // ERR_POST("Thread in pool threw non-standard exception.");
+                throw;
+            }
             if (m_RunMode == eRunOnce) {
                 m_Pool->UnRegister(*this);
                 break;
             }
         }
-    } catch (std::exception& e) {
-        ERR_POST("Exception from thread in pool: " << e.what());
-        m_Pool->UnRegister(*this);
     } catch (...) {
-        // May be CExitThreadException, for which we can't check explicitly
-        // because it's not known outside ncbithr.cpp... :-/
-        // ERR_POST("Thread in pool threw non-standard exception.");
+        // assumed to be CExitThreadException
         m_Pool->UnRegister(*this);
         throw;
     }
@@ -1070,6 +1079,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2006/08/18 14:36:44  ucko
+* Revise exception handling somewhat, introducing an eForciblyCaught
+* status for requests whose processing let an exception escape.
+*
 * Revision 1.51  2006/07/17 14:27:05  ucko
 * Inline CBlockingQueue<CRef<CStdRequest> >::CQueueItem::x_SetStatus's
 * definition for the sake of IBM's VisualAge compiler.
