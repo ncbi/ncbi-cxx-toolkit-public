@@ -101,52 +101,52 @@ static void _AddPSSMWordHits(NeighborInfo * info,
                              Int4 score, Int4 current_pos);
 
 
-/** 
-* Retrieve query offsets from the lookup table and store them in the array of
-* (query,subject) offset pairs.
+/**
+* Retrieve the number of query offsets associated with this subject word.
 * @param lookup The lookup table to read from. [in]
 * @param index The index value of the word to retrieve. [in]
-* @param count The number of available elements in the destination array. [in]
+* @return The number of query offsets associated with this subject word.
+*/
+static NCBI_INLINE Int4 s_BlastLookupGetNumHits(BlastLookupTable * lookup,
+                                                Int4 index)
+{
+    if (NA_PV_TEST(lookup->pv, index, PV_ARRAY_BTS))
+        return lookup->thick_backbone[index].num_used;
+    else
+        return 0;
+}
+
+/** 
+* Copy query offsets from the lookup table to the array of offset pairs.
+* @param lookup The lookup table to read from. [in]
+* @param index The index value of the word to retrieve. [in]
 * @param offset_pairs A pointer into the destination array. [out]
 * @param s_off The subject offset to be associated with the retrieved query offset(s). [in]
-* @return -1 if insufficient space to store results, otherwise, the number of hits stored.
 */
-static NCBI_INLINE Int4 s_BlastLookupRetrieve(BlastLookupTable * lookup,
+static NCBI_INLINE void s_BlastLookupRetrieve(BlastLookupTable * lookup,
                                               Int4 index,
-                                              Int4 count,
                                               BlastOffsetPair * offset_pairs,
                                               Int4 s_off)
 {
-    Int4 num_hits;
     Int4 *lookup_pos;
+    Int4 num_hits = lookup->thick_backbone[index].num_used;
     Int4 i;
 
-    /* Test the PV bitvector to see if there are hits for this index */
-    if (NA_PV_TEST(lookup->pv, index, PV_ARRAY_BTS)) {
-        num_hits = lookup->thick_backbone[index].num_used;
-        ASSERT(num_hits != 0);
+    /* determine if hits live in the backbone or the overflow array */
 
-        /* Exit if there is not enough room to save the hits. */
-        if (num_hits > count)
-            return -1;
+    if (num_hits <= HITS_ON_BACKBONE)
+        lookup_pos = lookup->thick_backbone[index].payload.entries;
+    else
+        lookup_pos = lookup->overflow +
+            lookup->thick_backbone[index].payload.overflow_cursor;
 
-        /* determine if hits live in the backbone or the overflow array */
-
-        if (num_hits <= HITS_ON_BACKBONE)
-            lookup_pos = lookup->thick_backbone[index].payload.entries;
-        else
-            lookup_pos = lookup->overflow +
-                lookup->thick_backbone[index].payload.overflow_cursor;
-
-        /* Copy the (query,subject) offset pairs to the destination. */
-        for (i = 0; i < num_hits; i++) {
-            offset_pairs[i].qs_offsets.q_off = lookup_pos[i];
-            offset_pairs[i].qs_offsets.s_off = s_off;
-        }
-        return num_hits;
-
+    /* Copy the (query,subject) offset pairs to the destination. */
+    for(i=0;i<num_hits;i++) {
+        offset_pairs[i].qs_offsets.q_off = lookup_pos[i];
+        offset_pairs[i].qs_offsets.s_off = s_off;
     }
-    return 0;
+
+    return;
 }
 
 Int4 BlastAaLookupNew(const LookupTableOptions * opt, BlastLookupTable * *lut)
@@ -281,8 +281,8 @@ Int4 LookupTableNew(const LookupTableOptions * opt,
         /* Choose the width of the lookup table. The width may be any number
            <= the word size, but the most efficient width is a compromise
            between small values (which have better cache performance and
-           allow a larger scanning stride) and large values (which have
-           fewer accesses and allow fewer word extensions) */
+           allow a larger scanning stride) and large values (which have fewer 
+           accesses and allow fewer word extensions) */
 
         switch (lookup->word_length) {
         case 4:
@@ -1111,9 +1111,9 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap * lookup_wrap,
 
             /* for strides that are a multiple of 4, words are always aligned 
                and two bytes of the subject sequence will always hold a
-               complete word (plus possible extra bases that must be shifted 
-               away). s_end below always points to the second-to-last byte
-               of subject, so we will never fetch the byte beyond the end of 
+               complete word (plus possible extra bases that must be shifted
+               away). s_end below always points to the second-to-last byte of
+               subject, so we will never fetch the byte beyond the end of
                subject */
 
             Uint1 *s_end = abs_start + last_offset / COMPRESSION_RATIO;
@@ -1125,15 +1125,16 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap * lookup_wrap,
                 index = s[0] << 8 | s[1];
                 index = index >> shift;
 
-                num_hits = s_BlastLookupRetrieve(lookup,
-                                                 index,
-                                                 max_hits - total_hits,
-                                                 offset_pairs + total_hits,
-                                                 (s -
-                                                  abs_start) *
-                                                 COMPRESSION_RATIO);
-                if (num_hits == -1)
+                num_hits = s_BlastLookupGetNumHits(lookup, index);
+                if (num_hits == 0)
+                    continue;
+                if (num_hits > (max_hits - total_hits))
                     break;
+
+                s_BlastLookupRetrieve(lookup,
+                                      index,
+                                      offset_pairs + total_hits,
+                                      (s - abs_start) * COMPRESSION_RATIO);
                 total_hits += num_hits;
             }
             *end_offset = (s - abs_start) * COMPRESSION_RATIO;
@@ -1175,13 +1176,15 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap * lookup_wrap,
                 index = s[0] << 16 | s[1] << 8 | s[2];
                 index = (index >> shift) & mask;
 
-                num_hits = s_BlastLookupRetrieve(lookup,
-                                                 index,
-                                                 max_hits - total_hits,
-                                                 offset_pairs + total_hits,
-                                                 s_off);
-                if (num_hits == -1)
+                num_hits = s_BlastLookupGetNumHits(lookup, index);
+                if (num_hits == 0)
+                    continue;
+                if (num_hits > (max_hits - total_hits))
                     break;
+
+                s_BlastLookupRetrieve(lookup,
+                                      index,
+                                      offset_pairs + total_hits, s_off);
                 total_hits += num_hits;
             }
 
@@ -1199,13 +1202,15 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap * lookup_wrap,
                 index = s[0] << 8 | s[1];
                 index = (index >> shift) & mask;
 
-                num_hits = s_BlastLookupRetrieve(lookup,
-                                                 index,
-                                                 max_hits - total_hits,
-                                                 offset_pairs + total_hits,
-                                                 s_off);
-                if (num_hits == -1)
+                num_hits = s_BlastLookupGetNumHits(lookup, index);
+                if (num_hits == 0)
+                    continue;
+                if (num_hits > (max_hits - total_hits))
                     break;
+
+                s_BlastLookupRetrieve(lookup,
+                                      index,
+                                      offset_pairs + total_hits, s_off);
                 total_hits += num_hits;
             }
             *end_offset = s_off;
@@ -1216,8 +1221,8 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap * lookup_wrap,
            for very small word sizes). The last word is always two bytes from 
            the end of the sequence, unless the table width is 4 and subect is 
            a multiple of 4 bases; in that case there is a sentinel byte, so
-           the following does not need to be corrected when scanning near
-           the end of the subject sequence */
+           the following does not need to be corrected when scanning near the 
+           end of the subject sequence */
 
         for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
 
@@ -1228,13 +1233,16 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap * lookup_wrap,
             index = s[0] << 8 | s[1];
             index = (index >> shift) & mask;
 
-            num_hits = s_BlastLookupRetrieve(lookup,
-                                             index,
-                                             max_hits - total_hits,
-                                             offset_pairs + total_hits,
-                                             s_off);
-            if (num_hits == -1)
+            num_hits = s_BlastLookupGetNumHits(lookup, index);
+            if (num_hits == 0)
+                continue;
+            if (num_hits > (max_hits - total_hits))
                 break;
+
+            s_BlastLookupRetrieve(lookup,
+                                  index,
+                                  offset_pairs + total_hits,
+                                  s_off);
             total_hits += num_hits;
         }
         *end_offset = s_off;
@@ -1272,13 +1280,16 @@ Int4 BlastNaScanSubject(const LookupTableWrap * lookup_wrap,
 
         Int4 index = s[0] << 8 | s[1];
 
-        num_hits = s_BlastLookupRetrieve(lookup,
-                                         index,
-                                         max_hits - total_hits,
-                                         offset_pairs + total_hits,
-                                         (s - abs_start) * COMPRESSION_RATIO);
-        if (num_hits == -1)
+        num_hits = s_BlastLookupGetNumHits(lookup, index);
+        if (num_hits == 0)
+            continue;
+        if (num_hits > (max_hits - total_hits))
             break;
+
+        s_BlastLookupRetrieve(lookup,
+                              index,
+                              offset_pairs + total_hits,
+                              (s - abs_start) * COMPRESSION_RATIO);
         total_hits += num_hits;
     }
     *end_offset = (s - abs_start) * COMPRESSION_RATIO;
