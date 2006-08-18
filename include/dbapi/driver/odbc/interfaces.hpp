@@ -210,9 +210,10 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public impl::CConnection
     friend class CDB_Connection;
     friend class CODBC_LangCmd;
     friend class CODBC_RPCCmd;
-    friend class CODBC_CursorCmd;
     friend class CODBC_BCPInCmd;
     friend class CODBC_SendDataCmd;
+    friend class CODBC_CursorCmd;
+    friend class CODBC_CursorCmdExpl;
 
 protected:
     CODBC_Connection(CODBCContext& cntx,
@@ -360,8 +361,11 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd :
     public impl::CBaseCmd
 {
     friend class CODBC_Connection;
-    friend class CODBC_CursorCmd;
+    friend class CODBC_CursorCmdBase;
     friend class CODBC_CursorResult;
+    friend class CODBC_CursorResultExpl;
+    friend class CODBC_CursorCmd;
+    friend class CODBC_CursorCmdExpl;
 
 protected:
     CODBC_LangCmd(
@@ -441,9 +445,33 @@ private:
 //  CODBC_CursorCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd :
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdBase :
     public CStatementBase,
     public impl::CCursorCmd
+{
+protected:
+    CODBC_CursorCmdBase(CODBC_Connection* conn,
+                        const string& cursor_name,
+                        const string& query,
+                        unsigned int nof_params);
+    virtual ~CODBC_CursorCmdBase(void);
+
+protected:
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
+                           bool out_param = false);
+    virtual int  RowCount(void) const;
+
+protected:
+    CODBC_LangCmd           m_CursCmd;
+
+    unsigned int            m_FetchSize;
+    auto_ptr<impl::CResult> m_Res;
+};
+
+
+// Implicit cursor based on ODBC API.
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd :
+    public CODBC_CursorCmdBase
 {
     friend class CODBC_Connection;
 
@@ -455,8 +483,6 @@ protected:
     virtual ~CODBC_CursorCmd(void);
 
 protected:
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
-                           bool out_param = false);
     virtual CDB_Result* Open(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
@@ -464,21 +490,50 @@ protected:
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                      bool log_it = true);
     virtual bool Delete(const string& table_name);
-    virtual int  RowCount(void) const;
     virtual bool Close(void);
 
-private:
-    bool x_AssignParams(bool just_declare = false);
+protected:
     CDB_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
-
-    CODBC_LangCmd           m_CursCmd;
-
-    unsigned int            m_FetchSize;
-    auto_ptr<impl::CResult> m_Res;
 };
 
 
+// Explicit cursor based on Transact-SQL cursors.
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdExpl :
+    public CODBC_CursorCmd
+{
+    friend class CODBC_Connection;
 
+protected:
+    CODBC_CursorCmdExpl(CODBC_Connection* conn,
+                        const string& cursor_name,
+                        const string& query,
+                        unsigned int nof_params);
+    virtual ~CODBC_CursorCmdExpl(void);
+
+protected:
+    virtual CDB_Result* Open(void);
+    virtual bool Update(const string& table_name, const string& upd_query);
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
+                 bool log_it = true);
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
+                     bool log_it = true);
+    virtual bool Delete(const string& table_name);
+    virtual bool Close(void);
+
+protected:
+    CDB_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
+
+protected:
+    auto_ptr<CODBC_LangCmd> m_LCmd;
+};
+
+
+// Future development.
+// // Explicit cursor based on stored procedures.
+// class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdExplSP :
+//     public CODBC_CursorCmd
+// {
+// };
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -560,6 +615,8 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public impl::CResult
     friend class CODBC_RPCCmd;
     friend class CODBC_CursorCmd;
     friend class CODBC_Connection;
+    friend class CODBC_CursorCmd;
+    friend class CODBC_CursorCmdExpl;
 
 protected:
     CODBC_RowResult(
@@ -671,6 +728,7 @@ protected:
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorResult : public impl::CResult
 {
     friend class CODBC_CursorCmd;
+    friend class CODBC_CursorCmdExpl;
 
 protected:
     CODBC_CursorResult(CODBC_LangCmd* cmd);
@@ -718,6 +776,17 @@ protected:
     bool m_EOR;
 };
 
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorResultExpl : public CODBC_CursorResult
+{
+    friend class CODBC_CursorCmdExpl;
+
+protected:
+    CODBC_CursorResultExpl(CODBC_LangCmd* cmd);
+    virtual ~CODBC_CursorResultExpl(void);
+
+protected:
+    virtual bool Fetch(void);
+};
 
 END_NCBI_SCOPE
 
@@ -729,6 +798,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/08/18 15:11:57  ssikorsk
+ * Revamp CODBC_CursorCmd/CODBC_CursorResult to use implicit cursors from ODBC API;
+ * Added CODBC_CursorCmdExpl and CODBC_CursorResultExpl classes, which implement
+ * explicit cursor based on Transact-SQL cursors.
+ *
  * Revision 1.42  2006/08/17 14:31:08  ssikorsk
  * Added methods SetCursorName and CloseCursor to CODBC_LangCmd in order
  * to use implicit cursors with ODBC API;
