@@ -232,6 +232,8 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
     } else if (!timeout)
         net_info->timeout = 0;
     CONNECTOR c = SERVICE_CreateConnectorEx(service, types, net_info, params);
+    if (!c)
+        ERR_POST(Error << "Cannot connect to service \"" << service << '\"');
     ConnNetInfo_Destroy(net_info);
     return c;
 }
@@ -428,6 +430,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2006/08/18 15:55:12  lavr
+ * Warn if unable to connect to a service
+ *
  * Revision 6.57  2006/04/08 04:26:08  lavr
  * Rollback to 6.54
  *
