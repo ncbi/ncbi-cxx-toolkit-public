@@ -591,23 +591,16 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
     case SQL_WLONGVARCHAR:
     case SQL_LONGVARBINARY:
     case SQL_LONGVARCHAR: {
-        SQLLEN f;
         switch(item_buf->GetType()) {
         case eDB_Text: {
-            for(;;) {
-                if (CheckSIENoD_Text((CDB_Stream*)item_buf)) {
-                    continue;
-                }
-                break;
+            while (CheckSIENoD_Text((CDB_Stream*)item_buf)) {
+                continue;
             }
             break;
         }
         case eDB_Image: {
-            for(;;) {
-                if (CheckSIENoD_Binary((CDB_Stream*)item_buf)) {
-                    continue;
-                }
-                break;
+            while (CheckSIENoD_Binary((CDB_Stream*)item_buf)) {
+                continue;
             }
             break;
         }
@@ -752,8 +745,8 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     case SQL_WLONGVARCHAR:
     case SQL_LONGVARCHAR: {
         CDB_Text* val = new CDB_Text;
-        SQLLEN f;
 
+        // Code below looks strange, but it completely matches original logic.
         for(;;) {
             CheckSIENoD_Text(val);
         }
@@ -762,7 +755,8 @@ CDB_Object* CODBC_RowResult::xMakeItem()
 
     case SQL_LONGVARBINARY: {
         CDB_Image* val = new CDB_Image;
-        SQLLEN f;
+
+        // Code below looks strange, but it completely matches original logic.
         for(;;) {
             CheckSIENoD_Binary(val);
         }
@@ -1051,8 +1045,9 @@ bool CODBC_CursorResult::Fetch()
             while (m_Cmd->HasMoreResults()) {
                 m_Res = m_Cmd->Result();
                 if (m_Res) {
-                    while (m_Res->Fetch())
-                        ;
+                    while (m_Res->Fetch()) {
+                        continue;
+                    }
                     delete m_Res;
                     m_Res = 0;
                 }
@@ -1120,6 +1115,75 @@ CODBC_CursorResult::~CODBC_CursorResult()
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+CODBC_CursorResultExpl::CODBC_CursorResultExpl(CODBC_LangCmd* cmd) :
+    CODBC_CursorResult(cmd)
+{
+}
+
+CODBC_CursorResultExpl::~CODBC_CursorResultExpl(void)
+{
+}
+
+
+bool CODBC_CursorResultExpl::Fetch(void)
+{
+
+    if( m_EOR ) {
+        return false;
+    }
+
+    try {
+        if (m_Res && m_Res->Fetch()) {
+            return true;
+        }
+    } catch ( const CDB_Exception& ) {
+        delete m_Res;
+        m_Res = 0;
+    }
+
+    try {
+        // finish this command
+        m_EOR = true;
+        if( m_Res ) {
+            delete m_Res;
+            m_Res = 0;
+            while (m_Cmd->HasMoreResults()) {
+                m_Res = m_Cmd->Result();
+                if (m_Res) {
+                    while (m_Res->Fetch()) {
+                        continue;
+                    }
+                    delete m_Res;
+                    m_Res = 0;
+                }
+            }
+        }
+
+        // send the another "fetch cursor_name" command
+        m_Cmd->Send();
+        while (m_Cmd->HasMoreResults()) {
+            m_Res = m_Cmd->Result();
+            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
+                m_EOR = false;
+                return m_Res->Fetch();
+            }
+            if ( m_Res ) {
+                while (m_Res->Fetch()) {
+                    continue;
+                }
+                delete m_Res;
+                m_Res = 0;
+            }
+        }
+    } catch (const CDB_Exception& e) {
+        string err_message = "Failed to fetch the results" + GetDiagnosticInfo();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422011 );
+    }
+    return false;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -1127,6 +1191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/08/18 15:19:02  ssikorsk
+ * Implemented the CODBC_CursorResultExpl class.
+ *
  * Revision 1.32  2006/08/17 14:39:34  ssikorsk
  * Use implicit cursors with the ODBC API;
  *
