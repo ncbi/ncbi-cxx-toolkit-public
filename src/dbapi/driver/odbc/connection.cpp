@@ -125,10 +125,18 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
         query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
+#ifdef FTDS_IN_USE
+    CODBC_CursorCmdExpl* ccmd = new CODBC_CursorCmdExpl(this,
+                                                cursor_name,
+                                                query,
+                                                nof_params);
+#else
     CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(this,
                                                 cursor_name,
                                                 query,
                                                 nof_params);
+#endif
+
     return Create_CursorCmd(*ccmd);
 }
 
@@ -280,7 +288,7 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     q += descr_in.SearchConditions();
     //q+= " ;\nset rowcount 0";
 
-#ifdef SQL_TEXTPTR_LOGGING
+#if defined(SQL_TEXTPTR_LOGGING) && !defined(FTDS_IN_USE)
     if(!logit) {
         switch(SQLSetStmtAttr(stmt.GetHandle(), SQL_TEXTPTR_LOGGING, /*SQL_SOPT_SS_TEXTPTR_LOGGING,*/
             (SQLPOINTER)SQL_TL_OFF, SQL_IS_INTEGER)) {
@@ -339,8 +347,8 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     if (!ODBC_xCheckSIE(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
                                          is_text? SQL_C_CHAR : SQL_C_BINARY,
                                          // par_type,
-                                         // SQL_LONGVARCHAR,
-                                         is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+                                         SQL_LONGVARCHAR,
+                                         // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
                                          size, 0, id, 0, ph),
                         stmt)) {
         return false;
@@ -675,6 +683,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/08/18 15:15:10  ssikorsk
+ * Use CODBC_CursorCmdExpl with the FreeTDS odbc driver (because implicit cursors
+ * are still not implemented) and CODBC_CursorCmd with the Windows SQL Server driver.
+ *
  * Revision 1.38  2006/08/17 14:37:16  ssikorsk
  * Improved ODBC_xSendDataPrepare to behave correctly when HAS_DEFERRED_PREPARE is not defined (FreeTDS).
  *
