@@ -65,6 +65,13 @@
 
 #include <algo/blast/api/query_data.hpp>
 
+
+// [MSVC]  Suppress tons of self-inflicted 'function deprecated' warnings
+#ifdef _MSC_VER
+#  pragma warning(disable: 4996)
+#endif
+
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -792,6 +799,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.96  2006/08/18 16:00:25  vakatov
+ * // [MSVC]  Suppress tons of self-inflicted 'function deprecated' warnings
+ *
  * Revision 1.95  2006/07/19 13:26:08  madden
  * Change to Blast_SetPHIPatternInfo parameters
  *
