@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.434 2006/08/10 14:09:22 ucko Exp $
+#  $Id: configure.ac,v 1.435 2006/08/18 14:49:25 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -844,7 +844,7 @@ case "$host_os:$compiler" in
 
  *:VisualAge)
    # 1506-1108 (I) The use of keyword '__attribute__' is non-portable.
-   CFLAGS="-qlanglvl=stdc99 -qsuppress=1506-1108 $CFLAGS"
+   CFLAGS="-qlanglvl=extc99 -qsuppress=1506-1108 $CFLAGS"
    # 1540-1663 (W) Incorrect assignment of a restrict qualified pointer.
    CXXFLAGS="-qrtti=all -qsuppress=1540-1663 $CXXFLAGS"
    DEPFLAGS="-E -M"
@@ -2525,11 +2525,11 @@ AC_LANG_PUSH(C)
 
 AC_CACHE_CHECK([whether the preprocessor supports C99-style variadic macros],
    ncbi_cv_cpp_std_varargs,
-   [AC_PREPROC_IFELSE(
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[#define foo(...) 1
          #if foo(x,y,z) != 1
          #error failed
-         #endif]],
+         #endif]], [])],
        [ncbi_cv_cpp_std_varargs=yes], [ncbi_cv_cpp_std_varargs=no])])
 if test "$ncbi_cv_cpp_std_varargs" = yes; then
    AC_DEFINE(HAVE_CPP_STD_VARARGS, 1,
@@ -2538,11 +2538,11 @@ fi
 
 AC_CACHE_CHECK([whether the preprocessor supports GNU-style variadic macros],
    ncbi_cv_cpp_gnu_varargs,
-   [AC_PREPROC_IFELSE(
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[#define foo(args...) 1
          #if foo(x,y,z) != 1
          #error failed
-         #endif]],
+         #endif]], [])],
        [ncbi_cv_cpp_gnu_varargs=yes], [ncbi_cv_cpp_gnu_varargs=no])])
 if test "$ncbi_cv_cpp_gnu_varargs" = yes; then
    AC_DEFINE(HAVE_CPP_GNU_VARARGS, 1,
