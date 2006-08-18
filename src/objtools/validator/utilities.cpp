@@ -899,6 +899,7 @@ const string CCountries::sm_Countries[] = {
   "Moldova",
   "Monaco",
   "Mongolia",
+  "Montenegro",
   "Montserrat",
   "Morocco",
   "Mozambique",
@@ -950,6 +951,7 @@ const string CCountries::sm_Countries[] = {
   "Sao Tome and Principe",
   "Saudi Arabia",
   "Senegal",
+  "Serbia",
   "Serbia and Montenegro",
   "Seychelles",
   "Sierra Leone",
@@ -1243,6 +1245,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2006/08/18 17:57:33  rsmith
+* Add Serbia and Montenegro as separate countries.
+*
 * Revision 1.25  2006/02/16 21:56:53  rsmith
 * Use new objects::valerr class to store validation errors.
 *
