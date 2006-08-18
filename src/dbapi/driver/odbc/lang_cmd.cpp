@@ -476,10 +476,20 @@ bool CODBC_LangCmd::xCheck4MoreResults()
 
 void CODBC_LangCmd::SetCursorName(const string& name) const
 {
-//     CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CONCURRENCY, (void*)SQL_CONCUR_VALUES, 0),
-//              "SQLSetStmtAttr failed", 420017);
-//     CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CURSOR_TYPE, (void*)SQL_CURSOR_STATIC, 0),
-//              "SQLSetStmtAttr failed", 420018);
+    // Set statement attributes so server-side cursor is generated 
+
+    // The default ODBC cursor attributes are:
+    // SQLSetStmtAttr(hstmt, SQL_ATTR_CURSOR_TYPE, SQL_CURSOR_FORWARD_ONLY);
+    // SQLSetStmtAttr(hstmt, SQL_ATTR_CONCURRENCY, SQL_CONCUR_READ_ONLY);
+    // SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_ARRAY_SIZE, 1); 
+
+    // CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ROWSET_SIZE, (void*)2, SQL_NTS),
+    //          "SQLSetStmtAttr(SQL_ROWSET_SIZE) failed", 420015);
+    CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CONCURRENCY, (void*)SQL_CONCUR_VALUES, SQL_NTS),
+             "SQLSetStmtAttr(SQL_ATTR_CONCURRENCY) failed", 420017);
+    CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CURSOR_TYPE, (void*)SQL_CURSOR_FORWARD_ONLY, SQL_NTS),
+             "SQLSetStmtAttr(SQL_ATTR_CURSOR_TYPE) failed", 420018);
+
     CheckSIE(SQLSetCursorName(GetHandle(), (SQLCHAR*)name.c_str(), name.size()),
              "SQLSetCursorName failed", 420016);
 }
@@ -499,6 +509,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/08/18 15:18:09  ssikorsk
+ * Improved the CODBC_LangCmd::SetCursorName method in order to open
+ * server-side cursor.
+ *
  * Revision 1.31  2006/08/17 14:40:23  ssikorsk
  * Implemented SetCursorName and CloseCursor.
  *
