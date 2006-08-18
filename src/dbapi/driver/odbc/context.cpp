@@ -201,68 +201,75 @@ void CODBC_Reporter::ReportErrors(void) const
     for(SQLSMALLINT i= 1; i < 128; i++) {
         int rc = SQLGetDiagRec(m_HType, m_Handle, i, SqlState, &NativeError,
                              Msg, sizeof(Msg), &MsgLen);
-        string err_msg( reinterpret_cast<const char*>(Msg) );
-        err_msg += GetExtraMsg();
 
-        switch( rc ) {
-        case SQL_SUCCESS:
-            if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
+        if (rc != SQL_NO_DATA) {
+            string err_msg( reinterpret_cast<const char*>(Msg) );
+            err_msg += GetExtraMsg();
 
-                CDB_TimeoutEx to(kBlankCompileInfo,
-                                 0,
-                                 err_msg.c_str(),
-                                 NativeError);
+            switch( rc ) {
+            case SQL_SUCCESS:
+                if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
 
-                m_HStack->PostMsg(&to);
-            }
-            else if(strncmp((const char*)SqlState, "40001", 5) == 0) { // deadlock
-                CDB_DeadlockEx dl(kBlankCompileInfo,
-                                  0,
-                                  err_msg.c_str());
-                m_HStack->PostMsg(&dl);
-            }
-            else if(NativeError != 5701 && NativeError != 5703){
-                CDB_SQLEx se(kBlankCompileInfo,
-                             0,
-                             err_msg.c_str(),
-                             (NativeError == 0 ? eDiag_Info : eDiag_Warning),
-                             NativeError,
-                             (const char*)SqlState,
-                             0);
-                m_HStack->PostMsg(&se);
-            }
-            continue;
+                    CDB_TimeoutEx to(kBlankCompileInfo,
+                                    0,
+                                    err_msg.c_str(),
+                                    NativeError);
 
-        case SQL_NO_DATA: break;
+                    m_HStack->PostMsg(&to);
+                }
+                else if(strncmp((const char*)SqlState, "40001", 5) == 0) { // deadlock
+                    CDB_DeadlockEx dl(kBlankCompileInfo,
+                                    0,
+                                    err_msg.c_str());
+                    m_HStack->PostMsg(&dl);
+                }
+                else if(NativeError != 5701 && NativeError != 5703){
+                    CDB_SQLEx se(kBlankCompileInfo,
+                                0,
+                                err_msg.c_str(),
+                                (NativeError == 0 ? eDiag_Info : eDiag_Warning),
+                                NativeError,
+                                (const char*)SqlState,
+                                0);
+                    m_HStack->PostMsg(&se);
+                }
+                continue;
 
-        case SQL_SUCCESS_WITH_INFO:
-            {
-                string err_msg( "Message is too long to be retrieved" );
+            case SQL_NO_DATA: 
+                break;
+
+            case SQL_SUCCESS_WITH_INFO:
+                err_msg = "Message is too long to be retrieved";
                 err_msg += GetExtraMsg();
 
-                CDB_DSEx dse(kBlankCompileInfo,
-                             0,
-                             err_msg.c_str(),
-                             eDiag_Warning,
-                             777);
-                m_HStack->PostMsg(&dse);
-            }
-            continue;
-
-        default:
-            {
-                string err_msg( "SQLGetDiagRec failed (memory corruption suspected" );
-                err_msg += GetExtraMsg();
-
-                CDB_ClientEx ce(kBlankCompileInfo,
+                {
+                    CDB_DSEx dse(kBlankCompileInfo,
                                 0,
                                 err_msg.c_str(),
                                 eDiag_Warning,
-                                420016);
-                m_HStack->PostMsg(&ce);
+                                777);
+                    m_HStack->PostMsg(&dse);
+                }
+
+                continue;
+
+            default:
+                err_msg = "SQLGetDiagRec failed (memory corruption suspected";
+                err_msg += GetExtraMsg();
+
+                {
+                    CDB_ClientEx ce(kBlankCompileInfo,
+                                    0,
+                                    err_msg.c_str(),
+                                    eDiag_Warning,
+                                    420016);
+                    m_HStack->PostMsg(&ce);
+                }
+
+                break;
             }
-            break;
         }
+
         break;
     }
 }
@@ -901,6 +908,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/08/18 15:16:07  ssikorsk
+ * Minor improvement to CODBC_Reporter::ReportErrors.
+ *
  * Revision 1.63  2006/08/10 15:24:22  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *
