@@ -235,7 +235,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 }
                 continue;
 
-            case SQL_NO_DATA: 
+            case SQL_NO_DATA:
                 break;
 
             case SQL_SUCCESS_WITH_INFO:
@@ -310,6 +310,8 @@ CODBCContext::CODBCContext(SQLLEN version,
     m_Reporter.SetHandlerStack(&m_CntxHandlers);
 
     SQLSetEnvAttr(m_Context, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)version, 0);
+    // For FreeTDS sake.
+    SQLSetEnvAttr(m_Context, SQL_ATTR_OUTPUT_NTS, (SQLPOINTER)SQL_FALSE, 0);
 
     x_AddToRegistry();
 }
@@ -908,6 +910,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/08/21 18:16:16  ssikorsk
+ * Set the SQL_ATTR_OUTPUT_NTS attribut with an environment handle.
+ *
  * Revision 1.64  2006/08/18 15:16:07  ssikorsk
  * Minor improvement to CODBC_Reporter::ReportErrors.
  *
