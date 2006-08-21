@@ -79,9 +79,6 @@ environment.
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 
-// For on-the-fly tabular output
-#include "blast_tabular.hpp"
-
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -236,10 +233,6 @@ void CBlastApplication::Init(void)
                             "Range of ordinal ids in the BLAST database.\n"
                              "Format: \"oid1 oid2\"",
                              CArgDescriptions::eString);
-
-    arg_desc->AddDefaultKey("tabular", "tabular", 
-                             "On the fly tabular output", 
-                             CArgDescriptions::eBoolean, "F");
 
     arg_desc->AddDefaultKey("threads", "num_threads",
                             "Number of threads to use in preliminary stage"
@@ -535,54 +528,22 @@ int CBlastApplication::Run(void)
 
     ProcessCommandLineArgs(opts, seq_src);
 
-    BlastHSPStream* hsp_stream = NULL;
-    bool tabular_output = args["tabular"].AsBoolean();
-
-    int num_threads = args["threads"].AsInteger();
-
     TSeqAlignVector seqalignv;
 
     try {
 
        CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
 
-       if (!tabular_output) {
-          CLocalBlast blaster(query_factory, opts, seq_src);
-          blaster.SetNumberOfThreads(num_threads);
-          CSearchResultSet results = blaster.Run();
-          seqalignv.reserve(results.GetNumResults());
-          for (int i = 0; i < results.GetNumResults(); i++) {
-              CRef<CSeq_align_set>
-                  sas(const_cast<CSeq_align_set*>(&*results[i].GetSeqAlign()));
-              seqalignv.push_back(sas);
-          }
-          PrintSeqAlign(seqalignv);
-       } else {
-          hsp_stream = Blast_HSPListCQueueInit();
-          
-          CDbBlast blaster(query_loc, seq_src, *opts, 
-                              hsp_stream, num_threads);
-          blaster.SetupSearch();
-	  
-          CSeqDbSeqInfoSrc seqinfo_src(args["db"].AsString(), db_is_aa);
-
-          // Start the on-the-fly formatting thread
-          CBlastTabularFormatThread* tab_thread = 
-              new CBlastTabularFormatThread(&blaster,
-                      (args["out"] ? args["out"].AsOutputFile() : cout),
-                      &seqinfo_src);
-
-          tab_thread->Run();
-          
-          blaster.RunPreliminarySearch();
-          // Close the HSP stream for writing, allowing the formatting thread
-          // to exit.
-          BlastHSPStreamClose(hsp_stream);
-          // Join the on-the-fly formatting thead
-          void *exit_data;
-          tab_thread->Join(&exit_data);
-          hsp_stream = BlastHSPStreamFree(hsp_stream);
+       CLocalBlast blaster(query_factory, opts, seq_src);
+       blaster.SetNumberOfThreads(args["threads"].AsInteger());
+       CSearchResultSet results = blaster.Run();
+       seqalignv.reserve(results.GetNumResults());
+       for (int i = 0; i < results.GetNumResults(); i++) {
+           CRef<CSeq_align_set>
+               sas(const_cast<CSeq_align_set*>(&*results[i].GetSeqAlign()));
+           seqalignv.push_back(sas);
        }
+       PrintSeqAlign(seqalignv);
 
     } catch (const CBlastException& exptn) {
        cerr << exptn.what() << endl;

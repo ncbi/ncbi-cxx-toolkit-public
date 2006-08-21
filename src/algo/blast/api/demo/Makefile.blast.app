@@ -1,5 +1,5 @@
 APP = blast
-SRC = blast_app blast_input blast_tabular
+SRC = blast_app blast_input
 LIB = xblastformat xblast composition_adjustment \
       seqdb xnetblastcli xnetblast xalgodustmask \
       ncbi_xloader_blastdb scoremat blastdb xalnmgr \
