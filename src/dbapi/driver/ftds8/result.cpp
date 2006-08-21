@@ -318,6 +318,14 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                 ((CDB_LongBinary*)item_buff)->SetValue((const void*) d_ptr,
                                                        (size_t) d_len);
                 break;
+            case eDB_VarChar:
+                if (d_len < 256) {
+                    ((CDB_VarChar*)  item_buff)->SetValue((const char*) d_ptr,
+                                                           (size_t) d_len);
+                } else {
+                    DATABASE_DRIVER_ERROR( "Invalid conversion to CDB_VarChar type", 230021 );
+                }
+                break;
             default:
                 DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
             }
@@ -1492,6 +1500,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/08/21 19:56:52  ssikorsk
+ * Allow to convert from CDB_LongChar to CDB_VarChar when size of
+ * data is less than 256 bytes.
+ *
  * Revision 1.28  2006/08/21 18:04:08  ssikorsk
  * Minor code cleanup.
  *
