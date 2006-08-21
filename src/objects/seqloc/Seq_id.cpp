@@ -707,6 +707,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'A':                     return eAcc_gb_patent;
             case 'B': case 'C': case 'E': return eAcc_gb_est;
             case 'D':                     return eAcc_gb_gss;
+            case 'F':                     return eAcc_gb_dirsub;
             default:                      return eAcc_unreserved_nuc;
             }
 
@@ -1595,6 +1596,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.133  2006/08/21 19:33:26  ucko
+ * IdentifyAccession: EF -> eAcc_gb_dirsub
+ *
  * Revision 6.132  2006/07/06 14:06:33  ucko
  * IdentifyAccession: EE -> eAcc_gb_est
  *
