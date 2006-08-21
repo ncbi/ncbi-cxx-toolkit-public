@@ -281,7 +281,7 @@ bool CCdFromFasta::AddCddDescr(CRef< CCdd_descr >& descr)
 
 void CCdFromFasta::WriteToFile(const string& outputFile) const
 {
-    static const string cdExt = ".acd";
+    static const string cdExt = ".cn3";
     string cdOutFile, cdOutExt, err;
 
     cdOutFile = (outputFile.size() > 0) ? outputFile : "fastaCd";
@@ -303,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/08/21 17:05:07  lanczyck
+ * use .cn3 extension instead of .acd
+ *
  * Revision 1.1  2006/05/22 17:13:37  lanczyck
  * new file:  CCdCore subclass for a Fasta-generated CD
  *
