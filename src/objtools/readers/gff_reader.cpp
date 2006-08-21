@@ -482,7 +482,7 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
 {
     CRef<CSeq_feat> feat(CFeature_table_reader::CreateSeqFeat
                          (record.key, *x_ResolveLoc(record.loc),
-                          CFeature_table_reader::fKeepBadKey));
+                          CFeature_table_reader::fTranslateBadKey));
     if (record.frame >= 0  &&  feat->GetData().IsCdregion()) {
         feat->SetData().SetCdregion().SetFrame
             (static_cast<CCdregion::EFrame>(record.frame + 1));
@@ -1145,6 +1145,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2006/08/21 18:31:18  ucko
+* x_ParseFeatRecord: invoke CFeature_table_reader::CreateSeqFeat with
+* the new fTranslateBadKey flag, if only because gbench currently
+* ignores imp features with unrecognized keys.
+*
 * Revision 1.24  2006/06/21 15:48:45  ucko
 * Drop gratuitous (and inappropriate) inclusion of feature.hpp.
 *
