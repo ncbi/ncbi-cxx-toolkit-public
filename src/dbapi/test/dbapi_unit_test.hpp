@@ -140,6 +140,15 @@ public:
 
 
 ///////////////////////////////////////////////////////////////////////////
+class CODBCErrHandler : public CDB_UserHandler
+{
+public:
+    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+    virtual bool HandleIt(CDB_Exception* ex);
+};
+
+
+///////////////////////////////////////////////////////////////////////////
 class CDBAPIUnitTest
 {
 public:
@@ -174,11 +183,13 @@ public:
     void Test_SelectStmt(void);
     void Test_SelectStmtXML(void);
     void Test_Cursor(void);
+    void Test_Cursor2(void);
     void Test_Procedure(void);
     void Test_Bulk_Writing(void);
     void Test_Bulk_Overflow(void);
     void Test_GetTotalColumns(void);
     void Test_LOB(void);
+    void Test_LOB2(void);
     void Test_BlobStream(void);
     void Test_BulkInsertBlob(void);
     void Test_UNIQUE(void);
@@ -243,6 +254,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2006/08/21 18:19:35  ssikorsk
+ * Added class CODBCErrHandler;
+ * Added tests Test_Cursor2 and Test_LOB2;
+ *
  * Revision 1.39  2006/06/14 19:35:39  ssikorsk
  * Added Create_Destroy and Multiple_Close tests.
  *
