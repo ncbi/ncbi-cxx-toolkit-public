@@ -124,14 +124,14 @@ void CHTMLPopupMenu::AddItem(const string& title,
 {
     string x_action = action;
     switch (m_Type) {
-    case eKurdinSide:
-        if ( x_action.empty() ) {
-            x_action = "none";
-        }
-    default:
-        if ( NStr::StartsWith(action, "http:", NStr::eNocase) ) {
-            x_action = "window.location='" + action + "'";
-        }
+        case eKurdinSide:
+            if ( x_action.empty() ) {
+                x_action = "none";
+            }
+        default:
+            if ( NStr::StartsWith(action, "http:", NStr::eNocase) ) {
+                x_action = "window.location='" + action + "'";
+            }
     }
     SItem item(title, x_action, color, mouseover, mouseout);
     m_Items.push_back(item);
@@ -173,19 +173,19 @@ void CHTMLPopupMenu::AddSeparator(const string& text)
     SItem item;
 
     switch (m_Type) {
-    case eSmith:
-        break;
-    case eKurdin:
-        // eKurdin popup menu doesn't support separators
-        return;
-    case eKurdinConf:
-        item.title  = text.empty() ? "-" : text;
-        item.action = "-";
-        break;
-    case eKurdinSide:
-        item.title  = "none";
-        item.action = "none";
-        break;
+        case eSmith:
+            break;
+        case eKurdin:
+            // eKurdin popup menu doesn't support separators
+            return;
+        case eKurdinConf:
+            item.title  = text.empty() ? "-" : text;
+            item.action = "-";
+            break;
+        case eKurdinSide:
+            item.title  = "none";
+            item.action = "none";
+            break;
     }
     m_Items.push_back(item);
 } 
@@ -332,18 +332,18 @@ string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute, EType type
     }
     string type_name = "This";
     switch (type) {
-    case eSmith:
-        type_name = "eSmith";
-        break;
-    case eKurdin:
-        type_name = "eKurdin";
-        break;
-    case eKurdinConf:
-        type_name = "eKurdinConf";
-        break;
-    case eKurdinSide:
-        type_name = "eKurdinSide";
-        break;
+        case eSmith:
+            type_name = "eSmith";
+            break;
+        case eKurdin:
+            type_name = "eKurdin";
+            break;
+        case eKurdinConf:
+            type_name = "eKurdinConf";
+            break;
+        case eKurdinSide:
+            type_name = "eKurdinSide";
+            break;
     }
     // Get attribute name approximately on the base other menu types
     string attr_name;
@@ -367,29 +367,30 @@ string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute, EType type
 string CHTMLPopupMenu::ShowMenu(void) const
 {
     switch (m_Type) {
-    case eSmith:
-        return "window.showMenu(window." + m_Name + ");";
-    case eKurdin:
-        {
-        string align_h      = GetAttributeValue(eHTML_PM_alignH);
-        string align_v      = GetAttributeValue(eHTML_PM_alignV);
-        string color_border = GetAttributeValue(eHTML_PM_borderColor);
-        string color_title  = GetAttributeValue(eHTML_PM_titleColor);
-        string color_back   = GetAttributeValue(eHTML_PM_bgColor);
-        string s = "','"; 
-        return "PopUpMenu2_Set(" + m_Name + ",'" + align_h + s + align_v + s + 
-                color_border + s + color_title + s + color_back + "');";
-        }
-    case eKurdinConf:
-        return "PopUpMenu2_Set(" + m_Name + ");";
-    case eKurdinSide: {
-        const string& nl = CHTMLHelper::GetNL();
-        return "<script language=\"JavaScript1.2\">" + nl + "<!--" + nl +
-               "document.write(SideMenuType == \"static\" ? " \
-               "SideMenuStaticHtml : SideMenuDynamicHtml);" + nl +
-               "//-->" + nl + "</script>" + nl;
+        case eSmith:
+            return "window.showMenu(window." + m_Name + ");";
+        case eKurdin:
+            {
+            string align_h      = GetAttributeValue(eHTML_PM_alignH);
+            string align_v      = GetAttributeValue(eHTML_PM_alignV);
+            string color_border = GetAttributeValue(eHTML_PM_borderColor);
+            string color_title  = GetAttributeValue(eHTML_PM_titleColor);
+            string color_back   = GetAttributeValue(eHTML_PM_bgColor);
+            string s = "','"; 
+            return "PopUpMenu2_Set(" + m_Name + ",'" + align_h + s + align_v +
+                   s + color_border + s + color_title + s +
+                   color_back + "');";
+            }
+        case eKurdinConf:
+            return "PopUpMenu2_Set(" + m_Name + ");";
+        case eKurdinSide: {
+            const string& nl = CHTMLHelper::GetNL();
+            return "<script language=\"JavaScript1.2\">" + nl + "<!--" + nl +
+                "document.write(SideMenuType == \"static\" ? " \
+                "SideMenuStaticHtml : SideMenuDynamicHtml);" + nl +
+                "//-->" + nl + "</script>" + nl;
 
-        }
+            }
     }
     _TROUBLE;
     return kEmptyStr;
@@ -399,11 +400,11 @@ string CHTMLPopupMenu::ShowMenu(void) const
 string CHTMLPopupMenu::HideMenu(void) const
 {
     switch (m_Type) {
-    case eKurdin:
-    case eKurdinConf:
-        return "PopUpMenu2_Hide();";
-    default:
-        ;
+        case eKurdin:
+        case eKurdinConf:
+            return "PopUpMenu2_Hide();";
+        default:
+            ;
     }
     return kEmptyStr;
 }
@@ -411,14 +412,19 @@ string CHTMLPopupMenu::HideMenu(void) const
 
 CNcbiOstream& CHTMLPopupMenu::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == eHTML ) {
-        string items = GetCodeItems();
-        if ( !items.empty() ) {
-            const string& nl = CHTMLHelper::GetNL();
-            out << "<script language=\"JavaScript1.2\">" << nl 
-                << "<!--" << nl << items << "//-->" << nl
-                << "</script>" << nl;
-        }
+    switch (mode) {
+        case ePlainText:
+            return out;
+        case eHTML:
+        case eXHTML:
+            break;
+    }
+    string items = GetCodeItems();
+    if ( !items.empty() ) {
+        const string& nl = CHTMLHelper::GetNL();
+        out << "<script language=\"JavaScript1.2\">" << nl 
+            << "<!--" << nl << items << "//-->" << nl
+            << "</script>" << nl;
     }
     return out;
 }
@@ -624,6 +630,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/08/21 16:05:41  ivanov
+ * Added XHTML support.
+ *
  * Revision 1.36  2006/05/12 16:35:13  yasmax
  * fixed loader for recolving conflicts with new discovery report in pubmed db
  *

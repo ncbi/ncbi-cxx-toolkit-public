@@ -106,41 +106,40 @@ CHTMLNode::~CHTMLNode(void)
 string CHTMLNode::GetEventHandlerName(const EHTML_EH_Attribute name) const
 {
     switch (name) {
-
-    case eHTML_EH_Blur:
-        return "onBlur";
-    case eHTML_EH_Change:
-        return "onChange";
-    case eHTML_EH_Click:
-        return "onClick";
-    case eHTML_EH_DblClick:
-        return "onDblClick";
-    case eHTML_EH_Focus:
-        return "onFocus";
-    case eHTML_EH_Load:
-        return "onLoad";
-    case eHTML_EH_Unload:
-        return "onUnload";
-    case eHTML_EH_MouseDown:
-        return "onMouseDown";
-    case eHTML_EH_MouseUp:
-        return "onMouseUp";
-    case eHTML_EH_MouseMove:
-        return "onMouseMove";
-    case eHTML_EH_MouseOver:
-        return "onMouseOver";
-    case eHTML_EH_MouseOut:
-        return "onMouseOut";
-    case eHTML_EH_Select:
-        return "onSelect";
-    case eHTML_EH_Submit:
-        return "onSubmit";
-    case eHTML_EH_KeyDown:
-        return "onKeyDown";
-    case eHTML_EH_KeyPress:
-        return "onKeyPress";
-    case eHTML_EH_KeyUp:
-        return "onKeyUp";
+        case eHTML_EH_Blur:
+            return "onblur";
+        case eHTML_EH_Change:
+            return "onchange";
+        case eHTML_EH_Click:
+            return "onclick";
+        case eHTML_EH_DblClick:
+            return "ondblclick";
+        case eHTML_EH_Focus:
+            return "onfocus";
+        case eHTML_EH_Load:
+            return "onload";
+        case eHTML_EH_Unload:
+            return "onunload";
+        case eHTML_EH_MouseDown:
+            return "onmousedown";
+        case eHTML_EH_MouseUp:
+            return "onmouseup";
+        case eHTML_EH_MouseMove:
+            return "onmousemove";
+        case eHTML_EH_MouseOver:
+            return "onmouseover";
+        case eHTML_EH_MouseOut:
+            return "onmouseout";
+        case eHTML_EH_Select:
+            return "onselect";
+        case eHTML_EH_Submit:
+            return "onsubmit";
+        case eHTML_EH_KeyDown:
+            return "onkeydown";
+        case eHTML_EH_KeyPress:
+            return "onkeypress";
+        case eHTML_EH_KeyUp:
+            return "onkeyup";
     }
     _TROUBLE;
     return kEmptyStr;
@@ -169,29 +168,29 @@ void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu,
     string show, hide;
 
     switch (menu->GetType()) {
-    case CHTMLPopupMenu::eSmith: 
-        show = menu->ShowMenu();
-        if ( cancel_default_event ) {
-            show += kStopEvent;
-        }
-        SetEventHandler(event, show);
-        return;
-    case CHTMLPopupMenu::eKurdin: 
-    case CHTMLPopupMenu::eKurdinConf:
-        {
+        case CHTMLPopupMenu::eSmith: 
             show = menu->ShowMenu();
-            hide = menu->HideMenu();
             if ( cancel_default_event ) {
                 show += kStopEvent;
-                hide += kStopEvent;
             }
             SetEventHandler(event, show);
-            SetEventHandler(eHTML_EH_MouseOut, hide);
-        }
-        return;
-    case CHTMLPopupMenu::eKurdinSide:
-        AppendHTMLText(menu->ShowMenu());
-        return;
+            return;
+        case CHTMLPopupMenu::eKurdin: 
+        case CHTMLPopupMenu::eKurdinConf:
+            {
+                show = menu->ShowMenu();
+                hide = menu->HideMenu();
+                if ( cancel_default_event ) {
+                    show += kStopEvent;
+                    hide += kStopEvent;
+                }
+                SetEventHandler(event, show);
+                SetEventHandler(eHTML_EH_MouseOut, hide);
+            }
+            return;
+        case CHTMLPopupMenu::eKurdinSide:
+            AppendHTMLText(menu->ShowMenu());
+            return;
     }
     _TROUBLE;
 }
@@ -249,14 +248,18 @@ CHTMLDualNode::~CHTMLDualNode(void)
 
 CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText ) {
-        INIT_STREAM_WRITE;
-        out << m_Plain;
-        CHECK_STREAM_WRITE(out);
-        return out;
-    } else {
-        return CParent::PrintChildren(out, mode);
+    switch (mode) {
+        case ePlainText:
+            INIT_STREAM_WRITE;
+            out << m_Plain;
+            CHECK_STREAM_WRITE(out);
+            break;
+        case eHTML:
+        case eXHTML:
+            CParent::PrintChildren(out, mode);
+            break;
     }
+    return out;
 }
 
 
@@ -284,11 +287,16 @@ CHTMLPlainText::~CHTMLPlainText(void)
 
 CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    string str;
-    if (mode == ePlainText  ||  NoEncode()) {
-        str = GetText();
-    } else {
-        str = CHTMLHelper::HTMLEncode(GetText());
+    string str(GetText());
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            if ( !NoEncode() ) {
+                str = CHTMLHelper::HTMLEncode(str);
+            }
+            break;
     }
     INIT_STREAM_WRITE;
     out << str;
@@ -322,16 +330,20 @@ CNcbiOstream& CHTMLText::PrintString(CNcbiOstream& out, TMode mode,
                                      const string& s) const
 {
     TFlags flags = 0;
-    if ( mode == ePlainText ) {
-        if ( m_Flags & fStripTextMode )
-            flags |= fStrip;
-        if ( m_Flags & fEncodeTextMode )
-            flags |= fEncode;
-    } else {
-        if ( m_Flags & fStripHtmlMode ) 
-            flags |= fStrip;
-        if ( m_Flags & fEncodeHtmlMode )
-            flags |= fEncode;
+    switch (mode) {
+        case ePlainText:
+            if ( m_Flags & fStripTextMode )
+                flags |= fStrip;
+            if ( m_Flags & fEncodeTextMode )
+                flags |= fEncode;
+            break;
+        case eHTML:
+        case eXHTML:
+            if ( m_Flags & fStripHtmlMode ) 
+                flags |= fStrip;
+            if ( m_Flags & fEncodeHtmlMode )
+                flags |= fEncode;
+            break;
     }
     string str;
     const string *pstr = &str;
@@ -435,45 +447,93 @@ CHTMLOpenElement::~CHTMLOpenElement(void)
     return;
 }
 
+CNcbiOstream& CHTMLOpenElement::x_PrintBegin(CNcbiOstream& out, TMode mode)
+{
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            out << '<' << m_Name;
+            if ( HaveAttributes() ) {
+                for ( TAttributes::const_iterator i = Attributes().begin();
+                    i != Attributes().end(); ++i ) {
+                    INIT_STREAM_WRITE;
+                    out << ' ' << i->first;
+                    CHECK_STREAM_WRITE(out);
+                    if ( (mode == eXHTML)  ||
+                         !i->second.IsOptional()  ||
+                         !i->second.GetValue().empty() ) {
+                        string attr = i->second.GetValue();
+                        out << "=\"";
+                        // For XHTML attribute minimization is forbidden
+                        if ( attr.empty() ) {
+                            out << i->first;
+                        } else {
+                            if ( attr.find_first_of("\"&") != NPOS ) {
+                                // Escape attributes
+                                attr = CHTMLHelper::HTMLAttributeEncode(attr, 
+                                            CHTMLHelper::fSkipEntities |
+    /* NOTE: 
+        temporary use fCheckPreencoded flag here to clean up redundant
+        HTMLEncode() calls from NCBI code.
+    */
+                                            CHTMLHelper::fCheckPreencoded);
+                            }
+                            // Check tags inside attribute value
+                            if (s_Find(attr, kTagStart) == NPOS) {
+                                out << attr;
+                            } else {
+                                CHTMLText tmp(attr);
+                                tmp.Print(out, mode);
+                            }
+                        }
+                        out << '"';
+                    }
+                }
+            }
+            break;
+    }
+    return out;
+}
+
 
 CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if ( mode != ePlainText ) {
-        out << '<' << m_Name;
-        if ( HaveAttributes() ) {
-            for ( TAttributes::const_iterator i = Attributes().begin();
-                  i != Attributes().end(); ++i ) {
-                INIT_STREAM_WRITE;
-                out << ' ' << i->first;
-                CHECK_STREAM_WRITE(out);
-                if ( !i->second.IsOptional() ||
-                     !i->second.GetValue().empty() ) {
-                    string attr = i->second.GetValue();
-                    out << "=\"";
-                    // Escape attributes
-                    if ( attr.find_first_of("\"&") != NPOS ) {
-                        attr = CHTMLHelper::HTMLAttributeEncode(attr, 
-                                            CHTMLHelper::fSkipEntities |
-    /* NOTE: 
-       temporary use fCheckPreencoded flag here to clean up redundant
-       HTMLEncode() calls from NCBI code.
-    */
-                                            CHTMLHelper::fCheckPreencoded);
-                    }
-                    // Check tags inside attribute value
-                    if (s_Find(attr, kTagStart) == NPOS) {
-                        out << attr;
-                    } else {
-                        CHTMLText tmp(attr);
-                        tmp.Print(out, mode);
-                    }
-                    out << '"';
-                }
-            }
-        }
-        INIT_STREAM_WRITE;
-        out << '>';
-        CHECK_STREAM_WRITE(out);
+    x_PrintBegin(out, mode);
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            INIT_STREAM_WRITE;
+            out << '>';
+            CHECK_STREAM_WRITE(out);
+            break;
+    }
+    return out;
+}
+
+
+CHTMLSingleElement::~CHTMLSingleElement(void)
+{
+    return;
+}
+
+
+CNcbiOstream& CHTMLSingleElement::PrintBegin(CNcbiOstream& out, TMode mode)
+{
+    switch (mode) {
+        case ePlainText:
+        case eHTML:
+            CParent::PrintBegin(out, mode);
+            break;
+        case eXHTML:
+            x_PrintBegin(out, mode);
+            INIT_STREAM_WRITE;
+            out << " />";
+            CHECK_STREAM_WRITE(out);
+            break;
     }
     return out;
 }
@@ -487,10 +547,15 @@ CHTMLInlineElement::~CHTMLInlineElement(void)
 
 CNcbiOstream& CHTMLInlineElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
-    if ( mode != ePlainText ) {
-        INIT_STREAM_WRITE;
-        out << "</" << m_Name << '>';
-        CHECK_STREAM_WRITE(out);
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            INIT_STREAM_WRITE;
+            out << "</" << m_Name << '>';
+            CHECK_STREAM_WRITE(out);
+            break;
     }
     return out;
 }
@@ -505,19 +570,24 @@ CHTMLElement::~CHTMLElement(void)
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
-    if ( mode != ePlainText ) {
-        const TMode* previous = mode.GetPreviousContext();
-        INIT_STREAM_WRITE;
-        if ( previous ) {
-            CNCBINode* parent = previous->GetNode();
-            if ( parent && parent->HaveChildren() &&
-                 parent->Children().size() > 1 )
-                // separate child nodes by newline
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            const TMode* previous = mode.GetPreviousContext();
+            INIT_STREAM_WRITE;
+            if ( previous ) {
+                CNCBINode* parent = previous->GetNode();
+                if ( parent && parent->HaveChildren() &&
+                    parent->Children().size() > 1 )
+                    // separate child nodes by newline
+                    out << CHTMLHelper::GetNL();
+            } else {
                 out << CHTMLHelper::GetNL();
-        } else {
-            out << CHTMLHelper::GetNL();
-        }
-        CHECK_STREAM_WRITE(out);
+            }
+            CHECK_STREAM_WRITE(out);
+            break;
     }
     return out;
 }
@@ -532,19 +602,26 @@ CHTMLBlockElement::~CHTMLBlockElement(void)
 CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
-    if ( mode == ePlainText ) {
-        // Add a newline iff no node on the path to the last descendant
-        // is also a block element. We only need one break.
-        CNCBINode* node = this;
-        while (node->HaveChildren()) {
-            node = node->Children().back();
-            if (dynamic_cast<CHTMLBlockElement*>(node)) {
-                return out;
+    switch (mode) {
+        case ePlainText:
+            {{
+            // Add a newline iff no node on the path to the last descendant
+            // is also a block element. We only need one break.
+            CNCBINode* node = this;
+            while (node->HaveChildren()) {
+                node = node->Children().back();
+                if (dynamic_cast<CHTMLBlockElement*>(node)) {
+                    return out;
+                }
             }
-        }
-        INIT_STREAM_WRITE;
-        out << CHTMLHelper::GetNL();
-        CHECK_STREAM_WRITE(out);
+            INIT_STREAM_WRITE;
+            out << CHTMLHelper::GetNL();
+            CHECK_STREAM_WRITE(out);
+            }}
+            break;
+        case eHTML:
+        case eXHTML:
+            break;
     }
     return out;
 }
@@ -561,28 +638,43 @@ CHTMLComment::~CHTMLComment(void)
 
 CNcbiOstream& CHTMLComment::Print(CNcbiOstream& out, TMode mode)
 {
-    if (mode == ePlainText) {
-        return out;
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            CParent::Print(out, mode);
+            break;
     }
-    return CParent::Print(out, mode);
+    return out;
 }
 
 CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if (mode == eHTML) {
-        INIT_STREAM_WRITE;
-        out << "<!--";
-        CHECK_STREAM_WRITE(out);
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            INIT_STREAM_WRITE;
+            out << "<!--";
+            CHECK_STREAM_WRITE(out);
+            break;
     }
     return out;
 }
 
 CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out, TMode mode)
 {
-    if (mode == eHTML) {
-        INIT_STREAM_WRITE;
-        out << "-->";
-        CHECK_STREAM_WRITE(out);
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            INIT_STREAM_WRITE;
+            out << "-->";
+            CHECK_STREAM_WRITE(out);
+            break;
     }
     return out;
 }
@@ -606,17 +698,23 @@ CHTMLListElement* CHTMLListElement::SetType(const string& type)
 
 CHTMLListElement* CHTMLListElement::SetCompact(void)
 {
-    SetOptionalAttribute("compact", true);
+    SetAttribute("compact");
     return this;
 }
 
 CNcbiOstream& CHTMLListElement::PrintChildren(CNcbiOstream& out, TMode mode)
 {
-    if (mode == ePlainText) {
-        CIndentingOstream out2(out);
-        CHTMLElement::PrintChildren(out2, mode);
-    } else {
-        CHTMLElement::PrintChildren(out, mode);
+    switch (mode) {
+        case ePlainText:
+            {{
+                CIndentingOstream out2(out);
+                CHTMLElement::PrintChildren(out2, mode);
+            }}
+            break;
+        case eHTML:
+        case eXHTML:
+            CHTMLElement::PrintChildren(out, mode);
+            break;
     }
     return out;
 }
@@ -642,18 +740,22 @@ CHTMLSpecialChar::~CHTMLSpecialChar(void)
 
 CNcbiOstream& CHTMLSpecialChar::PrintChildren(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText ) {
-        for ( int i = 0; i < m_Count; i++ ) {
-            INIT_STREAM_WRITE;
-            out << m_Plain;
-            CHECK_STREAM_WRITE(out);
-        }
-    } else {
-        for ( int i = 0; i < m_Count; i++ ) {
-            INIT_STREAM_WRITE;
-            out << "&" << m_Html << ";";
-            CHECK_STREAM_WRITE(out);
-        }
+    switch (mode) {
+        case ePlainText:
+            for ( int i = 0; i < m_Count; i++ ) {
+                INIT_STREAM_WRITE;
+                out << m_Plain;
+                CHECK_STREAM_WRITE(out);
+            }
+            break;
+        case eHTML:
+        case eXHTML:
+            for ( int i = 0; i < m_Count; i++ ) {
+                INIT_STREAM_WRITE;
+                out << "&" << m_Html << ";";
+                CHECK_STREAM_WRITE(out);
+            }
+            break;
     }
     return out;
 }
@@ -705,8 +807,12 @@ static bool s_CheckUsePopupMenus(const CNCBINode* node,
 CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     // Check mode
-    if ( mode != eHTML ) {
-        return CParent::PrintChildren(out, mode);
+    switch (mode) {
+        case ePlainText:
+            return CParent::PrintChildren(out, mode);
+        case eHTML:
+        case eXHTML:
+            break;
     }
     
     // Check for use popup menus
@@ -800,16 +906,21 @@ void CHTML_tr::ResetTableCache(void)
 CNcbiOstream& CHTML_tr::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
-    if ( mode == ePlainText ) {
-        if ( m_Parent ) {
-            INIT_STREAM_WRITE;
-            out << CHTMLHelper::GetNL();
-            if (m_Parent->m_IsRowSep == CHTML_table::ePrintRowSep) {
-                out << string(GetTextLength(mode), m_Parent->m_RowSepChar)
-                    << CHTMLHelper::GetNL();
+    switch (mode) {
+        case ePlainText:
+            if ( m_Parent ) {
+                INIT_STREAM_WRITE;
+                out << CHTMLHelper::GetNL();
+                if (m_Parent->m_IsRowSep == CHTML_table::ePrintRowSep) {
+                    out << string(GetTextLength(mode), m_Parent->m_RowSepChar)
+                        << CHTMLHelper::GetNL();
+                }
+                CHECK_STREAM_WRITE(out);
             }
-            CHECK_STREAM_WRITE(out);
-        }
+            break;
+        case eHTML:
+        case eXHTML:
+            break;
     }
     return out;
 }
@@ -819,11 +930,14 @@ CNcbiOstream& CHTML_tr::PrintChildren(CNcbiOstream& out, TMode mode)
     if ( !HaveChildren() ) {
         return out;
     }
-    if ( mode != ePlainText ) {
-        return CParent::PrintChildren(out, mode);
+    switch (mode) {
+        case ePlainText:
+            break;
+        case eHTML:
+        case eXHTML:
+            return CParent::PrintChildren(out, mode);
     }
     out << m_Parent->m_ColSepL;
-
     NON_CONST_ITERATE ( TChildren, i, Children() ) {
         if ( i != Children().begin() ) {
             INIT_STREAM_WRITE;
@@ -844,7 +958,6 @@ SIZE_TYPE CHTML_tr::GetTextLength(TMode mode)
     if ( !HaveChildren() ) {
         return 0;
     }
-
     CNcbiOstrstream sout;
     SIZE_TYPE cols = 0;
 
@@ -853,12 +966,18 @@ SIZE_TYPE CHTML_tr::GetTextLength(TMode mode)
         cols++;
     }
     SIZE_TYPE textlen = sout.pcount();
-    if ( mode == ePlainText ) {
-        textlen += m_Parent->m_ColSepL.length() +
-            m_Parent->m_ColSepR.length();
-        if ( cols ) {
-            textlen += m_Parent->m_ColSepM.length() * (cols - 1);
-        }
+
+    switch (mode) {
+        case ePlainText:
+            textlen += m_Parent->m_ColSepL.length() +
+                m_Parent->m_ColSepR.length();
+            if ( cols ) {
+                textlen += m_Parent->m_ColSepM.length() * (cols - 1);
+            }
+            break;
+        case eHTML:
+        case eXHTML:
+            break;
     }
     return textlen;
 }
@@ -1294,7 +1413,8 @@ CHTML_table::TIndex CHTML_table::CalculateNumberOfRows(void) const
 
 CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText ) {
+    switch (mode) {
+    case ePlainText:
         INIT_STREAM_WRITE;
         out << CHTMLHelper::GetNL();
         CHECK_STREAM_WRITE(out);
@@ -1314,7 +1434,9 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
             out << string(seplen, m_RowSepChar) << CHTMLHelper::GetNL();
             CHECK_STREAM_WRITE(out);
         }
-    } else {
+        break;
+    case eHTML:
+    case eXHTML:
         // Set column widths.
         if ( HaveChildren() ) {
             ITERATE ( TColWidths, w, m_ColWidths ) {
@@ -1336,6 +1458,7 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
                 }
             }
         }
+        break;
     }
     return CParent::PrintBegin(out, mode);
 }
@@ -1897,16 +2020,18 @@ CHTML_br::~CHTML_br(void)
 
 CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText ) {
-        INIT_STREAM_WRITE;
-        out << CHTMLHelper::GetNL();
-        CHECK_STREAM_WRITE(out);
-    }
-    else {
-        CParent::PrintBegin(out, mode);
+    switch (mode) {
+        case ePlainText:
+            INIT_STREAM_WRITE;
+            out << CHTMLHelper::GetNL();
+            CHECK_STREAM_WRITE(out);
+            break;
+        case eHTML:
+        case eXHTML:
+            CParent::PrintBegin(out, mode);
+            break;
     }
     return out;
-
 }
 
 
@@ -2191,13 +2316,16 @@ CHTML_hr* CHTML_hr::SetNoShade(void)
 
 CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText ) {
-        INIT_STREAM_WRITE;
-        out << CHTMLHelper::GetNL() << CHTMLHelper::GetNL();
-        CHECK_STREAM_WRITE(out);
-    }
-    else {
-        CParent::PrintBegin(out, mode);
+    switch (mode) {
+        case ePlainText:
+            INIT_STREAM_WRITE;
+            out << CHTMLHelper::GetNL() << CHTMLHelper::GetNL();
+            CHECK_STREAM_WRITE(out);
+            break;
+        case eHTML:
+        case eXHTML:
+            CParent::PrintBegin(out, mode);
+            break;
     }
     return out;
 }
@@ -2283,7 +2411,6 @@ DEFINE_HTML_ELEMENT(h4);
 DEFINE_HTML_ELEMENT(h5);
 DEFINE_HTML_ELEMENT(h6);
 DEFINE_HTML_ELEMENT(p);
-DEFINE_HTML_ELEMENT(pnop);
 DEFINE_HTML_ELEMENT(pre);
 DEFINE_HTML_ELEMENT(dt);
 DEFINE_HTML_ELEMENT(dd);
@@ -2326,6 +2453,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.129  2006/08/21 16:05:41  ivanov
+ * Added XHTML support.
+ *
  * Revision 1.128  2006/08/08 18:09:41  ivanov
  * CHTMLOpenElement::PrintBegin() -- use CHTMLHelper::HTMLAttributeEncode()
  * to escape quote and ampersands in the attribute values.

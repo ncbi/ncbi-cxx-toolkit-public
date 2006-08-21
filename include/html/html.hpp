@@ -359,7 +359,7 @@ private:
 
 
 // HTML tag base class.
-class NCBI_XHTML_EXPORT CHTMLOpenElement: public CHTMLNode
+class NCBI_XHTML_EXPORT CHTMLOpenElement : public CHTMLNode
 {
     typedef CHTMLNode CParent;
 public:
@@ -393,9 +393,47 @@ public:
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 
     // Set NOWRAP attribute
-    void SetNoWrap(void)
-        { SetAttribute("nowrap", "nowrap"); }
+    void SetNoWrap(void) 
+        { SetAttribute("nowrap"); }
 
+protected:
+    CNcbiOstream& x_PrintBegin(CNcbiOstream &, TMode mode);
+};
+
+
+// HTML single tag (without closing tag)
+class NCBI_XHTML_EXPORT CHTMLSingleElement: public CHTMLOpenElement
+{
+    typedef CHTMLOpenElement CParent;
+public:
+    CHTMLSingleElement(const char* tagname)
+        : CParent(tagname)
+    { }
+    CHTMLSingleElement(const char* tagname, const char* text)
+        : CParent(tagname, text)
+    { }
+    CHTMLSingleElement(const char* tagname, const string& text)
+        : CParent(tagname, text)
+    { }
+    CHTMLSingleElement(const char* tagname, CNCBINode* node)
+        : CParent(tagname, node)
+    { }
+    CHTMLSingleElement(const string& tagname)
+        : CParent(tagname)
+    { }
+    CHTMLSingleElement(const string& tagname, const char* text)
+        : CParent(tagname, text)
+    { }
+    CHTMLSingleElement(const string& tagname, const string& text)
+        : CParent(tagname, text)
+    { }
+    CHTMLSingleElement(const string& tagname, CNCBINode* node)
+        : CParent(tagname, node)
+    { }
+    ~CHTMLSingleElement(void);
+
+    // Print tag itself.
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 };
 
 
@@ -1024,9 +1062,9 @@ public:
 
 
 // <input> tag.
-class NCBI_XHTML_EXPORT CHTML_input : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_input : public CHTMLSingleElement
 {
-    typedef CHTMLOpenElement CParent;
+    typedef CHTMLSingleElement CParent;
 public:
     CHTML_input(const char* type, const string& name = kEmptyStr);
     ~CHTML_input(void);
@@ -1248,9 +1286,9 @@ public:
 
 
 // <br> tag (break).
-class NCBI_XHTML_EXPORT CHTML_br : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_br : public CHTMLSingleElement
 {
-    typedef CHTMLOpenElement CParent;
+    typedef CHTMLSingleElement CParent;
     static const char sm_TagName[];
 public:
     CHTML_br(void);
@@ -1330,9 +1368,9 @@ public:
 
 
 // <img> tag.
-class NCBI_XHTML_EXPORT CHTML_img : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_img : public CHTMLSingleElement
 {
-    typedef CHTMLOpenElement CParent;
+    typedef CHTMLSingleElement CParent;
 public:
     CHTML_img(const string& url, const string& alt = kEmptyStr);
     CHTML_img(const string& url, int width, int height, 
@@ -1464,9 +1502,9 @@ public:
 };
 
 
-class NCBI_XHTML_EXPORT CHTML_basefont : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_basefont : public CHTMLSingleElement
 {
-    typedef CHTMLOpenElement CParent;
+    typedef CHTMLSingleElement CParent;
     static const char sm_TagName[];
 public:
     CHTML_basefont(int size);
@@ -1489,9 +1527,9 @@ public:
 
 
 // <hr> tag.
-class NCBI_XHTML_EXPORT CHTML_hr : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_hr : public CHTMLSingleElement
 {
-    typedef CHTMLOpenElement CParent;
+    typedef CHTMLSingleElement CParent;
     static const char sm_TagName[];
 public:
     CHTML_hr(bool noShade = false);
@@ -1508,9 +1546,9 @@ public:
 
 
 // <meta> tag.
-class NCBI_XHTML_EXPORT CHTML_meta : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_meta : public CHTMLSingleElement
 {
-    typedef CHTMLOpenElement CParent;
+    typedef CHTMLSingleElement CParent;
     static const char sm_TagName[];
 public:
     enum EType {
@@ -1541,8 +1579,8 @@ public:
 DECLARE_HTML_ELEMENT( head,       CHTMLElement);
 DECLARE_HTML_ELEMENT( body,       CHTMLElement);
 DECLARE_HTML_ELEMENT( base,       CHTMLElement);
-DECLARE_HTML_ELEMENT( isindex,    CHTMLOpenElement);
-DECLARE_HTML_ELEMENT( link,       CHTMLOpenElement);
+DECLARE_HTML_ELEMENT( isindex,    CHTMLSingleElement);
+DECLARE_HTML_ELEMENT( link,       CHTMLSingleElement);
 DECLARE_HTML_ELEMENT( noscript,   CHTMLElement);
 DECLARE_HTML_ELEMENT( object,     CHTMLElement);
 DECLARE_HTML_ELEMENT( style,      CHTMLElement);
@@ -1558,7 +1596,6 @@ DECLARE_HTML_ELEMENT( h4,         CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( h5,         CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( h6,         CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( p,          CHTMLBlockElement);
-DECLARE_HTML_ELEMENT( pnop,       CHTMLOpenElement);
 DECLARE_HTML_ELEMENT( pre,        CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( dt,         CHTMLElement);
 DECLARE_HTML_ELEMENT( dd,         CHTMLElement);
@@ -1572,7 +1609,7 @@ DECLARE_HTML_ELEMENT( tfoot,      CHTMLElement);
 DECLARE_HTML_ELEMENT( th,         CHTML_tc);
 DECLARE_HTML_ELEMENT( td,         CHTML_tc);
 DECLARE_HTML_ELEMENT( applet,     CHTMLElement);
-DECLARE_HTML_ELEMENT( param,      CHTMLOpenElement);
+DECLARE_HTML_ELEMENT( param,      CHTMLSingleElement);
 DECLARE_HTML_ELEMENT( cite,       CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( code,       CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( dfn,        CHTMLElement);
@@ -1615,6 +1652,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2006/08/21 16:05:31  ivanov
+ * Added XHTML support.
+ *
  * Revision 1.90  2006/08/08 18:09:57  ivanov
  * Replace <... nowrap> with <... nowrap="nowrap">
  *
