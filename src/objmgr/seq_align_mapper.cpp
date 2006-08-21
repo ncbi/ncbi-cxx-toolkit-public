@@ -841,13 +841,13 @@ CSeq_align_Mapper::x_ConvertSegment(TSegments::iterator& seg_it,
         // skipped row
         return aln_row.m_Id;
     }
-    CSeq_loc_Mapper::TIdMap::iterator id_it =
-        mapper.m_IdMap.find(aln_row.m_Id);
-    if (id_it == mapper.m_IdMap.end()) {
+    const CMappingRanges::TIdMap& idmap = mapper.m_Mappings->GetIdMap();
+    CMappingRanges::TIdIterator id_it = idmap.find(aln_row.m_Id);
+    if (id_it == idmap.end()) {
         // ID not found in the segment, leave the row unchanged
         return aln_row.m_Id;
     }
-    CSeq_loc_Mapper::TRangeMap& rmap = id_it->second;
+    const CMappingRanges::TRangeMap& rmap = id_it->second;
     if ( rmap.empty() ) {
         // No mappings for this segment
         return aln_row.m_Id;
@@ -855,7 +855,7 @@ CSeq_align_Mapper::x_ConvertSegment(TSegments::iterator& seg_it,
     // Sorted mappings
     typedef vector< CRef<CMappingRange> > TSortedMappings;
     TSortedMappings mappings;
-    CSeq_loc_Mapper::TRangeMap::iterator rg_it = rmap.begin();
+    CMappingRanges::TRangeIterator rg_it = rmap.begin();
     for ( ; rg_it; ++rg_it) {
         mappings.push_back(rg_it->second);
     }
@@ -1277,6 +1277,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2006/08/21 15:46:42  grichenk
+* Added CMappingRanges for storing mappings.
+* Added CSeq_loc_Mapper(CMappingRanges&) constructor.
+*
 * Revision 1.19  2006/05/11 19:03:12  grichenk
 * Fixed mapping of gaps in alignments
 *

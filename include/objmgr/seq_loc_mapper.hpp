@@ -78,7 +78,9 @@ public:
                   bool              ext_to = false);
 
     bool GoodSrcId(const CSeq_id& id) const;
-    CRef<CSeq_id> GetDstId(void);
+    CRef<CSeq_id> GetDstId(void) const;
+    const CSeq_id_Handle& GetDstIdHandle(void) const
+        { return m_Dst_id_Handle; }
 
     typedef CRange<TSeqPos>    TRange;
     typedef CRef<CInt_fuzz>    TFuzz;
@@ -109,9 +111,58 @@ private:
     bool                m_ExtTo;
 
     friend class CSeq_loc_Mapper;
+    friend class CMappingRanges;
     friend class CSeq_align_Mapper;
     friend struct CMappingRangeRef_Less;
     friend struct CMappingRangeRef_LessRev;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CMappingRanges : public CObject
+{
+public:
+    CMappingRanges(void);
+
+    // Conversions
+    typedef CMappingRange::TRange                        TRange;
+    typedef CRangeMultimap<CRef<CMappingRange>, TSeqPos> TRangeMap;
+    typedef TRangeMap::const_iterator                    TRangeIterator;
+    typedef map<CSeq_id_Handle, TRangeMap>               TIdMap;
+    typedef TIdMap::const_iterator                       TIdIterator;
+    typedef vector< CRef<CMappingRange> >                TSortedMappings;
+
+    const TIdMap& GetIdMap() const { return m_IdMap; }
+    TIdMap& GetIdMap(void) { return m_IdMap; }
+
+    void AddConversion(CRef<CMappingRange> cvt);
+    void AddConversion(CSeq_id_Handle    src_id,
+                       TSeqPos           src_from,
+                       TSeqPos           src_length,
+                       ENa_strand        src_strand,
+                       CSeq_id_Handle    dst_id,
+                       TSeqPos           dst_from,
+                       ENa_strand        dst_strand,
+                       bool              ext_to = false);
+
+    TRangeIterator BeginMappingRanges(CSeq_id_Handle id,
+                                      TSeqPos         from,
+                                      TSeqPos         to);
+
+    // Set overall source orientation. The order of ranges is reversed
+    // if reverse_src != reverse_dst.
+    void SetReverseSrc(bool value = true) { m_ReverseSrc = value; };
+    bool GetReverseSrc(void) const { return m_ReverseSrc; }
+    // Set overall destination orientation. The order of ranges is reversed
+    // if reverse_src != reverse_dst.
+    void SetReverseDst(bool value = true) { m_ReverseDst = value; };
+    bool GetReverseDst(void) const { return m_ReverseDst; }
+
+private:
+    TIdMap m_IdMap;
+
+    // Mapping source and destination orientations
+    bool   m_ReverseSrc;
+    bool   m_ReverseDst;
 };
 
 
@@ -142,6 +193,16 @@ public:
         fAlign_Dense_seg_TotalRange = 0x01
     };
     typedef int TMapOptions;
+
+    /// Mapping through a pre-filled CMappipngRanges. Source(s) and
+    /// destination(s) are considered as having the same width.
+    /// @param mapping_ranges
+    ///  CMappingRanges filled with the desired source and destination
+    ///  ranges. Must be a heap object (will be stored in a CRef<>).
+    /// @param scope
+    ///  Optional scope (required only for mapping alignments).
+    CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
+                    CScope*         scope = 0);
 
     /// Mapping through a feature, both location and product must be set.
     /// If scope is set, synonyms are resolved for each source ID.
@@ -277,11 +338,12 @@ private:
         fWidthNucToProt = 2
     };
     typedef int TWidthFlags; // binary OR of "EWidthFlags"
-    // Conversions
-    typedef CRange<TSeqPos>                              TRange;
-    typedef CRangeMultimap<CRef<CMappingRange>, TSeqPos> TRangeMap;
-    typedef TRangeMap::iterator                          TRangeIterator;
-    typedef map<CSeq_id_Handle, TRangeMap>               TIdMap;
+
+    typedef CMappingRange::TRange           TRange;
+    typedef CMappingRanges::TRangeMap       TRangeMap;
+    typedef CMappingRanges::TRangeIterator  TRangeIterator;
+    typedef CMappingRanges::TSortedMappings TSortedMappings;
+
     // List and map of target ranges to construct target-to-target mapping
     typedef list<TRange>                    TDstRanges;
     typedef map<CSeq_id_Handle, TDstRanges> TDstIdMap;
@@ -300,7 +362,10 @@ private:
     typedef CSeq_align::C_Segs::TDendiag TDendiag;
     typedef CSeq_align::C_Segs::TStd     TStd;
 
-    typedef vector< CRef<CMappingRange> > TSortedMappings;
+    typedef vector<CSeq_id_Handle>        TSynonyms;
+
+    // Collect synonyms for the given seq-id
+    void x_CollectSynonyms(const CSeq_id_Handle& id, TSynonyms& synonyms);
 
     // Create target-to-target mapping to avoid truncation of ranges
     // already on the target sequence(s). This includes mapping
@@ -373,10 +438,6 @@ private:
     void x_InitAlign(const CStd_seg& sseg, size_t to_row);
     void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
 
-    TRangeIterator x_BeginMappingRanges(CSeq_id_Handle id,
-                                        TSeqPos from,
-                                        TSeqPos to);
-
     bool x_MapNextRange(const TRange& src_rg,
                         bool is_set_strand,
                         ENa_strand src_strand,
@@ -413,10 +474,6 @@ private:
                                     size_t                strand_idx,
                                     TRangeFuzz            rg_fuzz);
 
-    // Check location type, optimize if possible (empty mix to NULL,
-    // mix with a single element to this element etc.).
-    void x_OptimizeSeq_loc(CRef<CSeq_loc>& loc);
-
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
     bool x_ReverseRangeOrder(void) const;
@@ -428,19 +485,16 @@ private:
     bool              m_CheckStrand; // Check strands before mapping
 
     // Sources may have different widths, e.g. in an alignment
-    TWidthById      m_Widths;
-    bool            m_UseWidth;
-    int             m_Dst_width;
-    TIdMap          m_IdMap;
-    bool            m_Partial;
-    bool            m_LastTruncated;
+    TWidthById           m_Widths;
+    bool                 m_UseWidth;
+    int                  m_Dst_width;
+    bool                 m_Partial;
+    bool                 m_LastTruncated;
+    CRef<CMappingRanges> m_Mappings;
 
     mutable TRangesById m_MappedLocs;
     CRef<CSeq_loc>      m_Dst_loc;
     TDstStrandMap       m_DstRanges;
-    // Mapping source and destination orientation
-    bool                m_ReverseSrc;
-    bool                m_ReverseDst;
 };
 
 
@@ -498,7 +552,7 @@ bool CMappingRange::GoodSrcId(const CSeq_id& id) const
 
 
 inline
-CRef<CSeq_id> CMappingRange::GetDstId(void)
+CRef<CSeq_id> CMappingRange::GetDstId(void) const
 {
     return m_Dst_id_Handle ?
         Ref(&const_cast<CSeq_id&>(*m_Dst_id_Handle.GetSeqId())) :
@@ -591,9 +645,9 @@ bool CSeq_loc_Mapper::x_ReverseRangeOrder(void) const
     if (m_MergeFlag == eMergeContained  || m_MergeFlag == eMergeAll) {
         // Sorting discards the original order, no need to check
         // m_ReverseSrc
-        return m_ReverseDst;
+        return m_Mappings->GetReverseDst();
     }
-    return m_ReverseSrc != m_ReverseDst;
+    return m_Mappings->GetReverseSrc() != m_Mappings->GetReverseDst();
 }
 
 
@@ -606,6 +660,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/08/21 15:46:42  grichenk
+* Added CMappingRanges for storing mappings.
+* Added CSeq_loc_Mapper(CMappingRanges&) constructor.
+*
 * Revision 1.34  2006/06/26 16:56:41  grichenk
 * Fixed order of intervals in mapped locations.
 * Filter duplicate mappings.

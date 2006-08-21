@@ -51,6 +51,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/////////////////////////////////////////////////////////////////////
+//
+// CMappingRange
+//
+//   Helper class for mapping points, ranges, strands and fuzzes
+//
+
 
 CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
                              TSeqPos            src_from,
@@ -216,6 +223,97 @@ CMappingRange::TRangeFuzz CMappingRange::Map_Fuzz(const TRangeFuzz& fuzz) const
 }
 
 
+/////////////////////////////////////////////////////////////////////
+//
+// CMappingRanges
+//
+//   Collection of mapping ranges
+
+
+CMappingRanges::CMappingRanges(void)
+    : m_ReverseSrc(false),
+      m_ReverseDst(false)
+{
+}
+
+
+void CMappingRanges::AddConversion(CRef<CMappingRange> cvt)
+{
+    m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
+        TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+}
+
+
+void CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
+                                   TSeqPos           src_from,
+                                   TSeqPos           src_length,
+                                   ENa_strand        src_strand,
+                                   CSeq_id_Handle    dst_id,
+                                   TSeqPos           dst_from,
+                                   ENa_strand        dst_strand,
+                                   bool              ext_to)
+{
+    CRef<CMappingRange> cvt(new CMappingRange(
+        src_id, src_from, src_length, src_strand,
+        dst_id, dst_from, dst_strand,
+        ext_to));
+    AddConversion(cvt);
+}
+
+    
+CMappingRanges::TRangeIterator
+CMappingRanges::BeginMappingRanges(CSeq_id_Handle id,
+                                   TSeqPos         from,
+                                   TSeqPos         to)
+{
+    TIdMap::iterator ranges = m_IdMap.find(id);
+    if (ranges == m_IdMap.end()) {
+        return TRangeIterator();
+    }
+    return ranges->second.begin(TRange(from, to));
+}
+
+
+/////////////////////////////////////////////////////////////////////
+//
+// CSeq_loc_Mapper
+//
+
+
+/////////////////////////////////////////////////////////////////////
+//
+//   Initialization of the mapper
+//
+
+
+inline
+ENa_strand s_IndexToStrand(size_t idx)
+{
+    _ASSERT(idx != 0);
+    return ENa_strand(idx - 1);
+}
+
+#define STRAND_TO_INDEX(is_set, strand) \
+    ((is_set) ? size_t((strand) + 1) : 0)
+
+#define INDEX_TO_STRAND(idx) \
+    s_IndexToStrand(idx)
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
+                                 CScope*         scope)
+    : m_Scope(scope),
+      m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
+      m_CheckStrand(false),
+      m_UseWidth(false),
+      m_Dst_width(1),
+      m_Mappings(mapping_ranges)
+{
+}
+
+
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
                                  EFeatMapDirection dir,
                                  CScope*           scope)
@@ -226,8 +324,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
       m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
-      m_ReverseSrc(false),
-      m_ReverseDst(false)
+      m_Mappings(new CMappingRanges)
 {
     _ASSERT(map_feat.IsSetProduct());
     int frame = 0;
@@ -253,8 +350,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
       m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
-      m_ReverseSrc(false),
-      m_ReverseDst(false)
+      m_Mappings(new CMappingRanges)
 {
     x_Initialize(source, target);
 }
@@ -271,8 +367,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
-      m_ReverseSrc(false),
-      m_ReverseDst(false)
+      m_Mappings(new CMappingRanges)
 {
     x_Initialize(map_align, to_id, opts);
 }
@@ -289,8 +384,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
-      m_ReverseSrc(false),
-      m_ReverseDst(false)
+      m_Mappings(new CMappingRanges)
 {
     x_Initialize(map_align, to_row, opts);
 }
@@ -305,8 +399,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle top_level_seq,
       m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
-      m_ReverseSrc(false),
-      m_ReverseDst(false)
+      m_Mappings(new CMappingRanges)
 {
     CConstRef<CSeq_id> top_level_id = top_level_seq.GetSeqId();
     if ( !top_level_id ) {
@@ -322,18 +415,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle top_level_seq,
         // use unknown strand only.
         m_DstRanges.resize(1);
         m_DstRanges[0].clear();
-        if ( m_Scope.IsSet() ) {
-            CConstRef<CSynonymsSet> dst_syns =
-                m_Scope.GetScope().GetSynonyms(*top_level_id);
-            ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
-                m_DstRanges[0][top_level_seq.GetSeq_id_Handle()]
-                    .push_back(TRange::GetWhole());
-            }
-        }
-        else {
-            m_DstRanges[0][top_level_seq.GetSeq_id_Handle()]
-                .push_back(TRange::GetWhole());
-        }
+        m_DstRanges[0][CSeq_id_Handle::GetHandle(*top_level_id)]
+            .push_back(TRange::GetWhole());
     }
     x_PreserveDestinationLocs();
 }
@@ -350,8 +433,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
       m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
-      m_ReverseSrc(false),
-      m_ReverseDst(false)
+      m_Mappings(new CMappingRanges)
 {
     x_Initialize(seq_map, top_level_id, direction);
     x_PreserveDestinationLocs();
@@ -368,8 +450,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
       m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
-      m_ReverseSrc(false),
-      m_ReverseDst(false)
+      m_Mappings(new CMappingRanges)
 {
     if (depth > 0) {
         depth--;
@@ -382,18 +463,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
         // Synonyms conversion
         CConstRef<CSeq_id> top_level_id = top_level_seq.GetSeqId();
         m_DstRanges.resize(1);
-        if ( m_Scope.IsSet() ) {
-            CConstRef<CSynonymsSet> dst_syns =
-                m_Scope.GetScope().GetSynonyms(*top_level_id);
-            ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
-                m_DstRanges[0][top_level_seq.GetSeq_id_Handle()]
-                    .push_back(TRange::GetWhole());
-            }
-        }
-        else {
-            m_DstRanges[0][top_level_seq.GetSeq_id_Handle()]
-                .push_back(TRange::GetWhole());
-        }
+        m_DstRanges[0][CSeq_id_Handle::GetHandle(*top_level_id)]
+            .push_back(TRange::GetWhole());
     }
     x_PreserveDestinationLocs();
 }
@@ -411,8 +482,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
       m_CheckStrand(false),
       m_UseWidth(false),
       m_Dst_width(0),
-      m_ReverseSrc(false),
-      m_ReverseDst(false)
+      m_Mappings(new CMappingRanges)
 {
     if (depth > 0) {
         depth--;
@@ -421,15 +491,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
     else if (direction == eSeqMap_Up) {
         // Synonyms conversion
         m_DstRanges.resize(1);
-        if ( m_Scope.IsSet()  &&  top_level_id) {
-            CSeq_id_Handle top_level_idh = CSeq_id_Handle::GetHandle(*top_level_id);
-            CConstRef<CSynonymsSet> dst_syns =
-                m_Scope.GetScope().GetSynonyms(*top_level_id);
-            ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
-                m_DstRanges[0][top_level_idh]
-                    .push_back(TRange::GetWhole());
-            }
-        }
+        m_DstRanges[0][CSeq_id_Handle::GetHandle(*top_level_id)]
+            .push_back(TRange::GetWhole());
     }
     x_PreserveDestinationLocs();
 }
@@ -438,431 +501,6 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
 CSeq_loc_Mapper::~CSeq_loc_Mapper(void)
 {
     return;
-}
-
-
-void CSeq_loc_Mapper::x_PreserveDestinationLocs(void)
-{
-    for (size_t str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
-        NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
-            id_it->second.sort();
-            TSeqPos dst_start = kInvalidSeqPos;
-            TSeqPos dst_stop = kInvalidSeqPos;
-            ITERATE(TDstRanges, rg_it, id_it->second) {
-                // Collect and merge ranges
-                if (dst_start == kInvalidSeqPos) {
-                    dst_start = rg_it->GetFrom();
-                    dst_stop = rg_it->GetTo();
-                    continue;
-                }
-                if (rg_it->GetFrom() <= dst_stop + 1) {
-                    // overlapping or abutting ranges, continue collecting
-                    dst_stop = max(dst_stop, rg_it->GetTo());
-                    continue;
-                }
-                // Separate ranges, add conversion and restart collecting
-                CRef<CMappingRange> cvt(new CMappingRange(
-                    id_it->first, dst_start, dst_stop - dst_start + 1,
-                    ENa_strand(str_idx),
-                    id_it->first, dst_start, ENa_strand(str_idx)));
-                m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
-                    TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
-            }
-            if (dst_start < dst_stop) {
-                if ( m_Scope.IsSet() ) {
-                    CConstRef<CSynonymsSet> syns =
-                        m_Scope.GetScope().GetSynonyms(id_it->first);
-                    ITERATE(CSynonymsSet, syn_it, *syns) {
-                        CRef<CMappingRange> cvt(new CMappingRange(
-                            CSynonymsSet::GetSeq_id_Handle(syn_it),
-                            dst_start, dst_stop - dst_start + 1,
-                            ENa_strand(str_idx),
-                            id_it->first, dst_start, ENa_strand(str_idx)));
-                        m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
-                            TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
-                    }
-                }
-                else {
-                    CRef<CMappingRange> cvt(new CMappingRange(
-                        id_it->first, dst_start, dst_stop - dst_start + 1,
-                        ENa_strand(str_idx),
-                        id_it->first, dst_start, ENa_strand(str_idx)));
-                    m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
-                        TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
-                }
-
-            }
-        }
-    }
-    m_DstRanges.clear();
-}
-
-
-inline
-ENa_strand s_IndexToStrand(size_t idx)
-{
-    _ASSERT(idx != 0);
-    return ENa_strand(idx - 1);
-}
-
-#define STRAND_TO_INDEX(is_set, strand) \
-    ((is_set) ? size_t((strand) + 1) : 0)
-
-#define INDEX_TO_STRAND(idx) \
-    s_IndexToStrand(idx)
-
-
-CSeq_loc_Mapper::TMappedRanges&
-CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
-                                   size_t strand_idx) const
-{
-    TRangesByStrand& str_vec = m_MappedLocs[id];
-    if (str_vec.size() <= strand_idx) {
-        str_vec.resize(strand_idx + 1);
-    }
-    return str_vec[strand_idx];
-}
-
-
-void CSeq_loc_Mapper::x_PushMappedRange(const CSeq_id_Handle& id,
-                                        size_t                strand_idx,
-                                        const TRange&         range,
-                                        const TRangeFuzz&     fuzz)
-{
-    bool reverse = (strand_idx > 0) &&
-        IsReverse(INDEX_TO_STRAND(strand_idx));
-    switch ( m_MergeFlag ) {
-    case eMergeContained:
-    case eMergeAll:
-        {
-            if ( reverse ) {
-                x_GetMappedRanges(id, strand_idx)
-                    .push_front(TRangeWithFuzz(range, fuzz));
-            }
-            else {
-                x_GetMappedRanges(id, strand_idx)
-                    .push_back(TRangeWithFuzz(range, fuzz));
-            }
-            break;
-        }
-    case eMergeNone:
-        {
-            x_PushRangesToDstMix();
-            if ( reverse ) {
-                x_GetMappedRanges(id, strand_idx)
-                    .push_front(TRangeWithFuzz(range, fuzz));
-            }
-            else {
-                x_GetMappedRanges(id, strand_idx)
-                    .push_back(TRangeWithFuzz(range, fuzz));
-            }
-            break;
-        }
-    case eMergeAbutting:
-    default:
-        {
-            TRangesById::iterator it = m_MappedLocs.begin();
-            // Start new sub-location for:
-            // New ID
-            bool no_merge = it == m_MappedLocs.end()  ||  it->first != id;
-            // New strand
-            no_merge |= it->second.size() <= strand_idx
-                ||  it->second.empty();
-            // Ranges are not abutting
-            if ( !no_merge ) {
-                if ( reverse ) {
-                    no_merge |= it->second[strand_idx].front().first.GetFrom() !=
-                        range.GetToOpen();
-                }
-                else {
-                    no_merge |= it->second[strand_idx].back().first.GetToOpen() !=
-                        range.GetFrom();
-                }
-            }
-            if ( no_merge ) {
-                x_PushRangesToDstMix();
-                if ( reverse ) {
-                    x_GetMappedRanges(id, strand_idx)
-                        .push_front(TRangeWithFuzz(range, fuzz));
-                }
-                else {
-                    x_GetMappedRanges(id, strand_idx)
-                        .push_back(TRangeWithFuzz(range, fuzz));
-                }
-            }
-            else {
-                if ( reverse ) {
-                    TRangeWithFuzz& last_rg = it->second[strand_idx].front();
-                    last_rg.first.SetFrom(range.GetFrom());
-                    last_rg.second.first = fuzz.first;
-                }
-                else {
-                    TRangeWithFuzz& last_rg = it->second[strand_idx].back();
-                    last_rg.first.SetTo(range.GetTo());
-                    last_rg.second.second = fuzz.second;
-                }
-            }
-        }
-    }
-}
-
-
-void CSeq_loc_Mapper::x_PushRangesToDstMix(void)
-{
-    if (m_MappedLocs.size() == 0) {
-        return;
-    }
-    // Push everything already mapped to the destination mix
-    CRef<CSeq_loc> loc = x_GetMappedSeq_loc();
-    if ( !m_Dst_loc ) {
-        m_Dst_loc = loc;
-        return;
-    }
-    if ( !loc->IsNull() ) {
-        x_PushLocToDstMix(loc);
-    }
-}
-
-
-int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_id& id,
-                                     int            width,
-                                     TSeqPos*       length)
-{
-    if ( m_Scope.IsNull() ) {
-        return width;
-    }
-    CBioseq_Handle handle;
-    try {
-        handle = m_Scope.GetScope().GetBioseqHandle(id);
-    } catch (...) {
-        return width;
-    }
-    if ( !handle ) {
-        return width;
-    }
-    if ( length ) {
-        *length = handle.GetBioseqLength();
-    }
-    switch ( handle.GetBioseqMolType() ) {
-    case CSeq_inst::eMol_dna:
-    case CSeq_inst::eMol_rna:
-    case CSeq_inst::eMol_na:
-        {
-            if ( width != 3 ) {
-                if ( width ) {
-                    // width already set to a different value
-                    NCBI_THROW(CLocMapperException, eBadLocation,
-                               "Location contains different sequence types");
-                }
-                width = 3;
-            }
-            break;
-        }
-    case CSeq_inst::eMol_aa:
-        {
-            if ( width != 1 ) {
-                if ( width ) {
-                    // width already set to a different value
-                    NCBI_THROW(CLocMapperException, eBadLocation,
-                               "Location contains different sequence types");
-                }
-                width = 1;
-            }
-            break;
-        }
-    default:
-        return width;
-    }
-    // Destination width should always be checked first
-    if ( !m_Dst_width ) {
-        m_Dst_width = width;
-    }
-    TWidthFlags wid_cvt = 0;
-    if (width == 1) {
-        wid_cvt |= fWidthProtToNuc;
-    }
-    if (m_Dst_width == 1) {
-        wid_cvt |= fWidthNucToProt;
-    }
-    CConstRef<CSynonymsSet> syns = m_Scope.GetScope().GetSynonyms(id);
-    ITERATE(CSynonymsSet, syn_it, *syns) {
-        m_Widths[syns->GetSeq_id_Handle(syn_it)] = wid_cvt;
-    }
-    return width;
-}
-
-
-int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_loc& loc,
-                                     TSeqPos* total_length)
-{
-    int width = 0;
-    *total_length = 0;
-    for (CSeq_loc_CI it(loc); it; ++it) {
-        if (*total_length != kInvalidSeqPos) {
-            if ( it.GetRange().IsWhole() ) {
-                *total_length = kInvalidSeqPos;
-            }
-            else {
-                *total_length += it.GetRange().GetLength();
-            }
-        }
-        if ( m_Scope.IsNull() ) {
-            continue; // don't check sequence type;
-        }
-        width = x_CheckSeqWidth(it.GetSeq_id(), width, total_length);
-    }
-    return width;
-}
-
-
-TSeqPos CSeq_loc_Mapper::x_GetSequenceLength(const CSeq_id& id)
-{
-    CBioseq_Handle h;
-    if ( m_Scope.IsSet() ) {
-        h = m_Scope.GetScope().GetBioseqHandle(id);
-    }
-    if ( !h ) {
-        NCBI_THROW(CLocMapperException, eUnknownLength,
-                    "Can not map from minus strand -- "
-                    "unknown sequence length");
-    }
-    return h.GetBioseqLength();
-}
-
-
-TSeqPos CSeq_loc_Mapper::x_GetRangeLength(const CSeq_loc_CI& it)
-{
-    if (it.IsWhole()  &&  IsReverse(it.GetStrand())) {
-        // For reverse strand we need real interval length, not just "whole"
-        return x_GetSequenceLength(it.GetSeq_id());
-    }
-    else {
-        return it.GetRange().GetLength();
-    }
-}
-
-
-void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
-                                      TSeqPos        src_start,
-                                      ENa_strand     src_strand,
-                                      const CSeq_id& dst_id,
-                                      TSeqPos        dst_start,
-                                      ENa_strand     dst_strand,
-                                      TSeqPos        length,
-                                      bool           ext_right)
-{
-    if (m_DstRanges.size() <= size_t(dst_strand)) {
-        m_DstRanges.resize(size_t(dst_strand) + 1);
-    }
-    if ( m_Scope.IsSet() ) {
-        CConstRef<CSynonymsSet> syns = m_Scope.GetScope().GetSynonyms(src_id);
-        ITERATE(CSynonymsSet, syn_it, *syns) {
-            CRef<CMappingRange> cvt(new CMappingRange(
-                CSynonymsSet::GetSeq_id_Handle(syn_it),
-                src_start, length, src_strand,
-                CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
-                ext_right));
-            m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
-                TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
-        }
-        CConstRef<CSynonymsSet> dst_syns =
-            m_Scope.GetScope().GetSynonyms(dst_id);
-        ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
-            m_DstRanges[size_t(dst_strand)]
-                [CSynonymsSet::GetSeq_id_Handle(dst_syn_it)]
-                .push_back(TRange(dst_start, dst_start + length - 1));
-        }
-    }
-    else {
-        CRef<CMappingRange> cvt(new CMappingRange(
-            CSeq_id_Handle::GetHandle(src_id),
-            src_start, length, src_strand,
-            CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
-            ext_right));
-        m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
-            TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
-        m_DstRanges[size_t(dst_strand)][CSeq_id_Handle::GetHandle(dst_id)]
-            .push_back(TRange(dst_start, dst_start + length - 1));
-    }
-}
-
-
-void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
-                                         TSeqPos&       src_start,
-                                         TSeqPos&       src_len,
-                                         ENa_strand     src_strand,
-                                         const CSeq_id& dst_id,
-                                         TSeqPos&       dst_start,
-                                         TSeqPos&       dst_len,
-                                         ENa_strand     dst_strand,
-                                         const CInt_fuzz* fuzz_from,
-                                         const CInt_fuzz* fuzz_to,
-                                         int            src_width)
-{
-    TSeqPos cvt_src_start = src_start;
-    TSeqPos cvt_dst_start = dst_start;
-    TSeqPos cvt_length;
-
-    if (src_len == dst_len) {
-        if (src_len == kInvalidSeqPos) {
-            // Mapping whole to whole - need to know real length.
-            // Do not check strand - if it's reversed, the real length
-            // must be already known.
-            src_len = x_GetSequenceLength(src_id)*m_Dst_width - src_start;
-            dst_len = x_GetSequenceLength(dst_id)*src_width - dst_start;
-        }
-        cvt_length = src_len;
-        src_len = 0;
-        dst_len = 0;
-    }
-    else if (src_len > dst_len) {
-        // reverse interval for minus strand
-        if (IsReverse(src_strand)) {
-            cvt_src_start += src_len - dst_len;
-        }
-        else {
-            src_start += dst_len;
-        }
-        cvt_length = dst_len;
-        if (src_len != kInvalidSeqPos) {
-            src_len -= cvt_length;
-        }
-        dst_len = 0;
-    }
-    else { // if (src_len < dst_len)
-        // reverse interval for minus strand
-        if ( IsReverse(dst_strand) ) {
-            cvt_dst_start += dst_len - src_len;
-        }
-        else {
-            dst_start += src_len;
-        }
-        cvt_length = src_len;
-        if (dst_len != kInvalidSeqPos) {
-            dst_len -= cvt_length;
-        }
-        src_len = 0;
-    }
-    // Special case: prepare to extend mapped "to" if:
-    // - mapping is from prot to nuc
-    // - destination "to" is partial
-    bool ext_to = false;
-    if ( m_Dst_width == 3 ) {
-        if ( IsReverse(dst_strand) && fuzz_from ) {
-            ext_to = fuzz_from  &&
-                fuzz_from->IsLim()  &&
-                fuzz_from->GetLim() == CInt_fuzz::eLim_lt;
-        }
-        else if ( !IsReverse(dst_strand) && fuzz_to ) {
-            ext_to = fuzz_to  &&
-                fuzz_to->IsLim()  &&
-                fuzz_to->GetLim() == CInt_fuzz::eLim_gt;
-        }
-    }
-    x_AddConversion(
-        src_id, cvt_src_start, src_strand,
-        dst_id, cvt_dst_start, dst_strand,
-        cvt_length, ext_to);
 }
 
 
@@ -944,8 +582,8 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
             dst_len = x_GetRangeLength(dst_it)*src_width;
         }
     }
-    m_ReverseSrc = source.IsReverseStrand();
-    m_ReverseDst = target.IsReverseStrand();
+    m_Mappings->SetReverseSrc(source.IsReverseStrand());
+    m_Mappings->SetReverseDst(target.IsReverseStrand());
 }
 
 
@@ -1039,6 +677,99 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
     default:
         NCBI_THROW(CLocMapperException, eBadAlignment,
                    "Unsupported alignment type");
+    }
+}
+
+
+void CSeq_loc_Mapper::x_Initialize(const CSeqMap&   seq_map,
+                                   const CSeq_id*   top_id,
+                                   ESeqMapDirection direction)
+{
+    x_Initialize(seq_map, size_t(-1), top_id, direction);
+}
+
+
+void CSeq_loc_Mapper::x_Initialize(const CBioseq_Handle& bioseq,
+                                   const CSeq_id* top_id,
+                                   ESeqMapDirection direction)
+{
+    x_Initialize(bioseq, size_t(-1), top_id, direction);
+}
+
+
+void CSeq_loc_Mapper::x_Initialize(const CSeqMap&   seq_map,
+                                   size_t           depth,
+                                   const CSeq_id*   top_id,
+                                   ESeqMapDirection direction)
+{
+    SSeqMapSelector sel(CSeqMap::fFindRef, depth);
+    sel.SetLinkUsedTSE();
+    x_Initialize(CSeqMap_CI(ConstRef(&seq_map), m_Scope.GetScopeOrNull(), sel),
+                 top_id,
+                 direction);
+}
+
+
+void CSeq_loc_Mapper::x_Initialize(const CBioseq_Handle& bioseq,
+                                   size_t                depth,
+                                   const CSeq_id*        top_id,
+                                   ESeqMapDirection      direction)
+{
+    x_Initialize(CSeqMap_CI(bioseq, SSeqMapSelector(CSeqMap::fFindRef, depth)),
+                 top_id,
+                 direction);
+}
+
+
+void CSeq_loc_Mapper::x_Initialize(CSeqMap_CI       seg_it,
+                                   const CSeq_id*   top_id,
+                                   ESeqMapDirection direction)
+{
+    TSeqPos top_start = kInvalidSeqPos;
+    TSeqPos top_stop = kInvalidSeqPos;
+    TSeqPos dst_seg_start = kInvalidSeqPos;
+    CConstRef<CSeq_id> dst_id;
+
+    for ( ; seg_it; ++seg_it) {
+        _ASSERT(seg_it.GetType() == CSeqMap::eSeqRef);
+        if (seg_it.GetPosition() > top_stop  ||  !dst_id) {
+            // New top-level segment
+            top_start = seg_it.GetPosition();
+            top_stop = seg_it.GetEndPosition() - 1;
+            if (top_id) {
+                // Top level is a bioseq
+                dst_id.Reset(top_id);
+                dst_seg_start = top_start;
+            }
+            else {
+                // Top level is a seq-loc, positions are
+                // on the first-level references
+                dst_id = seg_it.GetRefSeqid().GetSeqId();
+                dst_seg_start = seg_it.GetRefPosition();
+                continue;
+            }
+        }
+        // when top_id is set, destination position = GetPosition(),
+        // else it needs to be calculated from top_start/stop and dst_start/stop.
+        TSeqPos dst_from = dst_seg_start + seg_it.GetPosition() - top_start;
+        _ASSERT(dst_from >= dst_seg_start);
+        TSeqPos dst_len = seg_it.GetLength();
+        CConstRef<CSeq_id> src_id(seg_it.GetRefSeqid().GetSeqId());
+        TSeqPos src_from = seg_it.GetRefPosition();
+        TSeqPos src_len = dst_len;
+        ENa_strand src_strand = seg_it.GetRefMinusStrand() ?
+            eNa_strand_minus : eNa_strand_unknown;
+        switch (direction) {
+        case eSeqMap_Up:
+            x_NextMappingRange(*src_id, src_from, src_len, src_strand,
+                               *dst_id, dst_from, dst_len, eNa_strand_unknown);
+            break;
+        case eSeqMap_Down:
+            x_NextMappingRange(*dst_id, dst_from, dst_len, eNa_strand_unknown,
+                               *src_id, src_from, src_len, src_strand);
+            break;
+        }
+        _ASSERT(src_len == 0  &&  dst_len == 0);
     }
 }
 
@@ -1352,109 +1083,360 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 }
 
 
-void CSeq_loc_Mapper::x_Initialize(const CSeqMap&   seq_map,
-                                   const CSeq_id*   top_id,
-                                   ESeqMapDirection direction)
+/////////////////////////////////////////////////////////////////////
+//
+//   Initialization helpers
+//
+
+
+void CSeq_loc_Mapper::x_CollectSynonyms(const CSeq_id_Handle& id,
+                                        TSynonyms&            synonyms)
 {
-    x_Initialize(seq_map, size_t(-1), top_id, direction);
+    if ( m_Scope.IsSet() ) {
+        CConstRef<CSynonymsSet> syns =
+            m_Scope.GetScope().GetSynonyms(id);
+        ITERATE(CSynonymsSet, syn_it, *syns) {
+            synonyms.push_back(CSynonymsSet::GetSeq_id_Handle(syn_it));
+        }
+    }
+    else {
+        synonyms.push_back(id);
+    }
 }
 
 
-void CSeq_loc_Mapper::x_Initialize(const CBioseq_Handle& bioseq,
-                                   const CSeq_id* top_id,
-                                   ESeqMapDirection direction)
+int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_id& id,
+                                     int            width,
+                                     TSeqPos*       length)
 {
-    x_Initialize(bioseq, size_t(-1), top_id, direction);
+    if ( m_Scope.IsNull() ) {
+        return width;
+    }
+    CBioseq_Handle handle;
+    try {
+        handle = m_Scope.GetScope().GetBioseqHandle(id);
+    } catch (...) {
+        return width;
+    }
+    if ( !handle ) {
+        return width;
+    }
+    if ( length ) {
+        *length = handle.GetBioseqLength();
+    }
+    switch ( handle.GetBioseqMolType() ) {
+    case CSeq_inst::eMol_dna:
+    case CSeq_inst::eMol_rna:
+    case CSeq_inst::eMol_na:
+        {
+            if ( width  &&  width != 3 ) {
+                // width already set to a different value
+                NCBI_THROW(CLocMapperException, eBadLocation,
+                            "Location contains different sequence types");
+            }
+            width = 3;
+            break;
+        }
+    case CSeq_inst::eMol_aa:
+        {
+            if ( width  &&  width != 1 ) {
+                // width already set to a different value
+                NCBI_THROW(CLocMapperException, eBadLocation,
+                            "Location contains different sequence types");
+            }
+            width = 1;
+            break;
+        }
+    default:
+        return width;
+    }
+    // Destination width should always be checked first
+    if ( !m_Dst_width ) {
+        m_Dst_width = width;
+    }
+    TWidthFlags wid_cvt = 0;
+    if (width == 1) {
+        wid_cvt |= fWidthProtToNuc;
+    }
+    if (m_Dst_width == 1) {
+        wid_cvt |= fWidthNucToProt;
+    }
+    CConstRef<CSynonymsSet> syns = m_Scope.GetScope().GetSynonyms(id);
+    ITERATE(CSynonymsSet, syn_it, *syns) {
+        m_Widths[syns->GetSeq_id_Handle(syn_it)] = wid_cvt;
+    }
+    return width;
 }
 
 
-void CSeq_loc_Mapper::x_Initialize(const CSeqMap&   seq_map,
-                                   size_t           depth,
-                                   const CSeq_id*   top_id,
-                                   ESeqMapDirection direction)
+int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_loc& loc,
+                                     TSeqPos* total_length)
 {
-    SSeqMapSelector sel(CSeqMap::fFindRef, depth);
-    sel.SetLinkUsedTSE();
-    x_Initialize(CSeqMap_CI(ConstRef(&seq_map), m_Scope.GetScopeOrNull(), sel),
-                 top_id,
-                 direction);
-}
-
-
-void CSeq_loc_Mapper::x_Initialize(const CBioseq_Handle& bioseq,
-                                   size_t                depth,
-                                   const CSeq_id*        top_id,
-                                   ESeqMapDirection      direction)
-{
-    x_Initialize(CSeqMap_CI(bioseq, SSeqMapSelector(CSeqMap::fFindRef, depth)),
-                 top_id,
-                 direction);
-}
-
-
-void CSeq_loc_Mapper::x_Initialize(CSeqMap_CI       seg_it,
-                                   const CSeq_id*   top_id,
-                                   ESeqMapDirection direction)
-{
-    TSeqPos top_start = kInvalidSeqPos;
-    TSeqPos top_stop = kInvalidSeqPos;
-    TSeqPos dst_seg_start = kInvalidSeqPos;
-    CConstRef<CSeq_id> dst_id;
-
-    for ( ; seg_it; ++seg_it) {
-        _ASSERT(seg_it.GetType() == CSeqMap::eSeqRef);
-        if (seg_it.GetPosition() > top_stop  ||  !dst_id) {
-            // New top-level segment
-            top_start = seg_it.GetPosition();
-            top_stop = seg_it.GetEndPosition() - 1;
-            if (top_id) {
-                // Top level is a bioseq
-                dst_id.Reset(top_id);
-                dst_seg_start = top_start;
+    int width = 0;
+    *total_length = 0;
+    for (CSeq_loc_CI it(loc); it; ++it) {
+        if (*total_length != kInvalidSeqPos) {
+            if ( it.GetRange().IsWhole() ) {
+                *total_length = kInvalidSeqPos;
             }
             else {
-                // Top level is a seq-loc, positions are
-                // on the first-level references
-                dst_id = seg_it.GetRefSeqid().GetSeqId();
-                dst_seg_start = seg_it.GetRefPosition();
-                continue;
+                *total_length += it.GetRange().GetLength();
             }
         }
-        // when top_id is set, destination position = GetPosition(),
-        // else it needs to be calculated from top_start/stop and dst_start/stop.
-        TSeqPos dst_from = dst_seg_start + seg_it.GetPosition() - top_start;
-        _ASSERT(dst_from >= dst_seg_start);
-        TSeqPos dst_len = seg_it.GetLength();
-        CConstRef<CSeq_id> src_id(seg_it.GetRefSeqid().GetSeqId());
-        TSeqPos src_from = seg_it.GetRefPosition();
-        TSeqPos src_len = dst_len;
-        ENa_strand src_strand = seg_it.GetRefMinusStrand() ?
-            eNa_strand_minus : eNa_strand_unknown;
-        switch (direction) {
-        case eSeqMap_Up:
-            x_NextMappingRange(*src_id, src_from, src_len, src_strand,
-                               *dst_id, dst_from, dst_len, eNa_strand_unknown);
-            break;
-        case eSeqMap_Down:
-            x_NextMappingRange(*dst_id, dst_from, dst_len, eNa_strand_unknown,
-                               *src_id, src_from, src_len, src_strand);
-            break;
+        if ( m_Scope.IsNull() ) {
+            if (*total_length == kInvalidSeqPos) {
+                break; // nothing more to collect
+            }
+            continue;  // don't check sequence type;
         }
-        _ASSERT(src_len == 0  &&  dst_len == 0);
+        width = x_CheckSeqWidth(it.GetSeq_id(), width, total_length);
+    }
+    return width;
+}
+
+
+TSeqPos CSeq_loc_Mapper::x_GetSequenceLength(const CSeq_id& id)
+{
+    CBioseq_Handle h;
+    if ( m_Scope.IsSet() ) {
+        h = m_Scope.GetScope().GetBioseqHandle(id);
+    }
+    if ( !h ) {
+        NCBI_THROW(CLocMapperException, eUnknownLength,
+                    "Can not map from minus strand -- "
+                    "unknown sequence length");
+    }
+    return h.GetBioseqLength();
+}
+
+
+TSeqPos CSeq_loc_Mapper::x_GetRangeLength(const CSeq_loc_CI& it)
+{
+    if (it.IsWhole()  &&  IsReverse(it.GetStrand())) {
+        // For reverse strand we need real interval length, not just "whole"
+        return x_GetSequenceLength(it.GetSeq_id());
+    }
+    else {
+        return it.GetRange().GetLength();
     }
 }
 
 
-CSeq_loc_Mapper::TRangeIterator
-CSeq_loc_Mapper::x_BeginMappingRanges(CSeq_id_Handle id,
-                                      TSeqPos from,
-                                      TSeqPos to)
+void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
+                                         TSeqPos&       src_start,
+                                         TSeqPos&       src_len,
+                                         ENa_strand     src_strand,
+                                         const CSeq_id& dst_id,
+                                         TSeqPos&       dst_start,
+                                         TSeqPos&       dst_len,
+                                         ENa_strand     dst_strand,
+                                         const CInt_fuzz* fuzz_from,
+                                         const CInt_fuzz* fuzz_to,
+                                         int            src_width)
 {
-    TIdMap::iterator ranges = m_IdMap.find(id);
-    if (ranges == m_IdMap.end()) {
-        return TRangeIterator();
+    TSeqPos cvt_src_start = src_start;
+    TSeqPos cvt_dst_start = dst_start;
+    TSeqPos cvt_length;
+
+    if (src_len == dst_len) {
+        if (src_len == kInvalidSeqPos) {
+            // Mapping whole to whole - need to know real length.
+            // Do not check strand - if it's reversed, the real length
+            // must be already known.
+            src_len = x_GetSequenceLength(src_id)*m_Dst_width - src_start;
+            dst_len = x_GetSequenceLength(dst_id)*src_width - dst_start;
+        }
+        cvt_length = src_len;
+        src_len = 0;
+        dst_len = 0;
     }
-    return ranges->second.begin(TRange(from, to));
+    else if (src_len > dst_len) {
+        // reverse interval for minus strand
+        if (IsReverse(src_strand)) {
+            cvt_src_start += src_len - dst_len;
+        }
+        else {
+            src_start += dst_len;
+        }
+        cvt_length = dst_len;
+        if (src_len != kInvalidSeqPos) {
+            src_len -= cvt_length;
+        }
+        dst_len = 0;
+    }
+    else { // if (src_len < dst_len)
+        // reverse interval for minus strand
+        if ( IsReverse(dst_strand) ) {
+            cvt_dst_start += dst_len - src_len;
+        }
+        else {
+            dst_start += src_len;
+        }
+        cvt_length = src_len;
+        if (dst_len != kInvalidSeqPos) {
+            dst_len -= cvt_length;
+        }
+        src_len = 0;
+    }
+    // Special case: prepare to extend mapped "to" if:
+    // - mapping is from prot to nuc
+    // - destination "to" is partial
+    bool ext_to = false;
+    if ( m_Dst_width == 3 ) {
+        if ( IsReverse(dst_strand) && fuzz_from ) {
+            ext_to = fuzz_from  &&
+                fuzz_from->IsLim()  &&
+                fuzz_from->GetLim() == CInt_fuzz::eLim_lt;
+        }
+        else if ( !IsReverse(dst_strand) && fuzz_to ) {
+            ext_to = fuzz_to  &&
+                fuzz_to->IsLim()  &&
+                fuzz_to->GetLim() == CInt_fuzz::eLim_gt;
+        }
+    }
+    x_AddConversion(
+        src_id, cvt_src_start, src_strand,
+        dst_id, cvt_dst_start, dst_strand,
+        cvt_length, ext_to);
+}
+
+
+void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
+                                      TSeqPos        src_start,
+                                      ENa_strand     src_strand,
+                                      const CSeq_id& dst_id,
+                                      TSeqPos        dst_start,
+                                      ENa_strand     dst_strand,
+                                      TSeqPos        length,
+                                      bool           ext_right)
+{
+    if (m_DstRanges.size() <= size_t(dst_strand)) {
+        m_DstRanges.resize(size_t(dst_strand) + 1);
+    }
+    TSynonyms syns;
+    x_CollectSynonyms(CSeq_id_Handle::GetHandle(src_id), syns);
+    ITERATE(TSynonyms, syn_it, syns) {
+        m_Mappings->AddConversion(
+            *syn_it, src_start, length, src_strand,
+            CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
+            ext_right);
+    }
+    m_DstRanges[size_t(dst_strand)][CSeq_id_Handle::GetHandle(dst_id)]
+        .push_back(TRange(dst_start, dst_start + length - 1));
+}
+
+
+void CSeq_loc_Mapper::x_PreserveDestinationLocs(void)
+{
+    for (size_t str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
+        NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
+            TSynonyms syns;
+            x_CollectSynonyms(id_it->first, syns);
+            id_it->second.sort();
+            TSeqPos dst_start = kInvalidSeqPos;
+            TSeqPos dst_stop = kInvalidSeqPos;
+            ITERATE(TDstRanges, rg_it, id_it->second) {
+                // Collect and merge ranges
+                if (dst_start == kInvalidSeqPos) {
+                    dst_start = rg_it->GetFrom();
+                    dst_stop = rg_it->GetTo();
+                    continue;
+                }
+                if (rg_it->GetFrom() <= dst_stop + 1) {
+                    // overlapping or abutting ranges, continue collecting
+                    dst_stop = max(dst_stop, rg_it->GetTo());
+                    continue;
+                }
+                ITERATE(TSynonyms, syn_it, syns) {
+                    // Separate ranges, add conversion and restart collecting
+                    m_Mappings->AddConversion(
+                        *syn_it, dst_start, dst_stop - dst_start + 1,
+                        ENa_strand(str_idx),
+                        id_it->first, dst_start, ENa_strand(str_idx));
+                }
+            }
+            if (dst_start < dst_stop) {
+                ITERATE(TSynonyms, syn_it, syns) {
+                    m_Mappings->AddConversion(
+                        *syn_it, dst_start, dst_stop - dst_start + 1,
+                        ENa_strand(str_idx),
+                        id_it->first, dst_start, ENa_strand(str_idx));
+                }
+            }
+        }
+    }
+    m_DstRanges.clear();
+}
+
+
+/////////////////////////////////////////////////////////////////////
+//
+//   Mapping methods
+//
+
+
+// Check location type, optimize if possible (empty mix to NULL,
+// mix with a single element to this element etc.).
+void OptimizeSeq_loc(CRef<CSeq_loc>& loc)
+{
+    if ( !loc ) {
+        loc.Reset(new CSeq_loc);
+        loc->SetNull();
+        return;
+    }
+    switch (loc->Which()) {
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Feat:
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+    case CSeq_loc::e_Whole:
+    case CSeq_loc::e_Int:
+    case CSeq_loc::e_Pnt:
+    case CSeq_loc::e_Equiv:
+    case CSeq_loc::e_Bond:
+    case CSeq_loc::e_Packed_int:  // pack ?
+    case CSeq_loc::e_Packed_pnt:  // pack ?
+        return;
+    case CSeq_loc::e_Mix:
+        {
+            switch ( loc->GetMix().Get().size() ) {
+            case 0:
+                loc->SetNull();
+                break;
+            case 1:
+                {
+                    CRef<CSeq_loc> single = *loc->SetMix().Set().begin();
+                    loc = single;
+                    break;
+                }
+            default:
+                {
+                    // Try to convert to packed-int
+                    CRef<CSeq_loc> packed;
+                    NON_CONST_ITERATE(CSeq_loc_mix::Tdata, it,
+                        loc->SetMix().Set()) {
+                        if ( !(*it)->IsInt() ) {
+                            packed.Reset();
+                            break;
+                        }
+                        if ( !packed ) {
+                            packed.Reset(new CSeq_loc);
+                        }
+                        packed->SetPacked_int().Set().
+                            push_back(Ref(&(*it)->SetInt()));
+                    }
+                    if ( packed ) {
+                        loc = packed;
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+    default:
+        NCBI_THROW(CAnnotException, eBadLocation,
+                   "Unsupported location type");
+    }
 }
 
 
@@ -1590,7 +1572,7 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
 
     // Sorted mapping ranges
     TSortedMappings mappings;
-    TRangeIterator rg_it = x_BeginMappingRanges(
+    TRangeIterator rg_it = m_Mappings->BeginMappingRanges(
         src_idh, src_rg.GetFrom(), src_rg.GetTo());
     for ( ; rg_it; ++rg_it) {
         mappings.push_back(rg_it->second);
@@ -1616,57 +1598,6 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
 }
 
 
-void CSeq_loc_Mapper::x_PushLocToDstMix(CRef<CSeq_loc> loc)
-{
-    _ASSERT(loc);
-    if ( !m_Dst_loc  ||  !m_Dst_loc->IsMix() ) {
-        CRef<CSeq_loc> tmp = m_Dst_loc;
-        m_Dst_loc.Reset(new CSeq_loc);
-        m_Dst_loc->SetMix();
-        if ( tmp ) {
-            m_Dst_loc->SetMix().Set().push_back(tmp);
-        }
-    }
-    CSeq_loc_mix::Tdata& mix = m_Dst_loc->SetMix().Set();
-    if ( loc->IsNull() ) {
-        if ( m_GapFlag == eGapRemove ) {
-            return;
-        }
-        if ( mix.size() > 0  &&  (*mix.rbegin())->IsNull() ) {
-            // do not create duplicate NULLs
-            return;
-        }
-    }
-    if ( x_ReverseRangeOrder() ) {
-        mix.push_front(loc);
-    }
-    else {
-        mix.push_back(loc);
-    }
-}
-
-
-CRef<CSeq_loc> CSeq_loc_Mapper::Map(const CSeq_loc& src_loc)
-{
-    m_Dst_loc.Reset();
-    m_Partial = false; // reset for each location
-    m_LastTruncated = false;
-    x_MapSeq_loc(src_loc);
-    x_PushRangesToDstMix();
-    x_OptimizeSeq_loc(m_Dst_loc);
-    return m_Dst_loc;
-}
-
-
-CRef<CSeq_align> CSeq_loc_Mapper::Map(const CSeq_align& src_align)
-{
-    m_Dst_loc.Reset();
-    m_Partial = false; // reset for each location
-    m_LastTruncated = false;
-    return x_MapSeq_align(src_align);
-}
-
-
 void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
 {
     switch ( src_loc.Which() ) {
@@ -1687,16 +1618,17 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
     case CSeq_loc::e_Empty:
     {
         bool res = false;
-        TRangeIterator mit = x_BeginMappingRanges(
+        TRangeIterator mit = m_Mappings->BeginMappingRanges(
             CSeq_id_Handle::GetHandle(src_loc.GetEmpty()),
             TRange::GetWhole().GetFrom(),
             TRange::GetWhole().GetTo());
         for ( ; mit; ++mit) {
-            CMappingRange& cvt = *mit->second;
+            const CMappingRange& cvt = *mit->second;
             if ( cvt.GoodSrcId(src_loc.GetEmpty()) ) {
                 TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
                 x_PushMappedRange(
-                    CSeq_id_Handle::GetHandle(src_loc.GetEmpty()),
+                    cvt.GetDstIdHandle(),
+                    // CSeq_id_Handle::GetHandle(src_loc.GetEmpty()),
                     STRAND_TO_INDEX(false, eNa_strand_unknown),
                     TRange::GetEmpty(), fuzz);
                 res = true;
@@ -1876,7 +1808,7 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         x_PushRangesToDstMix();
         CRef<CSeq_loc> mix = m_Dst_loc;
         m_Dst_loc = prev;
-        x_OptimizeSeq_loc(mix);
+        OptimizeSeq_loc(mix);
         x_PushLocToDstMix(mix);
         break;
     }
@@ -1891,7 +1823,7 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
             x_MapSeq_loc(**i);
             x_PushRangesToDstMix();
-            x_OptimizeSeq_loc(m_Dst_loc);
+            OptimizeSeq_loc(m_Dst_loc);
             equiv->SetEquiv().Set().push_back(m_Dst_loc);
             m_Dst_loc.Reset();
         }
@@ -1985,6 +1917,42 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
 }
 
 
+CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
+{
+    CSeq_align_Mapper aln_mapper(src_align, m_UseWidth,
+                                 m_Scope.GetScopeOrNull());
+    aln_mapper.Convert(*this);
+    return aln_mapper.GetDstAlign();
+}
+
+
+CRef<CSeq_loc> CSeq_loc_Mapper::Map(const CSeq_loc& src_loc)
+{
+    m_Dst_loc.Reset();
+    m_Partial = false; // reset for each location
+    m_LastTruncated = false;
+    x_MapSeq_loc(src_loc);
+    x_PushRangesToDstMix();
+    OptimizeSeq_loc(m_Dst_loc);
+    return m_Dst_loc;
+}
+
+
+CRef<CSeq_align> CSeq_loc_Mapper::Map(const CSeq_align& src_align)
+{
+    m_Dst_loc.Reset();
+    m_Partial = false; // reset for each location
+    m_LastTruncated = false;
+    return x_MapSeq_align(src_align);
+}
+
+
+/////////////////////////////////////////////////////////////////////
+//
+//   Produce result of the mapping
+//
+
+
 CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc
 (const CSeq_id_Handle& idh,
  TSeqPos               from,
@@ -2032,65 +2000,144 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc
 }
 
 
-void CSeq_loc_Mapper::x_OptimizeSeq_loc(CRef<CSeq_loc>& loc)
+CSeq_loc_Mapper::TMappedRanges&
+CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
+                                   size_t strand_idx) const
 {
-    if ( !loc ) {
-        loc.Reset(new CSeq_loc);
-        loc->SetNull();
-        return;
+    TRangesByStrand& str_vec = m_MappedLocs[id];
+    if (str_vec.size() <= strand_idx) {
+        str_vec.resize(strand_idx + 1);
     }
-    switch (loc->Which()) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Feat:
-    case CSeq_loc::e_Null:
-    case CSeq_loc::e_Empty:
-    case CSeq_loc::e_Whole:
-    case CSeq_loc::e_Int:
-    case CSeq_loc::e_Pnt:
-    case CSeq_loc::e_Equiv:
-    case CSeq_loc::e_Bond:
-    case CSeq_loc::e_Packed_int:  // pack ?
-    case CSeq_loc::e_Packed_pnt:  // pack ?
-        return;
-    case CSeq_loc::e_Mix:
+    return str_vec[strand_idx];
+}
+
+
+void CSeq_loc_Mapper::x_PushMappedRange(const CSeq_id_Handle& id,
+                                        size_t                strand_idx,
+                                        const TRange&         range,
+                                        const TRangeFuzz&     fuzz)
+{
+    bool reverse = (strand_idx > 0) &&
+        IsReverse(INDEX_TO_STRAND(strand_idx));
+    switch ( m_MergeFlag ) {
+    case eMergeContained:
+    case eMergeAll:
         {
-            switch ( loc->GetMix().Get().size() ) {
-            case 0:
-                loc->SetNull();
-                break;
-            case 1:
-                {
-                    CRef<CSeq_loc> single = *loc->SetMix().Set().begin();
-                    loc = single;
-                    break;
-                }
-            default:
-                {
-                    // Try to convert to packed-int
-                    CRef<CSeq_loc> packed;
-                    NON_CONST_ITERATE(CSeq_loc_mix::Tdata, it,
-                        loc->SetMix().Set()) {
-                        if ( !(*it)->IsInt() ) {
-                            packed.Reset();
-                            break;
-                        }
-                        if ( !packed ) {
-                            packed.Reset(new CSeq_loc);
-                        }
-                        packed->SetPacked_int().Set().
-                            push_back(Ref(&(*it)->SetInt()));
-                    }
-                    if ( packed ) {
-                        loc = packed;
-                    }
-                    break;
-                }
+            if ( reverse ) {
+                x_GetMappedRanges(id, strand_idx)
+                    .push_front(TRangeWithFuzz(range, fuzz));
+            }
+            else {
+                x_GetMappedRanges(id, strand_idx)
+                    .push_back(TRangeWithFuzz(range, fuzz));
             }
             break;
         }
+    case eMergeNone:
+        {
+            x_PushRangesToDstMix();
+            if ( reverse ) {
+                x_GetMappedRanges(id, strand_idx)
+                    .push_front(TRangeWithFuzz(range, fuzz));
+            }
+            else {
+                x_GetMappedRanges(id, strand_idx)
+                    .push_back(TRangeWithFuzz(range, fuzz));
+            }
+            break;
+        }
+    case eMergeAbutting:
     default:
-        NCBI_THROW(CAnnotException, eBadLocation,
-                   "Unsupported location type");
+        {
+            TRangesById::iterator it = m_MappedLocs.begin();
+            // Start new sub-location for:
+            // New ID
+            bool no_merge = it == m_MappedLocs.end()  ||  it->first != id;
+            // New strand
+            no_merge |= it->second.size() <= strand_idx
+                ||  it->second.empty();
+            // Ranges are not abutting
+            if ( !no_merge ) {
+                if ( reverse ) {
+                    no_merge |= it->second[strand_idx].front().first.GetFrom() !=
+                        range.GetToOpen();
+                }
+                else {
+                    no_merge |= it->second[strand_idx].back().first.GetToOpen() !=
+                        range.GetFrom();
+                }
+            }
+            if ( no_merge ) {
+                x_PushRangesToDstMix();
+                if ( reverse ) {
+                    x_GetMappedRanges(id, strand_idx)
+                        .push_front(TRangeWithFuzz(range, fuzz));
+                }
+                else {
+                    x_GetMappedRanges(id, strand_idx)
+                        .push_back(TRangeWithFuzz(range, fuzz));
+                }
+            }
+            else {
+                if ( reverse ) {
+                    TRangeWithFuzz& last_rg = it->second[strand_idx].front();
+                    last_rg.first.SetFrom(range.GetFrom());
+                    last_rg.second.first = fuzz.first;
+                }
+                else {
+                    TRangeWithFuzz& last_rg = it->second[strand_idx].back();
+                    last_rg.first.SetTo(range.GetTo());
+                    last_rg.second.second = fuzz.second;
+                }
+            }
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper::x_PushRangesToDstMix(void)
+{
+    if (m_MappedLocs.size() == 0) {
+        return;
+    }
+    // Push everything already mapped to the destination mix
+    CRef<CSeq_loc> loc = x_GetMappedSeq_loc();
+    if ( !m_Dst_loc ) {
+        m_Dst_loc = loc;
+        return;
+    }
+    if ( !loc->IsNull() ) {
+        x_PushLocToDstMix(loc);
+    }
+}
+
+
+void CSeq_loc_Mapper::x_PushLocToDstMix(CRef<CSeq_loc> loc)
+{
+    _ASSERT(loc);
+    if ( !m_Dst_loc  ||  !m_Dst_loc->IsMix() ) {
+        CRef<CSeq_loc> tmp = m_Dst_loc;
+        m_Dst_loc.Reset(new CSeq_loc);
+        m_Dst_loc->SetMix();
+        if ( tmp ) {
+            m_Dst_loc->SetMix().Set().push_back(tmp);
+        }
+    }
+    CSeq_loc_mix::Tdata& mix = m_Dst_loc->SetMix().Set();
+    if ( loc->IsNull() ) {
+        if ( m_GapFlag == eGapRemove ) {
+            return;
+        }
+        if ( mix.size() > 0  &&  (*mix.rbegin())->IsNull() ) {
+            // do not create duplicate NULLs
+            return;
+        }
+    }
+    if ( x_ReverseRangeOrder() ) {
+        mix.push_front(loc);
+    }
+    else {
+        mix.push_back(loc);
     }
 }
 
@@ -2187,25 +2234,8 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
         }
     }
     m_MappedLocs.clear();
-    x_OptimizeSeq_loc(dst_loc);
+    OptimizeSeq_loc(dst_loc);
     return dst_loc;
-}
-
-
-CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
-{
-    CSeq_align_Mapper aln_mapper(src_align, m_UseWidth,
-                                 m_Scope.GetScopeOrNull());
-    aln_mapper.Convert(*this);
-    return aln_mapper.GetDstAlign();
-    /*
-    ITERATE(TIdMap, id_it, m_IdMap) {
-        ITERATE(TRangeMap, rg_it, id_it->second) {
-            aln_mapper.Convert(*rg_it->second,
-                m_UseWidth ? m_Widths[id_it->first] : 0);
-        }
-    }
-    */
 }
 
 
@@ -2215,6 +2245,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2006/08/21 15:46:42  grichenk
+* Added CMappingRanges for storing mappings.
+* Added CSeq_loc_Mapper(CMappingRanges&) constructor.
+*
 * Revision 1.50  2006/06/26 16:56:42  grichenk
 * Fixed order of intervals in mapped locations.
 * Filter duplicate mappings.
