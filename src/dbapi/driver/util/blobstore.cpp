@@ -296,7 +296,7 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
                                    const string blob_column[],
                                    bool is_text) :
     m_TableName(table_name), m_KeyColName(key_col_name),
-    m_NumColName(num_col_name), m_RowNum(0), m_Desc(table_name)
+    m_NumColName(num_col_name), m_RowNum(0), m_Desc(table_name, kEmptyStr, kEmptyStr)
 {
     m_Con= 0;
     m_Cmd= 0;
@@ -375,7 +375,7 @@ I_ITDescriptor& CSimpleBlobStore::ItDescriptor(void)
 
         m_Desc.SetSearchConditions(s);
     }
-    m_Desc.SetColumn(m_DataColName[i]);
+    m_Desc.SetColumnName(m_DataColName[i]);
     m_ImageNum++;
     return m_Desc;
 }

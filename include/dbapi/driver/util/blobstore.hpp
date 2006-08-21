@@ -187,19 +187,6 @@ private:
  * DATA1 image NULL, ... DATAn image NULL)
  *
  */
-class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CMY_ITDescriptor : public CDB_ITDescriptor {
-public:
-    CMY_ITDescriptor(const string& table_name) :
-        CDB_ITDescriptor(table_name, kEmptyStr, kEmptyStr)
-    {};
-    void SetColumn(const string& col_name) {
-        m_ColumnName= col_name;
-    }
-    void SetSearchConditions(const string& s) {
-        m_SearchConditions= s;
-    }
-};
-
 
 class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CSimpleBlobStore
     : public ItDescriptorMaker {
@@ -230,7 +217,7 @@ protected:
     int m_ImageNum;
     CDB_VarChar m_Key;
     CDB_Int m_RowNum;
-    CMY_ITDescriptor m_Desc;
+    CDB_ITDescriptor m_Desc;
 };
 
 
@@ -381,6 +368,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/08/21 18:10:20  ssikorsk
+ * Replaced class CMY_ITDescriptor with CDB_ITDescriptor.
+ *
  * Revision 1.9  2006/02/15 19:56:54  lavr
  * IReader/IWriter moved to corelib
  *
