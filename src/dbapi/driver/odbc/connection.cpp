@@ -125,7 +125,7 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
         query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
-#ifdef FTDS_IN_USE
+#if 1 // defined(FTDS_IN_USE)
     CODBC_CursorCmdExpl* ccmd = new CODBC_CursorCmdExpl(this,
                                                 cursor_name,
                                                 query,
@@ -303,54 +303,22 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
 
     *ph = SQL_LEN_DATA_AT_EXEC(size);
 
-#if defined(HAS_DEFERRED_PREPARE)
-
-    SQLULEN par_size;
-    SQLSMALLINT par_type, par_dig, par_null;
-
-    if (!ODBC_xCheckSIE(SQLPrepare(stmt.GetHandle(),
-                                   (SQLCHAR*)q.c_str(),
-                                   SQL_NTS),
-                        stmt)) {
-        return false;
-    }
-
-    if (!ODBC_xCheckSIE(SQLDescribeParam(stmt.GetHandle(),
-                                         1,
-                                         &par_type,
-                                         &par_size,
-                                         &par_dig,
-                                         &par_null),
-                        stmt)) {
-        return false;
-    }
-
-    if (!ODBC_xCheckSIE(SQLBindParameter(stmt.GetHandle(),
-                                         1,
-                                         SQL_PARAM_INPUT,
-                                         is_text? SQL_C_CHAR : SQL_C_BINARY,
-                                         // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
-                                         par_type,
-                                         size,
-                                         0,
-                                         id,
-                                         0,
-                                         ph),
-                        stmt)) {
-        return false;
-    }
-
-#else // Same as defined(FTDS_IN_USE) ...
-
     // Do not use SQLDescribeParam. It is not implemented with the odbc driver
     // from FreeTDS.
-    if (!ODBC_xCheckSIE(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT,
-                                         is_text? SQL_C_CHAR : SQL_C_BINARY,
-                                         // par_type,
-                                         SQL_LONGVARCHAR,
-                                         // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
-                                         size, 0, id, 0, ph),
-                        stmt)) {
+    if (!ODBC_xCheckSIE(SQLBindParameter(
+            stmt.GetHandle(),
+            1,
+            SQL_PARAM_INPUT,
+            descr_in.GetColumnType() == CDB_ITDescriptor::eText ?
+                SQL_C_CHAR : SQL_C_BINARY,
+            descr_in.GetColumnType() == CDB_ITDescriptor::eText ?
+                SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+            size,
+            0,
+            id,
+            0,
+            ph),
+        stmt)) {
         return false;
     }
 
@@ -360,7 +328,6 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                         stmt)) {
         return false;
     }
-#endif // defined(HAS_DEFERRED_PREPARE)
 
     switch(SQLExecute(stmt.GetHandle())) {
     case SQL_NEED_DATA:
@@ -683,6 +650,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/08/21 18:14:57  ssikorsk
+ * Use explicit ursors with the MS Win odbc driver temporarily;
+ * Revamp code to use CDB_ITDescriptor:: GetColumnType();
+ *
  * Revision 1.39  2006/08/18 15:15:10  ssikorsk
  * Use CODBC_CursorCmdExpl with the FreeTDS odbc driver (because implicit cursors
  * are still not implemented) and CODBC_CursorCmd with the Windows SQL Server driver.
