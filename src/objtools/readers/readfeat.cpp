@@ -1582,7 +1582,23 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             ERR_POST (Warning << "Unrecognized feature " << feat);
                         }
 
-                        if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
+                        if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
+
+                            sfp.Reset (new CSeq_feat);
+                            sfp->ResetLocation ();
+                            sfp->SetData ().Select (CSeqFeatData::e_Imp);
+                            CSeqFeatData& sfdata = sfp->SetData ();
+                            CImp_feat_Base& imp = sfdata.SetImp ();
+                            imp.SetKey ("misc_feature");
+                            ftable.push_back (sfp);
+                            CRef<CSeq_loc> location (new CSeq_loc);
+                            mix = &(location->SetMix ());
+                            sfp->SetLocation (*location);
+                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
+                            x_AddQualifierToFeature (sfp, "standard_name", feat);
+
+                        } else if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
+
                             sfp.Reset (new CSeq_feat);
                             sfp->ResetLocation ();
                             sfp->SetData ().Select (CSeqFeatData::e_Imp);
@@ -1719,7 +1735,19 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
                 ERR_POST (Warning << "Unrecognized feature " << feat);
             }
 
-            if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
+            if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
+
+                sfp.Reset (new CSeq_feat);
+                sfp->ResetLocation ();
+                sfp->SetData ().Select (CSeqFeatData::e_Imp);
+                CSeqFeatData& sfdata = sfp->SetData ();
+                CImp_feat_Base& imp = sfdata.SetImp ();
+                imp.SetKey ("misc_feature");
+                sfp->SetLocation (location);
+                x_AddQualifierToFeature (sfp, "standard_name", feat);
+
+            } else if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
+
                 sfp.Reset (new CSeq_feat);
                 sfp->ResetLocation ();
                 sfp->SetData ().Select (CSeqFeatData::e_Imp);
