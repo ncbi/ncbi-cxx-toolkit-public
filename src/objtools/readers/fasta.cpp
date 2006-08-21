@@ -195,6 +195,12 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         }
     }
 
+    if (need_defline  &&  GetLineReader().AtEOF()) {
+        NCBI_THROW2(CObjReaderParseException, eEOF,
+                    "CFastaReader: reached end of file",
+                    StreamPosition());
+    }
+
     AssembleSeq();
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(*m_CurrentSeq);
@@ -1404,6 +1410,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2006/08/21 19:59:12  ucko
+* CFastaReader::ReadOneSeq: throw an exception upon encountering EOF
+* when still needing a defline.
+*
 * Revision 1.31  2006/07/05 19:37:14  ucko
 * Avoid infinite loops when scanning input files.
 *
