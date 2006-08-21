@@ -843,7 +843,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
     char* buffer[128];
     SQLSMALLINT slp;
 
-    switch(SQLColAttribute(GetHandle(), item_no+1,
+    switch(SQLColAttribute(GetHandle(), item_no + 1,
                            SQL_DESC_BASE_TABLE_NAME,
                            (SQLPOINTER)buffer, sizeof(buffer),
                            &slp, 0)) {
@@ -860,9 +860,10 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
-    string base_table=(const char*)buffer;
 
-    switch(SQLColAttribute(GetHandle(), item_no+1,
+    string base_table = (const char*)buffer;
+
+    switch(SQLColAttribute(GetHandle(), item_no + 1,
                            SQL_DESC_BASE_COLUMN_NAME,
                            (SQLPOINTER)buffer, sizeof(buffer),
                            &slp, 0)) {
@@ -879,9 +880,41 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
-    string base_column=(const char*)buffer;
 
-    return new CDB_ITDescriptor(base_table, base_column, cond);
+    string base_column = (const char*)buffer;
+
+    int column_type = 0;
+    switch(SQLColAttribute(GetHandle(), item_no + 1,
+                           SQL_COLUMN_TYPE,
+                           NULL, sizeof(column_type),
+                           &slp, &column_type)) {
+    case SQL_SUCCESS_WITH_INFO:
+        ReportErrors();
+    case SQL_SUCCESS:
+        break;
+    case SQL_ERROR:
+        ReportErrors();
+        return 0;
+    default:
+        {
+            string err_message = "SQLColAttribute failed" + GetDiagnosticInfo();
+            DATABASE_DRIVER_ERROR( err_message, 430027 );
+        }
+    }
+
+    CDB_ITDescriptor::ETDescriptorType type = CDB_ITDescriptor::eUnknown;
+    switch (column_type) {
+    case SQL_BINARY:
+    case SQL_VARBINARY:
+    case SQL_LONGVARBINARY:
+        type = CDB_ITDescriptor::eBinary;
+        break;
+    case SQL_LONGVARCHAR:
+        type = CDB_ITDescriptor::eText;
+        break;
+    };
+
+    return new CDB_ITDescriptor(base_table, base_column, cond, type);
 }
 
 I_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor()
@@ -1191,6 +1224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/08/21 18:17:33  ssikorsk
+ * Retrieve and set a column type in CODBC_RowResult::GetImageOrTextDescriptor.
+ *
  * Revision 1.33  2006/08/18 15:19:02  ssikorsk
  * Implemented the CODBC_CursorResultExpl class.
  *
