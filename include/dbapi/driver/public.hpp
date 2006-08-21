@@ -530,25 +530,42 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_ITDescriptor : public I_ITDescriptor
 {
 public:
+    enum ETDescriptorType {eUnknown, eText, eBinary};
+
     CDB_ITDescriptor(const string& table_name,
                      const string& column_name,
-                     const string& search_conditions)
+                     const string& search_conditions,
+                     ETDescriptorType column_type = eUnknown)
         : m_TableName(table_name),
           m_ColumnName(column_name),
-          m_SearchConditions(search_conditions)
+          m_SearchConditions(search_conditions),
+          m_ColumnType(column_type)
     {}
 
-    virtual int DescriptorType() const;
+    virtual int DescriptorType(void) const;
+    virtual ~CDB_ITDescriptor(void);
 
     const string& TableName()        const { return m_TableName;        }
+    void SetTableName(const string& name)  { m_TableName = name;        }
     const string& ColumnName()       const { return m_ColumnName;       }
+    void SetColumnName(const string& name) { m_ColumnName = name;       }
     const string& SearchConditions() const { return m_SearchConditions; }
-    virtual ~CDB_ITDescriptor();
+    void SetSearchConditions(const string& cond) { m_SearchConditions = cond; }
+
+    ETDescriptorType GetColumnType(void) const
+    {
+        return m_ColumnType;
+    }
+    void SetColumnType(ETDescriptorType type)
+    {
+        m_ColumnType = type;
+    }
 
 protected:
-    string m_TableName;
-    string m_ColumnName;
-    string m_SearchConditions;
+    string              m_TableName;
+    string              m_ColumnName;
+    string              m_SearchConditions;
+    ETDescriptorType    m_ColumnType;
 };
 
 
@@ -589,6 +606,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/08/21 18:09:14  ssikorsk
+ * Added enum ETDescriptorType to the CDB_ITDescriptor class in order to be able to pass
+ * binary/text/unknown type;
+ * Pass ETDescriptorType::eUnknown as a default argument of the CDB_ITDescriptor's ctor;
+ *
  * Revision 1.28  2006/07/18 15:46:00  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
