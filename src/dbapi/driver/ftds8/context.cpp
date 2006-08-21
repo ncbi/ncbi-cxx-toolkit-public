@@ -205,12 +205,6 @@ CTDSContext::CTDSContext(DBINT version) :
         "You cannot use more than one ftds contexts "
        "concurrently", 200000 );
 
-    char hostname[256];
-    if(gethostname(hostname, 256) == 0) {
-        hostname[255]= '\0';
-        SetHostName( hostname );
-    }
-
 #if defined(NCBI_OS_MSWIN)
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
@@ -218,6 +212,12 @@ CTDSContext::CTDSContext(DBINT version) :
         DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
     }
 #endif
+
+    char hostname[256];
+    if(gethostname(hostname, 256) == 0) {
+        hostname[255]= '\0';
+        SetHostName( hostname );
+    }
 
     CHECK_DRIVER_ERROR(
         Check(dbinit()) != SUCCEED,
@@ -355,6 +355,10 @@ CTDSContext::~CTDSContext()
 {
     try {
         x_Close();
+
+#if defined(NCBI_OS_MSWIN)
+        WSACleanup();
+#endif
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -390,10 +394,6 @@ CTDSContext::x_Close(bool delete_conn)
                 g_pTDSContext = NULL;
                 x_RemoveFromRegistry();
             }
-
-#if defined(NCBI_OS_MSWIN)
-            WSACleanup();
-#endif
         }
     } else {
         if (delete_conn && x_SafeToFinalize()) {
@@ -895,6 +895,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2006/08/21 18:03:26  ssikorsk
+ * Adjusted winsock2 initialization/finalization.
+ *
  * Revision 1.80  2006/07/28 15:00:56  ssikorsk
  * Revamp code to use CDB_Exception::SetSybaseSeverity.
  *
