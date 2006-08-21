@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.435 2006/08/18 14:49:25 ucko Exp $
+#  $Id: configure.ac,v 1.436 2006/08/21 14:23:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1392,7 +1392,7 @@ if test "$with_autodep" = "yes" ; then
    Rules="rules_with_autodep"
 elif test "$with_autodep" = "no" ; then
    Rules="rules"
-elif make --version 2>/dev/null | grep 'GNU Make' ; then
+elif make --version 2>/dev/null | grep 'GNU Make' >/dev/null ; then
    Rules="rules_with_autodep"
 else
    Rules="rules"
@@ -3983,19 +3983,22 @@ if test "$with_wxwidgets" != "no" ; then
    WXWIDGETS_LIBPATH=${WXWIDGETS_LIBPATH:="$WXWIDGETS_ARCH_PATH/lib"}
    WXWIDGETS_INCLUDE=
    wxconf=$WXWIDGETS_BINPATH/wx-config
-   for x in `"$wxconf" --libs --static`; do
-      case "$x" in
-         -L*)
-             d=`echo $x | sed -e 's/^-L//'`
-             pcd=$d/pkgconfig
-             if test -d "$pcd"; then
-                PKG_CONFIG_PATH="${PKG_CONFIG_PATH+$PKG_CONFIG_PATH:}$pcd"
-             fi
-             ;;
-      esac
-   done
-   export PKG_CONFIG_PATH
-   if "$wxconf" --list | grep 'Default config is gtk2' >/dev/null; then
+   if test -x "$wxconf"; then
+      for x in `"$wxconf" --libs --static`; do
+         case "$x" in
+            -L*)
+                d=`echo $x | sed -e 's/^-L//'`
+                pcd=$d/pkgconfig
+                if test -d "$pcd"; then
+                   PKG_CONFIG_PATH="${PKG_CONFIG_PATH+$PKG_CONFIG_PATH:}$pcd"
+                fi
+                ;;
+         esac
+      done
+      export PKG_CONFIG_PATH
+   fi
+   if test -x "$wxconf" \
+     &&  "$wxconf" --list | grep 'Default config is gtk2' >/dev/null; then
       gtkconf="pkg-config gtk+-2.0"
    elif test -x "$WXWIDGETS_BINPATH/gtk-config"; then
       gtkconf=$WXWIDGETS_BINPATH/gtk-config
