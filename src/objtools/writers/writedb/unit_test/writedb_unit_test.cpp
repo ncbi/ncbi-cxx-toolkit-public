@@ -324,6 +324,8 @@ BOOST_AUTO_UNIT_TEST(s_NuclBioseqDup)
 
 BOOST_AUTO_UNIT_TEST(s_ProtBioseqDup)
 {
+    START;
+    
     int ids[] = {
         1477444,  1669609,  1669611,  1669615, 1669617, 7544146,
         22652804, 1310870,  3114354,  3891778, 3891779, 81294290,
@@ -353,6 +355,8 @@ BOOST_AUTO_UNIT_TEST(s_ProtBioseqDup)
 
 BOOST_AUTO_UNIT_TEST(s_EmptyBioseq)
 {
+    START;
+    
     CWriteDB fails("failing-db",
                    CWriteDB::eProtein,
                    "title",
@@ -366,6 +370,8 @@ BOOST_AUTO_UNIT_TEST(s_EmptyBioseq)
 
 BOOST_AUTO_UNIT_TEST(s_BioseqHandle)
 {
+    START;
+    
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -389,6 +395,8 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandle)
 
 BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
 {
+    START;
+    
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -420,6 +428,8 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
 
 BOOST_AUTO_UNIT_TEST(s_SetPig)
 {
+    START;
+    
     string nm = "pigs";
     vector<string> files;
     
@@ -476,6 +486,8 @@ BOOST_AUTO_UNIT_TEST(s_SetPig)
 
 BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 {
+    START;
+    
     CSeqDB nr("nr", CSeqDB::eProtein);
     
     CWriteDB db("multivol",
@@ -531,6 +543,9 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/08/21 16:23:12  bealer
+ * - Verbosity mode (controlled by VERBOSE_UT envar).
+ *
  * Revision 1.2  2006/08/21 16:04:37  bealer
  * - Fix makefile include/lib paths.
  * - Change to use in-class enumeration definition.
