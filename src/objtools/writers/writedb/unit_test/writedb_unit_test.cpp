@@ -244,7 +244,7 @@ s_DupSequencesTest(int    * ids,
                            ? CWriteDB::eProtein
                            : CWriteDB::eNucleotide),
                           title,
-                          eFullIndex));
+                          CWriteDB::eFullIndex));
     
     if (raw_data) {
         s_DupIdsRaw(*db, src, ids);
@@ -356,7 +356,7 @@ BOOST_AUTO_UNIT_TEST(s_EmptyBioseq)
     CWriteDB fails("failing-db",
                    CWriteDB::eProtein,
                    "title",
-                   eFullIndex);
+                   CWriteDB::eFullIndex);
     
     CRef<CBioseq> bs(new CBioseq);
     fails.AddSequence(*bs);
@@ -369,7 +369,7 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandle)
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
-                eFullIndex);
+                CWriteDB::eFullIndex);
     
     CRef<CScope> scope = s_GetScope();
     
@@ -392,7 +392,7 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
-                eFullIndex);
+                CWriteDB::eFullIndex);
     
     CRef<CScope> scope = s_GetScope();
     
@@ -429,7 +429,7 @@ BOOST_AUTO_UNIT_TEST(s_SetPig)
         CWriteDB db(nm,
                     CWriteDB::eProtein,
                     "title",
-                    eFullIndex);
+                    CWriteDB::eFullIndex);
         
         db.AddSequence(*nr.GiToBioseq(129295));
         db.SetPig(101);
@@ -481,7 +481,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
     CWriteDB db("multivol",
                 CWriteDB::eProtein,
                 "title",
-                eFullIndex);
+                CWriteDB::eFullIndex);
     
     db.SetMaxVolumeLetters(500);
     
@@ -531,6 +531,10 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/08/21 16:04:37  bealer
+ * - Fix makefile include/lib paths.
+ * - Change to use in-class enumeration definition.
+ *
  * Revision 1.1  2006/08/21 15:46:19  bealer
  * - Add Boost unit test for writedb.
  *
