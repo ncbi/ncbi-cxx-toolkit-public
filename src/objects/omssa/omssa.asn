@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.32 2005/11/07 19:57:20 lewisg Exp $
+-- $Id: omssa.asn,v 1.33 2006/08/21 15:18:21 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -210,7 +210,23 @@ MSMod ::= INTEGER {
     phosphoneutrallosst (133),
     phosphoetdlosss (134),
     phosphoetdlosst (135),
-    max (136), -- maximum number of mods
+    arg-13c6 (136),
+    arg-13c6-15n4 (137),
+    lys-13c6 (138),
+    oxy18 (139),
+    beta-elim-s (140),
+    beta-elim-t (141),
+    usermod11 (142),
+    usermod12 (143),
+    usermod13 (144),
+    usermod14 (145),
+    usermod15 (146),
+    usermod16 (147),
+    usermod17 (148),
+    usermod18 (149),
+    usermod19 (150),
+    usermod20 (151),
+    max (152), -- maximum number of mods
     none(10000)
     }
 
@@ -276,11 +292,12 @@ MSCalcCharge ::= INTEGER {
 
 MSChargeHandle ::= SEQUENCE {
         calcplusone MSCalcPlusOne DEFAULT 1,  -- do we guess charge one?
-	calccharge MSCalcCharge DEFAULT 2,    -- how do we handle other charges?
+	calccharge MSCalcCharge DEFAULT 2,    -- how do we handle charges?
 	mincharge INTEGER DEFAULT 2,          -- if userange, what is the min?
 	maxcharge INTEGER DEFAULT 3,          -- if userange, what is the max?
-	considermult INTEGER DEFAULT 3,        -- at which precursor charge to consider +2 ions?
-        plusone REAL   -- what % of peaks below precursor needed to call as +1
+	considermult INTEGER DEFAULT 3,       -- at which precursor charge to consider +2 ions?
+        plusone REAL,                         -- what % of peaks below precursor needed to call as +1
+	maxproductcharge INTEGER OPTIONAL     -- maximum product ion charge
 	}
 	
 
@@ -353,9 +370,46 @@ MSSearchSettings ::= SEQUENCE {
 	maxnoenzyme INTEGER DEFAULT 0,        -- max number of AA in peptide for noenzyme search (0=none)
 	exactmass REAL OPTIONAL,              -- the threshold in Da for adding neutron
 	settingid INTEGER OPTIONAL,           -- id of the search settings
-	iterativesettings MSIterativeSettings OPTIONAL   -- iterative search settings
+	iterativesettings MSIterativeSettings OPTIONAL,   -- iterative search settings
+	precursorcull INTEGER OPTIONAL,       -- turn on aggressive precursor culling for ETD (0=none)
+	infiles SEQUENCE OF MSInFile OPTIONAL,         -- input files
+	outfiles SEQUENCE OF MSOutFile OPTIONAL,       -- output files
+ 	nocorrelationscore INTEGER OPTIONAL,           -- turn on correlation score (1=nocorr)
+	probfollowingion REAL OPTIONAL                 -- probability of a consecutive ion (used in correlation)
         }
 
+MSSerialDataFormat ::= INTEGER {
+	none (0) ,
+	asntext (1),      -- open ASN.1 text format
+	asnbinary (2),    -- open ASN.1 binary format
+	xml (3),          -- open XML format
+	csv (4)           -- csv (excel)
+	}
+
+MSOutFile ::= SEQUENCE {
+        outfile VisibleString,		      -- output file name
+        outfiletype MSSerialDataFormat,       -- output file type
+	includerequest BOOLEAN                -- should the output include the request?
+	}
+
+MSSpectrumFileType ::= INTEGER { 
+	dta(0), 
+	dtablank(1), 
+	dtaxml(2), 
+	asc(3), 
+	pkl(4), 
+	pks(5), 
+	sciex(6), 
+	mgf(7), 
+	unknown(8),
+	oms(9),    -- asn.1 binary
+	omx(10)    -- xml binary
+	}
+
+MSInFile ::= SEQUENCE {
+        infile VisibleString,		     -- input file name
+        infiletype MSSpectrumFileType        -- input file type
+	}
 
 MSSearchSettingsSet ::= SEQUENCE OF MSSearchSettings
 
@@ -365,7 +419,8 @@ MSRequest ::= SEQUENCE {
 	spectra MSSpectrumset,      -- the set of spectra
         settings MSSearchSettings,  -- the search settings
 	rid VisibleString OPTIONAL,  -- request id
-	moresettings MSSearchSettingsSet OPTIONAL -- additional search runs
+	moresettings MSSearchSettingsSet OPTIONAL, -- additional search runs
+        modset MSModSpecSet OPTIONAL  -- list of mods that can be used in search
 	}
 
 
@@ -388,7 +443,8 @@ MSMZHit ::= SEQUENCE {
 	ion MSIonType,  -- ion type, e.g. b
 	charge INTEGER, -- ion charge
 	number INTEGER, -- the sequential number of the ion
-	mz INTEGER  -- scaled m/z value in Da
+	mz INTEGER,  -- scaled m/z value in Da
+	index INTEGER OPTIONAL  -- the index of the peak in the original spectrum
 }
 
 
@@ -441,6 +497,13 @@ MSHitError ::= INTEGER {
 	notenuffpeaks (3) -- not enough peaks to search
 	}
 
+-- MSHitSet annotation by end user
+
+MSUserAnnot ::= INTEGER {
+	none (0),
+	delete (1),
+	flag (2)
+	}
 
 -- contains a set of hits to a single spectrum
 
@@ -450,7 +513,8 @@ MSHitSet ::= SEQUENCE {
         hits SEQUENCE OF MSHits OPTIONAL,        -- set of hit to spectrum
         ids SEQUENCE OF VisibleString OPTIONAL,  -- filenames or other ids of spectra searched
         namevalue SEQUENCE OF NameValue OPTIONAL,-- extra info: retention times, etc.
-	settingid INTEGER OPTIONAL               -- id of the search setting used
+	settingid INTEGER OPTIONAL,              -- id of the search setting used
+	userannotation MSUserAnnot OPTIONAL      -- allows users to flag certain
 	}
 
 

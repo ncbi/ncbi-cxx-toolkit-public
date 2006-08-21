@@ -81,44 +81,6 @@ const int kAccLen = 20;
 // arbitrary high evalue
 const double kHighEval = 1e50;
 
-/**
- * class to hold various helper functions for CSearch
- */
-class NCBI_XOMSSA_EXPORT CSearchHelper {
-public:
-
-    /**
-     * read in modification files.  probably should be in some helper class
-     * 
-     * @param ModFileName mods.xml
-     * @param UserModFileName usermods.xml
-     * @param Path program path
-     * @param Modset the data structure containing the mods
-     * @return 1 on error
-     */
-    static int ReadModFiles(const string& ModFileName,
-                            const string& UserModFileName, 
-                            const string& Path,
-                            CRef <CMSModSpecSet> Modset);
-
-    /** 
-     * read in taxonomy file
-     * 
-     * @param Filename filename
-     * @param TaxNameMap maps taxid to friendly name
-     */
-    typedef map<int, string> TTaxNameMap;
-    static void ReadTaxFile(string& Filename, TTaxNameMap& TaxNameMap);
-
-    /**
-     * correctly set up xml stream
-     * 
-     * @param xml_out xml output stream
-     */
-    static void ConditionXMLStream(CObjectOStreamXml *xml_out);
-
-};
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -847,6 +809,90 @@ CSearch::GetLadderContainer(void) const
 
 
 /////////////////// end of CSearch inline methods
+
+/**
+ * class to hold various helper functions for CSearch
+ */
+class NCBI_XOMSSA_EXPORT CSearchHelper {
+public:
+
+    /**
+     * read in modification files.  probably should be in some helper class
+     * 
+     * @param ModFileName mods.xml
+     * @param UserModFileName usermods.xml
+     * @param Path program path
+     * @param Modset the data structure containing the mods
+     * @return 1 on error
+     */
+    static int ReadModFiles(const string& ModFileName,
+                            const string& UserModFileName, 
+                            const string& Path,
+                            CRef <CMSModSpecSet> Modset);
+
+    /** 
+     * read in taxonomy file
+     * 
+     * @param Filename filename
+     * @param TaxNameMap maps taxid to friendly name
+     */
+    typedef map<int, string> TTaxNameMap;
+    static void ReadTaxFile(string& Filename, TTaxNameMap& TaxNameMap);
+
+    /**
+     * correctly set up xml stream
+     * 
+     * @param xml_out xml output stream
+     */
+    static void ConditionXMLStream(CObjectOStreamXml *xml_out);
+
+    /**
+     * Read in a spectrum file
+     * 
+     * @param Filename name of file
+     * @param FileType type of file to be read in
+     * @param MySearch the search
+     * @return 1, -1 = error, 0 = ok
+     */
+    static int ReadFile(const string& Filename, 
+                        const EMSSpectrumFileType FileType, 
+                        CMSSearch& MySearch);
+
+
+    /**
+      * Read in any input file
+      * 
+      * @param InFile type and name of file to be read in
+      * @param MySearch the search i/o object
+      * @param Search the search algorithm object
+      * @return 1, -1 = error, 0 = ok
+      */
+    static int LoadAnyFile(CMSSearch& MySearch, 
+                           CConstRef <CMSInFile> InFile,
+                           CSearch& SearchEngine);
+
+    /**
+     * Read in a complete search
+     * @param Filename name of file
+     * @param Dataformat xml or asn.1
+     * @param MySearch the search
+     * @return 0 if OK
+     */
+    static int ReadCompleteSearch(const string& Filename,
+                                  const ESerialDataFormat DataFormat,
+                                  CMSSearch& MySearch);
+
+    /**
+      * Write out a complete search
+      * @param Modset modifications used in search
+      * @param OutFiles list of output files
+      * @param MySearch the search
+      * @return 0 if OK
+      */
+    static int SaveAnyFile(CMSSearch& MySearch, 
+                           CMSSearchSettings::TOutfiles OutFiles,
+                           CRef <CMSModSpecSet> Modset);
+};  
 
 
 END_SCOPE(omssa)

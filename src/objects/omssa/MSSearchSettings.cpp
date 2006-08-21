@@ -401,8 +401,9 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             !GetChargehandling().CanGetCalccharge() ||
             !GetChargehandling().CanGetCalcplusone() ||
             !GetChargehandling().CanGetConsidermult() ||
-            !GetChargehandling().CanGetPlusone()) {
-            Error.push_back("unknown chargehandling option");
+            !GetChargehandling().CanGetPlusone() ||
+            !GetChargehandling().CanGetMaxproductcharge()) {
+            Error.push_back("charge handling option is missing");
             retval = 1;
         }
         else {
@@ -429,6 +430,11 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
                 GetChargehandling().GetPlusone() > 1) {
                 Error.push_back("invalid 1+ charge determination threshold");
                 retval = 1;
+            }
+            if (GetChargehandling().GetMaxproductcharge() < 0 ||
+                  GetChargehandling().GetMaxproductcharge() > 20) {
+                  Error.push_back("invalid maximum product ion charge");
+                  retval = 1;
             }
         }
     }
@@ -521,6 +527,39 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
         retval = 1;
     }
 
+    if(CanGetPrecursorcull()) {
+        if (GetPrecursorcull() < 0 || GetPrecursorcull() > 1) {
+             Error.push_back("precursor cull setting < 0 or > 1");
+             retval = 1;
+         }
+     }
+     else {
+         Error.push_back("unable to precursor cull setting");
+         retval = 1;
+     }
+
+     if(CanGetNocorrelationscore()) {
+        if (GetNocorrelationscore() != 0 && GetNocorrelationscore() != 1) {
+             Error.push_back("unknown correlation score setting");
+             retval = 1;
+         }
+     }
+     else {
+         Error.push_back("unable to get correlation score setting");
+         retval = 1;
+     }
+
+     if(CanGetProbfollowingion()) {
+        if (GetProbfollowingion() < 0.0 || GetProbfollowingion() > 1.0) {
+             Error.push_back("probability of consecutive ions is < 0 or > 1");
+             retval = 1;
+         }
+     }
+     else {
+         Error.push_back("unable to get probability of consecutive ions");
+         retval = 1;
+     }
+
     return retval;
 }
 
@@ -534,6 +573,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/08/21 15:18:21  lewisg
+* asn.1 changes, bug fixes
+*
 * Revision 1.6  2005/11/07 19:57:20  lewisg
 * iterative search
 *

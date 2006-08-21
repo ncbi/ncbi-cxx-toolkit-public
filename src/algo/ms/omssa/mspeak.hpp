@@ -732,8 +732,8 @@ public:
      * @param FileType file format to use
      * @param Which which MZI set to use
      */
-    void Write(std::ostream& FileOut, const EFileType FileType,
- const EMSPeakListTypes Which) const;
+    void Write(std::ostream& FileOut, const EMSSpectrumFileType FileType,
+               const EMSPeakListTypes Which) const;
 
     // functions used in SmartCull
     
@@ -753,8 +753,13 @@ public:
      * @param TempLen length of Temp
      * @param scaled precursor value
      * @param Charge precursor charge
+     * @param PrecursorCull charge reduced culling
      */
-    void CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor, const int Charge);
+    void CullPrecursor(CMZI *Temp,
+                       int& TempLen,
+                       const int Precursor,
+                       const int Charge,
+                       bool PrecursorCull);
 
     /**
      *  take out peaks below a threshold
@@ -889,8 +894,10 @@ public:
      *  calculates charge based on threshold and sets charge value 
      * 
      * @param ChargeHandle contains info on how to deal with charge
+     * @param Spectrum the spectrum
      */
-    void SetComputedCharge(const CMSChargeHandle& ChargeHandle);
+    void SetComputedCharge(const CMSChargeHandle& ChargeHandle, 
+                           const CMSSpectrum& Spectrum);
 
     /**
      * return the computed charge state

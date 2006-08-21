@@ -78,28 +78,30 @@ static CNcbiIstream& MyGetline(CNcbiIstream& is, string& str)
 /// wrapper for various file loaders
 ///
 
-int CSpectrumSet::LoadFile(const EFileType FileType, CNcbiIstream& DTA, int Max)
+int CSpectrumSet::LoadFile(const EMSSpectrumFileType FileType, CNcbiIstream& DTA, int Max)
 {
     switch (FileType) {
-    case eDTA:
+    case eMSSpectrumFileType_dta:
         return LoadDTA(DTA);
         break;
-    case eDTABlank:
+    case eMSSpectrumFileType_dtablank:
         return LoadMultBlankLineDTA(DTA, Max);
         break;
-    case eDTAXML:
+    case eMSSpectrumFileType_dtaxml:
         return LoadMultDTA(DTA, Max);
         break;
-    case ePKL:
+    case eMSSpectrumFileType_pkl:
         return LoadMultBlankLineDTA(DTA, Max, true);
         break;
-    case eMGF:
+    case eMSSpectrumFileType_mgf:
         return LoadMGF(DTA, Max);
         break;
-    case eASC:
-    case ePKS:
-    case eSCIEX:
-    case eUnknown:
+    case eMSSpectrumFileType_asc:
+    case eMSSpectrumFileType_pks:
+    case eMSSpectrumFileType_sciex:
+    case eMSSpectrumFileType_unknown:
+    case eMSSpectrumFileType_oms:
+    case eMSSpectrumFileType_omx:
     default:
         break;
     }
@@ -544,6 +546,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2006/08/21 15:18:21  lewisg
+ * asn.1 changes, bug fixes
+ *
  * Revision 1.26  2006/05/25 17:10:17  lewisg
  * one filtered spectrum per precursor charge state
  *

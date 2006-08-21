@@ -82,29 +82,6 @@ private:
     template <class T> void InsertList(const string& List, T& ToInsert, string error); 
 
     /**
-     * Read in a spectrum file
-     * 
-     * @param Filename name of file
-     * @param FileType type of file to be read in
-     * @param MySearch the search
-     * @return 1, -1 = error, 0 = ok
-     */
-    int ReadFile(const string& Filename, 
-                 const EFileType FileType, 
-                 CMSSearch& MySearch);
-
-    /**
-     * Read in a complete search
-     * @param Filename name of file
-     * @param Dataformat xml or asn.1
-     * @param MySearch the search
-     * @return 0 if OK
-     */
-    int ReadCompleteSearch(const string& Filename,
-                           const ESerialDataFormat DataFormat,
-                           CMSSearch& MySearch);
-    
-    /**
      * Set search settings given args
      */
     void SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings);
@@ -115,49 +92,6 @@ COMSSA::COMSSA()
     SetVersion(CVersionInfo(2, 0, 0));
 }
 
-
-int COMSSA::ReadFile(const string& Filename,
-                     const EFileType FileType,
-                     CMSSearch& MySearch)
-{
-    CNcbiIfstream PeakFile(Filename.c_str());
-    if(!PeakFile) {
-        ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
-                 Filename);
-        return 1;
-    }
-    // create request and response objects if necessary
-    if(!MySearch.CanGetRequest() || MySearch.SetRequest().empty()) {
-        CRef <CMSRequest> Request (new CMSRequest);
-        MySearch.SetRequest().push_back(Request);
-    }    
-    if(!MySearch.CanGetResponse() || MySearch.SetResponse().empty()) {
-        CRef <CMSResponse> Response (new CMSResponse);
-        MySearch.SetResponse().push_back(Response);
-    }
-
-    CRef <CSpectrumSet> SpectrumSet(new CSpectrumSet);
-    (*MySearch.SetRequest().begin())->SetSpectra(*SpectrumSet);
-    return SpectrumSet->LoadFile(FileType, PeakFile);
-}   
-
-
-int COMSSA::ReadCompleteSearch(const string& Filename,
-                               const ESerialDataFormat DataFormat,
-                               CMSSearch& MySearch)
-{
-    auto_ptr<CObjectIStream> 
-        in(CObjectIStream::Open(Filename.c_str(), DataFormat));
-    in->Open(Filename.c_str(), DataFormat);
-    if(in->fail()) {	    
-        ERR_POST(Warning << "ommsacl: unable to search file" << 
-                 Filename);
-        return 1;
-    }
-    in->Read(ObjectInfo(MySearch));
-    in->Close();
-    return 0;
-}
     
 
 template <class T> void COMSSA::InsertList(const string& Input, T& ToInsert, string error) 
@@ -280,6 +214,9 @@ void COMSSA::Init()
 			   CArgDescriptions::eDouble, "0.2");
     argDesc->AddDefaultKey("ci", "cutinc", "intensity cutoff increment as a fraction of max peak",
 			   CArgDescriptions::eDouble, "0.0005");
+    argDesc->AddDefaultKey("cp", "precursorcull", 
+                "eliminate charge reduced precursors in spectra (0=no, 1=yes)",
+                CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("v", "cleave", 
 			   "number of missed cleavages allowed",
 			   CArgDescriptions::eInteger, "1");
@@ -346,6 +283,10 @@ void COMSSA::Init()
 				"minimum precursor charge to search when not 1+",
 				CArgDescriptions::eInteger, 
 				"1");
+    argDesc->AddDefaultKey("zoh", "maxprodcharge", 
+                  "maximum product charge to search",
+                  CArgDescriptions::eInteger, 
+                  "2");
 	argDesc->AddDefaultKey("zt", "chargethresh", 
 				 "minimum precursor charge to start considering multiply charged products",
 				 CArgDescriptions::eInteger, 
@@ -358,12 +299,16 @@ void COMSSA::Init()
                   "should charge plus one be determined algorithmically? (1=yes)",
                   CArgDescriptions::eInteger, 
                   NStr::IntToString(eMSCalcPlusOne_calc));
+    argDesc->AddDefaultKey("zcc", "calccharge", 
+                   "how should precursor charges be determined? (1=believe the input file, 2=use a range)",
+                   CArgDescriptions::eInteger, 
+                   "2");
     argDesc->AddDefaultKey("pc", "pseudocount", 
                   "minimum number of precursors that match a spectrum",
                   CArgDescriptions::eInteger, 
                   "1");
     argDesc->AddDefaultKey("sb1", "searchb1", 
-                   "should first forward (b1) product ions be in search (1 = no)",
+                   "should first forward (b1) product ions be in search (1=no)",
                    CArgDescriptions::eInteger, 
                    "1");
     argDesc->AddDefaultKey("sct", "searchcterm", 
@@ -374,6 +319,14 @@ void COMSSA::Init()
                     "max number of ions in each series being searched (0=all)",
                     CArgDescriptions::eInteger, 
                     "100");
+    argDesc->AddDefaultKey("scorr", "corrscore", 
+                     "turn off correlation correction to score (1=off, 0=use correlation)",
+                     CArgDescriptions::eInteger, 
+                     "1");
+    argDesc->AddDefaultKey("scorp", "corrprob", 
+                      "probability of consecutive ion (used in correlation correction)",
+                      CArgDescriptions::eDouble, 
+                      "0.5");
     argDesc->AddDefaultKey("no", "minno", 
                      "minimum size of peptides for no-enzyme and semi-tryptic searches",
                      CArgDescriptions::eInteger, 
@@ -394,6 +347,7 @@ void COMSSA::Init()
                             "evalue threshold to iteratively search a spectrum again, 0 = always",
                             CArgDescriptions::eDouble, 
                             "0.01");
+    argDesc->AddFlag("ni", "don't print informational messages");
     argDesc->AddFlag("ns", "depreciated flag"); // no longer has an effect, replaced by "os"
     argDesc->AddFlag("os", "use omssa 1.0 scoring");
 
@@ -413,6 +367,76 @@ int main(int argc, const char* argv[])
 
 void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
 {
+    // set up input files
+
+    CRef <CMSInFile> Infile; 
+    Infile = new CMSInFile;
+
+    if(args["fx"].AsString().size() != 0) {
+        Infile->SetInfile(args["fx"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_dtaxml);
+    }
+    else if(args["f"].AsString().size() != 0) {
+        Infile->SetInfile(args["f"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_dta);
+    }
+    else if(args["fb"].AsString().size() != 0)  {
+        Infile->SetInfile(args["fb"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_dtablank);
+    }
+    else if(args["fp"].AsString().size() != 0)  {
+        Infile->SetInfile(args["fp"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_pkl);
+    }
+    else if(args["fm"].AsString().size() != 0) {
+        Infile->SetInfile(args["fm"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_mgf);
+    }
+    else if(args["fomx"].AsString().size() != 0) {
+        Infile->SetInfile(args["fomx"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_omx);
+    }
+    else if(args["foms"].AsString().size() != 0) {
+        Infile->SetInfile(args["foms"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_oms);
+    }
+
+    Settings->SetInfiles().push_back(Infile);
+
+
+    // set up output files
+
+    CRef <CMSOutFile> Outfile;
+    Outfile = new CMSOutFile;
+
+    if(args["o"].AsString() != "") {
+        Outfile->SetOutfile(args["o"].AsString());
+        Outfile->SetOutfiletype(eMSSerialDataFormat_asntext);
+    }
+    if(args["ob"].AsString() != "") {
+        Outfile->SetOutfile(args["ob"].AsString());
+        Outfile->SetOutfiletype(eMSSerialDataFormat_asnbinary);
+    }
+    if(args["ox"].AsString() != "") {
+        Outfile->SetOutfile(args["ox"].AsString());
+        Outfile->SetOutfiletype(eMSSerialDataFormat_xml);
+    }
+    if(args["oc"].AsString() != "") {
+        Outfile->SetOutfile(args["oc"].AsString());
+        Outfile->SetOutfiletype(eMSSerialDataFormat_csv);
+    }
+
+    if(args["w"]) {
+        Outfile->SetIncluderequest(true);
+    }
+    else {
+        Outfile->SetIncluderequest(false);
+    }
+
+    Settings->SetOutfiles().push_back(Outfile);
+
+    // set up rest of settings
+
 	Settings->SetPrecursorsearchtype(args["tem"].AsInteger());
 	Settings->SetProductsearchtype(args["tom"].AsInteger());
 	Settings->SetPeptol(args["te"].AsDouble());
@@ -424,6 +448,7 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
 	Settings->SetCutlo(args["cl"].AsDouble());
 	Settings->SetCuthi(args["ch"].AsDouble());
 	Settings->SetCutinc(args["ci"].AsDouble());
+    Settings->SetPrecursorcull(args["cp"].AsInteger());
 	Settings->SetSinglewin(args["w1"].AsInteger());
 	Settings->SetDoublewin(args["w2"].AsInteger());
 	Settings->SetSinglenum(args["h1"].AsInteger());
@@ -444,6 +469,9 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
     Settings->SetSearchb1(args["sb1"].AsInteger());
     Settings->SetSearchctermproduct(args["sct"].AsInteger());
     Settings->SetMaxproductions(args["sp"].AsInteger());
+    Settings->SetNocorrelationscore(args["scorr"].AsInteger());
+    Settings->SetProbfollowingion(args["scorp"].AsDouble());
+
     Settings->SetMinnoenzyme(args["no"].AsInteger());
     Settings->SetMaxnoenzyme(args["nox"].AsInteger());
 
@@ -456,13 +484,16 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
 	Settings->SetChargehandling().SetMincharge(args["zl"].AsInteger());
 	Settings->SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
     Settings->SetChargehandling().SetPlusone(args["z1"].AsDouble());
+    Settings->SetChargehandling().SetMaxproductcharge(args["zoh"].AsInteger());
+    Settings->SetChargehandling().SetCalccharge(args["zcc"].AsInteger());
 
     Settings->SetIterativesettings().SetResearchthresh(args["ii"].AsDouble());
     Settings->SetIterativesettings().SetSubsetthresh(args["is"].AsDouble());
     Settings->SetIterativesettings().SetReplacethresh(args["ir"].AsDouble());
 
 	// validate the input
-        list <string> ValidError;
+
+    list <string> ValidError;
 	if(Settings->Validate(ValidError) != 0) {
 	    list <string>::iterator iErr;
 	    for(iErr = ValidError.begin(); iErr != ValidError.end(); iErr++)
@@ -481,6 +512,9 @@ int COMSSA::Run()
 	CArgs args = GetArgs();
     CRef <CMSModSpecSet> Modset(new CMSModSpecSet);
 
+    // turn off informational messages if requested
+    if(args["ni"])
+       SetDiagPostLevel(eDiag_Error);
 
     // read in modifications
     if(CSearchHelper::ReadModFiles(args["mx"].AsString(), args["mux"].AsString(),
@@ -501,71 +535,64 @@ int COMSSA::Run()
 	}
 
     // print out the ions list
-     if(args["il"]) {
-         PrintIons();
-         return 0;
-     }
-
-     CSearch Search;
+    if(args["il"]) {
+        PrintIons();
+        return 0;
+    }
+    
+    CSearch SearchEngine;
 
     // set up rank scoring
-    if(args["os"]) Search.SetRankScore() = false;
-    else Search.SetRankScore() = true;
+    if(args["os"]) SearchEngine.SetRankScore() = false;
+    else SearchEngine.SetRankScore() = true;
 
-	int retval = Search.InitBlast(args["d"].AsString().c_str());
+	int retval = SearchEngine.InitBlast(args["d"].AsString().c_str());
 	if(retval) {
-	    ERR_POST(Fatal << "ommsacl: unable to initialize blastdb, error " 
+	    ERR_POST(Fatal << "omssacl: unable to initialize blastdb, error " 
 		     << retval);
 	    return 1;
 	}
 
     CMSSearch MySearch;
 
-    int FileRetVal(1);
+    CRef <CMSRequest> Request (new CMSRequest);
+    MySearch.SetRequest().push_back(Request);
+    CRef <CMSResponse> Response (new CMSResponse);
+    MySearch.SetResponse().push_back(Response);
 
-	if(args["fx"].AsString().size() != 0) 
-        FileRetVal = ReadFile(args["fx"].AsString(), eDTAXML, MySearch);
-	else if(args["f"].AsString().size() != 0)
-        FileRetVal = ReadFile(args["f"].AsString(), eDTA, MySearch);
-	else if(args["fb"].AsString().size() != 0) 
-        FileRetVal = ReadFile(args["fb"].AsString(), eDTABlank, MySearch);
- 	else if(args["fp"].AsString().size() != 0) 
-        FileRetVal = ReadFile(args["fp"].AsString(), ePKL, MySearch);
-    else if(args["fm"].AsString().size() != 0)
-        FileRetVal = ReadFile(args["fm"].AsString(), eMGF, MySearch);
-    else if(args["fomx"].AsString().size() != 0) {
-        FileRetVal = ReadCompleteSearch(args["fomx"].AsString(), eSerial_Xml, MySearch);
-        Search.SetIterative() = true;
-    }
-    else if(args["foms"].AsString().size() != 0) {
-         FileRetVal = ReadCompleteSearch(args["foms"].AsString(), eSerial_AsnBinary, MySearch);
-         Search.SetIterative() = true;
-    }
-	else {
-	    ERR_POST(Fatal << "omssacl: input file not given.");
-	    return 1;
-	}
-
-    if(FileRetVal == -1) {
-        ERR_POST(Fatal << "omssacl: too many spectra in input file");
-        return 1;
-    }
-    else if(FileRetVal == 1) {
-        ERR_POST(Fatal << "omssacl: unable to read spectrum file -- incorrect file type?");
-        return 1;
-    }
 
     // which search settings to use
     CRef <CMSSearchSettings> SearchSettings;
 
     // set up search settings
     MySearch.SetUpSearchSettings(SearchSettings, 
-                                 Search.GetIterative());
+                                 SearchEngine.GetIterative());
 
     SetSearchSettings(args, SearchSettings);
 
+    int FileRetVal(1);
+
+    if(SearchSettings->GetInfiles().size() == 1) {
+        FileRetVal = 
+            CSearchHelper::LoadAnyFile(MySearch,
+                                       *(SearchSettings->GetInfiles().begin()), SearchEngine);
+        if(FileRetVal == -1) {
+            ERR_POST(Fatal << "omssacl: too many spectra in input file");
+            return 1;
+        }
+        else if(FileRetVal == 1) {
+            ERR_POST(Fatal << "omssacl: unable to read spectrum file -- incorrect file type?");
+            return 1;
+        }
+    }
+	else {
+	    ERR_POST(Fatal << "omssacl: input file not given or too many input files given.");
+	    return 1;
+	}
+
+
 	_TRACE("omssa: search begin");
-	Search.Search(*MySearch.SetRequest().begin(),
+	SearchEngine.Search(*MySearch.SetRequest().begin(),
                   *MySearch.SetResponse().begin(), 
                   Modset,
                   SearchSettings);
@@ -609,44 +636,11 @@ int COMSSA::Run()
 	if(!(*MySearch.SetResponse().begin())->CanGetHitsets()) {
 	  ERR_POST(Fatal << "No results found");
 	}
-
-	// output
-    auto_ptr <CObjectOStream> txt_out;  
-    CNcbiOfstream os;
-
-	if(args["o"].AsString() != "") {
-		txt_out.reset(CObjectOStream::Open(args["o"].AsString().c_str(),
-					     eSerial_AsnText));
-	}
-	else if(args["ob"].AsString() != "") {
-		txt_out.reset(CObjectOStream::Open(args["ob"].AsString().c_str(),
-					     eSerial_AsnBinary));
-	}
-	else if(args["ox"].AsString() != "") {
-        txt_out.reset(CObjectOStream::Open(args["ox"].AsString().c_str(), eSerial_Xml)); 
-        CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
-        CSearchHelper::ConditionXMLStream(xml_out);
-	}
-
-    if(txt_out.get() != 0) {
-        if(args["w"]) {
-            // write out
-            txt_out->Write(ObjectInfo(MySearch));
-        }
-        else {
-            txt_out->Write(ObjectInfo(**MySearch.SetResponse().begin()));
-        }
-    }
-
-    // print csv if requested
-    if(args["oc"].AsString() != "") {
-        CNcbiOfstream oscsv;
-        oscsv.open(args["oc"].AsString().c_str());
-        (*MySearch.SetResponse().begin())->PrintCSV(oscsv, Modset);
-        oscsv.close();
-    }
-
-
+    
+    CSearchHelper::SaveAnyFile(MySearch, 
+                               SearchSettings->GetOutfiles(),
+                               Modset);
+    
     } catch (NCBI_NS_STD::exception& e) {
 	ERR_POST(Fatal << "Exception in COMSSA::Run: " << e.what());
     }
@@ -656,189 +650,3 @@ int COMSSA::Run()
 
 
 
-/*
-  $Log$
-  Revision 1.49  2006/07/20 21:00:22  lewisg
-  move functions out of COMSSA, create laddercontainer
-
-  Revision 1.48  2006/05/25 17:11:56  lewisg
-  one filtered spectrum per precursor charge state
-
-  Revision 1.47  2005/11/16 20:01:13  lewisg
-  turn off attribute tag in xml
-
-  Revision 1.46  2005/11/07 19:57:20  lewisg
-  iterative search
-
-  Revision 1.45  2005/10/24 21:46:13  lewisg
-  exact mass, peptide size limits, validation, code cleanup
-
-  Revision 1.44  2005/09/22 14:58:03  ucko
-  Tweak PrintMods to compile with WorkShop's ultra-strict STL; take
-  advantage of ITERATE along the way.
-
-  Revision 1.43  2005/09/21 20:08:50  lewisg
-  make PTMs consistent
-
-  Revision 1.42  2005/09/20 21:07:57  lewisg
-  get rid of c-toolkit dependencies and nrutil
-
-  Revision 1.41  2005/09/14 15:30:17  lewisg
-  neutral loss
-
-  Revision 1.40  2005/08/15 14:24:56  lewisg
-  new mod, enzyme; stat test
-
-  Revision 1.39  2005/08/01 13:44:18  lewisg
-  redo enzyme classes, no-enzyme, fix for fixed mod enumeration
-
-  Revision 1.38  2005/07/20 20:32:24  lewisg
-  new version
-
-  Revision 1.37  2005/06/16 21:22:11  lewisg
-  fix n dependence
-
-  Revision 1.36  2005/05/27 20:23:38  lewisg
-  top-down charge handling
-
-  Revision 1.35  2005/05/19 16:59:17  lewisg
-  add top-down searching, fix variable mod bugs
-
-  Revision 1.34  2005/05/13 17:57:17  lewisg
-  one mod per site and bug fixes
-
-  Revision 1.33  2005/04/21 21:54:03  lewisg
-  fix Jeri's mem bug, split off mod file, add aspn and gluc
-
-  Revision 1.32  2005/04/05 21:26:34  lewisg
-  adjust ht parameter
-
-  Revision 1.31  2005/04/05 21:02:52  lewisg
-  increase number of mods, fix gi problem, fix empty scan bug
-
-  Revision 1.30  2005/03/25 22:02:34  lewisg
-  fix code to honor lower charge bound
-
-  Revision 1.29  2005/03/22 22:22:34  lewisg
-  search executable path for mods.xml
-
-  Revision 1.28  2005/03/15 20:47:55  lewisg
-  fix bug in pkl import
-
-  Revision 1.27  2005/03/14 22:29:54  lewisg
-  add mod file input
-
-  Revision 1.26  2005/01/31 17:30:57  lewisg
-  adjustable intensity, z dpendence of precursor mass tolerance
-
-  Revision 1.25  2005/01/11 21:08:43  lewisg
-  average mass search
-
-  Revision 1.24  2004/12/06 22:57:34  lewisg
-  add new file formats
-
-  Revision 1.23  2004/12/03 21:14:16  lewisg
-  file loading code
-
-  Revision 1.22  2004/11/30 23:39:57  lewisg
-  fix interval query
-
-  Revision 1.21  2004/11/22 23:10:36  lewisg
-  add evalue cutoff, fix fixed mods
-
-  Revision 1.20  2004/11/01 22:04:12  lewisg
-  c-term mods
-
-  Revision 1.19  2004/10/20 22:24:48  lewisg
-  neutral mass bugfix, concatenate result and response
-
-  Revision 1.18  2004/09/29 19:43:09  lewisg
-  allow setting of ions
-
-  Revision 1.17  2004/09/15 18:35:00  lewisg
-  cz ions
-
-  Revision 1.16  2004/07/06 22:38:05  lewisg
-  tax list input and user settable modmax
-
-  Revision 1.15  2004/06/23 22:34:36  lewisg
-  add multiple enzymes
-
-  Revision 1.14  2004/06/08 19:46:21  lewisg
-  input validation, additional user settable parameters
-
-  Revision 1.13  2004/05/27 20:52:15  lewisg
-  better exception checking, use of AutoPtr, command line parsing
-
-  Revision 1.12  2004/05/21 21:41:03  gorelenk
-  Added PCH ncbi_pch.hpp
-
-  Revision 1.11  2004/03/30 19:36:59  lewisg
-  multiple mod code
-
-  Revision 1.10  2004/03/16 22:09:11  gorelenk
-  Changed include for private header.
-
-  Revision 1.9  2004/03/01 18:24:08  lewisg
-  better mod handling
-
-  Revision 1.8  2003/12/04 23:39:09  lewisg
-  no-overlap hits and various bugfixes
-
-  Revision 1.7  2003/11/20 15:40:53  lewisg
-  fix hitlist bug, change defaults
-
-  Revision 1.6  2003/11/18 18:16:04  lewisg
-  perf enhancements, ROCn adjusted params made default
-
-  Revision 1.5  2003/11/13 19:07:38  lewisg
-  bugs: iterate completely over nr, don't initialize blastdb by iteration
-
-  Revision 1.4  2003/11/10 22:24:12  lewisg
-  allow hitlist size to vary
-
-  Revision 1.3  2003/10/27 20:10:55  lewisg
-  demo program to read out omssa results
-
-  Revision 1.2  2003/10/21 21:12:17  lewisg
-  reorder headers
-
-  Revision 1.1  2003/10/20 21:32:13  lewisg
-  ommsa toolkit version
-
-  Revision 1.1  2003/10/07 18:02:28  lewisg
-  prep for toolkit
-
-  Revision 1.10  2003/10/06 18:14:17  lewisg
-  threshold vary
-
-  Revision 1.9  2003/07/21 20:25:03  lewisg
-  fix missing peak bug
-
-  Revision 1.8  2003/07/17 18:45:50  lewisg
-  multi dta support
-
-  Revision 1.7  2003/07/07 16:17:51  lewisg
-  new poisson distribution and turn off histogram
-
-  Revision 1.6  2003/05/01 14:52:10  lewisg
-  fixes to scoring
-
-  Revision 1.5  2003/04/18 20:46:52  lewisg
-  add graphing to omssa
-
-  Revision 1.4  2003/04/04 18:43:51  lewisg
-  tax cut
-
-  Revision 1.3  2003/04/02 18:49:51  lewisg
-  improved score, architectural changes
-
-  Revision 1.2  2003/02/10 19:37:56  lewisg
-  perf and web page cleanup
-
-  Revision 1.1  2003/02/03 20:39:06  lewisg
-  omssa cgi
-
-
-
-*/

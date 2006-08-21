@@ -127,6 +127,139 @@ CSearchHelper::ConditionXMLStream(CObjectOStreamXml *xml_out)
     xml_out->SetWriteNamedIntegersByValue(true);
 }
 
+
+
+int 
+CSearchHelper::ReadFile(const string& Filename,
+                     const EMSSpectrumFileType FileType,
+                     CMSSearch& MySearch)
+{
+    CNcbiIfstream PeakFile(Filename.c_str());
+    if(!PeakFile) {
+        ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
+                 Filename);
+        return 1;
+    }
+
+    CRef <CSpectrumSet> SpectrumSet(new CSpectrumSet);
+    (*MySearch.SetRequest().begin())->SetSpectra(*SpectrumSet);
+    return SpectrumSet->LoadFile(FileType, PeakFile);
+}   
+
+
+int 
+CSearchHelper::ReadCompleteSearch(const string& Filename,
+                               const ESerialDataFormat DataFormat,
+                               CMSSearch& MySearch)
+{
+    auto_ptr<CObjectIStream> 
+        in(CObjectIStream::Open(Filename.c_str(), DataFormat));
+    in->Open(Filename.c_str(), DataFormat);
+    if(in->fail()) {	    
+        ERR_POST(Warning << "ommsacl: unable to search file" << 
+                 Filename);
+        return 1;
+    }
+    in->Read(ObjectInfo(MySearch));
+    in->Close();
+    return 0;
+}
+
+
+int 
+CSearchHelper::LoadAnyFile(CMSSearch& MySearch, 
+                           CConstRef <CMSInFile> InFile,
+                           CSearch& SearchEngine)
+{
+    string Filename(InFile->GetInfile());
+    EMSSpectrumFileType DataFormat =
+        static_cast <EMSSpectrumFileType> (InFile->GetInfiletype());
+                               
+    switch (DataFormat) {
+    case eMSSpectrumFileType_dta:
+    case eMSSpectrumFileType_dtablank:
+    case eMSSpectrumFileType_dtaxml:
+    case eMSSpectrumFileType_pkl:
+    case eMSSpectrumFileType_mgf:
+    return CSearchHelper::ReadFile(Filename, DataFormat, MySearch);
+    break;
+    case eMSSpectrumFileType_oms:
+    SearchEngine.SetIterative() = true;
+    return CSearchHelper::ReadCompleteSearch(Filename, eSerial_AsnBinary, MySearch);
+    break;
+    case eMSSpectrumFileType_omx:
+    SearchEngine.SetIterative() = true;
+    return CSearchHelper::ReadCompleteSearch(Filename, eSerial_Xml, MySearch);
+    break;
+    case eMSSpectrumFileType_asc:
+    case eMSSpectrumFileType_pks:
+    case eMSSpectrumFileType_sciex:
+    case eMSSpectrumFileType_unknown:
+    default:
+        break;
+    }
+    return 1;  // not supported
+}
+
+
+int 
+CSearchHelper::SaveAnyFile(CMSSearch& MySearch, 
+                           CMSSearchSettings::TOutfiles OutFiles,
+                           CRef <CMSModSpecSet> Modset)
+{
+    CMSSearchSettings::TOutfiles::const_iterator iOutFile;
+
+    for(iOutFile = OutFiles.begin(); iOutFile != OutFiles.end(); ++iOutFile) {
+        string Filename((*iOutFile)->GetOutfile());
+        EMSSerialDataFormat DataFormat =
+            static_cast <EMSSerialDataFormat> ((*iOutFile)->GetOutfiletype());
+        ESerialDataFormat FileFormat;
+
+        auto_ptr <CObjectOStream> txt_out;
+        if(DataFormat == eMSSerialDataFormat_asntext)
+            FileFormat = eSerial_AsnText;
+        if(DataFormat == eMSSerialDataFormat_asnbinary)
+              FileFormat = eSerial_AsnBinary;
+        if(DataFormat == eMSSerialDataFormat_xml)
+               FileFormat = eSerial_Xml;
+
+        switch (DataFormat) {
+        case eMSSerialDataFormat_asntext:
+        case eMSSerialDataFormat_asnbinary:
+        case eMSSerialDataFormat_xml:
+        {
+            auto_ptr <CObjectOStream> txt_out(CObjectOStream::Open(Filename,
+                                                                   FileFormat));
+            if(FileFormat == eSerial_Xml) {
+                CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
+                CSearchHelper::ConditionXMLStream(xml_out);
+            }
+            if((*iOutFile)->GetIncluderequest())
+                txt_out->Write(ObjectInfo(MySearch));
+            else
+                txt_out->Write(ObjectInfo(**MySearch.SetResponse().begin()));
+        }
+        break;
+        case eMSSerialDataFormat_csv:    
+        {
+            CNcbiOfstream oscsv;
+            oscsv.open(Filename.c_str());
+            (*MySearch.SetResponse().begin())->PrintCSV(oscsv, Modset);
+            oscsv.close();
+        }
+        break;
+        case eMSSerialDataFormat_none:
+        default:
+        {
+            ERR_POST(Error << "Unknown output file format " << DataFormat);
+        }
+        return 1;
+        break;
+        }
+    }
+    return 0;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CSearch::
@@ -615,15 +748,15 @@ void CSearch::InitLadders(int ForwardIon, int BackwardIon)
     int MaxLadderSize = GetSettings()->GetMaxproductions();
     if (MaxLadderSize == 0) MaxLadderSize = kMSLadderMax;
 
+    int i;
     SetLadderContainer().SetSeriesChargePairList().clear();
-    SetLadderContainer().SetSeriesChargePairList().
-        push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)ForwardIon));
-    SetLadderContainer().SetSeriesChargePairList().
-        push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)ForwardIon));
-    SetLadderContainer().SetSeriesChargePairList().
-        push_back(TSeriesChargePairList::value_type(1, (EMSIonSeries)BackwardIon));
-    SetLadderContainer().SetSeriesChargePairList().
-        push_back(TSeriesChargePairList::value_type(2, (EMSIonSeries)BackwardIon));
+
+    for(i = 1; i <= GetSettings()->GetChargehandling().GetMaxproductcharge(); ++i) {
+        SetLadderContainer().SetSeriesChargePairList().
+            push_back(TSeriesChargePairList::value_type(i, (EMSIonSeries)ForwardIon));
+        SetLadderContainer().SetSeriesChargePairList().
+            push_back(TSeriesChargePairList::value_type(i, (EMSIonSeries)BackwardIon));
+    }
     SetLadderContainer().CreateLadderArrays(MaxModPerPep, MaxLadderSize);
 }
 
@@ -1479,7 +1612,10 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                     y1 = current;
 
             }
-            if (b1 && y1) b1->Compare(y1, false);
+
+            if(GetSettings()->GetNocorrelationscore() == 0) {
+                if (b1 && y1) b1->Compare(y1, false);
+            }
 
             if (Charge >= Peaks->GetConsiderMult()) {
                 for (iPairList = SetLadderContainer().GetSeriesChargePairList().begin();
@@ -1494,49 +1630,29 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                                         Peaks,
                                         GetSettings()->GetMaxproductions());
                     // compare to forward charge one state
-                    if (b1) {
-                        if (kIonDirection[iPairList->second] == 1)
-                            current->Compare(b1, true);
-                        if (kIonDirection[iPairList->second] == -1)
-                            current->Compare(b1, false);
-                    }
-
-                    // compare to reverse charge one state
-                    if (y1) {
-                        if (kIonDirection[iPairList->second] == -1)
-                            current->Compare(y1, true);
-                        if (kIonDirection[iPairList->second] == 1)
-                            current->Compare(y1, false);
+                    if(GetSettings()->GetNocorrelationscore() == 0) {
+                        if (b1) {
+                            if (kIonDirection[iPairList->second] == 1)
+                                current->Compare(b1, true);
+                            if (kIonDirection[iPairList->second] == -1)
+                                current->Compare(b1, false);
+                        }
+    
+                        // compare to reverse charge one state
+                        if (y1) {
+                            if (kIonDirection[iPairList->second] == -1)
+                                current->Compare(y1, true);
+                            if (kIonDirection[iPairList->second] == 1)
+                                current->Compare(y1, false);
+                        }
                     }
                 }
             }
 
-
-#if 0
-
-            // fill out the match list
-            CMSMatchedPeakSet *b1 = 
-                PepCharge(HitList[iHitList], 1, ForwardIon, minintensity, Which, Peaks,
-                          GetSettings()->GetMaxproductions());
-            CMSMatchedPeakSet *y1 =
-                PepCharge(HitList[iHitList], 1, BackwardIon, minintensity, Which, Peaks,
-                          GetSettings()->GetMaxproductions());
-            b1->Compare(y1, false);
-            // in case of +2 series
-            if(Charge >= Peaks->GetConsiderMult()) {
-                CMSMatchedPeakSet *b2 = 
-                    PepCharge(HitList[iHitList], 2, ForwardIon, minintensity, Which, Peaks,
-                              GetSettings()->GetMaxproductions());
-                CMSMatchedPeakSet *y2 = 
-                    PepCharge(HitList[iHitList], 2, BackwardIon, minintensity, Which, Peaks,
-                              GetSettings()->GetMaxproductions());
-                y2->Compare(b1, false);
-                b2->Compare(y1, false);
-                b2->Compare(b1, true);
-                y2->Compare(y1, true);
-            }
-#endif
-            double a = HitList[iHitList].CalcPoissonMean(0.5, GetEnzyme()->GetCleaveNum(), 0.5, 19);
+            double a = HitList[iHitList].CalcPoissonMean(GetSettings()->GetProbfollowingion(),
+                                                         GetEnzyme()->GetCleaveNum(),
+                                                         GetSettings()->GetProbfollowingion(),
+                                                         19);
 
             if (a == 0) {
                 // threshold probably too high

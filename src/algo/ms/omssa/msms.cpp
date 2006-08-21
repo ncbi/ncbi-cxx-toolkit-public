@@ -473,7 +473,7 @@ CChymoP::CChymoP(void)
 CAspNDE::CAspNDE(void)
 {
     CleaveAt = "\x04\x05";
-    CleaveOffset = "\x01";
+    CleaveOffset = "\x01\x01";
     CheckProline = false;
     kCleave = 2;
     TopDown = false;
@@ -484,7 +484,7 @@ CAspNDE::CAspNDE(void)
 CGluCDE::CGluCDE(void)
 {
     CleaveAt = "\x05\x04";
-    CleaveOffset = "\x00";
+    CleaveOffset = "\x00\x00";
     CheckProline = false;
     kCleave = 2;
     TopDown = false;
@@ -632,6 +632,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.34  2006/08/21 15:18:21  lewisg
+  asn.1 changes, bug fixes
+
   Revision 1.33  2006/07/28 14:21:05  lewisg
   new ladder container
 

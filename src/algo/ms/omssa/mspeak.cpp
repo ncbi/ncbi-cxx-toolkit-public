@@ -580,7 +580,7 @@ CMSPeak::ReadAndProcess(const CMSSpectrum& Spectrum,
 	    SetNumber() = Spectrum.GetNumber();
 		
 	SetPeakLists()[eMSPeakListOriginal]->Sort(eMSPeakListSortMZ);
-	SetComputedCharge(Settings.GetChargehandling());
+	SetComputedCharge(Settings.GetChargehandling(), Spectrum);
 	InitHitList(Settings.GetMinhit());
 	CullAll(Settings);
 
@@ -682,17 +682,31 @@ const double CMSPeak::RangeRatio(const double Start,
 }
 
 
-void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle)
+void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle,
+                                const CMSSpectrum& Spectrum)
 {
 	ConsiderMult = min(ChargeHandle.GetConsidermult(), 
             eMSPeakListChargeMax - eMSPeakListCharge1);
-	MinCharge = min(ChargeHandle.GetMincharge(),
-            eMSPeakListChargeMax - eMSPeakListCharge1);
-	MaxCharge = min(ChargeHandle.GetMaxcharge(),
-            eMSPeakListChargeMax - eMSPeakListCharge1);
+
+    // if the user wants us to believe the file charge state, believe it
+    if(ChargeHandle.GetCalccharge() == 1) {
+        // only allow one charge as input, otherwise throw
+        if(Spectrum.GetCharge().size() != 1)
+            MinCharge = MaxCharge = *(Spectrum.GetCharge().begin());
+        else
+            ERR_POST(Error << "There is more than one or no spectrum charge specified");
+    }
+    // otherwise search the specified range of charges
+    else {
+        MinCharge = min(ChargeHandle.GetMincharge(),
+                        eMSPeakListChargeMax - eMSPeakListCharge1);
+        MaxCharge = min(ChargeHandle.GetMaxcharge(),
+                        eMSPeakListChargeMax - eMSPeakListCharge1);
+    }
     PlusOne = ChargeHandle.GetPlusone();
 
-    if (ChargeHandle.GetCalcplusone() == eMSCalcPlusOne_calc) {
+    if (ChargeHandle.GetCalccharge() != 1 && 
+        ChargeHandle.GetCalcplusone() == eMSCalcPlusOne_calc) {
         if (MinCharge <= 1 && IsPlus1(PercentBelow())) {
             ComputedCharge = eCharge1;
             Charges[0] = 1;
@@ -754,17 +768,17 @@ void CMSPeak::xWrite(std::ostream& FileOut, const CMZI * const Temp, const int N
     unsigned Intensity;
     for(i = 0; i < Num; i++) {
         Intensity = Temp[i].GetIntensity();
-        if(Intensity == 0.0) Intensity = 1;  // make Mascot happy
+        if(Intensity == 0.0) Intensity = 1;  // make Mas cot happy
         FileOut << MSSCALE2DBL(Temp[i].GetMZ()) << " " << 
 	    Intensity << endl;
     }
 }
 
 
-void CMSPeak::Write(std::ostream& FileOut, const EFileType FileType,
+void CMSPeak::Write(std::ostream& FileOut, const EMSSpectrumFileType FileType,
  const EMSPeakListTypes Which) const
 {
-    if(!FileOut || FileType != eDTA) return;
+    if(!FileOut || FileType != eMSSpectrumFileType_dta) return;
     xWrite(FileOut, GetPeakLists()[Which]->GetMZI(),
         GetPeakLists()[Which]->GetNum());
 }
@@ -787,20 +801,6 @@ const int CMSPeak::AboveThresh(const double Threshold,
     return i;
 }
 
-#if 0
-// Truncate the at the precursor if plus one and set charge to 1
-// if charge is erronously set to 1, set it to 2
-
-void CMSPeak::TruncatePlus1(void)
-{
-    int PercentBelowVal = PercentBelow();
-    if(IsPlus1(PercentBelowVal)) {
-        Num[MSORIGINAL] = PercentBelowVal;
-        Charge = 1;
-    }
-    else if(Charge == 1) Charge = 2;
-}
-#endif 
 
 // functions used in SmartCull
 
@@ -812,7 +812,11 @@ void CMSPeak::CullBaseLine(const double Threshold, CMZI *Temp, int& TempLen)
 }
 
 
-void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor, const int Charge)
+void CMSPeak::CullPrecursor(CMZI *Temp,
+                            int& TempLen,
+                            const int Precursor,
+                            const int Charge,
+                            bool PrecursorCull)
 {
     // chop out precursors
     int iTemp(0), iMZI;
@@ -824,10 +828,8 @@ void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor, const
         //precursor charge dep with -19, 5: 191, 1 198,2
         // nothing: 196,1 205, 2
         // 5 5: 189 1, 196 2
-//#if 0
-	if(Temp[iMZI].GetMZ() > Precursor - 5*tol/Charge && 
-         Temp[iMZI].GetMZ() < Precursor + 5*tol/Charge) continue;
-//#endif
+        if(Temp[iMZI].GetMZ() > Precursor - 5*tol/Charge && 
+           Temp[iMZI].GetMZ() < Precursor + 5*tol/Charge) continue;
 
 #if 0
 // not as good as dina's clean peaks
@@ -845,22 +847,21 @@ void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor, const
     if(Temp[iMZI].GetMZ() > Precursor - 12*tol/Charge && 
          Temp[iMZI].GetMZ() < Precursor + 12*tol/Charge) continue;
 #endif
-#if 0
-    // dina's clean peaks.  same results *except* for a high scoring false positive */
-        if(Temp[iMZI].GetMZ() > Precursor - 60*tol) continue;
-        if(Temp[iMZI].GetMZ() > Precursor/2 - 30*tol && 
-            Temp[iMZI].GetMZ() < Precursor/2 + 3*tol) continue;
-        if(Temp[iMZI].GetMZ() > Precursor/3 - 20*tol && 
-             Temp[iMZI].GetMZ() < Precursor/3 + 3*tol) continue;
-        if(Temp[iMZI].GetMZ() > Precursor/4 - 3*tol && 
-              Temp[iMZI].GetMZ() < Precursor/4 + 3*tol) continue;
-#endif
-        /*
-1. exclude all masses above (parent mass - 60)
-2. exclude all masses from (+2 parent mass + 3) to (+2 parent mass - 30)
-3. exclude all masses from (+3 parent mass + 3) to (+3 parent mass - 20)
-4. exclude all masses from (+4 parent mass + 3) to (+4 parent mass - 3)
-*/
+        if(PrecursorCull) {
+            // dina's clean peaks.  same results *except* for a high scoring false positive */
+            //
+            // 1. exclude all masses above (parent mass - 60)
+            // 2. exclude all masses from (+2 parent mass + 3) to (+2 parent mass - 30)
+            // 3. exclude all masses from (+3 parent mass + 3) to (+3 parent mass - 20)
+            // 4. exclude all masses from (+4 parent mass + 3) to (+4 parent mass - 3)
+            if(Temp[iMZI].GetMZ() > Precursor - 60*tol) continue;
+            if(Temp[iMZI].GetMZ() > Precursor/2 - 30*tol && 
+               Temp[iMZI].GetMZ() < Precursor/2 + 3*tol) continue;
+            if(Temp[iMZI].GetMZ() > Precursor/3 - 20*tol && 
+               Temp[iMZI].GetMZ() < Precursor/3 + 3*tol) continue;
+            if(Temp[iMZI].GetMZ() > Precursor/4 - 3*tol && 
+               Temp[iMZI].GetMZ() < Precursor/4 + 3*tol) continue;
+        }
 
         Temp[iTemp] = Temp[iMZI];
         iTemp++;
@@ -932,19 +933,21 @@ void CMSPeak::CullH20NH3(CMZI *Temp, int& TempLen)
 
 void CMSPeak::CullChargeAndWhich(const CMSSearchSettings& Settings)
 {
-
     int iCharges;
 	for(iCharges = 0; iCharges < GetNumCharges(); iCharges++){
-
         int TempLen(0);
         CMZI *Temp = new CMZI [GetPeakLists()[eMSPeakListOriginal]->GetNum()]; // temporary holder
         copy(SetPeakLists()[eMSPeakListOriginal]->GetMZI(), 
              SetPeakLists()[eMSPeakListOriginal]->GetMZI() + 
              GetPeakLists()[eMSPeakListOriginal]->GetNum(), Temp);
         TempLen = GetPeakLists()[eMSPeakListOriginal]->GetNum();
-        bool ConsiderMultProduct;
+        bool ConsiderMultProduct(false);
 
-		CullPrecursor(Temp, TempLen, CalcPrecursorMass(GetCharges()[iCharges]), GetCharges()[iCharges]);
+		CullPrecursor(Temp,
+                      TempLen,
+                      CalcPrecursorMass(GetCharges()[iCharges]),
+                      GetCharges()[iCharges],
+                      Settings.GetPrecursorcull() != 0);
 
 //#define DEBUG_PEAKS1
 #ifdef DEBUG_PEAKS1

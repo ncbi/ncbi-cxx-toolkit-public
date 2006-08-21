@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/omssa/MSSpectrumset.hpp>
+#include <objects/omssa/MSSpectrumFileType.hpp>
 
 #include <iostream>
 #include <deque>
@@ -53,10 +54,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // proton mass
 const double kProton = 1.008;
-
-// file types for import
-enum EFileType { eDTA, eDTABlank, eDTAXML, eASC, ePKL, ePKS, eSCIEX, eMGF, eUnknown };
-
 
 //! struct for holding a single peak
 typedef struct _InputPeak
@@ -86,7 +83,7 @@ public:
     ///
     /// wrapper for various file loaders
     ///
-    int LoadFile(const EFileType FileType, CNcbiIstream& DTA, int Max = 0);
+    int LoadFile(const EMSSpectrumFileType FileType, CNcbiIstream& DTA, int Max = 0);
 
     ///
     /// load in a single dta file
@@ -190,6 +187,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/08/21 15:18:21  lewisg
+ * asn.1 changes, bug fixes
+ *
  * Revision 1.10  2005/11/07 19:57:20  lewisg
  * iterative search
  *
