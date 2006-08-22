@@ -710,7 +710,9 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         /* (msg->severity == 0  &&  msg->msgnumber == 0)  ||*/
         // commented out because nobody remember why it is there and PubSeqOS does
         // send messages with 0 0 that need to be processed
-        msg->msgnumber == 5701  ||  msg->msgnumber == 5703) {
+        msg->msgnumber == 5701 ||
+        msg->msgnumber == 5703 ||
+        msg->msgnumber == 5704) {
         return true;
     }
 
@@ -882,15 +884,19 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
                      (void*) &m_PacketSize, CS_UNUSED, NULL));
     }
 
+#if defined(CS_RETRY_COUNT)
     if (m_LoginRetryCount > 0) {
         Check(ct_con_props(con, CS_SET, CS_RETRY_COUNT,
                      (void*) &m_LoginRetryCount, CS_UNUSED, NULL));
     }
+#endif
 
+#if defined (CS_LOOP_DELAY)
     if (m_LoginLoopDelay > 0) {
         Check(ct_con_props(con, CS_SET, CS_LOOP_DELAY,
                      (void*) &m_LoginLoopDelay, CS_UNUSED, NULL));
     }
+#endif
 
     CS_BOOL flag = CS_TRUE;
     if ((mode & fBcpIn) != 0) {
@@ -950,7 +956,7 @@ CS_INT GetCtlibTdsVersion(int version)
 
     int fallback_version = (version == NCBI_CTLIB_TDS_VERSION) ?
         NCBI_CTLIB_TDS_FALLBACK_VERSION : NCBI_CTLIB_TDS_VERSION;
-    
+
     ERR_POST(Critical <<
              "The version " << version << " of TDS protocol for "
              "the DBAPI CTLib driver is not supported. Falling back to "
@@ -1183,6 +1189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2006/08/22 20:15:55  ssikorsk
+ * Minor fixes in order to compile with FreeTDS ctlib.
+ *
  * Revision 1.89  2006/08/17 06:33:06  vakatov
  * Switch default version of TDS protocol to 12.5 (from 11.0)
  *
