@@ -301,6 +301,15 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
 #endif
 
 
+    CDB_ITDescriptor::ETDescriptorType descr_type = descr_in.GetColumnType();
+    if (descr_type == CDB_ITDescriptor::eUnknown) {
+        if (is_text) {
+            descr_type = CDB_ITDescriptor::eText;
+        } else {
+            descr_type = CDB_ITDescriptor::eBinary;
+        }
+    }
+
     *ph = SQL_LEN_DATA_AT_EXEC(size);
 
     // Do not use SQLDescribeParam. It is not implemented with the odbc driver
@@ -309,9 +318,9 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
             stmt.GetHandle(),
             1,
             SQL_PARAM_INPUT,
-            descr_in.GetColumnType() == CDB_ITDescriptor::eText ?
+            descr_type == CDB_ITDescriptor::eText ?
                 SQL_C_CHAR : SQL_C_BINARY,
-            descr_in.GetColumnType() == CDB_ITDescriptor::eText ?
+            descr_type == CDB_ITDescriptor::eText ?
                 SQL_LONGVARCHAR : SQL_LONGVARBINARY,
             size,
             0,
@@ -650,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/08/22 18:08:45  ssikorsk
+ * Improved calculation of CDB_ITDescriptor::ETDescriptorType in ODBC_xSendDataPrepare.
+ *
  * Revision 1.40  2006/08/21 18:14:57  ssikorsk
  * Use explicit ursors with the MS Win odbc driver temporarily;
  * Revamp code to use CDB_ITDescriptor:: GetColumnType();
