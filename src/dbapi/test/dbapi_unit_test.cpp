@@ -1243,6 +1243,7 @@ CDBAPIUnitTest::Test_BlobStream(void)
         }
 
         data_len = out.pcount();
+        BOOST_CHECK(data_len > 0);
 
         // Clean table ...
         auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
@@ -1259,11 +1260,15 @@ CDBAPIUnitTest::Test_BlobStream(void)
         // blobRs should be destroyed before auto_cursor ...
         auto_ptr<IResultSet> blobRs(auto_cursor->Open());
         while(blobRs->Next()) {
-            ostream& ostrm = auto_cursor->GetBlobOStream(1, out.pcount(), eDisableLog);
-            ostrm.write(out.str(), out.pcount());
+            ostream& ostrm = auto_cursor->GetBlobOStream(1, data_len, eDisableLog);
+
+            ostrm.write(out.str(), data_len);
             out.freeze(false);
+
             BOOST_CHECK_EQUAL(ostrm.fail(), false);
+
             ostrm.flush();
+
             BOOST_CHECK_EQUAL(ostrm.fail(), false);
             BOOST_CHECK_EQUAL(ostrm.good(), true);
             // BOOST_CHECK_EQUAL(int(ostrm.tellp()), int(out.pcount()));
@@ -4121,6 +4126,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             args.GetDriverName() == "odbc" ||
             // args.GetDriverName() == "msdblib" || // doesn't work ...
             args.GetDriverName() == "ftds64_odbc" ||
+            args.GetDriverName() == "ftds64_ctlib" ||
             args.GetDriverName() == "ftds64_dblib" ) {
             //
             boost::unit_test::test_case* tc_cursor =
@@ -4134,12 +4140,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_parameters);
             add(tc);
 
-            // Moved in front of Test_LOB temporarily.
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream, DBAPIInstance);
-            tc->depends_on(tc_init);
-            tc->depends_on(tc_cursor);
-            add(tc);
-
             // Does not work with all databases and drivers currently ...
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, DBAPIInstance);
             tc->depends_on(tc_init);
@@ -4147,6 +4147,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             add(tc);
 
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2, DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_cursor);
+            add(tc);
+
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream, DBAPIInstance);
             tc->depends_on(tc_init);
             tc->depends_on(tc_cursor);
             add(tc);
@@ -4185,13 +4190,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
         // ctlib will work in case of protocol version 12.5 only
         // ftds + Sybaseand dblib won't work because of the early protocol versions.
-        if (((args.GetDriverName() == "ftds" || 
+        if (((args.GetDriverName() == "ftds" ||
               args.GetDriverName() == "ftds63" ||
               args.GetDriverName() == "odbc" ||
               args.GetDriverName() == "ftds64_odbc" ||
               args.GetDriverName() == "ftds64_dblib" ) &&
              args.GetServerType() == CTestArguments::eMsSql) ||
-             args.GetDriverName() == "ctlib") {
+             args.GetDriverName() == "ctlib" ||
+             args.GetDriverName() == "ftds64_ctlib" ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
@@ -4268,12 +4274,12 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "gateway", "ftds64_dblib", "ftds64_odbc"
+                      "gateway", "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "ftds64_dblib", "ftds64_odbc"
+                      "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib"
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
@@ -4408,6 +4414,11 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.87  2006/08/22 14:33:15  ssikorsk
+ * Disable Test_Insert for the ctlib driver temporarily. It requires TDS
+ * version 12.5, which is not installed everywhere;
+ * Added ftds64_ctlib driver to the test-suite;
+ *
  * Revision 1.86  2006/08/21 18:22:17  ssikorsk
  * Added class CODBCErrHandler;
  * Added tests Test_Cursor2 and Test_LOB2;
