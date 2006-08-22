@@ -321,6 +321,14 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
                            (BYTE*) val.Value()));
             break;
         }
+        case eDB_LongChar: {
+            CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+                           status, SYBCHAR, -1,
+                           is_null ? 0 : (DBINT) val.Size(),
+                           (BYTE*) val.Value()));
+            break;
+        }
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
             r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
@@ -416,6 +424,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/08/22 18:21:04  ssikorsk
+ * Added handling of CDB_LongChar to CDBL_RPCCmd::x_AssignParams.
+ *
  * Revision 1.29  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
