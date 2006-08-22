@@ -41,6 +41,8 @@
 TDS_RCSID(var, "$Id$");
 
 
+int g_tds_version = CS_VERSION_110;
+
 static char * ct_describe_cmd_state(CS_INT state);
 /**
  * Read a row of data
@@ -250,6 +252,9 @@ ct_init(CS_CONTEXT * ctx, CS_INT version)
 	tdsdump_log(TDS_DBG_FUNC, "ct_init()\n");
 	ctx->tds_ctx->msg_handler = _ct_handle_server_message;
 	ctx->tds_ctx->err_handler = _ct_handle_client_message;
+
+    g_tds_version = version;
+
 	return CS_SUCCEED;
 }
 
@@ -580,6 +585,30 @@ ct_connect(CS_CONNECTION * con, CS_CHAR * servername, CS_INT snamelen)
 		con->tds_socket = NULL;
 		return CS_FAIL;
 	}
+
+    /* override TDS version */
+    /* CS_VERSION_125 is not defined with FreeTDS */
+    switch ( g_tds_version ) {
+    case 42:
+        connection->major_version = 4;
+        connection->minor_version = 2;
+        break;
+    case 70:
+        connection->major_version = 7;
+        connection->minor_version = 0;
+        break;
+    case 80:
+        connection->major_version = 8;
+        connection->minor_version = 0;
+        break;
+    case CS_VERSION_100:
+        connection->major_version = 4;
+        connection->minor_version = 6;
+    case CS_VERSION_110:
+        connection->major_version = 5;
+        connection->minor_version = 0;
+    };
+
 	if (tds_connect(con->tds_socket, connection) == TDS_FAIL) {
 		tds_free_socket(con->tds_socket);
 		con->tds_socket = NULL;
@@ -3648,7 +3677,7 @@ ct_options(CS_CONNECTION * con, CS_INT action, CS_INT option, CS_VOID * param, C
 		case CS_FALSE:
 			break;	/* end valid choices */
 		default:
-			if (action == CS_SET) 
+			if (action == CS_SET)
 				return CS_FAIL;
 		}
 		break;
@@ -3661,7 +3690,7 @@ ct_options(CS_CONNECTION * con, CS_INT action, CS_INT option, CS_VOID * param, C
 			tds_option = TDS_OPT_ARITHABORTOFF;
 			break;
 		default:
-			if (action == CS_SET) 
+			if (action == CS_SET)
 				return CS_FAIL;
 			tds_option = TDS_OPT_ARITHABORTON;
 		}
@@ -3677,7 +3706,7 @@ ct_options(CS_CONNECTION * con, CS_INT action, CS_INT option, CS_VOID * param, C
 			tds_option = TDS_OPT_ARITHIGNOREOFF;
 			break;
 		default:
-			if (action == CS_SET) 
+			if (action == CS_SET)
 				return CS_FAIL;
 		}
 		tds_argument.i = TDS_OPT_ARITHOVERFLOW | TDS_OPT_NUMERICTRUNC;
@@ -3719,7 +3748,7 @@ ct_options(CS_CONNECTION * con, CS_INT action, CS_INT option, CS_VOID * param, C
 			tds_argument.ti = TDS_OPT_SATURDAY;
 			break;
 		default:
-			if (action == CS_SET) 
+			if (action == CS_SET)
 				return CS_FAIL;
 		}
 		tds_argsize = (action == CS_SET) ? 1 : 0;
@@ -3746,7 +3775,7 @@ ct_options(CS_CONNECTION * con, CS_INT action, CS_INT option, CS_VOID * param, C
 			tds_argument.ti = TDS_OPT_FMTDYM;
 			break;
 		default:
-			if (action == CS_SET) 
+			if (action == CS_SET)
 				return CS_FAIL;
 		}
 		tds_argsize = (action == CS_SET) ? 1 : 0;
@@ -3765,7 +3794,7 @@ ct_options(CS_CONNECTION * con, CS_INT action, CS_INT option, CS_VOID * param, C
 			tds_argument.ti = TDS_OPT_LEVEL3;
 			break;
 		default:
-			if (action == CS_SET) 
+			if (action == CS_SET)
 				return CS_FAIL;
 		}
 		tds_argsize = (action == CS_SET) ? 1 : 0;
@@ -3777,7 +3806,7 @@ ct_options(CS_CONNECTION * con, CS_INT action, CS_INT option, CS_VOID * param, C
 		case CS_FALSE:
 			break;
 		default:
-			if (action == CS_SET) 
+			if (action == CS_SET)
 				return CS_FAIL;
 		}
 		tds_argument.ti = !*(char *) param;

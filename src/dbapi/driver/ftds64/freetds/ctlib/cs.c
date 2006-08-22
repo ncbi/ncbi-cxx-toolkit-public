@@ -49,6 +49,8 @@
 
 TDS_RCSID(var, "$Id$");
 
+extern int g_tds_version;
+
 static int _cs_datatype_length(int dtype);
 static CS_INT cs_diag_storemsg(CS_CONTEXT *context, CS_CLIENTMSG *message);
 static CS_INT cs_diag_clearmsg(CS_CONTEXT *context, CS_INT type);
@@ -56,10 +58,10 @@ static CS_INT cs_diag_getmsg(CS_CONTEXT *context, CS_INT idx, CS_CLIENTMSG *mess
 static CS_INT cs_diag_countmsg(CS_CONTEXT *context, CS_INT *count);
 
 /**
- * returns the fixed length of the specified data type, or 0 if not a 
+ * returns the fixed length of the specified data type, or 0 if not a
  * fixed length data type
  */
-static int 
+static int
 _cs_datatype_length(int dtype)
 {
 	switch (dtype) {
@@ -208,6 +210,9 @@ TDSCONTEXT *tds_ctx;
 		/* set default in case there's no locale file */
 		tds_ctx->locale->date_fmt = strdup("%b %e %Y %I:%M%p");
 	}
+
+    g_tds_version = version;
+
 	return CS_SUCCEED;
 }
 
@@ -262,7 +267,7 @@ CS_INT maxcp;
 			if (maxcp > buflen)
 				maxcp = buflen;
 
-			memcpy(buffer, ctx->userdata, maxcp); 
+			memcpy(buffer, ctx->userdata, maxcp);
 			
 			return CS_SUCCEED;
 		case CS_EXTRA_INF:
@@ -825,7 +830,7 @@ cs_diag(CS_CONTEXT * ctx, CS_INT operation, CS_INT type, CS_INT idx, CS_VOID * b
 			}
 			ctx->cs_errhandletype = _CS_ERRHAND_INLINE;
 			ctx->cs_diag_msglimit = CS_NO_LIMIT;
-			ctx->_cslibmsg_cb = (CS_CSLIBMSG_FUNC) cs_diag_storemsg; 
+			ctx->_cslibmsg_cb = (CS_CSLIBMSG_FUNC) cs_diag_storemsg;
 			break;
 		case CS_MSGLIMIT:
 			if ( ctx->cs_errhandletype != _CS_ERRHAND_INLINE) {
@@ -850,14 +855,14 @@ cs_diag(CS_CONTEXT * ctx, CS_INT operation, CS_INT type, CS_INT idx, CS_VOID * b
 			if (idx == 0 || (ctx->cs_diag_msglimit != CS_NO_LIMIT && idx > ctx->cs_diag_msglimit) )
 				return CS_FAIL;
 
-			return (cs_diag_getmsg(ctx, idx, (CS_CLIENTMSG *)buffer)); 
+			return (cs_diag_getmsg(ctx, idx, (CS_CLIENTMSG *)buffer));
 			
 			break;
 		case CS_STATUS:
 			if ( ctx->cs_errhandletype != _CS_ERRHAND_INLINE) {
 				return CS_FAIL;
 			}
-			if (buffer == NULL) 
+			if (buffer == NULL)
 				return CS_FAIL;
 
 			return (cs_diag_countmsg(ctx, (CS_INT *)buffer));
@@ -925,7 +930,7 @@ cs_will_convert(CS_CONTEXT * ctx, CS_INT srctype, CS_INT desttype, CS_BOOL * res
 	return CS_SUCCEED;
 }
 
-static CS_INT 
+static CS_INT
 cs_diag_storemsg(CS_CONTEXT *context, CS_CLIENTMSG *message)
 {
 
@@ -951,7 +956,7 @@ CS_INT msg_count = 0;
 	}
 
 	*curptr = (struct cs_diag_msg *) malloc(sizeof(struct cs_diag_msg));
-	if (*curptr == NULL) { 
+	if (*curptr == NULL) {
 		return CS_FAIL;
 	} else {
 		(*curptr)->next = NULL;
@@ -966,7 +971,7 @@ CS_INT msg_count = 0;
 	return CS_SUCCEED;
 }
 
-static CS_INT 
+static CS_INT
 cs_diag_getmsg(CS_CONTEXT *context, CS_INT idx, CS_CLIENTMSG *message)
 {
 
@@ -994,7 +999,7 @@ CS_INT msg_count = 0, msg_found = 0;
 	}
 }
 
-static CS_INT 
+static CS_INT
 cs_diag_clearmsg(CS_CONTEXT *context, CS_INT type)
 {
 
@@ -1013,7 +1018,7 @@ struct cs_diag_msg *curptr, *freeptr;
 	return CS_SUCCEED;
 }
 
-static CS_INT 
+static CS_INT
 cs_diag_countmsg(CS_CONTEXT *context, CS_INT *count)
 {
 struct cs_diag_msg *curptr;
