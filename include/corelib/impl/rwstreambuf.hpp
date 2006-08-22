@@ -102,15 +102,15 @@ protected:
     IReader*       m_Reader;
     IWriter*       m_Writer;
 
+    streamsize     m_BufSize;
     CT_CHAR_TYPE*  m_ReadBuf;
     CT_CHAR_TYPE*  m_WriteBuf;
-    streamsize     m_BufSize;
 
-    bool           m_OwnBuf;
+    CT_CHAR_TYPE*  m_pBuf;
     CT_CHAR_TYPE   x_Buf;
 
-    CT_POS_TYPE    x_PPos;      // put position [for ostream.tellp()]
     CT_POS_TYPE    x_GPos;      // get position [for istream.tellg()]
+    CT_POS_TYPE    x_PPos;      // put position [for ostream.tellp()]
 };
 
 
@@ -120,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/08/22 18:04:38  lavr
+ * Rearrange data members
+ *
  * Revision 1.13  2006/05/02 16:10:07  lavr
  * Use XNCBI export macro
  *
