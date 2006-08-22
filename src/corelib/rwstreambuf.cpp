@@ -79,7 +79,7 @@ CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
     : m_Flags(f), m_Reader(rw), m_Writer(rw), m_pBuf(s),
       x_GPos((CT_OFF_TYPE)(0)), x_PPos((CT_OFF_TYPE)(0))
 {
-    setbuf(s && n ? s : 0, n ? n : kDefaultBufSize << 1);
+    setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufSize << 1);
 }
 
 
@@ -91,7 +91,8 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
     : m_Flags(f), m_Reader(r), m_Writer(w), m_pBuf(s),
       x_GPos((CT_OFF_TYPE)(0)), x_PPos((CT_OFF_TYPE)(0))
 {
-    setbuf(s && n ? s : 0, n ? n : kDefaultBufSize << (m_Reader && m_Writer));
+    setbuf(s  &&  n ? s : 0,
+           n ? n : kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0));
 }
 
 
@@ -141,10 +142,12 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
         m_pBuf = s;
     }
 
-    streamsize    x_size = n ? n : kDefaultBufSize << (m_Reader  &&  m_Writer);
-    CT_CHAR_TYPE* x_buf  = s ? s : (n == 1? &x_Buf : new CT_CHAR_TYPE[x_size]);
+    streamsize    x_size = n ? n :
+        kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
+    CT_CHAR_TYPE* x_buf  = s ? s :
+        (n == 1 ? &x_Buf : new CT_CHAR_TYPE[x_size]);
 
-    n = x_size >> (m_Reader  &&  m_Writer);
+    n = x_size >> (m_Reader  &&  m_Writer ? 1 : 0);
 
     if (m_Reader) {
         m_BufSize  = x_size == 1 ? 1 : n;
@@ -363,6 +366,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2006/08/22 19:10:44  lavr
+ * Heed newly introduced arith-shift-with-bool warnings on MS-Win
+ *
  * Revision 1.21  2006/08/22 18:05:19  lavr
  * Allocate buffers per I/O direction; fix write bug
  *
