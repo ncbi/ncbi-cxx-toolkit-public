@@ -4196,7 +4196,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
               args.GetDriverName() == "ftds64_odbc" ||
               args.GetDriverName() == "ftds64_dblib" ) &&
              args.GetServerType() == CTestArguments::eMsSql) ||
-             args.GetDriverName() == "ctlib" ||
+             // args.GetDriverName() == "ctlib" ||
              args.GetDriverName() == "ftds64_ctlib" ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert, DBAPIInstance);
             tc->depends_on(tc_init);
@@ -4414,6 +4414,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.88  2006/08/22 14:37:42  ssikorsk
+ * Fixed typo.
+ *
  * Revision 1.87  2006/08/22 14:33:15  ssikorsk
  * Disable Test_Insert for the ctlib driver temporarily. It requires TDS
  * version 12.5, which is not installed everywhere;
