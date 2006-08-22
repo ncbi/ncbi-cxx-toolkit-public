@@ -58,6 +58,7 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 
+#include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
@@ -242,12 +243,12 @@ void CCleanup_imp::BasicCleanup(CSeq_descr& sdr)
 
 static bool s_SeqDescCommentCleanup( CSeqdesc::TComment& comment )
 {
-    //  Remove trailing periods:
-    if ( ! comment.empty() && (comment[ comment.size() -1 ] == '.') ) {
-        comment = comment.substr( 0, comment.size() -1 );
-        return true;
+    bool changed = RemoveTrailingJunk(comment);
+    if ( RemoveSpacesBetweenTildes(comment) ) {
+        changed = true;
     }
-    return false;
+    
+    return changed;
 };
 
 
@@ -439,9 +440,20 @@ void CCleanup_imp::BasicCleanup(CSeq_annot_Handle& sah)
 
 void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
 {
-    if (sl.IsWhole()) {
-        // change the Seq-id to a Seq-loc, Interval which covers the whole sequence.
-        // But how do you find the length of the sequence without the object manager??
+    if (sl.IsWhole()  &&  m_Scope) {
+        // change the Seq-loc/whole to a Seq-loc/interval which covers the whole sequence.
+        CSeq_id& id = sl.SetWhole();
+        CBioseq_Handle bsh;
+        try {
+            bsh = m_Scope->GetBioseqHandle(id);
+        } catch (...) { }
+        if (bsh) {
+            TSeqPos bs_len = bsh.GetBioseqLength();
+            
+            sl.SetInt().SetId(id);
+            sl.SetInt().SetFrom(0);
+            sl.SetInt().SetTo(bs_len - 1);
+        }
     }
     
     switch (sl.Which()) {
@@ -464,14 +476,17 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
     case CSeq_loc::e_Pnt :
         {
             CSeq_loc::TPnt& pnt = sl.SetPnt();
-            ENa_strand strand = pnt.GetStrand();
-            if (strand == eNa_strand_both) {
-                pnt.SetStrand(eNa_strand_plus);
-                ChangeMade(CCleanupChange::eChangeStrand);
-            } else if (strand == eNa_strand_both_rev) {
-                pnt.SetStrand(eNa_strand_minus);
-                ChangeMade(CCleanupChange::eChangeStrand);
-            }            
+            
+            if (pnt.CanGetStrand()) {
+                ENa_strand strand = pnt.GetStrand();
+                if (strand == eNa_strand_both) {
+                    pnt.SetStrand(eNa_strand_plus);
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                } else if (strand == eNa_strand_both_rev) {
+                    pnt.SetStrand(eNa_strand_minus);
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                }                
+            }
         }
         break;
     case CSeq_loc::e_Mix :
@@ -522,13 +537,15 @@ void CCleanup_imp::BasicCleanup(CSeq_interval& si)
         ChangeMade(CCleanupChange::eChangeSeqloc);
     }
     // change bad strand values.
-    ENa_strand strand = si.GetStrand();
-    if (strand == eNa_strand_both) {
-        si.SetStrand(eNa_strand_plus);
-        ChangeMade(CCleanupChange::eChangeStrand);
-    } else if (strand == eNa_strand_both_rev) {
-        si.SetStrand(eNa_strand_minus);
-        ChangeMade(CCleanupChange::eChangeStrand);
+    if (si.CanGetStrand()) {
+        ENa_strand strand = si.GetStrand();
+        if (strand == eNa_strand_both) {
+            si.SetStrand(eNa_strand_plus);
+            ChangeMade(CCleanupChange::eChangeStrand);
+        } else if (strand == eNa_strand_both_rev) {
+            si.SetStrand(eNa_strand_minus);
+            ChangeMade(CCleanupChange::eChangeStrand);
+        }        
     }
 }
 
@@ -1221,6 +1238,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2006/08/22 12:10:50  rsmith
+ * Better Seqdesc:Comment and Seqloc cleanup.
+ *
  * Revision 1.42  2006/08/03 18:13:46  rsmith
  * BasicCleanup(CSeq_loc)
  *
