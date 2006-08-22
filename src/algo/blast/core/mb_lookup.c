@@ -43,6 +43,46 @@ static char const rcsid[] =
 #include <algo/blast/core/lookup_util.h>
 #include "blast_inline.h"
 
+/**
+* Determine if this subject word occurs in the query.
+* @param lookup The lookup table to read from. [in]
+* @param index The index value of the word to retrieve. [in]
+* @return 1 if there are hits, 0 otherwise.
+*/
+static NCBI_INLINE Int4 s_BlastMBLookupHasHits(BlastMBLookupTable * lookup,
+                                               Int4 index)
+{
+    if (NA_PV_TEST(lookup->pv_array, index, lookup->pv_array_bts))
+        return 1;
+    else
+        return 0;
+}
+
+/** 
+* Copy query offsets from the lookup table to the array of offset pairs.
+* @param lookup The lookup table to read from. [in]
+* @param index The index value of the word to retrieve. [in]
+* @param offset_pairs A pointer into the destination array. [out]
+* @param s_off The subject offset to be associated with the retrieved query offset(s). [in]
+* @return The number of hits copied.
+*/
+static NCBI_INLINE Int4 s_BlastMBLookupRetrieve(BlastMBLookupTable * lookup,
+                                                Int4 index,
+                                                BlastOffsetPair * offset_pairs,
+                                                Int4 s_off)
+{
+    Int4 i=0;
+    Int4 q_off = lookup->hashtable[index];
+
+    while (q_off) {
+        offset_pairs[i].qs_offsets.q_off   = q_off - 1;
+        offset_pairs[i++].qs_offsets.s_off = s_off;
+        q_off = lookup->next_pos[q_off];
+    }
+    return i;
+}
+
+
 BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt)
 {
    if (!mb_lt)
@@ -558,7 +598,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
    BlastMBLookupTable* mb_lt;
    Uint1* s;
    Uint1* abs_start;
-   Int4 q_off, s_off;
+   Int4 s_off;
    Int4 last_offset;
    Int4 index;
    Int4 mask;
@@ -614,16 +654,14 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
             index = s[0] << 16 | s[1] << 8 | s[2];
             index = index >> shift;
       
-            if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
-               if (total_hits >= max_hits)
-                  break;
-               q_off = mb_lt->hashtable[index];
-               s_off = (s - abs_start)*COMPRESSION_RATIO;
-               while (q_off) {
-                  offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-                  q_off = mb_lt->next_pos[q_off];
-               }
+            if (s_BlastMBLookupHasHits(mb_lt, index)) {
+                if (total_hits >= max_hits)
+                    break;
+                s_off = (s - abs_start)*COMPRESSION_RATIO;
+                total_hits += s_BlastMBLookupRetrieve(mb_lt,
+                    index,
+                    offset_pairs + total_hits,
+                    s_off);
             }
          }
          *end_offset = (s - abs_start)*COMPRESSION_RATIO;
@@ -668,15 +706,13 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
             index = s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3];
             index = (index >> shift) & mask;
       
-            if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
-               if (total_hits >= max_hits)
-                  break;
-               q_off = mb_lt->hashtable[index];
-               while (q_off) {
-                  offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-                  q_off = mb_lt->next_pos[q_off];
-               }
+            if (s_BlastMBLookupHasHits(mb_lt, index)) {
+                if (total_hits >= max_hits)
+                    break;
+                total_hits += s_BlastMBLookupRetrieve(mb_lt,
+                    index,
+                    offset_pairs + total_hits,
+                    s_off);
             }
          }
 
@@ -693,15 +729,13 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
             index = s[0] << 16 | s[1] << 8 | s[2];
             index = (index >> shift) & mask;
       
-            if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
-               if (total_hits >= max_hits)
-                  break;
-               q_off = mb_lt->hashtable[index];
-               while (q_off) {
-                  offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-                  q_off = mb_lt->next_pos[q_off];
-               }
+            if (s_BlastMBLookupHasHits(mb_lt, index)) {
+                if (total_hits >= max_hits)
+                    break;
+                total_hits += s_BlastMBLookupRetrieve(mb_lt,
+                    index,
+                    offset_pairs + total_hits,
+                    s_off);
             }
          }
          *end_offset = s_off;
@@ -723,15 +757,13 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
          index = s[0] << 16 | s[1] << 8 | s[2];
          index = (index >> shift) & mask;
    
-         if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
-            if (total_hits >= max_hits)
-               break;
-            q_off = mb_lt->hashtable[index];
-            while (q_off) {
-               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-               q_off = mb_lt->next_pos[q_off];
-            }
+         if (s_BlastMBLookupHasHits(mb_lt, index)) {
+             if (total_hits >= max_hits)
+                 break;
+             total_hits += s_BlastMBLookupRetrieve(mb_lt,
+                 index,
+                 offset_pairs + total_hits,
+                 s_off);
          }
       }
       *end_offset = s_off;
