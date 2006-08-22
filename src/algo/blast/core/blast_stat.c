@@ -4169,16 +4169,16 @@ RPSfindUngappedLambda(const char *matrixName)
 static void
 RPSFillScores(Int4 **matrix, Int4 matrixLength, 
               double *queryProbArray, double *scoreArray,  
-              Blast_ScoreFreq* return_sfp, Int4 range)
+              Blast_ScoreFreq* return_sfp, Int4 range,
+              Int4 alphabet_size)
 {
     Int4 minScore, maxScore;    /*observed minimum and maximum scores */
     Int4 i,j;                   /* indices */
     double recipLength;        /* 1/matrix length as a double */
 
     minScore = maxScore = 0;
-
     for (i = 0; i < matrixLength; i++) {
-        for (j = 0 ; j < BLASTAA_SIZE; j++) {
+        for (j = 0 ; j < alphabet_size; j++) {
             if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
             if ((matrix[i][j] > BLAST_SCORE_MIN) && 
@@ -4191,13 +4191,12 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
 
     return_sfp->obs_min = minScore;
     return_sfp->obs_max = maxScore;
-    for (i = 0; i < range; i++)
-        scoreArray[i] = 0.0;
+    memset(scoreArray, 0, (maxScore - minScore + 1) * sizeof(double));
 
     return_sfp->sprob = &(scoreArray[-minScore]); /*center around 0*/
     recipLength = 1.0 / (double) matrixLength;
     for(i = 0; i < matrixLength; i++) {
-        for (j = 0; j < BLASTAA_SIZE; j++) {
+        for (j = 0; j < alphabet_size; j++) {
             if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
             if(matrix[i][j] >= minScore)
@@ -4234,8 +4233,9 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
 
     Blast_FillResidueProbability(rps_query_seq, rps_query_length, resProb);
 
+    alphabet_size = sbp->psi_matrix->pssm->nrows;
     RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray, 
-                 return_sfp, BLAST_SCORE_RANGE_MAX);
+                 return_sfp, BLAST_SCORE_RANGE_MAX, alphabet_size);
 
     initialUngappedLambda = RPSfindUngappedLambda(sbp->name);
     ASSERT(initialUngappedLambda > 0.0);
@@ -4256,8 +4256,6 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
     returnMatrix = (Int4 **)_PSIAllocateMatrix(db_seq_length,
                                                BLASTAA_SIZE,
                                                sizeof(Int4));
-
-    alphabet_size = sbp->psi_matrix->pssm->nrows;
 
     for (index = 0; index < db_seq_length; index++) {
         for (inner_index = 0; inner_index < alphabet_size; inner_index++) {
@@ -4410,6 +4408,11 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.147  2006/08/22 19:45:06  papadopo
+ * 1. Alphabet size must be variable in RPSFillScores
+ * 2. In RPSRescalePssm, only initialize the portion of the
+ *    array of score counts that is actually used
+ *
  * Revision 1.146  2006/07/05 15:33:35  papadopo
  * 1. Copy the 'X' columns in score matrices into the columns
  *    for 'U', 'O', 'J'
