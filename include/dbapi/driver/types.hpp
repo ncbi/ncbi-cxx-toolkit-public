@@ -66,10 +66,10 @@ enum EDB_Type {
     eDB_Image,
     eDB_Bit,
     eDB_Numeric,
-
-    eDB_UnsupportedType,
 	eDB_LongChar,
-	eDB_LongBinary
+	eDB_LongBinary,
+
+    eDB_UnsupportedType
 };
 
 
@@ -642,6 +642,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/08/22 20:12:44  ssikorsk
+ * Reordered EDB_Type.
+ *
  * Revision 1.21  2006/08/07 15:54:43  ssikorsk
  * Moved definitions of big inline functions into cpp.
  *
