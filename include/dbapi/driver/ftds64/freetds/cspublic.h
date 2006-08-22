@@ -52,6 +52,7 @@ static const void *const no_unused_cspublic_h_warn[] = { rcsid_cspublic_h, no_un
 #define CS_TIMED_OUT 	-208
 #define CS_PENDING 	-2
 #define CS_INTERRUPT 	-5
+#define CS_BLK_HAS_TEXT -6 
 #define CS_QUIET 	-3
 
 #define CS_SIZEOF(x) sizeof(x)
