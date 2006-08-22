@@ -883,7 +883,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
 
     string base_column = (const char*)buffer;
 
-    int column_type = 0;
+    SQLLEN column_type = 0;
     switch(SQLColAttribute(GetHandle(), item_no + 1,
                            SQL_COLUMN_TYPE,
                            NULL, sizeof(column_type),
@@ -1224,6 +1224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/08/22 15:11:50  ssikorsk
+ * Replaced int with SQLLEN for msvc8/64 sake.
+ *
  * Revision 1.34  2006/08/21 18:17:33  ssikorsk
  * Retrieve and set a column type in CODBC_RowResult::GetImageOrTextDescriptor.
  *
