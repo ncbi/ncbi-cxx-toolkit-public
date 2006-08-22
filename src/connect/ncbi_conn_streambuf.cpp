@@ -187,7 +187,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
         return CT_EOF;
     m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
-#endif
+#endif /*NCBI_COMPILER_MIPSPRO*/
 
     // read from connection
     size_t     n_read;
@@ -332,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.63  2006/08/22 18:24:52  lavr
+ * NCBI_COMPILER_MIPSPRO closing added
+ *
  * Revision 6.62  2006/07/24 21:11:11  lavr
  * Simplify CConn_Streambuf::xsgetn()
  *
