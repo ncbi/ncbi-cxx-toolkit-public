@@ -124,7 +124,7 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
                                    const BlastScoreBlk* sbp);
 
 /** Are the two HSPs within a given number of diagonals from each other? */
-#define MB_HSP_CLOSE(q1, q2, s1, s2, c) \
+#define MB_HSP_CLOSE(q1, s1, q2, s2, c) \
 (ABS(((q1)-(s1)) - ((q2)-(s2))) < c)
 
 /** Modify a BlastScoreBlk structure so that it can be used in RPS-BLAST. This
@@ -153,6 +153,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2006/08/22 19:26:20  papadopo
+ * change order of macro parameters
+ *
  * Revision 1.16  2006/07/18 14:41:36  papadopo
  * doxygen fixes
  *
