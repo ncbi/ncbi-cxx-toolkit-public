@@ -525,7 +525,6 @@ protected:
     int             m_CurrItem;
     bool            m_EOR;
     unsigned int    m_NofCols;
-    unsigned int    m_CmdNum;
     CS_DATAFMT*     m_ColFmt;
     int             m_BindedCols;
     CS_VOID**       m_BindItem;
@@ -752,6 +751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/08/22 20:11:42  ssikorsk
+ * - CTL_RowResult::m_CmdNum.
+ *
  * Revision 1.43  2006/08/17 06:33:06  vakatov
  * Switch default version of TDS protocol to 12.5 (from 11.0)
  *
