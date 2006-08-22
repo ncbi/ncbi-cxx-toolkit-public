@@ -121,38 +121,40 @@ algo/blast/api/blast_types.hpp
 algo/blast/api/blastx_options.hpp
 algo/blast/api/db_blast.hpp
 algo/blast/api/disc_nucl_options.hpp
+algo/blast/api/effsearchspace_calc.hpp
 algo/blast/api/hspstream_queue.hpp
+algo/blast/api/local_blast.hpp
+algo/blast/api/local_search.hpp
+algo/blast/api/objmgr_query_data.hpp
+algo/blast/api/objmgrfree_query_data.hpp
 algo/blast/api/phiblast_nucl_options.hpp
 algo/blast/api/phiblast_prot_options.hpp
+algo/blast/api/prelim_stage.hpp
 algo/blast/api/psi_pssm_input.hpp
 algo/blast/api/psibl2seq.hpp
 algo/blast/api/psiblast.hpp
 algo/blast/api/psiblast_iteration.hpp
 algo/blast/api/psiblast_options.hpp
+algo/blast/api/pssm_engine.hpp
 algo/blast/api/pssm_input.hpp
+algo/blast/api/query_data.hpp
 algo/blast/api/remote_blast.hpp
+algo/blast/api/remote_search.hpp
+algo/blast/api/remote_services.hpp
+algo/blast/api/rps_aux.hpp
 algo/blast/api/rpstblastn_options.hpp
 algo/blast/api/seqinfosrc_seqdb.hpp
 algo/blast/api/seqinfosrc_seqvec.hpp
 algo/blast/api/seqsrc_multiseq.hpp
 algo/blast/api/seqsrc_query_factory.hpp
 algo/blast/api/seqsrc_seqdb.hpp
+algo/blast/api/setup_factory.hpp
 algo/blast/api/sseqloc.hpp
 algo/blast/api/tblastn_options.hpp
 algo/blast/api/tblastx_options.hpp
-algo/blast/api/version.hpp
-algo/blast/api/local_blast.hpp
-algo/blast/api/local_search.hpp
-algo/blast/api/objmgr_query_data.hpp
-algo/blast/api/objmgrfree_query_data.hpp
-algo/blast/api/prelim_stage.hpp
-algo/blast/api/pssm_engine.hpp
-algo/blast/api/query_data.hpp
-algo/blast/api/remote_search.hpp
-algo/blast/api/rps_aux.hpp
-algo/blast/api/setup_factory.hpp
 algo/blast/api/traceback_stage.hpp
 algo/blast/api/uniform_search.hpp
+algo/blast/api/version.hpp
 
 algo/dustmask/symdust.hpp
 algo/gnomon/gnomon.hpp
@@ -285,6 +287,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/08/22 16:35:30  jcherry
+ * Added some blast headers, and reordered
+ *
  * Revision 1.16  2006/08/08 21:29:38  jcherry
  * Wrap some tree stuff
  *
