@@ -74,6 +74,14 @@ bool CleanString(string& str);
 /// if it is not preceded by an ampersand
 bool RemoveTrailingSemicolon(string& str);
 
+/// remove trailing white space, periods, commas, tildes and semicolons
+/// but leave a single or 3 trailing periods.
+bool RemoveTrailingJunk(string& str);
+
+/// remove white space between pairs of tildes.
+/// "~ ~  ~ a~" -> "~~~ a~"
+bool  RemoveSpacesBetweenTildes(string& str);
+
 // truncate trailing and leading spaces, trailing semicolons,
 // and redundant semicolons and extra spaces after semicolons
 void CleanVisString(string& str);
@@ -316,6 +324,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/08/22 12:10:10  rsmith
+* + RemoveTrailingJunk(string& str)
+* + RemoveSpacesBetweenTildes(string& str)
+*
 * Revision 1.10  2006/07/31 14:29:14  rsmith
 * Change reporting. is_sorted template.
 *

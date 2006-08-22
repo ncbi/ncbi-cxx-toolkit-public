@@ -94,6 +94,68 @@ bool RemoveTrailingSemicolon(string& str)
 }
 
 
+bool RemoveTrailingJunk(string& str)
+{
+    SIZE_TYPE end_str =  str.find_last_not_of(" \t\n\r.,~;");
+    if (end_str == NPOS) {
+        end_str = 0;
+    } else {
+        ++end_str; // indexes the first character to remove.
+    }
+    if (end_str >= str.length()) {
+        return false; // nothing to remove.
+    }
+    // save trailing period or ellipses.
+    if (str[end_str] == '.') {
+        ++end_str;
+        if ( (end_str + 1) < str.length()  &&  
+             str[end_str] == '.'  && 
+             str[end_str + 1] == '.' ) {
+            end_str += 2;
+        }
+    }
+    if (end_str >= str.length()) {
+        return false; // nothing to remove.
+    }
+    str.erase(end_str);
+    return true;
+}
+
+
+bool  RemoveSpacesBetweenTildes(string& str)
+{
+    static string whites(" \t\n\r");
+    bool changed = false;
+    SIZE_TYPE tilde1 = str.find('~');
+    if (tilde1 == NPOS) {
+        return changed; // no tildes in str.
+    }
+    SIZE_TYPE tilde2 = str.find_first_not_of(whites, tilde1 + 1);
+    while (tilde2 != NPOS) {
+        if (str[tilde2] == '~') {
+            if ( tilde2 > tilde1 + 1) {
+                // found two tildes with only spaces between them.
+                str.erase(tilde1+1, tilde2 - tilde1 - 1);
+                ++tilde1;
+                changed = true;
+            } else {
+                // found two tildes side by side.
+                tilde1 = tilde2;
+            }
+        } else {
+            // found a tilde with non-space non-tilde after it.
+            SIZE_TYPE tilde1 = str.find('~', tilde2 + 1);
+            if (tilde1 == NPOS) {
+                return changed; // no more tildes in str.
+            }
+        }
+        tilde2 = str.find_first_not_of(whites, tilde1 + 1);
+    }
+    return changed;
+
+}
+
+
 void TrimInternalSemicolons (string& str)
 {
     size_t pos, next_pos;
@@ -800,6 +862,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/08/22 12:10:17  rsmith
+* + RemoveTrailingJunk(string& str)
+* + RemoveSpacesBetweenTildes(string& str)
+*
 * Revision 1.8  2006/07/13 19:16:19  rsmith
 * eliminate unnecessary includes
 *
