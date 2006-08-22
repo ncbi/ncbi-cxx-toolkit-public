@@ -44,42 +44,38 @@ BEGIN_NCBI_SCOPE
 //
 
 
-CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) : 
-m_Connect(&conn),
-m_Cmd(cmd),
-m_CurrItem(-1),
-m_EOR(false)
+CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
+    m_Connect(&conn),
+    m_Cmd(cmd),
+    m_CurrItem(-1),
+    m_EOR(false),
+    m_NofCols(0),
+    m_ColFmt(NULL),
+    m_BindedCols(0),
+    m_BindItem(NULL),
+    m_Copied(NULL),
+    m_Indicator(NULL)
 {
     CS_INT outlen;
 
     CS_INT nof_cols;
-    bool rc = (Check(ct_res_info(x_GetSybaseCmd(), 
-                                 CS_NUMDATA, 
-                                 &nof_cols, 
-                                 CS_UNUSED, 
+    bool rc = (Check(ct_res_info(x_GetSybaseCmd(),
+                                 CS_NUMDATA,
+                                 &nof_cols,
+                                 CS_UNUSED,
                                  &outlen))
                != CS_SUCCEED);
     CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_NUMDATA) failed", 130001 );
 
     m_NofCols = nof_cols;
 
-    CS_INT cmd_num;
-    rc = (Check(ct_res_info(x_GetSybaseCmd(), 
-                            CS_CMD_NUMBER, 
-                            &cmd_num, 
-                            CS_UNUSED, 
-                            &outlen))
-        != CS_SUCCEED);
-    CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_CMD_NUMBER) failed", 130001 );
-    m_CmdNum = cmd_num;
-
     CS_INT bind_len= 0;
     m_BindedCols= 0;
 
     m_ColFmt = new CS_DATAFMT[m_NofCols];
     for (unsigned int nof_items = 0;  nof_items < m_NofCols;  nof_items++) {
-        rc = (Check(ct_describe(x_GetSybaseCmd(), 
-                                (CS_INT) nof_items + 1, 
+        rc = (Check(ct_describe(x_GetSybaseCmd(),
+                                (CS_INT) nof_items + 1,
                                 &m_ColFmt[nof_items]))
             != CS_SUCCEED);
         CHECK_DRIVER_ERROR( rc, "ct_describe failed", 130002 );
@@ -92,11 +88,11 @@ m_EOR(false)
         m_Indicator= new CS_SMALLINT[m_BindedCols];
         for(int i= 0; i < m_BindedCols; i++) {
           m_BindItem[i]= i? ((unsigned char*)(m_BindItem[i-1])) + m_ColFmt[i-1].maxlength : m_BindBuff;
-          rc = (Check(ct_bind(x_GetSybaseCmd(), 
-                              i+1, 
-                              &m_ColFmt[i], 
-                              m_BindItem[i], 
-                              &m_Copied[i], 
+          rc = (Check(ct_bind(x_GetSybaseCmd(),
+                              i+1,
+                              &m_ColFmt[i],
+                              m_BindItem[i],
+                              &m_Copied[i],
                               &m_Indicator[i]) )
              != CS_SUCCEED);
           CHECK_DRIVER_ERROR( rc, "ct_bind failed", 130042 );
@@ -198,8 +194,8 @@ int CTL_RowResult::GetColumnNum(void) const
     return static_cast<int>(m_NofCols);
 }
 
-CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item, 
-                                         CS_VOID* buffer, 
+CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
+                                         CS_VOID* buffer,
                                          CS_INT buflen, CS_INT *outlen)
 {
   if(item > m_BindedCols)
@@ -322,7 +318,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             }
 
             CDB_LongBinary* val = (outlen == 0)
-                ? new CDB_LongBinary(fmt.maxlength) : 
+                ? new CDB_LongBinary(fmt.maxlength) :
                   new CDB_LongBinary(fmt.maxlength, v, outlen);
 
             if ( v != buffer)  delete[] v;
@@ -926,9 +922,9 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 
     auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
 
-    bool rc = (Check(ct_data_info(x_GetSybaseCmd(), 
-                                  CS_GET, 
-                                  m_CurrItem+1, 
+    bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
+                                  CS_GET,
+                                  m_CurrItem+1,
                                   &desc->m_Desc))
         != CS_SUCCEED);
     CHECK_DRIVER_ERROR( rc, "ct_data_info failed", 130010 );
@@ -983,7 +979,7 @@ CTL_RowResult::Close(void)
             Check(ct_cmd_props(x_GetSybaseCmd(), CS_SET, CS_USERDATA,
                          &err_code, (CS_INT) sizeof(err_code), 0));
         }
-        
+
         m_Cmd = NULL;
     }
 }
@@ -1088,6 +1084,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/08/22 20:17:22  ssikorsk
+ * - CTL_RowResult::m_CmdNum.
+ *
  * Revision 1.25  2006/05/03 15:10:36  ssikorsk
  * Implemented classs CTL_Cmd and CCTLExceptions;
  * Surrounded each native ctlib call with Check;
