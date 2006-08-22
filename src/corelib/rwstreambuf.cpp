@@ -69,18 +69,17 @@ catch (...) {                                                                 \
 BEGIN_NCBI_SCOPE
              
              
-static const streamsize kDefaultBufferSize = 4096;
+static const streamsize kDefaultBufSize = 4096;
 
 
 CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
                            streamsize           n,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
-    : m_Flags(f), m_Reader(rw), m_Writer(rw),
-      m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false),
-      x_PPos((CT_OFF_TYPE)(0)), x_GPos((CT_OFF_TYPE)(0))
+    : m_Flags(f), m_Reader(rw), m_Writer(rw), m_pBuf(s),
+      x_GPos((CT_OFF_TYPE)(0)), x_PPos((CT_OFF_TYPE)(0))
 {
-    setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufferSize);
+    setbuf(s && n ? s : 0, n ? n : kDefaultBufSize << 1);
 }
 
 
@@ -89,11 +88,10 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
                            streamsize           n,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
-    : m_Flags(f), m_Reader(r), m_Writer(w),
-      m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false),
-      x_PPos((CT_OFF_TYPE)(0)), x_GPos((CT_OFF_TYPE)(0))
+    : m_Flags(f), m_Reader(r), m_Writer(w), m_pBuf(s),
+      x_GPos((CT_OFF_TYPE)(0)), x_PPos((CT_OFF_TYPE)(0))
 {
-    setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufferSize);
+    setbuf(s && n ? s : 0, n ? n : kDefaultBufSize << (m_Reader && m_Writer));
 }
 
 
@@ -103,8 +101,8 @@ CRWStreambuf::~CRWStreambuf()
     if (pbase()  &&  pptr() > pbase()) {
         sync();
     }
-    setp(0, 0);
     setg(0, 0, 0);
+    setp(0, 0);
 
     IReaderWriter* rw = dynamic_cast<IReaderWriter*> (m_Reader);
     if (rw  &&  rw == dynamic_cast<IReaderWriter*> (m_Writer)) {
@@ -120,8 +118,8 @@ CRWStreambuf::~CRWStreambuf()
         }
     }
 
-    if ( m_OwnBuf ) {
-        delete[] m_ReadBuf;
+    if ( m_pBuf ) {
+        delete[] m_pBuf;
     }
 }
 
@@ -138,22 +136,31 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
     if (pptr()  &&  pptr() != pbase()) {
         ERR_POST(Error << "CRWStreambuf::setbuf(): Write data pending");
     }
-
-    streamsize    x_size = n ? n : kDefaultBufferSize;
-    CT_CHAR_TYPE* x_buf  = s ? s : (n == 1? &x_Buf : new CT_CHAR_TYPE[x_size]);
-
-    if ( m_OwnBuf ) {
-        delete[] m_ReadBuf;
+    if (m_pBuf != s) {
+        delete[] m_pBuf;
+        m_pBuf = s;
     }
 
-    x_size   >>= 1;
-    m_BufSize  = x_size ? x_size : 1;
-    m_ReadBuf  = x_buf;
-    m_WriteBuf = x_size ? x_buf + m_BufSize : 0;
-    m_OwnBuf   = x_size  &&  !s;
+    streamsize    x_size = n ? n : kDefaultBufSize << (m_Reader  &&  m_Writer);
+    CT_CHAR_TYPE* x_buf  = s ? s : (n == 1? &x_Buf : new CT_CHAR_TYPE[x_size]);
 
-    setp(m_WriteBuf, m_WriteBuf + x_size);
-    setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);
+    n = x_size >> (m_Reader  &&  m_Writer);
+
+    if (m_Reader) {
+        m_BufSize  = x_size == 1 ? 1 : n;
+        m_ReadBuf  = x_buf;
+    } else {
+        m_BufSize  = 0;
+        m_ReadBuf  = 0;
+    }
+    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
+
+    if (m_Writer) {
+        m_WriteBuf = x_size == 1 ? 0 : x_buf + m_BufSize;
+    } else {
+        m_WriteBuf = 0;
+    }
+    setp(m_WriteBuf, m_WriteBuf + (m_WriteBuf ? x_size - m_BufSize : 0));
 
     return this;
 }
@@ -179,13 +186,11 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
                 return CT_EOF;
             n_written /= sizeof(CT_CHAR_TYPE);
             // update buffer content (get rid of the sent data)
-            if (n_written != n_write) {
-                _ASSERT(n_written <= n_write);
-                memmove(pbase(), pbase() + n_written,
-                        (n_write - n_written)*sizeof(CT_CHAR_TYPE));
-            }
+            _ASSERT(n_written <= n_write);
+            memmove(pbase(), pbase() + n_written,
+                    (n_write - n_written)*sizeof(CT_CHAR_TYPE));
+            pbump(-int(n_written));
             x_PPos += (CT_OFF_TYPE) n_written;
-            setp(pbase() + n_write - n_written, epptr());
         }
 
         // store char
@@ -227,7 +232,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
         return CT_EOF;
     m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1);
-#endif
+#endif /*NCBI_COMPILER_MIPSPRO*/
 
     // read
     size_t n_read;
@@ -256,26 +261,22 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         return 0;
     size_t n = (size_t) m;
 
-    size_t n_read;
-    // read from the memory buffer
-    if (gptr()  &&  gptr() < egptr()) {
-        n_read = egptr() - gptr();
-        if (n_read > n)
-            n_read = n;
-        memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
-        gbump((int) n_read);
-        buf += n_read;
-        n   -= n_read;
-    } else
-        n_read = 0;
+    // first, read from the memory buffer
+    size_t n_read = gptr() ?  egptr() - gptr() : 0;
+    if (n_read > n)
+        n_read = n;
+    memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
+    gbump((int) n_read);
+    buf += n_read;
+    n   -= n_read;
 
     while ( n ) {
+        // next, read directly from the device
         size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         ERW_Result   result = eRW_Success;
 
         try {
-            // read directly from device
             result = m_Reader->Read(x_buf,x_read*sizeof(CT_CHAR_TYPE),&x_read);
         }
         RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsgetn(): IReader::Read()",
@@ -362,6 +363,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.21  2006/08/22 18:05:19  lavr
+ * Allocate buffers per I/O direction; fix write bug
+ *
  * Revision 1.20  2006/05/01 19:28:39  lavr
  * Fix missing parenthesis
  *
