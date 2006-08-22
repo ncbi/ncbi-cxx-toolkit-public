@@ -104,4 +104,9 @@ typedef int socklen_t;
 #  define TDS_SQLCOLATTRIBUTE_SQLLEN 1
 #endif
 
+#if defined(NCBI_COMPILER_MSVC)
+#  define snprintf _snprintf
+#endif
+
+
 #endif  /* DBAPI_DRIVER_FTDS64_FREETDS___CONFIG__H */
