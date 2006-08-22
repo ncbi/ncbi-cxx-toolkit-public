@@ -125,8 +125,8 @@ CS_RETCODE CTL_Connection::CheckSFB(CS_RETCODE rc,
     case CS_FAIL:
 #ifdef CS_BUSY
     case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
 #endif
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
     }
 
     return rc;
@@ -713,6 +713,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/08/22 20:15:07  ssikorsk
+ * Fixed CTL_Connection::CheckSFB in order to compile with FreeTDS ctlib.
+ *
  * Revision 1.42  2006/08/10 15:19:27  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *
