@@ -146,7 +146,7 @@ int main(int argc, const char* argv[])
             flag |= eFCDC_LogAll;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
-                                "CURRENT/RELEASE_NOTES.html",
+                                "DOC/PDF/ncbi_toolkit--CURRENT.pdf",
                                 "ftp"/*default*/, "none"/*default*/,
                                 "/toolbox/ncbi_tools++", 0/*port = default*/,
                                 flag, 0/*offset*/, net_info->timeout);
@@ -322,6 +322,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2006/08/23 19:33:20  lavr
+ * FTP connector to download PDF documentation file (instead of RELEASE_NOTES)
+ *
  * Revision 6.47  2006/04/20 14:01:37  lavr
  * Cleanup to demonstrate no leaks
  *
