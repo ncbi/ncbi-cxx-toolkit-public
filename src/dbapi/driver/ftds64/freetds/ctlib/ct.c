@@ -2321,6 +2321,8 @@ ct_describe(CS_COMMAND * cmd, CS_INT item, CS_DATAFMT * datafmt)
 	datafmt->usertype = curcol->column_usertype;
 	datafmt->precision = curcol->column_prec;
 	datafmt->scale = curcol->column_scale;
+    /* Added by ssikorsk */
+	datafmt->format = curcol->column_bindfmt;
 
 	/*
 	 * There are other options that can be returned, but these are the
