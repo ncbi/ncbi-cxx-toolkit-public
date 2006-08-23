@@ -4188,16 +4188,17 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             add(tc);
         }
 
-        // ctlib will work in case of protocol version 12.5 only
+        // ctlib/ftds64_ctlib will work in case of protocol version 12.5 only
         // ftds + Sybaseand dblib won't work because of the early protocol versions.
         if (((args.GetDriverName() == "ftds" ||
               args.GetDriverName() == "ftds63" ||
               args.GetDriverName() == "odbc" ||
               args.GetDriverName() == "ftds64_odbc" ||
               args.GetDriverName() == "ftds64_dblib" ) &&
-             args.GetServerType() == CTestArguments::eMsSql) ||
+             args.GetServerType() == CTestArguments::eMsSql)
              // args.GetDriverName() == "ctlib" ||
-             args.GetDriverName() == "ftds64_ctlib" ) {
+             // args.GetDriverName() == "ftds64_ctlib"
+            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
@@ -4414,6 +4415,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.89  2006/08/23 20:01:40  ssikorsk
+ * Disable Test_Insert for the ftds64_ctlib driver, which supports TDS v12.5 only.
+ *
  * Revision 1.88  2006/08/22 14:37:42  ssikorsk
  * Fixed typo.
  *
