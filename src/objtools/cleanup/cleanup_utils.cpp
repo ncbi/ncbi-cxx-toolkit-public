@@ -144,7 +144,7 @@ bool  RemoveSpacesBetweenTildes(string& str)
             }
         } else {
             // found a tilde with non-space non-tilde after it.
-            SIZE_TYPE tilde1 = str.find('~', tilde2 + 1);
+            tilde1 = str.find('~', tilde2 + 1);
             if (tilde1 == NPOS) {
                 return changed; // no more tildes in str.
             }
@@ -862,6 +862,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/08/23 20:10:50  ludwigf
+* FIXED: Infinite loop in RemoveSpacesBetweenTildes().
+*
 * Revision 1.9  2006/08/22 12:10:17  rsmith
 * + RemoveTrailingJunk(string& str)
 * + RemoveSpacesBetweenTildes(string& str)
