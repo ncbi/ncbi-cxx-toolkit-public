@@ -732,6 +732,28 @@ static void s_Replace()
     dst = NStr::Replace(src, search, replace, src.size() - 1);
     assert(dst == "aaabbbaaccczzcccXx");
 
+    // ReplaceInPlace
+
+    search = "a";
+    replace = "W";
+    NStr::ReplaceInPlace(src, search, replace);
+    assert(src == "WWWbbbWWccczzcccXX");
+
+    search = "W";
+    replace = "a";
+    NStr::ReplaceInPlace(src, search, replace, 2, 2);
+    assert(src == "WWabbbaWccczzcccXX");
+
+    search = "a";
+    replace = "bb";
+    NStr::ReplaceInPlace(src, search, replace);
+    assert(src == "WWbbbbbbbWccczzcccXX");
+
+    search = "bb";
+    replace = "c";
+    NStr::ReplaceInPlace(src, search, replace);
+    assert(src == "WWcccbWccczzcccXX");
+
     OK;
 }
 
@@ -1434,7 +1456,6 @@ int CTestApplication::Run(void)
 {
     SetupDiag(eDS_ToStdout);
     CExceptionReporter::EnableDefault(false);
-    //CExceptionReporter::EnableDefault(true);
 
     s_Compare();
     s_Case();
@@ -1476,6 +1497,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.58  2006/08/23 13:33:38  ivanov
+ * Added tests for NStr::ReplaceInPlace()
+ *
  * Revision 6.57  2006/05/02 20:32:55  ivanov
  * SStringNumericValues::Same() - rearrange code to fix warning on GCC/Solaris
  *
