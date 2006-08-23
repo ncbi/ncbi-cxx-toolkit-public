@@ -267,6 +267,42 @@ unsigned int CBDB_RawFile::Truncate()
 }
 
 
+/// Compact the database.  The target fill percent per page can be
+/// supplied, to allow for known expansion
+void CBDB_RawFile::Compact(ECompact compact_type,
+                           int target_fill_pct)
+{
+    _ASSERT(m_DB != 0);
+
+    u_int32_t flags = 0;
+    if (compact_type == eCompactNoFree) {
+        /// default
+    } else if (compact_type == eCompactFreeExisting) {
+        flags = DB_FREELIST_ONLY;
+    } else if (compact_type == eCompactFreeAll) {
+        flags = DB_FREE_SPACE;
+    }
+
+    target_fill_pct = max(target_fill_pct, 0);
+    DB_TXN* txn = GetTxn();
+
+    DB_COMPACT compact;
+    memset(&compact, 0, sizeof(compact));
+    compact.compact_fillpercent = target_fill_pct;
+    compact.compact_timeout     = 0;
+
+    int ret = m_DB->compact(m_DB, txn, NULL, NULL, &compact,
+                            flags, NULL);
+    BDB_CHECK(ret, FileName().c_str());
+
+    LOG_POST(Info << "CBDB_RawFile::Compact(): "
+             << compact.compact_pages_examine << " pages examined / "
+             << compact.compact_pages_free << " pages freed / "
+             << compact.compact_levels << " levels removed / "
+             << compact.compact_pages_truncated << " pages truncated");
+}
+
+
 void CBDB_RawFile::SetCacheSize(unsigned int cache_size)
 {
     m_CacheSize = cache_size;
@@ -1253,6 +1289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/08/23 19:59:06  dicuccio
+ * Implement CBDB_RawFile::Compact()
+ *
  * Revision 1.59  2006/03/29 17:38:05  kuznets
  * +RevSplitOff()
  *

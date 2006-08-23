@@ -105,6 +105,19 @@ public:
         eThrowOnError
     };
 
+    /// BerkeleyDB compaction methods and flags
+    enum ECompact {
+
+        //< Do not attempt to free any pages from the underlying file
+        eCompactNoFree,
+
+        //< Free only pages that already exist as free pages in the file
+        eCompactFreeExisting,
+
+        //< Return all free pages to the file system after compaction
+        eCompactFreeAll
+    };
+
 public:
     CBDB_RawFile(EDuplicateKeys dup_keys = eDuplicatesDisable,
                  EDBType        db_type  = eBtree);
@@ -143,6 +156,11 @@ public:
     void Remove(const char* filename, const char* database = 0);
     /// Empty the database. Return number of records removed.
     unsigned int Truncate();
+
+    /// Compact the database.  The target fill percent per page can be
+    /// supplied, to allow for known expansion
+    void Compact(ECompact compact_type = eCompactNoFree,
+                 int target_fill_pct = 0);
 
     // Set Berkeley DB page size value. By default OS default is used.
     void SetPageSize(unsigned int page_size);
@@ -605,6 +623,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/08/23 19:59:05  dicuccio
+ * Implement CBDB_RawFile::Compact()
+ *
  * Revision 1.44  2006/03/29 17:38:16  kuznets
  * +RevSplitOff()
  *
