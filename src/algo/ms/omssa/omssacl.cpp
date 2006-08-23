@@ -73,6 +73,20 @@ class COMSSA : public CNcbiApplication {
 public:
     COMSSA();
 private:
+
+    /**
+     * Set the out files
+     * @param IncludeSpectra should we include the spectra in
+     *                       output?
+     * @param FileFormat the output file format
+     * @param FileName output file name
+     * @param Setting search settings
+     */
+    void SetOutFile(bool IncludeSpectra,
+                    EMSSerialDataFormat FileFormat,
+                    string FileName,
+                    CRef<CMSSearchSettings> &Settings);
+
     virtual int Run();
     virtual void Init();
     void PrintMods(CRef <CMSModSpecSet> Modset);
@@ -160,6 +174,10 @@ void COMSSA::Init()
 
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
     argDesc->PrintUsageIfNoArgs();
+
+    argDesc->AddDefaultKey("pm", "param",
+                           "search parameter input in xml format (overrides command line)",
+                           CArgDescriptions::eString, "");
 
     argDesc->AddDefaultKey("d", "blastdb", "Blast sequence library to search. Do not include .p* filename suffixes.",
 			   CArgDescriptions::eString, "nr");
@@ -365,68 +383,19 @@ int main(int argc, const char* argv[])
 }
 
 
-void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
+
+void COMSSA::SetOutFile(bool IncludeSpectra,
+                        EMSSerialDataFormat FileFormat,
+                        string FileName,
+                        CRef<CMSSearchSettings> &Settings) 
 {
-    // set up input files
-
-    CRef <CMSInFile> Infile; 
-    Infile = new CMSInFile;
-
-    if(args["fx"].AsString().size() != 0) {
-        Infile->SetInfile(args["fx"].AsString());
-        Infile->SetInfiletype(eMSSpectrumFileType_dtaxml);
-    }
-    else if(args["f"].AsString().size() != 0) {
-        Infile->SetInfile(args["f"].AsString());
-        Infile->SetInfiletype(eMSSpectrumFileType_dta);
-    }
-    else if(args["fb"].AsString().size() != 0)  {
-        Infile->SetInfile(args["fb"].AsString());
-        Infile->SetInfiletype(eMSSpectrumFileType_dtablank);
-    }
-    else if(args["fp"].AsString().size() != 0)  {
-        Infile->SetInfile(args["fp"].AsString());
-        Infile->SetInfiletype(eMSSpectrumFileType_pkl);
-    }
-    else if(args["fm"].AsString().size() != 0) {
-        Infile->SetInfile(args["fm"].AsString());
-        Infile->SetInfiletype(eMSSpectrumFileType_mgf);
-    }
-    else if(args["fomx"].AsString().size() != 0) {
-        Infile->SetInfile(args["fomx"].AsString());
-        Infile->SetInfiletype(eMSSpectrumFileType_omx);
-    }
-    else if(args["foms"].AsString().size() != 0) {
-        Infile->SetInfile(args["foms"].AsString());
-        Infile->SetInfiletype(eMSSpectrumFileType_oms);
-    }
-
-    Settings->SetInfiles().push_back(Infile);
-
-
-    // set up output files
-
     CRef <CMSOutFile> Outfile;
     Outfile = new CMSOutFile;
 
-    if(args["o"].AsString() != "") {
-        Outfile->SetOutfile(args["o"].AsString());
-        Outfile->SetOutfiletype(eMSSerialDataFormat_asntext);
-    }
-    if(args["ob"].AsString() != "") {
-        Outfile->SetOutfile(args["ob"].AsString());
-        Outfile->SetOutfiletype(eMSSerialDataFormat_asnbinary);
-    }
-    if(args["ox"].AsString() != "") {
-        Outfile->SetOutfile(args["ox"].AsString());
-        Outfile->SetOutfiletype(eMSSerialDataFormat_xml);
-    }
-    if(args["oc"].AsString() != "") {
-        Outfile->SetOutfile(args["oc"].AsString());
-        Outfile->SetOutfiletype(eMSSerialDataFormat_csv);
-    }
+    Outfile->SetOutfile(FileName);
+    Outfile->SetOutfiletype(FileFormat);
 
-    if(args["w"]) {
+    if(IncludeSpectra) {
         Outfile->SetIncluderequest(true);
     }
     else {
@@ -434,37 +403,94 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
     }
 
     Settings->SetOutfiles().push_back(Outfile);
+}
+
+
+void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
+{
+
+    CRef <CMSInFile> Infile; 
+    Infile = new CMSInFile;
+
+    if (args["fx"].AsString().size() != 0) {
+        Infile->SetInfile(args["fx"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_dtaxml);
+    }
+    else if (args["f"].AsString().size() != 0) {
+        Infile->SetInfile(args["f"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_dta);
+    }
+    else if (args["fb"].AsString().size() != 0) {
+        Infile->SetInfile(args["fb"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_dtablank);
+    }
+    else if (args["fp"].AsString().size() != 0) {
+        Infile->SetInfile(args["fp"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_pkl);
+    }
+    else if (args["fm"].AsString().size() != 0) {
+        Infile->SetInfile(args["fm"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_mgf);
+    }
+    else if (args["fomx"].AsString().size() != 0) {
+        Infile->SetInfile(args["fomx"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_omx);
+    }
+    else if (args["foms"].AsString().size() != 0) {
+        Infile->SetInfile(args["foms"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_oms);
+    }
+    else ERR_POST(Fatal << "no input file specified");
+
+    Settings->SetInfiles().push_back(Infile);
+
+
+    bool IncludeSpectra = args["w"];
+
+    // set up output files
+    if (args["o"].AsString() != "") {
+        SetOutFile(IncludeSpectra, eMSSerialDataFormat_asntext, args["o"].AsString(), Settings);
+    }
+    if (args["ob"].AsString() != "") {
+        SetOutFile(IncludeSpectra, eMSSerialDataFormat_asnbinary, args["ob"].AsString(), Settings);
+    }
+    if (args["ox"].AsString() != "") {
+        SetOutFile(IncludeSpectra, eMSSerialDataFormat_xml, args["ox"].AsString(), Settings);
+    }
+    if (args["oc"].AsString() != "") {
+        SetOutFile(IncludeSpectra, eMSSerialDataFormat_csv, args["oc"].AsString(), Settings);
+    }
 
     // set up rest of settings
 
-	Settings->SetPrecursorsearchtype(args["tem"].AsInteger());
-	Settings->SetProductsearchtype(args["tom"].AsInteger());
-	Settings->SetPeptol(args["te"].AsDouble());
-	Settings->SetMsmstol(args["to"].AsDouble());
+    Settings->SetPrecursorsearchtype(args["tem"].AsInteger());
+    Settings->SetProductsearchtype(args["tom"].AsInteger());
+    Settings->SetPeptol(args["te"].AsDouble());
+    Settings->SetMsmstol(args["to"].AsDouble());
     Settings->SetZdep(args["tez"].AsInteger());
     Settings->SetExactmass(args["tex"].AsDouble());
 
-	InsertList(args["i"].AsString(), Settings->SetIonstosearch(), "unknown ion");
-	Settings->SetCutlo(args["cl"].AsDouble());
-	Settings->SetCuthi(args["ch"].AsDouble());
-	Settings->SetCutinc(args["ci"].AsDouble());
+    InsertList(args["i"].AsString(), Settings->SetIonstosearch(), "unknown ion");
+    Settings->SetCutlo(args["cl"].AsDouble());
+    Settings->SetCuthi(args["ch"].AsDouble());
+    Settings->SetCutinc(args["ci"].AsDouble());
     Settings->SetPrecursorcull(args["cp"].AsInteger());
-	Settings->SetSinglewin(args["w1"].AsInteger());
-	Settings->SetDoublewin(args["w2"].AsInteger());
-	Settings->SetSinglenum(args["h1"].AsInteger());
-	Settings->SetDoublenum(args["h2"].AsInteger());
-	Settings->SetEnzyme(args["e"].AsInteger());
-	Settings->SetMissedcleave(args["v"].AsInteger());
-	InsertList(args["mv"].AsString(), Settings->SetVariable(), "unknown variable mod");
-	InsertList(args["mf"].AsString(), Settings->SetFixed(), "unknown fixed mod");
-	Settings->SetDb(args["d"].AsString());
-	Settings->SetHitlistlen(args["hl"].AsInteger());
-	Settings->SetTophitnum(args["ht"].AsInteger());
-	Settings->SetMinhit(args["hm"].AsInteger());
-	Settings->SetMinspectra(args["hs"].AsInteger());
+    Settings->SetSinglewin(args["w1"].AsInteger());
+    Settings->SetDoublewin(args["w2"].AsInteger());
+    Settings->SetSinglenum(args["h1"].AsInteger());
+    Settings->SetDoublenum(args["h2"].AsInteger());
+    Settings->SetEnzyme(args["e"].AsInteger());
+    Settings->SetMissedcleave(args["v"].AsInteger());
+    InsertList(args["mv"].AsString(), Settings->SetVariable(), "unknown variable mod");
+    InsertList(args["mf"].AsString(), Settings->SetFixed(), "unknown fixed mod");
+    Settings->SetDb(args["d"].AsString());
+    Settings->SetHitlistlen(args["hl"].AsInteger());
+    Settings->SetTophitnum(args["ht"].AsInteger());
+    Settings->SetMinhit(args["hm"].AsInteger());
+    Settings->SetMinspectra(args["hs"].AsInteger());
     Settings->SetScale(MSSCALE); // presently ignored
-	Settings->SetCutoff(args["he"].AsDouble());
-	Settings->SetMaxmods(args["mm"].AsInteger());
+    Settings->SetCutoff(args["he"].AsDouble());
+    Settings->SetMaxmods(args["mm"].AsInteger());
     Settings->SetPseudocount(args["pc"].AsInteger());
     Settings->SetSearchb1(args["sb1"].AsInteger());
     Settings->SetSearchctermproduct(args["sct"].AsInteger());
@@ -475,14 +501,14 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
     Settings->SetMinnoenzyme(args["no"].AsInteger());
     Settings->SetMaxnoenzyme(args["nox"].AsInteger());
 
-	if(args["x"].AsString() != "0") {
-	    InsertList(args["x"].AsString(), Settings->SetTaxids(), "unknown tax id");
-	}
+    if (args["x"].AsString() != "0") {
+        InsertList(args["x"].AsString(), Settings->SetTaxids(), "unknown tax id");
+    }
 
-	Settings->SetChargehandling().SetCalcplusone(args["zc"].AsInteger());
-	Settings->SetChargehandling().SetConsidermult(args["zt"].AsInteger());
-	Settings->SetChargehandling().SetMincharge(args["zl"].AsInteger());
-	Settings->SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
+    Settings->SetChargehandling().SetCalcplusone(args["zc"].AsInteger());
+    Settings->SetChargehandling().SetConsidermult(args["zt"].AsInteger());
+    Settings->SetChargehandling().SetMincharge(args["zl"].AsInteger());
+    Settings->SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
     Settings->SetChargehandling().SetPlusone(args["z1"].AsDouble());
     Settings->SetChargehandling().SetMaxproductcharge(args["zoh"].AsInteger());
     Settings->SetChargehandling().SetCalccharge(args["zcc"].AsInteger());
@@ -491,16 +517,8 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
     Settings->SetIterativesettings().SetSubsetthresh(args["is"].AsDouble());
     Settings->SetIterativesettings().SetReplacethresh(args["ir"].AsDouble());
 
-	// validate the input
 
-    list <string> ValidError;
-	if(Settings->Validate(ValidError) != 0) {
-	    list <string>::iterator iErr;
-	    for(iErr = ValidError.begin(); iErr != ValidError.end(); iErr++)
-		ERR_POST(Warning << *iErr);
-	    ERR_POST(Fatal << "Unable to validate settings");
-	}
-     return;
+    return;
 }
 
 
@@ -514,7 +532,7 @@ int COMSSA::Run()
 
     // turn off informational messages if requested
     if(args["ni"])
-       SetDiagPostLevel(eDiag_Error);
+       SetDiagPostLevel(eDiag_Warning);
 
     // read in modifications
     if(CSearchHelper::ReadModFiles(args["mx"].AsString(), args["mux"].AsString(),
@@ -539,39 +557,30 @@ int COMSSA::Run()
         PrintIons();
         return 0;
     }
-    
+
+    // which search settings to use
+    CRef <CMSSearchSettings> SearchSettings;
+
+    CSearchHelper::CreateSearchSettings(args["pm"].AsString(),
+                                        SearchSettings);
+
+    // use command line to set up search settings
+    if(args["pm"].AsString().size() == 0) 
+        SetSearchSettings(args, SearchSettings);
+
+    CSearchHelper::ValidateSearchSettings(SearchSettings);
+
     CSearch SearchEngine;
 
     // set up rank scoring
     if(args["os"]) SearchEngine.SetRankScore() = false;
     else SearchEngine.SetRankScore() = true;
 
-	int retval = SearchEngine.InitBlast(args["d"].AsString().c_str());
-	if(retval) {
-	    ERR_POST(Fatal << "omssacl: unable to initialize blastdb, error " 
-		     << retval);
-	    return 1;
-	}
-
     CMSSearch MySearch;
-
-    CRef <CMSRequest> Request (new CMSRequest);
-    MySearch.SetRequest().push_back(Request);
-    CRef <CMSResponse> Response (new CMSResponse);
-    MySearch.SetResponse().push_back(Response);
-
-
-    // which search settings to use
-    CRef <CMSSearchSettings> SearchSettings;
-
-    // set up search settings
-    MySearch.SetUpSearchSettings(SearchSettings, 
-                                 SearchEngine.GetIterative());
-
-    SetSearchSettings(args, SearchSettings);
 
     int FileRetVal(1);
 
+    // load in files
     if(SearchSettings->GetInfiles().size() == 1) {
         FileRetVal = 
             CSearchHelper::LoadAnyFile(MySearch,
@@ -590,6 +599,17 @@ int COMSSA::Run()
 	    return 1;
 	}
 
+    // place search settings in search object
+    MySearch.SetUpSearchSettings(SearchSettings, 
+                                 SearchEngine.GetIterative());
+
+
+    int retval = SearchEngine.InitBlast(SearchSettings->GetDb().c_str());
+    if(retval) {
+        ERR_POST(Fatal << "omssacl: unable to initialize blastdb, error " 
+             << retval);
+        return 1;
+    }
 
 	_TRACE("omssa: search begin");
 	SearchEngine.Search(*MySearch.SetRequest().begin(),
@@ -636,7 +656,7 @@ int COMSSA::Run()
 	if(!(*MySearch.SetResponse().begin())->CanGetHitsets()) {
 	  ERR_POST(Fatal << "No results found");
 	}
-    
+
     CSearchHelper::SaveAnyFile(MySearch, 
                                SearchSettings->GetOutfiles(),
                                Modset);

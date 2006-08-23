@@ -182,49 +182,6 @@ CSpectrumSet::~CSpectrumSet(void)
 /////////////////// end of CSpectrumSet inline methods
 
 
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.11  2006/08/21 15:18:21  lewisg
- * asn.1 changes, bug fixes
- *
- * Revision 1.10  2005/11/07 19:57:20  lewisg
- * iterative search
- *
- * Revision 1.9  2005/08/01 13:44:18  lewisg
- * redo enzyme classes, no-enzyme, fix for fixed mod enumeration
- *
- * Revision 1.8  2005/01/31 17:30:57  lewisg
- * adjustable intensity, z dpendence of precursor mass tolerance
- *
- * Revision 1.7  2004/12/06 22:57:34  lewisg
- * add new file formats
- *
- * Revision 1.6  2004/12/03 21:14:16  lewisg
- * file loading code
- *
- * Revision 1.5  2004/11/01 22:04:01  lewisg
- * c-term mods
- *
- * Revision 1.4  2004/05/27 20:52:15  lewisg
- * better exception checking, use of AutoPtr, command line parsing
- *
- * Revision 1.3  2004/03/16 20:18:54  gorelenk
- * Changed includes of private headers.
- *
- * Revision 1.2  2003/10/24 21:28:41  lewisg
- * add omssa, xomssa, omssacl to win32 build, including dll
- *
- * Revision 1.1  2003/10/20 21:32:13  lewisg
- * ommsa toolkit version
- *
- *
- *
- * ===========================================================================
- */
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

@@ -56,11 +56,10 @@ CMSSearch::SetUpSearchSettings(CRef <CMSSearchSettings> & SearchSettings,
     // set up search settings
     if(IsIterative) {
         Settingid = 1 + (*SetRequest().begin())->SetMoresettings().Set().size();
-        SearchSettings = new CMSSearchSettings;
         (*SetRequest().begin())->SetMoresettings().Set().push_back(SearchSettings);
     }
     else {
-        SearchSettings.Reset(&((*SetRequest().begin())->SetSettings()));
+        (*SetRequest().begin())->SetSettings(*SearchSettings);
     }
     SearchSettings->SetSettingid() = Settingid;
 
@@ -82,6 +81,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/08/23 21:31:30  lewisg
+* rearrange file parsing
+*
 * Revision 1.1  2006/07/20 21:00:21  lewisg
 * move functions out of COMSSA, create laddercontainer
 *

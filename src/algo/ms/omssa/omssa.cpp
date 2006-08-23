@@ -62,37 +62,48 @@ CSearchHelper::ReadModFiles(const string& ModFileName,
 {  
     CDirEntry DirEntry(Path);
     string FileName;
-    if(ModFileName == "")
-        ERR_POST(Critical << "modification filename is blank!");
-    if(!CDirEntry::IsAbsolutePath(ModFileName))
-        FileName = DirEntry.GetDir() + ModFileName;
-    else FileName = ModFileName;
-    auto_ptr<CObjectIStream> 
-        modsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
-    if(modsin->fail()) {	    
-        ERR_POST(Fatal << "ommsacl: unable to open modification file" << 
-                 FileName);
-        return 1;
+    try {
+        if(ModFileName == "")
+            ERR_POST(Critical << "modification filename is blank!");
+        if(!CDirEntry::IsAbsolutePath(ModFileName))
+            FileName = DirEntry.GetDir() + ModFileName;
+        else FileName = ModFileName;
+        auto_ptr<CObjectIStream> 
+            modsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
+        if(modsin->fail()) {	    
+            ERR_POST(Fatal << "ommsacl: unable to open modification file" << 
+                     FileName);
+            return 1;
+        }
+        modsin->Read(ObjectInfo(*Modset));
+        modsin->Close();
+    
+    } catch (NCBI_NS_STD::exception& e) {
+        ERR_POST(Fatal << "Unable to read modification file " <<
+                 FileName << " with error " << e.what());
     }
-    modsin->Read(ObjectInfo(*Modset));
-    modsin->Close();
 
     // read in user mod file, if any
     if(UserModFileName != "") {
-        CRef <CMSModSpecSet> UserModset(new CMSModSpecSet);
-        if(!CDirEntry::IsAbsolutePath(UserModFileName))
-            FileName = DirEntry.GetDir() + UserModFileName;
-        else FileName = UserModFileName;
-        auto_ptr<CObjectIStream> 
-         usermodsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
-        if(usermodsin->fail()) {	    
-             ERR_POST(Warning << "ommsacl: unable to open user modification file" << 
-                      ModFileName);
-             return 0;
-         }
-        usermodsin->Read(ObjectInfo(*UserModset));
-        usermodsin->Close();
-        Modset->Append(*UserModset);
+        try {
+            CRef <CMSModSpecSet> UserModset(new CMSModSpecSet);
+            if(!CDirEntry::IsAbsolutePath(UserModFileName))
+                FileName = DirEntry.GetDir() + UserModFileName;
+            else FileName = UserModFileName;
+            auto_ptr<CObjectIStream> 
+             usermodsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
+            if(usermodsin->fail()) {	    
+                 ERR_POST(Warning << "ommsacl: unable to open user modification file" << 
+                          ModFileName);
+                 return 0;
+             }
+            usermodsin->Read(ObjectInfo(*UserModset));
+            usermodsin->Close();
+            Modset->Append(*UserModset);
+        } catch (NCBI_NS_STD::exception& e) {
+             ERR_POST(Fatal << "Unable to read user modification file " <<
+                      FileName << " with error " << e.what());
+        }
     }
     return 0;
 }
@@ -134,6 +145,11 @@ CSearchHelper::ReadFile(const string& Filename,
                      const EMSSpectrumFileType FileType,
                      CMSSearch& MySearch)
 {
+    CRef <CMSRequest> Request (new CMSRequest);
+    MySearch.SetRequest().push_back(Request);
+    CRef <CMSResponse> Response (new CMSResponse);
+    MySearch.SetResponse().push_back(Response);
+
     CNcbiIfstream PeakFile(Filename.c_str());
     if(!PeakFile) {
         ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
@@ -259,6 +275,45 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
     }
     return 0;
 }
+
+void 
+CSearchHelper::ValidateSearchSettings(CRef<CMSSearchSettings> &Settings)
+{
+    list <string> ValidError;
+	if(Settings->Validate(ValidError) != 0) {
+	    list <string>::iterator iErr;
+	    for(iErr = ValidError.begin(); iErr != ValidError.end(); iErr++)
+		ERR_POST(Warning << *iErr);
+	    ERR_POST(Fatal << "Unable to validate settings");
+	}
+}
+
+
+void 
+CSearchHelper::CreateSearchSettings(string FileName,
+                                    CRef<CMSSearchSettings> &Settings)
+{
+    Settings.Reset(new CMSSearchSettings);
+    if(FileName != "" ) {
+        try {
+            auto_ptr<CObjectIStream> 
+                paramsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
+            if(paramsin->fail()) {	    
+                ERR_POST(Fatal << "ommsacl: unable to open parameter file" << 
+                         FileName);
+                return;
+            }
+            paramsin->Read(ObjectInfo(*Settings));
+            paramsin->Close();
+
+        } catch (NCBI_NS_STD::exception& e) {
+            ERR_POST(Fatal << "Unable to read parameter file " <<
+                     FileName << " with error " << e.what());
+        }
+    }
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1193,7 +1248,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
 
         if (GetSettings()->IsSetTaxids() && !TaxInfo)
-            ERR_POST(Error << 
+            ERR_POST(Warning << 
                      "Taxonomically restricted search specified and no matching organisms found in sequence library.  Did you use a sequence library with taxonomic information?");
 
         // read out hits
@@ -1699,7 +1754,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 }
                 else ERR_POST(Info << "M is zero");
             }
-            double eval = /*1e5*/ 1e3 * pval * N;
+            double eval = 3e3 * pval * N;
             _TRACE( " pval=" << pval << " eval=" << eval );
             ScoreList.insert(pair<const double, CMSHit *> 
                              (eval, &(HitList[iHitList])));

@@ -50,14 +50,14 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // list out the amino acids using NCBIstdAA
-const int kNumUniqueAA = 26;
+const int kNumUniqueAA = 28;
 // U is selenocystine
 // this is NCBIstdAA.  Doesn't seem to be a central location to get this.
 // all blast protein databases are encoded with this.
 // U is selenocystine
-const char * const UniqueAA = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
-//                             01234567890123456789012345
-//                             0123456789abcdef0123456789
+const char * const UniqueAA = "-ABCDEFGHIKLMNPQRSTVWXYZU*JO";
+//                             0123456789012345678901234567
+//                             0123456789abcdef0123456789ab
 
 // used to scale all float masses into ints
 #define MSSCALE 1000
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/08/23 21:33:04  lewisg
+* rearrange file parsing
+*
 * Revision 1.4  2006/05/25 17:11:56  lewisg
 * one filtered spectrum per precursor charge state
 *

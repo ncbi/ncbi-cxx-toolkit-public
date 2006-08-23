@@ -892,6 +892,22 @@ public:
     static int SaveAnyFile(CMSSearch& MySearch, 
                            CMSSearchSettings::TOutfiles OutFiles,
                            CRef <CMSModSpecSet> Modset);
+
+
+    /**
+     * Validates Search Settings
+     * @param Settings
+     */
+    static void ValidateSearchSettings(CRef<CMSSearchSettings> &Settings);
+
+
+    /**
+     * create search setting object from file or brand new
+     * @param FileName name of search settings file
+     * @param Settings output
+     */
+    static void CreateSearchSettings(string FileName,
+                              CRef<CMSSearchSettings> &Settings);
 };  
 
 

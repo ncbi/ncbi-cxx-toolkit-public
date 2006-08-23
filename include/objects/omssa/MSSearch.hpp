@@ -60,10 +60,10 @@ public:
     ~CMSSearch(void);
 
     /**
-     * create a new search settings object, give it an id, and put it in the
-     * right place
+     * take a search settings object, give it an id, and put it in
+     * the right place
      * 
-     * @param SearchSettings returns the new search settings
+     * @param SearchSettings search settings to place in search
      * @param IsIterative is this an iterative search?
      * @return search setting id
      */
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/08/23 21:33:04  lewisg
+* rearrange file parsing
+*
 * Revision 1.1  2006/07/20 21:00:21  lewisg
 * move functions out of COMSSA, create laddercontainer
 *

@@ -691,10 +691,10 @@ void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle,
     // if the user wants us to believe the file charge state, believe it
     if(ChargeHandle.GetCalccharge() == 1) {
         // only allow one charge as input, otherwise throw
-        if(Spectrum.GetCharge().size() != 1)
+        if(Spectrum.GetCharge().size() == 1)
             MinCharge = MaxCharge = *(Spectrum.GetCharge().begin());
         else
-            ERR_POST(Error << "There is more than one or no spectrum charge specified");
+            ERR_POST(Fatal << "There is more than one or no spectrum charge specified");
     }
     // otherwise search the specified range of charges
     else {
