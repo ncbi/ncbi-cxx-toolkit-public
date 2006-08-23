@@ -438,20 +438,23 @@ void CFasta2CD::Init(void)
 
     // Specify USAGE context
     argDescr->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Bare-bones MFasta --> CD converter");
+                              "Basic MFasta --> CD converter");
 
     argDescr->AddKey("i", "MFastaIn", "filename of file containing an MFasta alignment (ascii)", argDescr->eString);
-    argDescr->AddOptionalKey("a", "CdName", "name and accession of the CD created\n(if not given, uses lowercase of the base of the input mFasta file's name)\n", argDescr->eString);
+    argDescr->AddOptionalKey("n", "CdName", "name of the CD created\n(if not given, uses lowercase of the base of the input mFasta file's name)\nAn accession of the form 'acc_<name>' will also be assigned.\n", argDescr->eString);
 
-    argDescr->AddOptionalKey("o", "OutputCDFileName", "filename for output CD, adding '.acd' if not present\n(if not given, uses same basename as the input mFasta filename, adding the '.acd' extension)\n\n", argDescr->eString);//CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
+//    argDescr->AddOptionalKey("n", "CdName", "name of the CD created\n(if not given, uses lowercase of the base of the input mFasta file's name)\nIf -a is not also given, an accession of the form 'acc_<name>' will also be assigned.\n", argDescr->eString);
+//    argDescr->AddOptionalKey("a", "CdAcc", "accession of the CD created\nAn accession of the form 'acc_<name>' will be assigned if the value conflicts with any standard domain accession format at NCBI.\n", argDescr->eString);
+
+    argDescr->AddOptionalKey("o", "OutputCDFileName", "filename for output CD, adding '.cn3' if not present\n(if not given, uses same basename as the input mFasta filename, adding the '.cn3' extension)\n\n", argDescr->eString);//CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
     // Fasta input options
 
-    argDescr->AddFlag("localIds", "interpret all identifiers as local (i.e., do not try to parse as GI, PDB, etc.)/n");
+    argDescr->AddFlag("parseIds", "try to parse identifier in the defline as GI, PDB, etc./nNOTE: validation the ID itself, or of sequence data w/ the parsed ID, is attempted.");
 
     // Output alignment options
 
-    argDescr->AddFlag("asIs", "keep input block structures for every input sequence;\nskip intersection-by-master");
+    argDescr->AddFlag("ibm", "run the Intersection-By-Master algorithm to keep only those alignment columns without gap characters;\n(without this flag, the input alignment is left 'as-is')");
 
     argDescr->AddFlag("keepMaster", "use first sequence in the input as master sequence;\nskips attempt to identify an 'optimal' master\n(Ignored if -mr is also specified.)");
 
@@ -492,22 +495,22 @@ int CFasta2CD::Run(void)
     if (args["o"]) {
         cdOutFile = args["o"].AsString();
     } else {
-        cdOutFile = cdAcc + ".acd";
+        cdOutFile = cdAcc + ".cn3";
     }
-    if (cdOutFile.length() == 0) cdOutFile = "cd.acd";
+    if (cdOutFile.length() == 0) cdOutFile = "cd.cn3";
 */
 
-    params.cdAcc     = BuildCDName(args);
+    params.cdName     = BuildCDName(args);
+    params.cdAcc = BuildCDAccession(args);
+    if (params.cdAcc.length() == 0) {
+        (*m_outStream) << "Error:  Invalid CD accession '" << params.cdAcc << "' .\nPlease choose a different accession.\n";
+        return -1;
+    }
+
     cdOutFile = BuildOutputFilename(args);
 
-    params.useLocalIds = (args["localIds"]);
-//    if (useLocalIds) fastaFlags |= fReadFasta_NoParseID;
-//    fastaIO.SetFastaFlags(fastaFlags);
-
-//    fastaFlags |= fReadFasta_AllSeqIds;
-//    fastaFlags |= fReadFasta_RequireID;
-
-    params.useAsIs = (args["asIs"]);
+    params.useLocalIds = (! args["parseIds"]);
+    params.useAsIs = (! args["ibm"]);
 
     //  Command-line arg starts counting rows at 1.  Set master as row 0 by default.
     params.masterIndex = (args["mr"]) ? (unsigned int) args["mr"].AsInteger() - 1 : 0;
@@ -516,18 +519,11 @@ int CFasta2CD::Run(void)
     m_outStream = &cerr;
     SetDiagStream(m_outStream);
 
-/*
-    if (fastaFile.size() == 0) {
-        (*m_outStream) << "Unable to open file:  filename has size zero (?) \n";
-        return -1;
-    }
-*/
-
 //    CSeqAnnotFromFasta fastaSeqAnnot(!useAlignmentAsis, false, false);
     params.masterMethod = CSeqAnnotFromFasta::eMostAlignedAndFewestGaps; 
 //    CNcbiIfstream ifs(fastaFile.c_str(), IOS_BASE::in);
 
-    //  Select a mastering method based on command-line parameters.
+    //  Override the mastering method based on command-line parameters.
     if (args["mr"]) {
         params.masterMethod = (params.masterIndex > 0) ? CSeqAnnotFromFasta::eSpecifiedSequence : CSeqAnnotFromFasta::eFirstSequence;
     } else if (args["keepMaster"]) {
@@ -552,17 +548,14 @@ int CFasta2CD::Run(void)
     MedianColumnScorer medianScorer;
     bool converted = FastaSeqEntry_To_SeqAnnot(*m_ccdFromFasta, (threshold == dummyThreshold) ? NULL : &medianScorer, threshold);
 
-
-
     //  Write the CD object (unless column scorer was used and it failed).
     if (threshold != dummyThreshold && !converted) {
-        (*m_outStream) << "Error during Fasta->CD conversion using the median column scorer; no CD file written.\n";
+        (*m_outStream) << "Error during Fasta->CD conversion.  Try again without using the -t parameter, or providing a different value.\n";
         return -1;
     } else {
         m_ccdFromFasta->WriteToFile(cdOutFile);
         return 0;
     }
-
 }
 
 bool CFasta2CD::OutputCD(const string& filename, string& err) 
@@ -573,24 +566,42 @@ bool CFasta2CD::OutputCD(const string& filename, string& err)
 string CFasta2CD::BuildCDName(const CArgs& args)
 {
     string cdAcc;
-    if (args["a"]) {
-        cdAcc     = args["a"].AsString();
+    if (args["n"]) {
+        cdAcc     = args["n"].AsString();
     } else {
         CFile cfile(args["i"].AsString());
         string base = cfile.GetBase();
         cdAcc = NStr::ToLower(base);
     }
+
+    NStr::TruncateSpacesInPlace(cdAcc);
+
     if (cdAcc.size() == 0) cdAcc = "my_CD";
+    return cdAcc;
+}
+
+string CFasta2CD::BuildCDAccession(const CArgs& args)
+{
+    string cdAcc = "acc_" + BuildCDName(args);
+
+//    if (args["a"]) {
+//        cdAcc  = args["a"].AsString();
+//        NStr::TruncateSpacesInPlace(cdAcc);
+//        if (cdAcc.size() == 0) cdAcc = "acc_my_CD";
+//    } else if (args["n"]) {
+//        cdAcc += BuildCDName(args);
+//    }
+
     return cdAcc;
 }
 
 
 string CFasta2CD::BuildOutputFilename(const CArgs& args)
 {
-    static const string cdExt = ".acd";
+    static const string cdExt = ".cn3";
     string cdOutFile, cdOutExt;
     CFile cFastaFile(args["i"].AsString());
-    string inputBase = cFastaFile.GetBase();  //  , cdAcc = args["a"].AsString();
+    string inputBase = cFastaFile.GetBase();  //  , cdAcc = args["n"].AsString();
 
     if (args["o"]) {
         cdOutFile = args["o"].AsString();
@@ -607,7 +618,7 @@ string CFasta2CD::BuildOutputFilename(const CArgs& args)
     }
 
     //  Do here in case args["o"] might be empty.
-    if (cdOutFile.length() == 0) cdOutFile = "cd.acd";
+    if (cdOutFile.length() == 0) cdOutFile = "fa2cd.cn3";
 
     return cdOutFile;
 }
@@ -617,18 +628,20 @@ void CFasta2CD::PrintArgs(ostream& os)
     CArgs args = GetArgs();
     static const string yesStr = "yes", noStr = "no";
     string fastaFile = args["i"].AsString();
-    string cdOutFile = BuildOutputFilename(args), cdAcc = BuildCDName(args);
-    bool useLocalIds = (args["localIds"]);
-    bool useAlignmentAsIs = (args["asIs"]);
+    string cdOutFile = BuildOutputFilename(args), cdName = BuildCDName(args);
+    string cdAcc = "acc_" + cdName;
+    bool useLocalIds = (! args["parseIds"]);
+    bool useAlignmentAsIs = (! args["ibm"]);
     bool keepMaster = (args["keepMaster"]);
     unsigned int masterIndex = (args["mr"]) ? (unsigned int) args["mr"].AsInteger() : 1;
 
     os << "Fasta->CD Settings:        " << endl << "-------------------------------------\n";
-    os << "Input mFASTA file:         " << fastaFile << endl;
-    os << "Name/accession:            " << cdAcc << endl;
-    os << "Output CD file:            " << cdOutFile << endl;
-    os << "Use alignment 'as-is':     " << (useAlignmentAsIs ? yesStr : noStr) << endl;
-    os << "Force Local Ids:           " << (useLocalIds ? yesStr : noStr) << endl;
+    os << "Input mFASTA file:        " << fastaFile << endl;
+    os << "CD Name:                  " << cdName << endl;
+    os << "CD Accession:             " << cdAcc << endl;
+    os << "Output CD file:           " << cdOutFile << endl;
+    os << "Use alignment 'as-is':    " << (useAlignmentAsIs ? yesStr : noStr) << endl;
+    os << "Parse Ids from Defline:   " << (useLocalIds ? noStr : yesStr) << endl;
     if (keepMaster || args["mr"]) os << "Forced master sequence index:  " << masterIndex << endl;
     if (args["t"]) os << "Trim bad columns from CD using threshold = " << args["t"].AsDouble() << endl;
     os << "-------------------------------------\n\n";
@@ -683,6 +696,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/08/23 19:42:18  lanczyck
+ * change defaults and arguments for public release with CDTree
+ *
  * Revision 1.3  2006/06/07 20:31:36  lanczyck
  * add <algorithm> to includes for PC; remove unused variables
  *

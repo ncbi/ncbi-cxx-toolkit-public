@@ -77,6 +77,7 @@ private:
     bool OutputCD(const string& filename, string& err);
     string BuildOutputFilename(const CArgs& args);
     string BuildCDName(const CArgs& args);
+    string BuildCDAccession(const CArgs& args);
     void PrintArgs(ostream& os);
     
 
@@ -87,6 +88,9 @@ private:
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2006/08/23 19:42:18  lanczyck
+ * change defaults and arguments for public release with CDTree
+ *
  * Revision 1.2  2006/05/22 17:15:44  lanczyck
  * use new CCdCore subclass for a Fasta-generated CDs
  *
