@@ -957,15 +957,6 @@ void
 CTL_RowResult::Close(void)
 {
     if (x_GetSybaseCmd()) {
-        if ( m_ColFmt ) {
-            delete[] m_ColFmt;
-        }
-        if(m_BindedCols) {
-          delete [] m_BindItem;
-          delete [] m_Copied;
-          delete [] m_Indicator;
-        }
-
         if ( m_EOR ) {
             return;
         }
@@ -978,6 +969,18 @@ CTL_RowResult::Close(void)
             CS_INT err_code = 130007;
             Check(ct_cmd_props(x_GetSybaseCmd(), CS_SET, CS_USERDATA,
                          &err_code, (CS_INT) sizeof(err_code), 0));
+        }
+
+        // Data structures must be freed after ct_cancel has been called.
+        // Otherwise we will have problems with FreeTDS.
+        if ( m_ColFmt ) {
+            delete[] m_ColFmt;
+        }
+
+        if(m_BindedCols) {
+          delete [] m_BindItem;
+          delete [] m_Copied;
+          delete [] m_Indicator;
         }
 
         m_Cmd = NULL;
@@ -1084,6 +1087,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/08/23 19:57:30  ssikorsk
+ * CTL_RowResult::Close: free data structures after a call to ct_cancel.
+ *
  * Revision 1.26  2006/08/22 20:17:22  ssikorsk
  * - CTL_RowResult::m_CmdNum.
  *
