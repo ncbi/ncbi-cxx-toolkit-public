@@ -88,7 +88,7 @@ public:
     /// used
     enum EAPILocality {
         /// To be used for running BLAST locally. 
-        /// @sa CBl2Seq, CDbBlast
+        /// @sa CBl2Seq, CLocalBlast
         eLocal,
         /// To be used when running BLAST remotely. 
         /// @sa CRemoteBlast
@@ -466,7 +466,7 @@ END_NCBI_SCOPE
   CBl2Seq bl2seq(query, subjects, opts_handle);
   ...
   opts_handle.SetEvalueThreshold(1e-10);
-  CDbBlast blast(query, seq_src, opts_handle);
+  CLocalBlast blast(query_factory, opts_handle, seq_src);
   @endcode
 
   @section _validating_opts Options validation
@@ -551,7 +551,7 @@ END_NCBI_SCOPE
   This class offers a single static method to create CBlastOptionsHandle
   subclasses so that options that are applicable to all variants of BLAST can
   be inspected or modified. The actual type of the CBlastOptionsHandle returned
-  by Create is determined by its EProgram argument. The returned
+  by Create is determined by its EProgram argument. The return
   value of this function is guaranteed to have reasonable defaults set for the
   selected task.
 
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.122  2006/08/23 19:11:36  camacho
+* Remove CDbBlast from doxygen documentation
+*
 * Revision 1.121  2006/06/12 17:16:44  madden
 * Remove [GS]etMatrixPath
 *
