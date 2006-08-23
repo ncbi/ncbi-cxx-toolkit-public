@@ -461,14 +461,17 @@ CNcbiOstream& CHTMLOpenElement::x_PrintBegin(CNcbiOstream& out, TMode mode)
                     INIT_STREAM_WRITE;
                     out << ' ' << i->first;
                     CHECK_STREAM_WRITE(out);
+
                     if ( (mode == eXHTML)  ||
                          !i->second.IsOptional()  ||
                          !i->second.GetValue().empty() ) {
                         string attr = i->second.GetValue();
                         out << "=\"";
-                        // For XHTML attribute minimization is forbidden
                         if ( attr.empty() ) {
-                            out << i->first;
+                            // For XHTML attribute minimization is forbidden
+                            if ((mode == eXHTML) &&  i->second.IsOptional()) {
+                                out << i->first;
+                            }
                         } else {
                             if ( attr.find_first_of("\"&") != NPOS ) {
                                 // Escape attributes
@@ -2453,6 +2456,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.130  2006/08/23 14:05:31  ivanov
+ * Replace <... nowrap> with <... nowrap="nowrap"> only for XHTML
+ * and optional attributes.
+ *
  * Revision 1.129  2006/08/21 16:05:41  ivanov
  * Added XHTML support.
  *
