@@ -217,6 +217,13 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
+#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
+    {
+        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
+    }
+#endif
 
     SetApplicationName("CTLibDriver");
 
@@ -422,6 +429,10 @@ CTLibContext::~CTLibContext()
 {
     try {
         x_Close();
+
+#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
+        WSACleanup();
+#endif
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -1189,6 +1200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2006/08/23 20:45:38  ssikorsk
+ * Initiolize/finalyze winsock on Windows in case of FreeTDS.
+ *
  * Revision 1.90  2006/08/22 20:15:55  ssikorsk
  * Minor fixes in order to compile with FreeTDS ctlib.
  *
