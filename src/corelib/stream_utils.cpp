@@ -215,7 +215,7 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             size_t n       = (size_t) m;
             size_t n_avail = (size_t) (egptr() - gptr());
             size_t n_read  = (n <= n_avail) ? n : n_avail;
-            memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
+            memcpy(buf, gptr(), n_read);
             gbump((int) n_read);
             m       -= (streamsize) n_read;
             buf     += (streamsize) n_read;
@@ -508,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.49  2006/08/23 19:32:47  lavr
+ * Get rid of sizeof(CT_CHAR_TYPE)
+ *
  * Revision 1.48  2006/06/01 18:38:19  lavr
  * s_DoReadsome():  setstate() -> clear()
  *
