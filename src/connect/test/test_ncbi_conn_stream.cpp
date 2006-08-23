@@ -146,10 +146,11 @@ int main(int argc, const char* argv[])
             flag |= eFCDC_LogAll;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
-                                "DOC/PDF/ncbi_toolkit--CURRENT.pdf",
+                                "Misc/test_ncbi_conn_stream.FTP.data",
                                 "ftp"/*default*/, "none"/*default*/,
-                                "/toolbox/ncbi_tools++", 0/*port = default*/,
-                                flag, 0/*offset*/, net_info->timeout);
+                                "/toolbox/ncbi_tools++/DATA",
+                                0/*port = default*/, flag,
+                                0/*offset*/, net_info->timeout);
     for (size = 0; ftp.good(); size += ftp.gcount()) {
         char buf[512];
         ftp.read(buf, sizeof(buf));
@@ -322,6 +323,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2006/08/23 23:53:52  lavr
+ * Use specially designated file for FTP testing
+ *
  * Revision 6.48  2006/08/23 19:33:20  lavr
  * FTP connector to download PDF documentation file (instead of RELEASE_NOTES)
  *
