@@ -83,6 +83,8 @@ public:
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
+    virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize n);
+
     virtual CT_INT_TYPE underflow(void);
     virtual streamsize  xsgetn(CT_CHAR_TYPE* s, streamsize n);
     virtual streamsize  showmanyc(void);
@@ -120,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/08/23 19:31:17  lavr
+ * +xsputn
+ *
  * Revision 1.14  2006/08/22 18:04:38  lavr
  * Rearrange data members
  *

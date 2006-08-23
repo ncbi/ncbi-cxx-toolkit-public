@@ -179,7 +179,6 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         size_t n_write = pptr() - pbase();
         if ( n_write ) {
             size_t n_written;
-            n_write *= sizeof(CT_CHAR_TYPE);
             try {
                 m_Writer->Write(pbase(), n_write, &n_written);
             }
@@ -187,11 +186,9 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
                                   n_written = 0);
             if ( !n_written )
                 return CT_EOF;
-            n_written /= sizeof(CT_CHAR_TYPE);
-            // update buffer content (get rid of the sent data)
+            // update buffer content (get rid of the data just sent)
             _ASSERT(n_written <= n_write);
-            memmove(pbase(), pbase() + n_written,
-                    (n_write - n_written)*sizeof(CT_CHAR_TYPE));
+            memmove(pbase(), pbase() + n_written, n_write - n_written);
             pbump(-int(n_written));
             x_PPos += (CT_OFF_TYPE) n_written;
         }
@@ -203,9 +200,14 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         // send char
         size_t n_written;
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
-        m_Writer->Write(&b, sizeof(b), &n_written);
+        try {
+            m_Writer->Write(&b, 1, &n_written);
+        }
+        RWSTREAMBUF_CATCH_ALL("CRWStreambuf::overflow(): IWriter::Write(1)",
+                              n_written = 0);
+        _ASSERT(n_written <= 1);
         x_PPos += (CT_OFF_TYPE) n_written;
-        return n_written == sizeof(b) ? c : CT_EOF;
+        return n_written == 1 ? c : CT_EOF;
     }
 
     _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
@@ -224,6 +226,79 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 }
 
 
+streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
+{
+    if ( !m_Writer )
+        return 0;
+
+    if (m <= 0)
+        return 0;
+    size_t n = (size_t) m;
+
+    size_t n_written = 0;
+
+    for (;;) {
+        size_t x_written;
+
+        if ( pbase() ) {
+            if (pptr() + n < epptr()) {
+                // Entirely fits into the buffer not causing an overflow
+                memcpy(pptr(), buf, n);
+                pbump(int(n));
+                return (streamsize)(n_written + n);
+            }
+
+            size_t x_write = pptr() - pbase();
+            if (x_write) {
+                try {
+                    m_Writer->Write(pbase(), x_write, &x_written);
+                }
+                RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsputn():"
+                                      " IWriter::Write()", x_written = 0);
+                if (!x_written)
+                    break;
+                _ASSERT(x_written <= x_write);
+                memmove(pbase(), pbase() + x_written, x_write - x_written);
+                x_PPos    += (CT_OFF_TYPE) x_written;
+                n_written += x_written;
+                pbump(-int(x_written));
+                continue;
+            }
+        }
+
+        try {
+            m_Writer->Write(buf, n, &x_written);
+        }
+        RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsputn(): IWriter::Write()",
+                              x_written = 0);
+        if (!x_written) {
+            if (!pbase())
+                return (streamsize) n_written;
+            break;
+        }
+        _ASSERT(x_written <= n);
+        x_PPos    += (CT_OFF_TYPE) x_written;
+        n_written += x_written;
+        n         -= x_written;
+        if (!n  ||  !pbase())
+            return (streamsize) n_written;
+        buf       += x_written;
+    }
+
+    _ASSERT(n  &&  pbase());
+    if (pptr() < epptr()) {
+        size_t x_written = (size_t)(epptr() - pptr());
+        if (x_written > n)
+            x_written = n;
+        memcpy(pptr(), buf, x_written);
+        n_written += x_written;
+        pbump(int(x_written));
+    }
+
+    return (streamsize) n_written;
+}
+
+
 CT_INT_TYPE CRWStreambuf::underflow(void)
 {
     if ( !m_Reader )
@@ -237,15 +312,16 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1);
 #endif /*NCBI_COMPILER_MIPSPRO*/
 
-    // read
+    // read from device
     size_t n_read;
     try {
-        m_Reader->Read(m_ReadBuf, m_BufSize*sizeof(CT_CHAR_TYPE), &n_read);
+        m_Reader->Read(m_ReadBuf, m_BufSize, &n_read);
     }
     RWSTREAMBUF_CATCH_ALL("CRWStreambuf::underflow(): IReader::Read()",
                           n_read = 0);
-    if (!(n_read /= sizeof(CT_CHAR_TYPE)))
+    if (!n_read)
         return CT_EOF;
+    _ASSERT(n_read <= m_BufSize);
 
     // update input buffer with the data just read
     x_GPos += (CT_OFF_TYPE) n_read;
@@ -268,36 +344,38 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     size_t n_read = gptr() ?  egptr() - gptr() : 0;
     if (n_read > n)
         n_read = n;
-    memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
+    memcpy(buf, gptr(), n_read);
     gbump((int) n_read);
     buf += n_read;
     n   -= n_read;
 
     while ( n ) {
         // next, read directly from the device
-        size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
+        size_t      to_read = n < (size_t) m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         ERW_Result   result = eRW_Success;
+        size_t       x_read;
 
         try {
-            result = m_Reader->Read(x_buf,x_read*sizeof(CT_CHAR_TYPE),&x_read);
+            result = m_Reader->Read(x_buf, to_read, &x_read);
         }
         RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsgetn(): IReader::Read()",
                               x_read = 0);
-        if (!(x_read /= sizeof(CT_CHAR_TYPE)))
+        if (!x_read)
             break;
+        _ASSERT(x_read <= to_read);
         x_GPos += (CT_OFF_TYPE) x_read;
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
             if (x_read > n)
                 x_read = n;
-            memcpy(buf, m_ReadBuf, x_read*sizeof(CT_CHAR_TYPE));
+            memcpy(buf, m_ReadBuf, x_read);
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         } else {
             _ASSERT(x_read <= n);
             size_t xx_read = x_read > (size_t) m_BufSize ? m_BufSize : x_read;
-            memcpy(m_ReadBuf,buf+x_read-xx_read,xx_read*sizeof(CT_CHAR_TYPE));
+            memcpy(m_ReadBuf, buf + x_read - xx_read, xx_read);
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
         n_read += x_read;
@@ -366,6 +444,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.23  2006/08/23 19:32:28  lavr
+ * +xsputn
+ *
  * Revision 1.22  2006/08/22 19:10:44  lavr
  * Heed newly introduced arith-shift-with-bool warnings on MS-Win
  *

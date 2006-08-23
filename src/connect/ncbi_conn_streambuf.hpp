@@ -60,6 +60,8 @@ public:
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
+    virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize n);
+
     virtual CT_INT_TYPE underflow(void);
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
     virtual streamsize  showmanyc(void);
@@ -82,8 +84,9 @@ private:
 
     bool                m_Tie;       // always flush before reading
     CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream
-    CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
+
     CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]
+    CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
 
     void                x_Cleanup(bool if_close = true);
 
@@ -100,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2006/08/23 19:31:48  lavr
+ * +xsputn
+ *
  * Revision 6.39  2006/02/15 17:41:26  lavr
  * IReader/IWriter API moved (along with RWStream[buf]) to corelib
  *
