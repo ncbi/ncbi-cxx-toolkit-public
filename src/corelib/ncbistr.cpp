@@ -1420,6 +1420,32 @@ string NStr::Replace(const string& src,
 }
 
 
+string& NStr::ReplaceInPlace(string& src,
+                             const string& search, const string& replace,
+                             SIZE_TYPE start_pos, size_t max_replace)
+{
+    if ( start_pos + search.size() > src.size()  ||
+         search == replace )
+        return src;
+
+    bool equal_len = (search.size() == replace.size());
+    for (size_t count = 0; !(max_replace && count >= max_replace); count++) {
+        start_pos = src.find(search, start_pos);
+        if (start_pos == NPOS)
+            break;
+        // On some platforms string's replace() implementation
+        // is not optimal if size of search and replace strings are equal
+        if ( equal_len ) {
+            copy(replace.begin(), replace.end(), src.begin() + start_pos); 
+        } else {
+            src.replace(start_pos, search.size(), replace);
+        }
+        start_pos += replace.size();
+    }
+    return src;
+}
+
+
 list<string>& NStr::Split(const string& str, const string& delim,
                           list<string>& arr, EMergeDelims merge,
                           vector<SIZE_TYPE>* token_pos)
@@ -2480,6 +2506,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.180  2006/08/23 13:32:57  ivanov
+ * + NStr::ReplaceInPlace()
+ *
  * Revision 1.179  2006/07/10 19:26:23  ivanov
  * Tune S2N_CONVERT_ERROR macro for a better performance
  *

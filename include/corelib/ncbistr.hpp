@@ -1467,6 +1467,34 @@ public:
                           const string& replace,
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
+    /// Replace occurrences of a substring within a string.
+    ///
+    /// On some platforms this function is much faster than Replace()
+    /// if sizes of "search" and "replace" strings are equal.
+    /// Otherwise, the performance is mainly the same.
+    /// @param src
+    ///   String whre specified substring occurrences are replaced.
+    ///   This value is also returned by the function.
+    /// @param search
+    ///   Substring value in "src" that is replaced.
+    /// @param replace
+    ///   Replace "search" substring with this value.
+    /// @param start_pos
+    ///   Position to start search from.
+    /// @param max_replace
+    ///   Replace no more than "max_replace" occurrences of substring "search"
+    ///   If "max_replace" is zero(default), then replace all occurrences with
+    ///   "replace".
+    /// @return
+    ///   Result of replacing the "search" string with "replace" in "src".
+    /// @sa
+    ///   Replace
+    static string& ReplaceInPlace(string& src,
+                                  const string& search,
+                                  const string& replace,
+                                  SIZE_TYPE     start_pos = 0,
+                                  size_t        max_replace = 0);
+
     /// Whether to merge adjacent delimiters in Split and Tokenize.
     enum EMergeDelims {
         eNoMergeDelims,     ///< No merging of delimiters -- default for
@@ -3155,6 +3183,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.104  2006/08/23 13:32:50  ivanov
+ * + NStr::ReplaceInPlace()
+ *
  * Revision 1.103  2006/04/19 18:38:23  ivanov
  * Added additional optional parameter to Split(), Tokenize() and
  * TokenizePattern() to get tokens' positions in source string
