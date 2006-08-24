@@ -57,6 +57,7 @@ CNWAligner::CNWAligner()
       m_abc(g_nwaligner_nucleotides),
       m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
+      m_terminate(false),
       m_Seq1(0), m_SeqLen1(0),
       m_Seq2(0), m_SeqLen2(0),
       m_PositivesAsMatches(false),
@@ -80,6 +81,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_abc(g_nwaligner_nucleotides),
       m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
+      m_terminate(false),
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
       m_PositivesAsMatches(false),
@@ -103,6 +105,7 @@ CNWAligner::CNWAligner(const string& seq1,
       m_abc(g_nwaligner_nucleotides),
       m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
+      m_terminate(false),
       m_Seq1(seq1.data()), m_SeqLen1(seq1.size()),
       m_Seq2(seq2.data()), m_SeqLen2(seq2.size()),
       m_score(kInfMinus),
@@ -1438,6 +1441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/08/24 13:43:06  kapustin
+ * Set initial value for CNWAligner::m_terminate
+ *
  * Revision 1.70  2006/03/21 16:21:51  kapustin
  * Move RLE code to xalgoalignutil
  *
