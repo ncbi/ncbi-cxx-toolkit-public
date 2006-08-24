@@ -198,6 +198,7 @@ public:
     void Test_HasMoreResults(void);
     void Create_Destroy(void);
     void Multiple_Close(void);
+    void Test_Unicode(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -254,6 +255,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2006/08/24 17:00:24  ssikorsk
+ * + Test_Unicode
+ *
  * Revision 1.40  2006/08/21 18:19:35  ssikorsk
  * Added class CODBCErrHandler;
  * Added tests Test_Cursor2 and Test_LOB2;
@@ -262,7 +266,7 @@ END_NCBI_SCOPE
  * Added Create_Destroy and Multiple_Close tests.
  *
  * Revision 1.38  2006/05/30 16:32:33  ssikorsk
- * 	Made CNcbiArguments a member of CTestArguments.
+ *  Made CNcbiArguments a member of CTestArguments.
  *
  * Revision 1.37  2006/05/10 16:20:05  ssikorsk
  * Added class CErrHandler
