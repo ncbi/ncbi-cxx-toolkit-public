@@ -939,10 +939,24 @@ string CCgiApplication::GetDefaultLogPath(void) const
     string web_dir;
     // Find the first dir name corresponding to one of the entries
     ITERATE(list<string>, it, entries) {
-        size_t pos = exe_path.find("/" + *it + "/");
-        if (pos < min_pos) {
-            min_pos = pos;
-            web_dir = *it;
+        if (!it->empty()  &&  (*it)[0] != '/') {
+            // not an absolute path
+            string mask = "/" + *it;
+            if (mask[mask.length() - 1] != '/') {
+                mask += "/";
+            }
+            size_t pos = exe_path.find(mask);
+            if (pos < min_pos) {
+                min_pos = pos;
+                web_dir = *it;
+            }
+        }
+        else {
+            // absolute path
+            if (exe_path.substr(0, it->length()) == *it) {
+                web_dir = *it;
+                break;
+            }
         }
     }
     if ( !web_dir.empty() ) {
@@ -1137,6 +1151,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.85  2006/08/24 16:17:44  grichenk
+* Fixed parsing of absolute paths from /etc/toolkitrc.
+*
 * Revision 1.84  2006/08/15 16:21:37  ivanov
 * CCgiStatistics::Compose_Timing()
 * CCgiApplication::x_LogPost() -- use CTimeSpan for elapsed time
