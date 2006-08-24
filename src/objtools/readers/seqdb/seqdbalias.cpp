@@ -1479,6 +1479,26 @@ void CSeqDBAliasFile::GetAliasFileValues(TAliasFileValues   & afv,
                                          const CSeqDBVolSet & volset)
 {
     m_Node->CompleteAliasFileValues(volset);
+    
+    // Now complete the 'volume' values.
+    for(int i = 0; i < volset.GetNumVols(); i++) {
+        const CSeqDBVol * v = volset.GetVol(i);
+        
+        string key = v->GetVolName();
+        
+        if (afv.find(key) != afv.end()) {
+            // If this name already corresponds to an alias file,
+            // don't replace it with a volume.
+            continue;
+        }
+        
+        // Add the title of the volume.
+        map<string,string> values;
+        values["TITLE"] = v->GetTitle();
+        
+        afv[v->GetVolName()].push_back(values);
+    }
+    
     m_Node->GetAliasFileValues(afv);
 }
 
