@@ -673,6 +673,24 @@ typedef CStaticArraySet <const char*, PNocase_CStr> TSingleSet;
 static const TSingleSet sc_SingleKeys (single_key_list, sizeof (single_key_list));
 
 
+static const char * valid_inf_prefixes [] = {
+    "ab initio prediction",
+    "nucleotide motif",
+    "profile",
+    "protein motif",
+    "similar to AA sequence",
+    "similar to DNA sequence",
+    "similar to RNA sequence",
+    "similar to RNA sequence, EST",
+    "similar to RNA sequence, mRNA",
+    "similar to RNA sequence, other RNA",
+    "similar to sequence"
+};
+
+typedef CStaticArraySet <const char*, PNocase_CStr> TValidInfSet;
+static const TValidInfSet sc_InfPrefixes (valid_inf_prefixes, sizeof (valid_inf_prefixes));
+
+
 // constructor
 CFeature_table_reader_imp::CFeature_table_reader_imp(void)
 {
@@ -1245,11 +1263,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     return true;
                 case eQual_ribosomal_slippage:
                     sfp->SetExcept (true);
-                    sfp->SetExcept_text (val);
+                    sfp->SetExcept_text (qual);
                     return true;
                 case eQual_trans_splicing:
                     sfp->SetExcept (true);
-                    sfp->SetExcept_text (val);
+                    sfp->SetExcept_text (qual);
                     return true;
                 case eQual_evidence:
                     if (val == "experimental") {
@@ -1270,6 +1288,32 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                         }
                         return true;
                     }
+                case eQual_inference:
+                    {
+                        TValidInfSet::const_iterator s_iter
+                            = sc_InfPrefixes.lower_bound (val.c_str ());
+                        // In the (usual) case that lower_bound didn't find an
+                        // exact match, it actually returns the next *greater*
+                        // element.
+                        if (s_iter == sc_InfPrefixes.end ()
+                            ||  (s_iter != sc_InfPrefixes.begin ()
+                                 &&  NStr::CompareNocase (val, *s_iter))) {
+                            --s_iter;
+                        }
+                        if (NStr::StartsWith (val, *s_iter, NStr::eNocase)) {
+                            CSeq_feat::TQual& qlist = sfp->SetQual ();
+                            CRef<CGb_qual> gbq (new CGb_qual);
+                            gbq->SetQual (qual);
+                            if (x_StringIsJustQuotes (val)) {
+                                gbq->SetVal (kEmptyStr);
+                            } else {
+                                gbq->SetVal (val);
+                            }
+                            qlist.push_back (gbq);
+                            return true;
+                        }
+                        return false;
+                    }
                 case eQual_allele:
                 case eQual_bound_moiety:
                 case eQual_clone:
@@ -1280,7 +1324,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case eQual_experiment:
                 case eQual_frequency:
                 case eQual_function:
-                case eQual_inference:
                 case eQual_insertion_seq:
                 case eQual_label:
                 case eQual_map:
