@@ -341,9 +341,12 @@ streamsize CConn_Streambuf::showmanyc(void)
     }
     _ASSERT(!gptr()  ||  gptr() >= egptr());
 
-    for (int n = 0; n < 2; n++) {
-        static const STimeout kZero = {0, 0};
-        const STimeout* tmo = n ? CONN_GetTimeout(m_Conn, eIO_Read) : &kZero;
+    static const STimeout kZero = {0, 0};
+    const STimeout* timeout = CONN_GetTimeout(m_Conn, eIO_Read);
+    
+    for (int n = !timeout  ||  timeout == kDefaultTimeout  ||
+             timeout->sec  ||  timeout->usec ? 0 : 1; n < 2; n++) {
+        const STimeout* tmo = n ? timeout : &kZero;
         switch (CONN_Wait(m_Conn, eIO_Read, tmo)) {
         case eIO_Success:
             return  1;      // can read at least 1 byte
@@ -407,6 +410,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.68  2006/08/24 19:01:02  lavr
+ * showmanyc() not to loop with zero timeouts
+ *
  * Revision 6.67  2006/08/24 18:43:21  lavr
  * showmanyc() to fail after having waited the entire READ timeout
  *
