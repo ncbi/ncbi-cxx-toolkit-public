@@ -123,6 +123,14 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     
     m_terminate = false;
 
+    if(m_prg_callback) {
+        m_prg_info.m_iter_total = N1*fullrow;
+        m_prg_info.m_iter_done = 0;
+        if(m_terminate = m_prg_callback(&m_prg_info)) {
+            return 0;
+	}
+    }
+    
     vector<unsigned char> stl_bm (N1*fullrow, kVoid);
     unsigned char* backtrace_matrix = &stl_bm[0];
 
@@ -251,6 +259,11 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 
         m_TermK = k - 1;
         m_LastCoordSeq2 = jend - 1;
+
+        if(m_prg_callback) {
+            m_prg_info.m_iter_done = k;
+            m_terminate = m_prg_callback(&m_prg_info);
+        }
     }
 
     m_LastCoordSeq1 = iend - 1;
@@ -445,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/08/24 13:43:48  kapustin
+ * Check for user interruptions
+ *
  * Revision 1.10  2006/08/24 13:22:47  jcherry
  * Fix for CBandAligner::x_Align: restore intial assignment of m_terminate
  * to false
