@@ -272,6 +272,7 @@ unsigned int CBDB_RawFile::Truncate()
 void CBDB_RawFile::Compact(ECompact compact_type,
                            int target_fill_pct)
 {
+#ifdef DB_COMPACT_FLAGS
     _ASSERT(m_DB != 0);
 
     u_int32_t flags = 0;
@@ -300,6 +301,7 @@ void CBDB_RawFile::Compact(ECompact compact_type,
              << compact.compact_pages_free << " pages freed / "
              << compact.compact_levels << " levels removed / "
              << compact.compact_pages_truncated << " pages truncated");
+#endif
 }
 
 
@@ -1289,6 +1291,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/08/24 14:59:48  ucko
+ * Make CBDB_RawFile::Compact a no-op when DB_COMPACT_FLAGS is undefined.
+ * (The compact operation is new to 4.4.)
+ *
  * Revision 1.60  2006/08/23 19:59:06  dicuccio
  * Implement CBDB_RawFile::Compact()
  *
