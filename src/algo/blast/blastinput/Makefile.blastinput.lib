@@ -1,0 +1,13 @@
+# $Id$
+
+SRC_CXX = blast_input blast_fasta_input
+
+SRC  = $(SRC_CXX)
+
+LIB = blastinput
+
+DLL_LIB = xblast $(OBJMGR_LIBS)
+
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)

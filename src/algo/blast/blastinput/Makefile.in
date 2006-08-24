@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+LIB_PROJ = blastinput
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
