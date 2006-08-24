@@ -190,7 +190,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 return (streamsize)(n_written + n);
             }
 
-            size_t x_write = pptr() - pbase();
+            size_t x_write = (size_t)(pptr() - pbase());
             if (x_write) {
                 LOG_IF_ERROR(CONN_Write(m_Conn, pbase(),
                                         x_write, &x_written, eIO_WritePlain),
@@ -199,7 +199,6 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                     break;
                 memmove(pbase(), pbase() + x_written, x_write - x_written);
                 x_PPos += (CT_OFF_TYPE) x_written;
-                n_written += x_written;
                 pbump(-int(x_written));
                 continue;
             }
@@ -395,6 +394,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.65  2006/08/24 14:36:34  lavr
+ * BUGFIX:  xsputn() not to update write count when flushing
+ *
  * Revision 6.64  2006/08/23 19:32:04  lavr
  * +xsputn
  *

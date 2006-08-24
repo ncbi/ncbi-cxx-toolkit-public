@@ -176,7 +176,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 
     if ( pbase() ) {
         // send buffer
-        size_t n_write = pptr() - pbase();
+        size_t n_write = (size_t)(pptr() - pbase());
         if ( n_write ) {
             size_t n_written;
             try {
@@ -260,7 +260,6 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 _ASSERT(x_written <= x_write);
                 memmove(pbase(), pbase() + x_written, x_write - x_written);
                 x_PPos    += (CT_OFF_TYPE) x_written;
-                n_written += x_written;
                 pbump(-int(x_written));
                 continue;
             }
@@ -321,7 +320,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
                           n_read = 0);
     if (!n_read)
         return CT_EOF;
-    _ASSERT(n_read <= m_BufSize);
+    _ASSERT(n_read <= (size_t) m_BufSize);
 
     // update input buffer with the data just read
     x_GPos += (CT_OFF_TYPE) n_read;
@@ -444,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.24  2006/08/24 14:36:40  lavr
+ * BUGFIX:  xsputn() not to update write count when flushing
+ *
  * Revision 1.23  2006/08/23 19:32:28  lavr
  * +xsputn
  *
