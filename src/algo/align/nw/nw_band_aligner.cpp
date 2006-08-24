@@ -121,6 +121,8 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     const char* seq2 = m_Seq2 + data->m_offset2;
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
     
+    m_terminate = false;
+
     vector<unsigned char> stl_bm (N1*fullrow, kVoid);
     unsigned char* backtrace_matrix = &stl_bm[0];
 
@@ -443,6 +445,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/08/24 13:22:47  jcherry
+ * Fix for CBandAligner::x_Align: restore intial assignment of m_terminate
+ * to false
+ *
  * Revision 1.9  2006/08/07 17:33:59  kapustin
  * Support off-main diagonal bands
  *
