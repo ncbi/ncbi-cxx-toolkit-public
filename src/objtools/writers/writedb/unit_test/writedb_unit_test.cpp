@@ -48,6 +48,7 @@
 #ifndef BOOST_PARAM_TEST_CASE
 #  include <boost/test/parameterized_test.hpp>
 #endif
+#include <boost/current_function.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -87,7 +88,7 @@ static void s_UnitTestVerbosity(string s)
     }
 }
 
-#define START s_UnitTestVerbosity(__FUNCTION__)
+#define START s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
 
 static void
 s_FetchRawData(CSeqDBExpert & seqdb,
@@ -219,7 +220,8 @@ void s_RemoveFiles(vector<string> & files)
 {
     for(unsigned i = 0; i < files.size(); i++) {
         CHECK(NStr::StartsWith(files[i], ""));
-        CDirEntry(files[i]).Remove(CDirEntry::eOnlyEmpty);
+        CDirEntry de(files[i]);
+        de.Remove(CDirEntry::eOnlyEmpty);
     }
 }
 
@@ -543,6 +545,11 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/08/24 20:03:11  ucko
+ * - #include <boost/current_function.hpp>, and use BOOST_CURRENT_FUNCTION
+ *   in lieu of __FUNCTION__, which not all compilers actually support.
+ * - Tweak s_RemoveFiles to compile under GCC 3.3.x.
+ *
  * Revision 1.3  2006/08/21 16:23:12  bealer
  * - Verbosity mode (controlled by VERBOSE_UT envar).
  *
