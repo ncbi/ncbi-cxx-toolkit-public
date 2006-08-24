@@ -287,6 +287,14 @@ CDBAPIUnitTest::TestInit(void)
             // Create the table
             auto_stmt->ExecuteUpdate(sql);
         }
+
+        sql  = " CREATE TABLE #test_unicode_table ( \n";
+        sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
+        sql += "    nvc255_field NVARCHAR(255) NULL \n";
+        sql += " )";
+
+        // Create table
+        auto_stmt->ExecuteUpdate(sql);
     }
     catch(CDB_Exception& ex) {
         BOOST_FAIL(ex.GetMsg());
@@ -372,6 +380,78 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
     return false;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_Unicode(void)
+{
+    string sql;
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    string str_rus("坚坚 假结 俞家");
+    string str_ger("Au遝rdem k鰊nen Sie einzelne Eintr鋑e aus Ihrem Suchprotokoll entfernen");
+    CStringUTF8 utf8_str_1252_rus(str_rus, eEncoding_Windows_1252);
+    CStringUTF8 utf8_str_1252_ger(str_ger, eEncoding_Windows_1252);
+
+    try {
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM #test_unicode_table" );
+
+        // Insert data ...
+        {
+            sql = "INSERT INTO #test_unicode_table(nvc255_field) VALUES(@nvc_val)";
+
+            auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
+                                                   utf8_str_1252_rus.size()),
+                                 "@nvc_val" );
+            auto_stmt->ExecuteUpdate(sql);
+
+            auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.c_str(),
+                                                   utf8_str_1252_ger.size()),
+                                 "@nvc_val" );
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Retrieve data ...
+        {
+            string nvc255_value;
+
+            sql  = " SELECT nvc255_field FROM #test_unicode_table";
+            sql += " ORDER BY id";
+
+            auto_stmt->SendSql( sql );
+
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            BOOST_CHECK( rs.get() != NULL );
+
+            // Read utf8_str_1252_rus ...
+            BOOST_CHECK( rs->Next() );
+            nvc255_value = rs->GetVariant(1).GetString();
+            BOOST_CHECK_EQUAL( utf8_str_1252_rus.size(), nvc255_value.size() );
+            BOOST_CHECK_EQUAL( utf8_str_1252_rus, nvc255_value );
+            CStringUTF8 utf8_rus(nvc255_value, eEncoding_UTF8);
+            string value_rus = utf8_rus.AsSingleByteString(eEncoding_Windows_1252);
+            BOOST_CHECK_EQUAL( str_rus, value_rus );
+
+            // Read utf8_str_1252_ger ...
+            BOOST_CHECK( rs->Next() );
+            nvc255_value = rs->GetVariant(1).GetString();
+            BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(), nvc255_value.size() );
+            BOOST_CHECK_EQUAL( utf8_str_1252_ger, nvc255_value );
+            CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
+            string value_ger = utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
+            BOOST_CHECK_EQUAL( str_ger, value_ger );
+
+            DumpResults(auto_stmt.get());
+        }
+    }
+    catch(CDB_Exception& ex) {
+        BOOST_FAIL(ex.GetMsg());
+    }
+    catch(CException& ex) {
+        BOOST_FAIL(ex.GetMsg());
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void
@@ -656,8 +736,8 @@ CDBAPIUnitTest::Test_HasMoreResults(void)
     // This test shouldn't throw.
     // Sergey Koshelkov complained that this code throws an exception with
     // info-level severity.
-    // ftds (windows): 	HasMoreResults() never returns;
-    // odbs (windows): 	HasMoreResults() throws exception:
+    // ftds (windows):  HasMoreResults() never returns;
+    // odbs (windows):  HasMoreResults() throws exception:
     try {
         auto_stmt->SendSql( "exec sp_spaceused @updateusage='true'" );
 
@@ -4105,17 +4185,25 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
+    boost::unit_test::test_case* tc_parameters =
+        BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters,
+                              DBAPIInstance);
+    tc_parameters->depends_on(tc_init);
+    add(tc_parameters);
+
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
     tc->depends_on(tc_init);
+    tc->depends_on(tc_parameters);
     add(tc);
 
-    {
-        boost::unit_test::test_case* tc_parameters =
-            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters,
-                                  DBAPIInstance);
-        tc_parameters->depends_on(tc_init);
-        add(tc_parameters);
+    if (args.GetDriverName() == "ftds63") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
+        tc->depends_on(tc_init);
+        tc->depends_on(tc_parameters);
+        add(tc);
+    }
 
+    {
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
         // !!! It does not work in case of a new FTDS driver.
         if ((args.GetDriverName() == "ftds" &&
@@ -4415,6 +4503,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.90  2006/08/24 17:01:19  ssikorsk
+ * Implemented Test_Unicode;
+ * Enabled Test_Unicode for the ftds63 driver;
+ *
  * Revision 1.89  2006/08/23 20:01:40  ssikorsk
  * Disable Test_Insert for the ftds64_ctlib driver, which supports TDS v12.5 only.
  *
