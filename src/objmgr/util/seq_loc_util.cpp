@@ -2257,12 +2257,12 @@ int TestForOverlap(const CSeq_loc& loc1,
                    TSeqPos circular_len,
                    CScope* scope)
 {
-    Int8 ret = x_TestForOverlap(loc1, loc2, type, circular_len, scope);
+    Int8 ret = TestForOverlap64(loc1, loc2, type, circular_len, scope);
     return ret <= kMax_Int ? int(ret) : kMax_Int;
 }
 
 
-Int8 x_TestForOverlap(const CSeq_loc& loc1,
+Int8 TestForOverlap64(const CSeq_loc& loc1,
                       const CSeq_loc& loc2,
                       EOverlapType type,
                       TSeqPos circular_len,
@@ -2654,6 +2654,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.24  2006/08/24 16:16:48  grichenk
+* Renamed x_TestForOverlap() to TestForOverlap64().
+* Added comments.
+*
 * Revision 1.23  2006/07/20 22:19:01  grichenk
 * Added eOverlap_CheckIntRev, use it in GetBestXXXForCds().
 *

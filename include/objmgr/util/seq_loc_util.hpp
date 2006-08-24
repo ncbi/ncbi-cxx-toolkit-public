@@ -233,23 +233,25 @@ enum EOverlapType {
     eOverlap_Interval        ///< at least one pair of intervals must overlap
 };
 
-/// Check if the two locations have ovarlap of a given type
-/// Calls x_TestForOverlap() and if the result is greater than kMax_Int
-/// truncates it to kMax_Int. To get the exact value use x_TestForOverlap().
+/// 64-bit version of TestForOverlap()
+/// Check if the two locations have ovarlap of a given type.
+/// Return quality of the overlap: lower values mean better overlapping.
+/// 0 = exact match of the ranges, -1 = no overlap.
+NCBI_XOBJUTIL_EXPORT
+Int8 TestForOverlap64(const CSeq_loc& loc1,
+                      const CSeq_loc& loc2,
+                      EOverlapType    type,
+                      TSeqPos         circular_len = kInvalidSeqPos,
+                      CScope*         scope = 0);
+
+/// Calls TestForOverlap64() and if the result is greater than kMax_Int
+/// truncates it to kMax_Int. To get the exact value use TestForOverlap64().
 NCBI_XOBJUTIL_EXPORT
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
                    EOverlapType    type,
                    TSeqPos         circular_len = kInvalidSeqPos,
                    CScope*         scope = 0);
-
-/// 8-bit version of TestForOverlap()
-NCBI_XOBJUTIL_EXPORT
-Int8 x_TestForOverlap(const CSeq_loc& loc1,
-                      const CSeq_loc& loc2,
-                      EOverlapType    type,
-                      TSeqPos         circular_len = kInvalidSeqPos,
-                      CScope*         scope = 0);
 
 /* @} */
 
@@ -335,6 +337,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2006/08/24 16:16:48  grichenk
+* Renamed x_TestForOverlap() to TestForOverlap64().
+* Added comments.
+*
 * Revision 1.10  2006/07/20 22:19:01  grichenk
 * Added eOverlap_CheckIntRev, use it in GetBestXXXForCds().
 *
