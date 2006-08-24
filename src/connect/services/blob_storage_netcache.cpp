@@ -234,7 +234,7 @@ CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
         }
 
     } else {
-        key = CreateEmptyBlob();
+        if( key.empty() || !IsKeyValid(key) ) key = CreateEmptyBlob();
         m_CreatedBlobId = key;
         m_OStream.reset(CFile::CreateTmpFileEx(m_TempDir,sm_OutputBlobCachePrefix));        
         if( !m_OStream.get() || !m_OStream->good()) {
@@ -415,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2006/08/24 21:44:08  didenko
+ * Fixed bug in CreateOStream method
+ *
  * Revision 6.9  2006/07/20 15:50:17  didenko
  * Changed the way a key for an output stream is stored
  *
