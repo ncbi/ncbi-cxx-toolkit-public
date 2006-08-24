@@ -341,14 +341,24 @@ streamsize CConn_Streambuf::showmanyc(void)
     }
     _ASSERT(!gptr()  ||  gptr() >= egptr());
 
-    switch (CONN_Wait(m_Conn, eIO_Read, CONN_GetTimeout(m_Conn, eIO_Read))) {
-    case eIO_Success:
-        return  1;      // can read at least 1 byte
-    case eIO_Closed:
-        return -1;      // EOF
-    default:
-        return  0;      // no data available immediately
+    for (int n = 0; n < 2; n++) {
+        static const STimeout kZero = {0, 0};
+        const STimeout* tmo = n ? CONN_GetTimeout(m_Conn, eIO_Read) : &kZero;
+        switch (CONN_Wait(m_Conn, eIO_Read, tmo)) {
+        case eIO_Success:
+            return  1;      // can read at least 1 byte
+        case eIO_Timeout:
+            if (!n)
+                continue;
+            /*FALLTHRU*/
+        case eIO_Closed:
+            return -1;      // EOF
+        default:
+            return  0;      // no data available immediately
+        }
     }
+    /*NOTREACHED*/
+    return 0;
 }
 
 
@@ -397,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.67  2006/08/24 18:43:21  lavr
+ * showmanyc() to fail after having waited the entire READ timeout
+ *
  * Revision 6.66  2006/08/24 15:00:01  lavr
  * xsputn() to use I/O status when looping over actual writes to device
  *
