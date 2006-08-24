@@ -76,7 +76,7 @@ int main(int argc, const char* argv[])
     unsigned long seed;
     TFCDC_Flags flag = 0;
     SConnNetInfo* net_info;
-    size_t i, j, k, l, size;
+    size_t i, j, k, l, m, n, size;
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
@@ -103,33 +103,36 @@ int main(int argc, const char* argv[])
 
     // Testing memory stream out-of-sequence interleaving operations
     CConn_MemoryStream ms;
-    k = (rand() & 0x00FF) + 1;
+    m = (rand() & 0x00FF) + 1;
     size = 0;
-    for (i = 0;  i < k;  i++) {
-        l = (rand() & 0x00FF) + 1;
-        string data;
-        data.resize(l);
-        for (j = 0;  j < l;  j++) {
-            data[j] = "0123456789"[rand() % 10];
+    for (n = 0;  n < m;  n++) {
+        string data, back;
+        k = (rand() & 0x00FF) + 1;
+        for (i = 0;  i < k;  i++) {
+            l = (rand() & 0x00FF) + 1;
+            string bit;
+            bit.resize(l);
+            for (j = 0;  j < l;  j++) {
+                bit[j] = "0123456789"[rand() % 10];
+            }
+            size += l;
+            data += bit;
+            assert(ms << bit);
         }
-        size += l;
-        string back;
-        if (rand() & 1) {
-            assert(ms << data);
-            ms.ToString(&back);
-        } else {
-            assert(ms << data << endl);
+        if (!(rand() & 1)) {
+            assert(ms << endl);
             ms >> back;
             assert(ms.good());
             SetDiagTrace(eDT_Disable);
             ms >> ws;
             SetDiagTrace(eDT_Enable);
             ms.clear();
-        }
+        } else
+            ms.ToString(&back);
         assert(back == data);
     }
     ERR_POST(Info << "Memory stream test completed in " <<
-             (int) k    << " iteration(s) with " <<
+             (int) m    << " iteration(s) with " <<
              (int) size << " byte(s) transferred");
 
     if (!(net_info = ConnNetInfo_Create(0))) {
@@ -323,6 +326,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2006/08/24 15:21:56  lavr
+ * Randomize and lengthen the mem-stream test to check all aspects of xsputn()
+ *
  * Revision 6.49  2006/08/23 23:53:52  lavr
  * Use specially designated file for FTP testing
  *
