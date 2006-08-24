@@ -189,8 +189,8 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             // update buffer content (get rid of the data just sent)
             _ASSERT(n_written <= n_write);
             memmove(pbase(), pbase() + n_written, n_write - n_written);
-            pbump(-int(n_written));
             x_PPos += (CT_OFF_TYPE) n_written;
+            pbump(-int(n_written));
         }
 
         // store char
@@ -235,6 +235,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         return 0;
     size_t n = (size_t) m;
 
+    ERW_Result result = eRW_Success;
     size_t n_written = 0;
 
     for (;;) {
@@ -247,11 +248,13 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 pbump(int(n));
                 return (streamsize)(n_written + n);
             }
+            if (result != eRW_Success)
+                break;
 
-            size_t x_write = pptr() - pbase();
+            size_t x_write = (size_t)(pptr() - pbase());
             if (x_write) {
                 try {
-                    m_Writer->Write(pbase(), x_write, &x_written);
+                    result = m_Writer->Write(pbase(), x_write, &x_written);
                 }
                 RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsputn():"
                                       " IWriter::Write()", x_written = 0);
@@ -259,14 +262,15 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                     break;
                 _ASSERT(x_written <= x_write);
                 memmove(pbase(), pbase() + x_written, x_write - x_written);
-                x_PPos    += (CT_OFF_TYPE) x_written;
+                x_PPos += (CT_OFF_TYPE) x_written;
                 pbump(-int(x_written));
                 continue;
             }
         }
 
+        _ASSERT(n  &&  result == eRW_Success);
         try {
-            m_Writer->Write(buf, n, &x_written);
+            result = m_Writer->Write(buf, n, &x_written);
         }
         RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsputn(): IWriter::Write()",
                               x_written = 0);
@@ -282,6 +286,8 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         if (!n  ||  !pbase())
             return (streamsize) n_written;
         buf       += x_written;
+        if (result != eRW_Success)
+            break;
     }
 
     _ASSERT(n  &&  pbase());
@@ -443,6 +449,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.25  2006/08/24 15:00:29  lavr
+ * xsputn() to use I/O status when looping over actual writes to device
+ *
  * Revision 1.24  2006/08/24 14:36:40  lavr
  * BUGFIX:  xsputn() not to update write count when flushing
  *

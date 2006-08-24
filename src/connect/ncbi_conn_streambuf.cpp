@@ -177,6 +177,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         return 0;
     size_t n = (size_t) m;
 
+    EIO_Status status = eIO_Success;
     size_t n_written = 0;
 
     for (;;) {
@@ -189,12 +190,14 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 pbump(int(n));
                 return (streamsize)(n_written + n);
             }
+            if (status != eIO_Success)
+                break;
 
             size_t x_write = (size_t)(pptr() - pbase());
             if (x_write) {
-                LOG_IF_ERROR(CONN_Write(m_Conn, pbase(),
-                                        x_write, &x_written, eIO_WritePlain),
-                             "xsputn(): CONN_Write(Plain) failed");
+                status = CONN_Write(m_Conn, pbase(),
+                                    x_write, &x_written, eIO_WritePlain);
+                LOG_IF_ERROR(status, "xsputn(): CONN_Write(Plain) failed");
                 if (!x_written)
                     break;
                 memmove(pbase(), pbase() + x_written, x_write - x_written);
@@ -204,8 +207,8 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             }
         }
 
-        EIO_Status status = CONN_Write(m_Conn, buf,
-                                       n, &x_written, eIO_WritePersist);
+        _ASSERT(n  &&  status == eIO_Success);
+        status = CONN_Write(m_Conn, buf, n, &x_written, eIO_WritePersist);
         LOG_IF_ERROR(status, "xsputn(): CONN_Write(Persist) failed");
         if (!x_written) {
             if (!pbase())
@@ -394,6 +397,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.66  2006/08/24 15:00:01  lavr
+ * xsputn() to use I/O status when looping over actual writes to device
+ *
  * Revision 6.65  2006/08/24 14:36:34  lavr
  * BUGFIX:  xsputn() not to update write count when flushing
  *
