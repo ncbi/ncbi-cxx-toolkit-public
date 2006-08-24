@@ -343,7 +343,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 {
     const CRef<CBlast_def_line_set> bdlRef = CBlastFormatUtil::GetBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
-    const CBioseq::TId& ids = handle.GetBioseqCore()->GetId();
+    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
     CRef<CSeq_id> wid;
     sdl->defline = NcbiEmptyString;
  
@@ -379,16 +379,16 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         
     //get id
     if(bdl.empty()){
-        wid = FindBestChoice(ids, CSeq_id::WorstRank);
+        wid = FindBestChoice(*ids, CSeq_id::WorstRank);
         sdl->id = wid;
-        sdl->gi = FindGi(ids);    
+        sdl->gi = FindGi(*ids);    
     } else {        
         bool found = false;
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
-            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            int cur_gi =  FindGi(cur_id);
-            wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
+            const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
+            int cur_gi =  FindGi(*cur_id);
+            wid = FindBestChoice(*cur_id, CSeq_id::WorstRank);
             if (!use_this_gi.empty()) {
                 ITERATE(list<int>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){
@@ -397,7 +397,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                     }
                 }
             } else {
-                ITERATE(CBioseq::TId, iter_id, cur_id) {
+                ITERATE(CBioseq::TId, iter_id, *cur_id) {
                     if ((*iter_id)->Match(aln_id)) {
                         found = true;
                     }
@@ -406,6 +406,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             if(found){
                 sdl->id = wid;
                 sdl->gi = cur_gi;
+                ids = cur_id;
                 break;
             }
         }
@@ -469,7 +470,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                 CBlastFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
         }
            
-        sdl->id_url = s_GetIdUrl(ids, FindGi(ids), user_url,
+        sdl->id_url = s_GetIdUrl(*ids, sdl->gi, user_url,
                                  m_IsDbNa, m_Database, 
                                  (m_Option & eNewTargetWindow) ? true : false,
                                  m_Rid, m_QueryNumber, taxid);
@@ -833,6 +834,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.31  2006/08/24 16:17:51  jianye
+*make id consistent in use_this_gi case
+*
 *Revision 1.30  2006/07/26 18:14:07  jianye
 *fix unigene url
 *
