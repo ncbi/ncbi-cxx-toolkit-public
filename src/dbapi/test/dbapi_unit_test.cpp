@@ -388,8 +388,12 @@ void CDBAPIUnitTest::Test_Unicode(void)
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     string str_rus("坚坚 假结 俞家");
     string str_ger("Au遝rdem k鰊nen Sie einzelne Eintr鋑e aus Ihrem Suchprotokoll entfernen");
+//     string str_utf8("\320\237\321\203\320\277\320\272\320\270\320\275");
+//     string str_utf8("\0xD0\0x9F\0xD1\0x83\0xD0\0xBF\0xD0\0xBA\0xD0\0xB8\0xD0\0xBD");
+    string str_utf8("\0320\0237\0321\0203\0320\0277\0320\0272\0320\0270\0320\0275");
     CStringUTF8 utf8_str_1252_rus(str_rus, eEncoding_Windows_1252);
     CStringUTF8 utf8_str_1252_ger(str_ger, eEncoding_Windows_1252);
+    CStringUTF8 utf8_str_utf8(str_utf8, eEncoding_UTF8);
 
     try {
         // Clean table ...
@@ -399,13 +403,21 @@ void CDBAPIUnitTest::Test_Unicode(void)
         {
             sql = "INSERT INTO #test_unicode_table(nvc255_field) VALUES(@nvc_val)";
 
+            //
             auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
                                                    utf8_str_1252_rus.size()),
                                  "@nvc_val" );
             auto_stmt->ExecuteUpdate(sql);
 
+            //
             auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.c_str(),
                                                    utf8_str_1252_ger.size()),
+                                 "@nvc_val" );
+            auto_stmt->ExecuteUpdate(sql);
+
+            //
+            auto_stmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
+                                                   utf8_str_utf8.size()),
                                  "@nvc_val" );
             auto_stmt->ExecuteUpdate(sql);
         }
@@ -441,6 +453,13 @@ void CDBAPIUnitTest::Test_Unicode(void)
             CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
             string value_ger = utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
             BOOST_CHECK_EQUAL( str_ger, value_ger );
+
+            // Read utf8_str_utf8 ...
+            BOOST_CHECK( rs->Next() );
+            nvc255_value = rs->GetVariant(1).GetString();
+            BOOST_CHECK_EQUAL( utf8_str_utf8.size(), nvc255_value.size() );
+            BOOST_CHECK_EQUAL( utf8_str_utf8, nvc255_value );
+            CStringUTF8 utf8_utf8(nvc255_value, eEncoding_UTF8);
 
             DumpResults(auto_stmt.get());
         }
@@ -4372,7 +4391,8 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ftds", "ftds63", "gateway", "ftds64_dblib", "ftds64_odbc"
+#define ALL_DRIVERS   "ftds", "ftds63", "gateway", \
+                      "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -4467,6 +4487,9 @@ CTestArguments::SetDatabaseParameters(void)
         } else if (GetDriverName() == "ftds64_odbc"  &&
                    GetServerType() == eSybase) {
             m_DatabaseParameters["version"] = "50";
+        } else if (GetDriverName() == "ftds64_ctlib"  &&
+                   GetServerType() == eMsSql) {
+            m_DatabaseParameters["version"] = "80";
         }
     } else {
         m_DatabaseParameters["version"] = m_TDSVersion;
@@ -4503,6 +4526,11 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.91  2006/08/25 18:28:31  ssikorsk
+ * Added testing with UTF-8 encoded strings to Test_Unicode;
+ * Added ftds64_ctlib to a list of available servers when HAVE_LIBSYBASE
+ * is not defined;
+ *
  * Revision 1.90  2006/08/24 17:01:19  ssikorsk
  * Implemented Test_Unicode;
  * Enabled Test_Unicode for the ftds63 driver;
