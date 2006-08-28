@@ -249,6 +249,21 @@ void CBioseqContext::x_SetId(void)
     m_Accession.erase();
     m_PrimaryId->GetLabel(&m_Accession, CSeq_id::eContent);
 
+    //  -----------------------------------------------------------------------
+    //  Look for TPA assembly:
+    //  -----------------------------------------------------------------------
+    bool bTpaAssemblyPresent = false;
+    for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
+        const CUser_object& obj = it->GetUser();
+        if ( !obj.GetType().IsStr() ) {
+            continue;
+        }
+        if ( obj.GetType().GetStr() == "TpaAssembly" ) {
+            bTpaAssemblyPresent = true;
+            break; 
+        }
+    }
+
     ITERATE (CBioseq::TId, id_iter, m_Handle.GetBioseqCore()->GetId()) {
         const CSeq_id& id = **id_iter;
         const CTextseq_id* tsip = id.GetTextseq_Id();
@@ -311,7 +326,7 @@ void CBioseqContext::x_SetId(void)
         case CSeq_id::e_General:
             if ( id.GetGeneral().CanGetDb() ) {
                 if ( !NStr::CompareCase(id.GetGeneral().GetDb(), "BankIt") ) {
-                    m_IsTPA = true;
+                    m_IsTPA = bTpaAssemblyPresent;
                 }
             }
             break;
@@ -657,6 +672,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2006/08/28 19:10:02  ludwigf
+* FIXED: Third party annotations. Even when the ID is "general" and the dbtag
+*  refers to an eligible database we still require a "TpaAssembly" user object
+*  to be present.
+*
 * Revision 1.42  2006/06/15 17:50:59  dicuccio
 * Use seq-id handle instead of raw seq-id in GetPreferredSynonym().  Use
 * sequence::GetId() to retrieve synonym instead of requiring retrieval of bioseq
