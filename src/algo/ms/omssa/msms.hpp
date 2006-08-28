@@ -504,7 +504,7 @@ public:
                     CMod ModList[],
                     const int *IntCalcMass,  // array of int AA masses
                     const int *PrecursorIntCalcMass, // precursor masses
-                    CRef <CMSModSpecSet> Modset,
+                    CRef <CMSModSpecSet> &Modset,
                     int Maxproductions
                     );
 
@@ -543,27 +543,27 @@ public:
     /// looks for non-specific ptms
     ///
     void CheckNonSpecificMods(EMSModType ModType, // the type of mod
-			      CMSMod &VariableMods, // list of mods to look for
-			      int& NumMod, // number of mods applied to peptide
-			      int MaxNumMod,  // maximum mods for a peptide
-			      CMod ModList[],  // list of mod sites
-			      const char *iPepStart, // position in protein
-                  bool setfixed,
-                              CRef <CMSModSpecSet> Modset
+                              CMSMod &VariableMods, // list of mods to look for
+                              int& NumMod, // number of mods applied to peptide
+                              int MaxNumMod,  // maximum mods for a peptide
+                              CMod ModList[],  // list of mod sites
+                              const char *iPepStart, // position in protein
+                              bool setfixed,
+                              CRef <CMSModSpecSet> &Modset
                   ); 
 
     ///
     /// looks for amino acid specific ptms
     ///
     void CheckAAMods(EMSModType ModType, // the type of mod
-		     CMSMod &VariableMods, // list of mods to look for
-		     int& NumMod, // number of mods applied to peptide
-		     char SeqChar,  // the amino acid
-		     int MaxNumMod,  // maximum mods for a peptide
-		     CMod ModList[],  // list of mod sites
-		     const char *iPepStart,  // position in protein
-             bool setfixed,
-                     CRef <CMSModSpecSet> Modset
+                     CMSMod &VariableMods, // list of mods to look for
+                     int& NumMod, // number of mods applied to peptide
+                     char SeqChar,  // the amino acid
+                     int MaxNumMod,  // maximum mods for a peptide
+                     CMod ModList[],  // list of mod sites
+                     const char *iPepStart,  // position in protein
+                     bool setfixed,
+                     CRef <CMSModSpecSet> &Modset
              );
 
     /**
@@ -574,7 +574,7 @@ public:
 				   int& NumMod, char SeqChar, int MaxNumMod,
 				   CMod ModList[],
 				   const char *iPepStart,
-                   CRef <CMSModSpecSet> Modset);
+                   CRef <CMSModSpecSet> &Modset);
 
     /**
      * Is the enzyme really a top-down search?
@@ -739,7 +739,7 @@ void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
                           char SeqChar, int MaxNumMod, CMod ModList[],
                           const char *iPepStart,
                           bool setfixed,
-                          CRef <CMSModSpecSet> Modset)
+                          CRef <CMSModSpecSet> &Modset)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
@@ -768,7 +768,7 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
                                    CMod ModList[],
                                    const char *iPepStart,
                                    bool setfixed,
-                                   CRef <CMSModSpecSet> Modset)
+                                   CRef <CMSModSpecSet> &Modset)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
@@ -793,7 +793,7 @@ void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
                         int& NumMod, char SeqChar, int MaxNumMod,
                         CMod ModList[],
                         const char *iPepStart,
-                        CRef <CMSModSpecSet> Modset)
+                        CRef <CMSModSpecSet> &Modset)
 {
     // check non-specific mods
     CheckNonSpecificMods(NonSpecific, VariableMods, NumMod, MaxNumMod, ModList,
@@ -1053,6 +1053,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.35  2006/08/28 20:03:01  lewisg
+  perf improvements - no constref or comparesorted
+
   Revision 1.34  2006/08/23 21:31:30  lewisg
   rearrange file parsing
 

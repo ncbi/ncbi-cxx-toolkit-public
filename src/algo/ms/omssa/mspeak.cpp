@@ -62,23 +62,23 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
                                int COffset)
 {
     try {
-	TIntensity Intensity(new unsigned [Ladder.size()]);
-	Peaks->CompareSortedRank(Ladder, Which, &Intensity, SetSum(), SetM());
-
-    // examine hits array
-	unsigned i;
-	for(i = 0; i < Ladder.size(); i++) {
-	    // if hit, add to hitlist
-	    if(Ladder.GetHit()[i] > 0) {
-    		SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
-    		SetHitInfo(iHitInfo).SetIonSeries() = (char) Ladder.GetType();
-    		if(kIonDirection[Ladder.GetType()] == 1) SetHitInfo(iHitInfo).SetNumber() = (short) i + NOffset;
-            else SetHitInfo(iHitInfo).SetNumber() = (short) i + COffset;
-    		SetHitInfo(iHitInfo).SetIntensity() = *(Intensity.get() + i);
-    		//  for poisson test
-    		SetHitInfo(iHitInfo).SetMZ() = Ladder[i];
-    		//
-    		iHitInfo++;
+        SetSum() += Ladder.GetSum();
+        SetM() += Ladder.GetM();
+        
+        // examine hits array
+        unsigned i;
+        for(i = 0; i < Ladder.size(); i++) {
+            // if hit, add to hitlist
+            if(Ladder.GetHit()[i] > 0) {
+                SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
+                SetHitInfo(iHitInfo).SetIonSeries() = (char) Ladder.GetType();
+                if(kIonDirection[Ladder.GetType()] == 1) SetHitInfo(iHitInfo).SetNumber() = (short) i + NOffset;
+                else SetHitInfo(iHitInfo).SetNumber() = (short) i + COffset;
+                SetHitInfo(iHitInfo).SetIntensity() = Ladder.GetIntensity()[i];
+                //  for poisson test
+                SetHitInfo(iHitInfo).SetMZ() = Ladder[i];
+                //
+                iHitInfo++;
             }
         }
     } catch (NCBI_NS_STD::exception& e) {
@@ -463,10 +463,7 @@ const int CMSPeak::CompareSorted(CLadder& Ladder,
 
 
 int CMSPeak::CompareSortedRank(CLadder& Ladder,
-                               const EMSPeakListTypes Which, 
-                               TIntensity* Intensity, 
-                               int& Sum, 
-                               int& M)
+                               const EMSPeakListTypes Which)
 {
 
     unsigned i(0), j(0);
@@ -474,6 +471,9 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder,
     CRef <CMSPeakList> PeakList = SetPeakLists()[Which];
 
     if (Ladder.size() == 0 ||  PeakList->GetNum() == 0) return 0;
+
+    Ladder.SetM() = 0;
+    Ladder.SetSum() = 0;
 
     do {
         if (PeakList->GetMZI()[j].GetMZ() < Ladder[i] - tol) {
@@ -490,14 +490,12 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder,
                 PeakList->GetUsed()[j] = 1;
                 Ladder.GetHit()[i] = Ladder.GetHit()[i] + 1;
                 // sum up the ranks
-                Sum += PeakList->GetMZI()[j].GetRank();
-                M++;
+                Ladder.SetSum() += PeakList->GetMZI()[j].GetRank();
+                Ladder.SetM()++;
             }
             retval++;
-            // record the intensity if requested, used for auto adjust
-            if (Intensity) {
-                *(Intensity->get() + i) = PeakList->GetMZI()[j].GetIntensity();
-            }
+            // record the intensity  for scoring
+            Ladder.SetIntensity()[i] = PeakList->GetMZI()[j].GetIntensity();
             j++;
             if (j >= PeakList->GetNum()) break;
             i++;
@@ -878,11 +876,11 @@ void CMSPeak::CullIterate(CMZI *Temp, int& TempLen, const TMZIbool FCN)
     
     // scan for isotopes, starting at highest peak
     for(iMZI = 0; iMZI < TempLen - 1; iMZI++) { 
-	if(Deleted.count(iMZI) != 0) continue;
+	if(Deleted.find(iMZI) != Deleted.end()) continue;
 	for(jMZI = iMZI + 1; jMZI < TempLen; jMZI++) { 
-	    if(Deleted.count(jMZI) != 0) continue;
+//	    if(Deleted.find(jMZI) != Deleted.end()) continue;  // this is expensive
 	    if((*FCN)(Temp[iMZI], Temp[jMZI], tol)) {
-		Deleted.insert(jMZI);
+            Deleted.insert(jMZI);
 		//		Temp[iMZI].Intensity += Temp[jMZI].Intensity; // keep the intensity
 	    }
 	}
@@ -1078,46 +1076,46 @@ void CMSPeak::SmartCull(const CMSSearchSettings& Settings,
    
     // scan for isotopes, starting at highest peak
     for(iMZI = 0; iMZI < TempLen - 1; iMZI++) { 
-	if(Deleted.count(iMZI) != 0) continue;
-	HitCount = 0;
-	if(!ConsiderMultProduct ||
-       Temp[iMZI].GetMZ() > 
-       Precursormz) {
-	    // if charge 1 region, allow fewer peaks
-	    Window = Settings.GetSinglewin(); //27;
-	    HitsAllowed = Settings.GetSinglenum();
-	}
-	else {
-	    // otherwise allow a greater number
-	    Window = Settings.GetDoublewin(); //14;
-	    HitsAllowed = Settings.GetDoublenum();
-	}
-	// go over smaller peaks
-	set <int> Considered;
-	for(jMZI = iMZI + 1; jMZI < TempLen; jMZI++) { 
-	    if(Deleted.count(jMZI) != 0) continue;
-	    if(Temp[jMZI].GetMZ() < Temp[iMZI].GetMZ() + MSSCALE2INT(Window) + tol &&
-	       Temp[jMZI].GetMZ() > Temp[iMZI].GetMZ() - MSSCALE2INT(Window) - tol) {
-		if(IsMajorPeak(Temp[iMZI].GetMZ(), Temp[jMZI].GetMZ(), tol)) {
-		    // link little peak to big peak
-		    MajorPeak[jMZI] = iMZI;
-		    // ignore for deletion
-		    continue;
-		}
-		// if linked to a major peak, skip
-		if(MajorPeak.find(jMZI) != MajorPeak.end()) {
-		    if(Considered.find(jMZI) != Considered.end())
-			continue;
-		    Considered.insert(jMZI);
-		    HitCount++;
-		    if(HitCount <= HitsAllowed)  continue;
-		}
-		// if the first peak, skip
-		HitCount++;
-		if(HitCount <= HitsAllowed)  continue;
-		Deleted.insert(jMZI);
-	    }
-	}
+        if(Deleted.count(iMZI) != 0) continue;
+        HitCount = 0;
+        if(!ConsiderMultProduct ||
+           Temp[iMZI].GetMZ() > 
+           Precursormz) {
+            // if charge 1 region, allow fewer peaks
+            Window = Settings.GetSinglewin(); //27;
+            HitsAllowed = Settings.GetSinglenum();
+        }
+        else {
+            // otherwise allow a greater number
+            Window = Settings.GetDoublewin(); //14;
+            HitsAllowed = Settings.GetDoublenum();
+        }
+        // go over smaller peaks
+        set <int> Considered;
+        for(jMZI = iMZI + 1; jMZI < TempLen; jMZI++) { 
+            if(Temp[jMZI].GetMZ() < Temp[iMZI].GetMZ() + MSSCALE2INT(Window) + tol &&
+               Temp[jMZI].GetMZ() > Temp[iMZI].GetMZ() - MSSCALE2INT(Window) - tol &&
+               Deleted.find(jMZI) == Deleted.end()) {
+                if(IsMajorPeak(Temp[iMZI].GetMZ(), Temp[jMZI].GetMZ(), tol)) {
+                    // link little peak to big peak
+                    MajorPeak[jMZI] = iMZI;
+                    // ignore for deletion
+                    continue;
+                }
+                // if linked to a major peak, skip
+                if(MajorPeak.find(jMZI) != MajorPeak.end()) {
+                    if(Considered.find(jMZI) != Considered.end())
+                        continue;
+                    Considered.insert(jMZI);
+                    HitCount++;
+                    if(HitCount <= HitsAllowed)  continue;
+                }
+                // if the first peak, skip
+                HitCount++;
+                if(HitCount <= HitsAllowed)  continue;
+                Deleted.insert(jMZI);
+            }
+        }
     }
     
     // delete the culled peaks

@@ -54,17 +54,23 @@ USING_SCOPE(omssa);
 
 // constructor
 CLadder::CLadder(void): LadderIndex(0), 
-			Ladder(new int[kMSLadderMax]),
-			Hit(new int[kMSLadderMax]),
-			LadderSize(kMSLadderMax)
+    Ladder(new int[kMSLadderMax]),
+    Hit(new int[kMSLadderMax]),
+    Intensity(new unsigned[kMSLadderMax]),
+    LadderSize(kMSLadderMax),
+    M(0),
+    Sum(0)
 { 
 }
 
 // constructor
 CLadder::CLadder(int SizeIn): LadderIndex(0),
-			      Ladder(new int[SizeIn]),
-			      Hit(new int[SizeIn]),
-			      LadderSize(SizeIn)
+    Ladder(new int[SizeIn]),
+    Hit(new int[SizeIn]),
+    Intensity(new unsigned[SizeIn]),
+    LadderSize(SizeIn),
+    M(0),
+    Sum(0)
 {
 }
 
@@ -81,13 +87,16 @@ CLadder::CLadder(const CLadder& Old) : LadderIndex(0),
     Index = Old.Index;
     Type = Old.Type;
     Mass = Old.Mass;
+    M = Old.M;
+    Sum = Old.Sum;
 
     LadderIndex = Old.LadderIndex;
   
     int i;
     for(i = 0; i < size(); i++) {
-	(*this)[i] = *(Old.Ladder.get() + i);
-	GetHit()[i] = *(Old.Hit.get() + i);
+        (*this)[i] = *(Old.Ladder.get() + i);
+        GetHit()[i] = *(Old.Hit.get() + i);
+        SetIntensity()[i] = Old.GetIntensity()[i];
     }
 }
 
@@ -119,6 +128,9 @@ CLadder::CreateLadder(const int IonType,
 				    kIonTypeMass[IonType]/Charge);
     const int *IntMassArray = MassArray.GetIntMass();
     const char * const AAMap(AA.GetMap());
+    EMSSearchType SearchType = 
+        static_cast <EMSSearchType> (Settings.GetProductsearchtype());
+    double ExactMass = Settings.GetExactmass();
 
     Start = start;
     Stop = stop;
@@ -145,7 +157,8 @@ CLadder::CreateLadder(const int IonType,
         if(Settings.GetSearchb1() == 1) {
             if(!CalcDelta(IntMassArray, AAMap, Sequence,
                           Offset, Direction, NumMod, ModIndex,
-                          ModList, ModMask, 0, ion, Charge, Settings)) return false;
+                          ModList, ModMask, 0, ion, Charge, SearchType,
+                          ExactMass)) return false;
             iSkip = 1;
             LadderIndex--;
         }
@@ -157,8 +170,9 @@ CLadder::CreateLadder(const int IonType,
         iSkip = 0;
          if(Settings.GetSearchctermproduct() == 1) {
              if(!CalcDelta(IntMassArray, AAMap, Sequence,
-                     Offset, Direction, NumMod, ModIndex,
-                     ModList, ModMask, 0, ion, Charge, Settings)) return false;
+                           Offset, Direction, NumMod, ModIndex,
+                           ModList, ModMask, 0, ion, Charge, SearchType,
+                           ExactMass)) return false;
                iSkip = 1;
          }
     }
@@ -168,7 +182,8 @@ CLadder::CreateLadder(const int IonType,
         GetHit()[i] = 0;
         if(!CalcDelta(IntMassArray, AAMap, Sequence,
                       Offset, Direction, NumMod, ModIndex,
-                      ModList, ModMask, i+iSkip, ion, Charge, Settings)) return false;
+                      ModList, ModMask, i+iSkip, ion, Charge, SearchType,
+                      ExactMass)) return false;
         (*this)[i] = ion;
     }
     return true;

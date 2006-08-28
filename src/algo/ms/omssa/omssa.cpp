@@ -381,7 +381,7 @@ int CSearch::CreateLadders(const char *Sequence,
                          SetMassAndMask(iMissed, iMod).Mask,
                          ModList,
                          NumMod,
-                         *GetSettings()
+                         *SetSettings()
                          )) return 1;
         SetLadderContainer().Next(Iter);
     }
@@ -404,38 +404,10 @@ int CSearch::CompareLadders(int iMod,
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
     while(Iter != SetLadderContainer().SetLadderMap().end()) {
-        Peaks->CompareSorted(*((*(Iter->second))[iMod]), Which, 0);
+        Peaks->CompareSortedRank(*((*(Iter->second))[iMod]), Which);
         SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
     }
     return 0;
-}
-
-
-
-
-void CSearch::CompareLaddersRank(int iMod,
-                                 CMSPeak *Peaks,
-                                 const TMassPeak *MassPeak,
-                                 int& N,
-                                 int& M,
-                                 int& Sum)
-{
-    EMSPeakListTypes Which = Peaks->GetWhich(MassPeak->Charge);
-
-    int ChargeLimit(0);
-    if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) { 
-        ChargeLimit = 1;
-        N = (Peaks->GetPeakLists())[eMSPeakListCharge1]->GetNum();
-    }
-    else {
-        N = (Peaks->GetPeakLists())[eMSPeakListCharge3]->GetNum();
-    }
-    TLadderMap::iterator Iter;
-    SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
-    while(Iter != SetLadderContainer().SetLadderMap().end()) {
-        Peaks->CompareSortedRank(*((*(Iter->second))[iMod]), Which, 0, Sum, M);
-        SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
-    }
 }
 
 
@@ -565,7 +537,7 @@ void CSearch::UpdateWithNewPep(int Missed,
                                int Masses[],
                                int EndMasses[],
                                int NumModSites[],
-                               CRef <CMSModSpecSet> Modset)
+                               CRef <CMSModSpecSet> &Modset)
 {
     // iterate over missed cleavages
     int iMissed;
@@ -755,7 +727,7 @@ void CSearch::CreateModCombinations(int Missed,
         } // iMod
 
         // if exact mass, add neutrons as appropriate
-        if (GetSettings()->GetPrecursorsearchtype() == eMSSearchType_exact) {
+        if (SetSettings()->GetPrecursorsearchtype() == eMSSearchType_exact) {
             int ii;
             for (ii = 0; ii < iModCount; ++ii) {
                 SetMassAndMask(iMissed, ii).Mass += 
@@ -950,7 +922,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
             if (GetRestrictedSearch() && SetOidSet().find(iSearch) == SetOidSet().end())
                 continue;
 
-            if (GetSettings()->IsSetTaxids()) {
+            if (SetSettings()->IsSetTaxids()) {
                 rdfp->GetTaxIDs(iSearch, taxids, false);
                 for (itaxids = taxids.begin(); itaxids != taxids.end(); ++itaxids) {
                     if (*itaxids == 0) continue;
@@ -979,8 +951,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
             PepStart[Missed - 1] = Sequence.GetData();
 
             // if non-specific enzyme, set stop point
-            if (GetEnzyme()->GetNonSpecific()) {
-                SetEnzyme()->SetStop() = Sequence.GetData() + GetSettings()->GetMinnoenzyme() - 1;
+            if (SetEnzyme()->GetNonSpecific()) {
+                SetEnzyme()->SetStop() = Sequence.GetData() + SetSettings()->GetMinnoenzyme() - 1;
             }
 
             // iterate thru the sequence by digesting it
@@ -1011,7 +983,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                    IntMassArray,
                                    PrecursorIntMassArray,
                                    Modset,
-                                   GetSettings()->GetMaxproductions()
+                                   SetSettings()->GetMaxproductions()
                                   );
 
                 // delete variable mods that overlap with fixed mods
@@ -1058,7 +1030,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
                         // return peaks where theoretical mass is <= precursor mass + tol
                         // and >= precursor mass - tol
-                        if (!GetEnzyme()->GetTopDown())
+                        if (!SetEnzyme()->GetTopDown())
                             im = PeakSet.SetIntervalTree().IntervalsContaining(OldMass);
                         // if top-down enzyme, skip the interval tree match
                         else
@@ -1118,7 +1090,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                     hits += (*(Iter->second))[iMod]->HitCount();
                                     SetLadderContainer().Next(Iter);
                                 }
-                                if (hits >= GetSettings()->GetMinhit()) {
+                                if (hits >= SetSettings()->GetMinhit()) {
                                     // need to save mods.  bool map?
                                     NewHit.SetHits() = hits;   
                                     NewHit.SetCharge() = MassPeak->Charge;
@@ -1138,8 +1110,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                                       ModList[iMissed],
                                                       NumMod[iMissed],
                                                       PepStart[iMissed],
-                                                      GetSettings()->GetSearchctermproduct(),
-                                                      GetSettings()->GetSearchb1(),
+                                                      SetSettings()->GetSearchctermproduct(),
+                                                      SetSettings()->GetSearchb1(),
                                                       SetMassAndMask(iMissed, iMod).Mass
                                                      );
                                     }
@@ -1148,7 +1120,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                         } // MassPeak
                     } //iMod
                 } // iMissed
-                if (GetEnzyme()->GetNonSpecific()) {
+                if (SetEnzyme()->GetNonSpecific()) {
                     int NonSpecificMass(Masses[0] + EndMasses[0]);
                     PartialLoop:
 
@@ -1163,23 +1135,23 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     // need to use different criterion if semi-tryptic and  start position was
                     // moved.  otherwise this criterion is OK
                     if (NonSpecificMass < MaxMZ /*- MSSCALE2INT(MonoMass[7]) */&&
-                        GetEnzyme()->GetStop() < Sequence.GetData() + Sequence.GetLength() - 1 /*-1 added*/ &&
-                        (GetSettings()->GetMaxnoenzyme() == 0 ||
-                         GetEnzyme()->GetStop() - PepStart[0] + 1 < GetSettings()->GetMaxnoenzyme())
+                        SetEnzyme()->GetStop() < Sequence.GetData() + Sequence.GetLength() - 1 /*-1 added*/ &&
+                        (SetSettings()->GetMaxnoenzyme() == 0 ||
+                         SetEnzyme()->GetStop() - PepStart[0] + 1 < SetSettings()->GetMaxnoenzyme())
                        ) {
                         SetEnzyme()->SetStop()++;
-                        NonSpecificMass += PrecursorIntMassArray[AA.GetMap()[*(GetEnzyme()->GetStop())]];
+                        NonSpecificMass += PrecursorIntMassArray[AA.GetMap()[*(SetEnzyme()->GetStop())]];
                     }
                     // reset to new start with minimum size
                     else if ( PepStart[0] < Sequence.GetData() + Sequence.GetLength() - 
-                              GetSettings()->GetMinnoenzyme()) {
+                              SetSettings()->GetMinnoenzyme()) {
                         PepStart[0]++;
-                        SetEnzyme()->SetStop() = PepStart[0] + GetSettings()->GetMinnoenzyme() - 1;
+                        SetEnzyme()->SetStop() = PepStart[0] + SetSettings()->GetMinnoenzyme() - 1;
 
                         // reset mass
                         NonSpecificMass = 0;
                         const char *iSeqChar;
-                        for (iSeqChar = PepStart[0]; iSeqChar <= GetEnzyme()->GetStop(); iSeqChar++)
+                        for (iSeqChar = PepStart[0]; iSeqChar <= SetEnzyme()->GetStop(); iSeqChar++)
                             PrecursorIntMassArray[AA.GetMap()[*iSeqChar]];
                         // reset sequence done flag if at end of sequence
                         SequenceDone = false;
@@ -1189,11 +1161,11 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     // if this is partial tryptic, loop back if one end or the other is not tryptic
                     // for start, need to check sequence before (check for start of seq)
                     // for end, need to deal with end of protein case
-                    if (!SequenceDone && GetEnzyme()->GetCleaveNum() > 0 &&
+                    if (!SequenceDone && SetEnzyme()->GetCleaveNum() > 0 &&
                         PepStart[0] != Sequence.GetData() &&
-                        GetEnzyme()->GetStop() != Sequence.GetData() + Sequence.GetLength() - 1 /* -1 added */ ) {
+                        SetEnzyme()->GetStop() != Sequence.GetData() + Sequence.GetLength() - 1 /* -1 added */ ) {
                         if (!SetEnzyme()->CheckCleaveChar(PepStart[0]-1) &&
-                            !SetEnzyme()->CheckCleaveChar(GetEnzyme()->GetStop()))
+                            !SetEnzyme()->CheckCleaveChar(SetEnzyme()->GetStop()))
                             goto PartialLoop;
                     }
 

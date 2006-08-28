@@ -196,25 +196,6 @@ protected:
                        int NumMod,
                        CMod ModList[]);
 
-
-    /** 
-     * compare ladders to experiment
-     * 
-     * @param iMod ladder to examine
-     * @param Peaks the experimental values
-     * @param MassPeak
-     * @param N the number of experimental peaks
-     * @param M the number of matched peaks
-     * @param Sum the sum of the ranks of the matched peaks
-     * 
-     */
-    void CompareLaddersRank(int iMod,
-                            CMSPeak *Peaks,
-                            const TMassPeak *MassPeak,
-                            int& N,
-                            int& M,
-                            int& Sum);
-
     /**
      * set up the ions to use
      */
@@ -332,14 +313,14 @@ protected:
      * @param Modset modification specifications
      */
     void UpdateWithNewPep(int Missed,
-              const char *PepStart[],
-              const char *PepEnd[], 
-              int NumMod[], 
-              CMod ModList[][MAXMOD],
-              int Masses[],
-              int EndMasses[],
+                          const char *PepStart[],
+                          const char *PepEnd[], 
+                          int NumMod[], 
+                          CMod ModList[][MAXMOD],
+                          int Masses[],
+                          int EndMasses[],
                           int NumModSites[],
-                          CRef <CMSModSpecSet> Modset);
+                          CRef <CMSModSpecSet> &Modset);
 
     // create the various combinations of mods
     void CreateModCombinations(int Missed,

@@ -125,7 +125,7 @@ bool CCleave::CalcAndCut(const char *SeqStart,
                          CMod ModList[],
                          const int *IntCalcMass,  // array of int AA masses
                          const int *PrecursorIntCalcMass, // precursor masses
-                         CRef <CMSModSpecSet> Modset,
+                         CRef <CMSModSpecSet> &Modset,
                          int Maxproductions
                          )
 {
@@ -632,6 +632,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.35  2006/08/28 20:03:01  lewisg
+  perf improvements - no constref or comparesorted
+
   Revision 1.34  2006/08/21 15:18:21  lewisg
   asn.1 changes, bug fixes
 

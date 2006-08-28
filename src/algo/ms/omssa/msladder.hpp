@@ -55,6 +55,10 @@ typedef int THit;
 // max size of ladder
 const int kMSLadderMax = 10000;
 
+/** container for intensity */
+typedef AutoArray <unsigned> TIntensity;
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CLadder::
@@ -124,7 +128,8 @@ public:
      * @param i index into sequence
      * @param ion the ladder
      * @param Charge charge state
-     * @param Setting search settings
+     * @param SearchType what type of mass search (exact, ...)
+     * @param ExactMass exact mass threshold
      */
     bool CalcDelta(const int *IntMassArray,
                    const char * const AAMap,
@@ -138,7 +143,8 @@ public:
                    int i,
                    int& ion,
                    const int Charge, 
-                   const CMSSearchSettings& Settings);
+                   EMSSearchType SearchType,
+                   double ExactMass);
 
 
     // check if modification mask position is set
@@ -167,6 +173,36 @@ public:
     // clear the Hitlist
     void ClearHits(void);
 
+    /**
+     * Get the intensity array
+     */
+    const TIntensity& GetIntensity(void) const;
+
+    /**
+     * Set the intensity array
+     */
+    TIntensity& SetIntensity(void);
+
+    /**
+    * Get the number of matches
+    */
+    const int GetM(void) const;
+
+    /**
+    * Set the number of matches
+    */
+    int& SetM(void);
+
+    /**
+     * Get the sum of ranks of matched peaks
+     */
+    const int GetSum(void) const;
+
+    /**
+     * Set the sum of ranks of matched peaks
+     */
+    int& SetSum(void);
+
 private:
     int LadderIndex; // current end of the ladder
     AutoPtr <int, ArrayDeleter<int> > Ladder;
@@ -177,6 +213,12 @@ private:
     int Type;  // ion type
     int Mass;  // *neutral* precursor mass (Mr)
     int Charge;
+    /** number of matched peaks */
+    int M;
+    /** sum of ranks of matched peaks */
+    int Sum;
+    /** intensity of matched peaks */
+    TIntensity Intensity;
 };
 
 
@@ -195,7 +237,8 @@ bool CLadder::CalcDelta(const int *IntMassArray,
                         int i,
                         int& ion,
                         const int Charge, 
-                        const CMSSearchSettings& Settings)
+                        EMSSearchType SearchType,
+                        double ExactMass)
 {
     int delta = IntMassArray[AAMap[Sequence[Offset + Direction*i]]];
     if(!delta) return false; // unusable char (-BXZ*)
@@ -212,9 +255,9 @@ bool CLadder::CalcDelta(const int *IntMassArray,
     // increment the ladder
 
     // first check to see if exact mass increment needed
-    if(Settings.GetProductsearchtype() == eMSSearchType_exact) {
-        if ((ion * Charge)/MSSCALE2INT(Settings.GetExactmass()) != 
-            (ion * Charge + delta) / MSSCALE2INT(Settings.GetExactmass()))
+    if(SearchType == eMSSearchType_exact) {
+        if ((ion * Charge)/MSSCALE2INT(ExactMass) != 
+            (ion * Charge + delta) / MSSCALE2INT(ExactMass))
             ion += MSSCALE2INT(kNeutron)/Charge;
     }
 
@@ -294,6 +337,41 @@ inline bool CLadder::MaskSet(unsigned ModMask, int ModIndex)
     return (bool) (ModMask & (1 << ModIndex));
 }
 
+inline
+const TIntensity& CLadder::GetIntensity(void) const
+{
+    return Intensity;
+}
+
+inline
+TIntensity& CLadder::SetIntensity(void)
+{
+    return Intensity;
+}
+
+inline
+const int CLadder::GetM(void) const
+{
+    return M;
+}
+
+inline
+int& CLadder::SetM(void)
+{
+    return M;
+}
+
+inline
+const int CLadder::GetSum(void) const
+{
+    return Sum;
+}
+
+inline
+int& CLadder::SetSum(void)
+{
+    return Sum;
+}
 
 /////////////////// end of CLadder inline methods
 

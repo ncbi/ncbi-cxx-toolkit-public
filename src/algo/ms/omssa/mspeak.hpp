@@ -521,9 +521,6 @@ enum EChargeState {
     eCharge4,
     eCharge5 };
 
-// typedef for holding intensity
-typedef AutoPtr <unsigned, ArrayDeleter<unsigned> > TIntensity;
-
 // for statistical modelling
 // #define MSSTATRUN
 
@@ -696,16 +693,10 @@ public:
      * Compare the ladder and peaks and return back rank statistics
      * @param Ladder the ladder to compare
      * @param Which which exp spectrum to use
-     * @param Intensity keep a record of the intensities
-     * @param Sum the sum of ranks
-     * @param M the number of matched peaks
      *
      */
     int CompareSortedRank(CLadder& Ladder,
-                          EMSPeakListTypes Which, 
-                          TIntensity* Intensity, 
-                          int& Sum, 
-                          int& M);
+                          EMSPeakListTypes Which);
 
     /**
      * Read a spectrum set into a CMSPeak
