@@ -353,10 +353,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             const string prefix(prefix_pid + NStr::IntToString(m_Iteration));
             PushDiagPostPrefix(prefix.c_str());
         }
-        else {
-            // Show PID and iteration # in all of the the diagnostics
-            SetFastCGIIteration(m_Iteration);
-        }
+        // Show PID and iteration # in all of the the diagnostics
+        SetFastCGIIteration(m_Iteration);
 
         _TRACE("CCgiApplication::FastCGI: " << m_Iteration
                << " iteration of " << max_iterations);
@@ -629,6 +627,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.63  2006/08/28 18:35:44  grichenk
+ * Set iteration number even if new format is off.
+ *
  * Revision 1.62  2006/06/29 16:02:21  grichenk
  * Added constants for setting CDiagContext properties.
  *
