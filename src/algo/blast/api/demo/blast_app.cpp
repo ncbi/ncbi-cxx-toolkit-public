@@ -94,7 +94,7 @@ private:
     void InitScope(void);
     void ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opt, 
                                 BlastSeqSrc* seq_src);
-    void PrintSeqAlign(const TSeqAlignVector& seqalignv);
+    void PrintResults(CSearchResultSet& seqalignv);
     /// NB: The object manager member field must be put in front of the scope
     /// member field, to guarantee the correct order of destruction.
     CRef<CObjectManager> m_ObjMgr;
@@ -436,17 +436,19 @@ CBlastApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle,
     return;
 }
 
-void CBlastApplication::PrintSeqAlign(const TSeqAlignVector& seqalignv)
+void CBlastApplication::PrintResults(CSearchResultSet& results)
 {
-    if (seqalignv.size() == 0)
+    size_t num_results = results.GetNumResults();
+    if (num_results == 0)
         return;
     
     CNcbiOstream& out = GetArgs()["out"].AsOutputFile();
-    for (size_t query_index = 0; query_index < seqalignv.size(); ++query_index)
+    for (size_t query_index = 0; query_index < num_results; ++query_index)
     {
-        if (!seqalignv[query_index]->IsSet())
+
+        if (!(results[query_index].GetSeqAlign()->IsSet()))
             continue;
-        out << MSerial_AsnText << *seqalignv[query_index];
+        out << MSerial_AsnText << *results[query_index].GetSeqAlign();
     }
 }
 
@@ -533,17 +535,10 @@ int CBlastApplication::Run(void)
     try {
 
        CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
-
        CLocalBlast blaster(query_factory, opts, seq_src);
        blaster.SetNumberOfThreads(args["threads"].AsInteger());
        CSearchResultSet results = blaster.Run();
-       seqalignv.reserve(results.GetNumResults());
-       for (int i = 0; i < results.GetNumResults(); i++) {
-           CRef<CSeq_align_set>
-               sas(const_cast<CSeq_align_set*>(&*results[i].GetSeqAlign()));
-           seqalignv.push_back(sas);
-       }
-       PrintSeqAlign(seqalignv);
+       PrintResults(results);
 
     } catch (const CBlastException& exptn) {
        cerr << exptn.what() << endl;
