@@ -88,15 +88,11 @@ using namespace objects;
 
 #define END_LINE_VALIDATE_MSG LOG_POST(m_ValidateMsg->str())
 
-#define COLLECT_VALIDATE_MSG(type, msg) \
+#define AGP_MSG(type, msg) \
         m_LineErrorOccured = true; \
         *m_ValidateMsg << "\n\t" << type << ": " <<  msg
-
-#define VALIDATION_ERROR(msg) \
-        COLLECT_VALIDATE_MSG("ERROR", msg)
-
-#define COLLECT_VALIDATE_WARNING(msg) \
-        COLLECT_VALIDATE_MSG("WARNING", msg)
+#define AGP_ERROR(msg) AGP_MSG("ERROR", msg)
+#define AGP_WARNING(msg) AGP_MSG("WARNING", msg)
 
 #define NO_LOG false
 
@@ -132,7 +128,7 @@ private:
 
 
     // count the dfiffernt types of gaps
-    map<string, int> m_TypeGapCount;
+    map<string, int> m_TypeGapCnt;
 
     bool m_LineErrorOccured;
     CNcbiStrstream* m_ValidateMsg;
@@ -176,7 +172,7 @@ private:
     typedef set<string> TValuesSet;
     typedef pair< TValuesSet::iterator, bool> TValuesSetResult;
     TValuesSet m_ComponentTypeValues;
-    TValuesSet m_GapTypeValues;
+    TValuesSet m_GapTypes;
     TValuesSet m_OrientaionValues;
     TValuesSet m_LinkageValues;
 
@@ -218,12 +214,10 @@ private:
     bool x_CheckValues(int line_num, const TValuesSet& values,
       const string& value, const string& field_name,
       bool log_error = true);
-    int x_CheckRange(int line_num, int start, int begin, int end,
-      string begin_name, string end_name);
+    int x_CheckRange(int line_num, int start, int begin,
+      int end, string begin_name, string end_name);
     int x_CheckIntField(int line_num, const string& field,
       const string& field_name, bool log_error = true);
-    bool x_IncremenalCheck(int line_num, int prev_num, int num,
-      const string& field_name);
 
     //
     // Semantic validate methods
@@ -232,6 +226,7 @@ private:
     void x_ValidateSemanticLine(const SDataLine& line,
       const string& text_line);
 
+    // vsap: printableId is used for error messages only
     int x_GetTaxid(CBioseq_Handle& bioseq_handle);
     void x_AddToTaxidMap(int taxid, const SDataLine& dl);
     void x_CheckTaxid();
@@ -263,7 +258,7 @@ void CAgpValidateApplication::Init(void)
       "Type of Taxonomy semanitic check to be preformed",
       CArgDescriptions::eString,
       "exact");
-    CArgAllow_Strings* constraint_taxon = new CArgAllow_Strings;
+    CArgAllow_Strings* constraint_taxon= new CArgAllow_Strings;
     constraint_taxon->Allow("exact");
     constraint_taxon->Allow("species");
     arg_desc->SetConstraint("taxon", constraint_taxon);
@@ -275,15 +270,15 @@ void CAgpValidateApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 
     // initialze values
-    m_GapTypeValues.insert("fragment");
-    m_GapTypeValues.insert("split_finished");
-    m_GapTypeValues.insert("clone");
-    m_GapTypeValues.insert("contig");
-    m_GapTypeValues.insert("centromere");
-    m_GapTypeValues.insert("short_arm");
-    m_GapTypeValues.insert("heterochromatin");
-    m_GapTypeValues.insert("telomere");
-    m_GapTypeValues.insert("scaffold");
+    m_GapTypes.insert("fragment");
+    m_GapTypes.insert("split_finished");
+    m_GapTypes.insert("clone");
+    m_GapTypes.insert("contig");
+    m_GapTypes.insert("centromere");
+    m_GapTypes.insert("short_arm");
+    m_GapTypes.insert("heterochromatin");
+    m_GapTypes.insert("telomere");
+    m_GapTypes.insert("scaffold");
 
     m_ComponentTypeValues.insert("A");
     m_ComponentTypeValues.insert("D");
@@ -308,22 +303,22 @@ void CAgpValidateApplication::Init(void)
     m_CompZeroCount = 0;
     m_GapCount = 0;
 
-    m_TypeGapCount["fragmentyes"] = 0;
-    m_TypeGapCount["fragmentno"] = 0;
-    m_TypeGapCount["split_finishedyes"] = 0;
-    m_TypeGapCount["split_finishedno"] = 0;
-    m_TypeGapCount["cloneyes"] = 0;
-    m_TypeGapCount["cloneno"] = 0;
-    m_TypeGapCount["contigyes"] = 0;
-    m_TypeGapCount["contigno"] = 0;
-    m_TypeGapCount["centromereyes"] = 0;
-    m_TypeGapCount["centromereno"] = 0;
-    m_TypeGapCount["short_armyes"] = 0;
-    m_TypeGapCount["short_armno"] = 0;
-    m_TypeGapCount["heterochromatinyes"] = 0;
-    m_TypeGapCount["heterochromatinno"] = 0;
-    m_TypeGapCount["telomereyes"] = 0;
-    m_TypeGapCount["telomereno"] = 0;
+    m_TypeGapCnt["fragmentyes"] = 0;
+    m_TypeGapCnt["fragmentno"] = 0;
+    m_TypeGapCnt["split_finishedyes"] = 0;
+    m_TypeGapCnt["split_finishedno"] = 0;
+    m_TypeGapCnt["cloneyes"] = 0;
+    m_TypeGapCnt["cloneno"] = 0;
+    m_TypeGapCnt["contigyes"] = 0;
+    m_TypeGapCnt["contigno"] = 0;
+    m_TypeGapCnt["centromereyes"] = 0;
+    m_TypeGapCnt["centromereno"] = 0;
+    m_TypeGapCnt["short_armyes"] = 0;
+    m_TypeGapCnt["short_armno"] = 0;
+    m_TypeGapCnt["heterochromatinyes"] = 0;
+    m_TypeGapCnt["heterochromatinno"] = 0;
+    m_TypeGapCnt["telomereyes"] = 0;
+    m_TypeGapCnt["telomereno"] = 0;
 
 
     m_TaxidComponentTotal = 0;
@@ -335,7 +330,7 @@ void CAgpValidateApplication::Init(void)
 
 int CAgpValidateApplication::Run(void)
 {
-    // Setup registry, error log, and MT-lock for CONNECT library
+    // Setup registry, error log, MT-lock for CONNECT library
     CONNECT_Init(&GetConfig());
 
     // Get arguments
@@ -361,7 +356,8 @@ int CAgpValidateApplication::Run(void)
     return 0;
 }
 
-void CAgpValidateApplication::x_ValidateUsingDB(const CArgs& args)
+void CAgpValidateApplication::x_ValidateUsingDB(
+  const CArgs& args)
 {
     // Validate the data from the AGP DB based on submit id.
     // The args contain the submit id and db info.
@@ -389,7 +385,8 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
     }
 }
 
-void CAgpValidateApplication::x_ValidateFile(CNcbiIstream& istr)
+void CAgpValidateApplication::x_ValidateFile(
+  CNcbiIstream& istr)
 {
 
     int line_num = 1;
@@ -427,10 +424,10 @@ void CAgpValidateApplication::x_ValidateFile(CNcbiIstream& istr)
         }
 
             data_line.orientation = "";
-            if (data_line.component_type != "N") {  // Component
-
-                if (cols.size() > 8)
-                     data_line.orientation = cols[8];
+            if (data_line.component_type != "N") {
+              // Component
+              if (cols.size() > 8)
+                data_line.orientation = cols[8];
             }
 
         if (m_ValidationType == syntax) {
@@ -445,81 +442,69 @@ void CAgpValidateApplication::x_AgpTotals()
 {
   LOG_POST(
     "\nObjects: " << m_ObjCount << "\n" <<
-    "Unique Component Accessions: " << m_UniqComp.size() <<"\n"<<
+    "Unique Component Accessions: "<< m_UniqComp.size()<<"\n"<<
     "Lines with Components: " << m_CompCount        << "\n" <<
     "\tWith orientation of +: " << m_CompPosCount   << "\n" <<
     "\tWith orientation of -: " << m_CompNegCount   << "\n" <<
-    "\tWith orientation of 0: " << m_CompZeroCount  << "\n\n" <<
+    "\tWith orientation of 0: " << m_CompZeroCount  << "\n\n"
 
-    "Gaps with linkage, with no linkage: " << m_GapCount
- << "\n\tFragment       : "<<m_TypeGapCount["fragmentyes"       ]
- << "\t"                   <<m_TypeGapCount["fragmentno"        ]
- << "\n\tClone          : "<<m_TypeGapCount["cloneyes"          ]
- << "\t"                   <<m_TypeGapCount["cloneno"           ]
- << "\n\tContig         : "<<m_TypeGapCount["contigyes"         ]
- << "\t"                   <<m_TypeGapCount["contigno"          ]
- << "\n\tCentromere     : "<<m_TypeGapCount["centromereyes"     ]
- << "\t"                   <<m_TypeGapCount["centromereno"      ]
- << "\n\tShort_arm      : "<<m_TypeGapCount["short_armyes"      ]
- << "\t"                   <<m_TypeGapCount["short_armno"       ]
- << "\n\tHeterochromatin: "<<m_TypeGapCount["heterochromatinyes"]
- << "\t"                   <<m_TypeGapCount["heterochromatinno" ]
- << "\n\tTelomere       : "<<m_TypeGapCount["telomereyes"       ]
- << "\t"                   <<m_TypeGapCount["telomereno"        ]
- << "\n\tSplit_finished : "<<m_TypeGapCount["split_finishedyes" ]
- << "\t"                   <<m_TypeGapCount["split_finishedno"  ]
+ << "Gaps with linkage, with no linkage: " << m_GapCount
+ << "\n\tFragment       : "<<m_TypeGapCnt["fragmentyes"       ]
+ << "\t"                   <<m_TypeGapCnt["fragmentno"        ]
+ << "\n\tClone          : "<<m_TypeGapCnt["cloneyes"          ]
+ << "\t"                   <<m_TypeGapCnt["cloneno"           ]
+ << "\n\tContig         : "<<m_TypeGapCnt["contigyes"         ]
+ << "\t"                   <<m_TypeGapCnt["contigno"          ]
+ << "\n\tCentromere     : "<<m_TypeGapCnt["centromereyes"     ]
+ << "\t"                   <<m_TypeGapCnt["centromereno"      ]
+ << "\n\tShort_arm      : "<<m_TypeGapCnt["short_armyes"      ]
+ << "\t"                   <<m_TypeGapCnt["short_armno"       ]
+ << "\n\tHeterochromatin: "<<m_TypeGapCnt["heterochromatinyes"]
+ << "\t"                   <<m_TypeGapCnt["heterochromatinno" ]
+ << "\n\tTelomere       : "<<m_TypeGapCnt["telomereyes"       ]
+ << "\t"                   <<m_TypeGapCnt["telomereno"        ]
+ << "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
+ << "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
   );
 }
 
 
 
-bool CAgpValidateApplication::x_IncremenalCheck(
-  int line_num, int prev_num, int num, const string& field_name)
-{
-    if (num != ++prev_num) {
-        VALIDATION_ERROR("The " << field_name
-          << " filed must increment sequentially");
-        return false;
-    }
-
-    return true;
-}
 
 int CAgpValidateApplication::x_CheckIntField(
   int line_num, const string& field,
   const string& field_name, bool log_error)
 {
-    int field_value = 0;
-    try {
-        field_value = NStr::StringToInt(field);
-    } catch (...) {
-    }
+  int field_value = 0;
+  try {
+      field_value = NStr::StringToInt(field);
+  } catch (...) {
+  }
 
-    if (field_value <= 0  &&  log_error) {
-        VALIDATION_ERROR("The " << field_name <<
-          " field must be a positive integer");
-    }
-    return field_value;
+  if (field_value <= 0  &&  log_error) {
+    AGP_ERROR( field_name << " field must be a positive "
+    "integer");
+  }
+  return field_value;
 }
 
 int CAgpValidateApplication::x_CheckRange(
   int line_num, int start, int begin, int end,
   string begin_name, string end_name)
 {
-    int range = 0;
-    if (begin <= start){
-        VALIDATION_ERROR(begin_name <<
-          " field overlaps previous line in the file");
-    }
-    else if (end < begin) {
-        VALIDATION_ERROR(end_name <<
-                               " field is less than " <<
-                               end_name << " field");
-    } else {
-        range = end - begin + 1;
-    }
+  int length = 0;
+  if(begin <= start){
+    AGP_ERROR( begin_name << " field overlaps the previous "
+      "line");
+  }
+  else if (end < begin) {
+    AGP_ERROR(end_name << " is less than " << begin_name );
+  }
+  else {
+    length = end - begin + 1;
+  }
 
-    return range;
+  return length;
 }
 
 bool CAgpValidateApplication::x_CheckValues(
@@ -529,12 +514,12 @@ bool CAgpValidateApplication::x_CheckValues(
   const string& field_name,
   bool log_error)
 {
-    if (values.count(value) == 0) {
-        if (log_error)
-            VALIDATION_ERROR("Invalid value for " << field_name);
-        return false;
-    }
-    return true;
+  if (values.count(value) == 0) {
+    if (log_error)
+      AGP_ERROR("Invalid value for " << field_name);
+    return false;
+  }
+  return true;
 }
 
 void CAgpValidateApplication::x_ValidateSyntaxLine(
@@ -542,333 +527,314 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
   const string& text_line,
   bool last_validation)
 {
-    static string   prev_object = "";
-    static string   prev_component_type = "";
-    static string   prev_gap_type = "";
-    static string   prev_line;
-    static string   prev_line_filename = "";
-    static int      prev_end = 0;
-    static int      prev_part_num = 0;
-    static int      prev_line_num = 0;
-    static bool     prev_line_error_occured = false;
+  static string   prev_object = "";
+  static string   prev_component_type = "";
+  static string   prev_gap_type = "";
+  static string   prev_line;
+  static string   prev_line_filename = "";
+  static int      prev_end = 0;
+  static int      prev_part_num = 0;
+  static int      prev_line_num = 0;
+  static bool     prev_line_error_occured = false;
 
-    bool new_obj = false;
-    bool error;
+  bool new_obj = false;
+  bool error;
 
-    int obj_begin = 0;
-    int obj_end = 0;
-    int part_num = 0;
-    int comp_start = 0;
-    int comp_end = 0;
-    int gap_len = 0;
+  int obj_begin = 0;
+  int obj_end = 0;
+  int part_num = 0;
+  int comp_start = 0;
+  int comp_end = 0;
+  int gap_len = 0;
 
-    int obj_range_len = 0;
-    int comp_len = 0;
+  int obj_range_len = 0;
+  int comp_len = 0;
 
+  TIdMapResult id_insert_result;
+  TObjSetResult obj_insert_result;
 
-    TIdMapResult id_insert_result;
-    TObjSetResult obj_insert_result;
+  START_LINE_VALIDATE_MSG(dl.line_num, text_line);
 
-    START_LINE_VALIDATE_MSG(dl.line_num, text_line);
+  if (dl.object != prev_object) {
+    prev_end = 0;
+    prev_part_num = 0;
+    prev_object = dl.object;
+    new_obj = true;
+    m_ObjCount++;
+  }
 
-    if (dl.object != prev_object) {
-        prev_end = 0;
-        prev_part_num = 0;
-        prev_object = dl.object;
-        new_obj = true;
-        m_ObjCount++;
+  if( new_obj && (prev_component_type == "N") &&
+      (prev_gap_type == "fragment")
+  ) {
+    // A new scafold. Previous line is a scaffold
+    // ending with a fragment gap
+
+    // special error reporting mechanism since the
+    //  error is on the previous line. Directly Log
+    //  the error messages.
+    if(!prev_line_error_occured) {
+      LOG_POST("\n\n" << prev_line_filename << ", line "
+        << prev_line_num << ":\n" << prev_line);
+    }
+    LOG_POST("\tWARNING: Next line is a new scaffold "
+      "(and a new object). Current line is a fragment gap. "
+      "Scaffold must not end with a gap.");
+
+    if(last_validation) {
+      // Finished validating all lines.
+      // Just did a final gap ending check.
+      return;
+    }
+  }
+
+  if(new_obj) {
+    obj_insert_result = m_ObjIdSet.insert(dl.object);
+    if (obj_insert_result.second == false) {
+      AGP_ERROR("Duplicate object: " << dl.object);
+    }
+  }
+
+  obj_begin = x_CheckIntField(
+    dl.line_num, dl.begin, "object_begin"
+  );
+  if( obj_begin && ( obj_end = x_CheckIntField(
+        dl.line_num, dl.end, "object_end"
+  ))){
+    if(new_obj && obj_begin != 1) {
+      AGP_ERROR("First line of an object must have object_begin"
+        "=1");
     }
 
-    if( new_obj && (prev_component_type == "N") &&
-        (prev_gap_type == "fragment")
+    obj_range_len = x_CheckRange(
+      dl.line_num, prev_end, obj_begin, obj_end,
+      "object_begin", "object_end");
+    prev_end = obj_end;
+  }
+
+  if (part_num = x_CheckIntField(
+    dl.line_num, dl.part_num, "part_num"
+  )) {
+    if(part_num != prev_part_num+1) {
+      AGP_ERROR("Part number (column 4) != previous "
+        "part number +1");
+    }
+    prev_part_num = part_num;
+  }
+
+  x_CheckValues( dl.line_num, m_ComponentTypeValues,
+    dl.component_type,"component_type");
+
+
+  if (dl.component_type == "N") { // gap
+    m_GapCount++;
+    error = false;
+    if(gap_len = x_CheckIntField(
+      dl.line_num, dl.gap_length, "gap_length"
+    )) {
+      if (obj_range_len && obj_range_len != gap_len) {
+        AGP_ERROR("Object range length not equal to gap length"
+          ": " << obj_range_len << " != " << gap_len);
+        error = true;
+      }
+    }
+    else {
+      error = true;
+    }
+
+    if( x_CheckValues(
+          dl.line_num, m_GapTypes, dl.gap_type, "gap_type"
+        ) && x_CheckValues(
+          dl.line_num, m_LinkageValues, dl.linkage, "linkage"
+        )
     ) {
-        // new scafold. Previous line is a scaffold ending
-        //   with a fragment gap
-
-        // special error reporting mechanism since the
-        //  error is on the previous line. Directly Log
-        //  the error messages.
-        if (!prev_line_error_occured) {
-            LOG_POST("\n\n" << prev_line_filename << ", line " <<
-                      prev_line_num << ":\n" << prev_line);
-        }
-        LOG_POST("\tWARNING: Next line is a new scaffold "
-                 "(and new object). "
-                 "Current line is a fragment gap. "
-                 "A Scaffold should not end with a gap.");
-
-        if (last_validation) {
-            // Finished validating all lines.
-            //  Just did a final gap ending check
-            //  No more validating to perform
-            return;
-        }
+      string key = dl.gap_type + dl.linkage;
+      m_TypeGapCnt[key]++;
     }
-
+    else {
+      error = true;
+    }
 
     if (new_obj) {
-        obj_insert_result = m_ObjIdSet.insert(dl.object);
-        if (obj_insert_result.second == false) {
-          VALIDATION_ERROR("Duplicate object " << dl.object <<
-                                       " found");
-        }
+      if (dl.gap_type == "fragment") {
+        AGP_WARNING("Scaffold begins with a fragment gap.");
+      }
+      else {
+        AGP_WARNING("Object begins with a scaffold-ending gap."
+        );
+      }
     }
 
-    if( (obj_begin = x_CheckIntField(
-          dl.line_num, dl.begin, "object_begin"
+    if (prev_component_type == "N") {
+      // Previous line a gap. Check the gap_type.
+      if(prev_gap_type == "fragment") {
+        // two gaps in a row
+
+        if (!new_obj) {
+          if (dl.gap_type == "fragment") {
+            AGP_WARNING("Two fragment gaps in a row.");
+          }
+          else {
+            // Current gap type is a scaffold boundary
+
+            // special error reporting mechanism since
+            // the error is on the previous line.
+            // Directly Log the error messages.
+            if(!prev_line_error_occured) {
+              LOG_POST("\n\n" << prev_line_filename
+                << ", line " << prev_line_num
+                << ":\n" << prev_line);
+            }
+            LOG_POST("\tWARNING: "
+              "Next line is a scaffold-ending gap. "
+              "Current line is a fragment gap. "
+              "A Scaffold should not end with a gap."
+            );
+          }
+        }
+      }
+      else {
+        if (!new_obj) {
+          // Previous line is a a scafold gap
+          // This line is the start of a new scaffold
+          if (dl.gap_type == "fragment") {
+            // Scaffold starts with a fragment gap.
+            AGP_WARNING("Scaffold should not begin with a gap."
+              "(Previous line was a scaffold-ending gap.)" );
+          }
+          else {
+            // Current gap type is a scaffold boundary.
+            //  Two scaffold gaps in a row.
+            AGP_WARNING( "Two scaffold-ending gaps in a row.");
+          }
+        }
+      }
+    }
+
+    if (error) {
+      // Check if the line should be a component type
+      // i.e., dl.component_type != "N"
+
+      // A component line has integers in column 7
+      // (component start) and column 8 (component end);
+      // +, - or 0 in column 9 (orientation).
+      if( x_CheckIntField(
+            dl.line_num, dl.component_start,
+            "component_start", NO_LOG
+          ) && x_CheckIntField(
+            dl.line_num, dl.component_end,
+            "component_end", NO_LOG
+          ) && x_CheckValues(
+            dl.line_num, m_OrientaionValues,
+            dl.orientation, "orientation", NO_LOG
+      ) ) {
+        AGP_WARNING( "Line with component_type=N appears to be"
+          " a component line and not a gap line.");
+      }
+    }
+  }
+  else { // component
+    error = false;
+    m_CompCount++;
+    m_UniqComp.insert(dl.component_id);
+
+    if( (comp_start = x_CheckIntField(
+          dl.line_num,dl.component_start,"component_start"
         )) &&
-        (obj_end = x_CheckIntField(
-          dl.line_num, dl.end, "object_end"
+        (comp_end   = x_CheckIntField(
+          dl.line_num, dl.component_end ,"component_end"
         ))
     ) {
-
-        if (new_obj && obj_begin != 1) {
-          VALIDATION_ERROR(
-            "A new object must have an object_begin "
-            "field equal to 1");
-        }
-
-        obj_range_len = x_CheckRange(
-          dl.line_num, prev_end, obj_begin, obj_end,
-          "object_begin", "object_end");
-        prev_end = obj_end;
-
-    }
-
-    if (part_num = x_CheckIntField(
-      dl.line_num, dl.part_num, "part_num"
-    )) {
-        x_IncremenalCheck(dl.line_num, prev_part_num,
-          part_num, "part_num");
-        prev_part_num = part_num;
+      comp_len = x_CheckRange(
+        dl.line_num, 0, comp_start, comp_end,
+        "component_start", "component_end"
+      );
+      if( comp_len && obj_range_len &&
+          comp_len != obj_range_len
+      ) {
+        AGP_ERROR( "Object range length not equal to component"
+          " length");
+        error = true;
+      }
+    } else {
+      error = true;
     }
 
     if (x_CheckValues(
-      dl.line_num, m_ComponentTypeValues,
-      dl.component_type,"component_type"
-    )) {}
-
-
-    if (dl.component_type == "N") { // gap
-        m_GapCount++;
-        error = false;
-        if (gap_len = x_CheckIntField(dl.line_num, dl.gap_length,
-                                      "gap_length")) {
-            if (obj_range_len && obj_range_len != gap_len) {
-                VALIDATION_ERROR("The object range length (" <<
-                  obj_range_len <<
-                  ") is not equal to the gap length (" <<
-                  gap_len << ")");
-                error = true;
-            }
-        } else {
-            error = true;
-        }
-
-        if (x_CheckValues(dl.line_num, m_GapTypeValues,
-                          dl.gap_type, "gap_type") &&
-            x_CheckValues(dl.line_num, m_LinkageValues,
-                          dl.linkage, "linakge")) {
-            string key = dl.gap_type + dl.linkage;
-            m_TypeGapCount[key]++;
-        } else {
-            error = true;
-        }
-
-        if (new_obj) {
-            // New scafold. A Scaffold should not begin with a gap
-            if (dl.gap_type == "fragment") {
-                COLLECT_VALIDATE_WARNING(
-                  "Current line is a new scaffold. A scaffold"
-                  " should not begin with a fragment gap.");
-            } else {
-                COLLECT_VALIDATE_WARNING(
-                  "Current line is a new object. "
-                  "Object begins with a scaffold-ending gap.");
-            }
-        }
-
-        if (prev_component_type == "N") {
-            // Previous line a gap. Check the gap_type.
-
-            if (prev_gap_type == "fragment") {
-                // two gaps in a row
-
-                if (!new_obj) {
-
-                    if (dl.gap_type == "fragment") {
-                        COLLECT_VALIDATE_WARNING(
-                          "Previous line was a fragment gap. "
-                          "Two fragment gap lines in a row.");
-                    } else {
-                        // Current gap type is a scaffold boundary
-
-                        // special error reporting mechanism since
-                        // the error is on the previous line.
-                        // Directly Log the error messages.
-                        if (!prev_line_error_occured) {
-                            LOG_POST("\n\n" << prev_line_filename
-                              << ", line " << prev_line_num
-                              << ":\n" << prev_line);
-                        }
-                        LOG_POST("\tWARNING: "
-                          "Next line is a scaffold-ending gap. "
-                          "Current line is a fragment gap. "
-                          "A Scaffold should not end with a gap."
-                        );
-                    }
-                }
-            }
-            else {
-              if (!new_obj) {
-                  // Previous line is a a scafold gap
-                  // This line is the start of a new scaffold
-                  if (dl.gap_type == "fragment") {
-                    // Scaffold starts with a fragment gap.
-                    COLLECT_VALIDATE_WARNING(
-                      "Previous line is a scaffold ending gap. "
-                      "A Scaffold should not begin with a gap.");
-                  }
-                  else {
-                    // Current gap type is a scaffold boundary.
-                    //  Two scaffold gaps in a row.
-                    COLLECT_VALIDATE_WARNING(
-                      "Previous line is a scaffold ending gap. "
-                      "Current line is another scaffold "
-                      "ending gap.");
-                  }
-              }
-            }
-        }
-
-        if (error) {
-            // Check if the line should be a component type
-            //  i.e., dl.component_type != "N"
-
-            // A component line has an integer in
-            //  column 7 (component start) and column 8 (c end)
-            //  It also has a +, - or 0 in column 9 (orientation)
-            if (
-                x_CheckIntField(dl.line_num, dl.component_start,
-                                "component_start", NO_LOG) &&
-                x_CheckIntField(dl.line_num, dl.component_end,
-                                  "component_end", NO_LOG) &&
-                x_CheckValues(dl.line_num, m_OrientaionValues,
-                          dl.orientation, "orientation", NO_LOG)
-               ) {
-                COLLECT_VALIDATE_WARNING(
-                  "Line appears to be a component line and "
-                  "not a gap line");
-            }
-        }
-    } else { // component
-        error = false;
-        m_CompCount++;
-        m_UniqComp.insert(dl.component_id);
-
-        if( (comp_start = x_CheckIntField(
-              dl.line_num,dl.component_start,"component_start"
-            )) &&
-            (comp_end   = x_CheckIntField(
-              dl.line_num, dl.component_end ,"component_end"
-            ))
-        ) {
-          comp_len = x_CheckRange(
-            dl.line_num, 0, comp_start, comp_end,
-            "component_start", "component_end"
-          );
-          if( comp_len && obj_range_len &&
-              comp_len != obj_range_len
-          ) {
-            VALIDATION_ERROR(
-              "The object range length is not "
-              "equal to the component length");
-            error = true;
-          }
-        } else {
-          error = true;
-        }
-
-        if (x_CheckValues(
-          dl.line_num, m_OrientaionValues, dl.orientation,
-          "orientation"
-        )) {
-            if ( dl.orientation == "0") {
-                VALIDATION_ERROR(
-                  "A component can not have an "
-                  "unknown orientation.");
-                m_CompZeroCount++;
-                error = true;
-            } else if (dl.orientation == "+") {
-                m_CompPosCount++;
-            } else {
-                m_CompNegCount++;
-            }
-
-        } else {
-            error = true;
-        }
-
-
-        CRange<TSeqPos>  component_range(comp_start, comp_end);
-        TIdMapKeyValuePair value_pair(
-          dl.component_id, TIdMapValue(component_range)
-        );
-        id_insert_result = m_CompIdSet.insert(value_pair);
-        if (id_insert_result.second == false) {
-          TIdMapValue& collection =
-            (id_insert_result.first)->second;
-
-          string post_message = "Duplicate component id found.";
-
-          if (collection.IntersectingWith(component_range)) {
-            post_message += " The span overlaps a previous span "
-                            "for this component.";
-          } else if (
-            comp_start < collection.GetToOpen() &&
-            dl.orientation!="-"
-          ) {
-            post_message+= " The component span is out of order.";
-          }
-          COLLECT_VALIDATE_WARNING(post_message);
-
-          collection.CombineWith(component_range);
-        }
-
-        if (error) {
-            // Check if the line sholud be a gap type
-            //  i.e., dl.component_type == "N"
-
-            // A gap line has integer in column 6 (gap length),
-            //  a gap type value in column 7,
-            //  and a yes or no in column 8.
-            // vsap todo: FIX THIS ERROR
-            if( gap_len = x_CheckIntField(
-                  dl.line_num, dl.gap_length, "gap_length", NO_LOG
-                ) && x_CheckValues(
-                  dl.line_num, m_GapTypeValues,
-                  dl.gap_type, "gap_type", NO_LOG
-                ) && x_CheckValues(
-                  dl.line_num, m_LinkageValues,
-                  dl.linkage, "linakge", NO_LOG
-                )
-            ) {
-              COLLECT_VALIDATE_WARNING(
-                "Line appears to be a gap line and "
-                "not a component line");
-            }
-        }
-    }
-    if (m_LineErrorOccured) {
-        END_LINE_VALIDATE_MSG;
+      dl.line_num, m_OrientaionValues, dl.orientation,
+      "orientation"
+    )) {
+      if( dl.orientation == "0") {
+        AGP_ERROR( "Component cannot have an unknown"
+          " orientation.");
+        m_CompZeroCount++;
+        error = true;
+      } else if (dl.orientation == "+") {
+          m_CompPosCount++;
+      } else {
+          m_CompNegCount++;
+      }
+    } else {
+      error = true;
     }
 
-    prev_component_type = dl.component_type;
-    prev_gap_type = dl.gap_type;
-    prev_line = text_line;
-    prev_line_num = dl.line_num;
-    prev_line_filename = m_CurrentFileName;
-    prev_line_error_occured = m_LineErrorOccured;
+
+    CRange<TSeqPos>  component_range(comp_start, comp_end);
+    TIdMapKeyValuePair value_pair(
+      dl.component_id, TIdMapValue(component_range)
+    );
+    id_insert_result = m_CompIdSet.insert(value_pair);
+    if (id_insert_result.second == false) {
+      TIdMapValue& collection =
+        (id_insert_result.first)->second;
+
+      string str_details;
+      if(collection.IntersectingWith(component_range)) {
+        str_details += " The span overlaps "
+          "a previous span for this component.";
+      }
+      else if (
+        comp_start < (int)collection.GetToOpen() &&
+        dl.orientation!="-"
+      ) {
+        str_details+=" Component span is out of order.";
+      }
+      AGP_WARNING("Duplicate component id found."+str_details);
+
+      collection.CombineWith(component_range);
+    }
+
+    if(error) {
+      // Check if the line sholud be a gap type
+      //  i.e., dl.component_type == "N"
+
+      // Gap line has integer (gap len) in column 6,
+      // gap type value in column 7,
+      // a yes/no in column 8.
+      // (vsap) was: gap_len = x_CheckIntField(
+      if(x_CheckIntField(
+          dl.line_num, dl.gap_length, "gap_length",
+        NO_LOG) && x_CheckValues(
+          dl.line_num, m_GapTypes, dl.gap_type, "gap_type",
+        NO_LOG) && x_CheckValues(
+          dl.line_num, m_LinkageValues, dl.linkage, "linkage",
+        NO_LOG)
+      ) {
+        AGP_WARNING( "Line with component_type="
+          << dl.component_type <<" appears to be a gap line "
+          "and not a component line");
+      }
+    }
+  }
+  if (m_LineErrorOccured) {
+    END_LINE_VALIDATE_MSG;
+  }
+
+  prev_component_type = dl.component_type;
+  prev_gap_type = dl.gap_type;
+  prev_line = text_line;
+  prev_line_num = dl.line_num;
+  prev_line_filename = m_CurrentFileName;
+  prev_line_error_occured = m_LineErrorOccured;
 }
 
 void CAgpValidateApplication::x_ValidateSemanticInit()
@@ -906,9 +872,7 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
   }
   //    catch (CSeqIdException::eFormat)
   catch (...) {
-        VALIDATION_ERROR(
-                            "Component " << dl.component_id <<
-                            " has an invalid component id");
+    AGP_ERROR( "Invalid component id: " << dl.component_id);
   }
 
   // Get Bioseq handle for the Seq-id.
@@ -916,21 +880,19 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
   CBioseq_Handle bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
 
   // Accession not found check
-  if ( !bioseq_handle ) {
-        VALIDATION_ERROR(
-                            "Component " << dl.component_id <<
-                            " not found in Genbank");
-      return;
+  if( !bioseq_handle ) {
+    AGP_ERROR( "Component not in Genbank: "<< dl.component_id);
+    return;
   }
 
   // Component out of bounds check
   CBioseq_Handle::TInst_Length seq_len =
     bioseq_handle.GetInst_Length();
   if (NStr::StringToUInt(dl.component_end) > seq_len) {
-      VALIDATION_ERROR(
-        "Component end " << dl.component_end <<
-        " is out of bounds for " << dl.component_id <<
-        " that has a length of " << seq_len);
+      AGP_ERROR( "Component end greater than sequence length: "
+        << dl.component_end << " > "
+        << dl.component_id << " length = "
+        << seq_len << " bp");
   }
 
   int taxid = x_GetTaxid(bioseq_handle);
@@ -940,41 +902,40 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
 int CAgpValidateApplication::x_GetTaxid(
   CBioseq_Handle& bioseq_handle)
 {
-    int taxid = 0;
-    string docsum_taxid = "";
+  int taxid = 0;
+  string docsum_taxid = "";
 
-    taxid = sequence::GetTaxId(bioseq_handle);
-    if (taxid == 0) {
-        try {
-            CSeq_id_Handle seq_id_handle = sequence::GetId(
-              bioseq_handle, sequence::eGetId_ForceGi
-            );
-            int gi = seq_id_handle.GetGi();
-            CEntrez2Client entrez;
-            CRef<CEntrez2_docsum_list> docsums =
-                entrez.GetDocsums(gi, "Nucleotide");
+  taxid = sequence::GetTaxId(bioseq_handle);
+  if (taxid == 0) {
+    try {
+      CSeq_id_Handle seq_id_handle = sequence::GetId(
+        bioseq_handle, sequence::eGetId_ForceGi
+      );
+      int gi = seq_id_handle.GetGi();
+      CEntrez2Client entrez;
+      CRef<CEntrez2_docsum_list> docsums =
+        entrez.GetDocsums(gi, "Nucleotide");
 
-            ITERATE(CEntrez2_docsum_list::TList, it,
-                    docsums->GetList()) {
-                docsum_taxid = (*it)->GetValue("TaxId");
+      ITERATE(CEntrez2_docsum_list::TList, it,
+        docsums->GetList()
+      ) {
+        docsum_taxid = (*it)->GetValue("TaxId");
 
-                if (docsum_taxid != "") {
-                    taxid = NStr::StringToInt(docsum_taxid);
-                    break;
-                }
-            }
-
-
+        if (docsum_taxid != "") {
+          taxid = NStr::StringToInt(docsum_taxid);
+          break;
         }
-        catch(...) {
-          VALIDATION_ERROR("Unable to get Entrez Docsum Info");
-        }
+      }
     }
+    catch(...) {
+      AGP_ERROR("Unable to get Entrez Docsum.");
+    }
+  }
 
-    if (m_SpeciesLevelTaxonCheck) {
-        taxid = x_GetSpecies(taxid);
-    }
-    return taxid;
+  if (m_SpeciesLevelTaxonCheck) {
+    taxid = x_GetSpecies(taxid);
+  }
+  return taxid;
 }
 
 int CAgpValidateApplication::x_GetSpecies(int taxid)
@@ -996,38 +957,37 @@ int CAgpValidateApplication::x_GetSpecies(int taxid)
 
 int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
 {
+  CTaxon1 taxon;
+  taxon.Init();
 
-    CTaxon1 taxon;
-    taxon.Init();
+  bool is_species = true;
+  bool is_uncultured;
+  string blast_name;
 
-    bool is_species = true;
-    bool is_uncultured;
-    string blast_name;
+  int species_id = 0;
+  int prev_id = taxid;
 
-    int species_id = 0;
-    int prev_id = taxid;
-
-    for (int id = taxon.GetParent(taxid);
-         is_species == true && id > 1;
-         id = taxon.GetParent(id)) {
-
-        CConstRef<COrg_ref> org_ref = taxon.GetOrgRef(
-          id, is_species, is_uncultured, blast_name
-        );
-        if (org_ref == null) {
-            VALIDATION_ERROR(
-              "Taxon returned a null Org_ref for taxid " << id);
-            break;
-        }
-
-        if (is_species) {
-            prev_id = id;
-        } else {
-            species_id = prev_id;
-        }
+  for(int id = taxon.GetParent(taxid);
+      is_species == true && id > 1;
+      id = taxon.GetParent(id)
+  ) {
+    CConstRef<COrg_ref> org_ref = taxon.GetOrgRef(
+      id, is_species, is_uncultured, blast_name
+    );
+    if(org_ref == null) {
+      AGP_ERROR( "GetOrgRef() returned NULL for taxid "
+        << id);
+      break;
     }
 
-    return species_id;
+    if (is_species) {
+        prev_id = id;
+    } else {
+        species_id = prev_id;
+    }
+  }
+
+  return species_id;
 }
 
 
@@ -1107,8 +1067,8 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.4  2006/08/24 22:25:24  sapojnik
- * long lines reformatted for easier printing
+ * Revision 1.5  2006/08/28 16:43:15  sapojnik
+ * Reformatting, fixing typos, improving error messages and a few names
  *
  * Revision 1.3  2006/08/11 16:46:05  sapojnik
  * Print Unique Component Accessions, do not complain about the order of "-" spans
