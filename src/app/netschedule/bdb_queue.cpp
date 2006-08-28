@@ -365,7 +365,7 @@ CNSLB_ThreasholdCurve* s_ConfigureCurve(const IRegistry& reg,
     }
     return curve.release();
 }
-
+/*
 static
 CNSLB_DecisionModule* s_ConfigureDecision(const IRegistry& reg, 
                                           const string&    sname)
@@ -389,6 +389,7 @@ CNSLB_DecisionModule* s_ConfigureDecision(const IRegistry& reg,
 
     return decision.release();
 }
+*/
 
 void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
 {
@@ -2220,7 +2221,7 @@ void CQueueDataBase::CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
         return;
     }
 
-    int status = db.status;
+    //    int status = db.status;
 
     time_run = db.time_run;
     run_timeout = db.run_timeout;
@@ -2232,7 +2233,7 @@ void CQueueDataBase::CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
     // check if current timeout is enought and job requires no prolongation
     time_t safe_exp_time = 
         curr + std::max((unsigned)m_LQueue.run_timeout, 2*tm) + q_time_descr;
-    if (time_run + run_timeout > safe_exp_time) {
+    if (time_run + run_timeout > (unsigned) safe_exp_time) {
         return;
     }
 
@@ -2241,7 +2242,7 @@ void CQueueDataBase::CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
         db.time_run = curr;
     }
 
-    while (time_run + run_timeout <= safe_exp_time) {
+    while (time_run + run_timeout <= (unsigned) safe_exp_time) {
         run_timeout += std::max((unsigned)m_LQueue.run_timeout, tm);;
     }
     db.run_timeout = run_timeout;
@@ -3080,7 +3081,12 @@ CQueueDataBase::CQueue::GetJobDescr(unsigned int job_id,
             if (expected_status != CNetScheduleClient::eJobNotFound) {
                 CNetScheduleClient::EJobStatus status =
                     (CNetScheduleClient::EJobStatus)(int)db.status;
-                if (status != expected_status) {
+                if ((status != expected_status) 
+                    // The 'Retuned' status does not get saved into db
+                    // because it is temporary. (optimization).
+                    // this condition reflects that logically Pending == Returned
+                    && !(status ==  CNetScheduleClient::ePending 
+                         && expected_status == CNetScheduleClient::eReturned)) {
                     goto wait_sleep;
                 }
             }
@@ -3852,6 +3858,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2006/08/28 19:14:45  didenko
+ * Fixed a bug in GetJobDescr logic
+ *
  * Revision 1.87  2006/06/29 21:09:33  kuznets
  * Added queue dump by status(pending, running, etc)
  *

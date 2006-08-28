@@ -71,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.12.2  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.12.3  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2983,6 +2983,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2006/08/28 19:14:45  didenko
+ * Fixed a bug in GetJobDescr logic
+ *
  * Revision 1.95  2006/07/19 15:53:34  kuznets
  * Extended database size to accomodate escaped strings
  *
