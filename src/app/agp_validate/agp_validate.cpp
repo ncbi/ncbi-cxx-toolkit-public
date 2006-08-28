@@ -96,6 +96,33 @@ using namespace objects;
 
 #define NO_LOG false
 
+USING_NCBI_SCOPE;
+
+BEGIN_NCBI_SCOPE
+
+// Povide a nicer usage message
+class CArgDesc_agp_validate : public CArgDescriptions
+{
+public:
+  string& PrintUsage(string& str, bool detailed) const
+  {
+    str="Validate data in the AGP format:\n"
+    "http://www.ncbi.nlm.nih.gov/Genbank/WGS.agpformat.html\n"
+    "\n"
+    "USAGE: agp_validate [-options] [input files...]\n"
+    "\n"
+    "OPTIONS:\n"
+    "  -type semantics   Check sequence length and taxids using GenBank data\n"
+    "  -type syntax      (Default) Check line formatting and data consistency\n"
+    "  -taxon species    Allow sequences from different subspecies during semantic check\n"
+    "  -taxon exact      (Default)\n";
+    return str;
+    // To do:
+    // -taxon "taxname or taxid"
+    // -s    both syntAx and semantics
+  }
+};
+
 class CAgpValidateApplication : public CNcbiApplication
 {
 private:
@@ -239,121 +266,124 @@ private:
 
 void CAgpValidateApplication::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+  //auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+  auto_ptr<CArgDesc_agp_validate> arg_desc(new CArgDesc_agp_validate);
 
-    arg_desc->SetUsageContext(
-      GetArguments().GetProgramBasename(),
-      "Validate AGP data", false);
+  arg_desc->SetUsageContext(
+    GetArguments().GetProgramBasename(),
+    "Validate AGP data", false);
 
-    arg_desc->AddDefaultKey("type", "ValidationType",
-      "Type of validation to be preformed",
-      CArgDescriptions::eString,
-      "syntax");
-    CArgAllow_Strings* constraint_type = new CArgAllow_Strings;
-    constraint_type->Allow("syntax");
-    constraint_type->Allow("semantics");
-    arg_desc->SetConstraint("type", constraint_type);
+  arg_desc->AddDefaultKey("type", "ValidationType",
+    "Type of validation",
+    CArgDescriptions::eString,
+    "syntax");
+  CArgAllow_Strings* constraint_type = new CArgAllow_Strings;
+  constraint_type->Allow("syntax");
+  constraint_type->Allow("semantics");
+  arg_desc->SetConstraint("type", constraint_type);
 
-    arg_desc->AddDefaultKey("taxon", "TaxonCheckType",
-      "Type of Taxonomy semanitic check to be preformed",
-      CArgDescriptions::eString,
-      "exact");
-    CArgAllow_Strings* constraint_taxon= new CArgAllow_Strings;
-    constraint_taxon->Allow("exact");
-    constraint_taxon->Allow("species");
-    arg_desc->SetConstraint("taxon", constraint_taxon);
+  arg_desc->AddDefaultKey("taxon", "TaxonCheckType",
+    "Type of Taxonomy semanitic check to be preformed",
+    CArgDescriptions::eString,
+    "exact");
+  CArgAllow_Strings* constraint_taxon= new CArgAllow_Strings;
+  constraint_taxon->Allow("exact");
+  constraint_taxon->Allow("species");
+  arg_desc->SetConstraint("taxon", constraint_taxon);
 
-    // file list for file processing
-    arg_desc->AddExtra(0,100, "files to be processed",
-                       CArgDescriptions::eInputFile);
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
+  // file list for file processing
+  arg_desc->AddExtra(0,100, "files to be processed",
+                      CArgDescriptions::eInputFile);
+  // Setup arg.descriptions for this application
+  SetupArgDescriptions(arg_desc.release());
 
-    // initialze values
-    m_GapTypes.insert("fragment");
-    m_GapTypes.insert("split_finished");
-    m_GapTypes.insert("clone");
-    m_GapTypes.insert("contig");
-    m_GapTypes.insert("centromere");
-    m_GapTypes.insert("short_arm");
-    m_GapTypes.insert("heterochromatin");
-    m_GapTypes.insert("telomere");
-    m_GapTypes.insert("scaffold");
+  // initialze values
+  m_GapTypes.insert("fragment");
+  m_GapTypes.insert("split_finished");
+  m_GapTypes.insert("clone");
+  m_GapTypes.insert("contig");
+  m_GapTypes.insert("centromere");
+  m_GapTypes.insert("short_arm");
+  m_GapTypes.insert("heterochromatin");
+  m_GapTypes.insert("telomere");
+  m_GapTypes.insert("scaffold");
 
-    m_ComponentTypeValues.insert("A");
-    m_ComponentTypeValues.insert("D");
-    m_ComponentTypeValues.insert("F");
-    m_ComponentTypeValues.insert("G");
-    m_ComponentTypeValues.insert("P");
-    m_ComponentTypeValues.insert("N");
-    m_ComponentTypeValues.insert("O");
-    m_ComponentTypeValues.insert("W");
+  m_ComponentTypeValues.insert("A");
+  m_ComponentTypeValues.insert("D");
+  m_ComponentTypeValues.insert("F");
+  m_ComponentTypeValues.insert("G");
+  m_ComponentTypeValues.insert("P");
+  m_ComponentTypeValues.insert("N");
+  m_ComponentTypeValues.insert("O");
+  m_ComponentTypeValues.insert("W");
 
-    m_OrientaionValues.insert("+");
-    m_OrientaionValues.insert("-");
-    m_OrientaionValues.insert("0");
+  m_OrientaionValues.insert("+");
+  m_OrientaionValues.insert("-");
+  m_OrientaionValues.insert("0");
 
-    m_LinkageValues.insert("yes");
-    m_LinkageValues.insert("no");
+  m_LinkageValues.insert("yes");
+  m_LinkageValues.insert("no");
 
-    m_ObjCount = 0;
-    m_CompCount = 0;
-    m_CompPosCount = 0;
-    m_CompNegCount = 0;
-    m_CompZeroCount = 0;
-    m_GapCount = 0;
+  m_ObjCount = 0;
+  m_CompCount = 0;
+  m_CompPosCount = 0;
+  m_CompNegCount = 0;
+  m_CompZeroCount = 0;
+  m_GapCount = 0;
 
-    m_TypeGapCnt["fragmentyes"] = 0;
-    m_TypeGapCnt["fragmentno"] = 0;
-    m_TypeGapCnt["split_finishedyes"] = 0;
-    m_TypeGapCnt["split_finishedno"] = 0;
-    m_TypeGapCnt["cloneyes"] = 0;
-    m_TypeGapCnt["cloneno"] = 0;
-    m_TypeGapCnt["contigyes"] = 0;
-    m_TypeGapCnt["contigno"] = 0;
-    m_TypeGapCnt["centromereyes"] = 0;
-    m_TypeGapCnt["centromereno"] = 0;
-    m_TypeGapCnt["short_armyes"] = 0;
-    m_TypeGapCnt["short_armno"] = 0;
-    m_TypeGapCnt["heterochromatinyes"] = 0;
-    m_TypeGapCnt["heterochromatinno"] = 0;
-    m_TypeGapCnt["telomereyes"] = 0;
-    m_TypeGapCnt["telomereno"] = 0;
+  m_TypeGapCnt["fragmentyes"] = 0;
+  m_TypeGapCnt["fragmentno"] = 0;
+  m_TypeGapCnt["split_finishedyes"] = 0;
+  m_TypeGapCnt["split_finishedno"] = 0;
+  m_TypeGapCnt["cloneyes"] = 0;
+  m_TypeGapCnt["cloneno"] = 0;
+  m_TypeGapCnt["contigyes"] = 0;
+  m_TypeGapCnt["contigno"] = 0;
+  m_TypeGapCnt["centromereyes"] = 0;
+  m_TypeGapCnt["centromereno"] = 0;
+  m_TypeGapCnt["short_armyes"] = 0;
+  m_TypeGapCnt["short_armno"] = 0;
+  m_TypeGapCnt["heterochromatinyes"] = 0;
+  m_TypeGapCnt["heterochromatinno"] = 0;
+  m_TypeGapCnt["telomereyes"] = 0;
+  m_TypeGapCnt["telomereno"] = 0;
 
+  m_TaxidComponentTotal = 0;
 
-    m_TaxidComponentTotal = 0;
-
-    m_ValidateMsg = NULL;
+  m_ValidateMsg = NULL;
 }
-
 
 
 int CAgpValidateApplication::Run(void)
 {
-    // Setup registry, error log, MT-lock for CONNECT library
-    CONNECT_Init(&GetConfig());
+  //// Setup registry, error log, MT-lock for CONNECT library
+  CONNECT_Init(&GetConfig());
 
-    // Get arguments
-    const CArgs& args = GetArgs();
+ //// Get command line arguments
+  const CArgs& args = GetArgs();
 
-    if (args["type"].AsString() == "syntax") {
-        m_ValidationType = syntax;
-    } else { // args_type == "semantic"
-        x_ValidateSemanticInit();
-        m_ValidationType = semantic;
-    }
+  if (args["type"].AsString() == "syntax") {
+      m_ValidationType = syntax;
+  } else { // args_type == "semantic"
+      x_ValidateSemanticInit();
+      m_ValidationType = semantic;
+  }
 
-    m_SpeciesLevelTaxonCheck = false;
-    if (args["taxon"].AsString() == "species") {
-        m_SpeciesLevelTaxonCheck = true;
-    }
-        x_ValidateUsingFiles(args);
-    if (m_ValidationType == syntax) {
-        x_AgpTotals();
-    } else {
-        x_CheckTaxid();
-    }
-    return 0;
+  m_SpeciesLevelTaxonCheck = false;
+  if(args["taxon"].AsString() == "species") {
+    m_SpeciesLevelTaxonCheck = true;
+  }
+
+  //// Process files, print results
+  x_ValidateUsingFiles(args);
+  if(m_ValidationType == syntax) {
+    x_AgpTotals();
+  }
+  else {
+    x_CheckTaxid();
+  }
+
+  return 0;
 }
 
 void CAgpValidateApplication::x_ValidateUsingDB(
@@ -388,54 +418,59 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
 void CAgpValidateApplication::x_ValidateFile(
   CNcbiIstream& istr)
 {
+  int line_num = 0;
+  string  line;
+  while (NcbiGetlineEOL(istr, line)) {
+    line_num++;
+    if (line == "") continue;
+    if (line[0] == '#') continue;
 
-    int line_num = 1;
-    string  line;
-    while (NcbiGetlineEOL(istr, line)) {
-        if (line == "") continue;
-
-        SDataLine data_line;
-        vector<string> cols;
-        NStr::Tokenize(line, "\t", cols);
-
-        data_line.line_num        = line_num++;
-        if (cols.size() > 0)
-            data_line.object          = cols[0];
-        if (cols.size() > 1)
-            data_line.begin           = cols[1];
-        if (cols.size() > 2)
-            data_line.end             = cols[2];
-        if (cols.size() > 3)
-            data_line.part_num        = cols[3];
-        if (cols.size() > 4)
-            data_line.component_type  = cols[4];
-
-        if (cols.size() > 5) {
-            data_line.component_id = cols[5];
-            data_line.gap_length = cols[5];
-        }
-        if (cols.size() > 6) {
-            data_line.component_start = cols[6];
-            data_line.gap_type = cols[6];
-        }
-        if (cols.size() > 7) {
-            data_line.component_end = cols[7];
-            data_line.linkage = cols[7];
-        }
-
-            data_line.orientation = "";
-            if (data_line.component_type != "N") {
-              // Component
-              if (cols.size() > 8)
-                data_line.orientation = cols[8];
-            }
-
-        if (m_ValidationType == syntax) {
-            x_ValidateSyntaxLine(data_line, line);
-        } else {
-            x_ValidateSemanticLine(data_line, line);
-        }
+    // Strip #comments
+    {
+      SIZE_TYPE pos = NStr::Find(line, "#");
+      if(pos != NPOS) {
+        line.resize(pos);
+      }
     }
+
+    SDataLine data_line;
+    vector<string> cols;
+    NStr::Tokenize(line, "\t", cols);
+
+    data_line.line_num = line_num;
+
+    // 5 common fields for components an gaps.
+    if (cols.size() > 0) data_line.object         = cols[0];
+    if (cols.size() > 1) data_line.begin          = cols[1];
+    if (cols.size() > 2) data_line.end            = cols[2];
+    if (cols.size() > 3) data_line.part_num       = cols[3];
+    if (cols.size() > 4) data_line.component_type = cols[4];
+
+    if (cols.size() > 5) {
+        data_line.component_id = cols[5];
+        data_line.gap_length = cols[5];
+    }
+    if (cols.size() > 6) {
+        data_line.component_start = cols[6];
+        data_line.gap_type = cols[6];
+    }
+    if (cols.size() > 7) {
+        data_line.component_end = cols[7];
+        data_line.linkage = cols[7];
+    }
+
+    data_line.orientation = "";
+    if (data_line.component_type != "N") {
+      // Component
+      if (cols.size() > 8) data_line.orientation = cols[8];
+    }
+
+    if (m_ValidationType == syntax) {
+      x_ValidateSyntaxLine(data_line, line);
+    } else {
+      x_ValidateSemanticLine(data_line, line);
+    }
+  }
 }
 
 void CAgpValidateApplication::x_AgpTotals()
@@ -444,11 +479,12 @@ void CAgpValidateApplication::x_AgpTotals()
     "\nObjects: " << m_ObjCount << "\n" <<
     "Unique Component Accessions: "<< m_UniqComp.size()<<"\n"<<
     "Lines with Components: " << m_CompCount        << "\n" <<
-    "\tWith orientation of +: " << m_CompPosCount   << "\n" <<
-    "\tWith orientation of -: " << m_CompNegCount   << "\n" <<
-    "\tWith orientation of 0: " << m_CompZeroCount  << "\n\n"
+    "\torientation +: " << m_CompPosCount   << "\n" <<
+    "\torientation -: " << m_CompNegCount   << "\n" <<
+    "\torientation 0: " << m_CompZeroCount  << "\n\n"
 
- << "Gaps with linkage, with no linkage: " << m_GapCount
+ << "Gaps: " << m_GapCount
+ << "\n\t   with linkage: yes\tno"
  << "\n\tFragment       : "<<m_TypeGapCnt["fragmentyes"       ]
  << "\t"                   <<m_TypeGapCnt["fragmentno"        ]
  << "\n\tClone          : "<<m_TypeGapCnt["cloneyes"          ]
@@ -859,13 +895,10 @@ void CAgpValidateApplication::x_ValidateSemanticInit()
 void CAgpValidateApplication::x_ValidateSemanticLine(
   const SDataLine& dl, const string& text_line)
 {
-  if (dl.component_type == "N") { // gap
-      return;
-  }
+  if(dl.component_type == "N") return; // gap
 
   START_LINE_VALIDATE_MSG(dl.line_num, text_line);
 
-  // Create Seq-id, set it to the GI specified on the cmdline
   CSeq_id seq_id;
   try {
       seq_id.Set(dl.component_id);
@@ -874,12 +907,7 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
   catch (...) {
     AGP_ERROR( "Invalid component id: " << dl.component_id);
   }
-
-  // Get Bioseq handle for the Seq-id.
-  // * Most of requests will use this handle.
   CBioseq_Handle bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
-
-  // Accession not found check
   if( !bioseq_handle ) {
     AGP_ERROR( "Component not in Genbank: "<< dl.component_id);
     return;
@@ -1028,53 +1056,55 @@ void CAgpValidateApplication::x_CheckTaxid()
 
   if (!agp_taxid) {
       LOG_POST("Unable to determine a Taxid for the AGP");
+      // todo: print most popular taxids
       return;
   }
 
   LOG_POST(Error<< "The AGP's taxid is: " << agp_taxid);
-  LOG_POST(Error<<
-    "The following components have incorrect Taxids");
+  LOG_POST_ONCE(Error<< "Components with incorrect taxids:");
 
   // report components that have an incorrect taxid
   ITERATE(TTaxidMap, map_it, m_TaxidMap) {
-      if (map_it->first == agp_taxid) continue;
+    if (map_it->first == agp_taxid) continue;
 
-      int taxid = map_it->first;
-      ITERATE(TAgpInfoList, list_it, map_it->second) {
-          LOG_POST(Error << "\t" <<
-            list_it->filename << ", " <<
-            list_it->line_num << ": " <<
-            list_it->component_id << " - Taxid " <<
-            taxid);
-      }
+    int taxid = map_it->first;
+    ITERATE(TAgpInfoList, list_it, map_it->second) {
+      LOG_POST( Error << "\t"
+        << list_it->filename     << ", "
+        << list_it->line_num     << ": "
+        << list_it->component_id
+        << " - Taxid " << taxid
+      );
+    }
   }
 }
 
 void CAgpValidateApplication::Exit(void)
 {
-    SetDiagStream(0);
+  SetDiagStream(0);
 }
+END_NCBI_SCOPE
 
 
 int main(int argc, const char* argv[])
 {
-    return CAgpValidateApplication().AppMain(
-      argc, argv, 0, eDS_Default, 0
-    );
+  return CAgpValidateApplication().AppMain(
+    argc, argv, 0, eDS_Default, 0
+  );
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/08/28 19:52:02  sapojnik
+ * A nicer usage message via CArgDesc_agp_validate; more reformatting
+ *
  * Revision 1.5  2006/08/28 16:43:15  sapojnik
  * Reformatting, fixing typos, improving error messages and a few names
  *
  * Revision 1.3  2006/08/11 16:46:05  sapojnik
  * Print Unique Component Accessions, do not complain about the order of "-" spans
- *
- * Revision 1.2  2006/04/06 20:35:51  ucko
- * Replace "and" with "&&" for compatibility with GCC 2.95.
  *
  * Revision 1.1  2006/03/29 19:51:12  friedman
  * Initial version
