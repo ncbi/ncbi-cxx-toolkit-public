@@ -254,7 +254,7 @@ private:
     bool         m_Closed;           ///< True if database has been closed.
     string       m_MaskedLetters;    ///< Masked protein letters (IUPAC).
     string       m_MaskByte;         ///< Byte that replaced masked letters.
-    vector<bool> m_MaskLookup;       ///< Maps (blast-aa) byte to maskedness.
+    vector<char> m_MaskLookup;       ///< Maps (blast-aa) byte to maskedness.
     
     // Functions
     

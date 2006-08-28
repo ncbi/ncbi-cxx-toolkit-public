@@ -499,7 +499,7 @@ void CWriteDB_Impl::x_MaskSequence()
 {
     // Scan and mask the sequence itself.
     for(unsigned i = 0; i < m_Sequence.size(); i++) {
-        if (m_MaskLookup[m_Sequence[i] & 0xFF]) {
+        if (m_MaskLookup[m_Sequence[i] & 0xFF] != 0) {
             m_Sequence[i] = m_MaskByte[0];
         }
     }
@@ -741,7 +741,7 @@ void CWriteDB_Impl::SetMaskedLetters(const string & masked)
     m_MaskedLetters = masked;
     
     if (masked.empty()) {
-        vector<bool> none;
+        vector<char> none;
         m_MaskLookup.swap(none);
         return;
     }
@@ -760,12 +760,13 @@ void CWriteDB_Impl::SetMaskedLetters(const string & masked)
     _ASSERT(mask_bytes.size() == m_MaskedLetters.size());
     
     // Build a table of character-to-bool.
+    // (Bool is represented by char 0 and 1.)
     
-    m_MaskLookup.resize(256, false);
+    m_MaskLookup.resize(256, (char)0);
     
     for (unsigned i = 0; i < mask_bytes.size(); i++) {
-        int ch = mask_bytes[i] & 0xFF;
-        m_MaskLookup[ch] = true;
+        int ch = ((int) mask_bytes[i]) & 0xFF;
+        m_MaskLookup[ch] = (char)1;
     }
     
     // Convert the masking character - always 'X' - to stdaa.

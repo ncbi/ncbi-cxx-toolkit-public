@@ -159,14 +159,14 @@ inline void s_WriteInt4(ostream & str, int x)
 inline void s_WriteInt8LE(ostream & str, Uint8 x)
 {
     char buf[8];
-    buf[7] = (x >> 56) & 0xFF;
-    buf[6] = (x >> 48) & 0xFF;
-    buf[5] = (x >> 40) & 0xFF;
-    buf[4] = (x >> 32) & 0xFF;
-    buf[3] = (x >> 24) & 0xFF;
-    buf[2] = (x >> 16) & 0xFF;
-    buf[1] = (x >> 8)  & 0xFF;
-    buf[0] = (x     )  & 0xFF;
+    buf[7] = (char)((x >> 56) & 0xFF);
+    buf[6] = (char)((x >> 48) & 0xFF);
+    buf[5] = (char)((x >> 40) & 0xFF);
+    buf[4] = (char)((x >> 32) & 0xFF);
+    buf[3] = (char)((x >> 24) & 0xFF);
+    buf[2] = (char)((x >> 16) & 0xFF);
+    buf[1] = (char)((x >> 8)  & 0xFF);
+    buf[0] = (char)((x     )  & 0xFF);
     
     str.write(buf, 8);
 }

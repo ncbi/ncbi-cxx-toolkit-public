@@ -222,7 +222,7 @@ void CWriteDB_IsamIndex::x_WriteHeader()
     
     WriteInt4(isam_version);
     WriteInt4(isam_type);
-    WriteInt4(m_DataFileSize);
+    WriteInt4((int)m_DataFileSize);
     
     WriteInt4(num_terms);
     WriteInt4(samples);
@@ -258,7 +258,7 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
     // make reallocation rare, I divide by 63 instead, and throw in an
     // extra 16 bytes.
     
-    key_buffer.reserve(m_DataFileSize/63 + 16);
+    key_buffer.reserve((int)(m_DataFileSize/63 + 16));
     key_off.reserve(nsamples);
     
     unsigned i(0);
