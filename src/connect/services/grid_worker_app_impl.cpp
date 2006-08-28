@@ -119,26 +119,55 @@ private:
 class CGridWorkerNodeThread : public CThread
 {
 public:
-    CGridWorkerNodeThread(CWorkerNodeControlThread& control_thread) 
-        : m_ControlThread(control_thread) {}
+    CGridWorkerNodeThread(CGridWorkerNode& worker_node) 
+        : m_WorkerNode(worker_node) {}
 
     ~CGridWorkerNodeThread() {}
 protected:
 
     virtual void* Main(void)
     {
-        m_ControlThread.GetWorkerNode().Start();
+        m_WorkerNode.Start();
         return NULL;
     }
     virtual void OnExit(void)
     {
         CThread::OnExit();
-        m_ControlThread.RequestShutdown();
+        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         LOG_POST(CTime(CTime::eCurrent).AsString() << " Worker Node Thread exited.");
     }
 
 private:
-    CWorkerNodeControlThread& m_ControlThread;
+    CGridWorkerNode& m_WorkerNode;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//     CGridControleThread
+/// @internal
+class CGridControlThread : public CThread
+{
+public:
+    CGridControlThread(CWorkerNodeControlThread& control) 
+        : m_Control(control) {}
+
+    ~CGridControlThread() {}
+protected:
+
+    virtual void* Main(void)
+    {
+        m_Control.Run();
+        return NULL;
+    }
+    virtual void OnExit(void)
+    {
+        CThread::OnExit();
+        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        LOG_POST(CTime(CTime::eCurrent).AsString() << " Control Thread exited.");
+    }
+
+private:
+    CWorkerNodeControlThread& m_Control;
 };
 
 class CSelfRotatingLogStream : public CRotatingLogStream
@@ -602,10 +631,13 @@ int CGridWorkerApp_Impl::Run()
 
     {{
     CWorkerNodeControlThread control_server(control_port, *m_WorkerNode);
+    CRef<CGridControlThread> control_thread(new CGridControlThread(control_server));
 
-    CRef<CGridWorkerNodeThread> worker_thread(
-                                new CGridWorkerNodeThread(control_server));
-    worker_thread->Run();
+    //CRef<CGridWorkerNodeThread> worker_thread(
+    //                            new CGridWorkerNodeThread(*m_WorkerNode));
+
+    control_thread->Run();
+    //worker_thread->Run();
     // give sometime the thread to run
     SleepMilliSec(500);
     if (CGridGlobals::GetInstance().
@@ -621,15 +653,18 @@ int CGridWorkerApp_Impl::Run()
 
 
         try {
-            control_server.Run();
+            m_WorkerNode->Start();
+                //control_server.Run();
         }
         catch (exception& ex) {
             ERR_POST(CTime(CTime::eCurrent).AsString()
-                     << " Couldn't run a Threaded server: " << ex.what()  << "\n");
+                     << " Couldn't run a worker node: " << ex.what()  << "\n");
             RequestShutdown();
         }
+        control_server.RequestShutdown();
     }
-    worker_thread->Join();
+    control_thread->Join();
+    //    worker_thread->Join();
     if (m_IdleThread) {
         m_IdleThread->RequestShutdown();
         m_IdleThread->Join();
@@ -680,6 +715,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.26  2006/08/28 19:36:56  didenko
+ * Changed threads' order starting
+ *
  * Revision 6.25  2006/08/08 18:26:20  didenko
  * Code cleanning
  *

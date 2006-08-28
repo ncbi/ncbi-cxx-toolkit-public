@@ -209,8 +209,8 @@ const string GETLOAD_CMD = "GETLOAD";
 ///@internal
 CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port, 
                                                    CGridWorkerNode& worker_node)
-    : CThreadedServer(port), m_WorkerNode(worker_node), 
-      m_ShutdownRequested(false)
+    : CThreadedServer(port), m_WorkerNode(worker_node), m_ShutdownRequested(false)
+      //      m_ShutdownRequested(false)
 {
     m_InitThreads = 1;
     m_MaxThreads = 3;
@@ -293,6 +293,13 @@ void CWorkerNodeControlThread::Process(SOCK sock)
     }
 }
 
+bool CWorkerNodeControlThread::ShutdownRequested(void) 
+{
+    //    return CGridGlobals::GetInstance().
+    //        GetShutdownLevel() != CNetScheduleClient::eNoShutdown;
+    return m_ShutdownRequested;
+}
+
 void CWorkerNodeControlThread::ProcessTimeout(void)
 {
     CGridGlobals::GetInstance().GetJobsWatcher().CheckInfinitLoop();
@@ -303,6 +310,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.26  2006/08/28 19:36:56  didenko
+ * Changed threads' order starting
+ *
  * Revision 6.25  2006/08/03 19:33:10  didenko
  * Added auto_shutdown_if_idle config file paramter
  * Added current date to messages in the log file.

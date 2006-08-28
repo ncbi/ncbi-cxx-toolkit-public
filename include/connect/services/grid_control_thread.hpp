@@ -73,10 +73,7 @@ public:
 
     virtual void Process(SOCK sock);
 
-    virtual bool ShutdownRequested(void) 
-    {
-        return m_ShutdownRequested;
-    }
+    virtual bool ShutdownRequested(void);
 
     void RequestShutdown() { m_ShutdownRequested = true; }
 
@@ -100,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/08/28 19:36:56  didenko
+ * Changed threads' order starting
+ *
  * Revision 1.5  2006/05/12 15:13:37  didenko
  * Added infinit loop detection mechanism in job executions
  *
