@@ -264,9 +264,9 @@ void CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
 CMappingRanges::TRangeIterator
 CMappingRanges::BeginMappingRanges(CSeq_id_Handle id,
                                    TSeqPos         from,
-                                   TSeqPos         to)
+                                   TSeqPos         to) const
 {
-    TIdMap::iterator ranges = m_IdMap.find(id);
+    TIdMap::const_iterator ranges = m_IdMap.find(id);
     if (ranges == m_IdMap.end()) {
         return TRangeIterator();
     }
@@ -2245,6 +2245,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2006/08/28 18:36:38  grichenk
+* BeginMappingRanges() made const.
+*
 * Revision 1.51  2006/08/21 15:46:42  grichenk
 * Added CMappingRanges for storing mappings.
 * Added CSeq_loc_Mapper(CMappingRanges&) constructor.

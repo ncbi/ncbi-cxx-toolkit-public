@@ -146,7 +146,7 @@ public:
 
     TRangeIterator BeginMappingRanges(CSeq_id_Handle id,
                                       TSeqPos         from,
-                                      TSeqPos         to);
+                                      TSeqPos         to) const;
 
     // Set overall source orientation. The order of ranges is reversed
     // if reverse_src != reverse_dst.
@@ -660,6 +660,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/08/28 18:35:02  grichenk
+* BeginMappingRanges() made const.
+*
 * Revision 1.35  2006/08/21 15:46:42  grichenk
 * Added CMappingRanges for storing mappings.
 * Added CSeq_loc_Mapper(CMappingRanges&) constructor.
