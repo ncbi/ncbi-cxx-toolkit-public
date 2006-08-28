@@ -75,15 +75,16 @@ void CThreadedServer::Run(void)
                    "CThreadedServer::Run: Bad parameters");
     }
 
-    CStdPoolOfThreads pool(m_MaxThreads, m_QueueSize, m_SpawnThreshold);
-    pool.Spawn(m_InitThreads);
-
     CListeningSocket lsock(m_Port);
     if (lsock.GetStatus() != eIO_Success) {
         NCBI_THROW(CThreadedServerException, eCouldntListen,
                    "CThreadedServer::Run: Unable to create listening socket: "
                    + string(strerror(errno)));
     }
+
+    CStdPoolOfThreads pool(m_MaxThreads, m_QueueSize, m_SpawnThreshold);
+    pool.Spawn(m_InitThreads);
+
 
     while ( !ShutdownRequested() ) {
         CSocket    sock;
@@ -132,6 +133,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.18  2006/08/28 19:40:50  didenko
+ * Start a pool of threads only it a listening socket is created successfully
+ *
  * Revision 6.17  2006/04/03 16:21:28  ucko
  * CSocketRequest::Process: make sure to contain (and log) any exceptions
  * the user's Process method throws.
