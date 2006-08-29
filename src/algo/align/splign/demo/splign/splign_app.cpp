@@ -217,6 +217,7 @@ void CSplignApp::Init()
     
     argdescr->AddFlag ("mt","Use multiple threads (up to the number of CPUs)", 
                        true);
+#endif
 
     argdescr->AddDefaultKey
         ("quality", "quality", "Genomic sequence quality.",
@@ -226,7 +227,6 @@ void CSplignApp::Init()
     CArgAllow_Strings* constrain_errlevel = new CArgAllow_Strings;
     constrain_errlevel->Allow(kQuality_low)->Allow(kQuality_high);
     argdescr->SetConstraint("quality", constrain_errlevel);
-#endif
 
     argdescr->AddDefaultKey
         ("Wm", "match", "match score",
@@ -1184,6 +1184,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/08/29 18:21:01  kapustin
+ * Remove coditional compilation directive from the genome quality argument
+ *
  * Revision 1.70  2006/08/01 15:24:57  kapustin
  * Activate megablast mask-at-hash with SetFilterString
  *
