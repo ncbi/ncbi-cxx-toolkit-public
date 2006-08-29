@@ -44,29 +44,37 @@ USING_SCOPE(objects);
 //-------------------------------------------------------------------------
 CRef< CSeq_entry > CWinMaskFastaReader::GetNextSequence()
 {
+    CStreamLineReader line_reader( input_stream );
+
+    CFastaReader::TFlags flags = 
+        CFastaReader::fAssumeNuc |
+        CFastaReader::fForceType |
+        CFastaReader::fOneSeq    |
+        CFastaReader::fAllSeqIds;
+
+    CFastaReader fasta_reader( line_reader, flags );
+    CFastaReader fasta_reader_2( 
+            line_reader, flags|CFastaReader::fNoParseID );
+
     while( !input_stream.eof() )
     {
-        TReadFastaFlags flags = fReadFasta_AssumeNuc |
-                               fReadFasta_ForceType |
-                               fReadFasta_OneSeq    |
-                               fReadFasta_AllSeqIds;
-
-        CRef< CSeq_entry > aSeqEntry;
+        CRef< CSeq_entry > aSeqEntry( null );
         CT_POS_TYPE pos = input_stream.tellg();
 
         try {
-            aSeqEntry = ReadFasta( input_stream, flags, NULL, NULL );
+            aSeqEntry = fasta_reader.ReadSet( 1 );
         }catch( ... ) {
             input_stream.seekg( pos );
-            aSeqEntry = ReadFasta( 
-                    input_stream, flags|fReadFasta_NoParseID, NULL, NULL );
+            aSeqEntry = fasta_reader_2.ReadSet( 1 );
         }
 
-        if( aSeqEntry->IsSeq() && aSeqEntry->GetSeq().IsNa() )
+        if( aSeqEntry != 0 && 
+                aSeqEntry->IsSeq() && 
+                aSeqEntry->GetSeq().IsNa() )
             return aSeqEntry;
     }
 
-    return CRef< CSeq_entry >( 0 );
+    return CRef< CSeq_entry >( null );
 }
 
 
@@ -75,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2006/08/29 20:02:52  morgulis
+ * Changed ReadFasta() to CFastaReader
+ *
  * Revision 1.4  2005/10/25 20:11:51  ucko
  * Use CT_POS_TYPE for portability to GCC 2.95.
  *
