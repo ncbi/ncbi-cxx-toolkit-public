@@ -78,6 +78,9 @@ extern const Uint1 IUPACNA_TO_NCBI4NA[];
 /** Translates between ncbieaa and ncbistdaa. */
 extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 
+/** Translates between ncbieaa and ncbistdaa. */
+extern const char NCBISTDAA_TO_AMINOACID[];
+
 #define BLAST2NA_SIZE 4     /**< Size of compressed nucleic acid alphabet */
 #define BLASTNA_SIZE 16     /**< Size of nucleic acid alphabet */
 #define BLASTAA_SIZE 28     /**< Size of aminoacid alphabet */
@@ -103,6 +106,9 @@ extern const Uint1 kNuclSentinel;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/08/29 21:56:30  camacho
+ * +NCBISTDAA_TO_AMINOACID
+ *
  * Revision 1.10  2006/07/05 15:42:22  papadopo
  * change the amino acid alphabet size from 26 to 28
  *
