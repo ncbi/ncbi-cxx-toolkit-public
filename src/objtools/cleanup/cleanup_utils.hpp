@@ -127,7 +127,7 @@ struct SCaseInsensitiveStrComp {
 };
 
 template<typename Cont>
-bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
+void RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
 {
     typedef typename Cont::iterator iterator;
     iterator l_it = l.begin();
@@ -374,6 +374,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/08/29 17:38:52  ucko
+* Correct RemoveDupsNoSort's return type to void, in keeping with its
+* definition and usage.
+*
 * Revision 1.12  2006/08/29 14:24:57  rsmith
 * New ways to clean up strings, trailing junk and double to single quotes.
 *
