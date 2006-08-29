@@ -127,8 +127,9 @@ struct SCaseInsensitiveStrComp {
 };
 
 template<typename Cont>
-void RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
+bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
 {
+    bool changed = false;
     typedef typename Cont::iterator iterator;
     iterator l_it = l.begin();
     while (l_it != l.end()) {
@@ -138,10 +139,12 @@ void RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
             find( l.begin(), l_it, *l_it );
         if (dup_it != l.end()) {
             l_it = l.erase(l_it);
+            changed = true;
         } else {
             ++l_it;            
         }
     }
+    return changed;
 }
 
 
@@ -366,6 +369,22 @@ bool is_sorted(Iter first, Iter last,
 }
 
 
+template <class Iter>
+bool is_sorted(Iter first, Iter last)
+{
+    if (first == last)
+        return true;
+    
+    Iter next = first;
+    for (++next; next != last; first = next, ++next) {
+        if (*next < *first)
+            return false;
+    }
+    
+    return true;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -374,6 +393,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/08/29 19:27:13  rsmith
+* RemoveDupsNoSort reports if it has changed anything.
+* is_sorted w/o a comparison operator argument.
+*
 * Revision 1.13  2006/08/29 17:38:52  ucko
 * Correct RemoveDupsNoSort's return type to void, in keeping with its
 * definition and usage.
