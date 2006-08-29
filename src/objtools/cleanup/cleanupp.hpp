@@ -65,6 +65,7 @@ class CUser_field;
 class CUser_object;
 class CObject_id;
 class CGB_block;
+class CEMBL_block;
 class CPubdesc;
 class CPub_equiv;
 class CPub;
@@ -162,6 +163,7 @@ private:
     void BasicCleanup(CGb_qual& gbq);
     void BasicCleanup(CDbtag& dbtag);
     void BasicCleanup(CGB_block& gbb);
+    void BasicCleanup(CEMBL_block& emb);
     void BasicCleanup(CPubdesc& pd);
     void BasicCleanup(CPub_equiv& pe);
     void BasicCleanup(CPub& pub, bool fix_initials);
@@ -334,6 +336,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2006/08/29 14:28:12  rsmith
+ * + BasicCleanup(CEMBL_block)
+ *
  * Revision 1.40  2006/08/03 18:13:46  rsmith
  * BasicCleanup(CSeq_loc)
  *
