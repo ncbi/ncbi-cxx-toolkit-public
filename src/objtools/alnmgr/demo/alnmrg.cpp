@@ -221,6 +221,11 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
+        ("allowtranslocation", "bool",
+         "Allow translocation",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
         ("forcetranslation", "bool",
          "Force translation of nucleotides",
          CArgDescriptions::eBoolean, "f");
@@ -418,6 +423,10 @@ void CAlnMrgApp::SetOptions(void)
         m_MergeFlags |= CAlnMix::fTruncateOverlaps;
     }
 
+    if (args["allowtranslocation"]  &&  args["allowtranslocation"].AsBoolean()) {
+        m_MergeFlags |= CAlnMix::fAllowTranslocation;
+    }
+
     if (args["forcetranslation"]  &&  args["forcetranslation"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fForceTranslation;
     }
@@ -544,6 +553,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2006/08/29 19:26:36  todorov
+* + fAllowTranslocation
+*
 * Revision 1.37  2006/03/16 00:50:03  todorov
 * Added -bout option for binary asn.1 output.
 *
