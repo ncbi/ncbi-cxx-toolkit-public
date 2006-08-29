@@ -116,7 +116,7 @@ CWriteDB_File::CWriteDB_File(const string & basename,
     
     m_UseIndex = true;
     x_MakeFileName();
-    m_RealFile.open(m_Fname.c_str());
+	m_RealFile.open(m_Fname.c_str(), ios::out | ios::binary);
 }
 
 int CWriteDB_File::Write(const CTempString & data)
