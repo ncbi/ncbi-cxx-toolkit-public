@@ -31,7 +31,9 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/blastinput/blastinput.hpp>
+#include <objmgr/object_manager.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_fasta_input.hpp>
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
@@ -67,11 +69,19 @@ using boost::unit_test::test_suite;
 
 BOOST_AUTO_UNIT_TEST(s_ReadFasta)
 {
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CNcbiIfstream infile("data/aa.129295");
+    CBlastFastaInputSource source(*om, infile);
+
+    CHECK(source.End() == false);
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/08/29 20:43:28  papadopo
+ * add includes, add first test
+ *
  * Revision 1.1  2006/08/29 20:13:49  papadopo
  * unit tests for blastinput library
  *
