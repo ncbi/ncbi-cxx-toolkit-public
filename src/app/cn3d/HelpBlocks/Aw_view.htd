@@ -1,0 +1,60 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Microsoft FrontPage 5.0">
+<TITLE>Sequence Window : View</TITLE>
+</HEAD>
+<BODY>
+<H2>Sequence Window : View Commands</H2>
+<ul>
+  <li><A href="#titles">Show titles</a>
+  <li><A href="#geometry">Show geometry violations</a>
+  <li><A href="#pattern">Find pattern</a>
+  <li><A href="#showhide">Show / hide rows</a>
+  <li><A href="#scores">Show PSSM + contact scores</a></li>
+  <li><A href="#selfhit">Show self-hits</a></li>
+  <li><a href="#export">Export</a></li>
+  <li><A href="#taxonomy">Show taxonomy</a></li>
+</ul>
+<h3><a name="titles"></a>Show titles</h3>
+Causes the titles for each sequence to be displayed on the left side of the window.
+These are on by default, but can be turned off by double-clicking the black separator
+bar.
+<h3><a name="geometry"></a>Show geometry violations</h3>
+Shows in green background the places where a loop between aligned blocks is calculated
+to be too short to span the distance between the the ends of these blocks, based
+on the coordinates of the master structure.
+<h3><a name="pattern"></a>Find pattern</h3>
+Finds and highlights all non-overlapping occurrences of a residue pattern. This
+search uses ProSite syntax, described in detail at http://www.expasy.ch/prosite/
+- see the description of the PA (pattern) syntax. For example, to search for lysine
+separated by two to four residues from histidine, enter "k-x(2,4)-h";
+unlike ProSite, the letters are case-insensitive, and a trailing period is not
+required.
+<h3><a name="showhide"></a>Show / hide rows</h3>
+Show or hide specific rows of the alignment. All rows selected in the dialog will
+be displayed. Note that because of the way Cn3D combines pairwise alignments,
+especially when these alignments are very different (like from a VAST "multiple"
+alignment of three or more proteins), when you hide rows the alignment of the
+other rows may change. See the Cn3D Tutorial for more on this topic.
+<h3><a name="scores"></a>Show PSSM + contact scores</h3>
+Calculate and display scores for each row based on alignment (PSSM) and contact
+potential (structure-based) scores. You can specify what balance between PSSM
+and contact potential to use. These values will then be displayed in the status
+line at the bottom of the window when you move the mouse over each row.
+<h3><a name="selfhit"></a>Show self-hits</h3>
+Calculates a BLAST alignment for each sequence in the current alignment, using
+the PSSM constructed from the alignment, and restricting the alignment of each
+sequence to its currently aligned range. Shows scores for each row, and
+the percentage of rows that score significantly with the alignment's PSSM.
+<h3><a name="export"></a>Export</h3>
+<p>Used to export the current alignment in one of three formats: <b>FASTA</b> 
+(with gaps), <b>a2m FASTA</b>, <b>text</b>, or <b>HTML</b> (with color).</p>
+<h3><a name="taxonomy"></a>Show taxonomy</h3>
+Connects to the NCBI taxonomy server, and constructs the subset of the global 
+taxonomy tree that includes all sequences from the current alignment. In the 
+resulting taxonomy tree window, selecting a node and pressing space or return
+will cause that node to be completely collapsed or expanded. Double-clicking
+on a sequence node will highlight that sequence in the sequence window.
+</BODY>
+</HTML>
