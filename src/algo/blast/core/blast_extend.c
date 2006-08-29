@@ -705,7 +705,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     BlastUngappedData dummy_ungapped_data;
     BlastUngappedData *ungapped_data = NULL;
     Int4 rc;
-    Int4 last_hit, hit_saved;
+    Int4 last_hit, hit_saved=0;
     Int4 s_pos = s_end + hash_table->offset;
 
     window_size = word_params->options->window_size;
