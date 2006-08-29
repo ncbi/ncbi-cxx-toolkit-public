@@ -1065,7 +1065,11 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                     len -= delta / width1;
                                     start1 += delta;
                                 } else {
-                                    return eIgnoreMatch;
+                                    if (m_MergeFlags & fAllowTranslocation) {
+                                        return eFirstRowOverlapBelow;
+                                    } else {
+                                        return eIgnoreMatch;
+                                    }
                                 }
                             } else {
                                 return eFirstRowOverlapBelow;
@@ -1080,7 +1084,11 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                             // target above
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 if (len <= delta / width1) {
-                                    return eIgnoreMatch;
+                                    if (m_MergeFlags & fAllowTranslocation) {
+                                        return eFirstRowOverlapAbove;
+                                    } else {
+                                        return eIgnoreMatch;
+                                    }
                                 } else {
                                     len -= delta / width1;
                                 }
@@ -1271,6 +1279,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/08/29 19:20:19  todorov
+* Added logic for two particular cases when fAllowTranslocation can be
+* used.  The trick is that x_SecondRowFits must not return
+* eTranslocation, but just inconsistency.
+*
 * Revision 1.18  2006/03/22 16:48:49  gouriano
 * Do not dereference invalid iterator
 *
