@@ -79,15 +79,21 @@
 using namespace ncbi;
 using namespace objects;
 
-#define START_LINE_VALIDATE_MSG(line_num, line) \
-        m_LineErrorOccured = false; \
+#define START_LINE_VALIDATE_MSG \
+        m_LineErrorOccured = false;
+
+/*
         if (m_ValidateMsg != NULL) delete m_ValidateMsg; \
         m_ValidateMsg = new CNcbiOstrstream; \
         *m_ValidateMsg  << "\n\n" << m_CurrentFileName \
         << ", line " << line_num << ": \n" << line
+*/
 
-#define END_LINE_VALIDATE_MSG LOG_POST((string)CNcbiOstrstreamToString(*m_ValidateMsg))
-//#define END_LINE_VALIDATE_MSG *m_ValidateMsg <<"\0"; cout << m_ValidateMsg->str()
+#define END_LINE_VALIDATE_MSG(line_num, line)\
+  LOG_POST( line_num << ": " << line <<\
+    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n");\
+  delete m_ValidateMsg;\
+  m_ValidateMsg = new CNcbiOstrstream;
 
 #define AGP_MSG(severity, msg) \
         m_LineErrorOccured = true; \
@@ -355,7 +361,7 @@ void CAgpValidateApplication::Init(void)
 
   m_TaxidComponentTotal = 0;
 
-  m_ValidateMsg = NULL;
+  m_ValidateMsg = new CNcbiOstrstream;
 }
 
 
@@ -402,22 +408,25 @@ void CAgpValidateApplication::x_ValidateUsingDB(
 void CAgpValidateApplication::x_ValidateUsingFiles(
   const CArgs& args)
 {
-    if (args.GetNExtra() == 0) {
-        x_ValidateFile(cin);
-    } else {
-        for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
-            m_CurrentFileName =
-                args['#' + NStr::IntToString(i)].AsString();
-            CNcbiIstream& istr =
-                args['#' + NStr::IntToString(i)].AsInputFile();
-            if (!istr) {
-                LOG_POST(Fatal << "Unable to open file : " <<
-                         m_CurrentFileName);
-                exit (0);
-            }
-            x_ValidateFile(istr);
-        }
+  if (args.GetNExtra() == 0) {
+      x_ValidateFile(cin);
+  }
+  else {
+    for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
+
+      m_CurrentFileName =
+          args['#' + NStr::IntToString(i)].AsString();
+      LOG_POST("\n"<<m_CurrentFileName);
+      CNcbiIstream& istr =
+          args['#' + NStr::IntToString(i)].AsInputFile();
+      if (!istr) {
+          LOG_POST(Fatal << "Unable to open file : " <<
+                    m_CurrentFileName);
+          exit (0);
+      }
+      x_ValidateFile(istr);
     }
+  }
 }
 
 void CAgpValidateApplication::x_ValidateFile(
@@ -604,7 +613,7 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
   //TIdMapResult id_insert_result;
   TObjSetResult obj_insert_result;
 
-  START_LINE_VALIDATE_MSG(dl.line_num, text_line);
+  START_LINE_VALIDATE_MSG;
 
   if (dl.object != prev_object || last_validation) {
     prev_end = 0;
@@ -888,7 +897,7 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
     }
   }
   if (m_LineErrorOccured) {
-    END_LINE_VALIDATE_MSG;
+    END_LINE_VALIDATE_MSG(dl.line_num, text_line);
   }
 
   prev_component_type = dl.component_type;
@@ -923,7 +932,7 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
 {
   if(dl.component_type == "N") return; // gap
 
-  START_LINE_VALIDATE_MSG(dl.line_num, text_line);
+  START_LINE_VALIDATE_MSG;
 
   CSeq_id seq_id;
   try {
@@ -951,6 +960,10 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
 
   int taxid = x_GetTaxid(bioseq_handle);
   x_AddToTaxidMap(taxid, dl);
+
+  if (m_LineErrorOccured) {
+    END_LINE_VALIDATE_MSG(dl.line_num, text_line);
+  }
 }
 
 int CAgpValidateApplication::x_GetTaxid(
@@ -1123,6 +1136,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/08/29 18:35:51  sapojnik
+ * printing of semantic errors fixed; do not create a new CNcbiOstrstream for each line unless there were errors
+ *
  * Revision 1.8  2006/08/29 16:21:04  ucko
  * Allow END_LINE_VALIDATE_MSG to take advantage of CNcbiOstrstreamToString
  * rather than having to reimplement it.
