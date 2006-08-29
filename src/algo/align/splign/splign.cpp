@@ -1116,207 +1116,228 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 #endif
 
     // segment-level postprocessing
-
-    size_t seg_dim = segments.size();
-    if(seg_dim == 0) {
-        return;
-    }
-
-    // First go from the ends and see if we
-    // can improve boundary exons
-    size_t k0 = 0;
-    while(k0 < seg_dim) {
-
-        SSegment& s = segments[k0];
-        if(s.m_exon) {
-
-            const size_t len = 1 + s.m_box[1] - s.m_box[0];
-            const double min_idty = len >= kMinTermExonSize?
-                m_MinExonIdty: max(m_MinExonIdty, kMinTermExonIdty);
-
-            if(s.m_idty < min_idty || m_endgaps) {
-                s.ImproveFromLeft(Seq1, Seq2, m_aligner);
-            }
-            if(s.m_idty >= min_idty) {
-                break;
-            }
-        }
-        ++k0;
-    }
-
-    // fill the left-hand gap, if any
-    if(segments[0].m_exon && segments[0].m_box[0] > 0) {
-        segments.push_front(SSegment());
-        SSegment& g = segments.front();
-        g.m_exon = false;
-        g.m_box[0] = 0;
-        g.m_box[1] = segments[0].m_box[0] - 1;
-        g.m_box[2] = 0;
-        g.m_box[3] = segments[0].m_box[2] - 1;
-        g.m_idty = 0;
-        g.m_len = segments[0].m_box[0];
-        g.m_annot = s_kGap;
-        g.m_details.resize(0);
-        g.m_score = 0;
-        ++seg_dim;
-        ++k0;
-    }
-
-    int k1 = int(seg_dim - 1);
-    while(k1 >= int(k0)) {
-        SSegment& s = segments[k1];
-        if(s.m_exon) {
-
-            const size_t len = 1 + s.m_box[1] - s.m_box[0];
-            const double min_idty = len >= kMinTermExonSize?
-                m_MinExonIdty: max(m_MinExonIdty, kMinTermExonIdty);
-            if(s.m_idty < min_idty || m_endgaps) {
-                s.ImproveFromRight(Seq1, Seq2, m_aligner);
-            }
-            if(s.m_idty >= min_idty) {
-                break;
-            }
-        }
-        --k1;
-    }
-
-    const size_t SeqLen2 = m_genomic.size();
-    const size_t SeqLen1 = m_polya_start == kMax_UInt? m_mrna.size():
-        m_polya_start;
-
-    // fill the right-hand gap, if any
-    if( segments[seg_dim - 1].m_exon && 
-        segments[seg_dim - 1].m_box[1] < SeqLen1 - 1) {
-
-        SSegment g;
-        g.m_exon = false;
-        g.m_box[0] = segments[seg_dim - 1].m_box[1] + 1;
-        g.m_box[1] = SeqLen1 - 1;
-        g.m_box[2] = segments[seg_dim - 1].m_box[3] + 1;
-        g.m_box[3] = SeqLen2 - 1;
-        g.m_idty = 0;
-        g.m_len = g.m_box[1] - g.m_box[0] + 1;
-        g.m_annot = s_kGap;
-        g.m_details.resize(0);
-        g.m_score = 0;
-        segments.push_back(g);
-        ++seg_dim;
-    }
-
-    // turn to gaps exons with low identity
-    for(size_t k = 0; k < seg_dim; ++k) {
-        SSegment& s = segments[k];
-        if(s.m_exon && s.m_idty < m_MinExonIdty) {
-            s.m_exon = false;
-            s.m_idty = 0;
-            s.m_len = s.m_box[1] - s.m_box[0] + 1;
-            s.m_annot = s_kGap;
-            s.m_details.resize(0);
-            s.m_score = 0;
-        }
-    }
-
-    // turn to gaps short weak terminal exons
-    {{
-        // find the two leftmost exons
-        size_t exon_count = 0;
-        SSegment* term_segs[] = {0, 0};
-        for(size_t i = 0; i < seg_dim; ++i) {
-            SSegment& s = segments[i];
-            if(s.m_exon) {
-                term_segs[exon_count] = &s;
-                if(++exon_count == 2) {
-                    break;
-                }
-            }
-        }
-
-        if(exon_count == 2) {
-            x_ProcessTermSegm(term_segs, 0);
-        }
-    }}
-
-    {{
-        // find the two rightmost exons
-        size_t exon_count = 0;
-        SSegment* term_segs[] = {0, 0};
-        for(int i = seg_dim - 1; i >= 0; --i) {
-            SSegment& s = segments[i];
-            if(s.m_exon) {
-                term_segs[exon_count] = &s;
-                if(++exon_count == 2) {
-                    break;
-                }
-            }
-        }
-
-        if(exon_count == 2) {
-            x_ProcessTermSegm(term_segs, 1);
-        }
-    }}
-
-    // turn to gaps extra-short exons preceeded/followed by gaps
-    bool gap_prev = false;
-    for(size_t k = 0; k < seg_dim; ++k) {
-        SSegment& s = segments[k];
-	if(s.m_exon == false) {
-	  gap_prev = true;
-	}
-	else {
-	  size_t length = s.m_box[1] - s.m_box[0] + 1;
-	  bool gap_next = false;
-	  if(k + 1 < seg_dim) {
-	    gap_next = !segments[k+1].m_exon;
-	  }
-	  if(length <= 5 && (gap_prev || gap_next)) {
-            s.m_exon = false;
-            s.m_idty = 0;
-            s.m_len = s.m_box[1] - s.m_box[0] + 1;
-            s.m_annot = s_kGap;
-            s.m_details.resize(0);
-            s.m_score = 0;
-	  }
-	  gap_prev = false;
-	}
-    }
-
-    // merge all adjacent gaps
     m_segments.resize(0);
-    int gap_start_idx = -1;
-    if(seg_dim && segments[0].m_exon == false) {
-        gap_start_idx = 0;
-    }
-    for(size_t k = 0; k < seg_dim; ++k) {
-        SSegment& s = segments[k];
-        if(!s.m_exon) {
-            if(gap_start_idx == -1) {
-                gap_start_idx = int(k);
-                if(k > 0) {
-                    s.m_box[0] = segments[k-1].m_box[1] + 1;
-                    s.m_box[2] = segments[k-1].m_box[3] + 1;
+    while(true) {
+
+        if(m_segments.size() > 0) {
+            segments.resize(m_segments.size());
+            copy(m_segments.begin(), m_segments.end(), segments.begin());
+            m_segments.resize(0);
+        }
+
+        size_t seg_dim = segments.size();
+        if(seg_dim == 0) {
+            return;
+        }
+
+        size_t exon_count0 = 0;
+        ITERATE(TSegments, ii, segments) {
+            if(ii->m_exon) ++exon_count0;
+        }
+
+        // First go from the ends and see if we
+        // can improve boundary exons
+        size_t k0 = 0;
+        while(k0 < seg_dim) {
+
+            SSegment& s = segments[k0];
+            if(s.m_exon) {
+
+                const size_t len = 1 + s.m_box[1] - s.m_box[0];
+                const double min_idty = len >= kMinTermExonSize?
+                    m_MinExonIdty: max(m_MinExonIdty, kMinTermExonIdty);
+
+                if(s.m_idty < min_idty || m_endgaps) {
+                    s.ImproveFromLeft(Seq1, Seq2, m_aligner);
+                }
+
+                if(s.m_idty >= min_idty) {
+                    break;
                 }
             }
+            ++k0;
         }
-        else {
-           if(gap_start_idx >= 0) {
-               SSegment& g = segments[gap_start_idx];
-               g.m_box[1] = s.m_box[0] - 1;
-               g.m_box[3] = s.m_box[2] - 1;
-               g.m_len = g.m_box[1] - g.m_box[0] + 1;
-               g.m_details.resize(0);
-               m_segments.push_back(g);
-               gap_start_idx = -1;
-           }
-           m_segments.push_back(s);
-        } 
-    }
-    if(gap_start_idx >= 0) {
-        SSegment& g = segments[gap_start_idx];
-        g.m_box[1] = segments[seg_dim-1].m_box[1];
-        g.m_box[3] = segments[seg_dim-1].m_box[3];
-        g.m_len = g.m_box[1] - g.m_box[0] + 1;
-        g.m_details.resize(0);
-        m_segments.push_back(g);
+
+        // fill the left-hand gap, if any
+        if(segments[0].m_exon && segments[0].m_box[0] > 0) {
+            segments.push_front(SSegment());
+            SSegment& g = segments.front();
+            g.m_exon = false;
+            g.m_box[0] = 0;
+            g.m_box[1] = segments[0].m_box[0] - 1;
+            g.m_box[2] = 0;
+            g.m_box[3] = segments[0].m_box[2] - 1;
+            g.m_idty = 0;
+            g.m_len = segments[0].m_box[0];
+            g.m_annot = s_kGap;
+            g.m_details.resize(0);
+            g.m_score = 0;
+            ++seg_dim;
+            ++k0;
+        }
+
+        int k1 = int(seg_dim - 1);
+        while(k1 >= int(k0)) {
+            SSegment& s = segments[k1];
+            if(s.m_exon) {
+
+                const size_t len = 1 + s.m_box[1] - s.m_box[0];
+                const double min_idty = len >= kMinTermExonSize?
+                    m_MinExonIdty: max(m_MinExonIdty, kMinTermExonIdty);
+                if(s.m_idty < min_idty || m_endgaps) {
+                    s.ImproveFromRight(Seq1, Seq2, m_aligner);
+                }
+                if(s.m_idty >= min_idty) {
+                    break;
+                }
+            }
+            --k1;
+        }
+
+        const size_t SeqLen2 = m_genomic.size();
+        const size_t SeqLen1 = m_polya_start == kMax_UInt? m_mrna.size():
+            m_polya_start;
+
+        // fill the right-hand gap, if any
+        if( segments[seg_dim - 1].m_exon && 
+            segments[seg_dim - 1].m_box[1] < SeqLen1 - 1) {
+
+            SSegment g;
+            g.m_exon = false;
+            g.m_box[0] = segments[seg_dim - 1].m_box[1] + 1;
+            g.m_box[1] = SeqLen1 - 1;
+            g.m_box[2] = segments[seg_dim - 1].m_box[3] + 1;
+            g.m_box[3] = SeqLen2 - 1;
+            g.m_idty = 0;
+            g.m_len = g.m_box[1] - g.m_box[0] + 1;
+            g.m_annot = s_kGap;
+            g.m_details.resize(0);
+            g.m_score = 0;
+            segments.push_back(g);
+            ++seg_dim;
+        }
+
+        // turn to gaps exons with low identity
+        for(size_t k = 0; k < seg_dim; ++k) {
+            SSegment& s = segments[k];
+            if(s.m_exon && s.m_idty < m_MinExonIdty) {
+                s.m_exon = false;
+                s.m_idty = 0;
+                s.m_len = s.m_box[1] - s.m_box[0] + 1;
+                s.m_annot = s_kGap;
+                s.m_details.resize(0);
+                s.m_score = 0;
+            }
+        }
+
+        // turn to gaps short weak terminal exons
+        {{
+            // find the two leftmost exons
+            size_t exon_count = 0;
+            SSegment* term_segs[] = {0, 0};
+            for(size_t i = 0; i < seg_dim; ++i) {
+                SSegment& s = segments[i];
+                if(s.m_exon) {
+                    term_segs[exon_count] = &s;
+                    if(++exon_count == 2) {
+                        break;
+                    }
+                }
+            }
+
+            if(exon_count == 2) {
+                x_ProcessTermSegm(term_segs, 0);
+            }
+        }}
+
+        {{
+            // find the two rightmost exons
+            size_t exon_count = 0;
+            SSegment* term_segs[] = {0, 0};
+            for(int i = seg_dim - 1; i >= 0; --i) {
+                SSegment& s = segments[i];
+                if(s.m_exon) {
+                    term_segs[exon_count] = &s;
+                    if(++exon_count == 2) {
+                        break;
+                    }
+                }
+            }
+
+            if(exon_count == 2) {
+                x_ProcessTermSegm(term_segs, 1);
+            }
+        }}
+
+        // turn to gaps extra-short exons preceeded/followed by gaps
+        bool gap_prev = false;
+        for(size_t k = 0; k < seg_dim; ++k) {
+            SSegment& s = segments[k];
+            if(s.m_exon == false) {
+                gap_prev = true;
+            }
+            else {
+                size_t length = s.m_box[1] - s.m_box[0] + 1;
+                bool gap_next = false;
+                if(k + 1 < seg_dim) {
+                    gap_next = !segments[k+1].m_exon;
+                }
+                if(length <= 5 && (gap_prev || gap_next)) {
+                    s.m_exon = false;
+                    s.m_idty = 0;
+                    s.m_len = s.m_box[1] - s.m_box[0] + 1;
+                    s.m_annot = s_kGap;
+                    s.m_details.resize(0);
+                    s.m_score = 0;
+                }
+                gap_prev = false;
+            }
+        }
+
+        // merge all adjacent gaps
+        int gap_start_idx = -1;
+        if(seg_dim && segments[0].m_exon == false) {
+            gap_start_idx = 0;
+        }
+        for(size_t k = 0; k < seg_dim; ++k) {
+            SSegment& s = segments[k];
+            if(!s.m_exon) {
+                if(gap_start_idx == -1) {
+                    gap_start_idx = int(k);
+                    if(k > 0) {
+                        s.m_box[0] = segments[k-1].m_box[1] + 1;
+                        s.m_box[2] = segments[k-1].m_box[3] + 1;
+                    }
+                }
+            }
+            else {
+                if(gap_start_idx >= 0) {
+                    SSegment& g = segments[gap_start_idx];
+                    g.m_box[1] = s.m_box[0] - 1;
+                    g.m_box[3] = s.m_box[2] - 1;
+                    g.m_len = g.m_box[1] - g.m_box[0] + 1;
+                    g.m_details.resize(0);
+                    m_segments.push_back(g);
+                    gap_start_idx = -1;
+                }
+                m_segments.push_back(s);
+            } 
+        }
+        if(gap_start_idx >= 0) {
+            SSegment& g = segments[gap_start_idx];
+            g.m_box[1] = segments[seg_dim-1].m_box[1];
+            g.m_box[3] = segments[seg_dim-1].m_box[3];
+            g.m_len = g.m_box[1] - g.m_box[0] + 1;
+            g.m_details.resize(0);
+            m_segments.push_back(g);
+        }
+
+        size_t exon_count1 = 0;
+        ITERATE(CSplign::TSegments, ii, m_segments) {
+            if(ii->m_exon) ++exon_count1;
+        }
+
+        if(exon_count0 == exon_count1) break;
     }
 
 //#define DUMP_PROCESSED_SEGS
@@ -1418,7 +1439,8 @@ void CSplign::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
         // resize
         m_box[0] += i0_max;
         m_box[2] += i1_max;
-        m_details.erase(0, m_details.size() - (irs_max - irs0 + 1));
+        const size_t L = m_details.size() - (irs_max - irs0 + 1);
+        m_details.erase(0, L);
         m_details.insert(m_details.begin(), head, 'M');
         Update(aligner);
         
@@ -1895,6 +1917,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/08/29 20:21:23  kapustin
+ * Iterate seg-level core post-processing until no new exons created
+ *
  * Revision 1.59  2006/08/01 15:25:40  kapustin
  * Suppress a warning
  *
