@@ -127,10 +127,10 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
     CDir::TEntries  content(dir.GetEntries());
     ITERATE(CDir::TEntries, i, content) {
-
         if (!(*i)->IsFile()) {
             continue;
         }
+        (*i)->DereferenceLink();
 
         CTime modification;
         string entry = (*i)->GetPath();
@@ -306,6 +306,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/08/29 17:48:03  grichenk
+ * Dereference link before checking file stats.
+ *
  * Revision 1.5  2005/10/20 15:34:08  kuznets
  * Implemented duplicate id check
  *
