@@ -68,7 +68,7 @@ bool ConvertDoubleQuotes(string& str)
 
 
 /// truncate spaces and semicolons
-bool CleanString(string& str);
+bool CleanString(string& str, bool rm_trailing_junk = false);
 
 /// remove a trailing semicolon, 
 /// if it is not preceded by an ampersand
@@ -81,6 +81,9 @@ bool RemoveTrailingJunk(string& str);
 /// remove white space between pairs of tildes.
 /// "~ ~  ~ a~" -> "~~~ a~"
 bool  RemoveSpacesBetweenTildes(string& str);
+
+/// Change double to single quotes
+bool CleanDoubleQuote(string& str);
 
 // truncate trailing and leading spaces, trailing semicolons,
 // and redundant semicolons and extra spaces after semicolons
@@ -96,12 +99,12 @@ bool RemoveSpaces(string& str);
 
 /// clean a container of strings, remove blanks and repeats.
 template<typename C>
-bool CleanStringContainer(C& str_cont)
+bool CleanStringContainer(C& str_cont, bool rm_trailing_junk = false)
 {
     bool changed = false;
     typename C::iterator it = str_cont.begin();
     while (it != str_cont.end()) {
-        if (CleanString(*it)) {
+        if (CleanString(*it, rm_trailing_junk)) {
             changed = true;
         }
         if (NStr::IsBlank(*it)) {
@@ -112,6 +115,33 @@ bool CleanStringContainer(C& str_cont)
         }
     }
     return changed;
+}
+
+
+struct SCaseInsensitiveStrComp {
+    SCaseInsensitiveStrComp(const string& str) : m_Target(str) { }
+    bool operator()(string& s) {
+        return NStr::EqualNocase(s, m_Target);
+    }
+    string m_Target;
+};
+
+template<typename Cont>
+bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
+{
+    typedef typename Cont::iterator iterator;
+    iterator l_it = l.begin();
+    while (l_it != l.end()) {
+        
+        iterator dup_it = case_insensitive ?
+            find_if( l.begin(), l_it, SCaseInsensitiveStrComp(*l_it) ) :
+            find( l.begin(), l_it, *l_it );
+        if (dup_it != l.end()) {
+            l_it = l.erase(l_it);
+        } else {
+            ++l_it;            
+        }
+    }
 }
 
 
@@ -156,6 +186,16 @@ bool CleanStringContainer(C& str_cont)
         } \
     }
 
+#define CLEAN_STRING_MEMBER_JUNK(o, x) \
+if ((o).IsSet##x()) { \
+    if (CleanString((o).Set##x(), true) ) { \
+        ChangeMade(CCleanupChange::eTrimSpaces); \
+    } \
+    if (NStr::IsBlank((o).Get##x())) { \
+        (o).Reset##x(); \
+    } \
+}
+
 #define EXTENDED_CLEAN_STRING_MEMBER(o, x) \
 if ((o).IsSet##x()) { \
     CleanVisString((o).Set##x()); \
@@ -181,6 +221,16 @@ if ((o).IsSet##x()) { \
             (o).Reset##x(); \
         } \
     }
+
+#define CLEAN_STRING_LIST_JUNK(o, x) \
+if ((o).IsSet##x()) { \
+    if (CleanStringContainer((o).Set##x(), true) ) { \
+        ChangeMade(CCleanupChange::eTrimSpaces); \
+    } \
+    if ((o).Get##x().empty()) { \
+        (o).Reset##x(); \
+    } \
+}
 
 #define EXTENDED_CLEAN_STRING_LIST(o, x) \
     if ((o).IsSet##x()) { \
@@ -324,6 +374,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/08/29 14:24:57  rsmith
+* New ways to clean up strings, trailing junk and double to single quotes.
+*
 * Revision 1.11  2006/08/22 12:10:10  rsmith
 * + RemoveTrailingJunk(string& str)
 * + RemoveSpacesBetweenTildes(string& str)

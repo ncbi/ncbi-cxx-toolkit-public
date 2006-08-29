@@ -53,7 +53,7 @@ BEGIN_SCOPE(objects)
 
 using namespace sequence;
 
-bool CleanString(string& str)
+bool CleanString(string& str, bool rm_trailing_junk)
 {
     size_t orig_slen = str.size();
     NStr::TruncateSpacesInPlace(str, NStr::eTrunc_Begin);
@@ -62,6 +62,9 @@ bool CleanString(string& str)
         slen = str.size();
         NStr::TruncateSpacesInPlace(str, NStr::eTrunc_End);
         RemoveTrailingSemicolon(str);
+        if (rm_trailing_junk) {
+            RemoveTrailingJunk(str);
+        }
     }
     if (orig_slen != str.size()) {
         return true;
@@ -153,6 +156,19 @@ bool  RemoveSpacesBetweenTildes(string& str)
     }
     return changed;
 
+}
+
+
+bool CleanDoubleQuote(string& str)
+{
+    bool changed = false;
+    NON_CONST_ITERATE(string, it, str) {
+        if (*it == '\"') {
+            *it = '\'';
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 
@@ -862,6 +878,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/08/29 14:25:02  rsmith
+* New ways to clean up strings, trailing junk and double to single quotes.
+*
 * Revision 1.10  2006/08/23 20:10:50  ludwigf
 * FIXED: Infinite loop in RemoveSpacesBetweenTildes().
 *
