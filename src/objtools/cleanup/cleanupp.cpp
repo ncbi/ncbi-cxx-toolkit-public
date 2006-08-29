@@ -334,10 +334,20 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
 {
     CLEAN_STRING_LIST(gbb, Extra_accessions);
     CGB_block::TExtra_accessions& x_accs = gbb.SetExtra_accessions();
-    x_accs.sort();
+    if ( ! is_sorted(x_accs.begin(), x_accs.end())) {
+        x_accs.sort();
+        ChangeMade(CCleanupChange::eCleanQualifiers);
+    }
+    size_t xaccs_len = x_accs.size();
     x_accs.unique();
+    if (xaccs_len != x_accs.size()) {
+        ChangeMade(CCleanupChange::eCleanQualifiers);
+    }
+    
     CLEAN_STRING_LIST(gbb, Keywords);
-    RemoveDupsNoSort(gbb.SetKeywords(), m_Mode != eCleanup_EMBL);
+    if (RemoveDupsNoSort(gbb.SetKeywords(), m_Mode != eCleanup_EMBL)) { // case insensitive
+        ChangeMade(CCleanupChange::eCleanKeywords);
+    }
     
     // don't sort keywords, but get rid of dups.
     
@@ -363,8 +373,13 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
 void CCleanup_imp::BasicCleanup(CEMBL_block& emb)
 {
     CLEAN_STRING_LIST(emb, Extra_acc);
-    emb.SetExtra_acc().sort();
-    RemoveDupsNoSort(emb.SetKeywords(), false); // case insensitive
+    if ( ! is_sorted(emb.GetExtra_acc().begin(), emb.GetExtra_acc().end())) {
+        emb.SetExtra_acc().sort();
+        ChangeMade(CCleanupChange::eCleanQualifiers);
+    }
+    if (RemoveDupsNoSort(emb.SetKeywords(), false)) { // case insensitive
+        ChangeMade(CCleanupChange::eCleanKeywords);
+    }
 }
  
 
@@ -1261,6 +1276,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2006/08/29 19:28:09  rsmith
+ * Add reporting to BasicCleanup of CGB_block and CEMBL_block.
+ *
  * Revision 1.44  2006/08/29 14:28:40  rsmith
  * + BasicCleanup(CEMBL_block) and update BasicCleanup(CGB_block)
  *
