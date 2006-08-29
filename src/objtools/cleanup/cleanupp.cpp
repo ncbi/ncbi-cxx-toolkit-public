@@ -48,6 +48,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqblock/GB_block.hpp>
+#include <objects/seqblock/EMBL_block.hpp>
 #include <objects/biblio/Cit_gen.hpp>
 #include <serial/iterator.hpp>
 
@@ -293,7 +294,7 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
             break;
         case CSeqdesc::e_Region:
             if (CleanString( sd.SetRegion() ) ) {
-                ChangeMade(CCleanupChange::eTrimSpaces);
+                ChangeMade(CCleanupChange::eTrimSpaces); 
             }
             break;
         case CSeqdesc::e_User:
@@ -304,7 +305,7 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
         case CSeqdesc::e_Dbxref:
             break;
         case CSeqdesc::e_Embl:
-            // BasicCleanup( sd.SetEmbl() ); // no BasicCleanup( CEMBL_block& ) yet.
+            BasicCleanup( sd.SetEmbl() );
             break;
         case CSeqdesc::e_Create_date:
             break;
@@ -331,6 +332,17 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
 // CGB_block data member cleanup
 void CCleanup_imp::BasicCleanup(CGB_block& gbb)   
 {
+    CLEAN_STRING_LIST(gbb, Extra_accessions);
+    CGB_block::TExtra_accessions& x_accs = gbb.SetExtra_accessions();
+    x_accs.sort();
+    x_accs.unique();
+    CLEAN_STRING_LIST(gbb, Keywords);
+    RemoveDupsNoSort(gbb.SetKeywords(), m_Mode != eCleanup_EMBL);
+    
+    // don't sort keywords, but get rid of dups.
+    
+    CLEAN_STRING_MEMBER_JUNK(gbb, Source);
+    CLEAN_STRING_MEMBER_JUNK(gbb, Origin);
     //
     //  origin:
     //  append period if there isn't one already
@@ -342,8 +354,19 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
             ChangeMade(CCleanupChange::eChangeOther);
         }
     }
+    CLEAN_STRING_MEMBER(gbb, Date);
+    CLEAN_STRING_MEMBER(gbb, Div);
+    CLEAN_STRING_MEMBER(gbb, Taxonomy);
 }
 
+
+void CCleanup_imp::BasicCleanup(CEMBL_block& emb)
+{
+    CLEAN_STRING_LIST(emb, Extra_acc);
+    emb.SetExtra_acc().sort();
+    RemoveDupsNoSort(emb.SetKeywords(), false); // case insensitive
+}
+ 
 
 // Basic Cleanup w/Object Manager Handles.
 // cleanup fields that object manager cares about. (like changing feature types.)
@@ -1238,6 +1261,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2006/08/29 14:28:40  rsmith
+ * + BasicCleanup(CEMBL_block) and update BasicCleanup(CGB_block)
+ *
  * Revision 1.43  2006/08/22 12:10:50  rsmith
  * Better Seqdesc:Comment and Seqloc cleanup.
  *
