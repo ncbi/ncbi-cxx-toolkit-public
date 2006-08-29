@@ -205,6 +205,14 @@ public:
     ///   Exit code.
     virtual int Run(void) = 0;
 
+    /// Test run the application.
+    ///
+    /// It is only supposed to test if the Run() is possible,
+    /// or makes sense: that is, test all preconditions etc.
+    /// @return
+    ///   Exit code.
+    virtual int DryRun(void);
+
     /// Cleanup on application exit.
     ///
     /// Perform cleanup before exiting. The default behavior of this is
@@ -293,6 +301,9 @@ public:
 
     /// Get the program version information.
     CVersionInfo GetVersion(void) const;
+    
+    /// Check if it is a test run.
+    bool IsDryRun(void) const;
 
 protected:
     /// Disable argument descriptions.
@@ -318,7 +329,8 @@ protected:
         fHideHelp     = 0x01,  ///< Hide help description
         fHideLogfile  = 0x02,  ///< Hide log file description
         fHideConffile = 0x04,  ///< Hide configuration file description
-        fHideVersion  = 0x08   ///< Hide version description
+        fHideVersion  = 0x08,  ///< Hide version description
+        fHideDryRun   = 0x10   ///< Hide dryrun description
     };
     typedef int THideStdArgs;  ///< Binary OR of "EHideStdArgs"
 
@@ -419,10 +431,6 @@ protected:
     /// CNcbiApplication::LoadConfig(reg, conf) just calls
     /// LoadConfig(reg, conf, 0).
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
-
-
-    /// Get the home directory for the current user.
-    string GetHomeDir(void);
 
     /// Set program's display name.
     ///
@@ -537,6 +545,7 @@ private:
     string                     m_ConfigPath;  ///< Path to .ini file used
     int                        m_ExitCode;    ///< Exit code to force
     EExitMode                  m_ExitCodeCond; ///< When to force it (if ever)
+    bool                       m_DryRun;       ///< Dry run
 };
 
 
@@ -609,6 +618,11 @@ inline const string& CNcbiApplication::GetLogFileName(void) const
     return m_LogFileName;
 }
 
+inline bool CNcbiApplication::IsDryRun(void) const
+{
+    return m_DryRun;
+}
+
 
 END_NCBI_SCOPE
 
@@ -617,6 +631,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/08/29 15:29:05  gouriano
+ * Added dryrun option
+ *
  * Revision 1.61  2006/06/09 16:05:14  ucko
  * Don't force EExitMode's values to particular numbers.
  *

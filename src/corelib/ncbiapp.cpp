@@ -66,6 +66,7 @@ BEGIN_NCBI_SCOPE
 static const char* s_ArgLogFile = "-logfile";
 static const char* s_ArgCfgFile = "-conffile";
 static const char* s_ArgVersion = "-version";
+static const char* s_ArgDryRun  = "-dryrun";
 
 
 ///////////////////////////////////////////////////////
@@ -110,7 +111,8 @@ CNcbiApplication::CNcbiApplication(void)
 
     // Create an empty registry
     m_Config.Reset(new CNcbiRegistry);
-
+    
+    m_DryRun = false;
 }
 
 
@@ -140,6 +142,13 @@ CNcbiApplication::~CNcbiApplication(void)
 void CNcbiApplication::Init(void)
 {
     return;
+}
+
+
+int CNcbiApplication::DryRun(void)
+{
+    ERR_POST(Info << "DryRun: default implementation does nothing");
+    return 0;
 }
 
 
@@ -339,6 +348,10 @@ int CNcbiApplication::AppMain
                 LOG_POST(appname + ": " + GetVersion().Print());
                 return 0;
 
+                // Dry run
+            } else if ( NStr::strcmp(argv[i], s_ArgDryRun) == 0 ) {
+                m_DryRun = true;
+
                 // Save real argument
             } else {
                 v[real_arg_index++] = argv[i];
@@ -460,6 +473,12 @@ int CNcbiApplication::AppMain
                         (s_ArgVersion + 1,
                          "Print version number;  ignore other arguments");
                 }
+                if ((m_HideArgs & fHideDryRun) == 0  &&
+                    !m_ArgDesc->Exist(s_ArgDryRun + 1)) {
+                    m_ArgDesc->AddFlag
+                        (s_ArgDryRun + 1,
+                         "Dry run the application: do nothing, only test all preconditions");
+                }
             }
             // Print USAGE
             string str;
@@ -486,7 +505,7 @@ int CNcbiApplication::AppMain
         // Run application
         if (exit_code == 1) {
             try {
-                exit_code = Run();
+                exit_code = m_DryRun ? DryRun() : Run();
             }
             catch (CArgException& e) {
                 NCBI_RETHROW_SAME(e, "Application's execution failed");
@@ -1181,6 +1200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.126  2006/08/29 15:29:39  gouriano
+ * Added dryrun option
+ *
  * Revision 1.125  2006/06/29 16:02:21  grichenk
  * Added constants for setting CDiagContext properties.
  *
