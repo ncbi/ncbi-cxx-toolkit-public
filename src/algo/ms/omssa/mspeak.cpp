@@ -463,7 +463,7 @@ const int CMSPeak::CompareSorted(CLadder& Ladder,
 
 
 int CMSPeak::CompareSortedRank(CLadder& Ladder,
-                               const EMSPeakListTypes Which)
+                               EMSPeakListTypes Which)
 {
 
     unsigned i(0), j(0);
