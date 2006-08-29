@@ -35,6 +35,7 @@
 #include <memory>
 
 #include <corelib/ncbidbg.hpp>
+#include <util/line_reader.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -65,22 +66,28 @@ static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
     if( input_stream == 0 )
         return CRef< CSeq_entry >( 0 );
 
+    CStreamLineReader line_reader( *input_stream );
+
+    CFastaReader::TFlags flags = 
+        CFastaReader::fAssumeNuc |
+        CFastaReader::fForceType |
+        CFastaReader::fOneSeq    |
+        CFastaReader::fAllSeqIds;
+
+    CFastaReader fasta_reader( line_reader, flags );
+    CFastaReader fasta_reader_2( 
+            line_reader, flags|CFastaReader::fNoParseID );
+
     while( !input_stream->eof() )
     {
-        TReadFastaFlags flags = fReadFasta_AssumeNuc |
-                                fReadFasta_ForceType |
-                                fReadFasta_OneSeq    |
-                                fReadFasta_AllSeqIds;
-
-        CRef< CSeq_entry > aSeqEntry;
+        CRef< CSeq_entry > aSeqEntry( null );
         CT_POS_TYPE pos = input_stream->tellg();
 
-        try {
-            aSeqEntry = ReadFasta( *input_stream, flags, 0, 0 );
+        try{ 
+            aSeqEntry = fasta_reader.ReadSet( 1 );
         }catch( ... ) {
             input_stream->seekg( pos );
-            aSeqEntry = ReadFasta( 
-                    *input_stream, flags | fReadFasta_NoParseID, 0, 0 );
+            aSeqEntry = fasta_reader_2.ReadSet( 1 );
         }
 
         if(    aSeqEntry != 0
@@ -383,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.11  2006/08/29 17:34:50  morgulis
+ * Changed ReadFasta to CFastaReader
+ *
  * Revision 1.10  2005/10/26 20:23:37  ucko
  * Use CT_POS_TYPE for portability to GCC 2.95.
  *
