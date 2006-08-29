@@ -1440,6 +1440,19 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                 retval.push_back(seq_aligns);
 
             }
+            else
+            {   // Makes an empty SeqAlign set as this pattern had no hits.
+                CRef<CSeq_align_set> seq_aligns(
+                    BlastHitList2SeqAlign_OMF(NULL,
+                                              prog,
+                                              *query.GetSeq_loc(0),
+                                              query.GetSeqLength(0),
+                                              seqinfo_src,
+                                              true,
+                                              false));
+                retval.push_back(seq_aligns);
+                
+            }
         }
         sfree(phi_results);
     }
@@ -1676,6 +1689,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2006/08/29 16:11:05  madden
+* PhiBlastResults2SeqAlign_OMF now insests an empty SeqAlignSet into the results vector if the pattern has no matches
+*
 * Revision 1.74  2006/07/12 15:02:40  bealer
 * - Produce the filtered GI list for both nucleotide and protein.
 *
