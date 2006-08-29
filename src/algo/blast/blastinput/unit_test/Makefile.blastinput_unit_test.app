@@ -5,7 +5,7 @@ SRC = blastinput_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xncbi blastinput $(OBJMGR_LIBS)
+LIB = xncbi blastinput xobjsimple xobjutil xobjread $(OBJMGR_LIBS)
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
