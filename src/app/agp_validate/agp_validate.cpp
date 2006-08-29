@@ -82,13 +82,12 @@ using namespace objects;
 #define START_LINE_VALIDATE_MSG(line_num, line) \
         m_LineErrorOccured = false; \
         if (m_ValidateMsg != NULL) delete m_ValidateMsg; \
-        m_ValidateMsg = new CNcbiStrstream; \
+        m_ValidateMsg = new CNcbiOstrstream; \
         *m_ValidateMsg  << "\n\n" << m_CurrentFileName \
         << ", line " << line_num << ": \n" << line
 
-//#define END_LINE_VALIDATE_MSG LOG_POST(m_ValidateMsg->str())
+#define END_LINE_VALIDATE_MSG LOG_POST((string)CNcbiOstrstreamToString(*m_ValidateMsg))
 //#define END_LINE_VALIDATE_MSG *m_ValidateMsg <<"\0"; cout << m_ValidateMsg->str()
-#define END_LINE_VALIDATE_MSG string sELVM=m_ValidateMsg->str(); sELVM.resize(m_ValidateMsg->pcount()); LOG_POST(sELVM)
 
 #define AGP_MSG(severity, msg) \
         m_LineErrorOccured = true; \
@@ -161,7 +160,7 @@ private:
     map<string, int> m_TypeGapCnt;
 
     bool m_LineErrorOccured;
-    CNcbiStrstream* m_ValidateMsg;
+    CNcbiOstrstream* m_ValidateMsg;
 
     // data of an AGP line either
     //  from a file or the agp adb
@@ -1124,6 +1123,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/08/29 16:21:04  ucko
+ * Allow END_LINE_VALIDATE_MSG to take advantage of CNcbiOstrstreamToString
+ * rather than having to reimplement it.
+ *
  * Revision 1.7  2006/08/29 16:07:34  sapojnik
  * a workaround for strstream.str() bug; TIdMap* types renamed to TComp(Id|Span)*; counting scaffolds and singletons (does not work right yet); catching unwarranted GAPs at EOF
  *
