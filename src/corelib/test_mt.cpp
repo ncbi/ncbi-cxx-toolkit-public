@@ -189,6 +189,17 @@ int CThreadedApp::Run(void)
 #endif
         s_NumThreads = args["threads"].AsInteger();
 
+#if !defined(_MT)
+    // Set reasonable repeats if not set through the argument
+    if (!args["repeats"].AsInteger()) {
+        unsigned int repeats = s_NumThreads/6;
+        if (repeats < 4)
+            repeats = 4;
+        if (repeats < s_NumThreads)
+            s_NumThreads = repeats;
+    }
+#endif
+
     s_SpawnBy = args["spawnby"].AsInteger();
 
     //
@@ -282,6 +293,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/08/29 18:42:38  grichenk
+ * Adjust number of cycles in ST mode.
+ *
  * Revision 1.9  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
