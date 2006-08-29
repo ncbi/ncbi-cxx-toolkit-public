@@ -41,6 +41,8 @@
 
 BEGIN_NCBI_SCOPE
 
+static const size_t kMax_size_t = numeric_limits<size_t>::max();
+
 CBandAligner::CBandAligner( const char* seq1, size_t len1,
                             const char* seq2, size_t len2,
                             const SNCBIPackedScoreMatrix* scoremat,
@@ -138,7 +140,8 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     TScore E = kInfMinus, V2 = kInfMinus, G, n0;
     unsigned char tracer = 0;
 
-    const int ibeg ((m_Shift >= 0 && m_Shift > int(m_band))? (m_Shift - m_band): 0);
+    const int ibeg ((m_Shift >= 0 && m_Shift > int(m_band))? 
+		    (m_Shift - m_band): 0);
 
     const TScore wgleft1   = data->m_esf_L1? 0: m_Wg;
     const TScore wsleft1   = data->m_esf_L1? 0: m_Ws;
@@ -153,12 +156,14 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     int lendif = int(N2) - (int(N1) - (m_Shift + int(m_band)));
     const int iend ((lendif >= 0)? N1: (N1 - abs(lendif)));
 
-    m_LastCoordSeq1 = m_LastCoordSeq2 = m_TermK = kMax_UInt;
+    m_LastCoordSeq1 = m_LastCoordSeq2 = m_TermK = kMax_size_t;
 
     int jbeg0 = ibeg - m_Shift - int(m_band);
     for(int i = ibeg; i < iend && !m_terminate; ++i, ++jbeg0) {
 
-        int jbeg = i - m_Shift - int(m_band), jend = i - m_Shift + int(m_band) + 1;
+        int jbeg = i - m_Shift - int(m_band), 
+	    jend = i - m_Shift + int(m_band) + 1;
+
         if(jbeg < 0) jbeg = 0;
         if(jend > int(N2)) jend = N2;
 
@@ -268,8 +273,9 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 
     m_LastCoordSeq1 = iend - 1;
 
-    const bool uninit = m_TermK == kMax_UInt || m_LastCoordSeq1 == kMax_UInt 
-        || m_LastCoordSeq2 == kMax_UInt;
+    const bool uninit = m_TermK == kMax_size_t 
+        || m_LastCoordSeq1 == kMax_size_t 
+        || m_LastCoordSeq2 == kMax_size_t;
     if(uninit && !m_terminate) {
         NCBI_THROW(CAlgoAlignException, eInternal, g_msg_UnexpectedTermIndex);
     }
@@ -347,19 +353,22 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
 
     if(m_LastCoordSeq1 + 1 < data->m_len1 && data->m_esf_R2) {
         data->m_transcript.insert(data->m_transcript.begin(),
-                                  data->m_len1 - m_LastCoordSeq1 - 1, eTS_Delete);
+                                  data->m_len1 - m_LastCoordSeq1 - 1, 
+				  eTS_Delete);
     }
 
     if(m_LastCoordSeq2 + 1 < data->m_len2 && data->m_esf_R1) {
         data->m_transcript.insert(data->m_transcript.begin(),
-                                  data->m_len2 - m_LastCoordSeq2 - 1, eTS_Insert);
+                                  data->m_len2 - m_LastCoordSeq2 - 1, 
+				  eTS_Insert);
     }
 
     while (true) {
 
-        const size_t kOverflow = 0xFFFFFF00, kMax = 0xFFFFFFFF;
+        const size_t kOverflow = kMax_size_t - 256, kMax = kMax_size_t;
         if(i1 > kOverflow && i1 != kMax || i2 > kOverflow && i2 != kMax) {
-            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidBacktraceData);
+            NCBI_THROW(CAlgoAlignException, eInternal, 
+		       g_msg_InvalidBacktraceData);
         }
 
         if(i1 == kMax) {
@@ -382,7 +391,8 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
         unsigned char Key = backtrace[k];
 
         if(Key == kVoid) {
-            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidBacktraceData);
+            NCBI_THROW(CAlgoAlignException, eInternal, 
+		       g_msg_InvalidBacktraceData);
         }
 
         if (Key & kMaskD) {
@@ -418,7 +428,7 @@ bool CBandAligner::x_CheckMemoryLimit()
 {
     const size_t elem_size = GetElemSize();
     const size_t gdim = m_guides.size();
-    const size_t max_mem = kMax_UInt / 2;
+    const size_t max_mem = 1024 * 1024 * (512 + 2 * 1024);
     if(gdim) {
 
         size_t dim1 = m_guides[0], dim2 = m_guides[2];
@@ -458,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/08/29 18:23:48  kapustin
+ * Use numeric_limits to define size_t max
+ *
  * Revision 1.11  2006/08/24 13:43:48  kapustin
  * Check for user interruptions
  *
