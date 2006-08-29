@@ -86,11 +86,13 @@ using namespace objects;
         *m_ValidateMsg  << "\n\n" << m_CurrentFileName \
         << ", line " << line_num << ": \n" << line
 
-#define END_LINE_VALIDATE_MSG LOG_POST(m_ValidateMsg->str())
+//#define END_LINE_VALIDATE_MSG LOG_POST(m_ValidateMsg->str())
+//#define END_LINE_VALIDATE_MSG *m_ValidateMsg <<"\0"; cout << m_ValidateMsg->str()
+#define END_LINE_VALIDATE_MSG string sELVM=m_ValidateMsg->str(); sELVM.resize(m_ValidateMsg->pcount()); LOG_POST(sELVM)
 
-#define AGP_MSG(type, msg) \
+#define AGP_MSG(severity, msg) \
         m_LineErrorOccured = true; \
-        *m_ValidateMsg << "\n\t" << type << ": " <<  msg
+        *m_ValidateMsg << "\n\t" << severity << ": " <<  msg
 #define AGP_ERROR(msg) AGP_MSG("ERROR", msg)
 #define AGP_WARNING(msg) AGP_MSG("WARNING", msg)
 
@@ -144,9 +146,10 @@ private:
 
     // count varibles
     int m_ObjCount;
+    int m_ScaffoldCount;
+    int m_SingletonCount;
 
     int m_CompCount;
-    set<string> m_UniqComp;
 
     int m_CompPosCount;
     int m_CompNegCount;
@@ -182,11 +185,12 @@ private:
     // keep track of the componet and object ids used
     //  in the AGP. Used to detect duplicates and
     //  duplicates with seq range intersections.
-    typedef CRangeCollection<TSeqPos> TIdMapValue;
-    typedef map<string, TIdMapValue> TIdMap;
-    typedef pair<string, TIdMapValue> TIdMapKeyValuePair;
-    typedef pair<TIdMap::iterator, bool> TIdMapResult;
-    TIdMap m_CompIdSet;
+    typedef CRangeCollection<TSeqPos> TCompSpans;
+    typedef map<string, TCompSpans> TCompId2Spans;
+    typedef pair<string, TCompSpans> TCompIdSpansPair;
+    //typedef pair<TCompId2Spans::iterator, bool> TIdMapResult;
+
+    TCompId2Spans m_CompId2Spans;
 
     // keep track of the  object ids used
     //  in the AGP. Used to detect duplicates.
@@ -325,6 +329,8 @@ void CAgpValidateApplication::Init(void)
   m_LinkageValues.insert("no");
 
   m_ObjCount = 0;
+  m_ScaffoldCount = 0;
+  m_SingletonCount = 0;
   m_CompCount = 0;
   m_CompPosCount = 0;
   m_CompNegCount = 0;
@@ -420,6 +426,8 @@ void CAgpValidateApplication::x_ValidateFile(
 {
   int line_num = 0;
   string  line;
+  SDataLine data_line;
+  vector<string> cols;
   while (NcbiGetlineEOL(istr, line)) {
     line_num++;
     if (line == "") continue;
@@ -433,8 +441,7 @@ void CAgpValidateApplication::x_ValidateFile(
       }
     }
 
-    SDataLine data_line;
-    vector<string> cols;
+    cols.clear();
     NStr::Tokenize(line, "\t", cols);
 
     data_line.line_num = line_num;
@@ -471,17 +478,24 @@ void CAgpValidateApplication::x_ValidateFile(
       x_ValidateSemanticLine(data_line, line);
     }
   }
+
+  // Needed to check if the last line was a gap, or a singleton.
+  if (m_ValidationType == syntax) {
+    x_ValidateSyntaxLine(data_line, line, true);
+  }
 }
 
 void CAgpValidateApplication::x_AgpTotals()
 {
-  LOG_POST(
-    "\nObjects: " << m_ObjCount << "\n" <<
-    "Unique Component Accessions: "<< m_UniqComp.size()<<"\n"<<
-    "Lines with Components: " << m_CompCount        << "\n" <<
-    "\torientation +: " << m_CompPosCount   << "\n" <<
-    "\torientation -: " << m_CompNegCount   << "\n" <<
-    "\torientation 0: " << m_CompZeroCount  << "\n\n"
+  LOG_POST("\n"
+    "Objects     : " << m_ObjCount << "\n" <<
+    "Scaffolds   : " << m_ScaffoldCount   << "\n"
+    "  singletons: " << m_SingletonCount << "\n\n"
+    "Unique Component Accessions: "<< m_CompId2Spans.size()<<"\n"<<
+    "Lines with Components      : " << m_CompCount        << "\n" <<
+    "\torientation +       : " << m_CompPosCount   << "\n" <<
+    "\torientation -       : " << m_CompNegCount   << "\n" <<
+    "\torientation 0       : " << m_CompZeroCount  << "\n\n"
 
  << "Gaps: " << m_GapCount
  << "\n\t   with linkage: yes\tno"
@@ -572,6 +586,7 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
   static int      prev_part_num = 0;
   static int      prev_line_num = 0;
   static bool     prev_line_error_occured = false;
+  static int      componentsInLastScaffold = 0;
 
   bool new_obj = false;
   bool error;
@@ -586,17 +601,23 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
   int obj_range_len = 0;
   int comp_len = 0;
 
-  TIdMapResult id_insert_result;
+  pair<TCompId2Spans::iterator, bool> id_insert_result;
+  //TIdMapResult id_insert_result;
   TObjSetResult obj_insert_result;
 
   START_LINE_VALIDATE_MSG(dl.line_num, text_line);
 
-  if (dl.object != prev_object) {
+  if (dl.object != prev_object || last_validation) {
     prev_end = 0;
     prev_part_num = 0;
     prev_object = dl.object;
     new_obj = true;
     m_ObjCount++;
+
+    // 2006/08/28
+    m_ScaffoldCount++;
+    if(componentsInLastScaffold==1) m_SingletonCount++;
+    componentsInLastScaffold=0;
   }
 
   if( new_obj && (prev_component_type == "N") &&
@@ -612,15 +633,12 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
       LOG_POST("\n\n" << prev_line_filename << ", line "
         << prev_line_num << ":\n" << prev_line);
     }
-    LOG_POST("\tWARNING: Next line is a new scaffold "
-      "(and a new object). Current line is a fragment gap. "
-      "Scaffold must not end with a gap.");
-
-    if(last_validation) {
-      // Finished validating all lines.
-      // Just did a final gap ending check.
-      return;
-    }
+    LOG_POST("\tWARNING: Fragment gap at the end of a scaffold.");
+  }
+  if(last_validation) {
+    // Finished validating all lines.
+    // Just did a final gap ending check.
+    return;
   }
 
   if(new_obj) {
@@ -637,8 +655,8 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
         dl.line_num, dl.end, "object_end"
   ))){
     if(new_obj && obj_begin != 1) {
-      AGP_ERROR("First line of an object must have object_begin"
-        "=1");
+      AGP_ERROR("First line of an object must have "
+        "object_begin=1");
     }
 
     obj_range_len = x_CheckRange(
@@ -745,6 +763,14 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
         }
       }
     }
+    else if( dl.gap_type != "fragment" ) {
+      // 2006/08/28: Previous line is the last component of a scaffold
+      m_ScaffoldCount++;
+      if(componentsInLastScaffold==1) m_SingletonCount++;
+    }
+    if( dl.gap_type != "fragment" ) {
+      componentsInLastScaffold=0;
+    }
 
     if (error) {
       // Check if the line should be a component type
@@ -771,7 +797,7 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
   else { // component
     error = false;
     m_CompCount++;
-    m_UniqComp.insert(dl.component_id);
+    componentsInLastScaffold++;
 
     if( (comp_start = x_CheckIntField(
           dl.line_num,dl.component_start,"component_start"
@@ -788,7 +814,7 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
           comp_len != obj_range_len
       ) {
         AGP_ERROR( "Object range length not equal to component"
-          " length");
+          " range length");
         error = true;
       }
     } else {
@@ -815,26 +841,27 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
 
 
     CRange<TSeqPos>  component_range(comp_start, comp_end);
-    TIdMapKeyValuePair value_pair(
-      dl.component_id, TIdMapValue(component_range)
+    TCompIdSpansPair value_pair(
+      dl.component_id, TCompSpans(component_range)
     );
-    id_insert_result = m_CompIdSet.insert(value_pair);
+    id_insert_result = m_CompId2Spans.insert(value_pair);
     if (id_insert_result.second == false) {
-      TIdMapValue& collection =
+      TCompSpans& collection =
         (id_insert_result.first)->second;
 
-      string str_details;
+      string str_details="";
       if(collection.IntersectingWith(component_range)) {
-        str_details += " The span overlaps "
+        str_details = " The span overlaps "
           "a previous span for this component.";
       }
       else if (
         comp_start < (int)collection.GetToOpen() &&
         dl.orientation!="-"
       ) {
-        str_details+=" Component span is out of order.";
+        str_details=" Component span is out of order.";
       }
-      AGP_WARNING("Duplicate component id found."+str_details);
+      AGP_WARNING("Duplicate component id found.");
+      //  << str_details);
 
       collection.CombineWith(component_range);
     }
@@ -1097,6 +1124,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/08/29 16:07:34  sapojnik
+ * a workaround for strstream.str() bug; TIdMap* types renamed to TComp(Id|Span)*; counting scaffolds and singletons (does not work right yet); catching unwarranted GAPs at EOF
+ *
  * Revision 1.6  2006/08/28 19:52:02  sapojnik
  * A nicer usage message via CArgDesc_agp_validate; more reformatting
  *
