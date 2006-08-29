@@ -43,6 +43,10 @@
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/nw/nw_spliced_aligner32.hpp>
 #include <algo/align/util/hit_comparator.hpp>
+
+#include <algo/blast/api/bl2seq.hpp>
+#include <algo/blast/api/local_blast.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 
 #include <objmgr/object_manager.hpp>
@@ -215,8 +219,7 @@ void CSplignApp::Init()
     
 #ifdef GENOME_PIPELINE
     
-    argdescr->AddFlag ("mt","Use multiple threads (up to the number of CPUs)", 
-                       true);
+    argdescr->AddFlag ("mt","Use multiple threads (up to the number of CPUs)", true);
 #endif
 
     argdescr->AddDefaultKey
@@ -513,7 +516,7 @@ string GetLdsDbDir(const string& fasta_dir)
 }
 
 
-void CSplignApp::x_GetDbBlastHits(CSeqDB& seqdb,
+void CSplignApp::x_GetDbBlastHits(const string& dbname,
                                   blast::TSeqLocVector& queries,
                                   THitRefs* phitrefs,
                                   size_t chunk, size_t total_chunks)
@@ -521,13 +524,21 @@ void CSplignApp::x_GetDbBlastHits(CSeqDB& seqdb,
     USING_SCOPE(objects);
     USING_SCOPE(blast);
 
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
+    CSeqDB seqdb (dbname, CSeqDB::eNucleotide);
     CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(&seqdb));
-    CDbBlast blast (queries, seq_src, *m_BlastOptionsHandle);
-    TSeqAlignVector sav = blast.Run();
+    CLocalBlast blast (query_factory, m_BlastOptionsHandle, seq_src);
+    CSearchResultSet results = blast.Run();
     phitrefs->resize(0);
-    ITERATE(TSeqAlignVector, ii, sav) {
-        if((*ii)->IsSet()) {
-            const CSeq_align_set::Tdata &sas0 = (*ii)->Get();
+
+    const size_t num_results = results.GetNumResults();
+    for(size_t query_index = 0; query_index != num_results; ++query_index) {
+
+        CConstRef<objects::CSeq_align_set> ref_sas0 = 
+            results[query_index].GetSeqAlign();
+        if(ref_sas0->IsSet()) {
+
+            const CSeq_align_set::Tdata &sas0 = ref_sas0->Get();
             ITERATE(CSeq_align_set::Tdata, sa_iter0, sas0) {
                 const CSeq_align_set::Tdata &sas = 
                     (*sa_iter0)->GetSegs().GetDisc().Get();
@@ -545,6 +556,8 @@ void CSplignApp::x_GetDbBlastHits(CSeqDB& seqdb,
             }
         }
     }
+    
+//    BlastSeqSrcFree(seq_src);
 }
 
 
@@ -581,8 +594,7 @@ void CSplignApp::x_DoIncremental(void)
         queries.push_back(SSeqLoc(*sl, *scope));
             
         THitRefs hitrefs;
-        CSeqDB seqdb(dbname, CSeqDB::eNucleotide);
-        x_GetDbBlastHits(seqdb, queries, &hitrefs, 0, 0);
+        x_GetDbBlastHits(dbname, queries, &hitrefs, 0, 0);
         typedef CHitComparator<CBlastTabular> THitComparator;
         THitComparator hc (THitComparator::eSubjIdQueryId);
         stable_sort(hitrefs.begin(), hitrefs.end(), hc);
@@ -653,8 +665,7 @@ void CSplignApp::x_DoBatch2(void)
                 TSeqLocVector queries;
                 queries.push_back(SSeqLoc(*sl, *scope));
 
-                CSeqDB seqdb(dbname, CSeqDB::eNucleotide);
-                x_GetDbBlastHits(seqdb, queries, &hitrefs, 0, 0);
+                x_GetDbBlastHits(dbname, queries, &hitrefs, 0, 0);
                 NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
                 
                     THitRef h = *ii;
@@ -717,7 +728,6 @@ void CSplignApp::x_DoBatch2(void)
 
             THitRefs hitrefs_pair;
             m_CurHitRef = numeric_limits<size_t>::max();
-            CSeqDB seqdb(dbname, CSeqDB::eNucleotide);
             while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
                 
                 x_ProcessPair(hitrefs_pair, args); 
@@ -1184,6 +1194,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/08/29 20:23:03  kapustin
+ * Use CLocalBlast instead of discontinued CDbBlast
+ *
  * Revision 1.71  2006/08/29 18:21:01  kapustin
  * Remove coditional compilation directive from the genome quality argument
  *

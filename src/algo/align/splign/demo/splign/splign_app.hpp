@@ -42,22 +42,18 @@
 #include <algo/align/splign/splign_formatter.hpp>
 
 #include <algo/blast/api/blast_options_handle.hpp>
-#include <algo/blast/api/bl2seq.hpp>
-#include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/sseqloc.hpp>
+
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/lds/lds.hpp>
 
 #include <objmgr/scope.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <objtools/lds/lds.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class CSnap;
-typedef vector<CSnap> TSnaps;
 
 class CSplignApp: public CNcbiApplication
 {
@@ -86,7 +82,7 @@ protected:
                          CRef<objects::CScope>  scope,
                          THitRefs* phitrefs);
 
-    void x_GetDbBlastHits(CSeqDB& seq_src,
+    void x_GetDbBlastHits(const string& dbname,
                           blast::TSeqLocVector& queries,
                           THitRefs* phitrefs,
                           size_t chunk,
@@ -111,9 +107,6 @@ protected:
     void x_DoIncremental(void);
     void x_DoBatch2(void);
 
-    void x_ProcessSnaps(TSnaps& snaps, CSeqDB& seqdb, CRef<CSeq_id> seqid_subj, 
-                        TSeqPos right_bound);
-
     CRef<objects::CSeq_id> x_ReadFastaSetId(const CArgValue& argval,
                                             CRef<objects::CScope>);
 
@@ -134,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/08/29 20:23:03  kapustin
+ * Use CLocalBlast instead of discontinued CDbBlast
+ *
  * Revision 1.21  2006/05/22 15:52:22  kapustin
  * Engage new FASTA reader in the pairwise mode
  *
