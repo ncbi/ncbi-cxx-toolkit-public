@@ -68,7 +68,7 @@ public:
     /// provided with the TSeqLocVector.
     /// 
     /// @param v vector of SSeqLoc structures containing the queries [in]
-    /// @param p program type of this search [in]
+    /// @param prog program type of this search [in]
     CBlastQuerySourceOM(const TSeqLocVector & v, EBlastProgramType prog);
     
     /// Constructor which takes a TSeqLocVector
@@ -86,7 +86,7 @@ public:
     /// provided with the CBlastQueryVector.
     /// 
     /// @param v Object containing the queries, scopes and masking info [in]
-    /// @param opts BLAST algorithm options [in]
+    /// @param prog type of program to run [in]
     CBlastQuerySourceOM(CBlastQueryVector & v, EBlastProgramType prog);
     
     /// Constructor which takes a CBlastQueryVector

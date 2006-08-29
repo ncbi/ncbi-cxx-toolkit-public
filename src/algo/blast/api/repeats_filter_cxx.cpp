@@ -113,7 +113,9 @@ s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
 
 /** Convert a list of mask locations to TMaskedQueryRegions.
  * @param query Query sequence location [in]
+ * @param scope Scope for use by object manager [in]
  * @param loc_list List of mask locations [in]
+ * @param program type of blast search [in]
  * @return List of mask locations in TMaskedQueryRegions form.
  */
 TMaskedQueryRegions
@@ -234,6 +236,7 @@ s_FillMaskLocFromBlastResults(TSeqLocVector& query,
  * @param query Vector of queries [in] [out]
  * @param results alignments returned from a BLAST search against a repeats 
  *                database [in]
+ * @param program type of blast search [in]
  */
 static void
 s_FillMaskLocFromBlastResults(CBlastQueryVector& query,
@@ -409,6 +412,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.33  2006/08/29 18:13:30  madden
+ *  Doxygen fixes
+ *
  *  Revision 1.32  2006/08/02 23:37:32  camacho
  *  Remove unneeded shifting when processing Seq-align results
  *

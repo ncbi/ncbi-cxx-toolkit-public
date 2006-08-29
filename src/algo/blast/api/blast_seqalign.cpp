@@ -1466,13 +1466,12 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
  * The CSeq_align_set (list of CSeq_align's) consists of exactly one 
  * discontinuous CSeq_align for each vector element.
  * @param results results from running the BLAST algorithm [in]
- * @param prog type of BLAST program [in]
  * @param query_data All query sequences [in]
  * @param seqinfo_src Source of subject sequences information [in]
+ * @param prog type of BLAST program [in]
  * @param subj_index Index of this subject sequence in a set [in]
  * @param is_gapped Is this a gapped search? [in]
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
- * @param gi_list List of GIs for the subject sequence.
  * @return Vector of seqalign sets (one set per query sequence).
  */
 static TSeqAlignVector
@@ -1689,6 +1688,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2006/08/29 18:13:30  madden
+* Doxygen fixes
+*
 * Revision 1.75  2006/08/29 16:11:05  madden
 * PhiBlastResults2SeqAlign_OMF now insests an empty SeqAlignSet into the results vector if the pattern has no matches
 *

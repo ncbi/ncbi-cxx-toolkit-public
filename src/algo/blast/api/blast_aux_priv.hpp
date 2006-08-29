@@ -67,7 +67,7 @@ IBlastSeqInfoSrc* InitSeqInfoSrc(const BlastSeqSrc* seqsrc);
 /** Initializes the IBlastSeqInfoSrc from an existing CSeqDB object.
  * @param seqdb CSeqDB object to use as a source of database information.
  */
-IBlastSeqInfoSrc* InitSeqInfoSrc(CSeqDB * seqsrc);
+IBlastSeqInfoSrc* InitSeqInfoSrc(CSeqDB * seqdb);
 
 /** Create a single CSeq_loc of type whole from the first id in the list.
  * @param seqids identifiers for the Seq-loc [in]
