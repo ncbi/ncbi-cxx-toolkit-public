@@ -585,6 +585,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
     }
 
     CLEAN_STRING_MEMBER(f, Comment);
+    CleanDoubleQuote(f.SetComment());
     if (f.IsSetComment()  &&  f.GetComment() == ".") {
         f.ResetComment();
         ChangeMade(CCleanupChange::eChangeComment);
@@ -1677,7 +1678,7 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
                 need_convert = true;
             }
         } else if (feat_ci->GetFeatSubtype() == CSeqFeatData::eSubtype_misc_feature) {
-            if (CSeqFeatData::GetSiteList()->IsSiteName(feat_ci->GetComment().c_str(), site_type)) {
+            if (CSeqFeatData::GetSiteList()->IsSiteName(feat_ci->GetComment(), site_type)) {
                 is_site = true;
                 need_convert = true;
             } else if (CSeqFeatData::GetBondList()->IsBondName(feat_ci->GetComment(), bond_type)) {
@@ -1954,6 +1955,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2006/08/29 14:31:20  rsmith
+ * Cleanup double quotes in comments in CSeq_feat.
+ * Remove redundant c_str()
+ *
  * Revision 1.30  2006/08/04 13:14:52  rsmith
  * replace tab chars with spaces.
  *
