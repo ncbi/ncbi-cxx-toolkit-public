@@ -334,7 +334,7 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
 {
     CLEAN_STRING_LIST(gbb, Extra_accessions);
     CGB_block::TExtra_accessions& x_accs = gbb.SetExtra_accessions();
-    if ( ! is_sorted(x_accs.begin(), x_accs.end())) {
+    if ( ! objects::is_sorted(x_accs.begin(), x_accs.end())) {
         x_accs.sort();
         ChangeMade(CCleanupChange::eCleanQualifiers);
     }
@@ -373,7 +373,8 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
 void CCleanup_imp::BasicCleanup(CEMBL_block& emb)
 {
     CLEAN_STRING_LIST(emb, Extra_acc);
-    if ( ! is_sorted(emb.GetExtra_acc().begin(), emb.GetExtra_acc().end())) {
+    if ( ! objects::is_sorted(emb.GetExtra_acc().begin(),
+                              emb.GetExtra_acc().end())) {
         emb.SetExtra_acc().sort();
         ChangeMade(CCleanupChange::eCleanQualifiers);
     }
@@ -1276,6 +1277,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2006/08/29 23:36:04  ucko
+ * Explicitly qualify is_sorted by objects:: for the sake of older GCC
+ * versions, which otherwise complain about ambiguity with std::is_sorted.
+ *
  * Revision 1.45  2006/08/29 19:28:09  rsmith
  * Add reporting to BasicCleanup of CGB_block and CEMBL_block.
  *
