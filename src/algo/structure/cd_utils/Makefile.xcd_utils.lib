@@ -51,7 +51,14 @@ SRC = \
     cuReadFastaWrapper \
     cuSeqAnnotFromFasta \
     cuCdFromFasta \
-	cuBlockFormater
+	cuBlockFormater \
+	cuCdUpdater \
+	cuCdUpdateParameters \
+	cuDmBlastscore \
+	cuBlast2Seq \
+	cuHitsDistributor \
+	cuSeqSwapper \
+	cuFlexiDm
 
 DLL_LIB = xobjread
 

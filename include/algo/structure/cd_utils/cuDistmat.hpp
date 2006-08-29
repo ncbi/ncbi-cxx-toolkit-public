@@ -46,7 +46,7 @@ BEGIN_SCOPE(cd_utils)
 // pProgressFunction is called by ComputeMatrix to update the progress bar
 typedef void (* pProgressFunction) (int Num, int Total);
 
-const int NUMBER_OF_DISTANCE_METHODS = 6;
+const int NUMBER_OF_DISTANCE_METHODS = 7;
 const string DISTANCE_METHOD_NAMES[] = {
 		"",
 		"Percent Identity (Aligned Residues)",
@@ -54,7 +54,8 @@ const string DISTANCE_METHOD_NAMES[] = {
 		"Score of Aligned Residues",
 		"Score of Optimally-Extended Blocks",
 		"Blast Score (Footprint)",
-		"Blast Score (Full Sequence)"
+		"Blast Score (Full Sequence)",
+		"Percent Identity with variable Alignment"
 };
 enum EDistMethod {
 	eNoDistMethod     = 0,
@@ -63,7 +64,8 @@ enum EDistMethod {
 	eScoreAligned,
 	eScoreAlignedOptimal,
 	eScoreBlastFoot,
-	eScoreBlastFull
+	eScoreBlastFull,
+	ePercentIdentityRelaxed
 };
 const EDistMethod GLOBAL_DEFAULT_DIST_METHOD = eScoreAligned;
 	
@@ -170,6 +172,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/08/29 18:43:41  cliu
+ * no message
+ *
  * Revision 1.3  2006/08/09 18:41:23  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *

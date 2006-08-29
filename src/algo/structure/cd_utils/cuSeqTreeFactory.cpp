@@ -38,7 +38,7 @@
 //  Distance matrix headers for concrete classes
 #include <algo/structure/cd_utils/cuDmIdentities.hpp>
 #include <algo/structure/cd_utils/cuDmAlignedscore.hpp>
-//#include <algo/structure/cd_utils/cuDmBlastscore.hpp>
+#include <algo/structure/cd_utils/cuFlexiDm.hpp>
 #include <algo/structure/cd_utils/cuDmAlignedOptimalScore.hpp>
 //  Tree algorithm method headers
 #include <algo/structure/cd_utils/cuSeqTreeSlc.hpp>
@@ -154,6 +154,10 @@ DistanceMatrix* TreeFactory::GetMatrix(const EDistMethod method, AlignmentCollec
 					m_matrix->SetCTermExt(cTermExt);
 				}
 				break;
+			case ePercentIdentityRelaxed:
+				m_matrix = new FlexiDm(scoreMatrix);
+				m_matrix->SetData(alignData);
+				break;
 				/*
 			case eScoreBlastFoot:
 				m_matrix = new DM_BlastScore(scoreMatrix, nTermExt, cTermExt);
@@ -181,6 +185,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/08/29 18:42:44  cliu
+ * no message
+ *
  * Revision 1.3  2005/07/28 21:20:27  cliu
  * deal with saved blast trees
  *

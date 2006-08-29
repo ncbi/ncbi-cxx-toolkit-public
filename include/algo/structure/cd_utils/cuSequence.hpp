@@ -48,7 +48,7 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(cd_utils)
 
-// the taxid for Venter's environmental sequences
+// the taxid for environmental sequences
 const  int ENVIRONMENTAL_SEQUENCE_TAX_ID = 256318;
 
 NCBI_CDUTILS_EXPORT 
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/08/29 18:43:41  cliu
+ * no message
+ *
  * Revision 1.6  2006/08/09 18:41:24  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
