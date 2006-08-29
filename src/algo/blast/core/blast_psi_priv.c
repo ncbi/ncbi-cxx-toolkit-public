@@ -454,39 +454,9 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights)
 }
 
 #ifdef _DEBUG
-char GetResidue(char input)
+inline char GetResidue(char input)
 {
-    switch (input) {
-    case 0: return ('-');
-    case 1: return ('A');
-    case 2: return ('B');
-    case 3: return ('C');
-    case 4: return ('D');
-    case 5: return ('E');
-    case 6: return ('F');
-    case 7: return ('G');
-    case 8: return ('H');
-    case 9: return ('I');
-    case 10: return ('K');
-    case 11: return ('L');
-    case 12: return ('M');
-    case 13: return ('N');
-    case 14: return ('P');
-    case 15: return ('Q');
-    case 16: return ('R');
-    case 17: return ('S');
-    case 18: return ('T');
-    case 19: return ('V');
-    case 20: return ('W');
-    case 21: return ('X');
-    case 22: return ('Y');
-    case 23: return ('Z');
-    case 24: return ('U');
-    case 25: return ('*');
-    case 26: return ('O');
-    case 27: return ('J');
-    default: return ('?');
-    }
+    return input > BLASTAA_SIZE ? '?' : NCBISTDAA_TO_AMINOACID[(int)input];
 }
 
 void
@@ -2409,6 +2379,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/08/29 22:17:56  camacho
+ * Use NCBISTDAA_TO_AMINOACID
+ *
  * Revision 1.59  2006/04/19 19:16:49  camacho
  * Refactoring of structure group customization and addition of validation
  *
