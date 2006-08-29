@@ -2435,10 +2435,9 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
                     return -1;
                 }
             }
-            if ( rg2.GetFrom() <= rg1.GetFrom()  &&
-                rg2.GetTo() >= rg1.GetTo() ) {
-                return (rg1.GetFrom() - rg2.GetFrom()) +
-                    (rg2.GetTo() - rg1.GetTo());
+            if (rg1.GetFrom() <= rg2.GetFrom()  && rg1.GetTo() >= rg2.GetTo()) {
+                return (rg2.GetFrom() - rg1.GetFrom()) + 
+                    (rg1.GetTo() - rg2.GetTo());
             }
             return -1;
         }
@@ -2654,6 +2653,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2006/08/29 16:06:23  ludwigf
+* FIXED: Test for "eOverlap_Contains" in TestForOverlap64.
+*
 * Revision 1.24  2006/08/24 16:16:48  grichenk
 * Renamed x_TestForOverlap() to TestForOverlap64().
 * Added comments.
