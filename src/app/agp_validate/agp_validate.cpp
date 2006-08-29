@@ -38,17 +38,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbidiag.hpp>
-#include <corelib/ncbistr.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-#include <util/range_coll.hpp>
+#include "SyntaxValidator.hpp"
 
 // Objects includes
+// todo: move this to a separate .cpp file for semantic validator
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -63,6 +56,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 
 // Object Manager includes
+// todo: move this to a separate .cpp file for semantic validator
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -72,40 +66,92 @@
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-
-#include <iostream>
-#include "db.hpp"
+// #include "db.hpp"
 
 using namespace ncbi;
 using namespace objects;
 
-#define START_LINE_VALIDATE_MSG \
-        m_LineErrorOccured = false;
-
-/*
-        if (m_ValidateMsg != NULL) delete m_ValidateMsg; \
-        m_ValidateMsg = new CNcbiOstrstream; \
-        *m_ValidateMsg  << "\n\n" << m_CurrentFileName \
-        << ", line " << line_num << ": \n" << line
-*/
-
-#define END_LINE_VALIDATE_MSG(line_num, line)\
-  LOG_POST( line_num << ": " << line <<\
-    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n");\
-  delete m_ValidateMsg;\
-  m_ValidateMsg = new CNcbiOstrstream;
-
-#define AGP_MSG(severity, msg) \
-        m_LineErrorOccured = true; \
-        *m_ValidateMsg << "\n\t" << severity << ": " <<  msg
-#define AGP_ERROR(msg) AGP_MSG("ERROR", msg)
-#define AGP_WARNING(msg) AGP_MSG("WARNING", msg)
-
-#define NO_LOG false
-
-USING_NCBI_SCOPE;
-
 BEGIN_NCBI_SCOPE
+
+// USING_NCBI_SCOPE;
+class CAgpValidateApplication : public CNcbiApplication
+{
+private:
+
+  virtual void Init(void);
+  virtual int  Run(void);
+  virtual void Exit(void);
+
+  string m_CurrentFileName;
+  enum EValidationType {
+      syntax, semantic
+  } m_ValidationType;
+  bool m_SpeciesLevelTaxonCheck;
+
+  CRef<CObjectManager> m_ObjectManager;
+  CRef<CScope> m_Scope;
+
+  //CRef<CDb>   m_VolDb;
+
+  // In future, may hold other validator types
+  CAgpSyntaxValidator* m_LineValidator;
+
+  bool m_LineErrorOccured;
+  CNcbiOstrstream* m_ValidateMsg;
+
+  // data of an AGP line either
+  //  from a file or the agp adb
+  // typedef vector<SDataLine> TDataLines;
+
+
+  // The next few structures are used to keep track
+  //  of the taxids used in the AGP files. A map of
+  //  taxid to a vector of AGP file lines is maintained.
+  struct SAgpLineInfo {
+      string  filename;
+      int     line_num;
+      string  component_id;
+  };
+
+  typedef vector<SAgpLineInfo> TAgpInfoList;
+  typedef map<int, TAgpInfoList> TTaxidMap;
+  typedef pair<TTaxidMap::iterator, bool> TTaxidMapRes;
+  TTaxidMap m_TaxidMap;
+  int m_TaxidComponentTotal;
+
+  typedef map<int, int> TTaxidSpeciesMap;
+  TTaxidSpeciesMap m_TaxidSpeciesMap;
+
+  //
+  // Validate either from AGP files or from AGP DB
+  //  Each line (entry) of AGP data from either source is
+  //  populates a SDataLine. The SDataline is validated
+  //  syntatically or semanticaly.
+  //
+  void x_ValidateUsingDB(const CArgs& args);
+  void x_ValidateUsingFiles(const CArgs& args);
+  void x_ValidateFile(CNcbiIstream& istr);
+
+  //
+  // 2006/08/29: syntax validation is now done in CAgpSyntaxValidator
+  //
+  void x_ValidateSyntaxLine(const SDataLine& line,
+    const string& text_line, bool last_validation = false);
+
+  //
+  // Semantic validate methods
+  //
+  void x_ValidateSemanticInit();
+  void x_ValidateSemanticLine(const SDataLine& line,
+    const string& text_line);
+
+  // vsap: printableId is used for error messages only
+  int x_GetTaxid(CBioseq_Handle& bioseq_handle);
+  void x_AddToTaxidMap(int taxid, const SDataLine& dl);
+  void x_CheckTaxid();
+  int x_GetSpecies(int taxid);
+  int x_GetTaxonSpecies(int taxid);
+};
 
 // Povide a nicer usage message
 class CArgDesc_agp_validate : public CArgDescriptions
@@ -129,149 +175,6 @@ public:
     // -s    both syntAx and semantics
   }
 };
-
-class CAgpValidateApplication : public CNcbiApplication
-{
-private:
-
-    virtual void Init(void);
-    virtual int  Run(void);
-    virtual void Exit(void);
-
-    string m_CurrentFileName;
-    enum EValidationType {
-        syntax, semantic
-    } m_ValidationType;
-    bool m_SpeciesLevelTaxonCheck;
-
-    CRef<CObjectManager> m_ObjectManager;
-    CRef<CScope> m_Scope;
-
-    CRef<CDb>   m_VolDb;
-
-    // count varibles
-    int m_ObjCount;
-    int m_ScaffoldCount;
-    int m_SingletonCount;
-
-    int m_CompCount;
-
-    int m_CompPosCount;
-    int m_CompNegCount;
-    int m_CompZeroCount;
-    int m_GapCount;
-
-
-    // count the dfiffernt types of gaps
-    map<string, int> m_TypeGapCnt;
-
-    bool m_LineErrorOccured;
-    CNcbiOstrstream* m_ValidateMsg;
-
-    // data of an AGP line either
-    //  from a file or the agp adb
-    struct SDataLine {
-        int     line_num;
-        string  object;
-        string  begin;
-        string  end;
-        string  part_num;
-        string  component_type;
-        string  component_id;
-        string  component_start;
-        string  component_end;
-        string  orientation;
-        string  gap_length;
-        string  gap_type;
-        string  linkage;
-    };
-    typedef vector<SDataLine> TDataLines;
-
-    // keep track of the componet and object ids used
-    //  in the AGP. Used to detect duplicates and
-    //  duplicates with seq range intersections.
-    typedef CRangeCollection<TSeqPos> TCompSpans;
-    typedef map<string, TCompSpans> TCompId2Spans;
-    typedef pair<string, TCompSpans> TCompIdSpansPair;
-    //typedef pair<TCompId2Spans::iterator, bool> TIdMapResult;
-
-    TCompId2Spans m_CompId2Spans;
-
-    // keep track of the  object ids used
-    //  in the AGP. Used to detect duplicates.
-    typedef set<string> TObjSet;
-    typedef pair<TObjSet::iterator, bool> TObjSetResult;
-    TObjSet m_ObjIdSet;
-
-
-    // proper values for the different fields in the AGP
-    typedef set<string> TValuesSet;
-    typedef pair< TValuesSet::iterator, bool> TValuesSetResult;
-    TValuesSet m_ComponentTypeValues;
-    TValuesSet m_GapTypes;
-    TValuesSet m_OrientaionValues;
-    TValuesSet m_LinkageValues;
-
-
-    // The next few structures are used to keep track
-    //  of the taxids used in the AGP files. A map of
-    //  taxid to a vector of AGP file lines is maintained.
-    struct SAgpLineInfo {
-        string  filename;
-        int     line_num;
-        string  component_id;
-    };
-
-    typedef vector<SAgpLineInfo> TAgpInfoList;
-    typedef map<int, TAgpInfoList> TTaxidMap;
-    typedef pair<TTaxidMap::iterator, bool> TTaxidMapRes;
-    TTaxidMap m_TaxidMap;
-    int m_TaxidComponentTotal;
-
-    typedef map<int, int> TTaxidSpeciesMap;
-    TTaxidSpeciesMap m_TaxidSpeciesMap;
-
-    //
-    // Validate either from AGP files or from AGP DB
-    //  Each line (entry) of AGP data from either source is
-    //  populates a SDataLine. The SDataline is validated
-    //  syntatically or semanticaly.
-    //
-    void x_ValidateUsingDB(const CArgs& args);
-    void x_ValidateUsingFiles(const CArgs& args);
-    void x_ValidateFile(CNcbiIstream& istr);
-
-    //
-    // Syntax validate methods
-    //
-    void x_ValidateSyntaxLine(const SDataLine& line,
-      const string& text_line, bool last_validation = false);
-
-    bool x_CheckValues(int line_num, const TValuesSet& values,
-      const string& value, const string& field_name,
-      bool log_error = true);
-    int x_CheckRange(int line_num, int start, int begin,
-      int end, string begin_name, string end_name);
-    int x_CheckIntField(int line_num, const string& field,
-      const string& field_name, bool log_error = true);
-
-    //
-    // Semantic validate methods
-    //
-    void x_ValidateSemanticInit();
-    void x_ValidateSemanticLine(const SDataLine& line,
-      const string& text_line);
-
-    // vsap: printableId is used for error messages only
-    int x_GetTaxid(CBioseq_Handle& bioseq_handle);
-    void x_AddToTaxidMap(int taxid, const SDataLine& dl);
-    void x_CheckTaxid();
-    void x_AgpTotals();
-    int x_GetSpecies(int taxid);
-    int x_GetTaxonSpecies(int taxid);
-};
-
-
 
 void CAgpValidateApplication::Init(void)
 {
@@ -306,59 +209,6 @@ void CAgpValidateApplication::Init(void)
   // Setup arg.descriptions for this application
   SetupArgDescriptions(arg_desc.release());
 
-  // initialze values
-  m_GapTypes.insert("fragment");
-  m_GapTypes.insert("split_finished");
-  m_GapTypes.insert("clone");
-  m_GapTypes.insert("contig");
-  m_GapTypes.insert("centromere");
-  m_GapTypes.insert("short_arm");
-  m_GapTypes.insert("heterochromatin");
-  m_GapTypes.insert("telomere");
-  m_GapTypes.insert("scaffold");
-
-  m_ComponentTypeValues.insert("A");
-  m_ComponentTypeValues.insert("D");
-  m_ComponentTypeValues.insert("F");
-  m_ComponentTypeValues.insert("G");
-  m_ComponentTypeValues.insert("P");
-  m_ComponentTypeValues.insert("N");
-  m_ComponentTypeValues.insert("O");
-  m_ComponentTypeValues.insert("W");
-
-  m_OrientaionValues.insert("+");
-  m_OrientaionValues.insert("-");
-  m_OrientaionValues.insert("0");
-
-  m_LinkageValues.insert("yes");
-  m_LinkageValues.insert("no");
-
-  m_ObjCount = 0;
-  m_ScaffoldCount = 0;
-  m_SingletonCount = 0;
-  m_CompCount = 0;
-  m_CompPosCount = 0;
-  m_CompNegCount = 0;
-  m_CompZeroCount = 0;
-  m_GapCount = 0;
-
-  m_TypeGapCnt["fragmentyes"] = 0;
-  m_TypeGapCnt["fragmentno"] = 0;
-  m_TypeGapCnt["split_finishedyes"] = 0;
-  m_TypeGapCnt["split_finishedno"] = 0;
-  m_TypeGapCnt["cloneyes"] = 0;
-  m_TypeGapCnt["cloneno"] = 0;
-  m_TypeGapCnt["contigyes"] = 0;
-  m_TypeGapCnt["contigno"] = 0;
-  m_TypeGapCnt["centromereyes"] = 0;
-  m_TypeGapCnt["centromereno"] = 0;
-  m_TypeGapCnt["short_armyes"] = 0;
-  m_TypeGapCnt["short_armno"] = 0;
-  m_TypeGapCnt["heterochromatinyes"] = 0;
-  m_TypeGapCnt["heterochromatinno"] = 0;
-  m_TypeGapCnt["telomereyes"] = 0;
-  m_TypeGapCnt["telomereno"] = 0;
-
   m_TaxidComponentTotal = 0;
 
   m_ValidateMsg = new CNcbiOstrstream;
@@ -373,11 +223,14 @@ int CAgpValidateApplication::Run(void)
  //// Get command line arguments
   const CArgs& args = GetArgs();
 
+
   if (args["type"].AsString() == "syntax") {
-      m_ValidationType = syntax;
-  } else { // args_type == "semantic"
-      x_ValidateSemanticInit();
-      m_ValidationType = semantic;
+    m_ValidationType = syntax;
+    m_LineValidator = new CAgpSyntaxValidator();
+  }
+  else { // args_type == "semantic"
+    x_ValidateSemanticInit();
+    m_ValidationType = semantic;
   }
 
   m_SpeciesLevelTaxonCheck = false;
@@ -388,7 +241,7 @@ int CAgpValidateApplication::Run(void)
   //// Process files, print results
   x_ValidateUsingFiles(args);
   if(m_ValidationType == syntax) {
-    x_AgpTotals();
+    m_LineValidator->PrintTotals();
   }
   else {
     x_CheckTaxid();
@@ -493,419 +346,23 @@ void CAgpValidateApplication::x_ValidateFile(
   }
 }
 
-void CAgpValidateApplication::x_AgpTotals()
-{
-  LOG_POST("\n"
-    "Objects     : " << m_ObjCount << "\n" <<
-    "Scaffolds   : " << m_ScaffoldCount   << "\n"
-    "  singletons: " << m_SingletonCount << "\n\n"
-    "Unique Component Accessions: "<< m_CompId2Spans.size()<<"\n"<<
-    "Lines with Components      : " << m_CompCount        << "\n" <<
-    "\torientation +       : " << m_CompPosCount   << "\n" <<
-    "\torientation -       : " << m_CompNegCount   << "\n" <<
-    "\torientation 0       : " << m_CompZeroCount  << "\n\n"
-
- << "Gaps: " << m_GapCount
- << "\n\t   with linkage: yes\tno"
- << "\n\tFragment       : "<<m_TypeGapCnt["fragmentyes"       ]
- << "\t"                   <<m_TypeGapCnt["fragmentno"        ]
- << "\n\tClone          : "<<m_TypeGapCnt["cloneyes"          ]
- << "\t"                   <<m_TypeGapCnt["cloneno"           ]
- << "\n\tContig         : "<<m_TypeGapCnt["contigyes"         ]
- << "\t"                   <<m_TypeGapCnt["contigno"          ]
- << "\n\tCentromere     : "<<m_TypeGapCnt["centromereyes"     ]
- << "\t"                   <<m_TypeGapCnt["centromereno"      ]
- << "\n\tShort_arm      : "<<m_TypeGapCnt["short_armyes"      ]
- << "\t"                   <<m_TypeGapCnt["short_armno"       ]
- << "\n\tHeterochromatin: "<<m_TypeGapCnt["heterochromatinyes"]
- << "\t"                   <<m_TypeGapCnt["heterochromatinno" ]
- << "\n\tTelomere       : "<<m_TypeGapCnt["telomereyes"       ]
- << "\t"                   <<m_TypeGapCnt["telomereno"        ]
- << "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
- << "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
-  );
-}
-
-
-
-
-int CAgpValidateApplication::x_CheckIntField(
-  int line_num, const string& field,
-  const string& field_name, bool log_error)
-{
-  int field_value = 0;
-  try {
-      field_value = NStr::StringToInt(field);
-  } catch (...) {
-  }
-
-  if (field_value <= 0  &&  log_error) {
-    AGP_ERROR( field_name << " field must be a positive "
-    "integer");
-  }
-  return field_value;
-}
-
-int CAgpValidateApplication::x_CheckRange(
-  int line_num, int start, int begin, int end,
-  string begin_name, string end_name)
-{
-  int length = 0;
-  if(begin <= start){
-    AGP_ERROR( begin_name << " field overlaps the previous "
-      "line");
-  }
-  else if (end < begin) {
-    AGP_ERROR(end_name << " is less than " << begin_name );
-  }
-  else {
-    length = end - begin + 1;
-  }
-
-  return length;
-}
-
-bool CAgpValidateApplication::x_CheckValues(
-  int line_num,
-  const TValuesSet& values,
-  const string& value,
-  const string& field_name,
-  bool log_error)
-{
-  if (values.count(value) == 0) {
-    if (log_error)
-      AGP_ERROR("Invalid value for " << field_name);
-    return false;
-  }
-  return true;
-}
-
 void CAgpValidateApplication::x_ValidateSyntaxLine(
   const SDataLine& dl,
   const string& text_line,
   bool last_validation)
 {
-  static string   prev_object = "";
-  static string   prev_component_type = "";
-  static string   prev_gap_type = "";
-  static string   prev_line;
-  static string   prev_line_filename = "";
-  static int      prev_end = 0;
-  static int      prev_part_num = 0;
-  static int      prev_line_num = 0;
-  static bool     prev_line_error_occured = false;
-  static int      componentsInLastScaffold = 0;
+  // START_LINE_VALIDATE_MSG;
+  bool errorOccured = m_LineValidator->ValidateLine(
+    m_ValidateMsg, dl, text_line, last_validation);
 
-  bool new_obj = false;
-  bool error;
-
-  int obj_begin = 0;
-  int obj_end = 0;
-  int part_num = 0;
-  int comp_start = 0;
-  int comp_end = 0;
-  int gap_len = 0;
-
-  int obj_range_len = 0;
-  int comp_len = 0;
-
-  pair<TCompId2Spans::iterator, bool> id_insert_result;
-  //TIdMapResult id_insert_result;
-  TObjSetResult obj_insert_result;
-
-  START_LINE_VALIDATE_MSG;
-
-  if (dl.object != prev_object || last_validation) {
-    prev_end = 0;
-    prev_part_num = 0;
-    prev_object = dl.object;
-    new_obj = true;
-    m_ObjCount++;
-
-    // 2006/08/28
-    m_ScaffoldCount++;
-    if(componentsInLastScaffold==1) m_SingletonCount++;
-    componentsInLastScaffold=0;
-  }
-
-  if( new_obj && (prev_component_type == "N") &&
-      (prev_gap_type == "fragment")
-  ) {
-    // A new scafold. Previous line is a scaffold
-    // ending with a fragment gap
-
-    // special error reporting mechanism since the
-    //  error is on the previous line. Directly Log
-    //  the error messages.
-    if(!prev_line_error_occured) {
-      LOG_POST("\n\n" << prev_line_filename << ", line "
-        << prev_line_num << ":\n" << prev_line);
-    }
-    LOG_POST("\tWARNING: Fragment gap at the end of a scaffold.");
-  }
-  if(last_validation) {
-    // Finished validating all lines.
-    // Just did a final gap ending check.
-    return;
-  }
-
-  if(new_obj) {
-    obj_insert_result = m_ObjIdSet.insert(dl.object);
-    if (obj_insert_result.second == false) {
-      AGP_ERROR("Duplicate object: " << dl.object);
-    }
-  }
-
-  obj_begin = x_CheckIntField(
-    dl.line_num, dl.begin, "object_begin"
-  );
-  if( obj_begin && ( obj_end = x_CheckIntField(
-        dl.line_num, dl.end, "object_end"
-  ))){
-    if(new_obj && obj_begin != 1) {
-      AGP_ERROR("First line of an object must have "
-        "object_begin=1");
-    }
-
-    obj_range_len = x_CheckRange(
-      dl.line_num, prev_end, obj_begin, obj_end,
-      "object_begin", "object_end");
-    prev_end = obj_end;
-  }
-
-  if (part_num = x_CheckIntField(
-    dl.line_num, dl.part_num, "part_num"
-  )) {
-    if(part_num != prev_part_num+1) {
-      AGP_ERROR("Part number (column 4) != previous "
-        "part number +1");
-    }
-    prev_part_num = part_num;
-  }
-
-  x_CheckValues( dl.line_num, m_ComponentTypeValues,
-    dl.component_type,"component_type");
-
-
-  if (dl.component_type == "N") { // gap
-    m_GapCount++;
-    error = false;
-    if(gap_len = x_CheckIntField(
-      dl.line_num, dl.gap_length, "gap_length"
-    )) {
-      if (obj_range_len && obj_range_len != gap_len) {
-        AGP_ERROR("Object range length not equal to gap length"
-          ": " << obj_range_len << " != " << gap_len);
-        error = true;
-      }
-    }
-    else {
-      error = true;
-    }
-
-    if( x_CheckValues(
-          dl.line_num, m_GapTypes, dl.gap_type, "gap_type"
-        ) && x_CheckValues(
-          dl.line_num, m_LinkageValues, dl.linkage, "linkage"
-        )
-    ) {
-      string key = dl.gap_type + dl.linkage;
-      m_TypeGapCnt[key]++;
-    }
-    else {
-      error = true;
-    }
-
-    if (new_obj) {
-      if (dl.gap_type == "fragment") {
-        AGP_WARNING("Scaffold begins with a fragment gap.");
-      }
-      else {
-        AGP_WARNING("Object begins with a scaffold-ending gap."
-        );
-      }
-    }
-
-    if (prev_component_type == "N") {
-      // Previous line a gap. Check the gap_type.
-      if(prev_gap_type == "fragment") {
-        // two gaps in a row
-
-        if (!new_obj) {
-          if (dl.gap_type == "fragment") {
-            AGP_WARNING("Two fragment gaps in a row.");
-          }
-          else {
-            // Current gap type is a scaffold boundary
-
-            // special error reporting mechanism since
-            // the error is on the previous line.
-            // Directly Log the error messages.
-            if(!prev_line_error_occured) {
-              LOG_POST("\n\n" << prev_line_filename
-                << ", line " << prev_line_num
-                << ":\n" << prev_line);
-            }
-            LOG_POST("\tWARNING: "
-              "Next line is a scaffold-ending gap. "
-              "Current line is a fragment gap. "
-              "A Scaffold should not end with a gap."
-            );
-          }
-        }
-      }
-      else {
-        if (!new_obj) {
-          // Previous line is a a scafold gap
-          // This line is the start of a new scaffold
-          if (dl.gap_type == "fragment") {
-            // Scaffold starts with a fragment gap.
-            AGP_WARNING("Scaffold should not begin with a gap."
-              "(Previous line was a scaffold-ending gap.)" );
-          }
-          else {
-            // Current gap type is a scaffold boundary.
-            //  Two scaffold gaps in a row.
-            AGP_WARNING( "Two scaffold-ending gaps in a row.");
-          }
-        }
-      }
-    }
-    else if( dl.gap_type != "fragment" ) {
-      // 2006/08/28: Previous line is the last component of a scaffold
-      m_ScaffoldCount++;
-      if(componentsInLastScaffold==1) m_SingletonCount++;
-    }
-    if( dl.gap_type != "fragment" ) {
-      componentsInLastScaffold=0;
-    }
-
-    if (error) {
-      // Check if the line should be a component type
-      // i.e., dl.component_type != "N"
-
-      // A component line has integers in column 7
-      // (component start) and column 8 (component end);
-      // +, - or 0 in column 9 (orientation).
-      if( x_CheckIntField(
-            dl.line_num, dl.component_start,
-            "component_start", NO_LOG
-          ) && x_CheckIntField(
-            dl.line_num, dl.component_end,
-            "component_end", NO_LOG
-          ) && x_CheckValues(
-            dl.line_num, m_OrientaionValues,
-            dl.orientation, "orientation", NO_LOG
-      ) ) {
-        AGP_WARNING( "Line with component_type=N appears to be"
-          " a component line and not a gap line.");
-      }
-    }
-  }
-  else { // component
-    error = false;
-    m_CompCount++;
-    componentsInLastScaffold++;
-
-    if( (comp_start = x_CheckIntField(
-          dl.line_num,dl.component_start,"component_start"
-        )) &&
-        (comp_end   = x_CheckIntField(
-          dl.line_num, dl.component_end ,"component_end"
-        ))
-    ) {
-      comp_len = x_CheckRange(
-        dl.line_num, 0, comp_start, comp_end,
-        "component_start", "component_end"
-      );
-      if( comp_len && obj_range_len &&
-          comp_len != obj_range_len
-      ) {
-        AGP_ERROR( "Object range length not equal to component"
-          " range length");
-        error = true;
-      }
-    } else {
-      error = true;
-    }
-
-    if (x_CheckValues(
-      dl.line_num, m_OrientaionValues, dl.orientation,
-      "orientation"
-    )) {
-      if( dl.orientation == "0") {
-        AGP_ERROR( "Component cannot have an unknown"
-          " orientation.");
-        m_CompZeroCount++;
-        error = true;
-      } else if (dl.orientation == "+") {
-          m_CompPosCount++;
-      } else {
-          m_CompNegCount++;
-      }
-    } else {
-      error = true;
-    }
-
-
-    CRange<TSeqPos>  component_range(comp_start, comp_end);
-    TCompIdSpansPair value_pair(
-      dl.component_id, TCompSpans(component_range)
-    );
-    id_insert_result = m_CompId2Spans.insert(value_pair);
-    if (id_insert_result.second == false) {
-      TCompSpans& collection =
-        (id_insert_result.first)->second;
-
-      string str_details="";
-      if(collection.IntersectingWith(component_range)) {
-        str_details = " The span overlaps "
-          "a previous span for this component.";
-      }
-      else if (
-        comp_start < (int)collection.GetToOpen() &&
-        dl.orientation!="-"
-      ) {
-        str_details=" Component span is out of order.";
-      }
-      AGP_WARNING("Duplicate component id found.");
-      //  << str_details);
-
-      collection.CombineWith(component_range);
-    }
-
-    if(error) {
-      // Check if the line sholud be a gap type
-      //  i.e., dl.component_type == "N"
-
-      // Gap line has integer (gap len) in column 6,
-      // gap type value in column 7,
-      // a yes/no in column 8.
-      // (vsap) was: gap_len = x_CheckIntField(
-      if(x_CheckIntField(
-          dl.line_num, dl.gap_length, "gap_length",
-        NO_LOG) && x_CheckValues(
-          dl.line_num, m_GapTypes, dl.gap_type, "gap_type",
-        NO_LOG) && x_CheckValues(
-          dl.line_num, m_LinkageValues, dl.linkage, "linkage",
-        NO_LOG)
-      ) {
-        AGP_WARNING( "Line with component_type="
-          << dl.component_type <<" appears to be a gap line "
-          "and not a component line");
-      }
-    }
-  }
-  if (m_LineErrorOccured) {
+  if(errorOccured) {
     END_LINE_VALIDATE_MSG(dl.line_num, text_line);
   }
 
-  prev_component_type = dl.component_type;
-  prev_gap_type = dl.gap_type;
-  prev_line = text_line;
-  prev_line_num = dl.line_num;
-  prev_line_filename = m_CurrentFileName;
-  prev_line_error_occured = m_LineErrorOccured;
+  // Transitional code;
+  // prev_line_filename usage is questionable anyway...
+  m_LineValidator->prev_line_filename = m_CurrentFileName;
+
 }
 
 void CAgpValidateApplication::x_ValidateSemanticInit()
@@ -1136,6 +593,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/08/29 21:31:56  sapojnik
+ * "Syntax" validations moved to a separate class CAgpSyntaxValidator
+ *
  * Revision 1.9  2006/08/29 18:35:51  sapojnik
  * printing of semantic errors fixed; do not create a new CNcbiOstrstream for each line unless there were errors
  *
