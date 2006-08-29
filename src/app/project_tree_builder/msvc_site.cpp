@@ -52,16 +52,22 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
         str = m_Registry.Get("Configure", "ProvidedRequests");
         list<string> provided;
         NStr::Split(str, LIST_SEPARATOR, provided);
-        m_ProvidedThing.insert(provided.begin(),provided.end());
+        ITERATE (list<string>, it, provided) {
+            m_ProvidedThing.insert(*it);
+        }
 
         GetStandardFeatures(provided);
-        m_ProvidedThing.insert(provided.begin(),provided.end());
+        ITERATE (list<string>, it, provided) {
+            m_ProvidedThing.insert(*it);
+        }
 
         // Not provided requests
         str = m_Registry.Get("Configure", "NotProvidedRequests");
         list<string> not_provided;
         NStr::Split(str, LIST_SEPARATOR, not_provided);
-        m_NotProvidedThing.insert(not_provided.begin(),not_provided.end());
+        ITERATE (list<string>, it, not_provided) {
+            m_NotProvidedThing.insert(*it);
+        }
     } else {
         // unix
         CDir status_dir(GetApp().m_StatusDir);
@@ -565,6 +571,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/08/29 16:07:05  ucko
+ * Spell out bulk list -> set data transfers to workaround WorkShop's
+ * limited STL implementation.
+ *
  * Revision 1.40  2006/07/13 15:41:08  gouriano
  * Removed debug printouts
  *
