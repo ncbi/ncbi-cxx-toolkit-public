@@ -1024,6 +1024,70 @@ CRemoteBlast::CRemoteBlast(CBlastOptionsHandle * algo_opts)
     x_Init(algo_opts);
 }
 
+CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
+                           CRef<CBlastOptionsHandle>   opts_handle,
+                           const CSearchDatabase     & db)
+{
+    if (queries.Empty()) {
+        NCBI_THROW(CBlastException,
+                   eInvalidArgument,
+                   "Error: No queries specified");
+    }
+    
+    x_Init(opts_handle, db);
+    
+    CRef<IRemoteQueryData> Q(queries->MakeRemoteQueryData());
+    CRef<CBioseq_set> bss = Q->GetBioseqSet();
+    list< CRef<objects::CSeq_loc> > sll = Q->GetSeqLocs();
+    
+    if (bss.Empty() && sll.empty()) {
+        NCBI_THROW(CBlastException,
+                   eInvalidArgument,
+                   "Error: No query data.");
+    }
+    
+    if (bss.NotEmpty()) {
+        SetQueries(bss);
+    } else {
+        SetQueries(sll);
+    }
+}
+
+CRemoteBlast::CRemoteBlast(CRef<objects::CPssmWithParameters>   pssm,
+                           CRef<CBlastOptionsHandle>            opts_handle,
+                           const CSearchDatabase              & db)
+{
+    if (pssm.Empty()) {
+        NCBI_THROW(CBlastException,
+                   eInvalidArgument,
+                   "Error: No PSSM specified");
+    }
+    
+    x_Init(opts_handle, db);
+    
+    SetQueries(pssm);
+}
+
+void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
+                          const CSearchDatabase     & db)
+{
+    if (opts_handle.Empty()) {
+        NCBI_THROW(CBlastException,
+                   eInvalidArgument,
+                   "Error: No options specified");
+    }
+    
+    if (db.GetDatabaseName().empty()) {
+        NCBI_THROW(CBlastException,
+                   eInvalidArgument,
+                   "Error: No database specified");
+    }
+    
+    x_Init(&* opts_handle);
+    
+    SetDatabase(db.GetDatabaseName());
+}
+
 CRemoteBlast::~CRemoteBlast()
 {
 }
@@ -1910,6 +1974,51 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
 //     return m_EntrezQuery;
 // }
 
+/// Submit the search and return the results.
+/// @return Search results.
+CSearchResultSet CRemoteBlast::GetResultSet()
+{
+    SubmitSync();
+    
+    CSearchResultSet rs;
+    
+    TSeqAlignVector R = GetSeqAlignSets();
+    const vector<string> & W = GetWarningVector();
+    const vector<string> & E = GetErrorVector();
+    
+    TQueryMessages QM;
+    
+    // Represents the context of the error, not the error id.
+    int err = kBlastMessageNoContext;
+    
+    ITERATE(vector<string>, itw, W) {
+        CRef<CSearchMessage>
+            sm(new CSearchMessage(eBlastSevWarning, err, *itw));
+        
+        QM.push_back(sm);
+    }
+    
+    ITERATE(vector<string>, ite, E) {
+        int err = kBlastMessageNoContext;
+        
+        CRef<CSearchMessage>
+            sm(new CSearchMessage(eBlastSevError, err, *ite));
+        
+        QM.push_back(sm);
+    }
+    
+    TSearchMessages SM;
+    
+    // Since there is no way to report per-query messages, all
+    // warnings and errors are applied to all queries.
+    
+    for(unsigned i = 0; i<R.size(); i++) {
+        SM.push_back(QM);
+    }
+    
+    return CSearchResultSet(R, SM);
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -1919,6 +2028,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2006/08/30 17:43:58  bealer
+* - Add CLocalBlast-like constructor and GetResultSet() methods.
+*
 * Revision 1.47  2006/06/20 18:35:51  bealer
 * - Add interface for blast4 ASN parsing.
 *

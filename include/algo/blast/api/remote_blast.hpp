@@ -35,6 +35,7 @@
 
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/uniform_search.hpp>
 #include <objects/blast/blast__.hpp>
 
 /** @addtogroup AlgoBlast
@@ -94,6 +95,22 @@ public:
     /// Create a search using any kind of options handle.
     CRemoteBlast(CBlastOptionsHandle * any_opts);
     
+    /// Create a sequence search and set options, queries, and database.
+    /// @param queries Queries corresponding to Seq-loc-list or Bioseq-set.
+    /// @param opts_handle Blast options handle.
+    /// @param db Database used for this search.
+    CRemoteBlast(CRef<IQueryFactory>         queries,
+                 CRef<CBlastOptionsHandle>   opts_handle,
+                 const CSearchDatabase     & db);
+    
+    /// Create a PSSM search and set options, queries, and database.
+    /// @param pssm Search matrix for a PSSM search.
+    /// @param opts_handle Blast options handle.
+    /// @param db Database used for this search.
+    CRemoteBlast(CRef<objects::CPssmWithParameters>   pssm,
+                 CRef<CBlastOptionsHandle>            opts_handle,
+                 const CSearchDatabase              & db);
+    
     /// Destruct the search object.
     ~CRemoteBlast();
     
@@ -136,6 +153,10 @@ public:
     
     /* Getting Results */
     
+    
+    /// Submit the search (if necessary) and return the results.
+    /// @return Search results.
+    CSearchResultSet GetResultSet();
     
     /// This submits the search (if necessary) and polls for results.
     ///
@@ -414,6 +435,12 @@ private:
     
     /// Called by RID constructor: set up monitoring of existing search.
     void x_Init(const string & RID);
+    
+    /// Initialize a search with a database and options handle.
+    /// @param opts_handle Blast options handle.
+    /// @param db Database used for this search.
+    void x_Init(CRef<CBlastOptionsHandle>   opts_handle,
+                const CSearchDatabase     & db);
     
     /// Configure new search from options handle passed to constructor.
     void x_SetAlgoOpts(void);
@@ -773,6 +800,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/08/30 17:43:58  bealer
+ * - Add CLocalBlast-like constructor and GetResultSet() methods.
+ *
  * Revision 1.38  2006/06/20 18:35:48  bealer
  * - Add interface for blast4 ASN parsing.
  *
