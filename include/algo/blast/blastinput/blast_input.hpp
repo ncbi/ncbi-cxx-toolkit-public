@@ -48,7 +48,9 @@ class CBlastInputConfig {
 public:
 
     /// Constructor
-    /// @param strand All SeqLoc types will have this strand assigned [in]
+    /// @param strand All SeqLoc types will have this strand assigned;
+    ///             If set to 'other', the strand will be set to 'unknown'
+    ///             for protein sequences and 'both' for nucleotide [in]
     /// @param lowercase If true, lowercase mask locations are generated
     ///                 for all input sequences [in]
     /// @param believe_defline If true, all sequences ID's are parsed;
@@ -58,7 +60,7 @@ public:
     /// @param to All sequence locations end at this offset (end of sequence
     ///           if zero) [in]
     ///
-    CBlastInputConfig(objects::ENa_strand strand = objects::eNa_strand_unknown,
+    CBlastInputConfig(objects::ENa_strand strand = objects::eNa_strand_other,
                      bool lowercase = false,
                      bool believe_defline = false,
                      TSeqPos from = 0,
