@@ -17,6 +17,7 @@ LIB =   xbma_refiner \
         scoremat \
         cn3d \
         mmdb \
+	entrez2cli entrez2 \
         id1cli id1 \
         xalgodustmask xobjread creaders \
         xobjsimple xobjutil \
