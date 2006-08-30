@@ -46,6 +46,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class IRegistry;
+
 class NCBI_XNCBI_EXPORT CSysLog : public CDiagHandler {
 public:
     enum EFlags {
@@ -104,6 +106,8 @@ public:
               EFacility facility = eDefaultFacility);
     void Post(const string& message, EPriority priority, int facility);
 
+    void HonorRegistrySettings(IRegistry* reg = 0);
+
 private:
     static int x_TranslateFlags   (TFlags flags);
            int x_TranslateFacility(EFacility facility);
@@ -126,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/08/30 18:05:02  ucko
+ * Add an HonorRegistrySettings method to support tuning the default facility.
+ *
  * Revision 1.3  2005/12/29 15:39:26  jcherry
  * Added export specifier for CSysLog
  *

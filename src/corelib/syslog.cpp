@@ -33,6 +33,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/syslog.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbireg.hpp>
 
 #ifdef NCBI_OS_UNIX
 #  include <syslog.h>
@@ -44,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 
 DEFINE_CLASS_STATIC_MUTEX(CSysLog::sm_Mutex);
-CSysLog* CSysLog::sm_Current = 0;
+CSysLog* CSysLog::sm_Current = NULL;
 
 CSysLog::CSysLog(const string& ident, TFlags flags, EFacility default_facility)
     : m_Ident(ident), m_Flags(flags),
@@ -230,6 +232,47 @@ void CSysLog::x_Connect(void)
 #endif
 }
 
+void CSysLog::HonorRegistrySettings(IRegistry* reg)
+{
+    if (reg == NULL  &&  CNcbiApplication::Instance()) {
+        reg = &CNcbiApplication::Instance()->GetConfig();
+    }
+    if (reg == NULL  ||  !(m_Flags & fNoOverride) ) {
+        return;
+    }
+
+    string fac_name = reg->Get("LOG", "SysLogFacility");
+    if ( !fac_name.empty() ){
+        // just check for the few possibilities that make sense
+        EFacility facility = eDefaultFacility;
+        if (fac_name.size() == 6
+            &&  NStr::StartsWith(fac_name, "local", NStr::eNocase)
+            &&  fac_name[5] >= '0'  &&  fac_name[5] <= '7') {
+            facility = static_cast<EFacility>(eLocal0 + fac_name[5] - '0');
+        } else if (NStr::EqualNocase(fac_name, "user")) {
+            facility = eUser;
+        } else if (NStr::EqualNocase(fac_name, "mail")) {
+            facility = eMail;
+        } else if (NStr::EqualNocase(fac_name, "daemon")) {
+            facility = eDaemon;
+        } else if (NStr::EqualNocase(fac_name, "auth")) {
+            facility = eAuth;
+        } else if (NStr::EqualNocase(fac_name, "authpriv")) {
+            facility = eAuthPriv;
+        } else if (NStr::EqualNocase(fac_name, "ftp")) {
+            facility = eFTP;
+        }
+        if (facility != eDefaultFacility) {
+            CMutexGuard GUARD(sm_Mutex);
+            m_Flags &= ~fNoOverride;
+            m_DefaultFacility = facility;
+            if (sm_Current == this) {
+                // x_Connect();
+                sm_Current = NULL;
+            }
+        }
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -237,6 +280,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/08/30 18:05:12  ucko
+* Add an HonorRegistrySettings method to support tuning the default facility.
+*
 * Revision 1.3  2005/07/28 17:25:23  ucko
 * Post: check for fNoOverride rather than default m_Priority when
 * deciding whether to reconnect.
