@@ -36,6 +36,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/env_reg.hpp>
+#include <corelib/metareg.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -1249,6 +1250,7 @@ bool CTwoLayerRegistry::x_SetComment(const string& comment,
 const char* CNcbiRegistry::sm_MainRegName = ".main";
 const char* CNcbiRegistry::sm_EnvRegName  = ".env";
 const char* CNcbiRegistry::sm_FileRegName = ".file";
+const char* CNcbiRegistry::sm_SysRegName  = ".ncbirc";
 
 inline
 void CNcbiRegistry::x_Init(void)
@@ -1280,14 +1282,54 @@ CNcbiRegistry::CNcbiRegistry(void)
 
 CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
 {
-    x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags,  fTransient | fInternalSpaces );
+    x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags,
+                 fTransient | fInternalSpaces | fWithNcbirc);
     x_Init();
-    m_FileRegistry->Read(is, flags);
+    m_FileRegistry->Read(is, flags & ~fWithNcbirc);
+    IncludeNcbircIfAllowed(flags);
 }
 
 
 CNcbiRegistry::~CNcbiRegistry()
 {
+}
+
+
+bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
+{
+    if (flags & fWithNcbirc) {
+        flags &= ~fWithNcbirc;
+    } else {
+        return false;
+    }
+
+    if (getenv("NCBI_DONT_USE_NCBIRC")) {
+        return false;
+    }
+
+    if (HasEntry("NCBI", "DONT_USE_NCBIRC")) {
+        return false;
+    }
+
+    m_SysRegistry.Reset(new CTwoLayerRegistry);
+    try {
+        CMetaRegistry::SEntry entry
+            = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni,
+                                  0, flags, m_SysRegistry.GetPointer());
+        m_SysRegistry.Reset(entry.registry);
+    } catch (CRegistryException& e) {
+        ERR_POST(Critical << "CNcbiRegistry: "
+                 "Syntax error in system-wide configuration file: "
+                 << e.what());
+        return false;
+    }
+
+    if (m_SysRegistry  &&  !m_SysRegistry.Empty()) {
+        m_AllRegistries->Add(*m_SysRegistry, ePriority_Default - 1);
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -1482,6 +1524,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/08/30 18:02:31  ucko
+ * CNcbiRegistry: optionally load a global registry (.ncbirc or ncbi.ini)
+ * if explicitly requested (and not explicitly disabled).
+ *
  * Revision 1.60  2006/06/19 20:23:30  grichenk
  * Removed flags from _TRACE
  *

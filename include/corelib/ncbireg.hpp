@@ -90,6 +90,7 @@ public:
         fNotJustCore    = 0x800, ///< Include auxiliary subregistries
         fIgnoreErrors   = 0x10,  ///< Continue Read()ing after parse errors
         fInternalSpaces = 0x20,  ///< Allow internal whitespace in names
+        fWithNcbirc     = 0x40,  ///< Include .ncbirc (used only by CNcbiReg.)
         fCoreLayers     = fTransient | fPersistent | fJustCore,
         fAllLayers      = fTransient | fPersistent | fNotJustCore
     };
@@ -637,6 +638,23 @@ public:
 
     ~CNcbiRegistry();
 
+    /// Attempty to load a systemwide configuration file (.ncbirc on
+    /// Unix, ncbi.ini on Windows) as a low-priority registry, as long
+    /// as the following conditions all hold:
+    /// - fWithNcbirc is set in FLAGS.
+    /// - The environment variable NCBI_DONT_USE_NCBIRC is NOT set.
+    /// - The registry's existing contents do NOT contain a setting of
+    ///   [NCBI]DONT_USE_NCBIRC (case-insensitive).
+    /// @param flags
+    ///   Registry flags to be applied when reading the system
+    ///   configuration file.  Must also contain fWithNcbirc (which
+    ///   will be filtered out before calling any other methods) for
+    ///   the call to have any effect.
+    /// @return
+    ///   TRUE if the system configuration file was successfully read
+    ///   and parsed; FALSE otherwise.
+    bool IncludeNcbircIfAllowed(TFlags flags = fWithNcbirc);
+
     // The below interfaces provide access to the embedded compound registry.
 
     /// Priority for sub-registries; entries in higher-priority
@@ -682,6 +700,7 @@ public:
     static const char* sm_MainRegName;
     static const char* sm_EnvRegName;
     static const char* sm_FileRegName;
+    static const char* sm_SysRegName;
 
 protected:
     bool x_Empty(TFlags flags) const;
@@ -720,6 +739,7 @@ private:
     CRef<CTwoLayerRegistry>    m_MainRegistry;
     CRef<CEnvironmentRegistry> m_EnvRegistry;
     CRef<CTwoLayerRegistry>    m_FileRegistry;
+    CRef<IRWRegistry>          m_SysRegistry;
     CRef<CCompoundRegistry>    m_AllRegistries;
 };
 
@@ -793,6 +813,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/08/30 18:02:24  ucko
+ * CNcbiRegistry: optionally load a global registry (.ncbirc or ncbi.ini)
+ * if explicitly requested (and not explicitly disabled).
+ *
  * Revision 1.40  2006/05/08 15:54:35  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and
