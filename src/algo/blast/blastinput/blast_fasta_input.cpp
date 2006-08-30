@@ -126,7 +126,7 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
         else
             seqloc->SetInt().SetStrand(eNa_strand_both);
     }
-    else if (m_Config.GetStrand() == eNa_strand_other) {
+    else if (m_Config.GetStrand() == eNa_strand_unknown) {
         if (itr->IsNa()) {
             NCBI_THROW(CObjReaderException, eInvalid, 
                        "Cannot assign unknown strand to nucleotide sequence");
