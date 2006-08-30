@@ -82,6 +82,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB),
     TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
     TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
+    TDbxrefPair("ISD", CDbtag::eDbtagType_ISD),
     TDbxrefPair("ISFinder", CDbtag::eDbtagType_ISFinder),
     TDbxrefPair("InterPro", CDbtag::eDbtagType_Interpro),
     TDbxrefPair("InterimID", CDbtag::eDbtagType_InterimID),
@@ -420,6 +421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.32  2006/08/30 15:06:59  rsmith
+ * += influenza sequence database (ISD) to the list of allowed db_xrefs
+ *
  * Revision 6.31  2006/06/06 20:39:19  ucko
  * kApprovedDbXrefs: allow "cdd" as a synonym for "CDD".
  * (The list is case-sensitive in general.)

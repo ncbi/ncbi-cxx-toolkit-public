@@ -87,6 +87,7 @@ public:
         eDbtagType_IMGT_GENEDB,
         eDbtagType_IMGT_HLA,
         eDbtagType_IMGT_LIGM,
+        eDbtagType_ISD,
         eDbtagType_ISFinder,
         eDbtagType_InterimID,
         eDbtagType_Interpro,
@@ -200,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/08/30 15:06:59  rsmith
+ * += influenza sequence database (ISD) to the list of allowed db_xrefs
+ *
  * Revision 1.17  2006/03/14 20:21:50  rsmith
  * Move BasicCleanup functionality from objects to objtools/cleanup
  *
