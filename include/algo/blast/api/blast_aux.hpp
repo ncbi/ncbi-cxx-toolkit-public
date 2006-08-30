@@ -40,6 +40,7 @@
 #include <corelib/metareg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <util/range.hpp>       // For TSeqRange
 
 // NewBlast includes
 #include <algo/blast/api/blast_types.hpp>
@@ -156,6 +157,11 @@ public:
     { m_Interval.Reset(interval); }
     int GetFrame() const { return (int) m_Frame; }
     void SetFrame(int frame); // Throws exception on out-of-range input
+    operator TSeqRange() const {
+        TSeqRange retval(m_Interval->GetFrom(), 0);
+        retval.SetToOpen(m_Interval->GetTo());
+        return retval;
+    }
 private:
     CRef <objects::CSeq_interval> m_Interval; 
     ETranslationFrame m_Frame;         // For translated nucleotide sequence
@@ -336,6 +342,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2006/08/30 19:25:58  camacho
+* Add TSeqRange conversion operator from CSeqLocInfo
+*
 * Revision 1.76  2006/05/04 19:16:18  bealer
 * - Prototype for EBlastProgramType to EProgram converter.
 *
