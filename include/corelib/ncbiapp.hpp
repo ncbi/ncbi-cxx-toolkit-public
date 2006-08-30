@@ -184,7 +184,7 @@ public:
     int AppMain
     (int                argc,     ///< argc in a regular main(argc, argv, envp)
      const char* const* argv,     ///< argv in a regular main(argc, argv, envp)
-     const char* const* envp = 0, ///< argv in a regular main(argc, argv, envp)
+     const char* const* envp = 0, ///< envp in a regular main(argc, argv, envp)
      EAppDiagStream     diag = eDS_Default,     ///< Specify diagnostic stream
      const char*        conf = NcbiEmptyCStr,   ///< Specify registry to load
      const string&      name = NcbiEmptyString  ///< Specify application name
@@ -429,7 +429,7 @@ protected:
     /// Load settings from the configuration file to the registry.
     ///
     /// CNcbiApplication::LoadConfig(reg, conf) just calls
-    /// LoadConfig(reg, conf, 0).
+    /// LoadConfig(reg, conf, IRegistry::fWithNcbirc).
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
 
     /// Set program's display name.
@@ -589,7 +589,7 @@ inline const string& CNcbiApplication::GetConfigPath(void) const
 }
 
 inline bool CNcbiApplication::ReloadConfig(CMetaRegistry::TFlags flags,
-                                    IRegistry::TFlags reg_flags)
+                                           IRegistry::TFlags reg_flags)
 {
     return CMetaRegistry::Reload(GetConfigPath(), GetConfig(), flags,
                                  reg_flags);
@@ -631,6 +631,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/08/30 18:09:08  ucko
+ * Bring some comments in line with current reality; fix an indentation goof.
+ *
  * Revision 1.62  2006/08/29 15:29:05  gouriano
  * Added dryrun option
  *
