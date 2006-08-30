@@ -454,7 +454,7 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights)
 }
 
 #ifdef _DEBUG
-inline char GetResidue(char input)
+char GetResidue(char input)
 {
     return input > BLASTAA_SIZE ? '?' : NCBISTDAA_TO_AMINOACID[(int)input];
 }
@@ -2379,6 +2379,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/08/30 13:30:20  camacho
+ * Remove inline
+ *
  * Revision 1.60  2006/08/29 22:17:56  camacho
  * Use NCBISTDAA_TO_AMINOACID
  *
