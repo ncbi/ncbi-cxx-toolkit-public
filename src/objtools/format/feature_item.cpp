@@ -793,7 +793,22 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
         if ( m_Feat->GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
             x_AddQual(eFQ_experiment, new CFlatExperimentQVal());
         } else {
-            x_AddQual(eFQ_inference, new CFlatInferenceQVal());
+            string value;
+            CSeq_feat::TQual gbQuals = m_Feat->GetQual();
+            for ( CSeq_feat::TQual::iterator it = gbQuals.begin();
+                it != gbQuals.end(); ++it ) 
+            {
+                if (!(*it)->CanGetQual()  ||  !(*it)->CanGetVal()) {
+                    continue;
+                }
+                if ( (*it)->GetQual() != "inference" ) {
+                    continue;
+                }
+                value = (*it)->GetVal();
+                break;
+            }
+
+            x_AddQual(eFQ_inference, new CFlatInferenceQVal( value ));
         }
     }
 
@@ -2228,6 +2243,17 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
                 }
             }}
             break;
+        case eFQ_inference:
+            //
+            //  the "inference" gb-qualifier is strictly a modifier for the "real" 
+            //  qualifier, and it has already been dealt with in that context. We deal
+            //  with it here only in dump mode.
+            //
+            if (ctx.Config().IsModeDump()) {
+                x_AddQual(slot, new CFlatStringQVal(val));
+            }
+            break;
+
         default:
             x_AddQual(slot, new CFlatStringQVal(val));
             break;
@@ -3819,6 +3845,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2006/08/30 13:28:50  ludwigf
+* FIXED: Handling of "exp_ev" qualifier and "inference" gb-qualifier. The
+*  second may be used to modify the value of the first.
+*
 * Revision 1.77  2006/07/24 14:34:41  ludwigf
 * CHANGED: In flat file string values, embedded double quotes are now turned
 *   into single quotes.

@@ -373,9 +373,12 @@ public:
 class NCBI_FORMAT_EXPORT CFlatInferenceQVal : public IFlatQVal
 {
 public:
-    CFlatInferenceQVal() { }
+    CFlatInferenceQVal( const string& = "" );
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
+
+protected:
+    string m_str;
 };
 
 
@@ -592,6 +595,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2006/08/30 13:28:50  ludwigf
+* FIXED: Handling of "exp_ev" qualifier and "inference" gb-qualifier. The
+*  second may be used to modify the value of the first.
+*
 * Revision 1.26  2005/10/26 13:30:18  ludwigf
 * Removed qualifier "evidence".
 * Added qualifiers "experiment" and "inference".

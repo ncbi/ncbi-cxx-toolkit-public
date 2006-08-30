@@ -466,11 +466,44 @@ void CFlatExperimentQVal::Format(TFlatQuals& q, const string& name,
 }
 
 
+CFlatInferenceQVal::CFlatInferenceQVal( const string& gbValue ) :
+    m_str( "non-experimental evidence, no additional details recorded" )
+{
+    //
+    //  the initial "non-experimental ..." is just a default value which may be
+    //  overridden through an additional "inference" Gb-qual in the ASN.1.
+    //  However, it can't be overriden to be just anything, only certain strings
+    //  are allowed.
+    //  The following code will change m_str from its default if gbValue is a
+    //  legal replacement for "non-experimental ...", and leave it alone 
+    //  otherwise.
+    //
+    const char* legalPrefixes[] = { 
+        "similar to sequence",
+        "similar to AA sequence",
+        "similar to DNA sequence",
+        "similar to RNA sequence",
+        "similar to RNA sequence, mRNA",
+        "similar to RNA sequence, EST",
+        "similar to RNA sequence, other RNA",
+        "profile",
+        "nucleotide motif",
+        "protein motif",
+        "ab initio prediction",
+        0
+    };
+    for ( size_t i=0; legalPrefixes[i] != 0; ++i ) {
+        if ( NStr::StartsWith( gbValue, legalPrefixes[i] ) ) {
+            m_str = gbValue;
+        }
+    }
+}
+
+
 void CFlatInferenceQVal::Format(TFlatQuals& q, const string& name,
                           CBioseqContext&, IFlatQVal::TFlags) const
 {
-    const char* s = "non-experimental evidence, no additional details recorded";
-    x_AddFQ(q, name, s, CFormatQual::eQuoted);
+    x_AddFQ(q, name, m_str, CFormatQual::eQuoted);
 }
 
 
@@ -996,6 +1029,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2006/08/30 13:28:50  ludwigf
+* FIXED: Handling of "exp_ev" qualifier and "inference" gb-qualifier. The
+*  second may be used to modify the value of the first.
+*
 * Revision 1.36  2006/07/24 14:34:41  ludwigf
 * CHANGED: In flat file string values, embedded double quotes are now turned
 *   into single quotes.
