@@ -33,17 +33,18 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 char* BlastTypeNames[] = {
-	"blast",
-	"psi-blast"
+    "blast",
+    "psi-blast"
 };
 
 char* BlastDatabaseNames[] = {
-	"nr", 
+    "nr", 
     "swissprot", 
     "pdb", 
     "pat", 
@@ -54,8 +55,8 @@ char* BlastDatabaseNames[] = {
 };
 
 char* OrganismNames[] = {
-	"All organisms",
-	"Cellular organisms",
+    "All organisms",
+    "Cellular organisms",
     "Viruses", 
     "Archaea", 
     "Bacteria", 
@@ -71,23 +72,23 @@ char* OrganismNames[] = {
 };
 
 char* EnvironmentalTaxNames[] = {
-	"unclassified", 
+    "unclassified", 
     "environmental samples", 
     "environmental sequence"
 };
 
 CdUpdateParameters::CdUpdateParameters()
-	: entrezQuery(),
-	blastType(ePSI_BLAST),
-	database(eNR),
-	organism(eAll_organisms),
-	numHits(0),
-	evalue(0.01),
-	timeToCheck(100000),
-	missingResidueThreshold(1),
-	excludingTaxNodes(true),
-	nonRedundify(false),
-	refresh(false),
+    : entrezQuery(),
+    blastType(ePSI_BLAST),
+    database(eNR),
+    organism(eAll_organisms),
+    numHits(0),
+    evalue(0.01),
+    timeToCheck(100000),
+    missingResidueThreshold(1),
+    excludingTaxNodes(true),
+    nonRedundify(false),
+    refresh(false),
     useNRPrefs(false)
 
 {
@@ -100,114 +101,114 @@ CdUpdateParameters::~CdUpdateParameters()
 
 string CdUpdateParameters::toString()
 {
-	string result("CD-Updating parameters:");
-	result += getBlastTypeName(blastType);
-	result += ',';
-	result += getBlastDatabaseName(database);
-	result += ',';
-	result += getOrganismName(organism);
-	result += ',';
-	result += entrezQuery;
-	result += ',';
+    string result("CD-Updating parameters:");
+    result += getBlastTypeName(blastType);
+    result += ',';
+    result += getBlastDatabaseName(database);
+    result += ',';
+    result += getOrganismName(organism);
+    result += ',';
+    result += entrezQuery;
+    result += ',';
 
-	char evalueStr[100];
-	sprintf(evalueStr,"e-value:%.2e", evalue);
-	result += evalueStr;
-	return result;
+    char evalueStr[100];
+    sprintf(evalueStr,"e-value:%.2e", evalue);
+    result += evalueStr;
+    return result;
 }
 
 char* CdUpdateParameters::getBlastTypeName(enum BlastType bt)
 {
-	if (bt >= eBlastTypeEnd)
-		return 0;
-	else
-		return BlastTypeNames[bt];
+    if (bt >= eBlastTypeEnd)
+        return 0;
+    else
+        return BlastTypeNames[bt];
 }
 
 string CdUpdateParameters::getBlastTypeDefline()
 {
-	string defline("Type of Blast:");
-	for (int i = 0; i < eBlastTypeEnd; i++)
-	{
-		char* part = getBlastTypeName((BlastType)i);
-		if (part)
-		{
-			defline += '|';
-			defline += part;
-		}
-	}
-	return defline;
+    string defline("Type of Blast:");
+    for (int i = 0; i < eBlastTypeEnd; i++)
+    {
+        char* part = getBlastTypeName((BlastType)i);
+        if (part)
+        {
+            defline += '|';
+            defline += part;
+        }
+    }
+    return defline;
 }
 
 char* CdUpdateParameters::getBlastDatabaseName(BlastDatabase db)
 {
-	if (db >= eBlastDatabaseEnd)
-		return 0;
-	else
-		return BlastDatabaseNames[db];
+    if (db >= eBlastDatabaseEnd)
+        return 0;
+    else
+        return BlastDatabaseNames[db];
 }
 
 string CdUpdateParameters::getBlastDatabaseDefline()
 {
-	string defline("Choose a database:");
-	for (int i = 0; i < eBlastDatabaseEnd; i++)
-	{
-		char* part = getBlastDatabaseName((BlastDatabase)i);
-		if (part)
-		{
-			defline += '|';
-			defline += part;
-		}
-	}
-	return defline;
+    string defline("Choose a database:");
+    for (int i = 0; i < eBlastDatabaseEnd; i++)
+    {
+        char* part = getBlastDatabaseName((BlastDatabase)i);
+        if (part)
+        {
+            defline += '|';
+            defline += part;
+        }
+    }
+    return defline;
 }
 
 
 char* CdUpdateParameters::getOrganismName(Organism org)
 {
-	if (org >= eOrganismEnd)
-		return 0;
-	else
-		return OrganismNames[org];
+    if (org >= eOrganismEnd)
+        return 0;
+    else
+        return OrganismNames[org];
 }
 
 string CdUpdateParameters::getOrganismDefline()
 {
-	string defline("Limit search by organism:");
-	for (int i = 0; i < eOrganismEnd; i++)
-	{
-		char* part = getOrganismName((Organism)i);
-		if (part)
-		{
-			defline += '|';
-			defline += part;
-		}
-	}
-	return defline;
+    string defline("Limit search by organism:");
+    for (int i = 0; i < eOrganismEnd; i++)
+    {
+        char* part = getOrganismName((Organism)i);
+        if (part)
+        {
+            defline += '|';
+            defline += part;
+        }
+    }
+    return defline;
 }
 
 
 char* CdUpdateParameters::getEnvironmentalTaxName(EnvironmentalTax et)
 {
-	if (et >= eEnvironmentalTaxEnd)
-		return 0;
-	else
-		return EnvironmentalTaxNames[et];
+    if (et >= eEnvironmentalTaxEnd)
+        return 0;
+    else
+        return EnvironmentalTaxNames[et];
 }
 
 string CdUpdateParameters::getEnvironmentalTaxDefline()
 {
-	string defline("Exclude sequences with this taxonomic classification:");
-	for (int i = 0; i < eEnvironmentalTaxEnd; i++)
-	{
-		char* part = getEnvironmentalTaxName((EnvironmentalTax)i);
-		if (part)
-		{
-			defline += '|';
-			defline += part;
-		}
-	}
-	return defline;	
+    string defline("Exclude sequences with this taxonomic classification:");
+    for (int i = 0; i < eEnvironmentalTaxEnd; i++)
+    {
+        char* part = getEnvironmentalTaxName((EnvironmentalTax)i);
+        if (part)
+        {
+            defline += '|';
+            defline += part;
+        }
+    }
+    return defline; 
 
 }
 
