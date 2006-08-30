@@ -703,6 +703,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
             NCBI_THROW(CAppException, eNoRegistry,
                        "Registry file \"" + *conf + "\" cannot be opened");
         }
+        // still consider pulling in defaults from .ncbirc
+        reg.IncludeNcbircIfAllowed(reg_flags);
         return false;
     } else if (entry.registry != static_cast<IRWRegistry*>(&reg)) {
         // should be impossible with new CMetaRegistry interface...
@@ -725,7 +727,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
 bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg,
                                   const string*  conf)
 {
-    return LoadConfig(reg, conf, 0);
+    return LoadConfig(reg, conf, IRegistry::fWithNcbirc);
 }
 
 
@@ -960,6 +962,13 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             }
         }
     }
+
+    {{
+        CSysLog* syslog = dynamic_cast<CSysLog*>(GetDiagHandler());
+        if (syslog) {
+            syslog->HonorRegistrySettings(reg);
+        }
+    }}
 
     // Debugging features
 
@@ -1200,6 +1209,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.127  2006/08/30 18:08:13  ucko
+ * Load global registry settings in addition to program-specific ones by
+ * default (which can be overridden in various ways).
+ * Ask CSysLog to honor registry settings (for the default facility).
+ *
  * Revision 1.126  2006/08/29 15:29:39  gouriano
  * Added dryrun option
  *
