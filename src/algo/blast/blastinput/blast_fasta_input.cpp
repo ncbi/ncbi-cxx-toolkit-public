@@ -106,17 +106,41 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
     TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
                                              m_Scope) - 1;
 
-    if (to > 0 && to < seq_length)
+    if (to >= seq_length || from >= seq_length ||
+        (to > 0 && to < from)) {
+        NCBI_THROW(CObjReaderException, eInvalid, 
+                   "Invalid sequence range");
+    }
+
+    // set sequence range
+    if (to > 0)
         seqloc->SetInt().SetTo(to);
     else
         seqloc->SetInt().SetTo(seq_length);
+    seqloc->SetInt().SetFrom(from);
 
-    if (from > 0 && from < seq_length && from < to)
-        seqloc->SetInt().SetFrom(from);
-    else
-        seqloc->SetInt().SetFrom(0);
+    // set strand
+    if (m_Config.GetStrand() == eNa_strand_other) {
+        if (itr->IsAa())
+            seqloc->SetInt().SetStrand(eNa_strand_unknown);
+        else
+            seqloc->SetInt().SetStrand(eNa_strand_both);
+    }
+    else if (m_Config.GetStrand() == eNa_strand_other) {
+        if (itr->IsNa()) {
+            NCBI_THROW(CObjReaderException, eInvalid, 
+                       "Cannot assign unknown strand to nucleotide sequence");
+        }
+        seqloc->SetInt().SetStrand(eNa_strand_other);
+    }
+    else {
+        if (itr->IsAa()) {
+            NCBI_THROW(CObjReaderException, eInvalid, 
+                       "Cannot assign nucleotide strand to protein sequence");
+        }
+        seqloc->SetInt().SetStrand(m_Config.GetStrand());
+    }
 
-    seqloc->SetInt().SetStrand(m_Config.GetStrand());
     seqloc->SetInt().SetId().Assign(*itr->GetId().front());
     return seqloc;
 }
