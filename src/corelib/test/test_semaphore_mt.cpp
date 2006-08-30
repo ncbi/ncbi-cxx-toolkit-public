@@ -156,7 +156,11 @@ bool CTestSemaphoreApp::TestApp_Init(void)
         << " threads"
         << NcbiEndl;
     if ( s_NumThreads%2 != 0 ) {
+#ifdef NCBI_THREADS
         throw runtime_error("The number of threads MUST be even");
+#else
+        ++s_NumThreads;
+#endif
     }
     return true;
 }
@@ -192,6 +196,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2006/08/30 00:01:39  ucko
+ * Compensate for unthreaded builds' thread-count adjustment by
+ * incrementing s_NumThreads if necessary.
+ *
  * Revision 6.10  2005/05/02 13:16:36  grichenk
  * Enable test in non-MT builds
  *
