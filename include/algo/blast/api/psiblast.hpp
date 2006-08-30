@@ -53,6 +53,24 @@ BEGIN_SCOPE(blast)
 class IQueryFactory;
 
 /// Runs a single iteration of the PSI-BLAST algorithm on a BLAST database
+/// @code
+/// ...
+/// /* Run PSI-BLAST starting with a protein query sequence */
+/// CRef<CBioseq> bioseq = ...;
+/// CSearchDatabase db("nr", CSearchDatabase::eBlastDbIsProtein);
+/// CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bioseq));
+/// CRef<CPSIBlastOptionsHandle> options(new CPSIBlastOptionsHandle);
+///
+/// CRef<CPsiBlast> psiblast(new CPsiBlast(query_factory, db, options));
+/// CRef<CSearchResults> alignment = psiblast->Run();
+/// ...
+///
+/// /* Run PSI-BLAST starting with a PSSM */
+/// CRef<CPssmWithParameters> pssm = ...;
+/// psiblast = new CPsiBlast(pssm, db, options);
+/// alignment = psiblast->Run();
+/// ...
+/// @endcode
 class NCBI_XBLAST_EXPORT CPsiBlast : public CObject
 {
 public:
