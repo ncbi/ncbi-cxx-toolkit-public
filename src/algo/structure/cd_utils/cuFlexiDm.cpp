@@ -52,30 +52,30 @@ ResidueMatrix::ResidueMatrix()
 
 void ResidueMatrix::read(ColumnResidueProfile& crp)
 {
-	vector<char> residues;
-	crp.getResiduesByRow(residues);
-	if (m_rows.size() == 0)
-		m_rows.assign(residues.size(), RowContent());
-	for (unsigned row = 0; row < residues.size(); row++)
-		m_rows[row].push_back(ResidueCell(residues[row], crp.isAligned(row)));
+    vector<char> residues;
+    crp.getResiduesByRow(residues);
+    if (m_rows.size() == 0)
+        m_rows.assign(residues.size(), RowContent());
+    for (unsigned row = 0; row < residues.size(); row++)
+        m_rows[row].push_back(ResidueCell(residues[row], crp.isAligned(row)));
 }
 
 bool ResidueMatrix::getAlignedPair(unsigned row1, unsigned row2, pair< string, string >& seqPair)
 {
-	if (row1 > m_rows.size() || row2 > m_rows.size())
-		return false;
-	RowContent& rc1 = m_rows[row1];
-	RowContent& rc2 = m_rows[row2];
-	assert(rc1.size() == rc2.size());
-	for (int i = 0; i < rc1.size(); i++)
-	{
-		if (rc1[i].aligned && rc2[i].aligned)
-		{
-			seqPair.first += rc1[i].residue;
-			seqPair.second += rc2[i].residue;
-		}
-	}
-	return true;
+    if (row1 > m_rows.size() || row2 > m_rows.size())
+        return false;
+    RowContent& rc1 = m_rows[row1];
+    RowContent& rc2 = m_rows[row2];
+    assert(rc1.size() == rc2.size());
+    for (int i = 0; i < rc1.size(); i++)
+    {
+        if (rc1[i].aligned && rc2[i].aligned)
+        {
+            seqPair.first += rc1[i].residue;
+            seqPair.second += rc2[i].residue;
+        }
+    }
+    return true;
 }
 
 //  FlexiDm class
@@ -94,7 +94,7 @@ FlexiDm::~FlexiDm() {
 FlexiDm::FlexiDm(EScoreMatrixType type) : DistanceMatrix() {
     initDMIdentities(type);
 }
-	
+    
 void FlexiDm::initDMIdentities(EScoreMatrixType type, int nExt, int cExt) {
     m_scoreMatrix = new ScoreMatrix(type);
     m_useAligned  = true;
@@ -122,42 +122,42 @@ bool FlexiDm::ComputeMatrix(pProgressFunction pFunc) {
 void FlexiDm::GetPercentIdentities(pProgressFunction pFunc) 
 {
     int nrows = m_aligns->GetNumRows();
-	ResidueProfiles rp;
-	string mseq = m_aligns->GetSequenceForRow(0);
-	for (int i = 1; i < nrows; i++)
-	{
-		string sseq = m_aligns->GetSequenceForRow(i);
-		BlockModelPair bmp(m_aligns->getSeqAlign(i));
-		rp.addOneRow(bmp, mseq, sseq);
-	}
-	ResidueMatrix rm;
-	rp.traverseColumnsOnMaster(rm);
+    ResidueProfiles rp;
+    string mseq = m_aligns->GetSequenceForRow(0);
+    for (int i = 1; i < nrows; i++)
+    {
+        string sseq = m_aligns->GetSequenceForRow(i);
+        BlockModelPair bmp(m_aligns->getSeqAlign(i));
+        rp.addOneRow(bmp, mseq, sseq);
+    }
+    ResidueMatrix rm;
+    rp.traverseColumnsOnMaster(rm);
 
     int Identity;
     char Res1, Res2;
 
     int count = 0;
     int total = (int)((double)nrows * (((double)nrows-1)/2));
-	pair<string, string> seqPair;
+    pair<string, string> seqPair;
     // for each row in the alignment
     for (int j=0; j<nrows; j++) 
-	{
+    {
         m_Array[j][j] = 0.0;
         // for each other row in the alignment
         for (int k=j+1; k<nrows; k++) 
-		{
+        {
             Identity = 0;
-			seqPair.first.clear();
-			seqPair.second.clear();
-			rm.getAlignedPair(j,k, seqPair);
+            seqPair.first.erase();
+            seqPair.second.erase();
+            rm.getAlignedPair(j,k, seqPair);
             // for each column of the alignment +/- extensions
             for (int i = 0; i < seqPair.first.size(); i++) 
-			{
+            {
                 Res1 = seqPair.first[i];
                 Res2 = seqPair.second[i];
                 // calculate percent of identical residues
                 if (Res1 == Res2 && Res1 != 0) 
-				{
+                {
                     Identity++;
                 }
             }
