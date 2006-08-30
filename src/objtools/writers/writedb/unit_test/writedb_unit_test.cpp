@@ -264,7 +264,7 @@ s_DupSequencesTest(int    * ids,
 
 CRef<CScope> s_GetScope()
 {
-    static CRef<CObjectManager> obj_mgr;
+    CRef<CObjectManager> obj_mgr;
     
     if (obj_mgr.Empty()) {
         obj_mgr.Reset(CObjectManager::GetInstance());
@@ -545,6 +545,9 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/08/30 19:29:02  bealer
+ * - Remove 'static' modifier causing cleanup order issue.
+ *
  * Revision 1.4  2006/08/24 20:03:11  ucko
  * - #include <boost/current_function.hpp>, and use BOOST_CURRENT_FUNCTION
  *   in lieu of __FUNCTION__, which not all compilers actually support.
