@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/readers/reader_exception.hpp>
@@ -77,8 +78,30 @@ using boost::unit_test::test_suite;
     CNcbiIfstream infile(file);                                 \
     CBlastFastaInputSource source(*om, infile);
 
+static bool s_CheckBoolEnvar(const char * env)
+{
+    const char * p = getenv(env);
+    string s(p ? p : "");
+    NStr::ToLower(s);
+                    
+    return (s == "on"  || s == "true" || s == "yes" || s == "1");
+}
+
+static void s_UnitTestVerbosity(string s)
+{
+    static bool enabled = s_CheckBoolEnvar("VERBOSE_UT");
+            
+    if (enabled) {
+        cout << "Running test: " << s << endl;
+    }
+}
+
+#define START s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
+
+
 BOOST_AUTO_UNIT_TEST(s_ReadFastaProtein)
 {
+    START;
     DECLARE_SOURCE("data/aa.129295");
 
     CHECK(source.End() == false);
@@ -104,6 +127,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaProtein)
 
 BOOST_AUTO_UNIT_TEST(s_RangeBoth)
 {
+    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetFrom(50);
@@ -116,6 +140,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeBoth)
 
 BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
 {
+    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetFrom(50);
@@ -127,6 +152,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
 
 BOOST_AUTO_UNIT_TEST(s_RangeInvalid)
 {
+    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetFrom(100);
@@ -136,6 +162,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeInvalid)
 
 BOOST_AUTO_UNIT_TEST(s_ParseDefline)
 {
+    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetBelieveDeflines(true);
@@ -146,15 +173,143 @@ BOOST_AUTO_UNIT_TEST(s_ParseDefline)
 
 BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
 {
+    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetStrand(eNa_strand_both);
     CHECK_THROW(source.GetNextSSeqLoc(), CObjReaderException);
 }
 
+BOOST_AUTO_UNIT_TEST(s_ReadFastaNucl)
+{
+    START;
+    DECLARE_SOURCE("data/nt.cat");
+
+    CHECK(source.End() == false);
+    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    CHECK(source.End() == false);
+
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    CHECK_EQUAL((TSeqPos)645, ssl.seqloc->GetInt().GetTo());
+
+    ssl = source.GetNextSSeqLoc();
+    CHECK(source.End() == true);
+
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    CHECK_EQUAL((TSeqPos)359, ssl.seqloc->GetInt().GetTo());
+    CHECK(!ssl.mask);
+}
+
+BOOST_AUTO_UNIT_TEST(s_NuclStrand)
+{
+    START;
+    DECLARE_SOURCE("data/nt.cat");
+
+    source.m_Config.SetStrand(eNa_strand_plus);
+    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    CHECK_EQUAL(eNa_strand_plus, ssl.seqloc->GetInt().GetStrand());
+
+    source.m_Config.SetStrand(eNa_strand_minus);
+    ssl = source.GetNextSSeqLoc();
+    CHECK_EQUAL(eNa_strand_minus, ssl.seqloc->GetInt().GetStrand());
+}
+
+BOOST_AUTO_UNIT_TEST(s_NuclBadStrand)
+{
+    DECLARE_SOURCE("data/nt.cat");
+
+    source.m_Config.SetStrand(eNa_strand_unknown);
+    CHECK_THROW(source.GetNextSSeqLoc(), CObjReaderException);
+}
+
+BOOST_AUTO_UNIT_TEST(s_NuclLcaseMask)
+{
+    START;
+    DECLARE_SOURCE("data/nt.cat");
+
+    source.m_Config.SetLowercaseMask(true);
+    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    CHECK(ssl.mask)
+    CHECK(ssl.mask->IsPacked_int());
+
+    CPacked_seqint::Tdata masklocs = ssl.mask->GetPacked_int();
+    CHECK_EQUAL((size_t)2, masklocs.size());
+    CHECK_EQUAL((TSeqPos)126, masklocs.front()->GetFrom());
+    CHECK_EQUAL((TSeqPos)167, masklocs.front()->GetTo());
+    CHECK_EQUAL((TSeqPos)330, masklocs.back()->GetFrom());
+    CHECK_EQUAL((TSeqPos)356, masklocs.back()->GetTo());
+
+    ssl = source.GetNextSSeqLoc();
+    CHECK(ssl.mask);
+    CHECK(ssl.mask->IsNull());
+}
+
+BOOST_AUTO_UNIT_TEST(s_MultiSeq)
+{
+    START;
+    DECLARE_SOURCE("data/aa.cat");
+    CBlastInput in(&source);
+
+    blast::TSeqLocVector v = in.GetAllSeqLocs();
+    CHECK(source.End());
+    CHECK_EQUAL((size_t)19, v.size());
+}
+
+BOOST_AUTO_UNIT_TEST(s_MultiRange)
+{
+    START;
+    DECLARE_SOURCE("data/aa.cat");
+    source.m_Config.SetFrom(50);
+    source.m_Config.SetTo(100);
+    CBlastInput in(&source);
+
+    blast::TSeqLocVector v = in.GetAllSeqLocs();
+    NON_CONST_ITERATE(blast::TSeqLocVector, itr, v) {
+        CHECK_EQUAL((TSeqPos)50, itr->seqloc->GetInt().GetFrom());
+        CHECK_EQUAL((TSeqPos)100, itr->seqloc->GetInt().GetTo());
+    }
+}
+
+BOOST_AUTO_UNIT_TEST(s_MultiBatch)
+{
+    START;
+    DECLARE_SOURCE("data/aa.cat");
+    source.m_Config.SetBelieveDeflines(true);
+    CBlastInput in(&source, 5000);
+
+    blast::TSeqLocVector v;
+
+    size_t num_seqs = 0;
+    v = in.GetNextSeqLocBatch();
+    num_seqs += v.size();
+    CHECK_EQUAL((size_t)7, v.size());
+    CHECK_EQUAL((TSeqPos)530, v[0].seqloc->GetInt().GetTo());
+    CHECK_EQUAL(1346057, v[0].seqloc->GetInt().GetId().GetGi());
+
+    v = in.GetNextSeqLocBatch();
+    num_seqs += v.size();
+    CHECK_EQUAL((size_t)8, v.size());
+    CHECK_EQUAL((TSeqPos)445, v[0].seqloc->GetInt().GetTo());
+    CHECK_EQUAL(1170625, v[0].seqloc->GetInt().GetId().GetGi());
+
+    v = in.GetNextSeqLocBatch();
+    num_seqs += v.size();
+    CHECK_EQUAL((size_t)4, v.size());
+    CHECK_EQUAL((TSeqPos)688, v[0].seqloc->GetInt().GetTo());
+    CHECK_EQUAL(114152, v[0].seqloc->GetInt().GetId().GetGi());
+
+    CHECK_EQUAL((size_t)19, num_seqs);
+    CHECK(source.End());
+}
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/08/30 19:30:01  papadopo
+ * 1. Add nucleotide sequence tests
+ * 2. Add multi-query-fetch tests
+ * 3. Add optional verbose output
+ *
  * Revision 1.3  2006/08/30 18:03:40  papadopo
  * add protein fasta parsing unit tests
  *
