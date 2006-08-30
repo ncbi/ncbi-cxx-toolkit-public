@@ -270,32 +270,30 @@ BOOST_AUTO_UNIT_TEST(s_MultiBatch)
 
     blast::TSeqLocVector v;
 
-    size_t num_seqs = 0;
     v = in.GetNextSeqLocBatch();
-    num_seqs += v.size();
     CHECK_EQUAL((size_t)7, v.size());
     CHECK_EQUAL((TSeqPos)530, v[0].seqloc->GetInt().GetTo());
     CHECK_EQUAL(1346057, v[0].seqloc->GetInt().GetId().GetGi());
 
     v = in.GetNextSeqLocBatch();
-    num_seqs += v.size();
     CHECK_EQUAL((size_t)8, v.size());
     CHECK_EQUAL((TSeqPos)445, v[0].seqloc->GetInt().GetTo());
     CHECK_EQUAL(1170625, v[0].seqloc->GetInt().GetId().GetGi());
 
     v = in.GetNextSeqLocBatch();
-    num_seqs += v.size();
     CHECK_EQUAL((size_t)4, v.size());
     CHECK_EQUAL((TSeqPos)688, v[0].seqloc->GetInt().GetTo());
     CHECK_EQUAL(114152, v[0].seqloc->GetInt().GetId().GetGi());
 
-    CHECK_EQUAL((size_t)19, num_seqs);
     CHECK(source.End());
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/08/30 19:57:55  papadopo
+ * remove redundant work
+ *
  * Revision 1.5  2006/08/30 19:55:03  camacho
  * Make verbose output less restrictive
  *
