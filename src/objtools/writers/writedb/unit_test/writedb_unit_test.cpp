@@ -70,18 +70,9 @@ using boost::unit_test::test_suite;
 #define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
 #define CHECK_THROW(s, x) BOOST_CHECK_THROW(s, x)
 
-static bool s_CheckBoolEnvar(const char * env)
-{
-    const char * p = getenv(env);
-    string s(p ? p : "");
-    NStr::ToLower(s);
-    
-    return (s == "on"  || s == "true" || s == "yes" || s == "1");
-}
-
 static void s_UnitTestVerbosity(string s)
 {
-    static bool enabled = s_CheckBoolEnvar("VERBOSE_UT");
+    static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
     
     if (enabled) {
         cout << "Running test: " << s << endl;
@@ -545,6 +536,9 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/08/30 19:53:27  camacho
+ * Make verbose output less restrictive
+ *
  * Revision 1.5  2006/08/30 19:29:02  bealer
  * - Remove 'static' modifier causing cleanup order issue.
  *

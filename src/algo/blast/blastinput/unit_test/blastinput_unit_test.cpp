@@ -78,18 +78,9 @@ using boost::unit_test::test_suite;
     CNcbiIfstream infile(file);                                 \
     CBlastFastaInputSource source(*om, infile);
 
-static bool s_CheckBoolEnvar(const char * env)
-{
-    const char * p = getenv(env);
-    string s(p ? p : "");
-    NStr::ToLower(s);
-                    
-    return (s == "on"  || s == "true" || s == "yes" || s == "1");
-}
-
 static void s_UnitTestVerbosity(string s)
 {
-    static bool enabled = s_CheckBoolEnvar("VERBOSE_UT");
+    static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
             
     if (enabled) {
         cout << "Running test: " << s << endl;
@@ -305,6 +296,9 @@ BOOST_AUTO_UNIT_TEST(s_MultiBatch)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/08/30 19:55:03  camacho
+ * Make verbose output less restrictive
+ *
  * Revision 1.4  2006/08/30 19:30:01  papadopo
  * 1. Add nucleotide sequence tests
  * 2. Add multi-query-fetch tests
