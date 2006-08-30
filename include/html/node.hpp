@@ -106,8 +106,8 @@ public:
     typedef map<string, SAttributeValue, PNocase> TAttributes;
     
     enum EMode {
-        ePlainText = 0,
-        eHTML      = 1,
+        eHTML      = 0,
+        ePlainText = 1,
         eXHTML     = 2
     };
 
@@ -297,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/08/30 16:19:15  ivanov
+ * Restored EMode enumerator order
+ *
  * Revision 1.30  2006/08/21 16:01:59  ivanov
  * CNCBINode::EMode += eXHTML
  *
