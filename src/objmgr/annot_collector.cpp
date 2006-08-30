@@ -624,8 +624,7 @@ struct CAnnotObject_Less
             // from > to = circular location.
             // Any circular location is less than non-circular one.
             // If both are circular, compare in normal way.
-            if ( (x_from > x_to || y_from > y_to)  &&
-                    (x_from > x_to) != (y_from > y_to) ) {
+            if ( (x_from > x_to) != (y_from > y_to) ) {
                 return x.GetMappingInfo().GetTotalRange().Empty();
             }
             // smallest left extreme first
@@ -1596,7 +1595,10 @@ void CAnnot_Collector::x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
                                           CSeq_loc_Conversion* cvt,
                                           unsigned int         loc_index)
 {
-    object_ref.ResetLocation();
+    if ( cvt ) {
+        // reset current mapping info, it will be updated by conversion set
+        object_ref.ResetLocation();
+    }
     if ( !m_MappingCollector.get() ) {
         m_MappingCollector.reset(new CAnnotMappingCollector);
     }
@@ -1908,6 +1910,16 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     CAnnotObject_Ref annot_ref(annot_info);
                     if ( !cvt  &&  aoit->second.GetMultiIdFlag() ) {
                         // Create self-conversion, add to conversion set
+                        CHandleRange::TRange ref_rg = aoit->first;
+                        if (is_circular ) {
+                            TSeqPos from = aoit->second.m_HandleRange->
+                                GetData().GetLeft();
+                            TSeqPos to =aoit->second.m_HandleRange->
+                                GetData().GetRight();
+                            ref_rg = CHandleRange::TRange(from, to);
+                        }
+                        annot_ref.GetMappingInfo().SetAnnotObjectRange(ref_rg,
+                                m_Selector->m_FeatProduct);
                         x_AddObjectMapping(annot_ref, 0,
                                            aoit->second.m_AnnotLocationIndex);
                     }
@@ -2276,6 +2288,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2006/08/30 20:58:14  vasilche
+* Fixed order of multi-id annotations.
+*
 * Revision 1.74  2006/06/07 19:44:29  vasilche
 * To not send large requests in prefetch thread.
 *
