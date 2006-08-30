@@ -72,7 +72,9 @@ void CCleanup_imp::BasicCleanup(CPubdesc& pd)
     
     CLEAN_STRING_MEMBER(pd, Name);
     
-    CleanDoubleQuote(pd.SetComment());
+    if (pd.IsSetComment()) {
+        CleanDoubleQuote(pd.SetComment());
+    }
     if (IsOnlinePub(pd)) {
         TRUNCATE_SPACES(pd, Comment);
     } else {
@@ -581,6 +583,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/08/30 17:55:48  rsmith
+ * Do not set empty comments.
+ *
  * Revision 1.8  2006/08/29 14:30:00  rsmith
  * Cleanup double quotes in comments in CPubdesc
  *

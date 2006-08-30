@@ -585,7 +585,9 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
     }
 
     CLEAN_STRING_MEMBER(f, Comment);
-    CleanDoubleQuote(f.SetComment());
+    if (f.IsSetComment()) {
+        CleanDoubleQuote(f.SetComment());        
+    }
     if (f.IsSetComment()  &&  f.GetComment() == ".") {
         f.ResetComment();
         ChangeMade(CCleanupChange::eChangeComment);
@@ -1955,6 +1957,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2006/08/30 17:55:48  rsmith
+ * Do not set empty comments.
+ *
  * Revision 1.31  2006/08/29 14:31:20  rsmith
  * Cleanup double quotes in comments in CSeq_feat.
  * Remove redundant c_str()
