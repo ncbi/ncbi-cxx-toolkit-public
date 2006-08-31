@@ -2163,6 +2163,16 @@ public:
         return *this;
     }
 
+    /// Append single Unicode code point
+    ///
+    /// @param ch
+    ///   Unicode code point
+    CStringUTF8& Append(TUnicodeSymbol ch)
+    {
+        x_AppendChar(ch);
+        return *this;
+    }
+
     /// Get the number of symbols (code points) in the string
     ///
     /// @return
@@ -3183,6 +3193,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.105  2006/08/31 17:23:49  gouriano
+ * Possibility to append unicode char to UTF8 string
+ *
  * Revision 1.104  2006/08/23 13:32:50  ivanov
  * + NStr::ReplaceInPlace()
  *
