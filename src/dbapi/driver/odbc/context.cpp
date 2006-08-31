@@ -670,6 +670,10 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
 
 #ifdef FTDS_IN_USE
         connect_str += ";" + x_MakeFreeTDSVersion(GetTDSVersion());
+
+        if (!GetClientCharset().empty()) {
+            connect_str += ";client_charset=" + GetClientCharset();
+        }
 #endif
 
         r = SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
@@ -796,6 +800,7 @@ CDbapiOdbcCFBase::CreateInstance(
 
         // Optional parameters ...
         int page_size = 0;
+        string client_charset;
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
@@ -814,6 +819,8 @@ CDbapiOdbcCFBase::CreateInstance(
                     tds_version = NStr::StringToInt( v.value );
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
+                } else if ( v.id == "client_charset" ) {
+                    client_charset = v.value;
                 }
             }
         }
@@ -824,6 +831,10 @@ CDbapiOdbcCFBase::CreateInstance(
         // Set parameters ...
         if ( page_size ) {
             drv->ODBC_SetPacketSize( page_size );
+        }
+
+        if ( !client_charset.empty() ) {
+            drv->SetClientCharset( client_charset );
         }
     }
     return drv;
@@ -910,6 +921,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/08/31 15:00:24  ssikorsk
+ * Handle ClientCharset.
+ *
  * Revision 1.65  2006/08/21 18:16:16  ssikorsk
  * Set the SQL_ATTR_OUTPUT_NTS attribut with an environment handle.
  *
