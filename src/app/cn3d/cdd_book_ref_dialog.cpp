@@ -106,7 +106,7 @@ static TypeStringAssociator < CCdd_book_ref::ETextelement > enum2str;
 CDDBookRefDialog::CDDBookRefDialog(StructureSet *structureSet, CDDBookRefDialog **handle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
         wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
-        sSet(structureSet), dialogHandle(handle), selectedItem(-1), editOn(false)
+        sSet(structureSet), dialogHandle(handle), selectedItem(-1), editOn(false), isNew(false)
 {
     if (enum2str.Size() == 0) {
         enum2str.Associate(CCdd_book_ref::eTextelement_unassigned, "unassigned");
@@ -220,7 +220,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cType, ID_C_TYPE, wxChoice)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tAddress, ID_T_ADDRESS, wxTextCtrl)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tSubaddress, ID_T_SUBADDRESS, wxTextCtrl)
-    if (selectedItem >= 0 && selectedItem < listbox->GetCount() && listbox->GetClientData(selectedItem) && !editOn) {
+    if (selectedItem >= 0 && selectedItem < listbox->GetCount() && listbox->GetClientData(selectedItem) && !isNew) {
         listbox->SetSelection(selectedItem, true);
         const CCdd_book_ref& bref =
             (*(reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem))))->GetBook_ref();
@@ -299,7 +299,6 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_LISTBOX, wxListBox)
     CRef < CCdd_descr > *selDescr = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
-    static bool isNew = false;
 
     if (event.GetId() == ID_B_DONE) {
         Close(false);
@@ -576,6 +575,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/08/31 15:48:58  thiessen
+* fix edit bug in book refs dialog
+*
 * Revision 1.10  2006/06/20 21:01:40  thiessen
 * insert new refs after selected one (instead of at end)
 *
