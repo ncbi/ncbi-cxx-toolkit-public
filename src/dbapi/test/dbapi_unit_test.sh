@@ -99,7 +99,7 @@ Unknown driver initialization error.
 EOF
     else
         for server in $server_list ; do
-            if test \( $driver = "ctlib" -o $driver = "dblib" -o $driver = "ftds64_ctlib" \) -a $server = $server_mssql ; then
+            if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
 
