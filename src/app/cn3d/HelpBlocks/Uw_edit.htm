@@ -10,14 +10,25 @@
  href="AW_Edit.htm" >Sequence Window :&nbsp;Edit</A> menu, with a few additions:</P>
 <P>&nbsp;</P>
 <ul>
+  <li><a href="#blocks">Delete all blocks</a></li>
+  <li><a href="#all">Delete all blocks in all alignments</a></li>
   <li><a href="#sort">Sort imports</a></li>
   <li><a href="#sequence">Import sequences</a></li>
   <li><a href="#structure">Import structure</a></li>
 </ul>
+<h3><a name="blocks"></a>Delete all blocks</h3>
+Delete all the blocks in the selected alignment.
+<h3><a name="all"></a>Delete all blocks in all alignments</h3>
+Delete all the blocks in all the alignments in the import window.
 <h3><a name="sort"></a>Sort imports</h3>
-<P>Sorts imports by sequence identifier (of the slave sequence), putting PDB
+<P>Sorts imports by:</p>
+<ul>
+<li><b>Sequence identifier</b>: (of the imported sequence), putting PDB
 sequences at the top in alphabetical order, followed by non-structured sequences
-in numerical order of their identifier.</P>
+in numerical order of their identifier.</li>
+<li><b>PSSM score</b>: sorts rows by the sum of the residue-to-PSSM scores for all aligned
+residues, with the highest at the top.</li>
+</ul>
 <H3><a name="sequence"></a>Import sequences</H3>
 <P>Use this item to import new sequences. You will be given a choice to import
   multiple sequences from a FASTA file, or a single sequence from NCBI via the

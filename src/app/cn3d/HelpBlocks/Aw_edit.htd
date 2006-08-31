@@ -51,7 +51,7 @@ colors</b> is on, which means this redrawing of structures will take place autom
 This can be turned off for slower computers where redraws take a long time; use
 <b>Sync structure colors </b> to manually redraw the structures with any new colors.
 <h3><a name="sort"></a>Sort rows</h3>
-<p>Use this item to sort the slave rows of the current alignment. The algorithms
+<p>Use this item to sort all but the first row of the current alignment. The algorithms
   available for sorting are:</p>
 <ul>
   <li><b>By identifier</b>: sort so 
@@ -73,15 +73,17 @@ This can be turned off for slower computers where redraws take a long time; use
   <li><b>Self-hit</b>: sorts by BLAST score between each sequence and the PSSM
 constructed from the current alignment.
   <li><b>Proximity sort</b>: select this menu item and then click on any but the
-    master sequence to do a proximity sort. This will move the selected sequence
+    first row to do a proximity sort. This will move the selected sequence
     to a position in the alignment according to its relative sequence conservation
-    with the master sequence. Then the other sequences most similar to the selected
+    with the first row. Then the other sequences most similar to the selected
     row will be clustered around it. This is useful for grouping similar sequences
     together, and for automatically finding similar sequences in a large alignment.</li>
 </ul>
 <h3><a name="delete_row"></a>Delete row</h3>
-Select this item and then click on any but the master sequence to remove that
+Select this item and then click on any but the first sequence to remove that
 row from the alignment.
 <h3><a name="refiner"></A>Alignment refiner</h3>
+See Chakrabarti S. et. al., Nucleic Acids Res. 2006 May 17, 34(9):2598-606 
+(<a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&cmd=Retrieve&dopt=AbstractPlus&list_uids=16707662">PMID 16707662</a>).
 </BODY>
 </HTML>

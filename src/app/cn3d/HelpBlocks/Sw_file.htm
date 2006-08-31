@@ -55,10 +55,10 @@ that structure directly, which you can then manipulate as usual or save to a loc
   a small progress meter as the file is created; you'll have to wait until export
   is finished before continuing.</p>
 <h3><a name="realign"></a>Realign Structures</h3>
-<p>Re-compute the structure alignment(s) between multiple structures. Each slave
-  structure will be realigned with the master according to a rigid body fit, using
+<p>Re-compute the structure alignment(s) between multiple structures. Each 
+  structure will be realigned with the first structure of the alignment, according to a rigid body fit using
   only the alpha carbon coordinates of residues in aligned blocks. The RMSD
-  between the coordinate sets for each slave will be printed in the message log. If there are
+  between the coordinate sets for each pair of structures will be printed in the message log. If there are
  aligned columns selected in the sequence window, then a dialog will appear asking whether to
  use only the selected residues for structure alignment.</p>
 <h3><a name="preferences"></a>Preferences</h3>
@@ -81,7 +81,7 @@ that structure directly, which you can then manipulate as usual or save to a loc
     the same structures over a slow network connection. This panel allows you
     to set the location of the cache, and limit the amount of disk space it will
     use.</p>
-  <p><b>Advanced</b>
+  <p><b>Advanced</b>:
 <ul><li>The <b>CDD Annotations</b> checkbox controls whether CDD annotation information is read-only 
   (the default) or editable. Un-check this option if you want to edit the 
   annotation information stored in a local CDD file.</li>
