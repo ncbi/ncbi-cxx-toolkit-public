@@ -65,30 +65,34 @@ CFlatFileConfig::~CFlatFileConfig(void)
 // -- mode flags
 
 // mode flags initialization
-const bool CFlatFileConfig::sm_ModeFlags[4][26] = {
+const bool CFlatFileConfig::sm_ModeFlags[4][32] = {
     // Release
     { 
         true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true
+        true, true, true, true, true, true, true, false, false, false, 
+        false, false
     },
     // Entrez
     {
         false, true, true, true, true, false, true, true, true, true,
         true, false, true, true, true, true, false, false, true, true,
-        true, true, true, true, false, true
+        true, true, true, true, false, true, true, false, false, false, 
+        false, false
     },
     // GBench
     {
         false, false, false, false, false, false, false, true, false, false,
         false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false
+        false, false, false, false, false, false, false, false, false, false, 
+        false, false
     },
     // Dump
     {
         false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false
+        false, false, false, false, false, false, false, false, false, false, 
+        false, false
     }
 };
 
@@ -125,6 +129,7 @@ MODE_FLAG_GET(GoQualsToNote, 21);
 //MODE_FLAG_GET(SelenocysteineToNote, 23);
 MODE_FLAG_GET(ForGBRelease, 24);
 MODE_FLAG_GET(HideUnclassPartial, 25);
+MODE_FLAG_GET(CodonRecognizedToNote, 26);
 
 #undef MODE_FLAG_GET
 
@@ -152,6 +157,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/08/31 17:13:00  ludwigf
+* ADDED: Extra mode flag that controls whether codon_recognized becomes a
+*  qualifier or part of the note in the flat file. As implemented, it will
+*  be part of the note in release and entrez modes, and its own qualifier in
+*  gbench and dump modes.
+*
 * Revision 1.6  2006/08/31 13:54:06  ludwigf
 * CHANGED: In relaxed modes, turn object qualifier "syn" into a flat file
 *  qualifier "/synonym" rather than a component of the "/note" qualifier.

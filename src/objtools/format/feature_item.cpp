@@ -1283,7 +1283,8 @@ static int s_GetOverlap( CConstRef<CSeq_feat> feat )
 //                const CSeq_id& whole = location.GetWhole(); 
                 return numeric_limits<int>::max();
             }
-
+            default:
+                break;
         }
     }
     return 0;
@@ -1509,6 +1510,8 @@ CSeq_id_Handle s_FindBestIdChoice(const CBioseq_Handle::TId& ids)
             case CSeq_id::e_Tpd:
             case CSeq_id::e_Gpipe:
                 tracker(*it);
+                break;
+            default:
                 break;
         }
     }
@@ -2413,6 +2416,9 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(transl_except);
     DO_QUAL(transl_table);
     DO_QUAL(codon);
+    if ( ! cfg.CodonRecognizedToNote() ) {
+        DO_QUAL(trna_codons);
+    }
     DO_QUAL(organism);
     DO_QUAL(label);
     x_FormatQual(eFQ_cds_product, "product", qvec);
@@ -2480,7 +2486,9 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     if ( cfg.GeneSynsToNote() ) {
         DO_NOTE(gene_syn);
     }
-    DO_NOTE(trna_codons);
+    if ( cfg.CodonRecognizedToNote() ) {
+        DO_NOTE(trna_codons);
+    }
     DO_NOTE(encodes);
     DO_NOTE(prot_desc);
     DO_NOTE(prot_note);
@@ -3850,6 +3858,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2006/08/31 17:13:00  ludwigf
+* ADDED: Extra mode flag that controls whether codon_recognized becomes a
+*  qualifier or part of the note in the flat file. As implemented, it will
+*  be part of the note in release and entrez modes, and its own qualifier in
+*  gbench and dump modes.
+*
 * Revision 1.79  2006/08/31 13:54:06  ludwigf
 * CHANGED: In relaxed modes, turn object qualifier "syn" into a flat file
 *  qualifier "/synonym" rather than a component of the "/note" qualifier.

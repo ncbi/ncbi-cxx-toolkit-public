@@ -250,6 +250,7 @@ public:
     bool SelenocysteineToNote(void) const;
     bool ForGBRelease        (void) const;
     bool HideUnclassPartial  (void) const;
+    bool CodonRecognizedToNote(void) const;
     
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
@@ -286,12 +287,12 @@ public:
     CFlatFileConfig& SetOldFeaturesOrder     (bool val = true);
     CFlatFileConfig& SetHideGapFeatures      (bool val = true);
     CFlatFileConfig& SetNeverTranslateCDS    (bool val = true);
-
+    CFlatFileConfig& SetCodonRecognizedToNote(bool val = true);
     
 
 private:
     // mode specific flags
-    static const bool sm_ModeFlags[4][26];
+    static const bool sm_ModeFlags[4][32];
 
     // data
     TFormat     m_Format;
@@ -381,6 +382,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/08/31 17:13:00  ludwigf
+* ADDED: Extra mode flag that controls whether codon_recognized becomes a
+*  qualifier or part of the note in the flat file. As implemented, it will
+*  be part of the note in release and entrez modes, and its own qualifier in
+*  gbench and dump modes.
+*
 * Revision 1.7  2005/04/27 17:09:43  shomrat
 * Modify for RefSeq
 *

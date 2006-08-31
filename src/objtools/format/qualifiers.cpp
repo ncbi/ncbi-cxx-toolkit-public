@@ -999,18 +999,24 @@ void CFlatTrnaCodonsQVal::Format
     if (!m_Value  ||  !m_Value->IsSetCodon()) {
         return;
     }
-
     string recognized;
     size_t num = s_ComposeCodonRecognizedStr(*m_Value, recognized);
-    if (num > 0) {
+    if ( 0 == num ) {
+        return;
+    }
+
+    if ( ctx.Config().CodonRecognizedToNote() ) {
         if (num == 1) {
             string str = "codon recognized: " + recognized;
             if (NStr::Find(m_Seqfeat_note, str) == NPOS) {
                 x_AddFQ(q, name, str);
             }
-        } else {
+        }
+        else {
             x_AddFQ(q, name, "codons recognized: " + recognized);
         }
+    } else {
+        x_AddFQ(q, "codon_recognized", recognized);
     }
 }
 
@@ -1044,9 +1050,14 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2006/08/31 17:13:00  ludwigf
+* ADDED: Extra mode flag that controls whether codon_recognized becomes a
+*  qualifier or part of the note in the flat file. As implemented, it will
+*  be part of the note in release and entrez modes, and its own qualifier in
+*  gbench and dump modes.
+*
 * Revision 1.39  2006/08/31 15:34:36  ludwigf
 * FIXED: Logical error in s_StringIsJustQuotes().
-*
 * CHANGED: Print out plasmid names even if they are empty, i.e. produce
 *  /plasmid="" instead of just /plasmid.
 *
