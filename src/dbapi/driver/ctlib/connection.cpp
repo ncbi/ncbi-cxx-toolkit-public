@@ -501,9 +501,9 @@ I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
 
 bool CTL_Connection::Abort()
 {
+#ifdef CS_ENDPOINT
     int fd = -1;
 
-#ifdef CS_ENDPOINT
     if(Check(ct_con_props(x_GetSybaseConn(),
                           CS_GET,
                           CS_ENDPOINT,
@@ -713,6 +713,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/08/31 15:03:04  ssikorsk
+ * Get rid of warnings.
+ *
  * Revision 1.43  2006/08/22 20:15:07  ssikorsk
  * Fixed CTL_Connection::CheckSFB in order to compile with FreeTDS ctlib.
  *
