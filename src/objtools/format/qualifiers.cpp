@@ -74,7 +74,7 @@ static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
 static bool s_StringIsJustQuotes(const string& str)
 {
     ITERATE(string, it, str) {
-        if ( (*it != '"')  ||  (*it != '\'') ) {
+        if ( (*it != '"')  &&  (*it != '\'') ) {
             return false;
         }
     }
@@ -731,14 +731,26 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
         }
     } else {
         CSubSource::TSubtype subtype = m_Value->GetSubtype();
-        if ( subtype == CSubSource::eSubtype_germline            ||
-             subtype == CSubSource::eSubtype_rearranged          ||
-             subtype == CSubSource::eSubtype_transgenic          ||
-             subtype == CSubSource::eSubtype_environmental_sample ) {
+        switch( subtype ) {
+
+        case CSubSource::eSubtype_germline:
+        case CSubSource::eSubtype_rearranged:
+        case CSubSource::eSubtype_transgenic:
+        case CSubSource::eSubtype_environmental_sample:
             x_AddFQ(q, name, kEmptyStr, CFormatQual::eEmpty);
-        } else if (!subname.empty()) {
+            break;
+
+        case CSubSource::eSubtype_plasmid_name:
             ExpandTildes(subname, eTilde_space);
             x_AddFQ(q, name, subname);
+            break;
+
+        default:
+            if ( ! subname.empty() ) {
+                ExpandTildes(subname, eTilde_space);
+                x_AddFQ(q, name, subname);
+            }
+            break;
         }
     }
 }
@@ -1032,6 +1044,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2006/08/31 15:34:36  ludwigf
+* FIXED: Logical error in s_StringIsJustQuotes().
+*
+* CHANGED: Print out plasmid names even if they are empty, i.e. produce
+*  /plasmid="" instead of just /plasmid.
+*
 * Revision 1.38  2006/08/31 13:54:06  ludwigf
 * CHANGED: In relaxed modes, turn object qualifier "syn" into a flat file
 *  qualifier "/synonym" rather than a component of the "/note" qualifier.
