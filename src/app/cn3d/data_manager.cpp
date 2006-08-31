@@ -101,14 +101,14 @@ void ASNDataManager::Load(void)
         RemoveConsensusFromCDD();
         for (CTypeConstIterator < CSeq_id > i(ConstBegin(*(GetInternalCDDData()))); i; ++i) {
             if (i->IsLocal() && i->GetLocal().IsStr() && i->GetLocal().GetStr() == "consensus") {
-                ERRORMSG("ASNDataManager::Load() - consensus still referenced in the data: " << i.GetContext());
+                WARNINGMSG("ASNDataManager::Load() - consensus still referenced in the data: " << i.GetContext());
                 break;
             }
         }
     } else if (mimeData.NotEmpty()) {
         for (CTypeConstIterator < CSeq_id > i(ConstBegin(mimeData.GetObject())); i; ++i) {
             if (i->IsLocal() && i->GetLocal().IsStr() && i->GetLocal().GetStr() == "consensus") {
-                ERRORMSG("ASNDataManager::Load() - a consensus is present in the data: " << i.GetContext());
+                WARNINGMSG("ASNDataManager::Load() - a consensus is present in the data: " << i.GetContext());
                 break;
             }
         }
@@ -1016,6 +1016,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/08/31 16:56:06  thiessen
+* demote consensus errors to warnings
+*
 * Revision 1.35  2006/07/13 22:33:51  thiessen
 * change all 'slave' -> 'dependent'
 *
