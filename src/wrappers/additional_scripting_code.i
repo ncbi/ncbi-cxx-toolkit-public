@@ -212,6 +212,14 @@ def SerialObjectTextEdit(sobj):
 CSerialObject.TextEdit = SerialObjectTextEdit
 
 
+def SerialClone(sobj):
+    rv = type(sobj)()
+    rv.Assign(sobj)
+    return rv
+
+CSerialObject.Clone = SerialClone
+
+
 def WithinNcbi():
     '''
     Determine from ip address whether we're running within NCBI.
@@ -345,8 +353,8 @@ try:
 except:
 	pass
 
-asn_spec_url_base = 'http://graceland.ncbi.nlm.nih.gov:6224' \
-                    '/staff/jcherry/asn_spec/'
+asn_spec_url_base = 'http://intranet.ncbi.nlm.nih.gov' \
+                    '/ieb/ToolBox/CPP_DOC/asn_spec/'
 def Spec(arg, web=False):
    if isinstance(arg, CSerialObject):
       # a serial object; get type string from type info
@@ -564,6 +572,15 @@ def enable_class_monitoring():
 # no-op implementation to ease switching between ncbi and ncbi_fast
 def use_class(arg):
     pass
+
+
+# bring up the web page for a file or directory in the CVS repository
+def CvsWeb(fname):
+    cvs_web_base = 'http://intranet.ncbi.nlm.nih.gov' \
+                   '/cvsutils/index.cgi/c%2b%2b'
+    url = '%s/%s' % (cvs_web_base, fname)
+    import webbrowser
+    webbrowser.open_new(url)
 
 
 #del object
@@ -797,6 +814,18 @@ sub TextEdit {
     return $rv;
 }
 
+############ SerialClone() -- Make a copy of a serial object ##########
+
+package ncbi;
+sub SerialClone {
+    my $sobj = shift;
+    my $type = ref($sobj);
+    my $cmd = 'new ' . $type;
+    my $rv = eval($cmd);
+    $rv->Assign($sobj);
+    return $rv;
+}
+
 ############ EntrezUrl() -- url for Seq-ids or uids ##########
 
 package ncbi;
@@ -893,9 +922,54 @@ webbrowser._tryorder = orig_tryorder \
 #endif
 
 
+#ifdef SWIGRUBY
+
+%inline %{
+
+void Spec(const string& type, bool web = false)
+{
+    if (web) {
+        CExec::SpawnLP(CExec::eWait,
+                       "/netopt/ncbi_tools/c++-wrappers/bin/asn_spec",
+                       "--web", type.c_str(), NULL);
+    } else {
+        CExec::SpawnLP(CExec::eWait,
+                       "/netopt/ncbi_tools/c++-wrappers/bin/asn_spec",
+                       type.c_str(), NULL);
+    }
+}
+
+
+void Spec(const CSerialObject& obj, bool web = false)
+{
+    Spec(obj.GetThisTypeInfo()->GetName(), web);
+}
+
+%}
+
+
+%extend ncbi::CSerialObject {
+    void Spec(bool web = false) {
+        void Spec(const CSerialObject& obj, bool web);
+        Spec(*self, web);
+    }
+
+//     void TextView() {
+//         ncbi::CNcbiOstrstream buf;
+//         buf << MSerial_AsnText << *self;
+//         ncbi::CTextEditor::DisplayText(ncbi::CNcbiOstrstreamToString(buf));
+//     }
+};
+
+#endif
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/08/31 16:06:24  jcherry
+ * Changed URL for ASN.1 specs.  Added serial object cloning and
+ * CvsWeb.  Added experimental ruby stuff from some time ago.
+ *
  * Revision 1.4  2005/05/19 17:58:32  jcherry
  * Fixes for Python modules set to None, which exist under Windows
  *
