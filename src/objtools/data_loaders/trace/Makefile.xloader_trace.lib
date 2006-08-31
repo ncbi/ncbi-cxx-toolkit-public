@@ -6,3 +6,4 @@
 LIB = ncbi_xloader_trace
 SRC = trace_chgr
 
+ASN_DEP = id1
