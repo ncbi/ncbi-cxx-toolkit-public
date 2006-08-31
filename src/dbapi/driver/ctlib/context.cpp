@@ -207,7 +207,8 @@ extern "C"
 
 
 CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
-    m_Context(0),
+    m_Context(NULL),
+    m_Locale(NULL),
     m_PacketSize(2048),
     m_LoginRetryCount(0),
     m_LoginLoopDelay(0),
@@ -232,6 +233,12 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     if (r != CS_SUCCEED) {
         m_Context = 0;
         DATABASE_DRIVER_ERROR( "Cannot allocate a context", 100001 );
+    }
+
+
+    r = cs_loc_alloc(CTLIB_GetContext(), &m_Locale);
+    if (r != CS_SUCCEED) {
+        m_Locale = NULL;
     }
 
     CS_VOID*     cb;
@@ -429,6 +436,11 @@ CTLibContext::~CTLibContext()
 {
     try {
         x_Close();
+
+        if (m_Locale) {
+            cs_loc_drop(CTLIB_GetContext(), m_Locale);
+            m_Locale = NULL;
+        }
 
 #if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
         WSACleanup();
@@ -879,6 +891,8 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
                      CS_NULLTERM, NULL)) != CS_SUCCEED  ||
         Check(ct_con_props(con, CS_SET, CS_APPNAME, (void*) GetApplicationName().c_str(),
                      CS_NULLTERM, NULL)) != CS_SUCCEED ||
+        Check(ct_con_props(con, CS_SET, CS_LOC_PROP, (void*) GetLocale(),
+                     CS_UNUSED, NULL)) != CS_SUCCEED ||
         Check(ct_con_props(con, CS_SET, CS_HOSTNAME, (void*) hostname,
                      CS_NULLTERM, NULL)) != CS_SUCCEED) {
         Check(ct_con_drop(con));
@@ -926,6 +940,20 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
     return con;
 }
 
+void CTLibContext::SetClientCharset(const string& charset)
+{
+    m_ClientCharset = charset;
+
+    if ( !GetClientCharset().empty() ) {
+        cs_locale(CTLIB_GetContext(),
+                  CS_SET,
+                  m_Locale,
+                  CS_SYB_CHARSET,
+                  (CS_CHAR*) GetClientCharset().c_str(),
+                  CS_UNUSED,
+                  NULL);
+    }
+}
 
 // Tunable version of TDS protocol to use
 
@@ -951,6 +979,10 @@ CS_INT GetCtlibTdsVersion(int version)
     }
 
     switch ( version ) {
+    case 42:
+    case 70:
+    case 80:
+        return version;
     case 100:
         return CS_VERSION_100;
     case 110:
@@ -1082,6 +1114,7 @@ CDbapiCtlibCFBase::CreateInstance(
         CS_INT page_size = 0;
         string prog_name;
         string host_name;
+        string client_charset;
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
@@ -1104,6 +1137,8 @@ CDbapiCtlibCFBase::CreateInstance(
                     prog_name = v.value;
                 } else if ( v.id == "host_name" ) {
                     host_name = v.value;
+                } else if ( v.id == "client_charset" ) {
+                    client_charset = v.value;
                 }
             }
         }
@@ -1116,11 +1151,17 @@ CDbapiCtlibCFBase::CreateInstance(
         if ( page_size ) {
             drv->CTLIB_SetPacketSize( page_size );
         }
+
         if ( !prog_name.empty() ) {
             drv->CTLIB_SetApplicationName( prog_name );
         }
+
         if ( !host_name.empty() ) {
             drv->CTLIB_SetHostName( host_name );
+        }
+
+        if ( !client_charset.empty() ) {
+            drv->SetClientCharset( client_charset );
         }
     }
     return drv;
@@ -1200,6 +1241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2006/08/31 15:02:05  ssikorsk
+ * Handle ClientCharset and locale.
+ *
  * Revision 1.91  2006/08/23 20:45:38  ssikorsk
  * Initiolize/finalyze winsock on Windows in case of FreeTDS.
  *
