@@ -609,6 +609,11 @@ ct_connect(CS_CONNECTION * con, CS_CHAR * servername, CS_INT snamelen)
         connection->minor_version = 0;
     };
 
+    if (con->locale && con->locale->charset) {
+        tds_dstr_copy(&connection->client_charset, con->locale->charset);
+    }
+//     tds_dstr_copy(&connection->server_charset, "UCS-2LE");
+
 	if (tds_connect(con->tds_socket, connection) == TDS_FAIL) {
 		tds_free_socket(con->tds_socket);
 		con->tds_socket = NULL;
