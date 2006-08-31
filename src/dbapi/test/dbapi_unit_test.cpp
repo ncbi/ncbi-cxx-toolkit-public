@@ -201,8 +201,8 @@ CDBAPIUnitTest::TestInit(void)
         m_Conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
@@ -388,12 +388,21 @@ void CDBAPIUnitTest::Test_Unicode(void)
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     string str_rus("坚坚 假结 俞家");
     string str_ger("Au遝rdem k鰊nen Sie einzelne Eintr鋑e aus Ihrem Suchprotokoll entfernen");
+
 //     string str_utf8("\320\237\321\203\320\277\320\272\320\270\320\275");
-//     string str_utf8("\0xD0\0x9F\0xD1\0x83\0xD0\0xBF\0xD0\0xBA\0xD0\0xB8\0xD0\0xBD");
-    string str_utf8("\0320\0237\0321\0203\0320\0277\0320\0272\0320\0270\0320\0275");
+//     string str_utf8("\xD0\x9F\xD1\x83\xD0\xBF\xD0\xBA\xD0\xB8\xD0\xBD");
+    string str_utf8("HELLO");
+
     CStringUTF8 utf8_str_1252_rus(str_rus, eEncoding_Windows_1252);
     CStringUTF8 utf8_str_1252_ger(str_ger, eEncoding_Windows_1252);
     CStringUTF8 utf8_str_utf8(str_utf8, eEncoding_UTF8);
+
+    BOOST_CHECK( str_utf8.size() > 0 );
+    BOOST_CHECK_EQUAL( str_utf8, utf8_str_utf8 );
+
+    BOOST_CHECK( utf8_str_1252_rus.IsValid() );
+    BOOST_CHECK( utf8_str_1252_ger.IsValid() );
+    BOOST_CHECK( utf8_str_utf8.IsValid() );
 
     try {
         // Clean table ...
@@ -404,20 +413,24 @@ void CDBAPIUnitTest::Test_Unicode(void)
             sql = "INSERT INTO #test_unicode_table(nvc255_field) VALUES(@nvc_val)";
 
             //
+            BOOST_CHECK( utf8_str_utf8.size() > 0 );
+            BOOST_CHECK_EQUAL( str_utf8, utf8_str_utf8 );
+            auto_stmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
+                                                   utf8_str_utf8.size()),
+                                 "@nvc_val" );
+            auto_stmt->ExecuteUpdate(sql);
+
+            //
+            BOOST_CHECK( utf8_str_1252_rus.size() > 0 );
             auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
                                                    utf8_str_1252_rus.size()),
                                  "@nvc_val" );
             auto_stmt->ExecuteUpdate(sql);
 
             //
+            BOOST_CHECK( utf8_str_1252_ger.size() > 0 );
             auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.c_str(),
                                                    utf8_str_1252_ger.size()),
-                                 "@nvc_val" );
-            auto_stmt->ExecuteUpdate(sql);
-
-            //
-            auto_stmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
-                                                   utf8_str_utf8.size()),
                                  "@nvc_val" );
             auto_stmt->ExecuteUpdate(sql);
         }
@@ -436,9 +449,18 @@ void CDBAPIUnitTest::Test_Unicode(void)
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
 
+            // Read utf8_str_utf8 ...
+            BOOST_CHECK( rs->Next() );
+            nvc255_value = rs->GetVariant(1).GetString();
+            BOOST_CHECK( nvc255_value.size() > 0);
+            BOOST_CHECK_EQUAL( utf8_str_utf8.size(), nvc255_value.size() );
+            BOOST_CHECK_EQUAL( utf8_str_utf8, nvc255_value );
+            CStringUTF8 utf8_utf8(nvc255_value, eEncoding_UTF8);
+
             // Read utf8_str_1252_rus ...
             BOOST_CHECK( rs->Next() );
             nvc255_value = rs->GetVariant(1).GetString();
+            BOOST_CHECK( nvc255_value.size() > 0);
             BOOST_CHECK_EQUAL( utf8_str_1252_rus.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( utf8_str_1252_rus, nvc255_value );
             CStringUTF8 utf8_rus(nvc255_value, eEncoding_UTF8);
@@ -448,20 +470,106 @@ void CDBAPIUnitTest::Test_Unicode(void)
             // Read utf8_str_1252_ger ...
             BOOST_CHECK( rs->Next() );
             nvc255_value = rs->GetVariant(1).GetString();
+            BOOST_CHECK( nvc255_value.size() > 0);
             BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( utf8_str_1252_ger, nvc255_value );
             CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
             string value_ger = utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
             BOOST_CHECK_EQUAL( str_ger, value_ger );
 
-            // Read utf8_str_utf8 ...
-            BOOST_CHECK( rs->Next() );
-            nvc255_value = rs->GetVariant(1).GetString();
-            BOOST_CHECK_EQUAL( utf8_str_utf8.size(), nvc255_value.size() );
-            BOOST_CHECK_EQUAL( utf8_str_utf8, nvc255_value );
-            CStringUTF8 utf8_utf8(nvc255_value, eEncoding_UTF8);
-
             DumpResults(auto_stmt.get());
+        }
+
+        // Call stored procedure ...
+        {
+            auto_stmt->ExecuteUpdate( "DELETE FROM DBAPI_Sample..test_nstring_table" );
+
+//             // Insert data ...
+//             {
+//                 auto_ptr<ICallableStatement> auto_istmt( m_Conn->GetCallableStatement("DBAPI_Sample..TestProc3") );
+//
+//                 auto_istmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
+//                                                        utf8_str_1252_rus.size()),
+//                                      "@val" );
+//                 auto_istmt->Execute();
+//
+//                 //
+//                 auto_istmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.c_str(),
+//                                                        utf8_str_1252_ger.size()),
+//                                      "@val" );
+//                 auto_istmt->Execute();
+//
+//                 //
+//                 auto_istmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
+//                                                        utf8_str_utf8.size()),
+//                                      "@val" );
+//                 auto_istmt->Execute();
+//             }
+
+            // Insert data ...
+            {
+                sql = "INSERT INTO DBAPI_Sample..test_nstring_table(first_field) VALUES(@val)";
+
+                //
+                auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
+                                                       utf8_str_1252_rus.size()),
+                                     "@val" );
+                auto_stmt->ExecuteUpdate(sql);
+
+                //
+                auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.c_str(),
+                                                       utf8_str_1252_ger.size()),
+                                     "@val" );
+                auto_stmt->ExecuteUpdate(sql);
+
+                //
+                auto_stmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
+                                                       utf8_str_utf8.size()),
+                                     "@val" );
+                auto_stmt->ExecuteUpdate(sql);
+            }
+
+            // Retrieve data ....
+            {
+                string nvc255_value;
+
+                sql  = " SELECT first_field FROM DBAPI_Sample..test_nstring_table";
+                sql += " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK( rs.get() != NULL );
+
+                // Read utf8_str_1252_rus ...
+                BOOST_CHECK( rs->Next() );
+                nvc255_value = rs->GetVariant(1).GetString();
+                BOOST_CHECK_EQUAL( utf8_str_1252_rus.size(), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( utf8_str_1252_rus, nvc255_value );
+                CStringUTF8 utf8_rus(nvc255_value, eEncoding_UTF8);
+                string value_rus = utf8_rus.AsSingleByteString(eEncoding_Windows_1252);
+                BOOST_CHECK_EQUAL( str_rus, value_rus );
+
+                // Read utf8_str_1252_ger ...
+                BOOST_CHECK( rs->Next() );
+                nvc255_value = rs->GetVariant(1).GetString();
+                BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( utf8_str_1252_ger, nvc255_value );
+                CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
+                string value_ger = utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
+                BOOST_CHECK_EQUAL( str_ger, value_ger );
+
+                // Read utf8_str_utf8 ...
+                BOOST_CHECK( rs->Next() );
+                nvc255_value = rs->GetVariant(1).GetString();
+                BOOST_CHECK_EQUAL( utf8_str_utf8.size(), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( utf8_str_utf8, nvc255_value );
+                CStringUTF8 utf8_utf8(nvc255_value, eEncoding_UTF8);
+
+                DumpResults(auto_stmt.get());
+            }
         }
     }
     catch(CDB_Exception& ex) {
@@ -486,8 +594,8 @@ CDBAPIUnitTest::Create_Destroy(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
@@ -501,8 +609,8 @@ CDBAPIUnitTest::Create_Destroy(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         IStatement* stmt(local_conn->CreateStatement());
@@ -520,8 +628,8 @@ CDBAPIUnitTest::Create_Destroy(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
@@ -535,8 +643,8 @@ CDBAPIUnitTest::Create_Destroy(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         IStatement* stmt(local_conn->GetStatement());
@@ -557,8 +665,8 @@ void CDBAPIUnitTest::Multiple_Close(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
@@ -580,8 +688,8 @@ void CDBAPIUnitTest::Multiple_Close(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
@@ -604,8 +712,8 @@ void CDBAPIUnitTest::Multiple_Close(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         IStatement* stmt(local_conn->CreateStatement());
@@ -627,8 +735,8 @@ void CDBAPIUnitTest::Multiple_Close(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         IStatement* stmt(local_conn->CreateStatement());
@@ -655,8 +763,8 @@ void CDBAPIUnitTest::Multiple_Close(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
@@ -678,8 +786,8 @@ void CDBAPIUnitTest::Multiple_Close(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
@@ -702,8 +810,8 @@ void CDBAPIUnitTest::Multiple_Close(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         IStatement* stmt(local_conn->GetStatement());
@@ -725,8 +833,8 @@ void CDBAPIUnitTest::Multiple_Close(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         IStatement* stmt(local_conn->GetStatement());
@@ -2347,8 +2455,8 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         drv_context->PushCntxMsgHandler( drv_err_handler.get() );
@@ -2362,8 +2470,8 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 conn->Connect(
                     "unknown",
                     "invalid",
-                    m_args.GetServerName(),
-                    m_args.GetDatabaseName()
+                    m_args.GetServerName()
+//                     m_args.GetDatabaseName()
                     );
             }
             catch( const CDB_Exception& ) {
@@ -2392,8 +2500,8 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             conn->Connect(
                 m_args.GetUserName(),
                 m_args.GetUserPassword(),
-                m_args.GetServerName(),
-                m_args.GetDatabaseName()
+                m_args.GetServerName()
+//                 m_args.GetDatabaseName()
                 );
 
             // Reinit the errot handler because it can be affected during connection.
@@ -2434,8 +2542,8 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             conn->Connect(
                 m_args.GetUserName(),
                 m_args.GetUserPassword(),
-                m_args.GetServerName(),
-                m_args.GetDatabaseName()
+                m_args.GetServerName()
+//                 m_args.GetDatabaseName()
                 );
 
             // Reinit the errot handler because it can be affected during connection.
@@ -2466,8 +2574,8 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         local_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
@@ -2509,8 +2617,8 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         new_conn->Connect(
             m_args.GetUserName(),
             m_args.GetUserPassword(),
-            m_args.GetServerName(),
-            m_args.GetDatabaseName()
+            m_args.GetServerName()
+//             m_args.GetDatabaseName()
             );
 
         // New connection should be affected ...
@@ -2551,8 +2659,8 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             conn->Connect(
                 m_args.GetUserName(),
                 m_args.GetUserPassword(),
-                m_args.GetServerName(),
-                m_args.GetDatabaseName()
+                m_args.GetServerName()
+//                 m_args.GetDatabaseName()
                 );
 
             try {
@@ -2835,7 +2943,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
 
 
         {
-            sql  = " SELECT int_field, int_field FROM " + GetTableName() +
+            sql  = " SELECT int_field FROM " + GetTableName() +
                 " ORDER BY int_field";
             // Execute a statement without parameters ...
             auto_stmt->ExecuteUpdate( sql );
@@ -3118,7 +3226,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT int_field, int_field FROM " + GetTableName() + " ORDER BY int_field";
+        sql  = " SELECT int_field FROM " + GetTableName() + " ORDER BY int_field";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -3160,7 +3268,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT int_field, int_field FROM " + GetTableName() + " WHERE int_field = 0";
+        sql  = " SELECT int_field FROM " + GetTableName() + " WHERE int_field = 0";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -3223,7 +3331,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT int_field, int_field FROM " + GetTableName() + " ORDER BY int_field";
+        sql  = " SELECT int_field FROM " + GetTableName() + " ORDER BY int_field";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -4210,17 +4318,21 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc_parameters->depends_on(tc_init);
     add(tc_parameters);
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
-    tc->depends_on(tc_init);
-    tc->depends_on(tc_parameters);
-    add(tc);
-
-    if (args.GetDriverName() == "ftds63") {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
+    if (args.GetDriverName() != "ftds64_ctlib") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
         tc->depends_on(tc_init);
         tc->depends_on(tc_parameters);
         add(tc);
     }
+
+//     if (args.GetDriverName() == "ftds63" ||
+// //         args.GetDriverName() == "ftds64_ctlib" ||
+//         args.GetDriverName() == "ftds") {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         tc->depends_on(tc_parameters);
+//         add(tc);
+//     }
 
     {
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
@@ -4253,10 +4365,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_cursor);
             add(tc);
 
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2, DBAPIInstance);
-            tc->depends_on(tc_init);
-            tc->depends_on(tc_cursor);
-            add(tc);
+//             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2, DBAPIInstance);
+//             tc->depends_on(tc_init);
+//             tc->depends_on(tc_cursor);
+//             add(tc);
 
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream, DBAPIInstance);
             tc->depends_on(tc_init);
@@ -4449,7 +4561,8 @@ CTestArguments::GetServerType(void) const
          GetServerName().compare(0, 6, "BARTOK") == 0 ) {
         return eSybase;
     } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0 ||
-                GetServerName().compare(0, 5, "MSSQL") == 0) {
+                GetServerName().compare(0, 5, "MSSQL") == 0 ||
+                GetServerName().compare(0, 7, "OAMSDEV") == 0) {
         return eMsSql;
     }
 
@@ -4473,17 +4586,14 @@ CTestArguments::SetDatabaseParameters(void)
             // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
             // BcpIn to it using protocol version other than "100".
             m_DatabaseParameters["version"] = "100";
-        } else if ( (GetDriverName() == "ftds" ||
-                     GetDriverName() == "ftds63" ||
+        } else if ( (GetDriverName() == "ftds") &&
+                    GetServerType() == eSybase ) {
+            m_DatabaseParameters["version"] = "42";
+        } else if ( (GetDriverName() == "ftds63" ||
                      GetDriverName() == "ftds64_dblib") &&
                     GetServerType() == eSybase ) {
             // ftds work with Sybase databases using protocol v42 only ...
-            // m_DatabaseParameters["version"] = "100";
-            m_DatabaseParameters["version"] = "42";
-//         } else if ( GetDriverName() == "ftds63" &&
-//                     GetServerType() == eSybase ) {
-//             // ftds63 is TDS v10.0 oriented ...
-//             m_DatabaseParameters["version"] = "100";
+            m_DatabaseParameters["version"] = "50";
         } else if (GetDriverName() == "ftds64_odbc"  &&
                    GetServerType() == eSybase) {
             m_DatabaseParameters["version"] = "50";
@@ -4497,6 +4607,8 @@ CTestArguments::SetDatabaseParameters(void)
 
     if ( (GetDriverName() == "ftds" ||
           GetDriverName() == "ftds63" ||
+//           GetDriverName() == "ftds64_ctlib" ||
+//           GetDriverName() == "ftds64_odbc" ||
           GetDriverName() == "ftds64_dblib") &&
         GetServerType() == eMsSql) {
         m_DatabaseParameters["client_charset"] = "UTF-8";
@@ -4526,6 +4638,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.92  2006/08/31 14:56:12  ssikorsk
+ * Made tests database-independent.
+ *
  * Revision 1.91  2006/08/25 18:28:31  ssikorsk
  * Added testing with UTF-8 encoded strings to Test_Unicode;
  * Added ftds64_ctlib to a list of available servers when HAVE_LIBSYBASE
