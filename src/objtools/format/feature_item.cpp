@@ -2334,8 +2334,9 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(locus_tag);
     DO_QUAL(old_locus_tag);
     x_FormatQual(eFQ_gene_syn_refseq, "synonym", qvec);
-    //DO_QUAL(gene_syn_refseq);
-
+    if ( ! cfg.GeneSynsToNote() ) {
+        DO_QUAL(gene_syn);
+    }
     x_FormatQual(eFQ_gene_allele, "allele", qvec);
 
     DO_QUAL(operon);
@@ -2469,12 +2470,16 @@ static void s_PruneNoteQuals(CFlatFeature::TQuals& qvec)
 
 void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 {
+    const CFlatFileConfig& cfg = GetContext()->Config();
     CFlatFeature::TQuals qvec;
 
 #define DO_NOTE(x) x_FormatNoteQual(eFQ_##x, #x, qvec)
     x_FormatNoteQual(eFQ_transcript_id_note, "tscpt_id_note", qvec);
     DO_NOTE(gene_desc);
-    DO_NOTE(gene_syn);
+
+    if ( cfg.GeneSynsToNote() ) {
+        DO_NOTE(gene_syn);
+    }
     DO_NOTE(trna_codons);
     DO_NOTE(encodes);
     DO_NOTE(prot_desc);
@@ -3845,6 +3850,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2006/08/31 13:54:06  ludwigf
+* CHANGED: In relaxed modes, turn object qualifier "syn" into a flat file
+*  qualifier "/synonym" rather than a component of the "/note" qualifier.
+*
 * Revision 1.78  2006/08/30 13:28:50  ludwigf
 * FIXED: Handling of "exp_ev" qualifier and "inference" gb-qualifier. The
 *  second may be used to modify the value of the first.

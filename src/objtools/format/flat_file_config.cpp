@@ -47,7 +47,7 @@ CFlatFileConfig::CFlatFileConfig
  TFlags flags,
  TView view) :
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
-    m_Flags(flags), m_RefSeqConventions(false)
+    m_Flags(flags), m_RefSeqConventions(true)
 {
     // GFF/GFF3 and FTable always require master style
     if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
@@ -152,6 +152,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/08/31 13:54:06  ludwigf
+* CHANGED: In relaxed modes, turn object qualifier "syn" into a flat file
+*  qualifier "/synonym" rather than a component of the "/note" qualifier.
+*
 * Revision 1.5  2005/08/16 15:45:02  shomrat
 * GFF/GFF3 and FTable require master style
 *

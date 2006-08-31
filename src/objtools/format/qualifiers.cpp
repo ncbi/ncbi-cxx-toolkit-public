@@ -400,13 +400,16 @@ void CFlatGeneSynonymsQVal::Format
     if (GetValue().empty()) {
         return;
     }
-    string qual = name;
-    string syns;
-    if (!ctx.IsRefSeq()  ||  ctx.Config().GeneSynsToNote()) {
+    string qual, syns;
+    if ( ! ctx.Config().GeneSynsToNote() ) {
+        qual = "synonym";
+        syns += NStr::Join(GetValue(), ", ");
+    }
+    else {
         qual = "note";
-        syns = (GetValue().size() > 1) ? "synonyms: " : "synonym: ";
-    } 
-    syns += NStr::Join(GetValue(), ", ");
+        syns = ( GetValue().size() == 1 ? "synonym: " : "synonyms: " );
+        syns += NStr::Join(GetValue(), ", ");
+    }
     x_AddFQ(q, qual, syns, m_Style);
     m_Suffix = &kSemicolon;
 }
@@ -1029,6 +1032,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2006/08/31 13:54:06  ludwigf
+* CHANGED: In relaxed modes, turn object qualifier "syn" into a flat file
+*  qualifier "/synonym" rather than a component of the "/note" qualifier.
+*
 * Revision 1.37  2006/08/30 13:28:50  ludwigf
 * FIXED: Handling of "exp_ev" qualifier and "inference" gb-qualifier. The
 *  second may be used to modify the value of the first.
