@@ -238,7 +238,7 @@ CDemoeApp::Run(void)
 
         myExHandler.HandleIt(&e);
         return 1;
-    } catch (const CException& e) {
+    } catch (const CException&) {
         return 1;
     }
 
@@ -254,6 +254,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/08/31 18:46:11  ssikorsk
+ * Get rid of unused variables.
+ *
  * Revision 1.2  2006/07/11 14:23:13  ssikorsk
  * 3.4 -> float(3.4) for VC sake.
  *

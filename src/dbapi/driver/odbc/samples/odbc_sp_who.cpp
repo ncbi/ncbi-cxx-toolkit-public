@@ -98,7 +98,7 @@ CDemoeApp::Run(void)
         
         myExHandler.HandleIt(&e);
         return 1;
-    } catch (const CException& e) {
+    } catch (const CException&) {
         return 1;
     }
 
@@ -114,6 +114,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/08/31 18:46:11  ssikorsk
+ * Get rid of unused variables.
+ *
  * Revision 1.8  2006/02/24 19:36:13  ssikorsk
  * Added #include <test/test_assert.h> for test-suite sake
  *
