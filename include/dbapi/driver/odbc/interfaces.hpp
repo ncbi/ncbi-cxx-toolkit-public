@@ -155,7 +155,7 @@ public:
     // the following methods are optional (driver will use the default values
     // if not called), the values will affect the new connections only
 
-    virtual void ODBC_SetPacketSize(SQLUINTEGER packet_size);
+    void ODBC_SetPacketSize(SQLUINTEGER packet_size);
 
     virtual SQLHENV ODBC_GetContext(void) const;
     const CODBC_Reporter& GetReporter(void) const
@@ -165,6 +165,15 @@ public:
     int GetTDSVersion(void) const
     {
         return m_TDSVersion;
+    }
+
+    void SetClientCharset(const string& charset)
+    {
+        m_ClientCharset = charset;
+    }
+    const string& GetClientCharset(void) const
+    {
+        return m_ClientCharset;
     }
 
 protected:
@@ -178,6 +187,7 @@ private:
     bool            m_UseDSN;
     CODBCContextRegistry* m_Registry;
     int             m_TDSVersion;
+    string          m_ClientCharset;
 
     SQLHDBC x_ConnectToServer(const string&   srv_name,
                    const string&   usr_name,
@@ -615,7 +625,6 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public impl::CResult
     friend class CODBC_RPCCmd;
     friend class CODBC_CursorCmd;
     friend class CODBC_Connection;
-    friend class CODBC_CursorCmd;
     friend class CODBC_CursorCmdExpl;
 
 protected:
@@ -798,6 +807,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/08/31 14:58:08  ssikorsk
+ * Added ClientCharset to the DriverContext.
+ *
  * Revision 1.43  2006/08/18 15:11:57  ssikorsk
  * Revamp CODBC_CursorCmd/CODBC_CursorResult to use implicit cursors from ODBC API;
  * Added CODBC_CursorCmdExpl and CODBC_CursorResultExpl classes, which implement
