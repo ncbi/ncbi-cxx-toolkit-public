@@ -501,10 +501,11 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding)
 
     for (i = str.begin(); i != e;) {
         ch = *(i++);
-//check for HTML entities and character references
+        //check for HTML entities and character references
         if (i != e && ch == '&') {
-            string::const_iterator itmp = i, end_of_entity = i, start_of_entity = i;
-            bool ent, dec=false, hex=false, parsed=false;
+            string::const_iterator itmp, end_of_entity, start_of_entity;
+            itmp = end_of_entity = start_of_entity = i;
+            bool ent, dec, hex, parsed=false;
             ent = isalpha((unsigned char)(*itmp)) != 0;
             dec = !ent && *itmp == '#' && ++itmp != e &&
                   isdigit((unsigned char)(*itmp)) != 0;
@@ -512,9 +513,8 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding)
                   isxdigit((unsigned char)(*itmp)) != 0;
             start_of_entity = itmp;
             if (itmp != e && (ent || dec || hex)) {
-                int entlen;
                 // do not look too far
-                for (entlen=0; entlen<16 && itmp != e; ++entlen, ++itmp) {
+                for (int len=0; len<16 && itmp != e; ++len, ++itmp) {
                     if (*itmp == '&' || *itmp == '#') {
                         break;
                     }
@@ -540,7 +540,8 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding)
                         }
                     } else {
                         parsed = true;
-                        for (itmp = start_of_entity; itmp != end_of_entity; ++itmp) {
+                        for (itmp = start_of_entity;
+                             itmp != end_of_entity; ++itmp) {
                             TUnicodeSymbol ud = *itmp;
                             if (dec) {
                                 uch = 10 * uch + (ud - '0');
@@ -582,6 +583,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/08/31 19:35:08  gouriano
+ * cosmetics
+ *
  * Revision 1.30  2006/08/31 17:26:04  gouriano
  * Added HTMLDecode method
  *
