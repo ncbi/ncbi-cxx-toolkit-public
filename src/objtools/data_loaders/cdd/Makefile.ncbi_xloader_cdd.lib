@@ -6,3 +6,4 @@
 LIB = ncbi_xloader_cdd
 SRC = cdd
 
+ASN_DEP = seqset
